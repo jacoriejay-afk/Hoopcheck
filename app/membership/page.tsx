@@ -16,6 +16,8 @@ export default function MembershipPage() {
     useState<Subscription | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [portalLoading, setPortalLoading] =
+    useState(false);
 
   useEffect(() => {
     async function loadMembership() {
@@ -75,7 +77,8 @@ export default function MembershipPage() {
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
             Authorization:
               `Bearer ${session.access_token}`,
           },
@@ -92,6 +95,7 @@ export default function MembershipPage() {
           data.error ||
             "Unable to start checkout."
         );
+
         setLoading(false);
         return;
       }
@@ -100,6 +104,7 @@ export default function MembershipPage() {
         alert(
           "Stripe did not return a checkout URL."
         );
+
         setLoading(false);
         return;
       }
@@ -116,6 +121,66 @@ export default function MembershipPage() {
       );
 
       setLoading(false);
+    }
+  }
+
+  async function openCustomerPortal() {
+    try {
+      setPortalLoading(true);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        window.location.href = "/login";
+        return;
+      }
+
+      const response = await fetch(
+        "/api/stripe/create-portal",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(
+          data.error ||
+            "Unable to open subscription management."
+        );
+
+        setPortalLoading(false);
+        return;
+      }
+
+      if (!data.url) {
+        alert(
+          "Stripe did not return a billing portal URL."
+        );
+
+        setPortalLoading(false);
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch (error) {
+      console.error(
+        "Portal error:",
+        error
+      );
+
+      alert(
+        "Something went wrong opening subscription management."
+      );
+
+      setPortalLoading(false);
     }
   }
 
@@ -153,10 +218,10 @@ export default function MembershipPage() {
         <h1>Know before you sign.</h1>
 
         <p>
-          Unlock deeper player experiences and
-          research coaches, teams, and leagues
-          before your next overseas basketball
-          opportunity.
+          Unlock deeper player experiences
+          and research coaches, teams, and
+          leagues before your next overseas
+          basketball opportunity.
         </p>
 
         {loading ? (
@@ -165,15 +230,21 @@ export default function MembershipPage() {
           </p>
         ) : activeSubscription ? (
           <div className="card">
+            <div className="eyebrow">
+              ACTIVE MEMBERSHIP
+            </div>
+
             <h2>
-              You're subscribed to HoopCheck{" "}
-              {subscription?.plan === "premium"
+              HoopCheck{" "}
+              {subscription?.plan ===
+              "premium"
                 ? "Premium"
                 : "Pro"}
             </h2>
 
             <p className="muted">
-              Status: {subscription?.status}
+              Status:{" "}
+              {subscription?.status}
             </p>
 
             {subscription?.current_period_end && (
@@ -192,103 +263,118 @@ export default function MembershipPage() {
                 current billing period.
               </p>
             )}
+
+            <div className="actions">
+              <button
+                className="btn"
+                onClick={
+                  openCustomerPortal
+                }
+                disabled={portalLoading}
+              >
+                {portalLoading
+                  ? "Opening..."
+                  : "Manage Subscription"}
+              </button>
+
+              <Link
+                href="/dashboard"
+                className="btn dark"
+              >
+                Dashboard
+              </Link>
+            </div>
           </div>
         ) : null}
       </section>
 
-      <section className="grid">
-        <div className="card">
-          <div className="eyebrow">
-            HOOPCHECK PRO
+      {!activeSubscription && (
+        <section className="grid">
+          <div className="card">
+            <div className="eyebrow">
+              HOOPCHECK PRO
+            </div>
+
+            <h2>$7.99/month</h2>
+
+            <p>
+              Essential access for players
+              researching overseas
+              opportunities.
+            </p>
+
+            <ul className="muted">
+              <li>Full player ratings</li>
+              <li>Full player reviews</li>
+              <li>Coach research</li>
+              <li>Team research</li>
+              <li>League research</li>
+            </ul>
+
+            <button
+              className="btn"
+              disabled={loading}
+              onClick={() =>
+                startCheckout("pro")
+              }
+            >
+              {loading
+                ? "Loading..."
+                : "Choose Pro"}
+            </button>
           </div>
 
-          <h2>$7.99/month</h2>
+          <div className="card">
+            <div className="eyebrow">
+              HOOPCHECK PREMIUM
+            </div>
 
-          <p>
-            Essential access for players
-            researching overseas opportunities.
-          </p>
+            <h2>$15.99/month</h2>
 
-          <ul className="muted">
-            <li>Full player ratings</li>
-            <li>Full player reviews</li>
-            <li>Coach research</li>
-            <li>Team research</li>
-            <li>League research</li>
-          </ul>
+            <p>
+              Advanced access for players
+              who want the complete HoopCheck
+              experience.
+            </p>
 
-          <button
-            className="btn"
-            disabled={
-              !!activeSubscription || loading
-            }
-            onClick={() =>
-              startCheckout("pro")
-            }
-          >
-            {activeSubscription
-              ? "Current Membership"
-              : loading
-              ? "Loading..."
-              : "Choose Pro"}
-          </button>
-        </div>
+            <ul className="muted">
+              <li>Everything in Pro</li>
+              <li>Advanced research tools</li>
+              <li>Expanded player insights</li>
+              <li>Premium discovery features</li>
+              <li>
+                Priority access to new features
+              </li>
+            </ul>
 
-        <div className="card">
-          <div className="eyebrow">
-            HOOPCHECK PREMIUM
+            <button
+              className="btn"
+              disabled={loading}
+              onClick={() =>
+                startCheckout("premium")
+              }
+            >
+              {loading
+                ? "Loading..."
+                : "Choose Premium"}
+            </button>
           </div>
-
-          <h2>$15.99/month</h2>
-
-          <p>
-            Advanced access for players who
-            want the complete HoopCheck
-            experience.
-          </p>
-
-          <ul className="muted">
-            <li>Everything in Pro</li>
-            <li>Advanced research tools</li>
-            <li>Expanded player insights</li>
-            <li>Premium discovery features</li>
-            <li>Priority access to new features</li>
-          </ul>
-
-          <button
-            className="btn"
-            disabled={
-              !!activeSubscription || loading
-            }
-            onClick={() =>
-              startCheckout("premium")
-            }
-          >
-            {activeSubscription
-              ? "Current Membership"
-              : loading
-              ? "Loading..."
-              : "Choose Premium"}
-          </button>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="hero">
         <div className="card">
-          <h2>Already subscribed?</h2>
+          <h2>
+            Your membership powers HoopCheck
+          </h2>
 
           <p className="muted">
-            Your membership will automatically
-            sync with HoopCheck after payment is
-            completed.
+            Stripe securely handles your
+            subscription and billing. You can
+            manage your payment method, cancel,
+            or update your subscription through
+            Stripe.
           </p>
-
-          <Link
-            href="/dashboard"
-            className="btn dark"
-          >
-            Back to Dashboard
-          </Link>
         </div>
       </section>
     </main>
