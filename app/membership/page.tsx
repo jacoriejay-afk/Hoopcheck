@@ -54,7 +54,50 @@ export default function MembershipPage() {
     subscription &&
     (subscription.status === "active" ||
       subscription.status === "trialing");
+  async function startProCheckout() {
+    try {
+      setLoading(true);
 
+      const response = await fetch(
+        "/api/stripe/create-checkout",
+        {
+          method: "POST",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(
+          data.error ||
+            "Unable to start checkout."
+        );
+        setLoading(false);
+        return;
+      }
+
+      if (!data.url) {
+        alert(
+          "Stripe did not return a checkout URL."
+        );
+        setLoading(false);
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch (error) {
+      console.error(
+        "Checkout error:",
+        error
+      );
+
+      alert(
+        "Something went wrong starting checkout."
+      );
+
+      setLoading(false);
+    }
+  }
   return (
     <main>
       <nav className="nav">
@@ -169,11 +212,19 @@ export default function MembershipPage() {
           <button
             className="btn"
             disabled={activeSubscription}
-          >
-            {activeSubscription
-              ? "Current Membership"
-              : "Choose Pro"}
-          </button>
+         <button
+  className="btn"
+  disabled={
+    activeSubscription || loading
+  }
+  onClick={startProCheckout}
+>
+  {activeSubscription
+    ? "Current Membership"
+    : loading
+    ? "Loading..."
+    : "Choose Pro"}
+</button>
         </div>
 
         <div className="card">
