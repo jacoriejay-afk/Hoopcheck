@@ -1,0 +1,152 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #080b12;
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.nav {
+  height: 70px;
+  padding: 0 7%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #252b38;
+  background: #0b0f18;
+}
+
+.logo {
+  font-size: 25px;
+  font-weight: 800;
+}
+
+.logo span {
+  color: #ff8a00;
+}
+
+.links {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.btn {
+  display: inline-block;
+  background: #ff8a00;
+  color: #111111;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.dark {
+  background: #171d29;
+  color: #ffffff;
+  border: 1px solid #303746;
+}
+
+.hero {
+  max-width: 1100px;
+  margin: auto;
+  padding: 90px 7%;
+}
+
+.eyebrow {
+  color: #ff9b2f;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  font-size: clamp(44px, 7vw, 76px);
+  line-height: 1;
+  margin: 14px 0;
+  max-width: 850px;
+}
+
+.hero p {
+  color: #b7bfcc;
+  font-size: 20px;
+  line-height: 1.6;
+  max-width: 720px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+
+.grid {
+  max-width: 1100px;
+  margin: auto;
+  padding: 20px 7% 80px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.card {
+  background: #101620;
+  border: 1px solid #252e3c;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.card p {
+  color: #aeb7c5;
+  line-height: 1.5;
+}
+
+.form {
+  max-width: 460px;
+  margin: 70px auto;
+  padding: 28px;
+  background: #101620;
+  border: 1px solid #252e3c;
+  border-radius: 16px;
+}
+
+.input {
+  width: 100%;
+  padding: 13px;
+  margin: 8px 0 14px;
+  background: #080b12;
+  color: #ffffff;
+  border: 1px solid #303746;
+  border-radius: 8px;
+}
+
+.muted {
+  color: #aeb7c5;
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .links a:not(.btn) {
+    display: none;
+  }
+
+  .hero {
+    padding-top: 60px;
+  }
+}
