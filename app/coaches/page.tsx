@@ -17,12 +17,18 @@ export default function CoachesPage() {
 
   useEffect(() => {
     async function loadCoaches() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("coaches")
         .select("id, name, country, city")
         .order("name");
 
-      setCoaches(data || []);
+      if (error) {
+        console.error("Error loading coaches:", error);
+        setCoaches([]);
+      } else {
+        setCoaches(data || []);
+      }
+
       setLoading(false);
     }
 
@@ -62,8 +68,7 @@ export default function CoachesPage() {
             <h2>No coaches yet</h2>
 
             <p>
-              Coaches will appear here once they are added to
-              HoopCheck.
+              Coaches will appear here once they are added to HoopCheck.
             </p>
           </div>
         ) : (
@@ -74,15 +79,17 @@ export default function CoachesPage() {
               <p>
                 {coach.city && coach.country
                   ? `${coach.city}, ${coach.country}`
-                  : coach.country || coach.city || "Location not listed"}
+                  : coach.country ||
+                    coach.city ||
+                    "Location not listed"}
               </p>
 
-            <Link
-  href={`/coaches/${coach.id}`}
-  className="btn"
->
-  View Coach
-</Link>
+              <Link
+                href={`/coaches/${coach.id}`}
+                className="btn"
+              >
+                View Coach
+              </Link>
             </div>
           ))
         )}
