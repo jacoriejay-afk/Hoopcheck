@@ -101,9 +101,9 @@ export default function DashboardPage() {
             Explore ratings and player experiences with coaches.
           </p>
 
-          <button className="btn">
-            Explore Coaches
-          </button>
+          <Link href="/coaches" className="btn">
+  Explore Coaches
+</Link>
         </div>
 
         <div className="card">
@@ -112,9 +112,9 @@ export default function DashboardPage() {
             Research professional teams before signing.
           </p>
 
-          <button className="btn">
-            Explore Teams
-          </button>
+          <Link href="/teams" className="btn">
+  Explore Teams
+</Link>
         </div>
 
         <div className="card">
@@ -123,9 +123,9 @@ export default function DashboardPage() {
             Explore player experiences across leagues worldwide.
           </p>
 
-          <button className="btn">
-            Explore Leagues
-          </button>
+          <Link href="/leagues" className="btn">
+  Explore Leagues
+</Link>
         </div>
       </section>
 
@@ -138,9 +138,9 @@ export default function DashboardPage() {
             ratings and player reviews.
           </p>
 
-          <button className="btn">
-            View Memberships
-          </button>
+        <Link href="/membership" className="btn">
+  View Memberships
+</Link>
         </div>
       </section>
     </main>
