@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { supabase } from "../../../../lib/supabase";
+import crypto from "crypto";
+import { createClient } from "@supabase/supabase-js";
 
 const STRIPE_API_URL = "https://api.stripe.com/v1";
 
@@ -35,15 +36,150 @@ type StripeInvoice = {
   subscription: string | null;
 };
 
-function getPlanFromPrice(priceId: string | undefined) {
-  const proPriceId = process.env.STRIPE_PRO_PRICE_ID;
-  const premiumPriceId = process.env.STRIPE_PREMIUM_PRICE_ID;
+function getAdminSupabase() {
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-  if (priceId === premiumPriceId) {
+  const serviceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error(
+      "Missing Supabase server configuration."
+    );
+  }
+
+  return createClient(
+    supabaseUrl,
+    serviceRoleKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+}
+
+function verifyStripeSignature(
+  payload: string,
+  signature: string,
+  secret: string
+) {
+  const parts = signature
+    .split(",")
+    .reduce(
+      (
+        result: Record<string, string[]>,
+        item
+      ) => {
+        const [key, value] = item.split("=");
+
+        if (key && value) {
+          if (!result[key]) {
+            result[key] = [];
+          }
+
+          result[key].push(value);
+        }
+
+        return result;
+      },
+      {}
+    );
+
+  const timestamp = parts.t?.[0];
+  const signatures = parts.v1 || [];
+
+  if (!timestamp || signatures.length === 0) {
+    return false;
+  }
+
+  const timestampNumber =
+    Number(timestamp);
+
+  if (!Number.isFinite(timestampNumber)) {
+    return false;
+  }
+
+  const currentTime =
+    Math.floor(Date.now() / 1000);
+
+  const tolerance = 300;
+
+  if (
+    Math.abs(
+      currentTime - timestampNumber
+    ) > tolerance
+  ) {
+    return false;
+  }
+
+  const signedPayload =
+    `${timestamp}.${payload}`;
+
+  const expectedSignature =
+    crypto
+      .createHmac(
+        "sha256",
+        secret
+      )
+      .update(signedPayload)
+      .digest("hex");
+
+  return signatures.some(
+    (receivedSignature) => {
+      try {
+        const expectedBuffer =
+          Buffer.from(
+            expectedSignature,
+            "utf8"
+          );
+
+        const receivedBuffer =
+          Buffer.from(
+            receivedSignature,
+            "utf8"
+          );
+
+        if (
+          expectedBuffer.length !==
+          receivedBuffer.length
+        ) {
+          return false;
+        }
+
+        return crypto.timingSafeEqual(
+          expectedBuffer,
+          receivedBuffer
+        );
+      } catch {
+        return false;
+      }
+    }
+  );
+}
+
+function getPlanFromPrice(
+  priceId: string | undefined
+) {
+  const proPriceId =
+    process.env.STRIPE_PRO_PRICE_ID;
+
+  const premiumPriceId =
+    process.env.STRIPE_PREMIUM_PRICE_ID;
+
+  if (
+    premiumPriceId &&
+    priceId === premiumPriceId
+  ) {
     return "premium";
   }
 
-  if (priceId === proPriceId) {
+  if (
+    proPriceId &&
+    priceId === proPriceId
+  ) {
     return "pro";
   }
 
@@ -67,13 +203,15 @@ async function stripeRequest<T>(
     {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${stripeSecretKey}`,
+        Authorization:
+          `Bearer ${stripeSecretKey}`,
       },
       cache: "no-store",
     }
   );
 
-  const data = await response.json();
+  const data =
+    await response.json();
 
   if (!response.ok) {
     throw new Error(
@@ -89,45 +227,56 @@ async function saveSubscription(
   userId: string,
   subscription: StripeSubscription
 ) {
-  const priceId =
-    subscription.items?.data?.[0]?.price?.id;
+  const supabase =
+    getAdminSupabase();
 
-  const plan = getPlanFromPrice(priceId);
+  const priceId =
+    subscription.items?.data?.[0]
+      ?.price?.id;
+
+  const plan =
+    getPlanFromPrice(priceId);
 
   if (!plan) {
     throw new Error(
-      `Unknown Stripe price: ${priceId || "missing"}`
+      `Unknown Stripe price: ${
+        priceId || "missing"
+      }`
     );
   }
 
   const currentPeriodEnd =
     subscription.current_period_end
       ? new Date(
-          subscription.current_period_end * 1000
+          subscription.current_period_end *
+            1000
         ).toISOString()
       : null;
 
-  const { error } = await supabase
-    .from("subscriptions")
-    .upsert(
-      {
-        user_id: userId,
-        stripe_customer_id:
-          subscription.customer,
-        stripe_subscription_id:
-          subscription.id,
-        stripe_price_id: priceId,
-        plan,
-        status: subscription.status,
-        current_period_end:
-          currentPeriodEnd,
-        cancel_at_period_end:
-          subscription.cancel_at_period_end,
-      },
-      {
-        onConflict: "user_id",
-      }
-    );
+  const { error } =
+    await supabase
+      .from("subscriptions")
+      .upsert(
+        {
+          user_id: userId,
+          stripe_customer_id:
+            subscription.customer,
+          stripe_subscription_id:
+            subscription.id,
+          stripe_price_id:
+            priceId,
+          plan,
+          status:
+            subscription.status,
+          current_period_end:
+            currentPeriodEnd,
+          cancel_at_period_end:
+            subscription.cancel_at_period_end,
+        },
+        {
+          onConflict: "user_id",
+        }
+      );
 
   if (error) {
     throw new Error(
@@ -139,11 +288,18 @@ async function saveSubscription(
 async function findUserByStripeCustomer(
   customerId: string
 ) {
-  const { data, error } = await supabase
-    .from("subscriptions")
-    .select("user_id")
-    .eq("stripe_customer_id", customerId)
-    .maybeSingle();
+  const supabase =
+    getAdminSupabase();
+
+  const { data, error } =
+    await supabase
+      .from("subscriptions")
+      .select("user_id")
+      .eq(
+        "stripe_customer_id",
+        customerId
+      )
+      .maybeSingle();
 
   if (error) {
     throw new Error(
@@ -152,6 +308,51 @@ async function findUserByStripeCustomer(
   }
 
   return data?.user_id || null;
+}
+
+async function saveEvent(
+  event: {
+    id: string;
+    type: string;
+    [key: string]: unknown;
+  }
+) {
+  const supabase =
+    getAdminSupabase();
+
+  const {
+    data: existingEvent,
+  } = await supabase
+    .from("subscription_events")
+    .select("id")
+    .eq(
+      "stripe_event_id",
+      event.id
+    )
+    .maybeSingle();
+
+  if (existingEvent) {
+    return false;
+  }
+
+  const { error } =
+    await supabase
+      .from("subscription_events")
+      .insert({
+        stripe_event_id:
+          event.id,
+        event_type:
+          event.type,
+        payload: event,
+      });
+
+  if (error) {
+    throw new Error(
+      `Unable to save Stripe event: ${error.message}`
+    );
+  }
+
+  return true;
 }
 
 export async function POST(
@@ -171,18 +372,8 @@ export async function POST(
       );
     }
 
-    /*
-     * IMPORTANT:
-     *
-     * Stripe webhook signature verification
-     * requires the raw request body.
-     *
-     * We read the body here so this endpoint
-     * is ready for Stripe's signed webhook
-     * payload.
-     */
-
-    const rawBody = await request.text();
+    const rawBody =
+      await request.text();
 
     const signature =
       request.headers.get(
@@ -199,35 +390,28 @@ export async function POST(
       );
     }
 
-    /*
-     * The webhook verification will be completed
-     * with Stripe's signing secret when the
-     * endpoint is connected in Stripe.
-     *
-     * For now, reject unsigned requests and
-     * continue only when the configured secret
-     * is present.
-     */
+    const validSignature =
+      verifyStripeSignature(
+        rawBody,
+        signature,
+        webhookSecret
+      );
 
-    if (!rawBody) {
+    if (!validSignature) {
       return NextResponse.json(
         {
-          error: "Empty webhook body.",
+          error:
+            "Invalid Stripe signature.",
         },
         { status: 400 }
       );
     }
 
-    let event: {
-      id: string;
-      type: string;
-      data?: {
-        object?: any;
-      };
-    };
+    let event: any;
 
     try {
-      event = JSON.parse(rawBody);
+      event =
+        JSON.parse(rawBody);
     } catch {
       return NextResponse.json(
         {
@@ -238,18 +422,20 @@ export async function POST(
       );
     }
 
-    /*
-     * Prevent duplicate processing.
-     */
+    if (!event.id || !event.type) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid Stripe event.",
+        },
+        { status: 400 }
+      );
+    }
 
-    const { data: existingEvent } =
-      await supabase
-        .from("subscription_events")
-        .select("id")
-        .eq("stripe_event_id", event.id)
-        .maybeSingle();
+    const isNewEvent =
+      await saveEvent(event);
 
-    if (existingEvent) {
+    if (!isNewEvent) {
       return NextResponse.json({
         received: true,
         duplicate: true,
@@ -257,35 +443,15 @@ export async function POST(
     }
 
     /*
-     * Save the event first.
+     * Checkout completed
      */
-
-    const { error: eventInsertError } =
-      await supabase
-        .from("subscription_events")
-        .insert({
-          stripe_event_id: event.id,
-          event_type: event.type,
-          payload: event,
-        });
-
-    if (eventInsertError) {
-      console.error(
-        "Unable to save Stripe event:",
-        eventInsertError
-      );
-    }
-
-    /*
-     * Handle completed Checkout.
-     */
-
     if (
       event.type ===
       "checkout.session.completed"
     ) {
       const session =
-        event.data?.object as StripeCheckoutSession;
+        event.data
+          ?.object as StripeCheckoutSession;
 
       const userId =
         session.client_reference_id ||
@@ -293,13 +459,13 @@ export async function POST(
 
       if (!userId) {
         throw new Error(
-          "Checkout session does not contain a HoopCheck user ID."
+          "Checkout session is missing the HoopCheck user ID."
         );
       }
 
       if (!session.subscription) {
         throw new Error(
-          "Checkout session does not contain a subscription ID."
+          "Checkout session is missing the subscription ID."
         );
       }
 
@@ -315,14 +481,15 @@ export async function POST(
     }
 
     /*
-     * Handle successful recurring payments.
+     * Successful recurring payment
      */
-
     if (
-      event.type === "invoice.paid"
+      event.type ===
+      "invoice.paid"
     ) {
       const invoice =
-        event.data?.object as StripeInvoice;
+        event.data
+          ?.object as StripeInvoice;
 
       if (invoice.subscription) {
         const userId =
@@ -345,15 +512,15 @@ export async function POST(
     }
 
     /*
-     * Handle failed recurring payments.
+     * Failed recurring payment
      */
-
     if (
       event.type ===
       "invoice.payment_failed"
     ) {
       const invoice =
-        event.data?.object as StripeInvoice;
+        event.data
+          ?.object as StripeInvoice;
 
       if (invoice.subscription) {
         const userId =
@@ -376,12 +543,33 @@ export async function POST(
     }
 
     /*
-     * Handle subscription changes/cancellations.
+     * Subscription updated
      */
-
     if (
       event.type ===
-      "customer.subscription.updated" ||
+      "customer.subscription.updated"
+    ) {
+      const subscription =
+        event.data
+          ?.object as StripeSubscription;
+
+      const userId =
+        await findUserByStripeCustomer(
+          subscription.customer
+        );
+
+      if (userId) {
+        await saveSubscription(
+          userId,
+          subscription
+        );
+      }
+    }
+
+    /*
+     * Subscription deleted
+     */
+    if (
       event.type ===
       "customer.subscription.deleted"
     ) {
