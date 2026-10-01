@@ -77,9 +77,12 @@ export default function CoachesPage() {
                   : coach.country || coach.city || "Location not listed"}
               </p>
 
-              <button className="btn">
-                View Coach
-              </button>
+            <Link
+  href={`/coaches/${coach.id}`}
+  className="btn"
+>
+  View Coach
+</Link>
             </div>
           ))
         )}
