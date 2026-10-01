@@ -17,12 +17,18 @@ export default function LeaguesPage() {
 
   useEffect(() => {
     async function loadLeagues() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("leagues")
         .select("id, name, country, level")
         .order("name");
 
-      setLeagues(data || []);
+      if (error) {
+        console.error("Error loading leagues:", error);
+        setLeagues([]);
+      } else {
+        setLeagues(data || []);
+      }
+
       setLoading(false);
     }
 
@@ -62,8 +68,7 @@ export default function LeaguesPage() {
             <h2>No leagues yet</h2>
 
             <p>
-              Leagues will appear here once they are added to
-              HoopCheck.
+              Leagues will appear here once they are added to HoopCheck.
             </p>
           </div>
         ) : (
@@ -76,12 +81,17 @@ export default function LeaguesPage() {
               </p>
 
               {league.level && (
-                <p>Level: {league.level}</p>
+                <p>
+                  Level: {league.level}
+                </p>
               )}
 
-              <button className="btn">
+              <Link
+                href={`/leagues/${league.id}`}
+                className="btn"
+              >
                 View League
-              </button>
+              </Link>
             </div>
           ))
         )}
