@@ -54,14 +54,34 @@ export default function MembershipPage() {
     subscription &&
     (subscription.status === "active" ||
       subscription.status === "trialing");
-  async function startProCheckout() {
+
+  async function startCheckout(
+    plan: "pro" | "premium"
+  ) {
     try {
       setLoading(true);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        window.location.href = "/login";
+        return;
+      }
 
       const response = await fetch(
         "/api/stripe/create-checkout",
         {
           method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization:
+              `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            plan,
+          }),
         }
       );
 
@@ -98,6 +118,7 @@ export default function MembershipPage() {
       setLoading(false);
     }
   }
+
   return (
     <main>
       <nav className="nav">
@@ -132,9 +153,10 @@ export default function MembershipPage() {
         <h1>Know before you sign.</h1>
 
         <p>
-          Unlock deeper player experiences and research
-          coaches, teams, and leagues before your next
-          overseas basketball opportunity.
+          Unlock deeper player experiences and
+          research coaches, teams, and leagues
+          before your next overseas basketball
+          opportunity.
         </p>
 
         {loading ? (
@@ -165,9 +187,9 @@ export default function MembershipPage() {
 
             {subscription?.cancel_at_period_end && (
               <p className="muted">
-                Your subscription is scheduled to
-                cancel at the end of the current
-                billing period.
+                Your subscription is scheduled
+                to cancel at the end of the
+                current billing period.
               </p>
             )}
           </div>
@@ -183,48 +205,33 @@ export default function MembershipPage() {
           <h2>$7.99/month</h2>
 
           <p>
-            Essential access for players researching
-            overseas opportunities.
+            Essential access for players
+            researching overseas opportunities.
           </p>
 
           <ul className="muted">
-            <li>
-              Full player ratings
-            </li>
-
-            <li>
-              Full player reviews
-            </li>
-
-            <li>
-              Coach research
-            </li>
-
-            <li>
-              Team research
-            </li>
-
-            <li>
-              League research
-            </li>
+            <li>Full player ratings</li>
+            <li>Full player reviews</li>
+            <li>Coach research</li>
+            <li>Team research</li>
+            <li>League research</li>
           </ul>
 
           <button
             className="btn"
-            disabled={activeSubscription}
-         <button
-  className="btn"
-  disabled={
-    activeSubscription || loading
-  }
-  onClick={startProCheckout}
->
-  {activeSubscription
-    ? "Current Membership"
-    : loading
-    ? "Loading..."
-    : "Choose Pro"}
-</button>
+            disabled={
+              !!activeSubscription || loading
+            }
+            onClick={() =>
+              startCheckout("pro")
+            }
+          >
+            {activeSubscription
+              ? "Current Membership"
+              : loading
+              ? "Loading..."
+              : "Choose Pro"}
+          </button>
         </div>
 
         <div className="card">
@@ -235,38 +242,32 @@ export default function MembershipPage() {
           <h2>$15.99/month</h2>
 
           <p>
-            Advanced access for players who want the
-            complete HoopCheck experience.
+            Advanced access for players who
+            want the complete HoopCheck
+            experience.
           </p>
 
           <ul className="muted">
-            <li>
-              Everything in Pro
-            </li>
-
-            <li>
-              Advanced research tools
-            </li>
-
-            <li>
-              Expanded player insights
-            </li>
-
-            <li>
-              Premium discovery features
-            </li>
-
-            <li>
-              Priority access to new features
-            </li>
+            <li>Everything in Pro</li>
+            <li>Advanced research tools</li>
+            <li>Expanded player insights</li>
+            <li>Premium discovery features</li>
+            <li>Priority access to new features</li>
           </ul>
 
           <button
             className="btn"
-            disabled={activeSubscription}
+            disabled={
+              !!activeSubscription || loading
+            }
+            onClick={() =>
+              startCheckout("premium")
+            }
           >
             {activeSubscription
               ? "Current Membership"
+              : loading
+              ? "Loading..."
               : "Choose Premium"}
           </button>
         </div>
@@ -277,8 +278,9 @@ export default function MembershipPage() {
           <h2>Already subscribed?</h2>
 
           <p className="muted">
-            Your membership will automatically sync
-            with HoopCheck after payment is completed.
+            Your membership will automatically
+            sync with HoopCheck after payment is
+            completed.
           </p>
 
           <Link
