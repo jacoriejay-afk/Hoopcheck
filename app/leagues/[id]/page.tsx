@@ -27,7 +27,7 @@ type Review = {
 function average(
   reviews: Review[],
   field: keyof Review
-): string | null {
+) {
   const values = reviews
     .map((review) => review[field])
     .filter(
@@ -35,63 +35,108 @@ function average(
         typeof value === "number"
     );
 
-  if (values.length === 0) {
-    return null;
-  }
+  if (values.length === 0) return null;
 
-  const total = values.reduce(
-    (sum, value) => sum + value,
-    0
-  );
-
-  return (total / values.length).toFixed(1);
+  return (
+    values.reduce((sum, value) => sum + value, 0) /
+    values.length
+  ).toFixed(1);
 }
 
 export default function LeagueProfilePage() {
   const params = useParams();
   const id = params.id as string;
 
-  const [league, setLeague] = useState<League | null>(null);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [league, setLeague] =
+    useState<League | null>(null);
+
+  const [reviews, setReviews] =
+    useState<Review[]>([]);
+
   const [loading, setLoading] = useState(true);
+  const [isSubscriber, setIsSubscriber] =
+    useState(false);
+
+  const [isAdmin, setIsAdmin] =
+    useState(false);
+
+  const [loggedIn, setLoggedIn] =
+    useState(false);
 
   useEffect(() => {
     async function loadLeague() {
-      const { data: leagueData, error: leagueError } =
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      setLoggedIn(!!user);
+
+      let hasAccess = false;
+
+      if (user) {
+        const { data: subscription } =
+          await supabase
+            .from("subscriptions")
+            .select(
+              "status, current_period_end"
+            )
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+        const active =
+          subscription &&
+          (subscription.status === "active" ||
+            subscription.status === "trialing") &&
+          (!subscription.current_period_end ||
+            new Date(
+              subscription.current_period_end
+            ) > new Date());
+
+        setIsSubscriber(!!active);
+
+        const { data: adminRole } =
+          await supabase
+            .from("admin_roles")
+            .select("role")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+        const admin =
+          adminRole?.role === "admin" ||
+          adminRole?.role === "moderator";
+
+        setIsAdmin(admin);
+
+        hasAccess = !!active || admin;
+      }
+
+      const { data: leagueData } =
         await supabase
           .from("leagues")
-          .select("id, name, country, level")
+          .select(
+            "id, name, country, level"
+          )
           .eq("id", id)
           .single();
 
-      if (leagueError) {
-        console.error(
-          "Error loading league:",
-          leagueError
-        );
+      setLeague(leagueData);
+
+      if (hasAccess) {
+        const { data: reviewData } =
+          await supabase
+            .from("reviews")
+            .select(
+              "id, overall_rating, communication_rating, professionalism_rating, development_rating, payment_rating, title, body, created_at"
+            )
+            .eq("league_id", id)
+            .eq("status", "approved")
+            .order("created_at", {
+              ascending: false,
+            });
+
+        setReviews(reviewData || []);
       }
 
-      const { data: reviewData, error: reviewError } =
-        await supabase
-          .from("reviews")
-          .select(
-            "id, overall_rating, communication_rating, professionalism_rating, development_rating, payment_rating, title, body, created_at"
-          )
-          .eq("league_id", id)
-          .eq("status", "approved")
-          .order("created_at", {
-            ascending: false,
-          });
-
-      if (reviewError) {
-        console.error(
-          "Error loading league reviews:",
-          reviewError
-        );
-      }
-
-      setLeague(leagueData || null);
-      setReviews(reviewData || []);
       setLoading(false);
     }
 
@@ -113,18 +158,8 @@ export default function LeagueProfilePage() {
   if (!league) {
     return (
       <main>
-        <nav className="nav">
-          <Link href="/" className="logo">
-            Hoop<span>Check</span>
-          </Link>
-        </nav>
-
         <section className="hero">
           <h1>League not found</h1>
-
-          <p className="muted">
-            This league could not be found.
-          </p>
 
           <Link
             href="/leagues"
@@ -136,6 +171,9 @@ export default function LeagueProfilePage() {
       </main>
     );
   }
+
+  const hasFullAccess =
+    isSubscriber || isAdmin;
 
   const overall = average(
     reviews,
@@ -193,165 +231,176 @@ export default function LeagueProfilePage() {
         </p>
 
         {league.level && (
-          <p>
+          <p className="muted">
             Level: {league.level}
           </p>
         )}
 
         <p className="muted">
-          {reviews.length}{" "}
-          {reviews.length === 1
-            ? "player review"
-            : "player reviews"}
+          Research player experiences before
+          committing to a league.
         </p>
-
-        <div className="actions">
-          <Link
-            href="/leagues"
-            className="btn dark"
-          >
-            ← Back to Leagues
-          </Link>
-
-          <Link
-            href={`/leagues/${league.id}/review`}
-            className="btn"
-          >
-            Write a Review
-          </Link>
-        </div>
       </section>
 
-      <section className="grid">
-        <div className="card">
-          <h2>Overall</h2>
-
-          <p>
-            {overall
-              ? `⭐ ${overall} / 5`
-              : "Not rated yet"}
-          </p>
-        </div>
-
-        <div className="card">
-          <h2>Communication</h2>
-
-          <p>
-            {communication
-              ? `⭐ ${communication} / 5`
-              : "Not rated yet"}
-          </p>
-        </div>
-
-        <div className="card">
-          <h2>Professionalism</h2>
-
-          <p>
-            {professionalism
-              ? `⭐ ${professionalism} / 5`
-              : "Not rated yet"}
-          </p>
-        </div>
-
-        <div className="card">
-          <h2>Player Development</h2>
-
-          <p>
-            {development
-              ? `⭐ ${development} / 5`
-              : "Not rated yet"}
-          </p>
-        </div>
-
-        <div className="card">
-          <h2>Payment</h2>
-
-          <p>
-            {payment
-              ? `⭐ ${payment} / 5`
-              : "Not rated yet"}
-          </p>
-        </div>
-      </section>
-
-      <section className="hero">
-        <h2>Player Reviews</h2>
-
-        {reviews.length === 0 ? (
+      {!hasFullAccess ? (
+        <section className="hero">
           <div className="card">
-            <h2>No reviews yet</h2>
+            <div className="eyebrow">
+              🔒 MEMBER ACCESS
+            </div>
+
+            <h2>
+              Full ratings & reviews are locked
+            </h2>
 
             <p className="muted">
-              No approved player reviews have
-              been submitted for this league yet.
+              HoopCheck members get access to
+              player ratings, detailed reviews,
+              and deeper research on professional
+              basketball leagues worldwide.
             </p>
 
-            <Link
-              href={`/leagues/${league.id}/review`}
-              className="btn"
-            >
-              Write the First Review
-            </Link>
-          </div>
-        ) : (
-          <div className="grid">
-            {reviews.map((review) => (
-              <div
-                className="card"
-                key={review.id}
+            <div className="actions">
+              <Link
+                href="/membership"
+                className="btn"
               >
-                <h2>
-                  ⭐ {review.overall_rating} / 5
-                </h2>
+                Unlock Full Access
+              </Link>
 
-                {review.title && (
-                  <h3>{review.title}</h3>
-                )}
+              {!loggedIn && (
+                <Link
+                  href="/login"
+                  className="btn dark"
+                >
+                  Log In
+                </Link>
+              )}
+            </div>
+          </div>
+        </section>
+      ) : (
+        <>
+          <section className="grid">
+            <div className="card">
+              <h2>Overall</h2>
 
-                {review.body && (
-                  <p>{review.body}</p>
-                )}
+              <p>
+                {overall
+                  ? `⭐ ${overall} / 5`
+                  : "Not rated yet"}
+              </p>
+            </div>
 
-                <div className="muted">
-                  <p>
-                    Communication:{" "}
-                    {review.communication_rating ??
-                      "N/A"}{" "}
-                    / 5
-                  </p>
+            <div className="card">
+              <h2>Communication</h2>
 
-                  <p>
-                    Professionalism:{" "}
-                    {review.professionalism_rating ??
-                      "N/A"}{" "}
-                    / 5
-                  </p>
+              <p>
+                {communication
+                  ? `⭐ ${communication} / 5`
+                  : "Not rated yet"}
+              </p>
+            </div>
 
-                  <p>
-                    Development:{" "}
-                    {review.development_rating ??
-                      "N/A"}{" "}
-                    / 5
-                  </p>
+            <div className="card">
+              <h2>Professionalism</h2>
 
-                  <p>
-                    Payment:{" "}
-                    {review.payment_rating ??
-                      "N/A"}{" "}
-                    / 5
-                  </p>
+              <p>
+                {professionalism
+                  ? `⭐ ${professionalism} / 5`
+                  : "Not rated yet"}
+              </p>
+            </div>
+
+            <div className="card">
+              <h2>Player Development</h2>
+
+              <p>
+                {development
+                  ? `⭐ ${development} / 5`
+                  : "Not rated yet"}
+              </p>
+            </div>
+
+            <div className="card">
+              <h2>Payment</h2>
+
+              <p>
+                {payment
+                  ? `⭐ ${payment} / 5`
+                  : "Not rated yet"}
+              </p>
+            </div>
+          </section>
+
+          <section className="hero">
+            <h2>Player Reviews</h2>
+
+            {reviews.length === 0 ? (
+              <div className="card">
+                <p>
+                  No approved reviews have been
+                  submitted for this league yet.
+                </p>
+
+                <Link
+                  href={`/leagues/${league.id}/review`}
+                  className="btn"
+                >
+                  Write a Review
+                </Link>
+              </div>
+            ) : (
+              <>
+                <div className="grid">
+                  {reviews.map((review) => (
+                    <div
+                      className="card"
+                      key={review.id}
+                    >
+                      <h2>
+                        ⭐{" "}
+                        {review.overall_rating} / 5
+                      </h2>
+
+                      {review.title && (
+                        <h3>
+                          {review.title}
+                        </h3>
+                      )}
+
+                      {review.body && (
+                        <p>
+                          {review.body}
+                        </p>
+                      )}
+
+                      <p className="muted">
+                        {new Date(
+                          review.created_at
+                        ).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
                 </div>
 
-                <p className="muted">
-                  {new Date(
-                    review.created_at
-                  ).toLocaleDateString()}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+                <div
+                  style={{
+                    marginTop: "24px",
+                  }}
+                >
+                  <Link
+                    href={`/leagues/${league.id}/review`}
+                    className="btn"
+                  >
+                    Write a Review
+                  </Link>
+                </div>
+              </>
+            )}
+          </section>
+        </>
+      )}
     </main>
   );
 }
