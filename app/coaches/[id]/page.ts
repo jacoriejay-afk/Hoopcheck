@@ -222,9 +222,12 @@ export default function CoachProfilePage() {
               for this coach yet.
             </p>
 
-            <button className="btn">
-              Write a Review
-            </button>
+            <Link
+  href={`/coaches/${coach.id}/review`}
+  className="btn"
+>
+  Write a Review
+</Link>
           </div>
         ) : (
           <div className="grid">
