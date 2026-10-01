@@ -18,12 +18,18 @@ export default function TeamsPage() {
 
   useEffect(() => {
     async function loadTeams() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("teams")
         .select("id, name, country, league_name, city")
         .order("name");
 
-      setTeams(data || []);
+      if (error) {
+        console.error("Error loading teams:", error);
+        setTeams([]);
+      } else {
+        setTeams(data || []);
+      }
+
       setLoading(false);
     }
 
@@ -61,6 +67,7 @@ export default function TeamsPage() {
         ) : teams.length === 0 ? (
           <div className="card">
             <h2>No teams yet</h2>
+
             <p>
               Teams will appear here once they are added to HoopCheck.
             </p>
@@ -73,16 +80,21 @@ export default function TeamsPage() {
               <p>
                 {team.city && team.country
                   ? `${team.city}, ${team.country}`
-                  : team.country || team.city || "Location not listed"}
+                  : team.country ||
+                    team.city ||
+                    "Location not listed"}
               </p>
 
               {team.league_name && (
                 <p>League: {team.league_name}</p>
               )}
 
-              <button className="btn">
+              <Link
+                href={`/teams/${team.id}`}
+                className="btn"
+              >
                 View Team
-              </button>
+              </Link>
             </div>
           ))
         )}
