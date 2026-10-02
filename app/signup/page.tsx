@@ -1,372 +1,370 @@
-"use client";
+“use client”;
 
-import {
-  FormEvent,
-  useState,
-} from "react";
-
-import Link from "next/link";
-
-import { supabase } from "../../lib/supabase";
+import { FormEvent, useState } from “react”;
+import Link from “next/link”;
+import { useRouter } from “next/navigation”;
+import { supabase } from “../../lib/supabase”;
 
 export default function SignupPage() {
-  const [name, setName] =
-    useState("");
+const router = useRouter();
 
-  const [email, setEmail] =
-    useState("");
+const [name, setName] = useState(””);
+const [email, setEmail] = useState(””);
+const [password, setPassword] = useState(””);
 
-  const [password, setPassword] =
-    useState("");
+const [loading, setLoading] = useState(false);
+const [message, setMessage] = useState(””);
+const [error, setError] = useState(””);
 
-  const [message, setMessage] =
-    useState("");
+async function handleSignup(event: FormEvent) {
+event.preventDefault();
 
-  const [loading, setLoading] =
-    useState(false);
-
-  async function handleSignup(
-    event: FormEvent<HTMLFormElement>
-  ) {
-    event.preventDefault();
-
-    setMessage("");
-
-    const trimmedName =
-      name.trim();
-
-    const normalizedEmail =
-      email.trim().toLowerCase();
-
-    if (trimmedName.length < 2) {
-      setMessage(
-        "Please enter your name."
-      );
-      return;
-    }
-
-    if (password.length < 6) {
-      setMessage(
-        "Your password must be at least 6 characters."
-      );
-      return;
-    }
-
-    setLoading(true);
-
-    const {
-      error,
-    } =
-      await supabase.auth.signUp({
-        email: normalizedEmail,
-        password,
-        options: {
-          data: {
-            full_name:
-              trimmedName,
-          },
-        },
-      });
-
-    if (error) {
-      setMessage(
-        error.message
-      );
-    } else {
-      setMessage(
-        "Account created! Check your email if confirmation is required."
-      );
-    }
-
-    setLoading(false);
-  }
-
-  return (
-    <main>
-      <nav className="nav">
-        <Link
-          href="/"
-          className="logo"
-        >
-          Hoop<span>Check</span>
-        </Link>
-
-        <div className="links">
-          <Link href="/login">
-            Log In
-          </Link>
-        </div>
-      </nav>
-
-      <section
-        className="hero"
-        style={{
-          paddingBottom:
-            "30px",
-        }}
-      >
-        <div className="eyebrow">
-          Join HoopCheck
-        </div>
-
-        <h1>
-          Your next
-          <br />
-          move starts
-          <br />
-          here.
-        </h1>
-
-        <p>
-          Create your free account and start
-          researching coaches, teams, and
-          leagues around the world.
-        </p>
-      </section>
-
-      <section
-        style={{
-          maxWidth: "520px",
-          margin: "0 auto",
-          padding:
-            "20px 6% 100px",
-        }}
-      >
-        <div className="form">
-          <div className="eyebrow">
-            Player Account
-          </div>
-
-          <h2
-            style={{
-              fontSize: "30px",
-              letterSpacing:
-                "-1px",
-              marginTop: "0",
-            }}
-          >
-            Create your account
-          </h2>
-
-          <p className="muted">
-            Join the HoopCheck community
-            and research your next basketball
-            opportunity with more information.
-          </p>
-
-          <form
-            onSubmit={handleSignup}
-          >
-            <label htmlFor="name">
-              Name
-            </label>
-
-            <input
-              id="name"
-              className="input"
-              type="text"
-              value={name}
-              onChange={(event) =>
-                setName(
-                  event.target.value
-                )
-              }
-              placeholder="Your name"
-              autoComplete="name"
-              minLength={2}
-              required
-            />
-
-            <label htmlFor="email">
-              Email
-            </label>
-
-            <input
-              id="email"
-              className="input"
-              type="email"
-              value={email}
-              onChange={(event) =>
-                setEmail(
-                  event.target.value
-                )
-              }
-              placeholder="you@example.com"
-              autoComplete="email"
-              required
-            />
-
-            <label htmlFor="password">
-              Password
-            </label>
-
-            <input
-              id="password"
-              className="input"
-              type="password"
-              value={password}
-              onChange={(event) =>
-                setPassword(
-                  event.target.value
-                )
-              }
-              placeholder="Create a password"
-              autoComplete="new-password"
-              minLength={6}
-              required
-            />
-
-            <button
-              type="submit"
-              className="btn"
-              disabled={loading}
-              style={{
-                width: "100%",
-                marginTop: "8px",
-              }}
-            >
-              {loading
-                ? "Creating Account..."
-                : "Create Free Account"}
-            </button>
-          </form>
-
-          {message && (
-            <div
-              style={{
-                marginTop: "18px",
-                padding: "14px",
-                border:
-                  "1px solid #3a3a3a",
-                borderRadius: "8px",
-                background:
-                  "#0b0b0b",
-              }}
-            >
-              <p
-                role="status"
-                aria-live="polite"
-                style={{
-                  margin: 0,
-                  color:
-                    "var(--orange)",
-                  lineHeight: 1.5,
-                }}
-              >
-                {message}
-              </p>
-            </div>
-          )}
-
-          <p
-            className="muted"
-            style={{
-              marginTop: "22px",
-              marginBottom: 0,
-            }}
-          >
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              style={{
-                color:
-                  "var(--orange)",
-                fontWeight: 900,
-              }}
-            >
-              Log in
-            </Link>
-          </p>
-        </div>
-      </section>
-
-      <section
-        className="grid"
-        style={{
-          maxWidth: "1000px",
-        }}
-      >
-        <div className="card">
-          <div className="eyebrow">
-            01
-          </div>
-
-          <h2>
-            Research
-          </h2>
-
-          <p>
-            Explore coaches, teams, and leagues
-            before making your next move.
-          </p>
-        </div>
-
-        <div className="card">
-          <div className="eyebrow">
-            02
-          </div>
-
-          <h2>
-            Learn
-          </h2>
-
-          <p>
-            Access real player experiences and
-            understand what organizations are
-            really like.
-          </p>
-        </div>
-
-        <div className="card">
-          <div className="eyebrow">
-            03
-          </div>
-
-          <h2>
-            Share
-          </h2>
-
-          <p>
-            Give other professional players the
-            information you wish you had before
-            signing.
-          </p>
-        </div>
-      </section>
-
-      <section className="hero">
-        <div className="eyebrow">
-          Built For Players
-        </div>
-
-        <h2>
-          Research first.
-          <br />
-          Sign smarter.
-        </h2>
-
-        <p>
-          HoopCheck is built around the
-          experiences of professional basketball
-          players around the world.
-        </p>
-
-        <div className="actions">
-          <Link
-            href="/membership"
-            className="btn"
-          >
-            View Membership
-          </Link>
-
-          <Link
-            href="/login"
-            className="btn dark"
-          >
-            Log In
-          </Link>
-        </div>
-      </section>
-    </main>
-  );
+setLoading(true);
+setError("");
+setMessage("");
+if (name.trim().length < 2) {
+  setError("Please enter your name.");
+  setLoading(false);
+  return;
 }
+if (password.length < 6) {
+  setError("Password must be at least 6 characters.");
+  setLoading(false);
+  return;
+}
+const { data, error } = await supabase.auth.signUp({
+  email: email.trim().toLowerCase(),
+  password,
+  options: {
+    data: {
+      full_name: name.trim(),
+    },
+  },
+});
+if (error) {
+  setError(error.message);
+  setLoading(false);
+  return;
+}
+if (data.session) {
+  router.push("/dashboard");
+  return;
+}
+setMessage(
+  "Account created. Check your email to confirm your account before logging in."
+);
+setLoading(false);
+
+}
+
+return (
+HoopCheck
+    <div className="links">
+      <Link href="/login">
+        Log In
+      </Link>
+    </div>
+  </nav>
+  <section className="auth-page">
+    <div className="auth-hero">
+      <div className="eyebrow">
+        JOIN HOOPCHECK
+      </div>
+      <h1>
+        Know before
+        <br />
+        you commit.
+      </h1>
+      <p>
+        Join the global basketball research platform
+        built for players who want real information
+        before making their next career decision.
+      </p>
+      <div className="feature-grid">
+        <div className="feature">
+          <strong>01</strong>
+          <span>
+            Research coaches worldwide.
+          </span>
+        </div>
+        <div className="feature">
+          <strong>02</strong>
+          <span>
+            Research professional teams.
+          </span>
+        </div>
+        <div className="feature">
+          <strong>03</strong>
+          <span>
+            Learn about leagues from players.
+          </span>
+        </div>
+      </div>
+    </div>
+    <div className="auth-card">
+      <div className="eyebrow">
+        CREATE ACCOUNT
+      </div>
+      <h2>
+        Start your HoopCheck account.
+      </h2>
+      <p className="intro">
+        Create a free account to begin
+        researching the basketball world.
+      </p>
+      <form onSubmit={handleSignup}>
+        <label htmlFor="name">
+          Full Name
+        </label>
+        <input
+          id="name"
+          type="text"
+          value={name}
+          onChange={(event) =>
+            setName(event.target.value)
+          }
+          placeholder="Your full name"
+          autoComplete="name"
+          required
+        />
+        <label htmlFor="email">
+          Email
+        </label>
+        <input
+          id="email"
+          type="email"
+          value={email}
+          onChange={(event) =>
+            setEmail(event.target.value)
+          }
+          placeholder="you@example.com"
+          autoComplete="email"
+          required
+        />
+        <label htmlFor="password">
+          Password
+        </label>
+        <input
+          id="password"
+          type="password"
+          value={password}
+          onChange={(event) =>
+            setPassword(event.target.value)
+          }
+          placeholder="At least 6 characters"
+          autoComplete="new-password"
+          required
+        />
+        <div className="legal-consent">
+          <p>
+            By creating an account, you agree to the{" "}
+            <Link href="/terms">
+              Terms of Service
+            </Link>{" "}
+            and acknowledge the{" "}
+            <Link href="/privacy">
+              Privacy Policy
+            </Link>
+            . Please also review our{" "}
+            <Link href="/community-guidelines">
+              Community Guidelines
+            </Link>
+            .
+          </p>
+        </div>
+        {error && (
+          <div className="message error">
+            {error}
+          </div>
+        )}
+        {message && (
+          <div className="message success">
+            {message}
+          </div>
+        )}
+        <button
+          type="submit"
+          className="btn submit"
+          disabled={loading}
+        >
+          {loading
+            ? "Creating Account..."
+            : "Create Free Account"}
+        </button>
+      </form>
+      <div className="login-link">
+        Already have an account?{" "}
+        <Link href="/login">
+          Log in
+        </Link>
+      </div>
+    </div>
+  </section>
+  <style jsx>{`
+    .auth-page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 70px 24px 100px;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 70px;
+      align-items: center;
+    }
+    .auth-hero h1 {
+      font-size: clamp(48px, 7vw, 86px);
+      line-height: 0.95;
+      margin: 14px 0 25px;
+      letter-spacing: -0.04em;
+    }
+    .auth-hero > p {
+      max-width: 650px;
+      color: #bdbdbd;
+      font-size: 18px;
+      line-height: 1.7;
+    }
+    .feature-grid {
+      display: grid;
+      gap: 12px;
+      margin-top: 35px;
+    }
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 18px;
+      background: #111;
+      border: 1px solid #292929;
+      border-left: 3px solid var(--orange);
+      border-radius: 10px;
+    }
+    .feature strong {
+      color: var(--orange);
+      font-size: 13px;
+    }
+    .feature span {
+      color: #ddd;
+      font-weight: 700;
+    }
+    .auth-card {
+      background: #111;
+      border: 1px solid #292929;
+      border-top: 4px solid var(--orange);
+      border-radius: 18px;
+      padding: 36px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    .auth-card h2 {
+      font-size: 30px;
+      margin: 10px 0;
+    }
+    .intro {
+      color: #aaa;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+    .auth-card form {
+      display: flex;
+      flex-direction: column;
+    }
+    .auth-card label {
+      margin: 16px 0 7px;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #ddd;
+    }
+    .auth-card input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px 15px;
+      border: 1px solid #333;
+      border-radius: 9px;
+      background: #080808;
+      color: #fff;
+      font: inherit;
+      outline: none;
+    }
+    .auth-card input:focus {
+      border-color: var(--orange);
+    }
+    .legal-consent {
+      margin-top: 20px;
+      padding: 14px 16px;
+      background: #0a0a0a;
+      border: 1px solid #292929;
+      border-radius: 9px;
+    }
+    .legal-consent p {
+      margin: 0;
+      color: #999;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+    .legal-consent a {
+      color: var(--orange);
+      font-weight: 800;
+    }
+    .submit {
+      width: 100%;
+      margin-top: 20px;
+      border: 0;
+      cursor: pointer;
+    }
+    .submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .message {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .error {
+      background: #241010;
+      border: 1px solid #6b2424;
+      color: #ffb1b1;
+    }
+    .success {
+      background: #102417;
+      border: 1px solid #245d35;
+      color: #b9f0c8;
+    }
+    .login-link {
+      margin-top: 22px;
+      text-align: center;
+      color: #999;
+      font-size: 14px;
+    }
+    .login-link a {
+      color: var(--orange);
+      font-weight: 900;
+    }
+    @media (max-width: 850px) {
+      .auth-page {
+        grid-template-columns: 1fr;
+        gap: 40px;
+        padding-top: 45px;
+      }
+      .auth-hero h1 {
+        font-size: 54px;
+      }
+    }
+    @media (max-width: 600px) {
+      .auth-page {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+      .auth-card {
+        padding: 25px 20px;
+      }
+    }
+  `}</style>
+</main>
+
+);
+}
+
+Save it, commit it to GitHub, and reply **Done**.
