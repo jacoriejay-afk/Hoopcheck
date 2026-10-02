@@ -1,8 +1,28 @@
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const STRIPE_PORTAL_URL =
-  "https://api.stripe.com/v1/billing_portal/sessions";
+const stripeSecretKey =
+  process.env.STRIPE_SECRET_KEY;
+
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL;
+
+if (!stripeSecretKey) {
+  throw new Error(
+    "Missing STRIPE_SECRET_KEY."
+  );
+}
+
+if (!siteUrl) {
+  throw new Error(
+    "Missing NEXT_PUBLIC_SITE_URL."
+  );
+}
+
+const stripe = new Stripe(
+  stripeSecretKey
+);
 
 function getAdminSupabase() {
   const supabaseUrl =
@@ -29,27 +49,14 @@ function getAdminSupabase() {
   );
 }
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request
+) {
   try {
-    const stripeSecretKey =
-      process.env.STRIPE_SECRET_KEY;
-
-    const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      "https://hoopcheck-hktk6gt22-hoopcheck.vercel.app";
-
-    if (!stripeSecretKey) {
-      return NextResponse.json(
-        {
-          error:
-            "Stripe is not configured.",
-        },
-        { status: 500 }
-      );
-    }
-
     const authorization =
-      request.headers.get("authorization");
+      request.headers.get(
+        "authorization"
+      );
 
     const accessToken =
       authorization?.replace(
@@ -73,9 +80,10 @@ export async function POST(request: Request) {
     const {
       data: { user },
       error: userError,
-    } = await supabase.auth.getUser(
-      accessToken
-    );
+    } =
+      await supabase.auth.getUser(
+        accessToken
+      );
 
     if (userError || !user) {
       return NextResponse.json(
@@ -87,19 +95,25 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data: subscription, error } =
+    const {
+      data: subscription,
+      error: subscriptionError,
+    } =
       await supabase
         .from("subscriptions")
         .select(
           "stripe_customer_id, status"
         )
-        .eq("user_id", user.id)
+        .eq(
+          "user_id",
+          user.id
+        )
         .maybeSingle();
 
-    if (error) {
+    if (subscriptionError) {
       console.error(
         "Subscription lookup error:",
-        error
+        subscriptionError
       );
 
       return NextResponse.json(
@@ -117,68 +131,28 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "No Stripe subscription was found for this account.",
+            "No Stripe customer was found for this account.",
         },
         { status: 404 }
       );
     }
 
-    const params =
-      new URLSearchParams();
-
-    params.append(
-      "customer",
-      subscription.stripe_customer_id
-    );
-
-    params.append(
-      "return_url",
-      `${siteUrl}/membership`
-    );
-
-    const response =
-      await fetch(
-        STRIPE_PORTAL_URL,
+    const portalSession =
+      await stripe.billingPortal.sessions.create(
         {
-          method: "POST",
-          headers: {
-            Authorization:
-              `Bearer ${stripeSecretKey}`,
-            "Content-Type":
-              "application/x-www-form-urlencoded",
-          },
-          body: params.toString(),
-          cache: "no-store",
+          customer:
+            subscription.stripe_customer_id,
+          return_url:
+            `${siteUrl}/membership`,
         }
       );
-
-    const data =
-      await response.json();
-
-    if (!response.ok) {
-      console.error(
-        "Stripe Customer Portal error:",
-        data
-      );
-
-      return NextResponse.json(
-        {
-          error:
-            data?.error?.message ||
-            "Unable to open billing portal.",
-        },
-        {
-          status: response.status,
-        }
-      );
-    }
 
     return NextResponse.json({
-      url: data.url,
+      url: portalSession.url,
     });
   } catch (error) {
     console.error(
-      "Customer portal error:",
+      "Customer Portal error:",
       error
     );
 
@@ -187,7 +161,7 @@ export async function POST(request: Request) {
         error:
           error instanceof Error
             ? error.message
-            : "Something went wrong.",
+            : "Unable to open billing portal.",
       },
       { status: 500 }
     );
