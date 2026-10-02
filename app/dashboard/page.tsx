@@ -1,89 +1,118 @@
 "use client";
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import {
+  useEffect,
+  useState,
+} from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
-
-type Subscription = {
-  plan: "pro" | "premium";
-  status: string;
+type Profile = {
+  display_name: string | null;
 };
-
+type Subscription = {
+  plan: "pro" | "premium" | null;
+  status: string | null;
+};
 export default function DashboardPage() {
-  const router = useRouter();
-
-  const [userName, setUserName] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] =
+    useState<Profile | null>(null);
   const [subscription, setSubscription] =
     useState<Subscription | null>(null);
-
+  const [loading, setLoading] =
+    useState(true);
   useEffect(() => {
-    async function loadUser() {
+    async function loadDashboard() {
       const {
-        data: { user },
+        data: {
+          user,
+        },
       } = await supabase.auth.getUser();
-
       if (!user) {
-        router.replace("/login");
+        window.location.href =
+          "/login";
         return;
       }
-
-      const { data: profile } =
-        await supabase
+      const [
+        profileResult,
+        subscriptionResult,
+      ] = await Promise.all([
+        supabase
           .from("profiles")
           .select("display_name")
           .eq("id", user.id)
-          .maybeSingle();
-
-      const { data: membership } =
-        await supabase
+          .maybeSingle(),
+        supabase
           .from("subscriptions")
-          .select("plan, status")
+          .select(
+            "plan, status"
+          )
           .eq("user_id", user.id)
-          .maybeSingle();
-
-      setUserName(
-        profile?.display_name ||
-          user.user_metadata?.full_name ||
-          user.email?.split("@")[0] ||
-          "Player"
-      );
-
-      setSubscription(
-        membership || null
-      );
-
+          .maybeSingle(),
+      ]);
+      if (
+        !profileResult.error &&
+        profileResult.data
+      ) {
+        setProfile(
+          profileResult.data
+        );
+      }
+      if (
+        !subscriptionResult.error &&
+        subscriptionResult.data
+      ) {
+        setSubscription(
+          subscriptionResult.data
+        );
+      }
       setLoading(false);
     }
-
-    loadUser();
-  }, [router]);
-
+    loadDashboard();
+  }, []);
   async function handleLogout() {
     await supabase.auth.signOut();
-    router.replace("/login");
+    window.location.href =
+      "/";
   }
-
-  const activeSubscription =
-    subscription &&
-    (
-      subscription.status === "active" ||
-      subscription.status === "trialing"
-    );
-
   if (loading) {
     return (
       <main>
+        <nav className="nav">
+          <Link
+            href="/"
+            className="logo"
+          >
+            Hoop<span>Check</span>
+          </Link>
+        </nav>
         <section className="hero">
+          <div className="eyebrow">
+            HoopCheck
+          </div>
           <h1>
-            Loading HoopCheck...
+            Loading your
+            <br />
+            dashboard.
           </h1>
         </section>
       </main>
     );
   }
-
+  const isActiveMember =
+    subscription?.status ===
+      "active" ||
+    subscription?.status ===
+      "trialing";
+  const displayName =
+    profile?.display_name ||
+    "Player";
+  const planLabel =
+    subscription?.plan ===
+    "premium"
+      ? "Premium"
+      : subscription?.plan ===
+        "pro"
+      ? "Pro"
+      : "Free";
   return (
     <main>
       <nav className="nav">
@@ -93,170 +122,176 @@ export default function DashboardPage() {
         >
           Hoop<span>Check</span>
         </Link>
-
         <div className="links">
-          <span>
-            Welcome, {userName}
-          </span>
-
-          <button
-            className="btn dark"
-            onClick={handleLogout}
-          >
-            Log out
-          </button>
-        </div>
-      </nav>
-
-      <section className="hero">
-        <div className="eyebrow">
-          Player Dashboard
-        </div>
-
-        <h1>
-          Research before you sign.
-        </h1>
-
-        <p>
-          Search coaches, professional
-          teams, and leagues from around
-          the world.
-        </p>
-
-        <div className="actions">
-          <input
-            className="input"
-            type="text"
-            placeholder="Search coaches, teams, or leagues..."
-            aria-label="Search coaches, teams, or leagues"
-            disabled
-          />
-        </div>
-
-        {activeSubscription ? (
-          <div className="card">
-            <div className="eyebrow">
-              MEMBERSHIP ACTIVE
-            </div>
-
-            <h2>
-              HoopCheck{" "}
-              {subscription?.plan ===
-              "premium"
-                ? "Premium"
-                : "Pro"}
-            </h2>
-
-            <p className="muted">
-              Your membership gives you
-              access to full ratings and
-              player reviews.
-            </p>
-
-            <Link
-              href="/membership"
-              className="btn"
-            >
-              Manage Membership
-            </Link>
-          </div>
-        ) : (
-          <div className="card">
-            <div className="eyebrow">
-              FREE ACCOUNT
-            </div>
-
-            <h2>
-              Start researching.
-            </h2>
-
-            <p className="muted">
-              Browse coaches, teams, and
-              leagues. Upgrade when you're
-              ready to unlock full ratings
-              and player reviews.
-            </p>
-
-            <Link
-              href="/membership"
-              className="btn"
-            >
-              View Memberships
-            </Link>
-          </div>
-        )}
-      </section>
-
-      <section className="grid">
-        <div className="card">
-          <h2>Coaches</h2>
-
-          <p>
-            Explore ratings and player
-            experiences with coaches.
-          </p>
-
-          <Link
-            href="/coaches"
-            className="btn"
-          >
-            Explore Coaches
+          <Link href="/coaches">
+            Coaches
           </Link>
-        </div>
-
-        <div className="card">
-          <h2>Teams</h2>
-
-          <p>
-            Research professional teams
-            before signing.
-          </p>
-
-          <Link
-            href="/teams"
-            className="btn"
-          >
-            Explore Teams
+          <Link href="/teams">
+            Teams
           </Link>
-        </div>
-
-        <div className="card">
-          <h2>Leagues</h2>
-
-          <p>
-            Explore player experiences
-            across leagues worldwide.
-          </p>
-
-          <Link
-            href="/leagues"
-            className="btn"
-          >
-            Explore Leagues
+          <Link href="/leagues">
+            Leagues
           </Link>
-        </div>
-      </section>
-
-      <section className="hero">
-        <div className="card">
-          <h2>
-            Help build HoopCheck
-          </h2>
-
-          <p className="muted">
-            Share your experience with
-            coaches, teams, and leagues
-            to help other players make
-            informed decisions.
-          </p>
-
           <Link
             href="/membership"
             className="btn"
           >
-            View Memberships
+            Membership
           </Link>
         </div>
+      </nav>
+      <section className="hero">
+        <div className="eyebrow">
+          Player Dashboard
+        </div>
+        <h1>
+          Welcome,
+          <br />
+          {displayName}.
+        </h1>
+        <p>
+          Research your next basketball
+          opportunity before you put pen
+          to paper.
+        </p>
+        <div className="actions">
+          <Link
+            href="/coaches"
+            className="btn"
+          >
+            Research Coaches
+          </Link>
+          <Link
+            href="/teams"
+            className="btn dark"
+          >
+            Research Teams
+          </Link>
+          <Link
+            href="/leagues"
+            className="btn dark"
+          >
+            Research Leagues
+          </Link>
+        </div>
+      </section>
+      <section className="grid">
+        <div className="card">
+          <div className="eyebrow">
+            Membership
+          </div>
+          <h2>
+            {planLabel}
+          </h2>
+          {isActiveMember ? (
+            <>
+              <p>
+                You have full access to
+                HoopCheck ratings and
+                approved player reviews.
+              </p>
+              <Link
+                href="/membership"
+                className="btn"
+              >
+                Manage Membership
+              </Link>
+            </>
+          ) : (
+            <>
+              <p>
+                You&apos;re currently on the
+                free plan. Upgrade to research
+                full ratings and reviews.
+              </p>
+              <Link
+                href="/membership"
+                className="btn"
+              >
+                View Plans
+              </Link>
+            </>
+          )}
+        </div>
+        <div className="card">
+          <div className="eyebrow">
+            Research
+          </div>
+          <h2>
+            Before You Sign
+          </h2>
+          <p>
+            Check coaches, teams, and leagues
+            before making your next overseas
+            basketball decision.
+          </p>
+          <Link
+            href="/coaches"
+            className="btn"
+          >
+            Start Research
+          </Link>
+        </div>
+        <div className="card">
+          <div className="eyebrow">
+            Player Voice
+          </div>
+          <h2>
+            Share Your Experience
+          </h2>
+          <p>
+            Help other professional players
+            understand what to expect from
+            basketball organizations worldwide.
+          </p>
+          <Link
+            href="/coaches"
+            className="btn"
+          >
+            Write A Review
+          </Link>
+        </div>
+      </section>
+      <section className="hero">
+        <div className="eyebrow">
+          HoopCheck
+        </div>
+        <h2>
+          Research.
+          <br />
+          Know.
+          <br />
+          Move.
+        </h2>
+        <p>
+          Your career is bigger than one
+          contract. Make your next move with
+          more information.
+        </p>
+        <div className="actions">
+          <Link
+            href="/coaches"
+            className="btn"
+          >
+            Find A Coach
+          </Link>
+          <Link
+            href="/teams"
+            className="btn dark"
+          >
+            Find A Team
+          </Link>
+        </div>
+        <button
+          type="button"
+          className="btn dark"
+          onClick={handleLogout}
+          style={{
+            marginTop: "16px",
+          }}
+        >
+          Log Out
+        </button>
       </section>
     </main>
   );
