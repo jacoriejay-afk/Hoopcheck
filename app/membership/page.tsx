@@ -218,10 +218,11 @@ export default function MembershipPage() {
         <h1>Know before you sign.</h1>
 
         <p>
-          Unlock deeper player experiences
-          and research coaches, teams, and
-          leagues before your next overseas
-          basketball opportunity.
+          Research coaches, professional
+          teams, and leagues before your next
+          overseas basketball opportunity.
+          Read detailed ratings and reviews
+          from the HoopCheck community.
         </p>
 
         {loading ? (
@@ -304,8 +305,15 @@ export default function MembershipPage() {
             </p>
 
             <ul className="muted">
-              <li>Full player ratings</li>
-              <li>Full player reviews</li>
+              <li>
+                Full coach ratings and reviews
+              </li>
+              <li>
+                Full team ratings and reviews
+              </li>
+              <li>
+                Full league ratings and reviews
+              </li>
               <li>Coach research</li>
               <li>Team research</li>
               <li>League research</li>
@@ -334,14 +342,21 @@ export default function MembershipPage() {
             <p>
               Advanced access for players
               who want the complete HoopCheck
-              experience.
+              research experience.
             </p>
 
             <ul className="muted">
               <li>Everything in Pro</li>
-              <li>Advanced research tools</li>
-              <li>Expanded player insights</li>
-              <li>Premium discovery features</li>
+              <li>
+                Advanced research tools
+              </li>
+              <li>
+                Expanded coach, team, and
+                league insights
+              </li>
+              <li>
+                Premium discovery features
+              </li>
               <li>
                 Priority access to new features
               </li>
