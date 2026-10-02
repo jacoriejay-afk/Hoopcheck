@@ -5,6 +5,8 @@ import Link from “next/link”;
 import { useRouter } from “next/navigation”;
 import { supabase } from “../../lib/supabase”;
 
+const TERMS_VERSION = “2026-10-01”;
+
 export default function SignupPage() {
 const router = useRouter();
 
@@ -52,6 +54,10 @@ const { data, error } = await supabase.auth.signUp({
   options: {
     data: {
       full_name: name.trim(),
+      is_adult: true,
+      agreed_to_terms: true,
+      terms_accepted_at: new Date().toISOString(),
+      terms_version: TERMS_VERSION,
     },
   },
 });
@@ -374,5 +380,5 @@ HoopCheck
 );
 }
 
-Save this file and commit it to GitHub.
-**Do not deploy yet.** Reply **Done** when it's committed, and we'll move to the next launch step.
+Save and commit it to GitHub.
+**Don't deploy yet.** Reply **Done**, and then we'll connect those consent values to the `profiles` table automatically.
