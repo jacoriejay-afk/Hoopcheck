@@ -1,137 +1,281 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import {
+  FormEvent,
+  useEffect,
+  useState,
+} from "react";
+
 import Link from "next/link";
+
+import { useParams } from "next/navigation";
+
 import { supabase } from "../../../../lib/supabase";
 
-type League = {
+type Team = {
   id: string;
   name: string;
   country: string | null;
-  level: string | null;
+  league_name: string | null;
+  city: string | null;
 };
 
-export default function LeagueReviewPage() {
+type RatingFieldProps = {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+};
+
+function RatingField({
+  label,
+  value,
+  onChange,
+}: RatingFieldProps) {
+  return (
+    <div
+      style={{
+        padding: "20px",
+        border: "1px solid #252525",
+        borderRadius: "10px",
+        background: "#0d0d0d",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "13px",
+          fontWeight: 900,
+          textTransform: "uppercase",
+          letterSpacing: "0.7px",
+          marginBottom: "12px",
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          flexWrap: "wrap",
+        }}
+      >
+        {[1, 2, 3, 4, 5].map(
+          (rating) => (
+            <button
+              key={rating}
+              type="button"
+              aria-label={`Rate ${label} ${rating} out of 5`}
+              aria-pressed={
+                value === rating
+              }
+              onClick={() =>
+                onChange(rating)
+              }
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "8px",
+                border:
+                  value === rating
+                    ? "2px solid var(--orange)"
+                    : "1px solid #333",
+                background:
+                  value === rating
+                    ? "var(--orange)"
+                    : "#171717",
+                color:
+                  value === rating
+                    ? "#000"
+                    : "#fff",
+                fontWeight: 900,
+                cursor: "pointer",
+                fontSize: "16px",
+              }}
+            >
+              {rating}
+            </button>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function TeamReviewPage() {
   const params = useParams();
-  const router = useRouter();
 
-  const id = params.id as string;
+  const id = Array.isArray(params.id)
+    ? params.id[0]
+    : params.id;
 
-  const [league, setLeague] = useState<League | null>(null);
-  const [hasAccess, setHasAccess] = useState(false);
-  const [alreadyReviewed, setAlreadyReviewed] = useState(false);
+  const [team, setTeam] =
+    useState<Team | null>(null);
 
-  const [overallRating, setOverallRating] = useState(0);
-  const [communicationRating, setCommunicationRating] =
+  const [overall, setOverall] =
     useState(0);
-  const [professionalismRating, setProfessionalismRating] =
-    useState(0);
-  const [developmentRating, setDevelopmentRating] =
-    useState(0);
-  const [paymentRating, setPaymentRating] = useState(0);
 
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
+  const [communication, setCommunication] =
+    useState(0);
 
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
+  const [professionalism, setProfessionalism] =
+    useState(0);
+
+  const [development, setDevelopment] =
+    useState(0);
+
+  const [payment, setPayment] =
+    useState(0);
+
+  const [title, setTitle] =
+    useState("");
+
+  const [body, setBody] =
+    useState("");
+
+  const [message, setMessage] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [submitting, setSubmitting] =
+    useState(false);
+
+  const [alreadyReviewed, setAlreadyReviewed] =
+    useState(false);
 
   useEffect(() => {
     async function loadPage() {
-      setLoading(true);
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.replace("/login");
-        return;
-      }
-
-      const { data: leagueData, error: leagueError } =
-        await supabase
-          .from("leagues")
-          .select("id, name, country, level")
-          .eq("id", id)
-          .single();
-
-      if (leagueError) {
-        console.error(
-          "Error loading league:",
-          leagueError
-        );
-
-        setLeague(null);
+      if (!id) {
         setLoading(false);
         return;
       }
 
-      setLeague(leagueData);
+      const {
+        data: teamData,
+        error: teamError,
+      } = await supabase
+        .from("teams")
+        .select(
+          "id, name, country, league_name, city"
+        )
+        .eq("id", id)
+        .maybeSingle();
 
-      const { data: subscription } =
-        await supabase
+      if (
+        teamError ||
+        !teamData
+      ) {
+        setTeam(null);
+        setLoading(false);
+        return;
+      }
+
+      setTeam(teamData);
+
+      const {
+        data: {
+          user,
+        },
+      } =
+        await supabase.auth.getUser();
+
+      if (!user) {
+        window.location.href =
+          "/login";
+        return;
+      }
+
+      const [
+        subscriptionResult,
+        adminResult,
+      ] = await Promise.all([
+        supabase
           .from("subscriptions")
           .select(
             "status, current_period_end"
           )
-          .eq("user_id", user.id)
-          .maybeSingle();
+          .eq(
+            "user_id",
+            user.id
+          )
+          .maybeSingle(),
 
-      const activeSubscription =
-        subscription &&
-        (subscription.status === "active" ||
-          subscription.status === "trialing") &&
-        (!subscription.current_period_end ||
-          new Date(
-            subscription.current_period_end
-          ) > new Date());
-
-      const { data: adminRole } =
-        await supabase
+        supabase
           .from("admin_roles")
           .select("role")
-          .eq("user_id", user.id)
-          .maybeSingle();
+          .eq(
+            "user_id",
+            user.id
+          )
+          .maybeSingle(),
+      ]);
+
+      const subscription =
+        subscriptionResult.data;
+
+      const currentPeriodEnd =
+        subscription?.current_period_end
+          ? new Date(
+              subscription.current_period_end
+            )
+          : null;
+
+      const subscriptionIsActive =
+        (
+          subscription?.status ===
+            "active" ||
+          subscription?.status ===
+            "trialing"
+        ) &&
+        (
+          !currentPeriodEnd ||
+          currentPeriodEnd >
+            new Date()
+        );
 
       const isAdmin =
-        adminRole?.role === "admin" ||
-        adminRole?.role === "moderator";
+        adminResult.data?.role ===
+          "admin" ||
+        adminResult.data?.role ===
+          "moderator";
 
-      setHasAccess(
-        !!activeSubscription || !!isAdmin
-      );
+      if (
+        !subscriptionIsActive &&
+        !isAdmin
+      ) {
+        setMessage(
+          "An active HoopCheck membership is required to submit a review."
+        );
+
+        setLoading(false);
+        return;
+      }
 
       const {
         data: existingReview,
-        error: existingReviewError,
       } = await supabase
         .from("reviews")
         .select("id")
-        .eq("author_id", user.id)
-        .eq("league_id", id)
+        .eq(
+          "author_id",
+          user.id
+        )
+        .eq(
+          "team_id",
+          id
+        )
         .maybeSingle();
 
-      if (
-        existingReviewError &&
-        existingReviewError.code !== "PGRST116"
-      ) {
-        console.error(
-          "Error checking existing review:",
-          existingReviewError
-        );
+      if (existingReview) {
+        setAlreadyReviewed(true);
       }
 
-      setAlreadyReviewed(!!existingReview);
       setLoading(false);
     }
 
-    if (id) {
-      loadPage();
-    }
-  }, [id, router]);
+    loadPage();
+  }, [id]);
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
@@ -140,57 +284,44 @@ export default function LeagueReviewPage() {
 
     setMessage("");
 
-    if (!hasAccess) {
+    if (
+      overall < 1 ||
+      communication < 1 ||
+      professionalism < 1 ||
+      development < 1 ||
+      payment < 1
+    ) {
       setMessage(
-        "An active HoopCheck membership is required to submit a review."
+        "Please rate every category."
       );
       return;
     }
 
-    if (alreadyReviewed) {
+    const trimmedTitle =
+      title.trim();
+
+    const trimmedBody =
+      body.trim();
+
+    if (
+      trimmedTitle.length > 0 &&
+      (
+        trimmedTitle.length < 3 ||
+        trimmedTitle.length > 120
+      )
+    ) {
       setMessage(
-        "You have already submitted a review for this league."
+        "Your title must be between 3 and 120 characters."
       );
       return;
     }
 
     if (
-      overallRating === 0 ||
-      communicationRating === 0 ||
-      professionalismRating === 0 ||
-      developmentRating === 0 ||
-      paymentRating === 0
+      trimmedBody.length < 20 ||
+      trimmedBody.length > 5000
     ) {
       setMessage(
-        "Please give a rating in every category."
-      );
-      return;
-    }
-
-    const trimmedTitle = title.trim();
-    const trimmedBody = body.trim();
-
-    if (trimmedBody.length < 20) {
-      setMessage(
-        "Your review must be at least 20 characters."
-      );
-      return;
-    }
-
-    if (trimmedBody.length > 5000) {
-      setMessage(
-        "Your review must be 5,000 characters or fewer."
-      );
-      return;
-    }
-
-    if (
-      trimmedTitle &&
-      (trimmedTitle.length < 3 ||
-        trimmedTitle.length > 120)
-    ) {
-      setMessage(
-        "Your review title must be between 3 and 120 characters."
+        "Your review must be between 20 and 5,000 characters."
       );
       return;
     }
@@ -198,46 +329,59 @@ export default function LeagueReviewPage() {
     setSubmitting(true);
 
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: {
+        user,
+      },
+    } =
+      await supabase.auth.getUser();
 
     if (!user) {
+      setMessage(
+        "Please log in before submitting a review."
+      );
+
       setSubmitting(false);
-      router.replace("/login");
       return;
     }
 
-    const { error } = await supabase
-      .from("reviews")
-      .insert({
-        author_id: user.id,
-        coach_id: null,
-        team_id: null,
-        league_id: id,
-        overall_rating: overallRating,
-        communication_rating: communicationRating,
-        professionalism_rating: professionalismRating,
-        development_rating: developmentRating,
-        payment_rating: paymentRating,
-        title: trimmedTitle || null,
-        body: trimmedBody,
-        status: "pending",
-      });
+    const { error } =
+      await supabase
+        .from("reviews")
+        .insert({
+          author_id: user.id,
+          team_id: id,
+          overall_rating: overall,
+          communication_rating:
+            communication,
+          professionalism_rating:
+            professionalism,
+          development_rating:
+            development,
+          payment_rating:
+            payment,
+          title:
+            trimmedTitle || null,
+          body: trimmedBody,
+          status: "pending",
+        });
 
     if (error) {
-      console.error(
-        "Error submitting review:",
-        error
-      );
-
-      if (error.code === "23505") {
+      if (
+        error.code ===
+        "23505"
+      ) {
         setMessage(
-          "You have already submitted a review for this league."
+          "You have already submitted a review for this team."
         );
-        setAlreadyReviewed(true);
       } else {
+        console.error(
+          "Review submission error:",
+          error
+        );
+
         setMessage(
-          `Could not submit review: ${error.message}`
+          error.message ||
+            "Unable to submit your review."
         );
       }
 
@@ -246,144 +390,67 @@ export default function LeagueReviewPage() {
     }
 
     setMessage(
-      "Your review has been submitted and is waiting for moderation."
+      "Review submitted. It will appear after moderation."
     );
-
-    setSubmitting(false);
 
     setTimeout(() => {
-      router.push(`/leagues/${id}`);
+      window.location.href =
+        `/teams/${id}`;
     }, 1500);
-  }
-
-  function RatingButtons({
-    label,
-    value,
-    onChange,
-  }: {
-    label: string;
-    value: number;
-    onChange: (value: number) => void;
-  }) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          gap: "8px",
-          flexWrap: "wrap",
-          marginBottom: "20px",
-        }}
-      >
-        {[1, 2, 3, 4, 5].map((rating) => (
-          <button
-            key={rating}
-            type="button"
-            onClick={() => onChange(rating)}
-            aria-label={`${label}: ${rating} out of 5`}
-            aria-pressed={value === rating}
-            style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "10px",
-              border:
-                value === rating
-                  ? "2px solid #ff8a00"
-                  : "1px solid #303746",
-              background:
-                value === rating
-                  ? "#ff8a00"
-                  : "#080b12",
-              color:
-                value === rating
-                  ? "#111111"
-                  : "#ffffff",
-              fontWeight: 800,
-              fontSize: "16px",
-              cursor: "pointer",
-            }}
-          >
-            {rating}
-          </button>
-        ))}
-      </div>
-    );
   }
 
   if (loading) {
     return (
       <main>
-        <section className="hero">
-          <h1>Loading...</h1>
-        </section>
-      </main>
-    );
-  }
-
-  if (!league) {
-    return (
-      <main>
-        <section className="hero">
-          <h1>League not found</h1>
-
-          <Link
-            href="/leagues"
-            className="btn"
-          >
-            Back to Leagues
-          </Link>
-        </section>
-      </main>
-    );
-  }
-
-  if (!hasAccess) {
-    return (
-      <main>
         <nav className="nav">
-          <Link href="/" className="logo">
+          <Link
+            href="/"
+            className="logo"
+          >
             Hoop<span>Check</span>
           </Link>
-
-          <div className="links">
-            <Link
-              href={`/leagues/${league.id}`}
-            >
-              Back to League
-            </Link>
-
-            <Link href="/dashboard">
-              Dashboard
-            </Link>
-          </div>
         </nav>
 
         <section className="hero">
           <div className="eyebrow">
-            MEMBERSHIP REQUIRED
+            HoopCheck
           </div>
 
-          <h1>Unlock Review Access</h1>
+          <h1>
+            Loading review form...
+          </h1>
+        </section>
+      </main>
+    );
+  }
 
-          <p>
-            An active HoopCheck membership is
-            required to submit player reviews.
-          </p>
+  if (!team) {
+    return (
+      <main>
+        <nav className="nav">
+          <Link
+            href="/"
+            className="logo"
+          >
+            Hoop<span>Check</span>
+          </Link>
+        </nav>
 
-          <div className="actions">
-            <Link
-              href="/membership"
-              className="btn"
-            >
-              View Memberships
-            </Link>
-
-            <Link
-              href={`/leagues/${league.id}`}
-              className="btn dark"
-            >
-              Back to League
-            </Link>
+        <section className="hero">
+          <div className="eyebrow">
+            404
           </div>
+
+          <h1>
+            Team not found.
+          </h1>
+
+          <Link
+            href="/teams"
+            className="btn"
+          >
+            Back To Teams
+          </Link>
         </section>
       </main>
     );
@@ -393,46 +460,93 @@ export default function LeagueReviewPage() {
     return (
       <main>
         <nav className="nav">
-          <Link href="/" className="logo">
+          <Link
+            href="/"
+            className="logo"
+          >
             Hoop<span>Check</span>
           </Link>
-
-          <div className="links">
-            <Link
-              href={`/leagues/${league.id}`}
-            >
-              Back to League
-            </Link>
-
-            <Link href="/dashboard">
-              Dashboard
-            </Link>
-          </div>
         </nav>
 
         <section className="hero">
           <div className="eyebrow">
-            REVIEW ALREADY SUBMITTED
+            Already Submitted
           </div>
 
-          <h1>{league.name}</h1>
+          <h1>
+            You already reviewed
+            <br />
+            {team.name}.
+          </h1>
 
           <p>
-            You have already submitted a review
-            for this league.
+            HoopCheck allows one review per
+            player for each team.
           </p>
 
-          <p className="muted">
-            Each HoopCheck member can submit one
-            review per league.
-          </p>
+          <div className="actions">
+            <Link
+              href={`/teams/${team.id}`}
+              className="btn"
+            >
+              View Team
+            </Link>
 
+            <Link
+              href="/teams"
+              className="btn dark"
+            >
+              Back To Teams
+            </Link>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (message.startsWith(
+    "An active HoopCheck"
+  )) {
+    return (
+      <main>
+        <nav className="nav">
           <Link
-            href={`/leagues/${league.id}`}
-            className="btn"
+            href="/"
+            className="logo"
           >
-            Back to League
+            Hoop<span>Check</span>
           </Link>
+        </nav>
+
+        <section className="hero">
+          <div className="eyebrow">
+            Members Only
+          </div>
+
+          <h1>
+            Membership required.
+          </h1>
+
+          <p>
+            An active HoopCheck membership
+            is required to submit a review.
+          </p>
+
+          <div className="actions">
+            <Link
+              href="/membership"
+              className="btn"
+            >
+              View Membership
+            </Link>
+
+            <Link
+              href={`/teams/${team.id}`}
+              className="btn dark"
+            >
+              Back To Team
+            </Link>
+          </div>
         </section>
       </main>
     );
@@ -441,128 +555,142 @@ export default function LeagueReviewPage() {
   return (
     <main>
       <nav className="nav">
-        <Link href="/" className="logo">
+        <Link
+          href="/"
+          className="logo"
+        >
           Hoop<span>Check</span>
         </Link>
 
         <div className="links">
           <Link
-            href={`/leagues/${league.id}`}
+            href={`/teams/${team.id}`}
           >
-            Back to League
-          </Link>
-
-          <Link href="/dashboard">
-            Dashboard
+            Back To Team
           </Link>
         </div>
       </nav>
 
       <section className="hero">
         <div className="eyebrow">
-          Write a Player Review
+          Organization Evaluation
         </div>
 
-        <h1>{league.name}</h1>
+        <h1>
+          Rate {team.name}.
+        </h1>
 
         <p>
-          Share your experience with this league
-          to help other professional players make
-          informed decisions.
+          Help another professional player
+          understand what it&apos;s really like
+          to play for this organization.
         </p>
-
-        <p className="muted">
-          {league.country ||
-            "Country not listed"}
-        </p>
-
-        {league.level && (
-          <p className="muted">
-            Level: {league.level}
-          </p>
-        )}
       </section>
 
-      <section className="form">
-        <form onSubmit={handleSubmit}>
-          <h2>Rate Your Experience</h2>
-
-          <label>Overall Rating</label>
-
-          <RatingButtons
-            label="Overall rating"
-            value={overallRating}
-            onChange={setOverallRating}
+      <section
+        style={{
+          maxWidth: "760px",
+          margin: "0 auto",
+          padding: "20px 6% 90px",
+        }}
+      >
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            display: "grid",
+            gap: "16px",
+          }}
+        >
+          <RatingField
+            label="Overall"
+            value={overall}
+            onChange={setOverall}
           />
 
-          <label>Communication</label>
-
-          <RatingButtons
+          <RatingField
             label="Communication"
-            value={communicationRating}
-            onChange={setCommunicationRating}
+            value={communication}
+            onChange={
+              setCommunication
+            }
           />
 
-          <label>Professionalism</label>
-
-          <RatingButtons
+          <RatingField
             label="Professionalism"
-            value={professionalismRating}
-            onChange={setProfessionalismRating}
-          />
-
-          <label>Player Development</label>
-
-          <RatingButtons
-            label="Player development"
-            value={developmentRating}
-            onChange={setDevelopmentRating}
-          />
-
-          <label>Payment</label>
-
-          <RatingButtons
-            label="Payment"
-            value={paymentRating}
-            onChange={setPaymentRating}
-          />
-
-          <label>Review Title</label>
-
-          <input
-            className="input"
-            type="text"
-            value={title}
-            onChange={(event) =>
-              setTitle(event.target.value)
+            value={professionalism}
+            onChange={
+              setProfessionalism
             }
-            placeholder="Example: Good league overall"
-            maxLength={120}
           />
 
-          <label>Your Experience</label>
-
-          <textarea
-            className="input"
-            value={body}
-            onChange={(event) =>
-              setBody(event.target.value)
+          <RatingField
+            label="Player Development"
+            value={development}
+            onChange={
+              setDevelopment
             }
-            placeholder="Describe your experience with this league..."
-            rows={8}
-            maxLength={5000}
-            required
           />
 
-          <p className="muted">
-            Your review will be submitted for
-            moderation before it becomes publicly
-            visible.
-          </p>
+          <RatingField
+            label="Payment Experience"
+            value={payment}
+            onChange={setPayment}
+          />
+
+          <div className="card">
+            <div className="eyebrow">
+              Your Experience
+            </div>
+
+            <label htmlFor="title">
+              Review Title
+            </label>
+
+            <input
+              id="title"
+              className="input"
+              type="text"
+              value={title}
+              onChange={(event) =>
+                setTitle(
+                  event.target.value
+                )
+              }
+              placeholder="Example: Great organization, strong player support"
+              maxLength={120}
+            />
+
+            <label htmlFor="body">
+              Review
+            </label>
+
+            <textarea
+              id="body"
+              value={body}
+              onChange={(event) =>
+                setBody(
+                  event.target.value
+                )
+              }
+              placeholder="Share your experience with this team..."
+              minLength={20}
+              maxLength={5000}
+              required
+            />
+
+            <p className="muted">
+              {body.length}/5000 characters
+            </p>
+          </div>
 
           {message && (
             <div className="card">
-              <p>{message}</p>
+              <p
+                role="status"
+                aria-live="polite"
+              >
+                {message}
+              </p>
             </div>
           )}
 
