@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import Link from "next/link";
+
+import { useParams } from "next/navigation";
+
 import { supabase } from "../../../lib/supabase";
 
 type League = {
@@ -20,32 +26,87 @@ type Review = {
   development_rating: number | null;
   payment_rating: number | null;
   title: string | null;
-  body: string | null;
+  body: string;
   created_at: string;
 };
 
-function average(
-  reviews: Review[],
-  field: keyof Review
-) {
-  const values = reviews
-    .map((review) => review[field])
-    .filter(
-      (value): value is number =>
-        typeof value === "number"
+function RatingBar({
+  label,
+  value,
+}: {
+  label: string;
+  value: number;
+}) {
+  const percentage =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        (value / 5) * 100
+      )
     );
 
-  if (values.length === 0) return null;
-
   return (
-    values.reduce((sum, value) => sum + value, 0) /
-    values.length
-  ).toFixed(1);
+    <div
+      style={{
+        marginBottom: "18px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent:
+            "space-between",
+          gap: "12px",
+          marginBottom: "7px",
+          fontSize: "13px",
+          fontWeight: 800,
+          textTransform:
+            "uppercase",
+          letterSpacing: "0.4px",
+        }}
+      >
+        <span>{label}</span>
+
+        <span
+          style={{
+            color:
+              "var(--orange)",
+          }}
+        >
+          {value.toFixed(1)}
+        </span>
+      </div>
+
+      <div
+        style={{
+          height: "8px",
+          background: "#252525",
+          borderRadius: "999px",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            width: `${percentage}%`,
+            height: "100%",
+            background:
+              "var(--orange)",
+            borderRadius:
+              "999px",
+          }}
+        />
+      </div>
+    </div>
+  );
 }
 
-export default function LeagueProfilePage() {
+export default function LeagueDetailPage() {
   const params = useParams();
-  const id = params.id as string;
+
+  const id = Array.isArray(params.id)
+    ? params.id[0]
+    : params.id;
 
   const [league, setLeague] =
     useState<League | null>(null);
@@ -53,103 +114,190 @@ export default function LeagueProfilePage() {
   const [reviews, setReviews] =
     useState<Review[]>([]);
 
-  const [loading, setLoading] = useState(true);
-  const [isSubscriber, setIsSubscriber] =
+  const [hasAccess, setHasAccess] =
     useState(false);
 
-  const [isAdmin, setIsAdmin] =
-    useState(false);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [loggedIn, setLoggedIn] =
+  const [reviewLoading, setReviewLoading] =
     useState(false);
 
   useEffect(() => {
     async function loadLeague() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      setLoggedIn(!!user);
-
-      let hasAccess = false;
-
-      if (user) {
-        const { data: subscription } =
-          await supabase
-            .from("subscriptions")
-            .select(
-              "status, current_period_end"
-            )
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-        const active =
-          subscription &&
-          (subscription.status === "active" ||
-            subscription.status === "trialing") &&
-          (!subscription.current_period_end ||
-            new Date(
-              subscription.current_period_end
-            ) > new Date());
-
-        setIsSubscriber(!!active);
-
-        const { data: adminRole } =
-          await supabase
-            .from("admin_roles")
-            .select("role")
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-        const admin =
-          adminRole?.role === "admin" ||
-          adminRole?.role === "moderator";
-
-        setIsAdmin(admin);
-
-        hasAccess = !!active || admin;
+      if (!id) {
+        setLoading(false);
+        return;
       }
 
-      const { data: leagueData } =
-        await supabase
-          .from("leagues")
-          .select(
-            "id, name, country, level"
-          )
-          .eq("id", id)
-          .single();
+      const {
+        data: leagueData,
+        error: leagueError,
+      } = await supabase
+        .from("leagues")
+        .select(
+          "id, name, country, level"
+        )
+        .eq("id", id)
+        .maybeSingle();
+
+      if (
+        leagueError ||
+        !leagueData
+      ) {
+        setLeague(null);
+        setLoading(false);
+        return;
+      }
 
       setLeague(leagueData);
 
-      if (hasAccess) {
-        const { data: reviewData } =
-          await supabase
-            .from("reviews")
-            .select(
-              "id, overall_rating, communication_rating, professionalism_rating, development_rating, payment_rating, title, body, created_at"
-            )
-            .eq("league_id", id)
-            .eq("status", "approved")
-            .order("created_at", {
-              ascending: false,
-            });
+      const {
+        data: {
+          user,
+        },
+      } =
+        await supabase.auth.getUser();
 
-        setReviews(reviewData || []);
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      const [
+        subscriptionResult,
+        adminResult,
+      ] = await Promise.all([
+        supabase
+          .from("subscriptions")
+          .select(
+            "status, current_period_end"
+          )
+          .eq(
+            "user_id",
+            user.id
+          )
+          .maybeSingle(),
+
+        supabase
+          .from("admin_roles")
+          .select("role")
+          .eq(
+            "user_id",
+            user.id
+          )
+          .maybeSingle(),
+      ]);
+
+      const subscription =
+        subscriptionResult.data;
+
+      const currentPeriodEnd =
+        subscription?.current_period_end
+          ? new Date(
+              subscription.current_period_end
+            )
+          : null;
+
+      const subscriptionIsActive =
+        (
+          subscription?.status ===
+            "active" ||
+          subscription?.status ===
+            "trialing"
+        ) &&
+        (
+          !currentPeriodEnd ||
+          currentPeriodEnd >
+            new Date()
+        );
+
+      const isAdmin =
+        adminResult.data?.role ===
+          "admin" ||
+        adminResult.data?.role ===
+          "moderator";
+
+      const access =
+        subscriptionIsActive ||
+        isAdmin;
+
+      setHasAccess(access);
+
+      if (access) {
+        setReviewLoading(true);
+
+        const {
+          data: reviewData,
+          error: reviewError,
+        } = await supabase
+          .from("reviews")
+          .select(
+            `
+              id,
+              overall_rating,
+              communication_rating,
+              professionalism_rating,
+              development_rating,
+              payment_rating,
+              title,
+              body,
+              created_at
+            `
+          )
+          .eq(
+            "league_id",
+            id
+          )
+          .eq(
+            "status",
+            "approved"
+          )
+          .order(
+            "created_at",
+            {
+              ascending: false,
+            }
+          );
+
+        if (
+          !reviewError &&
+          reviewData
+        ) {
+          setReviews(
+            reviewData
+          );
+        }
+
+        setReviewLoading(false);
       }
 
       setLoading(false);
     }
 
-    if (id) {
-      loadLeague();
-    }
+    loadLeague();
   }, [id]);
 
   if (loading) {
     return (
       <main>
+        <nav className="nav">
+          <Link
+            href="/"
+            className="logo"
+          >
+            Hoop<span>Check</span>
+          </Link>
+        </nav>
+
         <section className="hero">
-          <h1>Loading league...</h1>
+          <div className="eyebrow">
+            HoopCheck
+          </div>
+
+          <h1>
+            Loading league...
+          </h1>
         </section>
       </main>
     );
@@ -158,72 +306,150 @@ export default function LeagueProfilePage() {
   if (!league) {
     return (
       <main>
-        <section className="hero">
-          <h1>League not found</h1>
-
+        <nav className="nav">
           <Link
-            href="/leagues"
-            className="btn"
+            href="/"
+            className="logo"
           >
-            Back to Leagues
+            Hoop<span>Check</span>
           </Link>
+        </nav>
+
+        <section className="hero">
+          <div className="eyebrow">
+            404
+          </div>
+
+          <h1>
+            League not found.
+          </h1>
+
+          <p>
+            We couldn&apos;t find that league
+            in the HoopCheck database.
+          </p>
+
+          <div className="actions">
+            <Link
+              href="/leagues"
+              className="btn"
+            >
+              Back To Leagues
+            </Link>
+          </div>
         </section>
       </main>
     );
   }
 
-  const hasFullAccess =
-    isSubscriber || isAdmin;
+  const average =
+    reviews.length > 0
+      ? reviews.reduce(
+          (
+            total,
+            review
+          ) =>
+            total +
+            Number(
+              review.overall_rating
+            ),
+          0
+        ) / reviews.length
+      : 0;
 
-  const overall = average(
-    reviews,
-    "overall_rating"
-  );
+  const communication =
+    reviews.length > 0
+      ? reviews.reduce(
+          (
+            total,
+            review
+          ) =>
+            total +
+            Number(
+              review.communication_rating ||
+                0
+            ),
+          0
+        ) / reviews.length
+      : 0;
 
-  const communication = average(
-    reviews,
-    "communication_rating"
-  );
+  const professionalism =
+    reviews.length > 0
+      ? reviews.reduce(
+          (
+            total,
+            review
+          ) =>
+            total +
+            Number(
+              review.professionalism_rating ||
+                0
+            ),
+          0
+        ) / reviews.length
+      : 0;
 
-  const professionalism = average(
-    reviews,
-    "professionalism_rating"
-  );
+  const development =
+    reviews.length > 0
+      ? reviews.reduce(
+          (
+            total,
+            review
+          ) =>
+            total +
+            Number(
+              review.development_rating ||
+                0
+            ),
+          0
+        ) / reviews.length
+      : 0;
 
-  const development = average(
-    reviews,
-    "development_rating"
-  );
-
-  const payment = average(
-    reviews,
-    "payment_rating"
-  );
+  const payment =
+    reviews.length > 0
+      ? reviews.reduce(
+          (
+            total,
+            review
+          ) =>
+            total +
+            Number(
+              review.payment_rating ||
+                0
+            ),
+          0
+        ) / reviews.length
+      : 0;
 
   return (
     <main>
       <nav className="nav">
-        <Link href="/" className="logo">
+        <Link
+          href="/"
+          className="logo"
+        >
           Hoop<span>Check</span>
         </Link>
 
         <div className="links">
-          <Link href="/leagues">
-            Leagues
-          </Link>
-
           <Link href="/dashboard">
             Dashboard
+          </Link>
+
+          <Link href="/leagues">
+            Leagues
           </Link>
         </div>
       </nav>
 
       <section className="hero">
         <div className="eyebrow">
-          League Profile
+          League Research
         </div>
 
-        <h1>{league.name}</h1>
+        <h1>
+          {league.name}
+        </h1>
 
         <p>
           {league.country ||
@@ -231,33 +457,55 @@ export default function LeagueProfilePage() {
         </p>
 
         {league.level && (
-          <p className="muted">
-            Level: {league.level}
+          <p
+            style={{
+              color:
+                "var(--orange)",
+              fontWeight: 800,
+              textTransform:
+                "uppercase",
+              letterSpacing:
+                "0.5px",
+              fontSize: "13px",
+            }}
+          >
+            {league.level}
           </p>
         )}
 
-        <p className="muted">
-          Research player experiences before
-          committing to a league.
-        </p>
+        <div className="actions">
+          <Link
+            href={`/leagues/${league.id}/review`}
+            className="btn"
+          >
+            Write A Review
+          </Link>
+
+          <Link
+            href="/leagues"
+            className="btn dark"
+          >
+            Back To Leagues
+          </Link>
+        </div>
       </section>
 
-      {!hasFullAccess ? (
+      {!hasAccess ? (
         <section className="hero">
           <div className="card">
             <div className="eyebrow">
-              🔒 MEMBER ACCESS
+              Members Only
             </div>
 
             <h2>
-              Full ratings & reviews are locked
+              Know the league
+              before you commit.
             </h2>
 
-            <p className="muted">
-              HoopCheck members get access to
-              player ratings, detailed reviews,
-              and deeper research on professional
-              basketball leagues worldwide.
+            <p>
+              HoopCheck ratings and approved
+              player reviews are available to
+              active members.
             </p>
 
             <div className="actions">
@@ -265,17 +513,15 @@ export default function LeagueProfilePage() {
                 href="/membership"
                 className="btn"
               >
-                Unlock Full Access
+                View Membership
               </Link>
 
-              {!loggedIn && (
-                <Link
-                  href="/login"
-                  className="btn dark"
-                >
-                  Log In
-                </Link>
-              )}
+              <Link
+                href="/login"
+                className="btn dark"
+              >
+                Log In
+              </Link>
             </div>
           </div>
         </section>
@@ -283,120 +529,202 @@ export default function LeagueProfilePage() {
         <>
           <section className="grid">
             <div className="card">
-              <h2>Overall</h2>
+              <div className="eyebrow">
+                Overall Rating
+              </div>
+
+              <h2
+                style={{
+                  fontSize: "58px",
+                  color:
+                    "var(--orange)",
+                  marginBottom:
+                    "4px",
+                }}
+              >
+                {average.toFixed(1)}
+              </h2>
 
               <p>
-                {overall
-                  ? `⭐ ${overall} / 5`
-                  : "Not rated yet"}
+                Based on{" "}
+                {reviews.length}{" "}
+                approved{" "}
+                {reviews.length === 1
+                  ? "review"
+                  : "reviews"}
+                .
               </p>
             </div>
 
             <div className="card">
-              <h2>Communication</h2>
+              <div className="eyebrow">
+                League Breakdown
+              </div>
 
-              <p>
-                {communication
-                  ? `⭐ ${communication} / 5`
-                  : "Not rated yet"}
-              </p>
+              {reviews.length === 0 ? (
+                <p>
+                  No approved reviews yet.
+                </p>
+              ) : (
+                <>
+                  <RatingBar
+                    label="Communication"
+                    value={
+                      communication
+                    }
+                  />
+
+                  <RatingBar
+                    label="Professionalism"
+                    value={
+                      professionalism
+                    }
+                  />
+
+                  <RatingBar
+                    label="Development"
+                    value={
+                      development
+                    }
+                  />
+
+                  <RatingBar
+                    label="Payment"
+                    value={payment}
+                  />
+                </>
+              )}
             </div>
 
             <div className="card">
-              <h2>Professionalism</h2>
+              <div className="eyebrow">
+                Player Feedback
+              </div>
+
+              <h2>
+                {reviews.length}
+              </h2>
 
               <p>
-                {professionalism
-                  ? `⭐ ${professionalism} / 5`
-                  : "Not rated yet"}
+                Approved player experiences
+                currently available for this
+                league.
               </p>
-            </div>
 
-            <div className="card">
-              <h2>Player Development</h2>
-
-              <p>
-                {development
-                  ? `⭐ ${development} / 5`
-                  : "Not rated yet"}
-              </p>
-            </div>
-
-            <div className="card">
-              <h2>Payment</h2>
-
-              <p>
-                {payment
-                  ? `⭐ ${payment} / 5`
-                  : "Not rated yet"}
-              </p>
+              <Link
+                href={`/leagues/${league.id}/review`}
+                className="btn"
+              >
+                Add Your Experience
+              </Link>
             </div>
           </section>
 
           <section className="hero">
-            <h2>Player Reviews</h2>
+            <div className="eyebrow">
+              Approved Reviews
+            </div>
 
-            {reviews.length === 0 ? (
+            <h2>
+              What players
+              <br />
+              are saying.
+            </h2>
+
+            {reviewLoading ? (
+              <p>
+                Loading reviews...
+              </p>
+            ) : reviews.length ===
+              0 ? (
               <div className="card">
+                <h3>
+                  No approved reviews yet.
+                </h3>
+
                 <p>
-                  No approved reviews have been
-                  submitted for this league yet.
+                  Be one of the first players
+                  to share an experience with
+                  this league.
                 </p>
 
                 <Link
                   href={`/leagues/${league.id}/review`}
                   className="btn"
                 >
-                  Write a Review
+                  Write A Review
                 </Link>
               </div>
             ) : (
-              <>
-                <div className="grid">
-                  {reviews.map((review) => (
-                    <div
+              <div
+                style={{
+                  display: "grid",
+                  gap: "18px",
+                  marginTop: "30px",
+                }}
+              >
+                {reviews.map(
+                  (review) => (
+                    <article
                       className="card"
                       key={review.id}
                     >
-                      <h2>
-                        ⭐{" "}
-                        {review.overall_rating} / 5
-                      </h2>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent:
+                            "space-between",
+                          alignItems:
+                            "center",
+                          gap: "12px",
+                          flexWrap:
+                            "wrap",
+                        }}
+                      >
+                        <div>
+                          <div className="eyebrow">
+                            Player Review
+                          </div>
 
-                      {review.title && (
-                        <h3>
-                          {review.title}
-                        </h3>
-                      )}
+                          <h3>
+                            {review.title ||
+                              "Player experience"}
+                          </h3>
+                        </div>
 
-                      {review.body && (
-                        <p>
-                          {review.body}
-                        </p>
-                      )}
+                        <strong
+                          style={{
+                            color:
+                              "var(--orange)",
+                            fontSize:
+                              "24px",
+                          }}
+                        >
+                          {Number(
+                            review.overall_rating
+                          ).toFixed(1)}
+                        </strong>
+                      </div>
 
-                      <p className="muted">
+                      <p>
+                        {review.body}
+                      </p>
+
+                      <p
+                        className="muted"
+                        style={{
+                          fontSize:
+                            "13px",
+                        }}
+                      >
                         {new Date(
                           review.created_at
                         ).toLocaleDateString()}
                       </p>
-                    </div>
-                  ))}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: "24px",
-                  }}
-                >
-                  <Link
-                    href={`/leagues/${league.id}/review`}
-                    className="btn"
-                  >
-                    Write a Review
-                  </Link>
-                </div>
-              </>
+                    </article>
+                  )
+                )}
+              </div>
             )}
           </section>
         </>
