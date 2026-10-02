@@ -1,24 +1,24 @@
-“use client”;
+"use client";
 
-import { FormEvent, useState } from “react”;
-import Link from “next/link”;
-import { useRouter } from “next/navigation”;
-import { supabase } from “../../lib/supabase”;
+import { FormEvent, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { supabase } from "../../lib/supabase";
 
-const TERMS_VERSION = “2026-10-01”;
+const TERMS_VERSION = "2026-10-01";
 
 export default function SignupPage() {
 const router = useRouter();
 
-const [name, setName] = useState(””);
-const [email, setEmail] = useState(””);
-const [password, setPassword] = useState(””);
+const [name, setName] = useState("");
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
 const [isAdult, setIsAdult] = useState(false);
 const [agreedToTerms, setAgreedToTerms] = useState(false);
 
 const [loading, setLoading] = useState(false);
-const [message, setMessage] = useState(””);
-const [error, setError] = useState(””);
+const [message, setMessage] = useState("");
+const [error, setError] = useState("");
 
 async function handleSignup(event: FormEvent) {
 event.preventDefault();

@@ -3,9 +3,9 @@
 import {
 useEffect,
 useState,
-} from “react”;
-import Link from “next/link”;
-import { supabase } from “../../lib/supabase”;
+} from "react";
+import Link from "next/link";
+import { supabase } from "../../lib/supabase";
 
 type League = {
 id: string;
@@ -21,9 +21,9 @@ const [loading, setLoading] = useState(true);
 useEffect(() => {
 async function loadLeagues() {
 const { data, error } = await supabase
-.from(“leagues”)
-.select(“id, name, country, level”)
-.order(“name”);
+.from("leagues")
+.select("id, name, country, level")
+.order("name");
 
   if (error) {
     console.error("Error loading leagues:", error);

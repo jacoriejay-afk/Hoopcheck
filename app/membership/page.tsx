@@ -1,15 +1,15 @@
-“use client”;
+"use client";
 
 import {
 Suspense,
 useEffect,
 useState,
-} from “react”;
-import Link from “next/link”;
-import { useSearchParams } from “next/navigation”;
-import { supabase } from “../../lib/supabase”;
+} from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { supabase } from "../../lib/supabase";
 
-type Plan = “pro” | “premium”;
+type Plan = "pro" | "premium";
 
 type Subscription = {
 plan: Plan;
@@ -30,12 +30,12 @@ useState<Plan | null>(null);
 const [portalLoading, setPortalLoading] =
 useState(false);
 
-const [message, setMessage] = useState(””);
-const [error, setError] = useState(””);
+const [message, setMessage] = useState("");
+const [error, setError] = useState("");
 
 async function loadSubscription() {
 setLoading(true);
-setError(””);
+setError("");
 
 const {
   data: { user },
@@ -89,8 +89,8 @@ if (canceled === "1") {
 
 async function startCheckout(plan: Plan) {
 setCheckoutLoading(plan);
-setError(””);
-setMessage(””);
+setError("");
+setMessage("");
 
 try {
   const {
@@ -146,8 +146,8 @@ try {
 
 async function openCustomerPortal() {
 setPortalLoading(true);
-setError(””);
-setMessage(””);
+setError("");
+setMessage("");
 
 try {
   const {
@@ -198,8 +198,8 @@ try {
 }
 
 const isActive =
-subscription?.status === “active” ||
-subscription?.status === “trialing”;
+subscription?.status === "active" ||
+subscription?.status === "trialing";
 
 return (
 HoopCheck

@@ -3,9 +3,9 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-title: “HoopCheck”,
+title: "HoopCheck",
 description:
-“Research coaches, professional basketball teams, and leagues worldwide.”,
+"Research coaches, professional basketball teams, and leagues worldwide.",
 };
 
 export default function RootLayout({
