@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
 type Subscription = {
@@ -12,12 +13,26 @@ type Subscription = {
 };
 
 export default function MembershipPage() {
+  const searchParams =
+    useSearchParams();
+
   const [subscription, setSubscription] =
     useState<Subscription | null>(null);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
+
+  const [checkoutLoading, setCheckoutLoading] =
+    useState<"pro" | "premium" | null>(null);
+
   const [portalLoading, setPortalLoading] =
     useState(false);
+
+  const success =
+    searchParams.get("success") === "true";
+
+  const canceled =
+    searchParams.get("canceled") === "true";
 
   useEffect(() => {
     async function loadMembership() {
@@ -30,13 +45,14 @@ export default function MembershipPage() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from("subscriptions")
-        .select(
-          "plan, status, current_period_end, cancel_at_period_end"
-        )
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const { data, error } =
+        await supabase
+          .from("subscriptions")
+          .select(
+            "plan, status, current_period_end, cancel_at_period_end"
+          )
+          .eq("user_id", user.id)
+          .maybeSingle();
 
       if (error) {
         console.error(
@@ -54,14 +70,16 @@ export default function MembershipPage() {
 
   const activeSubscription =
     subscription &&
-    (subscription.status === "active" ||
-      subscription.status === "trialing");
+    (
+      subscription.status === "active" ||
+      subscription.status === "trialing"
+    );
 
   async function startCheckout(
     plan: "pro" | "premium"
   ) {
     try {
-      setLoading(true);
+      setCheckoutLoading(plan);
 
       const {
         data: { session },
@@ -72,23 +90,25 @@ export default function MembershipPage() {
         return;
       }
 
-      const response = await fetch(
-        "/api/stripe/create-checkout",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-            Authorization:
-              `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            plan,
-          }),
-        }
-      );
+      const response =
+        await fetch(
+          "/api/stripe/create-checkout",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+              Authorization:
+                `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              plan,
+            }),
+          }
+        );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         alert(
@@ -96,7 +116,7 @@ export default function MembershipPage() {
             "Unable to start checkout."
         );
 
-        setLoading(false);
+        setCheckoutLoading(null);
         return;
       }
 
@@ -105,7 +125,7 @@ export default function MembershipPage() {
           "Stripe did not return a checkout URL."
         );
 
-        setLoading(false);
+        setCheckoutLoading(null);
         return;
       }
 
@@ -120,7 +140,7 @@ export default function MembershipPage() {
         "Something went wrong starting checkout."
       );
 
-      setLoading(false);
+      setCheckoutLoading(null);
     }
   }
 
@@ -137,18 +157,20 @@ export default function MembershipPage() {
         return;
       }
 
-      const response = await fetch(
-        "/api/stripe/create-portal",
-        {
-          method: "POST",
-          headers: {
-            Authorization:
-              `Bearer ${session.access_token}`,
-          },
-        }
-      );
+      const response =
+        await fetch(
+          "/api/stripe/create-portal",
+          {
+            method: "POST",
+            headers: {
+              Authorization:
+                `Bearer ${session.access_token}`,
+            },
+          }
+        );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         alert(
@@ -187,7 +209,10 @@ export default function MembershipPage() {
   return (
     <main>
       <nav className="nav">
-        <Link href="/" className="logo">
+        <Link
+          href="/"
+          className="logo"
+        >
           Hoop<span>Check</span>
         </Link>
 
@@ -215,15 +240,58 @@ export default function MembershipPage() {
           HoopCheck Membership
         </div>
 
-        <h1>Know before you sign.</h1>
+        <h1>
+          Know before you sign.
+        </h1>
 
         <p>
           Research coaches, professional
-          teams, and leagues before your next
-          overseas basketball opportunity.
-          Read detailed ratings and reviews
-          from the HoopCheck community.
+          teams, and leagues before your
+          next overseas basketball
+          opportunity. Read detailed
+          ratings and reviews from the
+          HoopCheck community.
         </p>
+
+        {success && (
+          <div className="card">
+            <div className="eyebrow">
+              PAYMENT RECEIVED
+            </div>
+
+            <h2>
+              Welcome to HoopCheck.
+            </h2>
+
+            <p className="muted">
+              Your subscription checkout
+              was completed successfully.
+              Your membership will update
+              after Stripe confirms the
+              subscription through the
+              webhook.
+            </p>
+          </div>
+        )}
+
+        {canceled && (
+          <div className="card">
+            <div className="eyebrow">
+              CHECKOUT CANCELED
+            </div>
+
+            <h2>
+              No changes were made.
+            </h2>
+
+            <p className="muted">
+              Your Stripe checkout was
+              canceled. You can choose a
+              membership whenever you're
+              ready.
+            </p>
+          </div>
+        )}
 
         {loading ? (
           <p className="muted">
@@ -259,9 +327,10 @@ export default function MembershipPage() {
 
             {subscription?.cancel_at_period_end && (
               <p className="muted">
-                Your subscription is scheduled
-                to cancel at the end of the
-                current billing period.
+                Your subscription is
+                scheduled to cancel at
+                the end of the current
+                billing period.
               </p>
             )}
 
@@ -271,7 +340,9 @@ export default function MembershipPage() {
                 onClick={
                   openCustomerPortal
                 }
-                disabled={portalLoading}
+                disabled={
+                  portalLoading
+                }
               >
                 {portalLoading
                   ? "Opening..."
@@ -296,37 +367,51 @@ export default function MembershipPage() {
               HOOPCHECK PRO
             </div>
 
-            <h2>$7.99/month</h2>
+            <h2>
+              $7.99/month
+            </h2>
 
             <p>
-              Essential access for players
-              researching overseas
-              opportunities.
+              Essential access for
+              players researching
+              overseas opportunities.
             </p>
 
             <ul className="muted">
               <li>
-                Full coach ratings and reviews
+                Full coach ratings
+                and reviews
               </li>
               <li>
-                Full team ratings and reviews
+                Full team ratings
+                and reviews
               </li>
               <li>
-                Full league ratings and reviews
+                Full league ratings
+                and reviews
               </li>
-              <li>Coach research</li>
-              <li>Team research</li>
-              <li>League research</li>
+              <li>
+                Coach research
+              </li>
+              <li>
+                Team research
+              </li>
+              <li>
+                League research
+              </li>
             </ul>
 
             <button
               className="btn"
-              disabled={loading}
+              disabled={
+                checkoutLoading !== null
+              }
               onClick={() =>
                 startCheckout("pro")
               }
             >
-              {loading
+              {checkoutLoading ===
+              "pro"
                 ? "Loading..."
                 : "Choose Pro"}
             </button>
@@ -337,39 +422,53 @@ export default function MembershipPage() {
               HOOPCHECK PREMIUM
             </div>
 
-            <h2>$15.99/month</h2>
+            <h2>
+              $15.99/month
+            </h2>
 
             <p>
-              Advanced access for players
-              who want the complete HoopCheck
+              Advanced access for
+              players who want the
+              complete HoopCheck
               research experience.
             </p>
 
             <ul className="muted">
-              <li>Everything in Pro</li>
               <li>
-                Advanced research tools
+                Everything in Pro
               </li>
               <li>
-                Expanded coach, team, and
-                league insights
+                Advanced research
+                tools
               </li>
               <li>
-                Premium discovery features
+                Expanded coach,
+                team, and league
+                insights
               </li>
               <li>
-                Priority access to new features
+                Premium discovery
+                features
+              </li>
+              <li>
+                Priority access to
+                new features
               </li>
             </ul>
 
             <button
               className="btn"
-              disabled={loading}
+              disabled={
+                checkoutLoading !== null
+              }
               onClick={() =>
-                startCheckout("premium")
+                startCheckout(
+                  "premium"
+                )
               }
             >
-              {loading
+              {checkoutLoading ===
+              "premium"
                 ? "Loading..."
                 : "Choose Premium"}
             </button>
@@ -380,14 +479,17 @@ export default function MembershipPage() {
       <section className="hero">
         <div className="card">
           <h2>
-            Your membership powers HoopCheck
+            Your membership powers
+            HoopCheck
           </h2>
 
           <p className="muted">
-            Stripe securely handles your
-            subscription and billing. You can
-            manage your payment method, cancel,
-            or update your subscription through
+            Stripe securely handles
+            your subscription and
+            billing. You can manage
+            your payment method,
+            cancel, or update your
+            subscription through
             Stripe.
           </p>
         </div>
