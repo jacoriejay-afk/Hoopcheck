@@ -199,7 +199,7 @@ export async function POST(
       {
         error:
           error instanceof Error
-            ? error.message CV
+            ? error.message
             : "Something went wrong.",
       },
       { status: 500 }
