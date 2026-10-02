@@ -11,6 +11,8 @@ const router = useRouter();
 const [name, setName] = useState(””);
 const [email, setEmail] = useState(””);
 const [password, setPassword] = useState(””);
+const [isAdult, setIsAdult] = useState(false);
+const [agreedToTerms, setAgreedToTerms] = useState(false);
 
 const [loading, setLoading] = useState(false);
 const [message, setMessage] = useState(””);
@@ -29,6 +31,18 @@ if (name.trim().length < 2) {
 }
 if (password.length < 6) {
   setError("Password must be at least 6 characters.");
+  setLoading(false);
+  return;
+}
+if (!isAdult) {
+  setError("You must confirm that you are 18 or older.");
+  setLoading(false);
+  return;
+}
+if (!agreedToTerms) {
+  setError(
+    "Please agree to the Terms of Service and acknowledge the Privacy Policy."
+  );
   setLoading(false);
   return;
 }
@@ -60,143 +74,122 @@ setLoading(false);
 return (
 HoopCheck
     <div className="links">
-      <Link href="/login">
-        Log In
-      </Link>
+      <Link href="/login">Log In</Link>
     </div>
   </nav>
   <section className="auth-page">
     <div className="auth-hero">
-      <div className="eyebrow">
-        JOIN HOOPCHECK
-      </div>
+      <div className="eyebrow">JOIN HOOPCHECK</div>
       <h1>
         Know before
         <br />
         you commit.
       </h1>
       <p>
-        Join the global basketball research platform
-        built for players who want real information
-        before making their next career decision.
+        Join the global basketball research platform built for players
+        who want real information before making their next career
+        decision.
       </p>
       <div className="feature-grid">
         <div className="feature">
           <strong>01</strong>
-          <span>
-            Research coaches worldwide.
-          </span>
+          <span>Research coaches worldwide.</span>
         </div>
         <div className="feature">
           <strong>02</strong>
-          <span>
-            Research professional teams.
-          </span>
+          <span>Research professional teams.</span>
         </div>
         <div className="feature">
           <strong>03</strong>
-          <span>
-            Learn about leagues from players.
-          </span>
+          <span>Learn about leagues from players.</span>
         </div>
       </div>
     </div>
     <div className="auth-card">
-      <div className="eyebrow">
-        CREATE ACCOUNT
-      </div>
-      <h2>
-        Start your HoopCheck account.
-      </h2>
+      <div className="eyebrow">CREATE ACCOUNT</div>
+      <h2>Start your HoopCheck account.</h2>
       <p className="intro">
-        Create a free account to begin
-        researching the basketball world.
+        Create a free account to begin researching the basketball world.
       </p>
       <form onSubmit={handleSignup}>
-        <label htmlFor="name">
-          Full Name
-        </label>
+        <label htmlFor="name">Full Name</label>
         <input
           id="name"
           type="text"
           value={name}
-          onChange={(event) =>
-            setName(event.target.value)
-          }
+          onChange={(event) => setName(event.target.value)}
           placeholder="Your full name"
           autoComplete="name"
           required
         />
-        <label htmlFor="email">
-          Email
-        </label>
+        <label htmlFor="email">Email</label>
         <input
           id="email"
           type="email"
           value={email}
-          onChange={(event) =>
-            setEmail(event.target.value)
-          }
+          onChange={(event) => setEmail(event.target.value)}
           placeholder="you@example.com"
           autoComplete="email"
           required
         />
-        <label htmlFor="password">
-          Password
-        </label>
+        <label htmlFor="password">Password</label>
         <input
           id="password"
           type="password"
           value={password}
-          onChange={(event) =>
-            setPassword(event.target.value)
-          }
+          onChange={(event) => setPassword(event.target.value)}
           placeholder="At least 6 characters"
           autoComplete="new-password"
           required
         />
         <div className="legal-consent">
-          <p>
-            By creating an account, you agree to the{" "}
-            <Link href="/terms">
-              Terms of Service
-            </Link>{" "}
-            and acknowledge the{" "}
-            <Link href="/privacy">
-              Privacy Policy
-            </Link>
-            . Please also review our{" "}
-            <Link href="/community-guidelines">
-              Community Guidelines
-            </Link>
-            .
-          </p>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={isAdult}
+              onChange={(event) => setIsAdult(event.target.checked)}
+            />
+            <span>
+              I confirm that I am 18 years of age or older.
+            </span>
+          </label>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={(event) =>
+                setAgreedToTerms(event.target.checked)
+              }
+            />
+            <span>
+              I agree to the{" "}
+              <Link href="/terms">Terms of Service</Link> and acknowledge
+              the <Link href="/privacy">Privacy Policy</Link>. I have also
+              reviewed the{" "}
+              <Link href="/community-guidelines">
+                Community Guidelines
+              </Link>
+              .
+            </span>
+          </label>
         </div>
         {error && (
-          <div className="message error">
-            {error}
-          </div>
+          <div className="message error">{error}</div>
         )}
         {message && (
-          <div className="message success">
-            {message}
-          </div>
+          <div className="message success">{message}</div>
         )}
         <button
           type="submit"
           className="btn submit"
           disabled={loading}
         >
-          {loading
-            ? "Creating Account..."
-            : "Create Free Account"}
+          {loading ? "Creating Account..." : "Create Free Account"}
         </button>
       </form>
       <div className="login-link">
         Already have an account?{" "}
-        <Link href="/login">
-          Log in
-        </Link>
+        <Link href="/login">Log in</Link>
       </div>
     </div>
   </section>
@@ -266,7 +259,7 @@ HoopCheck
       display: flex;
       flex-direction: column;
     }
-    .auth-card label {
+    .auth-card > form > label {
       margin: 16px 0 7px;
       font-size: 12px;
       font-weight: 900;
@@ -274,7 +267,7 @@ HoopCheck
       text-transform: uppercase;
       color: #ddd;
     }
-    .auth-card input {
+    .auth-card input:not([type="checkbox"]) {
       width: 100%;
       box-sizing: border-box;
       padding: 14px 15px;
@@ -285,23 +278,37 @@ HoopCheck
       font: inherit;
       outline: none;
     }
-    .auth-card input:focus {
+    .auth-card input:not([type="checkbox"]):focus {
       border-color: var(--orange);
     }
     .legal-consent {
       margin-top: 20px;
-      padding: 14px 16px;
+      padding: 16px;
       background: #0a0a0a;
       border: 1px solid #292929;
       border-radius: 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
     }
-    .legal-consent p {
-      margin: 0;
-      color: #999;
+    .checkbox-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      color: #aaa;
       font-size: 12px;
       line-height: 1.7;
+      cursor: pointer;
     }
-    .legal-consent a {
+    .checkbox-row input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      flex: 0 0 auto;
+      margin-top: 2px;
+      accent-color: var(--orange);
+      cursor: pointer;
+    }
+    .checkbox-row a {
       color: var(--orange);
       font-weight: 800;
     }
@@ -367,4 +374,5 @@ HoopCheck
 );
 }
 
-Save it, commit it to GitHub, and reply **Done**.
+Save this file and commit it to GitHub.
+**Do not deploy yet.** Reply **Done** when it's committed, and we'll move to the next launch step.
