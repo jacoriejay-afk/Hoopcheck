@@ -1,7 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import Link from "next/link";
+
 import { supabase } from "../../lib/supabase";
 
 type Team = {
@@ -13,18 +18,30 @@ type Team = {
 };
 
 export default function TeamsPage() {
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [teams, setTeams] =
+    useState<Team[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
     async function loadTeams() {
-      const { data, error } = await supabase
+      const {
+        data,
+        error,
+      } = await supabase
         .from("teams")
-        .select("id, name, country, league_name, city")
+        .select(
+          "id, name, country, league_name, city"
+        )
         .order("name");
 
       if (error) {
-        console.error("Error loading teams:", error);
+        console.error(
+          "Error loading teams:",
+          error
+        );
+
         setTeams([]);
       } else {
         setTeams(data || []);
@@ -39,46 +56,110 @@ export default function TeamsPage() {
   return (
     <main>
       <nav className="nav">
-        <Link href="/" className="logo">
+        <Link
+          href="/"
+          className="logo"
+        >
           Hoop<span>Check</span>
         </Link>
 
         <div className="links">
-          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/dashboard">
+            Dashboard
+          </Link>
+
+          <Link
+            href="/membership"
+            className="btn"
+          >
+            Membership
+          </Link>
         </div>
       </nav>
 
       <section className="hero">
-        <div className="eyebrow">HoopCheck Teams</div>
+        <div className="eyebrow">
+          HoopCheck Teams
+        </div>
 
-        <h1>Research the organization before you sign.</h1>
+        <h1>
+          Know the organization
+          <br />
+          before you sign.
+        </h1>
 
         <p>
-          Explore professional basketball teams and player experiences
-          from around the world.
+          Explore professional basketball
+          organizations and learn from players
+          who have already experienced them.
         </p>
+
+        <div className="actions">
+          <Link
+            href="/coaches"
+            className="btn dark"
+          >
+            Research Coaches
+          </Link>
+
+          <Link
+            href="/leagues"
+            className="btn dark"
+          >
+            Research Leagues
+          </Link>
+        </div>
       </section>
 
       <section className="grid">
         {loading ? (
           <div className="card">
-            <h2>Loading teams...</h2>
+            <div className="eyebrow">
+              HoopCheck
+            </div>
+
+            <h2>
+              Loading teams...
+            </h2>
+
+            <p>
+              Finding professional teams
+              in the HoopCheck database.
+            </p>
           </div>
         ) : teams.length === 0 ? (
           <div className="card">
-            <h2>No teams yet</h2>
+            <div className="eyebrow">
+              Coming Soon
+            </div>
+
+            <h2>
+              No teams yet
+            </h2>
 
             <p>
-              Teams will appear here once they are added to HoopCheck.
+              Teams will appear here as
+              HoopCheck&apos;s global basketball
+              database grows.
             </p>
           </div>
         ) : (
           teams.map((team) => (
-            <div className="card" key={team.id}>
-              <h2>{team.name}</h2>
+            <div
+              className="card"
+              key={team.id}
+            >
+              <div className="eyebrow">
+                Professional Team
+              </div>
+
+              <h2>
+                {team.name}
+              </h2>
 
               <p>
-                {team.city && team.country
+                {team.city &&
+                team.country
                   ? `${team.city}, ${team.country}`
                   : team.country ||
                     team.city ||
@@ -86,7 +167,12 @@ export default function TeamsPage() {
               </p>
 
               {team.league_name && (
-                <p>League: {team.league_name}</p>
+                <p>
+                  League:{" "}
+                  <strong>
+                    {team.league_name}
+                  </strong>
+                </p>
               )}
 
               <Link
@@ -98,6 +184,42 @@ export default function TeamsPage() {
             </div>
           ))
         )}
+      </section>
+
+      <section className="hero">
+        <div className="eyebrow">
+          Player Intelligence
+        </div>
+
+        <h2>
+          The contract
+          <br />
+          is only part
+          <br />
+          of the decision.
+        </h2>
+
+        <p>
+          Research the organization, understand
+          player experiences, and make your next
+          move with more information.
+        </p>
+
+        <div className="actions">
+          <Link
+            href="/signup"
+            className="btn"
+          >
+            Create Free Account
+          </Link>
+
+          <Link
+            href="/membership"
+            className="btn dark"
+          >
+            Unlock Full Access
+          </Link>
+        </div>
       </section>
     </main>
   );
