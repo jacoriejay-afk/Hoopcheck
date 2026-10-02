@@ -78,7 +78,11 @@ setLoading(false);
 }
 
 return (
-HoopCheck
+<main>
+<nav className="nav">
+  <Link href="/" className="logo">
+    Hoop<span>Check</span>
+  </Link>
     <div className="links">
       <Link href="/login">Log In</Link>
     </div>
@@ -379,6 +383,3 @@ HoopCheck
 
 );
 }
-
-Save and commit it to GitHub.
-**Don't deploy yet.** Reply **Done**, and then we'll connect those consent values to the `profiles` table automatically.

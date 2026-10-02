@@ -4,7 +4,11 @@ import Link from "next/link";
 
 export default function PrivacyPage() {
 return (
-HoopCheck
+<main>
+<nav className="nav">
+  <Link href="/" className="logo">
+    Hoop<span>Check</span>
+  </Link>
     <div className="links">
       <Link href="/search">Search</Link>
       <Link href="/dashboard">Dashboard</Link>
@@ -324,6 +328,3 @@ HoopCheck
 
 );
 }
-
-Save it as **`app/privacy/page.tsx`**, commit it to GitHub, and reply **Done**.
-Then we'll add **Community Guidelines**, which is especially important for HoopCheck because users are publishing reviews about real coaches, teams, and leagues.

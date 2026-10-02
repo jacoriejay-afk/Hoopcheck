@@ -4,7 +4,11 @@ import Link from "next/link";
 
 export default function TermsPage() {
 return (
-HoopCheck
+<main>
+<nav className="nav">
+  <Link href="/" className="logo">
+    Hoop<span>Check</span>
+  </Link>
     <div className="links">
       <Link href="/search">Search</Link>
       <Link href="/dashboard">Dashboard</Link>
@@ -312,6 +316,3 @@ HoopCheck
 
 );
 }
-
-**Save → commit to GitHub → reply `Done`.**
-Then we'll build the **Privacy Policy** next.

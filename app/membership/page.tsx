@@ -202,7 +202,11 @@ subscription?.status === "active" ||
 subscription?.status === "trialing";
 
 return (
-HoopCheck
+<main>
+<nav className="nav">
+  <Link href="/" className="logo">
+    Hoop<span>Check</span>
+  </Link>
     <div className="links">
       <Link href="/search">
         Search
@@ -721,7 +725,9 @@ export default function MembershipPage() {
 return (
 <Suspense
 fallback={
-HoopCheck Membership
+<main>
+  <section className="hero membership-hero">
+    <div className="eyebrow">HoopCheck Membership</div>
         <h1>
           Loading membership...
         </h1>
@@ -734,6 +740,3 @@ HoopCheck Membership
 
 );
 }
-
-Save → commit to GitHub → reply **Done**.
-After this, we'll make the legal links visible in the **site-wide footer**, so users can reach them from anywhere on HoopCheck.

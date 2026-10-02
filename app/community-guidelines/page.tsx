@@ -4,7 +4,11 @@ import Link from "next/link";
 
 export default function CommunityGuidelinesPage() {
 return (
-HoopCheck
+<main>
+<nav className="nav">
+  <Link href="/" className="logo">
+    Hoop<span>Check</span>
+  </Link>
     <div className="links">
       <Link href="/search">Search</Link>
       <Link href="/dashboard">Dashboard</Link>
@@ -282,6 +286,3 @@ HoopCheck
 
 );
 }
-
-Save → commit to GitHub → reply **Done**.
-After that, we'll connect these legal pages throughout the signup, membership, and footer areas so users can actually find them before creating an account or paying.
