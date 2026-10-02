@@ -1,134 +1,279 @@
 import { NextResponse } from "next/server";
-import { supabase } from "../../../../lib/supabase";
+import Stripe from "stripe";
+import { createClient } from "@supabase/supabase-js";
 
-const STRIPE_API_URL =
-  "https://api.stripe.com/v1/checkout/sessions";
+const stripeSecretKey =
+  process.env.STRIPE_SECRET_KEY;
 
-const PRO_PRICE_ID =
-  process.env.STRIPE_PRO_PRICE_ID ||
-  "price_1ULOQmPfOHVXLGd2w1Nlen2E";
+const proPriceId =
+  process.env.STRIPE_PRO_PRICE_ID;
 
-export async function POST() {
+const premiumPriceId =
+  process.env.STRIPE_PREMIUM_PRICE_ID;
+
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL;
+
+if (!stripeSecretKey) {
+  throw new Error(
+    "Missing STRIPE_SECRET_KEY."
+  );
+}
+
+if (!proPriceId) {
+  throw new Error(
+    "Missing STRIPE_PRO_PRICE_ID."
+  );
+}
+
+if (!premiumPriceId) {
+  throw new Error(
+    "Missing STRIPE_PREMIUM_PRICE_ID."
+  );
+}
+
+if (!siteUrl) {
+  throw new Error(
+    "Missing NEXT_PUBLIC_SITE_URL."
+  );
+}
+
+const stripe = new Stripe(
+  stripeSecretKey
+);
+
+function getAdminSupabase() {
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  const serviceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error(
+      "Missing Supabase server configuration."
+    );
+  }
+
+  return createClient(
+    supabaseUrl,
+    serviceRoleKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+}
+
+export async function POST(
+  request: Request
+) {
   try {
-    const stripeSecretKey =
-      process.env.STRIPE_SECRET_KEY;
+    const authorization =
+      request.headers.get(
+        "authorization"
+      );
 
-    const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      "https://hoopcheck.vercel.app";
+    const accessToken =
+      authorization?.replace(
+        "Bearer ",
+        ""
+      );
 
-    if (!stripeSecretKey) {
+    if (!accessToken) {
       return NextResponse.json(
         {
           error:
-            "Stripe is not configured. Missing STRIPE_SECRET_KEY.",
-        },
-        { status: 500 }
-      );
-    }
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json(
-        {
-          error: "You must be logged in.",
+            "You must be logged in.",
         },
         { status: 401 }
       );
     }
 
-    const params = new URLSearchParams();
+    const supabase =
+      getAdminSupabase();
 
-    params.append("mode", "subscription");
+    const {
+      data: { user },
+      error: userError,
+    } =
+      await supabase.auth.getUser(
+        accessToken
+      );
 
-    params.append(
-      "line_items[0][price]",
-      PRO_PRICE_ID
-    );
-
-    params.append(
-      "line_items[0][quantity]",
-      "1"
-    );
-
-    params.append(
-      "success_url",
-      `${siteUrl}/membership?success=true&session_id={CHECKOUT_SESSION_ID}`
-    );
-
-    params.append(
-      "cancel_url",
-      `${siteUrl}/membership?canceled=true`
-    );
-
-    params.append(
-      "client_reference_id",
-      user.id
-    );
-
-    params.append(
-      "metadata[user_id]",
-      user.id
-    );
-
-    params.append(
-      "metadata[plan]",
-      "pro"
-    );
-
-    params.append(
-      "customer_email",
-      user.email || ""
-    );
-
-    const response = await fetch(
-      STRIPE_API_URL,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${stripeSecretKey}`,
-          "Content-Type":
-            "application/x-www-form-urlencoded",
+    if (userError || !user) {
+      return NextResponse.json(
+        {
+          error:
+            "Your session is invalid or expired.",
         },
-        body: params.toString(),
-        cache: "no-store",
-      }
-    );
+        { status: 401 }
+      );
+    }
 
-    const data = await response.json();
+    let body: {
+      plan?: string;
+    } = {};
 
-    if (!response.ok) {
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid request body.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const plan = body.plan;
+
+    if (
+      plan !== "pro" &&
+      plan !== "premium"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid subscription plan.",
+        },
+        { status: 400 }
+      );
+    }
+
+    /*
+     * Prevent duplicate active subscriptions.
+     */
+    const {
+      data: existingSubscription,
+      error: subscriptionError,
+    } = await supabase
+      .from("subscriptions")
+      .select(
+        "stripe_customer_id, stripe_subscription_id, status, plan"
+      )
+      .eq(
+        "user_id",
+        user.id
+      )
+      .maybeSingle();
+
+    if (subscriptionError) {
       console.error(
-        "Stripe Checkout error:",
-        data
+        "Subscription lookup error:",
+        subscriptionError
       );
 
       return NextResponse.json(
         {
           error:
-            data?.error?.message ||
-            "Unable to create Stripe Checkout session.",
+            "Unable to check your current subscription.",
         },
-        { status: response.status }
+        { status: 500 }
+      );
+    }
+
+    if (
+      existingSubscription &&
+      (
+        existingSubscription.status ===
+          "active" ||
+        existingSubscription.status ===
+          "trialing"
+      )
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "You already have an active HoopCheck subscription.",
+        },
+        { status: 409 }
+      );
+    }
+
+    const priceId =
+      plan === "premium"
+        ? premiumPriceId
+        : proPriceId;
+
+    const customerId =
+      existingSubscription?.stripe_customer_id ||
+      undefined;
+
+    const session =
+      await stripe.checkout.sessions.create(
+        {
+          mode: "subscription",
+
+          line_items: [
+            {
+              price: priceId,
+              quantity: 1,
+            },
+          ],
+
+          success_url:
+            `${siteUrl}/membership?success=true&session_id={CHECKOUT_SESSION_ID}`,
+
+          cancel_url:
+            `${siteUrl}/membership?canceled=true`,
+
+          client_reference_id:
+            user.id,
+
+          customer:
+            customerId,
+
+          customer_email:
+            customerId
+              ? undefined
+              : user.email || undefined,
+
+          metadata: {
+            user_id: user.id,
+            plan,
+          },
+
+          subscription_data: {
+            metadata: {
+              user_id: user.id,
+              plan,
+            },
+          },
+
+          integration_identifier:
+            "hoopcheck_subscription_a7Kp9QxL",
+        }
+      );
+
+    if (!session.url) {
+      return NextResponse.json(
+        {
+          error:
+            "Stripe did not return a checkout URL.",
+        },
+        { status: 500 }
       );
     }
 
     return NextResponse.json({
-      url: data.url,
+      url: session.url,
     });
   } catch (error) {
     console.error(
-      "Checkout route error:",
+      "Stripe Checkout error:",
       error
     );
 
     return NextResponse.json(
       {
         error:
-          "Something went wrong creating Checkout.",
+          error instanceof Error
+            ? error.message
+            : "Unable to create checkout session.",
       },
       { status: 500 }
     );
