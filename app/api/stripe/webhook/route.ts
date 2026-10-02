@@ -20,7 +20,7 @@ if (!webhookSecret) {
   );
 }
 
-const stripe = new Stripe.StripeClient(
+const stripe = new Stripe(
   stripeSecretKey
 );
 
@@ -220,7 +220,7 @@ export async function POST(
 
     try {
       event =
-        await stripe.webhooks.constructEventAsync(
+        stripe.webhooks.constructEvent(
           rawBody,
           signature,
           webhookSecret
