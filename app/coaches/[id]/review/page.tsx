@@ -5,11 +5,11 @@ import {
   useEffect,
   useState,
 } from "react";
-import {
-  useParams,
-  useRouter,
-} from "next/navigation";
+
 import Link from "next/link";
+
+import { useParams } from "next/navigation";
+
 import { supabase } from "../../../../lib/supabase";
 
 type Coach = {
@@ -19,48 +19,119 @@ type Coach = {
   city: string | null;
 };
 
+type RatingFieldProps = {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+};
+
+function RatingField({
+  label,
+  value,
+  onChange,
+}: RatingFieldProps) {
+  return (
+    <div
+      style={{
+        padding: "20px",
+        border: "1px solid #252525",
+        borderRadius: "10px",
+        background: "#0d0d0d",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "13px",
+          fontWeight: 900,
+          textTransform: "uppercase",
+          letterSpacing: "0.7px",
+          marginBottom: "12px",
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          flexWrap: "wrap",
+        }}
+      >
+        {[1, 2, 3, 4, 5].map(
+          (rating) => (
+            <button
+              key={rating}
+              type="button"
+              aria-label={`Rate ${label} ${rating} out of 5`}
+              aria-pressed={
+                value === rating
+              }
+              onClick={() =>
+                onChange(rating)
+              }
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "8px",
+                border:
+                  value === rating
+                    ? "2px solid var(--orange)"
+                    : "1px solid #333",
+                background:
+                  value === rating
+                    ? "var(--orange)"
+                    : "#171717",
+                color:
+                  value === rating
+                    ? "#000"
+                    : "#fff",
+                fontWeight: 900,
+                cursor: "pointer",
+                fontSize: "16px",
+              }}
+            >
+              {rating}
+            </button>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function CoachReviewPage() {
   const params = useParams();
-  const router = useRouter();
 
-  const id = params.id as string;
+  const id = Array.isArray(params.id)
+    ? params.id[0]
+    : params.id;
 
   const [coach, setCoach] =
     useState<Coach | null>(null);
 
-  const [hasAccess, setHasAccess] =
-    useState(false);
-
-  const [alreadyReviewed, setAlreadyReviewed] =
-    useState(false);
-
-  const [overallRating, setOverallRating] =
+  const [overall, setOverall] =
     useState(0);
 
-  const [
-    communicationRating,
-    setCommunicationRating,
-  ] = useState(0);
+  const [communication, setCommunication] =
+    useState(0);
 
-  const [
-    professionalismRating,
-    setProfessionalismRating,
-  ] = useState(0);
+  const [professionalism, setProfessionalism] =
+    useState(0);
 
-  const [
-    developmentRating,
-    setDevelopmentRating,
-  ] = useState(0);
+  const [development, setDevelopment] =
+    useState(0);
 
-  const [
-    paymentRating,
-    setPaymentRating,
-  ] = useState(0);
+  const [payment, setPayment] =
+    useState(0);
 
   const [title, setTitle] =
     useState("");
 
   const [body, setBody] =
+    useState("");
+
+  const [message, setMessage] =
     useState("");
 
   const [loading, setLoading] =
@@ -69,19 +140,13 @@ export default function CoachReviewPage() {
   const [submitting, setSubmitting] =
     useState(false);
 
-  const [message, setMessage] =
-    useState("");
+  const [alreadyReviewed, setAlreadyReviewed] =
+    useState(false);
 
   useEffect(() => {
     async function loadPage() {
-      setLoading(true);
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.replace("/login");
+      if (!id) {
+        setLoading(false);
         return;
       }
 
@@ -94,14 +159,12 @@ export default function CoachReviewPage() {
           "id, name, country, city"
         )
         .eq("id", id)
-        .single();
+        .maybeSingle();
 
-      if (coachError) {
-        console.error(
-          "Error loading coach:",
-          coachError
-        );
-
+      if (
+        coachError ||
+        !coachData
+      ) {
         setCoach(null);
         setLoading(false);
         return;
@@ -110,79 +173,108 @@ export default function CoachReviewPage() {
       setCoach(coachData);
 
       const {
-        data: subscription,
-      } = await supabase
-        .from("subscriptions")
-        .select(
-          "status, current_period_end"
-        )
-        .eq("user_id", user.id)
-        .maybeSingle();
+        data: {
+          user,
+        },
+      } =
+        await supabase.auth.getUser();
 
-      const activeSubscription =
-        subscription &&
+      if (!user) {
+        window.location.href =
+          "/login";
+        return;
+      }
+
+      const [
+        subscriptionResult,
+        adminResult,
+      ] = await Promise.all([
+        supabase
+          .from("subscriptions")
+          .select(
+            "status, current_period_end"
+          )
+          .eq(
+            "user_id",
+            user.id
+          )
+          .maybeSingle(),
+
+        supabase
+          .from("admin_roles")
+          .select("role")
+          .eq(
+            "user_id",
+            user.id
+          )
+          .maybeSingle(),
+      ]);
+
+      const subscription =
+        subscriptionResult.data;
+
+      const currentPeriodEnd =
+        subscription?.current_period_end
+          ? new Date(
+              subscription.current_period_end
+            )
+          : null;
+
+      const subscriptionIsActive =
         (
-          subscription.status ===
+          subscription?.status ===
             "active" ||
-          subscription.status ===
+          subscription?.status ===
             "trialing"
         ) &&
         (
-          !subscription.current_period_end ||
-          new Date(
-            subscription.current_period_end
-          ) > new Date()
+          !currentPeriodEnd ||
+          currentPeriodEnd >
+            new Date()
         );
 
-      const {
-        data: adminRole,
-      } = await supabase
-        .from("admin_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
       const isAdmin =
-        adminRole?.role === "admin" ||
-        adminRole?.role === "moderator";
+        adminResult.data?.role ===
+          "admin" ||
+        adminResult.data?.role ===
+          "moderator";
 
-      setHasAccess(
-        !!activeSubscription ||
-          !!isAdmin
-      );
+      if (
+        !subscriptionIsActive &&
+        !isAdmin
+      ) {
+        setMessage(
+          "An active HoopCheck membership is required to submit a review."
+        );
+
+        setLoading(false);
+        return;
+      }
 
       const {
         data: existingReview,
-        error: existingReviewError,
       } = await supabase
         .from("reviews")
         .select("id")
-        .eq("author_id", user.id)
-        .eq("coach_id", id)
+        .eq(
+          "author_id",
+          user.id
+        )
+        .eq(
+          "coach_id",
+          id
+        )
         .maybeSingle();
 
-      if (
-        existingReviewError &&
-        existingReviewError.code !==
-          "PGRST116"
-      ) {
-        console.error(
-          "Error checking existing review:",
-          existingReviewError
-        );
+      if (existingReview) {
+        setAlreadyReviewed(true);
       }
-
-      setAlreadyReviewed(
-        !!existingReview
-      );
 
       setLoading(false);
     }
 
-    if (id) {
-      loadPage();
-    }
-  }, [id, router]);
+    loadPage();
+  }, [id]);
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
@@ -191,66 +283,44 @@ export default function CoachReviewPage() {
 
     setMessage("");
 
-    if (!hasAccess) {
-      setMessage(
-        "An active HoopCheck membership is required to submit a review."
-      );
-      return;
-    }
-
-    if (alreadyReviewed) {
-      setMessage(
-        "You have already submitted a review for this coach."
-      );
-      return;
-    }
-
     if (
-      overallRating === 0 ||
-      communicationRating === 0 ||
-      professionalismRating === 0 ||
-      developmentRating === 0 ||
-      paymentRating === 0
+      overall < 1 ||
+      communication < 1 ||
+      professionalism < 1 ||
+      development < 1 ||
+      payment < 1
     ) {
       setMessage(
-        "Please give a rating in every category."
+        "Please rate every category."
       );
       return;
     }
-
-    const trimmedBody =
-      body.trim();
 
     const trimmedTitle =
       title.trim();
 
-    if (
-      trimmedBody.length < 20
-    ) {
-      setMessage(
-        "Your review must be at least 20 characters."
-      );
-      return;
-    }
+    const trimmedBody =
+      body.trim();
 
     if (
-      trimmedBody.length > 5000
-    ) {
-      setMessage(
-        "Your review must be 5,000 characters or fewer."
-      );
-      return;
-    }
-
-    if (
-      trimmedTitle &&
+      trimmedTitle.length > 0 &&
       (
         trimmedTitle.length < 3 ||
         trimmedTitle.length > 120
       )
     ) {
       setMessage(
-        "Your review title must be between 3 and 120 characters."
+        "Your title must be between 3 and 120 characters."
+      );
+      return;
+    }
+
+    if (
+      trimmedBody.length < 20 ||
+      trimmedBody.length > 5000
+    ) {
+      setMessage(
+        "Your review must be between 20 and 5,000 characters."
       );
       return;
     }
@@ -258,12 +328,18 @@ export default function CoachReviewPage() {
     setSubmitting(true);
 
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: {
+        user,
+      },
+    } =
+      await supabase.auth.getUser();
 
     if (!user) {
+      setMessage(
+        "Please log in before submitting a review."
+      );
+
       setSubmitting(false);
-      router.replace("/login");
       return;
     }
 
@@ -273,18 +349,15 @@ export default function CoachReviewPage() {
         .insert({
           author_id: user.id,
           coach_id: id,
-          team_id: null,
-          league_id: null,
-          overall_rating:
-            overallRating,
+          overall_rating: overall,
           communication_rating:
-            communicationRating,
+            communication,
           professionalism_rating:
-            professionalismRating,
+            professionalism,
           development_rating:
-            developmentRating,
+            development,
           payment_rating:
-            paymentRating,
+            payment,
           title:
             trimmedTitle || null,
           body: trimmedBody,
@@ -292,21 +365,22 @@ export default function CoachReviewPage() {
         });
 
     if (error) {
-      console.error(
-        "Error submitting review:",
-        error
-      );
-
       if (
-        error.code === "23505"
+        error.code ===
+        "23505"
       ) {
         setMessage(
           "You have already submitted a review for this coach."
         );
-        setAlreadyReviewed(true);
       } else {
+        console.error(
+          "Review submission error:",
+          error
+        );
+
         setMessage(
-          `Could not submit review: ${error.message}`
+          error.message ||
+            "Unable to submit your review."
         );
       }
 
@@ -315,109 +389,16 @@ export default function CoachReviewPage() {
     }
 
     setMessage(
-      "Your review has been submitted and is waiting for moderation."
+      "Review submitted. It will appear after moderation."
     );
 
-    setSubmitting(false);
-
     setTimeout(() => {
-      router.push(
-        `/coaches/${id}`
-      );
+      window.location.href =
+        `/coaches/${id}`;
     }, 1500);
   }
 
-  function RatingButtons({
-    value,
-    onChange,
-  }: {
-    value: number;
-    onChange: (
-      value: number
-    ) => void;
-  }) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          gap: "8px",
-          flexWrap: "wrap",
-          marginBottom: "20px",
-        }}
-      >
-        {[1, 2, 3, 4, 5].map(
-          (rating) => (
-            <button
-              key={rating}
-              type="button"
-              onClick={() =>
-                onChange(rating)
-              }
-              aria-label={`Rate ${rating} out of 5`}
-              aria-pressed={
-                value === rating
-              }
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "10px",
-                border:
-                  value === rating
-                    ? "2px solid #ff8a00"
-                    : "1px solid #303746",
-                background:
-                  value === rating
-                    ? "#ff8a00"
-                    : "#080b12",
-                color:
-                  value === rating
-                    ? "#111111"
-                    : "#ffffff",
-                fontWeight: 800,
-                fontSize: "16px",
-                cursor: "pointer",
-              }}
-            >
-              {rating}
-            </button>
-          )
-        )}
-      </div>
-    );
-  }
-
   if (loading) {
-    return (
-      <main>
-        <section className="hero">
-          <h1>
-            Loading...
-          </h1>
-        </section>
-      </main>
-    );
-  }
-
-  if (!coach) {
-    return (
-      <main>
-        <section className="hero">
-          <h1>
-            Coach not found
-          </h1>
-
-          <Link
-            href="/coaches"
-            className="btn"
-          >
-            Back to Coaches
-          </Link>
-        </section>
-      </main>
-    );
-  }
-
-  if (!hasAccess) {
     return (
       <main>
         <nav className="nav">
@@ -427,50 +408,48 @@ export default function CoachReviewPage() {
           >
             Hoop<span>Check</span>
           </Link>
-
-          <div className="links">
-            <Link
-              href={`/coaches/${coach.id}`}
-            >
-              Back to Coach
-            </Link>
-
-            <Link href="/dashboard">
-              Dashboard
-            </Link>
-          </div>
         </nav>
 
         <section className="hero">
           <div className="eyebrow">
-            MEMBERSHIP REQUIRED
+            HoopCheck
           </div>
 
           <h1>
-            Unlock Review Access
+            Loading review form...
+          </h1>
+        </section>
+      </main>
+    );
+  }
+
+  if (!coach) {
+    return (
+      <main>
+        <nav className="nav">
+          <Link
+            href="/"
+            className="logo"
+          >
+            Hoop<span>Check</span>
+          </Link>
+        </nav>
+
+        <section className="hero">
+          <div className="eyebrow">
+            404
+          </div>
+
+          <h1>
+            Coach not found.
           </h1>
 
-          <p>
-            An active HoopCheck
-            membership is required
-            to submit player reviews.
-          </p>
-
-          <div className="actions">
-            <Link
-              href="/membership"
-              className="btn"
-            >
-              View Memberships
-            </Link>
-
-            <Link
-              href={`/coaches/${coach.id}`}
-              className="btn dark"
-            >
-              Back to Coach
-            </Link>
-          </div>
+          <Link
+            href="/coaches"
+            className="btn"
+          >
+            Back To Coaches
+          </Link>
         </section>
       </main>
     );
@@ -486,32 +465,22 @@ export default function CoachReviewPage() {
           >
             Hoop<span>Check</span>
           </Link>
-
-          <div className="links">
-            <Link
-              href={`/coaches/${coach.id}`}
-            >
-              Back to Coach
-            </Link>
-
-            <Link href="/dashboard">
-              Dashboard
-            </Link>
-          </div>
         </nav>
 
         <section className="hero">
           <div className="eyebrow">
-            REVIEW ALREADY SUBMITTED
+            Already Submitted
           </div>
 
           <h1>
-            You already reviewed {coach.name}.
+            You already reviewed
+            <br />
+            {coach.name}.
           </h1>
 
           <p>
-            Each player can submit one
-            review per coach.
+            HoopCheck allows one review per
+            player for each coach.
           </p>
 
           <div className="actions">
@@ -519,14 +488,62 @@ export default function CoachReviewPage() {
               href={`/coaches/${coach.id}`}
               className="btn"
             >
-              Back to Coach
+              View Coach
             </Link>
 
             <Link
-              href="/dashboard"
+              href="/coaches"
               className="btn dark"
             >
-              Dashboard
+              Back To Coaches
+            </Link>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (message.startsWith(
+    "An active HoopCheck"
+  )) {
+    return (
+      <main>
+        <nav className="nav">
+          <Link
+            href="/"
+            className="logo"
+          >
+            Hoop<span>Check</span>
+          </Link>
+        </nav>
+
+        <section className="hero">
+          <div className="eyebrow">
+            Members Only
+          </div>
+
+          <h1>
+            Membership required.
+          </h1>
+
+          <p>
+            An active HoopCheck membership
+            is required to submit a review.
+          </p>
+
+          <div className="actions">
+            <Link
+              href="/membership"
+              className="btn"
+            >
+              View Membership
+            </Link>
+
+            <Link
+              href={`/coaches/${coach.id}`}
+              className="btn dark"
+            >
+              Back To Coach
             </Link>
           </div>
         </section>
@@ -548,150 +565,131 @@ export default function CoachReviewPage() {
           <Link
             href={`/coaches/${coach.id}`}
           >
-            Back to Coach
-          </Link>
-
-          <Link href="/dashboard">
-            Dashboard
+            Back To Coach
           </Link>
         </div>
       </nav>
 
       <section className="hero">
         <div className="eyebrow">
-          WRITE A PLAYER REVIEW
+          Player Evaluation
         </div>
 
         <h1>
-          {coach.name}
+          Rate {coach.name}.
         </h1>
 
         <p>
-          Share your experience with
-          this coach to help other
-          professional players make
-          informed decisions.
+          Your experience can help another
+          professional player make a more
+          informed decision.
         </p>
       </section>
 
-      <section className="form">
+      <section
+        style={{
+          maxWidth: "760px",
+          margin: "0 auto",
+          padding: "20px 6% 90px",
+        }}
+      >
         <form
           onSubmit={handleSubmit}
+          style={{
+            display: "grid",
+            gap: "16px",
+          }}
         >
-          <h2>
-            Rate Your Experience
-          </h2>
+          <RatingField
+            label="Overall"
+            value={overall}
+            onChange={setOverall}
+          />
 
-          <label>
-            Overall Rating
-          </label>
-
-          <RatingButtons
-            value={
-              overallRating
-            }
+          <RatingField
+            label="Communication"
+            value={communication}
             onChange={
-              setOverallRating
+              setCommunication
             }
           />
 
-          <label>
-            Communication
-          </label>
-
-          <RatingButtons
-            value={
-              communicationRating
-            }
+          <RatingField
+            label="Professionalism"
+            value={professionalism}
             onChange={
-              setCommunicationRating
+              setProfessionalism
             }
           />
 
-          <label>
-            Professionalism
-          </label>
-
-          <RatingButtons
-            value={
-              professionalismRating
-            }
+          <RatingField
+            label="Player Development"
+            value={development}
             onChange={
-              setProfessionalismRating
+              setDevelopment
             }
           />
 
-          <label>
-            Player Development
-          </label>
-
-          <RatingButtons
-            value={
-              developmentRating
-            }
-            onChange={
-              setDevelopmentRating
-            }
+          <RatingField
+            label="Payment Experience"
+            value={payment}
+            onChange={setPayment}
           />
 
-          <label>
-            Payment
-          </label>
+          <div className="card">
+            <div className="eyebrow">
+              Your Experience
+            </div>
 
-          <RatingButtons
-            value={
-              paymentRating
-            }
-            onChange={
-              setPaymentRating
-            }
-          />
+            <label htmlFor="title">
+              Review Title
+            </label>
 
-          <label>
-            Review Title
-          </label>
+            <input
+              id="title"
+              className="input"
+              type="text"
+              value={title}
+              onChange={(event) =>
+                setTitle(
+                  event.target.value
+                )
+              }
+              placeholder="Example: Professional and communicative"
+              maxLength={120}
+            />
 
-          <input
-            className="input"
-            type="text"
-            value={title}
-            onChange={(event) =>
-              setTitle(
-                event.target.value
-              )
-            }
-            placeholder="Example: Great coach, difficult communication"
-            maxLength={120}
-          />
+            <label htmlFor="body">
+              Review
+            </label>
 
-          <label>
-            Your Experience
-          </label>
+            <textarea
+              id="body"
+              value={body}
+              onChange={(event) =>
+                setBody(
+                  event.target.value
+                )
+              }
+              placeholder="Share your experience with this coach..."
+              minLength={20}
+              maxLength={5000}
+              required
+            />
 
-          <textarea
-            className="input"
-            value={body}
-            onChange={(event) =>
-              setBody(
-                event.target.value
-              )
-            }
-            placeholder="Describe your experience working with this coach..."
-            rows={8}
-            maxLength={5000}
-            required
-          />
-
-          <p className="muted">
-            Your review will be
-            submitted for moderation
-            before it becomes publicly
-            visible.
-          </p>
+            <p className="muted">
+              {body.length}/5000 characters
+            </p>
+          </div>
 
           {message && (
             <div className="card">
-              <p>{message}</p>
+              <p
+                role="status"
+                aria-live="polite"
+              >
+                {message}
+              </p>
             </div>
           )}
 
