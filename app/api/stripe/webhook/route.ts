@@ -164,6 +164,31 @@ async function findUserByStripeCustomer(
   return data?.user_id || null;
 }
 
+async function eventAlreadyProcessed(
+  eventId: string
+) {
+  const supabase =
+    getAdminSupabase();
+
+  const { data, error } =
+    await supabase
+      .from("subscription_events")
+      .select("stripe_event_id")
+      .eq(
+        "stripe_event_id",
+        eventId
+      )
+      .maybeSingle();
+
+  if (error) {
+    throw new Error(
+      `Unable to check Stripe event: ${error.message}`
+    );
+  }
+
+  return Boolean(data);
+}
+
 async function saveEvent(
   event: Stripe.Event
 ) {
@@ -178,19 +203,41 @@ async function saveEvent(
           event.id,
         event_type:
           event.type,
-        payload: event,
+        payload:
+          event,
       });
 
   if (!error) {
-    return true;
+    return;
   }
 
   if (error.code === "23505") {
-    return false;
+    return;
   }
 
   throw new Error(
     `Unable to save Stripe event: ${error.message}`
+  );
+}
+
+async function getSubscriptionUserId(
+  subscription: Stripe.Subscription
+) {
+  const metadataUserId =
+    subscription.metadata?.user_id;
+
+  if (metadataUserId) {
+    return metadataUserId;
+  }
+
+  const customerId =
+    typeof subscription.customer ===
+    "string"
+      ? subscription.customer
+      : subscription.customer.id;
+
+  return findUserByStripeCustomer(
+    customerId
   );
 }
 
@@ -240,10 +287,12 @@ export async function POST(
       );
     }
 
-    const isNewEvent =
-      await saveEvent(event);
+    const alreadyProcessed =
+      await eventAlreadyProcessed(
+        event.id
+      );
 
-    if (!isNewEvent) {
+    if (alreadyProcessed) {
       return NextResponse.json({
         received: true,
         duplicate: true,
@@ -300,27 +349,18 @@ export async function POST(
           ? invoice.subscription
           : invoice.subscription?.id;
 
-      const customerId =
-        typeof invoice.customer ===
-        "string"
-          ? invoice.customer
-          : invoice.customer?.id;
+      if (subscriptionId) {
+        const subscription =
+          await stripe.v1.subscriptions.retrieve(
+            subscriptionId
+          );
 
-      if (
-        subscriptionId &&
-        customerId
-      ) {
         const userId =
-          await findUserByStripeCustomer(
-            customerId
+          await getSubscriptionUserId(
+            subscription
           );
 
         if (userId) {
-          const subscription =
-            await stripe.v1.subscriptions.retrieve(
-              subscriptionId
-            );
-
           await saveSubscription(
             userId,
             subscription
@@ -342,27 +382,18 @@ export async function POST(
           ? invoice.subscription
           : invoice.subscription?.id;
 
-      const customerId =
-        typeof invoice.customer ===
-        "string"
-          ? invoice.customer
-          : invoice.customer?.id;
+      if (subscriptionId) {
+        const subscription =
+          await stripe.v1.subscriptions.retrieve(
+            subscriptionId
+          );
 
-      if (
-        subscriptionId &&
-        customerId
-      ) {
         const userId =
-          await findUserByStripeCustomer(
-            customerId
+          await getSubscriptionUserId(
+            subscription
           );
 
         if (userId) {
-          const subscription =
-            await stripe.v1.subscriptions.retrieve(
-              subscriptionId
-            );
-
           await saveSubscription(
             userId,
             subscription
@@ -378,15 +409,9 @@ export async function POST(
       const subscription =
         event.data.object as Stripe.Subscription;
 
-      const customerId =
-        typeof subscription.customer ===
-        "string"
-          ? subscription.customer
-          : subscription.customer.id;
-
       const userId =
-        await findUserByStripeCustomer(
-          customerId
+        await getSubscriptionUserId(
+          subscription
         );
 
       if (userId) {
@@ -404,15 +429,9 @@ export async function POST(
       const subscription =
         event.data.object as Stripe.Subscription;
 
-      const customerId =
-        typeof subscription.customer ===
-        "string"
-          ? subscription.customer
-          : subscription.customer.id;
-
       const userId =
-        await findUserByStripeCustomer(
-          customerId
+        await getSubscriptionUserId(
+          subscription
         );
 
       if (userId) {
@@ -422,6 +441,8 @@ export async function POST(
         );
       }
     }
+
+    await saveEvent(event);
 
     return NextResponse.json({
       received: true,
