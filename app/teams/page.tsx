@@ -64,6 +64,13 @@ export default function TeamsPage() {
         </Link>
 
         <div className="links">
+          <Link
+            href="/search"
+            className="search-nav"
+          >
+            Search
+          </Link>
+
           <Link href="/dashboard">
             Dashboard
           </Link>
@@ -93,6 +100,25 @@ export default function TeamsPage() {
           organizations and learn from players
           who have already experienced them.
         </p>
+
+        <div className="research-search">
+          <div className="search-label">
+            GLOBAL RESEARCH
+          </div>
+
+          <Link
+            href="/search"
+            className="search-button"
+          >
+            <span>
+              Search coaches, teams, or leagues...
+            </span>
+
+            <strong>
+              Search →
+            </strong>
+          </Link>
+        </div>
 
         <div className="actions">
           <Link
@@ -221,6 +247,72 @@ export default function TeamsPage() {
           </Link>
         </div>
       </section>
+
+      <style jsx>{`
+        .search-nav {
+          color: #ff6a00;
+          font-weight: 800;
+        }
+
+        .research-search {
+          width: 100%;
+          max-width: 760px;
+          margin: 35px 0 10px;
+        }
+
+        .search-label {
+          margin-bottom: 9px;
+          color: #ff6a00;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.12em;
+        }
+
+        .search-button {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          width: 100%;
+          min-height: 62px;
+          padding: 0 20px;
+          border: 1px solid #3a3a3a;
+          border-radius: 8px;
+          background: #111;
+          color: #fff;
+          text-decoration: none;
+          transition:
+            border-color 0.2s ease,
+            background 0.2s ease;
+        }
+
+        .search-button:hover {
+          border-color: #ff6a00;
+          background: #161616;
+        }
+
+        .search-button span {
+          color: #888;
+          font-size: 15px;
+          text-align: left;
+        }
+
+        .search-button strong {
+          color: #ff6a00;
+          font-size: 13px;
+          white-space: nowrap;
+        }
+
+        @media (max-width: 800px) {
+          .search-button {
+            align-items: flex-start;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px;
+            padding: 15px 18px;
+          }
+        }
+      `}</style>
     </main>
   );
 }
