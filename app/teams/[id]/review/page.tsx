@@ -21,6 +21,7 @@ export default function TeamReviewPage() {
 
   const [team, setTeam] = useState<Team | null>(null);
   const [hasAccess, setHasAccess] = useState(false);
+  const [alreadyReviewed, setAlreadyReviewed] = useState(false);
 
   const [overallRating, setOverallRating] = useState(0);
   const [communicationRating, setCommunicationRating] = useState(0);
@@ -89,6 +90,26 @@ export default function TeamReviewPage() {
         adminRole?.role === "moderator";
 
       setHasAccess(!!activeSubscription || !!isAdmin);
+
+      const { data: existingReview, error: existingReviewError } =
+        await supabase
+          .from("reviews")
+          .select("id")
+          .eq("author_id", user.id)
+          .eq("team_id", id)
+          .maybeSingle();
+
+      if (
+        existingReviewError &&
+        existingReviewError.code !== "PGRST116"
+      ) {
+        console.error(
+          "Error checking existing review:",
+          existingReviewError
+        );
+      }
+
+      setAlreadyReviewed(!!existingReview);
       setLoading(false);
     }
 
@@ -111,6 +132,13 @@ export default function TeamReviewPage() {
       return;
     }
 
+    if (alreadyReviewed) {
+      setMessage(
+        "You have already submitted a review for this team."
+      );
+      return;
+    }
+
     if (
       overallRating === 0 ||
       communicationRating === 0 ||
@@ -118,12 +146,37 @@ export default function TeamReviewPage() {
       developmentRating === 0 ||
       paymentRating === 0
     ) {
-      setMessage("Please give a rating in every category.");
+      setMessage(
+        "Please give a rating in every category."
+      );
       return;
     }
 
-    if (!body.trim()) {
-      setMessage("Please write about your experience.");
+    const trimmedTitle = title.trim();
+    const trimmedBody = body.trim();
+
+    if (trimmedBody.length < 20) {
+      setMessage(
+        "Your review must be at least 20 characters."
+      );
+      return;
+    }
+
+    if (trimmedBody.length > 5000) {
+      setMessage(
+        "Your review must be 5,000 characters or fewer."
+      );
+      return;
+    }
+
+    if (
+      trimmedTitle &&
+      (trimmedTitle.length < 3 ||
+        trimmedTitle.length > 120)
+    ) {
+      setMessage(
+        "Your review title must be between 3 and 120 characters."
+      );
       return;
     }
 
@@ -134,6 +187,7 @@ export default function TeamReviewPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
+      setSubmitting(false);
       router.replace("/login");
       return;
     }
@@ -150,17 +204,27 @@ export default function TeamReviewPage() {
         professionalism_rating: professionalismRating,
         development_rating: developmentRating,
         payment_rating: paymentRating,
-        title: title.trim() || null,
-        body: body.trim(),
+        title: trimmedTitle || null,
+        body: trimmedBody,
         status: "pending",
       });
 
     if (error) {
-      console.error("Error submitting review:", error);
-
-      setMessage(
-        `Could not submit review: ${error.message}`
+      console.error(
+        "Error submitting review:",
+        error
       );
+
+      if (error.code === "23505") {
+        setMessage(
+          "You have already submitted a review for this team."
+        );
+        setAlreadyReviewed(true);
+      } else {
+        setMessage(
+          `Could not submit review: ${error.message}`
+        );
+      }
 
       setSubmitting(false);
       return;
@@ -178,9 +242,11 @@ export default function TeamReviewPage() {
   }
 
   function RatingButtons({
+    label,
     value,
     onChange,
   }: {
+    label: string;
     value: number;
     onChange: (value: number) => void;
   }) {
@@ -198,6 +264,8 @@ export default function TeamReviewPage() {
             key={rating}
             type="button"
             onClick={() => onChange(rating)}
+            aria-label={`${label}: ${rating} out of 5`}
+            aria-pressed={value === rating}
             style={{
               width: "48px",
               height: "48px",
@@ -282,7 +350,10 @@ export default function TeamReviewPage() {
           </p>
 
           <div className="actions">
-            <Link href="/membership" className="btn">
+            <Link
+              href="/membership"
+              className="btn"
+            >
               View Memberships
             </Link>
 
@@ -293,6 +364,53 @@ export default function TeamReviewPage() {
               Back to Team
             </Link>
           </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (alreadyReviewed) {
+    return (
+      <main>
+        <nav className="nav">
+          <Link href="/" className="logo">
+            Hoop<span>Check</span>
+          </Link>
+
+          <div className="links">
+            <Link href={`/teams/${team.id}`}>
+              Back to Team
+            </Link>
+
+            <Link href="/dashboard">
+              Dashboard
+            </Link>
+          </div>
+        </nav>
+
+        <section className="hero">
+          <div className="eyebrow">
+            REVIEW ALREADY SUBMITTED
+          </div>
+
+          <h1>{team.name}</h1>
+
+          <p>
+            You have already submitted a review
+            for this team.
+          </p>
+
+          <p className="muted">
+            Each HoopCheck member can submit one
+            review per team.
+          </p>
+
+          <Link
+            href={`/teams/${team.id}`}
+            className="btn"
+          >
+            Back to Team
+          </Link>
         </section>
       </main>
     );
@@ -349,6 +467,7 @@ export default function TeamReviewPage() {
           <label>Overall Rating</label>
 
           <RatingButtons
+            label="Overall rating"
             value={overallRating}
             onChange={setOverallRating}
           />
@@ -356,6 +475,7 @@ export default function TeamReviewPage() {
           <label>Communication</label>
 
           <RatingButtons
+            label="Communication"
             value={communicationRating}
             onChange={setCommunicationRating}
           />
@@ -363,6 +483,7 @@ export default function TeamReviewPage() {
           <label>Professionalism</label>
 
           <RatingButtons
+            label="Professionalism"
             value={professionalismRating}
             onChange={setProfessionalismRating}
           />
@@ -370,6 +491,7 @@ export default function TeamReviewPage() {
           <label>Player Development</label>
 
           <RatingButtons
+            label="Player development"
             value={developmentRating}
             onChange={setDevelopmentRating}
           />
@@ -377,6 +499,7 @@ export default function TeamReviewPage() {
           <label>Payment</label>
 
           <RatingButtons
+            label="Payment"
             value={paymentRating}
             onChange={setPaymentRating}
           />
