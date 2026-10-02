@@ -1,40 +1,28 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
+import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const STRIPE_API_URL = "https://api.stripe.com/v1";
+const stripeSecretKey =
+  process.env.STRIPE_SECRET_KEY;
 
-type StripeSubscription = {
-  id: string;
-  customer: string;
-  status: string;
-  current_period_end: number;
-  cancel_at_period_end: boolean;
-  items?: {
-    data?: Array<{
-      price?: {
-        id?: string;
-      };
-    }>;
-  };
-};
+const webhookSecret =
+  process.env.STRIPE_WEBHOOK_SECRET;
 
-type StripeCheckoutSession = {
-  id: string;
-  client_reference_id: string | null;
-  customer: string | null;
-  subscription: string | null;
-  metadata?: {
-    user_id?: string;
-    plan?: string;
-  };
-};
+if (!stripeSecretKey) {
+  throw new Error(
+    "Missing STRIPE_SECRET_KEY."
+  );
+}
 
-type StripeInvoice = {
-  id: string;
-  customer: string;
-  subscription: string | null;
-};
+if (!webhookSecret) {
+  throw new Error(
+    "Missing STRIPE_WEBHOOK_SECRET."
+  );
+}
+
+const stripe = new Stripe(
+  stripeSecretKey
+);
 
 function getAdminSupabase() {
   const supabaseUrl =
@@ -61,108 +49,9 @@ function getAdminSupabase() {
   );
 }
 
-function verifyStripeSignature(
-  payload: string,
-  signature: string,
-  secret: string
-) {
-  const parts = signature
-    .split(",")
-    .reduce(
-      (
-        result: Record<string, string[]>,
-        item
-      ) => {
-        const [key, value] = item.split("=");
-
-        if (key && value) {
-          if (!result[key]) {
-            result[key] = [];
-          }
-
-          result[key].push(value);
-        }
-
-        return result;
-      },
-      {}
-    );
-
-  const timestamp = parts.t?.[0];
-  const signatures = parts.v1 || [];
-
-  if (!timestamp || signatures.length === 0) {
-    return false;
-  }
-
-  const timestampNumber =
-    Number(timestamp);
-
-  if (!Number.isFinite(timestampNumber)) {
-    return false;
-  }
-
-  const currentTime =
-    Math.floor(Date.now() / 1000);
-
-  const tolerance = 300;
-
-  if (
-    Math.abs(
-      currentTime - timestampNumber
-    ) > tolerance
-  ) {
-    return false;
-  }
-
-  const signedPayload =
-    `${timestamp}.${payload}`;
-
-  const expectedSignature =
-    crypto
-      .createHmac(
-        "sha256",
-        secret
-      )
-      .update(signedPayload)
-      .digest("hex");
-
-  return signatures.some(
-    (receivedSignature) => {
-      try {
-        const expectedBuffer =
-          Buffer.from(
-            expectedSignature,
-            "utf8"
-          );
-
-        const receivedBuffer =
-          Buffer.from(
-            receivedSignature,
-            "utf8"
-          );
-
-        if (
-          expectedBuffer.length !==
-          receivedBuffer.length
-        ) {
-          return false;
-        }
-
-        return crypto.timingSafeEqual(
-          expectedBuffer,
-          receivedBuffer
-        );
-      } catch {
-        return false;
-      }
-    }
-  );
-}
-
 function getPlanFromPrice(
   priceId: string | undefined
-) {
+): "pro" | "premium" | null {
   const proPriceId =
     process.env.STRIPE_PRO_PRICE_ID;
 
@@ -186,53 +75,16 @@ function getPlanFromPrice(
   return null;
 }
 
-async function stripeRequest<T>(
-  path: string
-): Promise<T> {
-  const stripeSecretKey =
-    process.env.STRIPE_SECRET_KEY;
-
-  if (!stripeSecretKey) {
-    throw new Error(
-      "Missing STRIPE_SECRET_KEY."
-    );
-  }
-
-  const response = await fetch(
-    `${STRIPE_API_URL}${path}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization:
-          `Bearer ${stripeSecretKey}`,
-      },
-      cache: "no-store",
-    }
-  );
-
-  const data =
-    await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data?.error?.message ||
-        "Stripe API request failed."
-    );
-  }
-
-  return data;
-}
-
 async function saveSubscription(
   userId: string,
-  subscription: StripeSubscription
+  subscription: Stripe.Subscription
 ) {
   const supabase =
     getAdminSupabase();
 
   const priceId =
-    subscription.items?.data?.[0]
-      ?.price?.id;
+    subscription.items.data[0]?.price
+      ?.id;
 
   const plan =
     getPlanFromPrice(priceId);
@@ -260,7 +112,10 @@ async function saveSubscription(
         {
           user_id: userId,
           stripe_customer_id:
-            subscription.customer,
+            typeof subscription.customer ===
+            "string"
+              ? subscription.customer
+              : subscription.customer.id,
           stripe_subscription_id:
             subscription.id,
           stripe_price_id:
@@ -311,29 +166,10 @@ async function findUserByStripeCustomer(
 }
 
 async function saveEvent(
-  event: {
-    id: string;
-    type: string;
-    [key: string]: unknown;
-  }
+  event: Stripe.Event
 ) {
   const supabase =
     getAdminSupabase();
-
-  const {
-    data: existingEvent,
-  } = await supabase
-    .from("subscription_events")
-    .select("id")
-    .eq(
-      "stripe_event_id",
-      event.id
-    )
-    .maybeSingle();
-
-  if (existingEvent) {
-    return false;
-  }
 
   const { error } =
     await supabase
@@ -346,32 +182,29 @@ async function saveEvent(
         payload: event,
       });
 
-  if (error) {
-    throw new Error(
-      `Unable to save Stripe event: ${error.message}`
-    );
+  if (!error) {
+    return true;
   }
 
-  return true;
+  /*
+   * Stripe may deliver the same event more
+   * than once. The database unique constraint
+   * on stripe_event_id makes duplicate
+   * processing safe.
+   */
+  if (error.code === "23505") {
+    return false;
+  }
+
+  throw new Error(
+    `Unable to save Stripe event: ${error.message}`
+  );
 }
 
 export async function POST(
   request: Request
 ) {
   try {
-    const webhookSecret =
-      process.env.STRIPE_WEBHOOK_SECRET;
-
-    if (!webhookSecret) {
-      return NextResponse.json(
-        {
-          error:
-            "Missing STRIPE_WEBHOOK_SECRET.",
-        },
-        { status: 500 }
-      );
-    }
-
     const rawBody =
       await request.text();
 
@@ -390,43 +223,25 @@ export async function POST(
       );
     }
 
-    const validSignature =
-      verifyStripeSignature(
-        rawBody,
-        signature,
-        webhookSecret
+    let event: Stripe.Event;
+
+    try {
+      event =
+        stripe.webhooks.constructEvent(
+          rawBody,
+          signature,
+          webhookSecret
+        );
+    } catch (error) {
+      console.error(
+        "Stripe signature verification failed:",
+        error
       );
 
-    if (!validSignature) {
       return NextResponse.json(
         {
           error:
             "Invalid Stripe signature.",
-        },
-        { status: 400 }
-      );
-    }
-
-    let event: any;
-
-    try {
-      event =
-        JSON.parse(rawBody);
-    } catch {
-      return NextResponse.json(
-        {
-          error:
-            "Invalid webhook payload.",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (!event.id || !event.type) {
-      return NextResponse.json(
-        {
-          error:
-            "Invalid Stripe event.",
         },
         { status: 400 }
       );
@@ -450,8 +265,7 @@ export async function POST(
       "checkout.session.completed"
     ) {
       const session =
-        event.data
-          ?.object as StripeCheckoutSession;
+        event.data.object as Stripe.Checkout.Session;
 
       const userId =
         session.client_reference_id ||
@@ -463,15 +277,18 @@ export async function POST(
         );
       }
 
-      if (!session.subscription) {
+      if (
+        typeof session.subscription !==
+        "string"
+      ) {
         throw new Error(
           "Checkout session is missing the subscription ID."
         );
       }
 
       const subscription =
-        await stripeRequest<StripeSubscription>(
-          `/subscriptions/${session.subscription}`
+        await stripe.v1.subscriptions.retrieve(
+          session.subscription
         );
 
       await saveSubscription(
@@ -488,19 +305,33 @@ export async function POST(
       "invoice.paid"
     ) {
       const invoice =
-        event.data
-          ?.object as StripeInvoice;
+        event.data.object as Stripe.Invoice;
 
-      if (invoice.subscription) {
+      const subscriptionId =
+        typeof invoice.subscription ===
+        "string"
+          ? invoice.subscription
+          : invoice.subscription?.id;
+
+      const customerId =
+        typeof invoice.customer ===
+        "string"
+          ? invoice.customer
+          : invoice.customer?.id;
+
+      if (
+        subscriptionId &&
+        customerId
+      ) {
         const userId =
           await findUserByStripeCustomer(
-            invoice.customer
+            customerId
           );
 
         if (userId) {
           const subscription =
-            await stripeRequest<StripeSubscription>(
-              `/subscriptions/${invoice.subscription}`
+            await stripe.v1.subscriptions.retrieve(
+              subscriptionId
             );
 
           await saveSubscription(
@@ -519,19 +350,33 @@ export async function POST(
       "invoice.payment_failed"
     ) {
       const invoice =
-        event.data
-          ?.object as StripeInvoice;
+        event.data.object as Stripe.Invoice;
 
-      if (invoice.subscription) {
+      const subscriptionId =
+        typeof invoice.subscription ===
+        "string"
+          ? invoice.subscription
+          : invoice.subscription?.id;
+
+      const customerId =
+        typeof invoice.customer ===
+        "string"
+          ? invoice.customer
+          : invoice.customer?.id;
+
+      if (
+        subscriptionId &&
+        customerId
+      ) {
         const userId =
           await findUserByStripeCustomer(
-            invoice.customer
+            customerId
           );
 
         if (userId) {
           const subscription =
-            await stripeRequest<StripeSubscription>(
-              `/subscriptions/${invoice.subscription}`
+            await stripe.v1.subscriptions.retrieve(
+              subscriptionId
             );
 
           await saveSubscription(
@@ -550,12 +395,17 @@ export async function POST(
       "customer.subscription.updated"
     ) {
       const subscription =
-        event.data
-          ?.object as StripeSubscription;
+        event.data.object as Stripe.Subscription;
+
+      const customerId =
+        typeof subscription.customer ===
+        "string"
+          ? subscription.customer
+          : subscription.customer.id;
 
       const userId =
         await findUserByStripeCustomer(
-          subscription.customer
+          customerId
         );
 
       if (userId) {
@@ -574,12 +424,17 @@ export async function POST(
       "customer.subscription.deleted"
     ) {
       const subscription =
-        event.data
-          ?.object as StripeSubscription;
+        event.data.object as Stripe.Subscription;
+
+      const customerId =
+        typeof subscription.customer ===
+        "string"
+          ? subscription.customer
+          : subscription.customer.id;
 
       const userId =
         await findUserByStripeCustomer(
-          subscription.customer
+          customerId
         );
 
       if (userId) {
