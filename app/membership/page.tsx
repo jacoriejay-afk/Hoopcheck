@@ -5,15 +5,20 @@ import {
   useEffect,
   useState,
 } from "react";
+
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+
+import {
+  useSearchParams,
+} from "next/navigation";
+
 import { supabase } from "../../lib/supabase";
 
 type Subscription = {
-  plan: "pro" | "premium";
-  status: string;
+  plan: "pro" | "premium" | null;
+  status: string | null;
   current_period_end: string | null;
-  cancel_at_period_end: boolean;
+  cancel_at_period_end: boolean | null;
 };
 
 function MembershipContent() {
@@ -27,73 +32,93 @@ function MembershipContent() {
     useState(true);
 
   const [checkoutLoading, setCheckoutLoading] =
-    useState<"pro" | "premium" | null>(null);
+    useState<string | null>(null);
 
   const [portalLoading, setPortalLoading] =
     useState(false);
 
-  const success =
-    searchParams.get("success") === "true";
-
-  const canceled =
-    searchParams.get("canceled") === "true";
+  const [message, setMessage] =
+    useState("");
 
   useEffect(() => {
     async function loadMembership() {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: {
+          user,
+        },
+      } =
+        await supabase.auth.getUser();
 
       if (!user) {
         setLoading(false);
         return;
       }
 
-      const { data, error } =
+      const {
+        data,
+        error,
+      } =
         await supabase
           .from("subscriptions")
           .select(
             "plan, status, current_period_end, cancel_at_period_end"
           )
-          .eq("user_id", user.id)
+          .eq(
+            "user_id",
+            user.id
+          )
           .maybeSingle();
 
-      if (error) {
-        console.error(
-          "Error loading subscription:",
-          error
-        );
+      if (!error && data) {
+        setSubscription(data);
       }
 
-      setSubscription(data || null);
       setLoading(false);
     }
 
     loadMembership();
   }, []);
 
-  const activeSubscription =
-    subscription &&
-    (
-      subscription.status === "active" ||
-      subscription.status === "trialing"
-    );
+  useEffect(() => {
+    if (
+      searchParams.get("success") ===
+      "true"
+    ) {
+      setMessage(
+        "Checkout completed. Your membership will activate after Stripe confirms the subscription."
+      );
+    }
+
+    if (
+      searchParams.get("canceled") ===
+      "true"
+    ) {
+      setMessage(
+        "Checkout was canceled. No subscription was created."
+      );
+    }
+  }, [searchParams]);
 
   async function startCheckout(
     plan: "pro" | "premium"
   ) {
+    setMessage("");
+    setCheckoutLoading(plan);
+
+    const {
+      data: {
+        session,
+      },
+    } =
+      await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      window.location.href =
+        "/login";
+      return;
+    }
+
     try {
-      setCheckoutLoading(plan);
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        window.location.href = "/login";
-        return;
-      }
-
       const response =
         await fetch(
           "/api/stripe/create-checkout",
@@ -115,7 +140,7 @@ function MembershipContent() {
         await response.json();
 
       if (!response.ok) {
-        alert(
+        setMessage(
           data.error ||
             "Unable to start checkout."
         );
@@ -124,43 +149,47 @@ function MembershipContent() {
         return;
       }
 
-      if (!data.url) {
-        alert(
-          "Stripe did not return a checkout URL."
-        );
-
-        setCheckoutLoading(null);
+      if (data.url) {
+        window.location.href =
+          data.url;
         return;
       }
 
-      window.location.href = data.url;
+      setMessage(
+        "Stripe did not return a checkout URL."
+      );
     } catch (error) {
       console.error(
         "Checkout error:",
         error
       );
 
-      alert(
+      setMessage(
         "Something went wrong starting checkout."
       );
-
-      setCheckoutLoading(null);
     }
+
+    setCheckoutLoading(null);
   }
 
   async function openCustomerPortal() {
+    setMessage("");
+    setPortalLoading(true);
+
+    const {
+      data: {
+        session,
+      },
+    } =
+      await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      window.location.href =
+        "/login";
+      return;
+    }
+
     try {
-      setPortalLoading(true);
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        window.location.href = "/login";
-        return;
-      }
-
       const response =
         await fetch(
           "/api/stripe/create-portal",
@@ -177,38 +206,59 @@ function MembershipContent() {
         await response.json();
 
       if (!response.ok) {
-        alert(
+        setMessage(
           data.error ||
-            "Unable to open subscription management."
+            "Unable to open your billing portal."
         );
 
         setPortalLoading(false);
         return;
       }
 
-      if (!data.url) {
-        alert(
-          "Stripe did not return a billing portal URL."
-        );
-
-        setPortalLoading(false);
+      if (data.url) {
+        window.location.href =
+          data.url;
         return;
       }
 
-      window.location.href = data.url;
+      setMessage(
+        "Stripe did not return a portal URL."
+      );
     } catch (error) {
       console.error(
         "Portal error:",
         error
       );
 
-      alert(
-        "Something went wrong opening subscription management."
+      setMessage(
+        "Something went wrong opening your billing portal."
       );
-
-      setPortalLoading(false);
     }
+
+    setPortalLoading(false);
   }
+
+  const isActive =
+    subscription?.status ===
+      "active" ||
+    subscription?.status ===
+      "trialing";
+
+  const planLabel =
+    subscription?.plan ===
+    "premium"
+      ? "Premium"
+      : subscription?.plan ===
+        "pro"
+      ? "Pro"
+      : "Free";
+
+  const periodEnd =
+    subscription?.current_period_end
+      ? new Date(
+          subscription.current_period_end
+        ).toLocaleDateString()
+      : null;
 
   return (
     <main>
@@ -245,101 +295,100 @@ function MembershipContent() {
         </div>
 
         <h1>
-          Know before you sign.
+          Know more.
+          <br />
+          Move smarter.
         </h1>
 
         <p>
-          Research coaches, professional
-          teams, and leagues before your
-          next overseas basketball
-          opportunity. Read detailed
-          ratings and reviews from the
-          HoopCheck community.
+          Unlock the player intelligence you
+          need before signing your next
+          overseas basketball contract.
         </p>
 
-        {success && (
-          <div className="card">
-            <div className="eyebrow">
-              PAYMENT RECEIVED
-            </div>
-
-            <h2>
-              Welcome to HoopCheck.
-            </h2>
-
-            <p className="muted">
-              Your subscription checkout
-              was completed successfully.
-              Your membership will update
-              after Stripe confirms the
-              subscription through the
-              webhook.
+        {message && (
+          <div
+            className="card"
+            style={{
+              marginTop: "28px",
+              maxWidth: "760px",
+            }}
+          >
+            <p
+              role="status"
+              aria-live="polite"
+              style={{
+                margin: 0,
+              }}
+            >
+              {message}
             </p>
           </div>
         )}
+      </section>
 
-        {canceled && (
-          <div className="card">
+      {isActive && (
+        <section
+          style={{
+            maxWidth: "1180px",
+            margin: "0 auto",
+            padding: "0 6% 30px",
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              borderColor:
+                "rgba(255, 106, 0, 0.45)",
+              background:
+                "linear-gradient(145deg, #171717, #0c0c0c)",
+            }}
+          >
             <div className="eyebrow">
-              CHECKOUT CANCELED
+              Current Membership
             </div>
 
-            <h2>
-              No changes were made.
+            <h2
+              style={{
+                fontSize: "34px",
+                marginBottom: "8px",
+              }}
+            >
+              HoopCheck {planLabel}
             </h2>
 
-            <p className="muted">
-              Your Stripe checkout was
-              canceled. You can choose a
-              membership whenever you're
-              ready.
-            </p>
-          </div>
-        )}
-
-        {loading ? (
-          <p className="muted">
-            Checking your membership...
-          </p>
-        ) : activeSubscription ? (
-          <div className="card">
-            <div className="eyebrow">
-              ACTIVE MEMBERSHIP
-            </div>
-
-            <h2>
-              HoopCheck{" "}
-              {subscription?.plan ===
-              "premium"
-                ? "Premium"
-                : "Pro"}
-            </h2>
-
-            <p className="muted">
-              Status:{" "}
-              {subscription?.status}
+            <p>
+              Your membership is currently{" "}
+              <strong>
+                {subscription?.status}
+              </strong>
+              .
             </p>
 
-            {subscription?.current_period_end && (
+            {periodEnd && (
               <p className="muted">
-                Current period ends:{" "}
-                {new Date(
-                  subscription.current_period_end
-                ).toLocaleDateString()}
+                Current billing period ends:{" "}
+                {periodEnd}
               </p>
             )}
 
             {subscription?.cancel_at_period_end && (
-              <p className="muted">
-                Your subscription is
-                scheduled to cancel at
-                the end of the current
-                billing period.
+              <p
+                style={{
+                  color:
+                    "var(--orange)",
+                  fontWeight: 800,
+                }}
+              >
+                Your membership is scheduled
+                to cancel at the end of the
+                current billing period.
               </p>
             )}
 
             <div className="actions">
               <button
+                type="button"
                 className="btn"
                 onClick={
                   openCustomerPortal
@@ -350,130 +399,236 @@ function MembershipContent() {
               >
                 {portalLoading
                   ? "Opening..."
-                  : "Manage Subscription"}
+                  : "Manage Billing"}
               </button>
 
               <Link
                 href="/dashboard"
                 className="btn dark"
               >
-                Dashboard
+                Back To Dashboard
               </Link>
             </div>
           </div>
-        ) : null}
-      </section>
+        </section>
+      )}
 
-      {!activeSubscription && (
-        <section className="grid">
+      {!isActive && (
+        <section
+          className="grid"
+          style={{
+            gridTemplateColumns:
+              "repeat(2, minmax(0, 1fr))",
+            maxWidth: "1000px",
+          }}
+        >
           <div className="card">
             <div className="eyebrow">
-              HOOPCHECK PRO
+              HoopCheck Pro
             </div>
 
-            <h2>
-              $7.99/month
+            <h2
+              style={{
+                fontSize: "44px",
+                marginBottom: "4px",
+              }}
+            >
+              $7.99
+              <span
+                style={{
+                  fontSize: "15px",
+                  color:
+                    "var(--gray-500)",
+                  fontWeight: 700,
+                }}
+              >
+                /month
+              </span>
             </h2>
 
             <p>
-              Essential access for
-              players researching
-              overseas opportunities.
+              Everything you need to research
+              your next basketball opportunity.
             </p>
 
-            <ul className="muted">
-              <li>
-                Full coach ratings
-                and reviews
-              </li>
-              <li>
-                Full team ratings
-                and reviews
-              </li>
-              <li>
-                Full league ratings
-                and reviews
-              </li>
-              <li>
-                Coach research
-              </li>
-              <li>
-                Team research
-              </li>
-              <li>
-                League research
-              </li>
-            </ul>
+            <div
+              style={{
+                display: "grid",
+                gap: "11px",
+                margin:
+                  "24px 0",
+              }}
+            >
+              {[
+                "Full coach ratings and reviews",
+                "Full team ratings and reviews",
+                "Full league ratings and reviews",
+                "Coach research",
+                "Team research",
+                "League research",
+              ].map(
+                (feature) => (
+                  <div
+                    key={feature}
+                    style={{
+                      display:
+                        "flex",
+                      gap: "10px",
+                      alignItems:
+                        "flex-start",
+                      color:
+                        "var(--gray-100)",
+                      fontSize:
+                        "14px",
+                      lineHeight:
+                        "1.5",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color:
+                          "var(--orange)",
+                        fontWeight:
+                          900,
+                      }}
+                    >
+                      ✓
+                    </span>
+
+                    <span>
+                      {feature}
+                    </span>
+                  </div>
+                )
+              )}
+            </div>
 
             <button
+              type="button"
               className="btn"
-              disabled={
-                checkoutLoading !== null
-              }
               onClick={() =>
-                startCheckout("pro")
+                startCheckout(
+                  "pro"
+                )
+              }
+              disabled={
+                checkoutLoading !==
+                null
               }
             >
               {checkoutLoading ===
               "pro"
-                ? "Loading..."
+                ? "Opening Stripe..."
                 : "Choose Pro"}
             </button>
           </div>
 
-          <div className="card">
+          <div
+            className="card"
+            style={{
+              borderColor:
+                "var(--orange)",
+              boxShadow:
+                "0 18px 50px rgba(255, 106, 0, 0.12)",
+            }}
+          >
             <div className="eyebrow">
-              HOOPCHECK PREMIUM
+              HoopCheck Premium
             </div>
 
-            <h2>
-              $15.99/month
+            <h2
+              style={{
+                fontSize: "44px",
+                marginBottom: "4px",
+              }}
+            >
+              $15.99
+              <span
+                style={{
+                  fontSize: "15px",
+                  color:
+                    "var(--gray-500)",
+                  fontWeight: 700,
+                }}
+              >
+                /month
+              </span>
             </h2>
 
             <p>
-              Advanced access for
-              players who want the
-              complete HoopCheck
-              research experience.
+              Go deeper with expanded research
+              and premium player intelligence.
             </p>
 
-            <ul className="muted">
-              <li>
-                Everything in Pro
-              </li>
-              <li>
-                Advanced research
-                tools
-              </li>
-              <li>
-                Expanded coach,
-                team, and league
-                insights
-              </li>
-              <li>
-                Premium discovery
-                features
-              </li>
-              <li>
-                Priority access to
-                new features
-              </li>
-            </ul>
+            <div
+              style={{
+                display: "grid",
+                gap: "11px",
+                margin:
+                  "24px 0",
+              }}
+            >
+              {[
+                "Everything in Pro",
+                "Advanced research tools",
+                "Expanded coach insights",
+                "Expanded team insights",
+                "Expanded league insights",
+                "Premium discovery features",
+                "Priority access to new features",
+              ].map(
+                (feature) => (
+                  <div
+                    key={feature}
+                    style={{
+                      display:
+                        "flex",
+                      gap: "10px",
+                      alignItems:
+                        "flex-start",
+                      color:
+                        "var(--gray-100)",
+                      fontSize:
+                        "14px",
+                      lineHeight:
+                        "1.5",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color:
+                          "var(--orange)",
+                        fontWeight:
+                          900,
+                      }}
+                    >
+                      ✓
+                    </span>
+
+                    <span>
+                      {feature}
+                    </span>
+                  </div>
+                )
+              )}
+            </div>
 
             <button
+              type="button"
               className="btn"
-              disabled={
-                checkoutLoading !== null
-              }
               onClick={() =>
                 startCheckout(
                   "premium"
                 )
               }
+              disabled={
+                checkoutLoading !==
+                null
+              }
             >
               {checkoutLoading ===
               "premium"
-                ? "Loading..."
+                ? "Opening Stripe..."
                 : "Choose Premium"}
             </button>
           </div>
@@ -481,21 +636,85 @@ function MembershipContent() {
       )}
 
       <section className="hero">
-        <div className="card">
+        <div className="eyebrow">
+          Why HoopCheck
+        </div>
+
+        <h2>
+          Your next contract
+          <br />
+          deserves research.
+        </h2>
+
+        <p>
+          A contract tells you what you&apos;ll
+          earn. HoopCheck helps you learn about
+          the people and organizations behind it.
+        </p>
+
+        <div className="actions">
+          <Link
+            href="/coaches"
+            className="btn"
+          >
+            Research Coaches
+          </Link>
+
+          <Link
+            href="/teams"
+            className="btn dark"
+          >
+            Research Teams
+          </Link>
+
+          <Link
+            href="/leagues"
+            className="btn dark"
+          >
+            Research Leagues
+          </Link>
+        </div>
+      </section>
+
+      <section
+        style={{
+          maxWidth: "900px",
+          margin: "0 auto",
+          padding:
+            "0 6% 100px",
+        }}
+      >
+        <div
+          className="card"
+          style={{
+            textAlign: "center",
+          }}
+        >
+          <div className="eyebrow">
+            Simple Membership
+          </div>
+
           <h2>
-            Your membership powers
-            HoopCheck
+            Cancel through Stripe
+            whenever you need.
           </h2>
 
-          <p className="muted">
-            Stripe securely handles
-            your subscription and
-            billing. You can manage
-            your payment method,
-            cancel, or update your
-            subscription through
-            Stripe.
+          <p>
+            HoopCheck uses Stripe for secure
+            subscription billing. You can
+            manage your payment method,
+            subscription, and cancellation from
+            the Stripe Customer Portal.
           </p>
+
+          {!isActive && (
+            <Link
+              href="/signup"
+              className="btn"
+            >
+              Create Your Account
+            </Link>
+          )}
         </div>
       </section>
     </main>
@@ -507,7 +726,20 @@ export default function MembershipPage() {
     <Suspense
       fallback={
         <main>
+          <nav className="nav">
+            <Link
+              href="/"
+              className="logo"
+            >
+              Hoop<span>Check</span>
+            </Link>
+          </nav>
+
           <section className="hero">
+            <div className="eyebrow">
+              HoopCheck
+            </div>
+
             <h1>
               Loading membership...
             </h1>
