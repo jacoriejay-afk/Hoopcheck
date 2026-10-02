@@ -20,6 +20,7 @@ export default function TeamReviewPage() {
   const id = params.id as string;
 
   const [team, setTeam] = useState<Team | null>(null);
+  const [hasAccess, setHasAccess] = useState(false);
 
   const [overallRating, setOverallRating] = useState(0);
   const [communicationRating, setCommunicationRating] = useState(0);
@@ -36,25 +37,65 @@ export default function TeamReviewPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    async function loadTeam() {
-      const { data, error } = await supabase
-        .from("teams")
-        .select("id, name, country, league_name, city")
-        .eq("id", id)
-        .single();
+    async function loadPage() {
+      setLoading(true);
 
-      if (error) {
-        console.error("Error loading team:", error);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.replace("/login");
+        return;
       }
 
-      setTeam(data || null);
+      const { data: teamData, error: teamError } =
+        await supabase
+          .from("teams")
+          .select("id, name, country, league_name, city")
+          .eq("id", id)
+          .single();
+
+      if (teamError) {
+        console.error("Error loading team:", teamError);
+        setTeam(null);
+        setLoading(false);
+        return;
+      }
+
+      setTeam(teamData);
+
+      const { data: subscription } = await supabase
+        .from("subscriptions")
+        .select("status, current_period_end")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const activeSubscription =
+        subscription &&
+        (subscription.status === "active" ||
+          subscription.status === "trialing") &&
+        (!subscription.current_period_end ||
+          new Date(subscription.current_period_end) > new Date());
+
+      const { data: adminRole } = await supabase
+        .from("admin_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const isAdmin =
+        adminRole?.role === "admin" ||
+        adminRole?.role === "moderator";
+
+      setHasAccess(!!activeSubscription || !!isAdmin);
       setLoading(false);
     }
 
     if (id) {
-      loadTeam();
+      loadPage();
     }
-  }, [id]);
+  }, [id, router]);
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
@@ -62,6 +103,13 @@ export default function TeamReviewPage() {
     event.preventDefault();
 
     setMessage("");
+
+    if (!hasAccess) {
+      setMessage(
+        "An active HoopCheck membership is required to submit a review."
+      );
+      return;
+    }
 
     if (
       overallRating === 0 ||
@@ -86,7 +134,7 @@ export default function TeamReviewPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      router.push("/login");
+      router.replace("/login");
       return;
     }
 
@@ -197,6 +245,54 @@ export default function TeamReviewPage() {
           <Link href="/teams" className="btn">
             Back to Teams
           </Link>
+        </section>
+      </main>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <main>
+        <nav className="nav">
+          <Link href="/" className="logo">
+            Hoop<span>Check</span>
+          </Link>
+
+          <div className="links">
+            <Link href={`/teams/${team.id}`}>
+              Back to Team
+            </Link>
+
+            <Link href="/dashboard">
+              Dashboard
+            </Link>
+          </div>
+        </nav>
+
+        <section className="hero">
+          <div className="eyebrow">
+            MEMBERSHIP REQUIRED
+          </div>
+
+          <h1>Unlock Review Access</h1>
+
+          <p>
+            An active HoopCheck membership is required
+            to submit player reviews.
+          </p>
+
+          <div className="actions">
+            <Link href="/membership" className="btn">
+              View Memberships
+            </Link>
+
+            <Link
+              href={`/teams/${team.id}`}
+              className="btn dark"
+            >
+              Back to Team
+            </Link>
+          </div>
         </section>
       </main>
     );
