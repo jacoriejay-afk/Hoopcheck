@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import Link from "next/link";
+
 import { useParams } from "next/navigation";
+
 import { supabase } from "../../../lib/supabase";
 
 type Coach = {
@@ -15,96 +21,219 @@ type Coach = {
 type Review = {
   id: string;
   overall_rating: number;
-  communication_rating: number;
-  professionalism_rating: number;
-  development_rating: number;
-  payment_rating: number;
+  communication_rating: number | null;
+  professionalism_rating: number | null;
+  development_rating: number | null;
+  payment_rating: number | null;
   title: string | null;
-  body: string | null;
+  body: string;
   created_at: string;
 };
 
-export default function CoachPage() {
-  const params = useParams();
-  const id = params.id as string;
+function RatingBar({
+  label,
+  value,
+}: {
+  label: string;
+  value: number;
+}) {
+  const percentage =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        (value / 5) * 100
+      )
+    );
 
-  const [coach, setCoach] = useState<Coach | null>(null);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [isSubscriber, setIsSubscriber] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  return (
+    <div
+      style={{
+        marginBottom: "18px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent:
+            "space-between",
+          gap: "12px",
+          marginBottom: "7px",
+          fontSize: "13px",
+          fontWeight: 800,
+          textTransform:
+            "uppercase",
+          letterSpacing: "0.4px",
+        }}
+      >
+        <span>{label}</span>
+
+        <span
+          style={{
+            color:
+              "var(--orange)",
+          }}
+        >
+          {value.toFixed(1)}
+        </span>
+      </div>
+
+      <div
+        style={{
+          height: "8px",
+          background: "#252525",
+          borderRadius: "999px",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            width: `${percentage}%`,
+            height: "100%",
+            background:
+              "var(--orange)",
+            borderRadius:
+              "999px",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+export default function CoachDetailPage() {
+  const params = useParams();
+
+  const id = Array.isArray(params.id)
+    ? params.id[0]
+    : params.id;
+
+  const [coach, setCoach] =
+    useState<Coach | null>(null);
+
+  const [reviews, setReviews] =
+    useState<Review[]>([]);
+
+  const [hasAccess, setHasAccess] =
+    useState(false);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [reviewLoading, setReviewLoading] =
+    useState(false);
 
   useEffect(() => {
     async function loadCoach() {
-      setLoading(true);
+      if (!id) {
+        setLoading(false);
+        return;
+      }
 
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: coachData,
+        error: coachError,
+      } = await supabase
+        .from("coaches")
+        .select(
+          "id, name, country, city"
+        )
+        .eq("id", id)
+        .maybeSingle();
 
-      const { data: coachData, error: coachError } =
-        await supabase
-          .from("coaches")
-          .select("*")
-          .eq("id", id)
-          .single();
-
-      if (coachError) {
-        console.error(
-          "Error loading coach:",
-          coachError
-        );
-
+      if (
+        coachError ||
+        !coachData
+      ) {
+        setCoach(null);
         setLoading(false);
         return;
       }
 
       setCoach(coachData);
 
-      let hasAccess = false;
+      const {
+        data: {
+          user,
+        },
+      } =
+        await supabase.auth.getUser();
 
-      if (user) {
-        const { data: subscription } =
-          await supabase
-            .from("subscriptions")
-            .select(
-              "status, current_period_end"
-            )
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-        const active =
-          subscription &&
-          (subscription.status === "active" ||
-            subscription.status === "trialing") &&
-          (!subscription.current_period_end ||
-            new Date(
-              subscription.current_period_end
-            ) > new Date());
-
-        const { data: adminRole } =
-          await supabase
-            .from("admin_roles")
-            .select("role")
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-        const admin =
-          adminRole?.role === "admin" ||
-          adminRole?.role === "moderator";
-
-        hasAccess = !!active || admin;
-
-        setIsSubscriber(!!active);
-        setIsAdmin(!!admin);
+      if (!user) {
+        setLoading(false);
+        return;
       }
 
-      if (hasAccess) {
-        const { data: reviewData, error: reviewError } =
-          await supabase
-            .from("reviews")
-            .select(
-              `
+      const [
+        subscriptionResult,
+        adminResult,
+      ] = await Promise.all([
+        supabase
+          .from("subscriptions")
+          .select(
+            "status, current_period_end"
+          )
+          .eq(
+            "user_id",
+            user.id
+          )
+          .maybeSingle(),
+
+        supabase
+          .from("admin_roles")
+          .select("role")
+          .eq(
+            "user_id",
+            user.id
+          )
+          .maybeSingle(),
+      ]);
+
+      const subscription =
+        subscriptionResult.data;
+
+      const currentPeriodEnd =
+        subscription?.current_period_end
+          ? new Date(
+              subscription.current_period_end
+            )
+          : null;
+
+      const subscriptionIsActive =
+        (
+          subscription?.status ===
+            "active" ||
+          subscription?.status ===
+            "trialing"
+        ) &&
+        (
+          !currentPeriodEnd ||
+          currentPeriodEnd >
+            new Date()
+        );
+
+      const isAdmin =
+        adminResult.data?.role ===
+          "admin" ||
+        adminResult.data?.role ===
+          "moderator";
+
+      const access =
+        subscriptionIsActive ||
+        isAdmin;
+
+      setHasAccess(access);
+
+      if (access) {
+        setReviewLoading(true);
+
+        const {
+          data: reviewData,
+          error: reviewError,
+        } = await supabase
+          .from("reviews")
+          .select(
+            `
               id,
               overall_rating,
               communication_rating,
@@ -115,36 +244,60 @@ export default function CoachPage() {
               body,
               created_at
             `
-            )
-            .eq("coach_id", id)
-            .eq("status", "approved")
-            .order("created_at", {
+          )
+          .eq(
+            "coach_id",
+            id
+          )
+          .eq(
+            "status",
+            "approved"
+          )
+          .order(
+            "created_at",
+            {
               ascending: false,
-            });
-
-        if (reviewError) {
-          console.error(
-            "Error loading reviews:",
-            reviewError
+            }
           );
-        } else {
-          setReviews(reviewData || []);
+
+        if (
+          !reviewError &&
+          reviewData
+        ) {
+          setReviews(
+            reviewData
+          );
         }
+
+        setReviewLoading(false);
       }
 
       setLoading(false);
     }
 
-    if (id) {
-      loadCoach();
-    }
+    loadCoach();
   }, [id]);
 
   if (loading) {
     return (
       <main>
+        <nav className="nav">
+          <Link
+            href="/"
+            className="logo"
+          >
+            Hoop<span>Check</span>
+          </Link>
+        </nav>
+
         <section className="hero">
-          <p>Loading coach...</p>
+          <div className="eyebrow">
+            HoopCheck
+          </div>
+
+          <h1>
+            Loading coach...
+          </h1>
         </section>
       </main>
     );
@@ -153,31 +306,128 @@ export default function CoachPage() {
   if (!coach) {
     return (
       <main>
-        <section className="hero">
-          <h1>Coach not found</h1>
-          <Link href="/coaches">
-            Back to coaches
+        <nav className="nav">
+          <Link
+            href="/"
+            className="logo"
+          >
+            Hoop<span>Check</span>
           </Link>
+        </nav>
+
+        <section className="hero">
+          <div className="eyebrow">
+            404
+          </div>
+
+          <h1>
+            Coach not found.
+          </h1>
+
+          <p>
+            We couldn&apos;t find that coach
+            in the HoopCheck database.
+          </p>
+
+          <div className="actions">
+            <Link
+              href="/coaches"
+              className="btn"
+            >
+              Back To Coaches
+            </Link>
+          </div>
         </section>
       </main>
     );
   }
 
-  const averageRating =
+  const average =
     reviews.length > 0
-      ? (
-          reviews.reduce(
-            (sum, review) =>
-              sum + Number(review.overall_rating),
-            0
-          ) / reviews.length
-        ).toFixed(1)
-      : null;
+      ? reviews.reduce(
+          (
+            total,
+            review
+          ) =>
+            total +
+            Number(
+              review.overall_rating
+            ),
+          0
+        ) / reviews.length
+      : 0;
+
+  const communication =
+    reviews.length > 0
+      ? reviews.reduce(
+          (
+            total,
+            review
+          ) =>
+            total +
+            Number(
+              review.communication_rating ||
+                0
+            ),
+          0
+        ) / reviews.length
+      : 0;
+
+  const professionalism =
+    reviews.length > 0
+      ? reviews.reduce(
+          (
+            total,
+            review
+          ) =>
+            total +
+            Number(
+              review.professionalism_rating ||
+                0
+            ),
+          0
+        ) / reviews.length
+      : 0;
+
+  const development =
+    reviews.length > 0
+      ? reviews.reduce(
+          (
+            total,
+            review
+          ) =>
+            total +
+            Number(
+              review.development_rating ||
+                0
+            ),
+          0
+        ) / reviews.length
+      : 0;
+
+  const payment =
+    reviews.length > 0
+      ? reviews.reduce(
+          (
+            total,
+            review
+          ) =>
+            total +
+            Number(
+              review.payment_rating ||
+                0
+            ),
+          0
+        ) / reviews.length
+      : 0;
 
   return (
     <main>
       <nav className="nav">
-        <Link href="/" className="logo">
+        <Link
+          href="/"
+          className="logo"
+        >
           Hoop<span>Check</span>
         </Link>
 
@@ -189,78 +439,60 @@ export default function CoachPage() {
           <Link href="/coaches">
             Coaches
           </Link>
-
-          <Link href="/teams">
-            Teams
-          </Link>
-
-          <Link href="/leagues">
-            Leagues
-          </Link>
         </div>
       </nav>
 
       <section className="hero">
         <div className="eyebrow">
-          COACH
+          Coach Research
         </div>
 
-        <h1>{coach.name}</h1>
+        <h1>
+          {coach.name}
+        </h1>
 
         <p>
-          {coach.city || "Location unavailable"}
-          {coach.country
-            ? `, ${coach.country}`
-            : ""}
+          {coach.city &&
+          coach.country
+            ? `${coach.city}, ${coach.country}`
+            : coach.country ||
+              coach.city ||
+              "Location not listed"}
         </p>
 
-        {isSubscriber || isAdmin ? (
-          <>
-            <div className="card">
-              <h2>
-                {averageRating
-                  ? `${averageRating}/5`
-                  : "No ratings yet"}
-              </h2>
+        <div className="actions">
+          <Link
+            href={`/coaches/${coach.id}/review`}
+            className="btn"
+          >
+            Write A Review
+          </Link>
 
-              <p className="muted">
-                {reviews.length} approved review
-                {reviews.length === 1
-                  ? ""
-                  : "s"}
-              </p>
-            </div>
+          <Link
+            href="/coaches"
+            className="btn dark"
+          >
+            Back To Coaches
+          </Link>
+        </div>
+      </section>
 
-            <div className="actions">
-              <Link
-                href={`/coaches/${id}/review`}
-                className="btn"
-              >
-                Write a Review
-              </Link>
-
-              <Link
-                href="/coaches"
-                className="btn dark"
-              >
-                Back to Coaches
-              </Link>
-            </div>
-          </>
-        ) : (
+      {!hasAccess ? (
+        <section className="hero">
           <div className="card">
             <div className="eyebrow">
-              MEMBER ACCESS
+              Members Only
             </div>
 
             <h2>
-              Unlock coach reviews
+              Unlock the player
+              experience.
             </h2>
 
-            <p className="muted">
-              Create an account and subscribe
-              to view full ratings and reviews
-              from other professional players.
+            <p>
+              HoopCheck ratings and approved
+              player reviews are available to
+              active members.
             </p>
 
             <div className="actions">
@@ -268,7 +500,7 @@ export default function CoachPage() {
                 href="/membership"
                 className="btn"
               >
-                Unlock Full Access
+                View Membership
               </Link>
 
               <Link
@@ -279,65 +511,210 @@ export default function CoachPage() {
               </Link>
             </div>
           </div>
-        )}
-      </section>
-
-      {(isSubscriber || isAdmin) && (
-        <section className="grid">
-          {reviews.length === 0 ? (
+        </section>
+      ) : (
+        <>
+          <section className="grid">
             <div className="card">
-              <h2>
-                No approved reviews yet
+              <div className="eyebrow">
+                Overall Rating
+              </div>
+
+              <h2
+                style={{
+                  fontSize: "58px",
+                  color:
+                    "var(--orange)",
+                  marginBottom:
+                    "4px",
+                }}
+              >
+                {average.toFixed(1)}
               </h2>
 
-              <p className="muted">
-                Be the first player to share
-                your experience with this coach.
+              <p>
+                Based on{" "}
+                {reviews.length}{" "}
+                approved{" "}
+                {reviews.length === 1
+                  ? "review"
+                  : "reviews"}
+                .
               </p>
             </div>
-          ) : (
-            reviews.map((review) => (
-              <div
-                className="card"
-                key={review.id}
-              >
-                <div className="eyebrow">
-                  {review.overall_rating}/5
-                </div>
 
-                {review.title && (
-                  <h2>{review.title}</h2>
-                )}
-
-                {review.body && (
-                  <p>{review.body}</p>
-                )}
-
-                <div className="muted">
-                  <p>
-                    Communication:{" "}
-                    {review.communication_rating}/5
-                  </p>
-
-                  <p>
-                    Professionalism:{" "}
-                    {review.professionalism_rating}/5
-                  </p>
-
-                  <p>
-                    Development:{" "}
-                    {review.development_rating}/5
-                  </p>
-
-                  <p>
-                    Payment:{" "}
-                    {review.payment_rating}/5
-                  </p>
-                </div>
+            <div className="card">
+              <div className="eyebrow">
+                Coach Breakdown
               </div>
-            ))
-          )}
-        </section>
+
+              {reviews.length === 0 ? (
+                <p>
+                  No approved reviews yet.
+                </p>
+              ) : (
+                <>
+                  <RatingBar
+                    label="Communication"
+                    value={
+                      communication
+                    }
+                  />
+
+                  <RatingBar
+                    label="Professionalism"
+                    value={
+                      professionalism
+                    }
+                  />
+
+                  <RatingBar
+                    label="Development"
+                    value={
+                      development
+                    }
+                  />
+
+                  <RatingBar
+                    label="Payment"
+                    value={payment}
+                  />
+                </>
+              )}
+            </div>
+
+            <div className="card">
+              <div className="eyebrow">
+                Player Feedback
+              </div>
+
+              <h2>
+                {reviews.length}
+              </h2>
+
+              <p>
+                Approved player experiences
+                currently available for this
+                coach.
+              </p>
+
+              <Link
+                href={`/coaches/${coach.id}/review`}
+                className="btn"
+              >
+                Add Your Experience
+              </Link>
+            </div>
+          </section>
+
+          <section className="hero">
+            <div className="eyebrow">
+              Approved Reviews
+            </div>
+
+            <h2>
+              What players
+              <br />
+              are saying.
+            </h2>
+
+            {reviewLoading ? (
+              <p>
+                Loading reviews...
+              </p>
+            ) : reviews.length ===
+              0 ? (
+              <div className="card">
+                <h3>
+                  No approved reviews yet.
+                </h3>
+
+                <p>
+                  Be one of the first players
+                  to share an experience with
+                  this coach.
+                </p>
+
+                <Link
+                  href={`/coaches/${coach.id}/review`}
+                  className="btn"
+                >
+                  Write A Review
+                </Link>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: "grid",
+                  gap: "18px",
+                  marginTop: "30px",
+                }}
+              >
+                {reviews.map(
+                  (review) => (
+                    <article
+                      className="card"
+                      key={review.id}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent:
+                            "space-between",
+                          alignItems:
+                            "center",
+                          gap: "12px",
+                          flexWrap:
+                            "wrap",
+                        }}
+                      >
+                        <div>
+                          <div className="eyebrow">
+                            Player Review
+                          </div>
+
+                          <h3>
+                            {review.title ||
+                              "Player experience"}
+                          </h3>
+                        </div>
+
+                        <strong
+                          style={{
+                            color:
+                              "var(--orange)",
+                            fontSize:
+                              "24px",
+                          }}
+                        >
+                          {Number(
+                            review.overall_rating
+                          ).toFixed(1)}
+                        </strong>
+                      </div>
+
+                      <p>
+                        {review.body}
+                      </p>
+
+                      <p
+                        className="muted"
+                        style={{
+                          fontSize:
+                            "13px",
+                        }}
+                      >
+                        {new Date(
+                          review.created_at
+                        ).toLocaleDateString()}
+                      </p>
+                    </article>
+                  )
+                )}
+              </div>
+            )}
+          </section>
+        </>
       )}
     </main>
   );
