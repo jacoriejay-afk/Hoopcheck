@@ -14,9 +14,7 @@ export default function Home() {
         </div>
       </nav>
       <section className="hero">
-        <div className="eyebrow">
-          Built for overseas basketball
-        </div>
+        <div className="eyebrow">Built for overseas basketball</div>
         <h1>
           Know who
           <br />
@@ -29,6 +27,17 @@ export default function Home() {
           Research coaches, teams, and leagues before you make your
           next move.
         </p>
+        <form action="/search" method="get" className="search-box">
+          <input
+            type="search"
+            name="q"
+            placeholder="Search coaches, teams, or leagues..."
+            aria-label="Search coaches, teams, or leagues"
+          />
+          <button type="submit" className="btn">
+            Search
+          </button>
+        </form>
         <div className="actions">
           <Link href="/signup" className="btn">
             Create Free Account
@@ -40,12 +49,8 @@ export default function Home() {
       </section>
       <section className="grid">
         <div className="card">
-          <div className="eyebrow">
-            01
-          </div>
-          <h2>
-            Coaches
-          </h2>
+          <div className="eyebrow">01</div>
+          <h2>Coaches</h2>
           <p>
             Research communication, professionalism, development,
             payment experiences, and player feedback.
@@ -55,12 +60,8 @@ export default function Home() {
           </Link>
         </div>
         <div className="card">
-          <div className="eyebrow">
-            02
-          </div>
-          <h2>
-            Teams
-          </h2>
+          <div className="eyebrow">02</div>
+          <h2>Teams</h2>
           <p>
             Find out what players have experienced with professional
             organizations before you sign your next contract.
@@ -70,12 +71,8 @@ export default function Home() {
           </Link>
         </div>
         <div className="card">
-          <div className="eyebrow">
-            03
-          </div>
-          <h2>
-            Leagues
-          </h2>
+          <div className="eyebrow">03</div>
+          <h2>Leagues</h2>
           <p>
             Explore professional basketball leagues and learn from
             players who have already been there.
@@ -86,9 +83,7 @@ export default function Home() {
         </div>
       </section>
       <section className="hero">
-        <div className="eyebrow">
-          Your next move matters
-        </div>
+        <div className="eyebrow">Your next move matters</div>
         <h2>
           Research first.
           <br />
@@ -107,6 +102,47 @@ export default function Home() {
           </Link>
         </div>
       </section>
+      <style jsx>{`
+        .search-box {
+          display: flex;
+          gap: 12px;
+          width: 100%;
+          max-width: 720px;
+          margin: 32px 0 8px;
+        }
+        .search-box input {
+          flex: 1;
+          min-width: 0;
+          height: 54px;
+          padding: 0 18px;
+          border: 1px solid #444;
+          border-radius: 8px;
+          background: #111;
+          color: #fff;
+          font-size: 16px;
+          outline: none;
+        }
+        .search-box input::placeholder {
+          color: #888;
+        }
+        .search-box input:focus {
+          border-color: #ff6a00;
+        }
+        .search-box button {
+          border: none;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        @media (max-width: 600px) {
+          .search-box {
+            flex-direction: column;
+          }
+          .search-box input,
+          .search-box button {
+            width: 100%;
+          }
+        }
+      `}</style>
     </main>
   );
 }
