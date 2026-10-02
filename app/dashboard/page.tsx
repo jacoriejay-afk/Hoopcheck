@@ -1,24 +1,31 @@
 "use client";
+
 import {
   useEffect,
   useState,
 } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+
 type Profile = {
   display_name: string | null;
 };
+
 type Subscription = {
   plan: "pro" | "premium" | null;
   status: string | null;
 };
+
 export default function DashboardPage() {
   const [profile, setProfile] =
     useState<Profile | null>(null);
+
   const [subscription, setSubscription] =
     useState<Subscription | null>(null);
+
   const [loading, setLoading] =
     useState(true);
+
   useEffect(() => {
     async function loadDashboard() {
       const {
@@ -26,11 +33,12 @@ export default function DashboardPage() {
           user,
         },
       } = await supabase.auth.getUser();
+
       if (!user) {
-        window.location.href =
-          "/login";
+        window.location.href = "/login";
         return;
       }
+
       const [
         profileResult,
         subscriptionResult,
@@ -40,22 +48,21 @@ export default function DashboardPage() {
           .select("display_name")
           .eq("id", user.id)
           .maybeSingle(),
+
         supabase
           .from("subscriptions")
-          .select(
-            "plan, status"
-          )
+          .select("plan, status")
           .eq("user_id", user.id)
           .maybeSingle(),
       ]);
+
       if (
         !profileResult.error &&
         profileResult.data
       ) {
-        setProfile(
-          profileResult.data
-        );
+        setProfile(profileResult.data);
       }
+
       if (
         !subscriptionResult.error &&
         subscriptionResult.data
@@ -64,15 +71,18 @@ export default function DashboardPage() {
           subscriptionResult.data
         );
       }
+
       setLoading(false);
     }
+
     loadDashboard();
   }, []);
+
   async function handleLogout() {
     await supabase.auth.signOut();
-    window.location.href =
-      "/";
+    window.location.href = "/";
   }
+
   if (loading) {
     return (
       <main>
@@ -84,10 +94,12 @@ export default function DashboardPage() {
             Hoop<span>Check</span>
           </Link>
         </nav>
+
         <section className="hero">
           <div className="eyebrow">
             HoopCheck
           </div>
+
           <h1>
             Loading your
             <br />
@@ -97,22 +109,21 @@ export default function DashboardPage() {
       </main>
     );
   }
+
   const isActiveMember =
-    subscription?.status ===
-      "active" ||
-    subscription?.status ===
-      "trialing";
+    subscription?.status === "active" ||
+    subscription?.status === "trialing";
+
   const displayName =
-    profile?.display_name ||
-    "Player";
+    profile?.display_name || "Player";
+
   const planLabel =
-    subscription?.plan ===
-    "premium"
+    subscription?.plan === "premium"
       ? "Premium"
-      : subscription?.plan ===
-        "pro"
-      ? "Pro"
-      : "Free";
+      : subscription?.plan === "pro"
+        ? "Pro"
+        : "Free";
+
   return (
     <main>
       <nav className="nav">
@@ -122,16 +133,27 @@ export default function DashboardPage() {
         >
           Hoop<span>Check</span>
         </Link>
+
         <div className="links">
+          <Link
+            href="/search"
+            className="search-nav"
+          >
+            Search
+          </Link>
+
           <Link href="/coaches">
             Coaches
           </Link>
+
           <Link href="/teams">
             Teams
           </Link>
+
           <Link href="/leagues">
             Leagues
           </Link>
+
           <Link
             href="/membership"
             className="btn"
@@ -140,20 +162,41 @@ export default function DashboardPage() {
           </Link>
         </div>
       </nav>
+
       <section className="hero">
         <div className="eyebrow">
           Player Dashboard
         </div>
+
         <h1>
           Welcome,
           <br />
           {displayName}.
         </h1>
+
         <p>
           Research your next basketball
           opportunity before you put pen
           to paper.
         </p>
+
+        <div className="dashboard-search">
+          <div className="search-label">
+            GLOBAL RESEARCH
+          </div>
+
+          <Link
+            href="/search"
+            className="search-button"
+          >
+            <span>
+              Search coaches, teams, or leagues...
+            </span>
+
+            <strong>Search →</strong>
+          </Link>
+        </div>
+
         <div className="actions">
           <Link
             href="/coaches"
@@ -161,12 +204,14 @@ export default function DashboardPage() {
           >
             Research Coaches
           </Link>
+
           <Link
             href="/teams"
             className="btn dark"
           >
             Research Teams
           </Link>
+
           <Link
             href="/leagues"
             className="btn dark"
@@ -175,14 +220,17 @@ export default function DashboardPage() {
           </Link>
         </div>
       </section>
+
       <section className="grid">
         <div className="card">
           <div className="eyebrow">
             Membership
           </div>
+
           <h2>
             {planLabel}
           </h2>
+
           {isActiveMember ? (
             <>
               <p>
@@ -190,6 +238,7 @@ export default function DashboardPage() {
                 HoopCheck ratings and
                 approved player reviews.
               </p>
+
               <Link
                 href="/membership"
                 className="btn"
@@ -204,6 +253,7 @@ export default function DashboardPage() {
                 free plan. Upgrade to research
                 full ratings and reviews.
               </p>
+
               <Link
                 href="/membership"
                 className="btn"
@@ -213,37 +263,45 @@ export default function DashboardPage() {
             </>
           )}
         </div>
+
         <div className="card">
           <div className="eyebrow">
             Research
           </div>
+
           <h2>
             Before You Sign
           </h2>
+
           <p>
             Check coaches, teams, and leagues
             before making your next overseas
             basketball decision.
           </p>
+
           <Link
-            href="/coaches"
+            href="/search"
             className="btn"
           >
             Start Research
           </Link>
         </div>
+
         <div className="card">
           <div className="eyebrow">
             Player Voice
           </div>
+
           <h2>
             Share Your Experience
           </h2>
+
           <p>
             Help other professional players
             understand what to expect from
             basketball organizations worldwide.
           </p>
+
           <Link
             href="/coaches"
             className="btn"
@@ -252,10 +310,12 @@ export default function DashboardPage() {
           </Link>
         </div>
       </section>
+
       <section className="hero">
         <div className="eyebrow">
           HoopCheck
         </div>
+
         <h2>
           Research.
           <br />
@@ -263,18 +323,21 @@ export default function DashboardPage() {
           <br />
           Move.
         </h2>
+
         <p>
           Your career is bigger than one
           contract. Make your next move with
           more information.
         </p>
+
         <div className="actions">
           <Link
-            href="/coaches"
+            href="/search"
             className="btn"
           >
-            Find A Coach
+            Find Anything
           </Link>
+
           <Link
             href="/teams"
             className="btn dark"
@@ -282,6 +345,7 @@ export default function DashboardPage() {
             Find A Team
           </Link>
         </div>
+
         <button
           type="button"
           className="btn dark"
@@ -293,6 +357,72 @@ export default function DashboardPage() {
           Log Out
         </button>
       </section>
+
+      <style jsx>{`
+        .search-nav {
+          color: #ff6a00;
+          font-weight: 800;
+        }
+
+        .dashboard-search {
+          width: 100%;
+          max-width: 760px;
+          margin: 35px 0 10px;
+        }
+
+        .search-label {
+          margin-bottom: 9px;
+          color: #ff6a00;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.12em;
+        }
+
+        .search-button {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          width: 100%;
+          min-height: 62px;
+          padding: 0 20px;
+          border: 1px solid #3a3a3a;
+          border-radius: 8px;
+          background: #111;
+          color: #fff;
+          text-decoration: none;
+          transition:
+            border-color 0.2s ease,
+            background 0.2s ease;
+        }
+
+        .search-button:hover {
+          border-color: #ff6a00;
+          background: #161616;
+        }
+
+        .search-button span {
+          color: #888;
+          font-size: 15px;
+          text-align: left;
+        }
+
+        .search-button strong {
+          color: #ff6a00;
+          font-size: 13px;
+          white-space: nowrap;
+        }
+
+        @media (max-width: 800px) {
+          .search-button {
+            align-items: flex-start;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px;
+            padding: 15px 18px;
+          }
+        }
+      `}</style>
     </main>
   );
 }
