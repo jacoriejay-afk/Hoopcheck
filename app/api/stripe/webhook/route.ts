@@ -253,25 +253,30 @@ export async function POST(
         "stripe-signature"
       );
 
-    if (!signature) {
-      return NextResponse.json(
-        {
-          error:
-            "Missing Stripe signature.",
-        },
-        { status: 400 }
-      );
-    }
+    const signature = request.headers.get("stripe-signature");
+const secret = process.env.STRIPE_WEBHOOK_SECRET;
 
-    let event: Stripe.Event;
+if (!signature) {
+  return NextResponse.json(
+    { error: "Missing Stripe signature" },
+    { status: 400 }
+  );
+}
 
-    try {
-      event =
-        stripe.webhooks.constructEvent(
-          rawBody,
-          signature,
-          webhookSecret
-        );
+if (!secret) {
+  console.error("Missing STRIPE_WEBHOOK_SECRET");
+  return NextResponse.json(
+    { error: "Stripe webhook is not configured" },
+    { status: 500 }
+  );
+}
+
+try {
+  const event = stripe.webhooks.constructEvent(
+    rawBody,
+    signature,
+    secret
+  );
     } catch (error) {
       console.error(
         "Stripe signature verification failed:",
