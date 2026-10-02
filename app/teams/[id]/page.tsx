@@ -1,10 +1,11 @@
 "use client";
-
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import {
+  useEffect,
+  useState,
+} from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
-
 type Team = {
   id: string;
   name: string;
@@ -12,7 +13,6 @@ type Team = {
   league_name: string | null;
   city: string | null;
 };
-
 type Review = {
   id: string;
   overall_rating: number;
@@ -21,246 +21,448 @@ type Review = {
   development_rating: number | null;
   payment_rating: number | null;
   title: string | null;
-  body: string | null;
+  body: string;
   created_at: string;
 };
-
-function average(
-  reviews: Review[],
-  field: keyof Review
-) {
-  const values = reviews
-    .map((review) => review[field])
-    .filter(
-      (value): value is number =>
-        typeof value === "number"
+function RatingBar({
+  label,
+  value,
+}: {
+  label: string;
+  value: number;
+}) {
+  const percentage =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        (value / 5) * 100
+      )
     );
-
-  if (values.length === 0) return null;
-
   return (
-    values.reduce((sum, value) => sum + value, 0) /
-    values.length
-  ).toFixed(1);
+    <div
+      style={{
+        marginBottom: "18px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent:
+            "space-between",
+          gap: "12px",
+          marginBottom: "7px",
+          fontSize: "13px",
+          fontWeight: 800,
+          textTransform:
+            "uppercase",
+          letterSpacing: "0.4px",
+        }}
+      >
+        <span>{label}</span>
+        <span
+          style={{
+            color:
+              "var(--orange)",
+          }}
+        >
+          {value.toFixed(1)}
+        </span>
+      </div>
+      <div
+        style={{
+          height: "8px",
+          background: "#252525",
+          borderRadius: "999px",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            width: `${percentage}%`,
+            height: "100%",
+            background:
+              "var(--orange)",
+            borderRadius:
+              "999px",
+          }}
+        />
+      </div>
+    </div>
+  );
 }
-
-export default function TeamProfilePage() {
+export default function TeamDetailPage() {
   const params = useParams();
-  const id = params.id as string;
-
-  const [team, setTeam] = useState<Team | null>(null);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isSubscriber, setIsSubscriber] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
-
+  const id = Array.isArray(params.id)
+    ? params.id[0]
+    : params.id;
+  const [team, setTeam] =
+    useState<Team | null>(null);
+  const [reviews, setReviews] =
+    useState<Review[]>([]);
+  const [hasAccess, setHasAccess] =
+    useState(false);
+  const [loading, setLoading] =
+    useState(true);
+  const [reviewLoading, setReviewLoading] =
+    useState(false);
   useEffect(() => {
     async function loadTeam() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      setLoggedIn(!!user);
-
-      let hasAccess = false;
-
-      if (user) {
-        const { data: subscription } = await supabase
-          .from("subscriptions")
-          .select("status, current_period_end")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        const active =
-          subscription &&
-          (subscription.status === "active" ||
-            subscription.status === "trialing") &&
-          (!subscription.current_period_end ||
-            new Date(subscription.current_period_end) >
-              new Date());
-
-        setIsSubscriber(!!active);
-
-        const { data: adminRole } = await supabase
-          .from("admin_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        const admin =
-          adminRole?.role === "admin" ||
-          adminRole?.role === "moderator";
-
-        setIsAdmin(admin);
-
-        hasAccess = !!active || admin;
+      if (!id) {
+        setLoading(false);
+        return;
       }
-
-      const { data: teamData } = await supabase
+      const {
+        data: teamData,
+        error: teamError,
+      } = await supabase
         .from("teams")
         .select(
           "id, name, country, league_name, city"
         )
         .eq("id", id)
-        .single();
-
+        .maybeSingle();
+      if (
+        teamError ||
+        !teamData
+      ) {
+        setTeam(null);
+        setLoading(false);
+        return;
+      }
       setTeam(teamData);
-
-      if (hasAccess) {
-        const { data: reviewData } = await supabase
+      const {
+        data: {
+          user,
+        },
+      } =
+        await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      const [
+        subscriptionResult,
+        adminResult,
+      ] = await Promise.all([
+        supabase
+          .from("subscriptions")
+          .select(
+            "status, current_period_end"
+          )
+          .eq(
+            "user_id",
+            user.id
+          )
+          .maybeSingle(),
+        supabase
+          .from("admin_roles")
+          .select("role")
+          .eq(
+            "user_id",
+            user.id
+          )
+          .maybeSingle(),
+      ]);
+      const subscription =
+        subscriptionResult.data;
+      const currentPeriodEnd =
+        subscription?.current_period_end
+          ? new Date(
+              subscription.current_period_end
+            )
+          : null;
+      const subscriptionIsActive =
+        (
+          subscription?.status ===
+            "active" ||
+          subscription?.status ===
+            "trialing"
+        ) &&
+        (
+          !currentPeriodEnd ||
+          currentPeriodEnd >
+            new Date()
+        );
+      const isAdmin =
+        adminResult.data?.role ===
+          "admin" ||
+        adminResult.data?.role ===
+          "moderator";
+      const access =
+        subscriptionIsActive ||
+        isAdmin;
+      setHasAccess(access);
+      if (access) {
+        setReviewLoading(true);
+        const {
+          data: reviewData,
+          error: reviewError,
+        } = await supabase
           .from("reviews")
           .select(
-            "id, overall_rating, communication_rating, professionalism_rating, development_rating, payment_rating, title, body, created_at"
+            `
+              id,
+              overall_rating,
+              communication_rating,
+              professionalism_rating,
+              development_rating,
+              payment_rating,
+              title,
+              body,
+              created_at
+            `
           )
-          .eq("team_id", id)
-          .eq("status", "approved")
-          .order("created_at", {
-            ascending: false,
-          });
-
-        setReviews(reviewData || []);
+          .eq(
+            "team_id",
+            id
+          )
+          .eq(
+            "status",
+            "approved"
+          )
+          .order(
+            "created_at",
+            {
+              ascending: false,
+            }
+          );
+        if (
+          !reviewError &&
+          reviewData
+        ) {
+          setReviews(
+            reviewData
+          );
+        }
+        setReviewLoading(false);
       }
-
       setLoading(false);
     }
-
-    if (id) {
-      loadTeam();
-    }
+    loadTeam();
   }, [id]);
-
   if (loading) {
     return (
       <main>
+        <nav className="nav">
+          <Link
+            href="/"
+            className="logo"
+          >
+            Hoop<span>Check</span>
+          </Link>
+        </nav>
         <section className="hero">
-          <h1>Loading team...</h1>
+          <div className="eyebrow">
+            HoopCheck
+          </div>
+          <h1>
+            Loading team...
+          </h1>
         </section>
       </main>
     );
   }
-
   if (!team) {
     return (
       <main>
-        <section className="hero">
-          <h1>Team not found</h1>
-
-          <Link href="/teams" className="btn">
-            Back to Teams
+        <nav className="nav">
+          <Link
+            href="/"
+            className="logo"
+          >
+            Hoop<span>Check</span>
           </Link>
+        </nav>
+        <section className="hero">
+          <div className="eyebrow">
+            404
+          </div>
+          <h1>
+            Team not found.
+          </h1>
+          <p>
+            We couldn&apos;t find that team
+            in the HoopCheck database.
+          </p>
+          <div className="actions">
+            <Link
+              href="/teams"
+              className="btn"
+            >
+              Back To Teams
+            </Link>
+          </div>
         </section>
       </main>
     );
   }
-
-  const hasFullAccess =
-    isSubscriber || isAdmin;
-
-  const overall = average(
-    reviews,
-    "overall_rating"
-  );
-
-  const communication = average(
-    reviews,
-    "communication_rating"
-  );
-
-  const professionalism = average(
-    reviews,
-    "professionalism_rating"
-  );
-
-  const development = average(
-    reviews,
-    "development_rating"
-  );
-
-  const payment = average(
-    reviews,
-    "payment_rating"
-  );
-
+  const average =
+    reviews.length > 0
+      ? reviews.reduce(
+          (
+            total,
+            review
+          ) =>
+            total +
+            Number(
+              review.overall_rating
+            ),
+          0
+        ) / reviews.length
+      : 0;
+  const communication =
+    reviews.length > 0
+      ? reviews.reduce(
+          (
+            total,
+            review
+          ) =>
+            total +
+            Number(
+              review.communication_rating ||
+                0
+            ),
+          0
+        ) / reviews.length
+      : 0;
+  const professionalism =
+    reviews.length > 0
+      ? reviews.reduce(
+          (
+            total,
+            review
+          ) =>
+            total +
+            Number(
+              review.professionalism_rating ||
+                0
+            ),
+          0
+        ) / reviews.length
+      : 0;
+  const development =
+    reviews.length > 0
+      ? reviews.reduce(
+          (
+            total,
+            review
+          ) =>
+            total +
+            Number(
+              review.development_rating ||
+                0
+            ),
+          0
+        ) / reviews.length
+      : 0;
+  const payment =
+    reviews.length > 0
+      ? reviews.reduce(
+          (
+            total,
+            review
+          ) =>
+            total +
+            Number(
+              review.payment_rating ||
+                0
+            ),
+          0
+        ) / reviews.length
+      : 0;
   return (
     <main>
       <nav className="nav">
-        <Link href="/" className="logo">
+        <Link
+          href="/"
+          className="logo"
+        >
           Hoop<span>Check</span>
         </Link>
-
         <div className="links">
-          <Link href="/teams">
-            Teams
-          </Link>
-
           <Link href="/dashboard">
             Dashboard
           </Link>
+          <Link href="/teams">
+            Teams
+          </Link>
         </div>
       </nav>
-
       <section className="hero">
         <div className="eyebrow">
-          Team Profile
+          Team Research
         </div>
-
-        <h1>{team.name}</h1>
-
+        <h1>
+          {team.name}
+        </h1>
         <p>
-          {team.city && team.country
+          {team.city &&
+          team.country
             ? `${team.city}, ${team.country}`
             : team.country ||
               team.city ||
               "Location not listed"}
         </p>
-
         {team.league_name && (
-          <p className="muted">
-            League: {team.league_name}
+          <p
+            style={{
+              color:
+                "var(--orange)",
+              fontWeight: 800,
+              textTransform:
+                "uppercase",
+              letterSpacing:
+                "0.5px",
+              fontSize: "13px",
+            }}
+          >
+            {team.league_name}
           </p>
         )}
-
-        <p className="muted">
-          Research this organization before
-          your next overseas opportunity.
-        </p>
+        <div className="actions">
+          <Link
+            href={`/teams/${team.id}/review`}
+            className="btn"
+          >
+            Write A Review
+          </Link>
+          <Link
+            href="/teams"
+            className="btn dark"
+          >
+            Back To Teams
+          </Link>
+        </div>
       </section>
-
-      {!hasFullAccess ? (
+      {!hasAccess ? (
         <section className="hero">
           <div className="card">
             <div className="eyebrow">
-              🔒 MEMBER ACCESS
+              Members Only
             </div>
-
             <h2>
-              Full ratings & reviews are locked
+              Know the organization
+              before you sign.
             </h2>
-
-            <p className="muted">
-              HoopCheck members get access to
-              player ratings, detailed reviews,
-              and deeper research on professional
-              basketball teams.
+            <p>
+              HoopCheck ratings and approved
+              player reviews are available to
+              active members.
             </p>
-
             <div className="actions">
               <Link
                 href="/membership"
                 className="btn"
               >
-                Unlock Full Access
+                View Membership
               </Link>
-
-              {!loggedIn && (
-                <Link
-                  href="/login"
-                  className="btn dark"
-                >
-                  Log In
-                </Link>
-              )}
+              <Link
+                href="/login"
+                className="btn dark"
+              >
+                Log In
+              </Link>
             </div>
           </div>
         </section>
@@ -268,120 +470,182 @@ export default function TeamProfilePage() {
         <>
           <section className="grid">
             <div className="card">
-              <h2>Overall</h2>
-
+              <div className="eyebrow">
+                Overall Rating
+              </div>
+              <h2
+                style={{
+                  fontSize: "58px",
+                  color:
+                    "var(--orange)",
+                  marginBottom:
+                    "4px",
+                }}
+              >
+                {average.toFixed(1)}
+              </h2>
               <p>
-                {overall
-                  ? `⭐ ${overall} / 5`
-                  : "Not rated yet"}
+                Based on{" "}
+                {reviews.length}{" "}
+                approved{" "}
+                {reviews.length === 1
+                  ? "review"
+                  : "reviews"}
+                .
               </p>
             </div>
-
             <div className="card">
-              <h2>Communication</h2>
-
-              <p>
-                {communication
-                  ? `⭐ ${communication} / 5`
-                  : "Not rated yet"}
-              </p>
+              <div className="eyebrow">
+                Team Breakdown
+              </div>
+              {reviews.length === 0 ? (
+                <p>
+                  No approved reviews yet.
+                </p>
+              ) : (
+                <>
+                  <RatingBar
+                    label="Communication"
+                    value={
+                      communication
+                    }
+                  />
+                  <RatingBar
+                    label="Professionalism"
+                    value={
+                      professionalism
+                    }
+                  />
+                  <RatingBar
+                    label="Development"
+                    value={
+                      development
+                    }
+                  />
+                  <RatingBar
+                    label="Payment"
+                    value={payment}
+                  />
+                </>
+              )}
             </div>
-
             <div className="card">
-              <h2>Professionalism</h2>
-
+              <div className="eyebrow">
+                Player Feedback
+              </div>
+              <h2>
+                {reviews.length}
+              </h2>
               <p>
-                {professionalism
-                  ? `⭐ ${professionalism} / 5`
-                  : "Not rated yet"}
+                Approved player experiences
+                currently available for this
+                organization.
               </p>
-            </div>
-
-            <div className="card">
-              <h2>Player Development</h2>
-
-              <p>
-                {development
-                  ? `⭐ ${development} / 5`
-                  : "Not rated yet"}
-              </p>
-            </div>
-
-            <div className="card">
-              <h2>Payment</h2>
-
-              <p>
-                {payment
-                  ? `⭐ ${payment} / 5`
-                  : "Not rated yet"}
-              </p>
+              <Link
+                href={`/teams/${team.id}/review`}
+                className="btn"
+              >
+                Add Your Experience
+              </Link>
             </div>
           </section>
-
           <section className="hero">
-            <h2>Player Reviews</h2>
-
-            {reviews.length === 0 ? (
+            <div className="eyebrow">
+              Approved Reviews
+            </div>
+            <h2>
+              What players
+              <br />
+              are saying.
+            </h2>
+            {reviewLoading ? (
+              <p>
+                Loading reviews...
+              </p>
+            ) : reviews.length ===
+              0 ? (
               <div className="card">
+                <h3>
+                  No approved reviews yet.
+                </h3>
                 <p>
-                  No approved reviews have been
-                  submitted for this team yet.
+                  Be one of the first players
+                  to share an experience with
+                  this organization.
                 </p>
-
                 <Link
                   href={`/teams/${team.id}/review`}
                   className="btn"
                 >
-                  Write a Review
+                  Write A Review
                 </Link>
               </div>
             ) : (
-              <>
-                <div className="grid">
-                  {reviews.map((review) => (
-                    <div
+              <div
+                style={{
+                  display: "grid",
+                  gap: "18px",
+                  marginTop: "30px",
+                }}
+              >
+                {reviews.map(
+                  (review) => (
+                    <article
                       className="card"
                       key={review.id}
                     >
-                      <h2>
-                        ⭐{" "}
-                        {review.overall_rating} / 5
-                      </h2>
-
-                      {review.title && (
-                        <h3>
-                          {review.title}
-                        </h3>
-                      )}
-
-                      {review.body && (
-                        <p>
-                          {review.body}
-                        </p>
-                      )}
-
-                      <p className="muted">
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent:
+                            "space-between",
+                          alignItems:
+                            "center",
+                          gap: "12px",
+                          flexWrap:
+                            "wrap",
+                        }}
+                      >
+                        <div>
+                          <div className="eyebrow">
+                            Player Review
+                          </div>
+                          <h3>
+                            {review.title ||
+                              "Player experience"}
+                          </h3>
+                        </div>
+                        <strong
+                          style={{
+                            color:
+                              "var(--orange)",
+                            fontSize:
+                              "24px",
+                          }}
+                        >
+                          {Number(
+                            review.overall_rating
+                          ).toFixed(1)}
+                        </strong>
+                      </div>
+                      <p>
+                        {review.body}
+                      </p>
+                      <p
+                        className="muted"
+                        style={{
+                          fontSize:
+                            "13px",
+                        }}
+                      >
                         {new Date(
                           review.created_at
                         ).toLocaleDateString()}
                       </p>
-                    </div>
-                  ))}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: "24px",
-                  }}
-                >
-                  <Link
-                    href={`/teams/${team.id}/review`}
-                    className="btn"
-                  >
-                    Write a Review
-                  </Link>
-                </div>
-              </>
+                    </article>
+                  )
+                )}
+              </div>
             )}
           </section>
         </>
