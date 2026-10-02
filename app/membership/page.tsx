@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  Suspense,
+  useEffect,
+  useState,
+} from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -12,7 +16,7 @@ type Subscription = {
   cancel_at_period_end: boolean;
 };
 
-export default function MembershipPage() {
+function MembershipContent() {
   const searchParams =
     useSearchParams();
 
@@ -495,5 +499,23 @@ export default function MembershipPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function MembershipPage() {
+  return (
+    <Suspense
+      fallback={
+        <main>
+          <section className="hero">
+            <h1>
+              Loading membership...
+            </h1>
+          </section>
+        </main>
+      }
+    >
+      <MembershipContent />
+    </Suspense>
   );
 }
