@@ -19,6 +19,7 @@ export default function LeagueReviewPage() {
   const id = params.id as string;
 
   const [league, setLeague] = useState<League | null>(null);
+  const [hasAccess, setHasAccess] = useState(false);
 
   const [overallRating, setOverallRating] = useState(0);
   const [communicationRating, setCommunicationRating] = useState(0);
@@ -35,25 +36,65 @@ export default function LeagueReviewPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    async function loadLeague() {
-      const { data, error } = await supabase
-        .from("leagues")
-        .select("id, name, country, level")
-        .eq("id", id)
-        .single();
+    async function loadPage() {
+      setLoading(true);
 
-      if (error) {
-        console.error("Error loading league:", error);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.replace("/login");
+        return;
       }
 
-      setLeague(data || null);
+      const { data: leagueData, error: leagueError } =
+        await supabase
+          .from("leagues")
+          .select("id, name, country, level")
+          .eq("id", id)
+          .single();
+
+      if (leagueError) {
+        console.error("Error loading league:", leagueError);
+        setLeague(null);
+        setLoading(false);
+        return;
+      }
+
+      setLeague(leagueData);
+
+      const { data: subscription } = await supabase
+        .from("subscriptions")
+        .select("status, current_period_end")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const activeSubscription =
+        subscription &&
+        (subscription.status === "active" ||
+          subscription.status === "trialing") &&
+        (!subscription.current_period_end ||
+          new Date(subscription.current_period_end) > new Date());
+
+      const { data: adminRole } = await supabase
+        .from("admin_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const isAdmin =
+        adminRole?.role === "admin" ||
+        adminRole?.role === "moderator";
+
+      setHasAccess(!!activeSubscription || !!isAdmin);
       setLoading(false);
     }
 
     if (id) {
-      loadLeague();
+      loadPage();
     }
-  }, [id]);
+  }, [id, router]);
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
@@ -61,6 +102,13 @@ export default function LeagueReviewPage() {
     event.preventDefault();
 
     setMessage("");
+
+    if (!hasAccess) {
+      setMessage(
+        "An active HoopCheck membership is required to submit a review."
+      );
+      return;
+    }
 
     if (
       overallRating === 0 ||
@@ -85,7 +133,7 @@ export default function LeagueReviewPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      router.push("/login");
+      router.replace("/login");
       return;
     }
 
@@ -196,6 +244,54 @@ export default function LeagueReviewPage() {
           <Link href="/leagues" className="btn">
             Back to Leagues
           </Link>
+        </section>
+      </main>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <main>
+        <nav className="nav">
+          <Link href="/" className="logo">
+            Hoop<span>Check</span>
+          </Link>
+
+          <div className="links">
+            <Link href={`/leagues/${league.id}`}>
+              Back to League
+            </Link>
+
+            <Link href="/dashboard">
+              Dashboard
+            </Link>
+          </div>
+        </nav>
+
+        <section className="hero">
+          <div className="eyebrow">
+            MEMBERSHIP REQUIRED
+          </div>
+
+          <h1>Unlock Review Access</h1>
+
+          <p>
+            An active HoopCheck membership is required
+            to submit player reviews.
+          </p>
+
+          <div className="actions">
+            <Link href="/membership" className="btn">
+              View Memberships
+            </Link>
+
+            <Link
+              href={`/leagues/${league.id}`}
+              className="btn dark"
+            >
+              Back to League
+            </Link>
+          </div>
         </section>
       </main>
     );
