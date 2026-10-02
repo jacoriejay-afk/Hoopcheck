@@ -20,7 +20,7 @@ if (!webhookSecret) {
   );
 }
 
-const stripe = new Stripe(
+const stripe = new Stripe.StripeClient(
   stripeSecretKey
 );
 
@@ -83,8 +83,7 @@ async function saveSubscription(
     getAdminSupabase();
 
   const priceId =
-    subscription.items.data[0]?.price
-      ?.id;
+    subscription.items.data[0]?.price?.id;
 
   const plan =
     getPlanFromPrice(priceId);
@@ -186,12 +185,6 @@ async function saveEvent(
     return true;
   }
 
-  /*
-   * Stripe may deliver the same event more
-   * than once. The database unique constraint
-   * on stripe_event_id makes duplicate
-   * processing safe.
-   */
   if (error.code === "23505") {
     return false;
   }
@@ -227,7 +220,7 @@ export async function POST(
 
     try {
       event =
-        stripe.webhooks.constructEvent(
+        await stripe.webhooks.constructEventAsync(
           rawBody,
           signature,
           webhookSecret
@@ -257,9 +250,6 @@ export async function POST(
       });
     }
 
-    /*
-     * Checkout completed
-     */
     if (
       event.type ===
       "checkout.session.completed"
@@ -297,9 +287,6 @@ export async function POST(
       );
     }
 
-    /*
-     * Successful recurring payment
-     */
     if (
       event.type ===
       "invoice.paid"
@@ -342,9 +329,6 @@ export async function POST(
       }
     }
 
-    /*
-     * Failed recurring payment
-     */
     if (
       event.type ===
       "invoice.payment_failed"
@@ -387,9 +371,6 @@ export async function POST(
       }
     }
 
-    /*
-     * Subscription updated
-     */
     if (
       event.type ===
       "customer.subscription.updated"
@@ -416,9 +397,6 @@ export async function POST(
       }
     }
 
-    /*
-     * Subscription deleted
-     */
     if (
       event.type ===
       "customer.subscription.deleted"
