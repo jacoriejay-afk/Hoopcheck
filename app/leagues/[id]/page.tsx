@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
+import { submitReviewReport } from "../../../lib/review-reports";
 
 type League = {
   id: string;
@@ -288,47 +289,13 @@ export default function LeagueDetailPage() {
     setReportLoading(true);
     setReportMessage("");
 
-    const {
-      data: {
-        user,
-      },
-    } = await supabase.auth.getUser();
+    const result = await submitReviewReport(
+      reportReviewId,
+      reportReason
+    );
 
-    if (!user) {
-      setReportMessage(
-        "Please log in to report a review."
-      );
-      setReportLoading(false);
-      return;
-    }
-
-    const {
-      error,
-    } = await supabase
-      .from("review_reports")
-      .insert({
-        review_id: reportReviewId,
-        reporter_id: user.id,
-        reason: reportReason,
-        status: "open",
-      });
-
-    if (error) {
-      console.error(
-        "Error reporting review:",
-        error
-      );
-
-      if (error.code === "23505") {
-        setReportMessage(
-          "You have already reported this review."
-        );
-      } else {
-        setReportMessage(
-          "Could not submit your report. Please try again."
-        );
-      }
-
+    if (!result.success) {
+      setReportMessage(result.message);
       setReportLoading(false);
       return;
     }
