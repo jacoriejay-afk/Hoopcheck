@@ -49,8 +49,15 @@ export default function AdminDirectoryPage() {
         return;
       }
 
-      const { data: adminRole, error: adminRoleError } = await supabase
-        .from("admin_roles")
+      const { data: isAdminOrModerator, error: roleError } =
+  await supabase.rpc("is_current_user_admin_or_moderator");
+
+if (!mounted) return;
+
+if (roleError || !isAdminOrModerator) {
+  router.replace("/dashboard");
+  return;
+}
         .select("role")
         .eq("user_id", session.user.id)
         .maybeSingle();
