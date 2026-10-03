@@ -16,10 +16,6 @@ type Subscription = {
   status: string | null;
 };
 
-type AdminRole = {
-  role: string;
-};
-
 export default function DashboardPage() {
   const [profile, setProfile] =
     useState<Profile | null>(null);
@@ -68,11 +64,7 @@ export default function DashboardPage() {
           .eq("user_id", user.id)
           .maybeSingle(),
 
-        supabase
-          .from("admin_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .maybeSingle(),
+        supabase.rpc("is_current_user_admin_or_moderator"),
       ]);
 
       if (!mounted) return;
@@ -95,22 +87,10 @@ export default function DashboardPage() {
 
       if (
         !adminRoleResult.error &&
-        adminRoleResult.data
+        adminRoleResult.data === true
       ) {
-        const role =
-          (
-            adminRoleResult.data as AdminRole
-          ).role
-            .trim()
-            .toLowerCase();
-
-        if (
-          role === "admin" ||
-          role === "moderator"
-        ) {
-          setIsAdmin(true);
-          setAdminRole(role);
-        }
+        setIsAdmin(true);
+        setAdminRole("admin");
       }
 
       setLoading(false);
