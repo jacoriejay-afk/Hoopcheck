@@ -12,12 +12,11 @@ import { useParams } from "next/navigation";
 
 import { supabase } from "../../../../lib/supabase";
 
-type Team = {
+type League = {
   id: string;
   name: string;
   country: string | null;
-  league_name: string | null;
-  city: string | null;
+  level: string | null;
 };
 
 type RatingFieldProps = {
@@ -101,15 +100,15 @@ function RatingField({
   );
 }
 
-export default function TeamReviewPage() {
+export default function LeagueReviewPage() {
   const params = useParams();
 
   const id = Array.isArray(params.id)
     ? params.id[0]
     : params.id;
 
-  const [team, setTeam] =
-    useState<Team | null>(null);
+  const [league, setLeague] =
+    useState<League | null>(null);
 
   const [overall, setOverall] =
     useState(0);
@@ -152,26 +151,26 @@ export default function TeamReviewPage() {
       }
 
       const {
-        data: teamData,
-        error: teamError,
+        data: leagueData,
+        error: leagueError,
       } = await supabase
-        .from("teams")
+        .from("leagues")
         .select(
-          "id, name, country, league_name, city"
+          "id, name, country, level"
         )
         .eq("id", id)
         .maybeSingle();
 
       if (
-        teamError ||
-        !teamData
+        leagueError ||
+        !leagueData
       ) {
-        setTeam(null);
+        setLeague(null);
         setLoading(false);
         return;
       }
 
-      setTeam(teamData);
+      setLeague(leagueData);
 
       const {
         data: {
@@ -262,7 +261,7 @@ export default function TeamReviewPage() {
           user.id
         )
         .eq(
-          "team_id",
+          "league_id",
           id
         )
         .maybeSingle();
@@ -349,7 +348,7 @@ export default function TeamReviewPage() {
         .from("reviews")
         .insert({
           author_id: user.id,
-          team_id: id,
+          league_id: id,
           overall_rating: overall,
           communication_rating:
             communication,
@@ -371,7 +370,7 @@ export default function TeamReviewPage() {
         "23505"
       ) {
         setMessage(
-          "You have already submitted a review for this team."
+          "You have already submitted a review for this league."
         );
       } else {
         console.error(
@@ -395,7 +394,7 @@ export default function TeamReviewPage() {
 
     setTimeout(() => {
       window.location.href =
-        `/teams/${id}`;
+        `/leagues/${id}`;
     }, 1500);
   }
 
@@ -424,7 +423,7 @@ export default function TeamReviewPage() {
     );
   }
 
-  if (!team) {
+  if (!league) {
     return (
       <main>
         <nav className="nav">
@@ -442,14 +441,14 @@ export default function TeamReviewPage() {
           </div>
 
           <h1>
-            Team not found.
+            League not found.
           </h1>
 
           <Link
-            href="/teams"
+            href="/leagues"
             className="btn"
           >
-            Back To Teams
+            Back To Leagues
           </Link>
         </section>
       </main>
@@ -476,27 +475,27 @@ export default function TeamReviewPage() {
           <h1>
             You already reviewed
             <br />
-            {team.name}.
+            {league.name}.
           </h1>
 
           <p>
             HoopCheck allows one review per
-            player for each team.
+            player for each league.
           </p>
 
           <div className="actions">
             <Link
-              href={`/teams/${team.id}`}
+              href={`/leagues/${league.id}`}
               className="btn"
             >
-              View Team
+              View League
             </Link>
 
             <Link
-              href="/teams"
+              href="/leagues"
               className="btn dark"
             >
-              Back To Teams
+              Back To Leagues
             </Link>
           </div>
         </section>
@@ -541,10 +540,10 @@ export default function TeamReviewPage() {
             </Link>
 
             <Link
-              href={`/teams/${team.id}`}
+              href={`/leagues/${league.id}`}
               className="btn dark"
             >
-              Back To Team
+              Back To League
             </Link>
           </div>
         </section>
@@ -564,9 +563,9 @@ export default function TeamReviewPage() {
 
         <div className="links">
           <Link
-            href={`/teams/${team.id}`}
+            href={`/leagues/${league.id}`}
           >
-            Back To Team
+            Back To League
           </Link>
         </div>
       </nav>
@@ -577,7 +576,7 @@ export default function TeamReviewPage() {
         </div>
 
         <h1>
-          Rate {team.name}.
+          Rate {league.name}.
         </h1>
 
         <p>
@@ -672,7 +671,7 @@ export default function TeamReviewPage() {
                   event.target.value
                 )
               }
-              placeholder="Share your experience with this team..."
+              placeholder="Share your experience with this league..."
               minLength={20}
               maxLength={5000}
               required
