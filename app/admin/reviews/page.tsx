@@ -44,6 +44,8 @@ export default function AdminReviewsPage() {
 
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -329,10 +331,34 @@ export default function AdminReviewsPage() {
     }
   }
 
+  const filteredReviews = reviews.filter((review) => {
+    const matchesFilter =
+      filter === "all" || review.status === filter;
+    const searchText = search.trim().toLowerCase();
+    const searchableText = [
+      review.title,
+      review.body,
+      review.author_id,
+      getTarget(review),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    return matchesFilter && searchableText.includes(searchText);
+  });
+
+  const pendingCount = reviews.filter(
+    (review) => review.status === "pending"
+  ).length;
+  const pendingReportCount = reports.filter(
+    (report) => report.status === "pending"
+  ).length;
+
   if (loading) {
     return (
-      <main>
-        <section className="hero">
+      <main className="moderation-page">
+        <section className="hero moderation-hero">
           <div className="eyebrow">HOOPCHECK ADMIN</div>
 
           <h1>Loading moderation...</h1>
@@ -346,8 +372,8 @@ export default function AdminReviewsPage() {
   }
 
   return (
-    <main>
-      <nav className="nav">
+    <main className="moderation-page">
+      <nav className="nav moderation-nav">
         <Link href="/" className="logo">
           Hoop<span>Check</span>
         </Link>
@@ -357,30 +383,35 @@ export default function AdminReviewsPage() {
         </div>
       </nav>
 
-      <section className="hero">
+      <section className="hero moderation-hero">
         <div className="eyebrow">HOOPCHECK ADMINISTRATION</div>
 
-        <h1>Review Moderation</h1>
+        <h1>Review Management</h1>
 
         <p>
-          Manage player reviews and reports before they appear publicly.
+          Review, approve, and moderate community feedback and reports.
         </p>
 
         <div className="admin-header-row">
           <div className="admin-role">
             <span className="admin-role-label">ACCESS LEVEL</span>
-            <strong>{role?.toUpperCase()}</strong>
+            <strong>{role}</strong>
           </div>
 
           <div className="admin-stats">
             <div className="admin-stat">
-              <span>REVIEWS</span>
+              <span>TOTAL REVIEWS</span>
               <strong>{reviews.length}</strong>
             </div>
 
             <div className="admin-stat">
-              <span>REPORTS</span>
-              <strong>{reports.length}</strong>
+              <span>PENDING REVIEWS</span>
+              <strong>{pendingCount}</strong>
+            </div>
+
+            <div className="admin-stat">
+              <span>PENDING REPORTS</span>
+              <strong>{pendingReportCount}</strong>
             </div>
           </div>
         </div>
@@ -393,7 +424,7 @@ export default function AdminReviewsPage() {
         )}
       </section>
 
-      <section className="hero admin-section">
+      <section className="hero admin-section moderation-section">
         <div className="section-heading">
           <div>
             <div className="eyebrow">PLAYER FEEDBACK</div>
@@ -401,23 +432,58 @@ export default function AdminReviewsPage() {
           </div>
 
           <span className="section-count">
-            {reviews.length} TOTAL
+            {filteredReviews.length} SHOWN
           </span>
         </div>
 
-        {reviews.length === 0 ? (
+        <div className="moderation-controls">
+          <label className="visually-hidden" htmlFor="review-search">
+            Search reviews
+          </label>
+          <input
+            id="review-search"
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search reviews..."
+            className="moderation-search"
+          />
+
+          <label className="visually-hidden" htmlFor="review-status">
+            Filter reviews by status
+          </label>
+          <select
+            id="review-status"
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            className="moderation-filter"
+          >
+            <option value="all">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="flagged">Flagged</option>
+            <option value="removed">Removed</option>
+          </select>
+        </div>
+
+        {filteredReviews.length === 0 ? (
           <div className="card empty-state">
             <div className="empty-icon">✓</div>
 
-            <h2>No reviews</h2>
+            <h2>
+              {reviews.length === 0 ? "No reviews" : "No reviews found"}
+            </h2>
 
             <p className="muted">
-              There are currently no reviews to moderate.
+              {reviews.length === 0
+                ? "There are currently no reviews to moderate."
+                : "Try changing the search or status filter."}
             </p>
           </div>
         ) : (
-          <div className="grid">
-            {reviews.map((review) => (
+          <div className="grid moderation-grid">
+            {filteredReviews.map((review) => (
               <div className="card admin-review-card" key={review.id}>
                 <div className="review-top">
                   <div>
@@ -545,7 +611,7 @@ export default function AdminReviewsPage() {
         )}
       </section>
 
-      <section className="hero admin-section">
+      <section className="hero admin-section moderation-section moderation-reports">
         <div className="section-heading">
           <div>
             <div className="eyebrow">SAFETY & MODERATION</div>
