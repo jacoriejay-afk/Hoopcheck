@@ -5,10 +5,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
-type AdminRole = {
-  role: string;
-};
-
 type DirectoryCounts = {
   coaches: number;
   teams: number;
@@ -43,7 +39,17 @@ export default function AdminDirectoryPage() {
         return;
       }
 
-      const { data: adminRole, error: roleError } = await supabase
+      const { data: isAdminOrModerator, error: roleError } =
+        await supabase.rpc("is_current_user_admin_or_moderator");
+
+      if (!mounted) return;
+
+      if (roleError || !isAdminOrModerator) {
+        router.replace("/dashboard");
+        return;
+      }
+
+      const { data: adminRole, error: adminRoleError } = await supabase
         .from("admin_roles")
         .select("role")
         .eq("user_id", session.user.id)
@@ -51,12 +57,12 @@ export default function AdminDirectoryPage() {
 
       if (!mounted) return;
 
-      if (roleError || !adminRole) {
+      if (adminRoleError || !adminRole) {
         router.replace("/dashboard");
         return;
       }
 
-      const normalizedRole = (adminRole as AdminRole).role
+      const normalizedRole = String(adminRole.role)
         .trim()
         .toLowerCase();
 
