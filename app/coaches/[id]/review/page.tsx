@@ -7,7 +7,6 @@ import {
 } from "react";
 
 import Link from "next/link";
-
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../../lib/supabase";
@@ -58,43 +57,37 @@ function RatingField({
           flexWrap: "wrap",
         }}
       >
-        {[1, 2, 3, 4, 5].map(
-          (rating) => (
-            <button
-              key={rating}
-              type="button"
-              aria-label={`Rate ${label} ${rating} out of 5`}
-              aria-pressed={
+        {[1, 2, 3, 4, 5].map((rating) => (
+          <button
+            key={rating}
+            type="button"
+            aria-label={`Rate ${label} ${rating} out of 5`}
+            aria-pressed={value === rating}
+            onClick={() => onChange(rating)}
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "8px",
+              border:
                 value === rating
-              }
-              onClick={() =>
-                onChange(rating)
-              }
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "8px",
-                border:
-                  value === rating
-                    ? "2px solid var(--orange)"
-                    : "1px solid #333",
-                background:
-                  value === rating
-                    ? "var(--orange)"
-                    : "#171717",
-                color:
-                  value === rating
-                    ? "#000"
-                    : "#fff",
-                fontWeight: 900,
-                cursor: "pointer",
-                fontSize: "16px",
-              }}
-            >
-              {rating}
-            </button>
-          )
-        )}
+                  ? "2px solid var(--orange)"
+                  : "1px solid #333",
+              background:
+                value === rating
+                  ? "var(--orange)"
+                  : "#171717",
+              color:
+                value === rating
+                  ? "#000"
+                  : "#fff",
+              fontWeight: 900,
+              cursor: "pointer",
+              fontSize: "16px",
+            }}
+          >
+            {rating}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -176,12 +169,10 @@ export default function CoachReviewPage() {
         data: {
           user,
         },
-      } =
-        await supabase.auth.getUser();
+      } = await supabase.auth.getUser();
 
       if (!user) {
-        window.location.href =
-          "/login";
+        window.location.href = "/login";
         return;
       }
 
@@ -200,14 +191,9 @@ export default function CoachReviewPage() {
           )
           .maybeSingle(),
 
-        supabase
-          .from("admin_roles")
-          .select("role")
-          .eq(
-            "user_id",
-            user.id
-          )
-          .maybeSingle(),
+        supabase.rpc(
+          "is_current_user_admin_or_moderator"
+        ),
       ]);
 
       const subscription =
@@ -234,10 +220,7 @@ export default function CoachReviewPage() {
         );
 
       const isAdmin =
-        adminResult.data?.role ===
-          "admin" ||
-        adminResult.data?.role ===
-          "moderator";
+        adminResult.data === true;
 
       if (
         !subscriptionIsActive &&
@@ -253,6 +236,7 @@ export default function CoachReviewPage() {
 
       const {
         data: existingReview,
+        error: existingReviewError,
       } = await supabase
         .from("reviews")
         .select("id")
@@ -265,6 +249,13 @@ export default function CoachReviewPage() {
           id
         )
         .maybeSingle();
+
+      if (existingReviewError) {
+        console.error(
+          "Existing review check error:",
+          existingReviewError
+        );
+      }
 
       if (existingReview) {
         setAlreadyReviewed(true);
@@ -331,8 +322,7 @@ export default function CoachReviewPage() {
       data: {
         user,
       },
-    } =
-      await supabase.auth.getUser();
+    } = await supabase.auth.getUser();
 
     if (!user) {
       setMessage(
@@ -343,6 +333,14 @@ export default function CoachReviewPage() {
       return;
     }
 
+    /*
+     * The database RLS policy is the final security layer.
+     *
+     * It requires:
+     * - author_id = authenticated user
+     * - status = pending
+     * - active/trialing subscription OR admin/moderator
+     */
     const { error } =
       await supabase
         .from("reviews")
@@ -366,11 +364,16 @@ export default function CoachReviewPage() {
 
     if (error) {
       if (
-        error.code ===
-        "23505"
+        error.code === "23505"
       ) {
         setMessage(
           "You have already submitted a review for this coach."
+        );
+      } else if (
+        error.code === "42501"
+      ) {
+        setMessage(
+          "An active HoopCheck membership is required to submit a review."
         );
       } else {
         console.error(
@@ -503,9 +506,11 @@ export default function CoachReviewPage() {
     );
   }
 
-  if (message.startsWith(
-    "An active HoopCheck"
-  )) {
+  if (
+    message.startsWith(
+      "An active HoopCheck"
+    )
+  ) {
     return (
       <main>
         <nav className="nav">
@@ -609,25 +614,19 @@ export default function CoachReviewPage() {
           <RatingField
             label="Communication"
             value={communication}
-            onChange={
-              setCommunication
-            }
+            onChange={setCommunication}
           />
 
           <RatingField
             label="Professionalism"
             value={professionalism}
-            onChange={
-              setProfessionalism
-            }
+            onChange={setProfessionalism}
           />
 
           <RatingField
             label="Player Development"
             value={development}
-            onChange={
-              setDevelopment
-            }
+            onChange={setDevelopment}
           />
 
           <RatingField
