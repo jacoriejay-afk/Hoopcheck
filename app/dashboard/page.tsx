@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 
@@ -17,29 +14,20 @@ type Subscription = {
 };
 
 export default function DashboardPage() {
-  const [profile, setProfile] =
-    useState<Profile | null>(null);
-
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [subscription, setSubscription] =
     useState<Subscription | null>(null);
-
-  const [isAdmin, setIsAdmin] =
-    useState(false);
-
+  const [isAdmin, setIsAdmin] = useState(false);
   const [adminRole, setAdminRole] =
     useState<"admin" | "moderator" | null>(null);
-
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
 
     async function loadDashboard() {
       const {
-        data: {
-          user,
-        },
+        data: { user },
       } = await supabase.auth.getUser();
 
       if (!user) {
@@ -80,9 +68,7 @@ export default function DashboardPage() {
         !subscriptionResult.error &&
         subscriptionResult.data
       ) {
-        setSubscription(
-          subscriptionResult.data
-        );
+        setSubscription(subscriptionResult.data);
       }
 
       if (
@@ -103,372 +89,246 @@ export default function DashboardPage() {
     };
   }, []);
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    window.location.href = "/";
-  }
-
   if (loading) {
     return (
-      <main>
-        <nav className="nav">
-          <Link
-            href="/"
-            className="logo"
-          >
-            Hoop<span>Check</span>
-          </Link>
-        </nav>
-
-        <section className="hero">
-          <div className="eyebrow">
-            HoopCheck
-          </div>
-
-          <h1>
-            Loading your
-            <br />
-            dashboard.
-          </h1>
-        </section>
+      <main className="page-shell">
+        <div className="page-container">
+          <p>Loading your dashboard...</p>
+        </div>
       </main>
     );
   }
-
-  const isActiveMember =
-    subscription?.status === "active" ||
-    subscription?.status === "trialing";
 
   const displayName =
     profile?.display_name || "Player";
 
   const planLabel =
     subscription?.plan === "premium"
-      ? "Premium"
+      ? "HoopCheck Premium"
       : subscription?.plan === "pro"
-        ? "Pro"
+        ? "HoopCheck Pro"
         : "Free";
 
+  const subscriptionStatus =
+    subscription?.status || "inactive";
+
   return (
-    <main>
-      <nav className="nav">
-        <Link
-          href="/"
-          className="logo"
-        >
-          Hoop<span>Check</span>
-        </Link>
-
-        <div className="links">
-          <Link
-            href="/search"
-            className="search-nav"
-          >
-            Search
-          </Link>
-
-          <Link href="/coaches">
-            Coaches
-          </Link>
-
-          <Link href="/teams">
-            Teams
-          </Link>
-
-          <Link href="/leagues">
-            Leagues
-          </Link>
-
-          {isAdmin && (
+    <main className="page-shell">
+      <div className="page-container">
+        <header className="topbar">
+          <div>
             <Link
-              href="/admin/directory"
-              className="btn"
+              href="/"
+              className="brand"
             >
-              Admin
+              HOOPCHECK
             </Link>
-          )}
-
-          <Link
-            href="/membership"
-            className="btn"
-          >
-            Membership
-          </Link>
-        </div>
-      </nav>
-
-      <section className="hero">
-        <div className="eyebrow">
-          Player Dashboard
-        </div>
-
-        <h1>
-          Welcome,
-          <br />
-          {displayName}.
-        </h1>
-
-        <p>
-          Research your next basketball
-          opportunity before you put pen
-          to paper.
-        </p>
-
-        <div className="dashboard-search">
-          <div className="search-label">
-            GLOBAL RESEARCH
           </div>
 
-          <Link
-            href="/search"
-            className="search-button"
-          >
+          <nav className="topnav">
+            <Link href="/search">
+              Search
+            </Link>
+
+            <Link href="/membership">
+              Membership
+            </Link>
+
+            {isAdmin && (
+              <Link
+                href="/admin/directory"
+                className="btn"
+              >
+                Admin
+              </Link>
+            )}
+          </nav>
+        </header>
+
+        <section className="hero-card">
+          <div>
+            <p className="eyebrow">
+              PLAYER DASHBOARD
+            </p>
+
+            <h1>
+              Welcome back, {displayName}.
+            </h1>
+
+            <p className="muted">
+              Research coaches, teams, and
+              leagues before your next move.
+            </p>
+          </div>
+
+          <div className="membership-badge">
             <span>
-              Search coaches, teams, or leagues...
+              Membership
             </span>
 
-            <strong>Search →</strong>
-          </Link>
-        </div>
+            <strong>
+              {planLabel}
+            </strong>
 
-        <div className="actions">
+            <small>
+              {subscriptionStatus}
+            </small>
+          </div>
+        </section>
+
+        <section className="grid">
           <Link
             href="/coaches"
-            className="btn"
+            className="dashboard-card"
           >
-            Research Coaches
+            <span className="card-kicker">
+              COACHES
+            </span>
+
+            <h2>
+              Research Coaches
+            </h2>
+
+            <p>
+              Explore coach profiles,
+              ratings, and reviews.
+            </p>
           </Link>
 
           <Link
             href="/teams"
-            className="btn dark"
+            className="dashboard-card"
           >
-            Research Teams
+            <span className="card-kicker">
+              TEAMS
+            </span>
+
+            <h2>
+              Research Teams
+            </h2>
+
+            <p>
+              Explore professional teams,
+              ratings, and reviews.
+            </p>
           </Link>
 
           <Link
             href="/leagues"
-            className="btn dark"
+            className="dashboard-card"
           >
-            Research Leagues
+            <span className="card-kicker">
+              LEAGUES
+            </span>
+
+            <h2>
+              Research Leagues
+            </h2>
+
+            <p>
+              Explore leagues and player
+              experiences.
+            </p>
           </Link>
-        </div>
-      </section>
 
-      {isAdmin && (
-        <section className="grid">
-          <div
-            className="card"
-            style={{
-              border: "2px solid #ff6a00",
-            }}
+          <Link
+            href="/membership"
+            className="dashboard-card"
           >
-            <div className="eyebrow">
-              {adminRole === "moderator"
-                ? "Moderator"
-                : "Administrator"}
-            </div>
+            <span className="card-kicker">
+              MEMBERSHIP
+            </span>
 
             <h2>
-              Admin Control Center
+              Manage Membership
             </h2>
 
             <p>
-              Manage HoopCheck directories,
-              moderate player reviews, and
-              maintain the platform.
+              View your plan and manage
+              your subscription.
             </p>
-
-            <Link
-              href="/admin/directory"
-              className="btn"
-            >
-              Open Admin Panel
-            </Link>
-          </div>
-
-          <div className="card">
-            <div className="eyebrow">
-              Directory
-            </div>
-
-            <h2>
-              Coach Directory
-            </h2>
-
-            <p>
-              Manage coaches, team relationships,
-              sources, and active directory status.
-            </p>
-
-            <Link
-              href="/admin/directory/coaches"
-              className="btn"
-            >
-              Manage Coaches
-            </Link>
-          </div>
-
-          <div className="card">
-            <div className="eyebrow">
-              Moderation
-            </div>
-
-            <h2>
-              Review Queue
-            </h2>
-
-            <p>
-              Review, approve, reject, and manage
-              player-submitted reviews and reports.
-            </p>
-
-            <Link
-              href="/admin/reviews"
-              className="btn"
-            >
-              Manage Reviews
-            </Link>
-          </div>
+          </Link>
         </section>
-      )}
 
-      <section className="grid">
-        <div className="card">
-          <div className="eyebrow">
-            Membership
-          </div>
+        {isAdmin && (
+          <section className="admin-section">
+            <div className="admin-header">
+              <div>
+                <p className="eyebrow">
+                  {adminRole === "moderator"
+                    ? "MODERATOR"
+                    : "ADMINISTRATOR"}
+                </p>
 
-          <h2>
-            {planLabel}
-          </h2>
+                <h2>
+                  Admin Control Center
+                </h2>
 
-          {isActiveMember ? (
-            <>
-              <p>
-                You have full access to
-                HoopCheck ratings and
-                approved player reviews.
-              </p>
+                <p className="muted">
+                  Manage directory data,
+                  reviews, and moderation.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid">
+              <Link
+                href="/admin/directory"
+                className="dashboard-card"
+              >
+                <span className="card-kicker">
+                  ADMIN
+                </span>
+
+                <h2>
+                  Open Admin Panel
+                </h2>
+
+                <p>
+                  Manage HoopCheck directory
+                  operations.
+                </p>
+              </Link>
 
               <Link
-                href="/membership"
-                className="btn"
+                href="/admin/directory/coaches"
+                className="dashboard-card"
               >
-                Manage Membership
+                <span className="card-kicker">
+                  DIRECTORY
+                </span>
+
+                <h2>
+                  Manage Coaches
+                </h2>
+
+                <p>
+                  Manage coach profiles,
+                  teams, leagues, and sources.
+                </p>
               </Link>
-            </>
-          ) : (
-            <>
-              <p>
-                You&apos;re currently on the
-                free plan. Upgrade to research
-                full ratings and reviews.
-              </p>
 
               <Link
-                href="/membership"
-                className="btn"
+                href="/admin/reviews"
+                className="dashboard-card"
               >
-                View Plans
+                <span className="card-kicker">
+                  MODERATION
+                </span>
+
+                <h2>
+                  Manage Reviews
+                </h2>
+
+                <p>
+                  Review, approve, reject,
+                  and moderate submissions.
+                </p>
               </Link>
-            </>
-          )}
-        </div>
-
-        <div className="card">
-          <div className="eyebrow">
-            Research
-          </div>
-
-          <h2>
-            Before You Sign
-          </h2>
-
-          <p>
-            Check coaches, teams, and leagues
-            before making your next overseas
-            basketball decision.
-          </p>
-
-          <Link
-            href="/search"
-            className="btn"
-          >
-            Start Research
-          </Link>
-        </div>
-
-        <div className="card">
-          <div className="eyebrow">
-            Player Voice
-          </div>
-
-          <h2>
-            Share Your Experience
-          </h2>
-
-          <p>
-            Help other professional players
-            understand what to expect from
-            basketball organizations worldwide.
-          </p>
-
-          <Link
-            href="/coaches"
-            className="btn"
-          >
-            Write A Review
-          </Link>
-        </div>
-      </section>
-
-      <section className="hero">
-        <div className="eyebrow">
-          HoopCheck
-        </div>
-
-        <h2>
-          Research.
-          <br />
-          Know.
-          <br />
-          Move.
-        </h2>
-
-        <p>
-          Your career is bigger than one
-          contract. Make your next move with
-          more information.
-        </p>
-
-        <div className="actions">
-          <Link
-            href="/search"
-            className="btn"
-          >
-            Find Anything
-          </Link>
-
-          <Link
-            href="/teams"
-            className="btn dark"
-          >
-            Find A Team
-          </Link>
-        </div>
-
-        <button
-          type="button"
-          className="btn dark"
-          onClick={handleLogout}
-          style={{
-            marginTop: "16px",
-          }}
-        >
-          Log Out
-        </button>
-      </section>
+            </div>
+          </section>
+        )}
+      </div>
     </main>
   );
 }
