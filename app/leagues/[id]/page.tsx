@@ -182,14 +182,9 @@ export default function LeagueDetailPage() {
           )
           .maybeSingle(),
 
-        supabase
-          .from("admin_roles")
-          .select("role")
-          .eq(
-            "user_id",
-            user.id
-          )
-          .maybeSingle(),
+        supabase.rpc(
+          "is_current_user_admin_or_moderator"
+        ),
       ]);
 
       const subscription =
@@ -216,10 +211,7 @@ export default function LeagueDetailPage() {
         );
 
       const isAdmin =
-        adminResult.data?.role ===
-          "admin" ||
-        adminResult.data?.role ===
-          "moderator";
+        adminResult.data === true;
 
       const access =
         subscriptionIsActive ||
@@ -318,7 +310,7 @@ export default function LeagueDetailPage() {
         review_id: reportReviewId,
         reporter_id: user.id,
         reason: reportReason,
-        status: "pending",
+        status: "open",
       });
 
     if (error) {
@@ -552,10 +544,16 @@ export default function LeagueDetailPage() {
 
         <div className="actions">
           <Link
-            href={`/leagues/${league.id}/review`}
+            href={
+              hasAccess
+                ? `/leagues/${league.id}/review`
+                : "/membership"
+            }
             className="btn"
           >
-            Write A Review
+            {hasAccess
+              ? "Write A Review"
+              : "Become A Member To Review"}
           </Link>
 
           <Link
@@ -925,6 +923,6 @@ export default function LeagueDetailPage() {
           </div>
         </div>
       )}
-</main>
+    </main>
   );
 }
