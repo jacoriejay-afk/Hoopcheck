@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -27,7 +27,7 @@ type League = {
   level: string | null;
 };
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q")?.trim() || "";
 
@@ -340,5 +340,19 @@ export default function SearchPage() {
         </section>
       )}
 </main>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="search-page">
+          <p>Loading search...</p>
+        </main>
+      }
+    >
+      <SearchContent />
+    </Suspense>
   );
 }
