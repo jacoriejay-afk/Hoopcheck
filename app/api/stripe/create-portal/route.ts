@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const stripeSecretKey =
-  process.env.STRIPE_SECRET_KEY;
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL;
@@ -14,14 +13,20 @@ if (!stripeSecretKey) {
   );
 }
 
-if (!siteUrl) {
-  throw new Error(
-    "Missing NEXT_PUBLIC_SITE_URL."
+if (!stripeSecretKey) {
+
+  return NextResponse.json(
+
+    { error: "Stripe is not configured" },
+
+    { status: 500 }
+
   );
+
+}
 }
 
-const stripe = new Stripe(
-  stripeSecretKey
+const stripe = new Stripe(stripeSecretKey);
 );
 
 function getAdminSupabase() {
