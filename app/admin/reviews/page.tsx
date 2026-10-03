@@ -47,21 +47,16 @@ export default function AdminReviewsPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    async function loadAdminPage() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    let mounted = true;
 
-      if (!user) {
-        router.replace("/login");
-        return;
-      }
-
+    async function loadAdminPage(userId: string) {
       const { data: adminRole, error: roleError } = await supabase
         .from("admin_roles")
         .select("role")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .single();
+
+      if (!mounted) return;
 
       if (roleError || !adminRole) {
         router.replace("/dashboard");
@@ -70,23 +65,61 @@ export default function AdminReviewsPage() {
 
       const typedRole = adminRole as AdminRole;
 
+      // Trim whitespace so values like " admin" still work.
+      const normalizedRole = typedRole.role.trim().toLowerCase();
+
       if (
-        typedRole.role !== "admin" &&
-        typedRole.role !== "moderator"
+        normalizedRole !== "admin" &&
+        normalizedRole !== "moderator"
       ) {
         router.replace("/dashboard");
         return;
       }
 
-      setRole(typedRole.role);
+      setRole(normalizedRole);
 
       await loadReviews();
       await loadReports();
 
-      setLoading(false);
+      if (mounted) {
+        setLoading(false);
+      }
     }
 
-    loadAdminPage();
+    async function initializeAdminPage() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!mounted) return;
+
+      if (session?.user) {
+        await loadAdminPage(session.user.id);
+      }
+    }
+
+    initializeAdminPage();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (!mounted) return;
+
+        if (!session?.user) {
+          setLoading(false);
+          router.replace("/login");
+          return;
+        }
+
+        await loadAdminPage(session.user.id);
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [router]);
 
   async function loadReviews() {
