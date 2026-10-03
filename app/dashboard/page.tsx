@@ -18,6 +18,7 @@ export default function DashboardPage() {
   const [subscription, setSubscription] =
     useState<Subscription | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminDebug, setAdminDebug] = useState("");
   const [adminRole, setAdminRole] =
     useState<"admin" | "moderator" | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,12 +72,19 @@ export default function DashboardPage() {
         setSubscription(subscriptionResult.data);
       }
 
-      if (
-        !adminRoleResult.error &&
-        adminRoleResult.data === true
-      ) {
-        setIsAdmin(true);
-        setAdminRole("admin");
+      if (adminRoleResult.error) {
+        setAdminDebug(
+          `Admin check error: ${adminRoleResult.error.message}`
+        );
+      } else {
+        setAdminDebug(
+          `Admin RPC result: ${String(adminRoleResult.data)}`
+        );
+
+        if (adminRoleResult.data === true) {
+          setIsAdmin(true);
+          setAdminRole("admin");
+        }
       }
 
       setLoading(false);
@@ -144,6 +152,12 @@ export default function DashboardPage() {
             )}
           </nav>
         </header>
+
+        {adminDebug && (
+          <div className="mx-auto mb-4 max-w-6xl rounded-xl border border-orange-500/40 bg-orange-500/10 px-4 py-3 text-sm text-orange-200">
+            {adminDebug}
+          </div>
+        )}
 
         <section className="hero-card">
           <div>
