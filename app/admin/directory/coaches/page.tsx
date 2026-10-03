@@ -1,27 +1,22 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../../../lib/supabase";
-
-type AdminRole = {
-  role: string;
-};
+import { supabase } from "@/lib/supabase";
 
 type Coach = {
   id: string;
   name: string;
   country: string | null;
   city: string | null;
-  current_team_id: string | null;
+  external_id: string | null;
   website: string | null;
   photo_url: string | null;
   source: string | null;
-  source_id: string | null;
-  external_id?: string | null;
   last_synced_at: string | null;
   active: boolean;
+  current_team_id: string | null;
 };
 
 type Team = {
@@ -29,8 +24,8 @@ type Team = {
   name: string;
   country: string | null;
   city: string | null;
-  league_id: string | null;
   league_name: string | null;
+  league_id: string | null;
 };
 
 type League = {
@@ -45,6 +40,10 @@ type DirectorySource = {
   name: string;
 };
 
+type AdminRole = {
+  role: string;
+};
+
 export default function AdminCoachDirectoryPage() {
   const router = useRouter();
 
@@ -53,37 +52,96 @@ export default function AdminCoachDirectoryPage() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [sources, setSources] = useState<DirectorySource[]>([]);
 
-  const [role, setRole] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showInactive, setShowInactive] = useState(false);
-  const [error, setError] = useState("");
+
+  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+
+  async function loadDirectory() {
+    const [
+      coachesResult,
+      teamsResult,
+      leaguesResult,
+      sourcesResult,
+    ] = await Promise.all([
+      supabase
+        .from("coaches")
+        .select(
+          `
+            id,
+            name,
+            country,
+            city,
+            external_id,
+            website,
+            photo_url,
+            source,
+            last_synced_at,
+            active,
+            current_team_id
+          `
+        )
+        .order("name", { ascending: true }),
+
+      supabase
+        .from("teams")
+        .select(
+          `
+            id,
+            name,
+            country,
+            city,
+            league_name,
+            league_id
+          `
+        )
+        .order("name", { ascending: true }),
+
+      supabase
+        .from("leagues")
+        .select("id, name, country, level")
+        .order("name", { ascending: true }),
+
+      supabase
+        .from("directory_sources")
+        .select("id, name")
+        .eq("active", true)
+        .order("name", { ascending: true }),
+    ]);
+
+    if (coachesResult.error) {
+      console.error("Error loading coaches:", coachesResult.error);
+    }
+
+    if (teamsResult.error) {
+      console.error("Error loading teams:", teamsResult.error);
+    }
+
+    if (leaguesResult.error) {
+      console.error("Error loading leagues:", leaguesResult.error);
+    }
+
+    if (sourcesResult.error) {
+      console.error("Error loading directory sources:", sourcesResult.error);
+    }
+
+    setCoaches((coachesResult.data ?? []) as Coach[]);
+    setTeams((teamsResult.data ?? []) as Team[]);
+    setLeagues((leaguesResult.data ?? []) as League[]);
+    setSources((sourcesResult.data ?? []) as DirectorySource[]);
+  }
 
   useEffect(() => {
     let mounted = true;
 
-    async function loadDirectory() {
-      setLoading(true);
-      setError("");
-
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      if (!mounted) return;
-
-      if (sessionError || !session?.user) {
-        router.replace("/login");
-        return;
-      }
-
+    async function loadAdminPage(userId: string) {
       const { data: adminRole, error: roleError } = await supabase
         .from("admin_roles")
         .select("role")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
+        .eq("user_id", userId)
+        .single();
 
       if (!mounted) return;
 
@@ -92,9 +150,9 @@ export default function AdminCoachDirectoryPage() {
         return;
       }
 
-      const normalizedRole = String(
-        (adminRole as AdminRole).role
-      )
+      const typedRole = adminRole as AdminRole;
+
+      const normalizedRole = String(typedRole.role)
         .trim()
         .toLowerCase();
 
@@ -106,176 +164,56 @@ export default function AdminCoachDirectoryPage() {
         return;
       }
 
-      const [
-        coachesResult,
-        teamsResult,
-        leaguesResult,
-        sourcesResult,
-      ] = await Promise.all([
-        supabase
-          .from("coaches")
-          .select(
-            `
-              id,
-              name,
-              country,
-              city,
-              current_team_id,
-              website,
-              photo_url,
-              source,
-              source_id,
-              external_id,
-              last_synced_at,
-              active
-            `
-          )
-          .order("name"),
+      setRole(normalizedRole);
 
-        supabase
-          .from("teams")
-          .select(
-            `
-              id,
-              name,
-              country,
-              city,
-              league_id,
-              league_name
-            `
-          )
-          .order("name"),
+      await loadDirectory();
 
-        supabase
-          .from("leagues")
-          .select(
-            `
-              id,
-              name,
-              country,
-              level
-            `
-          )
-          .order("name"),
+      if (mounted) {
+        setLoading(false);
+      }
+    }
 
-        supabase
-          .from("directory_sources")
-          .select("id, name")
-          .order("name"),
-      ]);
+    async function initializeAdminPage() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       if (!mounted) return;
 
-      const firstError =
-        coachesResult.error ??
-        teamsResult.error ??
-        leaguesResult.error ??
-        sourcesResult.error;
-
-      if (firstError) {
-        setError(firstError.message);
-        setLoading(false);
-        return;
+      if (session?.user) {
+        await loadAdminPage(session.user.id);
       }
-
-      setCoaches((coachesResult.data ?? []) as Coach[]);
-      setTeams((teamsResult.data ?? []) as Team[]);
-      setLeagues((leaguesResult.data ?? []) as League[]);
-      setSources((sourcesResult.data ?? []) as DirectorySource[]);
-      setRole(normalizedRole);
-      setLoading(false);
     }
 
-    void loadDirectory();
+    initializeAdminPage();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (!mounted) return;
+
+        if (!session?.user) {
+          setLoading(false);
+          router.replace("/login");
+          return;
+        }
+
+        await loadAdminPage(session.user.id);
+      }
+    );
 
     return () => {
       mounted = false;
+      subscription.unsubscribe();
     };
   }, [router]);
 
-  const teamMap = useMemo(() => {
-    return new Map(teams.map((team) => [team.id, team]));
-  }, [teams]);
-
-  const leagueMap = useMemo(() => {
-    return new Map(
-      leagues.map((league) => [league.id, league])
-    );
-  }, [leagues]);
-
-  const sourceMap = useMemo(() => {
-    return new Map(
-      sources.map((source) => [source.id, source.name])
-    );
-  }, [sources]);
-
-  const filteredCoaches = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
-    return coaches.filter((coach) => {
-      if (!showInactive && !coach.active) {
-        return false;
-      }
-
-      if (!normalizedSearch) {
-        return true;
-      }
-
-      const team = coach.current_team_id
-        ? teamMap.get(coach.current_team_id)
-        : undefined;
-
-      const league = team?.league_id
-        ? leagueMap.get(team.league_id)
-        : undefined;
-
-      const sourceName = coach.source_id
-        ? sourceMap.get(coach.source_id)
-        : coach.source;
-
-      const searchableText = [
-        coach.name,
-        coach.country,
-        coach.city,
-        coach.external_id,
-        team?.name,
-        team?.country,
-        team?.city,
-        team?.league_name,
-        league?.name,
-        league?.country,
-        sourceName,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return searchableText.includes(normalizedSearch);
-    });
-  }, [
-    coaches,
-    search,
-    showInactive,
-    teamMap,
-    leagueMap,
-    sourceMap,
-  ]);
-
-  const activeCount = coaches.filter(
-    (coach) => coach.active
-  ).length;
-
-  const inactiveCount = coaches.filter(
-    (coach) => !coach.active
-  ).length;
-
   async function runCoachAction(
-    action: "set_active",
     coachId: string,
     active: boolean
   ) {
     setActionLoading(coachId);
-    setError("");
 
     try {
       const {
@@ -287,32 +225,29 @@ export default function AdminCoachDirectoryPage() {
         return;
       }
 
-      const { data, error: functionError } =
-        await supabase.functions.invoke("directory-admin", {
+      const { data, error } = await supabase.functions.invoke(
+        "directory-admin",
+        {
           body: {
-            action,
+            action: "set_active",
             coach_id: coachId,
             active,
           },
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
-        });
+        }
+      );
 
-      if (functionError) {
-        throw new Error(
-          functionError.message || "Coach action failed."
-        );
-      }
-
-      if (data?.error) {
-        throw new Error(String(data.error));
+      if (error) {
+        console.error("Directory admin error:", error);
+        alert(error.message || "Unable to update coach.");
+        return;
       }
 
       if (!data?.coach) {
-        throw new Error(
-          "The server did not return the updated coach."
-        );
+        alert("The coach update did not return updated data.");
+        return;
       }
 
       const updatedCoach = data.coach as Coach;
@@ -324,277 +259,391 @@ export default function AdminCoachDirectoryPage() {
             : coach
         )
       );
-    } catch (actionError) {
-      setError(
-        actionError instanceof Error
-          ? actionError.message
-          : "Coach action failed."
-      );
+    } catch (error) {
+      console.error("Coach action failed:", error);
+      alert("Something went wrong while updating the coach.");
     } finally {
       setActionLoading(null);
     }
   }
 
+  const teamById = useMemo(() => {
+    const map = new Map<string, Team>();
+
+    teams.forEach((team) => {
+      map.set(team.id, team);
+    });
+
+    return map;
+  }, [teams]);
+
+  const leagueById = useMemo(() => {
+    const map = new Map<string, League>();
+
+    leagues.forEach((league) => {
+      map.set(league.id, league);
+    });
+
+    return map;
+  }, [leagues]);
+
+  const sourceById = useMemo(() => {
+    const map = new Map<string, DirectorySource>();
+
+    sources.forEach((source) => {
+      map.set(source.id, source);
+    });
+
+    return map;
+  }, [sources]);
+
+  const filteredCoaches = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return coaches.filter((coach) => {
+      if (!showInactive && !coach.active) {
+        return false;
+      }
+
+      if (!query) {
+        return true;
+      }
+
+      const team = coach.current_team_id
+        ? teamById.get(coach.current_team_id)
+        : undefined;
+
+      const league = team?.league_id
+        ? leagueById.get(team.league_id)
+        : undefined;
+
+      const searchableText = [
+        coach.name,
+        coach.country,
+        coach.city,
+        coach.external_id,
+        coach.source,
+        team?.name,
+        team?.country,
+        team?.city,
+        team?.league_name,
+        league?.name,
+        league?.country,
+        league?.level,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(query);
+    });
+  }, [
+    coaches,
+    search,
+    showInactive,
+    teamById,
+    leagueById,
+  ]);
+
+  const activeCount = coaches.filter(
+    (coach) => coach.active
+  ).length;
+
+  const inactiveCount = coaches.filter(
+    (coach) => !coach.active
+  ).length;
+
   if (loading) {
     return (
-      <main style={styles.page}>
-        <div style={styles.loader}>
-          Loading coach directory...
+      <main className="min-h-screen bg-black px-6 py-12 text-white">
+        <div className="mx-auto max-w-7xl">
+          <p className="text-white/60">
+            Loading coach directory...
+          </p>
         </div>
       </main>
     );
   }
 
+  if (!role) {
+    return null;
+  }
+
   return (
-    <main style={styles.page}>
-      <div style={styles.shell}>
-        <header style={styles.header}>
-          <div>
-            <p style={styles.eyebrow}>HOOPCHECK ADMIN</p>
+    <main className="min-h-screen bg-black px-4 py-8 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8">
+          <Link
+            href="/admin/directory"
+            className="mb-4 inline-flex text-sm text-orange-400 transition hover:text-orange-300"
+          >
+            ← Back to Directory Control Center
+          </Link>
 
-            <h1 style={styles.title}>
-              Coach Directory
-            </h1>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-orange-500">
+                HoopCheck Admin
+              </p>
 
-            <p style={styles.subtitle}>
-              Search and review coaches across the
-              worldwide basketball directory.
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Coach Directory
+              </h1>
+
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/60">
+                Manage coaches imported into the worldwide
+                HoopCheck directory.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-orange-500/20 bg-orange-500/10 px-5 py-4">
+              <p className="text-xs uppercase tracking-wider text-orange-300">
+                Access
+              </p>
+              <p className="mt-1 font-semibold capitalize text-white">
+                {role}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <section className="mb-6 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <p className="text-sm text-white/50">
+              Total coaches
+            </p>
+            <p className="mt-2 text-3xl font-bold">
+              {coaches.length}
             </p>
           </div>
 
-          <div style={styles.headerActions}>
-            <Link
-              href="/admin/directory"
-              style={styles.secondaryButton}
-            >
-              ← Directory
-            </Link>
-
-            <Link
-              href="/admin/reviews"
-              style={styles.secondaryButton}
-            >
-              Review Queue
-            </Link>
+          <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-5">
+            <p className="text-sm text-green-300/70">
+              Active
+            </p>
+            <p className="mt-2 text-3xl font-bold text-green-300">
+              {activeCount}
+            </p>
           </div>
-        </header>
 
-        {error && (
-          <div style={styles.errorBox}>
-            {error}
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <p className="text-sm text-white/50">
+              Inactive
+            </p>
+            <p className="mt-2 text-3xl font-bold">
+              {inactiveCount}
+            </p>
           </div>
-        )}
-
-        <section style={styles.statsGrid}>
-          <StatCard
-            label="Total Coaches"
-            value={coaches.length}
-          />
-
-          <StatCard
-            label="Active"
-            value={activeCount}
-          />
-
-          <StatCard
-            label="Inactive"
-            value={inactiveCount}
-          />
-
-          <StatCard
-            label="Showing"
-            value={filteredCoaches.length}
-          />
         </section>
 
-        <section style={styles.panel}>
-          <div style={styles.panelHeader}>
-            <div>
-              <p style={styles.sectionEyebrow}>
-                COACH DATABASE
-              </p>
-
-              <h2 style={styles.panelTitle}>
-                Find a coach
-              </h2>
-            </div>
-
-            <span style={styles.badge}>
-              {role === "admin"
-                ? "Admin Access"
-                : "Moderator Access"}
-            </span>
-          </div>
-
-          <div style={styles.controls}>
-            <div style={styles.searchWrapper}>
-              <span style={styles.searchIcon}>
-                🔎
-              </span>
+        <section className="mb-6 rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+            <div className="flex-1">
+              <label
+                htmlFor="coach-search"
+                className="mb-2 block text-sm font-medium text-white/70"
+              >
+                Search coaches
+              </label>
 
               <input
-                type="search"
+                id="coach-search"
+                type="text"
                 value={search}
                 onChange={(event) =>
                   setSearch(event.target.value)
                 }
-                placeholder="Search coach, team, league, city, or country..."
-                style={styles.searchInput}
+                placeholder="Coach, team, league, city, country, source..."
+                className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-orange-500"
               />
             </div>
 
-            <label style={styles.checkboxLabel}>
+            <label className="flex cursor-pointer items-center gap-3 text-sm text-white/70">
               <input
                 type="checkbox"
                 checked={showInactive}
                 onChange={(event) =>
                   setShowInactive(event.target.checked)
                 }
+                className="h-4 w-4 accent-orange-500"
               />
-
-              <span>
-                Show inactive
-              </span>
+              Show inactive
             </label>
           </div>
         </section>
 
-        <section style={styles.panel}>
-          <div style={styles.resultsHeader}>
-            <div>
-              <p style={styles.sectionEyebrow}>
-                RESULTS
-              </p>
-
-              <h2 style={styles.panelTitle}>
-                {filteredCoaches.length.toLocaleString()}{" "}
-                coaches
-              </h2>
-            </div>
-
-            <span style={styles.resultNote}>
-              {teams.length.toLocaleString()} teams ·{" "}
-              {leagues.length.toLocaleString()} leagues
-            </span>
+        <section className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold">
+              Coaches
+            </h2>
+            <p className="mt-1 text-sm text-white/50">
+              Showing {filteredCoaches.length} coach
+              {filteredCoaches.length === 1 ? "" : "es"}.
+            </p>
           </div>
+        </section>
 
-          {filteredCoaches.length === 0 ? (
-            <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>
-                🏀
-              </div>
+        {filteredCoaches.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-10 text-center">
+            <h3 className="text-lg font-semibold">
+              No coaches found
+            </h3>
 
-              <h3 style={styles.emptyTitle}>
-                No coaches found
-              </h3>
+            <p className="mt-2 text-sm text-white/50">
+              Try a different search or enable inactive
+              coaches.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {filteredCoaches.map((coach) => {
+              const team = coach.current_team_id
+                ? teamById.get(coach.current_team_id)
+                : undefined;
 
-              <p style={styles.emptyText}>
-                {coaches.length === 0
-                  ? "The coach directory does not contain any records yet."
-                  : "Try another search or enable inactive coaches."}
-              </p>
-            </div>
-          ) : (
-            <div style={styles.coachGrid}>
-              {filteredCoaches.map((coach) => {
-                const team = coach.current_team_id
-                  ? teamMap.get(coach.current_team_id)
-                  : undefined;
+              const league = team?.league_id
+                ? leagueById.get(team.league_id)
+                : undefined;
 
-                const league = team?.league_id
-                  ? leagueMap.get(team.league_id)
-                  : undefined;
+              const sourceName = coach.source
+                ? coach.source
+                : "Manual / Unknown";
 
-                const sourceName = coach.source_id
-                  ? sourceMap.get(coach.source_id)
-                  : coach.source;
+              const isSaving =
+                actionLoading === coach.id;
 
-                const isActionLoading =
-                  actionLoading === coach.id;
-
-                return (
-                  <article
-                    key={coach.id}
-                    style={{
-                      ...styles.coachCard,
-                      ...(coach.active
-                        ? {}
-                        : styles.inactiveCard),
-                    }}
-                  >
-                    <div style={styles.coachTop}>
-                      <div style={styles.avatar}>
+              return (
+                <article
+                  key={coach.id}
+                  className={`overflow-hidden rounded-2xl border bg-white/[0.04] ${
+                    coach.active
+                      ? "border-white/10"
+                      : "border-red-500/20 opacity-80"
+                  }`}
+                >
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 items-center gap-4">
                         {coach.photo_url ? (
                           <img
                             src={coach.photo_url}
                             alt={coach.name}
-                            style={styles.avatarImage}
+                            className="h-14 w-14 rounded-full object-cover"
                           />
                         ) : (
-                          getInitials(coach.name)
+                          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-orange-500/15 text-lg font-bold text-orange-400">
+                            {coach.name
+                              .slice(0, 1)
+                              .toUpperCase()}
+                          </div>
                         )}
+
+                        <div className="min-w-0">
+                          <h3 className="truncate text-lg font-bold">
+                            {coach.name}
+                          </h3>
+
+                          <p className="mt-1 text-sm text-white/50">
+                            {coach.city ||
+                            coach.country
+                              ? [
+                                  coach.city,
+                                  coach.country,
+                                ]
+                                  .filter(Boolean)
+                                  .join(", ")
+                              : "Location not listed"}
+                          </p>
+                        </div>
                       </div>
 
-                      <div style={styles.statusColumn}>
-                        <span
-                          style={{
-                            ...styles.status,
-                            ...(coach.active
-                              ? styles.activeStatus
-                              : styles.inactiveStatus),
-                          }}
-                        >
-                          {coach.active
-                            ? "ACTIVE"
-                            : "INACTIVE"}
-                        </span>
+                      <span
+                        className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
+                          coach.active
+                            ? "bg-green-500/15 text-green-300"
+                            : "bg-red-500/15 text-red-300"
+                        }`}
+                      >
+                        {coach.active
+                          ? "ACTIVE"
+                          : "INACTIVE"}
+                      </span>
+                    </div>
+
+                    <div className="mt-5 space-y-3">
+                      <div className="rounded-xl border border-white/5 bg-black/30 p-3">
+                        <p className="text-xs uppercase tracking-wider text-white/30">
+                          Team
+                        </p>
+
+                        <p className="mt-1 text-sm font-medium">
+                          {team?.name ||
+                            "No current team linked"}
+                        </p>
                       </div>
-                    </div>
 
-                    <div>
-                      <h3 style={styles.coachName}>
-                        {coach.name}
-                      </h3>
+                      <div className="rounded-xl border border-white/5 bg-black/30 p-3">
+                        <p className="text-xs uppercase tracking-wider text-white/30">
+                          League
+                        </p>
 
-                      <p style={styles.location}>
-                        {formatLocation(
-                          coach.city,
-                          coach.country
+                        <p className="mt-1 text-sm font-medium">
+                          {league?.name ||
+                            team?.league_name ||
+                            "No league linked"}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-xl border border-white/5 bg-black/30 p-3">
+                          <p className="text-xs uppercase tracking-wider text-white/30">
+                            Source
+                          </p>
+
+                          <p className="mt-1 truncate text-sm">
+                            {sourceName}
+                          </p>
+                        </div>
+
+                        <div className="rounded-xl border border-white/5 bg-black/30 p-3">
+                          <p className="text-xs uppercase tracking-wider text-white/30">
+                            External ID
+                          </p>
+
+                          <p className="mt-1 truncate text-sm">
+                            {coach.external_id ||
+                              "Not set"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {coach.source &&
+                        sourceById.size > 0 && (
+                          <p className="text-xs text-white/30">
+                            Directory source:
+                            {" "}
+                            {sourceById.get(
+                              coach.source
+                            )?.name ||
+                              coach.source}
+                          </p>
                         )}
-                      </p>
+
+                      {coach.last_synced_at && (
+                        <p className="text-xs text-white/30">
+                          Last synced:{" "}
+                          {new Date(
+                            coach.last_synced_at
+                          ).toLocaleString()}
+                        </p>
+                      )}
                     </div>
 
-                    <div style={styles.relationships}>
-                      <InfoRow
-                        label="Current Team"
-                        value={
-                          team?.name ??
-                          "No team connected"
-                        }
-                      />
-
-                      <InfoRow
-                        label="League"
-                        value={
-                          league?.name ??
-                          team?.league_name ??
-                          "No league connected"
-                        }
-                      />
-
-                      <InfoRow
-                        label="Source"
-                        value={
-                          sourceName ??
-                          "Manual / Unknown"
-                        }
-                      />
-                    </div>
-
-                    <div style={styles.cardFooter}>
+                    <div className="mt-5 flex flex-wrap gap-2">
                       <Link
                         href={`/coaches/${coach.id}`}
-                        style={styles.primaryButton}
+                        className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-black transition hover:bg-orange-400"
                       >
                         View Profile
                       </Link>
@@ -604,652 +653,41 @@ export default function AdminCoachDirectoryPage() {
                           href={coach.website}
                           target="_blank"
                           rel="noreferrer"
-                          style={styles.secondarySmallButton}
+                          className="rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/5"
                         >
-                          Website ↗
+                          Website
                         </a>
                       )}
 
                       <button
                         type="button"
-                        disabled={isActionLoading}
+                        disabled={isSaving}
                         onClick={() =>
                           runCoachAction(
-                            "set_active",
                             coach.id,
                             !coach.active
                           )
                         }
-                        style={{
-                          ...styles.secondarySmallButton,
-                          ...styles.actionButton,
-                          ...(isActionLoading
-                            ? styles.disabledButton
-                            : {}),
-                        }}
+                        className={`rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                          coach.active
+                            ? "border-red-500/30 text-red-300 hover:bg-red-500/10"
+                            : "border-green-500/30 text-green-300 hover:bg-green-500/10"
+                        }`}
                       >
-                        {isActionLoading
+                        {isSaving
                           ? "Saving..."
                           : coach.active
-                            ? "Deactivate"
-                            : "Activate"}
+                          ? "Deactivate"
+                          : "Activate"}
                       </button>
                     </div>
-
-                    {coach.last_synced_at && (
-                      <p style={styles.synced}>
-                        Last synced{" "}
-                        {formatDate(
-                          coach.last_synced_at
-                        )}
-                      </p>
-                    )}
-                  </article>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        <section style={styles.panel}>
-          <div style={styles.panelHeader}>
-            <div>
-              <p style={styles.sectionEyebrow}>
-                DIRECTORY STRUCTURE
-              </p>
-
-              <h2 style={styles.panelTitle}>
-                Coach → Team → League
-              </h2>
-
-              <p style={styles.panelText}>
-                Each coach can be connected to a current
-                team, and each team can be connected to
-                a league. This structure keeps the
-                worldwide directory searchable and
-                organized.
-              </p>
-            </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
-
-          <div style={styles.structureGrid}>
-            <StructureCard
-              number="01"
-              title="Coach"
-              description="Name, location, profile, source, and current team."
-            />
-
-            <StructureCard
-              number="02"
-              title="Team"
-              description="Professional team, location, logo, and league relationship."
-            />
-
-            <StructureCard
-              number="03"
-              title="League"
-              description="Competition name, country, level, season, and source."
-            />
-          </div>
-        </section>
+        )}
       </div>
     </main>
   );
 }
-
-function StatCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: number;
-}) {
-  return (
-    <div style={styles.statCard}>
-      <span style={styles.statLabel}>
-        {label}
-      </span>
-
-      <strong style={styles.statValue}>
-        {value.toLocaleString()}
-      </strong>
-    </div>
-  );
-}
-
-function InfoRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div style={styles.infoRow}>
-      <span style={styles.infoLabel}>
-        {label}
-      </span>
-
-      <span style={styles.infoValue}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function StructureCard({
-  number,
-  title,
-  description,
-}: {
-  number: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div style={styles.structureCard}>
-      <span style={styles.structureNumber}>
-        {number}
-      </span>
-
-      <h3 style={styles.structureTitle}>
-        {title}
-      </h3>
-
-      <p style={styles.structureText}>
-        {description}
-      </p>
-    </div>
-  );
-}
-
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
-}
-
-function formatLocation(
-  city: string | null,
-  country: string | null
-) {
-  if (city && country) {
-    return `${city}, ${country}`;
-  }
-
-  return city || country || "Location not listed";
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "unknown date";
-  }
-
-  return date.toLocaleDateString();
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    background:
-      "radial-gradient(circle at 50% -10%, rgba(255,106,0,0.14), transparent 35%), #050505",
-    color: "#fff",
-    padding: "40px 20px 80px",
-  },
-
-  shell: {
-    width: "min(1200px, 100%)",
-    margin: "0 auto",
-  },
-
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: "20px",
-    marginBottom: "28px",
-    flexWrap: "wrap",
-  },
-
-  headerActions: {
-    display: "flex",
-    gap: "9px",
-    flexWrap: "wrap",
-  },
-
-  eyebrow: {
-    margin: "0 0 8px",
-    color: "#ff6a00",
-    fontSize: "11px",
-    fontWeight: 950,
-    letterSpacing: "0.17em",
-    textTransform: "uppercase",
-  },
-
-  title: {
-    margin: 0,
-    fontSize: "clamp(2.3rem, 5vw, 4rem)",
-    lineHeight: 0.98,
-    letterSpacing: "-0.06em",
-    fontWeight: 950,
-  },
-
-  subtitle: {
-    color: "#8c8c8c",
-    margin: "13px 0 0",
-    maxWidth: "650px",
-    lineHeight: 1.5,
-  },
-
-  secondaryButton: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "42px",
-    padding: "0 14px",
-    borderRadius: "8px",
-    background: "#151515",
-    border: "1px solid #303030",
-    color: "#fff",
-    textDecoration: "none",
-    fontSize: "11px",
-    fontWeight: 950,
-    textTransform: "uppercase",
-    letterSpacing: "0.07em",
-  },
-
-  errorBox: {
-    background: "rgba(255,50,50,0.08)",
-    border: "1px solid rgba(255,70,70,0.35)",
-    color: "#ff8b8b",
-    borderRadius: "10px",
-    padding: "13px 15px",
-    marginBottom: "18px",
-  },
-
-  statsGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(190px, 1fr))",
-    gap: "14px",
-    marginBottom: "20px",
-  },
-
-  statCard: {
-    background: "#111",
-    border: "1px solid #272727",
-    borderTop: "3px solid #ff6a00",
-    borderRadius: "13px",
-    padding: "18px",
-  },
-
-  statLabel: {
-    display: "block",
-    color: "#7f7f7f",
-    fontSize: "10px",
-    fontWeight: 900,
-    letterSpacing: "0.11em",
-    textTransform: "uppercase",
-    marginBottom: "13px",
-  },
-
-  statValue: {
-    display: "block",
-    fontSize: "2.25rem",
-    lineHeight: 1,
-    fontWeight: 950,
-    letterSpacing: "-0.05em",
-  },
-
-  panel: {
-    background: "rgba(17,17,17,0.95)",
-    border: "1px solid #252525",
-    borderRadius: "15px",
-    padding: "22px",
-    marginBottom: "18px",
-  },
-
-  panelHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: "18px",
-    flexWrap: "wrap",
-    marginBottom: "20px",
-  },
-
-  sectionEyebrow: {
-    margin: "0 0 6px",
-    color: "#ff6a00",
-    fontSize: "9px",
-    fontWeight: 950,
-    letterSpacing: "0.16em",
-  },
-
-  panelTitle: {
-    margin: 0,
-    fontSize: "1.4rem",
-    fontWeight: 950,
-    letterSpacing: "-0.02em",
-  },
-
-  panelText: {
-    margin: "8px 0 0",
-    color: "#858585",
-    maxWidth: "750px",
-    lineHeight: 1.6,
-  },
-
-  badge: {
-    borderRadius: "999px",
-    padding: "6px 10px",
-    background: "rgba(255,106,0,0.1)",
-    border: "1px solid rgba(255,106,0,0.3)",
-    color: "#ffad72",
-    fontSize: "9px",
-    fontWeight: 950,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-  },
-
-  controls: {
-    display: "flex",
-    alignItems: "center",
-    gap: "15px",
-    flexWrap: "wrap",
-  },
-
-  searchWrapper: {
-    position: "relative",
-    flex: "1 1 400px",
-  },
-
-  searchIcon: {
-    position: "absolute",
-    left: "14px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    fontSize: "14px",
-    opacity: 0.6,
-  },
-
-  searchInput: {
-    width: "100%",
-    minHeight: "48px",
-    boxSizing: "border-box",
-    padding: "0 15px 0 43px",
-    borderRadius: "9px",
-    border: "1px solid #303030",
-    background: "#090909",
-    color: "#fff",
-    outline: "none",
-    fontSize: "14px",
-  },
-
-  checkboxLabel: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    color: "#aaa",
-    fontSize: "12px",
-    fontWeight: 700,
-    whiteSpace: "nowrap",
-  },
-
-  resultsHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    gap: "15px",
-    marginBottom: "20px",
-    flexWrap: "wrap",
-  },
-
-  resultNote: {
-    color: "#686868",
-    fontSize: "11px",
-  },
-
-  coachGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fill, minmax(280px, 1fr))",
-    gap: "14px",
-  },
-
-  coachCard: {
-    background: "#0b0b0b",
-    border: "1px solid #292929",
-    borderRadius: "13px",
-    padding: "17px",
-    minWidth: 0,
-  },
-
-  inactiveCard: {
-    opacity: 0.68,
-    borderColor: "#333",
-  },
-
-  coachTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: "14px",
-  },
-
-  avatar: {
-    width: "54px",
-    height: "54px",
-    borderRadius: "50%",
-    background:
-      "linear-gradient(135deg, #ff6a00, #ffad72)",
-    color: "#050505",
-    display: "grid",
-    placeItems: "center",
-    fontSize: "17px",
-    fontWeight: 950,
-    overflow: "hidden",
-  },
-
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-
-  statusColumn: {
-    display: "flex",
-    justifyContent: "flex-end",
-  },
-
-  status: {
-    display: "inline-flex",
-    borderRadius: "999px",
-    padding: "5px 8px",
-    fontSize: "8px",
-    fontWeight: 950,
-    letterSpacing: "0.08em",
-  },
-
-  activeStatus: {
-    color: "#65df65",
-    background: "rgba(70,210,70,0.1)",
-    border: "1px solid rgba(70,210,70,0.2)",
-  },
-
-  inactiveStatus: {
-    color: "#888",
-    background: "#1b1b1b",
-    border: "1px solid #292929",
-  },
-
-  coachName: {
-    margin: 0,
-    fontSize: "1.1rem",
-    fontWeight: 950,
-  },
-
-  location: {
-    margin: "5px 0 0",
-    color: "#777",
-    fontSize: "12px",
-  },
-
-  relationships: {
-    marginTop: "16px",
-    borderTop: "1px solid #222",
-    borderBottom: "1px solid #222",
-  },
-
-  infoRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "12px",
-    padding: "10px 0",
-    borderBottom: "1px solid #1d1d1d",
-  },
-
-  infoLabel: {
-    color: "#666",
-    fontSize: "10px",
-    fontWeight: 800,
-    textTransform: "uppercase",
-    letterSpacing: "0.05em",
-    flexShrink: 0,
-  },
-
-  infoValue: {
-    color: "#ddd",
-    fontSize: "11px",
-    fontWeight: 700,
-    textAlign: "right",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-  },
-
-  cardFooter: {
-    display: "flex",
-    gap: "8px",
-    marginTop: "15px",
-    flexWrap: "wrap",
-  },
-
-  primaryButton: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "36px",
-    padding: "0 12px",
-    borderRadius: "7px",
-    background: "#ff6a00",
-    color: "#050505",
-    textDecoration: "none",
-    fontSize: "10px",
-    fontWeight: 950,
-    textTransform: "uppercase",
-    letterSpacing: "0.06em",
-  },
-
-  secondarySmallButton: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "36px",
-    padding: "0 12px",
-    borderRadius: "7px",
-    background: "#151515",
-    border: "1px solid #303030",
-    color: "#ddd",
-    textDecoration: "none",
-    fontSize: "10px",
-    fontWeight: 900,
-    textTransform: "uppercase",
-  },
-
-  actionButton: {
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-
-  disabledButton: {
-    opacity: 0.5,
-    cursor: "not-allowed",
-  },
-
-  synced: {
-    margin: "11px 0 0",
-    color: "#555",
-    fontSize: "9px",
-  },
-
-  emptyState: {
-    textAlign: "center",
-    padding: "60px 20px",
-    border: "1px dashed #292929",
-    borderRadius: "12px",
-    background: "#0b0b0b",
-  },
-
-  emptyIcon: {
-    fontSize: "30px",
-    marginBottom: "12px",
-  },
-
-  emptyTitle: {
-    margin: 0,
-    fontSize: "1.1rem",
-  },
-
-  emptyText: {
-    color: "#777",
-    margin: "8px auto 0",
-    maxWidth: "500px",
-    lineHeight: 1.5,
-    fontSize: "13px",
-  },
-
-  structureGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: "12px",
-  },
-
-  structureCard: {
-    background: "#0b0b0b",
-    border: "1px solid #272727",
-    borderRadius: "11px",
-    padding: "16px",
-  },
-
-  structureNumber: {
-    color: "#ff6a00",
-    fontSize: "10px",
-    fontWeight: 950,
-  },
-
-  structureTitle: {
-    margin: "10px 0 7px",
-    fontSize: "1rem",
-    fontWeight: 950,
-  },
-
-  structureText: {
-    margin: 0,
-    color: "#777",
-    lineHeight: 1.5,
-    fontSize: "12px",
-  },
-
-  loader: {
-    minHeight: "60vh",
-    display: "grid",
-    placeItems: "center",
-    color: "#aaa",
-  },
-};
