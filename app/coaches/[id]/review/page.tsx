@@ -191,8 +191,7 @@ export default function CoachReviewPage() {
           )
           .maybeSingle(),
 
-        supabase.rpc(
-          "is_current_user_admin_or_moderator"
+        supabase.rpc("is_current_user_admin_or_moderator"),
         ),
       ]);
 
