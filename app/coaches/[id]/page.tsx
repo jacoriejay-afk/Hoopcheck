@@ -43,11 +43,7 @@ function RatingBar({
   );
 
   return (
-    <div
-      style={{
-        marginBottom: "18px",
-      }}
-    >
+    <div style={{ marginBottom: "18px" }}>
       <div
         style={{
           display: "flex",
@@ -62,11 +58,7 @@ function RatingBar({
       >
         <span>{label}</span>
 
-        <span
-          style={{
-            color: "var(--orange)",
-          }}
-        >
+        <span style={{ color: "var(--orange)" }}>
           {value.toFixed(1)}
         </span>
       </div>
@@ -167,33 +159,32 @@ export default function CoachDetailPage() {
         return;
       }
 
-      const [
-        subscriptionResult,
-        adminResult,
-      ] = await Promise.all([
-        supabase
-          .from("subscriptions")
-          .select(
-            "status, current_period_end"
-          )
-          .eq(
-            "user_id",
-            user.id
-          )
-          .maybeSingle(),
+      const {
+        data: subscription,
+      } = await supabase
+        .from("subscriptions")
+        .select(
+          "status, current_period_end"
+        )
+        .eq(
+          "user_id",
+          user.id
+        )
+        .maybeSingle();
 
-        supabase
-          .from("admin_roles")
-          .select("role")
-          .eq(
-            "user_id",
-            user.id
-          )
-          .maybeSingle(),
-      ]);
+      const {
+        data: adminResult,
+        error: adminError,
+      } = await supabase.rpc(
+        "is_current_user_admin_or_moderator"
+      );
 
-      const subscription =
-        subscriptionResult.data;
+      if (adminError) {
+        console.error(
+          "Admin check error:",
+          adminError
+        );
+      }
 
       const currentPeriodEnd =
         subscription?.current_period_end
@@ -215,15 +206,9 @@ export default function CoachDetailPage() {
             new Date()
         );
 
-      const isAdmin =
-        adminResult.data?.role ===
-          "admin" ||
-        adminResult.data?.role ===
-          "moderator";
-
       const access =
         subscriptionIsActive ||
-        isAdmin;
+        Boolean(adminResult);
 
       setHasAccess(access);
 
@@ -318,7 +303,7 @@ export default function CoachDetailPage() {
         review_id: reportReviewId,
         reporter_id: user.id,
         reason: reportReason,
-        status: "pending",
+        status: "open",
       });
 
     if (error) {
@@ -541,12 +526,21 @@ export default function CoachDetailPage() {
         </p>
 
         <div className="actions">
-          <Link
-            href={`/coaches/${coach.id}/review`}
-            className="btn"
-          >
-            Write A Review
-          </Link>
+          {hasAccess ? (
+            <Link
+              href={`/coaches/${coach.id}/review`}
+              className="btn"
+            >
+              Write A Review
+            </Link>
+          ) : (
+            <Link
+              href="/membership"
+              className="btn"
+            >
+              Become A Member To Review
+            </Link>
+          )}
 
           <Link
             href="/coaches"
@@ -915,6 +909,6 @@ export default function CoachDetailPage() {
           </div>
         </div>
       )}
-</main>
+    </main>
   );
 }
