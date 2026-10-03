@@ -162,60 +162,6 @@ return (
       </Link>
     </div>
   </section>
-  <style jsx>{`
-    .search-nav {
-      color: var(--orange);
-      font-weight: 900;
-    }
-    .research-search {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-      padding: 12px 18px;
-      border: 2px solid var(--orange);
-      border-radius: 999px;
-      color: var(--orange);
-      font-size: 13px;
-      font-weight: 900;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      transition: 0.2s ease;
-    }
-    .research-search:hover {
-      background: var(--orange);
-      color: #000;
-    }
-    .search-label {
-      color: var(--orange);
-      font-size: 12px;
-      font-weight: 900;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-    .search-button {
-      white-space: nowrap;
-    }
-    @media (max-width: 700px) {
-      .links {
-        gap: 10px;
-      }
-      .links a {
-        font-size: 12px;
-      }
-      .links .btn {
-        padding: 9px 12px;
-      }
-      .actions {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .actions .btn {
-        width: 100%;
-        text-align: center;
-      }
-    }
-  `}</style>
 </main>
 
 );

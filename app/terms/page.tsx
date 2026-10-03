@@ -257,61 +257,6 @@ return (
       </div>
     </div>
   </section>
-  <style jsx>{`
-    .legal-content {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 0 24px 80px;
-    }
-    .legal-card {
-      background: #111;
-      border: 1px solid #2a2a2a;
-      border-top: 4px solid var(--orange);
-      padding: 42px;
-      border-radius: 18px;
-    }
-    .updated {
-      color: var(--orange);
-      font-size: 12px;
-      font-weight: 900;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin-bottom: 35px;
-    }
-    .legal-card h2 {
-      margin-top: 38px;
-      margin-bottom: 12px;
-      font-size: 22px;
-    }
-    .legal-card p {
-      color: #c9c9c9;
-      line-height: 1.8;
-      margin-bottom: 16px;
-    }
-    .legal-footer {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 18px;
-      margin-top: 45px;
-      padding-top: 25px;
-      border-top: 1px solid #333;
-    }
-    .legal-footer a {
-      color: var(--orange);
-      font-weight: 900;
-    }
-    @media (max-width: 700px) {
-      .legal-content {
-        padding: 0 16px 60px;
-      }
-      .legal-card {
-        padding: 25px 20px;
-      }
-      .legal-card h2 {
-        font-size: 19px;
-      }
-    }
-  `}</style>
 </main>
 
 );

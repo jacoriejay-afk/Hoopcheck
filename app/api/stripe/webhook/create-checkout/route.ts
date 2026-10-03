@@ -2,46 +2,6 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const stripeSecretKey =
-  process.env.STRIPE_SECRET_KEY;
-
-const proPriceId =
-  process.env.STRIPE_PRO_PRICE_ID;
-
-const premiumPriceId =
-  process.env.STRIPE_PREMIUM_PRICE_ID;
-
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL;
-
-if (!stripeSecretKey) {
-  throw new Error(
-    "Missing STRIPE_SECRET_KEY."
-  );
-}
-
-if (!proPriceId) {
-  throw new Error(
-    "Missing STRIPE_PRO_PRICE_ID."
-  );
-}
-
-if (!premiumPriceId) {
-  throw new Error(
-    "Missing STRIPE_PREMIUM_PRICE_ID."
-  );
-}
-
-if (!siteUrl) {
-  throw new Error(
-    "Missing NEXT_PUBLIC_SITE_URL."
-  );
-}
-
-const stripe = new Stripe(
-  stripeSecretKey
-);
-
 function getAdminSupabase() {
   const supabaseUrl =
     process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -70,6 +30,37 @@ function getAdminSupabase() {
 export async function POST(
   request: Request
 ) {
+  const stripeSecretKey =
+    process.env.STRIPE_SECRET_KEY;
+
+  const proPriceId =
+    process.env.STRIPE_PRO_PRICE_ID;
+
+  const premiumPriceId =
+    process.env.STRIPE_PREMIUM_PRICE_ID;
+
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL;
+
+  if (
+    !stripeSecretKey ||
+    !proPriceId ||
+    !premiumPriceId ||
+    !siteUrl
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "Stripe checkout is not configured.",
+      },
+      { status: 500 }
+    );
+  }
+
+  const stripe = new Stripe(
+    stripeSecretKey
+  );
+
   try {
     const authorization =
       request.headers.get(

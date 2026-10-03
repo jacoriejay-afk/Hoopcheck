@@ -2,28 +2,6 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const stripeSecretKey =
-  process.env.STRIPE_SECRET_KEY;
-
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL;
-
-if (!stripeSecretKey) {
-  throw new Error(
-    "Missing STRIPE_SECRET_KEY."
-  );
-}
-
-if (!siteUrl) {
-  throw new Error(
-    "Missing NEXT_PUBLIC_SITE_URL."
-  );
-}
-
-const stripe = new Stripe(
-  stripeSecretKey
-);
-
 function getAdminSupabase() {
   const supabaseUrl =
     process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -53,6 +31,30 @@ export async function POST(
   request: Request
 ) {
   try {
+    const stripeSecretKey =
+      process.env.STRIPE_SECRET_KEY;
+
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL;
+
+    if (!stripeSecretKey) {
+      return NextResponse.json(
+        { error: "Stripe is not configured." },
+        { status: 500 }
+      );
+    }
+
+    if (!siteUrl) {
+      return NextResponse.json(
+        { error: "Site URL is not configured." },
+        { status: 500 }
+      );
+    }
+
+    const stripe = new Stripe(
+      stripeSecretKey
+    );
+
     const authorization =
       request.headers.get(
         "authorization"

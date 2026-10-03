@@ -2,28 +2,6 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const stripeSecretKey =
-  process.env.STRIPE_SECRET_KEY;
-
-const webhookSecret =
-  process.env.STRIPE_WEBHOOK_SECRET;
-
-if (!stripeSecretKey) {
-  throw new Error(
-    "Missing STRIPE_SECRET_KEY."
-  );
-}
-
-if (!webhookSecret) {
-  throw new Error(
-    "Missing STRIPE_WEBHOOK_SECRET."
-  );
-}
-
-const stripe = new Stripe(
-  stripeSecretKey
-);
-
 function getAdminSupabase() {
   const supabaseUrl =
     process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -96,11 +74,12 @@ async function saveSubscription(
     );
   }
 
+  const currentPeriodEndTimestamp =
+    subscription.items.data[0]?.current_period_end;
   const currentPeriodEnd =
-    subscription.current_period_end
+    currentPeriodEndTimestamp
       ? new Date(
-          subscription.current_period_end *
-            1000
+          currentPeriodEndTimestamp * 1000
         ).toISOString()
       : null;
 
@@ -241,9 +220,49 @@ async function getSubscriptionUserId(
   );
 }
 
+function getInvoiceSubscriptionId(
+  invoice: Stripe.Invoice
+) {
+  const subscription =
+    invoice.parent?.subscription_details
+      ?.subscription;
+
+  if (!subscription) {
+    return null;
+  }
+
+  return typeof subscription === "string"
+    ? subscription
+    : subscription.id;
+}
+
 export async function POST(
   request: Request
 ) {
+  const stripeSecretKey =
+    process.env.STRIPE_SECRET_KEY;
+
+  const webhookSecret =
+    process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!stripeSecretKey || !webhookSecret) {
+    console.error(
+      "Stripe webhook is not configured."
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          "Stripe webhook is not configured.",
+      },
+      { status: 500 }
+    );
+  }
+
+  const stripe = new Stripe(
+    stripeSecretKey
+  );
+
   try {
     const rawBody =
       await request.text();
@@ -316,18 +335,21 @@ export async function POST(
         );
       }
 
-      if (
-        typeof session.subscription !==
+      const subscriptionId =
+        typeof session.subscription ===
         "string"
-      ) {
+          ? session.subscription
+          : session.subscription?.id;
+
+      if (!subscriptionId) {
         throw new Error(
           "Checkout session is missing the subscription ID."
         );
       }
 
       const subscription =
-        await stripe.v1.subscriptions.retrieve(
-          session.subscription
+        await stripe.subscriptions.retrieve(
+          subscriptionId
         );
 
       await saveSubscription(
@@ -344,14 +366,11 @@ export async function POST(
         event.data.object as Stripe.Invoice;
 
       const subscriptionId =
-        typeof invoice.subscription ===
-        "string"
-          ? invoice.subscription
-          : invoice.subscription?.id;
+        getInvoiceSubscriptionId(invoice);
 
       if (subscriptionId) {
         const subscription =
-          await stripe.v1.subscriptions.retrieve(
+          await stripe.subscriptions.retrieve(
             subscriptionId
           );
 
@@ -377,14 +396,11 @@ export async function POST(
         event.data.object as Stripe.Invoice;
 
       const subscriptionId =
-        typeof invoice.subscription ===
-        "string"
-          ? invoice.subscription
-          : invoice.subscription?.id;
+        getInvoiceSubscriptionId(invoice);
 
       if (subscriptionId) {
         const subscription =
-          await stripe.v1.subscriptions.retrieve(
+          await stripe.subscriptions.retrieve(
             subscriptionId
           );
 

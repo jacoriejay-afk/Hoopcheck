@@ -102,47 +102,6 @@ export default function Home() {
           </Link>
         </div>
       </section>
-      <style jsx>{`
-        .search-box {
-          display: flex;
-          gap: 12px;
-          width: 100%;
-          max-width: 720px;
-          margin: 32px 0 8px;
-        }
-        .search-box input {
-          flex: 1;
-          min-width: 0;
-          height: 54px;
-          padding: 0 18px;
-          border: 1px solid #444;
-          border-radius: 8px;
-          background: #111;
-          color: #fff;
-          font-size: 16px;
-          outline: none;
-        }
-        .search-box input::placeholder {
-          color: #888;
-        }
-        .search-box input:focus {
-          border-color: #ff6a00;
-        }
-        .search-box button {
-          border: none;
-          cursor: pointer;
-          white-space: nowrap;
-        }
-        @media (max-width: 600px) {
-          .search-box {
-            flex-direction: column;
-          }
-          .search-box input,
-          .search-box button {
-            width: 100%;
-          }
-        }
-      `}</style>
-    </main>
+</main>
   );
 }
