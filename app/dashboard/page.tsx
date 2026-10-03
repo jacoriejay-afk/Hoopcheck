@@ -16,6 +16,10 @@ type Subscription = {
   status: string | null;
 };
 
+type AdminRole = {
+  role: string;
+};
+
 export default function DashboardPage() {
   const [profile, setProfile] =
     useState<Profile | null>(null);
@@ -23,10 +27,18 @@ export default function DashboardPage() {
   const [subscription, setSubscription] =
     useState<Subscription | null>(null);
 
+  const [isAdmin, setIsAdmin] =
+    useState(false);
+
+  const [adminRole, setAdminRole] =
+    useState<"admin" | "moderator" | null>(null);
+
   const [loading, setLoading] =
     useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     async function loadDashboard() {
       const {
         data: {
@@ -42,6 +54,7 @@ export default function DashboardPage() {
       const [
         profileResult,
         subscriptionResult,
+        adminRoleResult,
       ] = await Promise.all([
         supabase
           .from("profiles")
@@ -54,7 +67,15 @@ export default function DashboardPage() {
           .select("plan, status")
           .eq("user_id", user.id)
           .maybeSingle(),
+
+        supabase
+          .from("admin_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle(),
       ]);
+
+      if (!mounted) return;
 
       if (
         !profileResult.error &&
@@ -72,10 +93,34 @@ export default function DashboardPage() {
         );
       }
 
+      if (
+        !adminRoleResult.error &&
+        adminRoleResult.data
+      ) {
+        const role =
+          (
+            adminRoleResult.data as AdminRole
+          ).role
+            .trim()
+            .toLowerCase();
+
+        if (
+          role === "admin" ||
+          role === "moderator"
+        ) {
+          setIsAdmin(true);
+          setAdminRole(role);
+        }
+      }
+
       setLoading(false);
     }
 
     loadDashboard();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   async function handleLogout() {
@@ -154,6 +199,15 @@ export default function DashboardPage() {
             Leagues
           </Link>
 
+          {isAdmin && (
+            <Link
+              href="/admin/directory"
+              className="btn"
+            >
+              Admin
+            </Link>
+          )}
+
           <Link
             href="/membership"
             className="btn"
@@ -220,6 +274,84 @@ export default function DashboardPage() {
           </Link>
         </div>
       </section>
+
+      {isAdmin && (
+        <section className="grid">
+          <div
+            className="card"
+            style={{
+              border: "2px solid #ff6a00",
+            }}
+          >
+            <div className="eyebrow">
+              {adminRole === "moderator"
+                ? "Moderator"
+                : "Administrator"}
+            </div>
+
+            <h2>
+              Admin Control Center
+            </h2>
+
+            <p>
+              Manage HoopCheck directories,
+              moderate player reviews, and
+              maintain the platform.
+            </p>
+
+            <Link
+              href="/admin/directory"
+              className="btn"
+            >
+              Open Admin Panel
+            </Link>
+          </div>
+
+          <div className="card">
+            <div className="eyebrow">
+              Directory
+            </div>
+
+            <h2>
+              Coach Directory
+            </h2>
+
+            <p>
+              Manage coaches, team relationships,
+              sources, and active directory status.
+            </p>
+
+            <Link
+              href="/admin/directory/coaches"
+              className="btn"
+            >
+              Manage Coaches
+            </Link>
+          </div>
+
+          <div className="card">
+            <div className="eyebrow">
+              Moderation
+            </div>
+
+            <h2>
+              Review Queue
+            </h2>
+
+            <p>
+              Review, approve, reject, and manage
+              player-submitted reviews and reports.
+            </p>
+
+            <Link
+              href="/admin/reviews"
+              className="btn"
+            >
+              Manage Reviews
+            </Link>
+          </div>
+        </section>
+      )}
 
       <section className="grid">
         <div className="card">
@@ -357,6 +489,6 @@ export default function DashboardPage() {
           Log Out
         </button>
       </section>
-</main>
+    </main>
   );
 }
