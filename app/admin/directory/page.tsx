@@ -1,705 +1,630 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "../../../lib/supabase";
 
-type Source = {
-  id: string;
-  name: string;
-  base_url: string | null;
-  documentation_url: string | null;
-  license_notes: string | null;
-  active: boolean;
+type AdminRole = {
+  role: string;
 };
 
-type SyncRun = {
-  id: string;
-  source_id: string | null;
-  entity_type: string;
-  status: string;
-  records_seen: number;
-  records_created: number;
-  records_updated: number;
-  records_skipped: number;
-  error_message: string | null;
-  started_at: string;
-  finished_at: string | null;
+type DirectoryCounts = {
+  coaches: number;
+  teams: number;
+  leagues: number;
 };
 
-export default function DirectoryAdminPage() {
+export default function AdminDirectoryPage() {
   const router = useRouter();
 
-  const [sources, setSources] = useState<Source[]>([]);
-  const [runs, setRuns] = useState<SyncRun[]>([]);
+  const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-  const [message, setMessage] = useState("");
-
-  async function loadDirectory() {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session?.user) {
-      router.replace("/login");
-      return;
-    }
-
-    const { data: role } = await supabase
-      .from("admin_roles")
-      .select("role")
-      .eq("user_id", session.user.id)
-      .maybeSingle();
-
-    if (
-      !role ||
-      !["admin", "moderator"].includes(
-        String(role.role).trim().toLowerCase()
-      )
-    ) {
-      router.replace("/dashboard");
-      return;
-    }
-
-    const [{ data: sourceData }, { data: runData }] = await Promise.all([
-      supabase
-        .from("directory_sources")
-        .select("*")
-        .order("name"),
-      supabase
-        .from("directory_sync_runs")
-        .select("*")
-        .order("started_at", { ascending: false })
-        .limit(25),
-    ]);
-
-    setSources((sourceData ?? []) as Source[]);
-    setRuns((runData ?? []) as SyncRun[]);
-    setLoading(false);
-  }
+  const [counts, setCounts] = useState<DirectoryCounts>({
+    coaches: 0,
+    teams: 0,
+    leagues: 0,
+  });
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    loadDirectory();
-  }, []);
+    let mounted = true;
 
-  async function toggleSource(source: Source) {
-    setMessage("");
-
-    const { error } = await supabase
-      .from("directory_sources")
-      .update({ active: !source.active })
-      .eq("id", source.id);
-
-    if (error) {
-      setMessage(error.message);
-      return;
-    }
-
-    setMessage(
-      `${source.name} is now ${source.active ? "disabled" : "enabled"}.`
-    );
-
-    await loadDirectory();
-  }
-
-  async function runTheSportsDBLeagues() {
-    setSyncing(true);
-    setMessage("");
-
-    try {
+    async function loadDirectory() {
       const {
         data: { session },
+        error: sessionError,
       } = await supabase.auth.getSession();
 
-      if (!session) {
+      if (!mounted) return;
+
+      if (sessionError || !session?.user) {
         router.replace("/login");
         return;
       }
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/directory-sync-thesportsdb`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            mode: "leagues",
-          }),
-        }
-      );
+      const { data: adminRole, error: roleError } = await supabase
+        .from("admin_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
 
-      const result = await response.json();
+      if (!mounted) return;
 
-      if (!response.ok) {
-        throw new Error(result.error ?? "TheSportsDB sync failed.");
-      }
-
-      setMessage(
-        `TheSportsDB sync complete: ${result.records_created ?? 0} created, ${
-          result.records_updated ?? 0
-        } updated.`
-      );
-
-      await loadDirectory();
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Sync failed."
-      );
-    } finally {
-      setSyncing(false);
-    }
-  }
-
-  async function testSportradar() {
-    setSyncing(true);
-    setMessage("");
-
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        router.replace("/login");
+      if (roleError || !adminRole) {
+        router.replace("/dashboard");
         return;
       }
 
-      const source = sources.find(
-        (item) => item.name === "Sportradar Global Basketball"
-      );
+      const normalizedRole = (adminRole as AdminRole).role
+        .trim()
+        .toLowerCase();
 
-      if (!source) {
-        throw new Error("Sportradar source was not found.");
+      if (
+        normalizedRole !== "admin" &&
+        normalizedRole !== "moderator"
+      ) {
+        router.replace("/dashboard");
+        return;
       }
 
-      if (!source.active) {
-        throw new Error(
-          "Sportradar is disabled until the API credential and licensing are ready."
+      const [
+        { count: coachCount, error: coachError },
+        { count: teamCount, error: teamError },
+        { count: leagueCount, error: leagueError },
+      ] = await Promise.all([
+        supabase
+          .from("coaches")
+          .select("*", { count: "exact", head: true })
+          .eq("active", true),
+
+        supabase
+          .from("teams")
+          .select("*", { count: "exact", head: true })
+          .eq("active", true),
+
+        supabase
+          .from("leagues")
+          .select("*", { count: "exact", head: true })
+          .eq("active", true),
+      ]);
+
+      if (!mounted) return;
+
+      if (coachError || teamError || leagueError) {
+        setError(
+          coachError?.message ??
+            teamError?.message ??
+            leagueError?.message ??
+            "Unable to load directory counts."
         );
       }
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/directory-sync-sportradar`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            mode: "leagues",
-          }),
-        }
-      );
+      setRole(normalizedRole);
 
-      const result = await response.json();
+      setCounts({
+        coaches: coachCount ?? 0,
+        teams: teamCount ?? 0,
+        leagues: leagueCount ?? 0,
+      });
 
-      if (!response.ok) {
-        throw new Error(result.error ?? "Sportradar sync failed.");
-      }
-
-      setMessage(
-        `Sportradar sync complete: ${
-          result.records_created ?? 0
-        } created, ${result.records_updated ?? 0} updated.`
-      );
-
-      await loadDirectory();
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Sportradar test failed."
-      );
-    } finally {
-      setSyncing(false);
+      setLoading(false);
     }
-  }
+
+    void loadDirectory();
+
+    return () => {
+      mounted = false;
+    };
+  }, [router]);
 
   if (loading) {
     return (
-      <main className="directory-page">
-        <div className="directory-shell">
-          <p className="directory-loading">Loading directory control center...</p>
+      <main style={styles.page}>
+        <div style={styles.loader}>
+          Loading directory controls...
         </div>
       </main>
     );
   }
 
   return (
-    <main className="directory-page">
-      <div className="directory-shell">
-        <header className="directory-header">
+    <main style={styles.page}>
+      <div style={styles.shell}>
+        <header style={styles.header}>
           <div>
-            <p className="directory-eyebrow">HOOPCHECK ADMIN</p>
-            <h1>Directory Control Center</h1>
-            <p>
-              Manage worldwide basketball data providers and synchronization.
+            <p style={styles.eyebrow}>HOOPCHECK ADMIN</p>
+
+            <h1 style={styles.title}>
+              Directory Control Center
+            </h1>
+
+            <p style={styles.subtitle}>
+              Manage the worldwide basketball directory.
             </p>
           </div>
 
-          <button
-            className="directory-back"
-            onClick={() => router.push("/admin/reviews")}
-          >
-            ← Moderation
-          </button>
+          <div style={styles.headerActions}>
+            <Link
+              href="/admin/reviews"
+              style={styles.secondaryButton}
+            >
+              Review Queue
+            </Link>
+
+            <Link
+              href="/dashboard"
+              style={styles.secondaryButton}
+            >
+              Dashboard
+            </Link>
+          </div>
         </header>
 
-        {message && (
-          <div className="directory-message">
-            {message}
+        {error && (
+          <div style={styles.errorBox}>
+            {error}
           </div>
         )}
 
-        <section className="directory-card">
-          <div className="directory-card-header">
+        <section style={styles.statsGrid}>
+          <StatCard
+            label="Active Coaches"
+            value={counts.coaches}
+            accent="#ff8a1f"
+          />
+
+          <StatCard
+            label="Active Teams"
+            value={counts.teams}
+            accent="#f5b36a"
+          />
+
+          <StatCard
+            label="Active Leagues"
+            value={counts.leagues}
+            accent="#ff6a00"
+          />
+        </section>
+
+        <section style={styles.panel}>
+          <div style={styles.panelHeader}>
             <div>
-              <h2>Data Providers</h2>
-              <p>
-                Providers supply the worldwide league and team directory.
+              <p style={styles.sectionEyebrow}>
+                DIRECTORY MANAGEMENT
+              </p>
+
+              <h2 style={styles.panelTitle}>
+                Build the worldwide basketball database
+              </h2>
+
+              <p style={styles.panelText}>
+                HoopCheck will connect coaches, teams, and leagues
+                while keeping user reviews separate from imported
+                directory data.
               </p>
             </div>
+
+            <span style={styles.badge}>
+              {role === "admin"
+                ? "Admin Access"
+                : "Moderator Access"}
+            </span>
           </div>
 
-          <div className="provider-grid">
-            {sources.map((source) => (
-              <article className="provider-card" key={source.id}>
-                <div className="provider-top">
-                  <div>
-                    <span
-                      className={`provider-status ${
-                        source.active ? "enabled" : "disabled"
-                      }`}
-                    >
-                      {source.active ? "ENABLED" : "DISABLED"}
-                    </span>
+          <div style={styles.cardGrid}>
+            <DirectoryCard
+              number="01"
+              title="Coaches"
+              description="Manage coach profiles, teams, countries, sources, and active status."
+              href="/coaches"
+            />
 
-                    <h3>{source.name}</h3>
-                  </div>
-                </div>
+            <DirectoryCard
+              number="02"
+              title="Teams"
+              description="Manage professional teams and connect each team to its league."
+              href="/teams"
+            />
 
-                <p className="provider-url">
-                  {source.base_url ?? "No API endpoint configured"}
-                </p>
+            <DirectoryCard
+              number="03"
+              title="Leagues"
+              description="Manage leagues, countries, seasons, and competition levels."
+              href="/leagues"
+            />
 
-                <p className="provider-license">
-                  {source.license_notes ??
-                    "No licensing notes recorded."}
-                </p>
-
-                <div className="provider-actions">
-                  <button
-                    onClick={() => toggleSource(source)}
-                    className="secondary-button"
-                  >
-                    {source.active ? "Disable" : "Enable"}
-                  </button>
-
-                  {source.documentation_url && (
-                    <a
-                      href={source.documentation_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="secondary-button"
-                    >
-                      Documentation
-                    </a>
-                  )}
-
-                  {source.name === "TheSportsDB" && source.active && (
-                    <button
-                      onClick={runTheSportsDBLeagues}
-                      disabled={syncing}
-                      className="primary-button"
-                    >
-                      {syncing ? "Syncing..." : "Sync Leagues"}
-                    </button>
-                  )}
-
-                  {source.name === "Sportradar Global Basketball" && (
-                    <button
-                      onClick={testSportradar}
-                      disabled={syncing || !source.active}
-                      className="primary-button"
-                    >
-                      {syncing ? "Testing..." : "Sync Leagues"}
-                    </button>
-                  )}
-                </div>
-              </article>
-            ))}
+            <DirectoryCard
+              number="04"
+              title="Data Providers"
+              description="Control licensed external data sources and synchronization."
+              href="/admin/directory"
+            />
           </div>
         </section>
 
-        <section className="directory-card">
-          <div className="directory-card-header">
+        <section style={styles.panel}>
+          <div style={styles.panelHeader}>
             <div>
-              <h2>Recent Sync History</h2>
-              <p>Latest directory synchronization activity.</p>
+              <p style={styles.sectionEyebrow}>
+                DIRECTORY ROADMAP
+              </p>
+
+              <h2 style={styles.panelTitle}>
+                Worldwide coverage
+              </h2>
             </div>
           </div>
 
-          {runs.length === 0 ? (
-            <div className="empty-state">
-              No synchronization runs yet.
-            </div>
-          ) : (
-            <div className="sync-table-wrapper">
-              <table className="sync-table">
-                <thead>
-                  <tr>
-                    <th>Entity</th>
-                    <th>Status</th>
-                    <th>Seen</th>
-                    <th>Created</th>
-                    <th>Updated</th>
-                    <th>Skipped</th>
-                    <th>Started</th>
-                  </tr>
-                </thead>
+          <div style={styles.roadmap}>
+            <RoadmapItem
+              number="01"
+              title="Database foundation"
+              complete
+            />
 
-                <tbody>
-                  {runs.map((run) => (
-                    <tr key={run.id}>
-                      <td>{run.entity_type}</td>
-                      <td>
-                        <span
-                          className={`sync-status ${run.status}`}
-                        >
-                          {run.status}
-                        </span>
-                      </td>
-                      <td>{run.records_seen}</td>
-                      <td>{run.records_created}</td>
-                      <td>{run.records_updated}</td>
-                      <td>{run.records_skipped}</td>
-                      <td>
-                        {new Date(run.started_at).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+            <RoadmapItem
+              number="02"
+              title="Provider registry"
+              complete
+            />
 
-        <section className="directory-card roadmap-card">
-          <h2>Directory Roadmap</h2>
+            <RoadmapItem
+              number="03"
+              title="Coach directory"
+            />
 
-          <div className="roadmap-grid">
-            <div className="roadmap-item complete">
-              <strong>01</strong>
-              <span>Provider registry</span>
-            </div>
+            <RoadmapItem
+              number="04"
+              title="Team directory"
+            />
 
-            <div className="roadmap-item complete">
-              <strong>02</strong>
-              <span>Normalized database</span>
-            </div>
+            <RoadmapItem
+              number="05"
+              title="League directory"
+            />
 
-            <div className="roadmap-item complete">
-              <strong>03</strong>
-              <span>Sync history</span>
-            </div>
+            <RoadmapItem
+              number="06"
+              title="Coach → Team relationships"
+            />
 
-            <div className="roadmap-item">
-              <strong>04</strong>
-              <span>Sportradar credentials</span>
-            </div>
+            <RoadmapItem
+              number="07"
+              title="Team → League relationships"
+            />
 
-            <div className="roadmap-item">
-              <strong>05</strong>
-              <span>Global league import</span>
-            </div>
-
-            <div className="roadmap-item">
-              <strong>06</strong>
-              <span>Global team import</span>
-            </div>
-
-            <div className="roadmap-item">
-              <strong>07</strong>
-              <span>Coach directory</span>
-            </div>
-
-            <div className="roadmap-item">
-              <strong>08</strong>
-              <span>User corrections</span>
-            </div>
+            <RoadmapItem
+              number="08"
+              title="Licensed worldwide imports"
+            />
           </div>
         </section>
       </div>
-
-      <style jsx>{`
-        .directory-page {
-          min-height: 100vh;
-          background: #090909;
-          color: #fff;
-          padding: 32px 18px 70px;
-        }
-
-        .directory-shell {
-          width: min(1200px, 100%);
-          margin: 0 auto;
-        }
-
-        .directory-header {
-          display: flex;
-          justify-content: space-between;
-          gap: 24px;
-          align-items: flex-start;
-          margin-bottom: 28px;
-        }
-
-        .directory-eyebrow {
-          color: #ff6a00;
-          font-size: 12px;
-          font-weight: 900;
-          letter-spacing: 2px;
-          margin: 0 0 8px;
-        }
-
-        h1 {
-          margin: 0;
-          font-size: clamp(32px, 6vw, 54px);
-          line-height: 0.98;
-          font-weight: 950;
-          letter-spacing: -2px;
-        }
-
-        .directory-header p {
-          color: #a8a8a8;
-          margin: 12px 0 0;
-        }
-
-        .directory-back,
-        .secondary-button,
-        .primary-button {
-          border: 0;
-          border-radius: 10px;
-          padding: 11px 15px;
-          font-weight: 900;
-          cursor: pointer;
-        }
-
-        .directory-back,
-        .secondary-button {
-          background: #181818;
-          color: #fff;
-          border: 1px solid #303030;
-        }
-
-        .primary-button {
-          background: #ff6a00;
-          color: #090909;
-        }
-
-        .primary-button:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .directory-message {
-          border: 1px solid #ff6a00;
-          background: rgba(255, 106, 0, 0.08);
-          color: #ff9a55;
-          padding: 14px 16px;
-          border-radius: 12px;
-          margin-bottom: 20px;
-        }
-
-        .directory-card {
-          background: #111;
-          border: 1px solid #252525;
-          border-radius: 16px;
-          padding: 22px;
-          margin-bottom: 20px;
-          overflow: hidden;
-        }
-
-        .directory-card-header {
-          margin-bottom: 20px;
-        }
-
-        .directory-card h2 {
-          margin: 0;
-          font-size: 22px;
-          font-weight: 950;
-        }
-
-        .directory-card-header p {
-          color: #858585;
-          margin: 7px 0 0;
-        }
-
-        .provider-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 16px;
-        }
-
-        .provider-card {
-          border: 1px solid #2b2b2b;
-          background: #0c0c0c;
-          border-radius: 14px;
-          padding: 18px;
-        }
-
-        .provider-top {
-          display: flex;
-          justify-content: space-between;
-        }
-
-        .provider-status,
-        .sync-status {
-          display: inline-flex;
-          border-radius: 999px;
-          padding: 4px 8px;
-          font-size: 10px;
-          font-weight: 950;
-          letter-spacing: 0.7px;
-        }
-
-        .provider-status.enabled {
-          background: rgba(50, 205, 50, 0.12);
-          color: #62db62;
-        }
-
-        .provider-status.disabled {
-          background: #202020;
-          color: #888;
-        }
-
-        .provider-card h3 {
-          margin: 12px 0 0;
-          font-size: 20px;
-          font-weight: 950;
-        }
-
-        .provider-url {
-          color: #777;
-          font-size: 12px;
-          word-break: break-all;
-          margin: 14px 0;
-        }
-
-        .provider-license {
-          color: #aaa;
-          font-size: 13px;
-          line-height: 1.5;
-          min-height: 58px;
-        }
-
-        .provider-actions {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin-top: 18px;
-        }
-
-        .provider-actions a {
-          text-decoration: none;
-        }
-
-        .sync-table-wrapper {
-          overflow-x: auto;
-        }
-
-        .sync-table {
-          width: 100%;
-          min-width: 760px;
-          border-collapse: collapse;
-        }
-
-        .sync-table th,
-        .sync-table td {
-          text-align: left;
-          padding: 13px 10px;
-          border-bottom: 1px solid #242424;
-          font-size: 13px;
-        }
-
-        .sync-table th {
-          color: #777;
-          font-size: 11px;
-          text-transform: uppercase;
-          letter-spacing: 0.7px;
-        }
-
-        .sync-status.completed {
-          color: #65dc65;
-          background: rgba(50, 205, 50, 0.1);
-        }
-
-        .sync-status.running {
-          color: #ffad64;
-          background: rgba(255, 106, 0, 0.1);
-        }
-
-        .sync-status.failed {
-          color: #ff6666;
-          background: rgba(255, 60, 60, 0.1);
-        }
-
-        .empty-state,
-        .directory-loading {
-          color: #777;
-          padding: 24px 0;
-        }
-
-        .roadmap-grid {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 10px;
-        }
-
-        .roadmap-item {
-          border: 1px solid #282828;
-          background: #0c0c0c;
-          padding: 15px;
-          border-radius: 12px;
-        }
-
-        .roadmap-item strong {
-          display: block;
-          color: #555;
-          font-size: 11px;
-          margin-bottom: 8px;
-        }
-
-        .roadmap-item span {
-          font-weight: 800;
-          font-size: 13px;
-          color: #aaa;
-        }
-
-        .roadmap-item.complete {
-          border-color: rgba(255, 106, 0, 0.35);
-        }
-
-        .roadmap-item.complete strong,
-        .roadmap-item.complete span {
-          color: #ff6a00;
-        }
-
-        @media (max-width: 800px) {
-          .provider-grid,
-          .roadmap-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .directory-header {
-            flex-direction: column;
-          }
-
-          .directory-back {
-            width: 100%;
-          }
-        }
-      `}</style>
     </main>
   );
 }
+
+function StatCard({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number;
+  accent: string;
+}) {
+  return (
+    <div
+      style={{
+        ...styles.statCard,
+        borderTop: `3px solid ${accent}`,
+      }}
+    >
+      <span style={styles.statLabel}>{label}</span>
+
+      <strong style={styles.statValue}>
+        {value.toLocaleString()}
+      </strong>
+    </div>
+  );
+}
+
+function DirectoryCard({
+  number,
+  title,
+  description,
+  href,
+}: {
+  number: string;
+  title: string;
+  description: string;
+  href: string;
+}) {
+  return (
+    <article style={styles.card}>
+      <span style={styles.cardNumber}>{number}</span>
+
+      <h3 style={styles.cardTitle}>{title}</h3>
+
+      <p style={styles.cardText}>{description}</p>
+
+      <Link href={href} style={styles.cardButton}>
+        Open
+      </Link>
+    </article>
+  );
+}
+
+function RoadmapItem({
+  number,
+  title,
+  complete = false,
+}: {
+  number: string;
+  title: string;
+  complete?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        ...styles.roadmapItem,
+        ...(complete ? styles.roadmapComplete : {}),
+      }}
+    >
+      <strong>{number}</strong>
+
+      <span>{title}</span>
+
+      {complete && (
+        <small>COMPLETE</small>
+      )}
+    </div>
+  );
+}
+
+const styles: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: "100vh",
+    background:
+      "radial-gradient(circle at 50% -10%, rgba(255,106,0,0.14), transparent 35%), #050505",
+    color: "#fff",
+    padding: "40px 24px 80px",
+  },
+
+  shell: {
+    width: "min(1180px, 100%)",
+    margin: "0 auto",
+  },
+
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "20px",
+    marginBottom: "30px",
+    flexWrap: "wrap",
+  },
+
+  headerActions: {
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
+  },
+
+  eyebrow: {
+    margin: "0 0 8px",
+    color: "#ff6a00",
+    fontSize: "12px",
+    fontWeight: 900,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+  },
+
+  title: {
+    margin: 0,
+    fontSize: "clamp(2.3rem, 5vw, 4.2rem)",
+    lineHeight: 0.98,
+    letterSpacing: "-0.06em",
+    fontWeight: 950,
+  },
+
+  subtitle: {
+    color: "#8d8d8d",
+    margin: "14px 0 0",
+    fontSize: "15px",
+  },
+
+  secondaryButton: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "44px",
+    padding: "0 15px",
+    borderRadius: "9px",
+    border: "1px solid #303030",
+    background: "#151515",
+    color: "#fff",
+    textDecoration: "none",
+    fontSize: "12px",
+    fontWeight: 900,
+    textTransform: "uppercase",
+    letterSpacing: "0.07em",
+  },
+
+  errorBox: {
+    background: "rgba(255,60,60,0.08)",
+    border: "1px solid rgba(255,60,60,0.35)",
+    color: "#ff8585",
+    borderRadius: "10px",
+    padding: "13px 15px",
+    marginBottom: "20px",
+  },
+
+  statsGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(210px, 1fr))",
+    gap: "16px",
+    marginBottom: "22px",
+  },
+
+  statCard: {
+    background: "#111",
+    border: "1px solid #252525",
+    borderRadius: "14px",
+    padding: "19px",
+  },
+
+  statLabel: {
+    display: "block",
+    color: "#858585",
+    fontSize: "11px",
+    fontWeight: 900,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    marginBottom: "14px",
+  },
+
+  statValue: {
+    fontSize: "2.5rem",
+    lineHeight: 1,
+    fontWeight: 950,
+    letterSpacing: "-0.06em",
+  },
+
+  panel: {
+    background: "rgba(17,17,17,0.94)",
+    border: "1px solid #252525",
+    borderRadius: "16px",
+    padding: "24px",
+    marginBottom: "20px",
+  },
+
+  panelHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "20px",
+    marginBottom: "22px",
+    flexWrap: "wrap",
+  },
+
+  sectionEyebrow: {
+    margin: "0 0 7px",
+    color: "#ff6a00",
+    fontSize: "10px",
+    fontWeight: 900,
+    letterSpacing: "0.14em",
+  },
+
+  panelTitle: {
+    margin: 0,
+    fontSize: "1.45rem",
+    fontWeight: 950,
+  },
+
+  panelText: {
+    color: "#888",
+    maxWidth: "700px",
+    lineHeight: 1.6,
+    margin: "8px 0 0",
+  },
+
+  badge: {
+    borderRadius: "999px",
+    padding: "7px 11px",
+    background: "rgba(255,106,0,0.1)",
+    border: "1px solid rgba(255,106,0,0.3)",
+    color: "#ffad72",
+    fontSize: "10px",
+    fontWeight: 900,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+  },
+
+  cardGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "15px",
+  },
+
+  card: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    background: "#0c0c0c",
+    border: "1px solid #282828",
+    borderRadius: "13px",
+    padding: "18px",
+    minHeight: "190px",
+  },
+
+  cardNumber: {
+    color: "#555",
+    fontSize: "11px",
+    fontWeight: 900,
+    letterSpacing: "0.1em",
+  },
+
+  cardTitle: {
+    margin: 0,
+    fontSize: "1.15rem",
+    fontWeight: 950,
+  },
+
+  cardText: {
+    margin: 0,
+    color: "#999",
+    lineHeight: 1.55,
+    flex: 1,
+    fontSize: "13px",
+  },
+
+  cardButton: {
+    alignSelf: "flex-start",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "38px",
+    padding: "0 13px",
+    borderRadius: "8px",
+    background: "#ff6a00",
+    color: "#050505",
+    textDecoration: "none",
+    fontSize: "11px",
+    fontWeight: 950,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+  },
+
+  roadmap: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(210px, 1fr))",
+    gap: "10px",
+  },
+
+  roadmapItem: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "7px",
+    background: "#0b0b0b",
+    border: "1px solid #252525",
+    borderRadius: "11px",
+    padding: "15px",
+  },
+
+  roadmapComplete: {
+    borderColor: "rgba(255,106,0,0.35)",
+    background: "rgba(255,106,0,0.04)",
+  },
+
+  loader: {
+    minHeight: "60vh",
+    display: "grid",
+    placeItems: "center",
+    color: "#aaa",
+  },
+};
