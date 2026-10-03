@@ -19,6 +19,7 @@ type Coach = {
   photo_url: string | null;
   source: string | null;
   source_id: string | null;
+  external_id?: string | null;
   last_synced_at: string | null;
   active: boolean;
 };
@@ -57,6 +58,7 @@ export default function AdminCoachDirectoryPage() {
   const [search, setSearch] = useState("");
   const [showInactive, setShowInactive] = useState(false);
   const [error, setError] = useState("");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -123,6 +125,7 @@ export default function AdminCoachDirectoryPage() {
               photo_url,
               source,
               source_id,
+              external_id,
               last_synced_at,
               active
             `
@@ -234,6 +237,7 @@ export default function AdminCoachDirectoryPage() {
         coach.name,
         coach.country,
         coach.city,
+        coach.external_id,
         team?.name,
         team?.country,
         team?.city,
@@ -264,6 +268,72 @@ export default function AdminCoachDirectoryPage() {
   const inactiveCount = coaches.filter(
     (coach) => !coach.active
   ).length;
+
+  async function runCoachAction(
+    action: "set_active",
+    coachId: string,
+    active: boolean
+  ) {
+    setActionLoading(coachId);
+    setError("");
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        router.replace("/login");
+        return;
+      }
+
+      const { data, error: functionError } =
+        await supabase.functions.invoke("directory-admin", {
+          body: {
+            action,
+            coach_id: coachId,
+            active,
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+
+      if (functionError) {
+        throw new Error(
+          functionError.message || "Coach action failed."
+        );
+      }
+
+      if (data?.error) {
+        throw new Error(String(data.error));
+      }
+
+      if (!data?.coach) {
+        throw new Error(
+          "The server did not return the updated coach."
+        );
+      }
+
+      const updatedCoach = data.coach as Coach;
+
+      setCoaches((current) =>
+        current.map((coach) =>
+          coach.id === updatedCoach.id
+            ? updatedCoach
+            : coach
+        )
+      );
+    } catch (actionError) {
+      setError(
+        actionError instanceof Error
+          ? actionError.message
+          : "Coach action failed."
+      );
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
   if (loading) {
     return (
@@ -439,6 +509,9 @@ export default function AdminCoachDirectoryPage() {
                   ? sourceMap.get(coach.source_id)
                   : coach.source;
 
+                const isActionLoading =
+                  actionLoading === coach.id;
+
                 return (
                   <article
                     key={coach.id}
@@ -536,6 +609,31 @@ export default function AdminCoachDirectoryPage() {
                           Website ↗
                         </a>
                       )}
+
+                      <button
+                        type="button"
+                        disabled={isActionLoading}
+                        onClick={() =>
+                          runCoachAction(
+                            "set_active",
+                            coach.id,
+                            !coach.active
+                          )
+                        }
+                        style={{
+                          ...styles.secondarySmallButton,
+                          ...styles.actionButton,
+                          ...(isActionLoading
+                            ? styles.disabledButton
+                            : {}),
+                        }}
+                      >
+                        {isActionLoading
+                          ? "Saving..."
+                          : coach.active
+                            ? "Deactivate"
+                            : "Activate"}
+                      </button>
                     </div>
 
                     {coach.last_synced_at && (
@@ -1071,6 +1169,16 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "10px",
     fontWeight: 900,
     textTransform: "uppercase",
+  },
+
+  actionButton: {
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
+
+  disabledButton: {
+    opacity: 0.5,
+    cursor: "not-allowed",
   },
 
   synced: {
