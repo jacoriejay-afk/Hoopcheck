@@ -54,7 +54,7 @@ export default function AdminReviewsPage() {
         .from("admin_roles")
         .select("role")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (!mounted) return;
 
@@ -64,8 +64,6 @@ export default function AdminReviewsPage() {
       }
 
       const typedRole = adminRole as AdminRole;
-
-      // Trim whitespace so values like " admin" still work.
       const normalizedRole = typedRole.role.trim().toLowerCase();
 
       if (
@@ -89,13 +87,31 @@ export default function AdminReviewsPage() {
     async function initializeAdminPage() {
       const {
         data: { session },
+        error: sessionError,
       } = await supabase.auth.getSession();
 
       if (!mounted) return;
 
-      if (session?.user) {
-        await loadAdminPage(session.user.id);
+      if (sessionError || !session?.user) {
+        setLoading(false);
+        router.replace("/login");
+        return;
       }
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (!mounted) return;
+
+      if (userError || !user) {
+        setLoading(false);
+        router.replace("/login");
+        return;
+      }
+
+      await loadAdminPage(user.id);
     }
 
     initializeAdminPage();
