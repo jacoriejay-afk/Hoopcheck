@@ -183,14 +183,9 @@ export default function TeamDetailPage() {
           )
           .maybeSingle(),
 
-        supabase
-          .from("admin_roles")
-          .select("role")
-          .eq(
-            "user_id",
-            user.id
-          )
-          .maybeSingle(),
+        supabase.rpc(
+          "is_current_user_admin_or_moderator"
+        ),
       ]);
 
       const subscription =
@@ -217,10 +212,7 @@ export default function TeamDetailPage() {
         );
 
       const isAdmin =
-        adminResult.data?.role ===
-          "admin" ||
-        adminResult.data?.role ===
-          "moderator";
+        adminResult.data === true;
 
       const access =
         subscriptionIsActive ||
@@ -319,7 +311,7 @@ export default function TeamDetailPage() {
         review_id: reportReviewId,
         reporter_id: user.id,
         reason: reportReason,
-        status: "pending",
+        status: "open",
       });
 
     if (error) {
@@ -557,10 +549,16 @@ export default function TeamDetailPage() {
 
         <div className="actions">
           <Link
-            href={`/teams/${team.id}/review`}
+            href={
+              hasAccess
+                ? `/teams/${team.id}/review`
+                : "/membership"
+            }
             className="btn"
           >
-            Write A Review
+            {hasAccess
+              ? "Write A Review"
+              : "Become A Member To Review"}
           </Link>
 
           <Link
@@ -930,6 +928,6 @@ export default function TeamDetailPage() {
           </div>
         </div>
       )}
-</main>
+    </main>
   );
 }
