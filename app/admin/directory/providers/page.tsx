@@ -29,11 +29,24 @@ export default function DirectoryProvidersPage(){
  async function previewSync(s:Source, entityType:"leagues"|"teams"|"coaches"){ setError("");setMessage(""); const {data:{session}}=await supabase.auth.getSession(); const res=await fetch("/api/admin/directory/sync/preview",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${session?.access_token??""}`},body:JSON.stringify({source_id:s.id,entity_type:entityType})}); const data=await res.json(); if(!res.ok)setError(data.error||"Preview failed.");else{setPreview(data.preview);setMessage(`Preview ready: ${data.preview.create_count} create, ${data.preview.update_count} update, ${data.preview.skip_count} skip. It expires in 30 minutes.`);} } async function approvePreview(){if(!preview)return;setError("");setMessage("");const {data:{session}}=await supabase.auth.getSession();const res=await fetch("/api/admin/directory/sync/approve",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${session?.access_token??""}`},body:JSON.stringify({preview_id:preview.id})});const data=await res.json();if(!res.ok)setError(data.error||"Approval failed.");else{setMessage(`Approved and imported: ${data.created} created, ${data.updated} updated, ${data.skipped} skipped.`);setPreview(null);await load();}}
  async function startSync(s:Source, entityType:"leagues"|"teams"|"coaches"){
  setSyncing(s.id+entityType);setError("");setMessage("");
- const {data:{session}}=await supabase.auth.getSession();
- const res=await fetch("/api/admin/directory/sync",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${session?.access_token??""}`},body:JSON.stringify({source_id:s.id,entity_type:entityType})});
- const data=await res.json();
- if(!res.ok)setError(data.error||"Unable to queue sync.");else{setMessage(`Queued ${entityType} sync for ${s.name}.`);await load();}
- setSyncing(null);
+ try{
+  const {data:{session}}=await supabase.auth.getSession();
+  if(!session?.access_token){setError("Your session has expired. Please log in again.");return;}
+  let offset=0;let batchCount=0;let totalSeen=0;let totalCreated=0;let totalUpdated=0;let totalSkipped=0;
+  while(true){
+   batchCount++;
+   setMessage(`Syncing ${entityType} batch ${batchCount}...`);
+   const res=await fetch("/api/admin/directory/sync",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({source_id:s.id,entity_type:entityType,offset,limit:25})});
+   const data=await res.json();
+   if(!res.ok)throw new Error(data.error||"Directory sync failed.");
+   totalSeen+=Number(data.seen||0);totalCreated+=Number(data.created||0);totalUpdated+=Number(data.updated||0);totalSkipped+=Number(data.skipped||0);
+   if(!data.batch?.has_more)break;
+   offset=Number(data.batch.next_offset||0);
+  }
+  setMessage(`Completed ${entityType} sync for ${s.name}: ${totalCreated} created, ${totalUpdated} updated, ${totalSkipped} skipped.`);
+  await load();
+ }catch(error){setError(error instanceof Error?error.message:"Unable to sync directory.");}
+ finally{setSyncing(null);}
  }
  async function toggleSource(s:Source){setError("");const {error:e1}=await supabase.from("directory_sources").update({active:!s.active}).eq("id",s.id);if(e1)setError(e1.message);else await load();}
  if(loading)return <main style={styles.page}><div style={styles.loader}>Loading provider center...</div></main>;
