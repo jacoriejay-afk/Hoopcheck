@@ -117,6 +117,8 @@ export default function LeagueDetailPage() {
   const [teams, setTeams] =
     useState<Team[]>([]);
 
+  const [teamHistory, setTeamHistory] = useState<any[]>([]);
+
   const [hasAccess, setHasAccess] =
     useState(false);
 
@@ -175,7 +177,13 @@ export default function LeagueDetailPage() {
         .order("name");
 
       if (!teamError && teamData) {
-        setTeams(teamData);\n\n      const teamIds = teamData.map((x) => x.id);\n      if (teamIds.length) {\n        const { data: membershipRows } = await supabase.from("team_league_memberships").select("team_id,season,active").eq("league_id", id).eq("active", true);\n        const currentTeamIds = new Set((membershipRows || []).map((x) => x.team_id));\n        setTeams(teamData.filter((x) => currentTeamIds.has(x.id)));\n      }
+        setTeams(teamData);
+        const { data: membershipRows } = await supabase.from("team_league_memberships").select("id,team_id,season,start_date,end_date,active").eq("league_id", id).eq("active", true).order("season", { ascending: false });
+        if (membershipRows) {
+          const ids = membershipRows.map((x) => x.team_id);
+          const { data: rows } = ids.length ? await supabase.from("teams").select("id,name").in("id", ids) : { data: [] as any[] };
+          setTeamHistory(membershipRows.map((x) => ({ ...x, team: rows?.find((t) => t.id === x.team_id) })));
+        }\n\n      const teamIds = teamData.map((x) => x.id);\n      if (teamIds.length) {\n        const { data: membershipRows } = await supabase.from("team_league_memberships").select("team_id,season,active").eq("league_id", id).eq("active", true);\n        const currentTeamIds = new Set((membershipRows || []).map((x) => x.team_id));\n        setTeams(teamData.filter((x) => currentTeamIds.has(x.id)));\n      }
       }
 
       const {
@@ -552,6 +560,12 @@ export default function LeagueDetailPage() {
             Back To Leagues
           </Link>
         </div>
+      </section>
+
+      <section className="hero">
+        <div className="eyebrow">Team Membership History</div>
+        <h2>Teams by season</h2>
+        {teamHistory.length ? <div className="grid" style={{ marginTop: "25px" }}>{teamHistory.map((item) => <div className="card" key={item.id}><div className="eyebrow">{item.season || "Season not listed"}</div><h3>{item.team?.name || "Team not listed"}</h3><p>{item.start_date || "Start not listed"} → {item.end_date || "Present"}</p></div>)}</div> : <div className="card"><p>No historical team memberships have been added yet.</p></div>}
       </section>
 
       <section className="hero">
