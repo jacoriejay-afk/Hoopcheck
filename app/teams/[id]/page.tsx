@@ -332,13 +332,11 @@ export default function TeamDetailPage() {
             }
           );
 
-        if (
-          !reviewError &&
-          reviewData
-        ) {
-          setReviews(
-            reviewData
-          );
+        if (!reviewError && reviewData) {
+          const reviewIds = reviewData.map((review) => review.id);
+          const { data: verificationData } = await supabase.rpc("get_review_verification", { p_review_ids: reviewIds });
+          const verifiedByReview = Object.fromEntries((verificationData || []).map((item) => [item.review_id, Boolean(item.player_verified)]));
+          setReviews(reviewData.map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
         }
 
         setReviewLoading(false);
