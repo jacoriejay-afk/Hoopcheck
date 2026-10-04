@@ -35,17 +35,26 @@ async function apiSportsGet(path: string, params: Record<string, string> = {}) {
 }
 
 function latestSeason(seasons: any[]): string | null {
-  const current = seasons.find((season) => season?.current === true);
-  if (current?.season != null) return String(current.season);
+  // API-Sports Free plans currently restrict basketball season access to 2022-2024.
+  // Use an explicit env override when available; otherwise prefer 2024 so the
+  // directory sync works on the free plan. Paid plans can set a newer season.
+  const configured = process.env.API_SPORTS_BASKETBALL_SEASON?.trim();
+  if (configured) return configured;
 
-  const values = seasons
+  const eligible = seasons
     .map((season) => season?.season)
     .filter((season) => season != null)
     .map((season) => String(season))
+    .filter((season) => Number(season) <= 2024)
     .sort()
     .reverse();
 
-  return values[0] ?? null;
+  if (eligible[0]) return eligible[0];
+
+  const current = seasons.find((season) => season?.current === true);
+  if (current?.season != null) return String(current.season);
+
+  return null;
 }
 
 function batchOptions(options?: DirectorySyncOptions) {
