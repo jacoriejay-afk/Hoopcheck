@@ -1,14 +1,11 @@
 "use client";
 
-import {
+import { useEffect, useState } from "react";
 
 type ReviewVerification = {
   review_id: string;
   player_verified: boolean | null;
 };
-  useEffect,
-  useState,
-} from "react";
 
 import Link from "next/link";
 
