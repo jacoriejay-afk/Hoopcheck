@@ -3,6 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 import { getDirectoryConnector } from "../../../../../lib/directory-sync/connectors";
 import { syncNormalizedDirectory } from "../../../../../lib/directory-sync/sync-directory";
 
+const DEFAULT_BATCH_SIZE = 25;
+const MAX_BATCH_SIZE = 50;
+
 export async function POST(req: Request) {
   const auth = req.headers.get("authorization");
   const token = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
@@ -22,6 +25,10 @@ export async function POST(req: Request) {
   const entityType = ["leagues", "teams", "coaches"].includes(body.entity_type) ? body.entity_type as "leagues"|"teams"|"coaches" : null;
   if (!sourceId || !entityType) return NextResponse.json({ error: "source_id and entity_type are required" }, { status: 400 });
 
+  const offset = typeof body.offset === "number" && Number.isFinite(body.offset) ? Math.max(0, Math.floor(body.offset)) : 0;
+  const requestedLimit = typeof body.limit === "number" && Number.isFinite(body.limit) ? Math.floor(body.limit) : DEFAULT_BATCH_SIZE;
+  const limit = Math.min(MAX_BATCH_SIZE, Math.max(1, requestedLimit));
+
   const { data: source, error: sourceError } = await supabase.from("directory_sources")
     .select("id,name,active,connector_key").eq("id", sourceId).single();
   if (sourceError || !source) return NextResponse.json({ error: "Provider not found" }, { status: 404 });
@@ -38,15 +45,22 @@ export async function POST(req: Request) {
 
   try {
     await supabase.from("directory_sync_runs").update({ status: "running" }).eq("id", run.id);
-    const normalized = await connector.getDirectory({ entityType, sourceId });
+    const normalized = await connector.getDirectory({ entityType, sourceId, options: { offset, limit } });
     const result = await syncNormalizedDirectory(supabase, sourceId, entityType, normalized);
+
+    const batchHasMore = entityType !== "coaches" && normalized.leagues.length === Math.min(limit, Math.max(0, normalized.leagues.length));
+    const nextOffset = batchHasMore ? offset + limit : null;
 
     await supabase.from("directory_sync_runs").update({
       status: "completed", records_seen: result.seen, records_created: result.created,
       records_updated: result.updated, records_skipped: result.skipped, finished_at: new Date().toISOString(),
     }).eq("id", run.id);
 
-    return NextResponse.json({ run: { ...run, status: "completed" }, ...result });
+    return NextResponse.json({
+      run: { ...run, status: "completed" },
+      ...result,
+      batch: { offset, limit, next_offset: nextOffset, has_more: batchHasMore },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Sync failed";
     await supabase.from("directory_sync_runs").update({
