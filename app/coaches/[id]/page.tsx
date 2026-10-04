@@ -115,6 +115,15 @@ export default function CoachDetailPage() {
   const [reviews, setReviews] =
     useState<Review[]>([]);
 
+  const [publicSummary, setPublicSummary] = useState({
+    review_count: 0,
+    overall_rating: null as number | null,
+    communication_rating: null as number | null,
+    professionalism_rating: null as number | null,
+    development_rating: null as number | null,
+    payment_rating: null as number | null,
+  });
+
   const [team, setTeam] =
     useState<Team | null>(null);
 
@@ -268,6 +277,25 @@ export default function CoachDetailPage() {
         Boolean(adminResult);
 
       setHasAccess(access);
+
+      const { data: summaryData, error: summaryError } =
+        await supabase.rpc("get_public_review_summary", {
+          p_entity_type: "coach",
+          p_entity_id: id,
+        });
+
+      if (!summaryError && summaryData?.[0]) {
+        setPublicSummary({
+          review_count: Number(summaryData[0].review_count || 0),
+          overall_rating: summaryData[0].overall_rating == null ? null : Number(summaryData[0].overall_rating),
+          communication_rating: summaryData[0].communication_rating == null ? null : Number(summaryData[0].communication_rating),
+          professionalism_rating: summaryData[0].professionalism_rating == null ? null : Number(summaryData[0].professionalism_rating),
+          development_rating: summaryData[0].development_rating == null ? null : Number(summaryData[0].development_rating),
+          payment_rating: summaryData[0].payment_rating == null ? null : Number(summaryData[0].payment_rating),
+        });
+      } else if (summaryError) {
+        console.error("Public review summary error:", summaryError);
+      }
 
       if (access) {
         setReviewLoading(true);
@@ -640,6 +668,41 @@ export default function CoachDetailPage() {
           )}
         </div>
       </section>
+
+      {!hasAccess && (
+        <section className="grid">
+          <div className="card">
+            <div className="eyebrow">Community Rating</div>
+            <h2 style={{ fontSize: "58px", color: "var(--orange)", marginBottom: "4px" }}>
+              {publicSummary.overall_rating == null ? "—" : publicSummary.overall_rating.toFixed(1)}
+            </h2>
+            <p>
+              Based on {publicSummary.review_count} approved {publicSummary.review_count === 1 ? "review" : "reviews"}.
+            </p>
+          </div>
+
+          <div className="card">
+            <div className="eyebrow">Rating Breakdown</div>
+            {publicSummary.review_count === 0 ? (
+              <p>No approved reviews yet.</p>
+            ) : (
+              <>
+                {publicSummary.communication_rating != null && <RatingBar label="Communication" value={publicSummary.communication_rating} />}
+                {publicSummary.professionalism_rating != null && <RatingBar label="Professionalism" value={publicSummary.professionalism_rating} />}
+                {publicSummary.development_rating != null && <RatingBar label="Development" value={publicSummary.development_rating} />}
+                {publicSummary.payment_rating != null && <RatingBar label="Payment" value={publicSummary.payment_rating} />}
+              </>
+            )}
+          </div>
+
+          <div className="card">
+            <div className="eyebrow">Full Reviews</div>
+            <h3>See what players are saying.</h3>
+            <p>Subscribe to unlock the complete approved review library and player experiences.</p>
+            <Link href="/membership" className="btn">Unlock Full Reviews</Link>
+          </div>
+        </section>
+      )}
 
       {!hasAccess ? (
         <section className="hero">
