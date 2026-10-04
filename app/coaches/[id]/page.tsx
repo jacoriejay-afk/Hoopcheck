@@ -17,6 +17,23 @@ type Coach = {
   name: string;
   country: string | null;
   city: string | null;
+  current_team_id: string | null;
+};
+
+type Team = {
+  id: string;
+  name: string;
+  country: string | null;
+  city: string | null;
+  league_id: string | null;
+  league_name: string | null;
+};
+
+type League = {
+  id: string;
+  name: string;
+  country: string | null;
+  level: string | null;
 };
 
 type Review = {
@@ -98,6 +115,12 @@ export default function CoachDetailPage() {
   const [reviews, setReviews] =
     useState<Review[]>([]);
 
+  const [team, setTeam] =
+    useState<Team | null>(null);
+
+  const [league, setLeague] =
+    useState<League | null>(null);
+
   const [hasAccess, setHasAccess] =
     useState(false);
 
@@ -132,7 +155,7 @@ export default function CoachDetailPage() {
       } = await supabase
         .from("coaches")
         .select(
-          "id, name, country, city"
+          "id, name, country, city, current_team_id"
         )
         .eq("id", id)
         .maybeSingle();
@@ -147,6 +170,30 @@ export default function CoachDetailPage() {
       }
 
       setCoach(coachData);
+
+      if (coachData.current_team_id) {
+        const { data: teamData, error: teamError } = await supabase
+          .from("teams")
+          .select("id, name, country, city, league_id, league_name")
+          .eq("id", coachData.current_team_id)
+          .maybeSingle();
+
+        if (!teamError && teamData) {
+          setTeam(teamData);
+
+          if (teamData.league_id) {
+            const { data: leagueData, error: leagueError } = await supabase
+              .from("leagues")
+              .select("id, name, country, level")
+              .eq("id", teamData.league_id)
+              .maybeSingle();
+
+            if (!leagueError && leagueData) {
+              setLeague(leagueData);
+            }
+          }
+        }
+      }
 
       const {
         data: {
@@ -515,6 +562,67 @@ export default function CoachDetailPage() {
           >
             Back To Coaches
           </Link>
+        </div>
+      </section>
+
+      <section className="grid">
+        <div className="card">
+          <div className="eyebrow">Current Team</div>
+          {team ? (
+            <>
+              <h2>{team.name}</h2>
+              <p>
+                {team.city && team.country
+                  ? team.city + ", " + team.country
+                  : team.country || team.city || "Location not listed"}
+              </p>
+              {league && (
+                <p style={{ color: "var(--orange)", fontWeight: 800 }}>
+                  {league.name}
+                </p>
+              )}
+              <Link href={"/teams/" + team.id} className="btn">
+                View Team
+              </Link>
+            </>
+          ) : (
+            <>
+              <h2>No current team listed.</h2>
+              <p>HoopCheck has not linked this coach to a current organization yet.</p>
+              <Link href="/teams" className="btn">
+                Browse Teams
+              </Link>
+            </>
+          )}
+        </div>
+
+        <div className="card">
+          <div className="eyebrow">League</div>
+          {league ? (
+            <>
+              <h2>{league.name}</h2>
+              <p>
+                {league.country || "Country not listed"}
+                {league.level ? " • " + league.level : ""}
+              </p>
+              <Link href={"/leagues/" + league.id} className="btn">
+                View League
+              </Link>
+            </>
+          ) : team?.league_name ? (
+            <>
+              <h2>{team.league_name}</h2>
+              <p>League relationship is available through the team record.</p>
+              <Link href="/leagues" className="btn">
+                Browse Leagues
+              </Link>
+            </>
+          ) : (
+            <>
+              <h2>League not listed</h2>
+              <p>HoopCheck has not linked this coach to a league yet.</p>
+            </>
+          )}
         </div>
       </section>
 
