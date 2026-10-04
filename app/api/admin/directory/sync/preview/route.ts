@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getDirectoryConnector } from "../../../../../../lib/directory-sync/connectors";
-import type { NormalizedDirectory } from "../../../../../../lib/directory-sync/types";
+import type { NormalizedDirectory, SyncEntityType } from "../../../../../../lib/directory-sync/types";
 import { clean } from "../../../../../../lib/directory-sync/sync-record";
 
 export async function POST(req:Request){
@@ -10,15 +10,16 @@ export async function POST(req:Request){
  const s=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,{global:{headers:{Authorization:`Bearer ${token}`}}});
  const {data:{user}}=await s.auth.getUser(token); if(!user)return NextResponse.json({error:"Invalid session"},{status:401});
  const {data:admin}=await s.rpc("is_current_user_admin_or_moderator"); if(!admin)return NextResponse.json({error:"Admin or moderator access required"},{status:403});
- const body=await req.json().catch(()=>({})); const sourceId=typeof body.source_id==="string"?body.source_id:null; const entityType=["leagues","teams","coaches"].includes(body.entity_type)?body.entity_type:null;
+ const body=await req.json().catch(()=>({})); const sourceId=typeof body.source_id==="string"?body.source_id:null;
+ const entityType:SyncEntityType|undefined=["leagues","teams","coaches"].includes(body.entity_type)?body.entity_type:undefined;
  if(!sourceId||!entityType)return NextResponse.json({error:"source_id and entity_type are required"},{status:400});
  const {data:source}=await s.from("directory_sources").select("id,name,active,connector_key").eq("id",sourceId).single();
  if(!source)return NextResponse.json({error:"Provider not found"},{status:404}); if(!source.active)return NextResponse.json({error:"Provider is paused"},{status:409});
  const connector=getDirectoryConnector(source.connector_key); if(!connector)return NextResponse.json({error:"Connector not configured for this provider"},{status:409});
  try{
-  const directory:NormalizedDirectory=await connector.getDirectory({entityType,sourceId}); const rows:any[]=directory[entityType];
+  const directory:NormalizedDirectory=await connector.getDirectory({entityType,sourceId}); const rows=directory[entityType];
   let create=0,update=0,skip=0;
-  for(const row of rows){const name=clean(row.name);if(!name){skip++;continue;}let existing:any=null;
+  for(const row of rows){const name=clean(row.name);if(!name){skip++;continue;}let existing:{id:string}|null=null;
    if(clean(row.externalId)){const q=await s.from(entityType).select("id").eq("source_id",sourceId).eq("external_id",clean(row.externalId)).maybeSingle();if(q.error)throw q.error;existing=q.data;}
    if(!existing){const q=await s.from(entityType).select("id").ilike("name",name).eq("country",clean(row.country)).maybeSingle();if(q.error&&q.error.code!=="PGRST116")throw q.error;existing=q.data;}
    if(existing)update++;else create++;
