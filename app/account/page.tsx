@@ -119,7 +119,7 @@ export default function AccountPage() {
     if (error) {
       setProfileMessage(error.message);
     } else {
-      setProfile({ display_name: name || null });
+      setProfile((current) => ({ ...current, ...updates }));
       setDisplayName(name);
       setProfileMessage("Profile updated.");
     }
