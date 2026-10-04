@@ -119,7 +119,7 @@ export default function DirectoryManagerPage() {
             <h1 style={{ fontSize: "clamp(2rem,5vw,3.5rem)", margin: "7px 0" }}>Directory Manager</h1>
             <p style={{ color: "#888", margin: 0 }}>Create, edit, search, and archive worldwide basketball records.</p>
           </div>
-          <Link href="/admin/directory" style={{ color: "#fff", textDecoration: "none", border: "1px solid #333", padding: "11px 14px", borderRadius: 8 }}>← Control Center</Link>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}><Link href="/admin/directory/relationships" style={{ color: "#050505", textDecoration: "none", background:"#ff6a00", padding: "11px 14px", borderRadius: 8,fontWeight:900 }}>Relationships</Link><Link href="/admin/directory" style={{ color: "#fff", textDecoration: "none", border: "1px solid #333", padding: "11px 14px", borderRadius: 8 }}>← Control Center</Link></div>
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
