@@ -118,7 +118,9 @@ export default function CoachDetailPage() {
   const [team, setTeam] =
     useState<Team | null>(null);
 
-  const [history, setHistory] = useState<any[]>([]);\n\n  const [league, setLeague] =
+  const [history, setHistory] = useState<any[]>([]);
+
+  const [league, setLeague] =
     useState<League | null>(null);
 
   const [hasAccess, setHasAccess] =
@@ -169,7 +171,14 @@ export default function CoachDetailPage() {
         return;
       }
 
-      setCoach(coachData);\n\n      const { data: assignmentData } = await supabase.from("coach_team_assignments").select("id,team_id,role,season,start_date,end_date,active").eq("coach_id", id).eq("active", true).order("season", { ascending: false });\n      if (assignmentData) {\n        const teamIds = assignmentData.map((x) => x.team_id);\n        const { data: teamRows } = teamIds.length ? await supabase.from("teams").select("id,name").in("id", teamIds) : { data: [] as any[] };\n        setHistory(assignmentData.map((x) => ({ ...x, team: teamRows?.find((t) => t.id === x.team_id) })));\n      }
+      setCoach(coachData);
+
+      const { data: assignmentData } = await supabase.from("coach_team_assignments").select("id,team_id,role,season,start_date,end_date,active").eq("coach_id", id).eq("active", true).order("season", { ascending: false });
+      if (assignmentData) {
+        const teamIds = assignmentData.map((x) => x.team_id);
+        const { data: teamRows } = teamIds.length ? await supabase.from("teams").select("id,name").in("id", teamIds) : { data: [] as any[] };
+        setHistory(assignmentData.map((x) => ({ ...x, team: teamRows?.find((t) => t.id === x.team_id) })));
+      }
 
       if (coachData.current_team_id) {
         const { data: teamData, error: teamError } = await supabase
@@ -563,6 +572,12 @@ export default function CoachDetailPage() {
             Back To Coaches
           </Link>
         </div>
+      </section>
+
+      <section className="hero">
+        <div className="eyebrow">Team History</div>
+        <h2>Coach assignments</h2>
+        {history.length ? <div className="grid" style={{ marginTop: "25px" }}>{history.map((item) => <div className="card" key={item.id}><div className="eyebrow">{item.season || "Season not listed"}</div><h3>{item.team?.name || "Team not listed"}</h3><p>{item.role || "Coaching role not listed"}</p>{item.start_date || item.end_date ? <p>{item.start_date || "—"} → {item.end_date || "Present"}</p> : null}</div>)}</div> : <div className="card"><p>No historical team assignments have been added yet.</p></div>}
       </section>
 
       <section className="grid">
