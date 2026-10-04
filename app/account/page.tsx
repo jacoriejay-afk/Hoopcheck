@@ -34,6 +34,7 @@ export default function AccountPage() {
   const [targets, setTargets] = useState<Record<string, Target>>({});
   const [profile, setProfile] = useState<Profile>({ display_name: null, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public" });
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [verified, setVerified] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [position, setPosition] = useState("");
@@ -51,7 +52,7 @@ export default function AccountPage() {
       if (!user) { window.location.href = "/login"; return; }
       setEmail(user.email ?? "");
       const [{ data: profileData }, { data: subscriptionData }] = await Promise.all([
-        supabase.from("profiles").select("display_name,bio,position,years_pro,current_country,current_team,profile_visibility").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("display_name,bio,position,years_pro,current_country,current_team,profile_visibility,player_verified").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
       ]);
       const nextProfile = profileData ?? { display_name: null };
@@ -64,6 +65,7 @@ export default function AccountPage() {
       setCurrentTeam(nextProfile.current_team ?? "");
       setVisibility(nextProfile.profile_visibility ?? "public");
       setSubscription(subscriptionData ?? null);
+      setVerified(Boolean(nextProfile.player_verified));
       const { data } = await supabase.from("reviews")
         .select("id,status,title,body,overall_rating,created_at,coach_id,team_id,league_id")
         .eq("author_id", user.id).order("created_at", { ascending: false });
@@ -143,7 +145,7 @@ export default function AccountPage() {
       <section className="grid" style={{marginTop:32}}>
         <div className="dashboard-card">
           <p className="eyebrow">PROFILE</p>
-          <h2>Player information</h2>
+          <h2>Player information {verified && <span title="Verified professional player" style={{color:"var(--orange)"}}>✓</span>}</h2>
           <form onSubmit={saveProfile} style={{display:"grid",gap:12,marginTop:16}}>
             <label htmlFor="display-name" className="muted">Display name</label>
             <input id="display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder="How players should see you" />
@@ -163,6 +165,11 @@ export default function AccountPage() {
               <option value="private">Private</option>
             </select>
             <p className="muted">Email: {email}</p>
+            <div className="card" style={{marginTop:8}}>
+              <strong>{verified ? "✓ Verified Player" : "Player verification"}</strong>
+              <p className="muted">{verified ? "Your professional-player account has been verified by HoopCheck." : "Apply for a verification badge to strengthen trust around your reviews."}</p>
+              {!verified && <Link href="/verification" className="btn dark">Request Verification</Link>}
+            </div>
             <button className="btn" type="submit" disabled={savingProfile}>{savingProfile ? "Saving..." : "Save Profile"}</button>
             {profileMessage && <p className="muted">{profileMessage}</p>}
           </form>
