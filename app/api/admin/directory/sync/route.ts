@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getDirectoryConnector } from "@/lib/directory-sync/connectors";
 
 export async function POST(req: Request) {
   const auth = req.headers.get("authorization");
@@ -24,9 +25,11 @@ export async function POST(req: Request) {
   if (!sourceId || !entityType) return NextResponse.json({ error: "source_id and entity_type are required" }, { status: 400 });
 
   const { data: source, error: sourceError } = await supabase
-    .from("directory_sources").select("id,name,active").eq("id", sourceId).single();
+    .from("directory_sources").select("id,name,active,connector_key").eq("id", sourceId).single();
   if (sourceError || !source) return NextResponse.json({ error: "Provider not found" }, { status: 404 });
   if (!source.active) return NextResponse.json({ error: "Provider is paused" }, { status: 409 });
+  const connector = getDirectoryConnector(source.connector_key);
+  if (!connector) return NextResponse.json({ error: "Connector not configured for this provider" }, { status: 409 });
 
   const { data: run, error: runError } = await supabase
     .from("directory_sync_runs")
