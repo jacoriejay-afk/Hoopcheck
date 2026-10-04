@@ -68,7 +68,7 @@ export async function POST(req: Request) {
   const { data: run, error: runError } = await adminSupabase.from("directory_sync_runs").insert({
     source_id: sourceId,
     entity_type: entityType === "leagues" ? "league" : entityType === "teams" ? "team" : "coach",
-    status: "queued",
+    status: "running",
     records_seen: 0,
     records_created: 0,
     records_updated: 0,
@@ -78,8 +78,6 @@ export async function POST(req: Request) {
   if (runError) return NextResponse.json({ error: runError.message }, { status: 500 });
 
   try {
-    await adminSupabase.from("directory_sync_runs").update({ status: "running" }).eq("id", run.id);
-
     const normalized = await connector.getDirectory({
       entityType,
       sourceId,
