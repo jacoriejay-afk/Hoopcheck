@@ -15,6 +15,9 @@ create table if not exists public.directory_sync_previews (
  approved_at timestamptz
 );
 alter table public.directory_sync_previews enable row level security;
+drop policy if exists "directory_sync_previews_admin_read" on public.directory_sync_previews;
+drop policy if exists "directory_sync_previews_admin_insert" on public.directory_sync_previews;
+drop policy if exists "directory_sync_previews_admin_update" on public.directory_sync_previews;
 create policy "directory_sync_previews_admin_read" on public.directory_sync_previews for select to authenticated using (public.is_current_user_admin_or_moderator());
 create policy "directory_sync_previews_admin_insert" on public.directory_sync_previews for insert to authenticated with check (public.is_current_user_admin_or_moderator() and created_by=(select auth.uid()));
 create policy "directory_sync_previews_admin_update" on public.directory_sync_previews for update to authenticated using (public.is_current_user_admin_or_moderator()) with check (public.is_current_user_admin_or_moderator());
