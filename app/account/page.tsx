@@ -33,7 +33,7 @@ export default function AccountPage() {
   const [email, setEmail] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [targets, setTargets] = useState<Record<string, Target>>({});
-  const [profile, setProfile] = useState<Profile>({ display_name: null, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public" });
+  const [profile, setProfile] = useState<Profile>({ display_name: null, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false });
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [verified, setVerified] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -88,8 +88,6 @@ export default function AccountPage() {
     }
     load();
   }, []);
-
-
 
   async function saveProfile(event: React.FormEvent) {
     event.preventDefault();
