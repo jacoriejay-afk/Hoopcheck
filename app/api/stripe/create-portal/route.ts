@@ -158,10 +158,7 @@ export async function POST(
 
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unable to open billing portal.",
+        error: "Unable to open billing portal.",
       },
       { status: 500 }
     );
