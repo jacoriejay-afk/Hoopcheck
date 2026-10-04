@@ -5,7 +5,7 @@ import type { SyncEntityType, NormalizedDirectory } from "@/lib/directory-sync/t
 
 export async function POST(req:Request){
  const token=req.headers.get("authorization")?.replace(/^Bearer /,""); if(!token)return NextResponse.json({error:"Authentication required"},{status:401});
- const s=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,{global:{headers:{Authorization:`Bearer ${token}`}}});
+ const s=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,{global:{headers:{Authorization:`Bearer ${token}`}}});
  const {data:{user}}=await s.auth.getUser(token); if(!user)return NextResponse.json({error:"Invalid session"},{status:401});
  const {data:admin}=await s.rpc("is_current_user_admin_or_moderator"); if(!admin)return NextResponse.json({error:"Admin or moderator access required"},{status:403});
  const body=await req.json().catch(()=>({})); const previewId=typeof body.preview_id==="string"?body.preview_id:null; if(!previewId)return NextResponse.json({error:"preview_id is required"},{status:400});
