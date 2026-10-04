@@ -214,7 +214,7 @@ export default function TeamDetailPage() {
             .order("name"),
         ]);
 
-      if (!leagueResult.error && leagueResult.data) {
+      if ('error' in leagueResult && !leagueResult.error && leagueResult.data) {
         setLeague(leagueResult.data);
       }
 
