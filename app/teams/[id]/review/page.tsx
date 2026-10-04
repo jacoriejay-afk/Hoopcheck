@@ -176,63 +176,33 @@ export default function TeamReviewPage() {
         window.location.href = "/login";
         return;
       }
+const [subscriptionResult, adminResult] = await Promise.all([
+  supabase
+    .from("subscriptions")
+    .select("status, current_period_end")
+    .eq("user_id", user.id)
+    .maybeSingle(),
 
-      const [
-        subscriptionResult,
-        adminResult,
-      ] = await Promise.all([
-        supabase
-          .from("subscriptions")
-          .select(
-            "status, current_period_end"
-          )
-          .eq(
-            "user_id",
-            user.id
-          )
-          .maybeSingle(),
+  supabase.rpc("is_current_user_admin_or_moderator"),
+]);
 
-        supabase.rpc(
-          "is_current_user_admin_or_moderator"
-        ),
-      ]);
+const isAdmin = adminResult.data === true;
 
-      const subscription =
-        subscriptionResult.data;
+const subscription = subscriptionResult.data;
 
-      const currentPeriodEnd =
-        subscription?.current_period_end
-          ? new Date(
-              subscription.current_period_end
-            )
-          : null;
+const hasActiveSubscription =
+  subscription?.status === "active" ||
+  subscription?.status === "trialing";
 
-      const subscriptionIsActive =
-        (
-          subscription?.status ===
-            "active" ||
-          subscription?.status ===
-            "trialing"
-        ) &&
-        (
-          !currentPeriodEnd ||
-          currentPeriodEnd >
-            new Date()
-        );
+const hasValidSubscription =
+  hasActiveSubscription &&
+  (!subscription?.current_period_end ||
+    new Date(subscription.current_period_end) > new Date());
 
-      const isAdmin =
-        adminResult.data === true;
-
-      if (
-        !subscriptionIsActive &&
-        !isAdmin
-      ) {
-        setMessage(
-          "An active HoopCheck membership is required to submit a review."
-        );
-
-        setLoading(false);
-        return;
+if (!isAdmin && !hasValidSubscription) {
+  router.replace("/membership");
+  return;
+}
       }
 
       const {
