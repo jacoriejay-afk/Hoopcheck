@@ -195,7 +195,12 @@ export default function LeagueDetailPage() {
           setTeamHistory(membershipRows.map((x) => ({ ...x, team: rows?.find((t) => t.id === x.team_id) })));
         }
 
-      const teamIds = teamData.map((x) => x.id);\n      if (teamIds.length) {\n        const { data: membershipRows } = await supabase.from("team_league_memberships").select("team_id,season,active").eq("league_id", id).eq("active", true);\n        const currentTeamIds = new Set((membershipRows || []).map((x) => x.team_id));\n        setTeams(teamData.filter((x) => currentTeamIds.has(x.id)));\n      }
+      const teamIds = teamData.map((x) => x.id);
+      if (teamIds.length) {
+        const { data: membershipRows } = await supabase.from("team_league_memberships").select("team_id,season,active").eq("league_id", id).eq("active", true);
+        const currentTeamIds = new Set((membershipRows || []).map((x) => x.team_id));
+        setTeams(teamData.filter((x) => currentTeamIds.has(x.id)));
+      }
       }
 
       const {
