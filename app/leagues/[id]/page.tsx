@@ -19,6 +19,14 @@ type League = {
   level: string | null;
 };
 
+type Team = {
+  id: string;
+  name: string;
+  country: string | null;
+  city: string | null;
+  league_id: string | null;
+};
+
 type Review = {
   id: string;
   overall_rating: number;
@@ -106,6 +114,9 @@ export default function LeagueDetailPage() {
   const [reviews, setReviews] =
     useState<Review[]>([]);
 
+  const [teams, setTeams] =
+    useState<Team[]>([]);
+
   const [hasAccess, setHasAccess] =
     useState(false);
 
@@ -155,6 +166,17 @@ export default function LeagueDetailPage() {
       }
 
       setLeague(leagueData);
+
+      const { data: teamData, error: teamError } = await supabase
+        .from("teams")
+        .select("id, name, country, city, league_id")
+        .eq("league_id", id)
+        .eq("active", true)
+        .order("name");
+
+      if (!teamError && teamData) {
+        setTeams(teamData);
+      }
 
       const {
         data: {
@@ -530,6 +552,38 @@ export default function LeagueDetailPage() {
             Back To Leagues
           </Link>
         </div>
+      </section>
+
+      <section className="hero">
+        <div className="eyebrow">Teams In This League</div>
+        <h2>Professional organizations</h2>
+        <p>
+          {teams.length > 0
+            ? teams.length + " active team" + (teams.length === 1 ? "" : "s") + " currently linked to this league."
+            : "No active teams are linked to this league yet."}
+        </p>
+
+        {teams.length > 0 && (
+          <div className="grid" style={{ marginTop: "30px" }}>
+            {teams.map((team) => (
+              <Link
+                key={team.id}
+                href={"/teams/" + team.id}
+                className="card"
+                style={{ textDecoration: "none" }}
+              >
+                <div className="eyebrow">TEAM</div>
+                <h3>{team.name}</h3>
+                <p>
+                  {team.city && team.country
+                    ? team.city + ", " + team.country
+                    : team.country || team.city || "Location not listed"}
+                </p>
+                <span className="btn">View Team</span>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {!hasAccess ? (
