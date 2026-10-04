@@ -36,6 +36,7 @@ function SearchContent() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [searchInput, setSearchInput] = useState(query);
 
   useEffect(() => {
     async function search() {
@@ -108,6 +109,8 @@ function SearchContent() {
     search();
   }, [query]);
 
+  useEffect(() => { setSearchInput(query); }, [query]);
+
   const totalResults =
     coaches.length + teams.length + leagues.length;
 
@@ -145,7 +148,8 @@ function SearchContent() {
           <input
             type="search"
             name="q"
-            defaultValue={query}
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
             placeholder="Search coaches, teams, or leagues..."
             aria-label="Search coaches, teams, or leagues"
           />
