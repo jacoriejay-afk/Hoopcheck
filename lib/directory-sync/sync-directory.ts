@@ -18,8 +18,8 @@ export async function syncNormalizedDirectory(
   const name=clean(r.name); if(!name){result.skipped++;continue;}
   result.seen++;
   let existing:any=null;
-  if(clean(r.externalId)){const q=await supabase.from("leagues").select("id").eq("source_id",sourceId).eq("external_id",clean(r.externalId)).maybeSingle();if(q.error)throw q.error;existing=q.data;}
-  if(!existing){const q=await supabase.from("leagues").select("id").ilike("name",name).eq("country",clean(r.country)).maybeSingle();if(q.error&&q.error.code!=="PGRST116")throw q.error;existing=q.data;}
+  if(clean(r.externalId)){const q=await supabase.from("leagues").select("id").eq("source_id",sourceId).eq("external_id",clean(r.externalId)).limit(1).maybeSingle();if(q.error)throw q.error;existing=q.data;}
+  if(!existing){const q=await supabase.from("leagues").select("id").ilike("name",name).eq("country",clean(r.country)).limit(1).maybeSingle();if(q.error&&q.error.code!=="PGRST116")throw q.error;existing=q.data;}
   const payload={name,country:clean(r.country),level:clean(r.level),season:clean(r.season),external_id:clean(r.externalId),source_id:sourceId,last_synced_at:new Date().toISOString(),active:true};
   if(existing){const q=await supabase.from("leagues").update(payload).eq("id",existing.id).select("id").single();if(q.error)throw q.error;leagueIds.set(normalizedKey(name,r.country),existing.id);result.updated++;await supabase.from("directory_change_log").insert({entity_type:"league",entity_id:existing.id,source_id:sourceId,action:"updated"});}
   else{const q=await supabase.from("leagues").insert(payload).select("id").single();if(q.error)throw q.error;leagueIds.set(normalizedKey(name,r.country),q.data.id);result.created++;await supabase.from("directory_change_log").insert({entity_type:"league",entity_id:q.data.id,source_id:sourceId,action:"created"});}
@@ -29,8 +29,8 @@ export async function syncNormalizedDirectory(
   let leagueId=r.leagueExternalId?null:leagueIds.get(normalizedKey(r.leagueName||"",r.country));
   if(r.leagueExternalId){const q=await supabase.from("leagues").select("id").eq("source_id",sourceId).eq("external_id",clean(r.leagueExternalId)).maybeSingle();if(q.error)throw q.error;leagueId=q.data?.id??null;}
   let existing:any=null;
-  if(clean(r.externalId)){const q=await supabase.from("teams").select("id").eq("source_id",sourceId).eq("external_id",clean(r.externalId)).maybeSingle();if(q.error)throw q.error;existing=q.data;}
-  if(!existing){const q=await supabase.from("teams").select("id").ilike("name",name).eq("country",clean(r.country)).maybeSingle();if(q.error&&q.error.code!=="PGRST116")throw q.error;existing=q.data;}
+  if(clean(r.externalId)){const q=await supabase.from("teams").select("id").eq("source_id",sourceId).eq("external_id",clean(r.externalId)).limit(1).maybeSingle();if(q.error)throw q.error;existing=q.data;}
+  if(!existing){const q=await supabase.from("teams").select("id").ilike("name",name).eq("country",clean(r.country)).limit(1).maybeSingle();if(q.error&&q.error.code!=="PGRST116")throw q.error;existing=q.data;}
   const payload:any={name,country:clean(r.country),city:clean(r.city),league_id:leagueId,league_name:clean(r.leagueName),external_id:clean(r.externalId),source_id:sourceId,last_synced_at:new Date().toISOString(),active:true};
   if(existing){const q=await supabase.from("teams").update(payload).eq("id",existing.id).select("id").single();if(q.error)throw q.error;teamIds.set(normalizedKey(name,r.country),existing.id);result.updated++;await supabase.from("directory_change_log").insert({entity_type:"team",entity_id:existing.id,source_id:sourceId,action:"updated"});}
   else{const q=await supabase.from("teams").insert(payload).select("id").single();if(q.error)throw q.error;teamIds.set(normalizedKey(name,r.country),q.data.id);result.created++;await supabase.from("directory_change_log").insert({entity_type:"team",entity_id:q.data.id,source_id:sourceId,action:"created"});}
@@ -41,8 +41,8 @@ export async function syncNormalizedDirectory(
   let teamId=r.teamExternalId?null:teamIds.get(normalizedKey(r.teamName||"",r.country));
   if(r.teamExternalId){const q=await supabase.from("teams").select("id").eq("source_id",sourceId).eq("external_id",clean(r.teamExternalId)).maybeSingle();if(q.error)throw q.error;teamId=q.data?.id??null;}
   let existing:any=null;
-  if(clean(r.externalId)){const q=await supabase.from("coaches").select("id").eq("source_id",sourceId).eq("external_id",clean(r.externalId)).maybeSingle();if(q.error)throw q.error;existing=q.data;}
-  if(!existing){const q=await supabase.from("coaches").select("id").ilike("name",name).eq("country",clean(r.country)).maybeSingle();if(q.error&&q.error.code!=="PGRST116")throw q.error;existing=q.data;}
+  if(clean(r.externalId)){const q=await supabase.from("coaches").select("id").eq("source_id",sourceId).eq("external_id",clean(r.externalId)).limit(1).maybeSingle();if(q.error)throw q.error;existing=q.data;}
+  if(!existing){const q=await supabase.from("coaches").select("id").ilike("name",name).eq("country",clean(r.country)).limit(1).maybeSingle();if(q.error&&q.error.code!=="PGRST116")throw q.error;existing=q.data;}
   const payload:any={name,country:clean(r.country),city:clean(r.city),current_team_id:teamId,external_id:clean(r.externalId),source_id:sourceId,last_synced_at:new Date().toISOString(),active:true};
   if(existing){const q=await supabase.from("coaches").update(payload).eq("id",existing.id).select("id").single();if(q.error)throw q.error;result.updated++;await supabase.from("directory_change_log").insert({entity_type:"coach",entity_id:existing.id,source_id:sourceId,action:"update"});}
   else{const q=await supabase.from("coaches").insert(payload).select("id").single();if(q.error)throw q.error;existing=q.data;result.created++;await supabase.from("directory_change_log").insert({entity_type:"coach",entity_id:existing.id,source_id:sourceId,action:"create"});}
