@@ -418,6 +418,236 @@ a {
   border: 0;
 }
 
+.review-moderation-center {
+  min-height: 100vh;
+  padding: 48px 24px 80px;
+}
+.review-moderation-center .container {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+.review-moderation-center .admin-topbar,
+.review-moderation-center .admin-section-heading,
+.review-moderation-center .moderation-card-header,
+.review-moderation-center .moderation-actions,
+.review-moderation-center .confirmation-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.review-moderation-center .admin-topbar {
+  margin-bottom: 28px;
+}
+.review-moderation-center .admin-topbar h1 {
+  margin: 4px 0 10px;
+  font-size: clamp(34px, 5vw, 52px);
+  letter-spacing: -1.8px;
+}
+.review-moderation-center .admin-topbar .muted {
+  margin: 0;
+}
+.review-moderation-center .admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 26px 0;
+}
+.review-moderation-center .admin-stat-card,
+.review-moderation-center .admin-panel,
+.review-moderation-center .moderation-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(145deg, #151515, #0d0d0d);
+}
+.review-moderation-center .admin-stat-card {
+  padding: 20px;
+}
+.review-moderation-center .admin-stat-card span {
+  display: block;
+  color: var(--gray-500);
+  font-size: 13px;
+}
+.review-moderation-center .admin-stat-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 30px;
+}
+.review-moderation-center .admin-panel {
+  margin: 22px 0;
+  padding: 24px;
+}
+.review-moderation-center .admin-section-heading {
+  margin-bottom: 20px;
+}
+.review-moderation-center .admin-section-heading h2 {
+  margin: 0;
+  font-size: 25px;
+}
+.review-moderation-center .admin-section-heading p {
+  margin: 0 0 7px;
+}
+.review-moderation-center .admin-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 260px);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.review-moderation-center .admin-filters .input {
+  margin-bottom: 0;
+}
+.review-moderation-center .admin-list {
+  display: grid;
+  gap: 14px;
+}
+.review-moderation-center .moderation-card {
+  padding: 20px;
+}
+.review-moderation-center .moderation-card-header {
+  align-items: flex-start;
+}
+.review-moderation-center .moderation-card-header h3 {
+  margin: 12px 0 5px;
+  font-size: 18px;
+}
+.review-moderation-center .moderation-card-header .muted {
+  margin: 0;
+}
+.review-moderation-center .status-pill {
+  display: inline-flex;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 106, 0, 0.14);
+  color: #ff9b4a;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+.review-moderation-center .status-pill.status-approved {
+  background: rgba(46, 204, 113, 0.14);
+  color: #6ee7a3;
+}
+.review-moderation-center .status-pill.status-rejected,
+.review-moderation-center .status-pill.status-removed {
+  background: rgba(255, 82, 82, 0.14);
+  color: #ff8f8f;
+}
+.review-moderation-center .status-pill.status-flagged {
+  background: rgba(255, 193, 7, 0.14);
+  color: #ffd666;
+}
+.review-moderation-center .rating-number {
+  white-space: nowrap;
+  color: #ffd666;
+}
+.review-moderation-center .moderation-preview {
+  margin: 16px 0;
+  color: var(--gray-300);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.review-moderation-center .moderation-meta {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  color: var(--gray-500);
+  font-size: 12px;
+}
+.review-moderation-center .moderation-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+.review-moderation-center .moderation-actions .btn {
+  margin: 0;
+}
+.review-moderation-center .empty-state {
+  padding: 28px 12px;
+  color: var(--gray-500);
+  text-align: center;
+}
+.review-moderation-center .alert-error {
+  margin: 18px 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 82, 82, 0.35);
+  border-radius: 10px;
+  background: rgba(255, 82, 82, 0.1);
+  color: #ffaaaa;
+}
+.review-moderation-center .modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.78);
+}
+.review-moderation-center .modal-panel {
+  width: min(100%, 720px);
+  max-height: min(85vh, 900px);
+  overflow: auto;
+  padding: 26px;
+  border: 1px solid #343434;
+  border-radius: 16px;
+  background: #101010;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+.review-moderation-center .modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+.review-moderation-center .modal-header h2,
+.review-moderation-center .confirmation-panel h2 {
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+.review-moderation-center .modal-close {
+  border: 0;
+  background: transparent;
+  color: var(--gray-300);
+  font-size: 30px;
+  cursor: pointer;
+}
+.review-moderation-center .review-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 24px 0;
+}
+.review-moderation-center .review-detail-grid > div {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.review-moderation-center .review-detail-grid span,
+.review-moderation-center .review-detail-grid strong {
+  display: block;
+}
+.review-moderation-center .review-detail-grid span {
+  margin-bottom: 6px;
+  color: var(--gray-500);
+  font-size: 12px;
+}
+.review-moderation-center .review-detail-body {
+  margin: 20px 0;
+  color: var(--gray-300);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.review-moderation-center .confirmation-panel {
+  width: min(100%, 460px);
+}
+.review-moderation-center .confirmation-actions {
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
 /* =========================
    HERO
 ========================= */
@@ -680,6 +910,9 @@ textarea {
    MOBILE
 ========================= */
 @media (max-width: 800px) {
+  .review-moderation-center .admin-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .moderation-page .admin-header-row {
     align-items: stretch;
     flex-direction: column;
@@ -695,6 +928,29 @@ textarea {
   }
 }
 @media (max-width: 700px) {
+  .review-moderation-center {
+    padding: 28px 16px 56px;
+  }
+  .review-moderation-center .admin-topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .review-moderation-center .admin-panel {
+    padding: 18px 14px;
+  }
+  .review-moderation-center .admin-filters {
+    grid-template-columns: 1fr;
+  }
+  .review-moderation-center .moderation-card {
+    padding: 16px;
+  }
+  .review-moderation-center .moderation-card-header {
+    flex-direction: column;
+  }
+  .review-moderation-center .confirmation-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
   .moderation-nav {
     padding: 0 16px;
   }

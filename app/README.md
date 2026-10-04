@@ -42,6 +42,7 @@ STRIPE_WEBHOOK_SECRET=
 STRIPE_PRO_PRICE_ID=
 STRIPE_PREMIUM_PRICE_ID=
 NEXT_PUBLIC_SITE_URL=
+```
 
 Never commit .env.local or any secret keys to GitHub.
 
@@ -81,6 +82,11 @@ Reviews require:
 Reviews initially enter pending status and can be moderated by authorized administrators or moderators.
 
 Users can report reviews that violate the Community Guidelines.
+
+Before deploying moderation API changes, apply the SQL migration in
+`supabase/migrations/20261003223700_secure_review_moderation.sql` to the
+Supabase project. Keep `SUPABASE_SERVICE_ROLE_KEY` configured only as a
+server-side environment variable; never expose it with a `NEXT_PUBLIC_` name.
 
 Legal & Trust
 
