@@ -10,7 +10,7 @@ type SyncRun={id:string;source_id:string;entity_type:string;status:string;record
 
 export default function DirectoryProvidersPage(){
  const router=useRouter(); const [sources,setSources]=useState<Source[]>([]); const [runs,setRuns]=useState<SyncRun[]>([]);
- const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [name,setName]=useState(""); const [baseUrl,setBaseUrl]=useState(""); const [docsUrl,setDocsUrl]=useState(""); const [licenseNotes,setLicenseNotes]=useState(""); const [message,setMessage]=useState(""); const [error,setError]=useState("");
+ const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [name,setName]=useState(""); const [baseUrl,setBaseUrl]=useState(""); const [docsUrl,setDocsUrl]=useState(""); const [licenseNotes,setLicenseNotes]=useState(""); const [message,setMessage]=useState(""); const [error,setError]=useState(""); const [syncing,setSyncing]=useState<string|null>(null);
  async function load(){
   const {data:{session}}=await supabase.auth.getSession(); if(!session?.user){router.replace("/login");return;}
   const {data:allowed}=await supabase.rpc("is_current_user_admin_or_moderator"); if(!allowed){router.replace("/dashboard");return;}
@@ -26,6 +26,14 @@ export default function DirectoryProvidersPage(){
   const {error:e1}=await supabase.from("directory_sources").insert({name:name.trim(),base_url:baseUrl.trim()||null,documentation_url:docsUrl.trim()||null,license_notes:licenseNotes.trim()||null,active:true});
   if(e1)setError(e1.message);else{setName("");setBaseUrl("");setDocsUrl("");setLicenseNotes("");setMessage("Provider added. No external data has been imported.");await load();}setSaving(false);
  }
+ async function startSync(s:Source, entityType:"leagues"|"teams"|"coaches"){
+ setSyncing(s.id+entityType);setError("");setMessage("");
+ const {data:{session}}=await supabase.auth.getSession();
+ const res=await fetch("/api/admin/directory/sync",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${session?.access_token??""}`},body:JSON.stringify({source_id:s.id,entity_type:entityType})});
+ const data=await res.json();
+ if(!res.ok)setError(data.error||"Unable to queue sync.");else{setMessage(`Queued ${entityType} sync for ${s.name}.`);await load();}
+ setSyncing(null);
+ }
  async function toggleSource(s:Source){setError("");const {error:e1}=await supabase.from("directory_sources").update({active:!s.active}).eq("id",s.id);if(e1)setError(e1.message);else await load();}
  if(loading)return <main style={styles.page}><div style={styles.loader}>Loading provider center...</div></main>;
  return <main style={styles.page}><div style={styles.shell}>
@@ -34,7 +42,7 @@ export default function DirectoryProvidersPage(){
   <section style={styles.panel}><p style={styles.section}>PROVIDER REGISTRY</p><h2 style={styles.heading}>Add a data provider</h2><p style={styles.muted}>This records provider and licensing context. It does not scrape or import data.</p>
    <form onSubmit={addSource} style={styles.form}><input required value={name} onChange={e=>setName(e.target.value)} placeholder="Provider name" style={styles.input}/><input value={baseUrl} onChange={e=>setBaseUrl(e.target.value)} placeholder="Base URL" style={styles.input}/><input value={docsUrl} onChange={e=>setDocsUrl(e.target.value)} placeholder="Documentation URL" style={styles.input}/><textarea value={licenseNotes} onChange={e=>setLicenseNotes(e.target.value)} placeholder="License / usage notes" style={styles.textarea}/><button disabled={saving} style={styles.primary}>{saving?"Saving...":"Add Provider"}</button></form>
   </section>
-  <section style={styles.panel}><p style={styles.section}>REGISTERED SOURCES</p>{sources.length===0?<p style={styles.muted}>No providers registered yet.</p>:<div style={styles.list}>{sources.map(s=><div key={s.id} style={styles.row}><div><strong>{s.name}</strong><div style={styles.small}>{s.base_url||"No base URL"} · {s.license_notes||"No license notes"}</div></div><div style={styles.rowActions}><span style={{...styles.badge,...(s.active?styles.active:styles.inactive)}}>{s.active?"ACTIVE":"PAUSED"}</span><button onClick={()=>void toggleSource(s)} style={styles.secondary}>{s.active?"Pause":"Activate"}</button></div></div>)}</div>}</section>
+  <section style={styles.panel}><p style={styles.section}>REGISTERED SOURCES</p>{sources.length===0?<p style={styles.muted}>No providers registered yet.</p>:<div style={styles.list}>{sources.map(s=><div key={s.id} style={styles.row}><div><strong>{s.name}</strong><div style={styles.small}>{s.base_url||"No base URL"} · {s.license_notes||"No license notes"}</div></div><div style={styles.rowActions}><span style={{...styles.badge,...(s.active?styles.active:styles.inactive)}}>{s.active?"ACTIVE":"PAUSED"}</span><button onClick={()=>void startSync(s,"leagues")} disabled={syncing===s.id+"leagues"} style={styles.secondary}>{syncing===s.id+"leagues"?"Queueing...":"Sync Leagues"}</button><button onClick={()=>void startSync(s,"teams")} disabled={syncing===s.id+"teams"} style={styles.secondary}>{syncing===s.id+"teams"?"Queueing...":"Sync Teams"}</button><button onClick={()=>void startSync(s,"coaches")} disabled={syncing===s.id+"coaches"} style={styles.secondary}>{syncing===s.id+"coaches"?"Queueing...":"Sync Coaches"}</button><button onClick={()=>void toggleSource(s)} style={styles.secondary}>{s.active?"Pause":"Activate"}</button></div></div>)}</div>}</section>
   <section style={styles.panel}><p style={styles.section}>SYNC HISTORY</p>{runs.length===0?<p style={styles.muted}>No sync runs yet. The registry is ready for a licensed connector.</p>:<div style={styles.list}>{runs.map(r=><div key={r.id} style={styles.row}><div><strong>{r.entity_type} · {r.status}</strong><div style={styles.small}>{new Date(r.started_at).toLocaleString()} · seen {r.records_seen} · created {r.records_created} · updated {r.records_updated}</div></div>{r.error_message&&<span style={styles.errorText}>{r.error_message}</span>}</div>)}</div>}</section>
  </div></main>;
 }
