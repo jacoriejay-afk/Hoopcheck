@@ -57,7 +57,7 @@ export async function POST(
     );
   }
 
-  const stripe = new Stripe({apiKey: stripeSecretKey});
+  const stripe = new Stripe(stripeSecretKey);
 
   try {
     const authorization =
