@@ -19,6 +19,7 @@ type Profile = {
   current_country: string | null;
   current_team: string | null;
   profile_visibility: "public" | "private";
+  player_verified: boolean;
 };
 
 type Review = {
@@ -55,7 +56,7 @@ export default function AccountPage() {
         supabase.from("profiles").select("display_name,bio,position,years_pro,current_country,current_team,profile_visibility,player_verified").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
       ]);
-      const nextProfile: Profile = profileData ?? { display_name: null, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public" };
+      const nextProfile: Profile = profileData ?? { display_name: null, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false };
       setProfile(nextProfile);
       setDisplayName(nextProfile.display_name ?? "");
       setBio(nextProfile.bio ?? "");
