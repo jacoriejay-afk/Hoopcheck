@@ -3,7 +3,18 @@ import { createClient } from "@supabase/supabase-js";
 export async function POST(req:Request){
  const token=req.headers.get("authorization")?.replace(/^Bearer /,""); if(!token)return NextResponse.json({error:"Authentication required"},{status:401});
  const s=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,{global:{headers:{Authorization:`Bearer ${token}`}}});
- const {data:{user}}=await s.auth.getUser(token); if(!user)return NextResponse.json({error:"Invalid session"},{status:401});
+ const {data:{user}}=await s.auth.getUser(token);
+ if(!user)return NextResponse.json({error:"Invalid session"},{status:401});
+ if(!user.email_confirmed_at)return NextResponse.json({error:"Please confirm your email address before submitting a review."},{status:403});
+
+ const { count: recentCount } = await s
+   .from("reviews")
+   .select("id", { count: "exact", head: true })
+   .eq("author_id", user.id)
+   .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+ if ((recentCount ?? 0) >= 5) {
+   return NextResponse.json({error:"Review limit reached. You can submit up to 5 reviews in a 24-hour period."},{status:429});
+ }
  const b=await req.json().catch(()=>({})); const targetKeys=["coach_id","team_id","league_id"].filter(k=>typeof b[k]==="string"&&b[k]);
  if(targetKeys.length!==1)return NextResponse.json({error:"Choose exactly one coach, team, or league."},{status:400});
  const ratings=["overall_rating","communication_rating","professionalism_rating","development_rating","payment_rating"];
