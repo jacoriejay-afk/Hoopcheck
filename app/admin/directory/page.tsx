@@ -218,8 +218,8 @@ export default function AdminDirectoryPage() {
             <DirectoryCard
               number="04"
               title="Data Providers"
-              description="Control licensed external data sources and synchronization."
-              href="/admin/directory/manage"
+              description="Bulk import leagues, teams, and coaches from CSV with import history and duplicate-safe updates."
+              href="/admin/directory/import"
             />
           </div>
         </section>
@@ -275,10 +275,9 @@ export default function AdminDirectoryPage() {
               title="Team → League relationships"
             />
 
-            <RoadmapItem
-              number="08"
-              title="Licensed worldwide imports"
-            />
+            <RoadmapItem number="08" title="Bulk CSV imports" complete />
+
+            <RoadmapItem number="09" title="Licensed worldwide imports" />
           </div>
         </section>
       </div>
