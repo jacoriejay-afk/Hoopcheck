@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { syncNormalizedDirectory } from "@/lib/directory-sync/sync-directory";
-import type { SyncEntityType, NormalizedDirectory } from "@/lib/directory-sync/types";
+import { syncNormalizedDirectory } from "../../../../../../lib/directory-sync/sync-directory";
+import type { SyncEntityType, NormalizedDirectory } from "../../../../../../lib/directory-sync/types";
 
 export async function POST(req:Request){
  const token=req.headers.get("authorization")?.replace(/^Bearer /,""); if(!token)return NextResponse.json({error:"Authentication required"},{status:401});
