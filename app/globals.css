@@ -1021,3 +1021,28 @@ textarea {
     font-size: 30px;
   }
 }
+
+
+/* Final mobile reliability pass */
+html, body { overflow-x: hidden; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+@media (max-width: 700px) {
+  .search-page { overflow-x: hidden; }
+  .search-form { flex-direction: column; align-items: stretch; }
+  .search-form input, .search-form .btn { width: 100%; min-width: 0; }
+  .result-grid { grid-template-columns: 1fr; }
+  .result-card, .quick-card { min-width: 0; }
+  .topbar { flex-wrap: wrap; }
+  .topbar .topnav { width: 100%; justify-content: space-between; padding-bottom: 10px; }
+  .topbar .topnav a { min-height: 40px; display: inline-flex; align-items: center; }
+  .hero-card { grid-template-columns: 1fr; }
+  .membership-badge { width: 100%; }
+}
+@media (max-width: 480px) {
+  .hero h1 { font-size: clamp(38px, 12vw, 52px); }
+  .form { margin-left: 16px; margin-right: 16px; }
+  .footer-links { grid-template-columns: 1fr; }
+  .review-moderation-center .admin-stat-grid { grid-template-columns: 1fr; }
+  .review-moderation-center .modal-backdrop { padding: 10px; }
+  .review-moderation-center .modal-panel { padding: 18px; max-height: 92vh; }
+}
