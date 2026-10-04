@@ -1,0 +1,56 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { supabase } from "../../lib/supabase";
+
+export default function VerificationPage() {
+  const [team,setTeam]=useState("");
+  const [country,setCountry]=useState("");
+  const [league,setLeague]=useState("");
+  const [note,setNote]=useState("");
+  const [status,setStatus]=useState<string|null>(null);
+  const [message,setMessage]=useState("");
+  const [loading,setLoading]=useState(true);
+  const [submitting,setSubmitting]=useState(false);
+
+  useEffect(()=>{(async()=>{
+    const {data:{user}}=await supabase.auth.getUser();
+    if(!user){window.location.href="/login";return;}
+    const {data}=await supabase.from("player_verification_requests").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
+    setStatus(data?.status ?? null); setLoading(false);
+  })()},[]);
+
+  async function submit(e:React.FormEvent){
+    e.preventDefault(); setMessage(""); setSubmitting(true);
+    const {data:{user}}=await supabase.auth.getUser();
+    if(!user){window.location.href="/login";return;}
+    const {error}=await supabase.from("player_verification_requests").insert({
+      user_id:user.id,current_team:team.trim().slice(0,120)||null,
+      current_country:country.trim().slice(0,80)||null,
+      league:league.trim().slice(0,120)||null,note:note.trim().slice(0,1000)||null
+    });
+    if(error) setMessage(error.code==="23505"?"You already have a pending verification request.":"Unable to submit your request. Please try again.");
+    else {setStatus("pending");setMessage("Verification request submitted. Our team will review it.");}
+    setSubmitting(false);
+  }
+
+  if(loading)return <main className="page-shell"><div className="page-container"><p>Loading...</p></div></main>;
+  return <main className="page-shell"><div className="page-container">
+    <header className="topbar"><Link href="/" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/account">Account</Link></nav></header>
+    <section className="hero-card"><p className="eyebrow">PLAYER VERIFICATION</p><h1>Get your player badge.</h1><p className="muted">Verification helps HoopCheck distinguish professional-player accounts from ordinary accounts. We review requests manually.</p></section>
+    <section className="dashboard-card" style={{marginTop:24}}>
+      {status==="approved" ? <><h2>✓ Verified Player</h2><p className="muted">Your account is verified.</p></> :
+       status==="pending" ? <><h2>Request under review</h2><p className="muted">We have your request. You do not need to submit another one.</p></> :
+       <form onSubmit={submit} style={{display:"grid",gap:12}}>
+        <label>Current team<input value={team} onChange={e=>setTeam(e.target.value)} maxLength={120} placeholder="Team name"/></label>
+        <label>Current country<input value={country} onChange={e=>setCountry(e.target.value)} maxLength={80} placeholder="Country"/></label>
+        <label>League<input value={league} onChange={e=>setLeague(e.target.value)} maxLength={120} placeholder="League"/></label>
+        <label>Anything else we should know?<textarea value={note} onChange={e=>setNote(e.target.value)} maxLength={1000} rows={5}/></label>
+        {message&&<p role="status">{message}</p>}
+        <button className="btn" disabled={submitting}>{submitting?"Submitting...":"Request Verification"}</button>
+        <p className="muted">Do not submit passwords, financial information, or sensitive identity documents in this form.</p>
+       </form>}
+    </section>
+  </div></main>;
+}
