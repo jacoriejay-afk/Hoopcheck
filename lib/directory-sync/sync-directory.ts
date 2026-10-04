@@ -21,8 +21,8 @@ export async function syncNormalizedDirectory(
   if(clean(r.externalId)){const q=await supabase.from("leagues").select("id").eq("source_id",sourceId).eq("external_id",clean(r.externalId)).maybeSingle();if(q.error)throw q.error;existing=q.data;}
   if(!existing){const q=await supabase.from("leagues").select("id").ilike("name",name).eq("country",clean(r.country)).maybeSingle();if(q.error&&q.error.code!=="PGRST116")throw q.error;existing=q.data;}
   const payload={name,country:clean(r.country),level:clean(r.level),season:clean(r.season),external_id:clean(r.externalId),source_id:sourceId,last_synced_at:new Date().toISOString(),active:true};
-  if(existing){const q=await supabase.from("leagues").update(payload).eq("id",existing.id).select("id").single();if(q.error)throw q.error;leagueIds.set(normalizedKey(name,r.country),existing.id);result.updated++;await supabase.from("directory_change_log").insert({entity_type:"league",entity_id:existing.id,source_id:sourceId,action:"update"});}
-  else{const q=await supabase.from("leagues").insert(payload).select("id").single();if(q.error)throw q.error;leagueIds.set(normalizedKey(name,r.country),q.data.id);result.created++;await supabase.from("directory_change_log").insert({entity_type:"league",entity_id:q.data.id,source_id:sourceId,action:"create"});}
+  if(existing){const q=await supabase.from("leagues").update(payload).eq("id",existing.id).select("id").single();if(q.error)throw q.error;leagueIds.set(normalizedKey(name,r.country),existing.id);result.updated++;await supabase.from("directory_change_log").insert({entity_type:"league",entity_id:existing.id,source_id:sourceId,action:"updated"});}
+  else{const q=await supabase.from("leagues").insert(payload).select("id").single();if(q.error)throw q.error;leagueIds.set(normalizedKey(name,r.country),q.data.id);result.created++;await supabase.from("directory_change_log").insert({entity_type:"league",entity_id:q.data.id,source_id:sourceId,action:"created"});}
  }
  for(const r of directory.teams){
   const name=clean(r.name);if(!name){result.skipped++;continue;}result.seen++;
