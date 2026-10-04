@@ -61,13 +61,13 @@ function MembershipContent() {
     const success = searchParams.get("success");
     const canceled = searchParams.get("canceled");
 
-    if (success === "1") {
+    if (success === "true") {
       setMessage(
         "Checkout completed. Your membership will appear here once Stripe confirms the subscription."
       );
     }
 
-    if (canceled === "1") {
+    if (canceled === "true") {
       setMessage("Checkout was canceled. No subscription was created.");
     }
   }, [searchParams]);
