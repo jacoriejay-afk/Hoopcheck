@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getDirectoryConnector } from "@/lib/directory-sync/connectors";
-import { syncNormalizedDirectory } from "@/lib/directory-sync/sync-directory";
+import { getDirectoryConnector } from "../../../../../lib/directory-sync/connectors";
+import { syncNormalizedDirectory } from "../../../../../lib/directory-sync/sync-directory";
 
 export async function POST(req: Request) {
   const auth = req.headers.get("authorization");
