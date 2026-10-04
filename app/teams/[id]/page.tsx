@@ -17,7 +17,22 @@ type Team = {
   name: string;
   country: string | null;
   league_name: string | null;
+  league_id: string | null;
   city: string | null;
+};
+
+type Coach = {
+  id: string;
+  name: string;
+  country: string | null;
+  city: string | null;
+};
+
+type League = {
+  id: string;
+  name: string;
+  country: string | null;
+  level: string | null;
 };
 
 type Review = {
@@ -104,6 +119,12 @@ export default function TeamDetailPage() {
   const [team, setTeam] =
     useState<Team | null>(null);
 
+  const [league, setLeague] =
+    useState<League | null>(null);
+
+  const [coaches, setCoaches] =
+    useState<Coach[]>([]);
+
   const [reviews, setReviews] =
     useState<Review[]>([]);
 
@@ -141,7 +162,7 @@ export default function TeamDetailPage() {
       } = await supabase
         .from("teams")
         .select(
-          "id, name, country, league_name, city"
+          "id, name, country, league_name, league_id, city"
         )
         .eq("id", id)
         .maybeSingle();
@@ -156,6 +177,31 @@ export default function TeamDetailPage() {
       }
 
       setTeam(teamData);
+
+      const [leagueResult, coachesResult] =
+        await Promise.all([
+          teamData.league_id
+            ? supabase
+                .from("leagues")
+                .select("id, name, country, level")
+                .eq("id", teamData.league_id)
+                .maybeSingle()
+            : Promise.resolve({ data: null }),
+          supabase
+            .from("coaches")
+            .select("id, name, country, city")
+            .eq("current_team_id", id)
+            .eq("active", true)
+            .order("name"),
+        ]);
+
+      if (!leagueResult.error && leagueResult.data) {
+        setLeague(leagueResult.data);
+      }
+
+      if (!coachesResult.error && coachesResult.data) {
+        setCoaches(coachesResult.data);
+      }
 
       const {
         data: {
@@ -534,6 +580,80 @@ export default function TeamDetailPage() {
           >
             Back To Teams
           </Link>
+        </div>
+      <section className="grid">
+        <div className="card">
+          <div className="eyebrow">League</div>
+          {league ? (
+            <>
+              <h2>{league.name}</h2>
+              <p>
+                {league.country || "Country not listed"}
+                {league.level ? " • " + league.level : ""}
+              </p>
+              <Link
+                href={`/leagues/${league.id}`}
+                className="btn"
+              >
+                View League
+              </Link>
+            </>
+          ) : team.league_name ? (
+            <>
+              <h2>{team.league_name}</h2>
+              <p>League relationship is being verified.</p>
+              <Link href="/leagues" className="btn">
+                Browse Leagues
+              </Link>
+            </>
+          ) : (
+            <>
+              <h2>League not listed</h2>
+              <p>HoopCheck has not linked this team to a league yet.</p>
+            </>
+          )}
+        </div>
+
+        <div className="card">
+          <div className="eyebrow">Current Coaches</div>
+          {coaches.length === 0 ? (
+            <>
+              <h2>No coaches listed yet.</h2>
+              <p>HoopCheck has not linked a current coach to this team.</p>
+            </>
+          ) : (
+            <>
+              <h2>{coaches.length}</h2>
+              <div style={{ display: "grid", gap: "10px", marginTop: "15px" }}>
+                {coaches.slice(0, 6).map((coach) => (
+                  <Link
+                    key={coach.id}
+                    href={`/coaches/${coach.id}`}
+                    style={{
+                      display: "block",
+                      padding: "12px 14px",
+                      border: "1px solid #333",
+                      borderRadius: "10px",
+                      textDecoration: "none",
+                    }}
+                  >
+                    <strong>{coach.name}</strong>
+                    <span
+                      className="muted"
+                      style={{ display: "block", marginTop: "4px", fontSize: "13px" }}
+                    >
+                      {coach.city && coach.country
+                        ? coach.city + ", " + coach.country
+                        : coach.country || coach.city || "Location not listed"}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+              {coaches.length > 6 && (
+                <p className="muted">Showing 6 of {coaches.length} current coaches.</p>
+              )}
+            </>
+          )}
         </div>
       </section>
 
