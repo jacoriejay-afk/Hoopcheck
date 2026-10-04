@@ -32,7 +32,7 @@ export async function submitReviewReport(
   }
 
   try {
-    const response = await fetch("/api/review-reports", {
+    const response = await fetch("/api/reviews/report", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${session.access_token}`,
