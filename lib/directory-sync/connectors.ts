@@ -92,7 +92,7 @@ async function getApiSportsBasketballDirectory(
     return directory;
   }
 
-  const leagueBatch = leagues.slice(offset, offset + limit);
+  const leagueBatch = leagues.slice(offset, offset + limit);\n  directory.leagues = normalizedLeagues.slice(offset, offset + limit);
 
   for (const leagueItem of leagueBatch) {
     const league = leagueItem?.league ?? leagueItem;
