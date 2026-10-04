@@ -190,7 +190,12 @@ export default function TeamDetailPage() {
 
       setTeam(teamData);
 
-      const { data: membershipData } = await supabase.from("team_league_memberships").select("id,league_id,season,start_date,end_date,active").eq("team_id", id).eq("active", true).order("season", { ascending: false });\n      if (membershipData) {\n        const leagueIds = membershipData.map((x) => x.league_id);\n        const { data: leagueRows } = leagueIds.length ? await supabase.from("leagues").select("id,name").in("id", leagueIds) : { data: [] as any[] };\n        setHistory(membershipData.map((x) => ({ ...x, league: leagueRows?.find((l) => l.id === x.league_id) })));\n      }
+      const { data: membershipData } = await supabase.from("team_league_memberships").select("id,league_id,season,start_date,end_date,active").eq("team_id", id).eq("active", true).order("season", { ascending: false });
+      if (membershipData) {
+        const leagueIds = membershipData.map((x) => x.league_id);
+        const { data: leagueRows } = leagueIds.length ? await supabase.from("leagues").select("id,name").in("id", leagueIds) : { data: [] as any[] };
+        setHistory(membershipData.map((x) => ({ ...x, league: leagueRows?.find((l) => l.id === x.league_id) })));
+      }
 
       const [leagueResult, coachesResult] =
         await Promise.all([
