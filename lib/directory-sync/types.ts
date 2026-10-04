@@ -1,5 +1,10 @@
 export type SyncEntityType = "leagues" | "teams" | "coaches";
 
+export type DirectorySyncOptions = {
+  offset?: number;
+  limit?: number;
+};
+
 export type NormalizedLeague = {
   externalId?: string | null; name: string; country?: string | null; level?: string | null; season?: string | null;
 };
@@ -17,5 +22,9 @@ export type NormalizedDirectory = {
 
 export interface DirectoryProviderConnector {
   key: string;
-  getDirectory(input: { entityType: SyncEntityType; sourceId: string }): Promise<NormalizedDirectory>;
+  getDirectory(input: {
+    entityType: SyncEntityType;
+    sourceId: string;
+    options?: DirectorySyncOptions;
+  }): Promise<NormalizedDirectory>;
 }
