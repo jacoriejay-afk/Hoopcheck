@@ -176,33 +176,29 @@ export default function TeamReviewPage() {
         window.location.href = "/login";
         return;
       }
-const [subscriptionResult, adminResult] = await Promise.all([
-  supabase
-    .from("subscriptions")
-    .select("status, current_period_end")
-    .eq("user_id", user.id)
-    .maybeSingle(),
+      const [subscriptionResult, adminResult] = await Promise.all([
+        supabase
+          .from("subscriptions")
+          .select("status, current_period_end")
+          .eq("user_id", user.id)
+          .maybeSingle(),
 
-  supabase.rpc("is_current_user_admin_or_moderator"),
-]);
+        supabase.rpc("is_current_user_admin_or_moderator"),
+      ]);
 
-const isAdmin = adminResult.data === true;
+      const isAdmin = adminResult.data === true;
+      const subscription = subscriptionResult.data;
+      const hasActiveSubscription =
+        subscription?.status === "active" ||
+        subscription?.status === "trialing";
+      const hasValidSubscription =
+        hasActiveSubscription &&
+        (!subscription?.current_period_end ||
+          new Date(subscription.current_period_end) > new Date());
 
-const subscription = subscriptionResult.data;
-
-const hasActiveSubscription =
-  subscription?.status === "active" ||
-  subscription?.status === "trialing";
-
-const hasValidSubscription =
-  hasActiveSubscription &&
-  (!subscription?.current_period_end ||
-    new Date(subscription.current_period_end) > new Date());
-
-if (!isAdmin && !hasValidSubscription) {
-  router.replace("/membership");
-  return;
-}
+      if (!isAdmin && !hasValidSubscription) {
+        window.location.href = "/membership";
+        return;
       }
 
       const {

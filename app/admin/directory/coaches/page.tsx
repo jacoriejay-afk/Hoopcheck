@@ -40,10 +40,6 @@ type DirectorySource = {
   name: string;
 };
 
-type AdminRole = {
-  role: string;
-};
-
 export default function AdminCoachDirectoryPage() {
   const router = useRouter();
 
@@ -57,7 +53,7 @@ export default function AdminCoachDirectoryPage() {
 
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
+  const [hasAdminAccess, setHasAdminAccess] = useState(false);
 
   async function loadDirectory() {
     const [
@@ -136,35 +132,18 @@ export default function AdminCoachDirectoryPage() {
   useEffect(() => {
     let mounted = true;
 
-    async function loadAdminPage(userId: string) {
-      const { data: adminRole, error: roleError } = await supabase
-        .from("admin_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .single();
+    async function loadAdminPage() {
+      const { data: isAdminOrModerator, error: roleError } =
+        await supabase.rpc("is_current_user_admin_or_moderator");
 
       if (!mounted) return;
 
-      if (roleError || !adminRole) {
+      if (roleError || !isAdminOrModerator) {
         router.replace("/dashboard");
         return;
       }
 
-      const typedRole = adminRole as AdminRole;
-
-      const normalizedRole = String(typedRole.role)
-        .trim()
-        .toLowerCase();
-
-      if (
-        normalizedRole !== "admin" &&
-        normalizedRole !== "moderator"
-      ) {
-        router.replace("/dashboard");
-        return;
-      }
-
-      setRole(normalizedRole);
+      setHasAdminAccess(true);
 
       await loadDirectory();
 
@@ -181,7 +160,7 @@ export default function AdminCoachDirectoryPage() {
       if (!mounted) return;
 
       if (session?.user) {
-        await loadAdminPage(session.user.id);
+        await loadAdminPage();
       }
     }
 
@@ -199,7 +178,7 @@ export default function AdminCoachDirectoryPage() {
           return;
         }
 
-        await loadAdminPage(session.user.id);
+        await loadAdminPage();
       }
     );
 
@@ -365,7 +344,7 @@ export default function AdminCoachDirectoryPage() {
     );
   }
 
-  if (!role) {
+  if (!hasAdminAccess) {
     return null;
   }
 
@@ -401,7 +380,7 @@ export default function AdminCoachDirectoryPage() {
                 Access
               </p>
               <p className="mt-1 font-semibold capitalize text-white">
-                {role}
+                Admin / Moderator
               </p>
             </div>
           </div>

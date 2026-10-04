@@ -14,7 +14,7 @@ type DirectoryCounts = {
 export default function AdminDirectoryPage() {
   const router = useRouter();
 
-  const [role, setRole] = useState<string | null>(null);
+  const [hasAdminAccess, setHasAdminAccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [counts, setCounts] = useState<DirectoryCounts>({
     coaches: 0,
@@ -49,37 +49,7 @@ export default function AdminDirectoryPage() {
         return;
       }
 
-      const { data: isAdminOrModerator, error: roleError } =
-  await supabase.rpc("is_current_user_admin_or_moderator");
-
-if (!mounted) return;
-
-if (roleError || !isAdminOrModerator) {
-  router.replace("/dashboard");
-  return;
-}
-        .select("role")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
-
-      if (!mounted) return;
-
-      if (adminRoleError || !adminRole) {
-        router.replace("/dashboard");
-        return;
-      }
-
-      const normalizedRole = String(adminRole.role)
-        .trim()
-        .toLowerCase();
-
-      if (
-        normalizedRole !== "admin" &&
-        normalizedRole !== "moderator"
-      ) {
-        router.replace("/dashboard");
-        return;
-      }
+      setHasAdminAccess(true);
 
       const [
         { count: coachCount, error: coachError },
@@ -112,8 +82,6 @@ if (roleError || !isAdminOrModerator) {
             "Unable to load directory counts."
         );
       }
-
-      setRole(normalizedRole);
 
       setCounts({
         coaches: coachCount ?? 0,
@@ -219,9 +187,9 @@ if (roleError || !isAdminOrModerator) {
             </div>
 
             <span style={styles.badge}>
-              {role === "admin"
-                ? "Admin Access"
-                : "Moderator Access"}
+              {hasAdminAccess
+                ? "Admin / Moderator Access"
+                : "Access"}
             </span>
           </div>
 
