@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getDirectoryConnector } from "@/lib/directory-sync/connectors";
+import { syncNormalizedDirectory } from "@/lib/directory-sync/sync-directory";
 
 export async function POST(req: Request) {
   const auth = req.headers.get("authorization");
@@ -43,4 +44,6 @@ export async function POST(req: Request) {
     run,
     message: "Sync run queued. A provider connector must supply the normalized records before data is changed."
   });
-}
+}    const normalized = await connector.getDirectory({ entityType, sourceId });
+    const result = await syncNormalizedDirectory(supabase, sourceId, entityType, normalized);
+
