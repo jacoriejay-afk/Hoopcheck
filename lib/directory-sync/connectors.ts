@@ -74,7 +74,7 @@ async function getApiSportsBasketballDirectory(
   const normalizedLeagues = leagues.flatMap((item) => {
     const league = item?.league ?? item;
     const country = item?.country?.name ?? item?.country ?? null;
-    const season = latestSeason(item?.seasons ?? []);
+    const season = process.env.API_SPORTS_BASKETBALL_SEASON?.trim() || "2024";
 
     if (league?.id == null || !league?.name) return [];
 
@@ -109,7 +109,7 @@ async function getApiSportsBasketballDirectory(
     if (league?.id == null) continue;
 
     const country = leagueItem?.country?.name ?? leagueItem?.country ?? null;
-    const season = latestSeason(leagueItem?.seasons ?? []);
+    const season = process.env.API_SPORTS_BASKETBALL_SEASON?.trim() || "2024";
     if (!season) continue;
 
     const teams = await apiSportsGet("/teams", {
@@ -138,6 +138,76 @@ async function getApiSportsBasketballDirectory(
   return directory;
 }
 
+async function sportsDbGet(path: string, params: Record<string, string> = {}) {
+  const key = process.env.THESPORTSDB_API_KEY?.trim() || "123";
+  const url = new URL(`https://www.thesportsdb.com/api/v1/json/${encodeURIComponent(key)}${path}`);
+  Object.entries(params).forEach(([name, value]) => url.searchParams.set(name, value));
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) throw new Error(`TheSportsDB request failed (${response.status})`);
+  const payload = await response.json();
+  if (payload?.message && !payload?.teams && !payload?.leagues) {
+    throw new Error(`TheSportsDB returned an error: ${JSON.stringify(payload)}`);
+  }
+  return payload;
+}
+
+async function getTheSportsDbDirectory(
+  input: { entityType: SyncEntityType; options?: DirectorySyncOptions }
+): Promise<NormalizedDirectory> {
+  const directory: NormalizedDirectory = { leagues: [], teams: [], coaches: [] };
+  const { offset, limit } = batchOptions(input.options);
+  const payload = await sportsDbGet("/all_leagues.php");
+  const leagues = (payload?.leagues ?? []).filter((l: any) => String(l?.strSport ?? "").toLowerCase() === "basketball");
+  const leagueBatch = leagues.slice(offset, offset + limit);
+
+  directory.leagues = leagueBatch.flatMap((l: any) => l?.idLeague && l?.strLeague ? [{
+    externalId: String(l.idLeague),
+    name: String(l.strLeague),
+    country: l.strCountry ? String(l.strCountry) : null,
+    level: null,
+    season: null,
+  }] : []);
+
+  if (input.entityType === "leagues") return directory;
+
+  for (const league of directory.leagues) {
+    const teamsPayload = await sportsDbGet("/search_all_teams.php", { l: league.name });
+    for (const item of teamsPayload?.teams ?? []) {
+      if (!item?.idTeam || !item?.strTeam) continue;
+      const country = item.strCountry || league.country || null;
+      directory.teams.push({
+        externalId: String(item.idTeam),
+        name: String(item.strTeam),
+        country: country ? String(country) : null,
+        city: item.strCity ? String(item.strCity) : null,
+        leagueExternalId: league.externalId ?? null,
+        leagueName: league.name,
+        season: null,
+      });
+      if (input.entityType === "coaches" && item.strManager) {
+        directory.coaches.push({
+          externalId: `tsdb-team-${item.idTeam}-manager`,
+          name: String(item.strManager),
+          country: country ? String(country) : null,
+          city: item.strCity ? String(item.strCity) : null,
+          role: "Head Coach",
+          teamExternalId: String(item.idTeam),
+          teamName: String(item.strTeam),
+          season: null,
+        });
+      }
+    }
+  }
+
+  if (input.entityType === "coaches") directory.teams = [];
+  return directory;
+}
+
+const theSportsDbConnector: DirectoryProviderConnector = {
+  key: "thesportsdb",
+  getDirectory: ({ entityType, options }) => getTheSportsDbDirectory({ entityType, options }),
+};
+
 const apiSportsBasketballConnector: DirectoryProviderConnector = {
   key: "api_sports_basketball",
   getDirectory: ({ entityType, options }) => getApiSportsBasketballDirectory({ entityType, options }),
@@ -146,6 +216,7 @@ const apiSportsBasketballConnector: DirectoryProviderConnector = {
 const connectors: Record<string, DirectoryProviderConnector> = {
   mock: mockDirectoryConnector,
   api_sports_basketball: apiSportsBasketballConnector,
+  thesportsdb: theSportsDbConnector,
 };
 
 export function getDirectoryConnector(key: string | null | undefined) {
