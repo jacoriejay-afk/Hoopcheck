@@ -27,6 +27,11 @@ type Team = {
   league_id: string | null;
 };
 
+type ReviewVerification = {
+  review_id: string;
+  player_verified: boolean | null;
+};
+
 type Review = {
   id: string;
   overall_rating: number;
@@ -325,7 +330,7 @@ export default function LeagueDetailPage() {
         if (!reviewError && reviewData) {
           const reviewIds = reviewData.map((review) => review.id);
           const { data: verificationData } = await supabase.rpc("get_review_verification", { p_review_ids: reviewIds });
-          const verifiedByReview = Object.fromEntries((verificationData || []).map((item) => [item.review_id, Boolean(item.player_verified)]));
+          const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map((item) => [item.review_id, Boolean(item.player_verified)]));
           setReviews(reviewData.map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
         }
 
