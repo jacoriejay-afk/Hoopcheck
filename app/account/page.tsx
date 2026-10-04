@@ -13,6 +13,12 @@ type Subscription = {
 
 type Profile = {
   display_name: string | null;
+  bio: string | null;
+  position: string | null;
+  years_pro: number | null;
+  current_country: string | null;
+  current_team: string | null;
+  profile_visibility: "public" | "private";
 };
 
 type Review = {
@@ -26,9 +32,15 @@ export default function AccountPage() {
   const [email, setEmail] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [targets, setTargets] = useState<Record<string, Target>>({});
-  const [profile, setProfile] = useState<Profile>({ display_name: null });
+  const [profile, setProfile] = useState<Profile>({ display_name: null, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public" });
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [displayName, setDisplayName] = useState("");
+  const [bio, setBio] = useState("");
+  const [position, setPosition] = useState("");
+  const [yearsPro, setYearsPro] = useState("");
+  const [currentCountry, setCurrentCountry] = useState("");
+  const [currentTeam, setCurrentTeam] = useState("");
+  const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -39,12 +51,18 @@ export default function AccountPage() {
       if (!user) { window.location.href = "/login"; return; }
       setEmail(user.email ?? "");
       const [{ data: profileData }, { data: subscriptionData }] = await Promise.all([
-        supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("display_name,bio,position,years_pro,current_country,current_team,profile_visibility").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
       ]);
       const nextProfile = profileData ?? { display_name: null };
       setProfile(nextProfile);
       setDisplayName(nextProfile.display_name ?? "");
+      setBio(nextProfile.bio ?? "");
+      setPosition(nextProfile.position ?? "");
+      setYearsPro(nextProfile.years_pro?.toString() ?? "");
+      setCurrentCountry(nextProfile.current_country ?? "");
+      setCurrentTeam(nextProfile.current_team ?? "");
+      setVisibility(nextProfile.profile_visibility ?? "public");
       setSubscription(subscriptionData ?? null);
       const { data } = await supabase.from("reviews")
         .select("id,status,title,body,overall_rating,created_at,coach_id,team_id,league_id")
@@ -76,9 +94,25 @@ export default function AccountPage() {
     setProfileMessage("");
 
     const name = displayName.trim().slice(0, 80);
+    const years = yearsPro.trim() ? Number(yearsPro) : null;
+    if (years !== null && (!Number.isInteger(years) || years < 0 || years > 50)) {
+      setProfileMessage("Years pro must be a whole number from 0 to 50.");
+      setSavingProfile(false);
+      return;
+    }
+    const updates = {
+      display_name: name || null,
+      bio: bio.trim().slice(0, 500) || null,
+      position: position.trim().slice(0, 50) || null,
+      years_pro: years,
+      current_country: currentCountry.trim().slice(0, 80) || null,
+      current_team: currentTeam.trim().slice(0, 120) || null,
+      profile_visibility: visibility,
+    };
     const { error } = await supabase
       .from("profiles")
-      .upsert({ display_name: name || null }, { onConflict: "id" });
+      .update(updates)
+      .eq("id", (await supabase.auth.getUser()).data.user?.id ?? "");
 
     if (error) {
       setProfileMessage(error.message);
@@ -113,6 +147,21 @@ export default function AccountPage() {
           <form onSubmit={saveProfile} style={{display:"grid",gap:12,marginTop:16}}>
             <label htmlFor="display-name" className="muted">Display name</label>
             <input id="display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder="How players should see you" />
+            <label htmlFor="position" className="muted">Position</label>
+            <input id="position" value={position} onChange={e => setPosition(e.target.value)} maxLength={50} placeholder="Guard, Forward, Center..." />
+            <label htmlFor="years-pro" className="muted">Years as a pro</label>
+            <input id="years-pro" type="number" min="0" max="50" value={yearsPro} onChange={e => setYearsPro(e.target.value)} />
+            <label htmlFor="current-country" className="muted">Current country</label>
+            <input id="current-country" value={currentCountry} onChange={e => setCurrentCountry(e.target.value)} maxLength={80} placeholder="Country" />
+            <label htmlFor="current-team" className="muted">Current team</label>
+            <input id="current-team" value={currentTeam} onChange={e => setCurrentTeam(e.target.value)} maxLength={120} placeholder="Team" />
+            <label htmlFor="bio" className="muted">Player bio</label>
+            <textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder="Tell other players a little about your experience." />
+            <label htmlFor="visibility" className="muted">Profile visibility</label>
+            <select id="visibility" value={visibility} onChange={e => setVisibility(e.target.value as "public" | "private")}>
+              <option value="public">Public</option>
+              <option value="private">Private</option>
+            </select>
             <p className="muted">Email: {email}</p>
             <button className="btn" type="submit" disabled={savingProfile}>{savingProfile ? "Saving..." : "Save Profile"}</button>
             {profileMessage && <p className="muted">{profileMessage}</p>}
