@@ -617,8 +617,24 @@ export default function TeamDetailPage() {
             Back To Teams
           </Link>
         </div>
-      <section className="hero">\n        <div className="eyebrow">League History</div>\n        <h2>Competition history</h2>\n        {history.length ? <div className="grid" style={{ marginTop: "25px" }}>{history.map((item) => <div className="card" key={item.id}><div className="eyebrow">{item.season || "Season not listed"}</div><h3>{item.league?.name || "League not listed"}</h3><p>{item.start_date || "Start not listed"} → {item.end_date || "Present"}</p></div>)}</div> : <div className="card"><p>No historical league memberships have been added yet.</p></div>}\n      </section>
-
+      </section>
+      <section className="hero">
+        <div className="eyebrow">League History</div>
+        <h2>Competition history</h2>
+        {history.length ? (
+          <div className="grid" style={{ marginTop: "25px" }}>
+            {history.map((item) => (
+              <div className="card" key={item.id}>
+                <div className="eyebrow">{item.season || "Season not listed"}</div>
+                <h3>{item.league?.name || "League not listed"}</h3>
+                <p>{item.start_date || "Start not listed"} → {item.end_date || "Present"}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="card"><p>No historical league memberships have been added yet.</p></div>
+        )}
+      </section>
       <section className="grid">
         <div className="card">
           <div className="eyebrow">League</div>
