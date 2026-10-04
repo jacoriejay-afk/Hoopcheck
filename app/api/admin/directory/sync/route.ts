@@ -8,12 +8,9 @@ export async function POST(req: Request) {
   const token = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
   if (!token) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { global: { headers: { Authorization: `Bearer ${token}` } } }
-  );
-
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
   const { data: { user } } = await supabase.auth.getUser(token);
   if (!user) return NextResponse.json({ error: "Invalid session" }, { status: 401 });
 
@@ -22,28 +19,39 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({}));
   const sourceId = typeof body.source_id === "string" ? body.source_id : null;
-  const entityType = ["leagues", "teams", "coaches"].includes(body.entity_type) ? body.entity_type : null;
+  const entityType = ["leagues", "teams", "coaches"].includes(body.entity_type) ? body.entity_type as "leagues"|"teams"|"coaches" : null;
   if (!sourceId || !entityType) return NextResponse.json({ error: "source_id and entity_type are required" }, { status: 400 });
 
-  const { data: source, error: sourceError } = await supabase
-    .from("directory_sources").select("id,name,active,connector_key").eq("id", sourceId).single();
+  const { data: source, error: sourceError } = await supabase.from("directory_sources")
+    .select("id,name,active,connector_key").eq("id", sourceId).single();
   if (sourceError || !source) return NextResponse.json({ error: "Provider not found" }, { status: 404 });
   if (!source.active) return NextResponse.json({ error: "Provider is paused" }, { status: 409 });
+
   const connector = getDirectoryConnector(source.connector_key);
   if (!connector) return NextResponse.json({ error: "Connector not configured for this provider" }, { status: 409 });
 
-  const { data: run, error: runError } = await supabase
-    .from("directory_sync_runs")
-    .insert({ source_id: sourceId, entity_type: entityType, status: "queued", records_seen: 0, records_created: 0, records_updated: 0, records_skipped: 0 })
-    .select("id,source_id,entity_type,status,started_at")
-    .single();
-
+  const { data: run, error: runError } = await supabase.from("directory_sync_runs").insert({
+    source_id: sourceId, entity_type: entityType, status: "queued",
+    records_seen: 0, records_created: 0, records_updated: 0, records_skipped: 0,
+  }).select("id,source_id,entity_type,status,started_at").single();
   if (runError) return NextResponse.json({ error: runError.message }, { status: 500 });
 
-  return NextResponse.json({
-    run,
-    message: "Sync run queued. A provider connector must supply the normalized records before data is changed."
-  });
-}    const normalized = await connector.getDirectory({ entityType, sourceId });
+  try {
+    await supabase.from("directory_sync_runs").update({ status: "running" }).eq("id", run.id);
+    const normalized = await connector.getDirectory({ entityType, sourceId });
     const result = await syncNormalizedDirectory(supabase, sourceId, entityType, normalized);
 
+    await supabase.from("directory_sync_runs").update({
+      status: "completed", records_seen: result.seen, records_created: result.created,
+      records_updated: result.updated, records_skipped: result.skipped, finished_at: new Date().toISOString(),
+    }).eq("id", run.id);
+
+    return NextResponse.json({ run: { ...run, status: "completed" }, ...result });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Sync failed";
+    await supabase.from("directory_sync_runs").update({
+      status: "failed", error_message: message, finished_at: new Date().toISOString(),
+    }).eq("id", run.id);
+    return NextResponse.json({ error: message, run: { ...run, status: "failed" } }, { status: 500 });
+  }
+}
