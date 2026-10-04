@@ -18,6 +18,7 @@ export default function LoginPage() {
 
   const [message, setMessage] =
     useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   const [loading, setLoading] =
     useState(false);
@@ -54,6 +55,29 @@ export default function LoginPage() {
 
     window.location.href =
       "/dashboard";
+  }
+
+  async function handlePasswordReset() {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      setMessage("Enter your email address first, then select Forgot password.");
+      return;
+    }
+
+    setResetLoading(true);
+    setMessage("");
+
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    setMessage(
+      error
+        ? error.message
+        : "If an account exists for that email, we sent a password reset link."
+    );
+    setResetLoading(false);
   }
 
   return (
@@ -208,6 +232,23 @@ export default function LoginPage() {
               </p>
             </div>
           )}
+
+          <button
+            type="button"
+            onClick={handlePasswordReset}
+            disabled={resetLoading}
+            style={{
+              background: "transparent",
+              border: 0,
+              color: "var(--orange)",
+              padding: 0,
+              marginTop: "14px",
+              cursor: resetLoading ? "default" : "pointer",
+              fontWeight: 800,
+            }}
+          >
+            {resetLoading ? "Sending reset link..." : "Forgot password?"}
+          </button>
 
           <p
             className="muted"
