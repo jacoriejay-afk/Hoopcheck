@@ -23,11 +23,11 @@ export async function POST(req:Request){
   const directory:NormalizedDirectory=await connector.getDirectory({entityType,sourceId}); const rows=directory[entityType];
   let create=0,update=0,skip=0;
   for(const row of rows){const name=clean(row.name);if(!name){skip++;continue;}let existing:{id:string}|null=null;
-   if(clean(row.externalId)){const q=await s.from(entityType).select("id").eq("source_id",sourceId).eq("external_id",clean(row.externalId)).maybeSingle();if(q.error)throw q.error;existing=q.data;}
-   if(!existing){const q=await s.from(entityType).select("id").ilike("name",name).eq("country",clean(row.country)).maybeSingle();if(q.error&&q.error.code!=="PGRST116")throw q.error;existing=q.data;}
+   if(clean(row.externalId)){const q=await adminSupabase.from(entityType).select("id").eq("source_id",sourceId).eq("external_id",clean(row.externalId)).maybeSingle();if(q.error)throw q.error;existing=q.data;}
+   if(!existing){const q=await adminSupabase.from(entityType).select("id").ilike("name",name).eq("country",clean(row.country)).maybeSingle();if(q.error&&q.error.code!=="PGRST116")throw q.error;existing=q.data;}
    if(existing)update++;else create++;
   }
   const {data:preview,error}=await adminSupabase.from("directory_sync_previews").insert({source_id:sourceId,created_by:user.id,entity_type:entityType,status:"pending",normalized_data:directory,total_rows:rows.length,create_count:create,update_count:update,skip_count:skip}).select("id,source_id,entity_type,status,total_rows,create_count,update_count,skip_count,expires_at,created_at").single();
   if(error)throw error; return NextResponse.json({preview,provider:source.name});
- }catch(e){return NextResponse.json({error:e instanceof Error?e.message:"Preview failed"},{status:500});}
+ }catch(e){const message=e instanceof Error?e.message:"Preview failed"; return NextResponse.json({error:`Directory preview failed: ${message}`},{status:500});}
 }
