@@ -34,19 +34,15 @@ export default function VerificationAdminPage(){
    setSaving(row.id);setError("");
    const {data:{user}}=await supabase.auth.getUser();
    if(!user){setError("Session expired.");setSaving(null);return;}
-   const {error:e}=await supabase.from("player_verification_requests").update({
-     status,reviewer_id:user.id,reviewed_at:new Date().toISOString()
-   }).eq("id",row.id);
+   const {error:e}=await supabase.rpc("moderate_player_verification",{
+     p_request_id:row.id,
+     p_status:status,
+   });
    if(e){setError(e.message);setSaving(null);return;}
-   if(status==="approved"){
-     const {error:pe}=await supabase.from("profiles").update({player_verified:true,player_verified_at:new Date().toISOString()}).eq("id",row.user_id);
-     if(pe){setError(pe.message);setSaving(null);return;}
-   } else {
-     await supabase.from("profiles").update({player_verified:false,player_verified_at:null}).eq("id",row.user_id);
-   }
-   setRows(current=>current.map(x=>x.id===row.id?{...x,status}:x));setSaving(null);
+   setRows(current=>current.map(x=>x.id===row.id?{...x,status,reviewed_at:new Date().toISOString()}:x));
+   setProfiles(current=>({...current,[row.user_id]:{...current[row.user_id],player_verified:status==="approved"}}));
+   setSaving(null);
  }
-
  const visible=rows.filter(x=>filter==="all"||x.status===filter);
  if(loading)return <main className="page-shell"><div className="page-container"><p>Loading verification center...</p></div></main>;
  if(!authorized)return <main className="page-shell"><div className="page-container"><h1>Access denied</h1><Link href="/dashboard" className="btn">Back to Dashboard</Link></div></main>;
