@@ -1,7 +1,9 @@
-import type { DirectoryProviderConnector, NormalizedDirectory, SyncEntityType } from "./types";
+import type { DirectoryProviderConnector, DirectorySyncOptions, NormalizedDirectory, SyncEntityType } from "./types";
 import { mockDirectoryConnector } from "./mock-connector";
 
 const API_SPORTS_BASE = "https://v1.basketball.api-sports.io";
+const DEFAULT_BATCH_SIZE = 25;
+const MAX_BATCH_SIZE = 50;
 
 type ApiResponse = {
   response?: any[];
@@ -46,32 +48,53 @@ function latestSeason(seasons: any[]): string | null {
   return values[0] ?? null;
 }
 
+function batchOptions(options?: DirectorySyncOptions) {
+  const offset = Math.max(0, Math.floor(options?.offset ?? 0));
+  const limit = Math.min(MAX_BATCH_SIZE, Math.max(1, Math.floor(options?.limit ?? DEFAULT_BATCH_SIZE)));
+  return { offset, limit };
+}
+
 async function getApiSportsBasketballDirectory(
-  input: { entityType: SyncEntityType }
+  input: { entityType: SyncEntityType; options?: DirectorySyncOptions }
 ): Promise<NormalizedDirectory> {
   const directory: NormalizedDirectory = { leagues: [], teams: [], coaches: [] };
+  const { offset, limit } = batchOptions(input.options);
 
   const leagues = await apiSportsGet("/leagues");
 
-  for (const item of leagues) {
+  const normalizedLeagues = leagues.flatMap((item) => {
     const league = item?.league ?? item;
     const country = item?.country?.name ?? item?.country ?? null;
     const season = latestSeason(item?.seasons ?? []);
 
-    if (league?.id == null || !league?.name) continue;
+    if (league?.id == null || !league?.name) return [];
 
-    directory.leagues.push({
+    return [{
       externalId: String(league.id),
       name: String(league.name),
       country: country ? String(country) : null,
       level: league.type ? String(league.type) : null,
       season,
-    });
+    }];
+  });
+
+  if (input.entityType === "leagues") {
+    directory.leagues = normalizedLeagues.slice(offset, offset + limit);
+    return directory;
   }
 
-  if (input.entityType === "leagues") return directory;
+  if (input.entityType === "coaches") {
+    /*
+     * API-Basketball currently exposes leagues, teams and player/game data,
+     * but not a dedicated basketball-coaches endpoint. We deliberately leave
+     * coaches empty instead of inventing or scraping unlicensed coach records.
+     */
+    return directory;
+  }
 
-  for (const leagueItem of leagues) {
+  const leagueBatch = leagues.slice(offset, offset + limit);
+
+  for (const leagueItem of leagueBatch) {
     const league = leagueItem?.league ?? leagueItem;
     if (league?.id == null) continue;
 
@@ -102,19 +125,12 @@ async function getApiSportsBasketballDirectory(
     }
   }
 
-  /*
-   * API-Basketball currently exposes leagues, teams and player/game data,
-   * but not a dedicated basketball-coaches endpoint. We deliberately leave
-   * coaches empty instead of inventing or scraping unlicensed coach records.
-   * A coach-capable provider can be added later without changing the database
-   * normalization layer.
-   */
   return directory;
 }
 
 const apiSportsBasketballConnector: DirectoryProviderConnector = {
   key: "api_sports_basketball",
-  getDirectory: ({ entityType }) => getApiSportsBasketballDirectory({ entityType }),
+  getDirectory: ({ entityType, options }) => getApiSportsBasketballDirectory({ entityType, options }),
 };
 
 const connectors: Record<string, DirectoryProviderConnector> = {
