@@ -38,7 +38,7 @@ export async function submitReviewReport(
         Authorization: `Bearer ${session.access_token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ reviewId, reason }),
+      body: JSON.stringify({ review_id: reviewId, reason }),
     });
     const result: { error?: string } = await response.json();
 
