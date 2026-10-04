@@ -46,6 +46,7 @@ type Review = {
   title: string | null;
   body: string;
   created_at: string;
+  player_verified?: boolean;
 };
 
 function RatingBar({
