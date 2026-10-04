@@ -175,7 +175,7 @@ export default function LeagueDetailPage() {
         .order("name");
 
       if (!teamError && teamData) {
-        setTeams(teamData);
+        setTeams(teamData);\n\n      const teamIds = teamData.map((x) => x.id);\n      if (teamIds.length) {\n        const { data: membershipRows } = await supabase.from("team_league_memberships").select("team_id,season,active").eq("league_id", id).eq("active", true);\n        const currentTeamIds = new Set((membershipRows || []).map((x) => x.team_id));\n        setTeams(teamData.filter((x) => currentTeamIds.has(x.id)));\n      }
       }
 
       const {
