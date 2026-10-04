@@ -52,7 +52,7 @@ export default function DashboardPage() {
           .eq("user_id", user.id)
           .maybeSingle(),
 
-        supabase.rpc("is_current_user_admin_or_moderator"),
+        supabase.rpc("get_current_user_admin_role"),
       ]);
 
       if (!mounted) return;
@@ -73,10 +73,11 @@ export default function DashboardPage() {
 
       if (
         !adminRoleResult.error &&
-        adminRoleResult.data === true
+        (adminRoleResult.data === "admin" ||
+          adminRoleResult.data === "moderator")
       ) {
         setIsAdmin(true);
-        setAdminRole("admin");
+        setAdminRole(adminRoleResult.data);
       }
 
       setLoading(false);
@@ -132,6 +133,10 @@ export default function DashboardPage() {
 
             <Link href="/membership">
               Membership
+            </Link>
+
+            <Link href="/account">
+              Account
             </Link>
 
             {isAdmin && (
