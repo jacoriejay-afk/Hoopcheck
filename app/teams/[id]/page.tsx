@@ -119,7 +119,7 @@ export default function TeamDetailPage() {
   const [team, setTeam] =
     useState<Team | null>(null);
 
-  const [league, setLeague] =
+  const [history, setHistory] = useState<any[]>([]);\n\n  const [league, setLeague] =
     useState<League | null>(null);
 
   const [coaches, setCoaches] =
@@ -176,7 +176,7 @@ export default function TeamDetailPage() {
         return;
       }
 
-      setTeam(teamData);
+      setTeam(teamData);\n\n      const { data: membershipData } = await supabase.from("team_league_memberships").select("id,league_id,season,start_date,end_date,active").eq("team_id", id).eq("active", true).order("season", { ascending: false });\n      if (membershipData) {\n        const leagueIds = membershipData.map((x) => x.league_id);\n        const { data: leagueRows } = leagueIds.length ? await supabase.from("leagues").select("id,name").in("id", leagueIds) : { data: [] as any[] };\n        setHistory(membershipData.map((x) => ({ ...x, league: leagueRows?.find((l) => l.id === x.league_id) })));\n      }
 
       const [leagueResult, coachesResult] =
         await Promise.all([
@@ -581,7 +581,7 @@ export default function TeamDetailPage() {
             Back To Teams
           </Link>
         </div>
-      <section className="grid">
+      <section className="hero">\n        <div className="eyebrow">League History</div>\n        <h2>Competition history</h2>\n        {history.length ? <div className="grid" style={{ marginTop: "25px" }}>{history.map((item) => <div className="card" key={item.id}><div className="eyebrow">{item.season || "Season not listed"}</div><h3>{item.league?.name || "League not listed"}</h3><p>{item.start_date || "Start not listed"} → {item.end_date || "Present"}</p></div>)}</div> : <div className="card"><p>No historical league memberships have been added yet.</p></div>}\n      </section>\n\n      <section className="grid">
         <div className="card">
           <div className="eyebrow">League</div>
           {league ? (
