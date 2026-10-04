@@ -118,7 +118,7 @@ export default function CoachDetailPage() {
   const [team, setTeam] =
     useState<Team | null>(null);
 
-  const [league, setLeague] =
+  const [history, setHistory] = useState<any[]>([]);\n\n  const [league, setLeague] =
     useState<League | null>(null);
 
   const [hasAccess, setHasAccess] =
@@ -169,7 +169,7 @@ export default function CoachDetailPage() {
         return;
       }
 
-      setCoach(coachData);
+      setCoach(coachData);\n\n      const { data: assignmentData } = await supabase.from("coach_team_assignments").select("id,team_id,role,season,start_date,end_date,active").eq("coach_id", id).eq("active", true).order("season", { ascending: false });\n      if (assignmentData) {\n        const teamIds = assignmentData.map((x) => x.team_id);\n        const { data: teamRows } = teamIds.length ? await supabase.from("teams").select("id,name").in("id", teamIds) : { data: [] as any[] };\n        setHistory(assignmentData.map((x) => ({ ...x, team: teamRows?.find((t) => t.id === x.team_id) })));\n      }
 
       if (coachData.current_team_id) {
         const { data: teamData, error: teamError } = await supabase
