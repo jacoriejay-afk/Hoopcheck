@@ -15,7 +15,8 @@ type RightsRow = {
   research_status: "research_required" | "research_in_progress" | "research_complete";
   commercial_use_allowed: boolean | null;
   redistribution_allowed: boolean | null;
-  production_approved: boolean;\n  workflow_status: string;
+  production_approved: boolean;
+  workflow_status: string;
   license_path: string | null;
   evidence_url: string | null;
   evidence_note: string | null;
