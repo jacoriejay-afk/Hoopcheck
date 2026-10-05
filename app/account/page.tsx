@@ -61,7 +61,7 @@ export default function AccountPage() {
         supabase.from("profiles").select("display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_team,profile_visibility,player_verified,profile_claimed").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
       ]);
-      const nextProfile: Profile = profileData ?? { display_name: null, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false, profile_claimed: true };
+      const nextProfile: Profile = profileData ?? { display_name: null, first_name: null, last_name: null, professional_experience: false, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false, profile_claimed: true };
       setProfile(nextProfile);
       setDisplayName(nextProfile.display_name ?? "");
       setBio(nextProfile.bio ?? "");
