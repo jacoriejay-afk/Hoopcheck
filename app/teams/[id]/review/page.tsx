@@ -243,7 +243,7 @@ export default function TeamReviewPage() {
         setAlreadyReviewed(true);
       }
 
-      setIsPaid(hasValidSubscription ?? subscriptionIsActive ?? false);
+      setIsPaid(hasValidSubscription);
 
       setLoading(false);
     }
