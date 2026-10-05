@@ -118,7 +118,7 @@ export default function RightsCenterPage() {
   async function advance(row: RightsRow, to: string) {
     setBusy(row.id); setError("");
     const { data: { session } } = await supabase.auth.getSession();
-    const res = await fetch("/api/admin/rights/transition", { method: "POST", headers: { "Content-Type": "application/json", Authorization: \`Bearer \${session?.access_token || ""}\` }, body: JSON.stringify({ id: row.id, to_status: to }) });
+    const res = await fetch("/api/admin/rights/transition", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${}session?.access_token || ""}` }, body: JSON.stringify({ id: row.id, to_status: to }) });
     const data = await res.json();
     if (!res.ok) setError(data.error || "Transition failed."); else await load();
     setBusy(null);
