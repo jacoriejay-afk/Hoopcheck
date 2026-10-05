@@ -12,9 +12,10 @@ export default function OnboardingPage() {
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [accountType, setAccountType] = useState<"player"|"scout"|"agent"|"fan">("player");
+  const [accountType, setAccountType] = useState<"player"|"coach"|"scout"|"agent"|"fan">("player");
   const [professionalExperience, setProfessionalExperience] = useState(false);
   const [formerTeams, setFormerTeams] = useState<string[]>([]);
   const [teams, setTeams] = useState<{id:string;name:string;country:string|null;league_name:string|null}[]>([]);
@@ -39,20 +40,21 @@ export default function OnboardingPage() {
       const user = session.user;
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id,display_name,first_name,last_name,account_type,professional_experience,position,years_pro,country,current_country,current_team,bio,profile_visibility")
+        .select("id,display_name,username,first_name,last_name,account_type,professional_experience,position,years_pro,country,current_country,current_team,bio,profile_visibility")
         .eq("id", user.id)
         .maybeSingle();
 
       if (!active) return;
       setUserId(user.id);
       setDisplayName(profile?.display_name || user.user_metadata?.full_name || "");
+      setUsername(profile?.username || user.user_metadata?.username || "");
       setFirstName(profile?.first_name || user.user_metadata?.first_name || "");
       setLastName(profile?.last_name || user.user_metadata?.last_name || "");
-      setAccountType((profile?.account_type || user.user_metadata?.account_type || "player") as "player"|"scout"|"agent"|"fan");
+      setAccountType((profile?.account_type || user.user_metadata?.account_type || "player") as "player"|"coach"|"scout"|"agent"|"fan");
       setProfessionalExperience(profile?.professional_experience ?? Boolean(user.user_metadata?.professional_experience));
       const metadataTeams = Array.isArray(user.user_metadata?.former_team_ids) ? user.user_metadata.former_team_ids : [];
       setFormerTeams(metadataTeams);
-      setPosition(profile?.position || "");
+      setPosition(profile?.position || "PG");
       setYearsPro(profile?.years_pro != null ? String(profile.years_pro) : "");
       setCountry(profile?.country || "");
       setCurrentCountry(profile?.current_country || "");
@@ -142,6 +144,9 @@ export default function OnboardingPage() {
           <div className="eyebrow">PLAYER PROFILE</div>
           <h2>Complete your profile.</h2>
           <form onSubmit={save}>
+            <label>Username</label>
+            <input value={username} readOnly aria-readonly="true" />
+            <p className="muted" style={{fontSize:12}}>Username is locked after account creation.</p>
             <label>First Name</label>
             <input value={firstName} readOnly aria-readonly="true" />
             <label>Last Name</label>
@@ -158,10 +163,11 @@ export default function OnboardingPage() {
             </select>
 
             <label htmlFor="position">Position</label>
-            <input id="position" value={position} onChange={e => setPosition(e.target.value)} placeholder="PG, SG, SF, PF, C" />
+            <select id="position" value={position || "PG"} onChange={e => setPosition(e.target.value)} disabled={accountType === "player"}><option value="PG">Point Guard (PG)</option><option value="SG">Shooting Guard (SG)</option><option value="SF">Small Forward (SF)</option><option value="PF">Power Forward (PF)</option><option value="C">Center (C)</option></select>
+            {accountType === "player" && <p className="muted" style={{fontSize:12}}>Position is locked after account creation.</p>}
 
             <label htmlFor="yearsPro">Years Pro</label>
-            <select id="yearsPro" value={yearsPro || "0"} onChange={e => setYearsPro(e.target.value)}>
+            <select id="yearsPro" value={yearsPro || "0"} onChange={e => setYearsPro(e.target.value)} disabled={accountType === "player"}>
               {Array.from({length:26},(_,i)=><option key={i} value={i}>{i === 0 ? "0 years" : i + " year" + (i===1 ? "" : "s")}</option>)}
             </select>
             <label>Teams you have played for</label>
