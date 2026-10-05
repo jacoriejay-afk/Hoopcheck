@@ -775,7 +775,7 @@ export default function CoachDetailPage() {
 
             <div className="card" style={{ position: "relative", overflow: "hidden" }}>
               <div className="eyebrow">Coach Breakdown</div>
-              {hasAccess ? {reviews.length === 0 ? <p>No approved reviews yet.</p> : <>
+              {hasAccess ? (reviews.length === 0 ? <p>No approved reviews yet.</p> : <>
                   <RatingBar label="Communication" value={communication} />
                   <RatingBar label="Professionalism" value={professionalism} />
                   <RatingBar label="Development" value={development} />
