@@ -820,7 +820,7 @@ export default function TeamDetailPage() {
                   <RatingBar label="Professionalism" value={professionalism} />
                   <RatingBar label="Development" value={development} />
                   <RatingBar label="Payment" value={payment} />
-                </>} : (
+                </>) : (
                 <div style={{ padding: "24px 0" }}>
                   <div style={{ filter: "blur(7px)", opacity: 0.35, pointerEvents: "none" }}>
                     <div style={{ height: 16, width: "75%", background: "#555", borderRadius: 8, marginBottom: 14 }} />
