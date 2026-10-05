@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -67,7 +67,7 @@ if (error) {
   return;
 }
 if (data.session) {
-  router.push("/dashboard");
+  router.push("/onboarding");
   return;
 }
 setMessage(
