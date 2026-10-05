@@ -10,7 +10,12 @@ const TERMS_VERSION = "2026-10-01";
 export default function SignupPage() {
 const router = useRouter();
 
-const [name, setName] = useState("");
+const [firstName, setFirstName] = useState("");
+const [lastName, setLastName] = useState("");
+const [professionalExperience, setProfessionalExperience] = useState(false);
+const [yearsPro, setYearsPro] = useState("0");
+const [formerTeams, setFormerTeams] = useState<string[]>([]);
+const [teams, setTeams] = useState<{id:string;name:string;country:string|null;league_name:string|null}[]>([]);
 const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
 const [isAdult, setIsAdult] = useState(false);
@@ -20,14 +25,18 @@ const [loading, setLoading] = useState(false);
 const [message, setMessage] = useState("");
 const [error, setError] = useState("");
 
+useEffect(() => {
+  supabase.from("teams").select("id,name,country,league_name").eq("active", true).order("name").limit(300).then(({ data }) => setTeams(data || []));
+}, []);
+
 async function handleSignup(event: FormEvent) {
 event.preventDefault();
 
 setLoading(true);
 setError("");
 setMessage("");
-if (name.trim().length < 2) {
-  setError("Please enter your name.");
+if (firstName.trim().length < 2 || lastName.trim().length < 2) {
+  setError("Please enter your first and last name.");
   setLoading(false);
   return;
 }
@@ -53,7 +62,12 @@ const { data, error } = await supabase.auth.signUp({
   password,
   options: {
     data: {
-      full_name: name.trim(),
+      full_name: `${firstName.trim()} ${lastName.trim()}`,
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      professional_experience: professionalExperience,
+      years_pro: Number(yearsPro),
+      former_team_ids: formerTeams,
       is_adult: true,
       agreed_to_terms: true,
       terms_accepted_at: new Date().toISOString(),
@@ -122,16 +136,24 @@ return (
         Create a free account to begin researching the basketball world.
       </p>
       <form onSubmit={handleSignup}>
-        <label htmlFor="name">Full Name</label>
-        <input
-          id="name"
-          type="text"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="Your full name"
-          autoComplete="name"
-          required
-        />
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          <div><label htmlFor="first-name">First Name</label><input id="first-name" value={firstName} onChange={e=>setFirstName(e.target.value)} autoComplete="given-name" required /></div>
+          <div><label htmlFor="last-name">Last Name</label><input id="last-name" value={lastName} onChange={e=>setLastName(e.target.value)} autoComplete="family-name" required /></div>
+        </div>
+        <label>Professional Experience</label>
+        <select value={professionalExperience ? "yes" : "no"} onChange={e=>setProfessionalExperience(e.target.value==="yes")}>
+          <option value="yes">Yes — I have played professionally</option>
+          <option value="no">No — not yet</option>
+        </select>
+        <label htmlFor="years-pro-signup">Years as a professional</label>
+        <select id="years-pro-signup" value={yearsPro} onChange={e=>setYearsPro(e.target.value)}>
+          {Array.from({length:26},(_,i)=><option key={i} value={i}>{i === 0 ? "0 years" : i + " year" + (i===1 ? "" : "s")}</option>)}
+        </select>
+        <label>Former/current professional teams</label>
+        <p className="muted" style={{fontSize:12}}>Select teams you have played for. These are saved for review eligibility and can be verified by HoopCheck.</p>
+        <div style={{maxHeight:220,overflow:"auto",display:"grid",gap:7,border:"1px solid var(--border)",padding:10,borderRadius:10}}>
+          {teams.map(team=><label key={team.id} className="checkbox-row"><input type="checkbox" checked={formerTeams.includes(team.id)} onChange={e=>setFormerTeams(v=>e.target.checked ? [...v,team.id] : v.filter(id=>id!==team.id))}/><span>{team.name}{team.league_name ? " — " + team.league_name : ""}</span></label>)}
+        </div>
         <label htmlFor="email">Email</label>
         <input
           id="email"
