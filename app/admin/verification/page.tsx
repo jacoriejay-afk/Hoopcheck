@@ -15,7 +15,8 @@ export default function VerificationAdminPage(){
  const [rows,setRows]=useState<Request[]>([]); const [profiles,setProfiles]=useState<Record<string,Profile>>({});
  const [filter,setFilter]=useState<"all"|"pending"|"approved"|"rejected">("pending");
  const [loading,setLoading]=useState(true); const [authorized,setAuthorized]=useState(false); const [error,setError]=useState("");
- const [saving,setSaving]=useState<string|null>(null);\n const [docLinks,setDocLinks]=useState<Record<string,string>>({});
+ const [saving,setSaving]=useState<string|null>(null);
+ const [docLinks,setDocLinks]=useState<Record<string,string>>({});
 
  async function load(){
    const {data:role,error:roleError}=await supabase.rpc("is_current_user_admin_or_moderator");
@@ -30,7 +31,13 @@ export default function VerificationAdminPage(){
  }
  useEffect(()=>{(async()=>{const {data:{session}}=await supabase.auth.getSession();if(!session){window.location.href="/login";return;}await load();})();},[]);
 
- async function openDocument(row:Request){\n   if(!row.document_path) return;\n   const {data,error}=await supabase.storage.from("player-verification-documents").createSignedUrl(row.document_path,300);\n   if(!error&&data?.signedUrl) setDocLinks(v=>({...v,[row.id]:data.signedUrl}));\n }\n\n async function moderate(row:Request,status:"approved"|"rejected"){
+ async function openDocument(row:Request){
+   if(!row.document_path) return;
+   const {data,error}=await supabase.storage.from("player-verification-documents").createSignedUrl(row.document_path,300);
+   if(!error&&data?.signedUrl) setDocLinks(v=>({...v,[row.id]:data.signedUrl}));
+ }
+
+ async function moderate(row:Request,status:"approved"|"rejected"){
    setSaving(row.id);setError("");
    const {data:{user}}=await supabase.auth.getUser();
    if(!user){setError("Session expired.");setSaving(null);return;}
@@ -58,7 +65,10 @@ export default function VerificationAdminPage(){
    visible.map(row=><article className="dashboard-card" key={row.id}>
     <div style={{display:"flex",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}><div><p className="eyebrow">REQUEST</p><h2>{profiles[row.user_id]?.display_name||"Unnamed player"}</h2></div><strong>{row.status.toUpperCase()}</strong></div>
     <p className="muted">Team: {row.current_team||"Not provided"} · Country: {row.current_country||"Not provided"} · League: {row.league||"Not provided"}</p>
-    {row.note&&<p>{row.note}</p>}\n    {row.evidence_url&&<p><a href={row.evidence_url} target="_blank" rel="noreferrer" className="btn">Open proof link</a></p>}\n    {row.document_path&&<p><button className="btn" type="button" onClick={()=>openDocument(row)}>Open uploaded document</button>{docLinks[row.id]&&<> <a href={docLinks[row.id]} target="_blank" rel="noreferrer">View</a></>}</p>}\n    <p className="muted">{new Date(row.created_at).toLocaleString()}</p>
+    {row.note&&<p>{row.note}</p>}
+    {row.evidence_url&&<p><a href={row.evidence_url} target="_blank" rel="noreferrer" className="btn">Open proof link</a></p>}
+    {row.document_path&&<p><button className="btn" type="button" onClick={()=>openDocument(row)}>Open uploaded document</button>{docLinks[row.id]&&<> <a href={docLinks[row.id]} target="_blank" rel="noreferrer">View</a></>}</p>}
+    <p className="muted">{new Date(row.created_at).toLocaleString()}</p>
     {row.status==="pending"&&<div style={{display:"flex",gap:12}}><button className="btn" disabled={saving===row.id} onClick={()=>moderate(row,"approved")}>{saving===row.id?"Saving...":"Approve"}</button><button className="btn dark" disabled={saving===row.id} onClick={()=>moderate(row,"rejected")}>Reject</button></div>}
    </article>)}
   </section>
