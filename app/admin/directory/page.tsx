@@ -221,6 +221,13 @@ export default function AdminDirectoryPage() {
               description="Manage licensed data providers, sync status, source documentation, and import history."
               href="/admin/directory/providers"
             />
+
+            <DirectoryCard
+              number="05"
+              title="Rights & Coverage"
+              description="Track country and league rights, commercial use, redistribution, evidence, and production approval."
+              href="/admin/rights"
+            />
           </div>
         </section>
 
@@ -280,6 +287,8 @@ export default function AdminDirectoryPage() {
             <RoadmapItem number="09" title="Licensed worldwide imports" />
 
             <RoadmapItem number="10" title="Provider sync center" complete />
+
+            <RoadmapItem number="11" title="Rights & Coverage Center" complete />
           </div>
         </section>
       </div>
