@@ -48,6 +48,21 @@ export async function PATCH(
     );
   }
 
+  const { data: existingReview, error: existingError } = await auth.supabase
+    .from("reviews")
+    .select("id, status")
+    .eq("id", reviewId)
+    .maybeSingle();
+
+  if (existingError) {
+    console.error("Error loading review before moderation:", existingError);
+    return NextResponse.json({ error: "Unable to load review." }, { status: 500 });
+  }
+
+  if (!existingReview) {
+    return NextResponse.json({ error: "Review not found." }, { status: 404 });
+  }
+
   const { data, error } = await auth.supabase
     .from("reviews")
     .update({
@@ -70,6 +85,24 @@ export async function PATCH(
     return NextResponse.json(
       { error: "Review not found." },
       { status: 404 }
+    );
+  }
+
+  const { error: auditError } = await auth.supabase
+    .from("review_moderation_events")
+    .insert({
+      review_id: reviewId,
+      actor_id: auth.user.id,
+      entity_type: "review",
+      from_status: existingReview.status,
+      to_status: body.status,
+    });
+
+  if (auditError) {
+    console.error("Error recording review moderation event:", auditError);
+    return NextResponse.json(
+      { error: "Review updated, but the moderation audit could not be recorded." },
+      { status: 500 }
     );
   }
 
