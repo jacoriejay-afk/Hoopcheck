@@ -34,6 +34,14 @@ async function apiSportsGet(path: string, params: Record<string, string> = {}) {
   return payload.response ?? [];
 }
 
+function isYouthCompetitionOrTeam(name: unknown): boolean {
+  const value = String(name ?? "").trim().toLowerCase();
+  if (!value) return false;
+
+  return /(^|\\s|[-_/])u(?:1[0-9]|2[0-3])(?:\\s|$|[-_/])/.test(value)
+    || /\\b(?:under[- ]?(?:1[0-9]|2[0-3])|youth|junior(?:s)?|academy|reserve(?:s)?|development|amateur|school|colts)\\b/.test(value);
+}
+
 function latestSeason(seasons: any[]): string | null {
   // API-Sports Free plans currently restrict basketball season access to 2022-2024.
   // Use an explicit env override when available; otherwise prefer 2024 so the
@@ -76,7 +84,7 @@ async function getApiSportsBasketballDirectory(
     const country = item?.country?.name ?? item?.country ?? null;
     const season = process.env.API_SPORTS_BASKETBALL_SEASON?.trim() || "2024";
 
-    if (league?.id == null || !league?.name) return [];
+    if (league?.id == null || !league?.name || isYouthCompetitionOrTeam(league.name)) return [];
 
     return [{
       externalId: String(league.id),
@@ -156,7 +164,7 @@ async function getApiSportsBasketballDirectory(
 
     for (const item of teams) {
       const team = item?.team ?? item;
-      if (team?.id == null || !team?.name) continue;
+      if (team?.id == null || !team?.name || isYouthCompetitionOrTeam(team.name)) continue;
 
       const city = item?.venue?.city ?? team?.city ?? null;
 
@@ -215,7 +223,7 @@ async function getTheSportsDbDirectory(
   for (const league of directory.leagues) {
     const teamsPayload = await sportsDbGet("/search_all_teams.php", { l: league.name });
     for (const item of teamsPayload?.teams ?? []) {
-      if (!item?.idTeam || !item?.strTeam) continue;
+      if (!item?.idTeam || !item?.strTeam || isYouthCompetitionOrTeam(item.strTeam)) continue;
       const country = item.strCountry || league.country || null;
       directory.teams.push({
         externalId: String(item.idTeam),
