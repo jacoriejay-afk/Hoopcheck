@@ -27,12 +27,15 @@ export default function LanguageProvider({children}:{children:React.ReactNode}){
     let mounted=true;
     const apply=(v:string)=>{if((Object.keys(labels) as string[]).includes(v)&&mounted){setLanguage(v as Language);document.documentElement.lang=v;document.documentElement.dir=v==="ar"?"rtl":"ltr";}};
     apply(localStorage.getItem("hoopcheck-language")||"en");
+    const onLanguageChange=(event:Event)=>apply((event as CustomEvent<string>).detail);
+    window.addEventListener("hoopcheck-language-change",onLanguageChange);
+
     supabase.auth.getUser().then(async({data})=>{
       if(!data.user)return;
       const {data:prefs}=await supabase.from("user_preferences").select("language").eq("user_id",data.user.id).maybeSingle();
       if(prefs?.language) {apply(prefs.language); localStorage.setItem("hoopcheck-language",prefs.language);}
     });
-    return()=>{mounted=false};
+    return()=>{mounted=false;window.removeEventListener("hoopcheck-language-change",onLanguageChange)};
   },[]);
   return <LanguageContext.Provider value={{language,t:(key)=>labels[language][key]||labels.en[key]||key}}>{children}</LanguageContext.Provider>;
 }
