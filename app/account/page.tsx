@@ -14,6 +14,9 @@ type Subscription = {
 
 type Profile = {
   display_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  professional_experience: boolean;
   bio: string | null;
   position: string | null;
   years_pro: number | null;
@@ -35,7 +38,7 @@ export default function AccountPage() {
   const [email, setEmail] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [targets, setTargets] = useState<Record<string, Target>>({});
-  const [profile, setProfile] = useState<Profile>({ display_name: null, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false, profile_claimed: true });
+  const [profile, setProfile] = useState<Profile>({ display_name: null, first_name: null, last_name: null, professional_experience: false, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false, profile_claimed: true });
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [verified, setVerified] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -55,7 +58,7 @@ export default function AccountPage() {
       if (!user) { window.location.href = "/login"; return; }
       setEmail(user.email ?? "");
       const [{ data: profileData }, { data: subscriptionData }] = await Promise.all([
-        supabase.from("profiles").select("display_name,bio,position,years_pro,current_country,current_team,profile_visibility,player_verified,profile_claimed").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_team,profile_visibility,player_verified,profile_claimed").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
       ]);
       const nextProfile: Profile = profileData ?? { display_name: null, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false, profile_claimed: true };
@@ -152,6 +155,9 @@ export default function AccountPage() {
           <p className="eyebrow">PROFILE</p>
           <h2>Player information {verified && <span title="Verified professional player" style={{color:"var(--orange)"}}>✓</span>}</h2>
           <form onSubmit={saveProfile} style={{display:"grid",gap:12,marginTop:16}}>
+            <label className="muted">First name</label><input value={profile.first_name ?? ""} readOnly />
+            <label className="muted">Last name</label><input value={profile.last_name ?? ""} readOnly />
+            <p className="muted" style={{fontSize:12}}>First and last name are locked and cannot be changed.</p>
             <label htmlFor="display-name" className="muted">Display name</label>
             <input id="display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder="How players should see you" />
             <label htmlFor="position" className="muted">Position</label>
