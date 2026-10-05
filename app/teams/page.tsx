@@ -71,10 +71,13 @@ export default function TeamsPage() {
       if (error) {
         console.error("Error loading teams:", error);
         setTeams([]);
-        setHasMore(false);\n        setTotalCount(0);
+        setHasMore(false);
+        setTotalCount(0);
       } else {
         setTeams(data || []);
-        const total = count ?? 0;\n        setTotalCount(total);\n        setHasMore((page + 1) * pageSize < total);
+        const total = count ?? 0;
+        setTotalCount(total);
+        setHasMore((page + 1) * pageSize < total);
       }
 
       setLoading(false);
