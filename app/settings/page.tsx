@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import { useLanguage } from "../../components/LanguageProvider";
 
 type Theme = "light" | "dark" | "dynamic";
 type Language = "en" | "es" | "fr" | "de" | "tr" | "pt" | "it" | "el" | "ar";
 
 export default function SettingsPage() {
+  const { t } = useLanguage();
   const [theme, setTheme] = useState<Theme>("dynamic");
   const [notifications, setNotifications] = useState(true);
   const [language, setLanguage] = useState<Language>("en");
@@ -46,16 +48,16 @@ export default function SettingsPage() {
     <main className="settings-page">
       <header className="topbar settings-topbar">
         <Link href="/dashboard" className="brand">HOOPCHECK</Link>
-        <nav className="topnav"><Link href="/dashboard">Dashboard</Link><Link href="/search">Search</Link><Link href="/account">Account</Link></nav>
+        <nav className="topnav"><Link href="/dashboard">{t("dashboard")}</Link><Link href="/search">{t("search")}</Link><Link href="/account">{t("account")}</Link></nav>
       </header>
       <section className="settings-shell">
         <div className="eyebrow">CONTROL CENTER</div>
-        <h1>Settings</h1>
+        <h1>{t("settings")}</h1>
         <p className="muted">Tune the HoopCheck experience to match how you research the basketball world.</p>
         <div className="settings-grid">
           <section className="settings-card">
             <span className="card-kicker">LANGUAGE</span>
-            <h2>Choose your language</h2>
+            <h2>{language === "en" ? "Choose your language" : "Language"}</h2>
             <p className="muted">Choose the interface language you want HoopCheck to use. Your preference is saved to your account and this device.</p>
             <select className="language-select" value={language} onChange={(e) => { const next = e.target.value as Language; setLanguage(next); save(theme, notifications, next); }}>
               <option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option>
