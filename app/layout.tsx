@@ -3,6 +3,7 @@ import Link from "next/link";
 import "./globals.css";
 import ThemeProvider from "../components/ThemeProvider";
 import MobileAuth from "../components/MobileAuth";
+import GlobalBackButton from "../components/GlobalBackButton";
 
 export const metadata: Metadata = {
 title: "HoopCheck",
@@ -18,7 +19,7 @@ children: React.ReactNode;
 return (
 <html lang="en">
 <body>
-<ThemeProvider><MobileAuth />{children}</ThemeProvider>
+<ThemeProvider><MobileAuth /><GlobalBackButton />{children}</ThemeProvider>
 
     <footer className="site-footer">
       <div className="footer-inner">
