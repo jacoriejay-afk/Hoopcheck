@@ -23,6 +23,8 @@ export default function VerificationPage() {
   useEffect(()=>{(async()=>{
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){window.location.href="/login";return;}
+    const {data:teamData}=await supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(500);
+    setTeams(teamData||[]);
     const {data}=await supabase.from("player_verification_requests").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
     setStatus(data?.status ?? null); setLoading(false);
   })()},[]);
@@ -31,6 +33,7 @@ export default function VerificationPage() {
     e.preventDefault(); setMessage(""); setSubmitting(true);
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){window.location.href="/login";return;}
+    if (!teamId && !evidenceUrl.trim() && !documentFile) { setMessage("Select your current team or provide proof of professional basketball (a public link or document)."); setSubmitting(false); return; }
     let documentPath: string | null = null;
     if (documentFile) {
       if (documentFile.size > 10 * 1024 * 1024) { setMessage("Document must be 10 MB or smaller."); setSubmitting(false); return; }
@@ -61,7 +64,7 @@ export default function VerificationPage() {
         <label>Current team<select value={teamId} onChange={e=>{const id=e.target.value;setTeamId(id);const t=teams.find(x=>x.id===id);setTeam(t?.name||"");}}><option value="">Select current team</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?` — ${t.country}`:""}</option>)}</select></label>
         <label>Current country<input value={country} onChange={e=>setCountry(e.target.value)} maxLength={80} placeholder="Country"/></label>
         <label>League<input value={league} onChange={e=>setLeague(e.target.value)} maxLength={120} placeholder="League"/></label>
-        <label>Proof / public basketball link<input value={evidenceUrl} onChange={e=>setEvidenceUrl(e.target.value)} maxLength={500} placeholder="Team roster, league profile, agency, or personal site"/><small className="muted">Provide a public proof link, upload a document below, or both.</small></label>\n        <label>Verification document (optional)<input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={e=>setDocumentFile(e.target.files?.[0]||null)} /></label>\n        {documentFile&&<label>Document type<select value={documentType} onChange={e=>setDocumentType(e.target.value as any)}><option value="basketball_license">Basketball license</option><option value="passport">Passport</option><option value="national_id">National ID</option><option value="other">Other</option></select></label>
+        <label>Proof / public basketball link<input value={evidenceUrl} onChange={e=>setEvidenceUrl(e.target.value)} maxLength={500} placeholder="Team roster, league profile, agency, or personal site"/><small className="muted">Provide a public proof link, upload a document below, or both.</small></label>\n        <label>Verification document (optional)<input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={e=>setDocumentFile(e.target.files?.[0]||null)} /></label>\n        {documentFile&&<label>Document type<select value={documentType} onChange={e=>setDocumentType(e.target.value as "passport"|"basketball_license"|"national_id"|"other")}><option value="basketball_license">Basketball license</option><option value="passport">Passport</option><option value="national_id">National ID</option><option value="other">Other</option></select></label>}
         <label>Anything else we should know?<textarea value={note} onChange={e=>setNote(e.target.value)} maxLength={1000} rows={5}/></label>
         {message&&<p role="status">{message}</p>}
         <button className="btn" disabled={submitting}>{submitting?"Submitting...":"Request Verification"}</button>
