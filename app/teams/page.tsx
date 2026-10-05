@@ -197,22 +197,7 @@ export default function TeamsPage() {
       </section>
 
       <section className="grid">
-        {loading ? (
-          <div className="card">
-            <div className="eyebrow">
-              HoopCheck
-            </div>
-
-            <h2>
-              Loading teams...
-            </h2>
-
-            <p>
-              Finding professional teams
-              in the HoopCheck database.
-            </p>
-          </div>
-        ) : teams.length === 0 ? (
+        {loading ? (<div className="card"><HoopLoading label="Scanning professional teams..." /></div>) : teams.length === 0 ? (
           <div className="card">
             <div className="eyebrow">
               Coming Soon
@@ -237,6 +222,8 @@ export default function TeamsPage() {
               <div className="eyebrow">
                 Professional Team
               </div>
+
+              <GeoBadge country={team.country} />
 
               <h2>
                 {team.name}
