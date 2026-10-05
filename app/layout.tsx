@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import ThemeProvider from "../components/ThemeProvider";
 
 export const metadata: Metadata = {
 title: "HoopCheck",
@@ -16,7 +17,7 @@ children: React.ReactNode;
 return (
 <html lang="en">
 <body>
-{children}
+<ThemeProvider>{children}</ThemeProvider>
 
     <footer className="site-footer">
       <div className="footer-inner">
