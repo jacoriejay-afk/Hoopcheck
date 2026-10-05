@@ -642,35 +642,11 @@ export default function LeagueDetailPage() {
 
       {!hasAccess && (
         <section className="grid">
-          <div className="card">
+          <div className="card rating-locked-card">
             <div className="eyebrow">Community Rating</div>
-            <h2 style={{ fontSize: "58px", color: "var(--orange)", marginBottom: "4px" }}>
-              {publicSummary.overall_rating == null ? "—" : publicSummary.overall_rating.toFixed(1)}
-            </h2>
-            <p>
-              Based on {publicSummary.review_count} approved {publicSummary.review_count === 1 ? "review" : "reviews"}.
-            </p>
-          </div>
-
-          <div className="card">
-            <div className="eyebrow">Rating Breakdown</div>
-            {publicSummary.review_count === 0 ? (
-              <p>No approved reviews yet.</p>
-            ) : (
-              <>
-                {publicSummary.communication_rating != null && <RatingBar label="Communication" value={publicSummary.communication_rating} />}
-                {publicSummary.professionalism_rating != null && <RatingBar label="Professionalism" value={publicSummary.professionalism_rating} />}
-                {publicSummary.development_rating != null && <RatingBar label="Development" value={publicSummary.development_rating} />}
-                {publicSummary.payment_rating != null && <RatingBar label="Payment" value={publicSummary.payment_rating} />}
-              </>
-            )}
-          </div>
-
-          <div className="card">
-            <div className="eyebrow">Full Reviews</div>
-            <h3>See what players are saying.</h3>
-            <p>Subscribe to unlock the complete approved review library and player experiences.</p>
-            <Link href="/membership" className="btn">Unlock Full Reviews</Link>
+            <h2>Overall rating locked</h2>
+            <p>{publicSummary.review_count} approved {publicSummary.review_count === 1 ? "review" : "reviews"} are available, but ratings are reserved for members.</p>
+            <div className="actions"><Link href="/signup" className="btn">Create Free Account</Link><Link href="/membership" className="btn dark">Unlock Ratings</Link></div>
           </div>
         </section>
       )}
