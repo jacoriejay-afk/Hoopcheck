@@ -17,10 +17,10 @@ type WatchState = {
 };
 
 const DEFAULTS: WatchState = {
-  follow: true,
-  alert_reviews: true,
-  alert_ratings: true,
-  alert_updates: true,
+  follow: false,
+  alert_reviews: false,
+  alert_ratings: false,
+  alert_updates: false,
 };
 
 export default function WatchButton({ targetType, targetId, targetName }: Props) {
@@ -47,10 +47,10 @@ export default function WatchButton({ targetType, targetId, targetName }: Props)
         if (row) {
           setExists(true);
           setState({
-            follow: row.follow ?? true,
-            alert_reviews: row.alert_reviews ?? true,
-            alert_ratings: row.alert_ratings ?? true,
-            alert_updates: row.alert_updates ?? true,
+            follow: row.follow ?? false,
+            alert_reviews: row.alert_reviews ?? false,
+            alert_ratings: row.alert_ratings ?? false,
+            alert_updates: row.alert_updates ?? false,
           });
         }
         setBusy(false);
@@ -122,10 +122,10 @@ export default function WatchButton({ targetType, targetId, targetName }: Props)
           <button type="button" onClick={toggleFollow} disabled={busy}>
             {state.follow ? "✓ Following this " + targetType : "＋ Follow this " + targetType}
           </button>
-          <label><input type="checkbox" checked={state.alert_reviews} onChange={() => toggleAlert("alert_reviews")} disabled={busy} /> Team/player reviews</label>
-          <label><input type="checkbox" checked={state.alert_ratings} onChange={() => toggleAlert("alert_ratings")} disabled={busy} /> New ratings</label>
-          <label><input type="checkbox" checked={state.alert_updates} onChange={() => toggleAlert("alert_updates")} disabled={busy} /> Organization updates</label>
-          <small>{alertCount} alert type{alertCount === 1 ? "" : "s"} enabled</small>
+          <label><input type="checkbox" checked={state.alert_reviews} onChange={() => toggleAlert("alert_reviews")} disabled={busy || !state.follow} /> Team/player reviews</label>
+          <label><input type="checkbox" checked={state.alert_ratings} onChange={() => toggleAlert("alert_ratings")} disabled={busy || !state.follow} /> New ratings</label>
+          <label><input type="checkbox" checked={state.alert_updates} onChange={() => toggleAlert("alert_updates")} disabled={busy || !state.follow} /> Organization updates</label>
+          <small>{state.follow ? `${alertCount} alert type${alertCount === 1 ? "" : "s"} enabled` : "Follow this organization first to receive alerts."}</small>
         </div>
       )}
     </div>
