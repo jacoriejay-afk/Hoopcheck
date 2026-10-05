@@ -101,10 +101,12 @@ async function getApiSportsBasketballDirectory(
     return directory;
   }
 
-  const leagueBatch = leagues.slice(offset, offset + limit);
-  directory.leagues = normalizedLeagues.slice(offset, offset + limit);
+  const leagueBatch = normalizedLeagues.slice(offset, offset + limit);
+  directory.leagues = leagueBatch;
 
-  for (const leagueItem of leagueBatch) {
+  for (const normalizedLeague of leagueBatch) {
+    const leagueItem = leagues.find((item: any) => String((item?.league ?? item)?.id) === normalizedLeague.externalId);
+
     const league = leagueItem?.league ?? leagueItem;
     if (league?.id == null) continue;
 
