@@ -13,6 +13,7 @@ import { supabase } from "../../../lib/supabase";
 import { submitReviewReport } from "../../../lib/review-reports";
 import HoopLoading from "../../../components/HoopLoading";
 import WatchButton from "../../../components/WatchButton";
+import GeoBadge from "../../../components/GeoBadge";
 
 type League = {
   id: string;
@@ -560,7 +561,7 @@ export default function LeagueDetailPage() {
           {league.name}
         </h1>
 
-        <div className="entity-actions"><WatchButton targetType="league" targetId={id} targetName={league.name} /></div>
+        <div className="entity-actions"><GeoBadge country={league.country} regional={league.country === "Europe"} /><WatchButton targetType="league" targetId={id} targetName={league.name} /></div>
 
         <p>
           {league.country ||
