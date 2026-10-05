@@ -43,6 +43,21 @@ export async function PATCH(
     );
   }
 
+  const { data: existingReport, error: existingError } = await auth.supabase
+    .from("review_reports")
+    .select("id, status")
+    .eq("id", reportId)
+    .maybeSingle();
+
+  if (existingError) {
+    console.error("Error loading report before moderation:", existingError);
+    return NextResponse.json({ error: "Unable to load report." }, { status: 500 });
+  }
+
+  if (!existingReport) {
+    return NextResponse.json({ error: "Report not found." }, { status: 404 });
+  }
+
   const { data, error } = await auth.supabase
     .from("review_reports")
     .update({ status: body.status })
@@ -62,6 +77,24 @@ export async function PATCH(
     return NextResponse.json(
       { error: "Report not found." },
       { status: 404 }
+    );
+  }
+
+  const { error: auditError } = await auth.supabase
+    .from("review_moderation_events")
+    .insert({
+      report_id: reportId,
+      actor_id: auth.user.id,
+      entity_type: "report",
+      from_status: existingReport.status,
+      to_status: body.status,
+    });
+
+  if (auditError) {
+    console.error("Error recording report moderation event:", auditError);
+    return NextResponse.json(
+      { error: "Report updated, but the moderation audit could not be recorded." },
+      { status: 500 }
     );
   }
 
