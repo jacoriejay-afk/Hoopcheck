@@ -19,7 +19,7 @@ type Profile = {
   current_country: string | null;
   current_team: string | null;
   profile_visibility: "public" | "private";
-  player_verified: boolean;
+  player_verified: boolean;\n  profile_claimed: boolean;
 };
 
 type Review = {
@@ -33,7 +33,7 @@ export default function AccountPage() {
   const [email, setEmail] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [targets, setTargets] = useState<Record<string, Target>>({});
-  const [profile, setProfile] = useState<Profile>({ display_name: null, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false });
+  const [profile, setProfile] = useState<Profile>({ display_name: null, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false, profile_claimed: true });
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [verified, setVerified] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -53,7 +53,7 @@ export default function AccountPage() {
       if (!user) { window.location.href = "/login"; return; }
       setEmail(user.email ?? "");
       const [{ data: profileData }, { data: subscriptionData }] = await Promise.all([
-        supabase.from("profiles").select("display_name,bio,position,years_pro,current_country,current_team,profile_visibility,player_verified").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("display_name,bio,position,years_pro,current_country,current_team,profile_visibility,player_verified,profile_claimed").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
       ]);
       const nextProfile: Profile = profileData ?? { display_name: null, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false };
@@ -163,7 +163,7 @@ export default function AccountPage() {
               <option value="public">Public</option>
               <option value="private">Private</option>
             </select>
-            <p className="muted">Email: {email}</p>
+            <p className="muted">Email: {email}</p>\n            <div className="card" style={{marginTop:4}}><strong>✓ {profile.profile_claimed ? "Profile claimed" : "Claim your player profile"}</strong><p className="muted">{profile.profile_claimed ? "This HoopCheck profile is connected to your account and ready for you to manage." : "Claim this profile to manage your basketball information."}</p></div>
             <div className="card" style={{marginTop:8}}>
               <strong>{verified ? "✓ Verified Player" : "Player verification"}</strong>
               <p className="muted">{verified ? "Your professional-player account has been verified by HoopCheck." : "Apply for a verification badge to strengthen trust around your reviews."}</p>
