@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import NotificationBell from "../../components/NotificationBell";
+import { useLanguage } from "../../components/LanguageProvider";
 
 type Profile = { display_name: string | null; player_verified: boolean };
 type Subscription = {
@@ -27,6 +28,7 @@ type Review = {
 type Target = { id: string; name: string };
 
 export default function DashboardPage() {
+  const { t } = useLanguage();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -173,12 +175,12 @@ export default function DashboardPage() {
         <header className="topbar">
           <Link href="/dashboard" className="brand">HOOPCHECK</Link>
           <nav className="topnav"><button type="button" onClick={() => window.history.back()} style={{background:"transparent",border:"1px solid #333",color:"inherit",borderRadius:7,padding:"7px 10px",cursor:"pointer"}}>← Back</button>
-            <Link href="/search">Search</Link>
-            <Link href="/membership">Membership</Link>
-            <Link href="/account">Account</Link>
-            <Link href="/settings">Settings</Link>
+            <Link href="/search">{t("search")}</Link>
+            <Link href="/membership">{t("membership")}</Link>
+            <Link href="/account">{t("account")}</Link>
+            <Link href="/settings">{t("settings")}</Link>
             <NotificationBell />
-            <button type="button" onClick={signOut} style={{background:"transparent",border:0,color:"inherit",cursor:"pointer",font:"inherit"}}>Sign Out</button>
+            <button type="button" onClick={signOut} style={{background:"transparent",border:0,color:"inherit",cursor:"pointer",font:"inherit"}}>{t("signOut")}</button>
             {isAdmin && (
               <Link href="/admin/directory" className="btn">Admin</Link>
             )}
@@ -188,11 +190,11 @@ export default function DashboardPage() {
         <section className="player-dashboard-card">
           <div className="player-dashboard-main">
             <div>
-              <p className="eyebrow">PLAYER DASHBOARD</p>
+              <p className="eyebrow">{t("playerDashboard")}</p>
               <h1>{profile?.display_name || "Player"}</h1>
               <p className="muted">Your HoopCheck research hub.</p>
             </div>
-            <Link href="/account" className="btn dark">Edit Profile</Link>
+            <Link href="/account" className="btn dark">{t("editProfile")}</Link>
           </div>
           <div className="player-dashboard-stats">
             <div><span>MEMBERSHIP</span><strong>{planLabel.replace("HoopCheck ","")}</strong><small>{statusLabel}</small></div>
