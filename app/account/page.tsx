@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import HoopLoading from "../../components/HoopLoading";
 import { supabase } from "../../lib/supabase";
 
 type Subscription = {
@@ -135,7 +136,7 @@ export default function AccountPage() {
     window.location.replace("/login");
   }
 
-  if (loading) return <main className="page-shell"><div className="page-container"><p>Loading your account...</p></div></main>;
+  if (loading) return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading your account..." /></div></main>;
 
   return (
     <main className="page-shell"><div className="page-container">
