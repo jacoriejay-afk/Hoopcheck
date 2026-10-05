@@ -21,7 +21,25 @@ export default function TeamsPage() {
   const [teams, setTeams] =
     useState<Team[]>([]);
 
-  const [loading, setLoading] =
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [country, setCountry] = useState("");
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const pageSize = 24;
+
+  useEffect(() => {
+    async function loadTeams() {
+      setLoading(true);
+      let request = supabase
+        .from("teams")
+        .select("id, name, country, league_name, city")
+        .eq("active", true)
+        .order("name");
+
+      const term = query.trim();
+      if (term) {
+        const escaped = term.replace(/[%_]/g, "\\  const [loading, setLoading] =
     useState(true);
 
   useEffect(() => {
@@ -34,24 +52,32 @@ export default function TeamsPage() {
         .select(
           "id, name, country, league_name, city"
         )
-        .order("name");
+        .order("name");");
+        request = request.or(
+          `name.ilike.%${escaped}%,country.ilike.%${escaped}%,city.ilike.%${escaped}%,league_name.ilike.%${escaped}%`
+        );
+      }
+      if (country) request = request.eq("country", country);
+
+      const { data, error, count } = await request
+        .range(page * pageSize, page * pageSize + pageSize);
 
       if (error) {
-        console.error(
-          "Error loading teams:",
-          error
-        );
 
+      if (error) {
+        console.error("Error loading teams:", error);
         setTeams([]);
+        setHasMore(false);
       } else {
         setTeams(data || []);
+        setHasMore((count ?? 0) > (page + 1) * pageSize);
       }
 
       setLoading(false);
     }
 
     loadTeams();
-  }, []);
+  }, [query, country, page]);
 
   return (
     <main>
@@ -137,6 +163,19 @@ export default function TeamsPage() {
         </div>
       </section>
 
+      <section className="hero">
+        <div className="research-search">
+          <div className="search-label">TEAM DIRECTORY</div>
+          <input
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setPage(0); }}
+            placeholder="Search teams, leagues, countries, or cities..."
+            aria-label="Search teams"
+            style={{ width: "100%", padding: "14px 16px", borderRadius: 10, border: "1px solid #333", background: "#0d0d0d", color: "#fff", fontSize: 15 }}
+          />
+        </div>
+      </section>
+
       <section className="grid">
         {loading ? (
           <div className="card">
@@ -211,6 +250,28 @@ export default function TeamsPage() {
           ))
         )}
       </section>
+
+      {!loading && teams.length > 0 && (
+        <div style={{ display: "flex", justifyContent: "center", gap: 12, padding: "0 24px 40px" }}>
+          <button
+            className="btn dark"
+            disabled={page === 0}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+          >
+            ← Previous
+          </button>
+          <span style={{ display: "inline-flex", alignItems: "center", color: "#888", padding: "0 8px" }}>
+            Page {page + 1}
+          </span>
+          <button
+            className="btn dark"
+            disabled={!hasMore}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next →
+          </button>
+        </div>
+      )}
 
       <section className="hero">
         <div className="eyebrow">
