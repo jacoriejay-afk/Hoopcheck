@@ -16,6 +16,8 @@ type Team = {
   name: string;
   country: string | null;
   league_name: string | null;
+  league_id: string | null;
+  division: string | null;
   city: string | null;
 };
 
@@ -27,6 +29,9 @@ export default function TeamsPage() {
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
   const [continent, setContinent] = useState("");
+  const [league, setLeague] = useState("");
+  const [division, setDivision] = useState("");
+  const [leagueOptions, setLeagueOptions] = useState<{id:string;name:string;country:string|null;level:string|null}[]>([]);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
@@ -38,7 +43,7 @@ export default function TeamsPage() {
     Africa: ["Egypt","Tunisia","Morocco","Algeria","Nigeria","Senegal","South Africa","Angola","Cameroon","Rwanda"],
     North_America: ["United States","Canada","Mexico"],
     South_America: ["Argentina","Brazil","Chile","Colombia","Uruguay","Venezuela","Peru"],
-    Oceania: ["Australia","New Zealand"]
+    Oceania: ["Australia","New Zealand","Fiji","Guam","Samoa","American Samoa","New Caledonia","French Polynesia","Papua New Guinea"]
   };
   function countryInContinent(value: string | null, selected: string) {
     if (!selected) return true;
@@ -46,11 +51,18 @@ export default function TeamsPage() {
   }
 
   useEffect(() => {
+    supabase.from("leagues").select("id,name,country,level").eq("active", true).order("name").then(({data}) => setLeagueOptions(data || []));
+  }, []);
+
+  const countries = Array.from(new Set(teams.map((team) => team.country).filter(Boolean) as string[])).sort();
+  const divisions = Array.from(new Set(leagueOptions.map((item) => item.level).filter(Boolean) as string[])).sort();
+
+  useEffect(() => {
     async function loadTeams() {
       setLoading(true);
       let request = supabase
         .from("teams")
-        .select("id, name, country, league_name, city", { count: "exact" })
+        .select("id, name, country, league_name, league_id, city, leagues:league_id(level)", { count: "exact" })
         .eq("active", true)
         .order("name");
 
@@ -62,6 +74,11 @@ export default function TeamsPage() {
         );
       }
       if (country) request = request.eq("country", country);
+      if (league) request = request.eq("league_id", league);
+      if (division) {
+        const divisionLeagueIds = leagueOptions.filter((item) => item.level === division).map((item) => item.id);
+        request = divisionLeagueIds.length ? request.in("league_id", divisionLeagueIds) : request.eq("league_id", "00000000-0000-0000-0000-000000000000");
+      }
       const continentCountries = continent ? CONTINENT_COUNTRIES[continent] || [] : [];
       if (continentCountries.length) request = request.in("country", continentCountries);
 
@@ -86,7 +103,7 @@ export default function TeamsPage() {
     }
 
     loadTeams();
-  }, [query, country, continent, page]);
+  }, [query, country, continent, league, division, leagueOptions, page]);
 
   return (
     <main>
@@ -190,7 +207,15 @@ export default function TeamsPage() {
             </select>
             <select value={country} onChange={(e) => { setCountry(e.target.value); setPage(0); }} aria-label="Filter teams by country">
               <option value="">All countries</option>
-              {Array.from(new Set(teams.map((team) => team.country).filter(Boolean) as string[])).sort().filter((item) => countryInContinent(item, continent)).map((item) => <option key={item} value={item}>{item}</option>)}
+              {countries.filter((item) => countryInContinent(item, continent)).map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+            <select value={league} onChange={(e) => { setLeague(e.target.value); setPage(0); }} aria-label="Filter teams by league">
+              <option value="">All leagues</option>
+              {leagueOptions.filter(item => !country || item.country === country).map(item => <option key={item.id} value={item.id}>{item.name}{item.level ? ` — ${item.level}` : ""}</option>)}
+            </select>
+            <select value={division} onChange={(e) => { setDivision(e.target.value); setPage(0); }} aria-label="Filter teams by division">
+              <option value="">All divisions</option>
+              {divisions.map(item => <option key={item} value={item}>{item}</option>)}
             </select>
           </div>
         </div>
