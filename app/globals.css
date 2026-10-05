@@ -1291,3 +1291,14 @@ h1, h2, h3, h4 { text-transform: uppercase; }
 [data-theme="light"] .card input,[data-theme="light"] .card textarea,[data-theme="light"] .card select,[data-theme="light"] input,[data-theme="light"] textarea,[data-theme="light"] select{background:#fffaf0;color:#171717;border-color:#bdb3a5}
 [data-theme="light"] .watch-menu button,[data-theme="light"] .notification-button{color:#171717;border-color:#bdb3a5}
 .notification-panel-head button{border:0;background:transparent;color:var(--orange);font-size:10px;font-weight:900;cursor:pointer}
+
+
+/* Phase 6 readability and global navigation */
+.global-back-button{position:fixed;left:14px;bottom:14px;z-index:120;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--page-text);font-weight:900;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.22)}
+.global-back-button:hover{border-color:var(--orange);transform:translateY(-1px)}
+[data-theme="light"] .card,[data-theme="light"] .dashboard-card,[data-theme="light"] .result-card,[data-theme="light"] .quick-card,[data-theme="light"] .settings-card,[data-theme="light"] .hero-card,[data-theme="light"] .watch-menu,[data-theme="light"] .notification-panel{color:#171717}
+[data-theme="light"] .card p,[data-theme="light"] .dashboard-card p,[data-theme="light"] .result-card p,[data-theme="light"] .quick-card small,[data-theme="light"] .settings-card p,[data-theme="light"] .notification-item small{color:#4b4b4b}
+[data-theme="light"] .card .muted,[data-theme="light"] .dashboard-card .muted,[data-theme="light"] .settings-card .muted,[data-theme="light"] .hero-card .muted{color:#565656}
+[data-theme="light"] .card input,[data-theme="light"] .card textarea,[data-theme="light"] .card select,[data-theme="light"] input,[data-theme="light"] textarea,[data-theme="light"] select{background:#fffaf0;color:#171717;border-color:#bdb3a5}
+[data-theme="light"] .watch-menu button,[data-theme="light"] .notification-button{color:#171717;border-color:#bdb3a5}
+.notification-panel-head button{border:0;background:transparent;color:var(--orange);font-size:10px;font-weight:900;cursor:pointer}
