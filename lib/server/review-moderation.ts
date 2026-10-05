@@ -33,6 +33,29 @@ type ModerationDatabase = {
         Update: { status?: string };
         Relationships: [];
       };
+      review_moderation_events: {
+        Row: {
+          id: string;
+          review_id: string | null;
+          report_id: string | null;
+          actor_id: string;
+          entity_type: string;
+          from_status: string | null;
+          to_status: string;
+          created_at: string;
+        };
+        Insert: {
+          review_id?: string | null;
+          report_id?: string | null;
+          actor_id: string;
+          entity_type: string;
+          from_status?: string | null;
+          to_status: string;
+          created_at?: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
