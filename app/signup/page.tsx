@@ -11,10 +11,12 @@ export default function SignupPage() {
 const router = useRouter();
 
 const [firstName, setFirstName] = useState("");
+const [username, setUsername] = useState("");
 const [lastName, setLastName] = useState("");
-const [accountType, setAccountType] = useState<"player"|"scout"|"agent"|"fan">("player");
+const [accountType, setAccountType] = useState<"player"|"coach"|"scout"|"agent"|"fan">("player");
 const [professionalExperience, setProfessionalExperience] = useState(false);
 const [yearsPro, setYearsPro] = useState("0");
+const [position, setPosition] = useState("PG");
 const [formerTeams, setFormerTeams] = useState<string[]>([]);
 const [teams, setTeams] = useState<{id:string;name:string;country:string|null;league_name:string|null}[]>([]);
 const [email, setEmail] = useState("");
@@ -41,6 +43,7 @@ if (firstName.trim().length < 2 || lastName.trim().length < 2) {
   setLoading(false);
   return;
 }
+if (!/^[a-zA-Z0-9_]{3,20}$/.test(username.trim())) { setError("Username must be 3–20 characters using only letters, numbers, or underscores."); setLoading(false); return; }
 if (password.length < 6) {
   setError("Password must be at least 6 characters.");
   setLoading(false);
@@ -67,6 +70,9 @@ const { data, error } = await supabase.auth.signUp({
       first_name: firstName.trim(),
       last_name: lastName.trim(),
       account_type: accountType,
+      username: username.trim().toLowerCase(),
+      position: accountType === "player" ? position : null,
+      years_pro: accountType === "player" ? Number(yearsPro) : null,
       professional_experience: professionalExperience,
       years_pro: Number(yearsPro),
       former_team_ids: formerTeams,
@@ -138,18 +144,22 @@ return (
         Create a free account to begin researching the basketball world.
       </p>
       <form onSubmit={handleSignup}>
+        <label htmlFor="username">Username</label><input id="username" value={username} onChange={e=>setUsername(e.target.value)} autoComplete="username" placeholder="yourname" required />
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
           <div><label htmlFor="first-name">First Name</label><input id="first-name" value={firstName} onChange={e=>setFirstName(e.target.value)} autoComplete="given-name" required /></div>
           <div><label htmlFor="last-name">Last Name</label><input id="last-name" value={lastName} onChange={e=>setLastName(e.target.value)} autoComplete="family-name" required /></div>
         </div>
         <label htmlFor="account-type">Account Type</label>
-        <select id="account-type" value={accountType} onChange={e=>setAccountType(e.target.value as "player"|"scout"|"agent"|"fan")}>
+        <select id="account-type" value={accountType} onChange={e=>setAccountType(e.target.value as "player"|"coach"|"scout"|"agent"|"fan")}>
           <option value="player">Player — professional basketball player</option>
           <option value="scout">Scout — research only</option>
           <option value="agent">Agent — research only</option>
           <option value="fan">Fan — research only</option>
+          <option value="coach">Coach — research only</option>
         </select>
         <p className="muted" style={{fontSize:12}}>Scouts, agents, and fans can create Pro or Premium accounts for full research access, but only verified professional players can submit ratings or reviews.</p>
+        <label>Position</label>
+        <select value={position} onChange={e=>setPosition(e.target.value)} disabled={accountType !== "player"}><option value="PG">Point Guard (PG)</option><option value="SG">Shooting Guard (SG)</option><option value="SF">Small Forward (SF)</option><option value="PF">Power Forward (PF)</option><option value="C">Center (C)</option></select>
         <label>Professional Experience</label>
         <select value={professionalExperience ? "yes" : "no"} onChange={e=>setProfessionalExperience(e.target.value==="yes")}>
           <option value="yes">Yes — I have played professionally</option>
