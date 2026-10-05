@@ -22,6 +22,7 @@ function MembershipContent() {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<Plan | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -138,6 +139,43 @@ function MembershipContent() {
     }
   }
 
+  async function cancelMembership() {
+    if (!window.confirm("Cancel your HoopCheck membership at the end of your current billing period? You will keep full paid access until then.")) return;
+    setCancelLoading(true); setError(""); setMessage("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Please log in before managing your membership.");
+      const response = await fetch("/api/stripe/cancel-subscription", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cancel" }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || "Unable to cancel membership.");
+      setSubscription((current) => current ? { ...current, cancel_at_period_end: true, current_period_end: data.current_period_end } : current);
+      setMessage(`Membership canceled. Your paid access remains active until ${new Date(data.current_period_end).toLocaleDateString()}.`);
+    } catch (e) { setError(e instanceof Error ? e.message : "Unable to cancel membership."); }
+    finally { setCancelLoading(false); }
+  }
+
+  async function resumeMembership() {
+    setCancelLoading(true); setError(""); setMessage("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Please log in before managing your membership.");
+      const response = await fetch("/api/stripe/cancel-subscription", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "resume" }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || "Unable to resume membership.");
+      setSubscription((current) => current ? { ...current, cancel_at_period_end: false, current_period_end: data.current_period_end } : current);
+      setMessage("Membership cancellation was removed. Your subscription will continue.");
+    } catch (e) { setError(e instanceof Error ? e.message : "Unable to resume membership."); }
+    finally { setCancelLoading(false); }
+  }
+
   async function openCustomerPortal() {
     setPortalLoading(true);
     setError("");
@@ -248,9 +286,20 @@ function MembershipContent() {
                 billing period.
               </p>
             )}
-            <button className="btn" onClick={openCustomerPortal} disabled={portalLoading}>
-              {portalLoading ? "Opening..." : "Manage Membership"}
-            </button>
+            <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+              <button className="btn" onClick={openCustomerPortal} disabled={portalLoading || cancelLoading}>
+                {portalLoading ? "Opening..." : "Manage Membership"}
+              </button>
+              {subscription.cancel_at_period_end ? (
+                <button className="btn dark" onClick={resumeMembership} disabled={cancelLoading}>
+                  {cancelLoading ? "Updating..." : "Keep Membership"}
+                </button>
+              ) : (
+                <button className="btn dark" onClick={cancelMembership} disabled={cancelLoading}>
+                  {cancelLoading ? "Canceling..." : "Cancel Membership"}
+                </button>
+              )}
+            </div>
             <div className="legal-note">
               Billing is managed securely through Stripe. You can manage eligible
               subscription settings through the billing portal.
