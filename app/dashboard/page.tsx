@@ -148,6 +148,12 @@ export default function DashboardPage() {
     return counts;
   }, {});
 
+  async function signOut() {
+    const { error } = await supabase.auth.signOut({ scope: "local" });
+    if (error) return;
+    window.location.replace("/login");
+  }
+
   function reviewTarget(review: Review) {
     const id = review.coach_id ?? review.team_id ?? review.league_id ?? "";
     const type = review.coach_id ? "Coach" : review.team_id ? "Team" : "League";
@@ -167,7 +173,7 @@ export default function DashboardPage() {
           <nav className="topnav">
             <Link href="/search">Search</Link>
             <Link href="/membership">Membership</Link>
-            <Link href="/account">Account</Link>
+            <Link href="/account">Account</Link><button type="button" onClick={signOut} style={{background:"transparent",border:0,color:"inherit",cursor:"pointer",font:"inherit"}}>Sign Out</button>
             {isAdmin && (
               <Link href="/admin/directory" className="btn">Admin</Link>
             )}
