@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
 type Plan = "pro" | "premium";
+type BillingInterval = "month" | "6_month" | "year";
 
 type Subscription = {
   plan: Plan;
@@ -20,7 +21,8 @@ function MembershipContent() {
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
-  const [checkoutLoading, setCheckoutLoading] = useState<Plan | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>("month");
   const [portalLoading, setPortalLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
 
@@ -91,8 +93,8 @@ function MembershipContent() {
     return undefined;
   }, [searchParams]);
 
-  async function startCheckout(plan: Plan) {
-    setCheckoutLoading(plan);
+  async function startCheckout(plan: Plan, interval: BillingInterval = billingInterval) {
+    setCheckoutLoading(`${plan}-${interval}`);
     setError("");
     setMessage("");
 
@@ -113,7 +115,7 @@ function MembershipContent() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, interval }),
       });
 
       const data = await response.json();
@@ -317,6 +319,11 @@ function MembershipContent() {
               <p>Start with the level of research access that fits you.</p>
             </div>
 
+            <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",marginBottom:24}}>
+              <button className={billingInterval==="month" ? "btn" : "btn dark"} onClick={()=>setBillingInterval("month")}>Monthly</button>
+              <button className={billingInterval==="6_month" ? "btn" : "btn dark"} onClick={()=>setBillingInterval("6_month")}>6 Months</button>
+              <button className={billingInterval==="year" ? "btn" : "btn dark"} onClick={()=>setBillingInterval("year")}>1 Year</button>
+            </div>
             <div className="plans">
               <div className="plan-card">
                 <div className="plan-top">
@@ -325,8 +332,8 @@ function MembershipContent() {
                     <h3>Pro</h3>
                   </div>
                   <div className="price">
-                    <strong>$7.99</strong>
-                    <span>/ month</span>
+                    <strong>{billingInterval==="month" ? "$7.99" : billingInterval==="6_month" ? "$39.99" : "$74.99"}</strong>
+                    <span>{billingInterval==="month" ? "/ month" : billingInterval==="6_month" ? "/ 6 months" : "/ year"}</span>
                   </div>
                 </div>
                 <p className="plan-description">
@@ -345,7 +352,7 @@ function MembershipContent() {
                   onClick={() => startCheckout("pro")}
                   disabled={checkoutLoading !== null || loading}
                 >
-                  {checkoutLoading === "pro" ? "Opening Checkout..." : "Get Pro"}
+                  {checkoutLoading === `pro-${billingInterval}` ? "Opening Checkout..." : `Get Pro — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}
                 </button>
               </div>
 
@@ -357,8 +364,8 @@ function MembershipContent() {
                     <h3>Premium</h3>
                   </div>
                   <div className="price">
-                    <strong>$15.99</strong>
-                    <span>/ month</span>
+                    <strong>{billingInterval==="month" ? "$15.99" : billingInterval==="6_month" ? "$79.99" : "$149.99"}</strong>
+                    <span>{billingInterval==="month" ? "/ month" : billingInterval==="6_month" ? "/ 6 months" : "/ year"}</span>
                   </div>
                 </div>
                 <p className="plan-description">
@@ -378,9 +385,7 @@ function MembershipContent() {
                   onClick={() => startCheckout("premium")}
                   disabled={checkoutLoading !== null || loading}
                 >
-                  {checkoutLoading === "premium"
-                    ? "Opening Checkout..."
-                    : "Get Premium"}
+                  {checkoutLoading === `premium-${billingInterval}` ? "Opening Checkout..." : `Get Premium — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}
                 </button>
               </div>
             </div>
@@ -394,8 +399,7 @@ function MembershipContent() {
                 <Link href="/community-guidelines">Community Guidelines</Link>.
               </p>
               <p>
-                Memberships are billed monthly at the price shown above until
-                canceled. Cancellation and eligible billing management are
+                Memberships are billed for the selected term at the price shown above. Monthly, 6-month, and annual subscriptions renew on their applicable renewal date until canceled. Cancellation and eligible billing management are
                 available through the Stripe customer portal.
               </p>
               <p className="small">
