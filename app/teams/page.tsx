@@ -17,7 +17,7 @@ type Team = {
   country: string | null;
   league_name: string | null;
   league_id: string | null;
-  division: string | null;
+  division?: string | null;
   city: string | null;
 };
 
