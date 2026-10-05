@@ -11,6 +11,8 @@ export default function VerificationPage() {
   const [league,setLeague]=useState("");
   const [note,setNote]=useState("");
   const [evidenceUrl,setEvidenceUrl]=useState("");
+  const [documentType,setDocumentType]=useState<"passport"|"basketball_license"|"national_id"|"other">("basketball_license");
+  const [documentFile,setDocumentFile]=useState<File|null>(null);
   const [status,setStatus]=useState<string|null>(null);
   const [message,setMessage]=useState("");
   const [loading,setLoading]=useState(true);
@@ -27,13 +29,22 @@ export default function VerificationPage() {
     e.preventDefault(); setMessage(""); setSubmitting(true);
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){window.location.href="/login";return;}
+    let documentPath: string | null = null;
+    if (documentFile) {
+      if (documentFile.size > 10 * 1024 * 1024) { setMessage("Document must be 10 MB or smaller."); setSubmitting(false); return; }
+      const ext = documentFile.name.split(".").pop()?.toLowerCase() || "bin";
+      documentPath = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("player-verification-documents").upload(documentPath, documentFile, { upsert: false });
+      if (uploadError) { setMessage("We could not securely upload that document. Please try again."); setSubmitting(false); return; }
+    }
     const {error}=await supabase.from("player_verification_requests").insert({
       user_id:user.id,current_team:team.trim().slice(0,120)||null,
       current_country:country.trim().slice(0,80)||null,
-      league:league.trim().slice(0,120)||null,note:note.trim().slice(0,1000)||null,evidence_url:evidenceUrl.trim().slice(0,500)||null
+      league:league.trim().slice(0,120)||null,note:note.trim().slice(0,1000)||null,evidence_url:evidenceUrl.trim().slice(0,500)||null,
+      document_type: documentFile ? documentType : null, document_path: documentPath, document_uploaded_at: documentPath ? new Date().toISOString() : null
     });
     if(error) setMessage(error.code==="23505"?"You already have a pending verification request.":"Unable to submit your request. Please try again.");
-    else {setStatus("pending");setMessage("Verification request submitted. Our team will review it.");}
+    else {setStatus("pending");setMessage("Verification request submitted. Our team will review your document and player information manually.");}
     setSubmitting(false);
   }
 
