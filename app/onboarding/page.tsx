@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import HoopLoading from "../../components/HoopLoading";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 
@@ -90,7 +91,7 @@ export default function OnboardingPage() {
   }
 
   if (loading) {
-    return <main style={{ padding: "80px 6%" }}><p>Loading your account...</p></main>;
+    return <main style={{ padding: "80px 6%" }}><HoopLoading label="Loading your account..." /></main>;
   }
 
   return (
