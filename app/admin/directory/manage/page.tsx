@@ -8,7 +8,7 @@ type Kind = "coaches" | "teams" | "leagues";
 
 type Coach = { id: string; name: string; country: string | null; city: string | null; current_team_id: string | null; active: boolean };
 type Team = { id: string; name: string; country: string | null; city: string | null; league_id: string | null; league_name: string | null; active: boolean };
-type League = { id: string; name: string; country: string | null; level: string | null; season: string | null; active: boolean };
+type League = { id: string; name: string; country: string | null; level: string | null; season: string | null; active: boolean };\n\nconst EUROPE_COUNTRIES = ["Albania","Andorra","Armenia","Austria","Azerbaijan","Belarus","Belgium","Bosnia and Herzegovina","Bulgaria","Croatia","Cyprus","Czechia","Denmark","Estonia","Finland","France","Georgia","Germany","Greece","Hungary","Iceland","Ireland","Israel","Italy","Kosovo","Latvia","Lithuania","Luxembourg","Malta","Moldova","Montenegro","Netherlands","North Macedonia","Norway","Poland","Portugal","Romania","Russia","Serbia","Slovakia","Slovenia","Spain","Sweden","Switzerland","Türkiye","Ukraine","United Kingdom"];
 
 const inputStyle: React.CSSProperties = {
   width: "100%", padding: "11px 12px", borderRadius: 8, border: "1px solid #303030",
@@ -48,7 +48,7 @@ export default function DirectoryManagerPage() {
       ? { name: "", country: "", city: "", current_team_id: "", active: true }
       : kind === "teams"
       ? { name: "", country: "", city: "", league_id: "", league_name: "", active: true }
-      : { name: "", country: "", level: "", season: "", active: true });
+      : { name: "", country: "", level: "", season: "2026-27", active: true });
     setMessage("");
   }
 
