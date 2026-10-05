@@ -198,21 +198,21 @@ export default function AdminDirectoryPage() {
               number="01"
               title="Coaches"
               description="Manage coach profiles, teams, countries, sources, and active status."
-              href="/admin/directory/manage"
+              href="/admin/directory/manage?kind=coaches"
             />
 
             <DirectoryCard
               number="02"
               title="Teams"
               description="Manage professional teams and connect each team to its league."
-              href="/admin/directory/manage"
+              href="/admin/directory/manage?kind=teams"
             />
 
             <DirectoryCard
               number="03"
               title="Leagues"
               description="Manage leagues, countries, seasons, and competition levels."
-              href="/admin/directory/manage"
+              href="/admin/directory/manage?kind=leagues"
             />
 
             <DirectoryCard
