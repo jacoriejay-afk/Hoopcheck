@@ -45,6 +45,7 @@ type Review = {
   title: string | null;
   body: string;
   created_at: string;
+  is_anonymous?: boolean;
   player_verified?: boolean;
 };
 
@@ -312,7 +313,8 @@ export default function LeagueDetailPage() {
               payment_rating,
               title,
               body,
-              created_at
+              created_at,
+              is_anonymous
             `
           )
           .eq(
@@ -841,7 +843,7 @@ export default function LeagueDetailPage() {
                       >
                         <div>
                           <div className="eyebrow">
-                            Player Review
+                            {review.is_anonymous ? "Anonymous Player Review" : "Player Review"}
                           </div>
 
                           <h3>
