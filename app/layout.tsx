@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import ThemeProvider from "../components/ThemeProvider";
+import MobileAuth from "../components/MobileAuth";
 
 export const metadata: Metadata = {
 title: "HoopCheck",
@@ -17,7 +18,7 @@ children: React.ReactNode;
 return (
 <html lang="en">
 <body>
-<ThemeProvider>{children}</ThemeProvider>
+<ThemeProvider><MobileAuth />{children}</ThemeProvider>
 
     <footer className="site-footer">
       <div className="footer-inner">
