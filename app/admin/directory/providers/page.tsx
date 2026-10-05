@@ -10,7 +10,7 @@ type SyncRun={id:string;source_id:string;entity_type:string;status:string;record
 
 export default function DirectoryProvidersPage(){
  const router=useRouter(); const [sources,setSources]=useState<Source[]>([]); const [runs,setRuns]=useState<SyncRun[]>([]);
- const [loading,setLoading]=useState(true); const [preview,setPreview]=useState<any>(null); const [saving,setSaving]=useState(false); const [name,setName]=useState(""); const [baseUrl,setBaseUrl]=useState(""); const [docsUrl,setDocsUrl]=useState(""); const [licenseNotes,setLicenseNotes]=useState(""); const [connectorKey,setConnectorKey]=useState(""); const [message,setMessage]=useState(""); const [error,setError]=useState(""); const [syncing,setSyncing]=useState<string|null>(null);
+ const [loading,setLoading]=useState(true); const [preview,setPreview]=useState<any>(null); const [saving,setSaving]=useState(false); const [name,setName]=useState(""); const [baseUrl,setBaseUrl]=useState(""); const [docsUrl,setDocsUrl]=useState(""); const [licenseNotes,setLicenseNotes]=useState(""); const [connectorKey,setConnectorKey]=useState(""); const [message,setMessage]=useState(""); const [error,setError]=useState(""); const [syncing,setSyncing]=useState<string|null>(null); const [batchOffsets,setBatchOffsets]=useState<Record<string,number>>({});
  async function load(){
   const {data:{session}}=await supabase.auth.getSession(); if(!session?.user){router.replace("/login");return;}
   const {data:allowed}=await supabase.rpc("is_current_user_admin_or_moderator"); if(!allowed){router.replace("/dashboard");return;}
@@ -28,22 +28,23 @@ export default function DirectoryProvidersPage(){
  }
  async function previewSync(s:Source, entityType:"leagues"|"teams"|"coaches"){ setError("");setMessage(""); const {data:{session}}=await supabase.auth.getSession(); const res=await fetch("/api/admin/directory/sync/preview",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${session?.access_token??""}`},body:JSON.stringify({source_id:s.id,entity_type:entityType})}); const data=await res.json(); if(!res.ok)setError(data.error||"Preview failed.");else{setPreview(data.preview);setMessage(`Preview ready: ${data.preview.create_count} create, ${data.preview.update_count} update, ${data.preview.skip_count} skip. It expires in 30 minutes.`);} } async function approvePreview(){if(!preview)return;setError("");setMessage("");const {data:{session}}=await supabase.auth.getSession();const res=await fetch("/api/admin/directory/sync/approve",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${session?.access_token??""}`},body:JSON.stringify({preview_id:preview.id})});const data=await res.json();if(!res.ok)setError(data.error||"Approval failed.");else{setMessage(`Approved and imported: ${data.created} created, ${data.updated} updated, ${data.skipped} skipped.`);setPreview(null);await load();}}
  async function startSync(s:Source, entityType:"leagues"|"teams"|"coaches"){
- setSyncing(s.id+entityType);setError("");setMessage("");
+ const key=s.id+entityType; const offset=batchOffsets[key]??0;
+ setSyncing(key);setError("");setMessage("");
  try{
   const {data:{session}}=await supabase.auth.getSession();
   if(!session?.access_token){setError("Your session has expired. Please log in again.");return;}
-  let offset=0;let batchCount=0;let totalSeen=0;let totalCreated=0;let totalUpdated=0;let totalSkipped=0;
-  while(true){
-   batchCount++;
-   setMessage(`Syncing ${entityType} batch ${batchCount}...`);
-   const res=await fetch("/api/admin/directory/sync",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({source_id:s.id,entity_type:entityType,offset,limit:25})});
-   const data=await res.json();
-   if(!res.ok)throw new Error(data.error||"Directory sync failed.");
-   totalSeen+=Number(data.seen||0);totalCreated+=Number(data.created||0);totalUpdated+=Number(data.updated||0);totalSkipped+=Number(data.skipped||0);
-   if(!data.batch?.has_more)break;
-   offset=Number(data.batch.next_offset||0);
+  setMessage(`Syncing ${entityType} batch starting at ${offset}...`);
+  const res=await fetch("/api/admin/directory/sync",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({source_id:s.id,entity_type:entityType,offset,limit:25})});
+  const data=await res.json();
+  if(!res.ok)throw new Error(data.error||"Directory sync failed.");
+  if(data.batch?.has_more){
+   const next=Number(data.batch.next_offset||offset+25);
+   setBatchOffsets(prev=>({...prev,[key]:next}));
+   setMessage(`Batch complete: ${data.created||0} created, ${data.updated||0} updated, ${data.skipped||0} skipped. Next batch starts at ${next}.`);
+  }else{
+   setBatchOffsets(prev=>({...prev,[key]:0}));
+   setMessage(`Completed ${entityType} sync for ${s.name}: ${data.created||0} created, ${data.updated||0} updated, ${data.skipped||0} skipped.`);
   }
-  setMessage(`Completed ${entityType} sync for ${s.name}: ${totalCreated} created, ${totalUpdated} updated, ${totalSkipped} skipped.`);
   await load();
  }catch(error){setError(error instanceof Error?error.message:"Unable to sync directory.");}
  finally{setSyncing(null);}
@@ -56,7 +57,7 @@ export default function DirectoryProvidersPage(){
   <section style={styles.panel}><p style={styles.section}>PROVIDER REGISTRY</p><h2 style={styles.heading}>Add a data provider</h2><p style={styles.muted}>This records provider and licensing context. It does not scrape or import data.</p>
    <form onSubmit={addSource} style={styles.form}><input required value={name} onChange={e=>setName(e.target.value)} placeholder="Provider name" style={styles.input}/><input value={baseUrl} onChange={e=>setBaseUrl(e.target.value)} placeholder="Base URL" style={styles.input}/><input value={docsUrl} onChange={e=>setDocsUrl(e.target.value)} placeholder="Documentation URL" style={styles.input}/><textarea value={licenseNotes} onChange={e=>setLicenseNotes(e.target.value)} placeholder="License / usage notes" style={styles.textarea}/><input value={connectorKey} onChange={e=>setConnectorKey(e.target.value)} placeholder="Connector key (e.g. mock)" style={styles.input}/><button disabled={saving} style={styles.primary}>{saving?"Saving...":"Add Provider"}</button></form>
   </section>
-  <section style={styles.panel}><p style={styles.section}>REGISTERED SOURCES</p>{sources.length===0?<p style={styles.muted}>No providers registered yet.</p>:<div style={styles.list}>{sources.map(s=><div key={s.id} style={styles.row}><div><strong>{s.name}</strong><div style={styles.small}>Connector: {s.connector_key||"not configured"}</div><div style={styles.small}>{s.base_url||"No base URL"} · {s.license_notes||"No license notes"}</div></div><div style={styles.rowActions}><span style={{...styles.badge,...(s.active?styles.active:styles.inactive)}}>{s.active?"ACTIVE":"PAUSED"}</span><button onClick={()=>void previewSync(s,"leagues")} disabled={syncing===s.id+"leagues"} style={styles.secondary}>Preview Leagues</button><button onClick={()=>void previewSync(s,"teams")} disabled={syncing===s.id+"teams"} style={styles.secondary}>Preview Teams</button><button onClick={()=>void previewSync(s,"coaches")} disabled={syncing===s.id+"coaches"} style={styles.secondary}>Preview Coaches</button><button onClick={()=>void startSync(s,"leagues")} style={styles.primary}>Sync Leagues</button><button onClick={()=>void startSync(s,"teams")} style={styles.primary}>Sync Teams</button><button onClick={()=>void startSync(s,"coaches")} style={styles.primary}>Sync Coaches</button><button onClick={()=>void toggleSource(s)} style={styles.secondary}>{s.active?"Pause":"Activate"}</button></div></div>)}</div>}</section>
+  <section style={styles.panel}><p style={styles.section}>REGISTERED SOURCES</p>{sources.length===0?<p style={styles.muted}>No providers registered yet.</p>:<div style={styles.list}>{sources.map(s=><div key={s.id} style={styles.row}><div><strong>{s.name}</strong><div style={styles.small}>Connector: {s.connector_key||"not configured"}</div><div style={styles.small}>{s.base_url||"No base URL"} · {s.license_notes||"No license notes"}</div></div><div style={styles.rowActions}><span style={{...styles.badge,...(s.active?styles.active:styles.inactive)}}>{s.active?"ACTIVE":"PAUSED"}</span><button onClick={()=>void previewSync(s,"leagues")} disabled={syncing===s.id+"leagues"} style={styles.secondary}>Preview Leagues</button><button onClick={()=>void previewSync(s,"teams")} disabled={syncing===s.id+"teams"} style={styles.secondary}>Preview Teams</button><button onClick={()=>void previewSync(s,"coaches")} disabled={syncing===s.id+"coaches"} style={styles.secondary}>Preview Coaches</button><button onClick={()=>void startSync(s,"leagues")} style={styles.primary}>Sync Leagues{batchOffsets[s.id+"leagues"]?` (Next ${batchOffsets[s.id+"leagues"]})`:""}</button><button onClick={()=>void startSync(s,"teams")} style={styles.primary}>Sync Teams{batchOffsets[s.id+"teams"]?` (Next ${batchOffsets[s.id+"teams"]})`:""}</button><button onClick={()=>void startSync(s,"coaches")} style={styles.primary}>Sync Coaches{batchOffsets[s.id+"coaches"]?` (Next ${batchOffsets[s.id+"coaches"]})`:""}</button><button onClick={()=>void toggleSource(s)} style={styles.secondary}>{s.active?"Pause":"Activate"}</button></div></div>)}</div>}</section>
   <section style={styles.panel}><p style={styles.section}>SYNC HISTORY</p>{runs.length===0?<p style={styles.muted}>No sync runs yet. The registry is ready for a licensed connector.</p>:<div style={styles.list}>{runs.map(r=><div key={r.id} style={styles.row}><div><strong>{r.entity_type} · {r.status}</strong><div style={styles.small}>{new Date(r.started_at).toLocaleString()} · seen {r.records_seen} · created {r.records_created} · updated {r.records_updated}</div></div>{r.error_message&&<span style={styles.errorText}>{r.error_message}</span>}</div>)}</div>}</section>
  </div></main>;
 }
