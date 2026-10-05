@@ -139,22 +139,7 @@ export default function CoachesPage() {
       </section>
 
       <section className="grid">
-        {loading ? (
-          <div className="card">
-            <div className="eyebrow">
-              HoopCheck
-            </div>
-
-            <h2>
-              Loading coaches...
-            </h2>
-
-            <p>
-              Finding coaches in the
-              HoopCheck database.
-            </p>
-          </div>
-        ) : coaches.length === 0 ? (
+        {loading ? (<div className="card"><HoopLoading label="Scanning coaching profiles..." /></div>) : coaches.length === 0 ? (
           <div className="card">
             <div className="eyebrow">
               Coming Soon
