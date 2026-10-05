@@ -33,36 +33,23 @@ export default function TeamsPage() {
       setLoading(true);
       let request = supabase
         .from("teams")
-        .select("id, name, country, league_name, city")
+        .select("id, name, country, league_name, city", { count: "exact" })
         .eq("active", true)
         .order("name");
 
       const term = query.trim();
       if (term) {
-        const escaped = term.replace(/[%_]/g, "\\  const [loading, setLoading] =
-    useState(true);
-
-  useEffect(() => {
-    async function loadTeams() {
-      const {
-        data,
-        error,
-      } = await supabase
-        .from("teams")
-        .select(
-          "id, name, country, league_name, city"
-        )
-        .order("name");");
+        const escaped = term.replace(/[%_]/g, "\\$&");
         request = request.or(
           `name.ilike.%${escaped}%,country.ilike.%${escaped}%,city.ilike.%${escaped}%,league_name.ilike.%${escaped}%`
         );
       }
       if (country) request = request.eq("country", country);
 
-      const { data, error, count } = await request
-        .range(page * pageSize, page * pageSize + pageSize);
-
-      if (error) {
+      const { data, error, count } = await request.range(
+        page * pageSize,
+        page * pageSize + pageSize - 1
+      );
 
       if (error) {
         console.error("Error loading teams:", error);
