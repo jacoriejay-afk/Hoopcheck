@@ -813,43 +813,20 @@ export default function TeamDetailPage() {
               </p>
             </div>
 
-            <div className="card">
-              <div className="eyebrow">
-                Team Breakdown
-              </div>
-
-              {reviews.length === 0 ? (
-                <p>
-                  No approved reviews yet.
-                </p>
-              ) : (
-                <>
-                  <RatingBar
-                    label="Communication"
-                    value={
-                      communication
-                    }
-                  />
-
-                  <RatingBar
-                    label="Professionalism"
-                    value={
-                      professionalism
-                    }
-                  />
-
-                  <RatingBar
-                    label="Development"
-                    value={
-                      development
-                    }
-                  />
-
-                  <RatingBar
-                    label="Payment"
-                    value={payment}
-                  />
-                </>
+            <div className="card" style={{ position: "relative", overflow: "hidden" }}>
+              <div className="eyebrow">Team Breakdown</div>
+              {hasAccess ? (>) : (
+                <div style={{ padding: "24px 0" }}>
+                  <div style={{ filter: "blur(7px)", opacity: 0.35, pointerEvents: "none" }}>
+                    <div style={{ height: 16, width: "75%", background: "#555", borderRadius: 8, marginBottom: 14 }} />
+                    <div style={{ height: 16, width: "60%", background: "#555", borderRadius: 8, marginBottom: 14 }} />
+                    <div style={{ height: 16, width: "68%", background: "#555", borderRadius: 8 }} />
+                  </div>
+                  <div style={{ marginTop: -58, textAlign: "center", position: "relative" }}>
+                    <strong>Ratings locked</strong><p className="muted">Create a free account, then unlock full ratings with membership.</p>
+                    <div className="actions"><Link href="/signup" className="btn">Create Free Account</Link><Link href="/membership" className="btn dark">Unlock Ratings</Link></div>
+                  </div>
+                </div>
               )}
             </div>
 
