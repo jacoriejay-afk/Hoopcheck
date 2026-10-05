@@ -125,6 +125,9 @@ export default function TeamReviewPage() {
   const [body, setBody] =
     useState("");
 
+  const [anonymous, setAnonymous] = useState(false);
+  const [isPaid, setIsPaid] = useState(false);
+
   const [message, setMessage] =
     useState("");
 
@@ -240,6 +243,8 @@ export default function TeamReviewPage() {
         setAlreadyReviewed(true);
       }
 
+      setIsPaid(hasValidSubscription ?? subscriptionIsActive ?? false);
+
       setLoading(false);
     }
 
@@ -286,11 +291,11 @@ export default function TeamReviewPage() {
     }
 
     if (
-      trimmedBody.length < 20 ||
+      trimmedBody.length < 10 ||
       trimmedBody.length > 5000
     ) {
       setMessage(
-        "Your review must be between 20 and 5,000 characters."
+        "Your review must be between 10 and 5,000 characters."
       );
       return;
     }
@@ -344,6 +349,7 @@ export default function TeamReviewPage() {
         payment_rating: payment,
         title: trimmedTitle || null,
         body: trimmedBody,
+        is_anonymous: anonymous,
       }),
     });
 
@@ -660,7 +666,7 @@ export default function TeamReviewPage() {
                 )
               }
               placeholder="Share your experience with this team..."
-              minLength={20}
+              minLength={10}
               maxLength={5000}
               required
             />
@@ -668,6 +674,7 @@ export default function TeamReviewPage() {
             <p className="muted">
               {body.length}/5000 characters
             </p>
+            {isPaid ? <label className="checkbox-row" style={{marginTop:12}}><input type="checkbox" checked={anonymous} onChange={e=>setAnonymous(e.target.checked)} /> <span>Post this review anonymously <small className="muted">Paid members only</small></span></label> : <p className="muted" style={{fontSize:12}}>Anonymous reviews are available to paid members.</p>
           </div>
 
           {message && (
