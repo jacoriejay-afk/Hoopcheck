@@ -207,7 +207,7 @@ export default function TeamDetailPage() {
                 .select("id, name, country, level")
                 .eq("id", teamData.league_id)
                 .maybeSingle()
-            : Promise.resolve({ data: null }),
+            : Promise.resolve({ data: null, error: null }),
           supabase
             .from("coaches")
             .select("id, name, country, city")
