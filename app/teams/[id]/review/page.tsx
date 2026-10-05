@@ -204,6 +204,7 @@ export default function TeamReviewPage() {
       }
 
       const { data: eligibility, error: eligibilityError } = await supabase.rpc("can_user_review_team", { p_user_id: user.id, p_team_id: id });
+      if (isAdmin) setEligible(true);
       if (!isAdmin && (eligibilityError || eligibility !== true)) {
         setEligible(false);
         setMessage("Only verified professional players who currently or previously played for this team can submit a team review.");
