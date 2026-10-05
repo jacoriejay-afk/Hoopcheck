@@ -25,9 +25,11 @@ alter table public.notifications enable row level security;
 revoke all on public.notifications from anon;
 grant select, update on public.notifications to authenticated;
 
-create policy if not exists "notifications_select_own" on public.notifications
+drop policy if exists "notifications_select_own" on public.notifications;
+drop policy if exists "notifications_update_own" on public.notifications;
+create policy "notifications_select_own" on public.notifications
   for select to authenticated using ((select auth.uid()) = user_id);
-create policy if not exists "notifications_update_own" on public.notifications
+create policy "notifications_update_own" on public.notifications
   for update to authenticated using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
