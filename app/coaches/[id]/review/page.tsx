@@ -341,52 +341,44 @@ export default function CoachReviewPage() {
      * - status = pending
      * - active/trialing subscription OR admin/moderator
      */
-    const { error } =
-      await supabase
-        .from("reviews")
-        .insert({
-          author_id: user.id,
-          coach_id: id,
-          overall_rating: overall,
-          communication_rating:
-            communication,
-          professionalism_rating:
-            professionalism,
-          development_rating:
-            development,
-          payment_rating:
-            payment,
-          title:
-            trimmedTitle || null,
-          body: trimmedBody,
-          status: "pending",
-        });
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
 
-    if (error) {
-      if (
-        error.code === "23505"
-      ) {
-        setMessage(
-          "You have already submitted a review for this coach."
-        );
-      } else if (
-        error.code === "42501"
-      ) {
-        setMessage(
-          "An active HoopCheck membership is required to submit a review."
-        );
+    if (!accessToken) {
+      setMessage("Your session expired. Please log in again.");
+      setSubmitting(false);
+      return;
+    }
+
+    const response = await fetch("/api/reviews", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        coach_id: id,
+        overall_rating: overall,
+        communication_rating: communication,
+        professionalism_rating: professionalism,
+        development_rating: development,
+        payment_rating: payment,
+        title: trimmedTitle || null,
+        body: trimmedBody,
+      }),
+    });
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      if (response.status === 409 || result?.error?.includes("already")) {
+        setMessage("You have already submitted a review for this coach.");
+      } else if (response.status === 401 || response.status === 403) {
+        setMessage(result?.error || "An active HoopCheck membership is required to submit a review.");
       } else {
-        console.error(
-          "Review submission error:",
-          error
-        );
-
-        setMessage(
-          error.message ||
-            "Unable to submit your review."
-        );
+        console.error("Review submission error:", result);
+        setMessage(result?.error || "Unable to submit your review.");
       }
-
       setSubmitting(false);
       return;
     }
