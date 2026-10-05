@@ -12,6 +12,7 @@ const router = useRouter();
 
 const [firstName, setFirstName] = useState("");
 const [lastName, setLastName] = useState("");
+const [accountType, setAccountType] = useState<"player"|"scout"|"agent"|"fan">("player");
 const [professionalExperience, setProfessionalExperience] = useState(false);
 const [yearsPro, setYearsPro] = useState("0");
 const [formerTeams, setFormerTeams] = useState<string[]>([]);
@@ -65,6 +66,7 @@ const { data, error } = await supabase.auth.signUp({
       full_name: `${firstName.trim()} ${lastName.trim()}`,
       first_name: firstName.trim(),
       last_name: lastName.trim(),
+      account_type: accountType,
       professional_experience: professionalExperience,
       years_pro: Number(yearsPro),
       former_team_ids: formerTeams,
@@ -140,6 +142,14 @@ return (
           <div><label htmlFor="first-name">First Name</label><input id="first-name" value={firstName} onChange={e=>setFirstName(e.target.value)} autoComplete="given-name" required /></div>
           <div><label htmlFor="last-name">Last Name</label><input id="last-name" value={lastName} onChange={e=>setLastName(e.target.value)} autoComplete="family-name" required /></div>
         </div>
+        <label htmlFor="account-type">Account Type</label>
+        <select id="account-type" value={accountType} onChange={e=>setAccountType(e.target.value as "player"|"scout"|"agent"|"fan")}>
+          <option value="player">Player — professional basketball player</option>
+          <option value="scout">Scout — research only</option>
+          <option value="agent">Agent — research only</option>
+          <option value="fan">Fan — research only</option>
+        </select>
+        <p className="muted" style={{fontSize:12}}>Scouts, agents, and fans can create Pro or Premium accounts for full research access, but only verified professional players can submit ratings or reviews.</p>
         <label>Professional Experience</label>
         <select value={professionalExperience ? "yes" : "no"} onChange={e=>setProfessionalExperience(e.target.value==="yes")}>
           <option value="yes">Yes — I have played professionally</option>
