@@ -1277,3 +1277,6 @@ h1, h2, h3, h4 { text-transform: uppercase; }
   .nav{gap:8px}
   .watch-menu{right:auto;left:0}
 }
+
+.mobile-auth-global{display:none;position:fixed;top:10px;right:10px;z-index:100;padding:8px 11px;border:1px solid var(--orange);border-radius:8px;background:var(--surface,#111);color:var(--orange);font-size:12px;font-weight:900;text-decoration:none;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+@media (max-width:760px){.mobile-auth-global{display:inline-flex}.mobile-auth-link{display:none}}
