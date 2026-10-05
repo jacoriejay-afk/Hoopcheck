@@ -37,6 +37,8 @@ function SearchContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState(query);
+  const [typeFilter, setTypeFilter] = useState<"all"|"coaches"|"teams"|"leagues">("all");
+  const [countryFilter, setCountryFilter] = useState("");
 
   useEffect(() => {
     async function search() {
@@ -111,8 +113,17 @@ function SearchContent() {
 
   useEffect(() => { setSearchInput(query); }, [query]);
 
-  const totalResults =
-    coaches.length + teams.length + leagues.length;
+  const countries = Array.from(new Set([
+    ...coaches.map((x) => x.country),
+    ...teams.map((x) => x.country),
+    ...leagues.map((x) => x.country),
+  ].filter(Boolean) as string[])).sort();
+  const visibleCoaches = typeFilter === "all" || typeFilter === "coaches" ? coaches.filter(x => !countryFilter || x.country === countryFilter) : [];
+  const visibleTeams = typeFilter === "all" || typeFilter === "teams" ? teams.filter(x => !countryFilter || x.country === countryFilter) : [];
+  const visibleLeagues = typeFilter === "all" || typeFilter === "leagues" ? leagues.filter(x => !countryFilter || x.country === countryFilter) : [];
+
+
+  const totalResults = visibleCoaches.length + visibleTeams.length + visibleLeagues.length;
 
   return (
     <main className="search-page">
@@ -178,6 +189,20 @@ function SearchContent() {
             )}
           </div>
 
+          {!loading && !error && totalResults > 0 && (
+            <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:24}}>
+              {(["all","coaches","teams","leagues"] as const).map((type) => (
+                <button key={type} type="button" className="btn dark" onClick={() => setTypeFilter(type)} aria-pressed={typeFilter===type}>
+                  {type === "all" ? "All" : type[0].toUpperCase()+type.slice(1)}
+                </button>
+              ))}
+              <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} aria-label="Filter by country" style={{padding:"10px 14px",borderRadius:8}}>
+                <option value="">All countries</option>
+                {countries.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          )}
+
           {loading && (
             <div className="state-card">
               <p>Searching HoopCheck...</p>
@@ -201,7 +226,7 @@ function SearchContent() {
             </div>
           )}
 
-          {!loading && !error && coaches.length > 0 && (
+          {!loading && !error && visibleCoaches.length > 0 && (
             <section className="result-group">
               <div className="group-heading">
                 <span>01</span>
@@ -209,7 +234,7 @@ function SearchContent() {
               </div>
 
               <div className="result-grid">
-                {coaches.map((coach) => (
+                {visibleCoaches.map((coach) => (
                   <Link
                     href={`/coaches/${coach.id}`}
                     key={coach.id}
@@ -234,7 +259,7 @@ function SearchContent() {
             </section>
           )}
 
-          {!loading && !error && teams.length > 0 && (
+          {!loading && !error && visibleTeams.length > 0 && (
             <section className="result-group">
               <div className="group-heading">
                 <span>02</span>
@@ -242,7 +267,7 @@ function SearchContent() {
               </div>
 
               <div className="result-grid">
-                {teams.map((team) => (
+                {visibleTeams.map((team) => (
                   <Link
                     href={`/teams/${team.id}`}
                     key={team.id}
@@ -273,7 +298,7 @@ function SearchContent() {
             </section>
           )}
 
-          {!loading && !error && leagues.length > 0 && (
+          {!loading && !error && visibleLeagues.length > 0 && (
             <section className="result-group">
               <div className="group-heading">
                 <span>03</span>
@@ -281,7 +306,7 @@ function SearchContent() {
               </div>
 
               <div className="result-grid">
-                {leagues.map((league) => (
+                {visibleLeagues.map((league) => (
                   <Link
                     href={`/leagues/${league.id}`}
                     key={league.id}
