@@ -71,7 +71,7 @@ async function getApiSportsBasketballDirectory(
 
   const leagues = await apiSportsGet("/leagues");
 
-  const normalizedLeagues = Array.from(new Map(leagues.flatMap((item) => {
+  const normalizedLeagueRows = leagues.flatMap((item) => {
     const league = item?.league ?? item;
     const country = item?.country?.name ?? item?.country ?? null;
     const season = process.env.API_SPORTS_BASKETBALL_SEASON?.trim() || "2024";
@@ -85,7 +85,11 @@ async function getApiSportsBasketballDirectory(
       level: league.type ? String(league.type) : null,
       season,
     }];
-  })).map((row) => [row.externalId, row])).values());
+  });
+
+  const normalizedLeagues = Array.from(
+    new Map(normalizedLeagueRows.map((row) => [row.externalId, row])).values()
+  );
 
   if (input.entityType === "leagues") {
     directory.leagues = normalizedLeagues.slice(offset, offset + limit);
