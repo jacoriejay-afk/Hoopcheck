@@ -687,9 +687,7 @@ export default function LeagueDetailPage() {
             </h2>
 
             <p>
-              HoopCheck ratings and approved
-              player reviews are available to
-              active members.
+              Research the league before your next move. Membership starts at $7.99/month and can be managed through Stripe anytime.
             </p>
 
             <div className="actions">
