@@ -1236,3 +1236,26 @@ h1, h2, h3, h4 { text-transform: uppercase; }
   .topnav { gap:8px !important; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
   .topnav::-webkit-scrollbar { display:none; }
 }
+
+.geo-badge { display:inline-flex; align-items:center; gap:7px; width:max-content; margin:4px 0 10px; padding:5px 9px; border:1px solid var(--border); border-radius:999px; background:rgba(255,255,255,.035); font-size:12px; }
+.geo-badge b { color:var(--orange); font-family:var(--display-font); font-size:10px; letter-spacing:.08em; }
+.entity-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:14px 0 6px; }
+.dashboard-card { position:relative; border:1px solid var(--border); border-radius:16px; padding:22px; background:linear-gradient(145deg,var(--surface-2),var(--surface-3)); }
+.dashboard-card h2 { margin:7px 0 8px; font-size:20px; }
+.dashboard-card p { color:var(--gray-300); line-height:1.55; }
+.dashboard-card .card-kicker { color:var(--orange); font-size:10px; font-weight:900; letter-spacing:.14em; }
+.page-shell { min-height:100vh; background:transparent; }
+.page-container { width:min(1180px,100%); margin:0 auto; padding:0 24px 80px; }
+.topbar { width:min(1180px,100%); margin:0 auto; min-height:72px; padding:0 24px; display:flex; align-items:center; justify-content:space-between; gap:18px; }
+.brand { font-family:var(--display-font); font-size:25px; letter-spacing:.08em; }
+.topnav { display:flex; align-items:center; gap:14px; }
+.topnav a { color:var(--gray-300); font-size:12px; text-transform:uppercase; }
+.topnav a:hover { color:var(--orange); }
+.dashboard-card::after { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; background:linear-gradient(115deg,transparent 0 45%,rgba(255,255,255,.035) 50%,transparent 55%); transform:translateX(-120%); transition:transform .5s ease; }
+.dashboard-card:hover::after { transform:translateX(120%); }
+@media(max-width:700px){
+  .page-container { padding:0 16px 60px; }
+  .topbar { padding:10px 16px; align-items:flex-start; flex-wrap:wrap; }
+  .topnav { width:100%; overflow-x:auto; }
+  .dashboard-card { padding:18px; }
+}
