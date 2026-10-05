@@ -11,6 +11,7 @@ import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
 import { submitReviewReport } from "../../../lib/review-reports";
+import WatchButton from "../../../components/WatchButton";
 
 type Coach = {
   id: string;
@@ -571,6 +572,8 @@ export default function CoachDetailPage() {
         <h1>
           {coach.name}
         </h1>
+
+        <div className="entity-actions"><WatchButton targetType="coach" targetId={id} targetName={coach.name} /></div>
 
         <p>
           {coach.city &&
