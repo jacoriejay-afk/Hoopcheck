@@ -8,7 +8,8 @@ export default function VerificationPage() {
   const [team,setTeam]=useState("");
   const [country,setCountry]=useState("");
   const [league,setLeague]=useState("");
-  const [note,setNote]=useState("");\n  const [evidenceUrl,setEvidenceUrl]=useState("");
+  const [note,setNote]=useState("");
+  const [evidenceUrl,setEvidenceUrl]=useState("");
   const [status,setStatus]=useState<string|null>(null);
   const [message,setMessage]=useState("");
   const [loading,setLoading]=useState(true);
@@ -46,7 +47,8 @@ export default function VerificationPage() {
         <label>Current team<input value={team} onChange={e=>setTeam(e.target.value)} maxLength={120} placeholder="Team name"/></label>
         <label>Current country<input value={country} onChange={e=>setCountry(e.target.value)} maxLength={80} placeholder="Country"/></label>
         <label>League<input value={league} onChange={e=>setLeague(e.target.value)} maxLength={120} placeholder="League"/></label>
-        <label>Proof / public basketball link (optional)<input value={evidenceUrl} onChange={e=>setEvidenceUrl(e.target.value)} maxLength={500} placeholder="Team roster, league profile, agency, or personal site"/></label>\n        <label>Anything else we should know?<textarea value={note} onChange={e=>setNote(e.target.value)} maxLength={1000} rows={5}/></label>
+        <label>Proof / public basketball link (optional)<input value={evidenceUrl} onChange={e=>setEvidenceUrl(e.target.value)} maxLength={500} placeholder="Team roster, league profile, agency, or personal site"/></label>
+        <label>Anything else we should know?<textarea value={note} onChange={e=>setNote(e.target.value)} maxLength={1000} rows={5}/></label>
         {message&&<p role="status">{message}</p>}
         <button className="btn" disabled={submitting}>{submitting?"Submitting...":"Request Verification"}</button>
         <p className="muted">Do not submit passwords, financial information, or sensitive identity documents in this form.</p>
