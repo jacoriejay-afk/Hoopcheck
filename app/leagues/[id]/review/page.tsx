@@ -678,7 +678,7 @@ export default function LeagueReviewPage() {
             <p className="muted">
               {body.length}/5000 characters
             </p>
-            {isPaid ? <label className="checkbox-row" style={{marginTop:12}}><input type="checkbox" checked={anonymous} onChange={e=>setAnonymous(e.target.checked)} /> <span>Post this review anonymously <small className="muted">Paid members only</small></span></label> : <p className="muted" style={{fontSize:12}}>Anonymous reviews are available to paid members.</p>
+            {isPaid ? ( <label className="checkbox-row" style={{marginTop:12}}><input type="checkbox" checked={anonymous} onChange={e=>setAnonymous(e.target.checked)} /> <span>Post this review anonymously <small className="muted">Paid members only</small></span></label> ) : ( <p className="muted" style={{fontSize:12}}>Anonymous reviews are available to paid members.</p> )}
           </div>
 
           {message && (
