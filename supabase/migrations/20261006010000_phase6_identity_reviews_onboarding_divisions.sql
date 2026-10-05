@@ -7,7 +7,7 @@ alter table public.reviews add column if not exists is_anonymous boolean not nul
 
 update public.profiles
 set first_name = nullif(split_part(trim(display_name), ' ', 1), ''),
-    last_name = nullif(regexp_replace(trim(display_name), '^\\S+\\s*', ''), '')
+    last_name = case when position(' ' in trim(display_name))>0 then substring(trim(display_name) from position(' ' in trim(display_name))+1) else null end
 where first_name is null and display_name is not null and length(trim(display_name)) > 0;
 
 create or replace function public.prevent_profile_name_change()
@@ -90,4 +90,23 @@ where (t.name='FC Barcelona' and l.name='Liga Endesa')
    or (t.name='Real Madrid' and l.name='Liga Endesa')
    or (t.name='Fenerbahçe Tarfin Istanbul' and l.name='Türkiye Sigorta Basketbol Süper Ligi')
    or (t.name='Anadolu Efes Istanbul' and l.name='Türkiye Sigorta Basketbol Süper Ligi')
+on conflict (team_id,league_id,season) do nothing;
+
+
+insert into public.teams(name,country,city,league_name,source,active)
+select * from (values
+('FC Barcelona','Spain','Barcelona','Liga Endesa','official-euroleague-2026-27',true),
+('Real Madrid','Spain','Madrid','Liga Endesa','official-euroleague-2026-27',true),
+('Fenerbahçe Tarfin Istanbul','Türkiye','Istanbul','Türkiye Sigorta Basketbol Süper Ligi','official-euroleague-2026-27',true),
+('Anadolu Efes Istanbul','Türkiye','Istanbul','Türkiye Sigorta Basketbol Süper Ligi','official-euroleague-2026-27',true)
+) v(name,country,city,league_name,source,active)
+where not exists (select 1 from public.teams t where t.name=v.name);
+
+update public.teams t set league_id=(select l.id from public.leagues l where l.name=t.league_name and l.country=t.country limit 1)
+where t.name in ('FC Barcelona','Real Madrid','Fenerbahçe Tarfin Istanbul','Anadolu Efes Istanbul');
+
+insert into public.team_league_memberships(team_id,league_id,season,active)
+select t.id,l.id,'2026-27',true from public.teams t cross join public.leagues l
+where (t.name in ('FC Barcelona','Real Madrid') and l.name in ('Liga Endesa','EuroLeague'))
+   or (t.name in ('Fenerbahçe Tarfin Istanbul','Anadolu Efes Istanbul') and l.name in ('Türkiye Sigorta Basketbol Süper Ligi','EuroLeague'))
 on conflict (team_id,league_id,season) do nothing;
