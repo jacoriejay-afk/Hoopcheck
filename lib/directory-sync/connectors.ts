@@ -112,10 +112,22 @@ async function getApiSportsBasketballDirectory(
     const season = process.env.API_SPORTS_BASKETBALL_SEASON?.trim() || "2024";
     if (!season) continue;
 
-    const teams = await apiSportsGet("/teams", {
-      league: String(league.id),
-      season,
-    });
+    let teams: any[] = [];
+    try {
+      teams = await apiSportsGet("/teams", {
+        league: String(league.id),
+        season,
+      });
+    } catch (error) {
+      // API-Sports Free plans do not expose every competition/season.
+      // Keep the batch alive so one unavailable league does not block
+      // otherwise valid team records from the remaining leagues.
+      console.warn(
+        `Skipping API-Basketball league ${league.id} (${league.name}) for season ${season}: `,
+        error instanceof Error ? error.message : error
+      );
+      continue;
+    }
 
     for (const item of teams) {
       const team = item?.team ?? item;
