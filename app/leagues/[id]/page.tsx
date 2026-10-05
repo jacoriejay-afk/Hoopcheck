@@ -871,9 +871,13 @@ export default function LeagueDetailPage() {
                           </div>
 
                           <h3>
-                            {review.title ||
-                              "Player experience"}
+                            {review.title || "Player experience"}
                           </h3>
+                          {review.player_verified && (
+                            <div style={{ marginTop: "6px", fontSize: "12px", fontWeight: 800, color: "var(--orange)" }}>
+                              ✓ Verified Player
+                            </div>
+                          )}
                         </div>
 
                         <strong
