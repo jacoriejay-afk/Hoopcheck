@@ -6,6 +6,8 @@ useState,
 } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import HoopLoading from "../../components/HoopLoading";
+import GeoBadge from "../../components/GeoBadge";
 
 type League = {
 id: string;
