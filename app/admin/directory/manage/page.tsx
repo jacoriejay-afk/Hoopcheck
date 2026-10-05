@@ -190,6 +190,7 @@ export default function DirectoryManagerPage() {
                 <div style={{ display: "flex", gap: 7 }}>
                   <button onClick={() => startEdit(item)} style={{ padding: "8px 11px", borderRadius: 7, border: "1px solid #333", background: "#151515", color: "#fff" }}>Edit</button>
                   {item.active && <button onClick={() => archive(item.id)} style={{ padding: "8px 11px", borderRadius: 7, border: "1px solid #542b20", background: "#1a100c", color: "#ff9a70" }}>Archive</button>}
+                  <button onClick={() => deleteRecord(item.id)} style={{ padding: "8px 11px", borderRadius: 7, border: "1px solid #7a2d2d", background: "#1a0b0b", color: "#ff8f8f" }}>Delete</button>
                 </div>
               </article>
             ))}
