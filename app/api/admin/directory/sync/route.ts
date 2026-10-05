@@ -27,9 +27,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Server directory sync is not configured" }, { status: 503 });
   }
 
-  // The route performs privileged server-side directory writes only after the
-  // caller has been authenticated and authorized above. The service-role
-  // client bypasses RLS for those writes and is never exposed to the browser.
   const adminSupabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     serviceRoleKey,
@@ -55,12 +52,28 @@ export async function POST(req: Request) {
 
   const { data: source, error: sourceError } = await adminSupabase
     .from("directory_sources")
-    .select("id,name,active,connector_key")
+    .select("id,name,active,connector_key,license_status,commercial_use_allowed,redistribution_allowed")
     .eq("id", sourceId)
     .single();
 
   if (sourceError || !source) return NextResponse.json({ error: "Provider not found" }, { status: 404 });
   if (!source.active) return NextResponse.json({ error: "Provider is paused" }, { status: 409 });
+
+  // HoopCheck is a commercial subscription product. A provider may only be
+  // synchronized when its contract/terms have been reviewed and explicitly
+  // marked as allowing both commercial use and redistribution in the database.
+  if (
+    source.license_status !== "approved" ||
+    source.commercial_use_allowed !== true ||
+    source.redistribution_allowed !== true
+  ) {
+    return NextResponse.json({
+      error: "Provider is not legally cleared for commercial redistribution",
+      license_status: source.license_status,
+      commercial_use_allowed: source.commercial_use_allowed,
+      redistribution_allowed: source.redistribution_allowed,
+    }, { status: 409 });
+  }
 
   const connector = getDirectoryConnector(source.connector_key);
   if (!connector) return NextResponse.json({ error: "Connector not configured for this provider" }, { status: 409 });
@@ -86,7 +99,8 @@ export async function POST(req: Request) {
 
     const result = await syncNormalizedDirectory(adminSupabase, sourceId, entityType, normalized);
 
-    const batchHasMore = entityType !== "coaches" && normalized.leagues.length === limit;
+    const batchRows = normalized[entityType];
+    const batchHasMore = entityType !== "coaches" && batchRows.length === limit;
     const nextOffset = batchHasMore ? offset + limit : null;
 
     await adminSupabase.from("directory_sync_runs").update({
