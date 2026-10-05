@@ -26,7 +26,7 @@ export default function TeamsPage() {
   const [country, setCountry] = useState("");
   const [continent, setContinent] = useState("");
   const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);\n  const [totalCount, setTotalCount] = useState(0);
   const pageSize = 24;
 
   const CONTINENT_COUNTRIES: Record<string, string[]> = {
@@ -70,10 +70,10 @@ export default function TeamsPage() {
       if (error) {
         console.error("Error loading teams:", error);
         setTeams([]);
-        setHasMore(false);
+        setHasMore(false);\n        setTotalCount(0);
       } else {
         setTeams(data || []);
-        setHasMore((count ?? 0) > (page + 1) * pageSize);
+        const total = count ?? 0;\n        setTotalCount(total);\n        setHasMore((page + 1) * pageSize < total);
       }
 
       setLoading(false);
