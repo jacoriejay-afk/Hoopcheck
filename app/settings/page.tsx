@@ -32,10 +32,12 @@ export default function SettingsPage() {
     document.documentElement.dataset.theme = nextTheme;
     localStorage.setItem("hoopcheck-theme", nextTheme);
     localStorage.setItem("hoopcheck-language", nextLanguage);
+    window.dispatchEvent(new CustomEvent("hoopcheck-language-change", { detail: nextLanguage }));
     document.documentElement.lang = nextLanguage;
     const { data: userData } = await supabase.auth.getUser();
     if (userData.user) {
-      await supabase.from("user_preferences").upsert({ user_id: userData.user.id, theme: nextTheme, notifications_enabled: nextNotifications, language: nextLanguage, updated_at: new Date().toISOString() });
+      const { error } = await supabase.from("user_preferences").upsert({ user_id: userData.user.id, theme: nextTheme, notifications_enabled: nextNotifications, language: nextLanguage, updated_at: new Date().toISOString() });
+      if (error) console.error("Settings save error:", error);
     }
     setSaving(false);
   }
