@@ -1,9 +1,11 @@
-"use client";\nimport Link from "next/link";
+"use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 export default function Home() {
-  const [loggedIn, setLoggedIn] = useState(false);\n  useEffect(() => { supabase.auth.getSession().then(({ data }) => setLoggedIn(Boolean(data.session))); }, []);
+  const [loggedIn, setLoggedIn] = useState(false);
+  useEffect(() => { supabase.auth.getSession().then(({ data }) => setLoggedIn(Boolean(data.session))); }, []);
   return (
     <main>
       <nav className="nav">
