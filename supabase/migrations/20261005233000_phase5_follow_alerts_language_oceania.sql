@@ -68,13 +68,13 @@ for each row execute function public.create_review_notifications();
 revoke execute on function public.create_review_notifications() from public, anon, authenticated;
 
 update public.teams t set league_id=l.id,league_name=l.name from public.leagues l where t.name='Gence BC' and l.name='Azerbaijan Basketball League';
-update public.teams t set league_id=l.id,league_name=l.name from public.leagues l where t.name='Bakken Bears Aarhus' and l.name='Denmark Basketligaen';
-update public.teams t set league_id=l.id,league_name=l.name from public.leagues l where t.name='BC Oostende' and l.name='Belgium BNXT League';
-update public.teams t set league_id=l.id,league_name=l.name from public.leagues l where t.name='BC Prievidza' and l.name='Slovakia Nike SBL';
-update public.teams t set league_id=l.id,league_name=l.name from public.leagues l where t.name='Iraklis BC' and l.name='Greece Greek Basketball League';
-update public.teams t set league_id=l.id,league_name=l.name from public.leagues l where t.name='Lions de Geneve' and l.name='Switzerland SB League';
-update public.teams t set league_id=l.id,league_name=l.name from public.leagues l where t.name='VEF Riga' and l.name='Latvia Latvian-Estonian Basketball League';
-update public.teams t set league_id=l.id,league_name=l.name from public.leagues l where t.name='BC Bashkimi' and l.name='Kosovo Kosovo Superleague';
+update public.teams t set league_id=l.id,league_name=l.name from public.leagues l where t.name='Bakken Bears Aarhus' and l.name='Basketligaen';
+update public.teams t set league_id=l.id,league_name=l.name from public.leagues l where t.name='BC Oostende' and l.name='BNXT League' and l.country='Belgium';
+update public.teams t set league_id=l.id,league_name=l.name from public.leagues l where t.name='BC Prievidza' and l.name='Nike SBL';
+update public.teams t set league_id=l.id,league_name=l.name from public.leagues l where t.name='Iraklis BC' and l.name='Greek Basketball League';
+update public.teams t set league_id=l.id,league_name=l.name from public.leagues l where t.name='Lions de Geneve' and l.name='SB League';
+update public.teams t set league_id=l.id,league_name=l.name from public.leagues l where t.name='VEF Riga' and l.name='Latvian-Estonian Basketball League';
+update public.teams t set league_id=l.id,league_name=l.name from public.leagues l where t.name='BC Bashkimi' and l.name='Kosovo Superleague';
 
 insert into public.leagues(name,country,level,season,source,active)
 select 'CIBACOPA','Mexico','Mexican professional division','2026','official-cibacopa',true
