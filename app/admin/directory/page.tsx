@@ -228,6 +228,20 @@ export default function AdminDirectoryPage() {
               description="Track country and league rights, commercial use, redistribution, evidence, and production approval."
               href="/admin/rights"
             />
+
+            <DirectoryCard
+              number="06"
+              title="Player Verification"
+              description="Review professional-player verification requests and manage Verified Player badges."
+              href="/admin/verification"
+            />
+
+            <DirectoryCard
+              number="07"
+              title="Licensed Provider Gate"
+              description="Sofascore is registered as research-only until written commercial/API permission is verified. No scraping or unlicensed redistribution is enabled."
+              href="/admin/directory/providers"
+            />
           </div>
         </section>
 
