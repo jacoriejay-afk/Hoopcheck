@@ -15,6 +15,7 @@ import { supabase } from "../../../lib/supabase";
 import { submitReviewReport } from "../../../lib/review-reports";
 import HoopLoading from "../../../components/HoopLoading";
 import WatchButton from "../../../components/WatchButton";
+import GeoBadge from "../../../components/GeoBadge";
 
 type Team = {
   id: string;
@@ -576,7 +577,7 @@ export default function TeamDetailPage() {
           {team.name}
         </h1>
 
-        <div className="entity-actions"><WatchButton targetType="team" targetId={id} targetName={team.name} /></div>
+        <div className="entity-actions"><GeoBadge country={team.country} /><WatchButton targetType="team" targetId={id} targetName={team.name} /></div>
 
         <p>
           {team.city &&
