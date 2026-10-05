@@ -4,6 +4,9 @@ import { getDirectoryConnector } from "../../../../../../lib/directory-sync/conn
 import type { NormalizedDirectory, SyncEntityType } from "../../../../../../lib/directory-sync/types";
 import { clean } from "../../../../../../lib/directory-sync/sync-record";
 
+const DEFAULT_BATCH_SIZE = 25;
+const MAX_BATCH_SIZE = 50;
+
 export async function POST(req:Request){
  const token=req.headers.get("authorization")?.replace(/^Bearer /,"");
  if(!token)return NextResponse.json({error:"Authentication required"},{status:401});
@@ -16,13 +19,16 @@ export async function POST(req:Request){
  const body=await req.json().catch(()=>({})); const sourceId=typeof body.source_id==="string"?body.source_id:null;
  const entityType:SyncEntityType|undefined=["leagues","teams","coaches"].includes(body.entity_type)?body.entity_type:undefined;
  if(!sourceId||!entityType)return NextResponse.json({error:"source_id and entity_type are required"},{status:400});
+ const offset=typeof body.offset==="number"&&Number.isFinite(body.offset)?Math.max(0,Math.floor(body.offset)):0;
+ const requestedLimit=typeof body.limit==="number"&&Number.isFinite(body.limit)?Math.floor(body.limit):DEFAULT_BATCH_SIZE;
+ const limit=Math.min(MAX_BATCH_SIZE,Math.max(1,requestedLimit));
  const {data:source}=await adminSupabase.from("directory_sources").select("id,name,active,connector_key").eq("id",sourceId).single();
  if(!source)return NextResponse.json({error:"Provider not found"},{status:404}); if(!source.active)return NextResponse.json({error:"Provider is paused"},{status:409});
  const connector=getDirectoryConnector(source.connector_key); if(!connector)return NextResponse.json({error:"Connector not configured for this provider"},{status:409});
  try{
   let directory:NormalizedDirectory;
   try {
-   directory=await connector.getDirectory({entityType,sourceId});
+   directory=await connector.getDirectory({entityType,sourceId,options:{offset,limit}});
   } catch (error) {
    const detail=error instanceof Error ? error.message : JSON.stringify(error);
    throw new Error(`Provider fetch failed: ${detail}`);
@@ -35,7 +41,9 @@ export async function POST(req:Request){
    if(existing)update++;else create++;
   }
   const {data:preview,error}=await adminSupabase.from("directory_sync_previews").insert({source_id:sourceId,created_by:user.id,entity_type:entityType,status:"pending",normalized_data:directory,total_rows:rows.length,create_count:create,update_count:update,skip_count:skip}).select("id,source_id,entity_type,status,total_rows,create_count,update_count,skip_count,expires_at,created_at").single();
-  if(error)throw error; return NextResponse.json({preview,provider:source.name});
+  if(error)throw error;
+  const hasMore=entityType!=="coaches" && rows.length>=limit;
+  return NextResponse.json({preview,provider:source.name,batch:{offset,limit,next_offset:hasMore?offset+limit:null,has_more:hasMore}});
  }catch(e){
   const message=e instanceof Error ? e.message : (typeof e === "string" ? e : JSON.stringify(e));
   return NextResponse.json({error:`Directory preview failed: ${message || "Unknown error"}`},{status:500});
