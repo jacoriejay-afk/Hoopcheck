@@ -7,7 +7,13 @@ import { supabase } from "../lib/supabase";
 export default function Home() {
   const router = useRouter();
   const [loggedIn, setLoggedIn] = useState(false);
-  useEffect(() => {\n    supabase.auth.getSession().then(({ data }) => {\n      const signedIn = Boolean(data.session);\n      setLoggedIn(signedIn);\n      if (signedIn) router.replace("/dashboard");\n    });\n  }, [router]);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      const signedIn = Boolean(data.session);
+      setLoggedIn(signedIn);
+      if (signedIn) router.replace("/dashboard");
+    });
+  }, [router]);
   return (
     <main>
       <nav className="nav">
