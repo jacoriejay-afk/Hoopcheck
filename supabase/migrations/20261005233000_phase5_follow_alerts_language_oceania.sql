@@ -109,3 +109,23 @@ select t.name,t.country,t.city,league.id,league.name,'official-nznbl',true from 
 where not exists (select 1 from public.teams x where lower(x.name)=lower(t.name));
 
 delete from public.coaches;
+
+
+create or replace function public.create_entity_update_notifications()
+returns trigger language plpgsql security definer set search_path = public
+as $$
+declare target_kind text; target_label text;
+begin
+  target_kind := case when TG_TABLE_NAME='teams' then 'team' else 'league' end;
+  target_label := coalesce(new.name,'HoopCheck profile');
+  insert into public.notifications(user_id,target_type,target_id,notification_type,title,body)
+  select w.user_id,target_kind,new.id,'update','Update: '||target_label,'A followed basketball organization was updated on HoopCheck.'
+  from public.user_watchlists w join public.user_preferences p on p.user_id=w.user_id
+  where w.target_type=target_kind and w.target_id=new.id and w.follow=true and w.alert_updates=true and p.notifications_enabled=true;
+  return new;
+end; $$;
+drop trigger if exists teams_update_notifications on public.teams;
+create trigger teams_update_notifications after update on public.teams for each row execute function public.create_entity_update_notifications();
+drop trigger if exists leagues_update_notifications on public.leagues;
+create trigger leagues_update_notifications after update on public.leagues for each row execute function public.create_entity_update_notifications();
+revoke execute on function public.create_entity_update_notifications() from public,anon,authenticated;
