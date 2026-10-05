@@ -878,6 +878,17 @@ export default function TeamDetailPage() {
           </section>
 
           <section className="hero">
+            {!hasAccess && (
+              <div className="card" style={{ marginBottom: 24, borderColor: "rgba(255,106,0,.45)" }}>
+                <div className="eyebrow">Members Only</div>
+                <h3>Player reviews are locked</h3>
+                <p>{publicSummary.review_count || 0} approved player review{publicSummary.review_count === 1 ? "" : "s"} are available for this profile. Create a free account to see the locked review section and membership options.</p>
+                <div className="actions">
+                  <Link href="/signup" className="btn">Create Free Account</Link>
+                  <Link href="/login" className="btn dark">Log In</Link>
+                </div>
+              </div>
+            )}
             <div className="eyebrow">
               Approved Reviews
             </div>
