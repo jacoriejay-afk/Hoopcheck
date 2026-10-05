@@ -86,9 +86,7 @@ export async function POST(req: Request) {
 
     const result = await syncNormalizedDirectory(adminSupabase, sourceId, entityType, normalized);
 
-    const batchHasMore =
-      entityType !== "coaches" &&
-      normalized.leagues.length === Math.min(limit, Math.max(0, normalized.leagues.length));
+    const batchHasMore = entityType !== "coaches" && normalized.leagues.length === limit;
     const nextOffset = batchHasMore ? offset + limit : null;
 
     await adminSupabase.from("directory_sync_runs").update({
