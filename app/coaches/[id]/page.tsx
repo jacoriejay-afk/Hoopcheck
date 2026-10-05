@@ -572,7 +572,7 @@ export default function CoachDetailPage() {
           {coach.name}
         </h1>
 
-        <div className="entity-actions"><WatchButton targetType="coach" targetId={id} targetName={coach.name} /></div>
+        <div className="entity-actions"><WatchButton targetType="coach" targetId={coach.id} targetName={coach.name} /></div>
 
         <p>
           {coach.city &&
