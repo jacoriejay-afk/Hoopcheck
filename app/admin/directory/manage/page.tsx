@@ -19,7 +19,9 @@ const inputStyle: React.CSSProperties = {
 };
 
 export default function DirectoryManagerPage() {
-  const [kind, setKind] = useState<Kind>("coaches");
+  const searchParams = useSearchParams();
+  const requestedKind = searchParams.get("kind");
+  const [kind, setKind] = useState<Kind>(requestedKind === "teams" || requestedKind === "leagues" || requestedKind === "coaches" ? requestedKind : "coaches");
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [leagues, setLeagues] = useState<League[]>([]);
