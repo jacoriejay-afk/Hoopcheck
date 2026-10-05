@@ -14,6 +14,7 @@ export default function OnboardingPage() {
   const [displayName, setDisplayName] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [accountType, setAccountType] = useState<"player"|"scout"|"agent"|"fan">("player");
   const [professionalExperience, setProfessionalExperience] = useState(false);
   const [formerTeams, setFormerTeams] = useState<string[]>([]);
   const [teams, setTeams] = useState<{id:string;name:string;country:string|null;league_name:string|null}[]>([]);
@@ -38,7 +39,7 @@ export default function OnboardingPage() {
       const user = session.user;
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id,display_name,first_name,last_name,professional_experience,position,years_pro,country,current_country,current_team,bio,profile_visibility")
+        .select("id,display_name,first_name,last_name,account_type,professional_experience,position,years_pro,country,current_country,current_team,bio,profile_visibility")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -47,6 +48,7 @@ export default function OnboardingPage() {
       setDisplayName(profile?.display_name || user.user_metadata?.full_name || "");
       setFirstName(profile?.first_name || user.user_metadata?.first_name || "");
       setLastName(profile?.last_name || user.user_metadata?.last_name || "");
+      setAccountType((profile?.account_type || user.user_metadata?.account_type || "player") as "player"|"scout"|"agent"|"fan");
       setProfessionalExperience(profile?.professional_experience ?? Boolean(user.user_metadata?.professional_experience));
       const metadataTeams = Array.isArray(user.user_metadata?.former_team_ids) ? user.user_metadata.former_team_ids : [];
       setFormerTeams(metadataTeams);
@@ -82,6 +84,7 @@ export default function OnboardingPage() {
       .update({
         first_name: firstName.trim(),
         last_name: lastName.trim(),
+        account_type: accountType,
         professional_experience: professionalExperience,
         display_name: displayName.trim() || "HoopCheck Player",
         position: position.trim() || null,
@@ -144,6 +147,11 @@ export default function OnboardingPage() {
             <label>Last Name</label>
             <input value={lastName} readOnly aria-readonly="true" />
             <p className="muted" style={{fontSize:12}}>Your first and last name are locked after account setup.</p>
+            <label>Account Type</label>
+            <select value={accountType} onChange={e=>setAccountType(e.target.value as "player"|"scout"|"agent"|"fan")}>
+              <option value="player">Player</option><option value="scout">Scout</option><option value="agent">Agent</option><option value="fan">Fan</option>
+            </select>
+            <p className="muted" style={{fontSize:12}}>Only verified players can write ratings or reviews. Scouts, agents, and fans remain research-only.</p>
             <label>Professional Experience</label>
             <select value={professionalExperience ? "yes" : "no"} onChange={e=>setProfessionalExperience(e.target.value==="yes")}>
               <option value="yes">Yes — professional player</option><option value="no">No — not yet</option>
