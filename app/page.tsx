@@ -1,13 +1,15 @@
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
-export default function Home() {
+export default function Home() {\n  const [loggedIn, setLoggedIn] = useState(false);\n  useEffect(() => { supabase.auth.getSession().then(({ data }) => setLoggedIn(Boolean(data.session))); }, []);
   return (
     <main>
       <nav className="nav">
         <Link href="/" className="logo">Hoop<span>Check</span></Link>
         <div className="links">
           <Link href="/search">Search</Link>
-          <Link href="/login">Log in</Link>
+          <Link href={loggedIn ? "/dashboard" : "/login"}>{loggedIn ? "Dashboard" : "Log in"}</Link>
           <Link href="/signup" className="btn">Sign Up</Link>
         </div>
       </nav>
