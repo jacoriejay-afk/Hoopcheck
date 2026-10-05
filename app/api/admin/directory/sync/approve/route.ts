@@ -12,7 +12,12 @@ export async function POST(req:Request){
  if(!serviceRoleKey)return NextResponse.json({error:"Server directory sync is not configured"},{status:503});
  const adminSupabase=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,serviceRoleKey,{auth:{autoRefreshToken:false,persistSession:false}});
  const body=await req.json().catch(()=>({})); const previewId=typeof body.preview_id==="string"?body.preview_id:null; if(!previewId)return NextResponse.json({error:"preview_id is required"},{status:400});
- const {data:p,error}=await adminSupabase.from("directory_sync_previews").select("*").eq("id",previewId).single(); if(error||!p)return NextResponse.json({error:"Preview not found"},{status:404});
+ const {data:p,error}=await adminSupabase.from("directory_sync_previews").select("*,directory_sources!inner(active,license_status,commercial_use_allowed,redistribution_allowed)").eq("id",previewId).single();
+ if(error||!p)return NextResponse.json({error:"Preview not found"},{status:404});
+ const source=p.directory_sources;
+ if(!source.active||source.license_status!=="approved"||source.commercial_use_allowed!==true||source.redistribution_allowed!==true){
+  return NextResponse.json({error:"Provider is not legally cleared for commercial redistribution"},{status:409});
+ }
  if(p.status!=="pending")return NextResponse.json({error:`Preview is already ${p.status}`},{status:409});
  if(new Date(p.expires_at).getTime()<=Date.now()){await adminSupabase.from("directory_sync_previews").update({status:"expired"}).eq("id",previewId);return NextResponse.json({error:"Preview expired. Run a new preview."},{status:409});}
  const {data:run,error:runError}=await adminSupabase.from("directory_sync_runs").insert({source_id:p.source_id,entity_type:(p.entity_type==="leagues"?"league":p.entity_type==="teams"?"team":p.entity_type==="coaches"?"coach":"all"),status:"running",records_seen:0,records_created:0,records_updated:0,records_skipped:0}).select("id").single(); if(runError)return NextResponse.json({error:runError.message},{status:500});
@@ -21,4 +26,4 @@ export async function POST(req:Request){
   await adminSupabase.from("directory_sync_runs").update({status:"completed",records_seen:result.seen,records_created:result.created,records_updated:result.updated,records_skipped:result.skipped,finished_at:new Date().toISOString()}).eq("id",run.id);
   return NextResponse.json({preview_id:previewId,run_id:run.id,...result});
  }catch(e){const m=e instanceof Error?e.message:"Approval sync failed";await adminSupabase.from("directory_sync_runs").update({status:"failed",error_message:m,finished_at:new Date().toISOString()}).eq("id",run.id);return NextResponse.json({error:m,run_id:run.id},{status:500});}
-}
+ }
