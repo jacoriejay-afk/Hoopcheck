@@ -63,13 +63,30 @@ function MembershipContent() {
 
     if (success === "true") {
       setMessage(
-        "Checkout completed. Your membership will appear here once Stripe confirms the subscription."
+        "Checkout completed. Confirming your HoopCheck membership..."
       );
+
+      let attempts = 0;
+      const refresh = window.setInterval(async () => {
+        attempts += 1;
+        await loadSubscription();
+
+        if (attempts >= 6) {
+          window.clearInterval(refresh);
+          setMessage(
+            "Checkout completed. If your membership has not appeared yet, refresh this page in a moment while Stripe finishes confirming the subscription."
+          );
+        }
+      }, 2000);
+
+      return () => window.clearInterval(refresh);
     }
 
     if (canceled === "true") {
       setMessage("Checkout was canceled. No subscription was created.");
     }
+
+    return undefined;
   }, [searchParams]);
 
   async function startCheckout(plan: Plan) {
