@@ -33,9 +33,9 @@ function RatingField({
     <div
       style={{
         padding: "20px",
-        border: "1px solid #252525",
+        border: "1px solid var(--border)",
         borderRadius: "10px",
-        background: "#0d0d0d",
+        background: "var(--surface-2)",
       }}
     >
       <div
