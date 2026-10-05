@@ -57,7 +57,7 @@ export default function AccountPage() {
         supabase.from("profiles").select("display_name,bio,position,years_pro,current_country,current_team,profile_visibility,player_verified,profile_claimed").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
       ]);
-      const nextProfile: Profile = profileData ?? { display_name: null, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false };
+      const nextProfile: Profile = profileData ?? { display_name: null, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false, profile_claimed: true };
       setProfile(nextProfile);
       setDisplayName(nextProfile.display_name ?? "");
       setBio(nextProfile.bio ?? "");
@@ -127,8 +127,12 @@ export default function AccountPage() {
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
-    window.location.href = "/";
+    const { error } = await supabase.auth.signOut({ scope: "local" });
+    if (error) {
+      setProfileMessage("Unable to sign out. Please try again.");
+      return;
+    }
+    window.location.replace("/login");
   }
 
   if (loading) return <main className="page-shell"><div className="page-container"><p>Loading your account...</p></div></main>;
