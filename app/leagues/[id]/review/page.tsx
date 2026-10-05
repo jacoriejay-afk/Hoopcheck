@@ -264,7 +264,7 @@ export default function LeagueReviewPage() {
         setAlreadyReviewed(true);
       }
 
-      setIsPaid(hasValidSubscription ?? subscriptionIsActive ?? false);
+      setIsPaid(subscriptionIsActive);
 
       setLoading(false);
     }
