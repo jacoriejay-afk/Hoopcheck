@@ -13,6 +13,7 @@ import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
 import { submitReviewReport } from "../../../lib/review-reports";
+import WatchButton from "../../../components/WatchButton";
 
 type Team = {
   id: string;
@@ -575,6 +576,8 @@ export default function TeamDetailPage() {
         <h1>
           {team.name}
         </h1>
+
+        <div className="entity-actions"><WatchButton targetType="team" targetId={id} targetName={team.name} /></div>
 
         <p>
           {team.city &&
