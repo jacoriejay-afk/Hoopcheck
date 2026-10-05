@@ -137,6 +137,8 @@ export default function TeamReviewPage() {
   const [alreadyReviewed, setAlreadyReviewed] =
     useState(false);
 
+  const [eligible, setEligible] = useState(false);
+
   useEffect(() => {
     async function loadPage() {
       if (!id) {
@@ -200,6 +202,15 @@ export default function TeamReviewPage() {
         window.location.href = "/membership";
         return;
       }
+
+      const { data: eligibility, error: eligibilityError } = await supabase.rpc("can_user_review_team", { p_user_id: user.id, p_team_id: id });
+      if (!isAdmin && (eligibilityError || eligibility !== true)) {
+        setEligible(false);
+        setMessage("Only verified professional players who currently or previously played for this team can submit a team review.");
+        setLoading(false);
+        return;
+      }
+      setEligible(true);
 
       const {
         data: existingReview,
@@ -412,6 +423,23 @@ export default function TeamReviewPage() {
           >
             Back To Teams
           </Link>
+        </section>
+      </main>
+    );
+  }
+
+  if (!eligible) {
+    return (
+      <main>
+        <nav className="nav"><Link href="/" className="logo">Hoop<span>Check</span></Link></nav>
+        <section className="hero">
+          <div className="eyebrow">Player Eligibility Required</div>
+          <h1>Reviews are for players who played here.</h1>
+          <p>Only verified professional players with a verified current or former affiliation with this team can submit a review.</p>
+          <div className="actions">
+            <Link href="/account" className="btn">View My Account</Link>
+            <Link href={`/teams/${team.id}`} className="btn dark">Back To Team</Link>
+          </div>
         </section>
       </main>
     );
