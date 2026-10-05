@@ -33,6 +33,17 @@ type Report = {
   created_at: string;
 };
 
+type ModerationEvent = {
+  id: string;
+  review_id: string | null;
+  report_id: string | null;
+  actor_id: string;
+  entity_type: "review" | "report";
+  from_status: string | null;
+  to_status: string;
+  created_at: string;
+};
+
 type Profile = {
   id: string;
   display_name: string | null;
@@ -67,6 +78,9 @@ export default function AdminReviewsPage() {
     useState<"all" | ReportStatus>("all");
   const [selectedReview, setSelectedReview] =
     useState<Review | null>(null);
+  const [moderationEvents, setModerationEvents] =
+    useState<ModerationEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
   const [confirmAction, setConfirmAction] =
     useState<ConfirmAction | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -448,6 +462,28 @@ export default function AdminReviewsPage() {
     }
   }
 
+  async function openReviewDetails(review: Review) {
+    setSelectedReview(review);
+    setEventsLoading(true);
+    setModerationEvents([]);
+
+    const { data, error } = await supabase
+      .from("review_moderation_events")
+      .select(
+        "id, review_id, report_id, actor_id, entity_type, from_status, to_status, created_at"
+      )
+      .eq("review_id", review.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Unable to load moderation history:", error);
+    } else {
+      setModerationEvents((data || []) as ModerationEvent[]);
+    }
+
+    setEventsLoading(false);
+  }
+
   function formatDate(value: string) {
     return new Date(value).toLocaleString();
   }
@@ -607,7 +643,7 @@ export default function AdminReviewsPage() {
                   <div className="moderation-actions">
                     <button
                       className="btn dark"
-                      onClick={() => setSelectedReview(review)}
+                      onClick={() => openReviewDetails(review)}
                     >
                       View details
                     </button>
@@ -791,7 +827,7 @@ export default function AdminReviewsPage() {
                       {linkedReview && (
                         <button
                           className="btn dark"
-                          onClick={() => setSelectedReview(linkedReview)}
+                          onClick={() => openReviewDetails(linkedReview)}
                         >
                           View reported review
                         </button>
@@ -883,6 +919,28 @@ export default function AdminReviewsPage() {
               </span>
               <span>Status: {selectedReview.status}</span>
               <span>{formatDate(selectedReview.created_at)}</span>
+            </div>
+
+            <div style={{ marginTop: "24px" }}>
+              <p className="eyebrow">MODERATION HISTORY</p>
+              {eventsLoading ? (
+                <p className="muted">Loading audit history…</p>
+              ) : moderationEvents.length === 0 ? (
+                <p className="muted">No moderation actions recorded yet.</p>
+              ) : (
+                <div style={{ display: "grid", gap: "10px" }}>
+                  {moderationEvents.map((event) => (
+                    <div className="card" key={event.id}>
+                      <strong>
+                        {event.from_status || "created"} → {event.to_status}
+                      </strong>
+                      <p className="muted" style={{ marginBottom: 0 }}>
+                        {event.entity_type} · {formatDate(event.created_at)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
         </div>
