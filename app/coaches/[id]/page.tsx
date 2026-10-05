@@ -716,14 +716,12 @@ export default function CoachDetailPage() {
             </div>
 
             <h2>
-              Unlock the player
+              Unlock the full player
               experience.
             </h2>
 
             <p>
-              HoopCheck ratings and approved
-              player reviews are available to
-              active members.
+              Get the full picture before you trust the next coaching relationship. Membership starts at $7.99/month and can be managed through Stripe anytime.
             </p>
 
             <div className="actions">
