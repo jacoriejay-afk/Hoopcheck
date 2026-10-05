@@ -13,6 +13,7 @@ import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
 import { submitReviewReport } from "../../../lib/review-reports";
+import HoopLoading from "../../../components/HoopLoading";
 import WatchButton from "../../../components/WatchButton";
 
 type Team = {
@@ -420,9 +421,7 @@ export default function TeamDetailPage() {
             HoopCheck
           </div>
 
-          <h1>
-            Loading team...
-          </h1>
+          <HoopLoading label="Loading team intelligence..." />
         </section>
       </main>
     );
