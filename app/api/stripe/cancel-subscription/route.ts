@@ -9,6 +9,11 @@ function getAdminSupabase() {
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
+function getCurrentPeriodEnd(subscription: Stripe.Subscription) {
+  const timestamp = subscription.items.data[0]?.current_period_end;
+  return timestamp ? new Date(timestamp * 1000).toISOString() : null;
+}
+
 export async function POST(request: Request) {
   try {
     const secret = process.env.STRIPE_SECRET_KEY;
@@ -39,16 +44,18 @@ export async function POST(request: Request) {
       cancel_at_period_end: cancel,
     });
 
+    const currentPeriodEnd = getCurrentPeriodEnd(updated);
+
     await supabase.from("subscriptions").update({
       cancel_at_period_end: updated.cancel_at_period_end,
-      current_period_end: new Date(updated.current_period_end * 1000).toISOString(),
+      ...(currentPeriodEnd ? { current_period_end: currentPeriodEnd } : {}),
       updated_at: new Date().toISOString(),
     }).eq("user_id", user.id);
 
     return NextResponse.json({
       success: true,
       cancel_at_period_end: updated.cancel_at_period_end,
-      current_period_end: new Date(updated.current_period_end * 1000).toISOString(),
+      current_period_end: currentPeriodEnd,
     });
   } catch (error) {
     console.error("Subscription cancellation error:", error);
