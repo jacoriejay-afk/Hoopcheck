@@ -74,7 +74,6 @@ const { data, error } = await supabase.auth.signUp({
       position: accountType === "player" ? position : null,
       years_pro: accountType === "player" ? Number(yearsPro) : null,
       professional_experience: professionalExperience,
-      years_pro: Number(yearsPro),
       former_team_ids: formerTeams,
       is_adult: true,
       agreed_to_terms: true,
