@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import HoopLoading from "../../components/HoopLoading";
 import { supabase } from "../../lib/supabase";
 
 export default function VerificationPage() {
@@ -36,7 +37,7 @@ export default function VerificationPage() {
     setSubmitting(false);
   }
 
-  if(loading)return <main className="page-shell"><div className="page-container"><p>Loading...</p></div></main>;
+  if(loading)return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading verification center..." /></div></main>;
   return <main className="page-shell"><div className="page-container">
     <header className="topbar"><Link href="/" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/account">Account</Link></nav></header>
     <section className="hero-card"><p className="eyebrow">PLAYER VERIFICATION</p><h1>Get your player badge.</h1><p className="muted">Verification helps HoopCheck distinguish professional-player accounts from ordinary accounts. We review requests manually.</p></section>
