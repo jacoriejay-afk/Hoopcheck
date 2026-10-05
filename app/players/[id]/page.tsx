@@ -46,7 +46,7 @@ export default function PlayerProfilePage() {
         <div className="page-container">
           <header className="topbar">
             <Link href="/" className="brand">HOOPCHECK</Link>
-            <nav className="topnav"><Link href="/search">Search</Link><Link href="/dashboard">Dashboard</Link></nav>
+            <nav className="topnav"><button type="button" onClick={() => window.history.back()} style={{background:"transparent",border:"1px solid #333",color:"inherit",borderRadius:7,padding:"7px 10px",cursor:"pointer"}}>← Back</button><Link href="/search">Search</Link><Link href="/dashboard">Dashboard</Link></nav>
           </header>
           <section className="hero-card">
             <div>
