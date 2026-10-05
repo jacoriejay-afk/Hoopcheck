@@ -19,7 +19,8 @@ type Profile = {
   current_country: string | null;
   current_team: string | null;
   profile_visibility: "public" | "private";
-  player_verified: boolean;\n  profile_claimed: boolean;
+  player_verified: boolean;
+  profile_claimed: boolean;
 };
 
 type Review = {
@@ -163,7 +164,8 @@ export default function AccountPage() {
               <option value="public">Public</option>
               <option value="private">Private</option>
             </select>
-            <p className="muted">Email: {email}</p>\n            <div className="card" style={{marginTop:4}}><strong>✓ {profile.profile_claimed ? "Profile claimed" : "Claim your player profile"}</strong><p className="muted">{profile.profile_claimed ? "This HoopCheck profile is connected to your account and ready for you to manage." : "Claim this profile to manage your basketball information."}</p></div>
+            <p className="muted">Email: {email}</p>
+            <div className="card" style={{marginTop:4}}><strong>✓ {profile.profile_claimed ? "Profile claimed" : "Claim your player profile"}</strong><p className="muted">{profile.profile_claimed ? "This HoopCheck profile is connected to your account and ready for you to manage." : "Claim this profile to manage your basketball information."}</p></div>
             <div className="card" style={{marginTop:8}}>
               <strong>{verified ? "✓ Verified Player" : "Player verification"}</strong>
               <p className="muted">{verified ? "Your professional-player account has been verified by HoopCheck." : "Apply for a verification badge to strengthen trust around your reviews."}</p>
