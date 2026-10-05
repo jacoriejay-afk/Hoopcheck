@@ -96,6 +96,17 @@ export default function DirectoryManagerPage() {
     await load();
   }
 
+  async function deleteRecord(id: string) {
+    const typeLabel = kind.slice(0, -1);
+    const item = (kind === "coaches" ? coaches : kind === "teams" ? teams : leagues).find((x) => x.id === id);
+    if (!item) return;
+    if (!confirm(`Permanently delete this ${typeLabel} "${item.name}"? This cannot be undone. Records with reviews or linked relationships are protected.`)) return;
+    setMessage("");
+    const { error } = await supabase.rpc("admin_delete_directory_entry", { p_type: typeLabel === "coach" ? "coach" : typeLabel === "team" ? "team" : "league", p_id: id });
+    if (error) setMessage(error.message);
+    else { setMessage("Record deleted."); await load(); }
+  }
+
   async function archive(id: string) {
     if (!confirm("Archive this directory record? It will no longer appear as active.")) return;
     const { error } = await supabase.from(kind).update({ active: false }).eq("id", id);
