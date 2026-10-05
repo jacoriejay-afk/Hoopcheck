@@ -11,6 +11,7 @@ import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
 import { submitReviewReport } from "../../../lib/review-reports";
+import WatchButton from "../../../components/WatchButton";
 
 type League = {
   id: string;
@@ -559,6 +560,8 @@ export default function LeagueDetailPage() {
         <h1>
           {league.name}
         </h1>
+
+        <div className="entity-actions"><WatchButton targetType="league" targetId={id} targetName={league.name} /></div>
 
         <p>
           {league.country ||
