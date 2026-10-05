@@ -15,7 +15,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     apply(localStorage.getItem("hoopcheck-theme") || "dynamic");
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
-      const { data: prefs } = await supabase.from("user_preferences").select("theme").eq("user_id", data.user.id).maybeSingle();
+      const { data: prefs } = await supabase.from("user_preferences").select("theme,language").eq("user_id", data.user.id).maybeSingle();
       if (prefs?.theme) apply(prefs.theme);
     });
     return () => { active = false; };
