@@ -12,6 +12,11 @@ export default function OnboardingPage() {
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [professionalExperience, setProfessionalExperience] = useState(false);
+  const [formerTeams, setFormerTeams] = useState<string[]>([]);
+  const [teams, setTeams] = useState<{id:string;name:string;country:string|null;league_name:string|null}[]>([]);
   const [position, setPosition] = useState("");
   const [yearsPro, setYearsPro] = useState("");
   const [country, setCountry] = useState("");
@@ -33,13 +38,18 @@ export default function OnboardingPage() {
       const user = session.user;
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id,display_name,position,years_pro,country,current_country,current_team,bio,profile_visibility")
+        .select("id,display_name,first_name,last_name,professional_experience,position,years_pro,country,current_country,current_team,bio,profile_visibility")
         .eq("id", user.id)
         .maybeSingle();
 
       if (!active) return;
       setUserId(user.id);
       setDisplayName(profile?.display_name || user.user_metadata?.full_name || "");
+      setFirstName(profile?.first_name || user.user_metadata?.first_name || "");
+      setLastName(profile?.last_name || user.user_metadata?.last_name || "");
+      setProfessionalExperience(profile?.professional_experience ?? Boolean(user.user_metadata?.professional_experience));
+      const metadataTeams = Array.isArray(user.user_metadata?.former_team_ids) ? user.user_metadata.former_team_ids : [];
+      setFormerTeams(metadataTeams);
       setPosition(profile?.position || "");
       setYearsPro(profile?.years_pro != null ? String(profile.years_pro) : "");
       setCountry(profile?.country || "");
@@ -47,6 +57,8 @@ export default function OnboardingPage() {
       setCurrentTeam(profile?.current_team || "");
       setBio(profile?.bio || "");
       setVisibility(profile?.profile_visibility || "public");
+      const { data: teamRows } = await supabase.from("teams").select("id,name,country,league_name").eq("active", true).order("name").limit(300);
+      setTeams(teamRows || []);
       setLoading(false);
     })();
     return () => { active = false; };
@@ -68,6 +80,9 @@ export default function OnboardingPage() {
     const { error: updateError } = await supabase
       .from("profiles")
       .update({
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        professional_experience: professionalExperience,
         display_name: displayName.trim() || "HoopCheck Player",
         position: position.trim() || null,
         years_pro: years,
@@ -85,6 +100,10 @@ export default function OnboardingPage() {
       return;
     }
 
+    if (formerTeams.length) {
+      const rows = formerTeams.map(team_id => ({ user_id: userId, team_id, relationship: "former", verified: false }));
+      await supabase.from("player_team_affiliations").upsert(rows, { onConflict: "user_id,team_id", ignoreDuplicates: false });
+    }
     setMessage("Profile saved. Welcome to HoopCheck.");
     setSaving(false);
     setTimeout(() => router.replace("/dashboard"), 500);
@@ -120,14 +139,28 @@ export default function OnboardingPage() {
           <div className="eyebrow">PLAYER PROFILE</div>
           <h2>Complete your profile.</h2>
           <form onSubmit={save}>
-            <label htmlFor="displayName">Display Name</label>
-            <input id="displayName" value={displayName} onChange={e => setDisplayName(e.target.value)} required />
+            <label>First Name</label>
+            <input value={firstName} readOnly aria-readonly="true" />
+            <label>Last Name</label>
+            <input value={lastName} readOnly aria-readonly="true" />
+            <p className="muted" style={{fontSize:12}}>Your first and last name are locked after account setup.</p>
+            <label>Professional Experience</label>
+            <select value={professionalExperience ? "yes" : "no"} onChange={e=>setProfessionalExperience(e.target.value==="yes")}>
+              <option value="yes">Yes — professional player</option><option value="no">No — not yet</option>
+            </select>
 
             <label htmlFor="position">Position</label>
             <input id="position" value={position} onChange={e => setPosition(e.target.value)} placeholder="PG, SG, SF, PF, C" />
 
             <label htmlFor="yearsPro">Years Pro</label>
-            <input id="yearsPro" type="number" min="0" max="50" value={yearsPro} onChange={e => setYearsPro(e.target.value)} />
+            <select id="yearsPro" value={yearsPro || "0"} onChange={e => setYearsPro(e.target.value)}>
+              {Array.from({length:26},(_,i)=><option key={i} value={i}>{i === 0 ? "0 years" : i + " year" + (i===1 ? "" : "s")}</option>)}
+            </select>
+            <label>Teams you have played for</label>
+            <p className="muted" style={{fontSize:12}}>These affiliations are saved for review eligibility. HoopCheck can verify them before you can review a team.</p>
+            <div style={{maxHeight:240,overflow:"auto",display:"grid",gap:7,border:"1px solid var(--border)",padding:10,borderRadius:10}}>
+              {teams.map(team=><label key={team.id} className="checkbox-row"><input type="checkbox" checked={formerTeams.includes(team.id)} onChange={e=>setFormerTeams(v=>e.target.checked?[...v,team.id]:v.filter(id=>id!==team.id))}/><span>{team.name}{team.league_name ? " — " + team.league_name : ""}</span></label>)}
+            </div>
 
             <label htmlFor="country">Home Country</label>
             <input id="country" value={country} onChange={e => setCountry(e.target.value)} placeholder="United States" />
