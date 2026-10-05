@@ -34,7 +34,16 @@ export async function syncNormalizedDirectory(
   const payload:any={name,country:clean(r.country),city:clean(r.city),league_id:leagueId,league_name:clean(r.leagueName),external_id:clean(r.externalId),source_id:sourceId,last_synced_at:new Date().toISOString(),active:true};
   if(existing){const q=await supabase.from("teams").update(payload).eq("id",existing.id).select("id").single();if(q.error)throw q.error;teamIds.set(normalizedKey(name,r.country),existing.id);result.updated++;await supabase.from("directory_change_log").insert({entity_type:"team",entity_id:existing.id,source_id:sourceId,action:"updated"});}
   else{const q=await supabase.from("teams").insert(payload).select("id").single();if(q.error)throw q.error;teamIds.set(normalizedKey(name,r.country),q.data.id);result.created++;await supabase.from("directory_change_log").insert({entity_type:"team",entity_id:q.data.id,source_id:sourceId,action:"created"});}
-  if(leagueId){await supabase.from("team_league_memberships").upsert({team_id:existing?.id??teamIds.get(normalizedKey(name,r.country)),league_id:leagueId,season:clean(r.season),start_date:clean(r.startDate),end_date:clean(r.endDate),active:true},{onConflict:"team_id,league_id,season"});}
+  if(leagueId){
+ const teamId=existing?.id??teamIds.get(normalizedKey(name,r.country));
+ if(teamId){
+  const q=await supabase.from("team_league_memberships").upsert(
+   {team_id:teamId,league_id:leagueId,season:clean(r.season),start_date:clean(r.startDate),end_date:clean(r.endDate),active:true},
+   {onConflict:"team_id,league_id,season"}
+  );
+  if(q.error)throw q.error;
+ }
+}
  }
  for(const r of directory.coaches){
   const name=clean(r.name);if(!name){result.skipped++;continue;}result.seen++;
@@ -46,7 +55,13 @@ export async function syncNormalizedDirectory(
   const payload:any={name,country:clean(r.country),city:clean(r.city),current_team_id:teamId,external_id:clean(r.externalId),source_id:sourceId,last_synced_at:new Date().toISOString(),active:true};
   if(existing){const q=await supabase.from("coaches").update(payload).eq("id",existing.id).select("id").single();if(q.error)throw q.error;result.updated++;await supabase.from("directory_change_log").insert({entity_type:"coach",entity_id:existing.id,source_id:sourceId,action:"updated"});}
   else{const q=await supabase.from("coaches").insert(payload).select("id").single();if(q.error)throw q.error;existing=q.data;result.created++;await supabase.from("directory_change_log").insert({entity_type:"coach",entity_id:existing.id,source_id:sourceId,action:"created"});}
-  if(teamId){await supabase.from("coach_team_assignments").upsert({coach_id:existing.id,team_id:teamId,role:clean(r.role),season:clean(r.season),start_date:clean(r.startDate),end_date:clean(r.endDate),active:true},{onConflict:"coach_id,team_id,season"});}
+  if(teamId){
+ const q=await supabase.from("coach_team_assignments").upsert(
+  {coach_id:existing.id,team_id:teamId,role:clean(r.role),season:clean(r.season),start_date:clean(r.startDate),end_date:clean(r.endDate),active:true},
+  {onConflict:"coach_id,team_id,season"}
+ );
+ if(q.error)throw q.error;
+}
  }
  return result;
 }
