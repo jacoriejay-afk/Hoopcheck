@@ -22,17 +22,17 @@ export async function POST(req:Request){
  const offset=typeof body.offset==="number"&&Number.isFinite(body.offset)?Math.max(0,Math.floor(body.offset)):0;
  const requestedLimit=typeof body.limit==="number"&&Number.isFinite(body.limit)?Math.floor(body.limit):DEFAULT_BATCH_SIZE;
  const limit=Math.min(MAX_BATCH_SIZE,Math.max(1,requestedLimit));
- const {data:source}=await adminSupabase.from("directory_sources").select("id,name,active,connector_key").eq("id",sourceId).single();
- if(!source)return NextResponse.json({error:"Provider not found"},{status:404}); if(!source.active)return NextResponse.json({error:"Provider is paused"},{status:409});
+ const {data:source}=await adminSupabase.from("directory_sources").select("id,name,active,connector_key,license_status,commercial_use_allowed,redistribution_allowed").eq("id",sourceId).single();
+ if(!source)return NextResponse.json({error:"Provider not found"},{status:404});
+ if(!source.active)return NextResponse.json({error:"Provider is paused"},{status:409});
+ if(source.license_status!=="approved"||source.commercial_use_allowed!==true||source.redistribution_allowed!==true){
+  return NextResponse.json({error:"Provider is not legally cleared for commercial redistribution",license_status:source.license_status},{status:409});
+ }
  const connector=getDirectoryConnector(source.connector_key); if(!connector)return NextResponse.json({error:"Connector not configured for this provider"},{status:409});
  try{
   let directory:NormalizedDirectory;
-  try {
-   directory=await connector.getDirectory({entityType,sourceId,options:{offset,limit}});
-  } catch (error) {
-   const detail=error instanceof Error ? error.message : JSON.stringify(error);
-   throw new Error(`Provider fetch failed: ${detail}`);
-  }
+  try{directory=await connector.getDirectory({entityType,sourceId,options:{offset,limit}});}
+  catch(error){const detail=error instanceof Error?error.message:JSON.stringify(error);throw new Error(`Provider fetch failed: ${detail}`);}
   const rows=directory[entityType];
   let create=0,update=0,skip=0;
   for(const row of rows){const name=clean(row.name);if(!name){skip++;continue;}let existing:{id:string}|null=null;
@@ -42,10 +42,10 @@ export async function POST(req:Request){
   }
   const {data:preview,error}=await adminSupabase.from("directory_sync_previews").insert({source_id:sourceId,created_by:user.id,entity_type:entityType,status:"pending",normalized_data:directory,total_rows:rows.length,create_count:create,update_count:update,skip_count:skip}).select("id,source_id,entity_type,status,total_rows,create_count,update_count,skip_count,expires_at,created_at").single();
   if(error)throw error;
-  const hasMore=entityType!=="coaches" && rows.length>=limit;
+  const hasMore=entityType!=="coaches"&&rows.length>=limit;
   return NextResponse.json({preview,provider:source.name,batch:{offset,limit,next_offset:hasMore?offset+limit:null,has_more:hasMore}});
  }catch(e){
-  const message=e instanceof Error ? e.message : (typeof e === "string" ? e : JSON.stringify(e));
-  return NextResponse.json({error:`Directory preview failed: ${message || "Unknown error"}`},{status:500});
+  const message=e instanceof Error?e.message:(typeof e==="string"?e:JSON.stringify(e));
+  return NextResponse.json({error:`Directory preview failed: ${message||"Unknown error"}`},{status:500});
  }
 }
