@@ -1,4 +1,4 @@
-import Link from "next/link";
+"use client";\nimport Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
