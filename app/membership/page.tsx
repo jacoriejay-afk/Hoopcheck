@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import HoopLoading from "../../components/HoopLoading";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
@@ -388,7 +389,7 @@ export default function MembershipPage() {
         <main>
           <section className="hero membership-hero">
             <div className="eyebrow">HoopCheck Membership</div>
-            <h1>Loading membership...</h1>
+            <HoopLoading label="Loading membership..." />
           </section>
         </main>
       }
