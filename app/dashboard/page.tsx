@@ -185,19 +185,19 @@ export default function DashboardPage() {
           </nav>
         </header>
 
-        <section className="hero-card">
-          <div>
-            <p className="eyebrow">PLAYER DASHBOARD</p>
-            <h1>Welcome back, {profile?.display_name || "Player"}.</h1>
-            <p className="muted">
-              Your HoopCheck home base for membership, reviews, and basketball research.
-            </p>
-            {email && <p className="muted">{email}</p>}
+        <section className="player-dashboard-card">
+          <div className="player-dashboard-main">
+            <div>
+              <p className="eyebrow">PLAYER DASHBOARD</p>
+              <h1>{profile?.display_name || "Player"}</h1>
+              <p className="muted">Your HoopCheck research hub.</p>
+            </div>
+            <Link href="/account" className="btn dark">Edit Profile</Link>
           </div>
-          <div className="membership-badge">
-            <span>Membership</span>
-            <strong>{planLabel}</strong>
-            <small>{statusLabel}</small>
+          <div className="player-dashboard-stats">
+            <div><span>MEMBERSHIP</span><strong>{planLabel.replace("HoopCheck ","")}</strong><small>{statusLabel}</small></div>
+            <div><span>REVIEWS</span><strong>{reviews.length}</strong><small>{reviewCounts.approved || 0} published</small></div>
+            <div><span>PLAYER STATUS</span><strong>{profile?.player_verified ? "VERIFIED" : "UNVERIFIED"}</strong><small>{profile?.player_verified ? "Professional profile" : "Verification available"}</small></div>
           </div>
         </section>
 
