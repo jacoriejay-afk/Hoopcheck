@@ -561,7 +561,7 @@ export default function LeagueDetailPage() {
           {league.name}
         </h1>
 
-        <div className="entity-actions"><GeoBadge country={league.country} regional={league.country === "Europe"} /><WatchButton targetType="league" targetId={id} targetName={league.name} /></div>
+        <div className="entity-actions"><GeoBadge country={league.country} regional={league.country === "Europe"} /><WatchButton targetType="league" targetId={league.id} targetName={league.name} /></div>
 
         <p>
           {league.country ||
