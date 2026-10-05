@@ -38,6 +38,10 @@ export async function POST(
 
   const premiumPriceId =
     process.env.STRIPE_PREMIUM_PRICE_ID;
+  const proSixMonthPriceId = process.env.STRIPE_PRO_6_MONTH_PRICE_ID;
+  const premiumSixMonthPriceId = process.env.STRIPE_PREMIUM_6_MONTH_PRICE_ID;
+  const proYearPriceId = process.env.STRIPE_PRO_YEAR_PRICE_ID;
+  const premiumYearPriceId = process.env.STRIPE_PREMIUM_YEAR_PRICE_ID;
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL;
@@ -104,6 +108,7 @@ export async function POST(
 
     let body: {
       plan?: string;
+      interval?: string;
     } = {};
 
     try {
@@ -119,6 +124,8 @@ export async function POST(
     }
 
     const plan = body.plan;
+    const interval = body.interval || "month";
+    if (!["month","6_month","year"].includes(interval)) return NextResponse.json({error:"Invalid billing interval."},{status:400});
 
     if (
       plan !== "pro" &&
@@ -181,10 +188,8 @@ export async function POST(
       );
     }
 
-    const priceId =
-      plan === "premium"
-        ? premiumPriceId
-        : proPriceId;
+    const priceId = plan === "premium" ? (interval === "year" ? premiumYearPriceId : interval === "6_month" ? premiumSixMonthPriceId : premiumPriceId) : (interval === "year" ? proYearPriceId : interval === "6_month" ? proSixMonthPriceId : proPriceId);
+    if (!priceId) return NextResponse.json({error:"This membership term is not configured yet."},{status:500});
 
     const customerId =
       existingSubscription?.stripe_customer_id ||
@@ -222,12 +227,14 @@ export async function POST(
           metadata: {
             user_id: user.id,
             plan,
+            billing_interval: interval,
           },
 
           subscription_data: {
             metadata: {
               user_id: user.id,
               plan,
+              billing_interval: interval,
             },
           },
 
