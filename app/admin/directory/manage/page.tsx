@@ -11,7 +11,7 @@ type Coach = { id: string; name: string; country: string | null; city: string | 
 type Team = { id: string; name: string; country: string | null; city: string | null; league_id: string | null; league_name: string | null; active: boolean };
 type League = { id: string; name: string; country: string | null; level: string | null; season: string | null; active: boolean };
 
-const EUROPE_COUNTRIES = ["Albania","Andorra","Armenia","Austria","Azerbaijan","Belarus","Belgium","Bosnia and Herzegovina","Bulgaria","Croatia","Cyprus","Czechia","Denmark","Estonia","Finland","France","Georgia","Germany","Greece","Hungary","Iceland","Ireland","Israel","Italy","Kosovo","Latvia","Lithuania","Luxembourg","Malta","Moldova","Montenegro","Netherlands","North Macedonia","Norway","Poland","Portugal","Romania","Russia","Serbia","Slovakia","Slovenia","Spain","Sweden","Switzerland","Türkiye","Ukraine","United Kingdom"];
+const OCEANIA_COUNTRIES = ["Australia","New Zealand","Fiji","Guam","Samoa","American Samoa","Papua New Guinea","New Caledonia","Vanuatu","Solomon Islands"];\nconst ASIA_COUNTRIES = ["China","Chinese Taipei","Hong Kong, China","Indonesia","Japan","Jordan","Lebanon","Malaysia","Mongolia","Philippines","Qatar","Saudi Arabia","South Korea","Thailand","UAE","United Arab Emirates"];\nconst AFRICA_COUNTRIES = ["Algeria","Angola","Cameroon","Egypt","Ivory Coast","Mali","Morocco","Nigeria","Rwanda","Senegal","Tunisia","Uganda"];\nconst AMERICAS_COUNTRIES = ["Argentina","Brazil","Canada","Chile","Colombia","Mexico","Puerto Rico","Uruguay","USA","United States"];\nconst EUROPE_COUNTRIES = ["Albania","Andorra","Armenia","Austria","Azerbaijan","Belarus","Belgium","Bosnia and Herzegovina","Bulgaria","Croatia","Cyprus","Czechia","Denmark","Estonia","Finland","France","Georgia","Germany","Greece","Hungary","Iceland","Ireland","Israel","Italy","Kosovo","Latvia","Lithuania","Luxembourg","Malta","Moldova","Montenegro","Netherlands","North Macedonia","Norway","Poland","Portugal","Romania","Russia","Serbia","Slovakia","Slovenia","Spain","Sweden","Switzerland","Türkiye","Ukraine","United Kingdom"];
 
 const inputStyle: React.CSSProperties = {
   width: "100%", padding: "11px 12px", borderRadius: 8, border: "1px solid #303030",
@@ -25,7 +25,7 @@ export default function DirectoryManagerPage() {
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [leagues, setLeagues] = useState<League[]>([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState("");\n  const [region, setRegion] = useState("all");\n  const [activeOnly, setActiveOnly] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string,string | boolean>>({});
   const [message, setMessage] = useState("");
@@ -119,7 +119,7 @@ export default function DirectoryManagerPage() {
     else { setMessage("Record archived."); await load(); }
   }
 
-  const items = (kind === "coaches" ? coaches : kind === "teams" ? teams : leagues).filter((item) => {
+  const getRegion = (country: string | null) => {\n    if (!country) return "other";\n    if (EUROPE_COUNTRIES.includes(country)) return "Europe";\n    if (OCEANIA_COUNTRIES.includes(country)) return "Oceania";\n    if (ASIA_COUNTRIES.includes(country)) return "Asia";\n    if (AFRICA_COUNTRIES.includes(country)) return "Africa";\n    if (AMERICAS_COUNTRIES.includes(country)) return "Americas";\n    return "Other";\n  };\n\n  const items = (kind === "coaches" ? coaches : kind === "teams" ? teams : leagues).filter((item) => {\n    if (activeOnly && !item.active) return false;\n    if (region !== "all" && getRegion(item.country) !== region) return false;
     const q = search.toLowerCase().trim();
     if (!q) return true;
     return [item.name, item.country, "city" in item ? item.city : "", "level" in item ? item.level : "", "league_name" in item ? item.league_name : ""]
@@ -147,7 +147,7 @@ export default function DirectoryManagerPage() {
           <button onClick={startNew} style={{ marginLeft: "auto", padding: "11px 15px", borderRadius: 8, border: 0, background: "#ff6a00", color: "#050505", fontWeight: 950 }}>+ Add {kind.slice(0,-1)}</button>
         </div>
 
-        <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>\n          {["all","Europe","Oceania","Asia","Africa","Americas","Other"].map((r) => <button key={r} onClick={() => setRegion(r)} style={{padding:"8px 11px",borderRadius:7,border:region===r?"1px solid #ff6a00":"1px solid #333",background:region===r?"#ff6a00":"#111",color:region===r?"#050505":"#fff",fontWeight:800}}>{r === "all" ? "All regions" : r}</button>)}\n          <button onClick={() => setActiveOnly((v) => !v)} style={{padding:"8px 11px",borderRadius:7,border:"1px solid #333",background:"#111",color:"#fff",fontWeight:800}}>{activeOnly ? "Showing active" : "Showing active + archived"}</button>\n        </div>\n\n        <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={"Search " + kind + "..."} style={inputStyle} />
         </div>
 
