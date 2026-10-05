@@ -264,7 +264,7 @@ export default function CoachReviewPage() {
         setAlreadyReviewed(true);
       }
 
-      setIsPaid(hasValidSubscription ?? subscriptionIsActive ?? false);
+      setIsPaid(subscriptionIsActive);
 
       setLoading(false);
     }
