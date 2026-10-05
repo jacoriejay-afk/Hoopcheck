@@ -151,7 +151,7 @@ export default function DirectoryManagerPage() {
             <h2 style={{ marginTop: 0 }}>{editing === "new" ? "Add record" : "Edit record"}</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 }}>
               <label>Name<input style={inputStyle} value={String(form.name || "")} onChange={(e) => setForm({...form,name:e.target.value})} /></label>
-              <label>Country<input style={inputStyle} value={String(form.country || "")} onChange={(e) => setForm({...form,country:e.target.value})} /></label>
+              {kind !== "leagues" && <label>Country<input style={inputStyle} value={String(form.country || "")} onChange={(e) => setForm({...form,country:e.target.value})} /></label>}
               {kind !== "leagues" && <label>City<input style={inputStyle} value={String(form.city || "")} onChange={(e) => setForm({...form,city:e.target.value})} /></label>}
               {kind === "coaches" && <label>Current Team<select style={inputStyle} value={String(form.current_team_id || "")} onChange={(e) => setForm({...form,current_team_id:e.target.value})}><option value="">None</option>{teams.filter(t=>t.active).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>}
               {kind === "teams" && <>
