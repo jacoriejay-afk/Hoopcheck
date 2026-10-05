@@ -169,7 +169,7 @@ export default function DashboardPage() {
     <main className="page-shell">
       <div className="page-container">
         <header className="topbar">
-          <Link href="/" className="brand">HOOPCHECK</Link>
+          <Link href="/dashboard" className="brand">HOOPCHECK</Link>
           <nav className="topnav"><button type="button" onClick={() => window.history.back()} style={{background:"transparent",border:"1px solid #333",color:"inherit",borderRadius:7,padding:"7px 10px",cursor:"pointer"}}>← Back</button>
             <Link href="/search">Search</Link>
             <Link href="/membership">Membership</Link>
