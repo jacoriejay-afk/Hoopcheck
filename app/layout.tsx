@@ -5,6 +5,7 @@ import ThemeProvider from "../components/ThemeProvider";
 import MobileAuth from "../components/MobileAuth";
 import GlobalBackButton from "../components/GlobalBackButton";
 import GlobalSearch from "../components/GlobalSearch";
+import LanguageProvider from "../components/LanguageProvider";
 
 export const metadata: Metadata = {
 title: "HoopCheck",
@@ -20,7 +21,7 @@ children: React.ReactNode;
 return (
 <html lang="en">
 <body>
-<ThemeProvider><MobileAuth /><GlobalBackButton /><div className="global-search-wrap"><GlobalSearch compact /></div>{children}</ThemeProvider>
+<ThemeProvider><LanguageProvider><MobileAuth /><GlobalBackButton /><div className="global-search-wrap"><GlobalSearch compact /></div>{children}</LanguageProvider></ThemeProvider>
 
     <footer className="site-footer">
       <div className="footer-inner">
