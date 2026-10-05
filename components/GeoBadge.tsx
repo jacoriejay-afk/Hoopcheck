@@ -14,7 +14,7 @@ const countryMeta: Record<string, { flag: string; language: string }> = {
   Slovenia:{flag:"🇸🇮",language:"SL"}, Spain:{flag:"🇪🇸",language:"ES"}, Sweden:{flag:"🇸🇪",language:"SV"}, Switzerland:{flag:"🇨🇭",language:"DE / FR / IT"},
   Türkiye:{flag:"🇹🇷",language:"TR"}, Turkey:{flag:"🇹🇷",language:"TR"}, Ukraine:{flag:"🇺🇦",language:"UK"}, "United Kingdom":{flag:"🇬🇧",language:"EN"},
   "United States":{flag:"🇺🇸",language:"EN"}, Canada:{flag:"🇨🇦",language:"EN / FR"}, Mexico:{flag:"🇲🇽",language:"ES"}, China:{flag:"🇨🇳",language:"ZH"},
-  Japan:{flag:"🇯🇵",language:"JA"}, "South Korea":{flag:"🇰🇷",language:"KO"}, "United Arab Emirates":{flag:"🇦🇪",language:"AR"}, Israel:{flag:"🇮🇱",language:"HE"}
+  Japan:{flag:"🇯🇵",language:"JA"}, "South Korea":{flag:"🇰🇷",language:"KO"}, "United Arab Emirates":{flag:"🇦🇪",language:"AR"}
 };
 
 export default function GeoBadge({ country, regional = false }: { country: string | null; regional?: boolean }) {
