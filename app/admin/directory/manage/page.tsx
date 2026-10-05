@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../../../lib/supabase";
@@ -22,7 +22,7 @@ const inputStyle: React.CSSProperties = {
   background: "#111", color: "#fff", boxSizing: "border-box",
 };
 
-export default function DirectoryManagerPage() {
+function DirectoryManagerContent() {
   const searchParams = useSearchParams();
   const requestedKind = searchParams.get("kind");
   const [kind, setKind] = useState<Kind>(requestedKind === "teams" || requestedKind === "leagues" || requestedKind === "coaches" ? requestedKind : "coaches");
@@ -227,5 +227,14 @@ export default function DirectoryManagerPage() {
         )}
       </div>
     </main>
+  );
+}
+
+
+export default function DirectoryManagerPage() {
+  return (
+    <Suspense fallback={<main style={{ minHeight: "100vh", background: "#050505", color: "#fff", padding: 40 }}>Loading directory manager...</main>}>
+      <DirectoryManagerContent />
+    </Suspense>
   );
 }
