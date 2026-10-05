@@ -24,9 +24,23 @@ export default function TeamsPage() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
+  const [continent, setContinent] = useState("");
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const pageSize = 24;
+
+  const CONTINENT_COUNTRIES: Record<string, string[]> = {
+    Europe: ["Albania","Andorra","Armenia","Austria","Azerbaijan","Belarus","Belgium","Bosnia and Herzegovina","Bulgaria","Croatia","Cyprus","Czechia","Denmark","Estonia","Finland","France","Georgia","Germany","Greece","Hungary","Iceland","Ireland","Israel","Italy","Kosovo","Latvia","Lithuania","Luxembourg","Malta","Moldova","Montenegro","Netherlands","North Macedonia","Norway","Poland","Portugal","Romania","Russia","Serbia","Slovakia","Slovenia","Spain","Sweden","Switzerland","Türkiye","Ukraine","United Kingdom"],
+    Asia: ["China","Japan","South Korea","Philippines","India","Indonesia","Lebanon","Jordan","Saudi Arabia","United Arab Emirates","Qatar","Bahrain","Iran","Iraq","Kazakhstan","Uzbekistan"],
+    Africa: ["Egypt","Tunisia","Morocco","Algeria","Nigeria","Senegal","South Africa","Angola","Cameroon","Rwanda"],
+    North_America: ["United States","Canada","Mexico"],
+    South_America: ["Argentina","Brazil","Chile","Colombia","Uruguay","Venezuela","Peru"],
+    Oceania: ["Australia","New Zealand"]
+  };
+  function countryInContinent(value: string | null, selected: string) {
+    if (!selected) return true;
+    return CONTINENT_COUNTRIES[selected]?.includes(value || "") ?? false;
+  }
 
   useEffect(() => {
     async function loadTeams() {
@@ -45,6 +59,8 @@ export default function TeamsPage() {
         );
       }
       if (country) request = request.eq("country", country);
+      const continentCountries = continent ? CONTINENT_COUNTRIES[continent] || [] : [];
+      if (continentCountries.length) request = request.in("country", continentCountries);
 
       const { data, error, count } = await request.range(
         page * pageSize,
@@ -64,7 +80,7 @@ export default function TeamsPage() {
     }
 
     loadTeams();
-  }, [query, country, page]);
+  }, [query, country, continent, page]);
 
   return (
     <main>
@@ -161,6 +177,16 @@ export default function TeamsPage() {
             aria-label="Search teams"
             style={{ width: "100%", padding: "14px 16px", borderRadius: 10, border: "1px solid #333", background: "#0d0d0d", color: "#fff", fontSize: 15 }}
           />
+          <div className="team-filter-row">
+            <select value={continent} onChange={(e) => { setContinent(e.target.value); setCountry(""); setPage(0); }} aria-label="Filter teams by continent">
+              <option value="">All continents</option>
+              {Object.keys(CONTINENT_COUNTRIES).map((item) => <option key={item} value={item}>{item.replace("_", " ")}</option>)}
+            </select>
+            <select value={country} onChange={(e) => { setCountry(e.target.value); setPage(0); }} aria-label="Filter teams by country">
+              <option value="">All countries</option>
+              {Array.from(new Set(teams.map((team) => team.country).filter(Boolean) as string[])).sort().filter((item) => countryInContinent(item, continent)).map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </div>
         </div>
       </section>
 
