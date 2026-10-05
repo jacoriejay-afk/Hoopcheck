@@ -1,11 +1,13 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
 export default function Home() {
+  const router = useRouter();
   const [loggedIn, setLoggedIn] = useState(false);
-  useEffect(() => { supabase.auth.getSession().then(({ data }) => setLoggedIn(Boolean(data.session))); }, []);
+  useEffect(() => {\n    supabase.auth.getSession().then(({ data }) => {\n      const signedIn = Boolean(data.session);\n      setLoggedIn(signedIn);\n      if (signedIn) router.replace("/dashboard");\n    });\n  }, [router]);
   return (
     <main>
       <nav className="nav">
