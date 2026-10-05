@@ -35,7 +35,8 @@ export default function RightsCenterPage() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "blocked" | "approved">("all");
-  const [error, setError] = useState("");\n  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -112,7 +113,18 @@ export default function RightsCenterPage() {
     });
   }, [rows, query, filter]);
 
-  const workflow = ["research_required","research_complete","license_requested","license_verified","commercial_approved","redistribution_approved","production_approved"];\n\n  async function advance(row: RightsRow, to: string) {\n    setBusy(row.id); setError("");\n    const { data: { session } } = await supabase.auth.getSession();\n    const res = await fetch("/api/admin/rights/transition", { method: "POST", headers: { "Content-Type": "application/json", Authorization: \`Bearer \${session?.access_token || ""}\` }, body: JSON.stringify({ id: row.id, to_status: to }) });\n    const data = await res.json();\n    if (!res.ok) setError(data.error || "Transition failed."); else await load();\n    setBusy(null);\n  }\n\n  const approved = rows.filter((row) => row.production_approved).length;
+  const workflow = ["research_required","research_complete","license_requested","license_verified","commercial_approved","redistribution_approved","production_approved"];
+
+  async function advance(row: RightsRow, to: string) {
+    setBusy(row.id); setError("");
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch("/api/admin/rights/transition", { method: "POST", headers: { "Content-Type": "application/json", Authorization: \`Bearer \${session?.access_token || ""}\` }, body: JSON.stringify({ id: row.id, to_status: to }) });
+    const data = await res.json();
+    if (!res.ok) setError(data.error || "Transition failed."); else await load();
+    setBusy(null);
+  }
+
+  const approved = rows.filter((row) => row.production_approved).length;
   const blocked = rows.length - approved;
   const researchComplete = rows.filter(
     (row) => row.research_status === "research_complete"
