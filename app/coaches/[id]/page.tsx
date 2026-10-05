@@ -11,6 +11,7 @@ import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
 import { submitReviewReport } from "../../../lib/review-reports";
+import HoopLoading from "../../../components/HoopLoading";
 import WatchButton from "../../../components/WatchButton";
 
 type Coach = {
@@ -416,9 +417,7 @@ export default function CoachDetailPage() {
             HoopCheck
           </div>
 
-          <h1>
-            Loading coach...
-          </h1>
+          <HoopLoading label="Loading coach intelligence..." />
         </section>
       </main>
     );
