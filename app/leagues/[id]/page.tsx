@@ -11,6 +11,7 @@ import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
 import { submitReviewReport } from "../../../lib/review-reports";
+import HoopLoading from "../../../components/HoopLoading";
 import WatchButton from "../../../components/WatchButton";
 
 type League = {
@@ -404,9 +405,7 @@ export default function LeagueDetailPage() {
             HoopCheck
           </div>
 
-          <h1>
-            Loading league...
-          </h1>
+          <HoopLoading label="Loading league intelligence..." />
         </section>
       </main>
     );
