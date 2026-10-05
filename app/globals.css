@@ -1046,3 +1046,11 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
   .review-moderation-center .modal-backdrop { padding: 10px; }
   .review-moderation-center .modal-panel { padding: 18px; max-height: 92vh; }
 }
+
+
+/* HoopCheck Phase 3 clickable affordances */
+a, button, select, summary { cursor: pointer; }
+a:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+.btn, .card a, .dashboard-card, .result-card, .quick-card { transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease; }
+.btn:hover, .card a:hover { transform: translateY(-1px); }
+.dashboard-card:hover, .result-card:hover, .quick-card:hover { border-color: rgba(255,106,0,.5); box-shadow: 0 10px 30px rgba(0,0,0,.28); }
