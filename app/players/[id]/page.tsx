@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import HoopLoading from "../../../components/HoopLoading";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
@@ -37,7 +38,7 @@ export default function PlayerProfilePage() {
   }, [params.id]);
 
   if (loading) {
-    return <main className="page-shell"><div className="page-container"><p>Loading player profile...</p></div></main>;
+    return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading player profile..." /></div></main>;
   }
 
   if (!player) {
