@@ -89,20 +89,7 @@ return (
   </section>
   <section className="hero" style={{ paddingTop: "25px", paddingBottom: "25px" }}><div style={{ maxWidth: 520 }}><label htmlFor="league-country" style={{ display: "block", fontWeight: 900, marginBottom: 8 }}>League country</label><select id="league-country" value={country} onChange={(e) => setCountry(e.target.value)} style={{ width: "100%" }}><option value="">All countries</option>{Array.from(new Set(leagues.map((league) => league.country).filter(Boolean) as string[])).sort().map((item) => <option key={item} value={item}>{item}</option>)}</select></div></section>
   <section className="grid">
-    {loading ? (
-      <div className="card">
-        <div className="eyebrow">
-          HoopCheck
-        </div>
-        <h2>
-          Loading leagues...
-        </h2>
-        <p>
-          Finding professional leagues in the
-          HoopCheck database.
-        </p>
-      </div>
-    ) : leagues.length === 0 ? (
+    {loading ? (<div className="card"><HoopLoading label="Scanning professional leagues..." /></div>) : leagues.length === 0 ? (
       <div className="card">
         <div className="eyebrow">
           Coming Soon
@@ -124,6 +111,7 @@ return (
           <div className="eyebrow">
             Professional League
           </div>
+          <GeoBadge country={league.country} regional={league.country === "Europe"} />
           <h2>
             {league.name}
           </h2>
