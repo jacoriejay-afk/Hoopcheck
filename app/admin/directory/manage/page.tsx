@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../../../lib/supabase";
 
@@ -137,7 +138,7 @@ export default function DirectoryManagerPage() {
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
           {(["coaches","teams","leagues"] as Kind[]).map((tab) => (
-            <button key={tab} onClick={() => { setKind(tab); cancel(); }} style={{ padding: "11px 15px", borderRadius: 8, border: "1px solid #333", background: kind === tab ? "#ff6a00" : "#111", color: kind === tab ? "#050505" : "#fff", fontWeight: 900, textTransform: "uppercase" }}>
+            <button key={tab} onClick={() => { setKind(tab); cancel(); }} style={{ padding: "11px 15px", borderRadius: 8, border: kind === tab ? "1px solid #ff6a00" : "1px solid #333", background: kind === tab ? "#ff6a00" : "#111", color: kind === tab ? "#050505" : "#fff", fontWeight: 900, textTransform: "uppercase", boxShadow: kind === tab ? "0 8px 24px rgba(255,106,0,.18)" : "none" }}>
               {tab}
             </button>
           ))}
