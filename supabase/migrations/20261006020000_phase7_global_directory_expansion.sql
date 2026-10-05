@@ -17,7 +17,11 @@ select * from (values
 ('LNBP','Mexico','1st division','2026','fiba-current-2026',true),
 ('Liga Nacional de Básquet Chile','Chile','1st division','2026','fiba-current-2026',true),
 ('Liga Uruguaya de Basketball','Uruguay','1st division','2026','fiba-current-2026',true),
-('Baloncesto Superior Nacional','Puerto Rico','1st division','2026','fiba-current-2026',true)
+('Baloncesto Superior Nacional','Puerto Rico','1st division','2026','fiba-current-2026',true),
+('Hong Kong A1 Division','Hong Kong','1st division','2026-27','easl-2026',true),
+('Maharlika Pilipinas Basketball League','Philippines','1st division','2026','easl-2026',true),
+('Liga Nacional de Baloncesto de Paraguay','Paraguay','1st division','2026','fiba-current-2026',true),
+('Liga Básquet Pro','Ecuador','1st division','2026','fiba-current-2026',true)
 ) s(name,country,level,season,source,active)
 where not exists(select 1 from public.leagues l where lower(l.name)=lower(s.name) and l.country=s.country);
 
@@ -40,8 +44,8 @@ with seed(name,country,city,league_name,source) as (values
 ('Goyang Sono Skygunners','South Korea','Goyang','Korean Basketball League','easl-2026'),
 ('Taipei Fubon Braves','Chinese Taipei','Taipei','P.LEAGUE+','easl-2026'),
 ('Taoyuan Pauian Pilots','Chinese Taipei','Taoyuan','P.LEAGUE+','easl-2026'),
-('Hong Kong Eastern','Hong Kong','Hong Kong','P.LEAGUE+','easl-2026'),
-('Abra Weavers','Philippines','Baguio','Philippine Basketball Association','easl-2026'),
+('Hong Kong Eastern','Hong Kong','Hong Kong','Hong Kong A1 Division','easl-2026'),
+('Abra Weavers','Philippines','Baguio','Maharlika Pilipinas Basketball League','easl-2026'),
 ('Zac Bronco','Mongolia','Ulaanbaatar','Mongolian The League','easl-2026'),
 ('Flamengo','Brazil','Rio de Janeiro','NBB','lnb-2026-27'),
 ('Sesi Franca','Brazil','Franca','NBB','lnb-2026-27'),
@@ -54,10 +58,9 @@ with seed(name,country,city,league_name,source) as (values
 ('Boca Juniors','Argentina','Buenos Aires','Liga Nacional de Básquet','fiba-current-2026'),
 ('Instituto','Argentina','Córdoba','Liga Nacional de Básquet','fiba-current-2026'),
 ('Quimsa','Argentina','Santiago del Estero','Liga Nacional de Básquet','fiba-current-2026'),
-('Olimpia Kings','Paraguay','Asunción','Liga Nacional de Básquet','fiba-current-2026'),
-('Importadora Alvarado','Ecuador','Ambato','Liga Nacional de Básquet','fiba-current-2026'),
+('Olimpia Kings','Paraguay','Asunción','Liga Nacional de Baloncesto de Paraguay','fiba-current-2026'),
+('Importadora Alvarado','Ecuador','Ambato','Liga Básquet Pro','fiba-current-2026'),
 ('Independiente de Oliva','Argentina','Oliva','Liga Nacional de Básquet','fiba-current-2026'),
-('Fluminense','Brazil','Rio de Janeiro','NBB','lnb-2026-27'),
 ('Basquete Assis','Brazil','Assis','NBB','cbb-2026-27'),
 ('Brusque Basquete','Brazil','Brusque','NBB','cbb-2026-27'))
 insert into public.teams(name,country,city,league_name,source,active)
