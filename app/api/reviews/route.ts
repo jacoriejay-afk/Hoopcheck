@@ -17,6 +17,10 @@ export async function POST(req:Request){
  }
  const b=await req.json().catch(()=>({})); const targetKeys=["coach_id","team_id","league_id"].filter(k=>typeof b[k]==="string"&&b[k]);
  if(targetKeys.length!==1)return NextResponse.json({error:"Choose exactly one coach, team, or league."},{status:400});
+ if (typeof b.team_id === "string" && b.team_id) {
+   const { data: canReview, error: eligibilityError } = await s.rpc("can_user_review_team", { p_user_id: user.id, p_team_id: b.team_id });
+   if (eligibilityError || canReview !== true) return NextResponse.json({error:"Only verified professional players who currently or previously played for this team can submit a team review."},{status:403});
+ }
  const ratings=["overall_rating","communication_rating","professionalism_rating","development_rating","payment_rating"];
  for(const k of ratings){if(!Number.isFinite(Number(b[k]))||Number(b[k])<1||Number(b[k])>5)return NextResponse.json({error:`${k} must be between 1 and 5.`},{status:400});}
  const body=typeof b.body==="string"?b.body.trim():"";
