@@ -38,8 +38,8 @@ function isYouthCompetitionOrTeam(name: unknown): boolean {
   const value = String(name ?? "").trim().toLowerCase();
   if (!value) return false;
 
-  return /(^|\\s|[-_/])u(?:1[0-9]|2[0-3])(?:\\s|$|[-_/])/.test(value)
-    || /\\b(?:under[- ]?(?:1[0-9]|2[0-3])|youth|junior(?:s)?|academy|reserve(?:s)?|development|amateur|school|colts)\\b/.test(value);
+  return /(^|\s|[-_/])u(?:1[0-9]|2[0-3])(?:\s|$|[-_/])/.test(value)
+    || /\b(?:under[- ]?(?:1[0-9]|2[0-3])|youth|junior(?:s)?|academy|reserve(?:s)?|development|amateur|school|colts)\b/.test(value);
 }
 
 function latestSeason(seasons: any[]): string | null {
