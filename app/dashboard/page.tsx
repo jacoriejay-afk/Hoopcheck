@@ -32,6 +32,7 @@ export default function DashboardPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminRole, setAdminRole] = useState<"admin" | "moderator" | null>(null);
   const [email, setEmail] = useState("");
+  const [userId, setUserId] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,6 +46,7 @@ export default function DashboardPage() {
       }
 
       setEmail(user.email ?? "");
+      setUserId(user.id);
 
       const [profileResult, subscriptionResult, reviewsResult, adminRoleResult] =
         await Promise.all([
@@ -221,9 +223,10 @@ export default function DashboardPage() {
                 ? "Your professional-player badge is active."
                 : "Add your basketball background and request verification."}
             </p>
-            <Link href="/account" className="btn dark">
-              Open Account
-            </Link>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <Link href="/account" className="btn dark">Open Account</Link>
+              {userId && <Link href={`/players/${userId}`} className="btn dark">View Public Profile</Link>}
+            </div>
           </div>
 
           <Link href="/coaches" className="dashboard-card">
