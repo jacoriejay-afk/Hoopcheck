@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import HoopLoading from "../../components/HoopLoading";
+import NotificationBell from "../../components/NotificationBell";
 
 type Profile = { display_name: string | null; player_verified: boolean };
 type Subscription = {
@@ -125,7 +127,7 @@ export default function DashboardPage() {
     return (
       <main className="page-shell">
         <div className="page-container">
-          <p>Loading your dashboard...</p>
+          <HoopLoading label="Loading your player dashboard..." />
         </div>
       </main>
     );
@@ -174,7 +176,9 @@ export default function DashboardPage() {
             <Link href="/search">Search</Link>
             <Link href="/membership">Membership</Link>
             <Link href="/account">Account</Link>
-            <Link href="/login" className="btn dark">Log In</Link><button type="button" onClick={signOut} style={{background:"transparent",border:0,color:"inherit",cursor:"pointer",font:"inherit"}}>Sign Out</button>
+            <Link href="/settings">Settings</Link>
+            <NotificationBell />
+            <button type="button" onClick={signOut} style={{background:"transparent",border:0,color:"inherit",cursor:"pointer",font:"inherit"}}>Sign Out</button>
             {isAdmin && (
               <Link href="/admin/directory" className="btn">Admin</Link>
             )}
