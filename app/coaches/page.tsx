@@ -8,6 +8,7 @@ import {
 import Link from "next/link";
 
 import { supabase } from "../../lib/supabase";
+import HoopLoading from "../../components/HoopLoading";
 
 type Coach = {
   id: string;
