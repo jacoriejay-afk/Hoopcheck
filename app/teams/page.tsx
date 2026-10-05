@@ -26,7 +26,8 @@ export default function TeamsPage() {
   const [country, setCountry] = useState("");
   const [continent, setContinent] = useState("");
   const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(false);\n  const [totalCount, setTotalCount] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
   const pageSize = 24;
 
   const CONTINENT_COUNTRIES: Record<string, string[]> = {
