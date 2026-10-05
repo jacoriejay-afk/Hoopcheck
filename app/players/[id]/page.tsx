@@ -61,7 +61,7 @@ export default function PlayerProfilePage() {
   }
 
   return (
-    <main className="page-shell">
+    <main className="page-shell player-profile-page">
       <div className="page-container">
         <header className="topbar">
           <Link href="/" className="brand">HOOPCHECK</Link>
@@ -72,8 +72,9 @@ export default function PlayerProfilePage() {
           </nav>
         </header>
 
-        <section className="hero-card">
-          <div>
+        <section className="player-profile-hero">
+          <div className="player-profile-avatar">{player.display_name?.trim()?.charAt(0)?.toUpperCase() || "P"}</div>
+          <div className="player-profile-heading">
             <p className="eyebrow">PLAYER PROFILE</p>
             <h1>
               {player.display_name || "HoopCheck Player"}
@@ -87,8 +88,8 @@ export default function PlayerProfilePage() {
           </div>
         </section>
 
-        <section className="grid" style={{ marginTop: 24 }}>
-          <div className="dashboard-card">
+        <section className="player-profile-grid">
+          <div className="player-profile-card">
             <span className="card-kicker">PLAYER</span>
             <h2>Basketball Background</h2>
             <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
