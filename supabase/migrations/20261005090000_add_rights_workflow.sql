@@ -1,0 +1,9 @@
+alter table public.rights_registry add column if not exists workflow_status text not null default 'research_complete', add column if not exists license_requested_at timestamptz, add column if not exists license_verified_at timestamptz, add column if not exists commercial_approved_at timestamptz, add column if not exists redistribution_approved_at timestamptz, add column if not exists production_approved_at timestamptz, add column if not exists approved_by uuid references auth.users(id), add column if not exists workflow_note text;
+alter table public.rights_registry drop constraint if exists rights_registry_workflow_status_check;
+alter table public.rights_registry add constraint rights_registry_workflow_status_check check (workflow_status in ('research_required','research_complete','license_requested','license_verified','commercial_approved','redistribution_approved','production_approved','rejected','expired'));
+create table if not exists public.rights_registry_events (id uuid primary key default gen_random_uuid(), rights_registry_id uuid not null references public.rights_registry(id) on delete cascade, actor_id uuid references auth.users(id), from_status text, to_status text not null, note text, created_at timestamptz not null default now());
+alter table public.rights_registry_events enable row level security;
+drop policy if exists "admins can read rights registry events" on public.rights_registry_events;
+create policy "admins can read rights registry events" on public.rights_registry_events for select using (public.is_current_user_admin_or_moderator());
+create index if not exists rights_registry_workflow_status_idx on public.rights_registry(workflow_status);
+create index if not exists rights_registry_events_registry_idx on public.rights_registry_events(rights_registry_id,created_at desc);
