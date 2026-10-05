@@ -71,7 +71,7 @@ async function getApiSportsBasketballDirectory(
 
   const leagues = await apiSportsGet("/leagues");
 
-  const normalizedLeagues = leagues.flatMap((item) => {
+  const normalizedLeagues = Array.from(new Map(leagues.flatMap((item) => {
     const league = item?.league ?? item;
     const country = item?.country?.name ?? item?.country ?? null;
     const season = process.env.API_SPORTS_BASKETBALL_SEASON?.trim() || "2024";
@@ -85,7 +85,7 @@ async function getApiSportsBasketballDirectory(
       level: league.type ? String(league.type) : null,
       season,
     }];
-  });
+  })).map((row) => [row.externalId, row])).values());
 
   if (input.entityType === "leagues") {
     directory.leagues = normalizedLeagues.slice(offset, offset + limit);
@@ -109,7 +109,26 @@ async function getApiSportsBasketballDirectory(
     if (league?.id == null) continue;
 
     const country = leagueItem?.country?.name ?? leagueItem?.country ?? null;
-    const season = process.env.API_SPORTS_BASKETBALL_SEASON?.trim() || "2024";
+    let season = process.env.API_SPORTS_BASKETBALL_SEASON?.trim() || "2024";
+
+    // When no season override is configured, discover an eligible season for
+    // this specific competition. This avoids returning zero teams for leagues
+    // whose 2024 season is unavailable on the free plan.
+    if (!process.env.API_SPORTS_BASKETBALL_SEASON?.trim()) {
+      try {
+        const seasonRows = await apiSportsGet("/leagues", { id: String(league.id) });
+        const discovered = latestSeason(
+          seasonRows.flatMap((row: any) => row?.seasons ?? [])
+        );
+        if (discovered) season = discovered;
+      } catch (error) {
+        console.warn(
+          `Unable to discover season for API-Basketball league ${league.id}: `,
+          error instanceof Error ? error.message : error
+        );
+      }
+    }
+
     if (!season) continue;
 
     let teams: any[] = [];
