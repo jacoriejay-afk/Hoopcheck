@@ -16,7 +16,8 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
       const { data: prefs } = await supabase.from("user_preferences").select("theme,language").eq("user_id", data.user.id).maybeSingle();
-      if (prefs?.theme) apply(prefs.theme);\n      if (prefs?.language) { document.documentElement.lang = prefs.language; localStorage.setItem("hoopcheck-language", prefs.language); }
+      if (prefs?.theme) apply(prefs.theme);
+      if (prefs?.language) { document.documentElement.lang = prefs.language; localStorage.setItem("hoopcheck-language", prefs.language); }
     });
     return () => { active = false; };
   }, []);
