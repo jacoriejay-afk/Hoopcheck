@@ -189,8 +189,13 @@ async function getTheSportsDbDirectory(
 ): Promise<NormalizedDirectory> {
   const directory: NormalizedDirectory = { leagues: [], teams: [], coaches: [] };
   const { offset, limit } = batchOptions(input.options);
-  const payload = await sportsDbGet("/all_leagues.php");
-  const leagues = (payload?.leagues ?? []).filter((l: any) => String(l?.strSport ?? "").toLowerCase() === "basketball");
+  // The free V1 all_leagues endpoint is limited and may not return basketball
+  // records. Use the sport-filtered endpoint so the fallback actually returns
+  // basketball leagues on the public key.
+  const payload = await sportsDbGet("/search_all_leagues.php", { s: "Basketball" });
+  const leagues = (payload?.leagues ?? payload?.countrys ?? []).filter(
+    (l: any) => String(l?.strSport ?? "Basketball").toLowerCase() === "basketball"
+  );
   const leagueBatch = leagues.slice(offset, offset + limit);
 
   directory.leagues = leagueBatch.flatMap((l: any) => l?.idLeague && l?.strLeague ? [{
