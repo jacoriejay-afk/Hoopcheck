@@ -15,7 +15,11 @@ export async function POST(req:Request){
  if ((recentCount ?? 0) >= 5) {
    return NextResponse.json({error:"Review limit reached. You can submit up to 5 reviews in a 24-hour period."},{status:429});
  }
- const b=await req.json().catch(()=>({})); const targetKeys=["coach_id","team_id","league_id"].filter(k=>typeof b[k]==="string"&&b[k]);
+ const b=await req.json().catch(()=>({}));
+ const { data: subscription } = await s.from("subscriptions").select("status,current_period_end").eq("user_id", user.id).maybeSingle();
+ const paid = (subscription?.status === "active" || subscription?.status === "trialing") && (!subscription?.current_period_end || new Date(subscription.current_period_end) > new Date());
+ const anonymous = b.is_anonymous === true;
+ if (anonymous && !paid) return NextResponse.json({error:"Anonymous reviews are available only to paid members."},{status:403}); const targetKeys=["coach_id","team_id","league_id"].filter(k=>typeof b[k]==="string"&&b[k]);
  if(targetKeys.length!==1)return NextResponse.json({error:"Choose exactly one coach, team, or league."},{status:400});
  if (typeof b.team_id === "string" && b.team_id) {
    const { data: canReview, error: eligibilityError } = await s.rpc("can_user_review_team", { p_user_id: user.id, p_team_id: b.team_id });
@@ -25,11 +29,11 @@ export async function POST(req:Request){
  for(const k of ratings){if(!Number.isFinite(Number(b[k]))||Number(b[k])<1||Number(b[k])>5)return NextResponse.json({error:`${k} must be between 1 and 5.`},{status:400});}
  const body=typeof b.body==="string"?b.body.trim():"";
  if(!body)return NextResponse.json({error:"Review text is required."},{status:400});
- if(body.length<20)return NextResponse.json({error:"Review text must be at least 20 characters."},{status:400});
+ if(body.length<10)return NextResponse.json({error:"Review text must be at least 10 characters."},{status:400});
  if(body.length>5000)return NextResponse.json({error:"Review text must be 5,000 characters or fewer."},{status:400});
  const title=typeof b.title==="string"?b.title.trim():"";
  if(title.length>120)return NextResponse.json({error:"Review title must be 120 characters or fewer."},{status:400});
- const payload:any={author_id:user.id,coach_id:b.coach_id??null,team_id:b.team_id??null,league_id:b.league_id??null,overall_rating:Number(b.overall_rating),communication_rating:Number(b.communication_rating),professionalism_rating:Number(b.professionalism_rating),development_rating:Number(b.development_rating),payment_rating:Number(b.payment_rating),title:title||null,body,status:"pending"};
+ const payload:any={author_id:user.id,coach_id:b.coach_id??null,team_id:b.team_id??null,league_id:b.league_id??null,overall_rating:Number(b.overall_rating),communication_rating:Number(b.communication_rating),professionalism_rating:Number(b.professionalism_rating),development_rating:Number(b.development_rating),payment_rating:Number(b.payment_rating),title:title||null,body,is_anonymous:anonymous,status:"pending"};
  const {data,error}=await s.from("reviews").insert(payload).select("id,status,created_at").single();
  if(error)return NextResponse.json({error:error.message},{status:error.code==="42501"?403:400}); return NextResponse.json(data,{status:201});
 }
