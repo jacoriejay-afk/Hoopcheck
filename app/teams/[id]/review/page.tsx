@@ -526,6 +526,7 @@ export default function TeamReviewPage() {
         </Link>
 
         <div className="links">
+          <button type="button" onClick={() => window.history.back()} style={{ background: "transparent", border: "1px solid #333", color: "#fff", borderRadius: 7, padding: "7px 10px", cursor: "pointer" }}>← Back</button>
           <Link
             href={`/teams/${team.id}`}
           >
