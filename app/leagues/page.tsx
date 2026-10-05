@@ -12,17 +12,21 @@ id: string;
 name: string;
 country: string | null;
 level: string | null;
+season: string | null;
+active: boolean;
 };
 
 export default function LeaguesPage() {
 const [leagues, setLeagues] = useState<League[]>([]);
 const [loading, setLoading] = useState(true);
+const [country, setCountry] = useState("");
 
 useEffect(() => {
 async function loadLeagues() {
 const { data, error } = await supabase
 .from("leagues")
-.select("id, name, country, level")
+.select("id, name, country, level, season, active")
+.eq("active", true)
 .order("name");
 
   if (error) {
@@ -81,6 +85,7 @@ return (
       </Link>
     </div>
   </section>
+  <section className="hero" style={{ paddingTop: "25px", paddingBottom: "25px" }}><div style={{ maxWidth: 520 }}><label htmlFor="league-country" style={{ display: "block", fontWeight: 900, marginBottom: 8 }}>League country</label><select id="league-country" value={country} onChange={(e) => setCountry(e.target.value)} style={{ width: "100%" }}><option value="">All countries</option>{Array.from(new Set(leagues.map((league) => league.country).filter(Boolean) as string[])).sort().map((item) => <option key={item} value={item}>{item}</option>)}</select></div></section>
   <section className="grid">
     {loading ? (
       <div className="card">
@@ -109,7 +114,7 @@ return (
         </p>
       </div>
     ) : (
-      leagues.map((league) => (
+      leagues.filter((league) => !country || league.country === country).map((league) => (
         <div
           className="card"
           key={league.id}
@@ -123,6 +128,7 @@ return (
           <p>
             {league.country || "Country not listed"}
           </p>
+          <p style={{ color: "var(--orange)", fontWeight: 900 }}>Season: {league.season || "2026-27"}</p>
           {league.level && (
             <p>
               Level:{" "}
