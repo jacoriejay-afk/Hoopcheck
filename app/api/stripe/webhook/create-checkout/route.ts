@@ -33,23 +33,11 @@ export async function POST(
   const stripeSecretKey =
     process.env.STRIPE_SECRET_KEY;
 
-  const proPriceId =
-    process.env.STRIPE_PRO_PRICE_ID;
-
-  const premiumPriceId =
-    process.env.STRIPE_PREMIUM_PRICE_ID;
-  const proSixMonthPriceId = process.env.STRIPE_PRO_6_MONTH_PRICE_ID;
-  const premiumSixMonthPriceId = process.env.STRIPE_PREMIUM_6_MONTH_PRICE_ID;
-  const proYearPriceId = process.env.STRIPE_PRO_YEAR_PRICE_ID;
-  const premiumYearPriceId = process.env.STRIPE_PREMIUM_YEAR_PRICE_ID;
-
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL;
 
   if (
     !stripeSecretKey ||
-    !proPriceId ||
-    !premiumPriceId ||
     !siteUrl
   ) {
     return NextResponse.json(
@@ -188,7 +176,9 @@ export async function POST(
       );
     }
 
-    const priceId = plan === "premium" ? (interval === "year" ? premiumYearPriceId : interval === "6_month" ? premiumSixMonthPriceId : premiumPriceId) : (interval === "year" ? proYearPriceId : interval === "6_month" ? proSixMonthPriceId : proPriceId);
+    const lookupKey = `hoopcheck_${plan}_${interval === "6_month" ? "6_month" : interval}_${plan === "pro" ? (interval === "month" ? "499" : interval === "6_month" ? "2545" : "5389") : (interval === "month" ? "999" : interval === "6_month" ? "5095" : "10789")}_2026`;
+    const priceList = await stripe.prices.list({lookup_keys:[lookupKey],active:true,limit:1});
+    const priceId = priceList.data[0]?.id;
     if (!priceId) return NextResponse.json({error:"This membership term is not configured yet."},{status:500});
 
     const customerId =
