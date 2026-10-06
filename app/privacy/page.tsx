@@ -35,7 +35,7 @@ return (
   <section className="legal-content">
     <div className="legal-card">
       <p className="updated">
-        Last updated: October 2, 2026
+        Last updated: October 6, 2026
       </p>
       <h2>1. Information We Collect</h2>
       <p>
@@ -125,6 +125,23 @@ return (
         Stripe may process information necessary to complete
         payments, manage subscriptions, prevent fraud, and
         provide billing services.
+      </p>
+      <h2>8. Identity Verification</h2>
+      <p>
+        Players may choose to use HoopCheck's secure identity
+        verification flow to confirm a professional-player
+        identity. HoopCheck uses Stripe Identity to check a
+        government ID or passport and, when configured, compare
+        the document with a live selfie.
+      </p>
+      <p>
+        HoopCheck does not intentionally store the face scan or
+        government identity document in its application
+        database. Stripe may process identity information and
+        verification images under Stripe's identity and privacy
+        terms. HoopCheck receives the verification result needed
+        to determine whether the player account can receive a
+        verification badge.
       </p>
       <h2>8. Cookies and Local Storage</h2>
       <p>
