@@ -33,7 +33,7 @@ export async function POST(req:Request){
  if(!body)return NextResponse.json({error:"Review text is required."},{status:400});
  if(body.length<10)return NextResponse.json({error:"Review text must be at least 10 characters."},{status:400});
  if(body.length>5000)return NextResponse.json({error:"Review text must be 5,000 characters or fewer."},{status:400});
- const title=typeof b.title==="string"?b.title.trim():"";
+ const title=typeof b.title==="string"?b.title.trim():"";\n const prohibited=/\b(fuck|shit|bitch|cunt|nigger|nigga|porn|xxx|sexcam)\b/i;\n if(prohibited.test(body)||prohibited.test(title)) return NextResponse.json({error:"Review contains prohibited language or explicit content."},{status:400});
  if(title.length>120)return NextResponse.json({error:"Review title must be 120 characters or fewer."},{status:400});
  const payload:any={author_id:user.id,coach_id:b.coach_id??null,team_id:b.team_id??null,league_id:b.league_id??null,overall_rating:Number(b.overall_rating),communication_rating:Number(b.communication_rating),professionalism_rating:Number(b.professionalism_rating),development_rating:Number(b.development_rating),payment_rating:Number(b.payment_rating),title:title||null,body,is_anonymous:anonymous,status:"pending"};
  const {data,error}=await s.from("reviews").insert(payload).select("id,status,created_at").single();
