@@ -19,6 +19,9 @@ as $$
 begin
   if new.account_type in ('scout','agent','fan') then
     new.profile_visibility := 'private';
+    new.current_country := null;
+    new.current_team := null;
+    new.avatar_url := null;
   end if;
   return new;
 end;
