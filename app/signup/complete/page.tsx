@@ -6,13 +6,14 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
 type AccountType = "player"|"coach"|"fan"|"scout"|"agent";
-type Team = {id:string;name:string;country:string|null};
+type Team = {id:string;name:string;country:string|null;league_name?:string|null};
 
 function Complete(){
   const params=useSearchParams(); const email=params.get("email");
   const [accountType,setAccountType]=useState<AccountType>("player");
   const [basketballType,setBasketballType]=useState<"mens"|"womens">("mens");
   const [favoriteTeamId,setFavoriteTeamId]=useState(""); const [teams,setTeams]=useState<Team[]>([]);
+  const [teamCountry,setTeamCountry]=useState(""); const [teamLeague,setTeamLeague]=useState("");
   const [saved,setSaved]=useState(false);
 
   useEffect(()=>{
@@ -20,7 +21,7 @@ function Complete(){
       const {data:{user}}=await supabase.auth.getUser();
       const metadata=(user?.user_metadata?.account_type||"player") as AccountType;
       setAccountType(metadata);
-      const {data}=await supabase.from("teams").select("id,name,country").eq("active",true).order("name").limit(1000);
+      const {data}=await supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(1000);
       setTeams((data||[]) as Team[]);
     }
     void load();
@@ -35,6 +36,9 @@ function Complete(){
   }
 
   const label={player:"Player",coach:"Coach",fan:"Fan",scout:"Scout",agent:"Agent"}[accountType];
+  const teamCountries=Array.from(new Set(teams.map(t=>t.country).filter(Boolean) as string[])).sort();
+  const teamLeagues=Array.from(new Set(teams.filter(t=>!teamCountry||t.country===teamCountry).map(t=>(t as any).league_name).filter(Boolean) as string[])).sort();
+  const filteredTeams=teams.filter(t=>(!teamCountry||t.country===teamCountry)&&(!teamLeague||(t as any).league_name===teamLeague));
   const nonPlayer=accountType!=="player";
 
   return <main className="page-shell"><div className="page-container signup-complete-shell">
@@ -53,9 +57,9 @@ function Complete(){
     <section className="dashboard-card" style={{marginTop:18}}>
       <p className="eyebrow">{accountType==="player"?"03":"02"} · FOLLOW</p><h2>Choose a team to follow</h2>
       <p className="muted">Pick one now. You can follow more teams from team profiles later.</p>
-      <select value={favoriteTeamId} onChange={e=>setFavoriteTeamId(e.target.value)} style={{marginTop:10}}>
+      <div className="signup-two-col fan-team-filters" style={{marginTop:10}}><div><label htmlFor="setup-country">Country</label><select id="setup-country" value={teamCountry} onChange={e=>{setTeamCountry(e.target.value);setTeamLeague("");setFavoriteTeamId("");}}><option value="">All countries</option>{teamCountries.map(x=><option key={x} value={x}>{x}</option>)}</select></div><div><label htmlFor="setup-league">League</label><select id="setup-league" value={teamLeague} onChange={e=>{setTeamLeague(e.target.value);setFavoriteTeamId("");}}><option value="">All leagues</option>{teamLeagues.map(x=><option key={x} value={x}>{x}</option>)}</select></div></div><select value={favoriteTeamId} onChange={e=>setFavoriteTeamId(e.target.value)} style={{marginTop:10}}>
         <option value="">Select a team</option>
-        {teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?" — "+t.country:""}</option>)}
+        {filteredTeams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?" — "+t.country:""}{t.league_name?" · "+t.league_name:""}</option>)}
       </select>
     </section>
 
