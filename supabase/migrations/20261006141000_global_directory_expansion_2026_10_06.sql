@@ -1,16 +1,16 @@
 -- HoopCheck directory expansion applied 2026-10-06
 with league_additions(name,country,level,season) as (values
-('NBL','Czechia','Top Division','2026-27','manual-curated-2026-27',true),
-('Thailand Basketball League','Thailand','Top Division','2026-27','manual-curated-2026-27',true),
-('North Macedonia Vtora Liga','North Macedonia','2nd division','2026-27','manual-curated-2026-27',true),
-('Malaysian Basketball League','Malaysia','Top Division','2026-27','manual-curated-2026-27',true),
-('Basketball National League','South Africa','Top Division','2026-27','manual-curated-2026-27',true),
-('Türkiye Basketbol Süper Ligi','Türkiye','Top Division','2026-27','manual-curated-2026-27',true),
-('Division Excellence','Morocco','Top Division','2026-27','manual-curated-2026-27',true),
-('Basketball Egyptian Super League','Egypt','Top Division','2026-27','manual-curated-2026-27',true),
-('Liga WPlay','Colombia','Top Division','2026-27','manual-curated-2026-27',true),
-('IBL','Indonesia','Top Division','2026-27','manual-curated-2026-27',true),
-('National 1','Senegal','Top Division','2026-27','manual-curated-2026-27',true)
+('NBL','Czechia','Top Division','2026-27'),
+('Thailand Basketball League','Thailand','Top Division','2026-27'),
+('North Macedonia Vtora Liga','North Macedonia','2nd division','2026-27'),
+('Malaysian Basketball League','Malaysia','Top Division','2026-27'),
+('Basketball National League','South Africa','Top Division','2026-27'),
+('Türkiye Basketbol Süper Ligi','Türkiye','Top Division','2026-27'),
+('Division Excellence','Morocco','Top Division','2026-27'),
+('Basketball Egyptian Super League','Egypt','Top Division','2026-27'),
+('Liga WPlay','Colombia','Top Division','2026-27'),
+('IBL','Indonesia','Top Division','2026-27'),
+('National 1','Senegal','Top Division','2026-27')
 )
 insert into public.leagues(name,country,level,season,source,active)
 select v.name,v.country,v.level,v.season,'manual-curated-2026-27',true from league_additions v
