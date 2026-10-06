@@ -77,3 +77,32 @@ drop policy if exists "profile avatars update own" on storage.objects;
 create policy "profile avatars update own" on storage.objects for update to authenticated using(bucket_id='profile-avatars' and (storage.foldername(name))[1]=(select auth.uid()::text)) with check(bucket_id='profile-avatars' and (storage.foldername(name))[1]=(select auth.uid()::text));
 drop policy if exists "profile avatars delete own" on storage.objects;
 create policy "profile avatars delete own" on storage.objects for delete to authenticated using(bucket_id='profile-avatars' and (storage.foldername(name))[1]=(select auth.uid()::text));
+
+
+create or replace function public.prevent_user_moderation_fields()
+returns trigger language plpgsql security invoker set search_path=public as $$
+begin
+ if (select auth.uid())=new.id and not public.is_current_user_admin_or_moderator() then
+  new.moderation_status:=old.moderation_status;
+  new.moderation_note:=old.moderation_note;
+  new.moderation_updated_at:=old.moderation_updated_at;
+  new.moderation_updated_by:=old.moderation_updated_by;
+  new.avatar_moderation_status:=old.avatar_moderation_status;
+  new.avatar_moderation_note:=old.avatar_moderation_note;
+ end if;
+ return new;
+end; $$;
+drop trigger if exists protect_profile_moderation_fields on public.profiles;
+create trigger protect_profile_moderation_fields before update on public.profiles for each row execute function public.prevent_user_moderation_fields();
+
+create or replace function public.check_profile_text_safety()
+returns trigger language plpgsql security invoker set search_path=public as $$
+declare txt text:=lower(coalesce(new.bio,'')||' '||coalesce(new.interests,'')||' '||coalesce(new.experience_summary,'')||' '||coalesce(new.display_name,''));
+begin
+ if txt ~ '\\m(fuck|shit|bitch|cunt|nigger|nigga|porn|xxx|sexcam|onlyfans)\\M' then
+  raise exception 'Profile text contains prohibited language or explicit content';
+ end if;
+ return new;
+end; $$;
+drop trigger if exists profile_text_safety on public.profiles;
+create trigger profile_text_safety before insert or update on public.profiles for each row execute function public.check_profile_text_safety();
