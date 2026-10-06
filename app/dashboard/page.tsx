@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import NotificationBell from "../../components/NotificationBell";
+import PlayerContactButton from "../../components/PlayerContactButton";
 import { useLanguage } from "../../components/LanguageProvider";
 
 type Profile = { display_name: string | null; player_verified: boolean; account_type: "player"|"coach"|"scout"|"agent"|"fan"; moderation_status?: string; moderation_note?: string | null };
@@ -222,7 +223,7 @@ export default function DashboardPage() {
             <span className="card-kicker">PLAYER CONNECTIONS</span>
             <h2>{profile.account_type === "player" ? "Recruiting requests" : "Player outreach"}</h2>
             <p className="muted">{profile.account_type === "player" ? "Premium scouts and agents can request contact. You decide who can reach you." : "Premium scouts and agents can request contact with players. A player must accept before messaging opens."}</p>
-            {profile.account_type !== "player" && subscription?.plan === "premium" && activeMembership ? <p className="muted">Open any player profile to request contact.</p> : null}
+            {profile.account_type === "player" ? <PlayerContactButton playerId={userId} /> : subscription?.plan === "premium" && activeMembership ? <Link href="/players" className="btn">Browse Players</Link> : <Link href="/membership" className="btn">Upgrade to Premium</Link>}
           </section>
         )}
 
