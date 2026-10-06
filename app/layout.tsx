@@ -8,6 +8,7 @@ import GlobalBackButton from "../components/GlobalBackButton";
 import GlobalSearch from "../components/GlobalSearch";
 import LanguageProvider from "../components/LanguageProvider";
 import SignedInBar from "../components/SignedInBar";
+import BottomNav from "../components/BottomNav";
 
 export const metadata: Metadata = {
   title: "HoopCheck",
@@ -26,6 +27,7 @@ export default function RootLayout({
           <LanguageProvider>
             <MobileAuth />
             <SignedInBar />
+            <BottomNav />
             <GlobalBackButton />
             <div className="global-search-wrap">
               <Suspense fallback={null}>
