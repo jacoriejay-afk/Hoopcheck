@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense } from "react";
 import "./globals.css";
 import ThemeProvider from "../components/ThemeProvider";
 import MobileAuth from "../components/MobileAuth";
 import GlobalBackButton from "../components/GlobalBackButton";
-import GlobalSearch from "../components/GlobalSearch";
 import LanguageProvider from "../components/LanguageProvider";
 import BottomNav from "../components/BottomNav";
 import ProtectionLayer from "../components/ProtectionLayer";
@@ -28,11 +26,6 @@ export default function RootLayout({
             <MobileAuth />
             <BottomNav />
             <GlobalBackButton />
-            <div className="global-search-wrap">
-              <Suspense fallback={null}>
-                <GlobalSearch compact />
-              </Suspense>
-            </div>
             {children}
           </LanguageProvider>
         </ThemeProvider>
