@@ -126,12 +126,8 @@ export default function AdminDirectoryPage() {
           </div>
 
           <div style={styles.headerActions}>
-            <Link
-              href="/admin/reviews"
-              style={styles.secondaryButton}
-            >
-              Review Queue
-            </Link>
+            <Link href="/admin/reviews" style={styles.secondaryButton}>Review Queue</Link>
+            <Link href="/admin/support" style={styles.secondaryButton}>Community Inbox</Link>
 
             <Link
               href="/dashboard"
@@ -251,7 +247,14 @@ export default function AdminDirectoryPage() {
             />
 
             <DirectoryCard
-              number="09"
+              number="10"
+              title="Community Inbox"
+              description="Review help requests, sponsor inquiries, and donation/support requests from members."
+              href="/admin/support"
+            />
+
+            <DirectoryCard
+              number="11"
               title="Profile Reports"
               description="Review reports submitted by research accounts and resolve or dismiss profile flags."
               href="/admin/reports"
