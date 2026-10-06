@@ -254,7 +254,7 @@ export default function DashboardPage() {
               <Link href="/account" className="btn dark">Open Account</Link>
               {userId && <Link href={`/players/${userId}`} className="btn dark">View Public Profile</Link>}
             </div>
-          </div>
+          </div>}
 
           <Link href="/coaches" className="dashboard-card">
             <span className="card-kicker">COACHES</span>
