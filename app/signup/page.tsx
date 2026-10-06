@@ -6,250 +6,132 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
 const TERMS_VERSION = "2026-10-01";
+type AccountType = "player" | "coach" | "scout" | "agent" | "fan";
+type Team = { id:string; name:string; country:string|null; league_name:string|null };
+
+const ACCOUNT_TYPES: {value:AccountType; title:string; description:string; icon:string}[] = [
+  {value:"player",title:"Player",description:"Professional basketball player building a verified profile and sharing first-hand experience.",icon:"🏀"},
+  {value:"coach",title:"Coach",description:"Coach or basketball professional researching organizations and the basketball market.",icon:"📋"},
+  {value:"scout",title:"Scout",description:"Scout researching players, teams, leagues, and talent to follow.",icon:"🔎"},
+  {value:"agent",title:"Agent",description:"Agent researching players, teams, leagues, and recruiting opportunities.",icon:"🤝"},
+  {value:"fan",title:"Fan",description:"Fan following teams and exploring the global basketball community.",icon:"🔥"},
+];
 
 export default function SignupPage() {
-const router = useRouter();
+  const router = useRouter();
+  const [accountType, setAccountType] = useState<AccountType | null>(null);
+  const [firstName,setFirstName]=useState(""); const [lastName,setLastName]=useState("");
+  const [username,setUsername]=useState(""); const [position,setPosition]=useState("PG");
+  const [yearsPro,setYearsPro]=useState("0"); const [professionalExperience,setProfessionalExperience]=useState(false);
+  const [formerTeams,setFormerTeams]=useState<string[]>([]); const [favoriteTeamId,setFavoriteTeamId]=useState("");
+  const [teams,setTeams]=useState<Team[]>([]);
+  const [email,setEmail]=useState(""); const [password,setPassword]=useState(""); const [confirmPassword,setConfirmPassword]=useState("");
+  const [isAdult,setIsAdult]=useState(false); const [agreedToTerms,setAgreedToTerms]=useState(false);
+  const [loading,setLoading]=useState(false); const [error,setError]=useState("");
 
-const [firstName, setFirstName] = useState("");
-const [username, setUsername] = useState("");
-const [lastName, setLastName] = useState("");
-const [accountType, setAccountType] = useState<"player"|"coach"|"scout"|"agent"|"fan">("player");
-const [professionalExperience, setProfessionalExperience] = useState(false);
-const [yearsPro, setYearsPro] = useState("0");
-const [position, setPosition] = useState("PG");
-const [formerTeams, setFormerTeams] = useState<string[]>([]);
-const [teams, setTeams] = useState<{id:string;name:string;country:string|null;league_name:string|null}[]>([]);
-const [email, setEmail] = useState("");
-const [password, setPassword] = useState("");
-const [confirmPassword, setConfirmPassword] = useState("");
-const [interests, setInterests] = useState("");
-const [experienceSummary, setExperienceSummary] = useState("");
-const [isAdult, setIsAdult] = useState(false);
-const [agreedToTerms, setAgreedToTerms] = useState(false);
+  useEffect(()=>{supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(1000).then(({data})=>setTeams(data||[]));},[]);
 
-const [loading, setLoading] = useState(false);
-const [message, setMessage] = useState("");
-const [error, setError] = useState("");
+  const isPlayer = accountType === "player";
 
-useEffect(() => {
-  supabase.from("teams").select("id,name,country,league_name").eq("active", true).order("name").limit(300).then(({ data }) => setTeams(data || []));
-}, []);
+  async function handleSignup(event:FormEvent){
+    event.preventDefault(); setLoading(true); setError("");
+    if(!accountType){setError("Choose an account type first.");setLoading(false);return;}
+    if(firstName.trim().length<2||lastName.trim().length<2){setError("Please enter your first and last name.");setLoading(false);return;}
+    if(!/^[a-zA-Z0-9_]{3,20}$/.test(username.trim())){setError("Username must be 3–20 characters using only letters, numbers, or underscores.");setLoading(false);return;}
+    if(password.length<6){setError("Password must be at least 6 characters.");setLoading(false);return;}
+    if(password!==confirmPassword){setError("Passwords do not match.");setLoading(false);return;}
+    if(!isAdult){setError("You must confirm that you are 18 or older.");setLoading(false);return;}
+    if(!agreedToTerms){setError("Please agree to the Terms of Service and acknowledge the Privacy Policy.");setLoading(false);return;}
 
-async function handleSignup(event: FormEvent) {
-event.preventDefault();
+    const favoriteTeamName=teams.find(t=>t.id===favoriteTeamId)?.name||"";
+    const {data,error}=await supabase.auth.signUp({
+      email:email.trim().toLowerCase(), password,
+      options:{data:{
+        full_name:`${firstName.trim()} ${lastName.trim()}`, first_name:firstName.trim(), last_name:lastName.trim(),
+        account_type:accountType, username:username.trim().toLowerCase(),
+        position:isPlayer?position:null, years_pro:isPlayer?Number(yearsPro):null,
+        professional_experience:isPlayer?professionalExperience:false,
+        former_team_ids:isPlayer?formerTeams:[], favorite_teams:favoriteTeamName,
+        is_adult:true, agreed_to_terms:true, terms_accepted_at:new Date().toISOString(), terms_version:TERMS_VERSION,
+      }}
+    });
+    if(error){setError(error.message);setLoading(false);return;}
+    if(data.session){router.push("/onboarding");return;}
+    router.push(`/signup/complete?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+  }
 
-setLoading(true);
-setError("");
-setMessage("");
-if (firstName.trim().length < 2 || lastName.trim().length < 2) {
-  setError("Please enter your first and last name.");
-  setLoading(false);
-  return;
-}
-if (!/^[a-zA-Z0-9_]{3,20}$/.test(username.trim())) { setError("Username must be 3–20 characters using only letters, numbers, or underscores."); setLoading(false); return; }
-if (password.length < 6) {
-  setError("Password must be at least 6 characters.");
-  setLoading(false);
-  return;
-}
-if (password !== confirmPassword) {
-  setError("Passwords do not match."); setLoading(false); return;
-}
-if (!isAdult) {
-  setError("You must confirm that you are 18 or older.");
-  setLoading(false);
-  return;
-}
-if (!agreedToTerms) {
-  setError(
-    "Please agree to the Terms of Service and acknowledge the Privacy Policy."
-  );
-  setLoading(false);
-  return;
-}
-const { data, error } = await supabase.auth.signUp({
-  email: email.trim().toLowerCase(),
-  password,
-  options: {
-    data: {
-      full_name: `${firstName.trim()} ${lastName.trim()}`,
-      first_name: firstName.trim(),
-      last_name: lastName.trim(),
-      account_type: accountType,
-      username: username.trim().toLowerCase(),
-      position: accountType === "player" ? position : null,
-      years_pro: accountType === "player" ? Number(yearsPro) : null,
-      professional_experience: professionalExperience,
-      former_team_ids: formerTeams,
-      is_adult: true,
-      agreed_to_terms: true,
-      terms_accepted_at: new Date().toISOString(),
-      terms_version: TERMS_VERSION,
-      interests: interests.trim(),
-      experience_summary: experienceSummary.trim(),
-    },
-  },
-});
-if (error) {
-  setError(error.message);
-  setLoading(false);
-  return;
-}
-if (data.session) {
-  router.push("/onboarding");
-  return;
-}
-router.push(`/signup/complete?email=${encodeURIComponent(email.trim().toLowerCase())}`);
-
-}
-
-return (
-<main>
-<nav className="nav">
-  <Link href="/" className="logo">
-    Hoop<span>Check</span>
-  </Link>
-    <div className="links">
+  return <main className="auth-page-shell">
+    <nav className="nav signup-nav">
+      <Link href="/" className="logo">HOOP<span>CHECK</span></Link>
       <Link href="/login">Log In</Link>
-    </div>
-  </nav>
-  <section className="auth-page">
-    <div className="auth-hero">
-      <div className="eyebrow">JOIN HOOPCHECK</div>
-      <h1>
-        Know before
-        <br />
-        you commit.
-      </h1>
-      <p>
-        Join the global basketball research platform built for players
-        who want real information before making their next career
-        decision.
-      </p>
-      <div className="feature-grid">
-        <div className="feature">
-          <strong>01</strong>
-          <span>Research coaches worldwide.</span>
-        </div>
-        <div className="feature">
-          <strong>02</strong>
-          <span>Research professional teams.</span>
-        </div>
-        <div className="feature">
-          <strong>03</strong>
-          <span>Learn about leagues from players.</span>
+    </nav>
+    <section className="auth-page signup-page">
+      <div className="auth-hero">
+        <div className="eyebrow">JOIN HOOPCHECK</div>
+        <h1>Choose your lane.<br/>Then build your experience.</h1>
+        <p>HoopCheck adapts the signup experience to how you use basketball. Players get professional profile tools; fans, scouts, agents, and coaches get a cleaner research-first experience.</p>
+        <div className="feature-grid">
+          <div className="feature"><strong>01</strong><span>Research global basketball.</span></div>
+          <div className="feature"><strong>02</strong><span>Follow teams you care about.</span></div>
+          <div className="feature"><strong>03</strong><span>Connect with the basketball community.</span></div>
         </div>
       </div>
-    </div>
-    <div className="auth-card">
-      <div className="eyebrow">CREATE ACCOUNT</div>
-      <h2>Start your HoopCheck account.</h2>
-      <p className="intro">
-        Create a free account to begin researching the basketball world.
-      </p>
-      <form onSubmit={handleSignup}>
-        <label htmlFor="username">Username</label><input id="username" value={username} onChange={e=>setUsername(e.target.value)} autoComplete="username" placeholder="yourname" required />
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-          <div><label htmlFor="first-name">First Name</label><input id="first-name" value={firstName} onChange={e=>setFirstName(e.target.value)} autoComplete="given-name" required /></div>
-          <div><label htmlFor="last-name">Last Name</label><input id="last-name" value={lastName} onChange={e=>setLastName(e.target.value)} autoComplete="family-name" required /></div>
-        </div>
-        <label htmlFor="account-type">Account Type</label>
-        <select id="account-type" value={accountType} onChange={e=>setAccountType(e.target.value as "player"|"coach"|"scout"|"agent"|"fan")}>
-          <option value="player">Player — professional basketball player</option>
-          <option value="scout">Scout — research only</option>
-          <option value="agent">Agent — research only</option>
-          <option value="fan">Fan — research only</option>
-          <option value="coach">Coach — research only</option>
-        </select>
-        <p className="muted" style={{fontSize:12}}>Scouts, agents, and fans can create Pro or Premium accounts for full research access, but only verified professional players can submit ratings or reviews.</p>
-        <label>Position</label>
-        <select value={position} onChange={e=>setPosition(e.target.value)} disabled={accountType !== "player"}><option value="PG">Point Guard (PG)</option><option value="SG">Shooting Guard (SG)</option><option value="SF">Small Forward (SF)</option><option value="PF">Power Forward (PF)</option><option value="C">Center (C)</option></select>
-        <label>Professional Experience</label>
-        <select value={professionalExperience ? "yes" : "no"} onChange={e=>setProfessionalExperience(e.target.value==="yes")}>
-          <option value="yes">Yes — I have played professionally</option>
-          <option value="no">No — not yet</option>
-        </select>
-        <label htmlFor="years-pro-signup">Years as a professional</label>
-        <select id="years-pro-signup" value={yearsPro} onChange={e=>setYearsPro(e.target.value)}>
-          {Array.from({length:26},(_,i)=><option key={i} value={i}>{i === 0 ? "0 years" : i + " year" + (i===1 ? "" : "s")}</option>)}
-        </select>
-        <label>Former/current professional teams</label>
-        <p className="muted" style={{fontSize:12}}>Select teams you have played for. These are saved for review eligibility and can be verified by HoopCheck.</p>
-        <div style={{maxHeight:220,overflow:"auto",display:"grid",gap:7,border:"1px solid var(--border)",padding:10,borderRadius:10}}>
-          {teams.map(team=><label key={team.id} className="checkbox-row"><input type="checkbox" checked={formerTeams.includes(team.id)} onChange={e=>setFormerTeams(v=>e.target.checked ? [...v,team.id] : v.filter(id=>id!==team.id))}/><span>{team.name}{team.league_name ? " — " + team.league_name : ""}</span></label>)}
-        </div>
-        <label htmlFor="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="you@example.com"
-          autoComplete="email"
-          required
-        />
-        <label htmlFor="interests">What do you want to use HoopCheck for?</label>\n        <textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder="Research teams, find leagues, track coaches, connect with players..." />\n        <label htmlFor="experience-summary">Tell us about yourself</label>\n        <textarea id="experience-summary" value={experienceSummary} onChange={e=>setExperienceSummary(e.target.value)} maxLength={700} rows={3} placeholder="Optional: basketball background, role, interests, goals..." />\n        <label htmlFor="password">Password</label>
-        <input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          placeholder="At least 6 characters"
-          autoComplete="new-password"
-          required
-        />
-        <div className="legal-consent">
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={isAdult}
-              onChange={(event) => setIsAdult(event.target.checked)}
-            />
-            <span>
-              I confirm that I am 18 years of age or older.
-            </span>
-          </label>
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={agreedToTerms}
-              onChange={(event) =>
-                setAgreedToTerms(event.target.checked)
-              }
-            />
-            <span>
-              I agree to the{" "}
-              <Link href="/terms">Terms of Service</Link> and acknowledge
-              the <Link href="/privacy">Privacy Policy</Link>. I have also
-              reviewed the{" "}
-              <Link href="/community-guidelines">
-                Community Guidelines
-              </Link>
-              .
-            </span>
-          </label>
-        </div>
-        {error && (
-          <div className="message error">{error}</div>
-        )}
-        {message && (
-          <div className="message success">{message}</div>
-        )}
-        <button
-          type="submit"
-          className="btn submit"
-          disabled={loading}
-        >
-          {loading ? "Creating Account..." : "Create Free Account"}
-        </button>
-      </form>
-      <div className="login-link">
-        Already have an account?{" "}
-        <Link href="/login">Log in</Link>
-      </div>
-    </div>
-  </section>
-</main>
 
-);
+      <div className="auth-card signup-card">
+        <div className="eyebrow">STEP 01 · ACCOUNT TYPE</div>
+        <h2>How will you use HoopCheck?</h2>
+        <p className="intro">Choose this first. We’ll only show you the questions that apply to your account.</p>
+        <div className="account-type-grid">
+          {ACCOUNT_TYPES.map(type=><button key={type.value} type="button" onClick={()=>{setAccountType(type.value);setError("");}} className={`account-type-choice ${accountType===type.value?"selected":""}`}>
+            <span className="account-type-icon">{type.icon}</span><span><strong>{type.title}</strong><small>{type.description}</small></span><span className="account-type-check">{accountType===type.value?"✓":"+"}</span>
+          </button>)}
+        </div>
+
+        {accountType && <form onSubmit={handleSignup} className="signup-form">
+          <div className="signup-step-label">STEP 02 · CREATE YOUR ACCOUNT</div>
+          <div className="signup-account-badge"><strong>{ACCOUNT_TYPES.find(x=>x.value===accountType)?.title}</strong><button type="button" onClick={()=>setAccountType(null)}>Change</button></div>
+          <div className="signup-two-col">
+            <div><label htmlFor="first-name">First Name</label><input id="first-name" value={firstName} onChange={e=>setFirstName(e.target.value)} autoComplete="given-name" required /></div>
+            <div><label htmlFor="last-name">Last Name</label><input id="last-name" value={lastName} onChange={e=>setLastName(e.target.value)} autoComplete="family-name" required /></div>
+          </div>
+          <label htmlFor="username">Username</label><input id="username" value={username} onChange={e=>setUsername(e.target.value)} autoComplete="username" placeholder="yourname" required />
+
+          {isPlayer ? <>
+            <div className="signup-two-col">
+              <div><label>Position</label><select value={position} onChange={e=>setPosition(e.target.value)}><option value="PG">Point Guard (PG)</option><option value="SG">Shooting Guard (SG)</option><option value="SF">Small Forward (SF)</option><option value="PF">Power Forward (PF)</option><option value="C">Center (C)</option></select></div>
+              <div><label>Years as a professional</label><select value={yearsPro} onChange={e=>setYearsPro(e.target.value)}>{Array.from({length:26},(_,i)=><option key={i} value={i}>{i===0?"0 years":`${i} ${i===1?"year":"years"}`}</option>)}</select></div>
+            </div>
+            <label>Professional experience</label><select value={professionalExperience?"yes":"no"} onChange={e=>setProfessionalExperience(e.target.value==="yes")}><option value="yes">Yes — I have played professionally</option><option value="no">No — not yet</option></select>
+            <label>Former / current professional team</label>
+            <select multiple size={5} value={formerTeams} onChange={e=>setFormerTeams(Array.from(e.target.selectedOptions).map(o=>o.value).slice(0,8))}>
+              {teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?" — "+t.country:""}{t.league_name?" · "+t.league_name:""}</option>)}
+            </select>
+            <p className="form-hint">Select the teams you have played for. These are saved for verification and review eligibility.</p>
+          </> : <div className="non-player-preferences">
+            <div className="signup-step-label">BASKETBALL TO FOLLOW</div>
+            <label htmlFor="favorite-team">Choose a team to follow</label>
+            <select id="favorite-team" value={favoriteTeamId} onChange={e=>setFavoriteTeamId(e.target.value)}>
+              <option value="">Select a team</option>
+              {teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?" — "+t.country:""}{t.league_name?" · "+t.league_name:""}</option>)}
+            </select>
+            <p className="form-hint">No player-position, years-pro, or former-team questions for {accountType}s. You can follow more teams after signup.</p>
+          </div>}
+
+          <label htmlFor="email">Email</label><input id="email" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" required />
+          <div className="signup-two-col">
+            <div><label htmlFor="password">Password</label><input id="password" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 6 characters" autoComplete="new-password" required /></div>
+            <div><label htmlFor="confirm-password">Confirm Password</label><input id="confirm-password" type="password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} autoComplete="new-password" required /></div>
+          </div>
+          <div className="legal-consent">
+            <label className="checkbox-row"><input type="checkbox" checked={isAdult} onChange={e=>setIsAdult(e.target.checked)}/><span>I confirm that I am 18 years of age or older.</span></label>
+            <label className="checkbox-row"><input type="checkbox" checked={agreedToTerms} onChange={e=>setAgreedToTerms(e.target.checked)}/><span>I agree to the <Link href="/terms">Terms of Service</Link> and acknowledge the <Link href="/privacy">Privacy Policy</Link> and <Link href="/community-guidelines">Community Guidelines</Link>.</span></label>
+          </div>
+          {error&&<div className="message error">{error}</div>}
+          <button type="submit" className="btn submit" disabled={loading}>{loading?"Creating Account...":`Create ${ACCOUNT_TYPES.find(x=>x.value===accountType)?.title} Account`}</button>
+        </form>}
+        {!accountType&&<div className="signup-gate"><span>👆</span><strong>Select an account type to continue.</strong><small>Your choices are tailored to your role.</small></div>}
+        <div className="login-link">Already have an account? <Link href="/login">Log in</Link></div>
+      </div>
+    </section>
+  </main>;
 }
