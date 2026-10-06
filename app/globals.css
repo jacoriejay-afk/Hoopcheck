@@ -1331,3 +1331,33 @@ h1, h2, h3, h4 { text-transform: uppercase; }
 
 .bottom-nav{display:none}
 @media(max-width:700px){body{padding-bottom:68px}.bottom-nav{position:fixed;display:grid;grid-template-columns:repeat(6,1fr);left:0;right:0;bottom:0;z-index:1200;background:rgba(8,8,8,.97);border-top:1px solid var(--border);padding:8px 5px calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(14px)}.bottom-nav a{color:inherit;text-decoration:none;text-align:center;font-size:10px;font-weight:850;padding:7px 2px}.auth-page{padding:28px 14px!important}.auth-card,.auth-hero{border-radius:18px!important}.feature-grid{grid-template-columns:1fr!important}}
+
+/* Mobile navigation and account layout hardening */
+.bottom-nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;border-radius:10px;color:var(--page-text);opacity:.72}
+.bottom-nav a.active{color:var(--orange);opacity:1;background:rgba(255,106,0,.08)}
+.bottom-nav-icon{font-size:17px;line-height:1;font-weight:900}
+.bottom-nav a span:last-child{font-size:9px;letter-spacing:.02em}
+@media(max-width:700px){
+  .signed-in-bar{min-height:56px}
+  .signed-in-bar .mini-brand{max-width:92px;overflow:hidden;text-overflow:ellipsis}
+  .page-container{padding-left:14px;padding-right:14px}
+  .page-container input,.page-container textarea,.page-container select,.dashboard-card input,.dashboard-card textarea,.dashboard-card select{max-width:100%;width:100%;min-width:0}
+  .hero-card{padding:20px 16px!important}
+  .hero-card h1{font-size:clamp(30px,10vw,52px)!important;line-height:.98}
+  .topbar{min-width:0}
+  .topbar .brand{font-size:18px;max-width:50vw;overflow:hidden;text-overflow:ellipsis}
+  .topnav{max-width:100%;flex-wrap:nowrap}
+  .topnav a,.topnav .btn{white-space:nowrap}
+  .entity-actions,.actions{align-items:stretch}
+  .entity-actions>* ,.actions>*{max-width:100%}
+  .watch-menu{max-width:calc(100vw - 28px)}
+  .grid{grid-template-columns:1fr!important}
+}
+@media(max-width:420px){
+  .bottom-nav{padding-left:3px;padding-right:3px}
+  .bottom-nav a{padding:7px 1px}
+  .bottom-nav a span:last-child{font-size:8px}
+  .bottom-nav-icon{font-size:16px}
+  .signed-in-search{display:none}
+  .signed-in-options{margin-left:auto}
+}
