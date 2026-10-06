@@ -55,7 +55,7 @@ begin
   if new.years_pro is distinct from old.years_pro then raise exception 'Years professional cannot be changed after account creation.'; end if;
   if new.country is distinct from old.country then raise exception 'Country cannot be changed after selection.'; end if;
   if new.current_country is distinct from old.current_country then raise exception 'Current country is managed through verified team changes.'; end if;
-  if new.selected_team_id is distinct from old.selected_team_id then raise exception 'Current team can only be changed after a new team is verified by HoopCheck.'; end if;
+  if new.selected_team_id is distinct from old.selected_team_id or new.selected_womens_team_id is distinct from old.selected_womens_team_id then raise exception 'Current team can only be changed after a new team is verified by HoopCheck.'; end if;
   if new.display_name is distinct from old.display_name and old.display_name is not null then
    if (select count(*) from public.display_name_changes where user_id=old.id and changed_at >= date_trunc('month',now())) >= 2 then raise exception 'Display name can only be changed twice per month.'; end if;
    insert into public.display_name_changes(user_id) values(old.id);
