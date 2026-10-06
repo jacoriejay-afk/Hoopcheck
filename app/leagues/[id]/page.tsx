@@ -197,20 +197,25 @@ export default function LeagueDetailPage() {
         .order("name");
 
       if (!teamError && teamData) {
+        // The league's direct team relationship is the source of truth for the
+        // current directory. Historical membership rows should never hide teams.
         setTeams(teamData);
-        const { data: membershipRows } = await supabase.from("team_league_memberships").select("id,team_id,season,start_date,end_date,active").eq("league_id", id).eq("active", true).order("season", { ascending: false });
+        const { data: membershipRows } = await supabase
+          .from("team_league_memberships")
+          .select("id,team_id,season,start_date,end_date,active")
+          .eq("league_id", id)
+          .eq("active", true)
+          .order("season", { ascending: false });
         if (membershipRows) {
           const ids = membershipRows.map((x) => x.team_id);
-          const { data: rows } = ids.length ? await supabase.from("teams").select("id,name").in("id", ids) : { data: [] as any[] };
-          setTeamHistory(membershipRows.map((x) => ({ ...x, team: rows?.find((t) => t.id === x.team_id) })));
+          const { data: rows } = ids.length
+            ? await supabase.from("teams").select("id,name").in("id", ids)
+            : { data: [] as any[] };
+          setTeamHistory(membershipRows.map((x) => ({
+            ...x,
+            team: rows?.find((t) => t.id === x.team_id)
+          })));
         }
-
-      const teamIds = teamData.map((x) => x.id);
-      if (teamIds.length) {
-        const { data: membershipRows } = await supabase.from("team_league_memberships").select("team_id,season,active").eq("league_id", id).eq("active", true);
-        const currentTeamIds = new Set((membershipRows || []).map((x) => x.team_id));
-        setTeams(teamData.filter((x) => currentTeamIds.has(x.id)));
-      }
       }
 
       const {
