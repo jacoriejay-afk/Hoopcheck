@@ -13,7 +13,7 @@ function Complete() {
   const email = params.get("email");
   const [accountType, setAccountType] = useState<AccountType>("player");
   const [basketballType, setBasketballType] = useState<"mens" | "womens">("mens");
-  const [favoriteTeam, setFavoriteTeam] = useState("");
+  const [favoriteTeams, setFavoriteTeams] = useState<string[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [saved, setSaved] = useState(false);
 
@@ -22,15 +22,23 @@ function Complete() {
       const table = basketballType === "womens" ? "womens_teams" : "teams";
       const { data } = await supabase.from(table).select("id,name,country").eq("active", true).order("name").limit(500);
       setTeams((data ?? []) as Team[]);
-      setFavoriteTeam("");
+      setFavoriteTeams([]);
     }
     void loadTeams();
   }, [basketballType]);
 
-  function continueProfile() {
-    localStorage.setItem("hoopcheck_profile_setup", JSON.stringify({
-      accountType, basketballType, favoriteTeamId: favoriteTeam,
-    }));
+  async function continueProfile() {
+    const setup = { accountType, basketballType, favoriteTeamIds: favoriteTeams };
+    localStorage.setItem("hoopcheck_profile_setup", JSON.stringify(setup));
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const favoriteNames = teams.filter(t => favoriteTeams.includes(t.id)).map(t => t.name);
+      await supabase.from("profiles").update({
+        account_type: accountType,
+        basketball_type: basketballType,
+        favorite_teams: favoriteNames.join(", "),
+      }).eq("id", user.id);
+    }
     setSaved(true);
   }
 
@@ -79,11 +87,10 @@ function Complete() {
         <section className="dashboard-card" style={{ marginTop: 18 }}>
           <p className="eyebrow">03 · FAVORITE TEAM</p>
           <h2>Pick a team to follow</h2>
-          <select value={favoriteTeam} onChange={(e) => setFavoriteTeam(e.target.value)} style={{ marginTop: 12 }}>
-            <option value="">Select a team</option>
+          <select multiple value={favoriteTeams} onChange={(e) => setFavoriteTeams(Array.from(e.target.selectedOptions).map(o=>o.value).slice(0,5))} style={{ marginTop: 12, minHeight: 180 }}>
             {teams.map((team) => <option key={team.id} value={team.id}>{team.name}{team.country ? " — " + team.country : ""}</option>)}
           </select>
-          <p className="muted" style={{ fontSize: 13, marginTop: 8 }}>You can change your favorite teams later from your profile.</p>
+          <p className="muted" style={{ fontSize: 13, marginTop: 8 }}>Pick up to 5 favorite teams. On iPhone, tap each team you want to select.</p>
         </section>
 
         <section className="dashboard-card" style={{ marginTop: 18 }}>
