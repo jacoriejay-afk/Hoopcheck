@@ -7,7 +7,7 @@ import HoopLoading from "../../components/HoopLoading";
 import NotificationBell from "../../components/NotificationBell";
 import { useLanguage } from "../../components/LanguageProvider";
 
-type Profile = { display_name: string | null; player_verified: boolean };
+type Profile = { display_name: string | null; player_verified: boolean; moderation_status?: string; moderation_note?: string | null };
 type Subscription = {
   plan: "pro" | "premium" | null;
   status: string | null;
@@ -56,7 +56,7 @@ export default function DashboardPage() {
         await Promise.all([
           supabase
             .from("profiles")
-            .select("display_name,player_verified")
+            .select("display_name,player_verified,moderation_status,moderation_note")
             .eq("id", user.id)
             .maybeSingle(),
           supabase
@@ -187,7 +187,7 @@ export default function DashboardPage() {
           </nav>
         </header>
 
-        <section className="player-dashboard-card">
+        {(profile?.moderation_status === "warned" || profile?.moderation_status === "flagged") && <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{profile.moderation_status === "warned" ? "Account warning" : "Profile flagged for review"}</strong><p className="muted">{profile.moderation_note || "Please review the Community Guidelines and contact Support if you need clarification."}</p><Link href="/support" className="btn dark">Contact Support</Link></section>}\n\n        <section className="player-dashboard-card">
           <div className="player-dashboard-main">
             <div>
               <p className="eyebrow">{t("playerDashboard")}</p>
