@@ -79,7 +79,7 @@ export default function VerificationPage() {
     <section className="dashboard-card" style={{marginTop:24}}>
       {status==="approved" ? <><h2>✓ Verified Player</h2><p className="muted">Your account is verified.</p></> :
        status==="pending" ? <><h2>Request under review</h2><p className="muted">We have your request. You do not need to submit another one.</p></> :
-       <div className="card" style={{marginBottom:16,border:"1px solid var(--orange)"}}>
+       <><div className="card" style={{marginBottom:16,border:"1px solid var(--orange)"}}>
         <p className="eyebrow">IDENTITY CHECK</p>
         <h2>{identityStatus==="verified" ? "✓ Identity verified" : "Verify with ID + face scan"}</h2>
         <p className="muted">HoopCheck uses Stripe Identity to verify your government ID or passport and compare it with a live selfie. HoopCheck does not store your face scan.</p>
@@ -97,7 +97,7 @@ export default function VerificationPage() {
         {message&&<p role="status">{message}</p>}
         <button className="btn" disabled={submitting}>{submitting?"Submitting...":"Request Verification"}</button>
         <p className="muted">Use the secure identity check above for passports/IDs and face matching. Do not upload identity documents through this fallback form unless HoopCheck support specifically asks you to.</p>
-       </form>}
+       </form></>}
     </section>
   </div></main>;
 }
