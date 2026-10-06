@@ -261,7 +261,7 @@ export default function AdminDirectoryPage() {
             />
 
             <DirectoryCard
-              number="09"
+              number="12"
               title="Licensed Provider Gate"
               description="Sofascore is registered as research-only until written commercial/API permission is verified. No scraping or unlicensed redistribution is enabled."
               href="/admin/directory/providers"
