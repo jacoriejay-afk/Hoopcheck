@@ -169,7 +169,7 @@ export default function AccountPage() {
     window.location.replace("/login");
   }
 
-  if (loading) return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading your account..." /></div></main>;
+  if (loading) return <main className="page-shell account-page"><div className="page-container"><HoopLoading label="Loading your account..." /></div></main>;
 
   return (
     <main className="page-shell"><div className="page-container">
@@ -187,7 +187,7 @@ export default function AccountPage() {
           <label htmlFor="avatar-upload" className="muted">Profile picture</label><input id="avatar-upload" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f) void uploadAvatar(f)}} />
           <p className="muted" style={{fontSize:12}}>{avatarStatus==="pending" ? "Pending moderation." : avatarStatus==="rejected" ? "Photo rejected. Upload another image." : "Approved for public display."}</p>
           <h2>Player information {verified && <span title="Verified professional player" style={{color:"var(--orange)"}}>✓</span>}</h2>
-          <form onSubmit={saveProfile} style={{display:"grid",gap:12,marginTop:16}}>
+          <form onSubmit={saveProfile} className="account-profile-form" style={{display:"grid",gap:12,marginTop:16}}>
             <label className="muted">First name</label><input value={profile.first_name ?? ""} readOnly />
             <label className="muted">Last name</label><input value={profile.last_name ?? ""} readOnly />
             <p className="muted" style={{fontSize:12}}>First and last name are locked and cannot be changed.</p>
@@ -292,7 +292,7 @@ export default function AccountPage() {
           <p className="muted">Status: {subscription?.status ?? "inactive"}</p>
           {subscription?.current_period_end && <p className="muted">Current period ends: {new Date(subscription.current_period_end).toLocaleDateString()}</p>}
           {subscription?.cancel_at_period_end && <p className="muted">Cancellation is scheduled at the end of the current period.</p>}
-          <div style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:12}}>
+          <div className="account-actions" style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:12}}>
             <Link href="/membership" className="btn">Manage Membership</Link>
             <button type="button" className="btn dark" onClick={signOut}>Sign Out</button>
           </div>
