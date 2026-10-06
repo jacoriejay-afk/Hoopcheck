@@ -1,0 +1,1 @@
+"use client"; import Link from "next/link"; export default function BottomNav(){return <nav className="bottom-nav"><Link href="/feed">Feed</Link><Link href="/search">Search</Link><Link href="/teams">Teams</Link><Link href="/players">Players</Link><Link href="/account">Profile</Link><Link href="/support">Help</Link></nav>}
