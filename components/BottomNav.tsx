@@ -17,7 +17,7 @@ export default function BottomNav() {
   return (
     <nav className="bottom-nav" aria-label="Mobile navigation">
       {items.map(([href,label,icon]) => {
-        const active = pathname === href || (href !== "/" && pathname.startsWith(href + "/"));
+        const active = pathname === href || pathname.startsWith(href + "/");
         return <Link key={href} href={href} className={active ? "active" : ""} aria-current={active ? "page" : undefined}>
           <span className="bottom-nav-icon" aria-hidden="true">{icon}</span>
           <span>{label}</span>
