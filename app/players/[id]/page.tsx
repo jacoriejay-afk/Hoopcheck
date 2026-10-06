@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import HoopLoading from "../../../components/HoopLoading";
 import { useParams } from "next/navigation";
-import { supabase } from "../../../lib/supabase";\nimport FollowButton from "../../../components/FollowButton";
+import { supabase } from "../../../lib/supabase";
+import FollowButton from "../../../components/FollowButton";
 
 type Player = {
   id: string;
