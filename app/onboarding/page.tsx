@@ -17,13 +17,19 @@ export default function OnboardingPage() {
   const [lastName, setLastName] = useState("");
   const [accountType, setAccountType] = useState<"player"|"coach"|"scout"|"agent"|"fan">("player");
   const [professionalExperience, setProfessionalExperience] = useState(false);
-  const [formerTeams, setFormerTeams] = useState<string[]>([]);\n  const [favoriteTeams, setFavoriteTeams] = useState<string[]>([]);\n  const [basketballType, setBasketballType] = useState<"mens"|"womens">("mens");\n  const [freeAgent, setFreeAgent] = useState(false);\n  const [hometown, setHometown] = useState("");\n  const [nationality, setNationality] = useState("");
+  const [formerTeams, setFormerTeams] = useState<string[]>([]);
+  const [favoriteTeams, setFavoriteTeams] = useState<string[]>([]);
+  const [basketballType, setBasketballType] = useState<"mens"|"womens">("mens");
+  const [freeAgent, setFreeAgent] = useState(false);
+  const [hometown, setHometown] = useState("");
+  const [nationality, setNationality] = useState("");
   const [teams, setTeams] = useState<{id:string;name:string;country:string|null;league_name:string|null}[]>([]);
   const [position, setPosition] = useState("");
   const [yearsPro, setYearsPro] = useState("");
   const [country, setCountry] = useState("");
   const [currentCountry, setCurrentCountry] = useState("");
-  const [currentTeam, setCurrentTeam] = useState("");\n  const [selectedTeamId, setSelectedTeamId] = useState("");
+  const [currentTeam, setCurrentTeam] = useState("");
+  const [selectedTeamId, setSelectedTeamId] = useState("");
   const [bio, setBio] = useState("");
   const [visibility, setVisibility] = useState("public");
   const [interests, setInterests] = useState("");
@@ -60,11 +66,14 @@ export default function OnboardingPage() {
       setYearsPro(profile?.years_pro != null ? String(profile.years_pro) : "");
       setCountry(profile?.country || "");
       setCurrentCountry(profile?.current_country || "");
-      setCurrentTeam(profile?.current_team || "");\n      setSelectedTeamId(profile?.selected_team_id || "");
+      setCurrentTeam(profile?.current_team || "");
+      setSelectedTeamId(profile?.selected_team_id || "");
       setBio(profile?.bio || "");
       setVisibility(profile?.profile_visibility || "public");
       setInterests(profile?.interests || user.user_metadata?.interests || "");
-      setExperienceSummary(profile?.experience_summary || user.user_metadata?.experience_summary || "");\n      setBasketballType(profile?.basketball_type || "mens"); setFreeAgent(Boolean(profile?.free_agent)); setHometown(profile?.hometown || ""); setNationality(profile?.nationality || "");\n      setFavoriteTeams(profile?.favorite_teams ? String(profile.favorite_teams).split(",").map((x:string)=>x.trim()).filter(Boolean) : []);
+      setExperienceSummary(profile?.experience_summary || user.user_metadata?.experience_summary || "");
+      setBasketballType(profile?.basketball_type || "mens"); setFreeAgent(Boolean(profile?.free_agent)); setHometown(profile?.hometown || ""); setNationality(profile?.nationality || "");
+      setFavoriteTeams(profile?.favorite_teams ? String(profile.favorite_teams).split(",").map((x:string)=>x.trim()).filter(Boolean) : []);
       const { data: teamRows } = await supabase.from(basketballType === "womens" ? "womens_teams" : "teams").select("id,name,country,league_name").eq("active", true).order("name").limit(500);
       setTeams(teamRows || []);
       setLoading(false);
@@ -97,7 +106,11 @@ export default function OnboardingPage() {
         years_pro: years,
         country: country.trim() || null,
         current_country: currentCountry.trim() || null,
-        current_team: currentTeam.trim() || null,\n        selected_team_id: basketballType === "mens" ? (selectedTeamId || null) : null,\n        selected_womens_team_id: basketballType === "womens" ? (selectedTeamId || null) : null,\n        basketball_type: basketballType, free_agent: freeAgent, hometown: hometown.trim() || null, nationality: nationality.trim() || null,\n        favorite_teams: favoriteTeams.join(","),
+        current_team: currentTeam.trim() || null,
+        selected_team_id: basketballType === "mens" ? (selectedTeamId || null) : null,
+        selected_womens_team_id: basketballType === "womens" ? (selectedTeamId || null) : null,
+        basketball_type: basketballType, free_agent: freeAgent, hometown: hometown.trim() || null, nationality: nationality.trim() || null,
+        favorite_teams: favoriteTeams.join(","),
         bio: bio.trim() || null,
         profile_visibility: visibility === "public" ? "public" : "private",
         interests: interests.trim().slice(0,500) || null,
@@ -162,7 +175,9 @@ export default function OnboardingPage() {
             <select value={accountType} onChange={e=>setAccountType(e.target.value as "player"|"scout"|"agent"|"fan")}>
               <option value="player">Player</option><option value="coach">Coach</option><option value="scout">Scout</option><option value="agent">Agent</option><option value="fan">Fan</option>
             </select>
-            <p className="muted" style={{fontSize:12}}>Players can apply for verification and contribute first-hand reviews. Fans, scouts, and agents are research accounts.</p>\n\n            {accountType === "player" && <><label>Basketball</label><select value={basketballType} onChange={e=>setBasketballType(e.target.value as "mens"|"womens")}><option value="mens">Men’s Basketball</option><option value="womens">Women’s Basketball</option></select><label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>I am currently a free agent</span></label></>}
+            <p className="muted" style={{fontSize:12}}>Players can apply for verification and contribute first-hand reviews. Fans, scouts, and agents are research accounts.</p>
+
+            {accountType === "player" && <><label>Basketball</label><select value={basketballType} onChange={e=>setBasketballType(e.target.value as "mens"|"womens")}><option value="mens">Men’s Basketball</option><option value="womens">Women’s Basketball</option></select><label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>I am currently a free agent</span></label></>}
             <label>Professional Experience</label>
             <select value={professionalExperience ? "yes" : "no"} onChange={e=>setProfessionalExperience(e.target.value==="yes")}>
               <option value="yes">Yes — professional player</option><option value="no">No — not yet</option>
@@ -191,7 +206,8 @@ export default function OnboardingPage() {
             <label htmlFor="currentTeam">Current Team</label>
             <input id="currentTeam" value={currentTeam} onChange={e => setCurrentTeam(e.target.value)} />
 
-            <label>Favorite Teams</label><select multiple value={favoriteTeams} onChange={e=>setFavoriteTeams(Array.from(e.target.selectedOptions).map(o=>o.value))} style={{minHeight:150}}>{teams.map(t=><option key={"fav-"+t.id} value={t.id}>{t.name}{t.country ? " — "+t.country : ""}</option>)}</select><p className="muted" style={{fontSize:12}}>Hold Ctrl/Cmd to select multiple teams.</p>\n            <label htmlFor="interests">What do you want from HoopCheck?</label><textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} rows={3} maxLength={500} placeholder="Research teams, follow leagues, find coaches, connect with players..." />
+            <label>Favorite Teams</label><select multiple value={favoriteTeams} onChange={e=>setFavoriteTeams(Array.from(e.target.selectedOptions).map(o=>o.value))} style={{minHeight:150}}>{teams.map(t=><option key={"fav-"+t.id} value={t.id}>{t.name}{t.country ? " — "+t.country : ""}</option>)}</select><p className="muted" style={{fontSize:12}}>Hold Ctrl/Cmd to select multiple teams.</p>
+            <label htmlFor="interests">What do you want from HoopCheck?</label><textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} rows={3} maxLength={500} placeholder="Research teams, follow leagues, find coaches, connect with players..." />
             <label htmlFor="experienceSummary">About yourself</label><textarea id="experienceSummary" value={experienceSummary} onChange={e=>setExperienceSummary(e.target.value)} rows={3} maxLength={700} placeholder="Optional background, goals, or basketball interests." />
 
             <label htmlFor="bio">Short Bio</label>
