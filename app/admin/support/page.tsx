@@ -33,7 +33,6 @@ export default function AdminSupport(){
   const {error}=await supabase.from(table).update({status,updated_at:new Date().toISOString()}).eq("id",id);
   if(error){setMessage(error.message);return;} await load();
  }
- const rows=tab==="help"?help:inquiries.filter(x=>tab==="donations"?x.type==="donate":x.type!=="donate"&&x.type!=="inquire"?false:true);
  const visible=tab==="inquiries"?inquiries.filter(x=>x.type==="sponsor"||x.type==="inquire"):tab==="donations"?inquiries.filter(x=>x.type==="donate"):help;
  return <main className="page-shell"><div className="page-container admin-inbox-page">
   <header className="topbar"><Link href="/admin/directory" className="brand">HOOPCHECK ADMIN</Link><nav className="topnav"><Link href="/admin/users">Users</Link><Link href="/admin/reviews">Reviews</Link><Link href="/admin/verification">Verification</Link><Link href="/dashboard">Dashboard</Link></nav></header>
