@@ -50,8 +50,12 @@ Stripe
 
 Production checkout:
 
-* Pro: $7.99/month
-* Premium: $15.99/month
+* Pro: $4.99/month
+* Premium: $9.99/month
+* Pro 6 months: $25.45
+* Premium 6 months: $50.95
+* Pro yearly: $53.89
+* Premium yearly: $107.89
 
 Production site:
 
