@@ -48,7 +48,7 @@ export default function AccountPage() {
   const [position, setPosition] = useState("");
   const [yearsPro, setYearsPro] = useState("");
   const [currentCountry, setCurrentCountry] = useState("");
-  const [currentTeam, setCurrentTeam] = useState("");
+  const [currentTeam, setCurrentTeam] = useState("");\n  const [hometown, setHometown] = useState("");\n  const [nationality, setNationality] = useState("");
   const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
@@ -72,7 +72,7 @@ export default function AccountPage() {
       setPosition(nextProfile.position ?? "");
       setYearsPro(nextProfile.years_pro?.toString() ?? "");
       setCurrentCountry(nextProfile.current_country ?? "");
-      setCurrentTeam(nextProfile.current_team ?? "");
+      setCurrentTeam(nextProfile.current_team ?? "");\n      setHometown((nextProfile as any).hometown ?? ""); setNationality((nextProfile as any).nationality ?? "");
       setVisibility(nextProfile.profile_visibility ?? "public");
       setAvatarUrl(nextProfile.avatar_url ?? "");
       setAvatarStatus(nextProfile.avatar_moderation_status ?? "approved");
@@ -135,7 +135,7 @@ export default function AccountPage() {
       position: position.trim().slice(0, 50) || null,
       years_pro: years,
       current_country: currentCountry.trim().slice(0, 80) || null,
-      current_team: currentTeam.trim().slice(0, 120) || null,
+      current_team: currentTeam.trim().slice(0, 120) || null,\n      hometown: hometown.trim().slice(0,120) || null,\n      nationality: nationality.trim().slice(0,80) || null,
       profile_visibility: visibility,
     };
     const { error } = await supabase
@@ -187,13 +187,13 @@ export default function AccountPage() {
             <label htmlFor="display-name" className="muted">Display name</label>
             <input id="display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder="How players should see you" />
             <label htmlFor="position" className="muted">Position</label>
-            <input id="position" value={position} onChange={e => setPosition(e.target.value)} maxLength={50} placeholder="Guard, Forward, Center..." />
+            <input id="position" value={position} readOnly disabled />
             <label htmlFor="years-pro" className="muted">Years as a pro</label>
-            <input id="years-pro" type="number" min="0" max="50" value={yearsPro} onChange={e => setYearsPro(e.target.value)} />
-            <label htmlFor="current-country" className="muted">Current country</label>
-            <input id="current-country" value={currentCountry} onChange={e => setCurrentCountry(e.target.value)} maxLength={80} placeholder="Country" />
+            <input id="years-pro" type="number" value={yearsPro} readOnly disabled />
+            <label htmlFor="hometown">Hometown</label><input id="hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder="City, State / Region" />\n            <label htmlFor="nationality">Nationality</label><input id="nationality" value={nationality} readOnly disabled />\n            <label htmlFor="current-country" className="muted">Current country</label>
+            <select id="current-country" value={currentCountry} disabled><option value={currentCountry}>{currentCountry || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Country changes are tied to verified team changes.</p>
             <label htmlFor="current-team" className="muted">Current team</label>
-            <input id="current-team" value={currentTeam} onChange={e => setCurrentTeam(e.target.value)} maxLength={120} placeholder="Team" />
+            <input id="current-team" value={currentTeam} readOnly disabled /><p className="muted" style={{fontSize:12}}>Current team can only change after HoopCheck verifies a new team.</p>
             <label htmlFor="bio" className="muted">Player bio</label>
             <textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder="Tell other players a little about your experience." />
             <label htmlFor="visibility" className="muted">Profile visibility</label>
