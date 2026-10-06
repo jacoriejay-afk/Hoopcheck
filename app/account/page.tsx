@@ -49,7 +49,7 @@ export default function AccountPage() {
   const [yearsPro, setYearsPro] = useState("");
   const [currentCountry, setCurrentCountry] = useState("");
   const [currentTeam, setCurrentTeam] = useState("");\n  const [hometown, setHometown] = useState("");\n  const [nationality, setNationality] = useState("");
-  const [visibility, setVisibility] = useState<"public" | "private">("public");
+  const [visibility, setVisibility] = useState<"public" | "private">("public");\n  const [freeAgent, setFreeAgent] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -72,7 +72,7 @@ export default function AccountPage() {
       setPosition(nextProfile.position ?? "");
       setYearsPro(nextProfile.years_pro?.toString() ?? "");
       setCurrentCountry(nextProfile.current_country ?? "");
-      setCurrentTeam(nextProfile.current_team ?? "");\n      setHometown((nextProfile as any).hometown ?? ""); setNationality((nextProfile as any).nationality ?? "");
+      setCurrentTeam(nextProfile.current_team ?? "");\n      setHometown((nextProfile as any).hometown ?? ""); setNationality((nextProfile as any).nationality ?? ""); setFreeAgent(Boolean((nextProfile as any).free_agent));
       setVisibility(nextProfile.profile_visibility ?? "public");
       setAvatarUrl(nextProfile.avatar_url ?? "");
       setAvatarStatus(nextProfile.avatar_moderation_status ?? "approved");
@@ -136,7 +136,7 @@ export default function AccountPage() {
       years_pro: years,
       current_country: currentCountry.trim().slice(0, 80) || null,
       current_team: currentTeam.trim().slice(0, 120) || null,\n      hometown: hometown.trim().slice(0,120) || null,\n      nationality: nationality.trim().slice(0,80) || null,
-      profile_visibility: visibility,
+      profile_visibility: visibility,\n      free_agent: freeAgent,
     };
     const { error } = await supabase
       .from("profiles")
@@ -196,7 +196,7 @@ export default function AccountPage() {
             <input id="current-team" value={currentTeam} readOnly disabled /><p className="muted" style={{fontSize:12}}>Current team can only change after HoopCheck verifies a new team.</p>
             <label htmlFor="bio" className="muted">Player bio</label>
             <textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder="Tell other players a little about your experience." />
-            <label htmlFor="visibility" className="muted">Profile visibility</label>
+            <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>Show me as a free agent</span></label>\n            <label htmlFor="visibility" className="muted">Profile visibility</label>
             <select id="visibility" value={visibility} onChange={e => setVisibility(e.target.value as "public" | "private")}>
               <option value="public">Public</option>
               <option value="private">Private</option>
