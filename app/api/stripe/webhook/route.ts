@@ -322,7 +322,7 @@ export async function POST(
     }
 
     if (event.type === "identity.verification_session.verified") {
-      const verificationSession = event.data.object as Stripe.Identity.VerificationSession;
+      const verificationSession = event.data.object as any;
       const userId = verificationSession.metadata?.user_id || verificationSession.client_reference_id;
       if (userId) {
         const supabase = getAdminSupabase();
@@ -341,7 +341,7 @@ export async function POST(
     }
 
     if (event.type === "identity.verification_session.processing") {
-      const verificationSession = event.data.object as Stripe.Identity.VerificationSession;
+      const verificationSession = event.data.object as any;
       const userId = verificationSession.metadata?.user_id || verificationSession.client_reference_id;
       if (userId) {
         const supabase = getAdminSupabase();
