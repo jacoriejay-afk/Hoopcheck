@@ -7,7 +7,6 @@ import MobileAuth from "../components/MobileAuth";
 import GlobalBackButton from "../components/GlobalBackButton";
 import GlobalSearch from "../components/GlobalSearch";
 import LanguageProvider from "../components/LanguageProvider";
-import SignedInBar from "../components/SignedInBar";
 import BottomNav from "../components/BottomNav";
 import ProtectionLayer from "../components/ProtectionLayer";
 
@@ -27,7 +26,6 @@ export default function RootLayout({
         <ThemeProvider>
           <LanguageProvider>
             <MobileAuth />
-            <SignedInBar />
             <BottomNav />
             <GlobalBackButton />
             <div className="global-search-wrap">
