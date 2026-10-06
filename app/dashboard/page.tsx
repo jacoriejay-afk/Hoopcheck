@@ -5,7 +5,6 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import NotificationBell from "../../components/NotificationBell";
-import PlayerContactButton from "../../components/PlayerContactButton";
 import { useLanguage } from "../../components/LanguageProvider";
 
 type Profile = { display_name: string | null; player_verified: boolean; account_type: "player"|"coach"|"scout"|"agent"|"fan"; moderation_status?: string; moderation_note?: string | null };
