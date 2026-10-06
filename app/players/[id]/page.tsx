@@ -86,7 +86,7 @@ export default function PlayerProfilePage() {
         </header>
 
         <section className="player-profile-hero">
-          <div className="player-profile-avatar">{player.display_name?.trim()?.charAt(0)?.toUpperCase() || "P"}</div>
+          <div className="player-profile-avatar">{player.avatar_url ? <img src={player.avatar_url} alt="" /> : (player.display_name?.trim()?.charAt(0)?.toUpperCase() || "P")}</div>
           <div className="player-profile-heading">
             <p className="eyebrow">PLAYER PROFILE</p>
             <h1>
