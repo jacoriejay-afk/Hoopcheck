@@ -80,7 +80,7 @@ export default function VerificationPage() {
 
   if(loading)return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading verification center..." /></div></main>;
   return <main className="page-shell"><div className="page-container">
-    <header className="topbar"><Link href="/" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/account">Account</Link></nav></header>
+    <header className="topbar verification-topbar"><Link href="/" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/account">Account</Link></nav></header>
     <section className="hero-card"><p className="eyebrow">PLAYER VERIFICATION</p><h1>Get your player badge.</h1><p className="muted">Verification helps HoopCheck distinguish professional-player accounts from ordinary accounts. We review requests manually.</p></section>
     <section className="dashboard-card" style={{marginTop:24}}>
       {status==="approved" ? <><h2>✓ Verified Player</h2><p className="muted">Your account is verified.</p></> :
@@ -88,9 +88,11 @@ export default function VerificationPage() {
        <><div className="card" style={{marginBottom:16,border:"1px solid var(--orange)"}}>
         <p className="eyebrow">IDENTITY CHECK</p>
         <h2>{identityStatus==="verified" ? "✓ Identity verified" : "Verify with ID + face scan"}</h2>
-        <p className="muted">HoopCheck uses Stripe Identity to verify your government ID or passport and compare it with a live selfie. HoopCheck does not store your face scan.</p>
-        {identityStatus!=="verified" && <button type="button" className="btn" onClick={startIdentityVerification} disabled={identityLoading}>{identityLoading?"Opening secure verification...":"Start secure ID + face verification"}</button>}
-        {identityStatus==="processing" && <p className="muted">Your identity check is processing. Keep this page available and return after Stripe finishes the check.</p>}
+        <p className="muted">HoopCheck uses Stripe Identity to verify your government ID or passport and compare it with a live selfie. HoopCheck does not store your face scan in the HoopCheck database.</p>
+        {identityStatus!=="verified" && <button type="button" className="btn" onClick={startIdentityVerification} disabled={identityLoading}>{identityLoading?"Opening secure verification...":"Verify ID + face scan"}</button>}
+        {identityStatus==="processing" && <p className="muted">Your identity check is processing. Return here after Stripe finishes the check.</p>}
+        {identityStatus==="requires_input" && <p className="muted">Complete the secure ID and live-selfie check to continue.</p>}
+        {identityStatus==="failed" && <p className="muted">The identity check needs to be completed again. Start a new secure check.</p>}
        </div>
        <form onSubmit={submit} style={{display:"grid",gap:12}}>
         <label>Basketball type<select value={basketballType} onChange={e=>setBasketballType(e.target.value as "mens"|"womens")}><option value="mens">Men’s Basketball</option><option value="womens">Women’s Basketball</option></select></label><label>Current team{basketballType==="mens"?<select value={teamId} onChange={e=>{const id=e.target.value;setTeamId(id);const t=teams.find(x=>x.id===id);setTeam(t?.name||"");}}><option value="">Select current team</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?` — ${t.country}`:""}</option>)}</select>:<select value={womensTeamId} onChange={e=>{const id=e.target.value;setWomensTeamId(id);const t=womensTeams.find(x=>x.id===id);setTeam(t?.name||"");}}><option value="">Select women’s team</option>{womensTeams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?` — ${t.country}`:""}</option>)}</select>}</label>
