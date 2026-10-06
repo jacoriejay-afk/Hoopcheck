@@ -13,6 +13,7 @@ type Subscription = {
 };
 
 type Profile = {
+  account_type: "player"|"coach"|"scout"|"agent"|"fan";
   display_name: string | null;
   first_name: string | null;
   last_name: string | null;
@@ -40,7 +41,7 @@ export default function AccountPage() {
   const [email, setEmail] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [targets, setTargets] = useState<Record<string, Target>>({});
-  const [profile, setProfile] = useState<Profile>({ display_name: null, first_name: null, last_name: null, professional_experience: false, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false, profile_claimed: true, avatar_url: null, avatar_moderation_status: "approved" });
+  const [profile, setProfile] = useState<Profile>({ account_type: "player", display_name: null, first_name: null, last_name: null, professional_experience: false, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false, profile_claimed: true, avatar_url: null, avatar_moderation_status: "approved" });
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [verified, setVerified] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -65,7 +66,7 @@ export default function AccountPage() {
       if (!user) { window.location.href = "/login"; return; }
       setEmail(user.email ?? "");
       const [{ data: profileData }, { data: subscriptionData }] = await Promise.all([
-        supabase.from("profiles").select("display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_team,profile_visibility,player_verified,profile_claimed,avatar_url,avatar_moderation_status").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("account_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_team,profile_visibility,player_verified,profile_claimed,avatar_url,avatar_moderation_status").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
       ]);
       const nextProfile: Profile = profileData ?? { display_name: null, first_name: null, last_name: null, professional_experience: false, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false, profile_claimed: true, avatar_url: null, avatar_moderation_status: "approved" };
@@ -186,17 +187,17 @@ export default function AccountPage() {
           {avatarUrl && <img src={avatarUrl} alt="Profile" style={{width:84,height:84,borderRadius:"50%",objectFit:"cover",border:"2px solid var(--border)"}} />}
           <label htmlFor="avatar-upload" className="muted">Profile picture</label><input id="avatar-upload" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f) void uploadAvatar(f)}} />
           <p className="muted" style={{fontSize:12}}>{avatarStatus==="pending" ? "Pending moderation." : avatarStatus==="rejected" ? "Photo rejected. Upload another image." : "Approved for public display."}</p>
-          <h2>Player information {verified && <span title="Verified professional player" style={{color:"var(--orange)"}}>✓</span>}</h2>
+          <h2>{nextProfile.account_type === "player" ? "Player information" : "Profile information"} {nextProfile.account_type === "player" && verified && <span title="Verified professional player" style={{color:"var(--orange)"}}>✓</span>}</h2>
           <form onSubmit={saveProfile} className="account-profile-form" style={{display:"grid",gap:12,marginTop:16}}>
             <label className="muted">First name</label><input value={profile.first_name ?? ""} readOnly />
             <label className="muted">Last name</label><input value={profile.last_name ?? ""} readOnly />
             <p className="muted" style={{fontSize:12}}>First and last name are locked and cannot be changed.</p>
             <label htmlFor="display-name" className="muted">Display name</label>
             <input id="display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder="How players should see you" />
-            <label htmlFor="position" className="muted">Position</label>
-            <input id="position" value={position} readOnly disabled />
-            <label htmlFor="years-pro" className="muted">Years as a pro</label>
-            <input id="years-pro" type="number" value={yearsPro} readOnly disabled />
+            {profile.account_type === "player" && <label htmlFor="position" className="muted">Position</label>}
+            {profile.account_type === "player" && <input id="position" value={position} readOnly disabled />}
+            {profile.account_type === "player" && <label htmlFor="years-pro" className="muted">Years as a pro</label>}
+            {profile.account_type === "player" && <input id="years-pro" type="number" value={yearsPro} readOnly disabled />}
             <label htmlFor="hometown">Hometown</label><input id="hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder="City, State / Region" />
             <label htmlFor="nationality">Nationality</label>
             <select id="nationality" value={nationality} onChange={e=>setNationality(e.target.value)} disabled={savingProfile}>
@@ -276,11 +277,11 @@ export default function AccountPage() {
             </select>
             <p className="muted">Email: {email}</p>
             <div className="card" style={{marginTop:4}}><strong>✓ {profile.profile_claimed ? "Profile claimed" : "Claim your player profile"}</strong><p className="muted">{profile.profile_claimed ? "This HoopCheck profile is connected to your account and ready for you to manage." : "Claim this profile to manage your basketball information."}</p></div>
-            <div className="card" style={{marginTop:8}}>
+            {profile.account_type === "player" && <div className="card" style={{marginTop:8}}>
               <strong>{verified ? "✓ Verified Player" : "Player verification"}</strong>
               <p className="muted">{verified ? "Your professional-player account has been verified by HoopCheck." : "Apply for a verification badge to strengthen trust around your reviews."}</p>
               {!verified && <Link href="/verification" className="btn dark">Request Verification</Link>}
-            </div>
+            </div>}
             <button className="btn" type="submit" disabled={savingProfile}>{savingProfile ? "Saving..." : "Save Profile"}</button>
             {profileMessage && <p className="muted">{profileMessage}</p>}
           </form>
