@@ -231,13 +231,27 @@ export default function AdminDirectoryPage() {
 
             <DirectoryCard
               number="06"
+              title="Users & Player Control"
+              description="Look up any user, filter by account type, edit account type and verification, warn or flag profiles, and moderate profile photos."
+              href="/admin/users"
+            />
+
+            <DirectoryCard
+              number="07"
               title="Player Verification"
               description="Review professional-player verification requests and manage Verified Player badges."
               href="/admin/verification"
             />
 
             <DirectoryCard
-              number="07"
+              number="08"
+              title="Profile Reports"
+              description="Review reports submitted by research accounts and resolve or dismiss profile flags."
+              href="/admin/profile-reports"
+            />
+
+            <DirectoryCard
+              number="09"
               title="Licensed Provider Gate"
               description="Sofascore is registered as research-only until written commercial/API permission is verified. No scraping or unlicensed redistribution is enabled."
               href="/admin/directory/providers"
