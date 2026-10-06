@@ -292,6 +292,14 @@ export default function AccountPage() {
           <p className="muted">Status: {subscription?.status ?? "inactive"}</p>
           {subscription?.current_period_end && <p className="muted">Current period ends: {new Date(subscription.current_period_end).toLocaleDateString()}</p>}
           {subscription?.cancel_at_period_end && <p className="muted">Cancellation is scheduled at the end of the current period.</p>}
+          {subscription?.plan === "premium" && (
+            <div className="card" style={{marginTop:16,border:"1px solid var(--orange)"}}>
+              <p className="eyebrow">PREMIUM PLAYER FEATURE</p>
+              <h3 style={{marginBottom:8}}>🏀 Get Recruited — Coming Soon</h3>
+              <p className="muted">Premium players will soon be able to connect directly with scouts and agents, reach selected teams, and get discovered for opportunities.</p>
+              <p className="muted" style={{fontSize:12,marginBottom:0}}>We’re building a recruiting network designed to connect professional players with the right basketball opportunities.</p>
+            </div>
+          )}
           <div className="account-actions" style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:12}}>
             <Link href="/membership" className="btn">Manage Membership</Link>
             <button type="button" className="btn dark" onClick={signOut}>Sign Out</button>
