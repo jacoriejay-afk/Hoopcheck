@@ -55,6 +55,8 @@ export default function AccountPage() {
   const [currentTeam, setCurrentTeam] = useState("");
   const [hometown, setHometown] = useState("");
   const [nationality, setNationality] = useState("");
+  const [interests, setInterests] = useState("");
+  const [favoriteLeagues, setFavoriteLeagues] = useState("");
   const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [freeAgent, setFreeAgent] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -85,6 +87,8 @@ export default function AccountPage() {
       setHometown((nextProfile as any).hometown ?? "");
       setNationality((nextProfile as any).nationality ?? "");
       setFreeAgent(Boolean((nextProfile as any).free_agent));
+      setInterests((nextProfile as any).interests ?? "");
+      setFavoriteLeagues((nextProfile as any).favorite_leagues ?? "");
       setVisibility(nextProfile.profile_visibility ?? "public");
       setAvatarUrl(nextProfile.avatar_url ?? "");
       setAvatarStatus(nextProfile.avatar_moderation_status ?? "approved");
@@ -146,7 +150,10 @@ export default function AccountPage() {
       current_team: currentTeam.trim().slice(0, 120) || null,
       hometown: hometown.trim().slice(0,120) || null,
       nationality: nationality.trim().slice(0,80) || null,
-      profile_visibility: visibility, free_agent: freeAgent,
+      interests: interests.trim().slice(0,500) || null,
+      favorite_leagues: favoriteLeagues.trim().slice(0,500) || null,
+      profile_visibility: ["scout","agent","fan"].includes(profile.account_type) ? "private" : visibility,
+      free_agent: profile.account_type === "player" ? freeAgent : false,
     };
     const { error } = await supabase.from("profiles").update(updates).eq("id", (await supabase.auth.getUser()).data.user?.id ?? "");
     if (error) setProfileMessage(error.message);
@@ -175,9 +182,11 @@ export default function AccountPage() {
       <section className="grid" style={{marginTop:32}}>
         <div className="dashboard-card">
           <p className="eyebrow">PROFILE</p>
-          {avatarUrl && <img src={avatarUrl} alt="Profile" style={{width:84,height:84,borderRadius:"50%",objectFit:"cover",border:"2px solid var(--border)"}} />}
-          <label htmlFor="avatar-upload" className="muted">Profile picture</label><input id="avatar-upload" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f) void uploadAvatar(f)}} />
-          <p className="muted" style={{fontSize:12}}>{avatarStatus==="pending" ? "Pending moderation." : avatarStatus==="rejected" ? "Photo rejected. Upload another image." : "Approved for public display."}</p>
+          {profile.account_type === "player" && <>
+            {avatarUrl && <img src={avatarUrl} alt="Profile" style={{width:112,height:112,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--orange)",display:"block"}} />}
+            <label htmlFor="avatar-upload" className="muted">Player profile picture</label><input id="avatar-upload" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f) void uploadAvatar(f)}} />
+            <p className="muted" style={{fontSize:12}}>{avatarStatus==="pending" ? "Pending moderation. It will appear publicly after approval." : avatarStatus==="rejected" ? "Photo rejected. Upload another image." : "Approved and eligible to appear on your player profile."}</p>
+          </>}
           <h2>{profile.account_type === "player" ? "Player information" : "Profile information"} {profile.account_type === "player" && verified && <span title="Verified professional player" style={{color:"var(--orange)"}}>✓</span>}</h2>
           <form onSubmit={saveProfile} className="account-profile-form" style={{display:"grid",gap:12,marginTop:16}}>
             <label className="muted">First name</label><input value={profile.first_name ?? ""} readOnly />
@@ -190,12 +199,40 @@ export default function AccountPage() {
             {profile.account_type === "player" && <input id="years-pro" type="number" value={yearsPro} readOnly disabled />}
             <label htmlFor="hometown">Hometown</label><input id="hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder="City, State / Region" />
             <label htmlFor="nationality">Nationality</label>
-            <select id="nationality" value={nationality} onChange={e=>setNationality(e.target.value)} disabled={savingProfile}><option value="">Select nationality</option><option value="United States">United States</option><option value="Azerbaijan">Azerbaijan</option><option value="Albania">Albania</option><option value="Argentina">Argentina</option><option value="Australia">Australia</option><option value="Austria">Austria</option><option value="Belgium">Belgium</option><option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option><option value="Brazil">Brazil</option><option value="Bulgaria">Bulgaria</option><option value="Canada">Canada</option><option value="China">China</option><option value="Croatia">Croatia</option><option value="Cyprus">Cyprus</option><option value="Czechia">Czechia</option><option value="Denmark">Denmark</option><option value="Egypt">Egypt</option><option value="Estonia">Estonia</option><option value="Finland">Finland</option><option value="France">France</option><option value="Georgia">Georgia</option><option value="Germany">Germany</option><option value="Greece">Greece</option><option value="Hungary">Hungary</option><option value="Iceland">Iceland</option><option value="India">India</option><option value="Ireland">Ireland</option><option value="Israel">Israel</option><option value="Italy">Italy</option><option value="Japan">Japan</option><option value="Kosovo">Kosovo</option><option value="Latvia">Latvia</option><option value="Lebanon">Lebanon</option><option value="Lithuania">Lithuania</option><option value="Luxembourg">Luxembourg</option><option value="Mexico">Mexico</option><option value="Montenegro">Montenegro</option><option value="Morocco">Morocco</option><option value="Netherlands">Netherlands</option><option value="New Zealand">New Zealand</option><option value="Nigeria">Nigeria</option><option value="North Macedonia">North Macedonia</option><option value="Norway">Norway</option><option value="Philippines">Philippines</option><option value="Poland">Poland</option><option value="Portugal">Portugal</option><option value="Romania">Romania</option><option value="Serbia">Serbia</option><option value="Slovakia">Slovakia</option><option value="Slovenia">Slovenia</option><option value="South Africa">South Africa</option><option value="South Korea">South Korea</option><option value="Spain">Spain</option><option value="Sweden">Sweden</option><option value="Switzerland">Switzerland</option><option value="Tunisia">Tunisia</option><option value="Türkiye">Türkiye</option><option value="Ukraine">Ukraine</option><option value="United Kingdom">United Kingdom</option></select>
-            <label htmlFor="current-country" className="muted">Current country</label><select id="current-country" value={currentCountry} disabled><option value={currentCountry}>{currentCountry || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Country changes are tied to verified team changes.</p>
-            <label htmlFor="current-team" className="muted">Current team</label><select id="current-team" value={currentTeam} disabled><option value={currentTeam}>{currentTeam || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Current team is locked until HoopCheck verifies that you are on another club. Start a new verification request to change it.</p>
+            <select id="nationality" value={nationality} onChange={e=>setNationality(e.target.value)} disabled={savingProfile}>
+              <option value="">Select nationality</option>
+              <optgroup label="Africa">
+                {["Algeria","Angola","Benin","Botswana","Burkina Faso","Burundi","Cameroon","Cape Verde","Central African Republic","Chad","Comoros","Côte d’Ivoire","Democratic Republic of the Congo","Djibouti","Egypt","Equatorial Guinea","Eritrea","Eswatini","Ethiopia","Gabon","Gambia","Ghana","Guinea","Guinea-Bissau","Kenya","Lesotho","Liberia","Libya","Madagascar","Malawi","Mali","Mauritania","Mauritius","Morocco","Mozambique","Namibia","Niger","Nigeria","Republic of the Congo","Rwanda","São Tomé and Príncipe","Senegal","Seychelles","Sierra Leone","Somalia","South Africa","South Sudan","Sudan","Tanzania","Togo","Tunisia","Uganda","Zambia","Zimbabwe"].map(x=><option key={x} value={x}>{x}</option>)}
+              </optgroup>
+              <optgroup label="Asia">
+                {["Afghanistan","Armenia","Azerbaijan","Bahrain","Bangladesh","Bhutan","Brunei","Cambodia","China","Chinese Taipei","Cyprus","Georgia","Hong Kong","India","Indonesia","Iran","Iraq","Israel","Japan","Jordan","Kazakhstan","Kuwait","Kyrgyzstan","Laos","Lebanon","Malaysia","Maldives","Mongolia","Myanmar","Nepal","North Korea","Oman","Pakistan","Palestine","Philippines","Qatar","Saudi Arabia","Singapore","South Korea","Sri Lanka","Syria","Tajikistan","Thailand","Timor-Leste","Turkmenistan","United Arab Emirates","Uzbekistan","Vietnam","Yemen"].map(x=><option key={x} value={x}>{x}</option>)}
+              </optgroup>
+              <optgroup label="Europe">
+                {["Albania","Andorra","Austria","Belarus","Belgium","Bosnia and Herzegovina","Bulgaria","Croatia","Czechia","Denmark","Estonia","Finland","France","Germany","Greece","Hungary","Iceland","Ireland","Italy","Kosovo","Latvia","Liechtenstein","Lithuania","Luxembourg","Malta","Moldova","Monaco","Montenegro","Netherlands","North Macedonia","Norway","Poland","Portugal","Romania","Russia","San Marino","Serbia","Slovakia","Slovenia","Spain","Sweden","Switzerland","Türkiye","Ukraine","United Kingdom","Vatican City"].map(x=><option key={x} value={x}>{x}</option>)}
+              </optgroup>
+              <optgroup label="North America">
+                {["Antigua and Barbuda","Bahamas","Barbados","Belize","Canada","Costa Rica","Cuba","Dominica","Dominican Republic","El Salvador","Grenada","Guatemala","Haiti","Honduras","Jamaica","Mexico","Nicaragua","Panama","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Trinidad and Tobago","United States"].map(x=><option key={x} value={x}>{x}</option>)}
+              </optgroup>
+              <optgroup label="South America">
+                {["Argentina","Bolivia","Brazil","Chile","Colombia","Ecuador","Guyana","Paraguay","Peru","Suriname","Uruguay","Venezuela"].map(x=><option key={x} value={x}>{x}</option>)}
+              </optgroup>
+              <optgroup label="Oceania">
+                {["Australia","Fiji","Kiribati","Marshall Islands","Micronesia","Nauru","New Zealand","Palau","Papua New Guinea","Samoa","Solomon Islands","Tonga","Tuvalu","Vanuatu"].map(x=><option key={x} value={x}>{x}</option>)}
+              </optgroup>
+            </select>
+                        {profile.account_type === "player" && <>
+              <label htmlFor="current-country" className="muted">Current country</label><select id="current-country" value={currentCountry} disabled><option value={currentCountry}>{currentCountry || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Current country is managed through verified team changes.</p>
+              <label htmlFor="current-team" className="muted">Current team</label><select id="current-team" value={currentTeam} disabled><option value={currentTeam}>{currentTeam || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Current team is managed through player verification.</p>
+            </>}
             <label htmlFor="bio" className="muted">Player bio</label><textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder="Tell other players a little about your experience." />
-            <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>Show me as a free agent</span></label>
-            <label htmlFor="visibility" className="muted">Profile visibility</label><select id="visibility" value={visibility} onChange={e => setVisibility(e.target.value as "public" | "private")}><option value="public">Public</option><option value="private">Private</option></select>
+                        {profile.account_type === "player" && <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>Show me as a free agent</span></label>}
+            {["scout","agent"].includes(profile.account_type) && <>
+              <label htmlFor="interests" className="muted">Basketball interests</label><textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder="Roles, regions, positions, or player types you follow." />
+              <label htmlFor="favorite-leagues" className="muted">Leagues of interest</label><textarea id="favorite-leagues" value={favoriteLeagues} onChange={e=>setFavoriteLeagues(e.target.value)} maxLength={500} rows={3} placeholder="Leagues and markets you follow." />
+            </>}
+            {profile.account_type === "fan" && <label htmlFor="interests" className="muted">Basketball interests</label>}
+            {profile.account_type === "fan" && <textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder="Teams, players, leagues, or basketball topics you follow." />}
+            {["scout","agent","fan"].includes(profile.account_type) ? <div className="card"><strong>🔒 Private profile</strong><p className="muted">Your scout, agent, or fan profile is private. Other users cannot open your profile as a public profile.</p></div> : <><label htmlFor="visibility" className="muted">Profile visibility</label><select id="visibility" value={visibility} onChange={e => setVisibility(e.target.value as "public" | "private")}><option value="public">Public</option><option value="private">Private</option></select></>}
             <p className="muted">Email: {email}</p>
             <div className="card" style={{marginTop:4}}><strong>✓ {profile.profile_claimed ? "Profile claimed" : "Claim your player profile"}</strong><p className="muted">{profile.profile_claimed ? "This HoopCheck profile is connected to your account and ready for you to manage." : "Claim this profile to manage your basketball information."}</p></div>
             {profile.account_type === "player" && <div className="card" style={{marginTop:8}}><strong>{verified ? "✓ Verified Player" : "Player verification"}</strong><p className="muted">{verified ? "Your professional-player account has been verified by HoopCheck." : "Apply for a verification badge to strengthen trust around your reviews."}</p>{!verified && <Link href="/verification" className="btn dark">Request Verification</Link>}</div>}
