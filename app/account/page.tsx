@@ -29,19 +29,22 @@ type Profile = {
   avatar_url: string | null;
   avatar_moderation_status: "pending" | "approved" | "rejected";
 };
-
-type Review = {
-  id: string; status: string; title: string | null; body: string;
-  overall_rating: number; created_at: string;
-  coach_id: string | null; team_id: string | null; league_id: string | null;
-};
+type Review = { id: string; status: string; title: string | null; body: string; overall_rating: number; created_at: string; coach_id: string | null; team_id: string | null; league_id: string | null; };
 type Target = { id: string; name: string };
+
+const emptyProfile: Profile = {
+  account_type: "player",
+  display_name: null, first_name: null, last_name: null, professional_experience: false,
+  bio: null, position: null, years_pro: null, current_country: null, current_team: null,
+  profile_visibility: "public", player_verified: false, profile_claimed: true,
+  avatar_url: null, avatar_moderation_status: "approved"
+};
 
 export default function AccountPage() {
   const [email, setEmail] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [targets, setTargets] = useState<Record<string, Target>>({});
-  const [profile, setProfile] = useState<Profile>({ account_type: "player", display_name: null, first_name: null, last_name: null, professional_experience: false, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false, profile_claimed: true, avatar_url: null, avatar_moderation_status: "approved" });
+  const [profile, setProfile] = useState<Profile>(emptyProfile);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [verified, setVerified] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -69,7 +72,9 @@ export default function AccountPage() {
         supabase.from("profiles").select("account_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_team,profile_visibility,player_verified,profile_claimed,avatar_url,avatar_moderation_status").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
       ]);
-      const nextProfile: Profile = profileData ?? { display_name: null, first_name: null, last_name: null, professional_experience: false, bio: null, position: null, years_pro: null, current_country: null, current_team: null, profile_visibility: "public", player_verified: false, profile_claimed: true, avatar_url: null, avatar_moderation_status: "approved" };
+      const nextProfile: Profile = profileData
+        ? { ...emptyProfile, ...profileData }
+        : emptyProfile;
       setProfile(nextProfile);
       setDisplayName(nextProfile.display_name ?? "");
       setBio(nextProfile.bio ?? "");
@@ -77,7 +82,9 @@ export default function AccountPage() {
       setYearsPro(nextProfile.years_pro?.toString() ?? "");
       setCurrentCountry(nextProfile.current_country ?? "");
       setCurrentTeam(nextProfile.current_team ?? "");
-      setHometown((nextProfile as any).hometown ?? ""); setNationality((nextProfile as any).nationality ?? ""); setFreeAgent(Boolean((nextProfile as any).free_agent));
+      setHometown((nextProfile as any).hometown ?? "");
+      setNationality((nextProfile as any).nationality ?? "");
+      setFreeAgent(Boolean((nextProfile as any).free_agent));
       setVisibility(nextProfile.profile_visibility ?? "public");
       setAvatarUrl(nextProfile.avatar_url ?? "");
       setAvatarStatus(nextProfile.avatar_moderation_status ?? "approved");
@@ -105,7 +112,6 @@ export default function AccountPage() {
     load();
   }, []);
 
-
   async function uploadAvatar(file: File) {
     if (!file.type.startsWith("image/")) { setProfileMessage("Please choose an image file."); return; }
     if (file.size > 5 * 1024 * 1024) { setProfileMessage("Profile photos must be 5MB or smaller."); return; }
@@ -126,7 +132,6 @@ export default function AccountPage() {
     event.preventDefault();
     setSavingProfile(true);
     setProfileMessage("");
-
     const name = displayName.trim().slice(0, 80);
     const years = yearsPro.trim() ? Number(yearsPro) : null;
     if (years !== null && (!Number.isInteger(years) || years < 0 || years > 50)) {
@@ -135,38 +140,26 @@ export default function AccountPage() {
       return;
     }
     const updates = {
-      display_name: name || null,
-      bio: bio.trim().slice(0, 500) || null,
-      position: position.trim().slice(0, 50) || null,
-      years_pro: years,
+      display_name: name || null, bio: bio.trim().slice(0, 500) || null,
+      position: position.trim().slice(0, 50) || null, years_pro: years,
       current_country: currentCountry.trim().slice(0, 80) || null,
       current_team: currentTeam.trim().slice(0, 120) || null,
       hometown: hometown.trim().slice(0,120) || null,
       nationality: nationality.trim().slice(0,80) || null,
-      profile_visibility: visibility,
-      free_agent: freeAgent,
+      profile_visibility: visibility, free_agent: freeAgent,
     };
-    const { error } = await supabase
-      .from("profiles")
-      .update(updates)
-      .eq("id", (await supabase.auth.getUser()).data.user?.id ?? "");
-
-    if (error) {
-      setProfileMessage(error.message);
-    } else {
+    const { error } = await supabase.from("profiles").update(updates).eq("id", (await supabase.auth.getUser()).data.user?.id ?? "");
+    if (error) setProfileMessage(error.message);
+    else {
       setProfile((current) => ({ ...current, ...updates }));
-      setDisplayName(name);
-      setProfileMessage("Profile updated.");
+      setDisplayName(name); setProfileMessage("Profile updated.");
     }
     setSavingProfile(false);
   }
 
   async function signOut() {
     const { error } = await supabase.auth.signOut({ scope: "local" });
-    if (error) {
-      setProfileMessage("Unable to sign out. Please try again.");
-      return;
-    }
+    if (error) { setProfileMessage("Unable to sign out. Please try again."); return; }
     window.location.replace("/login");
   }
 
@@ -178,157 +171,49 @@ export default function AccountPage() {
         <Link href="/" className="brand">HOOPCHECK</Link>
         <nav className="topnav"><Link href="/dashboard">Dashboard</Link><Link href="/membership">Membership</Link></nav>
       </header>
-      <section className="hero-card">
-        <div><p className="eyebrow">MY ACCOUNT</p><h1>{email}</h1><p className="muted">Manage your HoopCheck activity and submitted reviews.</p></div>
-      </section>
+      <section className="hero-card"><div><p className="eyebrow">MY ACCOUNT</p><h1>{email}</h1><p className="muted">Manage your HoopCheck activity and submitted reviews.</p></div></section>
       <section className="grid" style={{marginTop:32}}>
         <div className="dashboard-card">
           <p className="eyebrow">PROFILE</p>
           {avatarUrl && <img src={avatarUrl} alt="Profile" style={{width:84,height:84,borderRadius:"50%",objectFit:"cover",border:"2px solid var(--border)"}} />}
           <label htmlFor="avatar-upload" className="muted">Profile picture</label><input id="avatar-upload" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f) void uploadAvatar(f)}} />
           <p className="muted" style={{fontSize:12}}>{avatarStatus==="pending" ? "Pending moderation." : avatarStatus==="rejected" ? "Photo rejected. Upload another image." : "Approved for public display."}</p>
-          <h2>{nextProfile.account_type === "player" ? "Player information" : "Profile information"} {nextProfile.account_type === "player" && verified && <span title="Verified professional player" style={{color:"var(--orange)"}}>✓</span>}</h2>
+          <h2>{profile.account_type === "player" ? "Player information" : "Profile information"} {profile.account_type === "player" && verified && <span title="Verified professional player" style={{color:"var(--orange)"}}>✓</span>}</h2>
           <form onSubmit={saveProfile} className="account-profile-form" style={{display:"grid",gap:12,marginTop:16}}>
             <label className="muted">First name</label><input value={profile.first_name ?? ""} readOnly />
             <label className="muted">Last name</label><input value={profile.last_name ?? ""} readOnly />
             <p className="muted" style={{fontSize:12}}>First and last name are locked and cannot be changed.</p>
-            <label htmlFor="display-name" className="muted">Display name</label>
-            <input id="display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder="How players should see you" />
+            <label htmlFor="display-name" className="muted">Display name</label><input id="display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder="How players should see you" />
             {profile.account_type === "player" && <label htmlFor="position" className="muted">Position</label>}
             {profile.account_type === "player" && <input id="position" value={position} readOnly disabled />}
             {profile.account_type === "player" && <label htmlFor="years-pro" className="muted">Years as a pro</label>}
             {profile.account_type === "player" && <input id="years-pro" type="number" value={yearsPro} readOnly disabled />}
             <label htmlFor="hometown">Hometown</label><input id="hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder="City, State / Region" />
             <label htmlFor="nationality">Nationality</label>
-            <select id="nationality" value={nationality} onChange={e=>setNationality(e.target.value)} disabled={savingProfile}>
-              <option value="">Select nationality</option>
-              <option value="United States">United States</option>
-              <option value="Azerbaijan">Azerbaijan</option>
-              <option value="Albania">Albania</option>
-              <option value="Argentina">Argentina</option>
-              <option value="Australia">Australia</option>
-              <option value="Austria">Austria</option>
-              <option value="Belgium">Belgium</option>
-              <option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option>
-              <option value="Brazil">Brazil</option>
-              <option value="Bulgaria">Bulgaria</option>
-              <option value="Canada">Canada</option>
-              <option value="China">China</option>
-              <option value="Croatia">Croatia</option>
-              <option value="Cyprus">Cyprus</option>
-              <option value="Czechia">Czechia</option>
-              <option value="Denmark">Denmark</option>
-              <option value="Egypt">Egypt</option>
-              <option value="Estonia">Estonia</option>
-              <option value="Finland">Finland</option>
-              <option value="France">France</option>
-              <option value="Georgia">Georgia</option>
-              <option value="Germany">Germany</option>
-              <option value="Greece">Greece</option>
-              <option value="Hungary">Hungary</option>
-              <option value="Iceland">Iceland</option>
-              <option value="India">India</option>
-              <option value="Ireland">Ireland</option>
-              <option value="Israel">Israel</option>
-              <option value="Italy">Italy</option>
-              <option value="Japan">Japan</option>
-              <option value="Kosovo">Kosovo</option>
-              <option value="Latvia">Latvia</option>
-              <option value="Lebanon">Lebanon</option>
-              <option value="Lithuania">Lithuania</option>
-              <option value="Luxembourg">Luxembourg</option>
-              <option value="Mexico">Mexico</option>
-              <option value="Montenegro">Montenegro</option>
-              <option value="Morocco">Morocco</option>
-              <option value="Netherlands">Netherlands</option>
-              <option value="New Zealand">New Zealand</option>
-              <option value="Nigeria">Nigeria</option>
-              <option value="North Macedonia">North Macedonia</option>
-              <option value="Norway">Norway</option>
-              <option value="Philippines">Philippines</option>
-              <option value="Poland">Poland</option>
-              <option value="Portugal">Portugal</option>
-              <option value="Romania">Romania</option>
-              <option value="Serbia">Serbia</option>
-              <option value="Slovakia">Slovakia</option>
-              <option value="Slovenia">Slovenia</option>
-              <option value="South Africa">South Africa</option>
-              <option value="South Korea">South Korea</option>
-              <option value="Spain">Spain</option>
-              <option value="Sweden">Sweden</option>
-              <option value="Switzerland">Switzerland</option>
-              <option value="Tunisia">Tunisia</option>
-              <option value="Türkiye">Türkiye</option>
-              <option value="Ukraine">Ukraine</option>
-              <option value="United Kingdom">United Kingdom</option>
-            </select>
-            <label htmlFor="current-country" className="muted">Current country</label>
-            <select id="current-country" value={currentCountry} disabled><option value={currentCountry}>{currentCountry || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Country changes are tied to verified team changes.</p>
-            <label htmlFor="current-team" className="muted">Current team</label>
-            <select id="current-team" value={currentTeam} disabled><option value={currentTeam}>{currentTeam || "Not selected"}</option></select>
-            <p className="muted" style={{fontSize:12}}>Current team is locked until HoopCheck verifies that you are on another club. Start a new verification request to change it.</p>
-            <label htmlFor="bio" className="muted">Player bio</label>
-            <textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder="Tell other players a little about your experience." />
+            <select id="nationality" value={nationality} onChange={e=>setNationality(e.target.value)} disabled={savingProfile}><option value="">Select nationality</option><option value="United States">United States</option><option value="Azerbaijan">Azerbaijan</option><option value="Albania">Albania</option><option value="Argentina">Argentina</option><option value="Australia">Australia</option><option value="Austria">Austria</option><option value="Belgium">Belgium</option><option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option><option value="Brazil">Brazil</option><option value="Bulgaria">Bulgaria</option><option value="Canada">Canada</option><option value="China">China</option><option value="Croatia">Croatia</option><option value="Cyprus">Cyprus</option><option value="Czechia">Czechia</option><option value="Denmark">Denmark</option><option value="Egypt">Egypt</option><option value="Estonia">Estonia</option><option value="Finland">Finland</option><option value="France">France</option><option value="Georgia">Georgia</option><option value="Germany">Germany</option><option value="Greece">Greece</option><option value="Hungary">Hungary</option><option value="Iceland">Iceland</option><option value="India">India</option><option value="Ireland">Ireland</option><option value="Israel">Israel</option><option value="Italy">Italy</option><option value="Japan">Japan</option><option value="Kosovo">Kosovo</option><option value="Latvia">Latvia</option><option value="Lebanon">Lebanon</option><option value="Lithuania">Lithuania</option><option value="Luxembourg">Luxembourg</option><option value="Mexico">Mexico</option><option value="Montenegro">Montenegro</option><option value="Morocco">Morocco</option><option value="Netherlands">Netherlands</option><option value="New Zealand">New Zealand</option><option value="Nigeria">Nigeria</option><option value="North Macedonia">North Macedonia</option><option value="Norway">Norway</option><option value="Philippines">Philippines</option><option value="Poland">Poland</option><option value="Portugal">Portugal</option><option value="Romania">Romania</option><option value="Serbia">Serbia</option><option value="Slovakia">Slovakia</option><option value="Slovenia">Slovenia</option><option value="South Africa">South Africa</option><option value="South Korea">South Korea</option><option value="Spain">Spain</option><option value="Sweden">Sweden</option><option value="Switzerland">Switzerland</option><option value="Tunisia">Tunisia</option><option value="Türkiye">Türkiye</option><option value="Ukraine">Ukraine</option><option value="United Kingdom">United Kingdom</option></select>
+            <label htmlFor="current-country" className="muted">Current country</label><select id="current-country" value={currentCountry} disabled><option value={currentCountry}>{currentCountry || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Country changes are tied to verified team changes.</p>
+            <label htmlFor="current-team" className="muted">Current team</label><select id="current-team" value={currentTeam} disabled><option value={currentTeam}>{currentTeam || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Current team is locked until HoopCheck verifies that you are on another club. Start a new verification request to change it.</p>
+            <label htmlFor="bio" className="muted">Player bio</label><textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder="Tell other players a little about your experience." />
             <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>Show me as a free agent</span></label>
-            <label htmlFor="visibility" className="muted">Profile visibility</label>
-            <select id="visibility" value={visibility} onChange={e => setVisibility(e.target.value as "public" | "private")}>
-              <option value="public">Public</option>
-              <option value="private">Private</option>
-            </select>
+            <label htmlFor="visibility" className="muted">Profile visibility</label><select id="visibility" value={visibility} onChange={e => setVisibility(e.target.value as "public" | "private")}><option value="public">Public</option><option value="private">Private</option></select>
             <p className="muted">Email: {email}</p>
             <div className="card" style={{marginTop:4}}><strong>✓ {profile.profile_claimed ? "Profile claimed" : "Claim your player profile"}</strong><p className="muted">{profile.profile_claimed ? "This HoopCheck profile is connected to your account and ready for you to manage." : "Claim this profile to manage your basketball information."}</p></div>
-            {profile.account_type === "player" && <div className="card" style={{marginTop:8}}>
-              <strong>{verified ? "✓ Verified Player" : "Player verification"}</strong>
-              <p className="muted">{verified ? "Your professional-player account has been verified by HoopCheck." : "Apply for a verification badge to strengthen trust around your reviews."}</p>
-              {!verified && <Link href="/verification" className="btn dark">Request Verification</Link>}
-            </div>}
+            {profile.account_type === "player" && <div className="card" style={{marginTop:8}}><strong>{verified ? "✓ Verified Player" : "Player verification"}</strong><p className="muted">{verified ? "Your professional-player account has been verified by HoopCheck." : "Apply for a verification badge to strengthen trust around your reviews."}</p>{!verified && <Link href="/verification" className="btn dark">Request Verification</Link>}</div>}
             <button className="btn" type="submit" disabled={savingProfile}>{savingProfile ? "Saving..." : "Save Profile"}</button>
             {profileMessage && <p className="muted">{profileMessage}</p>}
           </form>
         </div>
-
         <div className="dashboard-card">
-          <p className="eyebrow">MEMBERSHIP</p>
-          <h2>{subscription?.plan === "premium" ? "HoopCheck Premium" : subscription?.plan === "pro" ? "HoopCheck Pro" : "Free Membership"}</h2>
-          <p className="muted">Status: {subscription?.status ?? "inactive"}</p>
+          <p className="eyebrow">MEMBERSHIP</p><h2>{subscription?.plan === "premium" ? "HoopCheck Premium" : subscription?.plan === "pro" ? "HoopCheck Pro" : "Free Membership"}</h2><p className="muted">Status: {subscription?.status ?? "inactive"}</p>
           {subscription?.current_period_end && <p className="muted">Current period ends: {new Date(subscription.current_period_end).toLocaleDateString()}</p>}
           {subscription?.cancel_at_period_end && <p className="muted">Cancellation is scheduled at the end of the current period.</p>}
-          {subscription?.plan === "premium" && (
-            <div className="card" style={{marginTop:16,border:"1px solid var(--orange)"}}>
-              <p className="eyebrow">PREMIUM PLAYER FEATURE</p>
-              <h3 style={{marginBottom:8}}>🏀 Get Recruited — Coming Soon</h3>
-              <p className="muted">Premium players will soon be able to connect directly with scouts and agents, reach selected teams, and get discovered for opportunities.</p>
-              <p className="muted" style={{fontSize:12,marginBottom:0}}>We’re building a recruiting network designed to connect professional players with the right basketball opportunities.</p>
-            </div>
-          )}
-          <div className="account-actions" style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:12}}>
-            <Link href="/membership" className="btn">Manage Membership</Link>
-            <button type="button" className="btn dark" onClick={signOut}>Sign Out</button>
-          </div>
+          {subscription?.plan === "premium" && <div className="card" style={{marginTop:16,border:"1px solid var(--orange)"}}><p className="eyebrow">PREMIUM PLAYER FEATURE</p><h3 style={{marginBottom:8}}>🏀 Get Recruited — Coming Soon</h3><p className="muted">Premium players will soon be able to connect directly with scouts and agents, reach selected teams, and get discovered for opportunities.</p><p className="muted" style={{fontSize:12,marginBottom:0}}>We’re building a recruiting network designed to connect professional players with the right basketball opportunities.</p></div>}
+          <div className="account-actions" style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:12}}><Link href="/membership" className="btn">Manage Membership</Link><button type="button" className="btn dark" onClick={signOut}>Sign Out</button></div>
         </div>
       </section>
-
-      <section style={{marginTop:32}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,marginBottom:18}}>
-          <div><p className="eyebrow">REVIEW HISTORY</p><h2>My Reviews</h2></div>
-          <Link href="/search" className="btn">Find Another</Link>
-        </div>
-        {!reviews.length ? <div className="dashboard-card"><h2>No reviews yet.</h2><p>Share your experience to help the next player make a better decision.</p></div> :
-          <div style={{display:"grid",gap:16}}>{reviews.map(review => {
-            const targetId = review.coach_id ?? review.team_id ?? review.league_id ?? "";
-            const target = targets[targetId];
-            const href = review.coach_id ? "/coaches/"+targetId : review.team_id ? "/teams/"+targetId : "/leagues/"+targetId;
-            return <article key={review.id} className="dashboard-card">
-              <div style={{display:"flex",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}>
-                <div><span className="card-kicker">{review.coach_id ? "COACH" : review.team_id ? "TEAM" : "LEAGUE"}</span><h2>{target?.name ?? "Directory entry"}</h2></div>
-                <strong>{review.status.toUpperCase()}</strong>
-              </div>
-              {review.title && <h3>{review.title}</h3>}
-              <p>{review.body}</p>
-              <p className="muted">Overall: {review.overall_rating}/5 · {new Date(review.created_at).toLocaleDateString()}</p>
-              <Link href={href} className="btn dark">View Profile</Link>
-            </article>;
-          })}</div>}
+      <section style={{marginTop:32}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,marginBottom:18}}><div><p className="eyebrow">REVIEW HISTORY</p><h2>My Reviews</h2></div><Link href="/search" className="btn">Find Another</Link></div>
+      {!reviews.length ? <div className="dashboard-card"><h2>No reviews yet.</h2><p>Share your experience to help the next player make a better decision.</p></div> :
+        <div style={{display:"grid",gap:16}}>{reviews.map(review => { const targetId=review.coach_id??review.team_id??review.league_id??""; const target=targets[targetId]; const href=review.coach_id?"/coaches/"+targetId:review.team_id?"/teams/"+targetId:"/leagues/"+targetId; return <article key={review.id} className="dashboard-card"><div style={{display:"flex",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}><div><span className="card-kicker">{review.coach_id?"COACH":review.team_id?"TEAM":"LEAGUE"}</span><h2>{target?.name??"Directory entry"}</h2></div><strong>{review.status.toUpperCase()}</strong></div>{review.title&&<h3>{review.title}</h3>}<p>{review.body}</p><p className="muted">Overall: {review.overall_rating}/5 · {new Date(review.created_at).toLocaleDateString()}</p><Link href={href} className="btn dark">View Profile</Link></article>; })}</div>}
       </section>
     </div></main>
   );
