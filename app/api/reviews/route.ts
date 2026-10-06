@@ -29,7 +29,7 @@ export async function POST(req:Request){
  }
  const ratings=["overall_rating","communication_rating","professionalism_rating","development_rating","payment_rating"];
  for(const k of ratings){if(!Number.isFinite(Number(b[k]))||Number(b[k])<1||Number(b[k])>5)return NextResponse.json({error:`${k} must be between 1 and 5.`},{status:400});}
- const body=typeof b.body==="string"?b.body.trim():"";
+ const body=typeof b.body==="string"?b.body.trim():"";\n const prohibited=/\\b(fuck|shit|bitch|cunt|nigger|nigga|porn|xxx|sexcam)\\b/i;\n if(prohibited.test(body)||prohibited.test(title)) return NextResponse.json({error:"Review contains prohibited language or explicit content."},{status:400});
  if(!body)return NextResponse.json({error:"Review text is required."},{status:400});
  if(body.length<10)return NextResponse.json({error:"Review text must be at least 10 characters."},{status:400});
  if(body.length>5000)return NextResponse.json({error:"Review text must be 5,000 characters or fewer."},{status:400});
