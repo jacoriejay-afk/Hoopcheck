@@ -1525,3 +1525,19 @@ h1,h2,h3,.brand,.logo,.footer-logo,.card-kicker,.eyebrow{font-family:var(--hoop-
 .contact-message.mine{margin-left:auto;border-color:rgba(255,106,0,.35)}
 .contact-message small{display:block;margin-top:5px;color:var(--page-muted);font-size:10px}
 @media(max-width:850px){.admin-user-layout{grid-template-columns:1fr}.admin-user-editor{position:static}.logo{font-size:30px}.topnav{max-width:100%;overflow-x:auto}}
+
+/* Final mobile shell cleanup */
+@media (max-width:700px){
+  .topbar{min-height:64px!important;padding:8px 10px!important;gap:10px!important;align-items:center!important}
+  .topbar .brand,.verification-topbar .brand{font-size:0!important;width:176px!important;height:58px!important;background:url('/hoopcheck-logo.svg') left center/contain no-repeat!important;flex:0 0 auto!important}
+  .topbar .topnav{margin-left:auto!important}
+  .topbar .topnav a{font-size:11px!important;padding:7px 9px!important}
+  .global-search-wrap{display:none!important}
+  .site-footer{display:none!important}
+  .bottom-nav{background:#111!important;border-top:2px solid #444!important;box-shadow:0 -6px 20px rgba(0,0,0,.22)!important}
+  .bottom-nav a,.bottom-nav a span{color:#fff!important;text-shadow:none!important}
+  .bottom-nav a.active,.bottom-nav a.active span{color:#111!important}
+}
+[data-theme="light"] .bottom-nav{background:#fff!important;border-top:2px solid #222!important}
+[data-theme="light"] .bottom-nav a,[data-theme="light"] .bottom-nav a span{color:#111!important}
+[data-theme="light"] .bottom-nav a.active,[data-theme="light"] .bottom-nav a.active span{color:#111!important}
