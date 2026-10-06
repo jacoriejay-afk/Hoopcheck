@@ -52,3 +52,28 @@ export async function POST(req:Request){
 
   return NextResponse.json({url:session.url,client_secret:session.client_secret,status:session.status});
 }
+
+
+export async function GET(req:Request){
+  const token=req.headers.get("authorization")?.replace(/^Bearer /,"");
+  if(!token)return NextResponse.json({error:"Authentication required"},{status:401});
+  if(!process.env.STRIPE_SECRET_KEY)return NextResponse.json({error:"Identity verification is not configured yet."},{status:503});
+  const supabase=getSupabase(token);
+  const {data:{user},error:userError}=await supabase.auth.getUser(token);
+  if(userError||!user)return NextResponse.json({error:"Invalid session"},{status:401});
+  const {data:profile}=await supabase.from("profiles").select("account_type,stripe_identity_verification_session_id").eq("id",user.id).maybeSingle();
+  if(profile?.account_type!=="player")return NextResponse.json({error:"Only player accounts can check identity verification."},{status:403});
+  if(!profile.stripe_identity_verification_session_id)return NextResponse.json({status:"not_started"});
+  const stripe=new Stripe(process.env.STRIPE_SECRET_KEY);
+  const session=await stripe.identity.verificationSessions.retrieve(profile.stripe_identity_verification_session_id);
+  const status=session.status || "requires_input";
+  const admin=getAdminSupabase();
+  const verified=status==="verified";
+  await admin.from("profiles").update({
+    identity_verification_status:verified?"verified":status,
+    player_verified:verified ? true : undefined,
+    player_verified_at:verified ? new Date().toISOString() : undefined
+  }).eq("id",user.id);
+  await admin.from("identity_verification_sessions").update({status,updated_at:new Date().toISOString(),completed_at:verified?new Date().toISOString():null}).eq("stripe_session_id",session.id);
+  return NextResponse.json({status,verified});
+}
