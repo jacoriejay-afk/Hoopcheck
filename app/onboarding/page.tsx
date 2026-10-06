@@ -17,7 +17,7 @@ export default function OnboardingPage() {
   const [lastName, setLastName] = useState("");
   const [accountType, setAccountType] = useState<"player"|"coach"|"scout"|"agent"|"fan">("player");
   const [professionalExperience, setProfessionalExperience] = useState(false);
-  const [formerTeams, setFormerTeams] = useState<string[]>([]);
+  const [formerTeams, setFormerTeams] = useState<string[]>([]);\n  const [favoriteTeams, setFavoriteTeams] = useState<string[]>([]);\n  const [basketballType, setBasketballType] = useState<"mens"|"womens">("mens");\n  const [freeAgent, setFreeAgent] = useState(false);\n  const [hometown, setHometown] = useState("");\n  const [nationality, setNationality] = useState("");
   const [teams, setTeams] = useState<{id:string;name:string;country:string|null;league_name:string|null}[]>([]);
   const [position, setPosition] = useState("");
   const [yearsPro, setYearsPro] = useState("");
@@ -42,7 +42,7 @@ export default function OnboardingPage() {
       const user = session.user;
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id,display_name,username,first_name,last_name,account_type,professional_experience,position,years_pro,country,current_country,current_team,bio,profile_visibility,interests,experience_summary")
+        .select("id,display_name,username,first_name,last_name,account_type,professional_experience,position,years_pro,country,current_country,current_team,bio,profile_visibility,interests,experience_summary,basketball_type,free_agent,hometown,nationality,favorite_teams,selected_team_id")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -64,8 +64,8 @@ export default function OnboardingPage() {
       setBio(profile?.bio || "");
       setVisibility(profile?.profile_visibility || "public");
       setInterests(profile?.interests || user.user_metadata?.interests || "");
-      setExperienceSummary(profile?.experience_summary || user.user_metadata?.experience_summary || "");
-      const { data: teamRows } = await supabase.from("teams").select("id,name,country,league_name").eq("active", true).order("name").limit(300);
+      setExperienceSummary(profile?.experience_summary || user.user_metadata?.experience_summary || "");\n      setBasketballType(profile?.basketball_type || "mens"); setFreeAgent(Boolean(profile?.free_agent)); setHometown(profile?.hometown || ""); setNationality(profile?.nationality || "");\n      setFavoriteTeams(profile?.favorite_teams ? String(profile.favorite_teams).split(",").map((x:string)=>x.trim()).filter(Boolean) : []);
+      const { data: teamRows } = await supabase.from(basketballType === "womens" ? "womens_teams" : "teams").select("id,name,country,league_name").eq("active", true).order("name").limit(500);
       setTeams(teamRows || []);
       setLoading(false);
     })();
@@ -97,7 +97,7 @@ export default function OnboardingPage() {
         years_pro: years,
         country: country.trim() || null,
         current_country: currentCountry.trim() || null,
-        current_team: currentTeam.trim() || null,
+        current_team: currentTeam.trim() || null,\n        selected_team_id: currentTeam || null,\n        basketball_type: basketballType, free_agent: freeAgent, hometown: hometown.trim() || null, nationality: nationality.trim() || null,\n        favorite_teams: favoriteTeams.join(","),
         bio: bio.trim() || null,
         profile_visibility: visibility === "public" ? "public" : "private",
         interests: interests.trim().slice(0,500) || null,
@@ -133,8 +133,8 @@ export default function OnboardingPage() {
 
       <section className="auth-page">
         <div className="auth-hero">
-          <div className="eyebrow">PHASE 2 · PLAYER ONBOARDING</div>
-          <h1>Build your player profile.</h1>
+          <div className="eyebrow">PHASE 2 · PERSONALIZE HOOPCHECK</div>
+          <h1>Make HoopCheck yours.</h1>
           <p>
             Give other players enough context to know who they are hearing from.
             You can edit this anytime from Account.
@@ -147,7 +147,7 @@ export default function OnboardingPage() {
         </div>
 
         <div className="auth-card">
-          <div className="eyebrow">PLAYER PROFILE</div>
+          <div className="eyebrow">{accountType.toUpperCase()} PROFILE</div>
           <h2>Complete your profile.</h2>
           <form onSubmit={save}>
             <label>Username</label>
@@ -162,7 +162,7 @@ export default function OnboardingPage() {
             <select value={accountType} onChange={e=>setAccountType(e.target.value as "player"|"scout"|"agent"|"fan")}>
               <option value="player">Player</option><option value="coach">Coach</option><option value="scout">Scout</option><option value="agent">Agent</option><option value="fan">Fan</option>
             </select>
-            <p className="muted" style={{fontSize:12}}>Only verified players can write ratings or reviews. Scouts, agents, and fans remain research-only.</p>
+            <p className="muted" style={{fontSize:12}}>Players can apply for verification and contribute first-hand reviews. Fans, scouts, and agents are research accounts.</p>\n\n            {accountType === "player" && <><label>Basketball</label><select value={basketballType} onChange={e=>setBasketballType(e.target.value as "mens"|"womens")}><option value="mens">Men’s Basketball</option><option value="womens">Women’s Basketball</option></select><label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>I am currently a free agent</span></label></>}
             <label>Professional Experience</label>
             <select value={professionalExperience ? "yes" : "no"} onChange={e=>setProfessionalExperience(e.target.value==="yes")}>
               <option value="yes">Yes — professional player</option><option value="no">No — not yet</option>
@@ -191,7 +191,7 @@ export default function OnboardingPage() {
             <label htmlFor="currentTeam">Current Team</label>
             <input id="currentTeam" value={currentTeam} onChange={e => setCurrentTeam(e.target.value)} />
 
-            <label htmlFor="interests">What do you want from HoopCheck?</label><textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} rows={3} maxLength={500} placeholder="Research teams, follow leagues, find coaches, connect with players..." />
+            <label>Favorite Teams</label><div style={{maxHeight:180,overflow:"auto",display:"grid",gap:6,border:"1px solid var(--border)",padding:10,borderRadius:10}}>{teams.map(t=><label key={"fav-"+t.id} className="checkbox-row"><input type="checkbox" checked={favoriteTeams.includes(t.id)} onChange={e=>setFavoriteTeams(v=>e.target.checked?[...v,t.id]:v.filter(id=>id!==t.id))}/><span>{t.name}</span></label>)}</div>\n            <label htmlFor="interests">What do you want from HoopCheck?</label><textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} rows={3} maxLength={500} placeholder="Research teams, follow leagues, find coaches, connect with players..." />
             <label htmlFor="experienceSummary">About yourself</label><textarea id="experienceSummary" value={experienceSummary} onChange={e=>setExperienceSummary(e.target.value)} rows={3} maxLength={700} placeholder="Optional background, goals, or basketball interests." />
 
             <label htmlFor="bio">Short Bio</label>
