@@ -33,7 +33,9 @@ export async function POST(req:Request){
 
   const stripe=new Stripe(process.env.STRIPE_SECRET_KEY);
   const origin=process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
-  let session: Stripe.Identity.VerificationSession;\n  try {\n    session=await stripe.identity.verificationSessions.create({
+  let session: Stripe.Identity.VerificationSession;
+  try {
+    session=await stripe.identity.verificationSessions.create({
     type:"document",
     client_reference_id:user.id,
     metadata:{user_id:user.id,hoopcheck_role:"player"},
