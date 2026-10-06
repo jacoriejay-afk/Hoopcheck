@@ -321,6 +321,41 @@ export async function POST(
       });
     }
 
+    if (event.type === "identity.verification_session.verified") {
+      const verificationSession = event.data.object as Stripe.Identity.VerificationSession;
+      const userId = verificationSession.metadata?.user_id || verificationSession.client_reference_id;
+      if (userId) {
+        const supabase = getAdminSupabase();
+        await supabase.from("profiles").update({
+          player_verified: true,
+          player_verified_at: new Date().toISOString(),
+          stripe_identity_verification_session_id: verificationSession.id,
+          identity_verification_status: "verified",
+        }).eq("id", userId);
+        await supabase.from("identity_verification_sessions").update({
+          status: "verified",
+          updated_at: new Date().toISOString(),
+          completed_at: new Date().toISOString(),
+        }).eq("stripe_session_id", verificationSession.id);
+      }
+    }
+
+    if (event.type === "identity.verification_session.processing") {
+      const verificationSession = event.data.object as Stripe.Identity.VerificationSession;
+      const userId = verificationSession.metadata?.user_id || verificationSession.client_reference_id;
+      if (userId) {
+        const supabase = getAdminSupabase();
+        await supabase.from("profiles").update({
+          stripe_identity_verification_session_id: verificationSession.id,
+          identity_verification_status: "processing",
+        }).eq("id", userId);
+        await supabase.from("identity_verification_sessions").update({
+          status: "processing",
+          updated_at: new Date().toISOString(),
+        }).eq("stripe_session_id", verificationSession.id);
+      }
+    }
+
     if (
       event.type ===
       "checkout.session.completed"
