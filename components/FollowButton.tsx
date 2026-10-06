@@ -1,0 +1,11 @@
+"use client";
+import { useEffect,useState } from "react";
+import { supabase } from "../lib/supabase";
+
+export default function FollowButton({targetType,targetId}:{targetType:"team"|"player"|"league";targetId:string}){
+ const [following,setFollowing]=useState(false); const [notify,setNotify]=useState(true); const [count,setCount]=useState(0); const [busy,setBusy]=useState(false);
+ useEffect(()=>{(async()=>{const {data:{user}}=await supabase.auth.getUser(); if(!user)return; const {data}=await supabase.from("follow_relationships").select("notify_reviews,notify_ratings,notify_updates").eq("follower_id",user.id).eq("target_type",targetType).eq("target_id",targetId).maybeSingle(); setFollowing(!!data);setNotify(data?.notify_reviews??true); const {data:c}=await supabase.rpc("get_follow_count",{p_target_type:targetType,p_target_id:targetId});setCount(Number(c||0));})();},[targetType,targetId]);
+ async function toggle(){setBusy(true);const {data:{user}}=await supabase.auth.getUser();if(!user){location.href="/login";return} if(following){await supabase.from("follow_relationships").delete().eq("follower_id",user.id).eq("target_type",targetType).eq("target_id",targetId);setFollowing(false);setCount(v=>Math.max(0,v-1));}else{await supabase.from("follow_relationships").insert({follower_id:user.id,target_type:targetType,target_id:targetId,notify_reviews:true,notify_ratings:true,notify_updates:true});setFollowing(true);setCount(v=>v+1);}setBusy(false);}
+ async function toggleNotify(){if(!following)return;const {data:{user}}=await supabase.auth.getUser();if(!user)return;await supabase.from("follow_relationships").update({notify_reviews:!notify}).eq("follower_id",user.id).eq("target_type",targetType).eq("target_id",targetId);setNotify(v=>!v);}
+ return <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}><button type="button" className="btn dark" onClick={toggle} disabled={busy}>{following?"✓ Following":"＋ Follow"} <span className="muted">({count})</span></button>{following&&<button type="button" aria-label="Toggle notifications" title="Keep notifications on for this account" onClick={toggleNotify} style={{border:"1px solid var(--border)",borderRadius:8,padding:"8px 10px",background:"transparent",color:"inherit",cursor:"pointer"}}>{notify?"☑️":"☐"}</button>}</div>;
+}
