@@ -27,7 +27,7 @@ function getAdminSupabase() {
   );
 }
 
-function getPlanFromPrice(priceId: string | undefined, metadata?: Stripe.MetadataParam): "pro" | "premium" | null {
+function getPlanFromPrice(priceId: string | undefined, metadata?: Record<string,string>): "pro" | "premium" | null {
   const proPriceId =
     process.env.STRIPE_PRO_PRICE_ID;
 
@@ -51,7 +51,7 @@ function getPlanFromPrice(priceId: string | undefined, metadata?: Stripe.Metadat
   const metadataPlan = metadata?.plan;
   return metadataPlan === "pro" || metadataPlan === "premium" ? metadataPlan : null;
 }
-function getBillingInterval(priceId: string | undefined, metadata?: Stripe.MetadataParam): "month" | "6_month" | "year" {
+function getBillingInterval(priceId: string | undefined, metadata?: Record<string,string>): "month" | "6_month" | "year" {
   if (priceId === process.env.STRIPE_PRO_YEAR_PRICE_ID || priceId === process.env.STRIPE_PREMIUM_YEAR_PRICE_ID) return "year";
   if (priceId === process.env.STRIPE_PRO_6_MONTH_PRICE_ID || priceId === process.env.STRIPE_PREMIUM_6_MONTH_PRICE_ID) return "6_month";
   const metadataInterval = metadata?.billing_interval;
