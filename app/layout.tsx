@@ -9,7 +9,7 @@ import GlobalSearch from "../components/GlobalSearch";
 import LanguageProvider from "../components/LanguageProvider";
 import SignedInBar from "../components/SignedInBar";
 import BottomNav from "../components/BottomNav";
-
+import ProtectionLayer from "../components/ProtectionLayer";
 
 export const metadata: Metadata = {
   title: "HoopCheck",
@@ -71,8 +71,9 @@ export default function RootLayout({
             <span>© {new Date().getFullYear()} HoopCheck. All rights reserved.</span>
             <span>Built for basketball players.</span>
           </div>
-        </footer>
-      </body>
-    </html>
-  );
+        </div>
+      </footer>
+    </body>
+  </html>
+);
 }
