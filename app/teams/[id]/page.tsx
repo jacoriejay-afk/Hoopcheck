@@ -15,7 +15,7 @@ import { supabase } from "../../../lib/supabase";
 import { submitReviewReport } from "../../../lib/review-reports";
 import HoopLoading from "../../../components/HoopLoading";
 import WatchButton from "../../../components/WatchButton";
-import GeoBadge from "../../../components/GeoBadge";\nimport FollowButton from "../../../components/FollowButton";
+import GeoBadge from "../../../components/GeoBadge";\nimport FollowButton from "../../../components/FollowButton";\nimport ReviewCommunityActions from "../../../components/ReviewCommunityActions";
 
 type Team = {
   id: string;
