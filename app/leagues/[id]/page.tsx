@@ -12,6 +12,7 @@ import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import { submitReviewReport } from "../../../lib/review-reports";
 import HoopLoading from "../../../components/HoopLoading";
+import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
 import WatchButton from "../../../components/WatchButton";
 import GeoBadge from "../../../components/GeoBadge";
 
@@ -873,6 +874,7 @@ export default function LeagueDetailPage() {
                       <p>
                         {review.body}
                       </p>
+                      <ReviewCommunityActions reviewId={review.id} />
 
                       <div className="review-footer">
                         <p
