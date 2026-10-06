@@ -23,7 +23,7 @@ type Player = {
 export default function PlayerProfilePage() {
   const params = useParams<{ id: string }>();
   const [player, setPlayer] = useState<Player | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);\n  const [reportMessage, setReportMessage] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -37,7 +37,7 @@ export default function PlayerProfilePage() {
     if (params.id) load();
   }, [params.id]);
 
-  if (loading) {
+\n  async function reportProfile(){\n    const reason=window.prompt("Why are you reporting this profile?");\n    if(!reason?.trim()) return;\n    const {data:{session}}=await supabase.auth.getSession();\n    if(!session) { window.location.href="/login"; return; }\n    const res=await fetch("/api/profile-reports",{method:"POST",headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({profileId:player?.id,reason})});\n    const body=await res.json().catch(()=>({})); setReportMessage(res.ok?"Report submitted for review.":(body.error||"Unable to submit report."));\n  }\n\n  if (loading) {
     return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading player profile..." /></div></main>;
   }
 
@@ -117,7 +117,7 @@ export default function PlayerProfilePage() {
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 12 }}>
             <Link href="/search" className="btn">Explore HoopCheck</Link>
-            <Link href="/account" className="btn dark">My Account</Link>
+            <Link href="/account" className="btn dark">My Account</Link><button type="button" className="btn dark" onClick={reportProfile}>Report Profile</button>{reportMessage&&<span className="muted">{reportMessage}</span>}
           </div>
         </section>
       </div>
