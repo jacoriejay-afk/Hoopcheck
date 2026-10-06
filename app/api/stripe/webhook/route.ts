@@ -27,7 +27,7 @@ function getAdminSupabase() {
   );
 }
 
-function getPlanFromPrice(priceId: string | undefined): "pro" | "premium" | null {
+function getPlanFromPrice(priceId: string | undefined, metadata?: Stripe.MetadataParam): "pro" | "premium" | null {
   const proPriceId =
     process.env.STRIPE_PRO_PRICE_ID;
 
@@ -48,12 +48,14 @@ function getPlanFromPrice(priceId: string | undefined): "pro" | "premium" | null
     return "pro";
   }
 
-  return null;
+  const metadataPlan = metadata?.plan;
+  return metadataPlan === "pro" || metadataPlan === "premium" ? metadataPlan : null;
 }
-function getBillingInterval(priceId: string | undefined): "month" | "6_month" | "year" {
+function getBillingInterval(priceId: string | undefined, metadata?: Stripe.MetadataParam): "month" | "6_month" | "year" {
   if (priceId === process.env.STRIPE_PRO_YEAR_PRICE_ID || priceId === process.env.STRIPE_PREMIUM_YEAR_PRICE_ID) return "year";
   if (priceId === process.env.STRIPE_PRO_6_MONTH_PRICE_ID || priceId === process.env.STRIPE_PREMIUM_6_MONTH_PRICE_ID) return "6_month";
-  return "month";
+  const metadataInterval = metadata?.billing_interval;
+  return metadataInterval === "6_month" || metadataInterval === "year" ? metadataInterval : "month";
 }
 
 async function saveSubscription(
@@ -67,7 +69,7 @@ async function saveSubscription(
     subscription.items.data[0]?.price?.id;
 
   const plan =
-    getPlanFromPrice(priceId);
+    getPlanFromPrice(priceId, subscription.items.data[0]?.price?.metadata);
 
   if (!plan) {
     throw new Error(
@@ -102,7 +104,7 @@ async function saveSubscription(
           stripe_price_id:
             priceId,
           plan,
-          billing_interval: getBillingInterval(priceId),
+          billing_interval: getBillingInterval(priceId, subscription.items.data[0]?.price?.metadata),
           access_status: subscription.status === "active" || subscription.status === "trialing" ? plan : "free",
           status:
             subscription.status,
