@@ -25,7 +25,7 @@ export default function OnboardingPage() {
   const [currentCountry, setCurrentCountry] = useState("");
   const [currentTeam, setCurrentTeam] = useState("");
   const [bio, setBio] = useState("");
-  const [visibility, setVisibility] = useState("public");
+  const [visibility, setVisibility] = useState("public");\n  const [interests, setInterests] = useState("");\n  const [experienceSummary, setExperienceSummary] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -40,7 +40,7 @@ export default function OnboardingPage() {
       const user = session.user;
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id,display_name,username,first_name,last_name,account_type,professional_experience,position,years_pro,country,current_country,current_team,bio,profile_visibility")
+        .select("id,display_name,username,first_name,last_name,account_type,professional_experience,position,years_pro,country,current_country,current_team,bio,profile_visibility,interests,experience_summary")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -60,7 +60,7 @@ export default function OnboardingPage() {
       setCurrentCountry(profile?.current_country || "");
       setCurrentTeam(profile?.current_team || "");
       setBio(profile?.bio || "");
-      setVisibility(profile?.profile_visibility || "public");
+      setVisibility(profile?.profile_visibility || "public");\n      setInterests(profile?.interests || user.user_metadata?.interests || "");\n      setExperienceSummary(profile?.experience_summary || user.user_metadata?.experience_summary || "");
       const { data: teamRows } = await supabase.from("teams").select("id,name,country,league_name").eq("active", true).order("name").limit(300);
       setTeams(teamRows || []);
       setLoading(false);
@@ -95,7 +95,7 @@ export default function OnboardingPage() {
         current_country: currentCountry.trim() || null,
         current_team: currentTeam.trim() || null,
         bio: bio.trim() || null,
-        profile_visibility: visibility === "public" ? "public" : "private",
+        profile_visibility: visibility === "public" ? "public" : "private",\n        interests: interests.trim().slice(0,500) || null,\n        experience_summary: experienceSummary.trim().slice(0,700) || null,
       })
       .eq("id", userId);
 
@@ -154,7 +154,7 @@ export default function OnboardingPage() {
             <p className="muted" style={{fontSize:12}}>Your first and last name are locked after account setup.</p>
             <label>Account Type</label>
             <select value={accountType} onChange={e=>setAccountType(e.target.value as "player"|"scout"|"agent"|"fan")}>
-              <option value="player">Player</option><option value="scout">Scout</option><option value="agent">Agent</option><option value="fan">Fan</option>
+              <option value="player">Player</option><option value="coach">Coach</option><option value="scout">Scout</option><option value="agent">Agent</option><option value="fan">Fan</option>
             </select>
             <p className="muted" style={{fontSize:12}}>Only verified players can write ratings or reviews. Scouts, agents, and fans remain research-only.</p>
             <label>Professional Experience</label>
@@ -185,7 +185,7 @@ export default function OnboardingPage() {
             <label htmlFor="currentTeam">Current Team</label>
             <input id="currentTeam" value={currentTeam} onChange={e => setCurrentTeam(e.target.value)} />
 
-            <label htmlFor="bio">Short Bio</label>
+            <label htmlFor="interests">What do you want from HoopCheck?</label><textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} rows={3} maxLength={500} placeholder="Research teams, follow leagues, find coaches, connect with players..." />\n            <label htmlFor="experienceSummary">About yourself</label><textarea id="experienceSummary" value={experienceSummary} onChange={e=>setExperienceSummary(e.target.value)} rows={3} maxLength={700} placeholder="Optional background, goals, or basketball interests." />\n\n            <label htmlFor="bio">Short Bio</label>
             <textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} rows={5} maxLength={1200} />
 
             <label htmlFor="visibility">Profile Visibility</label>
