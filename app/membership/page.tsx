@@ -321,10 +321,10 @@ function MembershipContent() {
 
             <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",marginBottom:24}}>
               <button className={billingInterval==="month" ? "btn" : "btn dark"} onClick={()=>setBillingInterval("month")}>Monthly</button>
-              <button className={billingInterval==="6_month" ? "btn" : "btn dark"} onClick={()=>setBillingInterval("6_month")}>6 Months</button>
-              <button className={billingInterval==="year" ? "btn" : "btn dark"} onClick={()=>setBillingInterval("year")}>1 Year</button>
+              <button className={billingInterval==="6_month" ? "btn" : "btn dark"} onClick={()=>setBillingInterval("6_month")}>6 Months · 15% OFF</button>
+              <button className={billingInterval==="year" ? "btn" : "btn dark"} onClick={()=>setBillingInterval("year")}>1 Year · 10% OFF</button>
             </div>
-            <div className="plans">
+            <div className="dashboard-card" style={{marginBottom:16}}><strong>Recommended: 6 months</strong><span className="muted"> Save 15% versus six monthly payments. Annual is also recommended for the best long-term value at 10% off.</span></div><div className="plans">
               <div className="plan-card">
                 <div className="plan-top">
                   <div>
@@ -332,7 +332,7 @@ function MembershipContent() {
                     <h3>Pro</h3>
                   </div>
                   <div className="price">
-                    <strong>{billingInterval==="month" ? "$7.99" : billingInterval==="6_month" ? "$39.99" : "$74.99"}</strong>
+                    <strong>{billingInterval==="month" ? "$7.99" : billingInterval==="6_month" ? "$40.75" : "$86.29"}</strong>
                     <span>{billingInterval==="month" ? "/ month" : billingInterval==="6_month" ? "/ 6 months" : "/ year"}</span>
                   </div>
                 </div>
@@ -364,7 +364,7 @@ function MembershipContent() {
                     <h3>Premium</h3>
                   </div>
                   <div className="price">
-                    <strong>{billingInterval==="month" ? "$15.99" : billingInterval==="6_month" ? "$79.99" : "$149.99"}</strong>
+                    <strong>{billingInterval==="month" ? "$15.99" : billingInterval==="6_month" ? "$81.55" : "$172.69"}</strong>
                     <span>{billingInterval==="month" ? "/ month" : billingInterval==="6_month" ? "/ 6 months" : "/ year"}</span>
                   </div>
                 </div>
