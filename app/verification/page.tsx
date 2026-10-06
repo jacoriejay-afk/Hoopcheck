@@ -19,6 +19,8 @@ export default function VerificationPage() {
   const [documentType,setDocumentType]=useState<"passport"|"basketball_license"|"national_id"|"other">("basketball_license");
   const [documentFile,setDocumentFile]=useState<File|null>(null);
   const [status,setStatus]=useState<string|null>(null);
+  const [identityStatus,setIdentityStatus]=useState<string>("not_started");
+  const [identityLoading,setIdentityLoading]=useState(false);
   const [message,setMessage]=useState("");
   const [loading,setLoading]=useState(true);
   const [submitting,setSubmitting]=useState(false);
@@ -26,12 +28,25 @@ export default function VerificationPage() {
   useEffect(()=>{(async()=>{
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){window.location.href="/login";return;}
-    const {data:profile}=await supabase.from("profiles").select("account_type,basketball_type").eq("id",user.id).maybeSingle(); if(profile?.account_type !== "player"){window.location.href="/account";return;} setBasketballType(profile?.basketball_type||"mens");
+    const {data:profile}=await supabase.from("profiles").select("account_type,basketball_type,identity_verification_status").eq("id",user.id).maybeSingle(); if(profile?.account_type !== "player"){window.location.href="/account";return;} setBasketballType(profile?.basketball_type||"mens"); setIdentityStatus(profile?.identity_verification_status || "not_started");
     const {data:teamData}=await supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(500);
     setTeams(teamData||[]); const {data:wt}=await supabase.from("womens_teams").select("id,name,country").eq("active",true).order("name"); setWomensTeams(wt||[]);
     const {data}=await supabase.from("player_verification_requests").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
     setStatus(data?.status ?? null); setLoading(false);
   })()},[]);
+
+  async function startIdentityVerification(){
+    setIdentityLoading(true); setMessage("");
+    const {data:{session}}=await supabase.auth.getSession();
+    if(!session){window.location.href="/login";return;}
+    const res=await fetch("/api/verification/identity",{method:"POST",headers:{Authorization:"Bearer "+session.access_token}});
+    const body=await res.json().catch(()=>({}));
+    if(!res.ok){setMessage(body.error||"Unable to start identity verification.");setIdentityLoading(false);return;}
+    if(body.status)setIdentityStatus(body.status);
+    if(body.url)window.location.href=body.url;
+    else setMessage("Identity verification session created. Please try again if the verification window did not open.");
+    setIdentityLoading(false);
+  }
 
   async function submit(e:React.FormEvent){
     e.preventDefault(); setMessage(""); setSubmitting(true);
@@ -64,6 +79,13 @@ export default function VerificationPage() {
     <section className="dashboard-card" style={{marginTop:24}}>
       {status==="approved" ? <><h2>✓ Verified Player</h2><p className="muted">Your account is verified.</p></> :
        status==="pending" ? <><h2>Request under review</h2><p className="muted">We have your request. You do not need to submit another one.</p></> :
+       <div className="card" style={{marginBottom:16,border:"1px solid var(--orange)"}}>
+        <p className="eyebrow">IDENTITY CHECK</p>
+        <h2>{identityStatus==="verified" ? "✓ Identity verified" : "Verify with ID + face scan"}</h2>
+        <p className="muted">HoopCheck uses Stripe Identity to verify your government ID or passport and compare it with a live selfie. HoopCheck does not store your face scan.</p>
+        {identityStatus!=="verified" && <button type="button" className="btn" onClick={startIdentityVerification} disabled={identityLoading}>{identityLoading?"Opening secure verification...":"Start secure ID + face verification"}</button>}
+        {identityStatus==="processing" && <p className="muted">Your identity check is processing. Keep this page available and return after Stripe finishes the check.</p>}
+       </div>
        <form onSubmit={submit} style={{display:"grid",gap:12}}>
         <label>Basketball type<select value={basketballType} onChange={e=>setBasketballType(e.target.value as "mens"|"womens")}><option value="mens">Men’s Basketball</option><option value="womens">Women’s Basketball</option></select></label><label>Current team{basketballType==="mens"?<select value={teamId} onChange={e=>{const id=e.target.value;setTeamId(id);const t=teams.find(x=>x.id===id);setTeam(t?.name||"");}}><option value="">Select current team</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?` — ${t.country}`:""}</option>)}</select>:<select value={womensTeamId} onChange={e=>{const id=e.target.value;setWomensTeamId(id);const t=womensTeams.find(x=>x.id===id);setTeam(t?.name||"");}}><option value="">Select women’s team</option>{womensTeams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?` — ${t.country}`:""}</option>)}</select>}</label>
         <label>Current country<input value={country} onChange={e=>setCountry(e.target.value)} maxLength={80} placeholder="Country"/></label>
@@ -74,7 +96,7 @@ export default function VerificationPage() {
         <label>Anything else we should know?<textarea value={note} onChange={e=>setNote(e.target.value)} maxLength={1000} rows={5}/></label>
         {message&&<p role="status">{message}</p>}
         <button className="btn" disabled={submitting}>{submitting?"Submitting...":"Request Verification"}</button>
-        <p className="muted">Do not submit passwords, financial information, or sensitive identity documents in this form.</p>
+        <p className="muted">Use the secure identity check above for passports/IDs and face matching. Do not upload identity documents through this fallback form unless HoopCheck support specifically asks you to.</p>
        </form>}
     </section>
   </div></main>;
