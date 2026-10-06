@@ -1473,3 +1473,22 @@ h1,h2,h3,.brand,.logo,.footer-logo,.card-kicker,.eyebrow{font-family:var(--hoop-
  body{padding-bottom:calc(68px + env(safe-area-inset-bottom))!important}
 }
 @media(max-width:380px){.bottom-nav a span:last-child{font-size:8px}.bottom-nav-icon{font-size:15px}}
+
+
+/* HoopCheck compact, smooth cards */
+.dashboard-card,.hero-card,.player-dashboard-card,.card{border-radius:14px;}
+.dashboard-card{padding:18px;}
+.grid{gap:14px;}
+.dashboard-card h2{font-size:1.05rem;line-height:1.2;margin:6px 0 8px;}
+.dashboard-card p{line-height:1.45;}
+.account-type-choice{border-radius:12px;min-height:68px;padding:12px 14px;}
+.signup-card{border-radius:16px;}
+.signup-form select,.signup-form input,.signup-form textarea{border-radius:10px;}
+.fan-dashboard-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));}
+.fan-feature-card{min-height:170px;display:flex;flex-direction:column;}
+.fan-feature-card .btn{align-self:flex-start;margin-top:auto;}
+.premium-fan-card{border:1px solid var(--orange);}
+.fan-followed-list{display:grid;gap:7px;margin-top:8px;}
+.fan-team-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--border);border-radius:10px;text-decoration:none;color:inherit;}
+.fan-team-row small{display:block;color:var(--muted);margin-top:2px;}
+@media (max-width:700px){.dashboard-card{padding:15px}.grid{gap:10px}.fan-team-filters{grid-template-columns:1fr}.fan-feature-card{min-height:145px}}
