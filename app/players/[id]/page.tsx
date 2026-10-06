@@ -99,6 +99,7 @@ export default function PlayerProfilePage() {
               {player.player_verified ? "Verified professional player" : "HoopCheck player"}
             </p>
           </div>
+          <div style={{ marginTop: 14 }}><FollowButton targetType="player" targetId={player.id} /></div>
         </section>
 
         <section className="player-profile-grid">
