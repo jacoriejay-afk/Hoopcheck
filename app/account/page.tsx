@@ -24,7 +24,9 @@ type Profile = {
   current_team: string | null;
   profile_visibility: "public" | "private";
   player_verified: boolean;
-  profile_claimed: boolean;\n  avatar_url: string | null;\n  avatar_moderation_status: "pending" | "approved" | "rejected";
+  profile_claimed: boolean;
+  avatar_url: string | null;
+  avatar_moderation_status: "pending" | "approved" | "rejected";
 };
 
 type Review = {
@@ -50,7 +52,9 @@ export default function AccountPage() {
   const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
-  const [loading, setLoading] = useState(true);\n  const [avatarUrl, setAvatarUrl] = useState("");\n  const [avatarStatus, setAvatarStatus] = useState<"pending"|"approved"|"rejected">("approved");
+  const [loading, setLoading] = useState(true);
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarStatus, setAvatarStatus] = useState<"pending"|"approved"|"rejected">("approved");
 
   useEffect(() => {
     async function load() {
@@ -69,7 +73,9 @@ export default function AccountPage() {
       setYearsPro(nextProfile.years_pro?.toString() ?? "");
       setCurrentCountry(nextProfile.current_country ?? "");
       setCurrentTeam(nextProfile.current_team ?? "");
-      setVisibility(nextProfile.profile_visibility ?? "public");\n      setAvatarUrl(nextProfile.avatar_url ?? "");\n      setAvatarStatus(nextProfile.avatar_moderation_status ?? "approved");
+      setVisibility(nextProfile.profile_visibility ?? "public");
+      setAvatarUrl(nextProfile.avatar_url ?? "");
+      setAvatarStatus(nextProfile.avatar_moderation_status ?? "approved");
       setSubscription(subscriptionData ?? null);
       setVerified(Boolean(nextProfile.player_verified));
       const { data } = await supabase.from("reviews")
@@ -94,7 +100,24 @@ export default function AccountPage() {
     load();
   }, []);
 
-\n  async function uploadAvatar(file: File) {\n    if (!file.type.startsWith("image/")) { setProfileMessage("Please choose an image file."); return; }\n    if (file.size > 5 * 1024 * 1024) { setProfileMessage("Profile photos must be 5MB or smaller."); return; }\n    const { data: { user } } = await supabase.auth.getUser();\n    if (!user) return;\n    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();\n    const path = user.id + "/avatar." + ext;\n    const { error: uploadError } = await supabase.storage.from("profile-avatars").upload(path, file, { upsert: true, contentType: file.type });\n    if (uploadError) { setProfileMessage(uploadError.message); return; }\n    const { data } = supabase.storage.from("profile-avatars").getPublicUrl(path);\n    const pendingUrl = data.publicUrl + "?v=" + Date.now();\n    const { error } = await supabase.from("profiles").update({ avatar_url: pendingUrl }).eq("id", user.id);\n    if (error) { setProfileMessage(error.message); return; }\n    setAvatarUrl(pendingUrl); setAvatarStatus("pending"); setProfileMessage("Photo uploaded. It is pending moderation before appearing publicly.");\n  }\n\n  async function saveProfile(event: React.FormEvent) {
+
+  async function uploadAvatar(file: File) {
+    if (!file.type.startsWith("image/")) { setProfileMessage("Please choose an image file."); return; }
+    if (file.size > 5 * 1024 * 1024) { setProfileMessage("Profile photos must be 5MB or smaller."); return; }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const path = user.id + "/avatar." + ext;
+    const { error: uploadError } = await supabase.storage.from("profile-avatars").upload(path, file, { upsert: true, contentType: file.type });
+    if (uploadError) { setProfileMessage(uploadError.message); return; }
+    const { data } = supabase.storage.from("profile-avatars").getPublicUrl(path);
+    const pendingUrl = data.publicUrl + "?v=" + Date.now();
+    const { error } = await supabase.from("profiles").update({ avatar_url: pendingUrl }).eq("id", user.id);
+    if (error) { setProfileMessage(error.message); return; }
+    setAvatarUrl(pendingUrl); setAvatarStatus("pending"); setProfileMessage("Photo uploaded. It is pending moderation before appearing publicly.");
+  }
+
+  async function saveProfile(event: React.FormEvent) {
     event.preventDefault();
     setSavingProfile(true);
     setProfileMessage("");
@@ -152,7 +175,10 @@ export default function AccountPage() {
       </section>
       <section className="grid" style={{marginTop:32}}>
         <div className="dashboard-card">
-          <p className="eyebrow">PROFILE</p>\n          {avatarUrl && <img src={avatarUrl} alt="Profile" style={{width:84,height:84,borderRadius:"50%",objectFit:"cover",border:"2px solid var(--border)"}} />}\n          <label htmlFor="avatar-upload" className="muted">Profile picture</label><input id="avatar-upload" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f) void uploadAvatar(f)}} />\n          <p className="muted" style={{fontSize:12}}>{avatarStatus==="pending" ? "Pending moderation." : avatarStatus==="rejected" ? "Photo rejected. Upload another image." : "Approved for public display."}</p>
+          <p className="eyebrow">PROFILE</p>
+          {avatarUrl && <img src={avatarUrl} alt="Profile" style={{width:84,height:84,borderRadius:"50%",objectFit:"cover",border:"2px solid var(--border)"}} />}
+          <label htmlFor="avatar-upload" className="muted">Profile picture</label><input id="avatar-upload" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f) void uploadAvatar(f)}} />
+          <p className="muted" style={{fontSize:12}}>{avatarStatus==="pending" ? "Pending moderation." : avatarStatus==="rejected" ? "Photo rejected. Upload another image." : "Approved for public display."}</p>
           <h2>Player information {verified && <span title="Verified professional player" style={{color:"var(--orange)"}}>✓</span>}</h2>
           <form onSubmit={saveProfile} style={{display:"grid",gap:12,marginTop:16}}>
             <label className="muted">First name</label><input value={profile.first_name ?? ""} readOnly />
