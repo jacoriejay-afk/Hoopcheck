@@ -97,7 +97,7 @@ export default function OnboardingPage() {
         years_pro: years,
         country: country.trim() || null,
         current_country: currentCountry.trim() || null,
-        current_team: currentTeam.trim() || null,\n        selected_team_id: selectedTeamId || null,\n        basketball_type: basketballType, free_agent: freeAgent, hometown: hometown.trim() || null, nationality: nationality.trim() || null,\n        favorite_teams: favoriteTeams.join(","),
+        current_team: currentTeam.trim() || null,\n        selected_team_id: basketballType === "mens" ? (selectedTeamId || null) : null,\n        selected_womens_team_id: basketballType === "womens" ? (selectedTeamId || null) : null,\n        basketball_type: basketballType, free_agent: freeAgent, hometown: hometown.trim() || null, nationality: nationality.trim() || null,\n        favorite_teams: favoriteTeams.join(","),
         bio: bio.trim() || null,
         profile_visibility: visibility === "public" ? "public" : "private",
         interests: interests.trim().slice(0,500) || null,
