@@ -593,6 +593,22 @@ export default function TeamReviewPage() {
           padding: "20px 6% 90px",
         }}
       >
+        <div className="dashboard-card" style={{ marginBottom: 18, borderColor: "rgba(255,106,0,.45)" }}>
+          <p className="eyebrow">BEFORE YOU REVIEW</p>
+          <h2>HoopCheck review rules</h2>
+          <ul className="muted" style={{ lineHeight: 1.7, paddingLeft: 20 }}>
+            <li>Reviews must be based on your real professional experience with this organization.</li>
+            <li>Be factual and respectful. Do not post threats, harassment, private information, or explicit/prohibited content.</li>
+            <li>Do not submit a review for a team you did not play for or work with as an eligible professional player.</li>
+            <li>One review per player for each team. Reviews may be moderated before publication.</li>
+            <li>You may choose to publish anonymously, but HoopCheck may retain verification information for moderation and trust.</li>
+          </ul>
+          <label className="checkbox-row" style={{ marginTop: 10 }}>
+            <input type="checkbox" required />
+            <span>I have read and agree to these review rules.</span>
+          </label>
+        </div>
+
         <form
           onSubmit={handleSubmit}
           style={{
