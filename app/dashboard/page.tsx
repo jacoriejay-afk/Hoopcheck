@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import NotificationBell from "../../components/NotificationBell";
+import PlayerContactButton from "../../components/PlayerContactButton";
 import { useLanguage } from "../../components/LanguageProvider";
 
 type Profile = { display_name: string | null; player_verified: boolean; account_type: "player"|"coach"|"scout"|"agent"|"fan"; moderation_status?: string; moderation_note?: string | null };
@@ -216,6 +217,15 @@ export default function DashboardPage() {
           {subscription?.plan === "premium" && activeMembership ? <div className="dashboard-card fan-feature-card premium-fan-card"><span className="card-kicker">PREMIUM FAN</span><h2>📊 Fan Base Insights</h2><p className="muted">See follower momentum, community size, review activity, and team sentiment as your fan intelligence hub grows.</p><strong>{followedTeams.length} followed team{followedTeams.length===1?"":"s"}</strong></div> : <div className="dashboard-card fan-feature-card"><span className="card-kicker">PREMIUM FAN</span><h2>Unlock Fan Intelligence</h2><p className="muted">Premium fans get deeper team and fan-base insights, including community activity and team pulse features.</p><Link href="/membership" className="btn">Explore Premium</Link></div>}
           {followedTeams.length > 0 && <div className="dashboard-card fan-feature-card"><span className="card-kicker">FOLLOWING</span><h2>My Teams</h2><div className="fan-followed-list">{followedTeams.slice(0,6).map(t=><Link key={t.id} href={"/teams/"+t.id} className="fan-team-row"><span><strong>{t.name}</strong><small>{t.country || "Global"}{t.league_name ? " · "+t.league_name : ""}</small></span><span>›</span></Link>)}</div></div>}
         </section>}
+
+        {(profile?.account_type === "player" || profile?.account_type === "scout" || profile?.account_type === "agent") && (
+          <section className="dashboard-card contact-dashboard-card" style={{ marginTop: 24 }}>
+            <span className="card-kicker">PLAYER CONNECTIONS</span>
+            <h2>{profile.account_type === "player" ? "Recruiting requests" : "Player outreach"}</h2>
+            <p className="muted">{profile.account_type === "player" ? "Premium scouts and agents can request contact. You decide who can reach you." : "Premium scouts and agents can request contact with players. A player must accept before messaging opens."}</p>
+            {profile.account_type !== "player" && subscription?.plan === "premium" && activeMembership ? <p className="muted">Open any player profile to request contact.</p> : null}
+          </section>
+        )}
 
         <section className="grid" style={{ marginTop: 24 }}>
           <div className="dashboard-card">
