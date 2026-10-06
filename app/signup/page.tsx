@@ -25,6 +25,7 @@ export default function SignupPage() {
   const [yearsPro,setYearsPro]=useState("0"); const [professionalExperience,setProfessionalExperience]=useState(false);
   const [formerTeams,setFormerTeams]=useState<string[]>([]); const [favoriteTeamId,setFavoriteTeamId]=useState("");
   const [teams,setTeams]=useState<Team[]>([]);
+  const [teamCountry,setTeamCountry]=useState(""); const [teamLeague,setTeamLeague]=useState("");
   const [email,setEmail]=useState(""); const [password,setPassword]=useState(""); const [confirmPassword,setConfirmPassword]=useState("");
   const [isAdult,setIsAdult]=useState(false); const [agreedToTerms,setAgreedToTerms]=useState(false);
   const [loading,setLoading]=useState(false); const [error,setError]=useState("");
@@ -32,6 +33,9 @@ export default function SignupPage() {
   useEffect(()=>{supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(1000).then(({data})=>setTeams(data||[]));},[]);
 
   const isPlayer = accountType === "player";
+  const teamCountries=Array.from(new Set(teams.map(t=>t.country).filter(Boolean) as string[])).sort();
+  const teamLeagues=Array.from(new Set(teams.filter(t=>!teamCountry||t.country===teamCountry).map(t=>t.league_name).filter(Boolean) as string[])).sort();
+  const filteredTeams=teams.filter(t=>(!teamCountry||t.country===teamCountry)&&(!teamLeague||t.league_name===teamLeague));
 
   async function handleSignup(event:FormEvent){
     event.preventDefault(); setLoading(true); setError("");
@@ -82,14 +86,14 @@ export default function SignupPage() {
         <h2>How will you use HoopCheck?</h2>
         <p className="intro">Choose this first. We’ll only show you the questions that apply to your account.</p>
         <div className="account-type-grid">
-          {ACCOUNT_TYPES.map(type=><button key={type.value} type="button" onClick={()=>{setAccountType(type.value);setError("");}} className={`account-type-choice ${accountType===type.value?"selected":""}`}>
+          {ACCOUNT_TYPES.map(type=><button key={type.value} type="button" onClick={()=>{if(!accountType){setAccountType(type.value);setError("");}}} className={`account-type-choice ${accountType===type.value?"selected":""}`}>
             <span className="account-type-icon">{type.icon}</span><span><strong>{type.title}</strong><small>{type.description}</small></span><span className="account-type-check">{accountType===type.value?"✓":"+"}</span>
           </button>)}
         </div>
 
         {accountType && <form onSubmit={handleSignup} className="signup-form">
           <div className="signup-step-label">STEP 02 · CREATE YOUR ACCOUNT</div>
-          <div className="signup-account-badge"><strong>{ACCOUNT_TYPES.find(x=>x.value===accountType)?.title}</strong><button type="button" onClick={()=>setAccountType(null)}>Change</button></div>
+          <div className="signup-account-badge"><strong>{ACCOUNT_TYPES.find(x=>x.value===accountType)?.title}</strong><span className="muted">Account type is locked after selection.</span></div>
           <div className="signup-two-col">
             <div><label htmlFor="first-name">First Name</label><input id="first-name" value={firstName} onChange={e=>setFirstName(e.target.value)} autoComplete="given-name" required /></div>
             <div><label htmlFor="last-name">Last Name</label><input id="last-name" value={lastName} onChange={e=>setLastName(e.target.value)} autoComplete="family-name" required /></div>
@@ -104,12 +108,12 @@ export default function SignupPage() {
             <label>Professional experience</label><select value={professionalExperience?"yes":"no"} onChange={e=>setProfessionalExperience(e.target.value==="yes")}><option value="yes">Yes — I have played professionally</option><option value="no">No — not yet</option></select>
             <label>Former / current professional team</label>
             <select multiple size={5} value={formerTeams} onChange={e=>setFormerTeams(Array.from(e.target.selectedOptions).map(o=>o.value).slice(0,8))}>
-              {teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?" — "+t.country:""}{t.league_name?" · "+t.league_name:""}</option>)}
+              {filteredTeams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?" — "+t.country:""}{t.league_name?" · "+t.league_name:""}</option>)}
             </select>
             <p className="form-hint">Select the teams you have played for. These are saved for verification and review eligibility.</p>
           </> : <div className="non-player-preferences">
             <div className="signup-step-label">BASKETBALL TO FOLLOW</div>
-            <label htmlFor="favorite-team">Choose a team to follow</label>
+            <div className="signup-two-col fan-team-filters"><div><label htmlFor="fan-team-country">Country</label><select id="fan-team-country" value={teamCountry} onChange={e=>{setTeamCountry(e.target.value);setTeamLeague("");setFavoriteTeamId("");}}><option value="">All countries</option>{teamCountries.map(x=><option key={x} value={x}>{x}</option>)}</select></div><div><label htmlFor="fan-team-league">League</label><select id="fan-team-league" value={teamLeague} onChange={e=>{setTeamLeague(e.target.value);setFavoriteTeamId("");}}><option value="">All leagues</option>{teamLeagues.map(x=><option key={x} value={x}>{x}</option>)}</select></div></div><label htmlFor="favorite-team">Choose a team to follow</label>
             <select id="favorite-team" value={favoriteTeamId} onChange={e=>setFavoriteTeamId(e.target.value)}>
               <option value="">Select a team</option>
               {teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?" — "+t.country:""}{t.league_name?" · "+t.league_name:""}</option>)}
