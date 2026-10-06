@@ -113,3 +113,17 @@ language sql stable set search_path=public as $$
  select p.id,p.display_name,case when p.avatar_moderation_status='approved' then p.avatar_url else null end,p.country,p.bio,p.position,p.years_pro,p.current_country,p.current_team,p.player_verified,p.player_verified_at
  from public.profiles p where p.id=p_user_id and p.profile_visibility='public' and p.moderation_status <> 'suspended';
 $$;
+
+create or replace function public.admin_resolve_profile_report(p_report_id uuid,p_status text)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare v jsonb;
+begin
+ if not public.is_current_user_admin_or_moderator() then raise exception 'Admin or moderator access required'; end if;
+ if p_status not in ('open','resolved','dismissed') then raise exception 'Invalid report status'; end if;
+ update public.profile_reports set status=p_status where id=p_report_id
+ returning jsonb_build_object('id',id,'status',status) into v;
+ if v is null then raise exception 'Report not found'; end if;
+ return v;
+end; $$;
+revoke execute on function public.admin_resolve_profile_report(uuid,text) from public,anon,authenticated;
+grant execute on function public.admin_resolve_profile_report(uuid,text) to authenticated;
