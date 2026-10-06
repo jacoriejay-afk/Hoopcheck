@@ -197,8 +197,8 @@ export default function DashboardPage() {
         {(profile?.moderation_status === "warned" || profile?.moderation_status === "flagged") && <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{profile.moderation_status === "warned" ? "Account warning" : "Profile flagged for review"}</strong><p className="muted">{profile.moderation_note || "Please review the Community Guidelines and contact Support if you need clarification."}</p><Link href="/support" className="btn dark">Contact Support</Link></section>}\n\n        <section className="player-dashboard-card">
           <div className="player-dashboard-main">
             <div>
-              <p className="eyebrow">{t("playerDashboard")}</p>
-              <h1>{profile?.display_name || "Player"}</h1>
+              <p className="eyebrow">{profile?.account_type === "fan" ? "FAN DASHBOARD" : profile?.account_type ? profile.account_type.toUpperCase()+" DASHBOARD" : t("playerDashboard")}</p>
+              <h1>{profile?.display_name || (profile?.account_type === "fan" ? "Fan" : profile?.account_type ? profile.account_type.charAt(0).toUpperCase()+profile.account_type.slice(1) : "Player")}</h1>
               <p className="muted">Your HoopCheck research hub.</p>
             </div>
             <Link href="/account" className="btn dark">{t("editProfile")}</Link>
@@ -206,7 +206,7 @@ export default function DashboardPage() {
           <div className="player-dashboard-stats">
             <div><span>MEMBERSHIP</span><strong>{planLabel.replace("HoopCheck ","")}</strong><small>{statusLabel}</small></div>
             <div><span>REVIEWS</span><strong>{reviews.length}</strong><small>{reviewCounts.approved || 0} published</small></div>
-            <div><span>PLAYER STATUS</span><strong>{profile?.player_verified ? "VERIFIED" : "UNVERIFIED"}</strong><small>{profile?.player_verified ? "Professional profile" : "Verification available"}</small></div>
+            {profile?.account_type === "player" ? <div><span>PLAYER STATUS</span><strong>{profile?.player_verified ? "VERIFIED" : "UNVERIFIED"}</strong><small>{profile?.player_verified ? "Professional profile" : "Verification available"}</small></div> : <div><span>ACCOUNT</span><strong>{profile?.account_type?.toUpperCase()}</strong><small>Research profile</small></div>}
           </div>
         </section>
 
@@ -240,7 +240,7 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <div className="dashboard-card">
+          {profile?.account_type === "player" && <div className="dashboard-card">
             <span className="card-kicker">PLAYER PROFILE</span>
             <h2>
               {profile?.player_verified ? "✓ Verified Player" : "Build your player profile"}
