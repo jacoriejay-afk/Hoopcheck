@@ -29,6 +29,12 @@ export default function VerificationPage() {
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){window.location.href="/login";return;}
     const {data:profile}=await supabase.from("profiles").select("account_type,basketball_type,identity_verification_status").eq("id",user.id).maybeSingle(); if(profile?.account_type !== "player"){window.location.href="/account";return;} setBasketballType(profile?.basketball_type||"mens"); setIdentityStatus(profile?.identity_verification_status || "not_started");
+    const {data:{session}}=await supabase.auth.getSession();
+    if(session?.access_token){
+      const identityRes=await fetch("/api/verification/identity",{headers:{Authorization:"Bearer "+session.access_token}});
+      const identityBody=await identityRes.json().catch(()=>({}));
+      if(identityRes.ok && identityBody.status){setIdentityStatus(identityBody.status);}
+    }
     const {data:teamData}=await supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(500);
     setTeams(teamData||[]); const {data:wt}=await supabase.from("womens_teams").select("id,name,country").eq("active",true).order("name"); setWomensTeams(wt||[]);
     const {data}=await supabase.from("player_verification_requests").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
