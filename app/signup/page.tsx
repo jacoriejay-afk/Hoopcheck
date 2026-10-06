@@ -21,6 +21,9 @@ const [formerTeams, setFormerTeams] = useState<string[]>([]);
 const [teams, setTeams] = useState<{id:string;name:string;country:string|null;league_name:string|null}[]>([]);
 const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
+const [confirmPassword, setConfirmPassword] = useState("");
+const [interests, setInterests] = useState("");
+const [experienceSummary, setExperienceSummary] = useState("");
 const [isAdult, setIsAdult] = useState(false);
 const [agreedToTerms, setAgreedToTerms] = useState(false);
 
@@ -48,6 +51,9 @@ if (password.length < 6) {
   setError("Password must be at least 6 characters.");
   setLoading(false);
   return;
+}
+if (password !== confirmPassword) {
+  setError("Passwords do not match."); setLoading(false); return;
 }
 if (!isAdult) {
   setError("You must confirm that you are 18 or older.");
@@ -79,6 +85,8 @@ const { data, error } = await supabase.auth.signUp({
       agreed_to_terms: true,
       terms_accepted_at: new Date().toISOString(),
       terms_version: TERMS_VERSION,
+      interests: interests.trim(),
+      experience_summary: experienceSummary.trim(),
     },
   },
 });
@@ -183,7 +191,7 @@ return (
           autoComplete="email"
           required
         />
-        <label htmlFor="password">Password</label>
+        <label htmlFor="interests">What do you want to use HoopCheck for?</label>\n        <textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder="Research teams, find leagues, track coaches, connect with players..." />\n        <label htmlFor="experience-summary">Tell us about yourself</label>\n        <textarea id="experience-summary" value={experienceSummary} onChange={e=>setExperienceSummary(e.target.value)} maxLength={700} rows={3} placeholder="Optional: basketball background, role, interests, goals..." />\n        <label htmlFor="password">Password</label>
         <input
           id="password"
           type="password"
