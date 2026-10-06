@@ -48,8 +48,11 @@ export default function AccountPage() {
   const [position, setPosition] = useState("");
   const [yearsPro, setYearsPro] = useState("");
   const [currentCountry, setCurrentCountry] = useState("");
-  const [currentTeam, setCurrentTeam] = useState("");\n  const [hometown, setHometown] = useState("");\n  const [nationality, setNationality] = useState("");
-  const [visibility, setVisibility] = useState<"public" | "private">("public");\n  const [freeAgent, setFreeAgent] = useState(false);
+  const [currentTeam, setCurrentTeam] = useState("");
+  const [hometown, setHometown] = useState("");
+  const [nationality, setNationality] = useState("");
+  const [visibility, setVisibility] = useState<"public" | "private">("public");
+  const [freeAgent, setFreeAgent] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -72,7 +75,8 @@ export default function AccountPage() {
       setPosition(nextProfile.position ?? "");
       setYearsPro(nextProfile.years_pro?.toString() ?? "");
       setCurrentCountry(nextProfile.current_country ?? "");
-      setCurrentTeam(nextProfile.current_team ?? "");\n      setHometown((nextProfile as any).hometown ?? ""); setNationality((nextProfile as any).nationality ?? ""); setFreeAgent(Boolean((nextProfile as any).free_agent));
+      setCurrentTeam(nextProfile.current_team ?? "");
+      setHometown((nextProfile as any).hometown ?? ""); setNationality((nextProfile as any).nationality ?? ""); setFreeAgent(Boolean((nextProfile as any).free_agent));
       setVisibility(nextProfile.profile_visibility ?? "public");
       setAvatarUrl(nextProfile.avatar_url ?? "");
       setAvatarStatus(nextProfile.avatar_moderation_status ?? "approved");
@@ -135,8 +139,11 @@ export default function AccountPage() {
       position: position.trim().slice(0, 50) || null,
       years_pro: years,
       current_country: currentCountry.trim().slice(0, 80) || null,
-      current_team: currentTeam.trim().slice(0, 120) || null,\n      hometown: hometown.trim().slice(0,120) || null,\n      nationality: nationality.trim().slice(0,80) || null,
-      profile_visibility: visibility,\n      free_agent: freeAgent,
+      current_team: currentTeam.trim().slice(0, 120) || null,
+      hometown: hometown.trim().slice(0,120) || null,
+      nationality: nationality.trim().slice(0,80) || null,
+      profile_visibility: visibility,
+      free_agent: freeAgent,
     };
     const { error } = await supabase
       .from("profiles")
@@ -190,13 +197,16 @@ export default function AccountPage() {
             <input id="position" value={position} readOnly disabled />
             <label htmlFor="years-pro" className="muted">Years as a pro</label>
             <input id="years-pro" type="number" value={yearsPro} readOnly disabled />
-            <label htmlFor="hometown">Hometown</label><input id="hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder="City, State / Region" />\n            <label htmlFor="nationality">Nationality</label><input id="nationality" value={nationality} readOnly disabled />\n            <label htmlFor="current-country" className="muted">Current country</label>
+            <label htmlFor="hometown">Hometown</label><input id="hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder="City, State / Region" />
+            <label htmlFor="nationality">Nationality</label><input id="nationality" value={nationality} readOnly disabled />
+            <label htmlFor="current-country" className="muted">Current country</label>
             <select id="current-country" value={currentCountry} disabled><option value={currentCountry}>{currentCountry || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Country changes are tied to verified team changes.</p>
             <label htmlFor="current-team" className="muted">Current team</label>
             <input id="current-team" value={currentTeam} readOnly disabled /><p className="muted" style={{fontSize:12}}>Current team can only change after HoopCheck verifies a new team.</p>
             <label htmlFor="bio" className="muted">Player bio</label>
             <textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder="Tell other players a little about your experience." />
-            <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>Show me as a free agent</span></label>\n            <label htmlFor="visibility" className="muted">Profile visibility</label>
+            <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>Show me as a free agent</span></label>
+            <label htmlFor="visibility" className="muted">Profile visibility</label>
             <select id="visibility" value={visibility} onChange={e => setVisibility(e.target.value as "public" | "private")}>
               <option value="public">Public</option>
               <option value="private">Private</option>
