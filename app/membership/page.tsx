@@ -332,7 +332,7 @@ function MembershipContent() {
                     <h3>Pro</h3>
                   </div>
                   <div className="price">
-                    <strong>{billingInterval==="month" ? "$7.99" : billingInterval==="6_month" ? "$40.75" : "$86.29"}</strong>
+                    <strong>{billingInterval==="month" ? "\$4.99" : billingInterval==="6_month" ? "\$25.45" : "\$53.89"}</strong>
                     <span>{billingInterval==="month" ? "/ month" : billingInterval==="6_month" ? "/ 6 months" : "/ year"}</span>
                   </div>
                 </div>
@@ -364,7 +364,7 @@ function MembershipContent() {
                     <h3>Premium</h3>
                   </div>
                   <div className="price">
-                    <strong>{billingInterval==="month" ? "$15.99" : billingInterval==="6_month" ? "$81.55" : "$172.69"}</strong>
+                    <strong>{billingInterval==="month" ? "\$9.99" : billingInterval==="6_month" ? "\$50.95" : "\$107.89"}</strong>
                     <span>{billingInterval==="month" ? "/ month" : billingInterval==="6_month" ? "/ 6 months" : "/ year"}</span>
                   </div>
                 </div>
