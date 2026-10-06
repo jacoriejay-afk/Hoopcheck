@@ -10,6 +10,15 @@ import LanguageProvider from "../components/LanguageProvider";
 import SignedInBar from "../components/SignedInBar";
 import BottomNav from "../components/BottomNav";
 
+
+function ProtectionLayer(){
+  React.useEffect(()=>{
+    const block=(e:Event)=>e.preventDefault();
+    const key=(e:KeyboardEvent)=>{if((e.metaKey||e.ctrlKey)&&((e.shiftKey&&["s","4","5"].includes(e.key.toLowerCase()))||e.key.toLowerCase()==="p"))e.preventDefault();};
+    document.addEventListener("contextmenu",block); document.addEventListener("dragstart",block); document.addEventListener("keydown",key);
+    return()=>{document.removeEventListener("contextmenu",block);document.removeEventListener("dragstart",block);document.removeEventListener("keydown",key)};
+  },[]); return null;
+}
 export const metadata: Metadata = {
   title: "HoopCheck",
   description: "Research coaches, professional basketball teams, and leagues worldwide.",
@@ -22,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <body><ProtectionLayer />
         <ThemeProvider>
           <LanguageProvider>
             <MobileAuth />
