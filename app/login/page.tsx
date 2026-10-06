@@ -74,8 +74,7 @@ export default function LoginPage() {
   return (
     <main>
       <nav className="nav">
-        <Link href="/" className="logo">Hoop<span>Check</span></Link>
-        <div className="links">
+        <div className="links" style={{ marginLeft: "auto" }}>
           <button
             type="button"
             onClick={() => window.history.back()}
@@ -88,8 +87,8 @@ export default function LoginPage() {
       </nav>
 
       <section className="hero" style={{ paddingBottom: "30px" }}>
-        <div className="eyebrow">HoopCheck Player Access</div>
-        <h1>Welcome<br />back.</h1>
+        <div className="eyebrow">PLAYER ACCESS</div>
+        <h1>Welcome back.</h1>
         <p>
           Log in to research coaches, teams, leagues, and player experiences
           around the world.
