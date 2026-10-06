@@ -6,6 +6,7 @@ import HoopLoading from "../../../components/HoopLoading";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import FollowButton from "../../../components/FollowButton";
+import PlayerContactButton from "../../../components/PlayerContactButton";
 
 type Player = {
   id: string;
@@ -99,7 +100,7 @@ export default function PlayerProfilePage() {
               {player.player_verified ? "Verified professional player" : "HoopCheck player"}
             </p>
           </div>
-          <div style={{ marginTop: 14 }}><FollowButton targetType="player" targetId={player.id} /></div>
+          <div style={{ marginTop: 14, display:"flex", gap:10, flexWrap:"wrap" }}><FollowButton targetType="player" targetId={player.id} /></div>
         </section>
 
         <section className="player-profile-grid">
