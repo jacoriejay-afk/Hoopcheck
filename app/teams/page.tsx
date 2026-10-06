@@ -32,6 +32,7 @@ export default function TeamsPage() {
   const [league, setLeague] = useState("");
   const [division, setDivision] = useState("");
   const [leagueOptions, setLeagueOptions] = useState<{id:string;name:string;country:string|null;level:string|null}[]>([]);
+  const [directoryCountries, setDirectoryCountries] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
@@ -39,7 +40,7 @@ export default function TeamsPage() {
 
   const CONTINENT_COUNTRIES: Record<string, string[]> = {
     Europe: ["Albania","Andorra","Armenia","Austria","Azerbaijan","Belarus","Belgium","Bosnia and Herzegovina","Bulgaria","Croatia","Cyprus","Czechia","Denmark","Estonia","Finland","France","Georgia","Germany","Greece","Hungary","Iceland","Ireland","Israel","Italy","Kosovo","Latvia","Lithuania","Luxembourg","Malta","Moldova","Montenegro","Netherlands","North Macedonia","Norway","Poland","Portugal","Romania","Russia","Serbia","Slovakia","Slovenia","Spain","Sweden","Switzerland","Türkiye","Ukraine","United Kingdom"],
-    Asia: ["China","Japan","South Korea","Philippines","India","Indonesia","Lebanon","Jordan","Saudi Arabia","United Arab Emirates","Qatar","Bahrain","Iran","Iraq","Kazakhstan","Uzbekistan"],
+    Asia: ["China","Japan","South Korea","Philippines","India","Indonesia","Lebanon","Jordan","Saudi Arabia","United Arab Emirates","Qatar","Bahrain","Iran","Iraq","Kazakhstan","Uzbekistan","Mongolia","Kyrgyzstan","Tajikistan","Turkmenistan","Afghanistan","Bangladesh","Bhutan","Brunei","Cambodia","Laos","Malaysia","Maldives","Myanmar","Nepal","North Korea","Pakistan","Singapore","Sri Lanka","Taiwan","Vietnam","Palestine"],
     Africa: ["Egypt","Tunisia","Morocco","Algeria","Nigeria","Senegal","South Africa","Angola","Cameroon","Rwanda"],
     North_America: ["United States","Canada","Mexico"],
     South_America: ["Argentina","Brazil","Chile","Colombia","Uruguay","Venezuela","Peru"],
@@ -51,10 +52,16 @@ export default function TeamsPage() {
   }
 
   useEffect(() => {
-    supabase.from("leagues").select("id,name,country,level").eq("active", true).order("name").then(({data}) => setLeagueOptions(data || []));
+    Promise.all([
+      supabase.from("leagues").select("id,name,country,level").eq("active", true).order("name"),
+      supabase.from("teams").select("country").eq("active", true).not("country", "is", null),
+    ]).then(([leagueResult, countryResult]) => {
+      setLeagueOptions(leagueResult.data || []);
+      setDirectoryCountries(Array.from(new Set((countryResult.data || []).map((row) => row.country).filter(Boolean) as string[])).sort());
+    });
   }, []);
 
-  const countries = Array.from(new Set(teams.map((team) => team.country).filter(Boolean) as string[])).sort();
+  const countries = directoryCountries;
   const divisions = Array.from(new Set(leagueOptions.map((item) => item.level).filter(Boolean) as string[])).sort();
 
   useEffect(() => {
