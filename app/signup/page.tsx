@@ -99,10 +99,7 @@ if (data.session) {
   router.push("/onboarding");
   return;
 }
-setMessage(
-  "Account created. Check your email to confirm your account before logging in."
-);
-setLoading(false);
+router.push(`/signup/complete?email=${encodeURIComponent(email.trim().toLowerCase())}`);
 
 }
 
