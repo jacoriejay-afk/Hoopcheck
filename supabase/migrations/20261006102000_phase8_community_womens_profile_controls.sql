@@ -33,6 +33,9 @@ alter table public.profiles add column if not exists nationality text;
 alter table public.profiles add column if not exists display_name_changed_at timestamptz;
 alter table public.profiles add column if not exists selected_team_id uuid references public.teams(id) on delete set null;
 alter table public.profiles add column if not exists selected_team_verified boolean not null default false;
+alter table public.profiles add column if not exists selected_womens_team_id uuid references public.womens_teams(id) on delete set null;
+create table if not exists public.display_name_changes(id uuid primary key default gen_random_uuid(),user_id uuid not null references public.profiles(id) on delete cascade,changed_at timestamptz not null default now());
+create index if not exists idx_display_name_changes_user_date on public.display_name_changes(user_id,changed_at);
 create table if not exists public.support_requests(id uuid primary key default gen_random_uuid(),user_id uuid references public.profiles(id) on delete set null,subject text not null,body text not null,status text not null default 'open',created_at timestamptz not null default now());
 alter table public.support_requests enable row level security;
 create policy "support own" on public.support_requests for insert to authenticated with check(user_id=(select auth.uid()));
@@ -52,9 +55,10 @@ begin
   if new.years_pro is distinct from old.years_pro then raise exception 'Years professional cannot be changed after account creation.'; end if;
   if new.country is distinct from old.country then raise exception 'Country cannot be changed after selection.'; end if;
   if new.current_country is distinct from old.current_country then raise exception 'Current country is managed through verified team changes.'; end if;
-  if new.selected_team_id is distinct from old.selected_team_id and old.selected_team_id is not null and not old.selected_team_verified then raise exception 'Current team can only change after verification of a new team.'; end if;
+  if new.selected_team_id is distinct from old.selected_team_id then raise exception 'Current team can only be changed after a new team is verified by HoopCheck.'; end if;
   if new.display_name is distinct from old.display_name and old.display_name is not null then
-   if old.display_name_changed_at is not null and old.display_name_changed_at > now()-interval '14 days' then raise exception 'Display name can only be changed twice in a rolling month.'; end if;
+   if (select count(*) from public.display_name_changes where user_id=old.id and changed_at >= date_trunc('month',now())) >= 2 then raise exception 'Display name can only be changed twice per month.'; end if;
+   insert into public.display_name_changes(user_id) values(old.id);
    new.display_name_changed_at:=now();
   end if;
  end if; return new;
