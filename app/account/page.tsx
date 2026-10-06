@@ -198,11 +198,74 @@ export default function AccountPage() {
             <label htmlFor="years-pro" className="muted">Years as a pro</label>
             <input id="years-pro" type="number" value={yearsPro} readOnly disabled />
             <label htmlFor="hometown">Hometown</label><input id="hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder="City, State / Region" />
-            <label htmlFor="nationality">Nationality</label><input id="nationality" value={nationality} readOnly disabled />
+            <label htmlFor="nationality">Nationality</label>
+            <select id="nationality" value={nationality} onChange={e=>setNationality(e.target.value)} disabled={savingProfile}>
+              <option value="">Select nationality</option>
+              <option value="United States">United States</option>
+              <option value="Azerbaijan">Azerbaijan</option>
+              <option value="Albania">Albania</option>
+              <option value="Argentina">Argentina</option>
+              <option value="Australia">Australia</option>
+              <option value="Austria">Austria</option>
+              <option value="Belgium">Belgium</option>
+              <option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option>
+              <option value="Brazil">Brazil</option>
+              <option value="Bulgaria">Bulgaria</option>
+              <option value="Canada">Canada</option>
+              <option value="China">China</option>
+              <option value="Croatia">Croatia</option>
+              <option value="Cyprus">Cyprus</option>
+              <option value="Czechia">Czechia</option>
+              <option value="Denmark">Denmark</option>
+              <option value="Egypt">Egypt</option>
+              <option value="Estonia">Estonia</option>
+              <option value="Finland">Finland</option>
+              <option value="France">France</option>
+              <option value="Georgia">Georgia</option>
+              <option value="Germany">Germany</option>
+              <option value="Greece">Greece</option>
+              <option value="Hungary">Hungary</option>
+              <option value="Iceland">Iceland</option>
+              <option value="India">India</option>
+              <option value="Ireland">Ireland</option>
+              <option value="Israel">Israel</option>
+              <option value="Italy">Italy</option>
+              <option value="Japan">Japan</option>
+              <option value="Kosovo">Kosovo</option>
+              <option value="Latvia">Latvia</option>
+              <option value="Lebanon">Lebanon</option>
+              <option value="Lithuania">Lithuania</option>
+              <option value="Luxembourg">Luxembourg</option>
+              <option value="Mexico">Mexico</option>
+              <option value="Montenegro">Montenegro</option>
+              <option value="Morocco">Morocco</option>
+              <option value="Netherlands">Netherlands</option>
+              <option value="New Zealand">New Zealand</option>
+              <option value="Nigeria">Nigeria</option>
+              <option value="North Macedonia">North Macedonia</option>
+              <option value="Norway">Norway</option>
+              <option value="Philippines">Philippines</option>
+              <option value="Poland">Poland</option>
+              <option value="Portugal">Portugal</option>
+              <option value="Romania">Romania</option>
+              <option value="Serbia">Serbia</option>
+              <option value="Slovakia">Slovakia</option>
+              <option value="Slovenia">Slovenia</option>
+              <option value="South Africa">South Africa</option>
+              <option value="South Korea">South Korea</option>
+              <option value="Spain">Spain</option>
+              <option value="Sweden">Sweden</option>
+              <option value="Switzerland">Switzerland</option>
+              <option value="Tunisia">Tunisia</option>
+              <option value="Türkiye">Türkiye</option>
+              <option value="Ukraine">Ukraine</option>
+              <option value="United Kingdom">United Kingdom</option>
+            </select>
             <label htmlFor="current-country" className="muted">Current country</label>
             <select id="current-country" value={currentCountry} disabled><option value={currentCountry}>{currentCountry || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Country changes are tied to verified team changes.</p>
             <label htmlFor="current-team" className="muted">Current team</label>
-            <input id="current-team" value={currentTeam} readOnly disabled /><p className="muted" style={{fontSize:12}}>Current team can only change after HoopCheck verifies a new team.</p>
+            <select id="current-team" value={currentTeam} disabled><option value={currentTeam}>{currentTeam || "Not selected"}</option></select>
+            <p className="muted" style={{fontSize:12}}>Current team is locked until HoopCheck verifies that you are on another club. Start a new verification request to change it.</p>
             <label htmlFor="bio" className="muted">Player bio</label>
             <textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder="Tell other players a little about your experience." />
             <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>Show me as a free agent</span></label>
