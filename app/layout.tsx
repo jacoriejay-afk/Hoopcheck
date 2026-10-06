@@ -41,9 +41,6 @@ export default function RootLayout({
         <footer className="site-footer">
           <div className="footer-inner">
             <div className="footer-brand">
-              <Link href="/" className="footer-logo">
-                Hoop<span>Check</span>
-              </Link>
               <p>Research the basketball world before you commit.</p>
             </div>
             <div className="footer-links">
