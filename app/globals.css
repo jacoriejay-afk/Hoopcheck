@@ -1361,3 +1361,29 @@ h1, h2, h3, h4 { text-transform: uppercase; }
   .signed-in-search{display:none}
   .signed-in-options{margin-left:auto}
 }
+
+
+/* Final mobile account/settings polish */
+.account-page .page-container{padding-bottom:96px}
+.account-profile-form{min-width:0}
+.account-profile-form label{display:block;font-size:12px;font-weight:800;line-height:1.25}
+.account-profile-form input,.account-profile-form textarea,.account-profile-form select{box-sizing:border-box}
+@media(max-width:600px){
+  .settings-shell{padding:44px 14px 104px}
+  .settings-shell h1{font-size:clamp(38px,12vw,58px);overflow-wrap:anywhere}
+  .settings-shell p{max-width:100%;overflow-wrap:anywhere}
+  .settings-card{padding:17px;border-radius:14px}
+  .account-page .page-container{padding-left:12px;padding-right:12px;padding-bottom:104px}
+  .account-page .topbar{padding-left:4px;padding-right:4px}
+  .account-page .hero-card{margin-left:0;margin-right:0}
+  .account-profile-form{gap:10px!important}
+  .account-profile-form input,.account-profile-form textarea,.account-profile-form select{font-size:16px!important}
+  .account-profile-form .card{padding:14px!important}
+  .account-actions{display:grid!important;grid-template-columns:1fr!important}
+  .account-actions>*{width:100%!important;box-sizing:border-box}
+}
+@media(max-width:380px){
+  .settings-shell{padding-left:10px;padding-right:10px}
+  .settings-grid{gap:10px}
+  .settings-card{padding:14px}
+}
