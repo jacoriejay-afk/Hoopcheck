@@ -7,7 +7,7 @@ import HoopLoading from "../../components/HoopLoading";
 import NotificationBell from "../../components/NotificationBell";
 import { useLanguage } from "../../components/LanguageProvider";
 
-type Profile = { display_name: string | null; player_verified: boolean; moderation_status?: string; moderation_note?: string | null };
+type Profile = { display_name: string | null; player_verified: boolean; account_type: "player"|"coach"|"scout"|"agent"|"fan"; moderation_status?: string; moderation_note?: string | null };
 type Subscription = {
   plan: "pro" | "premium" | null;
   status: string | null;
@@ -38,6 +38,7 @@ export default function DashboardPage() {
   const [email, setEmail] = useState("");
   const [userId, setUserId] = useState("");
   const [loading, setLoading] = useState(true);
+  const [followedTeams, setFollowedTeams] = useState<{id:string;name:string;country:string|null;league_name:string|null}[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -56,7 +57,7 @@ export default function DashboardPage() {
         await Promise.all([
           supabase
             .from("profiles")
-            .select("display_name,player_verified,moderation_status,moderation_note")
+            .select("display_name,player_verified,account_type,moderation_status,moderation_note")
             .eq("id", user.id)
             .maybeSingle(),
           supabase
@@ -76,6 +77,12 @@ export default function DashboardPage() {
 
       if (!profileResult.error) setProfile(profileResult.data);
       if (!subscriptionResult.error) setSubscription(subscriptionResult.data);
+
+      if (profileResult.data?.account_type === "fan") {
+        const { data: follows } = await supabase.from("follow_relationships").select("target_id").eq("follower_id", user.id).eq("target_type", "team").order("created_at", { ascending: false }).limit(20);
+        const ids = (follows || []).map((x:any)=>x.target_id).filter(Boolean);
+        if (ids.length) { const { data: teamRows } = await supabase.from("teams").select("id,name,country,league_name").in("id", ids); setFollowedTeams((teamRows || []) as any); }
+      }
 
       const rows = reviewsResult.error ? [] : (reviewsResult.data ?? []);
       setReviews(rows);
@@ -202,6 +209,13 @@ export default function DashboardPage() {
             <div><span>PLAYER STATUS</span><strong>{profile?.player_verified ? "VERIFIED" : "UNVERIFIED"}</strong><small>{profile?.player_verified ? "Professional profile" : "Verification available"}</small></div>
           </div>
         </section>
+
+        {profile?.account_type === "fan" && <section className="grid fan-dashboard-grid" style={{ marginTop: 24 }}>
+          <div className="dashboard-card fan-feature-card"><span className="card-kicker">FAN HQ</span><h2>🏀 Your Team Hub</h2><p className="muted">Keep up with the teams you follow, ratings, reviews, and new activity.</p><Link href="/teams" className="btn">Explore Teams</Link></div>
+          <div className="dashboard-card fan-feature-card"><span className="card-kicker">PRO FAN</span><h2>🔔 Team Alerts</h2><p className="muted">Follow teams to keep notifications on for ratings, reviews, and team updates.</p><Link href="/teams" className="btn dark">Find Teams to Follow</Link></div>
+          {subscription?.plan === "premium" && activeMembership ? <div className="dashboard-card fan-feature-card premium-fan-card"><span className="card-kicker">PREMIUM FAN</span><h2>📊 Fan Base Insights</h2><p className="muted">See follower momentum, community size, review activity, and team sentiment as your fan intelligence hub grows.</p><strong>{followedTeams.length} followed team{followedTeams.length===1?"":"s"}</strong></div> : <div className="dashboard-card fan-feature-card"><span className="card-kicker">PREMIUM FAN</span><h2>Unlock Fan Intelligence</h2><p className="muted">Premium fans get deeper team and fan-base insights, including community activity and team pulse features.</p><Link href="/membership" className="btn">Explore Premium</Link></div>}
+          {followedTeams.length > 0 && <div className="dashboard-card fan-feature-card"><span className="card-kicker">FOLLOWING</span><h2>My Teams</h2><div className="fan-followed-list">{followedTeams.slice(0,6).map(t=><Link key={t.id} href={"/teams/"+t.id} className="fan-team-row"><span><strong>{t.name}</strong><small>{t.country || "Global"}{t.league_name ? " · "+t.league_name : ""}</small></span><span>›</span></Link>)}</div></div>}
+        </section>}
 
         <section className="grid" style={{ marginTop: 24 }}>
           <div className="dashboard-card">
