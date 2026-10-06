@@ -8,6 +8,9 @@ import { supabase } from "../../lib/supabase";
 export default function VerificationPage() {
   const [team,setTeam]=useState("");
   const [teamId,setTeamId]=useState("");
+  const [basketballType,setBasketballType]=useState<"mens"|"womens">("mens");
+  const [womensTeams,setWomensTeams]=useState<{id:string;name:string;country:string|null}[]>([]);
+  const [womensTeamId,setWomensTeamId]=useState("");
   const [teams,setTeams]=useState<{id:string;name:string;country:string|null;league_name:string|null}[]>([]);
   const [country,setCountry]=useState("");
   const [league,setLeague]=useState("");
@@ -23,8 +26,9 @@ export default function VerificationPage() {
   useEffect(()=>{(async()=>{
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){window.location.href="/login";return;}
+    const {data:profile}=await supabase.from("profiles").select("basketball_type").eq("id",user.id).maybeSingle(); setBasketballType(profile?.basketball_type||"mens");
     const {data:teamData}=await supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(500);
-    setTeams(teamData||[]);
+    setTeams(teamData||[]); const {data:wt}=await supabase.from("womens_teams").select("id,name,country").eq("active",true).order("name"); setWomensTeams(wt||[]);
     const {data}=await supabase.from("player_verification_requests").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
     setStatus(data?.status ?? null); setLoading(false);
   })()},[]);
@@ -43,7 +47,7 @@ export default function VerificationPage() {
       if (uploadError) { setMessage("We could not securely upload that document. Please try again."); setSubmitting(false); return; }
     }
     const {error}=await supabase.from("player_verification_requests").insert({
-      user_id:user.id,team_id:teamId||null,current_team:team.trim().slice(0,120)||null,
+      user_id:user.id,team_id:basketballType==="mens" ? (teamId||null) : null,womens_team_id:basketballType==="womens" ? (womensTeamId||null) : null,current_team:team.trim().slice(0,120)||null,
       current_country:country.trim().slice(0,80)||null,
       league:league.trim().slice(0,120)||null,note:note.trim().slice(0,1000)||null,evidence_url:evidenceUrl.trim().slice(0,500)||null,
       document_type: documentFile ? documentType : null, document_path: documentPath, document_uploaded_at: documentPath ? new Date().toISOString() : null
@@ -61,7 +65,7 @@ export default function VerificationPage() {
       {status==="approved" ? <><h2>✓ Verified Player</h2><p className="muted">Your account is verified.</p></> :
        status==="pending" ? <><h2>Request under review</h2><p className="muted">We have your request. You do not need to submit another one.</p></> :
        <form onSubmit={submit} style={{display:"grid",gap:12}}>
-        <label>Current team<select value={teamId} onChange={e=>{const id=e.target.value;setTeamId(id);const t=teams.find(x=>x.id===id);setTeam(t?.name||"");}}><option value="">Select current team</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?` — ${t.country}`:""}</option>)}</select></label>
+        <label>Basketball type<select value={basketballType} onChange={e=>setBasketballType(e.target.value as "mens"|"womens")}><option value="mens">Men’s Basketball</option><option value="womens">Women’s Basketball</option></select></label><label>Current team{basketballType==="mens"?<select value={teamId} onChange={e=>{const id=e.target.value;setTeamId(id);const t=teams.find(x=>x.id===id);setTeam(t?.name||"");}}><option value="">Select current team</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?` — ${t.country}`:""}</option>)}</select>:<select value={womensTeamId} onChange={e=>{const id=e.target.value;setWomensTeamId(id);const t=womensTeams.find(x=>x.id===id);setTeam(t?.name||"");}}><option value="">Select women’s team</option>{womensTeams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?` — ${t.country}`:""}</option>)}</select>}</label>
         <label>Current country<input value={country} onChange={e=>setCountry(e.target.value)} maxLength={80} placeholder="Country"/></label>
         <label>League<input value={league} onChange={e=>setLeague(e.target.value)} maxLength={120} placeholder="League"/></label>
         <label>Proof / public basketball link<input value={evidenceUrl} onChange={e=>setEvidenceUrl(e.target.value)} maxLength={500} placeholder="Team roster, league profile, agency, or personal site"/><small className="muted">Provide a public proof link, upload a document below, or both.</small></label>
