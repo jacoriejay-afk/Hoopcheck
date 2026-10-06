@@ -67,3 +67,24 @@ drop trigger if exists enforce_player_profile_locks on public.profiles;
 create trigger enforce_player_profile_locks before update on public.profiles for each row execute function public.enforce_player_profile_locks();
 create or replace function public.get_follow_count(p_target_type text,p_target_id uuid) returns bigint language sql stable security definer set search_path=public as $$ select count(*) from public.follow_relationships where target_type=p_target_type and target_id=p_target_id; $$;
 grant execute on function public.get_follow_count(text,uuid) to anon,authenticated;
+
+create or replace function public.moderate_player_verification(p_request_id uuid,p_status text,p_reviewer_note text default null)
+returns public.player_verification_requests language plpgsql security definer set search_path=public,pg_catalog as $$
+declare v_request public.player_verification_requests; v_now timestamptz:=now();
+begin
+ if auth.uid() is null then raise exception 'Authentication required'; end if;
+ if not exists(select 1 from public.admin_roles where user_id=auth.uid() and trim(lower(role)) in ('admin','moderator')) then raise exception 'Admin or moderator access required'; end if;
+ if p_status not in ('approved','rejected') then raise exception 'Invalid verification status'; end if;
+ update public.player_verification_requests set status=p_status,reviewer_id=auth.uid(),reviewer_note=case when p_reviewer_note is null then reviewer_note else left(trim(p_reviewer_note),1000) end,reviewed_at=v_now where id=p_request_id and status='pending' returning * into v_request;
+ if v_request.id is null then raise exception 'Pending verification request not found'; end if;
+ update public.profiles set player_verified=(p_status='approved'),player_verified_at=case when p_status='approved' then v_now else null end,
+ selected_team_id=case when p_status='approved' then v_request.team_id else selected_team_id end,
+ selected_womens_team_id=case when p_status='approved' then v_request.womens_team_id else selected_womens_team_id end,
+ selected_team_verified=case when p_status='approved' and (v_request.team_id is not null or v_request.womens_team_id is not null) then true else selected_team_verified end
+ where id=v_request.user_id;
+ if p_status='approved' and v_request.team_id is not null then
+  insert into public.player_team_affiliations(user_id,team_id,relationship,start_date,verified,evidence_url) values(v_request.user_id,v_request.team_id,'current',current_date,true,v_request.evidence_url)
+  on conflict(user_id,team_id) do update set relationship='current',verified=true,evidence_url=excluded.evidence_url,end_date=null;
+ end if;
+ return v_request;
+end; $$;
