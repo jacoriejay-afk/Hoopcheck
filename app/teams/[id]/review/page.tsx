@@ -181,18 +181,36 @@ export default function TeamReviewPage() {
         window.location.href = "/login";
         return;
       }
-      const [subscriptionResult, adminResult] = await Promise.all([
-        supabase
-          .from("subscriptions")
-          .select("status, current_period_end")
-          .eq("user_id", user.id)
-          .maybeSingle(),
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("account_type, player_verified")
+        .eq("id", user.id)
+        .maybeSingle();
 
-        supabase.rpc("is_current_user_admin_or_moderator"),
-      ]);
+      const { data: adminValue } = await supabase.rpc("is_current_user_admin_or_moderator");
+      const isAdmin = adminValue === true;
 
-      const isAdmin = adminResult.data === true;
-      const subscription = subscriptionResult.data;
+      // Check team-playing eligibility before the paid-membership gate so
+      // players always see the rule explaining that they can only review
+      // teams they currently or previously played for.
+      const { data: eligibility, error: eligibilityError } = await supabase.rpc("can_user_review_team", { p_user_id: user.id, p_team_id: id });
+      if (isAdmin) {
+        setEligible(true);
+      } else if (profile?.account_type !== "player" || profile.player_verified !== true || eligibilityError || eligibility !== true) {
+        setEligible(false);
+        setMessage("You can only make ratings and reviews for teams you currently or previously played for. Your player account must also be verified.");
+        setLoading(false);
+        return;
+      } else {
+        setEligible(true);
+      }
+
+      const { data: subscription } = await supabase
+        .from("subscriptions")
+        .select("status, current_period_end")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
       const hasActiveSubscription =
         subscription?.status === "active" ||
         subscription?.status === "trialing";
@@ -205,16 +223,6 @@ export default function TeamReviewPage() {
         window.location.href = "/membership";
         return;
       }
-
-      const { data: eligibility, error: eligibilityError } = await supabase.rpc("can_user_review_team", { p_user_id: user.id, p_team_id: id });
-      if (isAdmin) setEligible(true);
-      if (!isAdmin && (eligibilityError || eligibility !== true)) {
-        setEligible(false);
-        setMessage("Only verified professional players who currently or previously played for this team can submit a team review.");
-        setLoading(false);
-        return;
-      }
-      setEligible(true);
 
       const {
         data: existingReview,
@@ -442,7 +450,7 @@ export default function TeamReviewPage() {
         <section className="hero">
           <div className="eyebrow">Player Eligibility Required</div>
           <h1>Reviews are for players who played here.</h1>
-          <p>Only verified professional players with a verified current or former affiliation with this team can submit a review.</p>
+          <p>You can only make ratings and reviews for teams you currently or previously played for. Your player account must also be verified.</p>
           <div className="actions">
             <Link href="/account" className="btn">View My Account</Link>
             <Link href={`/teams/${team.id}`} className="btn dark">Back To Team</Link>
