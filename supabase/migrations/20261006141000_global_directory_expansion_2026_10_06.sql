@@ -1,5 +1,5 @@
 -- HoopCheck directory expansion applied 2026-10-06
-insert into public.leagues(name,country,level,season,source,active) values
+with league_additions(name,country,level,season) as (values
 ('NBL','Czechia','Top Division','2026-27','manual-curated-2026-27',true),
 ('Thailand Basketball League','Thailand','Top Division','2026-27','manual-curated-2026-27',true),
 ('North Macedonia Vtora Liga','North Macedonia','2nd division','2026-27','manual-curated-2026-27',true),
@@ -11,7 +11,10 @@ insert into public.leagues(name,country,level,season,source,active) values
 ('Liga WPlay','Colombia','Top Division','2026-27','manual-curated-2026-27',true),
 ('IBL','Indonesia','Top Division','2026-27','manual-curated-2026-27',true),
 ('National 1','Senegal','Top Division','2026-27','manual-curated-2026-27',true)
-on conflict do nothing;
+)
+insert into public.leagues(name,country,level,season,source,active)
+select v.name,v.country,v.level,v.season,'manual-curated-2026-27',true from league_additions v
+where not exists (select 1 from public.leagues l where lower(l.name)=lower(v.name) and lower(coalesce(l.country,''))=lower(v.country));
 
 with additions(name,country,city,league_name) as (values
 ('AE Chalkidas','Greece','Chalkida','Elite League'),
