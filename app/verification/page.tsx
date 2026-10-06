@@ -37,7 +37,7 @@ export default function VerificationPage() {
     e.preventDefault(); setMessage(""); setSubmitting(true);
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){window.location.href="/login";return;}
-    if (!teamId && !evidenceUrl.trim() && !documentFile) { setMessage("Select your current team or provide proof of professional basketball (a public link or document)."); setSubmitting(false); return; }
+    if (!teamId && !womensTeamId && !evidenceUrl.trim() && !documentFile) { setMessage("Select your current team or provide proof of professional basketball (a public link or document)."); setSubmitting(false); return; }
     let documentPath: string | null = null;
     if (documentFile) {
       if (documentFile.size > 10 * 1024 * 1024) { setMessage("Document must be 10 MB or smaller."); setSubmitting(false); return; }
