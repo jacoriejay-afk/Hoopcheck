@@ -246,14 +246,15 @@ export default function AdminDirectoryPage() {
             <DirectoryCard
               number="08"
               title="Review Comments"
-              description="Approve, reject, or flag player comments on review posts."              href="/admin/comments"
+              description="Approve, reject, or flag player comments on review posts."
+              href="/admin/comments"
             />
 
             <DirectoryCard
               number="09"
               title="Profile Reports"
               description="Review reports submitted by research accounts and resolve or dismiss profile flags."
-              href="/admin/profile-reports"
+              href="/admin/reports"
             />
 
             <DirectoryCard
