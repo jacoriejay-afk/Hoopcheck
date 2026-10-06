@@ -100,7 +100,6 @@ export default function PlayerProfilePage() {
             </p>
           </div>
           <div style={{ marginTop: 14 }}><FollowButton targetType="player" targetId={player.id} /></div>
-          <div style={{ marginTop: 14 }}><FollowButton targetType="player" targetId={player.id} /></div>
         </section>
 
         <section className="player-profile-grid">
