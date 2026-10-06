@@ -23,7 +23,7 @@ export default function OnboardingPage() {
   const [yearsPro, setYearsPro] = useState("");
   const [country, setCountry] = useState("");
   const [currentCountry, setCurrentCountry] = useState("");
-  const [currentTeam, setCurrentTeam] = useState("");
+  const [currentTeam, setCurrentTeam] = useState("");\n  const [selectedTeamId, setSelectedTeamId] = useState("");
   const [bio, setBio] = useState("");
   const [visibility, setVisibility] = useState("public");
   const [interests, setInterests] = useState("");
@@ -60,7 +60,7 @@ export default function OnboardingPage() {
       setYearsPro(profile?.years_pro != null ? String(profile.years_pro) : "");
       setCountry(profile?.country || "");
       setCurrentCountry(profile?.current_country || "");
-      setCurrentTeam(profile?.current_team || "");
+      setCurrentTeam(profile?.current_team || "");\n      setSelectedTeamId(profile?.selected_team_id || "");
       setBio(profile?.bio || "");
       setVisibility(profile?.profile_visibility || "public");
       setInterests(profile?.interests || user.user_metadata?.interests || "");
@@ -97,7 +97,7 @@ export default function OnboardingPage() {
         years_pro: years,
         country: country.trim() || null,
         current_country: currentCountry.trim() || null,
-        current_team: currentTeam.trim() || null,\n        selected_team_id: currentTeam || null,\n        basketball_type: basketballType, free_agent: freeAgent, hometown: hometown.trim() || null, nationality: nationality.trim() || null,\n        favorite_teams: favoriteTeams.join(","),
+        current_team: currentTeam.trim() || null,\n        selected_team_id: selectedTeamId || null,\n        basketball_type: basketballType, free_agent: freeAgent, hometown: hometown.trim() || null, nationality: nationality.trim() || null,\n        favorite_teams: favoriteTeams.join(","),
         bio: bio.trim() || null,
         profile_visibility: visibility === "public" ? "public" : "private",
         interests: interests.trim().slice(0,500) || null,
