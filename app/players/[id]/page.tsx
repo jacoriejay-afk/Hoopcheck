@@ -23,7 +23,8 @@ type Player = {
 export default function PlayerProfilePage() {
   const params = useParams<{ id: string }>();
   const [player, setPlayer] = useState<Player | null>(null);
-  const [loading, setLoading] = useState(true);\n  const [reportMessage, setReportMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [reportMessage, setReportMessage] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -37,7 +38,17 @@ export default function PlayerProfilePage() {
     if (params.id) load();
   }, [params.id]);
 
-\n  async function reportProfile(){\n    const reason=window.prompt("Why are you reporting this profile?");\n    if(!reason?.trim()) return;\n    const {data:{session}}=await supabase.auth.getSession();\n    if(!session) { window.location.href="/login"; return; }\n    const res=await fetch("/api/profile-reports",{method:"POST",headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({profileId:player?.id,reason})});\n    const body=await res.json().catch(()=>({})); setReportMessage(res.ok?"Report submitted for review.":(body.error||"Unable to submit report."));\n  }\n\n  if (loading) {
+
+  async function reportProfile(){
+    const reason=window.prompt("Why are you reporting this profile?");
+    if(!reason?.trim()) return;
+    const {data:{session}}=await supabase.auth.getSession();
+    if(!session) { window.location.href="/login"; return; }
+    const res=await fetch("/api/profile-reports",{method:"POST",headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({profileId:player?.id,reason})});
+    const body=await res.json().catch(()=>({})); setReportMessage(res.ok?"Report submitted for review.":(body.error||"Unable to submit report."));
+  }
+
+  if (loading) {
     return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading player profile..." /></div></main>;
   }
 
