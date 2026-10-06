@@ -1450,3 +1450,5 @@ h1, h2, h3, h4 { text-transform: uppercase; }
 
 .logo{font-size:0!important;background:url('/hoopcheck-logo.svg') center/contain no-repeat;display:inline-block;width:150px;height:58px;line-height:1}
 @media(max-width:560px){.logo{width:120px;height:48px}}
+
+[data-theme="light"] .brand,[data-theme="light"] .footer-logo,[data-theme="light"] .logo{filter:brightness(0)}
