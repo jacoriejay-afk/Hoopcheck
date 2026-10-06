@@ -90,3 +90,12 @@ begin
  end if;
  return v_request;
 end; $$;
+
+create table if not exists public.womens_team_reviews(
+ id uuid primary key default gen_random_uuid(),author_id uuid not null references public.profiles(id) on delete cascade,womens_team_id uuid not null references public.womens_teams(id) on delete cascade,
+ overall_rating numeric not null check(overall_rating between 1 and 5),communication_rating numeric check(communication_rating between 1 and 5),professionalism_rating numeric check(professionalism_rating between 1 and 5),development_rating numeric check(development_rating between 1 and 5),payment_rating numeric check(payment_rating between 1 and 5),
+ title text,body text not null check(char_length(body) between 10 and 5000),status text not null default 'pending',is_anonymous boolean not null default false,created_at timestamptz not null default now()
+);
+alter table public.womens_team_reviews enable row level security;
+create policy "womens reviews approved read" on public.womens_team_reviews for select to anon,authenticated using(status='approved' or author_id=auth.uid() or public.is_current_user_admin_or_moderator());
+create index if not exists idx_womens_team_reviews_team on public.womens_team_reviews(womens_team_id);
