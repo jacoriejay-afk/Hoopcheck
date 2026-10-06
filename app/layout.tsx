@@ -71,7 +71,6 @@ export default function RootLayout({
             <span>© {new Date().getFullYear()} HoopCheck. All rights reserved.</span>
             <span>Built for basketball players.</span>
           </div>
-        </div>
       </footer>
     </body>
   </html>
