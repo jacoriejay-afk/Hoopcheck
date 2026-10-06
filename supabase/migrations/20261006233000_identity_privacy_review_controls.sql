@@ -36,6 +36,7 @@ where account_type in ('scout','agent','fan')
 
 -- Defense in depth: only verified players can create reviews/ratings.
 drop policy if exists "reviews authenticated insert" on public.reviews;
+drop policy if exists "reviews_authored_insert" on public.reviews;
 create policy "reviews verified players insert"
 on public.reviews
 for insert to authenticated
