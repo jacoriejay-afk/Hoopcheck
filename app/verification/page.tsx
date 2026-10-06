@@ -26,7 +26,7 @@ export default function VerificationPage() {
   useEffect(()=>{(async()=>{
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){window.location.href="/login";return;}
-    const {data:profile}=await supabase.from("profiles").select("basketball_type").eq("id",user.id).maybeSingle(); setBasketballType(profile?.basketball_type||"mens");
+    const {data:profile}=await supabase.from("profiles").select("account_type,basketball_type").eq("id",user.id).maybeSingle(); if(profile?.account_type !== "player"){window.location.href="/account";return;} setBasketballType(profile?.basketball_type||"mens");
     const {data:teamData}=await supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(500);
     setTeams(teamData||[]); const {data:wt}=await supabase.from("womens_teams").select("id,name,country").eq("active",true).order("name"); setWomensTeams(wt||[]);
     const {data}=await supabase.from("player_verification_requests").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
