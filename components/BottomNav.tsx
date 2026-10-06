@@ -7,7 +7,7 @@ const items = [
   ["/feed","Feed","◉"],
   ["/search","Search","⌕"],
   ["/teams","Teams","▣"],
-  ["/players","Players","♙"],
+  ["/players","Players","🏀"],
   ["/account","Profile","●"],
   ["/support","Help","?"],
 ] as const;
