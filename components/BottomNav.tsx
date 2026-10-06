@@ -9,7 +9,7 @@ const items = [
   ["/teams","Teams","▣"],
   ["/players","Players","🏀"],
   ["/account","Profile","●"],
-  ["/support","Help","?"],
+
 ] as const;
 
 export default function BottomNav() {
