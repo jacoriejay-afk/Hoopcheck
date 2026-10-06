@@ -69,11 +69,12 @@ export async function GET(req:Request){
   const status=session.status || "requires_input";
   const admin=getAdminSupabase();
   const verified=status==="verified";
-  await admin.from("profiles").update({
-    identity_verification_status:verified?"verified":status,
-    player_verified:verified ? true : undefined,
-    player_verified_at:verified ? new Date().toISOString() : undefined
-  }).eq("id",user.id);
+  const profileUpdate:any={identity_verification_status:verified?"verified":status};
+  if(verified){
+    profileUpdate.player_verified=true;
+    profileUpdate.player_verified_at=new Date().toISOString();
+  }
+  await admin.from("profiles").update(profileUpdate).eq("id",user.id);
   await admin.from("identity_verification_sessions").update({status,updated_at:new Date().toISOString(),completed_at:verified?new Date().toISOString():null}).eq("stripe_session_id",session.id);
   return NextResponse.json({status,verified});
 }
