@@ -60,7 +60,7 @@ export default function SignupPage() {
       }}
     });
     if(error){setError(error.message);setLoading(false);return;}
-    if(data.session){router.push("/onboarding");return;}
+    if(data.session){router.push(accountType==="fan" ? "/dashboard" : "/onboarding");return;}
     router.push(`/signup/complete?email=${encodeURIComponent(email.trim().toLowerCase())}`);
   }
 
