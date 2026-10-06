@@ -1452,3 +1452,24 @@ h1, h2, h3, h4 { text-transform: uppercase; }
 @media(max-width:560px){.logo{width:120px;height:48px}}
 
 [data-theme="light"] .brand,[data-theme="light"] .footer-logo,[data-theme="light"] .logo{filter:brightness(0)}
+
+/* HoopCheck visual identity: orange basketball-court linework across every page */
+:root{--hoop-orange:#ff6a00;--hoop-brand-font:Impact,"Arial Black","Arial Narrow Bold",sans-serif}
+html,body{min-height:100%}
+body{position:relative;background-color:#080808;background-image:radial-gradient(circle at 50% 20%,rgba(255,106,0,.045),transparent 42%);}
+body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.13;background-repeat:no-repeat;background-position:center;background-size:min(1100px,92vw) auto;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 620' fill='none' stroke='%23ff6a00' stroke-width='4'%3E%3Crect x='28' y='28' width='944' height='564' rx='2'/%3E%3Cline x1='500' y1='28' x2='500' y2='592'/%3E%3Ccircle cx='500' cy='310' r='72'/%3E%3Cpath d='M28 150h120a75 75 0 0 1 75 75v170a75 75 0 0 1-75 75H28'/%3E%3Cpath d='M972 150H852a75 75 0 0 0-75 75v170a75 75 0 0 0 75 75h120'/%3E%3Cpath d='M28 104c170 0 282 85 282 206S198 516 28 516'/%3E%3Cpath d='M972 104c-170 0-282 85-282 206s112 206 282 206'/%3E%3Ccircle cx='148' cy='310' r='18'/%3E%3Ccircle cx='852' cy='310' r='18'/%3E%3Cpath d='M148 292v36M130 310h36M852 292v36M834 310h36'/%3E%3C/svg%3E")}
+[data-theme="light"] body{background-color:#f6f1e8}
+[data-theme="light"] body:before{opacity:.09}
+h1,h2,h3,.brand,.logo,.footer-logo,.card-kicker,.eyebrow{font-family:var(--hoop-brand-font)!important;letter-spacing:.015em}
+.brand,.logo{font-weight:900;letter-spacing:.02em}
+/* Keep the wordmark type consistent with the angular HoopCheck logo */
+
+/* Mobile bottom navigation: five clean tabs, safe-area aware */
+@media(max-width:700px){
+ .bottom-nav{grid-template-columns:repeat(5,1fr)!important;min-height:60px;padding:6px 4px calc(6px + env(safe-area-inset-bottom))!important;box-sizing:border-box}
+ .bottom-nav a{min-height:46px;justify-content:center;overflow:hidden}
+ .bottom-nav a span:last-child{font-size:9px;line-height:1.1;white-space:nowrap}
+ .bottom-nav-icon{font-size:17px}
+ body{padding-bottom:calc(68px + env(safe-area-inset-bottom))!important}
+}
+@media(max-width:380px){.bottom-nav a span:last-child{font-size:8px}.bottom-nav-icon{font-size:15px}}
