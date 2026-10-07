@@ -141,6 +141,7 @@ export default function LeagueDetailPage() {
 
   const [hasAccess, setHasAccess] =
     useState(false);
+  const [accountType, setAccountType] = useState<string>("");
 
   const [loading, setLoading] =
     useState(true);
@@ -593,15 +594,13 @@ export default function LeagueDetailPage() {
         <div className="actions">
           <Link
             href={
-              hasAccess
+              accountType === "player" && hasAccess
                 ? `/leagues/${league.id}/review`
-                : "/membership"
+                : accountType === "player" ? "/membership" : "/leagues"
             }
             className="btn"
           >
-            {hasAccess
-              ? "Write A Review"
-              : "Become A Member To Review"}
+            {accountType === "player" ? (hasAccess ? "Write A Review" : "Become A Member To Review") : "Back To Leagues"}
           </Link>
 
           <Link
