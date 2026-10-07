@@ -144,6 +144,7 @@ export default function CoachDetailPage() {
 
   const [hasAccess, setHasAccess] =
     useState(false);
+  const [accountType, setAccountType] = useState<string>("");
 
   const [loading, setLoading] =
     useState(true);
@@ -234,6 +235,9 @@ export default function CoachDetailPage() {
         setLoading(false);
         return;
       }
+
+      const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
+      setAccountType(profile?.account_type || "");
 
       const {
         data: subscription,
@@ -587,21 +591,16 @@ export default function CoachDetailPage() {
         </p>
 
         <div className="actions">
-          {hasAccess ? (
+          {accountType === "player" && hasAccess ? (
             <Link
               href={`/coaches/${coach.id}/review`}
               className="btn"
             >
               Write A Review
             </Link>
-          ) : (
-            <Link
-              href="/membership"
-              className="btn"
-            >
-              Become A Member To Review
-            </Link>
-          )}
+          ) : accountType === "player" ? (
+            <Link href="/membership" className="btn">Become A Member To Review</Link>
+          ) : null}
 
           <Link
             href="/coaches"
