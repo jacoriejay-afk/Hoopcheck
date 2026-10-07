@@ -245,7 +245,7 @@ export default function DashboardPage() {
         {profile?.account_type === "coach" && (
           <section className="dashboard-card" style={{ marginTop: 24 }}>
             <span className="card-kicker">COACH TEAM PLACEMENT</span>
-            <h2>{profile.coach_verified ? "Request a coaching assignment" : "Verify your coach identity first"}</h2>{profile.coach_verified && coachRequests.some(r=>r.status==="approved") && <div className="card" style={{margin:"12px 0"}}><strong>Team assignment</strong><p className="muted">{coachTeams.find(t=>t.id===coachRequests.find(r=>r.status==="approved")?.team_id)?.name || "Assigned team"}</p></div>}
+            <h2>{profile.coach_verified ? "Request a coaching assignment" : "Verify your coach identity first"}</h2>{profile?.coach_verified && coachRequests.some(r=>r.status==="approved") && <div className="card" style={{margin:"12px 0"}}><strong>Team assignment</strong><p className="muted">{coachTeams.find(t=>t.id===coachRequests.find(r=>r.status==="approved")?.team_id)?.name || "Assigned team"}</p></div>}
             <p className="muted">{profile.coach_verified ? "Pro and Premium coaches can request to be added to a professional team's coaching staff. Once approved, the team appears on your dashboard and public coach profile." : "Complete secure ID + live-selfie verification before requesting a coaching assignment."}</p>
             {!profile.coach_verified ? <Link href="/verification" className="btn">Verify Coach</Link> : !activeMembership || !["pro","premium"].includes(subscription?.plan || "") ? <Link href="/membership" className="btn">Upgrade to Pro or Premium</Link> :
               <div style={{display:"grid",gap:10,marginTop:12}}>
