@@ -10,6 +10,7 @@ create table if not exists public.feed_post_comments (
   created_at timestamptz not null default now()
 );
 create index if not exists feed_post_comments_post_created_idx on public.feed_post_comments(post_id, created_at desc);
+create index if not exists feed_post_comments_author_idx on public.feed_post_comments(author_id);
 alter table public.feed_post_comments enable row level security;
 
 create table if not exists public.feed_post_checks (
@@ -20,6 +21,7 @@ create table if not exists public.feed_post_checks (
   unique(post_id,user_id)
 );
 create index if not exists feed_post_checks_post_idx on public.feed_post_checks(post_id);
+create index if not exists feed_post_checks_user_idx on public.feed_post_checks(user_id);
 alter table public.feed_post_checks enable row level security;
 
 drop policy if exists "player feed comments read" on public.feed_post_comments;
