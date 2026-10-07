@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import HoopLoading from "../../components/HoopLoading";
 
 type MiniProfile = { display_name: string | null; avatar_url: string | null; current_country?: string | null; current_team?: string | null };
 type Post = { id:string; body:string; image_url:string|null; location_country:string|null; created_at:string; expires_at:string; author_id:string; profiles?:MiniProfile|null };
@@ -124,7 +125,7 @@ export default function Feed(){
 
   async function del(p:Post){if(!user||p.author_id!==user.id)return;if(!confirm("Delete this HoopFeed post?"))return;const {error}=await supabase.from("feed_posts").delete().eq("id",p.id);if(error){setMsg(error.message);return;}if(p.image_url){const marker="/storage/v1/object/public/feed-images/";const i=p.image_url.indexOf(marker);if(i>=0)await supabase.storage.from("feed-images").remove([p.image_url.slice(i+marker.length)]);}await load();}
 
-  if(loading)return <main className="page-shell"><div className="page-container"><section className="hero-card"><h1>Loading HoopFeed...</h1></section></div></main>;
+  if(loading)return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading HoopFeed..." /></div></main>;
   if(!user)return <main className="page-shell"><div className="page-container"><section className="hero-card"><p className="eyebrow">HOOPFEED</p><h1>Sign in to continue</h1><p className="muted">HoopFeed is for active Pro and Premium members.</p><Link href="/login" className="btn">Sign In</Link></section></div></main>;
   if(!access)return <main className="page-shell"><div className="page-container"><header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link></header><section className="hero-card"><p className="eyebrow">HOOPFEED</p><h1>Daily Player Experiences</h1><p className="muted">Pro and Premium members can access HoopFeed. Players share current-season experiences; fans see posts from players on teams they follow.</p><div className="actions"><Link href="/membership" className="btn">Upgrade Membership</Link><Link href="/dashboard" className="btn dark">Back to Dashboard</Link></div></section></div></main>;
 
