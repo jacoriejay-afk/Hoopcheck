@@ -1529,7 +1529,7 @@ h1,h2,h3,.brand,.logo,.footer-logo,.card-kicker,.eyebrow{font-family:var(--hoop-
 /* Final mobile shell cleanup */
 @media (max-width:700px){
   .topbar{min-height:64px!important;padding:8px 10px!important;gap:10px!important;align-items:center!important}
-  .topbar .brand,.verification-topbar .brand{font-size:0!important;width:176px!important;height:58px!important;background:url('/hoopcheck-logo.svg') left center/contain no-repeat!important;flex:0 0 auto!important}
+  .topbar .brand,.verification-topbar .brand{font-size:0!important;width:176px!important;height:58px!important;background:url('/hoopcheck-mark.svg') left center/40px 40px no-repeat!important;flex:0 0 auto!important}
   .topbar .topnav{margin-left:auto!important}
   .topbar .topnav a{font-size:11px!important;padding:7px 9px!important}
   .global-search-wrap{display:none!important}
