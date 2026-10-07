@@ -11,7 +11,7 @@ type Comment = { id:string; post_id:string; body:string; created_at:string; auth
 type Profile = { account_type:string; current_country:string|null };
 type Subscription = { plan:string|null; status:string|null; access_status:string|null };
 
-const ago = (v:string) => {
+const ago = (v:string, now:number) => {
   const s=Math.max(0,Math.floor((now-new Date(v).getTime())/1000));
   if(s<60)return "just now"; const m=Math.floor(s/60); if(m<60)return m+"m ago";
   const h=Math.floor(m/60); if(h<24)return h+"h ago"; return Math.floor(h/24)+"d ago";
