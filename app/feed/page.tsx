@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 
-type MiniProfile = { display_name: string | null; avatar_url: string | null; current_country?: string | null };
+type MiniProfile = { display_name: string | null; avatar_url: string | null; current_country?: string | null; current_team?: string | null };
 type Post = { id:string; body:string; image_url:string|null; location_country:string|null; created_at:string; expires_at:string; author_id:string; profiles?:MiniProfile|null };
 type Comment = { id:string; post_id:string; body:string; created_at:string; author_id:string; profiles?:MiniProfile|null };
 type Profile = { account_type:string; current_country:string|null };
