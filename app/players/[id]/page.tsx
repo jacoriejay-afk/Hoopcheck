@@ -26,7 +26,7 @@ export default function PlayerProfilePage() {
   const params = useParams<{ id: string }>();
   const [player, setPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
-  const [reportMessage, setReportMessage] = useState("");
+  const [reportMessage, setReportMessage] = useState("");\n  const [isOwnProfile, setIsOwnProfile] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -82,7 +82,7 @@ export default function PlayerProfilePage() {
           <nav className="topnav">
             <Link href="/search">Search</Link>
             <Link href="/dashboard">Dashboard</Link>
-            <Link href="/account">Account</Link>
+            <Link href={isOwnProfile ? "/account#edit-profile" : "/account"}>{isOwnProfile ? "Edit Profile" : "Account"}</Link>
           </nav>
         </header>
 
@@ -131,7 +131,7 @@ export default function PlayerProfilePage() {
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 12 }}>
             <Link href="/search" className="btn">Explore HoopCheck</Link>
-            <Link href="/account" className="btn dark">My Account</Link><button type="button" className="btn dark" onClick={reportProfile}>Report Profile</button>{reportMessage&&<span className="muted">{reportMessage}</span>}
+            <Link href={isOwnProfile ? "/account#edit-profile" : "/account"} className="btn dark">{isOwnProfile ? "Edit Profile" : "My Account"}</Link><button type="button" className="btn dark" onClick={reportProfile}>Report Profile</button>{reportMessage&&<span className="muted">{reportMessage}</span>}
           </div>
         </section>
       </div>
