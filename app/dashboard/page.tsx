@@ -235,10 +235,10 @@ export default function DashboardPage() {
 
         {profile?.account_type === "player" && (
           <section className="dashboard-card" style={{ marginTop: 24 }}>
-            <span className="card-kicker">PLAYER EXPERIENCE FEED</span>
-            <h2>{activeMembership && (subscription?.plan === "pro" || subscription?.plan === "premium") ? "Daily Player Experiences" : "Unlock the Player Experience Feed"}</h2>
-            <p className="muted">Share and discover real current-season experiences from professional players. Posts are visible to eligible players in the same current-season country and disappear after 24 hours.</p>
-            <Link href="/feed" className="btn">{activeMembership && (subscription?.plan === "pro" || subscription?.plan === "premium") ? "Open Player Feed" : "View Player Feed"}</Link>
+            <span className="card-kicker">HOOPFEED</span>
+            <h2>{activeMembership && (subscription?.plan === "pro" || subscription?.plan === "premium") ? "HoopFeed" : "Unlock HoopFeed"}</h2>
+            <p className="muted">Share and discover real current-season experiences from professional players. HoopFeed posts are visible to eligible players in the same current-season country and disappear after 24 hours.</p>
+            <Link href="/feed" className="btn">{activeMembership && (subscription?.plan === "pro" || subscription?.plan === "premium") ? "Open HoopFeed" : "View HoopFeed"}</Link>
           </section>
         )}
 
