@@ -7,7 +7,7 @@ Players can research:
 - Player experiences and reviews
 ## Memberships
 ### HoopCheck Pro
-$7.99/month
+$4.99/month
 Includes:
 - Full coach ratings and reviews
 - Full team ratings and reviews
