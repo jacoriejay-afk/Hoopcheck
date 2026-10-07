@@ -8,7 +8,7 @@ import NotificationBell from "../../components/NotificationBell";
 import PlayerContactButton from "../../components/PlayerContactButton";
 import { useLanguage } from "../../components/LanguageProvider";
 
-type Profile = { display_name: string | null; player_verified: boolean; account_type: "player"|"coach"|"scout"|"agent"|"fan"; moderation_status?: string; moderation_note?: string | null };
+type Profile = { display_name: string | null; player_verified: boolean; coach_verified?: boolean; account_type: "player"|"coach"|"scout"|"agent"|"fan"; moderation_status?: string; moderation_note?: string | null };
 type Subscription = {
   plan: "pro" | "premium" | null;
   status: string | null;
@@ -40,6 +40,12 @@ export default function DashboardPage() {
   const [userId, setUserId] = useState("");
   const [loading, setLoading] = useState(true);
   const [followedTeams, setFollowedTeams] = useState<{id:string;name:string;country:string|null;league_name:string|null}[]>([]);
+  const [coachTeams, setCoachTeams] = useState<{id:string;name:string;country:string|null;league_name:string|null}[]>([]);
+  const [coachRequests, setCoachRequests] = useState<{id:string;team_id:string;status:string;requested_role:string|null;reviewer_note:string|null}[]>([]);
+  const [coachRequestTeam, setCoachRequestTeam] = useState("");
+  const [coachRequestRole, setCoachRequestRole] = useState("Head Coach");
+  const [coachRequestNote, setCoachRequestNote] = useState("");
+  const [coachRequestMessage, setCoachRequestMessage] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -58,7 +64,7 @@ export default function DashboardPage() {
         await Promise.all([
           supabase
             .from("profiles")
-            .select("display_name,player_verified,account_type,moderation_status,moderation_note")
+            .select("display_name,player_verified,coach_verified,account_type,moderation_status,moderation_note")
             .eq("id", user.id)
             .maybeSingle(),
           supabase
@@ -78,6 +84,15 @@ export default function DashboardPage() {
 
       if (!profileResult.error) setProfile(profileResult.data);
       if (!subscriptionResult.error) setSubscription(subscriptionResult.data);
+
+      if (profileResult.data?.account_type === "coach") {
+        const [{data: teamRows}, {data: requestRows}] = await Promise.all([
+          supabase.from("teams").select("id,name,country,league_name").eq("active", true).order("name").limit(1000),
+          supabase.from("coach_team_requests").select("id,team_id,status,requested_role,reviewer_note").eq("user_id", user.id).order("created_at",{ascending:false}).limit(20)
+        ]);
+        setCoachTeams((teamRows || []) as any);
+        setCoachRequests((requestRows || []) as any);
+      }
 
       if (profileResult.data?.account_type === "fan") {
         const { data: follows } = await supabase.from("follow_relationships").select("target_id").eq("follower_id", user.id).eq("target_type", "team").order("created_at", { ascending: false }).limit(20);
@@ -195,7 +210,7 @@ export default function DashboardPage() {
           </nav>
         </header>
 
-        {(profile?.moderation_status === "warned" || profile?.moderation_status === "flagged") && <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{profile.moderation_status === "warned" ? "Account warning" : "Profile flagged for review"}</strong><p className="muted">{profile.moderation_note || "Please review the Community Guidelines and contact Support if you need clarification."}</p><Link href="/support" className="btn dark">Contact Support</Link></section>}\n\n        <section className="player-dashboard-card">
+        {(profile?.moderation_status === "warned" || profile?.moderation_status === "flagged") && <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{profile.moderation_status === "warned" ? "Account warning" : "Profile flagged for review"}</strong><p className="muted">{profile.moderation_note || "Please review the Community Guidelines and contact Support if you need clarification."}</p><Link href="/support" className="btn dark">Contact Support</Link></section>}        <section className="player-dashboard-card">
           <div className="player-dashboard-main">
             <div>
               <p className="eyebrow">{profile?.account_type === "fan" ? "FAN DASHBOARD" : profile?.account_type ? profile.account_type.toUpperCase()+" DASHBOARD" : t("playerDashboard")}</p>
@@ -224,6 +239,23 @@ export default function DashboardPage() {
             <h2>{profile.account_type === "player" ? "Recruiting requests" : "Player outreach"}</h2>
             <p className="muted">{profile.account_type === "player" ? "Premium scouts and agents can request contact. You decide who can reach you." : "Premium scouts and agents can request contact with players. A player must accept before messaging opens."}</p>
             {profile.account_type === "player" ? <PlayerContactButton playerId={userId} /> : subscription?.plan === "premium" && activeMembership ? <Link href="/players" className="btn">Browse Players</Link> : <Link href="/membership" className="btn">Upgrade to Premium</Link>}
+          </section>
+        )}
+
+        {profile?.account_type === "coach" && (
+          <section className="dashboard-card" style={{ marginTop: 24 }}>
+            <span className="card-kicker">COACH TEAM PLACEMENT</span>
+            <h2>{profile.coach_verified ? "Request a coaching assignment" : "Verify your coach identity first"}</h2>
+            <p className="muted">{profile.coach_verified ? "Pro and Premium coaches can request to be added to a professional team's coaching staff. Once approved, the team appears on your dashboard and public coach profile." : "Complete secure ID + live-selfie verification before requesting a coaching assignment."}</p>
+            {!profile.coach_verified ? <Link href="/verification" className="btn">Verify Coach</Link> : !activeMembership || !["pro","premium"].includes(subscription?.plan || "") ? <Link href="/membership" className="btn">Upgrade to Pro or Premium</Link> :
+              <div style={{display:"grid",gap:10,marginTop:12}}>
+                <select value={coachRequestTeam} onChange={e=>setCoachRequestTeam(e.target.value)}><option value="">Select team</option>{coachTeams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country ? " — "+t.country : ""}{t.league_name ? " · "+t.league_name : ""}</option>)}</select>
+                <select value={coachRequestRole} onChange={e=>setCoachRequestRole(e.target.value)}><option>Head Coach</option><option>Assistant Coach</option><option>Associate Head Coach</option><option>Player Development Coach</option><option>Strength & Conditioning Coach</option><option>Other</option></select>
+                <textarea value={coachRequestNote} onChange={e=>setCoachRequestNote(e.target.value)} rows={3} maxLength={1000} placeholder="Optional note for the HoopCheck admin team." />
+                <button className="btn" type="button" onClick={async()=>{setCoachRequestMessage(""); if(!coachRequestTeam){setCoachRequestMessage("Select a team.");return;} const {error}=await supabase.from("coach_team_requests").insert({user_id:userId,team_id:coachRequestTeam,requested_role:coachRequestRole,note:coachRequestNote.trim()||null}); if(error){setCoachRequestMessage(error.message);return;} setCoachRequestMessage("Request submitted. An admin will review it."); setCoachRequestNote(""); const {data}=await supabase.from("coach_team_requests").select("id,team_id,status,requested_role,reviewer_note").eq("user_id",userId).order("created_at",{ascending:false}).limit(20); setCoachRequests((data||[]) as any);}}>Request Team Placement</button>
+                {coachRequestMessage && <p className="muted">{coachRequestMessage}</p>}
+                {coachRequests.length > 0 && <div className="card"><strong>Your requests</strong>{coachRequests.map(r=><p key={r.id} className="muted" style={{margin:"8px 0"}}>{coachTeams.find(t=>t.id===r.team_id)?.name || "Team"} · {r.requested_role || "Coach"} · <strong>{r.status}</strong>{r.reviewer_note ? " · "+r.reviewer_note : ""}</p>)}</div>}
+              </div>}
           </section>
         )}
 
