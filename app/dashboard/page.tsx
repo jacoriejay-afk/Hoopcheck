@@ -226,18 +226,18 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {profile?.account_type === "fan" && <section className="grid fan-dashboard-grid" style={{ marginTop: 24 }}>
+        {profile?.account_type === "fan" && <section className="grid fan-dashboard-grid" style={{ marginTop: 18 }}>
           <div className="dashboard-card fan-feature-card"><span className="card-kicker">FAN HQ</span><h2>🏀 Your Team Hub</h2><p className="muted">Keep up with the teams you follow, ratings, reviews, and new activity.</p><Link href="/teams" className="btn">Explore Teams</Link></div>
           <div className="dashboard-card fan-feature-card"><span className="card-kicker">PRO FAN</span><h2>🔔 Team Alerts</h2><p className="muted">Follow teams to keep notifications on for ratings, reviews, and team updates.</p><Link href="/teams" className="btn dark">Find Teams to Follow</Link>{subscription?.plan === "premium" && activeMembership && <Link href="/fan-live" className="btn dark">Live Game Chat</Link>}</div>
           {subscription?.plan === "premium" && activeMembership ? <div className="dashboard-card fan-feature-card premium-fan-card"><span className="card-kicker">PREMIUM FAN</span><h2>📊 Fan Base Insights</h2><p className="muted">See follower momentum, community size, review activity, and team sentiment as your fan intelligence hub grows.</p><strong>{followedTeams.length} followed team{followedTeams.length===1?"":"s"}</strong></div> : <div className="dashboard-card fan-feature-card"><span className="card-kicker">PREMIUM FAN</span><h2>Unlock Fan Intelligence</h2><p className="muted">Premium fans get deeper team and fan-base insights, including community activity and team pulse features.</p><Link href="/membership" className="btn">Explore Premium</Link></div>}
-          {followedTeams.length > 0 && <div className="dashboard-card fan-feature-card"><span className="card-kicker">FOLLOWING</span><h2>My Teams</h2><div className="fan-followed-list">{followedTeams.slice(0,6).map(t=><Link key={t.id} href={"/teams/"+t.id} className="fan-team-row"><span><strong>{t.name}</strong><small>{t.country || "Global"}{t.league_name ? " · "+t.league_name : ""}</small></span><span>›</span></Link>)}</div></div>}
+          <div className="dashboard-card fan-feature-card"><span className="card-kicker">FAN NETWORK</span><h2>Connect with Fans</h2><p className="muted">Pro and Premium Fans can follow and send connection requests to other fans.</p><Link href="/fans" className="btn">Find Fans</Link></div>{followedTeams.length > 0 && <div className="dashboard-card fan-feature-card"><span className="card-kicker">FOLLOWING</span><h2>My Teams</h2><div className="fan-followed-list">{followedTeams.slice(0,6).map(t=><Link key={t.id} href={"/teams/"+t.id} className="fan-team-row"><span><strong>{t.name}</strong><small>{t.country || "Global"}{t.league_name ? " · "+t.league_name : ""}</small></span><span>›</span></Link>)}</div></div>}
         </section>}
 
         {profile?.account_type === "player" && (
           <section className="dashboard-card" style={{ marginTop: 24 }}>
             <span className="card-kicker">HOOPFEED</span>
             <h2>{activeMembership && (subscription?.plan === "pro" || subscription?.plan === "premium") ? "HoopFeed" : "Unlock HoopFeed"}</h2>
-            <p className="muted">Share and discover real current-season experiences from professional players. HoopFeed posts are visible to eligible players in the same current-season country and disappear after 24 hours.</p>
+            <p className="muted">Share and discover current basketball experiences. HoopFeed posts disappear after 24 hours.</p>
             <Link href="/feed" className="btn">{activeMembership && (subscription?.plan === "pro" || subscription?.plan === "premium") ? "Open HoopFeed" : "View HoopFeed"}</Link>
           </section>
         )}
