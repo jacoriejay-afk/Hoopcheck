@@ -7,6 +7,7 @@ import GlobalBackButton from "../components/GlobalBackButton";
 import LanguageProvider from "../components/LanguageProvider";
 import BottomNav from "../components/BottomNav";
 import ProtectionLayer from "../components/ProtectionLayer";
+import AnalyticsTracker from "../components/AnalyticsTracker";
 
 export const metadata: Metadata = {
   title: "HoopCheck",
@@ -23,6 +24,7 @@ export default function RootLayout({
       <body><ProtectionLayer />
         <ThemeProvider>
           <LanguageProvider>
+            <AnalyticsTracker />
             <MobileAuth />
             <BottomNav />
             <GlobalBackButton />
