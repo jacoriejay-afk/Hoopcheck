@@ -21,7 +21,7 @@ export default function VerificationPage() {
   const [documentFile,setDocumentFile]=useState<File|null>(null);
   const [status,setStatus]=useState<string|null>(null);
   const [identityStatus,setIdentityStatus]=useState<string>("not_started");
-  const [identityLoading,setIdentityLoading]=useState(false);
+  const [identityLoading,setIdentityLoading]=useState(false); const [coachMembershipEligible,setCoachMembershipEligible]=useState(true);
   const [message,setMessage]=useState("");
   const [loading,setLoading]=useState(true);
   const [submitting,setSubmitting]=useState(false);
@@ -29,7 +29,7 @@ export default function VerificationPage() {
   useEffect(()=>{(async()=>{
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){window.location.href="/login";return;}
-    const {data:profile}=await supabase.from("profiles").select("account_type,basketball_type,identity_verification_status,coach_verified,player_verified").eq("id",user.id).maybeSingle(); if(!["player","coach"].includes(profile?.account_type || "")){window.location.href="/account";return;} setAccountType(profile?.account_type as "player"|"coach"); setBasketballType(profile?.basketball_type||"mens"); setIdentityStatus(profile?.identity_verification_status || "not_started");
+    const {data:profile}=await supabase.from("profiles").select("account_type,basketball_type,identity_verification_status,coach_verified,player_verified").eq("id",user.id).maybeSingle(); if(!["player","coach"].includes(profile?.account_type || "")){window.location.href="/account";return;} setAccountType(profile?.account_type as "player"|"coach"); if(profile?.account_type==="coach"){const {data:sub}=await supabase.from("subscriptions").select("plan,status,current_period_end").eq("user_id",user.id).maybeSingle();setCoachMembershipEligible(!!sub && ["pro","premium"].includes(sub.plan||"") && ["active","trialing"].includes(sub.status||"") && (!sub.current_period_end || new Date(sub.current_period_end)>new Date()));} setBasketballType(profile?.basketball_type||"mens"); setIdentityStatus(profile?.identity_verification_status || "not_started");
     const {data:{session}}=await supabase.auth.getSession();
     if(session?.access_token){
       const identityRes=await fetch("/api/verification/identity",{headers:{Authorization:"Bearer "+session.access_token}});
@@ -89,7 +89,7 @@ export default function VerificationPage() {
         <p className="eyebrow">IDENTITY CHECK</p>
         <h2>{identityStatus==="verified" ? "✓ Identity verified" : "Verify with ID + face scan"}</h2>
         <p className="muted">HoopCheck uses Stripe Identity to verify your government ID or passport and compare it with a live selfie. HoopCheck does not store your face scan in the HoopCheck database.</p>
-        {identityStatus!=="verified" && <button type="button" className="btn" onClick={startIdentityVerification} disabled={identityLoading}>{identityLoading?"Opening secure verification...":"Verify ID + face scan"}</button>}
+        {identityStatus!=="verified" && (accountType!=="coach" || coachMembershipEligible) && <button type="button" className="btn" onClick={startIdentityVerification} disabled={identityLoading}>{identityLoading?"Opening secure verification...":"Verify ID + face scan"}</button>}{accountType==="coach" && !coachMembershipEligible && <Link href="/membership" className="btn dark">Upgrade to Pro or Premium</Link>}
         {identityStatus==="processing" && <p className="muted">Your identity check is processing. Return here after Stripe finishes the check.</p>}
         {identityStatus==="requires_input" && <p className="muted">Complete the secure ID and live-selfie check to continue.</p>}
         {identityStatus==="failed" && <p className="muted">The identity check needs to be completed again. Start a new secure check.</p>}
