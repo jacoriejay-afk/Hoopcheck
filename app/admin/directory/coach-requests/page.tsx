@@ -1,0 +1,17 @@
+"use client";
+
+import {useEffect,useState} from "react";
+import Link from "next/link";
+import {supabase} from "../../../../lib/supabase";
+
+type Row={id:string;user_id:string;team_id:string;requested_role:string|null;note:string|null;status:string;created_at:string};
+type User={id:string;display_name:string|null;username:string|null};
+type Team={id:string;name:string;country:string|null};
+
+export default function CoachTeamRequests(){
+ const [rows,setRows]=useState<Row[]>([]);const [users,setUsers]=useState<Record<string,User>>({});const [teams,setTeams]=useState<Record<string,Team>>({});const [message,setMessage]=useState("");
+ async function load(){const {data}=await supabase.from("coach_team_requests").select("id,user_id,team_id,requested_role,note,status,created_at").order("created_at",{ascending:false});const rs=(data||[]) as Row[];setRows(rs);const uids=Array.from(new Set(rs.map(r=>r.user_id)));const tids=Array.from(new Set(rs.map(r=>r.team_id)));if(uids.length){const {data:d}=await supabase.from("profiles").select("id,display_name,username").in("id",uids);setUsers(Object.fromEntries((d||[]).map((x:any)=>[x.id,x])));}if(tids.length){const {data:d}=await supabase.from("teams").select("id,name,country").in("id",tids);setTeams(Object.fromEntries((d||[]).map((x:any)=>[x.id,x])));}}
+ useEffect(()=>{(async()=>{const {data:{session}}=await supabase.auth.getSession();if(!session){location.href="/login";return;}const {data:ok}=await supabase.rpc("is_current_user_admin_or_moderator");if(!ok){location.href="/dashboard";return;}await load();})();},[]);
+ async function review(id:string,status:"approved"|"rejected"){setMessage("");const {error}=await supabase.rpc("admin_review_coach_team_request",{p_request_id:id,p_status:status,p_note:null});if(error)setMessage(error.message);else{setMessage(status==="approved"?"Coach added to the team staff record.":"Coach request rejected.");await load();}}
+ return <main className="page-shell"><div className="page-container"><header className="topbar"><Link href="/admin/directory" className="brand">HOOPCHECK ADMIN</Link><nav className="topnav"><Link href="/admin/directory">Directory</Link><Link href="/admin/users">Users</Link><Link href="/dashboard">Dashboard</Link></nav></header><section className="hero-card"><p className="eyebrow">COACH TEAM REQUESTS</p><h1>Coaching staff requests</h1><p className="muted">Approve verified Pro/Premium coaches for professional team staff placements.</p></section>{message&&<div className="dashboard-card" style={{marginTop:16}}>{message}</div>}<section style={{display:"grid",gap:14,marginTop:20}}>{rows.length?rows.map(r=><article key={r.id} className="dashboard-card"><p className="eyebrow">{r.status.toUpperCase()}</p><h2>{users[r.user_id]?.display_name||users[r.user_id]?.username||"Coach"}</h2><p className="muted">{teams[r.team_id]?.name||"Team"}{teams[r.team_id]?.country?" · "+teams[r.team_id].country:""} · {r.requested_role||"Coach"}</p>{r.note&&<p>{r.note}</p>}<p className="muted" style={{fontSize:12}}>{new Date(r.created_at).toLocaleString()}</p>{r.status==="pending"&&<div style={{display:"flex",gap:10,flexWrap:"wrap"}}><button className="btn" onClick={()=>review(r.id,"approved")}>Approve Placement</button><button className="btn dark" onClick={()=>review(r.id,"rejected")}>Reject</button></div>}</article>):<div className="dashboard-card"><h2>No requests.</h2></div>}</section></div></main>;
+}
