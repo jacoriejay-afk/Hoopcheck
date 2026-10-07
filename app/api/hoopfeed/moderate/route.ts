@@ -63,7 +63,7 @@ export async function POST(request: Request) {
 
     const { data: profile } = await db.from("profiles").select("account_type,current_country").eq("id", user.id).maybeSingle();
     const { data: sub } = await db.from("subscriptions").select("plan,status,access_status").eq("user_id", user.id).maybeSingle();
-    const activeAccess = profile?.account_type === "player" &&
+    const activeAccess = ["player","fan"].includes(profile?.account_type || "") &&
       ["pro","premium"].includes(sub?.plan || "") &&
       ["active","trialing"].includes(sub?.status || "") &&
       ["active","trialing","pro","premium"].includes(sub?.access_status ?? "active");
@@ -81,8 +81,10 @@ export async function POST(request: Request) {
       }
       const { data: author } = await db.from("profiles").select("account_type,current_country").eq("id",post.author_id).maybeSingle();
       const sameCountry = !!profile?.current_country && !!author?.current_country && profile.current_country.toLowerCase() === author.current_country.toLowerCase();
-      const { data: follow } = await db.from("follow_relationships").select("follower_id").eq("follower_id",user.id).eq("target_type","player").eq("target_id",post.author_id).maybeSingle();
-      if (post.author_id !== user.id && !(author?.account_type === "player" && sameCountry && !!follow)) {
+      const followType = author?.account_type === "fan" ? "fan" : "player";
+      const { data: follow } = await db.from("follow_relationships").select("follower_id").eq("follower_id",user.id).eq("target_type",followType).eq("target_id",post.author_id).maybeSingle();
+      const allowedFollow = author?.account_type === "fan" ? !!follow : author?.account_type === "player" && sameCountry && !!follow;
+      if (post.author_id !== user.id && !allowedFollow) {
         return NextResponse.json({ allowed: false, message: "You are not eligible to interact with this HoopFeed post." }, { status: 403 });
       }
       const { error } = await db.from("feed_post_comments").insert({ post_id:postId,author_id:user.id,body:text });
