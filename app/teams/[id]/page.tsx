@@ -54,6 +54,7 @@ type Review = {
   created_at: string;
   is_anonymous?: boolean;
   player_verified?: boolean;
+  player_season?: string | null;
 };
 
 function RatingBar({
@@ -328,6 +329,7 @@ export default function TeamDetailPage() {
           .select(
             `
               id,
+              player_season,
               overall_rating,
               communication_rating,
               professionalism_rating,
@@ -922,6 +924,9 @@ export default function TeamDetailPage() {
                         <div>
                           <div className="eyebrow">
                             {review.is_anonymous ? "Anonymous Player Review" : "Player Review"}
+                          </div>
+                          <div style={{ marginTop: "6px", fontSize: "12px", fontWeight: 800, color: "var(--orange)" }}>
+                            Season played: {review.player_season || "Season not recorded"}
                           </div>
 
                           <h3>
