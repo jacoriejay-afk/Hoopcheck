@@ -1733,3 +1733,33 @@ textarea{min-height:110px}
   .player-profile-hero { margin-top: 4px !important; }
   .page-shell { padding-top: 0 !important; }
 }
+
+/* Compact launch UI */
+.dashboard-card,.card,.hero-card{padding:18px;}
+.compact-card{padding:16px;}
+.compact-hero{padding:22px 24px;}
+.compact-section{padding:18px;margin-top:14px;}
+.compact-grid{padding:14px 0 20px;gap:12px;}
+.compact-review{padding:12px 0;border-top:1px solid var(--border);}
+.compact-review:first-of-type{margin-top:8px;}
+.review-line{display:flex;justify-content:space-between;gap:10px;align-items:center;}
+.league-filter-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+.filter-chip{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:4px;padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:#111;color:var(--white);cursor:pointer;}
+.filter-chip span{font-size:11px;color:var(--gray-500);}
+.filter-chip.active{border-color:var(--orange);background:rgba(255,106,0,.08);}
+@media(max-width:700px){
+ .page-container{padding:0 12px 34px;}
+ .hero-card,.dashboard-card,.card{padding:14px;}
+ .compact-hero{padding:16px;}
+ .grid{grid-template-columns:1fr;gap:10px;padding:10px 0 18px;}
+ .league-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;}
+ .compact-section{padding:14px;margin-top:10px;}
+ .topbar{min-height:50px;padding:0 10px;}
+ .topnav{gap:7px;}
+ .topnav a{font-size:11px;}
+ h1{font-size:clamp(28px,8vw,42px)!important;letter-spacing:-1.5px!important;}
+ h2{font-size:20px!important;}
+ .actions{gap:7px;margin-top:12px;}
+ .btn{padding:8px 11px;font-size:12px;}
+ .muted{line-height:1.45;}
+}
