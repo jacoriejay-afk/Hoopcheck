@@ -217,7 +217,7 @@ export default function DashboardPage() {
               <h1>{profile?.display_name || (profile?.account_type === "fan" ? "Fan" : profile?.account_type ? profile.account_type.charAt(0).toUpperCase()+profile.account_type.slice(1) : "Player")}</h1>
               <p className="muted">Your HoopCheck research hub.</p>
             </div>
-            <Link href="/account" className="btn dark">{t("editProfile")}</Link>
+            <Link href="/profile" className="btn dark">{t("editProfile")}</Link>
           </div>
           <div className="player-dashboard-stats">
             <div><span>MEMBERSHIP</span><strong>{planLabel.replace("HoopCheck ","")}</strong><small>{statusLabel}</small></div>
