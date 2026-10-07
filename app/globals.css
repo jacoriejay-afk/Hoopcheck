@@ -1541,3 +1541,8 @@ h1,h2,h3,.brand,.logo,.footer-logo,.card-kicker,.eyebrow{font-family:var(--hoop-
 [data-theme="light"] .bottom-nav{background:#fff!important;border-top:2px solid #222!important}
 [data-theme="light"] .bottom-nav a,[data-theme="light"] .bottom-nav a span{color:#111!important}
 [data-theme="light"] .bottom-nav a.active,[data-theme="light"] .bottom-nav a.active span{color:#111!important}
+
+
+/* Larger HoopCheck wordmark across signed-in dashboard shells */
+.page-shell .topbar .brand{width:196px!important;height:62px!important;flex-basis:196px!important;}
+@media(max-width:700px){.page-shell .topbar .brand{width:190px!important;height:60px!important;flex-basis:190px!important;max-width:60vw!important;}}
