@@ -26,7 +26,8 @@ export default function PlayerProfilePage() {
   const params = useParams<{ id: string }>();
   const [player, setPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
-  const [reportMessage, setReportMessage] = useState("");\n  const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [reportMessage, setReportMessage] = useState("");
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
 
   useEffect(() => {
     async function load() {
