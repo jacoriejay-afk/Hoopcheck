@@ -233,7 +233,7 @@ export default function DashboardPage() {
           <div className="dashboard-card fan-feature-card"><span className="card-kicker">FAN NETWORK</span><h2>Connect with Fans</h2><p className="muted">Pro and Premium Fans can follow and send connection requests to other fans.</p><Link href="/fans" className="btn">Find Fans</Link></div>{followedTeams.length > 0 && <div className="dashboard-card fan-feature-card"><span className="card-kicker">FOLLOWING</span><h2>My Teams</h2><div className="fan-followed-list">{followedTeams.slice(0,6).map(t=><Link key={t.id} href={"/teams/"+t.id} className="fan-team-row"><span><strong>{t.name}</strong><small>{t.country || "Global"}{t.league_name ? " · "+t.league_name : ""}</small></span><span>›</span></Link>)}</div></div>}
         </section>}
 
-        {profile?.account_type === "player" && (
+        {["player","fan","scout","agent"].includes(profile?.account_type || "") && (
           <section className="dashboard-card" style={{ marginTop: 24 }}>
             <span className="card-kicker">HOOPFEED</span>
             <h2>{activeMembership && (subscription?.plan === "pro" || subscription?.plan === "premium") ? "HoopFeed" : "Unlock HoopFeed"}</h2>
