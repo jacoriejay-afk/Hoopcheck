@@ -751,7 +751,7 @@ export default function TeamDetailPage() {
             </h2>
 
             <p>
-              See the player experience behind the organization before you commit. Membership starts at $7.99/month and can be managed through Stripe anytime.
+              See the player experience behind the organization before you commit. Membership starts at $4.99/month and can be managed through Stripe anytime.
             </p>
 
             <div className="actions">
