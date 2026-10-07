@@ -23,7 +23,7 @@ export async function POST(req:Request){
  const anonymous = b.is_anonymous === true;
  if (anonymous && !paid) return NextResponse.json({error:"Anonymous reviews are available only to paid members."},{status:403}); const targetKeys=["coach_id","team_id","league_id"].filter(k=>typeof b[k]==="string"&&b[k]);
  if(targetKeys.length!==1)return NextResponse.json({error:"Choose exactly one coach, team, or league."},{status:400});
- if (typeof b.team_id === "string" && b.team_id && authorProfile?.basketball_type === "mens") {
+ if (typeof b.team_id === "string" && b.team_id) {
    const { data: canReview, error: eligibilityError } = await s.rpc("can_user_review_team", { p_user_id: user.id, p_team_id: b.team_id });
    if (eligibilityError || canReview !== true) return NextResponse.json({error:"Only verified professional players who currently or previously played for this team can submit a team review."},{status:403});
  }
