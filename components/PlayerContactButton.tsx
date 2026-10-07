@@ -75,7 +75,7 @@ export default function PlayerContactButton({ playerId }: { playerId:string }) {
   }
 
   if(accountType==="scout" || accountType==="agent"){
-    if(!premium)return <div className="contact-gate"><strong>Premium Scout/Agent feature</strong><p className="muted">Upgrade to Premium to request contact with professional players. Players control whether requests are accepted.</p></div>;
+    if(!premium)return <div className="contact-gate"><strong>Pro/Premium Scout/Agent feature</strong><p className="muted">Upgrade to Pro or Premium to request contact with professional players. Players control whether requests are accepted.</p></div>;
     if(request?.status==="accepted")return <div className="contact-box"><span className="card-kicker">CONTACT ACCEPTED</span><h3>You can now get in touch</h3><div className="contact-messages">{messages.map(m=><div key={m.id} className={m.sender_id===userId?"contact-message mine":"contact-message"}>{m.body}<small>{new Date(m.created_at).toLocaleString()}</small></div>)}</div><textarea value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Write a message to the player..." rows={3}/><button className="btn" onClick={()=>void sendMessage()} disabled={busy||!draft.trim()}>{busy?"Sending...":"Send Message"}</button>{info&&<p className="muted">{info}</p>}</div>;
     if(request?.status==="pending")return <div className="contact-gate"><strong>Contact request pending</strong><p className="muted">The player will decide whether to accept your request.</p></div>;
     if(request?.status==="rejected")return <div className="contact-gate"><strong>Request declined</strong><p className="muted">This player declined the contact request.</p></div>;
