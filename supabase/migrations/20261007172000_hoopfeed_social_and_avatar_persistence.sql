@@ -22,6 +22,19 @@ create table if not exists public.feed_post_checks (
 create index if not exists feed_post_checks_post_idx on public.feed_post_checks(post_id);
 alter table public.feed_post_checks enable row level security;
 
+drop policy if exists "player feed comments read" on public.feed_post_comments;
+drop policy if exists "player feed comments insert" on public.feed_post_comments;
+drop policy if exists "player feed comments delete own" on public.feed_post_comments;
+drop policy if exists "player feed checks read" on public.feed_post_checks;
+drop policy if exists "player feed checks insert" on public.feed_post_checks;
+drop policy if exists "player feed checks delete own" on public.feed_post_checks;
+drop policy if exists "player feed post delete own" on public.feed_posts;
+drop policy if exists "player feed post update own" on public.feed_posts;
+drop policy if exists "feed images insert own" on storage.objects;
+drop policy if exists "feed images update own" on storage.objects;
+drop policy if exists "feed images delete own" on storage.objects;
+drop policy if exists "profile avatars select own" on storage.objects;
+
 create policy "player feed comments read" on public.feed_post_comments for select to authenticated using (
   exists (select 1 from public.feed_posts fp where fp.id=post_id and fp.expires_at>now() and public.can_view_player_feed_post(fp.author_id))
 );
