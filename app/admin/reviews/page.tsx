@@ -129,7 +129,7 @@ export default function AdminReviewsPage() {
           .from("reviews")
           .select(
             `
-              id, author_id, coach_id, team_id, league_id,
+              id, author_id, coach_id, team_id, league_id, player_season,
               overall_rating, communication_rating,
               professionalism_rating, development_rating,
               payment_rating, title, body, status, created_at
