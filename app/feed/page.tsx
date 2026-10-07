@@ -10,7 +10,7 @@ type Comment = { id:string; post_id:string; body:string; created_at:string; auth
 type Profile = { account_type:string; current_country:string|null };
 type Subscription = { plan:string|null; status:string|null; access_status:string|null };
 
-const ago = (v:string) => {
+const COUNTRIES = ["United States","Azerbaijan","Albania","Armenia","Austria","Belgium","Bosnia and Herzegovina","Bulgaria","Croatia","Cyprus","Czechia","Denmark","Estonia","Finland","France","Georgia","Germany","Greece","Hungary","Iceland","Ireland","Israel","Italy","Kosovo","Latvia","Lebanon","Lithuania","Luxembourg","Malta","Moldova","Montenegro","Netherlands","North Macedonia","Norway","Poland","Portugal","Romania","Russia","Serbia","Slovakia","Slovenia","Spain","Sweden","Switzerland","Türkiye","Ukraine","United Kingdom","Canada","Mexico","Brazil","Argentina","Chile","Colombia","Australia","New Zealand","China","Chinese Taipei","Hong Kong","India","Indonesia","Iran","Iraq","Japan","Jordan","Kazakhstan","Kuwait","Malaysia","Mongolia","Oman","Pakistan","Philippines","Qatar","Saudi Arabia","Singapore","South Korea","Thailand","United Arab Emirates","Uzbekistan","Vietnam","Egypt","Morocco","Nigeria","Senegal","South Africa","Tunisia"];\n\nconst ago = (v:string) => {
   const s=Math.max(0,Math.floor((Date.now()-new Date(v).getTime())/1000));
   if(s<60)return "just now"; const m=Math.floor(s/60); if(m<60)return m+"m ago";
   const h=Math.floor(m/60); if(h<24)return h+"h ago"; return Math.floor(h/24)+"d ago";
