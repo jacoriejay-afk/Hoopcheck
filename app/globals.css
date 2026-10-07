@@ -1634,3 +1634,33 @@ html[data-theme="light"] .modal-backdrop {
 
 .dashboard-page .brand { font-size: 42px; letter-spacing: -2px; font-weight: 1000; }
 @media (max-width: 700px) { .dashboard-page .brand { font-size: 34px; } }
+
+
+/* Universal HoopCheck loading screen */
+.hoop-loading-screen{min-height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:28px 16px}
+.hoop-loading-wordmark{font-size:clamp(30px,7vw,52px);font-weight:1000;letter-spacing:-2.5px;line-height:1}
+.hoop-loading-label{font-size:13px;color:var(--page-muted);max-width:90vw}
+.hoop-loading-globe{width:72px;height:72px;border:3px solid var(--orange);border-radius:50%;position:relative;overflow:hidden;animation:hoop-globe-spin 2.4s linear infinite;box-shadow:0 0 0 5px rgba(255,106,0,.08)}
+.globe-ring,.globe-lat{position:absolute;inset:8px;border:2px solid rgba(255,106,0,.8);border-radius:50%}
+.globe-ring-a{transform:scaleX(.38)}
+.globe-ring-b{transform:scaleX(.72)}
+.globe-lat-a{inset:21px 3px;border-radius:50%;transform:rotate(8deg)}
+.globe-lat-b{inset:30px 3px;border-radius:50%;transform:rotate(-8deg)}
+@keyframes hoop-globe-spin{from{transform:rotateY(0deg)}to{transform:rotateY(360deg)}}
+@media(prefers-reduced-motion:reduce){.hoop-loading-globe{animation:none}}
+
+/* Keep dense content readable on phones and tablets */
+.page-container,.container{width:100%;max-width:1180px;margin-left:auto;margin-right:auto;box-sizing:border-box}
+.dashboard-card,.hero-card,.card,.profile-card{min-width:0;overflow-wrap:anywhere}
+img,video,iframe{max-width:100%}
+.grid{min-width:0}
+@media(max-width:700px){
+  .page-container,.container{padding-left:12px!important;padding-right:12px!important}
+  .hero-card,.dashboard-card,.card,.profile-card{padding:16px!important}
+  h1{font-size:clamp(26px,8vw,38px);line-height:1.08}
+  h2{font-size:clamp(20px,6vw,28px);line-height:1.12}
+  h3{font-size:18px;line-height:1.2}
+  .actions{width:100%;display:flex;flex-wrap:wrap;gap:8px}
+  .actions .btn{flex:1 1 150px;text-align:center}
+  input,textarea,select{max-width:100%;box-sizing:border-box}
+}
