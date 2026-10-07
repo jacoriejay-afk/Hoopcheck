@@ -10,11 +10,11 @@ type AccountType = "player" | "coach" | "scout" | "agent" | "fan";
 type Team = { id:string; name:string; country:string|null; league_name:string|null };
 
 const ACCOUNT_TYPES: {value:AccountType; title:string; description:string; icon:string}[] = [
-  {value:"player",title:"Player",description:"Professional basketball player building a verified profile and sharing first-hand experience.",icon:"🏀"},
-  {value:"coach",title:"Coach",description:"Coach or basketball professional researching organizations and the basketball market.",icon:"📋"},
-  {value:"scout",title:"Scout",description:"Scout researching players, teams, leagues, and talent to follow.",icon:"🔎"},
-  {value:"agent",title:"Agent",description:"Agent researching players, teams, leagues, and recruiting opportunities.",icon:"🤝"},
-  {value:"fan",title:"Fan",description:"Fan following teams and exploring the global basketball community.",icon:"🔥"},
+  {value:"player",title:"Player",description:"Professional basketball player: build a verified career profile, research before signing, review teams you played for, and connect with the basketball industry.",icon:"🏀"},
+  {value:"coach",title:"Coach",description:"Coach: build a coaching profile, research organizations, pursue verification, and connect with players when eligible.",icon:"📋"},
+  {value:"scout",title:"Scout",description:"Scout: discover players and research teams, leagues, markets, and talent around the world.",icon:"🔎"},
+  {value:"agent",title:"Agent",description:"Agent: research players, teams, leagues, markets, and recruiting opportunities.",icon:"🤝"},
+  {value:"fan",title:"Fan",description:"Fan: follow favorite teams, track leagues, and personalize a basketball-first experience.",icon:"🔥"},
 ];
 
 export default function SignupPage() {
@@ -65,7 +65,7 @@ export default function SignupPage() {
       }}
     });
     if(error){setError(error.message);setLoading(false);return;}
-    if(data.session){router.push(accountType==="fan" ? "/dashboard" : "/onboarding");return;}
+    if(data.session){router.push(`/signup/complete?email=${encodeURIComponent(email.trim().toLowerCase())}`);return;}
     router.push(`/signup/complete?email=${encodeURIComponent(email.trim().toLowerCase())}`);
   }
 
