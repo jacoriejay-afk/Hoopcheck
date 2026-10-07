@@ -133,6 +133,8 @@ export default function TeamDetailPage() {
   const [league, setLeague] =
     useState<League | null>(null);
 
+  const [followerCount, setFollowerCount] = useState(0);
+
   const [coaches, setCoaches] =
     useState<Coach[]>([]);
 
@@ -197,6 +199,8 @@ export default function TeamDetailPage() {
       }
 
       setTeam(teamData);
+      const {data:followCount}=await supabase.rpc("get_follow_count",{p_target_type:"team",p_target_id:id});
+      setFollowerCount(Number(followCount || 0));
 
       const { data: membershipData } = await supabase.from("team_league_memberships").select("id,league_id,season,start_date,end_date,active").eq("team_id", id).eq("active", true).order("season", { ascending: false });
       if (membershipData) {
@@ -581,7 +585,7 @@ export default function TeamDetailPage() {
           {team.name}
         </h1>
 
-        <div className="entity-actions"><GeoBadge country={team.country} /><FollowButton targetType="team" targetId={team.id} /><WatchButton targetType="team" targetId={team.id} targetName={team.name} /></div>
+        <div className="entity-actions"><GeoBadge country={team.country} /><FollowButton targetType="team" targetId={team.id} /><WatchButton targetType="team" targetId={team.id} targetName={team.name} /></div><p className="muted" style={{fontSize:13}}>{followerCount.toLocaleString()} follower{followerCount===1?"":"s"}</p>
 
         <p>
           {team.city &&
