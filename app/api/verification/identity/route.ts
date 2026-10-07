@@ -33,6 +33,11 @@ export async function POST(req:Request){
 
   if(!["player","coach"].includes(profile?.account_type || ""))
     return NextResponse.json({error:"Only player and coach accounts can start identity verification."},{status:403});
+  if(profile.account_type==="coach"){
+    const {data:sub}=await supabase.from("subscriptions").select("plan,status,current_period_end").eq("user_id",user.id).maybeSingle();
+    const active=(sub?.status==="active"||sub?.status==="trialing") && (sub?.current_period_end==null || new Date(sub.current_period_end)>new Date());
+    if(!active || !["pro","premium"].includes(sub?.plan||"")) return NextResponse.json({error:"Coach identity verification is available to active Pro and Premium coaches."},{status:403});
+  }
   if(profile.identity_verification_status==="verified")
     return NextResponse.json({error:`This ${profile.account_type} is already identity verified.`},{status:409});
 
