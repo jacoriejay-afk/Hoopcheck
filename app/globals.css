@@ -1664,3 +1664,47 @@ img,video,iframe{max-width:100%}
   .actions .btn{flex:1 1 150px;text-align:center}
   input,textarea,select{max-width:100%;box-sizing:border-box}
 }
+
+
+/* HoopCheck compact/sleek 2026 UI pass */
+:root{--body-font:"Inter","Avenir Next","Segoe UI",system-ui,sans-serif;--display-font:"Inter","Avenir Next","Segoe UI",system-ui,sans-serif}
+html,body{font-family:var(--body-font)}
+h1,h2,h3,h4,.brand,.logo,.footer-logo,.eyebrow,.card-kicker,.btn,.topnav a{font-family:var(--display-font)}
+h1{font-size:clamp(28px,4.2vw,48px);letter-spacing:-1.8px;line-height:1.04}
+h2{font-size:clamp(20px,2.5vw,30px);letter-spacing:-.8px}
+h3{font-size:18px}
+p,.muted{font-size:14px;line-height:1.45}
+.page-container{max-width:1120px;padding-left:18px;padding-right:18px}
+.page-shell{padding-bottom:36px}
+.topbar{min-height:58px;padding:8px 0;margin-bottom:12px}
+.topnav{gap:12px;font-size:13px}
+.topnav a{font-size:12px}
+.hero-card{padding:20px;margin-bottom:12px;border-radius:14px}
+.hero-card h1{margin:5px 0 9px}
+.dashboard-card,.card{padding:16px;border-radius:12px}
+.grid{gap:12px;padding:12px 0 30px}
+.actions{gap:8px;margin-top:16px}
+.btn{min-height:38px;padding:9px 14px;font-size:12px;border-radius:7px}
+.input,textarea,select{padding:10px;margin-bottom:8px;font-size:13px}
+textarea{min-height:110px}
+.card-kicker{font-size:10px;letter-spacing:1.2px}
+.eyebrow{font-size:10px;letter-spacing:1.5px;margin-bottom:7px}
+.player-dashboard-card{padding:18px}
+.player-dashboard-stats{gap:8px}
+.player-dashboard-stats>div{padding:11px}
+.player-dashboard-stats strong{font-size:18px}
+.fan-dashboard-grid{gap:10px!important}
+.fan-feature-card{padding:14px!important}
+.fan-feature-card h2{margin:6px 0}
+.fan-followed-list{gap:5px}
+.fan-team-row{padding:9px 0!important}
+.hoop-loading-screen{min-height:38vh!important;gap:10px!important}
+.hoop-loading-wordmark{font-size:24px!important;letter-spacing:.16em!important}
+.hoop-loading-label{font-size:12px!important}
+.hoop-loading-globe{width:64px!important;height:64px!important}
+.bottom-back{display:flex;justify-content:center;margin:22px 0 0}
+.bottom-back .btn{min-width:110px}
+.brand{font-size:0!important;background:url('/hoopcheck-logo.svg') left center/contain no-repeat;display:inline-flex;align-items:center;width:auto;min-width:210px;height:42px;padding-left:52px;position:relative}
+.brand::after{content:"HoopCheck";font-size:18px;font-weight:850;letter-spacing:-.4px;color:var(--white);white-space:nowrap;margin-left:7px}
+.topbar .brand{flex-shrink:0}
+@media(max-width:700px){.page-container{padding-left:14px;padding-right:14px}.topbar{min-height:52px}.topnav{gap:8px}.topnav a{font-size:11px}.hero-card{padding:16px}.dashboard-card,.card{padding:13px}.brand{min-width:165px;padding-left:38px}.brand::after{font-size:15px}.grid{grid-template-columns:1fr;gap:9px}}
