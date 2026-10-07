@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 const items = [
   ["/feed","Feed","◉"],
@@ -14,6 +16,15 @@ const items = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setSignedIn(Boolean(data.user)));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => setSignedIn(Boolean(session)));
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  if (!signedIn) return null;
   return (
     <nav className="bottom-nav" aria-label="Mobile navigation">
       {items.map(([href,label,icon]) => {
