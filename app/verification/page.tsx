@@ -6,6 +6,7 @@ import HoopLoading from "../../components/HoopLoading";
 import { supabase } from "../../lib/supabase";
 
 export default function VerificationPage() {
+  const [accountType,setAccountType]=useState<"player"|"coach">("player");
   const [team,setTeam]=useState("");
   const [teamId,setTeamId]=useState("");
   const [basketballType,setBasketballType]=useState<"mens"|"womens">("mens");
@@ -28,7 +29,7 @@ export default function VerificationPage() {
   useEffect(()=>{(async()=>{
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){window.location.href="/login";return;}
-    const {data:profile}=await supabase.from("profiles").select("account_type,basketball_type,identity_verification_status").eq("id",user.id).maybeSingle(); if(profile?.account_type !== "player"){window.location.href="/account";return;} setBasketballType(profile?.basketball_type||"mens"); setIdentityStatus(profile?.identity_verification_status || "not_started");
+    const {data:profile}=await supabase.from("profiles").select("account_type,basketball_type,identity_verification_status,coach_verified,player_verified").eq("id",user.id).maybeSingle(); if(!["player","coach"].includes(profile?.account_type || "")){window.location.href="/account";return;} setAccountType(profile?.account_type as "player"|"coach"); setBasketballType(profile?.basketball_type||"mens"); setIdentityStatus(profile?.identity_verification_status || "not_started");
     const {data:{session}}=await supabase.auth.getSession();
     if(session?.access_token){
       const identityRes=await fetch("/api/verification/identity",{headers:{Authorization:"Bearer "+session.access_token}});
@@ -37,8 +38,7 @@ export default function VerificationPage() {
     }
     const {data:teamData}=await supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(500);
     setTeams(teamData||[]); const {data:wt}=await supabase.from("womens_teams").select("id,name,country").eq("active",true).order("name"); setWomensTeams(wt||[]);
-    const {data}=await supabase.from("player_verification_requests").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
-    setStatus(data?.status ?? null); setLoading(false);
+    if(profile?.account_type==="player"){ const {data}=await supabase.from("player_verification_requests").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle(); setStatus(data?.status ?? null); } else { setStatus(profile?.coach_verified ? "approved" : null); } setLoading(false);
   })()},[]);
 
   async function startIdentityVerification(){
@@ -58,7 +58,7 @@ export default function VerificationPage() {
     e.preventDefault(); setMessage(""); setSubmitting(true);
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){window.location.href="/login";return;}
-    if (!teamId && !womensTeamId && !evidenceUrl.trim() && !documentFile) { setMessage("Select your current team or provide proof of professional basketball (a public link or document)."); setSubmitting(false); return; }
+    if(accountType!=="player"){setMessage("Coach identity verification is handled through the secure ID + live selfie check above.");setSubmitting(false);return;} if (!teamId && !womensTeamId && !evidenceUrl.trim() && !documentFile) { setMessage("Select your current team or provide proof of professional basketball (a public link or document)."); setSubmitting(false); return; }
     let documentPath: string | null = null;
     if (documentFile) {
       if (documentFile.size > 10 * 1024 * 1024) { setMessage("Document must be 10 MB or smaller."); setSubmitting(false); return; }
@@ -81,9 +81,9 @@ export default function VerificationPage() {
   if(loading)return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading verification center..." /></div></main>;
   return <main className="page-shell"><div className="page-container">
     <header className="topbar verification-topbar"><Link href="/" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/account">Account</Link></nav></header>
-    <section className="hero-card"><p className="eyebrow">PLAYER VERIFICATION</p><h1>Get your player badge.</h1><p className="muted">Verification helps HoopCheck distinguish professional-professional accounts from ordinary accounts. We review requests manually.</p></section>
+    <section className="hero-card"><p className="eyebrow">{accountType==="coach" ? "COACH VERIFICATION" : "PLAYER VERIFICATION"}</p><h1>{accountType==="coach" ? "Get your verified coach badge." : "Get your player badge."}</h1><p className="muted">Verification helps HoopCheck confirm professional basketball identities. Secure identity verification uses a government ID or passport plus a live selfie check.</p></section>
     <section className="dashboard-card" style={{marginTop:24}}>
-      {status==="approved" ? <><h2>✓ Verified Professional</h2><p className="muted">Your account is verified.</p></> :
+      {status==="approved" ? <><h2>✓ Verified {accountType==="coach" ? "Coach" : "Player"}</h2><p className="muted">Your professional identity is verified. {accountType==="coach" ? "You can now request placement with teams from your dashboard." : "Your player verification is active."}</p></> :
        status==="pending" ? <><h2>Request under review</h2><p className="muted">We have your request. You do not need to submit another one.</p></> :
        <><div className="card" style={{marginBottom:16,border:"1px solid var(--orange)"}}>
         <p className="eyebrow">IDENTITY CHECK</p>
@@ -94,7 +94,7 @@ export default function VerificationPage() {
         {identityStatus==="requires_input" && <p className="muted">Complete the secure ID and live-selfie check to continue.</p>}
         {identityStatus==="failed" && <p className="muted">The identity check needs to be completed again. Start a new secure check.</p>}
        </div>
-       <form onSubmit={submit} style={{display:"grid",gap:12}}>
+       {accountType==="player" && <form onSubmit={submit} style={{display:"grid",gap:12}}> 
         <label>Basketball type<select value={basketballType} onChange={e=>setBasketballType(e.target.value as "mens"|"womens")}><option value="mens">Men’s Basketball</option><option value="womens">Women’s Basketball</option></select></label><label>Current team{basketballType==="mens"?<select value={teamId} onChange={e=>{const id=e.target.value;setTeamId(id);const t=teams.find(x=>x.id===id);setTeam(t?.name||"");}}><option value="">Select current team</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?` — ${t.country}`:""}</option>)}</select>:<select value={womensTeamId} onChange={e=>{const id=e.target.value;setWomensTeamId(id);const t=womensTeams.find(x=>x.id===id);setTeam(t?.name||"");}}><option value="">Select women’s team</option>{womensTeams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?` — ${t.country}`:""}</option>)}</select>}</label>
         <label>Current country<input value={country} onChange={e=>setCountry(e.target.value)} maxLength={80} placeholder="Country"/></label>
         <label>League<input value={league} onChange={e=>setLeague(e.target.value)} maxLength={120} placeholder="League"/></label>
@@ -105,7 +105,7 @@ export default function VerificationPage() {
         {message&&<p role="status">{message}</p>}
         <button className="btn" disabled={submitting}>{submitting?"Submitting...":"Request Verification"}</button>
         <p className="muted">Use the secure identity check above for passports/IDs and face matching. Do not upload identity documents through this fallback form unless HoopCheck support specifically asks you to.</p>
-       </form></>}
+       </form>} </>}
     </section>
   </div></main>;
 }
