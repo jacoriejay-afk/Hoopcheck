@@ -6,8 +6,8 @@ import GlobalSearch from "./GlobalSearch";
 import { supabase } from "../lib/supabase";
 
 export default function SignedInBar(){
- const [signedIn,setSignedIn]=useState(false); const [menuOpen,setMenuOpen]=useState(false); const [profileHref,setProfileHref]=useState("/account");
- useEffect(()=>{supabase.auth.getSession().then(async({data})=>{setSignedIn(!!data.session);if(data.session?.user){const {data:p}=await supabase.from("profiles").select("account_type").eq("id",data.session.user.id).maybeSingle();if(p?.account_type==="player")setProfileHref(`/players/${data.session.user.id}`);}});const {data}=supabase.auth.onAuthStateChange(async(_e,s)=>{setSignedIn(!!s);if(s?.user){const {data:p}=await supabase.from("profiles").select("account_type").eq("id",s.user.id).maybeSingle();setProfileHref(p?.account_type==="player"?`/players/${s.user.id}`:"/account");}else setProfileHref("/account");});return()=>data.subscription.unsubscribe();},[]);
+ const [signedIn,setSignedIn]=useState(false); const [menuOpen,setMenuOpen]=useState(false); const [profileHref,setProfileHref]=useState("/profile");
+ useEffect(()=>{supabase.auth.getSession().then(async({data})=>{setSignedIn(!!data.session);if(data.session?.user){const {data:p}=await supabase.from("profiles").select("account_type").eq("id",data.session.user.id).maybeSingle();if(p?.account_type==="player")setProfileHref(`/players/${data.session.user.id}`);}});const {data}=supabase.auth.onAuthStateChange(async(_e,s)=>{setSignedIn(!!s);if(s?.user){const {data:p}=await supabase.from("profiles").select("account_type").eq("id",s.user.id).maybeSingle();setProfileHref(p?.account_type==="player"?`/players/${s.user.id}`:"/profile");}else setProfileHref("/profile");});return()=>data.subscription.unsubscribe();},[]);
  if(!signedIn)return null;
  return <div className="signed-in-bar">
   <Link href="/dashboard" className="brand mini-brand" aria-label="HoopCheck home">HOOPCHECK</Link>
