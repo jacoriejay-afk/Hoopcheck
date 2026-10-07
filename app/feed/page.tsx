@@ -34,18 +34,19 @@ export default function Feed(){
     (subscription?.access_status==null||["active","trialing","pro","premium"].includes(subscription.access_status));
 
   async function load(){
-    let followedTeamNames:string[]=[];
+    let followedTeamNames:string[]=[]; let followedFanIds:string[]=[];
     if(profile?.account_type==="fan"){
-      const {data:follows}=await supabase.from("follow_relationships").select("target_id").eq("follower_id",user?.id).eq("target_type","team").limit(50);
-      const ids=(follows||[]).map((x:any)=>x.target_id).filter(Boolean);
-      if(ids.length){const {data:teams}=await supabase.from("teams").select("name").in("id",ids);followedTeamNames=(teams||[]).map((t:any)=>t.name).filter(Boolean);}
+      const {data:follows}=await supabase.from("follow_relationships").select("target_id,target_type").eq("follower_id",user?.id).in("target_type",["fan","team"]).limit(100);
+      const teamIds=(follows||[]).filter((x:any)=>x.target_type==="team").map((x:any)=>x.target_id).filter(Boolean);
+      followedFanIds=(follows||[]).filter((x:any)=>x.target_type==="fan").map((x:any)=>x.target_id).filter(Boolean);
+      if(teamIds.length){const {data:teams}=await supabase.from("teams").select("name").in("id",teamIds);followedTeamNames=(teams||[]).map((t:any)=>t.name).filter(Boolean);}
     }
     const {data,error}=await supabase.from("feed_posts")
       .select("id,body,image_url,location_country,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country,current_team)")
       .eq("status","approved").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(50);
     if(error){setMsg(error.message);return;}
     let rows=(data||[]).map((r:any)=>({...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)})) as Post[];
-    if(profile?.account_type==="fan") rows=rows.filter(p=>!!p.profiles?.current_country && followedTeamNames.some(name=>p.profiles?.current_team===name));
+    if(profile?.account_type==="fan") rows=rows.filter(p=>followedFanIds.includes(p.author_id));
     setPosts(rows);
     if(!rows.length){setComments({});setChecks({});setMine({});return;}
     const ids=rows.map(p=>p.id);
@@ -123,14 +124,14 @@ export default function Feed(){
 
   if(loading)return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading HoopFeed..." /></div></main>;
   if(!user)return <main className="page-shell"><div className="page-container"><section className="hero-card"><p className="eyebrow">HOOPFEED</p><h1>Sign in to continue</h1><p className="muted">HoopFeed is for active Pro and Premium members.</p><Link href="/login" className="btn">Sign In</Link></section></div></main>;
-  if(!access)return <main className="page-shell"><div className="page-container"><header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link></header><section className="hero-card"><p className="eyebrow">HOOPFEED</p><h1>Daily Player Experiences</h1><p className="muted">Pro and Premium members can access HoopFeed. Players share current-season experiences; fans see posts from players on teams they follow.</p><div className="actions"><Link href="/membership" className="btn">Upgrade Membership</Link><Link href="/dashboard" className="btn dark">Back to Dashboard</Link></div></section></div></main>;
+  if(!access)return <main className="page-shell"><div className="page-container"><header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link></header><section className="hero-card"><p className="eyebrow">HOOPFEED</p><h1>Daily Player Experiences</h1><p className="muted">Pro and Premium members can access HoopFeed. Players share basketball experiences; fans see posts from fans they follow.</p><div className="actions"><Link href="/membership" className="btn">Upgrade Membership</Link><Link href="/dashboard" className="btn dark">Back to Dashboard</Link></div></section></div></main>;
 
   return <main className="page-shell"><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/players">Players</Link><Link href="/account">Profile</Link></nav></header>
     <section className="hero-card"><p className="eyebrow">HOOPFEED · {subscription?.plan==="premium"?"PREMIUM":"PRO"}</p><h1>HoopFeed</h1><p className="muted">{profile?.account_type==="fan"?"Followed-team player activity, updated throughout the day.":"Share your current-season basketball life."} Posts, photos, checks and comments disappear with the post after 24 hours.</p></section>
 
-    {profile?.account_type==="player" && <section className="dashboard-card" style={{marginTop:18}}><span className="card-kicker">SHARE TO HOOPFEED</span>
-      <textarea value={body} onChange={e=>setBody(e.target.value)} rows={4} maxLength={2000} placeholder="What happened today? Practice, game day, travel, teammates, culture, wins, challenges..." />
+    {(profile?.account_type==="player" || profile?.account_type==="fan") && <section className="dashboard-card" style={{marginTop:18}}><span className="card-kicker">SHARE TO HOOPFEED</span>
+      <textarea value={body} onChange={e=>setBody(e.target.value)} rows={4} maxLength={2000} placeholder={profile?.account_type==="fan"?"What are you watching, following, or talking about?":"What happened today? Practice, game day, travel, teammates, culture, wins, challenges..."} />
       {preview&&<div style={{marginTop:12}}><img src={preview} alt="Post preview" style={{width:"100%",maxHeight:360,objectFit:"cover",borderRadius:16,display:"block"}}/><button type="button" className="btn dark" style={{marginTop:8}} onClick={clearPhoto}>Remove Photo</button></div>}
       <div style={{display:"flex",gap:10,marginTop:10,alignItems:"center",flexWrap:"wrap"}}><label htmlFor="hoopfeed-photo" className="btn dark" style={{cursor:"pointer"}}>Add Photo</label><input id="hoopfeed-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f)choosePhoto(f)}} style={{display:"none"}}/><button className="btn" onClick={post} disabled={posting||(!body.trim()&&!photo)}>{posting?"Posting...":"Post to HoopFeed"}</button>{msg&&<span className="muted">{msg}</span>}</div>
     </section>}
