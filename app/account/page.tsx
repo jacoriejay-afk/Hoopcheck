@@ -24,7 +24,7 @@ type Profile = {
   current_country: string | null;
   current_team: string | null;
   profile_visibility: "public" | "private";
-  player_verified: boolean;
+  player_verified: boolean; coach_verified?: boolean; coach_profile_id?: string | null; experience_summary?: string | null;
   profile_claimed: boolean;
   avatar_url: string | null;
   avatar_moderation_status: "pending" | "approved" | "rejected";
@@ -57,6 +57,7 @@ export default function AccountPage() {
   const [nationality, setNationality] = useState("");
   const [interests, setInterests] = useState("");
   const [favoriteLeagues, setFavoriteLeagues] = useState("");
+  const [coachingExperience, setCoachingExperience] = useState("");
   const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [freeAgent, setFreeAgent] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -71,7 +72,7 @@ export default function AccountPage() {
       if (!user) { window.location.href = "/login"; return; }
       setEmail(user.email ?? "");
       const [{ data: profileData }, { data: subscriptionData }] = await Promise.all([
-        supabase.from("profiles").select("account_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_team,profile_visibility,player_verified,profile_claimed,avatar_url,avatar_moderation_status").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("account_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_team,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
       ]);
       const nextProfile: Profile = profileData
@@ -89,11 +90,12 @@ export default function AccountPage() {
       setFreeAgent(Boolean((nextProfile as any).free_agent));
       setInterests((nextProfile as any).interests ?? "");
       setFavoriteLeagues((nextProfile as any).favorite_leagues ?? "");
+      setCoachingExperience((nextProfile as any).experience_summary ?? "");
       setVisibility(nextProfile.profile_visibility ?? "public");
       setAvatarUrl(nextProfile.avatar_url ?? "");
       setAvatarStatus(nextProfile.avatar_moderation_status ?? "approved");
       setSubscription(subscriptionData ?? null);
-      setVerified(Boolean(nextProfile.player_verified));
+      setVerified(Boolean(nextProfile.player_verified || (nextProfile as any).coach_verified));
       const { data } = await supabase.from("reviews")
         .select("id,status,title,body,overall_rating,created_at,coach_id,team_id,league_id")
         .eq("author_id", user.id).order("created_at", { ascending: false });
@@ -152,6 +154,7 @@ export default function AccountPage() {
       nationality: nationality.trim().slice(0,80) || null,
       interests: interests.trim().slice(0,500) || null,
       favorite_leagues: favoriteLeagues.trim().slice(0,500) || null,
+      experience_summary: profile.account_type === "coach" ? coachingExperience.trim().slice(0,1000) || null : null,
       profile_visibility: ["scout","agent","fan"].includes(profile.account_type) ? "private" : visibility,
       free_agent: profile.account_type === "player" ? freeAgent : false,
     };
@@ -187,7 +190,7 @@ export default function AccountPage() {
             <label htmlFor="avatar-upload" className="muted">Player profile picture</label><input id="avatar-upload" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f) void uploadAvatar(f)}} />
             <p className="muted" style={{fontSize:12}}>{avatarStatus==="pending" ? "Pending moderation. It will appear publicly after approval." : avatarStatus==="rejected" ? "Photo rejected. Upload another image." : "Approved and eligible to appear on your player profile."}</p>
           </>}
-          <h2>{profile.account_type === "player" ? "Player information" : "Profile information"} {profile.account_type === "player" && verified && <span title="Verified professional player" style={{color:"var(--orange)"}}>✓</span>}</h2>
+          <h2>{profile.account_type === "player" ? "Player information" : profile.account_type === "coach" ? "Coach information" : "Profile information"} {((profile.account_type === "player" && profile.player_verified) || (profile.account_type === "coach" && profile.coach_verified)) && <span title="Verified professional" style={{color:"var(--orange)"}}>✓</span>}</h2>
           <form onSubmit={saveProfile} className="account-profile-form" style={{display:"grid",gap:12,marginTop:16}}>
             <label className="muted">First name</label><input value={profile.first_name ?? ""} readOnly />
             <label className="muted">Last name</label><input value={profile.last_name ?? ""} readOnly />
@@ -197,6 +200,7 @@ export default function AccountPage() {
             {profile.account_type === "player" && <input id="position" value={position} readOnly disabled />}
             {profile.account_type === "player" && <label htmlFor="years-pro" className="muted">Years as a pro</label>}
             {profile.account_type === "player" && <input id="years-pro" type="number" value={yearsPro} readOnly disabled />}
+            {profile.account_type === "coach" && <><label htmlFor="coaching-experience" className="muted">Coaching experience</label><textarea id="coaching-experience" value={coachingExperience} onChange={e=>setCoachingExperience(e.target.value)} maxLength={1000} rows={4} placeholder="Years coaching, levels, roles, specialties, and professional experience." /><label htmlFor="coach-specialties" className="muted">Coaching specialties / basketball interests</label><textarea id="coach-specialties" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder="Player development, defense, scouting, strength & conditioning, etc." /></>}
             <label htmlFor="hometown">Hometown</label><input id="hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder="City, State / Region" />
             <label htmlFor="nationality">Nationality</label>
             <select id="nationality" value={nationality} onChange={e=>setNationality(e.target.value)} disabled={savingProfile}>
@@ -224,7 +228,7 @@ export default function AccountPage() {
               <label htmlFor="current-country" className="muted">Current country</label><select id="current-country" value={currentCountry} disabled><option value={currentCountry}>{currentCountry || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Current country is managed through verified team changes.</p>
               <label htmlFor="current-team" className="muted">Current team</label><select id="current-team" value={currentTeam} disabled><option value={currentTeam}>{currentTeam || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Current team is managed through player verification.</p>
             </>}
-            <label htmlFor="bio" className="muted">Player bio</label><textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder="Tell other players a little about your experience." />
+            <label htmlFor="bio" className="muted">{profile.account_type === "coach" ? "Coaching bio" : "Player bio"}</label><textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder={profile.account_type === "coach" ? "Tell teams and basketball professionals about your coaching background." : "Tell other players a little about your experience."} />
                         {profile.account_type === "player" && <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>Show me as a free agent</span></label>}
             {["scout","agent"].includes(profile.account_type) && <>
               <label htmlFor="interests" className="muted">Basketball interests</label><textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder="Roles, regions, positions, or player types you follow." />
@@ -235,7 +239,8 @@ export default function AccountPage() {
             {["scout","agent","fan"].includes(profile.account_type) ? <div className="card"><strong>🔒 Private profile</strong><p className="muted">Your scout, agent, or fan profile is private. Other users cannot open your profile as a public profile.</p></div> : <><label htmlFor="visibility" className="muted">Profile visibility</label><select id="visibility" value={visibility} onChange={e => setVisibility(e.target.value as "public" | "private")}><option value="public">Public</option><option value="private">Private</option></select></>}
             <p className="muted">Email: {email}</p>
             <div className="card" style={{marginTop:4}}><strong>✓ {profile.profile_claimed ? "Profile claimed" : "Claim your player profile"}</strong><p className="muted">{profile.profile_claimed ? "This HoopCheck profile is connected to your account and ready for you to manage." : "Claim this profile to manage your basketball information."}</p></div>
-            {profile.account_type === "player" && <div className="card" style={{marginTop:8}}><strong>{verified ? "✓ Verified Player" : "Player verification"}</strong><p className="muted">{verified ? "Your professional-player account has been verified by HoopCheck." : "Apply for a verification badge to strengthen trust around your reviews."}</p>{!verified && <Link href="/verification" className="btn dark">Request Verification</Link>}</div>}
+            {profile.account_type === "player" && <div className="card" style={{marginTop:8}}><strong>{profile.player_verified ? "✓ Verified Player" : "Player verification"}</strong><p className="muted">{profile.player_verified ? "Your professional-player account has been verified by HoopCheck." : "Apply for a verification badge to strengthen trust around your reviews."}</p>{!profile.player_verified && <Link href="/verification" className="btn dark">Request Verification</Link>}</div>}
+            {profile.account_type === "coach" && <div className="card" style={{marginTop:8,border:"1px solid var(--orange)"}}><strong>{profile.coach_verified ? "✓ Verified Coach" : "Coach verification"}</strong><p className="muted">{profile.coach_verified ? "Your professional coach identity is verified. Pro and Premium coaches can request team placement." : "Pro and Premium coaches can verify their identity with a government ID/passport and live selfie, then request to be added to a team coaching staff."}</p>{!profile.coach_verified && <Link href="/verification" className="btn dark">Verify Coach</Link>}{profile.coach_verified && <Link href="/dashboard" className="btn dark">Request Team Placement</Link>}</div>}
             <button className="btn" type="submit" disabled={savingProfile}>{savingProfile ? "Saving..." : "Save Profile"}</button>
             {profileMessage && <p className="muted">{profileMessage}</p>}
           </form>
