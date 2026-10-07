@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type Props = { targetType: "team" | "player" | "league"; targetId: string };
+type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string };
 
 export default function FollowButton({ targetType, targetId }: Props) {
   const [following, setFollowing] = useState(false);
