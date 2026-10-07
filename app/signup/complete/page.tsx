@@ -1,74 +1,39 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
-type AccountType = "player"|"coach"|"fan"|"scout"|"agent";
-type Team = {id:string;name:string;country:string|null;league_name?:string|null};
+type AccountType="player"|"coach"|"fan"|"scout"|"agent";
+type Team={id:string;name:string;country:string|null;league_name:string|null};
+
+const roleCopy:Record<AccountType,{title:string;description:string;goals:string[]}> = {
+ player:{title:"Player Experience",description:"Research teams and coaches, manage your professional profile, verify your career, share first-hand experiences and connect with the basketball community.",goals:["Research a team before signing","Share professional experiences","Build a verified player profile","Connect with scouts and agents"]},
+ coach:{title:"Coach Experience",description:"Build a coaching profile, research organizations, pursue verification and connect with professional players when eligible.",goals:["Build your coaching profile","Research teams and leagues","Pursue coach verification","Connect with players"]},
+ scout:{title:"Scout Experience",description:"Create a research-first workspace for discovering players, teams and leagues around the world.",goals:["Discover players","Follow markets and leagues","Research teams","Connect with eligible players"]},
+ agent:{title:"Agent Experience",description:"Create a recruiting-focused workspace for researching players, teams and leagues and building professional connections.",goals:["Research players","Track leagues and markets","Research teams","Connect with eligible players"]},
+ fan:{title:"Fan Experience",description:"Follow the teams and basketball worlds you care about, with fan membership features designed around your interests.",goals:["Follow favorite teams","Track leagues","Explore global basketball","Unlock fan membership features"]}
+};
 
 function Complete(){
-  const params=useSearchParams(); const email=params.get("email");
-  const [accountType,setAccountType]=useState<AccountType>("player");
-  const [basketballType,setBasketballType]=useState<"mens"|"womens">("mens");
-  const [favoriteTeamId,setFavoriteTeamId]=useState(""); const [teams,setTeams]=useState<Team[]>([]);
-  const [teamCountry,setTeamCountry]=useState(""); const [teamLeague,setTeamLeague]=useState("");
-  const [saved,setSaved]=useState(false);
+ const params=useSearchParams(); const router=useRouter(); const email=params.get("email");
+ const [accountType,setAccountType]=useState<AccountType>("player"); const [basketballType,setBasketballType]=useState<"mens"|"womens">("mens");
+ const [favoriteTeamId,setFavoriteTeamId]=useState(""); const [teams,setTeams]=useState<Team[]>([]); const [teamCountry,setTeamCountry]=useState(""); const [teamLeague,setTeamLeague]=useState("");
+ const [goal,setGoal]=useState(""); const [preferences,setPreferences]=useState(""); const [saved,setSaved]=useState(false); const [saving,setSaving]=useState(false);
 
-  useEffect(()=>{
-    async function load(){
-      const {data:{user}}=await supabase.auth.getUser();
-      const metadata=(user?.user_metadata?.account_type||"player") as AccountType;
-      setAccountType(metadata);
-      const {data}=await supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(1000);
-      setTeams((data||[]) as Team[]);
-    }
-    void load();
-  },[]);
-
-  async function continueProfile(){
-    const favoriteName=teams.find(t=>t.id===favoriteTeamId)?.name||"";
-    localStorage.setItem("hoopcheck_profile_setup",JSON.stringify({accountType,basketballType,favoriteTeamId}));
-    const {data:{user}}=await supabase.auth.getUser();
-    if(user) await supabase.from("profiles").update({account_type:accountType,basketball_type:basketballType,favorite_teams:favoriteName}).eq("id",user.id);
-    setSaved(true);
-  }
-
-  const label={player:"Player",coach:"Coach",fan:"Fan",scout:"Scout",agent:"Agent"}[accountType];
-  const teamCountries=Array.from(new Set(teams.map(t=>t.country).filter(Boolean) as string[])).sort();
-  const teamLeagues=Array.from(new Set(teams.filter(t=>!teamCountry||t.country===teamCountry).map(t=>(t as any).league_name).filter(Boolean) as string[])).sort();
-  const filteredTeams=teams.filter(t=>(!teamCountry||t.country===teamCountry)&&(!teamLeague||(t as any).league_name===teamLeague));
-  const nonPlayer=accountType!=="player";
-
-  return <main className="page-shell"><div className="page-container signup-complete-shell">
-    <section className="hero-card"><p className="eyebrow">WELCOME TO HOOPCHECK</p><h1>Let’s personalize your experience.</h1><p className="muted">Your account is created{email?" for "+email:""} as a <strong>{label}</strong>. We’ll keep setup focused on what matters for your role.</p></section>
-
-    <section className="dashboard-card" style={{marginTop:18}}>
-      <p className="eyebrow">01 · ACCOUNT TYPE</p><h2>{label} account</h2>
-      <p className="muted">{nonPlayer?"Research-first setup. We won’t ask you for player position, years pro, or former teams.":"Professional-player setup with optional basketball preferences."}</p>
-    </section>
-
-    {accountType==="player"&&<section className="dashboard-card" style={{marginTop:18}}>
-      <p className="eyebrow">02 · BASKETBALL</p><h2>Which game are you playing?</h2>
-      <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:14}}><button type="button" className={basketballType==="mens"?"btn":"btn dark"} onClick={()=>setBasketballType("mens")}>Men’s Basketball</button><button type="button" className={basketballType==="womens"?"btn":"btn dark"} onClick={()=>setBasketballType("womens")}>Women’s Basketball</button></div>
-    </section>}
-
-    <section className="dashboard-card" style={{marginTop:18}}>
-      <p className="eyebrow">{accountType==="player"?"03":"02"} · FOLLOW</p><h2>Choose a team to follow</h2>
-      <p className="muted">Pick one now. You can follow more teams from team profiles later.</p>
-      <div className="signup-two-col fan-team-filters" style={{marginTop:10}}><div><label htmlFor="setup-country">Country</label><select id="setup-country" value={teamCountry} onChange={e=>{setTeamCountry(e.target.value);setTeamLeague("");setFavoriteTeamId("");}}><option value="">All countries</option>{teamCountries.map(x=><option key={x} value={x}>{x}</option>)}</select></div><div><label htmlFor="setup-league">League</label><select id="setup-league" value={teamLeague} onChange={e=>{setTeamLeague(e.target.value);setFavoriteTeamId("");}}><option value="">All leagues</option>{teamLeagues.map(x=><option key={x} value={x}>{x}</option>)}</select></div></div><select value={favoriteTeamId} onChange={e=>setFavoriteTeamId(e.target.value)} style={{marginTop:10}}>
-        <option value="">Select a team</option>
-        {filteredTeams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?" — "+t.country:""}{t.league_name?" · "+t.league_name:""}</option>)}
-      </select>
-    </section>
-
-    <section className="dashboard-card" style={{marginTop:18}}>
-      <p className="eyebrow">{accountType==="player"?"04":"03"} · NEXT STEP</p><h2>Finish your profile</h2>
-      <p className="muted">{accountType==="player"?"Players can complete professional verification and locked identity fields from Profile.":"Customize your research preferences from Profile. You can follow teams, players, and leagues as you explore HoopCheck."}</p>
-      <div style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:16}}><button className="btn" onClick={continueProfile}>Save & Continue</button><Link href="/login" className="btn dark">Sign In Later</Link></div>
-      {saved&&<p className="muted" style={{marginTop:12}}>Saved. Your HoopCheck profile is ready.</p>}
-    </section>
-  </div></main>;
+ useEffect(()=>{(async()=>{const {data:{user}}=await supabase.auth.getUser();const metadata=(user?.user_metadata?.account_type||"player") as AccountType;setAccountType(metadata);setGoal(metadata==="player"?"research":metadata==="fan"?"follow_teams":"research");const {data}=await supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(1000);setTeams((data||[]) as Team[]);})();},[]);
+ const copy=roleCopy[accountType]; const countries=Array.from(new Set(teams.map(t=>t.country).filter(Boolean) as string[])).sort(); const leagues=Array.from(new Set(teams.filter(t=>!teamCountry||t.country===teamCountry).map(t=>t.league_name).filter(Boolean) as string[])).sort(); const filtered=teams.filter(t=>(!teamCountry||t.country===teamCountry)&&(!teamLeague||t.league_name===teamLeague));
+ async function save(){setSaving(true);const {data:{user}}=await supabase.auth.getUser();if(!user){router.push("/login");return;}const favorite=teams.find(t=>t.id===favoriteTeamId)?.name||"";const {error}=await supabase.from("profiles").update({account_type:accountType,basketball_type:accountType==="fan"||accountType==="player"?basketballType:null,favorite_teams:favorite||null,experience_goal:goal,research_preferences:preferences.trim().slice(0,1000)||null}).eq("id",user.id);if(error){setSaving(false);return;}localStorage.setItem("hoopcheck_profile_setup","complete");setSaved(true);setSaving(false);}
+ if(saved)return <main className="page-shell"><div className="page-container"><section className="hero-card"><p className="eyebrow">WELCOME TO HOOPCHECK</p><h1>Your experience is ready.</h1><p className="muted">Your {copy.title.toLowerCase()} has been personalized.</p><div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:18}}><Link href="/dashboard" className="btn">Go To Dashboard</Link><Link href="/teams" className="btn dark">Explore Teams</Link></div></section></div></main>;
+ return <main className="page-shell"><div className="page-container signup-complete-shell">
+  <section className="hero-card"><p className="eyebrow">WELCOME TO HOOPCHECK</p><h1>Let’s personalize your experience.</h1><p className="muted">Your account is created as a <strong>{copy.title.replace(" Experience","")}</strong>{email && <> for {email}</>}. Here is what HoopCheck will prioritize for you.</p></section>
+  <section className="dashboard-card" style={{marginTop:18}}><p className="eyebrow">YOUR ACCOUNT</p><h2>{copy.title}</h2><p className="muted">{copy.description}</p><div className="grid" style={{padding:"14px 0 0"}}>{copy.goals.map((g,i)=><article className="card" key={g}><span className="card-kicker">0{i+1}</span><h3>{g}</h3></article>)}</div></section>
+  {(accountType==="player"||accountType==="fan")&&<section className="dashboard-card" style={{marginTop:18}}><p className="eyebrow">BASKETBALL</p><h2>Choose your basketball experience</h2><div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:14}}><button type="button" className={basketballType==="mens"?"btn":"btn dark"} onClick={()=>setBasketballType("mens")}>Men’s Basketball</button><button type="button" className={basketballType==="womens"?"btn":"btn dark"} onClick={()=>setBasketballType("womens")}>Women’s Basketball</button></div></section>}
+  <section className="dashboard-card" style={{marginTop:18}}><p className="eyebrow">YOUR GOAL</p><h2>What do you want HoopCheck to help you do?</h2><select value={goal} onChange={e=>setGoal(e.target.value)}><option value="research">Research basketball opportunities</option>{accountType==="player"&&<><option value="share_experience">Share my professional experiences</option><option value="career_connections">Build career connections</option></>}{accountType==="coach"&&<option value="coaching_opportunities">Find coaching opportunities</option>}{accountType==="scout"&&<option value="discover_players">Discover players</option>}{accountType==="agent"&&<option value="recruit_players">Recruit and represent players</option>}{accountType==="fan"&&<option value="follow_teams">Follow my favorite teams</option>}</select>
+  <label style={{display:"block",marginTop:14}}>What countries, leagues, teams, positions, or basketball interests should HoopCheck prioritize for you?<textarea value={preferences} onChange={e=>setPreferences(e.target.value)} rows={5} maxLength={1000} placeholder="Example: Portugal, Germany, guards, EuroCup, player development..." /></label></section>
+  <section className="dashboard-card" style={{marginTop:18}}><p className="eyebrow">FOLLOW</p><h2>Choose a team to follow</h2><p className="muted">You can add more later.</p><div className="signup-two-col"><label>Country<select value={teamCountry} onChange={e=>{setTeamCountry(e.target.value);setTeamLeague("");setFavoriteTeamId("");}}><option value="">All countries</option>{countries.map(x=><option key={x}>{x}</option>)}</select></label><label>League<select value={teamLeague} onChange={e=>{setTeamLeague(e.target.value);setFavoriteTeamId("");}}><option value="">All leagues</option>{leagues.map(x=><option key={x}>{x}</option>)}</select></label></div><select value={favoriteTeamId} onChange={e=>setFavoriteTeamId(e.target.value)} style={{marginTop:10}}><option value="">Select a team</option>{filtered.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?" — "+t.country:""}{t.league_name?" · "+t.league_name:""}</option>)}</select></section>
+  <section className="dashboard-card" style={{marginTop:18}}><p className="eyebrow">READY</p><button className="btn" onClick={save} disabled={saving}>{saving?"Saving...":"Save My Experience"}</button><p className="muted" style={{marginTop:10}}>You can change preferences later from your profile and settings.</p></section>
+ </div></main>;
 }
-export default function SignupCompletePage(){return <Suspense fallback={<main className="page-shell"><div className="page-container">Loading...</div></main>}><Complete/></Suspense>}
+export default function SignupComplete(){return <Suspense fallback={<main className="page-shell"><div className="page-container"><div className="dashboard-card">Loading your personalized setup...</div></div></main>}><Complete/></Suspense>;}
