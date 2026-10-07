@@ -247,7 +247,7 @@ export default function DashboardPage() {
             <span className="card-kicker">PLAYER CONNECTIONS</span>
             <h2>{profile.account_type === "player" ? "Recruiting requests" : "Player outreach"}</h2>
             <p className="muted">{profile.account_type === "player" ? "Premium scouts and agents can request contact. You decide who can reach you." : "Premium scouts and agents can request contact with players. A player must accept before messaging opens."}</p>
-            {profile.account_type === "player" ? <PlayerContactButton playerId={userId} /> : subscription?.plan === "premium" && activeMembership ? <Link href="/players" className="btn">Browse Players</Link> : <Link href="/membership" className="btn">Upgrade to Premium</Link>}
+            {profile.account_type === "player" ? <PlayerContactButton playerId={userId} /> : ["pro","premium"].includes(subscription?.plan || "") && activeMembership ? <Link href="/players" className="btn">Browse Players</Link> : <Link href="/membership" className="btn">Upgrade to Pro or Premium</Link>}
           </section>
         )}
 
