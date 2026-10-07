@@ -28,13 +28,13 @@ export async function POST(req:Request){
   if(userError||!user)return NextResponse.json({error:"Invalid session"},{status:401});
 
   const {data:profile}=await supabase.from("profiles")
-    .select("account_type,identity_verification_status")
+    .select("account_type,identity_verification_status,coach_verified")
     .eq("id",user.id).maybeSingle();
 
-  if(profile?.account_type!=="player")
-    return NextResponse.json({error:"Only player accounts can start identity verification."},{status:403});
+  if(!["player","coach"].includes(profile?.account_type || ""))
+    return NextResponse.json({error:"Only player and coach accounts can start identity verification."},{status:403});
   if(profile.identity_verification_status==="verified")
-    return NextResponse.json({error:"This player is already identity verified."},{status:409});
+    return NextResponse.json({error:`This ${profile.account_type} is already identity verified.`},{status:409});
 
   const stripe=new Stripe(process.env.STRIPE_SECRET_KEY);
   const origin=process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
@@ -44,7 +44,7 @@ export async function POST(req:Request){
     session=await stripe.identity.verificationSessions.create({
       type:"document",
       client_reference_id:user.id,
-      metadata:{user_id:user.id,hoopcheck_role:"player"},
+      metadata:{user_id:user.id,hoopcheck_role:profile.account_type},
       return_url:`${origin}/verification?identity=complete`,
       options:{document:{require_matching_selfie:true}}
     });
@@ -92,8 +92,8 @@ export async function GET(req:Request){
     .select("account_type,stripe_identity_verification_session_id")
     .eq("id",user.id).maybeSingle();
 
-  if(profile?.account_type!=="player")
-    return NextResponse.json({error:"Only player accounts can check identity verification."},{status:403});
+  if(!["player","coach"].includes(profile?.account_type || ""))
+    return NextResponse.json({error:"Only player and coach accounts can check identity verification."},{status:403});
   if(!profile.stripe_identity_verification_session_id)
     return NextResponse.json({status:"not_started",verified:false});
 
@@ -112,7 +112,8 @@ export async function GET(req:Request){
 
   const {error:profileError}=await admin.from("profiles").update({
     identity_verification_status:verified?"verified":status,
-    ...(verified ? {player_verified:true,player_verified_at:new Date().toISOString()} : {})
+    ...(verified && profile.account_type==="player" ? {player_verified:true,player_verified_at:new Date().toISOString()} : {}),
+    ...(verified && profile.account_type==="coach" ? {coach_verified:true,coach_verified_at:new Date().toISOString()} : {})
   }).eq("id",user.id);
 
   if(profileError){
