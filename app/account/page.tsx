@@ -187,8 +187,8 @@ export default function AccountPage() {
           <p className="eyebrow">PROFILE</p>
           {profile.account_type === "player" && <>
             {avatarUrl && <img src={avatarUrl} alt="Profile" style={{width:112,height:112,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--orange)",display:"block"}} />}
-            <label htmlFor="avatar-upload" className="muted">Player profile picture</label><input id="avatar-upload" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f) void uploadAvatar(f)}} />
-            <p className="muted" style={{fontSize:12}}>{avatarStatus==="pending" ? "Pending moderation. It will appear publicly after approval." : avatarStatus==="rejected" ? "Photo rejected. Upload another image." : "Approved and eligible to appear on your player profile."}</p>
+            <label htmlFor="avatar-upload" className="muted">{profile.account_type === "coach" ? "Coach profile picture" : "Player profile picture"}</label><input id="avatar-upload" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f) void uploadAvatar(f)}} />
+            <p className="muted" style={{fontSize:12}}>{avatarStatus==="pending" ? "Pending moderation. It will appear publicly after approval." : avatarStatus==="rejected" ? "Photo rejected. Upload another image." : "Approved and eligible to appear on your public profile."}</p>
           </>}
           <h2>{profile.account_type === "player" ? "Player information" : profile.account_type === "coach" ? "Coach information" : "Profile information"} {((profile.account_type === "player" && profile.player_verified) || (profile.account_type === "coach" && profile.coach_verified)) && <span title="Verified professional" style={{color:"var(--orange)"}}>✓</span>}</h2>
           <form onSubmit={saveProfile} className="account-profile-form" style={{display:"grid",gap:12,marginTop:16}}>
