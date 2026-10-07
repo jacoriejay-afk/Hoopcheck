@@ -31,7 +31,7 @@ export async function POST(req:Request){
     .select("account_type,identity_verification_status,coach_verified")
     .eq("id",user.id).maybeSingle();
 
-  if(!["player","coach"].includes(profile?.account_type || ""))
+  if(!profile || !["player","coach"].includes(profile.account_type || ""))
     return NextResponse.json({error:"Only player and coach accounts can start identity verification."},{status:403});
   if(profile.account_type==="coach"){
     const {data:sub}=await supabase.from("subscriptions").select("plan,status,current_period_end").eq("user_id",user.id).maybeSingle();
@@ -97,7 +97,7 @@ export async function GET(req:Request){
     .select("account_type,stripe_identity_verification_session_id")
     .eq("id",user.id).maybeSingle();
 
-  if(!["player","coach"].includes(profile?.account_type || ""))
+  if(!profile || !["player","coach"].includes(profile.account_type || ""))
     return NextResponse.json({error:"Only player and coach accounts can check identity verification."},{status:403});
   if(!profile.stripe_identity_verification_session_id)
     return NextResponse.json({status:"not_started",verified:false});
