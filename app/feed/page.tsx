@@ -42,7 +42,7 @@ export default function Feed(){
       if(ids.length){const {data:teams}=await supabase.from("teams").select("name").in("id",ids);followedTeamNames=(teams||[]).map((t:any)=>t.name).filter(Boolean);}
     }
     const {data,error}=await supabase.from("feed_posts")
-      .select("id,body,image_url,location_country,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country)")
+      .select("id,body,image_url,location_country,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country,current_team)")
       .eq("status","approved").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(50);
     if(error){setMsg(error.message);return;}
     let rows=(data||[]).map((r:any)=>({...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)})) as Post[];
