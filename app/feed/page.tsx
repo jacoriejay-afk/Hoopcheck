@@ -6,13 +6,13 @@ import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 
 type MiniProfile = { display_name: string | null; avatar_url: string | null; current_country?: string | null; current_team?: string | null };
-type Post = { id:string; body:string; image_url:string|null; location_country:string|null; created_at:string; expires_at:string; author_id:string; profiles?:MiniProfile|null };
+type Post = { id:string; body:string; image_url:string|null; location_country:string|null; created_at:string; expires_at:string; author_id:string; ageLabel?:string; expiresLabel?:string; profiles?:MiniProfile|null };
 type Comment = { id:string; post_id:string; body:string; created_at:string; author_id:string; profiles?:MiniProfile|null };
 type Profile = { account_type:string; current_country:string|null };
 type Subscription = { plan:string|null; status:string|null; access_status:string|null };
 
 const ago = (v:string) => {
-  const s=Math.max(0,Math.floor((Date.now()-new Date(v).getTime())/1000));
+  const s=Math.max(0,Math.floor((now-new Date(v).getTime())/1000));
   if(s<60)return "just now"; const m=Math.floor(s/60); if(m<60)return m+"m ago";
   const h=Math.floor(m/60); if(h<24)return h+"h ago"; return Math.floor(h/24)+"d ago";
 };
@@ -49,7 +49,8 @@ export default function Feed(){
       .select("id,body,image_url,location_country,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country,current_team)")
       .eq("status","approved").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(50);
     if(error){setMsg(error.message);return;}
-    let rows=(data||[]).map((r:any)=>({...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)})) as Post[];
+    const now=Date.now();
+    let rows=(data||[]).map((r:any)=>{const post={...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)} as Post; return {...post,ageLabel:ago(post.created_at,now),expiresLabel:`Expires in ${Math.max(0,Math.ceil((new Date(post.expires_at).getTime()-now)/3600000))}h`};});
     if(profile?.account_type==="fan") rows=rows.filter(p=>followedFanIds.includes(p.author_id));
     if(profile?.account_type==="player") rows=rows.filter(p=>p.author_id===user?.id || connectedPlayerIds.includes(p.author_id));
     setPosts(rows);
@@ -142,9 +143,9 @@ export default function Feed(){
     </section>}
 
     <section style={{display:"grid",gap:14,marginTop:18}}>{posts.length?posts.map(p=>{const cs=comments[p.id]||[];return <article className="dashboard-card" key={p.id}>
-      <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"flex-start"}}><div style={{display:"flex",gap:12,alignItems:"center"}}>{p.profiles?.avatar_url?<img src={p.profiles.avatar_url} alt="" style={{width:46,height:46,borderRadius:"50%",objectFit:"cover"}}/>:<div className="player-avatar-fallback">HC</div>}<div><strong>{p.profiles?.display_name||"HoopCheck Player"}</strong>{p.location_country&&<div className="muted">📍 Playing in {p.location_country}</div>}<small className="muted">{ago(p.created_at)}</small></div></div>{p.author_id===user.id&&<button type="button" className="btn dark" onClick={()=>void del(p)}>Delete</button>}</div>
+      <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"flex-start"}}><div style={{display:"flex",gap:12,alignItems:"center"}}>{p.profiles?.avatar_url?<img src={p.profiles.avatar_url} alt="" style={{width:46,height:46,borderRadius:"50%",objectFit:"cover"}}/>:<div className="player-avatar-fallback">HC</div>}<div><strong>{p.profiles?.display_name||"HoopCheck Player"}</strong>{p.location_country&&<div className="muted">📍 Playing in {p.location_country}</div>}<small className="muted">{p.ageLabel}</small></div></div>{p.author_id===user.id&&<button type="button" className="btn dark" onClick={()=>void del(p)}>Delete</button>}</div>
       {p.body.trim()&&<p style={{whiteSpace:"pre-wrap",marginTop:14}}>{p.body}</p>}{p.image_url&&<img src={p.image_url} alt="HoopFeed post" style={{width:"100%",maxHeight:520,objectFit:"cover",borderRadius:16,display:"block",marginTop:12}}/>}
-      <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:14}}><button type="button" className={mine[p.id]?"btn":"btn dark"} onClick={()=>void toggleCheck(p)}>✓ {mine[p.id]?"Checked":"Check"} · {checks[p.id]||0}</button><button type="button" className="btn dark" onClick={()=>setOpen(x=>({...x,[p.id]:!x[p.id]}))}>Comment · {cs.length}</button><small className="muted" style={{alignSelf:"center"}}>Expires in {Math.max(0,Math.ceil((new Date(p.expires_at).getTime()-Date.now())/3600000))}h</small></div>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:14}}><button type="button" className={mine[p.id]?"btn":"btn dark"} onClick={()=>void toggleCheck(p)}>✓ {mine[p.id]?"Checked":"Check"} · {checks[p.id]||0}</button><button type="button" className="btn dark" onClick={()=>setOpen(x=>({...x,[p.id]:!x[p.id]}))}>Comment · {cs.length}</button><small className="muted" style={{alignSelf:"center"}}>{p.expiresLabel}</small></div>
       {open[p.id]&&<div style={{marginTop:14,borderTop:"1px solid var(--border)",paddingTop:14}}><div style={{display:"grid",gap:10}}>{cs.map(c=><div key={c.id} style={{display:"flex",gap:10}}>{c.profiles?.avatar_url?<img src={c.profiles.avatar_url} alt="" style={{width:34,height:34,borderRadius:"50%",objectFit:"cover"}}/>:<div className="player-avatar-fallback" style={{width:34,height:34,minWidth:34}}>HC</div>}<div><strong>{c.profiles?.display_name||"Player"}</strong><div style={{whiteSpace:"pre-wrap"}}>{c.body}</div><small className="muted">{ago(c.created_at)}</small></div></div>)}{!cs.length&&<p className="muted">No comments yet.</p>}</div><div style={{display:"flex",gap:8,marginTop:12}}><input value={drafts[p.id]||""} onChange={e=>setDrafts(x=>({...x,[p.id]:e.target.value}))} maxLength={1000} placeholder="Add a comment..." /><button type="button" className="btn" disabled={!drafts[p.id]?.trim()} onClick={()=>void comment(p.id)}>Send</button></div></div>}
     </article>}) : <div className="dashboard-card"><h2>No active HoopFeed posts yet.</h2><p className="muted">Follow players in your current-season country to see their daily posts here.</p></div>}</section>
   </div></main>;
