@@ -65,6 +65,9 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarStatus, setAvatarStatus] = useState<"pending"|"approved"|"rejected">("approved");
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const [cropPreview, setCropPreview] = useState("");
+  const [cropZoom, setCropZoom] = useState(1);
 
   useEffect(() => {
     async function load() {
@@ -118,20 +121,55 @@ export default function AccountPage() {
     load();
   }, []);
 
-  async function uploadAvatar(file: File) {
+  function chooseAvatar(file: File) {
     if (!file.type.startsWith("image/")) { setProfileMessage("Please choose an image file."); return; }
-    if (file.size > 5 * 1024 * 1024) { setProfileMessage("Profile photos must be 5MB or smaller."); return; }
+    if (file.size > 10 * 1024 * 1024) { setProfileMessage("Profile photos must be 10MB or smaller."); return; }
+    setCropFile(file);
+    setCropPreview(URL.createObjectURL(file));
+    setCropZoom(1);
+    setProfileMessage("");
+  }
+
+  async function cropAndUploadAvatar() {
+    if (!cropFile || !cropPreview) return;
+    const image = new Image();
+    image.src = cropPreview;
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("Unable to read that image."));
+    });
+
+    const size = 720;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) { setProfileMessage("Your browser could not prepare the photo."); return; }
+
+    const sourceSize = Math.min(image.naturalWidth, image.naturalHeight) / cropZoom;
+    const sx = Math.max(0, (image.naturalWidth - sourceSize) / 2);
+    const sy = Math.max(0, (image.naturalHeight - sourceSize) / 2);
+    ctx.drawImage(image, sx, sy, sourceSize, sourceSize, 0, 0, size, size);
+
+    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.9));
+    if (!blob) { setProfileMessage("Unable to prepare the cropped photo."); return; }
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-    const path = user.id + "/avatar." + ext;
-    const { error: uploadError } = await supabase.storage.from("profile-avatars").upload(path, file, { upsert: true, contentType: file.type });
+    const path = user.id + "/avatar.jpg";
+    const { error: uploadError } = await supabase.storage.from("profile-avatars").upload(path, blob, { upsert: true, contentType: "image/jpeg" });
     if (uploadError) { setProfileMessage(uploadError.message); return; }
+
     const { data } = supabase.storage.from("profile-avatars").getPublicUrl(path);
     const pendingUrl = data.publicUrl + "?v=" + Date.now();
-    const { error } = await supabase.from("profiles").update({ avatar_url: pendingUrl }).eq("id", user.id);
+    const { error } = await supabase.from("profiles").update({ avatar_url: pendingUrl, avatar_moderation_status: "pending" }).eq("id", user.id);
     if (error) { setProfileMessage(error.message); return; }
-    setAvatarUrl(pendingUrl); setAvatarStatus("pending"); setProfileMessage("Photo uploaded. It is pending moderation before appearing publicly.");
+
+    setAvatarUrl(pendingUrl);
+    setAvatarStatus("pending");
+    setCropFile(null);
+    setCropPreview("");
+    setProfileMessage("Photo uploaded. It is pending moderation before appearing publicly.");
   }
 
   async function saveProfile(event: React.FormEvent) {
@@ -187,8 +225,21 @@ export default function AccountPage() {
           <p className="eyebrow">PROFILE</p>
           {profile.account_type === "player" && <>
             {avatarUrl && <img src={avatarUrl} alt="Profile" style={{width:112,height:112,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--orange)",display:"block"}} />}
-            <label htmlFor="avatar-upload" className="muted">{"Player profile picture"}</label><input id="avatar-upload" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f) void uploadAvatar(f)}} />
+            <label htmlFor="avatar-upload" className="muted">Player profile picture</label>
+            <input id="avatar-upload" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f) chooseAvatar(f)}} />
             <p className="muted" style={{fontSize:12}}>{avatarStatus==="pending" ? "Pending moderation. It will appear publicly after approval." : avatarStatus==="rejected" ? "Photo rejected. Upload another image." : "Approved and eligible to appear on your public profile."}</p>
+            {cropPreview && <div className="dashboard-card" style={{marginTop:12}}>
+              <span className="card-kicker">CROP PHOTO</span>
+              <div style={{width:"min(100%,280px)",aspectRatio:"1",overflow:"hidden",borderRadius:"50%",margin:"12px auto",border:"3px solid var(--orange)",background:"#111"}}>
+                <img src={cropPreview} alt="Crop preview" style={{width:"100%",height:"100%",objectFit:"cover",transform:"scale("+cropZoom+")"}} />
+              </div>
+              <label className="muted" htmlFor="avatar-zoom">Zoom</label>
+              <input id="avatar-zoom" type="range" min="1" max="3" step="0.05" value={cropZoom} onChange={e=>setCropZoom(Number(e.target.value))} style={{width:"100%"}} />
+              <div className="actions">
+                <button type="button" className="btn" onClick={()=>void cropAndUploadAvatar()}>Use Cropped Photo</button>
+                <button type="button" className="btn dark" onClick={()=>{setCropFile(null);setCropPreview("")}}>Cancel</button>
+              </div>
+            </div>}
           </>}
           <h2>{profile.account_type === "player" ? "Player information" : profile.account_type === "coach" ? "Coach information" : "Profile information"} {((profile.account_type === "player" && profile.player_verified) || (profile.account_type === "coach" && profile.coach_verified)) && <span title="Verified professional" style={{color:"var(--orange)"}}>✓</span>}</h2>
           <form onSubmit={saveProfile} className="account-profile-form" style={{display:"grid",gap:12,marginTop:16}}>
