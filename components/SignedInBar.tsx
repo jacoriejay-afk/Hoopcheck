@@ -6,14 +6,14 @@ import GlobalSearch from "./GlobalSearch";
 import { supabase } from "../lib/supabase";
 
 export default function SignedInBar(){
- const [signedIn,setSignedIn]=useState(false); const [menuOpen,setMenuOpen]=useState(false);
- useEffect(()=>{supabase.auth.getSession().then(({data})=>setSignedIn(!!data.session));const {data}=supabase.auth.onAuthStateChange((_e,s)=>setSignedIn(!!s));return()=>data.subscription.unsubscribe();},[]);
+ const [signedIn,setSignedIn]=useState(false); const [menuOpen,setMenuOpen]=useState(false); const [profileHref,setProfileHref]=useState("/account");
+ useEffect(()=>{supabase.auth.getSession().then(async({data})=>{setSignedIn(!!data.session);if(data.session?.user){const {data:p}=await supabase.from("profiles").select("account_type").eq("id",data.session.user.id).maybeSingle();if(p?.account_type==="player")setProfileHref(`/players/${data.session.user.id}`);}});const {data}=supabase.auth.onAuthStateChange(async(_e,s)=>{setSignedIn(!!s);if(s?.user){const {data:p}=await supabase.from("profiles").select("account_type").eq("id",s.user.id).maybeSingle();setProfileHref(p?.account_type==="player"?`/players/${s.user.id}`:"/account");}else setProfileHref("/account");});return()=>data.subscription.unsubscribe();},[]);
  if(!signedIn)return null;
  return <div className="signed-in-bar">
   <Link href="/dashboard" className="brand mini-brand" aria-label="HoopCheck home">HOOPCHECK</Link>
   <div className="signed-in-search"><GlobalSearch compact /></div>
   <nav className="signed-in-options">
-   <Link href="/search">Search</Link><Link href="/account">Profile</Link><NotificationBell/>
+   <Link href="/search">Search</Link><Link href={profileHref}>Profile</Link><NotificationBell/>
    <div className="global-menu">
     <button type="button" className="global-menu-toggle" aria-expanded={menuOpen} onClick={()=>setMenuOpen(v=>!v)}><span className="menu-icon">☰</span><span>Menu</span></button>
     {menuOpen&&<div className="global-menu-panel" onMouseLeave={()=>setMenuOpen(false)}>
@@ -23,7 +23,7 @@ export default function SignedInBar(){
       <Link href="/players" onClick={()=>setMenuOpen(false)}>Players</Link>
       <Link href="/leagues" onClick={()=>setMenuOpen(false)}>Leagues</Link>
       <Link href="/feed" onClick={()=>setMenuOpen(false)}>Community Feed</Link>
-      <Link href="/account" onClick={()=>setMenuOpen(false)}>Profile</Link>
+      <Link href={profileHref} onClick={()=>setMenuOpen(false)}>Profile</Link>
       <Link href="/settings" onClick={()=>setMenuOpen(false)}>Settings</Link>
       <Link href="/support" onClick={()=>setMenuOpen(false)}>Help & Support</Link>
       <Link href="/admin/directory" onClick={()=>setMenuOpen(false)}>Admin</Link>
