@@ -101,7 +101,7 @@ export async function POST(request: Request) {
     const shareCountry = String(form.get("share_country") || "true") === "true";
     const { error } = await db.from("feed_posts").insert({
       author_id:user.id, body:text || " ", image_url,
-      location_country:shareCountry ? (profile?.current_country || null) : null,
+      location_country:shareCountry ? (String(form.get("post_country") || "").trim() || profile?.current_country || null) : null,
       status:"approved", expires_at:new Date(Date.now()+86400000).toISOString()
     });
     if (error) return NextResponse.json({ allowed:false,message:error.message },{status:400});
