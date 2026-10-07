@@ -1763,3 +1763,11 @@ textarea{min-height:110px}
  .btn{padding:8px 11px;font-size:12px;}
  .muted{line-height:1.45;}
 }
+/* Final compact-card pass: cards should size to their content, not stretch into large blocks. */
+.card,.dashboard-card,.hero-card,.result-card,.quick-card,.settings-card{min-height:0!important;height:auto;}
+.compact-card{min-height:0!important;height:auto;padding:13px!important;}
+.compact-card h2{margin:5px 0 6px;font-size:18px;line-height:1.15;}
+.compact-card p{margin:5px 0;line-height:1.35;}
+.compact-card .btn{margin-top:8px;}
+.fan-feature-card{min-height:0!important;}
+@media(max-width:700px){.compact-card{padding:12px!important}.compact-card .eyebrow{margin-bottom:4px}.compact-card h2{font-size:17px}.compact-card p{font-size:13px}.grid .card{padding:12px!important;}}
