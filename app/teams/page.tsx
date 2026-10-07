@@ -180,22 +180,7 @@ export default function TeamsPage() {
           </Link>
         </div>
 
-        <div className="actions">
-          <Link
-            href="/coaches"
-            className="btn dark"
-          >
-            Research Coaches
-          </Link>
-
-          <Link
-            href="/leagues"
-            className="btn dark"
-          >
-            Research Leagues
-          </Link>
-        </div>
-      </section>
+   </section>
 
       <section className="hero">
         <div className="research-search">
