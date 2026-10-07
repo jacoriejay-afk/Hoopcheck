@@ -41,7 +41,7 @@ export default function Feed() {
     profile?.account_type === "player" &&
     (subscription?.plan === "pro" || subscription?.plan === "premium") &&
     (subscription?.status === "active" || subscription?.status === "trialing") &&
-    (subscription?.access_status === null || subscription?.access_status === "active" || subscription?.access_status === "trialing");
+    (subscription?.access_status === null || subscription?.access_status === "active" || subscription?.access_status === "trialing" || subscription?.access_status === "pro" || subscription?.access_status === "premium");
 
   async function load() {
     const { data } = await supabase
