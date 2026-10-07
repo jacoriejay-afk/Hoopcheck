@@ -17,7 +17,7 @@ export default function LoginPage() {
     setMessage("");
 
     const normalizedEmail = email.trim().toLowerCase();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
       password,
     });
@@ -28,7 +28,7 @@ export default function LoginPage() {
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = data.user;
     if (!user) {
       setMessage("Login succeeded, but your session could not be restored. Please try again.");
       setLoading(false);
