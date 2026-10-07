@@ -10,7 +10,9 @@ export default function MobileAuth() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setSignedIn(Boolean(data.user)));
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => setSignedIn(Boolean(session)));
-    return () => listener.subscription.unsubscribe();
+    if (!signedIn) return null;
+
+  return () => listener.subscription.unsubscribe();
   }, []);
 
   return (
