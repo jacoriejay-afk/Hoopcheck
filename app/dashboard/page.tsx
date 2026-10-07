@@ -150,7 +150,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <main className="page-shell">
+      <main className="page-shell dashboard-page">
         <div className="page-container">
           <HoopLoading label="Loading your player dashboard..." />
         </div>
