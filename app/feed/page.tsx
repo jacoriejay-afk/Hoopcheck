@@ -34,7 +34,11 @@ export default function Feed(){
     (subscription?.access_status==null||["active","trialing","pro","premium"].includes(subscription.access_status));
 
   async function load(){
-    let followedTeamNames:string[]=[]; let followedFanIds:string[]=[];
+    let followedTeamNames:string[]=[]; let followedFanIds:string[]=[]; let connectedPlayerIds:string[]=[];
+    if(profile?.account_type==="player"){
+      const {data:connections}=await supabase.from("player_contact_requests").select("requester_id,player_id").or(`requester_id.eq.${user?.id},player_id.eq.${user?.id}`).eq("status","accepted").limit(100);
+      connectedPlayerIds=(connections||[]).flatMap((x:any)=>x.requester_id===user?.id?[x.player_id]:[x.requester_id]).filter(Boolean);
+    }
     if(profile?.account_type==="fan"){
       const {data:follows}=await supabase.from("follow_relationships").select("target_id,target_type").eq("follower_id",user?.id).in("target_type",["fan","team"]).limit(100);
       const teamIds=(follows||[]).filter((x:any)=>x.target_type==="team").map((x:any)=>x.target_id).filter(Boolean);
@@ -47,6 +51,7 @@ export default function Feed(){
     if(error){setMsg(error.message);return;}
     let rows=(data||[]).map((r:any)=>({...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)})) as Post[];
     if(profile?.account_type==="fan") rows=rows.filter(p=>followedFanIds.includes(p.author_id));
+    if(profile?.account_type==="player") rows=rows.filter(p=>p.author_id===user?.id || connectedPlayerIds.includes(p.author_id));
     setPosts(rows);
     if(!rows.length){setComments({});setChecks({});setMine({});return;}
     const ids=rows.map(p=>p.id);
