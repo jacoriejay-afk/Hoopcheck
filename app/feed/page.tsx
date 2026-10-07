@@ -14,7 +14,7 @@ type FeedPost = {
     display_name: string | null;
     avatar_url: string | null;
     current_country: string | null;
-  } | { display_name: string | null; avatar_url: string | null; current_country: string | null; }[] | null;
+  } | null;
 };
 
 type Profile = {
