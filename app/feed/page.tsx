@@ -77,36 +77,20 @@ export default function Feed(){
     if(!user||!access||(!body.trim()&&!photo)||posting)return;
     setPosting(true);setMsg("Checking your post for safety...");
     try{
+      const {data:{session}}=await supabase.auth.getSession();
+      if(!session?.access_token){setMsg("Your session expired. Please sign in again.");setPosting(false);return;}
       const form=new FormData();
+      form.append("kind","post");
       form.append("text",body.trim());
+      form.append("share_country",String(shareCountry));
       if(photo)form.append("image",photo);
-      const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",body:form});
+      const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
       const result=await moderation.json().catch(()=>({}));
-      if(!moderation.ok||result.allowed!==true){
-        setMsg(result.message||"This post could not be published because it did not pass HoopFeed safety checks.");
-        setPosting(false);return;
-      }
-      let path:string|null=null,image_url:string|null=null;
-      if(photo){
-        path=user.id+"/"+crypto.randomUUID()+".jpg";
-        const {error}=await supabase.storage.from("feed-images").upload(path,photo,{contentType:"image/jpeg",cacheControl:"31536000",upsert:false});
-        if(error){setMsg(error.message);setPosting(false);return;}
-        image_url=supabase.storage.from("feed-images").getPublicUrl(path).data.publicUrl;
-      }
-      const {error}=await supabase.from("feed_posts").insert({
-        author_id:user.id,
-        body:body.trim()||" ",
-        image_url,
-        location_country:shareCountry?(profile?.current_country||null):null,
-        status:"approved",
-        expires_at:new Date(Date.now()+86400000).toISOString()
-      });
-      if(error){if(path)await supabase.storage.from("feed-images").remove([path]);setMsg(error.message);setPosting(false);return;}
+      if(!moderation.ok||result.allowed!==true){setMsg(result.message||"This post could not be published because it did not pass HoopFeed safety checks.");setPosting(false);return;}
       setBody("");clearPhoto();setMsg("Posted to HoopFeed. AI safety checks passed. It stays live for 24 hours.");await load();
-    }catch(e:any){setMsg(e?.message||"Safety check failed. Your post was not published.");}
+    }catch(e:any){setMsg(e?.message||"Safety check failed. Your content was not published.");}
     setPosting(false);
   }
-
 
   async function toggleCheck(p:Post){
     if(!user||!access)return;
@@ -117,13 +101,17 @@ export default function Feed(){
   async function comment(post_id:string){
     const text=(drafts[post_id]||"").trim();if(!user||!access||!text)return;
     setMsg("Checking comment...");
-    const form=new FormData();form.append("text",text);
-    const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",body:form});
-    const result=await moderation.json().catch(()=>({}));
-    if(!moderation.ok||result.allowed!==true){setMsg(result.message||"This comment did not pass HoopFeed safety checks.");return;}
-    const {error}=await supabase.from("feed_post_comments").insert({post_id,author_id:user.id,body:text});
-    if(error){setMsg(error.message);return;}setDrafts(x=>({...x,[post_id]:""}));setMsg("");await load();
+    try{
+      const {data:{session}}=await supabase.auth.getSession();
+      if(!session?.access_token){setMsg("Your session expired. Please sign in again.");return;}
+      const form=new FormData();form.append("kind","comment");form.append("post_id",post_id);form.append("text",text);
+      const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
+      const result=await moderation.json().catch(()=>({}));
+      if(!moderation.ok||result.allowed!==true){setMsg(result.message||"This comment did not pass HoopFeed safety checks.");return;}
+      setDrafts(x=>({...x,[post_id]:""}));setMsg("");await load();
+    }catch(e:any){setMsg(e?.message||"Comment safety check failed.");}
   }
+
   async function del(p:Post){if(!user||p.author_id!==user.id)return;if(!confirm("Delete this HoopFeed post?"))return;const {error}=await supabase.from("feed_posts").delete().eq("id",p.id);if(error){setMsg(error.message);return;}if(p.image_url){const marker="/storage/v1/object/public/feed-images/";const i=p.image_url.indexOf(marker);if(i>=0)await supabase.storage.from("feed-images").remove([p.image_url.slice(i+marker.length)]);}await load();}
 
   if(loading)return <main className="page-shell"><div className="page-container"><section className="hero-card"><h1>Loading HoopFeed...</h1></section></div></main>;
