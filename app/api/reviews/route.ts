@@ -18,12 +18,12 @@ export async function POST(req:Request){
  const b=await req.json().catch(()=>({}));
  const { data: subscription } = await s.from("subscriptions").select("status,current_period_end").eq("user_id", user.id).maybeSingle();
  const paid = (subscription?.status === "active" || subscription?.status === "trialing") && (!subscription?.current_period_end || new Date(subscription.current_period_end) > new Date());
- const { data: authorProfile } = await s.from("profiles").select("account_type,player_verified").eq("id", user.id).maybeSingle();
+ const { data: authorProfile } = await s.from("profiles").select("account_type,player_verified,basketball_type").eq("id", user.id).maybeSingle();
  if (authorProfile?.account_type !== "player" || authorProfile?.player_verified !== true) return NextResponse.json({error:"Only verified professional player accounts can submit ratings or reviews. Scouts, agents, and fans can research but cannot post."},{status:403});
  const anonymous = b.is_anonymous === true;
  if (anonymous && !paid) return NextResponse.json({error:"Anonymous reviews are available only to paid members."},{status:403}); const targetKeys=["coach_id","team_id","league_id"].filter(k=>typeof b[k]==="string"&&b[k]);
  if(targetKeys.length!==1)return NextResponse.json({error:"Choose exactly one coach, team, or league."},{status:400});
- if (typeof b.team_id === "string" && b.team_id) {
+ if (typeof b.team_id === "string" && b.team_id && authorProfile?.basketball_type === "mens") {
    const { data: canReview, error: eligibilityError } = await s.rpc("can_user_review_team", { p_user_id: user.id, p_team_id: b.team_id });
    if (eligibilityError || canReview !== true) return NextResponse.json({error:"Only verified professional players who currently or previously played for this team can submit a team review."},{status:403});
  }
