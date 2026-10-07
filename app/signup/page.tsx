@@ -27,7 +27,7 @@ export default function SignupPage() {
   const [teams,setTeams]=useState<Team[]>([]);
   const [teamCountry,setTeamCountry]=useState(""); const [teamLeague,setTeamLeague]=useState("");
   const [email,setEmail]=useState(""); const [password,setPassword]=useState(""); const [confirmPassword,setConfirmPassword]=useState("");
-  const [isAdult,setIsAdult]=useState(false); const [agreedToTerms,setAgreedToTerms]=useState(false);
+  const [birthMonth,setBirthMonth]=useState(""); const [birthDay,setBirthDay]=useState(""); const [birthYear,setBirthYear]=useState(""); const [gender,setGender]=useState(""); const [agreedToTerms,setAgreedToTerms]=useState(false);
   const [loading,setLoading]=useState(false); const [error,setError]=useState("");
 
   useEffect(()=>{supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(1000).then(({data})=>setTeams(data||[]));},[]);
@@ -44,7 +44,7 @@ export default function SignupPage() {
     if(!/^[a-zA-Z0-9_]{3,20}$/.test(username.trim())){setError("Username must be 3–20 characters using only letters, numbers, or underscores.");setLoading(false);return;}
     if(password.length<6){setError("Password must be at least 6 characters.");setLoading(false);return;}
     if(password!==confirmPassword){setError("Passwords do not match.");setLoading(false);return;}
-    if(!isAdult){setError("You must confirm that you are 18 or older.");setLoading(false);return;}
+    if(!birthMonth||!birthDay||!birthYear){setError("Birthdate is required.");setLoading(false);return;}\n    const birthdate=`${birthYear}-${birthMonth.padStart(2,"0")}-${birthDay.padStart(2,"0")}`; const parsedBirthdate=new Date(`${birthdate}T00:00:00`);\n    if(Number.isNaN(parsedBirthdate.getTime())||parsedBirthdate.getUTCFullYear()!==Number(birthYear)||parsedBirthdate.getUTCMonth()+1!==Number(birthMonth)||parsedBirthdate.getUTCDate()!==Number(birthDay)){setError("Please enter a valid birthdate.");setLoading(false);return;}\n    const cutoff=new Date(); cutoff.setFullYear(cutoff.getFullYear()-18); if(parsedBirthdate>cutoff){setError("You must be 18 or older.");setLoading(false);return;}\n    if(!gender){setError("Gender is required.");setLoading(false);return;}
     if(!agreedToTerms){setError("Please agree to the Terms of Service and acknowledge the Privacy Policy.");setLoading(false);return;}
 
     const favoriteTeamName=teams.find(t=>t.id===favoriteTeamId)?.name||"";
@@ -56,7 +56,7 @@ export default function SignupPage() {
         position:isPlayer?position:null, years_pro:isPlayer?Number(yearsPro):null,
         professional_experience:isPlayer?professionalExperience:false,
         former_team_ids:isPlayer?formerTeams:[], favorite_teams:favoriteTeamName,
-        is_adult:true, agreed_to_terms:true, terms_accepted_at:new Date().toISOString(), terms_version:TERMS_VERSION,
+        is_adult:true, birthdate, gender, agreed_to_terms:true, terms_accepted_at:new Date().toISOString(), terms_version:TERMS_VERSION,
       }}
     });
     if(error){setError(error.message);setLoading(false);return;}
@@ -121,13 +121,17 @@ export default function SignupPage() {
             <p className="form-hint">No player-position, years-pro, or former-team questions for {accountType}s. You can follow more teams after signup.</p>
           </div>}
 
+          <div className="signup-two-col">
+            <div><label htmlFor="birth-month">Birthdate</label><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1.2fr",gap:8}}><select id="birth-month" value={birthMonth} onChange={e=>setBirthMonth(e.target.value)} required><option value="">Month</option>{Array.from({length:12},(_,i)=><option key={i+1} value={String(i+1)}>{new Date(2000,i,1).toLocaleString("en-US",{month:"long"})}</option>)}</select><select id="birth-day" value={birthDay} onChange={e=>setBirthDay(e.target.value)} required><option value="">Day</option>{Array.from({length:31},(_,i)=><option key={i+1} value={String(i+1)}>{i+1}</option>)}</select><select id="birth-year" value={birthYear} onChange={e=>setBirthYear(e.target.value)} required><option value="">Year</option>{Array.from({length:new Date().getFullYear()-1900+1},(_,i)=>new Date().getFullYear()-i).map(y=><option key={y} value={y}>{y}</option>)}</select></div></div>
+            <div><label htmlFor="gender">Gender</label><select id="gender" value={gender} onChange={e=>setGender(e.target.value)} required><option value="">Select gender</option><option value="male">Male</option><option value="female">Female</option><option value="non_binary">Non-binary</option><option value="prefer_not_to_say">Prefer not to say</option></select></div>
+          </div>
           <label htmlFor="email">Email</label><input id="email" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" required />
           <div className="signup-two-col">
             <div><label htmlFor="password">Password</label><input id="password" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 6 characters" autoComplete="new-password" required /></div>
             <div><label htmlFor="confirm-password">Confirm Password</label><input id="confirm-password" type="password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} autoComplete="new-password" required /></div>
           </div>
           <div className="legal-consent">
-            <label className="checkbox-row"><input type="checkbox" checked={isAdult} onChange={e=>setIsAdult(e.target.checked)}/><span>I confirm that I am 18 years of age or older.</span></label>
+            <p className="form-hint">Your birthdate is required to verify that you are 18 or older and is stored securely on your HoopCheck profile.</p>
             <label className="checkbox-row"><input type="checkbox" checked={agreedToTerms} onChange={e=>setAgreedToTerms(e.target.checked)}/><span>I agree to the <Link href="/terms">Terms of Service</Link> and acknowledge the <Link href="/privacy">Privacy Policy</Link> and <Link href="/community-guidelines">Community Guidelines</Link>.</span></label>
           </div>
           {error&&<div className="message error">{error}</div>}
