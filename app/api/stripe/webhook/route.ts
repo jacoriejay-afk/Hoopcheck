@@ -328,12 +328,11 @@ export async function POST(
       const userId = verificationSession.metadata?.user_id || verificationSession.client_reference_id;
       if (userId) {
         const supabase = getAdminSupabase();
-        await supabase.from("profiles").update({
-          player_verified: true,
-          player_verified_at: new Date().toISOString(),
-          stripe_identity_verification_session_id: verificationSession.id,
-          identity_verification_status: "verified",
-        }).eq("id", userId);
+        const role = verificationSession.metadata?.hoopcheck_role;
+        const verificationUpdate = role === "coach"
+          ? { coach_verified: true, coach_verified_at: new Date().toISOString(), stripe_identity_verification_session_id: verificationSession.id, identity_verification_status: "verified" }
+          : { player_verified: true, player_verified_at: new Date().toISOString(), stripe_identity_verification_session_id: verificationSession.id, identity_verification_status: "verified" };
+        await supabase.from("profiles").update(verificationUpdate).eq("id", userId);
         await supabase.from("identity_verification_sessions").update({
           status: "verified",
           updated_at: new Date().toISOString(),
