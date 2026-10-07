@@ -250,6 +250,7 @@ export default function TeamDetailPage() {
       }
 
       const [
+        profileResult,
         subscriptionResult,
         adminResult,
       ] = await Promise.all([
@@ -262,7 +263,7 @@ export default function TeamDetailPage() {
         supabase
           .from("subscriptions")
           .select(
-            "status, current_period_end"
+            "plan, status, current_period_end"
           )
           .eq(
             "user_id",
