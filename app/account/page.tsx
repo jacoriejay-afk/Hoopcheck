@@ -42,6 +42,7 @@ const emptyProfile: Profile = {
 
 export default function AccountPage() {
   const [email, setEmail] = useState("");
+  const [userId, setUserId] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [targets, setTargets] = useState<Record<string, Target>>({});
   const [profile, setProfile] = useState<Profile>(emptyProfile);
@@ -74,6 +75,7 @@ export default function AccountPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { window.location.href = "/login"; return; }
       setEmail(user.email ?? "");
+      setUserId(user.id);
       const [{ data: profileData }, { data: subscriptionData }] = await Promise.all([
         supabase.from("profiles").select("account_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_team,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
@@ -304,7 +306,7 @@ export default function AccountPage() {
           <div className="account-actions" style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:12}}><Link href="/membership" className="btn">Manage Membership</Link><button type="button" className="btn dark" onClick={signOut}>Sign Out</button></div>
         </div>
       </section>
-      <section className="dashboard-card" style={{marginTop:24}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,flexWrap:"wrap"}}><div><p className="eyebrow">PUBLIC PROFILE</p><h2>See how players see you</h2><p className="muted">Preview your public HoopCheck profile, then return here to edit it.</p></div><div className="actions"><Link href="/players/me" className="btn">View Public Profile</Link><a href="#edit-profile" className="btn dark">Edit Profile</a></div></div></section>\n\n      <section id="edit-profile" style={{marginTop:32}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,marginBottom:18}}><div><p className="eyebrow">REVIEW HISTORY</p><h2>My Reviews</h2></div><Link href="/search" className="btn">Find Another</Link></div>
+      <section className="dashboard-card" style={{marginTop:24}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,flexWrap:"wrap"}}><div><p className="eyebrow">PUBLIC PROFILE</p><h2>See how players see you</h2><p className="muted">Preview your public HoopCheck profile, then return here to edit it.</p></div><div className="actions"><Link href={userId ? `/players/${userId}` : "#"} className="btn">View Public Profile</Link><a href="#edit-profile" className="btn dark">Edit Profile</a></div></div></section>\n\n      <section id="edit-profile" style={{marginTop:32}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,marginBottom:18}}><div><p className="eyebrow">REVIEW HISTORY</p><h2>My Reviews</h2></div><Link href="/search" className="btn">Find Another</Link></div>
       {!reviews.length ? <div className="dashboard-card"><h2>No reviews yet.</h2><p>Share your experience to help the next player make a better decision.</p></div> :
         <div style={{display:"grid",gap:16}}>{reviews.map(review => { const targetId=review.coach_id??review.team_id??review.league_id??""; const target=targets[targetId]; const href=review.coach_id?"/coaches/"+targetId:review.team_id?"/teams/"+targetId:"/leagues/"+targetId; return <article key={review.id} className="dashboard-card"><div style={{display:"flex",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}><div><span className="card-kicker">{review.coach_id?"COACH":review.team_id?"TEAM":"LEAGUE"}</span><h2>{target?.name??"Directory entry"}</h2></div><strong>{review.status.toUpperCase()}</strong></div>{review.title&&<h3>{review.title}</h3>}<p>{review.body}</p><p className="muted">Overall: {review.overall_rating}/5 · {new Date(review.created_at).toLocaleDateString()}</p><Link href={href} className="btn dark">View Profile</Link></article>; })}</div>}
       </section>
