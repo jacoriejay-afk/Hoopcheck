@@ -10,17 +10,18 @@ const items = [
   ["/search","Search","⌕"],
   ["/teams","Teams","▣"],
   ["/players","Players","🏀"],
-  ["/account","Profile","●"],
+  ["__PROFILE__","Profile","●"],
 
 ] as const;
 
 export default function BottomNav() {
   const pathname = usePathname();
   const [signedIn, setSignedIn] = useState(false);
+  const [profileHref, setProfileHref] = useState("/profile");
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setSignedIn(Boolean(data.user)));
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => setSignedIn(Boolean(session)));
+    supabase.auth.getUser().then(async ({ data }) => {\n      setSignedIn(Boolean(data.user));\n      if (data.user) {\n        const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", data.user.id).maybeSingle();\n        setProfileHref(profile?.account_type === "player" ? `/players/${data.user.id}` : "/profile");\n      }\n    });
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {\n      setSignedIn(Boolean(session));\n      if (session?.user) {\n        const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", session.user.id).maybeSingle();\n        setProfileHref(profile?.account_type === "player" ? `/players/${session.user.id}` : "/profile");\n      } else {\n        setProfileHref("/profile");\n      }\n    });
     return () => listener.subscription.unsubscribe();
   }, []);
 
@@ -28,8 +29,8 @@ export default function BottomNav() {
   return (
     <nav className="bottom-nav" aria-label="Mobile navigation">
       {items.map(([href,label,icon]) => {
-        const active = pathname === href || pathname.startsWith(href + "/");
-        return <Link key={href} href={href} className={active ? "active" : ""} aria-current={active ? "page" : undefined}>
+        const resolvedHref = href === "__PROFILE__" ? profileHref : href;\n        const active = pathname === resolvedHref || pathname.startsWith(resolvedHref + "/");
+        return <Link key={href} href={resolvedHref} className={active ? "active" : ""} aria-current={active ? "page" : undefined}>
           <span className="bottom-nav-icon" aria-hidden="true">{icon}</span>
           <span>{label}</span>
         </Link>;
