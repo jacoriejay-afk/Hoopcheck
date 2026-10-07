@@ -5,7 +5,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 
 type MiniProfile = { display_name: string | null; avatar_url: string | null; current_country?: string | null };
-type Post = { id:string; body:string; image_url:string|null; created_at:string; expires_at:string; author_id:string; profiles?:MiniProfile|null };
+type Post = { id:string; body:string; image_url:string|null; location_country:string|null; created_at:string; expires_at:string; author_id:string; profiles?:MiniProfile|null };
 type Comment = { id:string; post_id:string; body:string; created_at:string; author_id:string; profiles?:MiniProfile|null };
 type Profile = { account_type:string; current_country:string|null };
 type Subscription = { plan:string|null; status:string|null; access_status:string|null };
@@ -23,7 +23,7 @@ export default function Feed(){
   const [mine,setMine]=useState<Record<string,boolean>>({});
   const [drafts,setDrafts]=useState<Record<string,string>>({});
   const [open,setOpen]=useState<Record<string,boolean>>({});
-  const [body,setBody]=useState(""); const [photo,setPhoto]=useState<File|null>(null); const [preview,setPreview]=useState("");
+  const [body,setBody]=useState(""); const [photo,setPhoto]=useState<File|null>(null); const [preview,setPreview]=useState(""); const [shareCountry,setShareCountry]=useState(true);
   const [user,setUser]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [subscription,setSubscription]=useState<Subscription|null>(null);
   const [msg,setMsg]=useState(""); const [loading,setLoading]=useState(true); const [posting,setPosting]=useState(false);
 
@@ -34,7 +34,7 @@ export default function Feed(){
 
   async function load(){
     const {data,error}=await supabase.from("feed_posts")
-      .select("id,body,image_url,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country)")
+      .select("id,body,image_url,location_country,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country)")
       .eq("status","approved").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(50);
     if(error){setMsg(error.message);return;}
     const rows=(data||[]).map((r:any)=>({...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)})) as Post[];
@@ -59,17 +59,54 @@ export default function Feed(){
     setProfile(p);setSubscription(s);if(p?.account_type==="player"&&(s?.plan==="pro"||s?.plan==="premium"))await load();setLoading(false);
   })();},[]);
 
-  function choosePhoto(f:File){if(!f.type.startsWith("image/")){setMsg("Choose a JPG, PNG, or WebP image.");return;}if(f.size>8*1024*1024){setMsg("Feed photos must be 8MB or smaller.");return;}if(preview)URL.revokeObjectURL(preview);setPhoto(f);setPreview(URL.createObjectURL(f));setMsg("");}
+  async function choosePhoto(f:File){
+    if(!f.type.startsWith("image/")){setMsg("Choose a JPG, PNG, or WebP image.");return;}
+    if(f.size>8*1024*1024){setMsg("Feed photos must be 8MB or smaller.");return;}
+    try{
+      const compressed=await new Promise<File>((resolve,reject)=>{
+        const img=new Image(); const url=URL.createObjectURL(f);
+        img.onload=()=>{URL.revokeObjectURL(url);const max=1600;const scale=Math.min(1,max/Math.max(img.width,img.height));const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));const ctx=canvas.getContext("2d");if(!ctx){reject(new Error("Photo processing failed."));return;}ctx.drawImage(img,0,0,canvas.width,canvas.height);canvas.toBlob(blob=>{if(!blob){reject(new Error("Photo processing failed."));return;}resolve(new File([blob],"hoopfeed.jpg",{type:"image/jpeg"}));},"image/jpeg",0.82);};
+        img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("Photo could not be read."));}; img.src=url;
+      });
+      if(preview)URL.revokeObjectURL(preview);setPhoto(compressed);setPreview(URL.createObjectURL(compressed));setMsg("");
+    }catch(e:any){setMsg(e?.message||"Photo processing failed.");}
+  }
   function clearPhoto(){if(preview)URL.revokeObjectURL(preview);setPhoto(null);setPreview("");}
 
   async function post(){
-    if(!user||!access||(!body.trim()&&!photo)||posting)return;setPosting(true);setMsg("");
-    let path:string|null=null,image_url:string|null=null;
-    if(photo){path=user.id+"/"+crypto.randomUUID()+".jpg";const {error}=await supabase.storage.from("feed-images").upload(path,photo,{contentType:photo.type,cacheControl:"31536000",upsert:false});if(error){setMsg(error.message);setPosting(false);return;}image_url=supabase.storage.from("feed-images").getPublicUrl(path).data.publicUrl;}
-    const {error}=await supabase.from("feed_posts").insert({author_id:user.id,body:body.trim()||" ",image_url,status:"approved",expires_at:new Date(Date.now()+86400000).toISOString()});
-    if(error){if(path)await supabase.storage.from("feed-images").remove([path]);setMsg(error.message);setPosting(false);return;}
-    setBody("");clearPhoto();setMsg("Posted to HoopFeed. It stays live for 24 hours.");await load();setPosting(false);
+    if(!user||!access||(!body.trim()&&!photo)||posting)return;
+    setPosting(true);setMsg("Checking your post for safety...");
+    try{
+      const form=new FormData();
+      form.append("text",body.trim());
+      if(photo)form.append("image",photo);
+      const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",body:form});
+      const result=await moderation.json().catch(()=>({}));
+      if(!moderation.ok||result.allowed!==true){
+        setMsg(result.message||"This post could not be published because it did not pass HoopFeed safety checks.");
+        setPosting(false);return;
+      }
+      let path:string|null=null,image_url:string|null=null;
+      if(photo){
+        path=user.id+"/"+crypto.randomUUID()+".jpg";
+        const {error}=await supabase.storage.from("feed-images").upload(path,photo,{contentType:"image/jpeg",cacheControl:"31536000",upsert:false});
+        if(error){setMsg(error.message);setPosting(false);return;}
+        image_url=supabase.storage.from("feed-images").getPublicUrl(path).data.publicUrl;
+      }
+      const {error}=await supabase.from("feed_posts").insert({
+        author_id:user.id,
+        body:body.trim()||" ",
+        image_url,
+        location_country:shareCountry?(profile?.current_country||null):null,
+        status:"approved",
+        expires_at:new Date(Date.now()+86400000).toISOString()
+      });
+      if(error){if(path)await supabase.storage.from("feed-images").remove([path]);setMsg(error.message);setPosting(false);return;}
+      setBody("");clearPhoto();setMsg("Posted to HoopFeed. AI safety checks passed. It stays live for 24 hours.");await load();
+    }catch(e:any){setMsg(e?.message||"Safety check failed. Your post was not published.");}
+    setPosting(false);
   }
+
 
   async function toggleCheck(p:Post){
     if(!user||!access)return;
@@ -77,7 +114,16 @@ export default function Feed(){
     else{const {error}=await supabase.from("feed_post_checks").insert({post_id:p.id,user_id:user.id});if(error){setMsg(error.message);return;}setMine(x=>({...x,[p.id]:true}));setChecks(x=>({...x,[p.id]:(x[p.id]||0)+1}));}
   }
 
-  async function comment(post_id:string){const text=(drafts[post_id]||"").trim();if(!user||!access||!text)return;const {error}=await supabase.from("feed_post_comments").insert({post_id,author_id:user.id,body:text});if(error){setMsg(error.message);return;}setDrafts(x=>({...x,[post_id]:""}));await load();}
+  async function comment(post_id:string){
+    const text=(drafts[post_id]||"").trim();if(!user||!access||!text)return;
+    setMsg("Checking comment...");
+    const form=new FormData();form.append("text",text);
+    const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",body:form});
+    const result=await moderation.json().catch(()=>({}));
+    if(!moderation.ok||result.allowed!==true){setMsg(result.message||"This comment did not pass HoopFeed safety checks.");return;}
+    const {error}=await supabase.from("feed_post_comments").insert({post_id,author_id:user.id,body:text});
+    if(error){setMsg(error.message);return;}setDrafts(x=>({...x,[post_id]:""}));setMsg("");await load();
+  }
   async function del(p:Post){if(!user||p.author_id!==user.id)return;if(!confirm("Delete this HoopFeed post?"))return;const {error}=await supabase.from("feed_posts").delete().eq("id",p.id);if(error){setMsg(error.message);return;}if(p.image_url){const marker="/storage/v1/object/public/feed-images/";const i=p.image_url.indexOf(marker);if(i>=0)await supabase.storage.from("feed-images").remove([p.image_url.slice(i+marker.length)]);}await load();}
 
   if(loading)return <main className="page-shell"><div className="page-container"><section className="hero-card"><h1>Loading HoopFeed...</h1></section></div></main>;
@@ -91,11 +137,11 @@ export default function Feed(){
     <section className="dashboard-card" style={{marginTop:18}}><span className="card-kicker">SHARE TO HOOPFEED</span>
       <textarea value={body} onChange={e=>setBody(e.target.value)} rows={4} maxLength={2000} placeholder="What happened today? Practice, game day, travel, teammates, culture, wins, challenges..." />
       {preview&&<div style={{marginTop:12}}><img src={preview} alt="Post preview" style={{width:"100%",maxHeight:360,objectFit:"cover",borderRadius:16,display:"block"}}/><button type="button" className="btn dark" style={{marginTop:8}} onClick={clearPhoto}>Remove Photo</button></div>}
-      <div style={{display:"flex",gap:10,marginTop:10,alignItems:"center",flexWrap:"wrap"}}><label htmlFor="hoopfeed-photo" className="btn dark" style={{cursor:"pointer"}}>Add Photo</label><input id="hoopfeed-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f)choosePhoto(f)}} style={{display:"none"}}/><button className="btn" onClick={post} disabled={posting||(!body.trim()&&!photo)}>{posting?"Posting...":"Post to HoopFeed"}</button>{msg&&<span className="muted">{msg}</span>}</div>
+      <label style={{display:"flex",gap:8,alignItems:"center",marginTop:10}}><input type="checkbox" checked={shareCountry} onChange={e=>setShareCountry(e.target.checked)} disabled={!profile?.current_country}/> <span>Share my current country on this post {profile?.current_country?`(${profile.current_country})`:"(set a current country first)"}</span></label>\n      <div style={{display:"flex",gap:10,marginTop:10,alignItems:"center",flexWrap:"wrap"}}><label htmlFor="hoopfeed-photo" className="btn dark" style={{cursor:"pointer"}}>Add Photo</label><input id="hoopfeed-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f)choosePhoto(f)}} style={{display:"none"}}/><button className="btn" onClick={post} disabled={posting||(!body.trim()&&!photo)}>{posting?"Posting...":"Post to HoopFeed"}</button>{msg&&<span className="muted">{msg}</span>}</div>
     </section>
 
     <section style={{display:"grid",gap:14,marginTop:18}}>{posts.length?posts.map(p=>{const cs=comments[p.id]||[];return <article className="dashboard-card" key={p.id}>
-      <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"flex-start"}}><div style={{display:"flex",gap:12,alignItems:"center"}}>{p.profiles?.avatar_url?<img src={p.profiles.avatar_url} alt="" style={{width:46,height:46,borderRadius:"50%",objectFit:"cover"}}/>:<div className="player-avatar-fallback">HC</div>}<div><strong>{p.profiles?.display_name||"HoopCheck Player"}</strong>{p.profiles?.current_country&&<div className="muted">{p.profiles.current_country}</div>}<small className="muted">{ago(p.created_at)}</small></div></div>{p.author_id===user.id&&<button type="button" className="btn dark" onClick={()=>void del(p)}>Delete</button>}</div>
+      <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"flex-start"}}><div style={{display:"flex",gap:12,alignItems:"center"}}>{p.profiles?.avatar_url?<img src={p.profiles.avatar_url} alt="" style={{width:46,height:46,borderRadius:"50%",objectFit:"cover"}}/>:<div className="player-avatar-fallback">HC</div>}<div><strong>{p.profiles?.display_name||"HoopCheck Player"}</strong>{p.location_country&&<div className="muted">📍 Playing in {p.location_country}</div>}<small className="muted">{ago(p.created_at)}</small></div></div>{p.author_id===user.id&&<button type="button" className="btn dark" onClick={()=>void del(p)}>Delete</button>}</div>
       {p.body.trim()&&<p style={{whiteSpace:"pre-wrap",marginTop:14}}>{p.body}</p>}{p.image_url&&<img src={p.image_url} alt="HoopFeed post" style={{width:"100%",maxHeight:520,objectFit:"cover",borderRadius:16,display:"block",marginTop:12}}/>}
       <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:14}}><button type="button" className={mine[p.id]?"btn":"btn dark"} onClick={()=>void toggleCheck(p)}>✓ {mine[p.id]?"Checked":"Check"} · {checks[p.id]||0}</button><button type="button" className="btn dark" onClick={()=>setOpen(x=>({...x,[p.id]:!x[p.id]}))}>Comment · {cs.length}</button><small className="muted" style={{alignSelf:"center"}}>Expires in {Math.max(0,Math.ceil((new Date(p.expires_at).getTime()-Date.now())/3600000))}h</small></div>
       {open[p.id]&&<div style={{marginTop:14,borderTop:"1px solid var(--border)",paddingTop:14}}><div style={{display:"grid",gap:10}}>{cs.map(c=><div key={c.id} style={{display:"flex",gap:10}}>{c.profiles?.avatar_url?<img src={c.profiles.avatar_url} alt="" style={{width:34,height:34,borderRadius:"50%",objectFit:"cover"}}/>:<div className="player-avatar-fallback" style={{width:34,height:34,minWidth:34}}>HC</div>}<div><strong>{c.profiles?.display_name||"Player"}</strong><div style={{whiteSpace:"pre-wrap"}}>{c.body}</div><small className="muted">{ago(c.created_at)}</small></div></div>)}{!cs.length&&<p className="muted">No comments yet.</p>}</div><div style={{display:"flex",gap:8,marginTop:12}}><input value={drafts[p.id]||""} onChange={e=>setDrafts(x=>({...x,[p.id]:e.target.value}))} maxLength={1000} placeholder="Add a comment..." /><button type="button" className="btn" disabled={!drafts[p.id]?.trim()} onClick={()=>void comment(p.id)}>Send</button></div></div>}
