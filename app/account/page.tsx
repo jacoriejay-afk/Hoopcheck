@@ -156,8 +156,8 @@ export default function AccountPage() {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const path = user.id + "/avatar.jpg";
-    const { error: uploadError } = await supabase.storage.from("profile-avatars").upload(path, blob, { upsert: true, contentType: "image/jpeg" });
+    const path = user.id + "/avatar-" + Date.now() + ".jpg";
+    const { error: uploadError } = await supabase.storage.from("profile-avatars").upload(path, blob, { upsert: false, contentType: "image/jpeg", cacheControl: "31536000" });
     if (uploadError) { setProfileMessage(uploadError.message); return; }
 
     const { data } = supabase.storage.from("profile-avatars").getPublicUrl(path);
