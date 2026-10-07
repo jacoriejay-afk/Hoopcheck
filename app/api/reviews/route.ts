@@ -37,7 +37,9 @@ export async function POST(req:Request){
  if(body.length<10)return NextResponse.json({error:"Review text must be at least 10 characters."},{status:400});
  if(body.length>5000)return NextResponse.json({error:"Review text must be 5,000 characters or fewer."},{status:400});
  if(title.length>120)return NextResponse.json({error:"Review title must be 120 characters or fewer."},{status:400});
- const payload:any={author_id:user.id,coach_id:b.coach_id??null,team_id:b.team_id??null,league_id:b.league_id??null,overall_rating:Number(b.overall_rating),communication_rating:Number(b.communication_rating),professionalism_rating:Number(b.professionalism_rating),development_rating:Number(b.development_rating),payment_rating:Number(b.payment_rating),title:title||null,body,is_anonymous:anonymous,status:"pending"};
+ const playerSeason=typeof b.player_season==="string"?b.player_season.trim():"";
+ if(!/^\\d{4}(-\\d{2,4})?$/.test(playerSeason))return NextResponse.json({error:"Select the season you played for this team."},{status:400});
+ const payload:any={author_id:user.id,coach_id:b.coach_id??null,team_id:b.team_id??null,league_id:b.league_id??null,player_season:playerSeason,overall_rating:Number(b.overall_rating),communication_rating:Number(b.communication_rating),professionalism_rating:Number(b.professionalism_rating),development_rating:Number(b.development_rating),payment_rating:Number(b.payment_rating),title:title||null,body,is_anonymous:anonymous,status:"pending"};
  const {data,error}=await s.from("reviews").insert(payload).select("id,status,created_at").single();
  if(error)return NextResponse.json({error:error.message},{status:error.code==="42501"?403:400}); return NextResponse.json(data,{status:201});
 }
