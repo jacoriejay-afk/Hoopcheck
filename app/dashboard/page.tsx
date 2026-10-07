@@ -233,6 +233,15 @@ export default function DashboardPage() {
           {followedTeams.length > 0 && <div className="dashboard-card fan-feature-card"><span className="card-kicker">FOLLOWING</span><h2>My Teams</h2><div className="fan-followed-list">{followedTeams.slice(0,6).map(t=><Link key={t.id} href={"/teams/"+t.id} className="fan-team-row"><span><strong>{t.name}</strong><small>{t.country || "Global"}{t.league_name ? " · "+t.league_name : ""}</small></span><span>›</span></Link>)}</div></div>}
         </section>}
 
+        {profile?.account_type === "player" && (
+          <section className="dashboard-card" style={{ marginTop: 24 }}>
+            <span className="card-kicker">PLAYER EXPERIENCE FEED</span>
+            <h2>{activeMembership && (subscription?.plan === "pro" || subscription?.plan === "premium") ? "Daily Player Experiences" : "Unlock the Player Experience Feed"}</h2>
+            <p className="muted">Share and discover real current-season experiences from professional players. Posts are visible to eligible players in the same current-season country and disappear after 24 hours.</p>
+            <Link href="/feed" className="btn">{activeMembership && (subscription?.plan === "pro" || subscription?.plan === "premium") ? "Open Player Feed" : "View Player Feed"}</Link>
+          </section>
+        )}
+
         {(profile?.account_type === "player" || profile?.account_type === "scout" || profile?.account_type === "agent") && (
           <section className="dashboard-card contact-dashboard-card" style={{ marginTop: 24 }}>
             <span className="card-kicker">PLAYER CONNECTIONS</span>
