@@ -24,7 +24,7 @@ export default function PlayerContactButton({ playerId }: { playerId:string }) {
     const {data:p}=await supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle();
     setAccountType(p?.account_type||"");
     const {data:s}=await supabase.from("subscriptions").select("plan,status").eq("user_id",user.id).maybeSingle();
-    setPremium(s?.plan==="premium" && (s?.status==="active" || s?.status==="trialing"));
+    setPremium(["pro","premium"].includes(s?.plan||"") && (s?.status==="active" || s?.status==="trialing"));
     const {data:r}=await supabase.from("player_contact_requests").select("id,requester_id,player_id,message,status,created_at").or(`requester_id.eq.${user.id},player_id.eq.${user.id}`).eq("player_id",playerId).maybeSingle();
     setRequest(r as RequestRow|null);
     if(r?.status==="accepted"){
@@ -60,6 +60,20 @@ export default function PlayerContactButton({ playerId }: { playerId:string }) {
     setBusy(false);
   }
 
+  if(accountType==="player" && request?.player_id===userId && request.status==="pending"){
+    return <div className="contact-box"><span className="card-kicker">PLAYER REQUEST</span><h3>Another Pro/Premium player wants to connect</h3><p className="muted">{request.message||"A player wants access to your profile and HoopFeed connection."}</p><div className="actions"><button className="btn" onClick={()=>void respond("accepted")} disabled={busy}>Accept</button><button className="btn dark" onClick={()=>void respond("rejected")} disabled={busy}>Decline</button></div>{info&&<p className="muted">{info}</p>}</div>;
+  }
+  if(accountType==="player" && request?.requester_id===userId && request.status==="pending"){
+    return <div className="contact-gate"><strong>Player request pending</strong><p className="muted">The player must accept before HoopChat messaging opens.</p></div>;
+  }
+  if(accountType==="player" && request?.status==="accepted"){
+    return <div className="contact-box"><span className="card-kicker">HOOPCHAT</span><h3>Connected player</h3><div className="contact-messages">{messages.map(m=><div key={m.id} className={m.sender_id===userId?"contact-message mine":"contact-message"}>{m.body}<small>{new Date(m.created_at).toLocaleString()}</small></div>)}</div><textarea value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Write a message..." rows={3}/><button className="btn" onClick={()=>void sendMessage()} disabled={busy||!draft.trim()}>{busy?"Sending...":"Send Message"}</button></div>;
+  }
+  if(accountType==="player" && !request){
+    if(!premium)return <div className="contact-gate"><strong>Pro/Premium Player feature</strong><p className="muted">Upgrade to Pro or Premium to send a player request.</p></div>;
+    return <div className="contact-box"><span className="card-kicker">PLAYER CONNECTION</span><h3>Request player access</h3><p className="muted">Send a request to connect. The player must accept before HoopChat messaging opens.</p><textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Introduce yourself..." rows={3}/><button className="btn" onClick={()=>void sendRequest()} disabled={busy}>{busy?"Sending...":"Send Player Request"}</button>{info&&<p className="muted">{info}</p>}</div>;
+  }
+
   if(accountType==="scout" || accountType==="agent"){
     if(!premium)return <div className="contact-gate"><strong>Premium Scout/Agent feature</strong><p className="muted">Upgrade to Premium to request contact with professional players. Players control whether requests are accepted.</p></div>;
     if(request?.status==="accepted")return <div className="contact-box"><span className="card-kicker">CONTACT ACCEPTED</span><h3>You can now get in touch</h3><div className="contact-messages">{messages.map(m=><div key={m.id} className={m.sender_id===userId?"contact-message mine":"contact-message"}>{m.body}<small>{new Date(m.created_at).toLocaleString()}</small></div>)}</div><textarea value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Write a message to the player..." rows={3}/><button className="btn" onClick={()=>void sendMessage()} disabled={busy||!draft.trim()}>{busy?"Sending...":"Send Message"}</button>{info&&<p className="muted">{info}</p>}</div>;
@@ -68,11 +82,5 @@ export default function PlayerContactButton({ playerId }: { playerId:string }) {
     return <div className="contact-box"><span className="card-kicker">PREMIUM SCOUT / AGENT</span><h3>Get in touch with this player</h3><p className="muted">Send a request. The player must accept before either side can message.</p><textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Introduce yourself and explain the opportunity..." rows={3}/><button className="btn" onClick={()=>void sendRequest()} disabled={busy}>{busy?"Sending...":"Request Contact"}</button>{info&&<p className="muted">{info}</p>}</div>;
   }
 
-  if(accountType==="player" && request?.player_id===userId && request.status==="pending"){
-    return <div className="contact-box"><span className="card-kicker">CONTACT REQUEST</span><h3>Someone wants to connect with you</h3><p className="muted">{request.message||"A premium scout or agent would like to get in touch."}</p><div className="actions"><button className="btn" onClick={()=>void respond("accepted")} disabled={busy}>Accept</button><button className="btn dark" onClick={()=>void respond("rejected")} disabled={busy}>Decline</button></div>{info&&<p className="muted">{info}</p>}</div>;
-  }
-  if(accountType==="player" && request?.player_id===userId && request.status==="accepted"){
-    return <div className="contact-box"><span className="card-kicker">CONTACT</span><h3>Accepted contact</h3><div className="contact-messages">{messages.map(m=><div key={m.id} className={m.sender_id===userId?"contact-message mine":"contact-message"}>{m.body}<small>{new Date(m.created_at).toLocaleString()}</small></div>)}</div><textarea value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Write a reply..." rows={3}/><button className="btn" onClick={()=>void sendMessage()} disabled={busy||!draft.trim()}>{busy?"Sending...":"Send Message"}</button></div>;
-  }
   return null;
 }
