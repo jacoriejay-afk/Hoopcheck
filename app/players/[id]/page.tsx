@@ -61,7 +61,7 @@ export default function PlayerProfilePage() {
         <div className="page-container">
           <header className="topbar">
             <Link href="/" className="brand">HOOPCHECK</Link>
-            <nav className="topnav"><button type="button" onClick={() => window.history.back()} style={{background:"transparent",border:"1px solid #333",color:"inherit",borderRadius:7,padding:"7px 10px",cursor:"pointer"}}>← Back</button><Link href="/search">Search</Link><Link href="/dashboard">Dashboard</Link></nav>
+            <nav className="topnav"><Link href="/search">Search</Link><Link href="/account">Profile</Link></nav>
           </header>
           <section className="hero-card">
             <div>
@@ -133,6 +133,7 @@ export default function PlayerProfilePage() {
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 12 }}>
             <Link href="/search" className="btn">Explore HoopCheck</Link>
             <Link href={isOwnProfile ? "/account#edit-profile" : "/account"} className="btn dark">{isOwnProfile ? "Edit Profile" : "My Account"}</Link><button type="button" className="btn dark" onClick={reportProfile}>Report Profile</button>{reportMessage&&<span className="muted">{reportMessage}</span>}
+            <div className="bottom-back"><button type="button" className="btn dark" onClick={() => window.history.back()}>← Back</button></div>
           </div>
         </section>
       </div>
