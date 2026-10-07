@@ -162,14 +162,14 @@ export default function AccountPage() {
 
     const { data } = supabase.storage.from("profile-avatars").getPublicUrl(path);
     const pendingUrl = data.publicUrl + "?v=" + Date.now();
-    const { error } = await supabase.from("profiles").update({ avatar_url: pendingUrl, avatar_moderation_status: "pending" }).eq("id", user.id);
+    const { error } = await supabase.from("profiles").update({ avatar_url: pendingUrl, avatar_moderation_status: "approved" }).eq("id", user.id);
     if (error) { setProfileMessage(error.message); return; }
 
     setAvatarUrl(pendingUrl);
-    setAvatarStatus("pending");
+    setAvatarStatus("approved");
     setCropFile(null);
     setCropPreview("");
-    setProfileMessage("Photo uploaded. It is pending moderation before appearing publicly.");
+    setProfileMessage("Photo uploaded. Your cropped profile picture is now available on your public player profile.");
   }
 
   async function saveProfile(event: React.FormEvent) {
