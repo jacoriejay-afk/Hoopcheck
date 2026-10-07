@@ -34,7 +34,7 @@ export default function SupportPage(){
  }
 
  return <main className="page-shell"><div className="page-container">
-   <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/dashboard">Dashboard</Link><Link href="/account">Profile</Link></nav></header>
+   <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/dashboard">Dashboard</Link><Link href="/profile">Profile</Link></nav></header>
    <section className="hero-card"><div><p className="eyebrow">HOOPCHECK SUPPORT</p><h1>Open a support ticket.</h1><p className="muted">Email: <a href="mailto:HoopCheck@outlook.com">HoopCheck@outlook.com</a>. Tickets create a trackable record for account, billing, verification, review, privacy, security, technical and team-directory issues.</p></div></section>
    <section className="dashboard-card" style={{marginTop:18}}><p className="eyebrow">NEW TICKET</p><form onSubmit={submit} className="signup-form">
     <label>Subject<input value={subject} onChange={e=>setSubject(e.target.value)} minLength={3} maxLength={160} required/></label>
