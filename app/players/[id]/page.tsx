@@ -28,6 +28,8 @@ export default function PlayerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [reportMessage, setReportMessage] = useState("");
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [viewerType, setViewerType] = useState("");
+  const [connectionAccepted, setConnectionAccepted] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -35,6 +37,16 @@ export default function PlayerProfilePage() {
         .rpc("get_public_player_profile", { p_user_id: params.id });
 
       if (!error && data?.[0]) setPlayer(data[0]);
+      const {data:{user}}=await supabase.auth.getUser();
+      if(user){
+        setIsOwnProfile(user.id===params.id);
+        const {data:p}=await supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle();
+        setViewerType(p?.account_type||"");
+        if(user.id!==params.id && p?.account_type==="player"){
+          const {data:r}=await supabase.from("player_contact_requests").select("id").eq("player_id",params.id).eq("requester_id",user.id).eq("status","accepted").maybeSingle();
+          setConnectionAccepted(!!r);
+        }
+      }
       setLoading(false);
     }
 
@@ -101,10 +113,10 @@ export default function PlayerProfilePage() {
               {player.player_verified ? "Verified professional player" : "HoopCheck player"}
             </p>
           </div>
-          <div style={{ marginTop: 14, display:"flex", gap:10, flexWrap:"wrap" }}><FollowButton targetType="player" targetId={player.id} /></div>
+          <div style={{ marginTop: 14, display:"flex", gap:10, flexWrap:"wrap" }}><FollowButton targetType="player" targetId={player.id} /><PlayerContactButton playerId={player.id} /></div>
         </section>
 
-        <section className="player-profile-grid">
+        {viewerType==="player" && !isOwnProfile && !connectionAccepted ? (<section className="dashboard-card" style={{marginTop:14}}><span className="card-kicker">PLAYER ACCESS</span><h2>Player connection required</h2><p className="muted">Pro and Premium players can request access to another player profile and HoopFeed connection. The player must accept before private player-to-player access opens.</p></section>) : (<section className="player-profile-grid">
           <div className="player-profile-card">
             <span className="card-kicker">PLAYER</span>
             <h2>Basketball Background</h2>
@@ -122,7 +134,7 @@ export default function PlayerProfilePage() {
             <h2>Player Bio</h2>
             <p>{player.bio || "This player has not added a public bio yet."}</p>
           </div>
-        </section>
+        </section>)}
 
         <section className="dashboard-card" style={{ marginTop: 24 }}>
           <span className="card-kicker">HOOPCHECK</span>
