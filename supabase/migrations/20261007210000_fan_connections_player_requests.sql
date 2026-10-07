@@ -33,5 +33,6 @@ drop policy if exists "premium scouts agents create player contact" on public.pl
 create policy "pro premium player scout agent create contact" on public.player_contact_requests for insert to authenticated with check(
   auth.uid()=requester_id and requester_id<>player_id and
   exists(select 1 from public.profiles p where p.id=auth.uid() and p.account_type in ('player','scout','agent')) and
+  exists(select 1 from public.profiles p where p.id=player_id and p.account_type='player' and p.moderation_status <> 'suspended') and
   exists(select 1 from public.subscriptions s where s.user_id=auth.uid() and s.plan in ('pro','premium') and s.status in ('active','trialing'))
 );
