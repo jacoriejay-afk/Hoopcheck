@@ -104,6 +104,8 @@ export default function TeamReviewPage() {
   const [team, setTeam] =
     useState<Team | null>(null);
 
+  const [playerSeason, setPlayerSeason] = useState("2026-27");
+
   const [overall, setOverall] =
     useState(0);
 
@@ -350,6 +352,7 @@ export default function TeamReviewPage() {
       },
       body: JSON.stringify({
         team_id: id,
+        player_season: playerSeason,
         overall_rating: overall,
         communication_rating: communication,
         professionalism_rating: professionalism,
@@ -624,6 +627,15 @@ export default function TeamReviewPage() {
             gap: "16px",
           }}
         >
+          <div className="card">
+            <div className="eyebrow">Season Played</div>
+            <label htmlFor="player-season">Which season did you play for {team.name}?</label>
+            <select id="player-season" className="input" value={playerSeason} onChange={(event) => setPlayerSeason(event.target.value)} required>
+              {Array.from({length: 27}, (_, i) => 2026 - i).map((year) => <option key={year} value={`${year}-${String((year + 1) % 100).padStart(2, "0")}`}>{year}-{String((year + 1) % 100).padStart(2, "0")}</option>)}
+            </select>
+            <p className="muted" style={{fontSize:12,marginTop:8}}>This season will appear publicly with your player review.</p>
+          </div>
+
           <RatingField
             label="Overall"
             value={overall}
