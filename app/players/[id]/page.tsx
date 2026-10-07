@@ -73,7 +73,7 @@ export default function PlayerProfilePage() {
         <div className="page-container">
           <header className="topbar">
             <Link href="/" className="brand">HOOPCHECK</Link>
-            <nav className="topnav"><Link href="/search">Search</Link><Link href="/account">Profile</Link></nav>
+            <nav className="topnav"><Link href="/search">Search</Link><Link href="/profile">Profile</Link></nav>
           </header>
           <section className="hero-card">
             <div>
