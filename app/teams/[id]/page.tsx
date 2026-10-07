@@ -153,6 +153,8 @@ export default function TeamDetailPage() {
 
   const [hasAccess, setHasAccess] =
     useState(false);
+  const [accountType, setAccountType] = useState<string>("");
+  const [membershipPlan, setMembershipPlan] = useState<string>("");
 
   const [loading, setLoading] =
     useState(true);
@@ -252,6 +254,12 @@ export default function TeamDetailPage() {
         adminResult,
       ] = await Promise.all([
         supabase
+          .from("profiles")
+          .select("account_type")
+          .eq("id", user.id)
+          .maybeSingle(),
+
+        supabase
           .from("subscriptions")
           .select(
             "status, current_period_end"
@@ -269,6 +277,8 @@ export default function TeamDetailPage() {
 
       const subscription =
         subscriptionResult.data;
+      setAccountType(profileResult.data?.account_type || "");
+      setMembershipPlan(subscription?.plan || "");
 
       const currentPeriodEnd =
         subscription?.current_period_end
@@ -318,7 +328,9 @@ export default function TeamDetailPage() {
         console.error("Public review summary error:", summaryError);
       }
 
-      if (access) {
+      const premiumFan = profileResult.data?.account_type === "fan" && subscription?.plan === "premium" && subscriptionIsActive;
+      const canViewReviews = access && !premiumFan;
+      if (canViewReviews) {
         setReviewLoading(true);
 
         const {
@@ -840,12 +852,12 @@ export default function TeamDetailPage() {
                 organization.
               </p>
 
-              <Link
+              {accountType === "player" && <Link
                 href={`/teams/${team.id}/review`}
                 className="btn"
               >
                 Add Your Experience
-              </Link>
+              </Link>}
             </div>
           </section>
 
@@ -862,16 +874,14 @@ export default function TeamDetailPage() {
               </div>
             )}
             <div className="eyebrow">
-              Approved Reviews
+              {membershipPlan === "premium" && accountType === "fan" ? "PLAYER RATINGS" : "Approved Reviews"}
             </div>
 
             <h2>
-              What players
-              <br />
-              are saying.
+              {membershipPlan === "premium" && accountType === "fan" ? "Team ratings at a glance." : <>What players<br/>are saying.</>}
             </h2>
 
-            {reviewLoading ? (
+            {membershipPlan === "premium" && accountType === "fan" ? <div className="card"><h3>Premium Fan View</h3><p className="muted">You can see this team’s ratings, but player reviews are reserved for player accounts.</p></div> : reviewLoading ? (
               <p>
                 Loading reviews...
               </p>
@@ -888,12 +898,12 @@ export default function TeamDetailPage() {
                   this organization.
                 </p>
 
-                <Link
+                {accountType === "player" && <Link
                   href={`/teams/${team.id}/review`}
                   className="btn"
                 >
                   Write A Review
-                </Link>
+                </Link>}
               </div>
             ) : (
               <div
