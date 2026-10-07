@@ -14,7 +14,7 @@ type FeedPost = {
     display_name: string | null;
     avatar_url: string | null;
     current_country: string | null;
-  } | null;
+  } | { display_name: string | null; avatar_url: string | null; current_country: string | null; }[] | null;
 };
 
 type Profile = {
@@ -51,7 +51,7 @@ export default function Feed() {
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
       .limit(50);
-    setPosts((data || []) as FeedPost[]);
+    setPosts((data || []).map((row) => ({ ...row, profiles: Array.isArray(row.profiles) ? (row.profiles[0] ?? null) : (row.profiles ?? null) })) as FeedPost[]);
   }
 
   useEffect(() => {
