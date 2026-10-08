@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { getCachedSession, supabase } from "../../lib/supabase";
+import PlayerContactButton from "../../components/PlayerContactButton";
 
 type Coach = { id: string; name: string; country: string | null; city: string | null };
 type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null };
@@ -19,6 +20,81 @@ type Player = {
   current_team: string | null;
   player_verified: boolean;
 };
+
+function PlayerUsernameConnect() {
+  const [username, setUsername] = useState("");
+  const [player, setPlayer] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function findPlayer(event: React.FormEvent) {
+    event.preventDefault();
+    const value = username.trim().replace(/^@+/, "");
+    setMessage("");
+    setPlayer(null);
+    if (!value) {
+      setMessage("Enter the player username first.");
+      return;
+    }
+
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id,display_name,username,avatar_url,current_team,current_country,player_verified")
+      .eq("account_type", "player")
+      .eq("profile_visibility", "public")
+      .neq("moderation_status", "suspended")
+      .ilike("username", value)
+      .maybeSingle();
+    setLoading(false);
+
+    if (error) {
+      setMessage("We couldn&apos;t find that username. Try again.");
+      return;
+    }
+    if (!data) {
+      setMessage("No player found with that username.");
+      return;
+    }
+    setPlayer(data);
+  }
+
+  return (
+    <div>
+      <form onSubmit={findPlayer} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <label htmlFor="player-username" className="sr-only">Player username</label>
+        <input
+          id="player-username"
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
+          placeholder="@playerusername"
+          autoComplete="off"
+          required
+          style={{ flex: "1 1 220px" }}
+        />
+        <button type="submit" className="btn" disabled={loading}>
+          {loading ? "Finding..." : "Find Player"}
+        </button>
+      </form>
+      {message && <p className="muted" style={{ margin: "8px 0 0" }}>{message}</p>}
+      {player && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+          {player.avatar_url ? (
+            <img src={player.avatar_url} alt="" style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover" }} />
+          ) : (
+            <div className="player-avatar-fallback">HC</div>
+          )}
+          <div style={{ minWidth: 150, flex: "1 1 180px" }}>
+            <strong>{player.display_name || "HoopCheck Player"} {player.player_verified ? "✓" : ""}</strong>
+            <div className="muted">@{player.username}</div>
+            <div className="muted">{[player.current_team, player.current_country].filter(Boolean).join(" · ")}</div>
+          </div>
+          <PlayerContactButton playerId={player.id} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -126,6 +202,15 @@ function SearchContent() {
           <Link href="/signup" className="btn">Sign Up</Link>
         </div>
       </nav>
+
+      <section className="dashboard-card" style={{ margin: "0 0 18px", padding: "16px" }}>
+        <div className="eyebrow">PLAYER CONNECT</div>
+        <h2 style={{ margin: "4px 0 6px" }}>Add a Player</h2>
+        <p className="muted" style={{ margin: "0 0 12px" }}>
+          Enter the player&apos;s <strong>HoopCheck username</strong> to send them a connection request.
+        </p>
+        <PlayerUsernameConnect />
+      </section>
 
       <section className="search-hero">
         <div className="eyebrow">Global Research</div>
