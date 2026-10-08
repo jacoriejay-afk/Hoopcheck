@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { getCachedSession, supabase } from "../lib/supabase";
 
 type RequestRow = { id:string; requester_id:string; player_id:string; message:string|null; status:string; created_at:string; };
 type MessageRow = { id:string; request_id:string; sender_id:string; body:string; created_at:string; };
 
-export default function PlayerContactButton({ playerId }: { playerId:string }) {
+export default function PlayerContactButton({ playerId, compact = false }: { playerId:string; compact?: boolean }) {
   const [userId,setUserId]=useState("");
   const [accountType,setAccountType]=useState("");
   const [premium,setPremium]=useState(false);
@@ -18,7 +18,7 @@ export default function PlayerContactButton({ playerId }: { playerId:string }) {
   const [messages,setMessages]=useState<MessageRow[]>([]);
 
   async function load(){
-    const {data:{session}}=await supabase.auth.getSession();
+    const {data:{session}}=await getCachedSession();
     const user=session?.user;
     if(!user){return;}
     setUserId(user.id);
@@ -76,6 +76,28 @@ export default function PlayerContactButton({ playerId }: { playerId:string }) {
       setMessages((m||[]) as MessageRow[]);setDraft("");
     }
     setBusy(false);
+  }
+
+  if (compact) {
+    if (!userId) {
+      return <Link href="/login" className="btn">Sign in to Add</Link>;
+    }
+    if (request?.status === "accepted") {
+      return <span className="contact-gate" style={{ display: "inline-flex", alignItems: "center", margin: 0, padding: "8px 12px" }}><strong>Connected</strong></span>;
+    }
+    if (request?.status === "pending" && request.requester_id === userId) {
+      return <span className="contact-gate" style={{ display: "inline-flex", alignItems: "center", margin: 0, padding: "8px 12px" }}><strong>Pending</strong></span>;
+    }
+    if (request?.status === "pending" && request.player_id === userId) {
+      return <span className="contact-gate" style={{ display: "inline-flex", alignItems: "center", margin: 0, padding: "8px 12px" }}><strong>Request waiting</strong></span>;
+    }
+    if (accountType === "player" && !premium) {
+      return <Link href="/membership" className="btn">Upgrade to Add</Link>;
+    }
+    if ((accountType === "player" || accountType === "scout" || accountType === "agent") && premium) {
+      return <button className="btn" onClick={() => void sendRequest()} disabled={busy}>{busy ? "Adding..." : "Add Player"}</button>;
+    }
+    return null;
   }
 
   if(accountType==="player" && request?.player_id===userId && request.status==="pending"){
