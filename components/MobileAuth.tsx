@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { supabase } from "../lib/supabase";
+import { getCachedSession, supabase } from "../lib/supabase";
 
 export default function MobileAuth() {
   const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSignedIn(Boolean(data.session)));
+    getCachedSession().then(({ data }) => setSignedIn(Boolean(data.session)));
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) =>
       setSignedIn(Boolean(session))
     );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { supabase } from "../lib/supabase";
+import { getCachedSession, supabase } from "../lib/supabase";
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -13,7 +13,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
       localStorage.setItem("hoopcheck-theme", value);
     };
     apply(localStorage.getItem("hoopcheck-theme") || "dynamic");
-    supabase.auth.getSession().then(async ({ data }) => {
+    getCachedSession().then(async ({ data }) => {
       const user = data.session?.user;
       if (!user) return;
       const { data: prefs } = await supabase.from("user_preferences").select("theme,language").eq("user_id", user.id).maybeSingle();

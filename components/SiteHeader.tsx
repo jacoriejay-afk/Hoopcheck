@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { getCachedSession, supabase } from "../lib/supabase";
 
 export default function SiteHeader() {
   const pathname = usePathname();
@@ -11,7 +11,7 @@ export default function SiteHeader() {
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
+    getCachedSession().then(({ data }) => {
       if (mounted) setSignedIn(Boolean(data.session));
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { getCachedSession, supabase } from "../lib/supabase";
 
 const items = [
   ["/feed","Feed","◉"],
@@ -20,7 +20,7 @@ export default function BottomNav() {
   const [profileHref, setProfileHref] = useState("/profile");
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
+    getCachedSession().then(async ({ data }) => {
       const session = data.session;
       setSignedIn(Boolean(session));
       if (session?.user) {

@@ -2,13 +2,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../lib/supabase";
+import { getCachedSession, supabase } from "../lib/supabase";
 
 export default function Home() {
   const router = useRouter();
   const [loggedIn, setLoggedIn] = useState(false);
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    getCachedSession().then(({ data }) => {
       const signedIn = Boolean(data.session);
       setLoggedIn(signedIn);
       if (signedIn) router.replace("/dashboard");

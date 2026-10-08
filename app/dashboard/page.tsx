@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { supabase } from "../../lib/supabase";
+import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import NotificationBell from "../../components/NotificationBell";
 import PlayerContactButton from "../../components/PlayerContactButton";
@@ -55,7 +55,7 @@ export default function DashboardPage() {
 
     async function loadDashboard() {
       const { data: { session } } = await withTimeout<any>(
-        supabase.auth.getSession(),
+        getCachedSession(),
         12000,
         { data: { session: null }, error: new Error("session-timeout") }
       );

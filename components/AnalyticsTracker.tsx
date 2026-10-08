@@ -2,14 +2,14 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { supabase } from "../lib/supabase";
+import { getCachedSession, supabase } from "../lib/supabase";
 
 export default function AnalyticsTracker(){
  const pathname=usePathname();
  useEffect(()=>{
    let active=true;
    (async()=>{
-     const {data:{session}}=await supabase.auth.getSession();
+     const {data:{session}}=await getCachedSession();
      const user=session?.user;
      if(!active||!user)return;
      await supabase.rpc("touch_last_seen");
