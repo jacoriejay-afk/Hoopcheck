@@ -1850,3 +1850,169 @@ a.btn {
 .hoop-loading-inline{min-height:18vh!important;padding:14px 8px!important;}
 @media(max-width:700px){.page-container{padding:0 12px 24px!important}.hero-card{padding:12px!important}.compact-hero{padding:13px!important}.compact-section{padding:11px!important}.grid{padding-top:6px!important;padding-bottom:12px!important}.hoop-loading-inline{min-height:16vh!important;padding:12px 6px!important}}
 .women-category-badge{display:inline-flex;align-items:center;margin-left:8px;padding:4px 8px;border:1px solid rgba(255,106,0,.45);border-radius:999px;color:var(--orange);font-size:10px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;}
+
+
+/* =========================================================
+   FINAL LAUNCH COMPACT PASS
+   One shared top menu + content-sized controls/cards.
+========================================================= */
+.site-header-global{
+  position:relative;
+  z-index:90;
+  width:min(1180px,100%);
+  min-height:52px;
+  margin:0 auto;
+  padding:7px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  box-sizing:border-box;
+  border-bottom:1px solid var(--border);
+  background:rgba(5,5,5,.94);
+  backdrop-filter:blur(10px);
+}
+.site-header-brand{
+  display:inline-flex;
+  align-items:center;
+  color:var(--page-text);
+  text-decoration:none;
+  font-family:var(--display-font);
+  font-size:20px;
+  font-weight:950;
+  letter-spacing:.02em;
+  white-space:nowrap;
+}
+.site-header-brand span{color:var(--orange)}
+.site-header-global nav{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
+.site-header-global nav a{
+  display:inline-flex;
+  align-items:center;
+  min-height:32px;
+  padding:6px 10px;
+  border-radius:7px;
+  color:var(--page-text);
+  text-decoration:none;
+  font-family:var(--display-font);
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.04em;
+  white-space:nowrap;
+}
+.site-header-global nav a:hover{border-color:var(--orange);color:var(--orange)}
+.site-header-signin{border:1px solid var(--orange);color:var(--orange)!important}
+.site-header-signup{background:var(--orange);color:#111!important}
+html[data-theme="light"] .site-header-global{background:rgba(255,255,255,.96)}
+
+.site-header-global + .page-shell,
+.site-header-global + .search-page,
+.site-header-global + .auth-page-shell{padding-top:0!important}
+
+/* Hide older page-specific top menus so every screen uses the same original menu. */
+.page-shell > .page-container > .topbar,
+.search-page > .nav,
+.auth-page-shell > .nav,
+main > .nav{display:none!important}
+
+/* Compact hero sections: no giant empty vertical zones. */
+.hero{
+  padding:26px 18px 22px!important;
+}
+.hero h1{
+  font-size:clamp(32px,6vw,62px)!important;
+  line-height:.98!important;
+  margin:7px 0 12px!important;
+  letter-spacing:-2px!important;
+}
+.hero p{font-size:14px!important;line-height:1.45!important}
+.hero .actions{
+  margin-top:12px!important;
+  align-items:flex-start!important;
+}
+.hero .actions .btn{
+  width:auto!important;
+  max-width:max-content!important;
+  min-width:0!important;
+  height:auto!important;
+  min-height:34px!important;
+  flex:0 0 auto!important;
+}
+.hero + .hero{margin-top:0!important}
+
+.card,.dashboard-card,.result-card,.quick-card,.settings-card,.auth-card{
+  min-height:0!important;
+  height:auto!important;
+}
+.card,.dashboard-card{padding:13px!important}
+.grid{gap:9px!important;padding:9px 0 18px!important}
+.actions{gap:6px!important;margin-top:10px!important}
+.entity-actions{gap:6px!important;margin:8px 0 5px!important}
+.btn,.actions .btn,button.btn,a.btn{
+  min-height:34px!important;
+  height:auto!important;
+  width:auto;
+  padding:7px 11px!important;
+  font-size:11px!important;
+  line-height:1.1!important;
+  border-radius:7px!important;
+}
+.result-card,.quick-card{padding:12px!important}
+.result-card p{margin-bottom:8px!important}
+.result-group{margin-top:16px!important}
+.results-section{padding-top:12px!important;padding-bottom:28px!important}
+.empty-section{padding:20px 6% 32px!important}
+.quick-links{gap:8px!important}
+.quick-card{gap:5px!important}
+
+/* Login/signup: keep the form immediately usable without oversized landing blocks. */
+.auth-page{padding:14px 12px!important}
+.auth-page-shell .auth-hero{padding:14px!important}
+.auth-page-shell .auth-card{padding:14px!important}
+.auth-page-shell .feature-grid{gap:7px!important}
+.auth-page-shell .feature{padding:9px!important}
+.form{margin:14px auto!important;padding:16px!important}
+.form label{margin-top:10px!important;margin-bottom:5px!important}
+.input,textarea,select{padding:9px 10px!important;margin-bottom:7px!important}
+.signup-page{gap:12px!important}
+.signup-page .auth-hero{margin-bottom:0!important}
+.signup-page .signup-card{margin-top:0!important}
+.signup-page .account-type-grid{gap:7px!important}
+.signup-page .account-type-choice{padding:9px!important;min-height:0!important}
+.signup-page .signup-form{gap:7px!important}
+.signup-page .signup-step-label{margin-top:8px!important}
+
+/* Loading should communicate activity without blocking the whole screen. */
+.hoop-loading-inline{
+  min-height:48px!important;
+  height:auto!important;
+  padding:10px 4px!important;
+  gap:9px!important;
+}
+.hoop-loading-globe{width:36px!important;height:36px!important;flex-basis:36px!important;border-width:2px!important}
+.hoop-loading-copy strong{font-size:16px!important}
+.hoop-loading-copy small{font-size:10px!important;margin-top:3px!important}
+
+/* Keep mobile pages dense while leaving enough room for the bottom nav. */
+@media(max-width:700px){
+  .site-header-global{min-height:48px;padding:6px 10px;gap:7px}
+  .site-header-brand{font-size:17px}
+  .site-header-global nav{gap:3px;overflow:hidden}
+  .site-header-global nav a{min-height:30px;padding:5px 7px;font-size:9px}
+  .site-header-global nav a:nth-child(2){display:none}
+  .site-header-global nav a:nth-child(3){display:none}
+  .page-container{padding-left:12px!important;padding-right:12px!important;padding-bottom:24px!important}
+  .hero{padding:18px 12px 16px!important}
+  .hero h1{font-size:clamp(30px,9vw,46px)!important}
+  .hero p{font-size:13px!important}
+  .hero .actions{margin-top:9px!important}
+  .card,.dashboard-card{padding:11px!important}
+  .grid{padding:7px 0 14px!important;gap:8px!important}
+  .auth-page-shell .auth-hero,.auth-page-shell .auth-card{padding:12px!important}
+  .auth-page-shell h1{font-size:30px!important}
+  .auth-page-shell h2{font-size:19px!important}
+  .search-page .search-hero{padding:22px 12px 14px!important}
+  .search-page .search-hero h1{font-size:clamp(34px,10vw,50px)!important;margin:5px 0 10px!important}
+  .search-page .search-hero p{font-size:13px!important}
+  .search-page .search-form{margin-top:12px!important;padding:5px!important}
+  .search-page .search-form input{padding:9px!important}
+}
