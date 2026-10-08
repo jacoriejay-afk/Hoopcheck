@@ -70,7 +70,7 @@ export default function TeamsPage() {
       setLoading(true);
       let request = supabase
         .from("teams")
-        .select("id, name, country, league_name, league_id, city, leagues:league_id(level)")
+        .select("id, name, country, league_name, league_id, city")
         .eq("active", true)
         .order("name");
 
@@ -93,7 +93,7 @@ export default function TeamsPage() {
       const { data, error } = await withTimeout<any>(request.range(
         page * pageSize,
         page * pageSize + pageSize - 1
-      ), 8000, { data: [], error: new Error("timeout") });
+      ), 5000, { data: [], error: new Error("timeout") });
 
       if (error) {
         console.error("Error loading teams:", error);
