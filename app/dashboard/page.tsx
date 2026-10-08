@@ -28,6 +28,9 @@ type Review = {
 };
 type Target = { id: string; name: string };
 
+const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000, fallback?: T) =>
+  Promise.race([Promise.resolve(promise), new Promise<T>((resolve) => setTimeout(() => resolve(fallback as T), ms))]);
+
 export default function DashboardPage() {
   const { t } = useLanguage();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -51,7 +54,7 @@ export default function DashboardPage() {
     let mounted = true;
 
     async function loadDashboard() {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await withTimeout(supabase.auth.getSession(), 5000, { data: { session: null }, error: null });
       const user = session?.user ?? null;
       if (!user) {
         window.location.href = "/login";
