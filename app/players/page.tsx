@@ -71,7 +71,6 @@ export default function PlayersPage(){
           <input value={query} onChange={e=>{setQuery(e.target.value);setPage(0)}} placeholder="Search players, teams, countries..." aria-label="Search players"/>
           <div className="team-filter-row">
             <select value={country} onChange={e=>{setCountry(e.target.value);setPage(0)}}><option value="">All countries</option>{countries.map(c=><option key={c} value={c}>{c}</option>)}</select>
-            <select value={type} onChange={e=>{setType(e.target.value);setPage(0)}}><option value="">All basketball</option><option value="mens">Men’s</option><option value="womens">Women’s</option></select>
           </div>
         </div>
       </section>
