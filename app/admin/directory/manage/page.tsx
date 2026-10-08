@@ -32,7 +32,7 @@ function Manager(){
  ]);setCoaches(c||[]);setTeams(t||[]);setLeagues(l||[]);setLoading(false);}
  useEffect(()=>{void load()},[]);
  function startNew(){setEditing("new");setForm(base==="coaches"?{name:"",country:"",city:"",current_team_id:"",active:true}:base==="teams"?{name:"",country:"",city:"",league_id:"",league_name:"",active:true,basketball_type:gender}:{name:"",country:"",level:"",season:"2026-27",active:true,basketball_type:gender});setMessage("");}
- function startEdit(item:any){setEditing(item.id);setForm(Object.fromEntries(Object.entries(item).map(([k,v])=>[k,v??""])));setMessage("");}
+ function startEdit(item:any){setEditing(item.id);const next:Record<string,string|boolean>={};Object.entries(item).forEach(([k,v])=>{next[k]=typeof v==="boolean"?v:String(v??"");});setForm(next);setMessage("");}
  function cancel(){setEditing(null);setForm({});setMessage("");}
  async function save(){const name=String(form.name||"").trim();if(!name){setMessage("Name is required.");return;}setSaving(true);const clean=(v:any)=>String(v??"").trim()||null;let payload:any;
   if(base==="coaches")payload={name,country:clean(form.country),city:clean(form.city),current_team_id:clean(form.current_team_id),active:Boolean(form.active)};
