@@ -20,9 +20,10 @@ export default function SettingsPage() {
     if (local) setTheme(local);
     const localLanguage = localStorage.getItem("hoopcheck-language") as Language | null;
     if (localLanguage) setLanguage(localLanguage);
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      const { data: prefs } = await supabase.from("user_preferences").select("theme,notifications_enabled,language").eq("user_id", data.user.id).maybeSingle();
+    supabase.auth.getSession().then(async ({ data }) => {
+      const user = data.session?.user;
+      if (!user) return;
+      const { data: prefs } = await supabase.from("user_preferences").select("theme,notifications_enabled,language").eq("user_id", user.id).maybeSingle();
       if (prefs?.theme) setTheme(prefs.theme as Theme);
       if (typeof prefs?.notifications_enabled === "boolean") setNotifications(prefs.notifications_enabled);
       if (prefs?.language) setLanguage(prefs.language as Language);
@@ -36,9 +37,10 @@ export default function SettingsPage() {
     localStorage.setItem("hoopcheck-language", nextLanguage);
     window.dispatchEvent(new CustomEvent("hoopcheck-language-change", { detail: nextLanguage }));
     document.documentElement.lang = nextLanguage;
-    const { data: userData } = await supabase.auth.getUser();
-    if (userData.user) {
-      const { error } = await supabase.from("user_preferences").upsert({ user_id: userData.user.id, theme: nextTheme, notifications_enabled: nextNotifications, language: nextLanguage, updated_at: new Date().toISOString() });
+    const { data: sessionData } = await supabase.auth.getSession();
+    const user = sessionData.session?.user;
+    if (user) {
+      const { error } = await supabase.from("user_preferences").upsert({ user_id: user.id, theme: nextTheme, notifications_enabled: nextNotifications, language: nextLanguage, updated_at: new Date().toISOString() });
       if (error) console.error("Settings save error:", error);
     }
     setSaving(false);
