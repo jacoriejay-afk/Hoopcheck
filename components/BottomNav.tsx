@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { getCachedSession, supabase } from "../lib/supabase";
+import { useState } from "react";
+import { useAuthState } from "./AuthProvider";
 
 const items = [
   ["/feed","Feed","◉"],
@@ -16,15 +16,7 @@ const items = [
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const [signedIn, setSignedIn] = useState(false);
-
-  useEffect(() => {
-    getCachedSession().then(({ data }) => setSignedIn(Boolean(data.session)));
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSignedIn(Boolean(session));
-    });
-    return () => listener.subscription.unsubscribe();
-  }, []);
+  const { signedIn } = useAuthState();
 
   if (!signedIn) return null;
   return (

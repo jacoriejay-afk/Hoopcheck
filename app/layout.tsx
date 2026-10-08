@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import ThemeProvider from "../components/ThemeProvider";
+import AuthProvider from "../components/AuthProvider";
 import MobileAuth from "../components/MobileAuth";
 import GlobalBackButton from "../components/GlobalBackButton";
 import LanguageProvider from "../components/LanguageProvider";
@@ -24,6 +25,7 @@ export default function RootLayout({
     <html lang="en">
       <body><ProtectionLayer />
         <ThemeProvider>
+          <AuthProvider>
           <LanguageProvider>
             <AnalyticsTracker />
             <SiteHeader />
@@ -32,6 +34,7 @@ export default function RootLayout({
             <GlobalBackButton />
             {children}
           </LanguageProvider>
+          </AuthProvider>
         </ThemeProvider>
 
         <footer className="site-footer">

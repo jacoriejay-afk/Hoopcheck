@@ -4,7 +4,6 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { getCachedSession, supabase } from "../../lib/supabase";
-import PlayerConnectSearch from "../../components/PlayerConnectSearch";
 
 type Coach = { id: string; name: string; country: string | null; city: string | null };
 type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null };
@@ -127,8 +126,6 @@ function SearchContent() {
           <Link href="/signup" className="btn">Sign Up</Link>
         </div>
       </nav>
-
-      <PlayerConnectSearch />
 
       <section className="search-hero">
         <div className="eyebrow">Global Research</div>

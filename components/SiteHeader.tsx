@@ -2,26 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { getCachedSession, supabase } from "../lib/supabase";
+
+import { useAuthState } from "./AuthProvider";
 
 export default function SiteHeader() {
   const pathname = usePathname();
-  const [signedIn, setSignedIn] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-    getCachedSession().then(({ data }) => {
-      if (mounted) setSignedIn(Boolean(data.session));
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (mounted) setSignedIn(Boolean(session));
-    });
-    return () => {
-      mounted = false;
-      listener.subscription.unsubscribe();
-    };
-  }, []);
+  const { signedIn } = useAuthState();
 
   if (pathname.startsWith("/admin")) return null;
 

@@ -1,20 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+
 import Link from "next/link";
-import { getCachedSession, supabase } from "../lib/supabase";
+import { useAuthState } from "./AuthProvider";
 
 export default function MobileAuth() {
-  const [signedIn, setSignedIn] = useState(false);
-
-  useEffect(() => {
-    getCachedSession().then(({ data }) => setSignedIn(Boolean(data.session)));
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) =>
-      setSignedIn(Boolean(session))
-    );
-
-    return () => listener.subscription.unsubscribe();
-  }, []);
+  const { signedIn } = useAuthState();
 
   if (!signedIn) return null;
 
