@@ -56,7 +56,7 @@ export default function TeamsPage() {
     withTimeout<any>(Promise.all([
       supabase.from("leagues").select("id,name,country,level").eq("active", true).order("name"),
       supabase.from("teams").select("country").eq("active", true).not("country", "is", null),
-    ]), 8000, [{data:[],error:new Error("timeout")},{data:[],error:new Error("timeout")}]).then(([leagueResult, countryResult]) => {
+    ]), 2500, [{data:[],error:new Error("timeout")},{data:[],error:new Error("timeout")}]).then(([leagueResult, countryResult]) => {
       setLeagueOptions(leagueResult.data || []);
       setDirectoryCountries(Array.from(new Set(((countryResult.data || []) as Array<{country:string|null}>).map((row) => row.country).filter(Boolean) as string[])).sort());
     });
@@ -93,7 +93,7 @@ export default function TeamsPage() {
       const { data, error } = await withTimeout<any>(request.range(
         page * pageSize,
         page * pageSize + pageSize - 1
-      ), 5000, { data: [], error: new Error("timeout") });
+      ), 2500, { data: [], error: new Error("timeout") });
 
       if (error) {
         console.error("Error loading teams:", error);
