@@ -57,7 +57,7 @@ export default function SignupPage() {
       email:email.trim().toLowerCase(), password,
       options:{data:{
         full_name:`${firstName.trim()} ${lastName.trim()}`, first_name:firstName.trim(), last_name:lastName.trim(),
-        account_type:accountType, username:username.trim().toLowerCase(),
+        account_type:accountType, username:username.trim().toLowerCase(), basketball_type:accountType === "player" && gender === "female" ? "womens" : accountType === "player" ? "mens" : null,
         position:isPlayer?position:null, years_pro:isPlayer?Number(yearsPro):null,
         professional_experience:isPlayer?professionalExperience:false,
         former_team_ids:isPlayer?formerTeams:[], favorite_teams:favoriteTeamName,
@@ -98,7 +98,7 @@ export default function SignupPage() {
 
         {accountType && <form onSubmit={handleSignup} className="signup-form">
           <div className="signup-step-label">STEP 02 · CREATE YOUR ACCOUNT</div>
-          <div className="signup-account-badge"><strong>{ACCOUNT_TYPES.find(x=>x.value===accountType)?.title}</strong><span className="muted">Account type is locked after selection.</span></div>
+          <div className="signup-account-badge"><strong>{ACCOUNT_TYPES.find(x=>x.value===accountType)?.title}</strong><span className="muted">Account type is locked after selection.</span>{accountType === "player" && gender === "female" && <span className="women-category-badge">Women’s HoopCheck</span>}</div>
           <div className="signup-two-col">
             <div><label htmlFor="first-name">First Name</label><input id="first-name" value={firstName} onChange={e=>setFirstName(e.target.value)} autoComplete="given-name" required /></div>
             <div><label htmlFor="last-name">Last Name</label><input id="last-name" value={lastName} onChange={e=>setLastName(e.target.value)} autoComplete="family-name" required /></div>
