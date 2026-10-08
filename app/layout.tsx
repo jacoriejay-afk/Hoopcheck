@@ -44,11 +44,9 @@ export default function RootLayout({
             </div>
             <div className="footer-links">
               <div>
-                <strong>Research</strong>
-                <Link href="/search">Global Search</Link>
-                <Link href="/coaches">Coaches</Link>
-                <Link href="/teams">Teams</Link>
-                <Link href="/leagues">Leagues</Link>
+                <strong>HoopCheck</strong>
+                <span className="muted">Account required for member access.</span>
+                <Link href="/membership">Membership</Link>
               </div>
               <div>
                 <strong>Account</strong>
