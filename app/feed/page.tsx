@@ -123,7 +123,7 @@ export default function Feed(){
       const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
       const result=await moderation.json().catch(()=>({}));
       if(!moderation.ok||result.allowed!==true){setMsg(result.message||"This comment did not pass HoopFeed safety checks.");return;}
-      setDrafts(x=>({...x,[post_id]:""}));setMsg("");await load();
+      setDrafts(x=>({...x,[post_id]:""}));setMsg("");await load(user, profile!);
     }catch(e:any){setMsg(e?.message||"Comment safety check failed.");}
   }
 
