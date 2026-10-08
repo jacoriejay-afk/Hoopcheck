@@ -36,14 +36,12 @@ export default function Feed(){
   async function load(currentUser:any, currentProfile:Profile){
     let followedFanIds:string[]=[]; let connectedPlayerIds:string[]=[];
     if(currentProfile.account_type==="player"){
-      const {data:connections}=await supabase.from("player_contact_requests").select("requester_id,player_id").or(`requester_id.eq.${currentUser.id},player_id.eq.${user?.id}`).eq("status","accepted").limit(100);
-      connectedPlayerIds=(connections||[]).flatMap((x:any)=>x.requester_id===user?.id?[x.player_id]:[x.requester_id]).filter(Boolean);
+      const {data:connections}=await supabase.from("player_contact_requests").select("requester_id,player_id").or(`requester_id.eq.${currentUser.id},player_id.eq.${currentUser.id}`).eq("status","accepted").limit(100);
+      connectedPlayerIds=(connections||[]).flatMap((x:any)=>x.requester_id===currentUser.id?[x.player_id]:[x.requester_id]).filter(Boolean);
     }
     if(currentProfile.account_type==="fan"){
-      const {data:follows}=await supabase.from("follow_relationships").select("target_id,target_type").eq("follower_id",user?.id).in("target_type",["fan","team"]).limit(100);
-      const teamIds=(follows||[]).filter((x:any)=>x.target_type==="team").map((x:any)=>x.target_id).filter(Boolean);
+      const {data:follows}=await supabase.from("follow_relationships").select("target_id,target_type").eq("follower_id",currentUser.id).in("target_type",["fan","team"]).limit(100);
       followedFanIds=(follows||[]).filter((x:any)=>x.target_type==="fan").map((x:any)=>x.target_id).filter(Boolean);
-      if(teamIds.length){const {data:teams}=await supabase.from("teams").select("name").in("id",teamIds);void teams;}
     }
     const {data,error}=await supabase.from("feed_posts")
       .select("id,body,image_url,location_country,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country,current_team)")
@@ -52,7 +50,7 @@ export default function Feed(){
     const now=Date.now();
     let rows=(data||[]).map((r:any)=>{const post={...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)} as Post; return {...post,ageLabel:ago(post.created_at,now),expiresLabel:`Expires in ${Math.max(0,Math.ceil((new Date(post.expires_at).getTime()-now)/3600000))}h`};});
     if(currentProfile.account_type==="fan") rows=rows.filter(p=>followedFanIds.includes(p.author_id));
-    if(currentProfile.account_type==="player") rows=rows.filter(p=>p.author_id===user?.id || connectedPlayerIds.includes(p.author_id));
+    if(currentProfile.account_type==="player") rows=rows.filter(p=>p.author_id===currentUser.id || connectedPlayerIds.includes(p.author_id));
     setPosts(rows);
     if(!rows.length){setComments({});setChecks({});setMine({});return;}
     const ids=rows.map(p=>p.id);
@@ -62,7 +60,7 @@ export default function Feed(){
     ]);
     const cg:Record<string,Comment[]>={}; const cc:Record<string,number>={}; const cm:Record<string,boolean>={};
     (cs||[]).forEach((r:any)=>{(cg[r.post_id]??=[]).push({...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)});});
-    (ks||[]).forEach((r:any)=>{cc[r.post_id]=(cc[r.post_id]||0)+1;if(r.user_id===user?.id)cm[r.post_id]=true;});
+    (ks||[]).forEach((r:any)=>{cc[r.post_id]=(cc[r.post_id]||0)+1;if(r.user_id===currentUser.id)cm[r.post_id]=true;});
     setComments(cg);setChecks(cc);setMine(cm);
   }
 
