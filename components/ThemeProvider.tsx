@@ -13,9 +13,10 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
       localStorage.setItem("hoopcheck-theme", value);
     };
     apply(localStorage.getItem("hoopcheck-theme") || "dynamic");
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      const { data: prefs } = await supabase.from("user_preferences").select("theme,language").eq("user_id", data.user.id).maybeSingle();
+    supabase.auth.getSession().then(async ({ data }) => {
+      const user = data.session?.user;
+      if (!user) return;
+      const { data: prefs } = await supabase.from("user_preferences").select("theme,language").eq("user_id", user.id).maybeSingle();
       if (prefs?.theme) apply(prefs.theme);
       if (prefs?.language) { document.documentElement.lang = prefs.language; localStorage.setItem("hoopcheck-language", prefs.language); }
     });
