@@ -99,6 +99,7 @@ function PlayerUsernameConnect() {
 function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q")?.trim() || "";
+  const initialType = searchParams.get("type");
 
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -107,7 +108,9 @@ function SearchContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState(query);
-  const [typeFilter, setTypeFilter] = useState<"all" | "players" | "coaches" | "teams" | "leagues">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "players" | "coaches" | "teams" | "leagues">(
+    initialType === "players" || initialType === "coaches" || initialType === "teams" || initialType === "leagues" ? initialType : "all"
+  );
   const [countryFilter, setCountryFilter] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
@@ -192,6 +195,11 @@ function SearchContent() {
   }, [query, countryFilter, verifiedOnly, typeFilter]);
 
   useEffect(() => { setSearchInput(query); }, [query]);
+  useEffect(() => {
+    if (initialType === "players" || initialType === "coaches" || initialType === "teams" || initialType === "leagues") {
+      setTypeFilter(initialType);
+    }
+  }, [initialType]);
 
   const countries = useMemo(() => Array.from(new Set([
     ...players.map((x) => x.country),
