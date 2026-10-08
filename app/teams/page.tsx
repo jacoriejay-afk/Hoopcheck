@@ -53,7 +53,7 @@ export default function TeamsPage() {
   }
 
   useEffect(() => {
-    Promise.all([
+    withTimeout(Promise.all([
       supabase.from("leagues").select("id,name,country,level").eq("active", true).order("name"),
       supabase.from("teams").select("country").eq("active", true).not("country", "is", null),
     ]), 8000, [{data:[],error:new Error("timeout")},{data:[],error:new Error("timeout")}]).then(([leagueResult, countryResult]) => {
@@ -90,10 +90,10 @@ export default function TeamsPage() {
       const continentCountries = continent ? CONTINENT_COUNTRIES[continent] || [] : [];
       if (continentCountries.length) request = request.in("country", continentCountries);
 
-      const { data, error } = await request.range(
+      const { data, error } = await withTimeout(request.range(
         page * pageSize,
         page * pageSize + pageSize - 1
-      );
+      ), 8000, { data: [], error: new Error("timeout") });
 
       if (error) {
         console.error("Error loading teams:", error);
