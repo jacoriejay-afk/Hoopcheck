@@ -9,7 +9,8 @@ export default function AnalyticsTracker(){
  useEffect(()=>{
    let active=true;
    (async()=>{
-     const {data:{user}}=await supabase.auth.getUser();
+     const {data:{session}}=await supabase.auth.getSession();
+     const user=session?.user;
      if(!active||!user)return;
      await supabase.rpc("touch_last_seen");
      await supabase.from("analytics_events").insert({user_id:user.id,event_name:"page_view",path:pathname,metadata:{source:"web"}});
