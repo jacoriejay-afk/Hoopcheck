@@ -45,24 +45,7 @@ loadLeagues();
 
 return (
 <main>
-<nav className="nav">
-  <Link href="/" className="logo">
-    Hoop<span>Check</span>
-  </Link>
-    <div className="links">
-          <button type="button" onClick={() => window.history.back()} style={{ background: "transparent", border: "1px solid #333", color: "#fff", borderRadius: 7, padding: "7px 10px", cursor: "pointer" }}>← Back</button>
-      <Link href="/search" className="search-nav">
-        Search
-      </Link>
-      <Link href="/dashboard">
-        Dashboard
-      </Link>
-      <Link href="/membership" className="btn">
-        Membership
-      </Link>
-    </div>
-  </nav>
-  <section className="hero">
+<section className="hero">
     <div className="eyebrow">
       HoopCheck Leagues
     </div>
