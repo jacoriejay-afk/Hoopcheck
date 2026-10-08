@@ -66,51 +66,55 @@ export default function TeamsPage() {
   const divisions = Array.from(new Set(leagueOptions.map((item) => item.level).filter(Boolean) as string[])).sort();
 
   useEffect(() => {
-    async function loadTeams() {
-      setLoading(true);
-      let request = supabase
-        .from("teams")
-        .select("id, name, country, league_name, league_id, city")
-        .eq("active", true)
-        .order("name");
+    const timer = window.setTimeout(() => {
+      async function loadTeams() {
+        setLoading(true);
+        let request = supabase
+          .from("teams")
+          .select("id, name, country, league_name, league_id, city")
+          .eq("active", true)
+          .order("name");
 
-      const term = query.trim();
-      if (term) {
-        const escaped = term.replace(/[%_]/g, "\\$&");
-        request = request.or(
-          `name.ilike.%${escaped}%,country.ilike.%${escaped}%,city.ilike.%${escaped}%,league_name.ilike.%${escaped}%`
-        );
+        const term = query.trim();
+        if (term) {
+          const escaped = term.replace(/[%_]/g, "\\$&");
+          request = request.or(
+            `name.ilike.%${escaped}%,country.ilike.%${escaped}%,city.ilike.%${escaped}%,league_name.ilike.%${escaped}%`
+          );
+        }
+        if (country) request = request.eq("country", country);
+        if (league) request = request.eq("league_id", league);
+        if (division) {
+          const divisionLeagueIds = leagueOptions.filter((item) => item.level === division).map((item) => item.id);
+          request = divisionLeagueIds.length ? request.in("league_id", divisionLeagueIds) : request.eq("league_id", "00000000-0000-0000-0000-000000000000");
+        }
+        const continentCountries = continent ? CONTINENT_COUNTRIES[continent] || [] : [];
+        if (continentCountries.length) request = request.in("country", continentCountries);
+
+        withTimeout<any>(request.range(
+          page * pageSize,
+          page * pageSize + pageSize - 1
+        ), 2500, { data: [], error: new Error("timeout") }).then(({ data, error }) => {
+          if (error) {
+            console.error("Error loading teams:", error);
+            setTeams([]);
+            setHasMore(false);
+            setTotalCount(0);
+          } else {
+            setTeams(data || []);
+            setTotalCount((page * pageSize) + (data?.length ?? 0));
+            setHasMore((data?.length ?? 0) === pageSize);
+          }
+          setLoading(false);
+        });
       }
-      if (country) request = request.eq("country", country);
-      if (league) request = request.eq("league_id", league);
-      if (division) {
-        const divisionLeagueIds = leagueOptions.filter((item) => item.level === division).map((item) => item.id);
-        request = divisionLeagueIds.length ? request.in("league_id", divisionLeagueIds) : request.eq("league_id", "00000000-0000-0000-0000-000000000000");
-      }
-      const continentCountries = continent ? CONTINENT_COUNTRIES[continent] || [] : [];
-      if (continentCountries.length) request = request.in("country", continentCountries);
 
-      const { data, error } = await withTimeout<any>(request.range(
-        page * pageSize,
-        page * pageSize + pageSize - 1
-      ), 2500, { data: [], error: new Error("timeout") });
+      loadTeams();
+    }, 250);
 
-      if (error) {
-        console.error("Error loading teams:", error);
-        setTeams([]);
-        setHasMore(false);
-        setTotalCount(0);
-      } else {
-        setTeams(data || []);
-        setTotalCount((page * pageSize) + (data?.length ?? 0));
-        setHasMore((data?.length ?? 0) === pageSize);
-      }
-
-      setLoading(false);
-    }
-
-    loadTeams();
+    return () => window.clearTimeout(timer);
   }, [query, country, continent, league, division, leagueOptions, page]);
+
 
   return (
     <main>
