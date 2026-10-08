@@ -51,11 +51,7 @@ export default function ResetPasswordPage() {
 
   return (
     <main>
-      <nav className="nav">
-        <Link href="/" className="logo">Hoop<span>Check</span></Link>
-        <div className="links"><Link href="/login">Log In</Link></div>
-      </nav>
-      <section className="hero" style={{ paddingBottom: "30px" }}>
+<section className="hero" style={{ paddingBottom: "30px" }}>
         <div className="eyebrow">ACCOUNT SECURITY</div>
         <h1>Reset your password.</h1>
         <p>Choose a new password for your HoopCheck account.</p>
