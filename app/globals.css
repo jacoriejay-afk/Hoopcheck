@@ -1771,3 +1771,11 @@ textarea{min-height:110px}
   .hoop-loading-inline{padding:10px 2px;font-size:11px}
   .hoop-loading-spinner{width:14px;height:14px}
 }
+
+
+/* Centered branded loader: use this for page-level data waits without a full-screen route mask. */
+.hoop-loading-inline{display:flex;align-items:center;justify-content:center;gap:14px;width:100%;min-height:42vh;padding:24px 12px;text-align:left}
+.hoop-loading-inline strong{display:block;font-family:var(--display-font);letter-spacing:.08em;font-size:20px}
+.hoop-loading-inline strong span{color:var(--orange)}
+.hoop-loading-inline small{display:block;color:var(--page-muted);margin-top:4px;font-size:12px}
+@media(max-width:700px){.hoop-loading-inline{min-height:42vh;padding:20px 8px}.hoop-loading-mark{width:36px;height:36px}.hoop-loading-mark span{width:36px;height:36px}.hoop-loading-mark span:nth-child(2){width:26px;height:26px}.hoop-loading-mark span:nth-child(3){width:17px;height:17px}.hoop-loading-inline strong{font-size:18px}}
