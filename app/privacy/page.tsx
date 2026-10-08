@@ -3,269 +3,101 @@
 import Link from "next/link";
 
 export default function PrivacyPage() {
-return (
-<main>
-<section className="hero">
-    <div className="eyebrow">
-      HoopCheck Legal
-    </div>
-    <h1>
-      Privacy
-      <br />
-      Policy.
-    </h1>
-    <p>
-      This policy explains what information HoopCheck
-      collects, how it is used, and the choices available
-      to users.
-    </p>
-  </section>
-  <section className="legal-content">
-    <div className="legal-card">
-      <p className="updated">
-        Last updated: October 6, 2026
-      </p>
-      <h2>1. Information We Collect</h2>
-      <p>
-        When you use HoopCheck, we may collect information
-        that you provide directly, including your name,
-        email address, profile information, country,
-        biography, reviews, ratings, reports, and other
-        information you choose to submit.
-      </p>
-      <p>
-        We may also collect information associated with your
-        subscription, such as subscription status, plan,
-        billing period, and payment-provider identifiers.
-      </p>
-      <h2>2. Account Information</h2>
-      <p>
-        When you create an account, HoopCheck may collect
-        information necessary to authenticate your account
-        and provide the service.
-      </p>
-      <p>
-        Your account information may be used to provide
-        account access, protect the platform, communicate
-        with you, and maintain the security of HoopCheck.
-      </p>
-      <h2>3. Reviews and User Content</h2>
-      <p>
-        If you submit a review, rating, report, profile
-        description, or other content, that information may
-        be stored by HoopCheck and displayed according to
-        the features and access rules of the platform.
-      </p>
-      <p>
-        Reviews may be associated with your HoopCheck
-        profile or display name depending on the platform's
-        current design and applicable settings.
-      </p>
-      <h2>4. Payment Information</h2>
-      <p>
-        HoopCheck uses Stripe to process subscription
-        payments.
-      </p>
-      <p>
-        HoopCheck does not intentionally store complete
-        payment card numbers on its own application
-        database. Payment information is handled through
-        Stripe's payment infrastructure.
-      </p>
-      <p>
-        Stripe may process payment and billing information
-        according to Stripe's own privacy practices and
-        applicable policies.
-      </p>
-      <h2>5. How We Use Information</h2>
-      <p>
-        HoopCheck may use collected information to:
-      </p>
-      <ul>
-        <li>Provide and operate the HoopCheck platform.</li>
-        <li>Authenticate users and protect accounts.</li>
-        <li>Process subscriptions and payments.</li>
-        <li>Display ratings, reviews, and research information.</li>
-        <li>Moderate and investigate reported content.</li>
-        <li>Prevent fraud, abuse, and unauthorized activity.</li>
-        <li>Improve platform features and performance.</li>
-        <li>Communicate important service information.</li>
-        <li>Comply with applicable legal obligations.</li>
-      </ul>
-      <h2>6. Supabase</h2>
-      <p>
-        HoopCheck uses Supabase for application services
-        including database infrastructure and
-        authentication.
-      </p>
-      <p>
-        Information stored through Supabase may include
-        account information, profiles, reviews, ratings,
-        reports, subscription records, and other information
-        necessary to operate HoopCheck.
-      </p>
-      <h2>7. Stripe</h2>
-      <p>
-        HoopCheck uses Stripe for subscription billing and
-        payment processing.
-      </p>
-      <p>
-        Stripe may process information necessary to complete
-        payments, manage subscriptions, prevent fraud, and
-        provide billing services.
-      </p>
-      <h2>8. Identity Verification</h2>
-      <p>
-        Players may choose to use HoopCheck's secure identity
-        verification flow to confirm a professional-player
-        identity. HoopCheck uses Stripe Identity to check a
-        government ID or passport and, when configured, compare
-        the document with a live selfie.
-      </p>
-      <p>
-        HoopCheck does not intentionally store the face scan or
-        government identity document in its application
-        database. Stripe may process identity information and
-        verification images under Stripe's identity and privacy
-        terms. HoopCheck receives the verification result needed
-        to determine whether the player account can receive a
-        verification badge.
-      </p>
-      <h2>8. Cookies and Local Storage</h2>
-      <p>
-        HoopCheck may use cookies, browser storage, session
-        information, or similar technologies necessary to
-        authenticate users, maintain sessions, remember
-        preferences, and operate the platform.
-      </p>
-      <p>
-        Some technologies may be provided by third-party
-        services used to operate HoopCheck.
-      </p>
-      <h2>9. Information Sharing</h2>
-      <p>
-        HoopCheck may share information with service
-        providers that help operate the platform, including
-        infrastructure, authentication, payment processing,
-        security, analytics, and hosting providers.
-      </p>
-      <p>
-        HoopCheck may also disclose information when
-        reasonably necessary to comply with applicable law,
-        legal process, protect users, protect the platform,
-        investigate fraud or abuse, or enforce our Terms.
-      </p>
-      <h2>10. Public Information</h2>
-      <p>
-        Information that you intentionally submit for public
-        display may become visible to other HoopCheck users.
-      </p>
-      <p>
-        Do not submit information to a public review or
-        profile that you do not want other users to see.
-      </p>
-      <h2>11. Review Privacy</h2>
-      <p>
-        HoopCheck is designed to allow players to share
-        professional experiences with coaches, teams, and
-        leagues.
-      </p>
-      <p>
-        Users should not include private personal
-        information, home addresses, private phone numbers,
-        private email addresses, financial information, or
-        other sensitive information about another person in
-        a review.
-      </p>
-      <h2>12. Data Security</h2>
-      <p>
-        HoopCheck uses technical and organizational measures
-        designed to protect information against unauthorized
-        access, alteration, disclosure, or destruction.
-      </p>
-      <p>
-        However, no internet service or electronic storage
-        system can guarantee absolute security.
-      </p>
-      <h2>13. Data Retention</h2>
-      <p>
-        HoopCheck may retain information for as long as
-        reasonably necessary to provide the service, maintain
-        business records, prevent abuse, resolve disputes,
-        enforce agreements, or satisfy legal obligations.
-      </p>
-      <h2>14. Account Deletion</h2>
-      <p>
-        Users may request deletion of their account and
-        associated personal information by contacting
-        HoopCheck through the contact method provided by the
-        service.
-      </p>
-      <p>
-        Some information may need to be retained when
-        required for legal, security, fraud-prevention,
-        financial, or recordkeeping purposes.
-      </p>
-      <h2>15. Children's Privacy</h2>
-      <p>
-        HoopCheck is intended for adults and professional
-        basketball users. Users under 18 should not create
-        an account or use paid services without appropriate
-        legal authorization.
-      </p>
-      <h2>16. International Users</h2>
-      <p>
-        HoopCheck may be accessed by users in different
-        countries. Information may therefore be processed or
-        stored in countries other than the country where a
-        user lives.
-      </p>
-      <p>
-        Users are responsible for reviewing the privacy
-        rights and requirements applicable in their
-        jurisdiction.
-      </p>
-      <h2>17. Your Privacy Choices</h2>
-      <p>
-        Depending on your location and applicable law, you
-        may have rights concerning your personal information,
-        including rights to access, correct, delete, or
-        restrict certain uses of your information.
-      </p>
-      <p>
-        Requests can be submitted through the contact method
-        provided by HoopCheck.
-      </p>
-      <h2>18. Changes to This Policy</h2>
-      <p>
-        HoopCheck may update this Privacy Policy when the
-        service, technology, or applicable legal requirements
-        change.
-      </p>
-      <p>
-        Updated versions will be posted on this page with a
-        revised effective date.
-      </p>
-      <h2>19. Contact</h2>
-      <p>
-        For privacy questions, account deletion requests, or
-        other privacy-related concerns, contact HoopCheck
-        through the contact method provided by the service.
-      </p>
-      <div className="legal-footer">
-        <Link href="/terms">
-          Terms of Service
-        </Link>
-        <Link href="/community-guidelines">
-          Community Guidelines
-        </Link>
-        <Link href="/membership">
-          Membership
-        </Link>
-      </div>
-    </div>
-  </section>
-</main>
+  return (
+    <main>
+      <section className="hero">
+        <div className="eyebrow">HoopCheck Legal</div>
+        <h1>Privacy<br />Policy.</h1>
+        <p>This Privacy Policy explains what HoopCheck collects, why it is used, how it is shared, and the choices available to users.</p>
+      </section>
+      <section className="legal-content">
+        <div className="legal-card">
+          <p className="updated">Last updated: October 8, 2026</p>
 
-);
+          <h2>1. Scope</h2>
+          <p>This policy applies to information processed through HoopCheck websites, applications, accounts, subscriptions, reviews, support interactions, and related services.</p>
+
+          <h2>2. Information We Collect</h2>
+          <p>Depending on how you use HoopCheck, we may collect account and profile information such as name, email address, account type, country, biography, team information, profile photo, preferences, reviews, ratings, reports, messages, and support requests.</p>
+          <p>We may collect technical information such as IP address, device/browser information, session information, approximate location derived from technical data, security logs, and usage events where needed to operate, secure, and improve the service.</p>
+          <p>Subscription records may include plan, subscription status, billing period, Stripe customer or subscription identifiers, and transaction-related information. HoopCheck does not intentionally store complete payment-card numbers in its application database.</p>
+
+          <h2>3. Reviews and Public Information</h2>
+          <p>Information you intentionally submit for public display, including reviews, ratings, profile information, or other public content, may be visible to other users according to the product's access rules.</p>
+          <p>Do not put private or sensitive information about another person into a public review. HoopCheck may preserve a moderation or legal record even when public content is removed where reasonably necessary for safety, fraud prevention, dispute resolution, or legal compliance.</p>
+
+          <h2>4. How We Use Information</h2>
+          <ul>
+            <li>Provide accounts, profiles, search, reviews, ratings, messaging, and other platform features.</li>
+            <li>Authenticate users and protect accounts.</li>
+            <li>Process subscriptions and billing.</li>
+            <li>Moderate content and investigate reports.</li>
+            <li>Detect fraud, abuse, manipulation, and security threats.</li>
+            <li>Operate, troubleshoot, measure, and improve HoopCheck.</li>
+            <li>Communicate service, security, billing, and legal notices.</li>
+            <li>Comply with applicable legal obligations and enforce agreements.</li>
+          </ul>
+
+          <h2>5. Service Providers</h2>
+          <p>HoopCheck may use third-party providers for hosting, database and authentication services, payments, identity verification, analytics, security, communications, storage, and other infrastructure. These providers receive information only as reasonably necessary for their services, subject to applicable agreements and law.</p>
+
+          <h2>6. Supabase</h2>
+          <p>HoopCheck uses Supabase for database, authentication, storage, and related application infrastructure. Information processed through Supabase may include account data, profiles, reviews, ratings, reports, preferences, and other platform data.</p>
+
+          <h2>7. Stripe</h2>
+          <p>HoopCheck uses Stripe for subscription billing and payment processing. Stripe may process payment, billing, fraud-prevention, and account information necessary to provide those services.</p>
+
+          <h2>8. Identity Verification</h2>
+          <p>Where enabled, eligible professional players may use an identity-verification process. HoopCheck may receive a verification result and limited information needed to administer a verification badge or status. Identity documents, selfies, biometric-related information, or other verification materials may be processed by the identity-verification provider and are subject to that provider's applicable policies.</p>
+          <p>HoopCheck does not intentionally store identity-document or face-scan files in its ordinary application database when the verification provider handles those materials.</p>
+
+          <h2>9. Cookies and Similar Technologies</h2>
+          <p>HoopCheck may use cookies, local storage, session technologies, and similar mechanisms for authentication, preferences, security, functionality, and measurement. Some third-party providers may use their own technologies when integrated into the service.</p>
+
+          <h2>10. When We Share Information</h2>
+          <p>We may disclose information to service providers, to comply with valid legal process or applicable law, to protect users or HoopCheck, to investigate fraud or abuse, to enforce our Terms, or as part of a business transaction such as a merger, acquisition, financing, or sale of assets.</p>
+          <p>We do not sell personal information merely because you use HoopCheck. If a future feature involves a legally defined sale or sharing of personal information, HoopCheck will provide the notices and choices required by applicable law.</p>
+
+          <h2>11. International Processing</h2>
+          <p>HoopCheck may be accessed internationally and information may be processed in countries other than the country where you live. Applicable privacy rights can vary by jurisdiction.</p>
+
+          <h2>12. Data Retention</h2>
+          <p>We retain information for as long as reasonably necessary for the purpose for which it was collected, including operating the service, maintaining legitimate business and payment records, preventing fraud and abuse, resolving disputes, enforcing agreements, maintaining security records, and complying with legal obligations. We aim to avoid retaining personal information longer than reasonably necessary for these purposes.</p>
+
+          <h2>13. Account Deletion</h2>
+          <p>You can request or initiate account deletion through the available HoopCheck account controls. When deletion is completed, user-owned account data and user-uploaded files are removed or de-identified according to the platform's deletion process.</p>
+          <p>Some limited information may remain where retention is reasonably necessary for legal compliance, payment/accounting records, security, fraud prevention, dispute resolution, moderation integrity, or other lawful purposes. Retained records are not kept for ordinary product use after account deletion.</p>
+
+          <h2>14. Privacy Rights</h2>
+          <p>Depending on where you live and whether applicable law covers you, you may have rights to know or access information, request correction, request deletion, obtain a copy of certain information, object to or restrict certain processing, or opt out of certain sales/sharing or targeted advertising activities.</p>
+          <p>For example, California law provides qualifying consumers rights that can include access, deletion, correction, and certain opt-out rights, subject to statutory exceptions. HoopCheck will evaluate requests under the law applicable to the requester and the service.</p>
+
+          <h2>15. Privacy Requests</h2>
+          <p>Use the HoopCheck Support page to submit a privacy or account request. We may need to verify your identity before fulfilling a request in order to protect accounts and personal information. We will respond within the time required by applicable law.</p>
+
+          <h2>16. Security</h2>
+          <p>HoopCheck uses technical and organizational measures intended to protect information, including access controls, authentication, encrypted network connections, database security controls, and limited administrative access. No online service can guarantee absolute security.</p>
+
+          <h2>17. Children's Privacy</h2>
+          <p>HoopCheck is not intended for children under 13, and we do not knowingly collect personal information from children under 13. Because HoopCheck is designed around professional basketball and career research, our account system is intended for adults.</p>
+
+          <h2>18. Data Breaches and Security Incidents</h2>
+          <p>If HoopCheck experiences a security incident involving personal information, we will assess the incident and provide notices or take other actions required by applicable law.</p>
+
+          <h2>19. Changes to This Policy</h2>
+          <p>We may update this Privacy Policy when our services, data practices, or legal obligations change. The updated version will be posted with a revised effective date.</p>
+
+          <h2>20. Contact</h2>
+          <p>For privacy questions, deletion requests, data-rights requests, or security concerns, use the HoopCheck Support page.</p>
+
+          <div className="legal-footer">
+            <Link href="/terms">Terms of Service</Link>
+            <Link href="/community-guidelines">Community Guidelines</Link>
+            <Link href="/support">Privacy Support</Link>
+            <Link href="/membership">Membership</Link>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
 }
