@@ -72,8 +72,8 @@ export default function PlayerContactButton({ playerId }: { playerId:string }) {
     setBusy(true);setInfo("");
     const {error}=await supabase.from("player_contact_messages").insert({request_id:request.id,sender_id:userId,body:draft.trim()});
     if(error)setInfo(error.message); else {
-      const sent:MessageRow={id:crypto.randomUUID(),request_id:request.id,sender_id:userId,body:draft.trim(),created_at:new Date().toISOString()};
-      setMessages(current=>[...current,sent]);setDraft("");
+      const {data:m}=await supabase.from("player_contact_messages").select("id,request_id,sender_id,body,created_at").eq("request_id",request.id).order("created_at",{ascending:true});
+      setMessages((m||[]) as MessageRow[]);setDraft("");
     }
     setBusy(false);
   }
