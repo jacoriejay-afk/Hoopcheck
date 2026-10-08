@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getCachedSession, supabase } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import FollowButton from "../../components/FollowButton";
 
@@ -25,28 +25,30 @@ export default function PlayersPage(){
 
   useEffect(()=>{
     let mounted=true;
-    (async()=>{
-      setLoading(true);
-      let req=supabase.from("profiles")
-        .select("id,display_name,username,first_name,last_name,country,current_country,current_team,position,years_pro,player_verified,avatar_url,free_agent")
-        .eq("account_type","player")
-        .or("basketball_type.is.null,basketball_type.eq.mens")
-        .eq("profile_visibility","public")
-        .neq("moderation_status","suspended")
-        .order("display_name",{ascending:true});
-      if(query.trim()){
-        const term=query.trim().replace(/[%_]/g,"\\$&");
-        req=req.or(`display_name.ilike.%${term}%,username.ilike.%${term}%,first_name.ilike.%${term}%,last_name.ilike.%${term}%,current_team.ilike.%${term}%,current_country.ilike.%${term}%`);
-      }
-      if(country) req=req.eq("current_country",country);
-      const {data,error}=await withTimeout<any>(req.range(page*size,page*size+size-1),2500,{data:[],error:new Error("timeout")});
-      if(mounted){
-        setPlayers(error?[]:(data||[]) as Player[]);
-        setHasMore((data?.length||0)===size);
-        setLoading(false);
-      }
-    })();
-    return()=>{mounted=false};
+    const timer=window.setTimeout(()=>{
+      (async()=>{
+        setLoading(true);
+        let req=supabase.from("profiles")
+          .select("id,display_name,username,first_name,last_name,country,current_country,current_team,position,years_pro,player_verified,avatar_url,free_agent")
+          .eq("account_type","player")
+          .or("basketball_type.is.null,basketball_type.eq.mens")
+          .eq("profile_visibility","public")
+          .neq("moderation_status","suspended")
+          .order("display_name",{ascending:true});
+        if(query.trim()){
+          const term=query.trim().replace(/[%_]/g,"\\$&");
+          req=req.or(`display_name.ilike.%${term}%,username.ilike.%${term}%,first_name.ilike.%${term}%,last_name.ilike.%${term}%,current_team.ilike.%${term}%,current_country.ilike.%${term}%`);
+        }
+        if(country) req=req.eq("current_country",country);
+        const {data,error}=await withTimeout<any>(req.range(page*size,page*size+size-1),2500,{data:[],error:new Error("timeout")});
+        if(mounted){
+          setPlayers(error?[]:(data||[]) as Player[]);
+          setHasMore((data?.length||0)===size);
+          setLoading(false);
+        }
+      })();
+    },250);
+    return()=>{mounted=false;window.clearTimeout(timer)};
   },[query,country,page]);
 
   const countries=Array.from(new Set(players.map(p=>p.current_country||p.country).filter(Boolean) as string[])).sort();
