@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { getCachedSession, supabase } from "../lib/supabase";
 
 export type Language = "en"|"es"|"fr"|"de"|"tr"|"pt"|"it"|"el"|"ar";
 
@@ -30,11 +29,6 @@ export default function LanguageProvider({children}:{children:React.ReactNode}){
     const onLanguageChange=(event:Event)=>apply((event as CustomEvent<string>).detail);
     window.addEventListener("hoopcheck-language-change",onLanguageChange);
 
-    getCachedSession().then(async({data})=>{
-      if(!data.session?.user)return;
-      const {data:prefs}=await supabase.from("user_preferences").select("language").eq("user_id",data.session?.user.id).maybeSingle();
-      if(prefs?.language) {apply(prefs.language); localStorage.setItem("hoopcheck-language",prefs.language);}
-    });
     return()=>{mounted=false;window.removeEventListener("hoopcheck-language-change",onLanguageChange)};
   },[]);
   return <LanguageContext.Provider value={{language,t:(key)=>labels[language][key]||labels.en[key]||key}}>{children}</LanguageContext.Provider>;

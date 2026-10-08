@@ -17,25 +17,11 @@ const items = [
 export default function BottomNav() {
   const pathname = usePathname();
   const [signedIn, setSignedIn] = useState(false);
-  const [profileHref, setProfileHref] = useState("/profile");
 
   useEffect(() => {
-    getCachedSession().then(async ({ data }) => {
-      const session = data.session;
-      setSignedIn(Boolean(session));
-      if (session?.user) {
-        const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", session.user.id).maybeSingle();
-        setProfileHref(profile?.account_type === "player" ? `/players/${session.user.id}` : "/profile");
-      }
-    });
+    getCachedSession().then(({ data }) => setSignedIn(Boolean(data.session)));
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSignedIn(Boolean(session));
-      if (session?.user) {
-        const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", session.user.id).maybeSingle();
-        setProfileHref(profile?.account_type === "player" ? `/players/${session.user.id}` : "/profile");
-      } else {
-        setProfileHref("/profile");
-      }
     });
     return () => listener.subscription.unsubscribe();
   }, []);
@@ -44,7 +30,7 @@ export default function BottomNav() {
   return (
     <nav className="bottom-nav" aria-label="Mobile navigation">
       {items.map(([href,label,icon]) => {
-        const resolvedHref = href === "__PROFILE__" ? profileHref : href;
+        const resolvedHref = href === "__PROFILE__" ? "/profile" : href;
         const active = pathname === resolvedHref || pathname.startsWith(resolvedHref + "/");
         return <Link key={href} href={resolvedHref} className={active ? "active" : ""} aria-current={active ? "page" : undefined}>
           <span className="bottom-nav-icon" aria-hidden="true">{icon}</span>
