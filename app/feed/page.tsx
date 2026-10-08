@@ -33,17 +33,17 @@ export default function Feed(){
     (subscription?.status==="active"||subscription?.status==="trialing") &&
     (subscription?.access_status==null||["active","trialing","pro","premium"].includes(subscription.access_status));
 
-  async function load(){
-    let followedTeamNames:string[]=[]; let followedFanIds:string[]=[]; let connectedPlayerIds:string[]=[];
-    if(profile?.account_type==="player"){
-      const {data:connections}=await supabase.from("player_contact_requests").select("requester_id,player_id").or(`requester_id.eq.${user?.id},player_id.eq.${user?.id}`).eq("status","accepted").limit(100);
+  async function load(currentUser:any, currentProfile:Profile){
+    let followedFanIds:string[]=[]; let connectedPlayerIds:string[]=[];
+    if(currentProfile.account_type==="player"){
+      const {data:connections}=await supabase.from("player_contact_requests").select("requester_id,player_id").or(`requester_id.eq.${currentUser.id},player_id.eq.${user?.id}`).eq("status","accepted").limit(100);
       connectedPlayerIds=(connections||[]).flatMap((x:any)=>x.requester_id===user?.id?[x.player_id]:[x.requester_id]).filter(Boolean);
     }
-    if(profile?.account_type==="fan"){
+    if(currentProfile.account_type==="fan"){
       const {data:follows}=await supabase.from("follow_relationships").select("target_id,target_type").eq("follower_id",user?.id).in("target_type",["fan","team"]).limit(100);
       const teamIds=(follows||[]).filter((x:any)=>x.target_type==="team").map((x:any)=>x.target_id).filter(Boolean);
       followedFanIds=(follows||[]).filter((x:any)=>x.target_type==="fan").map((x:any)=>x.target_id).filter(Boolean);
-      if(teamIds.length){const {data:teams}=await supabase.from("teams").select("name").in("id",teamIds);followedTeamNames=(teams||[]).map((t:any)=>t.name).filter(Boolean);}
+      if(teamIds.length){const {data:teams}=await supabase.from("teams").select("name").in("id",teamIds);void teams;}
     }
     const {data,error}=await supabase.from("feed_posts")
       .select("id,body,image_url,location_country,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country,current_team)")
@@ -51,8 +51,8 @@ export default function Feed(){
     if(error){setMsg(error.message);return;}
     const now=Date.now();
     let rows=(data||[]).map((r:any)=>{const post={...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)} as Post; return {...post,ageLabel:ago(post.created_at,now),expiresLabel:`Expires in ${Math.max(0,Math.ceil((new Date(post.expires_at).getTime()-now)/3600000))}h`};});
-    if(profile?.account_type==="fan") rows=rows.filter(p=>followedFanIds.includes(p.author_id));
-    if(profile?.account_type==="player") rows=rows.filter(p=>p.author_id===user?.id || connectedPlayerIds.includes(p.author_id));
+    if(currentProfile.account_type==="fan") rows=rows.filter(p=>followedFanIds.includes(p.author_id));
+    if(currentProfile.account_type==="player") rows=rows.filter(p=>p.author_id===user?.id || connectedPlayerIds.includes(p.author_id));
     setPosts(rows);
     if(!rows.length){setComments({});setChecks({});setMine({});return;}
     const ids=rows.map(p=>p.id);
@@ -66,12 +66,15 @@ export default function Feed(){
     setComments(cg);setChecks(cc);setMine(cm);
   }
 
-  useEffect(()=>{(async()=>{const {data:{user:u}}=await supabase.auth.getUser();setUser(u);if(!u){setLoading(false);return;}
+  useEffect(()=>{(async()=>{const {data:{session}}=await supabase.auth.getSession();const u=session?.user;setUser(u);if(!u){setLoading(false);return;}
     const [{data:p},{data:s}]=await Promise.all([
       supabase.from("profiles").select("account_type,current_country").eq("id",u.id).maybeSingle(),
       supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",u.id).maybeSingle()
     ]);
-    setProfile(p);setSubscription(s);if(p?.account_type==="player"&&(s?.plan==="pro"||s?.plan==="premium"))await load();setLoading(false);
+    setProfile(p);setSubscription(s);
+    const memberActive=(s?.plan==="pro"||s?.plan==="premium")&&(s?.status==="active"||s?.status==="trialing")&&(s?.access_status==null||["active","trialing","pro","premium"].includes(s.access_status));
+    if(p&&memberActive)await load(u,p);
+    setLoading(false);
   })();},[]);
 
   async function choosePhoto(f:File){
