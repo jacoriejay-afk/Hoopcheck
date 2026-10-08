@@ -16,15 +16,6 @@ export default function Home() {
   }, [router]);
   return (
     <main>
-      <nav className="nav">
-        <Link href="/" className="logo">Hoop<span>Check</span></Link>
-        <div className="links">
-          <Link href="/search">Search</Link>
-          <Link href={loggedIn ? "/dashboard" : "/login"} className="btn dark">{loggedIn ? "Dashboard" : "Sign In"}</Link>
-          <Link href="/signup" className="btn">Sign Up</Link>
-        </div>
-      </nav>
-
       <section className="hero">
         <div className="eyebrow">Built for overseas basketball</div>
         <h1>Know who<br />you&apos;re<br />signing with.</h1>
