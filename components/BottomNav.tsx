@@ -21,10 +21,11 @@ export default function BottomNav() {
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
-      setSignedIn(Boolean(data.user));
-      if (data.session?.user) {
-        const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", data.session.user.id).maybeSingle();
-        setProfileHref(profile?.account_type === "player" ? `/players/${data.user.id}` : "/profile");
+      const session = data.session;
+      setSignedIn(Boolean(session));
+      if (session?.user) {
+        const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", session.user.id).maybeSingle();
+        setProfileHref(profile?.account_type === "player" ? `/players/${session.user.id}` : "/profile");
       }
     });
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
