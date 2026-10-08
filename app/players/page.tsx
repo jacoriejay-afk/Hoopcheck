@@ -34,6 +34,7 @@ export default function PlayersPage(){
           .or("basketball_type.is.null,basketball_type.eq.mens")
           .eq("profile_visibility","public")
           .neq("moderation_status","suspended")
+          .not("username","is",null)
           .order("display_name",{ascending:true});
         if(query.trim()){
           const term=query.trim().replace(/[%_]/g,"\\$&");
