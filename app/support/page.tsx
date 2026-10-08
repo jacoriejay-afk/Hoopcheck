@@ -17,7 +17,7 @@ export default function SupportPage(){
  const [saving,setSaving]=useState(false);
 
  async function load(){
-   const {data:{user}}=await supabase.auth.getUser();
+   const {data:{session}}=await supabase.auth.getSession(); const user=session?.user;
    if(!user){window.location.href="/login";return;}
    const {data}=await supabase.from("support_tickets").select("id,subject,category,priority,status,description,created_at").eq("requester_id",user.id).order("created_at",{ascending:false});
    setTickets((data||[]) as Ticket[]);setLoading(false);
@@ -26,7 +26,7 @@ export default function SupportPage(){
 
  async function submit(e:React.FormEvent){
    e.preventDefault();setSaving(true);setMessage("");
-   const {data:{user}}=await supabase.auth.getUser();
+   const {data:{session}}=await supabase.auth.getSession(); const user=session?.user;
    if(!user){window.location.href="/login";return;}
    const {error}=await supabase.from("support_tickets").insert({requester_id:user.id,subject:subject.trim(),category,priority,description:description.trim()});
    if(error)setMessage(error.message);else{setSubject("");setDescription("");setPriority("normal");setMessage("Ticket submitted. Your ticket is now in the HoopCheck support queue.");await load();}
