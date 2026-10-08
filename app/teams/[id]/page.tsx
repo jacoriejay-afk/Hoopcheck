@@ -202,6 +202,7 @@ export default function TeamDetailPage() {
       }
 
       setTeam(teamData);
+      setLoading(false);
       const {data:followCount}=await supabase.rpc("get_follow_count",{p_target_type:"team",p_target_id:id});
       setFollowerCount(Number(followCount || 0));
 
