@@ -7,7 +7,7 @@ import {
 
 import Link from "next/link";
 
-import { getCachedSession, supabase } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import GeoBadge from "../../components/GeoBadge";
 
