@@ -15,32 +15,38 @@ export default function FollowButton({ targetType, targetId }: Props) {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: c } = await supabase.rpc("get_follow_count", {
-        p_target_type: targetType,
-        p_target_id: targetId,
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!mounted) return;
-      setCount(Number(c ?? 0));
       setSignedIn(Boolean(user));
-      if (!user) return;
-      const { data } = await supabase
-        .from("follow_relationships")
-        .select("notify_reviews,notify_ratings,notify_updates")
-        .eq("follower_id", user.id)
-        .eq("target_type", targetType)
-        .eq("target_id", targetId)
-        .maybeSingle();
-      if (data) {
+
+      const followPromise = user
+        ? supabase.from("follow_relationships")
+            .select("notify_reviews,notify_ratings,notify_updates")
+            .eq("follower_id", user.id)
+            .eq("target_type", targetType)
+            .eq("target_id", targetId)
+            .maybeSingle()
+        : Promise.resolve({ data: null });
+
+      // Do not block the card from rendering on the follower-count RPC.
+      const [followResult, countResult] = await Promise.all([
+        followPromise,
+        supabase.rpc("get_follow_count", { p_target_type: targetType, p_target_id: targetId }),
+      ]);
+      if (!mounted) return;
+      setCount(Number(countResult.data ?? 0));
+      if (followResult.data) {
         setFollowing(true);
-        setNotify(Boolean(data.notify_reviews || data.notify_ratings || data.notify_updates));
+        setNotify(Boolean(followResult.data.notify_reviews || followResult.data.notify_ratings || followResult.data.notify_updates));
       }
     })();
     return () => { mounted = false; };
   }, [targetType, targetId]);
 
   async function toggle() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) {
       window.location.href = "/login";
       return;
