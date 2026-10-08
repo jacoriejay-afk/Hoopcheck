@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../lib/supabase";
+import { getCachedSession, supabase } from "../../lib/supabase";
 
 const TERMS_VERSION = "2026-10-01";
 type AccountType = "player" | "coach" | "scout" | "agent" | "fan";
@@ -30,7 +30,7 @@ export default function SignupPage() {
   const [birthMonth,setBirthMonth]=useState(""); const [birthDay,setBirthDay]=useState(""); const [birthYear,setBirthYear]=useState(""); const [gender,setGender]=useState(""); const [agreedToTerms,setAgreedToTerms]=useState(false);
   const [loading,setLoading]=useState(false); const [error,setError]=useState("");
 
-  useEffect(()=>{if(!accountType)return; let mounted=true; supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(1200).then(({data})=>{if(mounted)setTeams(data||[])}); return()=>{mounted=false}},[accountType]);
+  useEffect(()=>{if(!accountType)return; let mounted=true; supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(300).then(({data})=>{if(mounted)setTeams(data||[])}); return()=>{mounted=false}},[accountType]);
 
   const isPlayer = accountType === "player";
   const teamCountries=Array.from(new Set(teams.map(t=>t.country).filter(Boolean) as string[])).sort();
