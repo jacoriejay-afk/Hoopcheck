@@ -18,21 +18,36 @@ export default function PlayerContactButton({ playerId }: { playerId:string }) {
   const [messages,setMessages]=useState<MessageRow[]>([]);
 
   async function load(){
-    const {data:{user}}=await supabase.auth.getUser();
+    const {data:{session}}=await supabase.auth.getSession();
+    const user=session?.user;
     if(!user){return;}
     setUserId(user.id);
-    const {data:p}=await supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle();
-    setAccountType(p?.account_type||"");
-    const {data:s}=await supabase.from("subscriptions").select("plan,status").eq("user_id",user.id).maybeSingle();
-    setPremium(["pro","premium"].includes(s?.plan||"") && (s?.status==="active" || s?.status==="trialing"));
-    const {data:r}=await supabase.from("player_contact_requests").select("id,requester_id,player_id,message,status,created_at").or(`requester_id.eq.${user.id},player_id.eq.${user.id}`).eq("player_id",playerId).maybeSingle();
-    setRequest(r as RequestRow|null);
+    const [profileResult,subscriptionResult,requestResult]=await Promise.all([
+      supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle(),
+      supabase.from("subscriptions").select("plan,status").eq("user_id",user.id).maybeSingle(),
+      supabase.from("player_contact_requests").select("id,requester_id,player_id,message,status,created_at").or(`requester_id.eq.${user.id},player_id.eq.${user.id}`).eq("player_id",playerId).maybeSingle()
+    ]);
+    setAccountType(profileResult.data?.account_type||"");
+    setPremium(["pro","premium"].includes(subscriptionResult.data?.plan||"") && (subscriptionResult.data?.status==="active" || subscriptionResult.data?.status==="trialing"));
+    const r=requestResult.data as RequestRow|null;
+    setRequest(r);
     if(r?.status==="accepted"){
       const {data:m}=await supabase.from("player_contact_messages").select("id,request_id,sender_id,body,created_at").eq("request_id",r.id).order("created_at",{ascending:true});
       setMessages((m||[]) as MessageRow[]);
     }
   }
   useEffect(()=>{void load()},[playerId]);
+
+  useEffect(()=>{
+    if(!request?.id || request.status!=="accepted") return;
+    const channel=supabase.channel("hoopchat-"+request.id)
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"player_contact_messages",filter:"request_id=eq."+request.id},payload=>{
+        const next=payload.new as MessageRow;
+        setMessages(current=>current.some(m=>m.id===next.id)?current:[...current,next]);
+      })
+      .subscribe();
+    return()=>{void supabase.removeChannel(channel);};
+  },[request?.id,request?.status]);
 
   async function sendRequest(){
     if(!userId){location.href="/login";return;}
@@ -56,7 +71,10 @@ export default function PlayerContactButton({ playerId }: { playerId:string }) {
     if(!request?.id || !draft.trim())return;
     setBusy(true);setInfo("");
     const {error}=await supabase.from("player_contact_messages").insert({request_id:request.id,sender_id:userId,body:draft.trim()});
-    if(error)setInfo(error.message); else {setDraft(""); const {data:m}=await supabase.from("player_contact_messages").select("id,request_id,sender_id,body,created_at").eq("request_id",request.id).order("created_at",{ascending:true});setMessages((m||[]) as MessageRow[]);}
+    if(error)setInfo(error.message); else {
+      const sent:MessageRow={id:crypto.randomUUID(),request_id:request.id,sender_id:userId,body:draft.trim(),created_at:new Date().toISOString()};
+      setMessages(current=>[...current,sent]);setDraft("");
+    }
     setBusy(false);
   }
 
