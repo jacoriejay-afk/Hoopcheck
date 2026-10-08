@@ -31,15 +31,16 @@ export default function WatchButton({ targetType, targetId, targetName }: Props)
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) {
+    supabase.auth.getSession().then(async ({ data }) => {
+      const user = data.session?.user;
+      if (!user) {
         if (mounted) setBusy(false);
         return;
       }
       const { data: row } = await supabase
         .from("user_watchlists")
         .select("follow,alert_reviews,alert_ratings,alert_updates")
-        .eq("user_id", data.user.id)
+        .eq("user_id", user.id)
         .eq("target_type", targetType)
         .eq("target_id", targetId)
         .maybeSingle();
@@ -60,12 +61,13 @@ export default function WatchButton({ targetType, targetId, targetName }: Props)
   }, [targetId, targetType]);
 
   async function loadUser() {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) {
+    const { data } = await supabase.auth.getSession();
+    const user = data.session?.user;
+    if (!user) {
       window.location.href = "/login";
       return null;
     }
-    return data.user;
+    return user;
   }
 
   async function save(next: WatchState) {
