@@ -2016,3 +2016,85 @@ main > .nav{display:none!important}
   .search-page .search-form{margin-top:12px!important;padding:5px!important}
   .search-page .search-form input{padding:9px!important}
 }
+
+
+/* Final density + perceived-speed pass. */
+.site-footer{
+  margin-top:24px!important;
+}
+.footer-inner{
+  padding:20px 16px!important;
+  gap:20px!important;
+}
+.footer-links{
+  gap:16px!important;
+}
+.footer-bottom{
+  padding:12px 16px 18px!important;
+}
+.hero{
+  padding:16px 12px 14px!important;
+}
+.hero > .card,
+.hero > .dashboard-card{
+  padding:12px!important;
+}
+.card,.dashboard-card{
+  box-shadow:0 6px 18px rgba(0,0,0,.14)!important;
+}
+.btn,button.btn,a.btn{
+  width:auto!important;
+  min-width:0!important;
+  min-height:32px!important;
+  height:auto!important;
+  padding:6px 10px!important;
+  font-size:11px!important;
+  box-shadow:none!important;
+}
+.actions{
+  align-items:center!important;
+}
+.page-shell .hero-card,
+.page-shell .compact-hero,
+.page-shell .compact-section{
+  margin-bottom:8px!important;
+}
+.search-page .search-hero{
+  padding:18px 12px 12px!important;
+}
+.search-page .results-section{
+  padding-bottom:20px!important;
+}
+.form{
+  margin:10px auto!important;
+  padding:13px!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.18)!important;
+}
+.auth-page-shell .auth-hero{
+  margin-bottom:4px!important;
+}
+.auth-page-shell .auth-card{
+  margin-bottom:8px!important;
+}
+.hoop-loading-inline{
+  min-height:42px!important;
+  padding:8px 4px!important;
+  gap:8px!important;
+}
+.hoop-loading-globe{
+  width:30px!important;
+  height:30px!important;
+  flex-basis:30px!important;
+}
+.hoop-loading-copy strong{font-size:14px!important}
+.hoop-loading-copy small{font-size:9px!important}
+@media(max-width:700px){
+  .site-footer{display:none!important}
+  .hero{padding:12px 8px!important}
+  .hero > .card,.hero > .dashboard-card{padding:10px!important}
+  .card,.dashboard-card{box-shadow:none!important}
+  .btn,button.btn,a.btn{min-height:30px!important;padding:5px 9px!important;font-size:10.5px!important}
+  .form{padding:12px!important}
+  .hoop-loading-inline{min-height:36px!important;padding:7px 2px!important}
+  .hoop-loading-globe{width:26px!important;height:26px!important;flex-basis:26px!important}
+}
