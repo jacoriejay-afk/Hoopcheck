@@ -37,6 +37,7 @@ export default function TeamsPage() {
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0); const [requestName,setRequestName]=useState(""); const [requestCountry,setRequestCountry]=useState(""); const [requestCity,setRequestCity]=useState(""); const [requestLeague,setRequestLeague]=useState(""); const [requestMessage,setRequestMessage]=useState(""); const [requestSubmitting,setRequestSubmitting]=useState(false);
   const pageSize = 24;
+  const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000, fallback?: T) => Promise.race([Promise.resolve(promise), new Promise<T>((resolve) => setTimeout(() => resolve(fallback as T), ms))]);
 
   const CONTINENT_COUNTRIES: Record<string, string[]> = {
     Europe: ["Albania","Andorra","Armenia","Austria","Azerbaijan","Belarus","Belgium","Bosnia and Herzegovina","Bulgaria","Croatia","Cyprus","Czechia","Denmark","Estonia","Finland","France","Georgia","Germany","Greece","Hungary","Iceland","Ireland","Israel","Italy","Kosovo","Latvia","Lithuania","Luxembourg","Malta","Moldova","Montenegro","Netherlands","North Macedonia","Norway","Poland","Portugal","Romania","Russia","Serbia","Slovakia","Slovenia","Spain","Sweden","Switzerland","Türkiye","Ukraine","United Kingdom"],
@@ -55,7 +56,7 @@ export default function TeamsPage() {
     Promise.all([
       supabase.from("leagues").select("id,name,country,level").eq("active", true).order("name"),
       supabase.from("teams").select("country").eq("active", true).not("country", "is", null),
-    ]).then(([leagueResult, countryResult]) => {
+    ]), 8000, [{data:[],error:new Error("timeout")},{data:[],error:new Error("timeout")}]).then(([leagueResult, countryResult]) => {
       setLeagueOptions(leagueResult.data || []);
       setDirectoryCountries(Array.from(new Set((countryResult.data || []).map((row) => row.country).filter(Boolean) as string[])).sort());
     });
