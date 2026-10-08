@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { getCachedSession, supabase } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import PlayerContactButton from "../../components/PlayerContactButton";
 
 type Coach = { id: string; name: string; country: string | null; city: string | null };
@@ -126,30 +126,55 @@ function SearchContent() {
 
       try {
         const searchTerm = `%${query}%`;
+        const wantsPlayers = typeFilter === "all" || typeFilter === "players";
+        const wantsCoaches = typeFilter === "all" || typeFilter === "coaches";
+        const wantsTeams = typeFilter === "all" || typeFilter === "teams";
+        const wantsLeagues = typeFilter === "all" || typeFilter === "leagues";
 
         const [playerResult, coachResult, teamResult, leagueResult] = await Promise.all([
-          supabase.rpc("search_public_players", {
-            p_query: query,
-            p_country: countryFilter,
-            p_position: "",
-            p_verified_only: verifiedOnly,
-            p_limit: 24,
-          }),
-          supabase.from("coaches").select("id, name, country, city")
-            .or(`name.ilike.${searchTerm},country.ilike.${searchTerm},city.ilike.${searchTerm}`)
-            .order("name").limit(20),
-          supabase.from("teams").select("id, name, country, city, league_name")
-            .or(`name.ilike.${searchTerm},country.ilike.${searchTerm},city.ilike.${searchTerm},league_name.ilike.${searchTerm}`)
-            .order("name").limit(20),
-          supabase.from("leagues").select("id, name, country, level")
-            .or(`name.ilike.${searchTerm},country.ilike.${searchTerm},level.ilike.${searchTerm}`)
-            .order("name").limit(20),
+          wantsPlayers
+            ? supabase.rpc("search_public_players", {
+                p_query: query,
+                p_country: countryFilter,
+                p_position: "",
+                p_verified_only: verifiedOnly,
+                p_limit: 24,
+              })
+            : Promise.resolve({ data: [], error: null }),
+          wantsCoaches
+            ? (() => {
+                let request = supabase.from("coaches").select("id, name, country, city")
+                  .or(`name.ilike.${searchTerm},country.ilike.${searchTerm},city.ilike.${searchTerm}`)
+                  .order("name").limit(20);
+                if (countryFilter) request = request.eq("country", countryFilter);
+                return request;
+              })()
+            : Promise.resolve({ data: [], error: null }),
+          wantsTeams
+            ? (() => {
+                let request = supabase.from("teams").select("id, name, country, city, league_name")
+                  .or(`name.ilike.${searchTerm},country.ilike.${searchTerm},city.ilike.${searchTerm},league_name.ilike.${searchTerm}`)
+                  .order("name").limit(20);
+                if (countryFilter) request = request.eq("country", countryFilter);
+                return request;
+              })()
+            : Promise.resolve({ data: [], error: null }),
+          wantsLeagues
+            ? (() => {
+                let request = supabase.from("leagues").select("id, name, country, level")
+                  .or(`name.ilike.${searchTerm},country.ilike.${searchTerm},level.ilike.${searchTerm}`)
+                  .order("name").limit(20);
+                if (countryFilter) request = request.eq("country", countryFilter);
+                return request;
+              })()
+            : Promise.resolve({ data: [], error: null }),
         ]);
 
         if (playerResult.error) throw playerResult.error;
         if (coachResult.error) throw coachResult.error;
         if (teamResult.error) throw teamResult.error;
         if (leagueResult.error) throw leagueResult.error;
+
 
         setPlayers((playerResult.data || []) as Player[]);
         setCoaches(coachResult.data || []);
@@ -164,7 +189,7 @@ function SearchContent() {
     }
 
     search();
-  }, [query, countryFilter, verifiedOnly]);
+  }, [query, countryFilter, verifiedOnly, typeFilter]);
 
   useEffect(() => { setSearchInput(query); }, [query]);
 
