@@ -53,7 +53,7 @@ export default function TeamsPage() {
   }
 
   useEffect(() => {
-    withTimeout(Promise.all([
+    withTimeout<any>(Promise.all([
       supabase.from("leagues").select("id,name,country,level").eq("active", true).order("name"),
       supabase.from("teams").select("country").eq("active", true).not("country", "is", null),
     ]), 8000, [{data:[],error:new Error("timeout")},{data:[],error:new Error("timeout")}]).then(([leagueResult, countryResult]) => {
