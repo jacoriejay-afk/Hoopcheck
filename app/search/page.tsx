@@ -218,16 +218,6 @@ function SearchContent() {
 
   return (
     <main className="search-page">
-      <nav className="nav">
-        <Link href="/" className="logo">Hoop<span>Check</span></Link>
-        <div className="links">
-          <button type="button" onClick={() => window.history.back()} style={{ background: "transparent", border: "1px solid #333", color: "#fff", borderRadius: 7, padding: "7px 10px", cursor: "pointer" }}>← Back</button>
-          <Link href="/dashboard">Dashboard</Link>
-          <Link href="/login">Log in</Link>
-          <Link href="/signup" className="btn">Sign Up</Link>
-        </div>
-      </nav>
-
       <section className="dashboard-card" style={{ margin: "0 0 18px", padding: "16px" }}>
         <div className="eyebrow">PLAYER CONNECT</div>
         <h2 style={{ margin: "4px 0 6px" }}>Add a Player</h2>
