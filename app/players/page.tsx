@@ -18,8 +18,7 @@ export default function PlayersPage(){
   const [loading,setLoading]=useState(true);
   const [query,setQuery]=useState("");
   const [country,setCountry]=useState("");
-  const [type,setType]=useState("");
-  const [page,setPage]=useState(0);
+    const [page,setPage]=useState(0);
   const [hasMore,setHasMore]=useState(false);
   const size=24;
   const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000, fallback?: T) => Promise.race([Promise.resolve(promise), new Promise<T>((resolve) => setTimeout(() => resolve(fallback as T), ms))]);
@@ -39,7 +38,6 @@ export default function PlayersPage(){
         req=req.or(`display_name.ilike.%${term}%,username.ilike.%${term}%,first_name.ilike.%${term}%,last_name.ilike.%${term}%,current_team.ilike.%${term}%,current_country.ilike.%${term}%`);
       }
       if(country) req=req.eq("current_country",country);
-      if(type) req=req.eq("basketball_type",type);
       const {data,error}=await withTimeout<any>(req.range(page*size,page*size+size-1),2500,{data:[],error:new Error("timeout")});
       if(mounted){
         setPlayers(error?[]:(data||[]) as Player[]);
@@ -48,7 +46,7 @@ export default function PlayersPage(){
       }
     })();
     return()=>{mounted=false};
-  },[query,country,type,page]);
+  },[query,country,page]);
 
   const countries=Array.from(new Set(players.map(p=>p.current_country||p.country).filter(Boolean) as string[])).sort();
 
@@ -56,7 +54,7 @@ export default function PlayersPage(){
     <div className="page-container">
       <header className="topbar">
         <Link href="/dashboard" className="brand">HOOPCHECK</Link>
-        <nav className="topnav"><Link href="/search">Search</Link><Link href="/teams">Teams</Link><Link href="/profile">Profile</Link></nav>
+        <nav className="topnav"><Link href="/teams">Teams</Link><Link href="/profile">Profile</Link></nav>
       </header>
       <section className="hero-card">
         <p className="eyebrow">PLAYER DIRECTORY</p>
@@ -64,7 +62,7 @@ export default function PlayersPage(){
         <p className="muted">Research professional players, follow talent, and discover basketball experience across the global game.</p>
         <div className="actions">
           <Link href="/womens" className="btn dark">Women’s Basketball</Link>
-          <Link href="/search" className="btn">Global Search</Link>
+          
         </div>
       </section>
       <section className="dashboard-card" style={{marginTop:18}}>
