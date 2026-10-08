@@ -69,7 +69,7 @@ export default function TeamsPage() {
       setLoading(true);
       let request = supabase
         .from("teams")
-        .select("id, name, country, league_name, league_id, city, leagues:league_id(level)", { count: "exact" })
+        .select("id, name, country, league_name, league_id, city, leagues:league_id(level)")
         .eq("active", true)
         .order("name");
 
@@ -89,7 +89,7 @@ export default function TeamsPage() {
       const continentCountries = continent ? CONTINENT_COUNTRIES[continent] || [] : [];
       if (continentCountries.length) request = request.in("country", continentCountries);
 
-      const { data, error, count } = await request.range(
+      const { data, error } = await request.range(
         page * pageSize,
         page * pageSize + pageSize - 1
       );
@@ -101,9 +101,8 @@ export default function TeamsPage() {
         setTotalCount(0);
       } else {
         setTeams(data || []);
-        const total = count ?? 0;
-        setTotalCount(total);
-        setHasMore((page + 1) * pageSize < total);
+        setTotalCount((page * pageSize) + (data?.length ?? 0));
+        setHasMore((data?.length ?? 0) === pageSize);
       }
 
       setLoading(false);
