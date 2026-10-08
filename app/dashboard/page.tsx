@@ -54,10 +54,14 @@ export default function DashboardPage() {
     let mounted = true;
 
     async function loadDashboard() {
-      const { data: { session } } = await withTimeout(supabase.auth.getSession(), 5000, { data: { session: null }, error: null });
+      const { data: { session } } = await withTimeout<any>(
+        supabase.auth.getSession(),
+        12000,
+        { data: { session: null }, error: new Error("session-timeout") }
+      );
       const user = session?.user ?? null;
       if (!user) {
-        window.location.href = "/login";
+        if (mounted) setLoading(false);
         return;
       }
 
@@ -65,7 +69,7 @@ export default function DashboardPage() {
       setUserId(user.id);
 
       const [profileResult, subscriptionResult, reviewsResult, adminRoleResult] =
-        await Promise.all([
+        await withTimeout<any>(Promise.all([
           supabase
             .from("profiles")
             .select("display_name,player_verified,coach_verified,account_type,moderation_status,moderation_note")
@@ -82,6 +86,11 @@ export default function DashboardPage() {
             .eq("author_id", user.id)
             .order("created_at", { ascending: false }),
           supabase.rpc("get_current_user_admin_role"),
+        ]), 12000, [
+          { data: null, error: new Error("profile-timeout") },
+          { data: null, error: new Error("subscription-timeout") },
+          { data: [], error: new Error("reviews-timeout") },
+          { data: null, error: new Error("admin-role-timeout") },
         ]);
 
       if (!mounted) return;
