@@ -28,7 +28,7 @@ export default function PlayersPage(){
     (async()=>{
       setLoading(true);
       let req=supabase.from("profiles")
-        .select("id,display_name,username,first_name,last_name,country,current_country,current_team,position,years_pro,player_verified,avatar_url,basketball_type,free_agent",{count:"exact"})
+        .select("id,display_name,username,first_name,last_name,country,current_country,current_team,position,years_pro,player_verified,avatar_url,basketball_type,free_agent")
         .eq("account_type","player")
         .eq("profile_visibility","public")
         .neq("moderation_status","suspended")
@@ -39,11 +39,10 @@ export default function PlayersPage(){
       }
       if(country) req=req.eq("current_country",country);
       if(type) req=req.eq("basketball_type",type);
-      const {data,count,error}=await req.range(page*size,page*size+size-1);
+      const {data,error}=await req.range(page*size,page*size+size-1);
       if(mounted){
         setPlayers(error?[]:(data||[]) as Player[]);
-        const total=count||0;
-        setHasMore((page+1)*size<total);
+        setHasMore((data?.length||0)===size);
         setLoading(false);
       }
     })();
