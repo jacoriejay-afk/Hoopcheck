@@ -28,7 +28,7 @@ export default function PlayersPage(){
     (async()=>{
       setLoading(true);
       let req=supabase.from("profiles")
-        .select("id,display_name,username,first_name,last_name,country,current_country,current_team,position,years_pro,player_verified,avatar_url,basketball_type,free_agent")
+        .select("id,display_name,username,first_name,last_name,country,current_country,current_team,position,years_pro,player_verified,avatar_url,free_agent")
         .eq("account_type","player")
         .eq("profile_visibility","public")
         .neq("moderation_status","suspended")
@@ -60,10 +60,7 @@ export default function PlayersPage(){
         <p className="eyebrow">PLAYER DIRECTORY</p>
         <h1>Find Players</h1>
         <p className="muted">Research professional players, follow talent, and discover basketball experience across the global game.</p>
-        <div className="actions">
-          <Link href="/womens" className="btn dark">Women’s Basketball</Link>
-          
-        </div>
+
       </section>
       <section className="dashboard-card" style={{marginTop:18}}>
         <div className="research-search">
@@ -81,14 +78,14 @@ export default function PlayersPage(){
           return <article className="dashboard-card" key={p.id}>
             <div style={{display:"flex",gap:14,alignItems:"center"}}>
               {p.avatar_url ? <img src={p.avatar_url} alt="" style={{width:58,height:58,borderRadius:"50%",objectFit:"cover",border:"1px solid var(--border)"}}/> : <div className="player-avatar-fallback">HC</div>}
-              <div><span className="card-kicker">{p.basketball_type==="womens"?"WOMEN’S":"MEN’S"} PLAYER</span><h2>{name} {p.player_verified&&<span title="Verified professional player" style={{color:"var(--orange)"}}>✓</span>}</h2></div>
+              <div><span className="card-kicker">PLAYER</span><h2>{name} {p.player_verified&&<span title="Verified professional player" style={{color:"var(--orange)"}}>✓</span>}</h2></div>
             </div>
             <p className="muted">{p.position||"Position not listed"} · {p.years_pro==null?"Years pro not listed":p.years_pro+" years pro"}</p>
             <p>{p.free_agent?"🟠 Free Agent":p.current_team||"Team not listed"}{p.current_country?" · "+p.current_country:""}</p>
             <div className="actions"><FollowButton targetType="player" targetId={p.id}/><Link href={"/players/"+p.id} className="btn dark">View Profile</Link></div>
           </article>
         })}
-        {!players.length&&<div className="dashboard-card"><h2>No players found.</h2><p className="muted">Try a different name, country, or basketball type.</p></div>}
+        {!players.length&&<div className="dashboard-card"><h2>No players found.</h2><p className="muted">Try a different name or country.</p></div>}
       </section>}
       {!loading&&players.length>0&&<div style={{display:"flex",justifyContent:"center",gap:12,padding:"20px 0 40px",flexWrap:"wrap"}}>
         <button className="btn dark" disabled={page===0} onClick={()=>setPage(p=>Math.max(0,p-1))}>← Previous</button>
