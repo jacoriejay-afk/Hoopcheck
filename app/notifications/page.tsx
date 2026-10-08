@@ -11,16 +11,18 @@ export default function NotificationsPage(){
   const [items,setItems]=useState<Notice[]>([]);
   const [loading,setLoading]=useState(true);
   useEffect(()=>{(async()=>{
-    const {data:user}=await supabase.auth.getUser();
-    if(!user.user){window.location.href="/login";return;}
-    const {data}=await supabase.from("notifications").select("id,target_type,target_id,notification_type,title,body,read_at,created_at").eq("user_id",user.user.id).order("created_at",{ascending:false}).limit(100);
+    const {data:{session}}=await supabase.auth.getSession();
+    const user=session?.user;
+    if(!user){window.location.href="/login";return;}
+    const {data}=await supabase.from("notifications").select("id,target_type,target_id,notification_type,title,body,read_at,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(100);
     setItems(data||[]);setLoading(false);
   })()},[]);
   async function markAll(){
-    const {data:user}=await supabase.auth.getUser();
-    if(!user.user)return;
+    const {data:{session}}=await supabase.auth.getSession();
+    const user=session?.user;
+    if(!user)return;
     const now=new Date().toISOString();
-    await supabase.from("notifications").update({read_at:now}).eq("user_id",user.user.id).is("read_at",null);
+    await supabase.from("notifications").update({read_at:now}).eq("user_id",user.id).is("read_at",null);
     setItems(v=>v.map(n=>({...n,read_at:n.read_at||now})));
   }
   if(loading)return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading notifications..." /></div></main>;
