@@ -89,7 +89,7 @@ function PlayerUsernameConnect() {
             <div className="muted">@{player.username}</div>
             <div className="muted">{[player.current_team, player.current_country].filter(Boolean).join(" · ")}</div>
           </div>
-          <PlayerContactButton playerId={player.id} />
+          <PlayerContactButton playerId={player.id} compact />
         </div>
       )}
     </div>
