@@ -26,11 +26,9 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data } = await supabase.auth.getClaims();
 
-  if (!user) {
+  if (!data?.claims) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.search = "";
