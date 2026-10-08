@@ -1779,3 +1779,18 @@ textarea{min-height:110px}
 .hoop-loading-inline strong span{color:var(--orange)}
 .hoop-loading-inline small{display:block;color:var(--page-muted);margin-top:4px;font-size:12px}
 @media(max-width:700px){.hoop-loading-inline{min-height:42vh;padding:20px 8px}.hoop-loading-mark{width:36px;height:36px}.hoop-loading-mark span{width:36px;height:36px}.hoop-loading-mark span:nth-child(2){width:26px;height:26px}.hoop-loading-mark span:nth-child(3){width:17px;height:17px}.hoop-loading-inline strong{font-size:18px}}
+
+
+/* Fast, prominent HoopCheck loading state with a spinning globe. */
+.hoop-loading-inline{display:flex;align-items:center;justify-content:center;gap:18px;width:100%;min-height:42vh;padding:28px 14px;text-align:left}
+.hoop-loading-copy strong{display:block;font-family:var(--display-font);letter-spacing:.1em;font-size:25px;line-height:1}
+.hoop-loading-copy strong span{color:var(--orange)}
+.hoop-loading-copy small{display:block;color:var(--page-muted);margin-top:7px;font-size:13px}
+.hoop-loading-globe{position:relative;width:82px;height:82px;flex:0 0 82px;border:3px solid var(--orange);border-radius:50%;overflow:hidden;box-shadow:0 0 22px rgba(255,106,0,.18);animation:hoop-globe-spin 1.8s linear infinite}
+.hoop-loading-globe::before,.hoop-loading-globe::after{content:"";position:absolute;inset:8px 20px;border:2px solid rgba(255,106,0,.7);border-radius:50%}
+.hoop-loading-globe::after{inset:20px 8px;border-radius:50%;transform:rotate(90deg)}
+.globe-line{position:absolute;left:5px;right:5px;height:2px;background:rgba(255,106,0,.7);border-radius:50%}
+.globe-line-a{top:25px}.globe-line-b{top:39px}.globe-line-c{top:53px}.globe-line-d{top:67px}
+@keyframes hoop-globe-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.hoop-loading-globe{animation:none}}
+@media(max-width:700px){.hoop-loading-inline{min-height:38vh;gap:13px;padding:22px 8px}.hoop-loading-globe{width:64px;height:64px;flex-basis:64px;border-width:2px}.hoop-loading-globe::before,.hoop-loading-globe::after{inset:6px 15px}.hoop-loading-globe::after{inset:15px 6px}.globe-line{left:4px;right:4px}.globe-line-a{top:19px}.globe-line-b{top:30px}.globe-line-c{top:41px}.globe-line-d{top:52px}.hoop-loading-copy strong{font-size:20px}.hoop-loading-copy small{font-size:11px}}
