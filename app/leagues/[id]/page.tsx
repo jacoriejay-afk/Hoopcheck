@@ -189,6 +189,7 @@ export default function LeagueDetailPage() {
       }
 
       setLeague(leagueData);
+      setLoading(false);
 
       const { data: teamData, error: teamError } = await supabase
         .from("teams")
