@@ -135,9 +135,7 @@ export default function LoginPage() {
           <h2>Research before<br />you commit.</h2>
           <p>Your next overseas opportunity can change your career. Get more information before you sign.</p>
           <div className="actions">
-            <Link href="/coaches" className="btn">Research Coaches</Link>
-            <Link href="/teams" className="btn dark">Research Teams</Link>
-            <Link href="/leagues" className="btn dark">Research Leagues</Link>
+            <Link href="/signup" className="btn">Create Free Account</Link>
           </div>
         </div>
       </section>
