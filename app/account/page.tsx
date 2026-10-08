@@ -66,6 +66,7 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarStatus, setAvatarStatus] = useState<"pending"|"approved"|"rejected">("approved");
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [cropPreview, setCropPreview] = useState("");
   const [cropZoom, setCropZoom] = useState(1);
@@ -211,6 +212,30 @@ export default function AccountPage() {
     const { error } = await supabase.auth.signOut({ scope: "local" });
     if (error) { setProfileMessage("Unable to sign out. Please try again."); return; }
     window.location.replace("/login");
+  }
+
+  async function deleteAccount() {
+    const first = window.confirm("Delete your HoopCheck account permanently? Your profile, reviews, ratings, messages, and account data will be removed where applicable. Active subscriptions will be canceled before deletion.");
+    if (!first) return;
+    const confirmation = window.prompt('Type DELETE to permanently delete your account.');
+    if (confirmation !== "DELETE") { setProfileMessage("Account deletion canceled. Type DELETE exactly to confirm."); return; }
+    setDeletingAccount(true); setProfileMessage("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Your session has expired. Please sign in again.");
+      const response = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ confirmation: "DELETE" }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.error || "Unable to delete your account.");
+      await supabase.auth.signOut({ scope: "local" });
+      window.location.replace("/?account_deleted=true");
+    } catch (error) {
+      setProfileMessage(error instanceof Error ? error.message : "Unable to delete your account.");
+      setDeletingAccount(false);
+    }
   }
 
   if (loading) return <main className="page-shell account-page"><div className="page-container"><HoopLoading label="Loading your account..." /></div></main>;
