@@ -398,16 +398,7 @@ export default function LeagueDetailPage() {
   if (loading) {
     return (
       <main>
-        <nav className="nav">
-          <Link
-            href="/"
-            className="logo"
-          >
-            Hoop<span>Check</span>
-          </Link>
-        </nav>
-
-        <section className="hero">
+<section className="hero">
           <div className="eyebrow">
             HoopCheck
           </div>
@@ -421,16 +412,7 @@ export default function LeagueDetailPage() {
   if (!league) {
     return (
       <main>
-        <nav className="nav">
-          <Link
-            href="/"
-            className="logo"
-          >
-            Hoop<span>Check</span>
-          </Link>
-        </nav>
-
-        <section className="hero">
+<section className="hero">
           <div className="eyebrow">
             404
           </div>
@@ -538,27 +520,7 @@ export default function LeagueDetailPage() {
 
   return (
     <main>
-      <nav className="nav">
-        <Link
-          href="/"
-          className="logo"
-        >
-          Hoop<span>Check</span>
-        </Link>
-
-        <div className="links">
-          <button type="button" onClick={() => window.history.back()} style={{ background: "transparent", border: "1px solid #333", color: "#fff", borderRadius: 7, padding: "7px 10px", cursor: "pointer" }}>← Back</button>
-          <Link href="/dashboard">
-            Dashboard
-          </Link>
-
-          <Link href="/leagues">
-            Leagues
-          </Link>
-        </div>
-      </nav>
-
-      <section className="hero">
+<section className="hero">
         <div className="eyebrow">
           League Research
         </div>
