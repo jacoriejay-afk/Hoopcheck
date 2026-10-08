@@ -19,8 +19,9 @@ export default function FanLivePage(){
   const [message,setMessage]=useState("");
 
   async function load(){
-    const {data:{user}}=await supabase.auth.getUser();
-    if(!user){window.location.href="/login";return;}
+    const {data:{session}}=await supabase.auth.getSession();
+    const user=session?.user;
+    if(!user){setLoading(false);return;}
     const [{data:p},{data:s}]=await Promise.all([
       supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle(),
       supabase.from("subscriptions").select("plan,status,current_period_end").eq("user_id",user.id).maybeSingle()
@@ -46,11 +47,18 @@ export default function FanLivePage(){
   }
 
   useEffect(()=>{void load();},[]);
-  useEffect(()=>{if(!selected)return;void loadMessages(selected.id);const channel=supabase.channel("fan-live-"+selected.id).on("postgres_changes",{event:"INSERT",schema:"public",table:"fan_live_chat_messages",filter:"game_id=eq."+selected.id},payload=>setMessages(x=>[...x,payload.new])).subscribe();return()=>{void supabase.removeChannel(channel);};},[selected?.id]);
+  useEffect(()=>{
+  if(!selected)return;
+  void loadMessages(selected.id);
+  const channel=supabase.channel("fan-live-"+selected.id)
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"fan_live_chat_messages",filter:"game_id=eq."+selected.id},payload=>setMessages(x=>x.some(m=>m.id===payload.new.id)?x:[...x,payload.new]))
+    .subscribe();
+  return()=>{void supabase.removeChannel(channel);};
+},[selected?.id]);
 
   async function send(){
     const text=body.trim();if(!text||!selected)return;
-    const {data:{user}}=await supabase.auth.getUser();if(!user)return;
+    const {data:{session}}=await supabase.auth.getSession();const user=session?.user;if(!user)return;
     const {error}=await supabase.from("fan_live_chat_messages").insert({game_id:selected.id,user_id:user.id,body:text});
     if(error){setMessage(error.message);return;}setBody("");setMessage("");
   }
