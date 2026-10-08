@@ -192,6 +192,7 @@ export default function CoachDetailPage() {
       }
 
       setCoach(coachData);
+      setLoading(false);
 
       const { data: assignmentData } = await supabase.from("coach_team_assignments").select("id,team_id,role,season,start_date,end_date,active").eq("coach_id", id).eq("active", true).order("season", { ascending: false });
       if (assignmentData) {
