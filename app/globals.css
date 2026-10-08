@@ -1815,3 +1815,26 @@ textarea{min-height:110px}
   .actions{gap:7px}
   .actions .btn{min-height:34px;padding:6px 10px}
 }
+
+
+/* Universal compact controls — prevent oversized buttons with tiny labels. */
+button:not(.filter-chip),
+button.btn,
+a.btn {
+  min-height: 36px !important;
+  height: auto !important;
+  padding: 8px 13px !important;
+  font-size: 12px !important;
+  line-height: 1.15 !important;
+  font-weight: 800 !important;
+  border-radius: 7px !important;
+}
+@media (max-width:700px) {
+  button:not(.filter-chip),
+  button.btn,
+  a.btn {
+    min-height: 34px !important;
+    padding: 7px 10px !important;
+    font-size: 11px !important;
+  }
+}
