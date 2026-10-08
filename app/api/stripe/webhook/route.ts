@@ -69,13 +69,18 @@ async function saveSubscription(
     subscription.items.data[0]?.price?.id;
 
   const plan =
-    getPlanFromPrice(priceId, subscription.items.data[0]?.price?.metadata);
+    getPlanFromPrice(
+      priceId,
+      subscription.items.data[0]?.price?.metadata
+    ) ||
+    (subscription.metadata?.plan === "pro" ||
+    subscription.metadata?.plan === "premium"
+      ? subscription.metadata.plan
+      : null);
 
   if (!plan) {
     throw new Error(
-      `Unknown Stripe price: ${
-        priceId || "missing"
-      }`
+      `Unknown Stripe price: ${priceId || "missing"}`
     );
   }
 
