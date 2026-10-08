@@ -7,7 +7,7 @@ import {
 
 import Link from "next/link";
 
-import { supabase } from "../../lib/supabase";
+import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import GeoBadge from "../../components/GeoBadge";
 
@@ -54,8 +54,8 @@ export default function TeamsPage() {
 
   useEffect(() => {
     withTimeout<any>(Promise.all([
-      supabase.from("leagues").select("id,name,country,level").eq("active", true).order("name"),
-      supabase.from("teams").select("country").eq("active", true).not("country", "is", null),
+      supabase.from("leagues").select("id,name,country,level").eq("active", true).order("name").limit(300),
+      supabase.from("teams").select("country").eq("active", true).not("country", "is", null).limit(2000),
     ]), 2500, [{data:[],error:new Error("timeout")},{data:[],error:new Error("timeout")}]).then(([leagueResult, countryResult]) => {
       setLeagueOptions(leagueResult.data || []);
       setDirectoryCountries(Array.from(new Set(((countryResult.data || []) as Array<{country:string|null}>).map((row) => row.country).filter(Boolean) as string[])).sort());
