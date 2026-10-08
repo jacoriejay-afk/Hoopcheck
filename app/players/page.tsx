@@ -30,7 +30,7 @@ export default function PlayersPage(){
       let req=supabase.from("profiles")
         .select("id,display_name,username,first_name,last_name,country,current_country,current_team,position,years_pro,player_verified,avatar_url,free_agent")
         .eq("account_type","player")
-        .eq("basketball_type","mens")
+        .or("basketball_type.is.null,basketball_type.eq.mens")
         .eq("profile_visibility","public")
         .neq("moderation_status","suspended")
         .order("display_name",{ascending:true});
