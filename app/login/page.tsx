@@ -73,20 +73,7 @@ export default function LoginPage() {
 
   return (
     <main>
-      <nav className="nav">
-        <div className="links" style={{ marginLeft: "auto" }}>
-          <button
-            type="button"
-            onClick={() => window.history.back()}
-            style={{ background: "transparent", border: "1px solid #333", color: "#fff", borderRadius: 7, padding: "7px 10px", cursor: "pointer" }}
-          >
-            ← Back
-          </button>
-          <Link href="/signup">Create Account</Link>
-        </div>
-      </nav>
-
-      <section className="hero" style={{ paddingBottom: "30px" }}>
+<section className="hero" style={{ paddingBottom: "30px" }}>
         <div className="eyebrow">PLAYER ACCESS</div>
         <h1>Welcome back.</h1>
         <p>
