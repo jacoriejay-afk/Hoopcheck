@@ -20,7 +20,7 @@ export default function Home() {
         <Link href="/" className="logo">Hoop<span>Check</span></Link>
         <div className="links">
           <Link href="/search">Search</Link>
-          <Link href={loggedIn ? "/dashboard" : "/login"}>{loggedIn ? "Dashboard" : "Log in"}</Link>
+          <Link href={loggedIn ? "/dashboard" : "/login"} className="btn dark">{loggedIn ? "Dashboard" : "Sign In"}</Link>
           <Link href="/signup" className="btn">Sign Up</Link>
         </div>
       </nav>
@@ -40,6 +40,7 @@ export default function Home() {
         </form>
         <div className="actions">
           <Link href="/signup" className="btn">Create Free Account</Link>
+          <Link href="/login" className="btn dark">Sign In</Link>
           <Link href="/search" className="btn dark">Explore HoopCheck</Link>
         </div>
       </section>
