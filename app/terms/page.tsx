@@ -5,19 +5,7 @@ import Link from "next/link";
 export default function TermsPage() {
 return (
 <main>
-<nav className="nav">
-  <Link href="/" className="logo">
-    Hoop<span>Check</span>
-  </Link>
-    <div className="links">
-      <Link href="/search">Search</Link>
-      <Link href="/dashboard">Dashboard</Link>
-      <Link href="/membership" className="btn">
-        Membership
-      </Link>
-    </div>
-  </nav>
-  <section className="hero">
+<section className="hero">
     <div className="eyebrow">
       HoopCheck Legal
     </div>
