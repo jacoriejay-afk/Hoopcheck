@@ -30,7 +30,7 @@ export default function SignupPage() {
   const [birthMonth,setBirthMonth]=useState(""); const [birthDay,setBirthDay]=useState(""); const [birthYear,setBirthYear]=useState(""); const [gender,setGender]=useState(""); const [agreedToTerms,setAgreedToTerms]=useState(false);
   const [loading,setLoading]=useState(false); const [error,setError]=useState("");
 
-  useEffect(()=>{supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(1000).then(({data})=>setTeams(data||[]));},[]);
+  useEffect(()=>{if(!accountType)return; let mounted=true; supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(1200).then(({data})=>{if(mounted)setTeams(data||[])}); return()=>{mounted=false}},[accountType]);
 
   const isPlayer = accountType === "player";
   const teamCountries=Array.from(new Set(teams.map(t=>t.country).filter(Boolean) as string[])).sort();
