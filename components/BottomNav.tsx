@@ -20,10 +20,10 @@ export default function BottomNav() {
   const [profileHref, setProfileHref] = useState("/profile");
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       setSignedIn(Boolean(data.user));
-      if (data.user) {
-        const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", data.user.id).maybeSingle();
+      if (data.session?.user) {
+        const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", data.session.user.id).maybeSingle();
         setProfileHref(profile?.account_type === "player" ? `/players/${data.user.id}` : "/profile");
       }
     });
