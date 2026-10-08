@@ -392,16 +392,7 @@ export default function TeamReviewPage() {
   if (loading) {
     return (
       <main>
-        <nav className="nav">
-          <Link
-            href="/"
-            className="logo"
-          >
-            Hoop<span>Check</span>
-          </Link>
-        </nav>
-
-        <section className="hero">
+<section className="hero">
           <div className="eyebrow">
             HoopCheck
           </div>
@@ -417,16 +408,7 @@ export default function TeamReviewPage() {
   if (!team) {
     return (
       <main>
-        <nav className="nav">
-          <Link
-            href="/"
-            className="logo"
-          >
-            Hoop<span>Check</span>
-          </Link>
-        </nav>
-
-        <section className="hero">
+<section className="hero">
           <div className="eyebrow">
             404
           </div>
@@ -449,8 +431,7 @@ export default function TeamReviewPage() {
   if (!eligible) {
     return (
       <main>
-        <nav className="nav"><Link href="/" className="logo">Hoop<span>Check</span></Link></nav>
-        <section className="hero">
+<section className="hero">
           <div className="eyebrow">Player Eligibility Required</div>
           <h1>Reviews are for players who played here.</h1>
           <p>You can only make ratings and reviews for teams you currently or previously played for. Your player account must also be verified.</p>
@@ -466,16 +447,7 @@ export default function TeamReviewPage() {
   if (alreadyReviewed) {
     return (
       <main>
-        <nav className="nav">
-          <Link
-            href="/"
-            className="logo"
-          >
-            Hoop<span>Check</span>
-          </Link>
-        </nav>
-
-        <section className="hero">
+<section className="hero">
           <div className="eyebrow">
             Already Submitted
           </div>
@@ -518,16 +490,7 @@ export default function TeamReviewPage() {
   ) {
     return (
       <main>
-        <nav className="nav">
-          <Link
-            href="/"
-            className="logo"
-          >
-            Hoop<span>Check</span>
-          </Link>
-        </nav>
-
-        <section className="hero">
+<section className="hero">
           <div className="eyebrow">
             Members Only
           </div>
@@ -563,25 +526,7 @@ export default function TeamReviewPage() {
 
   return (
     <main>
-      <nav className="nav">
-        <Link
-          href="/"
-          className="logo"
-        >
-          Hoop<span>Check</span>
-        </Link>
-
-        <div className="links">
-          <button type="button" onClick={() => window.history.back()} style={{ background: "transparent", border: "1px solid #333", color: "#fff", borderRadius: 7, padding: "7px 10px", cursor: "pointer" }}>← Back</button>
-          <Link
-            href={`/teams/${team.id}`}
-          >
-            Back To Team
-          </Link>
-        </div>
-      </nav>
-
-      <section className="hero">
+<section className="hero">
         <div className="eyebrow">
           Organization Evaluation
         </div>
