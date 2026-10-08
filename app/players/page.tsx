@@ -22,6 +22,7 @@ export default function PlayersPage(){
   const [page,setPage]=useState(0);
   const [hasMore,setHasMore]=useState(false);
   const size=24;
+  const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000, fallback?: T) => Promise.race([Promise.resolve(promise), new Promise<T>((resolve) => setTimeout(() => resolve(fallback as T), ms))]);
 
   useEffect(()=>{
     let mounted=true;
@@ -39,7 +40,7 @@ export default function PlayersPage(){
       }
       if(country) req=req.eq("current_country",country);
       if(type) req=req.eq("basketball_type",type);
-      const {data,error}=await req.range(page*size,page*size+size-1);
+      const {data,error}=await withTimeout(req.range(page*size,page*size+size-1),8000,{data:[],error:new Error("timeout")});
       if(mounted){
         setPlayers(error?[]:(data||[]) as Player[]);
         setHasMore((data?.length||0)===size);
