@@ -402,16 +402,7 @@ export default function LeagueReviewPage() {
   if (loading) {
     return (
       <main>
-        <nav className="nav">
-          <Link
-            href="/"
-            className="logo"
-          >
-            Hoop<span>Check</span>
-          </Link>
-        </nav>
-
-        <section className="hero">
+<section className="hero">
           <div className="eyebrow">
             HoopCheck
           </div>
@@ -427,16 +418,7 @@ export default function LeagueReviewPage() {
   if (!league) {
     return (
       <main>
-        <nav className="nav">
-          <Link
-            href="/"
-            className="logo"
-          >
-            Hoop<span>Check</span>
-          </Link>
-        </nav>
-
-        <section className="hero">
+<section className="hero">
           <div className="eyebrow">
             404
           </div>
@@ -459,16 +441,7 @@ export default function LeagueReviewPage() {
   if (alreadyReviewed) {
     return (
       <main>
-        <nav className="nav">
-          <Link
-            href="/"
-            className="logo"
-          >
-            Hoop<span>Check</span>
-          </Link>
-        </nav>
-
-        <section className="hero">
+<section className="hero">
           <div className="eyebrow">
             Already Submitted
           </div>
@@ -511,16 +484,7 @@ export default function LeagueReviewPage() {
   ) {
     return (
       <main>
-        <nav className="nav">
-          <Link
-            href="/"
-            className="logo"
-          >
-            Hoop<span>Check</span>
-          </Link>
-        </nav>
-
-        <section className="hero">
+<section className="hero">
           <div className="eyebrow">
             Members Only
           </div>
@@ -556,25 +520,7 @@ export default function LeagueReviewPage() {
 
   return (
     <main>
-      <nav className="nav">
-        <Link
-          href="/"
-          className="logo"
-        >
-          Hoop<span>Check</span>
-        </Link>
-
-        <div className="links">
-          <button type="button" onClick={() => window.history.back()} style={{ background: "transparent", border: "1px solid #333", color: "#fff", borderRadius: 7, padding: "7px 10px", cursor: "pointer" }}>← Back</button>
-          <Link
-            href={`/leagues/${league.id}`}
-          >
-            Back To League
-          </Link>
-        </div>
-      </nav>
-
-      <section className="hero">
+<section className="hero">
         <div className="eyebrow">
           League Evaluation
         </div>
