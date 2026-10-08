@@ -88,6 +88,7 @@ export default function TermsPage() {
           <div className="legal-footer">
             <Link href="/privacy">Privacy Policy</Link>
             <Link href="/community-guidelines">Community Guidelines</Link>
+            <Link href="/copyright">Copyright</Link>
             <Link href="/support">Support</Link>
             <Link href="/membership">Membership</Link>
           </div>
