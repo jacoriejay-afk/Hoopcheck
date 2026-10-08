@@ -1636,18 +1636,11 @@ html[data-theme="light"] .modal-backdrop {
 @media (max-width: 700px) { .dashboard-page .brand { font-size: 34px; } }
 
 
-/* Universal HoopCheck loading screen */
-.hoop-loading-screen{min-height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:28px 16px}
-.hoop-loading-wordmark{font-size:clamp(30px,7vw,52px);font-weight:1000;letter-spacing:-2.5px;line-height:1}
-.hoop-loading-label{font-size:13px;color:var(--page-muted);max-width:90vw}
-.hoop-loading-globe{width:72px;height:72px;border:3px solid var(--orange);border-radius:50%;position:relative;overflow:hidden;animation:hoop-globe-spin 2.4s linear infinite;box-shadow:0 0 0 5px rgba(255,106,0,.08)}
-.globe-ring,.globe-lat{position:absolute;inset:8px;border:2px solid rgba(255,106,0,.8);border-radius:50%}
-.globe-ring-a{transform:scaleX(.38)}
-.globe-ring-b{transform:scaleX(.72)}
-.globe-lat-a{inset:21px 3px;border-radius:50%;transform:rotate(8deg)}
-.globe-lat-b{inset:30px 3px;border-radius:50%;transform:rotate(-8deg)}
-@keyframes hoop-globe-spin{from{transform:rotateY(0deg)}to{transform:rotateY(360deg)}}
-@media(prefers-reduced-motion:reduce){.hoop-loading-globe{animation:none}}
+/* Lightweight loading indicator: keep navigation and content visible while data loads. */
+.hoop-loading-inline{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:0;padding:12px 4px;color:var(--page-muted);font-size:12px;text-align:center}
+.hoop-loading-spinner{width:16px;height:16px;border:2px solid rgba(255,106,0,.22);border-top-color:var(--orange);border-radius:50%;animation:hoop-loading-spin .7s linear infinite;flex:0 0 auto}
+@keyframes hoop-loading-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.hoop-loading-spinner{animation:none}}
 
 /* Keep dense content readable on phones and tablets */
 .page-container,.container{width:100%;max-width:1180px;margin-left:auto;margin-right:auto;box-sizing:border-box}
@@ -1763,11 +1756,18 @@ textarea{min-height:110px}
  .btn{padding:8px 11px;font-size:12px;}
  .muted{line-height:1.45;}
 }
-/* Final compact-card pass: cards should size to their content, not stretch into large blocks. */
-.card,.dashboard-card,.hero-card,.result-card,.quick-card,.settings-card{min-height:0!important;height:auto;}
-.compact-card{min-height:0!important;height:auto;padding:13px!important;}
-.compact-card h2{margin:5px 0 6px;font-size:18px;line-height:1.15;}
-.compact-card p{margin:5px 0;line-height:1.35;}
-.compact-card .btn{margin-top:8px;}
-.fan-feature-card{min-height:0!important;}
-@media(max-width:700px){.compact-card{padding:12px!important}.compact-card .eyebrow{margin-bottom:4px}.compact-card h2{font-size:17px}.compact-card p{font-size:13px}.grid .card{padding:12px!important;}}
+/* Content-sized cards: never reserve large empty rectangles. */
+.card,.dashboard-card,.hero-card,.result-card,.quick-card,.settings-card,.fan-feature-card{min-height:0!important;height:auto;align-self:start}
+.compact-card{min-height:0!important;height:auto;padding:13px!important}
+.compact-card h2{margin:5px 0 6px;font-size:18px;line-height:1.15}
+.compact-card p{margin:5px 0;line-height:1.35}
+.compact-card .btn{margin-top:8px}
+@media(max-width:700px){
+  .compact-card{padding:12px!important}
+  .compact-card .eyebrow{margin-bottom:4px}
+  .compact-card h2{font-size:17px}
+  .compact-card p{font-size:13px}
+  .grid .card,.grid .dashboard-card{padding:12px!important}
+  .hoop-loading-inline{padding:10px 2px;font-size:11px}
+  .hoop-loading-spinner{width:14px;height:14px}
+}
