@@ -43,6 +43,7 @@ function PlayerUsernameConnect() {
       .select("id,display_name,username,avatar_url,current_team,current_country,player_verified")
       .eq("account_type", "player")
       .eq("profile_visibility", "public")
+      .not("username", "is", null)
       .neq("moderation_status", "suspended")
       .ilike("username", value)
       .maybeSingle();
