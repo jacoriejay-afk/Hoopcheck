@@ -73,8 +73,8 @@ export default function Feed(){
     ]);
     setProfile(p);setSubscription(s);
     const memberActive=(s?.plan==="pro"||s?.plan==="premium")&&(s?.status==="active"||s?.status==="trialing")&&(s?.access_status==null||["active","trialing","pro","premium"].includes(s.access_status));
-    if(p&&memberActive)await load(u,p);
     setLoading(false);
+    if(p&&memberActive)void load(u,p);
   })();},[]);
 
   async function choosePhoto(f:File){
