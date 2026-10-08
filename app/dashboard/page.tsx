@@ -113,7 +113,7 @@ export default function DashboardPage() {
         if (ids.length) { const { data: teamRows } = await supabase.from("teams").select("id,name,country,league_name").in("id", ids); setFollowedTeams((teamRows || []) as any); }
       }
 
-      const rows = reviewsResult.error ? [] : (reviewsResult.data ?? []);
+      const rows: Review[] = reviewsResult.error ? [] : ((reviewsResult.data ?? []) as Review[]);
       setReviews(rows);
 
       const coachIds = rows.flatMap((r) => r.coach_id ? [r.coach_id] : []);
