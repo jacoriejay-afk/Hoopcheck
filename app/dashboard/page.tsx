@@ -84,7 +84,7 @@ export default function DashboardPage() {
             .from("reviews")
             .select("id,status,title,body,overall_rating,created_at,coach_id,team_id,league_id")
             .eq("author_id", user.id)
-            .order("created_at", { ascending: false }),
+            .order("created_at", { ascending: false }).limit(20),
           supabase.rpc("get_current_user_admin_role"),
         ]), 12000, [
           { data: null, error: new Error("profile-timeout") },
@@ -100,7 +100,7 @@ export default function DashboardPage() {
 
       if (profileResult.data?.account_type === "coach") {
         const [{data: teamRows}, {data: requestRows}] = await Promise.all([
-          supabase.from("teams").select("id,name,country,league_name").eq("active", true).order("name").limit(1000),
+          supabase.from("teams").select("id,name,country,league_name").eq("active", true).order("name").limit(300),
           supabase.from("coach_team_requests").select("id,team_id,status,requested_role,reviewer_note").eq("user_id", user.id).order("created_at",{ascending:false}).limit(20)
         ]);
         setCoachTeams((teamRows || []) as any);
