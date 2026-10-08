@@ -1838,3 +1838,15 @@ a.btn {
     font-size: 11px !important;
   }
 }
+
+
+/* Final compact launch pass: reduce empty page space and make controls text-sized. */
+.page-container{padding-bottom:32px!important;}
+.hero-card{margin-top:4px!important;padding:14px 16px!important;}
+.compact-hero{padding:15px 16px!important;}
+.compact-section{padding:12px!important;margin-top:9px!important;}
+.grid{padding-top:8px!important;padding-bottom:16px!important;gap:9px!important;}
+.actions{margin-top:9px!important;gap:6px!important;}
+.hoop-loading-inline{min-height:18vh!important;padding:14px 8px!important;}
+@media(max-width:700px){.page-container{padding:0 12px 24px!important}.hero-card{padding:12px!important}.compact-hero{padding:13px!important}.compact-section{padding:11px!important}.grid{padding-top:6px!important;padding-bottom:12px!important}.hoop-loading-inline{min-height:16vh!important;padding:12px 6px!important}}
+.women-category-badge{display:inline-flex;align-items:center;margin-left:8px;padding:4px 8px;border:1px solid rgba(255,106,0,.45);border-radius:999px;color:var(--orange);font-size:10px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;}
