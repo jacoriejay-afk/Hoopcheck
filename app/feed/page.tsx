@@ -34,34 +34,36 @@ export default function Feed(){
     (subscription?.access_status==null||["active","trialing","pro","premium"].includes(subscription.access_status));
 
   async function load(currentUser:any, currentProfile:Profile){
-    let followedFanIds:string[]=[]; let connectedPlayerIds:string[]=[];
-    if(currentProfile.account_type==="player"){
-      const {data:connections}=await supabase.from("player_contact_requests").select("requester_id,player_id").or(`requester_id.eq.${currentUser.id},player_id.eq.${currentUser.id}`).eq("status","accepted").limit(100);
-      connectedPlayerIds=(connections||[]).flatMap((x:any)=>x.requester_id===currentUser.id?[x.player_id]:[x.requester_id]).filter(Boolean);
-    }
-    if(currentProfile.account_type==="fan"){
-      const {data:follows}=await supabase.from("follow_relationships").select("target_id,target_type").eq("follower_id",currentUser.id).in("target_type",["fan","team"]).limit(100);
-      followedFanIds=(follows||[]).filter((x:any)=>x.target_type==="fan").map((x:any)=>x.target_id).filter(Boolean);
-    }
-    const {data,error}=await supabase.from("feed_posts")
-      .select("id,body,image_url,location_country,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country,current_team)")
-      .eq("status","approved").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(50);
-    if(error){setMsg(error.message);return;}
+    const connectionPromise=currentProfile.account_type==="player"
+      ? supabase.from("player_contact_requests").select("requester_id,player_id").or(`requester_id.eq.${currentUser.id},player_id.eq.${currentUser.id}`).eq("status","accepted").limit(100)
+      : Promise.resolve({data:[]});
+    const followPromise=currentProfile.account_type==="fan"
+      ? supabase.from("follow_relationships").select("target_id,target_type").eq("follower_id",currentUser.id).in("target_type",["fan","team"]).limit(100)
+      : Promise.resolve({data:[]});
+    const [connectionsResult,followsResult,feedResult]=await Promise.all([
+      connectionPromise,followPromise,
+      supabase.from("feed_posts").select("id,body,image_url,location_country,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country,current_team)")
+        .eq("status","approved").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(30)
+    ]);
+    const connectedPlayerIds=(connectionsResult.data||[]).flatMap((x:any)=>x.requester_id===currentUser.id?[x.player_id]:[x.requester_id]).filter(Boolean);
+    const followedFanIds=(followsResult.data||[]).filter((x:any)=>x.target_type==="fan").map((x:any)=>x.target_id).filter(Boolean);
+    if(feedResult.error){setMsg(feedResult.error.message);return;}
     const now=Date.now();
-    let rows=(data||[]).map((r:any)=>{const post={...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)} as Post; return {...post,ageLabel:ago(post.created_at,now),expiresLabel:`Expires in ${Math.max(0,Math.ceil((new Date(post.expires_at).getTime()-now)/3600000))}h`};});
+    let rows=(feedResult.data||[]).map((r:any)=>{const post={...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)} as Post;return {...post,ageLabel:ago(post.created_at,now),expiresLabel:`Expires in ${Math.max(0,Math.ceil((new Date(post.expires_at).getTime()-now)/3600000))}h`};});
     if(currentProfile.account_type==="fan") rows=rows.filter(p=>followedFanIds.includes(p.author_id));
-    if(currentProfile.account_type==="player") rows=rows.filter(p=>p.author_id===currentUser.id || connectedPlayerIds.includes(p.author_id));
+    if(currentProfile.account_type==="player") rows=rows.filter(p=>p.author_id===currentUser.id||connectedPlayerIds.includes(p.author_id));
     setPosts(rows);
     if(!rows.length){setComments({});setChecks({});setMine({});return;}
     const ids=rows.map(p=>p.id);
-    const [{data:cs},{data:ks}]=await Promise.all([
+    void Promise.all([
       supabase.from("feed_post_comments").select("id,post_id,body,created_at,author_id,profiles(display_name,avatar_url)").in("post_id",ids).order("created_at",{ascending:true}),
       supabase.from("feed_post_checks").select("post_id,user_id").in("post_id",ids)
-    ]);
-    const cg:Record<string,Comment[]>={}; const cc:Record<string,number>={}; const cm:Record<string,boolean>={};
-    (cs||[]).forEach((r:any)=>{(cg[r.post_id]??=[]).push({...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)});});
-    (ks||[]).forEach((r:any)=>{cc[r.post_id]=(cc[r.post_id]||0)+1;if(r.user_id===currentUser.id)cm[r.post_id]=true;});
-    setComments(cg);setChecks(cc);setMine(cm);
+    ]).then(([commentsResult,checksResult])=>{
+      const cg:Record<string,Comment[]>={};const cc:Record<string,number>={};const cm:Record<string,boolean>={};
+      (commentsResult.data||[]).forEach((r:any)=>{(cg[r.post_id]??=[]).push({...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)});});
+      (checksResult.data||[]).forEach((r:any)=>{cc[r.post_id]=(cc[r.post_id]||0)+1;if(r.user_id===currentUser.id)cm[r.post_id]=true;});
+      setComments(cg);setChecks(cc);setMine(cm);
+    });
   }
 
   useEffect(()=>{(async()=>{const {data:{session}}=await supabase.auth.getSession();const u=session?.user;setUser(u);if(!u){setLoading(false);return;}
