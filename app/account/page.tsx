@@ -188,7 +188,7 @@ export default function AccountPage() {
     }
     const updates = {
       display_name: name || null, bio: bio.trim().slice(0, 500) || null,
-      position: position.trim().slice(0, 50) || null, years_pro: years,
+      years_pro: years,
       current_country: currentCountry.trim().slice(0, 80) || null,
       current_team: currentTeam.trim().slice(0, 120) || null,
       hometown: hometown.trim().slice(0,120) || null,
