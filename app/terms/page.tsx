@@ -12,7 +12,7 @@ export default function TermsPage() {
       </section>
       <section className="legal-content">
         <div className="legal-card">
-          <p className="updated">Last updated: October 8, 2026</p>
+          <p className="updated">Last updated: October 9, 2026</p>
 
           <h2>1. Agreement</h2>
           <p>By creating an account, purchasing a subscription, or using HoopCheck, you agree to these Terms and the Community Guidelines and Privacy Policy. If you do not agree, do not use HoopCheck.</p>
@@ -46,10 +46,12 @@ export default function TermsPage() {
           <p>HoopCheck's software, trademarks, logos, original designs, database structure, and original platform materials are owned by or licensed to HoopCheck and are protected by applicable intellectual-property laws.</p>
           <p>You may not copy, scrape, reproduce, sell, redistribute, reverse engineer, or commercially exploit protected HoopCheck materials except as permitted by law or with written permission.</p>
 
-          <h2>9. Subscriptions and Billing</h2>
-          <p>Paid plans, prices, billing intervals, discounts, and included features are shown before purchase. Unless checkout states otherwise, subscriptions renew automatically until canceled.</p>
+          <h2>9. Subscriptions, Billing, Cancellation, and Refunds</h2>
+          <p>Paid plans, prices, billing intervals, discounts, and included features are shown before purchase. Monthly plans are billed upfront for one month and renew monthly. 6-month plans are billed upfront for six months and renew every six months. Annual plans are billed upfront for one year and renew annually, unless canceled before the next renewal date.</p>
+          <p>Current subscription pricing is $4.99/month for Pro and $9.99/month for Premium. Discounted 6-month and annual prices are displayed before checkout. A discounted term is charged as one upfront payment for the selected term.</p>
+          <p>Subscriptions renew automatically until canceled. You can cancel through the HoopCheck membership controls or the Stripe customer portal. Cancellation normally stops the next renewal while preserving paid access through the current paid period.</p>
+          <p>Unless a refund is required by applicable law or expressly offered at checkout, subscription payments are generally non-refundable. If you believe you were charged in error, charged more than once, or have another billing issue, contact HoopCheck Support promptly so the charge can be reviewed.</p>
           <p>Payments are processed by Stripe or another displayed payment provider. HoopCheck does not intentionally store complete payment-card numbers in its application database.</p>
-          <p>Canceling a subscription normally stops future renewal; access may continue until the end of the paid period. Refunds are governed by the terms displayed at purchase and applicable law.</p>
 
           <h2>10. Account Deletion</h2>
           <p>You may delete your HoopCheck account through the available account controls. Active HoopCheck subscriptions are canceled as part of the deletion process before the account is removed.</p>
