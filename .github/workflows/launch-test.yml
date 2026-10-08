@@ -21,3 +21,5 @@ jobs:
         run: npm ci
       - name: Production build
         run: npm run build
+
+# Final player-profile launch gate
