@@ -40,7 +40,7 @@ export default function PlayersPage(){
       }
       if(country) req=req.eq("current_country",country);
       if(type) req=req.eq("basketball_type",type);
-      const {data,error}=await withTimeout(req.range(page*size,page*size+size-1),8000,{data:[],error:new Error("timeout")});
+      const {data,error}=await withTimeout<any>(req.range(page*size,page*size+size-1),8000,{data:[],error:new Error("timeout")});
       if(mounted){
         setPlayers(error?[]:(data||[]) as Player[]);
         setHasMore((data?.length||0)===size);
