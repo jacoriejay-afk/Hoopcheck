@@ -36,8 +36,12 @@ export default function PlayerProfilePage() {
       const { data, error } = await supabase
         .rpc("get_public_player_profile", { p_user_id: params.id });
 
-      if (!error && data?.[0]) setPlayer(data[0]);
-      const {data:{user}}=await supabase.auth.getUser();
+      if (!error && data?.[0]) {
+        setPlayer(data[0]);
+        setLoading(false);
+      }
+      const {data:{session}}=await supabase.auth.getSession();
+      const user=session?.user;
       if(user){
         setIsOwnProfile(user.id===params.id);
         const {data:p}=await supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle();
