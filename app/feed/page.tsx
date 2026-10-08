@@ -102,7 +102,7 @@ export default function Feed(){
       const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
       const result=await moderation.json().catch(()=>({}));
       if(!moderation.ok||result.allowed!==true){setMsg(result.message||"This post could not be published because it did not pass HoopFeed safety checks.");setPosting(false);return;}
-      setBody("");clearPhoto();setMsg("Posted to HoopFeed. AI safety checks passed. It stays live for 24 hours.");await load();
+      setBody("");clearPhoto();setMsg("Posted to HoopFeed. AI safety checks passed. It stays live for 24 hours.");await load(user, profile!);
     }catch(e:any){setMsg(e?.message||"Safety check failed. Your content was not published.");}
     setPosting(false);
   }
