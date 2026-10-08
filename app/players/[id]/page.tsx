@@ -33,15 +33,41 @@ export default function PlayerProfilePage() {
 
   useEffect(() => {
     async function load() {
+      const {data:{session}}=await supabase.auth.getSession();
+      const user=session?.user;
+
       const { data, error } = await supabase
         .rpc("get_public_player_profile", { p_user_id: params.id });
 
       if (!error && data?.[0]) {
         setPlayer(data[0]);
         setLoading(false);
+      } else if (user?.id === params.id) {
+        // Owners can always open their own player profile, even if they keep it private.
+        const { data: own } = await supabase
+          .from("profiles")
+          .select("id,display_name,avatar_url,country,bio,position,years_pro,current_country,current_team,player_verified,player_verified_at,account_type")
+          .eq("id", params.id)
+          .eq("account_type", "player")
+          .maybeSingle();
+        if (own) {
+          setPlayer({
+            id: own.id,
+            display_name: own.display_name,
+            avatar_url: own.avatar_url,
+            country: own.country,
+            bio: own.bio,
+            player_position: own.position,
+            years_pro: own.years_pro,
+            current_country: own.current_country,
+            current_team: own.current_team,
+            player_verified: Boolean(own.player_verified),
+            player_verified_at: own.player_verified_at,
+          });
+          setLoading(false);
+        }
       }
-      const {data:{session}}=await supabase.auth.getSession();
-      const user=session?.user;
+
       if(user){
         setIsOwnProfile(user.id===params.id);
         const {data:p}=await supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle();
