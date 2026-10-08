@@ -229,26 +229,7 @@ function MembershipContent() {
 
   return (
     <main>
-      <nav className="nav">
-        <Link href="/" className="logo">
-          Hoop<span>Check</span>
-        </Link>
-        <div className="links">
-          <Link href="/search">Search</Link>
-          <Link href="/dashboard">Dashboard</Link>
-          <Link href="/coaches" className="hide-mobile">
-            Coaches
-          </Link>
-          <Link href="/teams" className="hide-mobile">
-            Teams
-          </Link>
-          <Link href="/leagues" className="hide-mobile">
-            Leagues
-          </Link>
-        </div>
-      </nav>
-
-      <section className="hero membership-hero">
+<section className="hero membership-hero">
         <div className="eyebrow">HoopCheck Membership</div>
         <h1>
           Research deeper.
