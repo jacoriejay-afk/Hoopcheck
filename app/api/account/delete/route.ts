@@ -47,7 +47,48 @@ export async function POST(request: Request) {
       }
     }
 
-    // auth.users deletion triggers database ON DELETE CASCADE relationships.
+    // Remove user-owned uploads before deleting auth.users. Storage objects are not
+    // removed automatically by relational ON DELETE CASCADE rules.
+    const buckets = ["profile-avatars", "feed-images", "player-verification-documents"];
+    for (const bucket of buckets) {
+      let offset = 0;
+      while (true) {
+        const { data: objects, error: listError } = await supabase.storage
+          .from(bucket)
+          .list(user.id, { limit: 1000, offset, sortBy: { column: "name", order: "asc" } });
+
+        if (listError) {
+          console.error(`Unable to inspect user files in ${bucket}:`, listError);
+          return NextResponse.json(
+            { error: "We could not safely remove your uploaded files. Your account has not been deleted. Please contact HoopCheck support." },
+            { status: 502 }
+          );
+        }
+
+        if (!objects?.length) break;
+
+        const paths = objects
+          .filter((object) => object.name)
+          .map((object) => `${user.id}/${object.name}`);
+
+        if (paths.length) {
+          const { error: removeError } = await supabase.storage.from(bucket).remove(paths);
+          if (removeError) {
+            console.error(`Unable to remove user files from ${bucket}:`, removeError);
+            return NextResponse.json(
+              { error: "We could not safely remove your uploaded files. Your account has not been deleted. Please contact HoopCheck support." },
+              { status: 502 }
+            );
+          }
+        }
+
+        if (objects.length < 1000) break;
+        offset += objects.length;
+      }
+    }
+
+    // auth.users deletion triggers the remaining database ON DELETE CASCADE
+    // relationships. Retained moderation/legal audit rows use SET NULL for actor IDs.
     const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
     if (deleteError) {
       console.error("Supabase account deletion error:", deleteError);
