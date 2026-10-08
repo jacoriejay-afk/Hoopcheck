@@ -1,4 +1,4 @@
-name: HoopCheck Launch Test
+name: HoopCheck Launch Test (Final)
 on:
   push:
     branches: [main]
