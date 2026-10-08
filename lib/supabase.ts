@@ -13,3 +13,20 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     storageKey: "hoopcheck-auth",
   },
 });
+
+let sessionPromise: ReturnType<typeof supabase.auth.getSession> | null = null;
+let sessionListenerStarted = false;
+
+function startSessionCache() {
+  if (sessionListenerStarted || typeof window === "undefined") return;
+  sessionListenerStarted = true;
+  supabase.auth.onAuthStateChange(() => {
+    sessionPromise = null;
+  });
+}
+
+export function getCachedSession() {
+  startSessionCache();
+  if (!sessionPromise) sessionPromise = supabase.auth.getSession();
+  return sessionPromise;
+}
