@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "next/link"; // Used by compact sign-in and upgrade actions.
 import { useEffect, useState } from "react";
 import { getCachedSession, supabase } from "../lib/supabase";
 
