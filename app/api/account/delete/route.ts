@@ -38,7 +38,7 @@ async function getUser() {
 }
 
 async function removeUserStorage(
-  admin: ReturnType<typeof createClient>,
+  admin: { storage: any },
   userId: string
 ) {
   for (const bucket of STORAGE_BUCKETS) {
@@ -51,8 +51,8 @@ async function removeUserStorage(
     }
 
     const files = (data ?? [])
-      .filter((item) => item.name)
-      .map((item) => `${userId}/${item.name}`);
+      .filter((item: { name?: string }) => item.name)
+      .map((item: { name: string }) => `${userId}/${item.name}`);
 
     if (files.length) {
       const { error: removeError } = await admin.storage
