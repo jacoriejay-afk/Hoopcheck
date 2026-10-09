@@ -136,10 +136,8 @@ export async function POST(request: Request) {
     );
   }
 
-  if (
-    subscription?.stripe_subscription_id &&
-    !["canceled", "incomplete_expired"].includes(subscription.status ?? "")
-  ) {
+  // Trust Stripe's current status rather than the local status, which can be stale.
+  if (subscription?.stripe_subscription_id) {
     if (!process.env.STRIPE_SECRET_KEY) {
       return NextResponse.json(
         {
