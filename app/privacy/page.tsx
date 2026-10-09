@@ -12,13 +12,13 @@ export default function PrivacyPage() {
       </section>
       <section className="legal-content">
         <div className="legal-card">
-          <p className="updated">Last updated: October 8, 2026</p>
+          <p className="updated">Last updated: October 9, 2026</p>
 
           <h2>1. Scope</h2>
           <p>This policy applies to information processed through HoopCheck websites, applications, accounts, subscriptions, reviews, support interactions, and related services.</p>
 
           <h2>2. Information We Collect</h2>
-          <p>Depending on how you use HoopCheck, we may collect account and profile information such as name, email address, account type, country, biography, team information, profile photo, preferences, reviews, ratings, reports, messages, and support requests.</p>
+          <p>Depending on how you use HoopCheck, we may collect account and profile information such as name, email address, date of birth (used to enforce the 18+ eligibility rule), account type, country, biography, team information, profile photo, preferences, reviews, ratings, reports, messages, and support requests.</p>
           <p>We may collect technical information such as IP address, device/browser information, session information, approximate location derived from technical data, security logs, and usage events where needed to operate, secure, and improve the service.</p>
           <p>Subscription records may include plan, subscription status, billing period, Stripe customer or subscription identifiers, and transaction-related information. HoopCheck does not intentionally store complete payment-card numbers in its application database.</p>
 
@@ -79,7 +79,7 @@ export default function PrivacyPage() {
           <p>HoopCheck uses technical and organizational measures intended to protect information, including access controls, authentication, encrypted network connections, database security controls, and limited administrative access. No online service can guarantee absolute security.</p>
 
           <h2>17. Children's Privacy</h2>
-          <p>HoopCheck is not intended for children under 13, and we do not knowingly collect personal information from children under 13. Because HoopCheck is designed around professional basketball and career research, our account system is intended for adults.</p>
+          <p>HoopCheck accounts are restricted to people aged 18 or older. During signup, users must provide a birthdate, and the signup form blocks account creation when the calculated age is under 18. We do not knowingly permit minors to create accounts. If we learn that an account belongs to someone under 18, we may restrict or close the account and take appropriate steps regarding associated personal information, subject to applicable law.</p>
 
           <h2>18. Data Breaches and Security Incidents</h2>
           <p>If HoopCheck experiences a security incident involving personal information, we will assess the incident and provide notices or take other actions required by applicable law.</p>
