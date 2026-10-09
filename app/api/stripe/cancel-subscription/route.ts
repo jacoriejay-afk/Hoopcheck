@@ -46,11 +46,19 @@ export async function POST(request: Request) {
 
     const currentPeriodEnd = getCurrentPeriodEnd(updated);
 
-    await supabase.from("subscriptions").update({
+    const { error: syncError } = await supabase.from("subscriptions").update({
       cancel_at_period_end: updated.cancel_at_period_end,
       ...(currentPeriodEnd ? { current_period_end: currentPeriodEnd } : {}),
       updated_at: new Date().toISOString(),
     }).eq("user_id", user.id);
+
+    if (syncError) {
+      console.error("Stripe subscription changed, but HoopCheck database sync failed:", syncError);
+      return NextResponse.json({
+        error: "Stripe was updated, but HoopCheck could not sync the membership status. Refresh in a moment; if it still looks wrong, contact support.",
+        stripe_updated: true,
+      }, { status: 500 });
+    }
 
     return NextResponse.json({
       success: true,
