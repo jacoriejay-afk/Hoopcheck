@@ -73,7 +73,7 @@ export default function PrivacyPage() {
           <p>For example, California law provides qualifying consumers rights that can include access, deletion, correction, and certain opt-out rights, subject to statutory exceptions. HoopCheck will evaluate requests under the law applicable to the requester and the service.</p>
 
           <h2>15. Privacy Requests</h2>
-          <p>Use the HoopCheck Support page to submit a privacy or account request. We may need to verify your identity before fulfilling a request in order to protect accounts and personal information. We will respond within the time required by applicable law.</p>
+          <p>Use the HoopCheck Privacy Request Center to submit an access, correction, deletion, export, or other privacy request. You can review the status of requests submitted through that center. We may need to verify your identity before fulfilling a request in order to protect accounts and personal information. We will respond within the time required by applicable law.</p>
 
           <h2>16. Security</h2>
           <p>HoopCheck uses technical and organizational measures intended to protect information, including access controls, authentication, encrypted network connections, database security controls, and limited administrative access. No online service can guarantee absolute security.</p>
@@ -93,7 +93,8 @@ export default function PrivacyPage() {
           <div className="legal-footer">
             <Link href="/terms">Terms of Service</Link>
             <Link href="/community-guidelines">Community Guidelines</Link>
-            <Link href="/support">Privacy Support</Link>
+            <Link href="/privacy-center">Privacy Request Center</Link>
+            <Link href="/support">Support</Link>
             <Link href="/membership">Membership</Link>
           </div>
         </div>
