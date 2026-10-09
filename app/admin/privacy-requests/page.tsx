@@ -5,6 +5,19 @@ import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
 
 type RequestStatus = "open" | "in_progress" | "waiting_on_user" | "completed" | "denied";
+type PrivacyRequestEvent = {
+  id: string;
+  request_id: string;
+  actor_id: string | null;
+  event_type: "created" | "status_changed" | "assigned" | "admin_notes_changed";
+  old_status: string | null;
+  new_status: string | null;
+  old_assigned_to: string | null;
+  new_assigned_to: string | null;
+  admin_notes_changed: boolean;
+  created_at: string;
+};
+
 type PrivacyRequest = {
   id: string;
   requester_id: string;
@@ -36,6 +49,7 @@ const statuses: { value: RequestStatus; label: string }[] = [
 
 export default function AdminPrivacyRequestsPage() {
   const [rows, setRows] = useState<PrivacyRequest[]>([]);
+  const [eventsByRequest, setEventsByRequest] = useState<Record<string, PrivacyRequestEvent[]>>({});
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [filter, setFilter] = useState("active");
@@ -75,6 +89,26 @@ export default function AdminPrivacyRequestsPage() {
     } else {
       const items = (data ?? []) as PrivacyRequest[];
       setRows(items);
+      if (items.length === 0) {
+        setEventsByRequest({});
+      } else {
+        const { data: events, error: eventsError } = await supabase
+          .from("privacy_request_events")
+          .select("id,request_id,actor_id,event_type,old_status,new_status,old_assigned_to,new_assigned_to,admin_notes_changed,created_at")
+          .in("request_id", items.map((item) => item.id))
+          .order("created_at", { ascending: false })
+          .limit(1000);
+        if (eventsError) {
+          setError("Requests loaded, but the audit history could not be loaded.");
+          setEventsByRequest({});
+        } else {
+          const grouped: Record<string, PrivacyRequestEvent[]> = {};
+          for (const event of (events ?? []) as PrivacyRequestEvent[]) {
+            (grouped[event.request_id] ??= []).push(event);
+          }
+          setEventsByRequest(grouped);
+        }
+      }
       setDrafts((current) => {
         const next = { ...current };
         for (const item of items) {
@@ -179,6 +213,31 @@ export default function AdminPrivacyRequestsPage() {
                   <textarea id={"notes-" + row.id} value={draft.admin_notes} maxLength={5000} onChange={(e) => setDrafts((prev) => ({ ...prev, [row.id]: { ...draft, admin_notes: e.target.value } }))} placeholder="Record identity verification, actions taken, or reasons for denial." style={{ width: "100%", minHeight: 88 }} />
                   <button className="btn" disabled={savingId === row.id} onClick={() => void save(row)}>{savingId === row.id ? "Saving…" : "Save request"}</button>
                 </div>
+                <details style={{ marginTop: 14 }}>
+                  <summary style={{ cursor: "pointer", fontWeight: 600 }}>Audit history ({(eventsByRequest[row.id] ?? []).length})</summary>
+                  {(eventsByRequest[row.id] ?? []).length === 0 ? (
+                    <p className="muted" style={{ fontSize: 12 }}>No recorded workflow events yet.</p>
+                  ) : (
+                    <ul style={{ display: "grid", gap: 8, paddingLeft: 20, marginTop: 10 }}>
+                      {(eventsByRequest[row.id] ?? []).map((event) => {
+                        const description =
+                          event.event_type === "created" ? "Request submitted" :
+                          event.event_type === "status_changed" ? `Status: ${event.old_status ?? "—"} → ${event.new_status ?? "—"}` :
+                          event.event_type === "assigned" ? "Assignment changed" :
+                          "Internal admin notes updated";
+                        return (
+                          <li key={event.id}>
+                            <strong>{description}</strong>
+                            <div className="muted" style={{ fontSize: 12 }}>
+                              {new Date(event.created_at).toLocaleString()}
+                              {event.actor_id ? ` · Actor ${event.actor_id.slice(0, 8)}` : " · System or unavailable actor"}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </details>
                 <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>Status updates track the workflow only. Marking a request completed does not automatically export data or delete an account.</p>
               </article>
             );
