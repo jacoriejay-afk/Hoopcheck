@@ -51,11 +51,34 @@ function getPlanFromPrice(priceId: string | undefined, metadata?: Record<string,
   const metadataPlan = metadata?.plan;
   return metadataPlan === "pro" || metadataPlan === "premium" ? metadataPlan : null;
 }
-function getBillingInterval(priceId: string | undefined, metadata?: Record<string,string>): "month" | "6_month" | "year" {
-  if (priceId === process.env.STRIPE_PRO_YEAR_PRICE_ID || priceId === process.env.STRIPE_PREMIUM_YEAR_PRICE_ID) return "year";
-  if (priceId === process.env.STRIPE_PRO_6_MONTH_PRICE_ID || priceId === process.env.STRIPE_PREMIUM_6_MONTH_PRICE_ID) return "6_month";
-  const metadataInterval = metadata?.billing_interval;
-  return metadataInterval === "6_month" || metadataInterval === "year" ? metadataInterval : "month";
+function getBillingInterval(
+  priceId: string | undefined,
+  priceMetadata?: Record<string, string>,
+  subscriptionMetadata?: Record<string, string>
+): "month" | "6_month" | "year" {
+  if (
+    priceId === process.env.STRIPE_PRO_YEAR_PRICE_ID ||
+    priceId === process.env.STRIPE_PREMIUM_YEAR_PRICE_ID
+  ) {
+    return "year";
+  }
+
+  if (
+    priceId === process.env.STRIPE_PRO_6_MONTH_PRICE_ID ||
+    priceId === process.env.STRIPE_PREMIUM_6_MONTH_PRICE_ID
+  ) {
+    return "6_month";
+  }
+
+  // Checkout writes the selected interval to subscription metadata.
+  // Use it when separate environment price IDs or price metadata aren't configured.
+  const metadataInterval =
+    priceMetadata?.billing_interval ??
+    subscriptionMetadata?.billing_interval;
+
+  return metadataInterval === "6_month" || metadataInterval === "year"
+    ? metadataInterval
+    : "month";
 }
 
 async function saveSubscription(
@@ -109,7 +132,7 @@ async function saveSubscription(
           stripe_price_id:
             priceId,
           plan,
-          billing_interval: getBillingInterval(priceId, subscription.items.data[0]?.price?.metadata),
+          billing_interval: getBillingInterval(priceId, subscription.items.data[0]?.price?.metadata, subscription.metadata),
           access_status: subscription.status === "active" || subscription.status === "trialing" ? plan : "free",
           status:
             subscription.status,
