@@ -42,22 +42,36 @@ async function removeUserStorage(
   userId: string
 ) {
   for (const bucket of STORAGE_BUCKETS) {
-    const { data, error } = await admin.storage.from(bucket).list(userId, {
-      limit: 1000,
-    });
+    const files: string[] = [];
 
-    if (error) {
-      throw new Error(`Unable to clean ${bucket}: ${error.message}`);
+    async function collectFiles(prefix: string): Promise<void> {
+      const { data, error } = await admin.storage.from(bucket).list(prefix, {
+        limit: 1000,
+      });
+
+      if (error) {
+        throw new Error(`Unable to list ${bucket}: ${error.message}`);
+      }
+
+      for (const item of data ?? []) {
+        if (!item.name) continue;
+        const path = `${prefix}/${item.name}`;
+        // Supabase Storage represents folders as entries without file metadata.
+        if (item.id == null && item.metadata == null) {
+          await collectFiles(path);
+        } else {
+          files.push(path);
+        }
+      }
     }
 
-    const files = (data ?? [])
-      .filter((item: { name?: string }) => item.name)
-      .map((item: { name: string }) => `${userId}/${item.name}`);
+    await collectFiles(userId);
 
-    if (files.length) {
+    // Storage remove APIs accept batches; keep each request comfortably bounded.
+    for (let i = 0; i < files.length; i += 100) {
       const { error: removeError } = await admin.storage
         .from(bucket)
-        .remove(files);
+        .remove(files.slice(i, i + 100));
 
       if (removeError) {
         throw new Error(
@@ -122,7 +136,20 @@ export async function POST(request: Request) {
     );
   }
 
-  if (subscription?.stripe_subscription_id && process.env.STRIPE_SECRET_KEY) {
+  if (
+    subscription?.stripe_subscription_id &&
+    !["canceled", "incomplete_expired"].includes(subscription.status ?? "")
+  ) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return NextResponse.json(
+        {
+          error:
+            "Membership cancellation is temporarily unavailable. Your account was not deleted. Please contact support.",
+        },
+        { status: 503 }
+      );
+    }
+
     try {
       const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
       const current = await stripe.subscriptions.retrieve(
