@@ -14,6 +14,7 @@ type Subscription = {
   status: string;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
+  stripe_subscription_id: string | null;
 };
 
 function MembershipContent() {
@@ -45,7 +46,7 @@ function MembershipContent() {
 
     const { data, error } = await supabase
       .from("subscriptions")
-      .select("plan, status, current_period_end, cancel_at_period_end")
+      .select("plan, status, current_period_end, cancel_at_period_end, stripe_subscription_id")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -249,7 +250,13 @@ function MembershipContent() {
       {error && <div className="status error">{error}</div>}
 
       <section className="membership-section">
-        {isActive && subscription ? (
+        {isActive && subscription && !subscription.stripe_subscription_id && (
+          <div className="dashboard-card" style={{ marginBottom: 16 }}>
+            <strong>Complimentary HoopCheck access is active.</strong>
+            <span className="muted"> You can keep using your current access or choose a paid membership below.</span>
+          </div>
+        )}
+        {isActive && subscription?.stripe_subscription_id ? (
           <div className="active-card">
             <div className="eyebrow">CURRENT MEMBERSHIP</div>
             <h2>
