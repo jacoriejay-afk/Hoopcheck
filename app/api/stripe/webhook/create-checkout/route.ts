@@ -177,7 +177,11 @@ export async function POST(
       );
     }
 
-    const lookupKey = `hoopcheck_${plan}_${interval === "6_month" ? "6_month" : interval}_${plan === "pro" ? (interval === "month" ? "499" : interval === "6_month" ? "2545" : "5389") : (interval === "month" ? "999" : interval === "6_month" ? "5095" : "10789")}_2026`;
+    const intervalKey = interval === "month" ? "monthly" : interval === "6_month" ? "6_month" : "year";
+    const amountKey = plan === "pro"
+      ? (interval === "month" ? "499" : interval === "6_month" ? "2545" : "5389")
+      : (interval === "month" ? "999" : interval === "6_month" ? "5095" : "10789");
+    const lookupKey = `hoopcheck_${plan}_${intervalKey}_${amountKey}_2026`;
     const priceList = await stripe.prices.list({lookup_keys:[lookupKey],active:true,limit:1});
     const priceId = priceList.data[0]?.id;
     if (!priceId) return NextResponse.json({error:"This membership term is not configured yet."},{status:500});
