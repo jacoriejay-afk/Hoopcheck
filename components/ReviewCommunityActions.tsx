@@ -11,9 +11,10 @@ type ReviewComment = {
 };
 
 export default function ReviewCommunityActions({ reviewId }: { reviewId: string }) {
-  const [likes, setLikes] = useState(0);
+  const [likes, setLikes] = useState<number | null>(null);
   const [liked, setLiked] = useState(false);
   const [comments, setComments] = useState<ReviewComment[]>([]);
+  const [commentsUnavailable, setCommentsUnavailable] = useState(false);
   const [body, setBody] = useState("");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(true);
@@ -23,19 +24,16 @@ export default function ReviewCommunityActions({ reviewId }: { reviewId: string 
     setLoading(true);
     setMsg("");
 
-    const [{ data: count, error: countError }, { data: sessionData }] = await Promise.all([
-      supabase.rpc("get_review_like_count", { p_review_id: reviewId }),
-      supabase.auth.getSession(),
-    ]);
-
-    if (countError) {
-      setMsg("Like counts could not be loaded. Please try again.");
-    } else {
-      setLikes(Number(count) || 0);
-    }
-
+    const [{ data: sessionData }] = await Promise.all([supabase.auth.getSession()]);
     const user = sessionData.session?.user;
+
     if (user) {
+      const { data: count, error: countError } = await supabase.rpc(
+        "get_review_like_count",
+        { p_review_id: reviewId },
+      );
+      setLikes(countError ? null : Number(count) || 0);
+
       const { data: ownLike, error: ownLikeError } = await supabase
         .from("review_likes")
         .select("id")
@@ -44,6 +42,7 @@ export default function ReviewCommunityActions({ reviewId }: { reviewId: string 
         .maybeSingle();
       if (!ownLikeError) setLiked(!!ownLike);
     } else {
+      setLikes(null);
       setLiked(false);
     }
 
@@ -56,8 +55,9 @@ export default function ReviewCommunityActions({ reviewId }: { reviewId: string 
 
     if (commentsError) {
       setComments([]);
-      setMsg((current) => current || "Comments are unavailable for this account or could not be loaded.");
+      setCommentsUnavailable(true);
     } else {
+      setCommentsUnavailable(false);
       setComments((commentRows || []) as ReviewComment[]);
     }
     setLoading(false);
@@ -87,14 +87,14 @@ export default function ReviewCommunityActions({ reviewId }: { reviewId: string 
           .eq("user_id", user.id);
         if (error) throw error;
         setLiked(false);
-        setLikes((value) => Math.max(0, value - 1));
+        setLikes((value) => value === null ? null : Math.max(0, value - 1));
       } else {
         const { error } = await supabase
           .from("review_likes")
           .insert({ review_id: reviewId, user_id: user.id });
         if (error) throw error;
         setLiked(true);
-        setLikes((value) => value + 1);
+        setLikes((value) => value === null ? null : value + 1);
       }
     } catch {
       setMsg("Your like could not be updated. Please try again.");
@@ -134,9 +134,15 @@ export default function ReviewCommunityActions({ reviewId }: { reviewId: string 
     <div style={{ marginTop: 12, borderTop: "1px solid var(--border)", paddingTop: 10 }}>
       <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
         <button type="button" className="btn dark" onClick={like} disabled={busy || loading} aria-pressed={liked}>
-          {liked ? "♥" : "♡"} {likes}
+          {liked ? "♥" : "♡"} {likes === null ? "Like" : likes}
         </button>
-        <span className="muted">{loading ? "Loading comments…" : `${comments.length} comments`}</span>
+        <span className="muted">
+          {loading
+            ? "Loading comments…"
+            : commentsUnavailable
+              ? "Comments unavailable"
+              : `${comments.length} comments`}
+        </span>
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
         <input
