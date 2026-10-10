@@ -158,13 +158,14 @@ export async function POST(
       );
     }
 
+    // Only block checkout when the active membership is linked to a real
+    // Stripe subscription. Complimentary/admin-granted memberships may be
+    // active locally without billing and should still be able to subscribe.
     if (
-      existingSubscription &&
+      existingSubscription?.stripe_subscription_id &&
       (
-        existingSubscription.status ===
-          "active" ||
-        existingSubscription.status ===
-          "trialing"
+        existingSubscription.status === "active" ||
+        existingSubscription.status === "trialing"
       )
     ) {
       return NextResponse.json(
