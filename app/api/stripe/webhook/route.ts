@@ -360,12 +360,25 @@ export async function POST(
         const verificationUpdate = role === "coach"
           ? { coach_verified: true, coach_verified_at: new Date().toISOString(), stripe_identity_verification_session_id: verificationSession.id, identity_verification_status: "verified" }
           : { player_verified: true, player_verified_at: new Date().toISOString(), stripe_identity_verification_session_id: verificationSession.id, identity_verification_status: "verified" };
-        await supabase.from("profiles").update(verificationUpdate).eq("id", userId);
-        await supabase.from("identity_verification_sessions").update({
-          status: "verified",
-          updated_at: new Date().toISOString(),
-          completed_at: new Date().toISOString(),
-        }).eq("stripe_session_id", verificationSession.id);
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update(verificationUpdate)
+          .eq("id", userId);
+        if (profileError) {
+          throw new Error(`Unable to update verified profile: ${profileError.message}`);
+        }
+
+        const { error: sessionError } = await supabase
+          .from("identity_verification_sessions")
+          .update({
+            status: "verified",
+            updated_at: new Date().toISOString(),
+            completed_at: new Date().toISOString(),
+          })
+          .eq("stripe_session_id", verificationSession.id);
+        if (sessionError) {
+          throw new Error(`Unable to update verification session: ${sessionError.message}`);
+        }
       }
     }
 
@@ -374,14 +387,27 @@ export async function POST(
       const userId = verificationSession.metadata?.user_id || verificationSession.client_reference_id;
       if (userId) {
         const supabase = getAdminSupabase();
-        await supabase.from("profiles").update({
-          stripe_identity_verification_session_id: verificationSession.id,
-          identity_verification_status: "processing",
-        }).eq("id", userId);
-        await supabase.from("identity_verification_sessions").update({
-          status: "processing",
-          updated_at: new Date().toISOString(),
-        }).eq("stripe_session_id", verificationSession.id);
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({
+            stripe_identity_verification_session_id: verificationSession.id,
+            identity_verification_status: "processing",
+          })
+          .eq("id", userId);
+        if (profileError) {
+          throw new Error(`Unable to update processing profile: ${profileError.message}`);
+        }
+
+        const { error: sessionError } = await supabase
+          .from("identity_verification_sessions")
+          .update({
+            status: "processing",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("stripe_session_id", verificationSession.id);
+        if (sessionError) {
+          throw new Error(`Unable to update verification session: ${sessionError.message}`);
+        }
       }
     }
 
