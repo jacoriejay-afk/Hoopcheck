@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../src/lib/supabase";
@@ -31,7 +31,7 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <Text style={styles.wordmark}>HoopCheck</Text>
         <Text style={styles.title}>You’re signed in.</Text>
         <Text style={styles.subtitle}>Welcome to your mobile account.</Text>
@@ -73,15 +73,15 @@ export default function DashboardScreen() {
         </Pressable>
         <Text style={styles.note}>Directories use HoopCheck’s existing Supabase data. Player search only displays public, non-suspended men’s professional profiles. The coach table currently has no active records, so the coach directory will show an honest empty state until data is added. Reviews, membership and account controls are not yet enabled in this mobile milestone.</Text>
         <Pressable onPress={signOut} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Signing out…" : "Sign out"}</Text></Pressable>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F5F7FA" },
-  container: { flex: 1, justifyContent: "center", padding: 24 },
+  container: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 18, paddingBottom: 28 },
   wordmark: { color: "#101827", fontSize: 16, fontWeight: "900", letterSpacing: 1 },
-  title: { color: "#101827", fontSize: 30, fontWeight: "800", marginTop: 28 },
+  title: { color: "#101827", fontSize: 30, fontWeight: "800", marginTop: 18 },
   subtitle: { color: "#586579", fontSize: 16, marginTop: 8 },
   card: { backgroundColor: "#FFFFFF", borderRadius: 12, padding: 18, borderWidth: 1, borderColor: "#E0E6EE", marginTop: 26 },
   cardLabel: { color: "#657287", fontSize: 11, fontWeight: "800", letterSpacing: 1 },
@@ -97,6 +97,6 @@ const styles = StyleSheet.create({
   directoryCaption: { color: "#657287", fontSize: 12, lineHeight: 17, marginTop: 4 },
   directoryAction: { color: "#946600", fontWeight: "800", fontSize: 12, marginTop: 10 },
   note: { color: "#657287", fontSize: 13, lineHeight: 20, marginTop: 18 },
-  button: { minHeight: 52, borderRadius: 10, backgroundColor: "#101827", alignItems: "center", justifyContent: "center", marginTop: 28 },
+  button: { minHeight: 52, borderRadius: 10, backgroundColor: "#101827", alignItems: "center", justifyContent: "center", marginTop: 18 },
   dim: { opacity: 0.65 }, buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
 });
