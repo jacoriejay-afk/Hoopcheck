@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -80,6 +81,31 @@ export async function POST(req: Request) {
   const db = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+
+  // Use a trusted edge IP header where available; hash the key so raw IPs are not retained.
+  // If the host provides no client IP, fall back to a per-claimant email key.
+  const ipAddress =
+    req.headers.get("x-real-ip")?.trim() ||
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "";
+  const rateLimitSubject = ipAddress ? `ip:${ipAddress}` : `email:${claimantEmail.toLowerCase()}`;
+  const rateLimitKey = createHash("sha256").update(rateLimitSubject).digest("hex");
+  const { data: allowed, error: rateLimitError } = await db.rpc(
+    "consume_copyright_report_rate_limit",
+    { p_key_hash: rateLimitKey },
+  );
+
+  if (rateLimitError) {
+    console.error("Copyright report rate limiter failed:", rateLimitError);
+    return NextResponse.json({ error: "Copyright reporting is temporarily unavailable. Please try again shortly." }, { status: 503 });
+  }
+  if (allowed !== true) {
+    return NextResponse.json(
+      { error: "Too many submissions from this source. Please wait an hour before submitting another notice." },
+      { status: 429, headers: { "Retry-After": "3600" } },
+    );
+  }
+
   const optional = (field: string) => {
     const value = payload[field];
     return typeof value === "string" && value.trim() ? value.trim().slice(0, fieldLimits[field]) : null;
