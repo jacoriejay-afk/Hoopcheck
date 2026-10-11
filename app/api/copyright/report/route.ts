@@ -82,26 +82,32 @@ export async function POST(req: Request) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // Only trust the hosting platform's edge-provided client IP header. Do not use
-  // x-forwarded-for as a fallback because clients may be able to spoof it.
-  // Hash the key so raw IPs are not retained; use claimant email if no trusted IP exists.
+  // Use layered limits: the edge-provided client IP blocks bursts from one network,
+  // while claimant email prevents bypassing the limit by changing networks. Never
+  // use x-forwarded-for, which clients may be able to spoof. Only hashes are stored.
   const ipAddress = req.headers.get("x-real-ip")?.trim() || "";
-  const rateLimitSubject = ipAddress ? `ip:${ipAddress}` : `email:${claimantEmail.toLowerCase()}`;
-  const rateLimitKey = createHash("sha256").update(rateLimitSubject).digest("hex");
-  const { data: allowed, error: rateLimitError } = await db.rpc(
-    "consume_copyright_report_rate_limit",
-    { p_key_hash: rateLimitKey },
-  );
+  const rateLimitSubjects = [
+    `email:${claimantEmail.toLowerCase()}`,
+    ...(ipAddress ? [`ip:${ipAddress}`] : []),
+  ];
 
-  if (rateLimitError) {
-    console.error("Copyright report rate limiter failed:", rateLimitError);
-    return NextResponse.json({ error: "Copyright reporting is temporarily unavailable. Please try again shortly." }, { status: 503 });
-  }
-  if (allowed !== true) {
-    return NextResponse.json(
-      { error: "Too many submissions from this source. Please wait an hour before submitting another notice." },
-      { status: 429, headers: { "Retry-After": "3600" } },
+  for (const subject of rateLimitSubjects) {
+    const rateLimitKey = createHash("sha256").update(subject).digest("hex");
+    const { data: allowed, error: rateLimitError } = await db.rpc(
+      "consume_copyright_report_rate_limit",
+      { p_key_hash: rateLimitKey },
     );
+
+    if (rateLimitError) {
+      console.error("Copyright report rate limiter failed:", rateLimitError);
+      return NextResponse.json({ error: "Copyright reporting is temporarily unavailable. Please try again shortly." }, { status: 503 });
+    }
+    if (allowed !== true) {
+      return NextResponse.json(
+        { error: "Too many submissions from this source. Please wait an hour before submitting another notice." },
+        { status: 429, headers: { "Retry-After": "3600" } },
+      );
+    }
   }
 
   const optional = (field: string) => {
