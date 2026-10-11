@@ -68,7 +68,7 @@ export default function SignUpScreen() {
           account_type: accountType,
           username: username.trim().toLowerCase(),
           basketball_type: accountType === "player" && gender === "female" ? "womens" : accountType === "player" ? "mens" : null,
-          position: null,
+          position: accountType === "player" ? "PG" : null,
           years_pro: accountType === "player" ? 0 : null,
           professional_experience: false,
           former_team_ids: [],
