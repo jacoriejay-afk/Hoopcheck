@@ -22,8 +22,8 @@ export default function DashboardScreen() {
   }, []);
 
   async function openHelp(path: string) {
-    try { await Linking.openURL(`https://hoopcheck-nine.vercel.app/${path}`); }
-    catch { Alert.alert("Unable to open link", "Please try again or visit hoopcheck-nine.vercel.app in your browser."); }
+    try { await Linking.openURL(`https://hoopcheck-hoopcheck.vercel.app/${path}`); }
+    catch { Alert.alert("Unable to open link", "Please try again or visit hoopcheck-hoopcheck.vercel.app in your browser."); }
   }
 
   async function signOut() {
