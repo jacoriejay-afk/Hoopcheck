@@ -14,8 +14,14 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#111318",
     icons: [
       {
+        src: "/hoopcheck-pwa-icon-192.svg",
+        sizes: "192x192",
+        type: "image/svg+xml",
+        purpose: "any",
+      },
+      {
         src: "/hoopcheck-pwa-icon.svg",
-        sizes: "any",
+        sizes: "512x512",
         type: "image/svg+xml",
         purpose: "any maskable",
       },
