@@ -13,9 +13,9 @@ export default function ForgotPasswordScreen() {
     if (!email.trim()) { Alert.alert("Email required", "Enter the email address associated with your account."); return; }
     setBusy(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase());
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: "hoopcheck://reset-password" });
       if (error) throw error;
-      Alert.alert("Check your email", "If an account exists for that address, password recovery instructions will be sent. The recovery callback/deep link must be configured and tested before store release.");
+      Alert.alert("Check your email", "If an account exists for that address, password recovery instructions will be sent. Open the recovery link on this device to choose a new password.");
     } catch (error) {
       Alert.alert("Could not request reset", error instanceof Error ? error.message : "Please try again.");
     } finally { setBusy(false); }
