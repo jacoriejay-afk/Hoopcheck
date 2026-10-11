@@ -124,7 +124,7 @@ export default function SignUpScreen() {
             {[
               ["male", "Male"], ["female", "Female"], ["non_binary", "Non-binary"], ["prefer_not_to_say", "Prefer not to say"],
             ].map(([value, label]) => (
-              <Pressable key={value} onPress={() => setGender(value)} style={[styles.choice, gender === value && styles.choiceSelected]}>
+              <Pressable key={value} accessibilityRole="radio" accessibilityState={{ selected: gender === value }} onPress={() => setGender(value)} style={[styles.choice, gender === value && styles.choiceSelected]}>
                 <Text style={[styles.choiceText, gender === value && styles.choiceTextSelected]}>{label}</Text>
               </Pressable>
             ))}
