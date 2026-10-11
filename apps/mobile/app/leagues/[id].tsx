@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../src/lib/supabase";
 
+type ReviewSummary = { id: string; overall_rating: number | null; title: string | null; body: string | null; created_at: string; player_season: string | null; is_anonymous: boolean };
 type League = { id: string; name: string; country: string | null; level: string | null; season: string | null; website: string | null };
 function safeWebsite(value: string | null) { if (!value) return null; try { const url = new URL(value.startsWith("http") ? value : `https://${value}`); return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null; } catch { return null; } }
 
@@ -14,6 +15,29 @@ export default function LeagueDetailScreen() {
   const [league, setLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  const [reviews, setReviews] = useState<ReviewSummary[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    async function loadReviews() {
+      if (!id) { setReviewsLoading(false); return; }
+      // RLS is the source of truth for who may read approved reviews.
+      const { data, error: queryError } = await supabase
+        .from("reviews")
+        .select("id,overall_rating,title,body,created_at,player_season,is_anonymous")
+        .eq("league_id", id)
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .limit(3);
+      if (!alive) return;
+      setReviews(!queryError && data ? data as ReviewSummary[] : []);
+      setReviewsLoading(false);
+    }
+    void loadReviews();
+    return () => { alive = false; };
+  }, [id]);
 
   useEffect(() => {
     let alive = true;
@@ -54,6 +78,21 @@ export default function LeagueDetailScreen() {
               <Text style={styles.label}>COUNTRY</Text><Text style={styles.value}>{league.country || "Not listed"}</Text>
             </View>
             {safeWebsite(league.website) ? <Pressable onPress={openWebsite} style={styles.button}><Text style={styles.buttonText}>Open league website ↗</Text></Pressable> : null}
+            <View style={styles.reviewsSection}>
+              <Text style={styles.reviewsTitle}>Latest reviews</Text>
+              <Text style={styles.reviewsSubtitle}>Approved reviews only · access follows your HoopCheck account permissions</Text>
+              {reviewsLoading ? <ActivityIndicator color="#D69E18" style={styles.reviewsLoader} /> : reviews.length ? reviews.map(review => (
+                <View key={review.id} style={styles.reviewCard}>
+                  <View style={styles.reviewTopRow}>
+                    <Text style={styles.reviewRating}>{review.overall_rating == null ? "Rating not listed" : `${review.overall_rating}/5 overall`}</Text>
+                    {review.player_season ? <Text style={styles.reviewSeason}>{review.player_season}</Text> : null}
+                  </View>
+                  {review.title ? <Text style={styles.reviewHeading}>{review.title}</Text> : null}
+                  {review.body ? <Text style={styles.reviewBody}>{review.body}</Text> : null}
+                  <Text style={styles.reviewDate}>{new Date(review.created_at).toLocaleDateString()}</Text>
+                </View>
+              )) : <Text style={styles.reviewsEmpty}>No reviews are available to display for this account. Reviews are filtered by HoopCheck’s existing subscription and moderation permissions.</Text>}
+            </View>
             <View style={styles.notice}><Text style={styles.noticeTitle}>Before you sign</Text><Text style={styles.body}>Competition details and seasons can change. Confirm league registration, team participation, contract terms and payment obligations through independently verified contacts.</Text></View>
           </>
         )}
