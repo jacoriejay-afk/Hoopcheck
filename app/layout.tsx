@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import "./globals.css";
 import ThemeProvider from "../components/ThemeProvider";
@@ -14,6 +14,24 @@ import SiteHeader from "../components/SiteHeader";
 export const metadata: Metadata = {
   title: "HoopCheck",
   description: "Research coaches, professional basketball teams, and leagues worldwide.",
+  manifest: "/manifest.webmanifest",
+  applicationName: "HoopCheck",
+  appleWebApp: {
+    capable: true,
+    title: "HoopCheck",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: [{ url: "/hoopcheck-app-icon.svg", type: "image/svg+xml", sizes: "any" }],
+    apple: [{ url: "/hoopcheck-app-icon.svg" }],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ff6a00",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
