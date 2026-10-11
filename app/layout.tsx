@@ -22,8 +22,11 @@ export const metadata: Metadata = {
     title: "HoopCheck",
   },
   icons: {
-    icon: [{ url: "/hoopcheck-pwa-icon.svg", type: "image/svg+xml", sizes: "any" }],
-    apple: [{ url: "/hoopcheck-pwa-icon.svg", type: "image/svg+xml" }],
+    icon: [
+      { url: "/hoopcheck-pwa-icon-192.svg", type: "image/svg+xml", sizes: "192x192" },
+      { url: "/hoopcheck-pwa-icon.svg", type: "image/svg+xml", sizes: "512x512" },
+    ],
+    apple: [{ url: "/hoopcheck-pwa-icon-192.svg", type: "image/svg+xml" }],
   },
 };
 
