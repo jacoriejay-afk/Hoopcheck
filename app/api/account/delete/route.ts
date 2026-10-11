@@ -45,23 +45,36 @@ async function removeUserStorage(
     const files: string[] = [];
 
     async function collectFiles(prefix: string): Promise<void> {
-      const { data, error } = await admin.storage.from(bucket).list(prefix, {
-        limit: 1000,
-      });
+      // Storage list is paginated. Continue until a short page is returned so
+      // accounts with more than 1,000 objects do not leave files behind.
+      const pageSize = 1000;
+      let offset = 0;
 
-      if (error) {
-        throw new Error(`Unable to list ${bucket}: ${error.message}`);
-      }
+      while (true) {
+        const { data, error } = await admin.storage.from(bucket).list(prefix, {
+          limit: pageSize,
+          offset,
+          sortBy: { column: "name", order: "asc" },
+        });
 
-      for (const item of data ?? []) {
-        if (!item.name) continue;
-        const path = `${prefix}/${item.name}`;
-        // Supabase Storage represents folders as entries without file metadata.
-        if (item.id == null && item.metadata == null) {
-          await collectFiles(path);
-        } else {
-          files.push(path);
+        if (error) {
+          throw new Error(`Unable to list ${bucket}: ${error.message}`);
         }
+
+        const page = data ?? [];
+        for (const item of page) {
+          if (!item.name) continue;
+          const path = `${prefix}/${item.name}`;
+          // Supabase Storage represents folders as entries without file metadata.
+          if (item.id == null && item.metadata == null) {
+            await collectFiles(path);
+          } else {
+            files.push(path);
+          }
+        }
+
+        if (page.length < pageSize) break;
+        offset += page.length;
       }
     }
 
@@ -92,9 +105,24 @@ export async function POST(request: Request) {
     );
   }
 
+  const declaredLength = Number(request.headers.get("content-length") || 0);
+  if (declaredLength > 1024) {
+    return NextResponse.json(
+      { error: "Request body is too large." },
+      { status: 413 }
+    );
+  }
+
   let body: { confirmation?: string } = {};
   try {
-    body = await request.json();
+    const raw = await request.text();
+    if (raw.length > 1024) {
+      return NextResponse.json(
+        { error: "Request body is too large." },
+        { status: 413 }
+      );
+    }
+    body = JSON.parse(raw);
   } catch {
     return NextResponse.json(
       { error: "Type DELETE to confirm account deletion." },
