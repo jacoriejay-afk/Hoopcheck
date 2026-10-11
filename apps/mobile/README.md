@@ -8,10 +8,11 @@ This isolated React Native / Expo app does not replace or modify the Next.js web
 - Supabase email/password sign-in and session-aware route protection.
 - Native sign-up fields for account type, name, username, birthdate, gender, email and password.
 - Client-side 18+ eligibility check and Terms/Privacy/Community Guidelines acknowledgement aligned to the current web signup metadata.
-- Password reset request screen.
+- Password reset request and new-password screens using Supabase recovery codes and the `hoopcheck://reset-password` deep link.
 - Authenticated placeholder screen with account details and sign out.
+- GitHub Actions mobile typecheck and Expo dependency/configuration diagnostics passed on the dependency-alignment commit; the latest recovery-flow changes are being checked separately.
 
-**Not yet release-ready:** no install, typecheck, native build or device test has been run. The dashboard is only a placeholder; no player search, reviews, subscriptions, account deletion, support tickets or moderation features are wired in.
+**Not yet release-ready:** no native iOS/Android build or physical-device recovery test has been completed. The dashboard is only a placeholder; no player search, reviews, subscriptions, account deletion, support tickets or moderation features are wired in.
 
 ## Local setup
 
@@ -24,7 +25,7 @@ This isolated React Native / Expo app does not replace or modify the Next.js web
 ## Required before store release
 
 - Confirm final Apple bundle identifier and Android application ID; current com.example.hoopcheck identifiers are placeholders.
-- Configure and test email verification, password-recovery callback/deep links, and any OAuth callback URLs.
+- In Supabase Authentication URL Configuration, add `hoopcheck://reset-password` to the allowed redirect URLs; then test recovery from an actual email on iOS and Android. Configure and test email verification and any OAuth callback URLs too.
 - Verify signup metadata against the live auth/profile trigger and schema. Client-side age checks improve UX but are not a security boundary; enforce eligibility on trusted backend paths too.
 - Review Supabase RLS, RPC grants, storage policies, and each API route before connecting a feature.
 - Decide compliant iOS/Android subscription billing for digital features. No real payment tests are permitted in this phase.
