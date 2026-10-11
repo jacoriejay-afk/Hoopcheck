@@ -11,11 +11,41 @@ import ProtectionLayer from "../components/ProtectionLayer";
 import AnalyticsTracker from "../components/AnalyticsTracker";
 import SiteHeader from "../components/SiteHeader";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://hoopcheck-nine.vercel.app";
+
 export const metadata: Metadata = {
-  title: "HoopCheck",
-  description: "Research coaches, professional basketball teams, and leagues worldwide.",
-  manifest: "/manifest.webmanifest",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "HoopCheck | Overseas Basketball Team & Coach Reviews",
+    template: "%s | HoopCheck",
+  },
+  description: "Research professional basketball teams, coaches, and leagues worldwide. Learn from player experiences before signing an overseas basketball contract.",
   applicationName: "HoopCheck",
+  keywords: [
+    "HoopCheck",
+    "overseas basketball",
+    "professional basketball teams",
+    "basketball coach reviews",
+    "basketball league reviews",
+    "international basketball",
+    "basketball player experiences",
+  ],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "HoopCheck",
+    title: "HoopCheck | Overseas Basketball Team & Coach Reviews",
+    description: "Research professional basketball teams, coaches, and leagues worldwide before you sign.",
+  },
+  twitter: {
+    card: "summary",
+    title: "HoopCheck | Overseas Basketball Team & Coach Reviews",
+    description: "Research professional basketball teams, coaches, and leagues worldwide before you sign.",
+  },
+  manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     title: "HoopCheck",
