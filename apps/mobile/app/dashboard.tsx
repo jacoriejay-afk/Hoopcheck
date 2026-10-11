@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -10,13 +10,16 @@ export default function DashboardScreen() {
   const [email, setEmail] = useState("");
   const [accountType, setAccountType] = useState("member");
 
-  useState(() => {
-    supabase.auth.getUser().then(({ data }) => {
+  useEffect(() => {
+    let alive = true;
+    supabase.auth.getUser().then(({ data, error }) => {
+      if (!alive || error) return;
       setEmail(data.user?.email ?? "");
       const role = data.user?.user_metadata?.account_type;
       if (typeof role === "string" && role.length > 0) setAccountType(role);
     });
-  });
+    return () => { alive = false; };
+  }, []);
 
   async function signOut() {
     setBusy(true);
