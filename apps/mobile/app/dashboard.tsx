@@ -41,13 +41,15 @@ export default function DashboardScreen() {
           <Text style={styles.role}>Account type: {accountType}</Text>
         </View>
         <Text style={styles.sectionTitle}>Explore basketball</Text>
+        <Pressable onPress={() => router.push("/players")} style={styles.playerWideCard}>
+          <Text style={styles.directoryIcon}>👤</Text>
+          <View style={styles.playerWideBody}>
+            <Text style={styles.directoryTitle}>Find players</Text>
+            <Text style={styles.directoryCaption}>Search public men’s professional player profiles</Text>
+          </View>
+          <Text style={styles.directoryAction}>Search →</Text>
+        </Pressable>
         <View style={styles.directoryRow}>
-          <Pressable onPress={() => router.push("/players")} style={styles.directoryCard}>
-            <Text style={styles.directoryIcon}>👤</Text>
-            <Text style={styles.directoryTitle}>Players</Text>
-            <Text style={styles.directoryCaption}>Find public player profiles</Text>
-            <Text style={styles.directoryAction}>Find players →</Text>
-          </Pressable>
           <Pressable onPress={() => router.push("/teams")} style={styles.directoryCard}>
             <Text style={styles.directoryIcon}>🏀</Text>
             <Text style={styles.directoryTitle}>Teams</Text>
@@ -78,6 +80,8 @@ const styles = StyleSheet.create({
   value: { color: "#101827", fontSize: 16, fontWeight: "700", marginTop: 8 },
   role: { color: "#586579", marginTop: 8, textTransform: "capitalize" },
   sectionTitle: { color: "#101827", fontSize: 18, fontWeight: "900", marginTop: 26, marginBottom: 12 },
+  playerWideCard: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#FFFFFF", borderRadius: 12, borderWidth: 1, borderColor: "#E0E6EE", padding: 14, marginBottom: 10 },
+  playerWideBody: { flex: 1 },
   directoryRow: { flexDirection: "row", gap: 10 },
   directoryCard: { flex: 1, backgroundColor: "#FFFFFF", borderRadius: 12, borderWidth: 1, borderColor: "#E0E6EE", padding: 14, minHeight: 154 },
   directoryIcon: { fontSize: 22 },
