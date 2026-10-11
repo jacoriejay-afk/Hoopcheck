@@ -11,7 +11,7 @@ This isolated React Native / Expo app does not replace or modify the Next.js web
 - Password reset request and new-password screens using Supabase recovery codes and the `hoopcheck://reset-password` deep link.
 - Authenticated dashboard with Supabase-backed search directories for active men’s teams and leagues, paginated results, refresh, and search by name/location/level.
 - Team and league detail screens that show available directory fields, link to validated HTTP(S) official websites when listed, and include contract-verification cautions.
-- Player search directory limited to public, non-suspended, men’s professional profiles, with search by name, username, team and country.
+- Player search directory limited to public, non-suspended, men’s professional profiles, with search by name, username, team and country; selecting a result opens a public profile detail screen showing only public-facing basketball and biography fields.
 - Coach directory backed by the existing active coach table, with search by name and location and an explicit empty state when there are no records.
 - GitHub Actions mobile TypeScript and Expo dependency/configuration diagnostics have passed on the latest recovery-flow commit. Directory changes are being checked now.
 
