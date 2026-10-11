@@ -13,7 +13,7 @@ REVOKE ALL PRIVILEGES ON TABLE
   public.support_requests,
   public.support_tickets,
   public.support_ticket_messages
-FROM PUBLIC, anon;
+FROM PUBLIC, anon, authenticated;
 
 -- Keep only the table operations the current UI and RLS policies require.
 GRANT SELECT, UPDATE ON TABLE public.copyright_reports TO authenticated;
@@ -27,11 +27,9 @@ GRANT SELECT, INSERT ON TABLE public.support_ticket_messages TO authenticated;
 
 -- Comment authors may submit comments, but must never set their own moderation status.
 DROP POLICY IF EXISTS "review comments own update" ON public.review_comments;
-REVOKE UPDATE ON TABLE public.review_comments FROM authenticated;
 
 -- Ticket status changes must be made through a moderator-checked function, not direct row updates.
 DROP POLICY IF EXISTS "ticket owner update" ON public.support_tickets;
-REVOKE UPDATE ON TABLE public.support_tickets FROM authenticated;
 
 CREATE OR REPLACE FUNCTION public.admin_update_support_ticket(
   p_ticket_id uuid,
