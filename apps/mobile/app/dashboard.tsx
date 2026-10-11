@@ -63,7 +63,15 @@ export default function DashboardScreen() {
             <Text style={styles.directoryAction}>Browse leagues →</Text>
           </Pressable>
         </View>
-        <Text style={styles.note}>Player, team and league directories use HoopCheck’s existing Supabase data. Player search only displays public, non-suspended men’s professional profiles. Reviews, coach profiles, membership and account controls are not yet enabled in this mobile milestone.</Text>
+        <Pressable onPress={() => router.push("/coaches")} style={styles.playerWideCard}>
+          <Text style={styles.directoryIcon}>🧑‍🏫</Text>
+          <View style={styles.playerWideBody}>
+            <Text style={styles.directoryTitle}>Find coaches</Text>
+            <Text style={styles.directoryCaption}>Search the existing coach directory</Text>
+          </View>
+          <Text style={styles.directoryAction}>Search →</Text>
+        </Pressable>
+        <Text style={styles.note}>Directories use HoopCheck’s existing Supabase data. Player search only displays public, non-suspended men’s professional profiles. The coach table currently has no active records, so the coach directory will show an honest empty state until data is added. Reviews, membership and account controls are not yet enabled in this mobile milestone.</Text>
         <Pressable onPress={signOut} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Signing out…" : "Sign out"}</Text></Pressable>
       </View>
     </SafeAreaView>
