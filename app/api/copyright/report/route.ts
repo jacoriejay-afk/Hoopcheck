@@ -82,12 +82,10 @@ export async function POST(req: Request) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // Use a trusted edge IP header where available; hash the key so raw IPs are not retained.
-  // If the host provides no client IP, fall back to a per-claimant email key.
-  const ipAddress =
-    req.headers.get("x-real-ip")?.trim() ||
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    "";
+  // Only trust the hosting platform's edge-provided client IP header. Do not use
+  // x-forwarded-for as a fallback because clients may be able to spoof it.
+  // Hash the key so raw IPs are not retained; use claimant email if no trusted IP exists.
+  const ipAddress = req.headers.get("x-real-ip")?.trim() || "";
   const rateLimitSubject = ipAddress ? `ip:${ipAddress}` : `email:${claimantEmail.toLowerCase()}`;
   const rateLimitKey = createHash("sha256").update(rateLimitSubject).digest("hex");
   const { data: allowed, error: rateLimitError } = await db.rpc(
