@@ -21,7 +21,12 @@ export default function DashboardScreen() {
     return () => { alive = false; };
   }, []);
 
-  async function openHelp(path: string) {\n    try { await Linking.openURL(`https://hoopcheck-nine.vercel.app/${path}`); }\n    catch { Alert.alert("Unable to open link", "Please try again or visit hoopcheck-nine.vercel.app in your browser."); }\n  }\n\n  async function signOut() {
+  async function openHelp(path: string) {
+    try { await Linking.openURL(`https://hoopcheck-nine.vercel.app/${path}`); }
+    catch { Alert.alert("Unable to open link", "Please try again or visit hoopcheck-nine.vercel.app in your browser."); }
+  }
+
+  async function signOut() {
     setBusy(true);
     const { error } = await supabase.auth.signOut();
     setBusy(false);
@@ -72,7 +77,15 @@ export default function DashboardScreen() {
           <Text style={styles.directoryAction}>Search →</Text>
         </Pressable>
         <Text style={styles.note}>Directories use HoopCheck’s existing Supabase data. Player search only displays public, non-suspended men’s professional profiles. The coach table currently has no active records, so the coach directory will show an honest empty state until data is added. Reviews, membership and account controls are not yet enabled in this mobile milestone.</Text>
-        <Text style={styles.sectionTitle}>Help & privacy</Text>\n        <View style={styles.legalCard}>\n          <Pressable onPress={() => void openHelp("support")} style={styles.legalLink}><Text style={styles.legalText}>Support</Text><Text style={styles.chevron}>›</Text></Pressable>\n          <Pressable onPress={() => void openHelp("terms")} style={styles.legalLink}><Text style={styles.legalText}>Terms of Service</Text><Text style={styles.chevron}>›</Text></Pressable>\n          <Pressable onPress={() => void openHelp("privacy")} style={styles.legalLink}><Text style={styles.legalText}>Privacy Policy</Text><Text style={styles.chevron}>›</Text></Pressable>\n          <Pressable onPress={() => void openHelp("community-guidelines")} style={styles.legalLink}><Text style={styles.legalText}>Community Guidelines</Text><Text style={styles.chevron}>›</Text></Pressable>\n          <Pressable onPress={() => void openHelp("privacy-center")} style={styles.legalLink}><Text style={styles.legalText}>Privacy Request Center</Text><Text style={styles.chevron}>›</Text></Pressable>\n        </View>\n        <Pressable onPress={signOut} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Signing out…" : "Sign out"}</Text></Pressable>
+        <Text style={styles.sectionTitle}>Help & privacy</Text>
+        <View style={styles.legalCard}>
+          <Pressable onPress={() => void openHelp("support")} style={styles.legalLink}><Text style={styles.legalText}>Support</Text><Text style={styles.chevron}>›</Text></Pressable>
+          <Pressable onPress={() => void openHelp("terms")} style={styles.legalLink}><Text style={styles.legalText}>Terms of Service</Text><Text style={styles.chevron}>›</Text></Pressable>
+          <Pressable onPress={() => void openHelp("privacy")} style={styles.legalLink}><Text style={styles.legalText}>Privacy Policy</Text><Text style={styles.chevron}>›</Text></Pressable>
+          <Pressable onPress={() => void openHelp("community-guidelines")} style={styles.legalLink}><Text style={styles.legalText}>Community Guidelines</Text><Text style={styles.chevron}>›</Text></Pressable>
+          <Pressable onPress={() => void openHelp("privacy-center")} style={styles.legalLink}><Text style={styles.legalText}>Privacy Request Center</Text><Text style={styles.chevron}>›</Text></Pressable>
+        </View>
+        <Pressable onPress={signOut} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Signing out…" : "Sign out"}</Text></Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -96,7 +109,11 @@ const styles = StyleSheet.create({
   directoryTitle: { color: "#101827", fontSize: 16, fontWeight: "900", marginTop: 8 },
   directoryCaption: { color: "#657287", fontSize: 12, lineHeight: 17, marginTop: 4 },
   directoryAction: { color: "#946600", fontWeight: "800", fontSize: 12, marginTop: 10 },
-  note: { color: "#657287", fontSize: 13, lineHeight: 20, marginTop: 18 },\n  legalCard: { backgroundColor: "#FFFFFF", borderRadius: 12, borderWidth: 1, borderColor: "#E0E6EE", paddingHorizontal: 14, marginBottom: 6 },\n  legalLink: { minHeight: 46, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: "#EEF1F5" },\n  legalText: { color: "#344054", fontSize: 14, fontWeight: "700" },\n  chevron: { color: "#946600", fontSize: 23, fontWeight: "700" },
+  note: { color: "#657287", fontSize: 13, lineHeight: 20, marginTop: 18 },
+  legalCard: { backgroundColor: "#FFFFFF", borderRadius: 12, borderWidth: 1, borderColor: "#E0E6EE", paddingHorizontal: 14, marginBottom: 6 },
+  legalLink: { minHeight: 46, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: "#EEF1F5" },
+  legalText: { color: "#344054", fontSize: 14, fontWeight: "700" },
+  chevron: { color: "#946600", fontSize: 23, fontWeight: "700" },
   button: { minHeight: 52, borderRadius: 10, backgroundColor: "#101827", alignItems: "center", justifyContent: "center", marginTop: 18 },
   dim: { opacity: 0.65 }, buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
 });
