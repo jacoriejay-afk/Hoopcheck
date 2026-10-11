@@ -105,6 +105,7 @@ begin
   for r in
     select p.oid, p.proname,
            pg_get_function_arguments(p.oid) as full_args,
+           pg_get_function_identity_arguments(p.oid) as identity_args,
            pg_get_function_result(p.oid) as result_type,
            p.pronargs,
            p.proretset,
@@ -162,29 +163,13 @@ begin
     execute format(
       'revoke execute on function public.%I(%s) from public, anon',
       r.proname,
-      pg_get_function_identity_arguments(
-        (select p2.oid
-         from pg_proc p2
-         join pg_namespace n2 on n2.oid = p2.pronamespace
-         where n2.nspname = 'public'
-           and p2.proname = r.proname
-         order by p2.oid desc
-         limit 1)
-      )
+      r.identity_args
     );
 
     execute format(
       'grant execute on function public.%I(%s) to authenticated, service_role',
       r.proname,
-      pg_get_function_identity_arguments(
-        (select p2.oid
-         from pg_proc p2
-         join pg_namespace n2 on n2.oid = p2.pronamespace
-         where n2.nspname = 'public'
-           and p2.proname = r.proname
-         order by p2.oid desc
-         limit 1)
-      )
+      r.identity_args
     );
   end loop;
 end
