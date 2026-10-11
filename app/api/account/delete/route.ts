@@ -113,7 +113,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { confirmation?: string } = {};
+  let body: unknown;
   try {
     const raw = await request.text();
     if (raw.length > 1024) {
@@ -130,7 +130,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (body.confirmation !== "DELETE") {
+  if (!body || typeof body !== "object" || Array.isArray(body) || (body as Record<string, unknown>).confirmation !== "DELETE") {
     return NextResponse.json(
       { error: "Type DELETE to confirm account deletion." },
       { status: 400 }
