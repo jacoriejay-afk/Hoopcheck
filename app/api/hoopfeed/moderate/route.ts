@@ -3,6 +3,15 @@ import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
+const MAX_REQUEST_BYTES = 10 * 1024 * 1024;
+const MAX_TEXT_LENGTH = 2000;
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const IMAGE_EXTENSIONS: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
 const PROFANITY = /\b(?:fuck|fucking|fucked|shit|bullshit|bitch|asshole|motherfucker|cunt|nigger|nigga|faggot|slut|whore)\b/i;
 
 function blockedByLocalRules(text: string) {
@@ -25,8 +34,8 @@ async function moderate(text: string, image: File | null) {
   const input: any[] = [];
   if (text) input.push({ type: "text", text });
   if (image) {
-    if (!image.type.startsWith("image/")) return { allowed: false, status: 400, message: "Only image files can be moderated." };
-    if (image.size > 8 * 1024 * 1024) return { allowed: false, status: 400, message: "Image is too large." };
+    if (!ALLOWED_IMAGE_TYPES.has(image.type)) return { allowed: false, status: 400, message: "Use a JPEG, PNG, or WebP image." };
+    if (image.size > 8 * 1024 * 1024) return { allowed: false, status: 413, message: "Image must be 8 MB or smaller." };
     const bytes = Buffer.from(await image.arrayBuffer());
     input.push({ type: "image_url", image_url: { url: "data:" + image.type + ";base64," + bytes.toString("base64") } });
   }
@@ -47,8 +56,13 @@ async function moderate(text: string, image: File | null) {
 
 export async function POST(request: Request) {
   try {
+    const declaredLength = Number(request.headers.get("content-length") || 0);
+    if (declaredLength > MAX_REQUEST_BYTES) {
+      return NextResponse.json({ allowed: false, message: "Request body is too large." }, { status: 413 });
+    }
+
     const auth = request.headers.get("authorization") || "";
-    const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+    const token = auth.match(/^Bearer\s+(\S+)$/i)?.[1] || "";
     if (!token) return NextResponse.json({ allowed: false, message: "Sign in is required." }, { status: 401 });
 
     const db = adminClient();
@@ -58,8 +72,21 @@ export async function POST(request: Request) {
 
     const form = await request.formData();
     const kind = String(form.get("kind") || "post");
+    if (kind !== "post" && kind !== "comment") {
+      return NextResponse.json({ allowed: false, message: "Unsupported content type." }, { status: 400 });
+    }
     const text = String(form.get("text") || "").trim();
-    const image = form.get("image") instanceof File ? form.get("image") as File : null;
+    if (text.length > MAX_TEXT_LENGTH) {
+      return NextResponse.json({ allowed: false, message: "Text must be 2,000 characters or fewer." }, { status: 413 });
+    }
+    const imageValue = form.get("image");
+    const image = imageValue instanceof File && imageValue.size > 0 ? imageValue : null;
+    if (image && !ALLOWED_IMAGE_TYPES.has(image.type)) {
+      return NextResponse.json({ allowed: false, message: "Use a JPEG, PNG, or WebP image." }, { status: 400 });
+    }
+    if (kind === "comment" && image) {
+      return NextResponse.json({ allowed: false, message: "Photos can only be added to posts." }, { status: 400 });
+    }
 
     const { data: profile } = await db.from("profiles").select("account_type,current_country").eq("id", user.id).maybeSingle();
     const { data: sub } = await db.from("subscriptions").select("plan,status,access_status").eq("user_id", user.id).maybeSingle();
@@ -88,27 +115,29 @@ export async function POST(request: Request) {
         return NextResponse.json({ allowed: false, message: "You are not eligible to interact with this HoopFeed post." }, { status: 403 });
       }
       const { error } = await db.from("feed_post_comments").insert({ post_id:postId,author_id:user.id,body:text });
-      if (error) return NextResponse.json({ allowed:false,message:error.message },{status:400});
+      if (error) return NextResponse.json({ allowed:false,message:"We couldn't publish your comment. Please try again." },{status:400});
       return NextResponse.json({ allowed:true });
     }
 
     let image_url: string | null = null;
     if (image) {
-      const path = user.id + "/" + crypto.randomUUID() + ".jpg";
+      const path = user.id + "/" + crypto.randomUUID() + "." + IMAGE_EXTENSIONS[image.type];
       const bytes = Buffer.from(await image.arrayBuffer());
-      const { error } = await db.storage.from("feed-images").upload(path,bytes,{contentType:"image/jpeg",cacheControl:"31536000",upsert:false});
+      const { error } = await db.storage.from("feed-images").upload(path,bytes,{contentType:image.type,cacheControl:"31536000",upsert:false});
       if (error) return NextResponse.json({ allowed:false,message:"Photo upload failed. Your post was not published." },{status:400});
       image_url = db.storage.from("feed-images").getPublicUrl(path).data.publicUrl;
     }
     const shareCountry = String(form.get("share_country") || "true") === "true";
+    const submittedCountry = String(form.get("post_country") || "").trim().slice(0, 100);
     const { error } = await db.from("feed_posts").insert({
       author_id:user.id, body:text || " ", image_url,
-      location_country:shareCountry ? (String(form.get("post_country") || "").trim() || profile?.current_country || null) : null,
+      location_country:shareCountry ? (submittedCountry || profile?.current_country || null) : null,
       status:"approved", expires_at:new Date(Date.now()+86400000).toISOString()
     });
-    if (error) return NextResponse.json({ allowed:false,message:error.message },{status:400});
+    if (error) return NextResponse.json({ allowed:false,message:"We couldn't publish your post. Please try again." },{status:400});
     return NextResponse.json({ allowed:true });
   } catch (error: any) {
-    return NextResponse.json({ allowed:false,message:error?.message||"Safety moderation failed. Your content was not published." },{status:500});
+    console.error("HoopFeed moderation request failed:", error);
+    return NextResponse.json({ allowed:false,message:"Safety moderation failed. Your content was not published." },{status:500});
   }
 }
