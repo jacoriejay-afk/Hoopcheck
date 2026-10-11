@@ -13,7 +13,8 @@ This isolated React Native / Expo app does not replace or modify the Next.js web
 - Team and league detail screens that show available directory fields, link to validated HTTP(S) official websites when listed, and include contract-verification cautions.
 - Player search directory limited to public, non-suspended, men’s professional profiles, with search by name, username, team and country; selecting a result opens a public profile detail screen showing only public-facing basketball and biography fields.
 - Coach directory backed by the existing active coach table, with search by name and location and an explicit empty state when there are no records.
-- GitHub Actions mobile TypeScript and Expo dependency/configuration diagnostics have passed on the latest recovery-flow commit. Directory changes are being checked now.
+- Dashboard links to the existing website’s Support, Terms, Privacy Policy, Community Guidelines, Privacy Request Center, and Account settings pages.
+- GitHub Actions mobile TypeScript checks, Expo dependency/configuration diagnostics, main CI, and launch gate passed on commit `b697020` (scrollable dashboard and help/privacy links). Later dashboard-link changes require their own checks to finish.
 
 **Not yet release-ready:** no native iOS/Android build or physical-device recovery test has been completed. Reviews, subscriptions, account deletion, support tickets and moderation features are not wired into the mobile app. The live coach table was empty when inspected, so no coaches are fabricated.
 
