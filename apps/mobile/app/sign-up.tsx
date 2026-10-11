@@ -12,7 +12,7 @@ const ACCOUNT_TYPES = [
   { value: "agent", label: "Agent" },
   { value: "fan", label: "Fan" },
 ] as const;
-const LEGAL_BASE = "https://hoopcheck-hoopcheck.vercel.app";
+const LEGAL_BASE = "https://hoopcheck-nine.vercel.app";
 
 function validBirthdate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
