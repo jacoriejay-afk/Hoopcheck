@@ -55,7 +55,9 @@ export default function RootLayout() {
         <Stack.Screen name="reset-password" options={{ title: "Choose new password" }} />
         <Stack.Screen name="dashboard" options={{ title: "HoopCheck" }} />
         <Stack.Screen name="teams" options={{ title: "Teams" }} />
+        <Stack.Screen name="teams/[id]" options={{ title: "Team profile" }} />
         <Stack.Screen name="leagues" options={{ title: "Leagues" }} />
+        <Stack.Screen name="leagues/[id]" options={{ title: "League profile" }} />
       </Stack>
     </SafeAreaProvider>
   );
