@@ -84,6 +84,7 @@ export default function DashboardScreen() {
           <Pressable onPress={() => void openHelp("privacy")} style={styles.legalLink}><Text style={styles.legalText}>Privacy Policy</Text><Text style={styles.chevron}>›</Text></Pressable>
           <Pressable onPress={() => void openHelp("community-guidelines")} style={styles.legalLink}><Text style={styles.legalText}>Community Guidelines</Text><Text style={styles.chevron}>›</Text></Pressable>
           <Pressable onPress={() => void openHelp("privacy-center")} style={styles.legalLink}><Text style={styles.legalText}>Privacy Request Center</Text><Text style={styles.chevron}>›</Text></Pressable>
+          <Pressable onPress={() => void openHelp("account")} style={styles.legalLink}><Text style={styles.legalText}>Account settings</Text><Text style={styles.chevron}>›</Text></Pressable>
         </View>
         <Pressable onPress={signOut} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Signing out…" : "Sign out"}</Text></Pressable>
       </ScrollView>
