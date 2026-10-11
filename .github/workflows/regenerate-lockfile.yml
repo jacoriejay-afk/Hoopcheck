@@ -1,0 +1,47 @@
+name: Temporary dependency lock regeneration
+on:
+  push:
+    branches: ["fix/launch-security-signup"]
+permissions:
+  contents: write
+jobs:
+  regenerate-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/launch-security-signup
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Regenerate lockfile from package.json
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Commit generated lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- package-lock.json; then
+            git add package-lock.json
+            git commit -m "chore(deps): regenerate lockfile for patched Next.js"
+            git push origin HEAD:fix/launch-security-signup
+          fi
+      - name: Clean install
+        run: npm ci
+      - name: Dependency security audit
+        run: npm audit --audit-level=high
+      - name: Lint
+        run: npm run lint
+      - name: Production build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://ci.invalid
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
+          SUPABASE_SERVICE_ROLE_KEY: ci-placeholder
+          STRIPE_SECRET_KEY: ci-placeholder
+          STRIPE_WEBHOOK_SECRET: ci-placeholder
+          STRIPE_PRO_PRICE_ID: price_ci_pro
+          STRIPE_PREMIUM_PRICE_ID: price_ci_premium
+          NEXT_PUBLIC_SITE_URL: https://ci.invalid
+        run: npm run build
