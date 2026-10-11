@@ -40,7 +40,22 @@ export default function DashboardScreen() {
           <Text style={styles.value}>{email || "Signed-in member"}</Text>
           <Text style={styles.role}>Account type: {accountType}</Text>
         </View>
-        <Text style={styles.note}>This is an authentication milestone screen, not the full HoopCheck dashboard. Player search, reviews, support and membership features will be connected only after their backend permissions are reviewed.</Text>
+        <Text style={styles.sectionTitle}>Explore basketball</Text>
+        <View style={styles.directoryRow}>
+          <Pressable onPress={() => router.push("/teams")} style={styles.directoryCard}>
+            <Text style={styles.directoryIcon}>🏀</Text>
+            <Text style={styles.directoryTitle}>Teams</Text>
+            <Text style={styles.directoryCaption}>Search professional clubs</Text>
+            <Text style={styles.directoryAction}>Browse teams →</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push("/leagues")} style={styles.directoryCard}>
+            <Text style={styles.directoryIcon}>🌍</Text>
+            <Text style={styles.directoryTitle}>Leagues</Text>
+            <Text style={styles.directoryCaption}>Explore competitions</Text>
+            <Text style={styles.directoryAction}>Browse leagues →</Text>
+          </Pressable>
+        </View>
+        <Text style={styles.note}>Directory browsing is connected to HoopCheck’s existing Supabase data. Reviews, coach profiles, membership and account controls are not yet enabled in this mobile milestone.</Text>
         <Pressable onPress={signOut} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Signing out…" : "Sign out"}</Text></Pressable>
       </View>
     </SafeAreaView>
@@ -56,7 +71,14 @@ const styles = StyleSheet.create({
   cardLabel: { color: "#657287", fontSize: 11, fontWeight: "800", letterSpacing: 1 },
   value: { color: "#101827", fontSize: 16, fontWeight: "700", marginTop: 8 },
   role: { color: "#586579", marginTop: 8, textTransform: "capitalize" },
-  note: { color: "#657287", fontSize: 13, lineHeight: 20, marginTop: 20 },
+  sectionTitle: { color: "#101827", fontSize: 18, fontWeight: "900", marginTop: 26, marginBottom: 12 },
+  directoryRow: { flexDirection: "row", gap: 10 },
+  directoryCard: { flex: 1, backgroundColor: "#FFFFFF", borderRadius: 12, borderWidth: 1, borderColor: "#E0E6EE", padding: 14, minHeight: 154 },
+  directoryIcon: { fontSize: 22 },
+  directoryTitle: { color: "#101827", fontSize: 16, fontWeight: "900", marginTop: 8 },
+  directoryCaption: { color: "#657287", fontSize: 12, lineHeight: 17, marginTop: 4 },
+  directoryAction: { color: "#946600", fontWeight: "800", fontSize: 12, marginTop: 10 },
+  note: { color: "#657287", fontSize: 13, lineHeight: 20, marginTop: 18 },
   button: { minHeight: 52, borderRadius: 10, backgroundColor: "#101827", alignItems: "center", justifyContent: "center", marginTop: 28 },
   dim: { opacity: 0.65 }, buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
 });
