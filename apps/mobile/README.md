@@ -30,7 +30,8 @@ This isolated React Native / Expo app does not replace or modify the Next.js web
 
 - Confirm final Apple bundle identifier and Android application ID; current com.example.hoopcheck identifiers are placeholders.
 - In Supabase Authentication URL Configuration, add `hoopcheck://reset-password` to the allowed redirect URLs; then test recovery from an actual email on iOS and Android. Configure and test email verification and any OAuth callback URLs too.
-- Verify signup metadata against the live auth/profile trigger and schema. Client-side age checks improve UX but are not a security boundary; enforce eligibility on trusted backend paths too.
+- Review and apply `supabase/migrations/20261011160000_fix_signup_profile_metadata.sql` through the normal database release process. Inspection found the existing `handle_new_user` trigger omits `first_name`/`last_name` and `basketball_type`, so client-sent values are not persisted as intended (female player accounts currently inherit the table default `mens`). This migration is committed for review only and has not been run against the live database.
+- Client-side age checks improve UX but are not a security boundary; enforce eligibility on trusted backend paths too.
 - Review Supabase RLS, RPC grants, storage policies, and each API route before connecting a feature.
 - Decide compliant iOS/Android subscription billing for digital features. No real payment tests are permitted in this phase.
 - Implement account deletion, privacy disclosures, user-generated-content reporting/moderation, accessibility, and device testing.
