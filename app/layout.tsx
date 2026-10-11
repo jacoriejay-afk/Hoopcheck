@@ -30,12 +30,8 @@ export const metadata: Metadata = {
     "international basketball",
     "basketball player experiences",
   ],
-  alternates: {
-    canonical: "/",
-  },
   openGraph: {
     type: "website",
-    url: "/",
     siteName: "HoopCheck",
     title: "HoopCheck | Overseas Basketball Team & Coach Reviews",
     description: "Research professional basketball teams, coaches, and leagues worldwide before you sign.",
