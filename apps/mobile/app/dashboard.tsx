@@ -42,6 +42,12 @@ export default function DashboardScreen() {
         </View>
         <Text style={styles.sectionTitle}>Explore basketball</Text>
         <View style={styles.directoryRow}>
+          <Pressable onPress={() => router.push("/players")} style={styles.directoryCard}>
+            <Text style={styles.directoryIcon}>👤</Text>
+            <Text style={styles.directoryTitle}>Players</Text>
+            <Text style={styles.directoryCaption}>Find public player profiles</Text>
+            <Text style={styles.directoryAction}>Find players →</Text>
+          </Pressable>
           <Pressable onPress={() => router.push("/teams")} style={styles.directoryCard}>
             <Text style={styles.directoryIcon}>🏀</Text>
             <Text style={styles.directoryTitle}>Teams</Text>
@@ -55,7 +61,7 @@ export default function DashboardScreen() {
             <Text style={styles.directoryAction}>Browse leagues →</Text>
           </Pressable>
         </View>
-        <Text style={styles.note}>Directory browsing is connected to HoopCheck’s existing Supabase data. Reviews, coach profiles, membership and account controls are not yet enabled in this mobile milestone.</Text>
+        <Text style={styles.note}>Player, team and league directories use HoopCheck’s existing Supabase data. Player search only displays public, non-suspended men’s professional profiles. Reviews, coach profiles, membership and account controls are not yet enabled in this mobile milestone.</Text>
         <Pressable onPress={signOut} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Signing out…" : "Sign out"}</Text></Pressable>
       </View>
     </SafeAreaView>
