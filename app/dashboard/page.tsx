@@ -345,6 +345,46 @@ export default function DashboardPage() {
           </Link>
         </section>
 
+        <section aria-labelledby="help-privacy-heading" style={{ marginTop: 24 }}>
+          <div style={{ marginBottom: 12 }}>
+            <p className="eyebrow">HELP & PRIVACY</p>
+            <h2 id="help-privacy-heading">Support and account policies</h2>
+            <p className="muted">Get help, review HoopCheck policies, or manage your personal data.</p>
+          </div>
+          <div className="grid" style={{ gap: 12 }}>
+            <Link href="/support" className="dashboard-card">
+              <span className="card-kicker">SUPPORT</span>
+              <h3>Contact Support</h3>
+              <p className="muted">Submit a ticket and track your requests.</p>
+            </Link>
+            <Link href="/terms" className="dashboard-card">
+              <span className="card-kicker">LEGAL</span>
+              <h3>Terms of Service</h3>
+              <p className="muted">Read the terms for using HoopCheck.</p>
+            </Link>
+            <Link href="/privacy" className="dashboard-card">
+              <span className="card-kicker">PRIVACY</span>
+              <h3>Privacy Policy</h3>
+              <p className="muted">Learn how personal information is handled.</p>
+            </Link>
+            <Link href="/community-guidelines" className="dashboard-card">
+              <span className="card-kicker">COMMUNITY</span>
+              <h3>Community Guidelines</h3>
+              <p className="muted">Review standards for safe, fair participation.</p>
+            </Link>
+            <Link href="/privacy-center" className="dashboard-card">
+              <span className="card-kicker">YOUR DATA</span>
+              <h3>Privacy Request Center</h3>
+              <p className="muted">Request access, correction, deletion, or an export of your data.</p>
+            </Link>
+            <Link href="/account" className="dashboard-card">
+              <span className="card-kicker">ACCOUNT</span>
+              <h3>Account Settings</h3>
+              <p className="muted">Manage your profile and find your privacy controls.</p>
+            </Link>
+          </div>
+        </section>
+
         <section style={{ marginTop: 32 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: 18 }}>
             <div>
