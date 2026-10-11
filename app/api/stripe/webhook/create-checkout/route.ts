@@ -36,6 +36,26 @@ export async function POST(
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL;
 
+  // Fail closed until the deployment explicitly declares and enables the
+  // matching Stripe mode. Production must use live keys; non-production must
+  // use test keys. This prevents accidental real charges from mixed config.
+  const deploymentMode =
+    process.env.VERCEL_ENV === "production" ? "live" : "test";
+  const configuredMode = process.env.STRIPE_CHECKOUT_MODE;
+  const expectedKeyPrefix =
+    deploymentMode === "live" ? "sk_live_" : "sk_test_";
+
+  if (
+    process.env.STRIPE_CHECKOUT_ENABLED !== "true" ||
+    configuredMode !== deploymentMode ||
+    !stripeSecretKey?.startsWith(expectedKeyPrefix)
+  ) {
+    return NextResponse.json(
+      { error: "Checkout is temporarily unavailable while payment configuration is verified." },
+      { status: 503 }
+    );
+  }
+
   if (
     !stripeSecretKey ||
     !siteUrl
