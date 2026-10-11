@@ -30,10 +30,11 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!sessionReady) return;
-    const onDashboard = segments[0] === "dashboard";
-    const onPasswordRecovery = segments[0] === "reset-password";
-    if (signedIn && !onDashboard && !onPasswordRecovery) router.replace("/dashboard");
-    if (!signedIn && onDashboard) router.replace("/sign-in");
+    const currentRoute = segments[0] ?? "";
+    const inAppArea = ["dashboard", "teams", "leagues"].includes(currentRoute);
+    const onPasswordRecovery = currentRoute === "reset-password";
+    if (signedIn && !inAppArea && !onPasswordRecovery) router.replace("/dashboard");
+    if (!signedIn && inAppArea) router.replace("/sign-in");
   }, [sessionReady, signedIn, segments, router]);
 
   return (
@@ -53,6 +54,8 @@ export default function RootLayout() {
         <Stack.Screen name="forgot-password" options={{ title: "Reset password" }} />
         <Stack.Screen name="reset-password" options={{ title: "Choose new password" }} />
         <Stack.Screen name="dashboard" options={{ title: "HoopCheck" }} />
+        <Stack.Screen name="teams" options={{ title: "Teams" }} />
+        <Stack.Screen name="leagues" options={{ title: "Leagues" }} />
       </Stack>
     </SafeAreaProvider>
   );
