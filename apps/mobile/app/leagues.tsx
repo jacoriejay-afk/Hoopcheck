@@ -19,7 +19,7 @@ export default function LeaguesScreen() {
   const [hasMore, setHasMore] = useState(false);
 
   const load = useCallback(async (search: string, start = 0, append = false) => {
-    if (start === 0) setLoading(!refreshing);
+    if (start === 0) setLoading(true);
     setError("");
     const clean = search.trim().replace(/[^\p{L}\p{N} '\-]/gu, " ").replace(/\s+/g, " ").trim();
     let query = supabase.from("leagues").select("id,name,country,level,season,website").eq("active", true).eq("basketball_type", "mens").order("name", { ascending: true }).range(start, start + PAGE_SIZE);
@@ -36,7 +36,7 @@ export default function LeaguesScreen() {
     setItems(append ? current => [...current, ...page] : page);
     setOffset(start);
     setLoading(false); setRefreshing(false);
-  }, [refreshing]);
+  }, []);
 
   useEffect(() => { void load("", 0, false); }, [load]);
   function search() { setAppliedTerm(term.trim()); void load(term, 0, false); }
