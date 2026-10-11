@@ -18,6 +18,10 @@ This isolated React Native / Expo app does not replace or modify the Next.js web
 
 **Not yet release-ready:** no native iOS/Android build or physical-device recovery test has been completed. Reviews, subscriptions, account deletion, support tickets and moderation features are not wired into the mobile app. The live coach table was empty when inspected, so no coaches are fabricated.
 
+## EAS build profiles
+
+`eas.json` defines internal development and preview profiles plus a production build profile. This is configuration only: no EAS build has been started, no signing credentials have been created, and no store submission has occurred. Do not start a store build until the final iOS bundle identifier and Android application ID replace the `com.example.hoopcheck` placeholders and the remaining release checklist is reviewed.
+
 ## Local setup
 
 1. Install a Node.js version compatible with the pinned Expo SDK.
