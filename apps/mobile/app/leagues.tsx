@@ -64,14 +64,15 @@ export default function LeaguesScreen() {
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
           renderItem={({ item }) => (
-            <View style={styles.card}>
+            <Pressable onPress={() => router.push({ pathname: "/leagues/[id]", params: { id: item.id } })} style={styles.card}>
               <View style={styles.logo}><Text style={styles.logoText}>{item.name.slice(0, 1).toUpperCase()}</Text></View>
               <View style={styles.cardBody}>
                 <Text style={styles.leagueName}>{item.name}</Text>
                 <Text style={styles.meta}>{item.country || "Country not listed"}{item.level ? ` · ${item.level}` : ""}</Text>
                 {item.season ? <Text style={styles.season}>Season: {item.season}</Text> : null}
+                <Text style={styles.openProfile}>View profile →</Text>
               </View>
-            </View>
+            </Pressable>
           )}
           ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>No leagues found</Text><Text style={styles.emptyText}>Try a shorter name or another country.</Text></View>}
           ListFooterComponent={hasMore ? <Pressable onPress={() => void nextPage()} style={styles.more}>{loading ? <ActivityIndicator color="#101827" /> : <Text style={styles.moreText}>Load more leagues</Text>}</Pressable> : <Text style={styles.footer}>Confirm league rules, payment terms and contract details independently before signing.</Text>}
@@ -103,6 +104,7 @@ const styles = StyleSheet.create({
   leagueName: { color: "#101827", fontSize: 15, fontWeight: "800" },
   meta: { color: "#59677A", fontSize: 12, marginTop: 4 },
   season: { color: "#A16E00", fontSize: 12, fontWeight: "700", marginTop: 5 },
+  openProfile: { color: "#946600", fontSize: 12, fontWeight: "900", marginTop: 8 },
   loader: { marginTop: 45 },
   errorBox: { margin: 16, padding: 14, backgroundColor: "#FDECEC", borderRadius: 10 },
   error: { color: "#8C2525" }, retry: { color: "#8C2525", fontWeight: "800", marginTop: 8 },
