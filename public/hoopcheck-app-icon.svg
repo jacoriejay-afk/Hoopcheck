@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="HoopCheck app icon">
+  <rect width="512" height="512" rx="112" fill="#10151f"/>
+  <path d="M124 118 256 56l132 62v112l-132 72-132-72z" fill="none" stroke="#f4f4f4" stroke-width="22" stroke-linejoin="round"/>
+  <circle cx="256" cy="232" r="105" fill="none" stroke="#ff6a00" stroke-width="18"/>
+  <path d="M151 232h210M256 127c-40 42-40 168 0 210M184 151c20 34 51 49 72 49s52-15 72-49M184 313c20-34 51-49 72-49s52 15 72 49" fill="none" stroke="#f4f4f4" stroke-width="12" stroke-linecap="round"/>
+  <path d="m285 273 111-79-48 81-24-7-25 29z" fill="#ff6a00"/>
+</svg>
