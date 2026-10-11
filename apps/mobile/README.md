@@ -10,6 +10,7 @@ This isolated React Native / Expo app does not replace or modify the Next.js web
 - Client-side 18+ eligibility check and Terms/Privacy/Community Guidelines acknowledgement aligned to the current web signup metadata.
 - Password reset request and new-password screens using Supabase recovery codes and the `hoopcheck://reset-password` deep link.
 - Authenticated dashboard with Supabase-backed search directories for active men’s teams and leagues, paginated results, refresh, and search by name/location/level.
+- Team and league detail screens that show available directory fields, link to validated HTTP(S) official websites when listed, and include contract-verification cautions.
 - GitHub Actions mobile TypeScript and Expo dependency/configuration diagnostics have passed on the latest recovery-flow commit. Directory changes are being checked now.
 
 **Not yet release-ready:** no native iOS/Android build or physical-device recovery test has been completed. Coach search, reviews, subscriptions, account deletion, support tickets and moderation features are not wired into the mobile app.
