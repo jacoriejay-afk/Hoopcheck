@@ -15,7 +15,23 @@ export async function POST(request: Request) {
   try {
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-    if (!stripeSecretKey) return NextResponse.json({ error: "Stripe is not configured." }, { status: 500 });
+
+    // Keep the billing portal aligned with checkout and cancellation:
+    // fail closed unless the deployment explicitly enables the matching Stripe mode.
+    const deploymentMode = process.env.VERCEL_ENV === "production" ? "live" : "test";
+    const configuredMode = process.env.STRIPE_CHECKOUT_MODE;
+    const expectedKeyPrefix = deploymentMode === "live" ? "sk_live_" : "sk_test_";
+    if (
+      process.env.STRIPE_CHECKOUT_ENABLED !== "true" ||
+      configuredMode !== deploymentMode ||
+      !stripeSecretKey?.startsWith(expectedKeyPrefix)
+    ) {
+      return NextResponse.json(
+        { error: "Billing portal is temporarily unavailable while payment configuration is verified." },
+        { status: 503 },
+      );
+    }
+
     if (!siteUrl) return NextResponse.json({ error: "Site URL is not configured." }, { status: 500 });
 
     const stripe = new Stripe(stripeSecretKey);
