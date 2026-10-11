@@ -25,6 +25,17 @@ export default function PlayersPage(){
 
   useEffect(()=>{
     let mounted=true;
+    if(!query.trim()){
+      setPlayers([]);
+      setHasMore(false);
+      setLoading(false);
+      return ()=>{mounted=false};
+    }
+    const timer=window.setTimeout(()=>{
+      (async()=>{
+        setLoading(true);
+        const term=query.trim().replace(/[%,_]/g,"\\  useEffect(()=>{
+    let mounted=true;
     const timer=window.setTimeout(()=>{
       (async()=>{
         setLoading(true);
@@ -50,6 +61,26 @@ export default function PlayersPage(){
       })();
     },250);
     return()=>{mounted=false;window.clearTimeout(timer)};
+  },[query,country,page]);");
+        let req=supabase.from("profiles")
+          .select("id,display_name,username,first_name,last_name,country,current_country,current_team,position,years_pro,player_verified,avatar_url,free_agent")
+          .eq("account_type","player")
+          .or("basketball_type.is.null,basketball_type.eq.mens")
+          .eq("profile_visibility","public")
+          .neq("moderation_status","suspended")
+          .not("username","is",null)
+          .ilike("username",`%${term}%`)
+          .order("username",{ascending:true});
+        if(country) req=req.eq("current_country",country);
+        const {data,error}=await withTimeout<any>(req.range(page*size,page*size+size-1),2500,{data:[],error:new Error("timeout")});
+        if(mounted){
+          setPlayers(error?[]:(data||[]) as Player[]);
+          setHasMore((data?.length||0)===size);
+          setLoading(false);
+        }
+      })();
+    },250);
+    return()=>{mounted=false;window.clearTimeout(timer)};
   },[query,country,page]);
 
   const countries=Array.from(new Set(players.map(p=>p.current_country||p.country).filter(Boolean) as string[])).sort();
@@ -65,13 +96,13 @@ export default function PlayersPage(){
       <section className="dashboard-card" style={{marginTop:18}}>
         <div className="research-search">
           <div className="search-label">PLAYER SEARCH</div>
-          <input value={query} onChange={e=>{setQuery(e.target.value);setPage(0)}} placeholder="Search players, teams, countries..." aria-label="Search players"/>
+          <input value={query} onChange={e=>{setQuery(e.target.value);setPage(0)}} placeholder="Type a player’s username to search..." aria-label="Search by player username" autoComplete="off"/>
           <div className="team-filter-row">
             <select value={country} onChange={e=>{setCountry(e.target.value);setPage(0)}}><option value="">All countries</option>{countries.map(c=><option key={c} value={c}>{c}</option>)}</select>
           </div>
         </div>
       </section>
-      {loading ? <div className="dashboard-card" style={{marginTop:18}}><HoopLoading label="Scanning player directory..." /></div> :
+      {!query.trim() ? <div className="dashboard-card" style={{marginTop:18}}><h2>Search by username</h2><p className="muted">Player profiles stay hidden until you enter a username above.</p></div> : loading ? <div className="dashboard-card" style={{marginTop:18}}><HoopLoading label="Searching usernames..." /></div> :
       <section className="grid" style={{marginTop:18}}>
         {players.map(p=>{
           const name=p.display_name || [p.first_name,p.last_name].filter(Boolean).join(" ") || p.username || "HoopCheck Player";
