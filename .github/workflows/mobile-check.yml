@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - "feat/expo-mobile-foundation"
+      - "fix/expo-doctor-dependencies"
     paths:
       - "apps/mobile/**"
       - ".github/workflows/mobile-check.yml"
