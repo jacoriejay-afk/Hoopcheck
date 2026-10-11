@@ -9,10 +9,10 @@ This isolated React Native / Expo app does not replace or modify the Next.js web
 - Native sign-up fields for account type, name, username, birthdate, gender, email and password.
 - Client-side 18+ eligibility check and Terms/Privacy/Community Guidelines acknowledgement aligned to the current web signup metadata.
 - Password reset request and new-password screens using Supabase recovery codes and the `hoopcheck://reset-password` deep link.
-- Authenticated placeholder screen with account details and sign out.
-- GitHub Actions mobile typecheck and Expo dependency/configuration diagnostics passed on the dependency-alignment commit; the latest recovery-flow changes are being checked separately.
+- Authenticated dashboard with Supabase-backed search directories for active men’s teams and leagues, paginated results, refresh, and search by name/location/level.
+- GitHub Actions mobile TypeScript and Expo dependency/configuration diagnostics have passed on the latest recovery-flow commit. Directory changes are being checked now.
 
-**Not yet release-ready:** no native iOS/Android build or physical-device recovery test has been completed. The dashboard is only a placeholder; no player search, reviews, subscriptions, account deletion, support tickets or moderation features are wired in.
+**Not yet release-ready:** no native iOS/Android build or physical-device recovery test has been completed. Coach search, reviews, subscriptions, account deletion, support tickets and moderation features are not wired into the mobile app.
 
 ## Local setup
 
