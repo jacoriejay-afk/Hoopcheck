@@ -5,10 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 function getAdminSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    throw new Error("Missing Supabase server configuration.");
-  }
-
+  if (!url || !key) throw new Error("Missing Supabase server configuration.");
   return createClient(url, key, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
@@ -22,21 +19,25 @@ function getCurrentPeriodEnd(subscription: Stripe.Subscription) {
 export async function POST(request: Request) {
   try {
     const secret = process.env.STRIPE_SECRET_KEY;
-    if (!secret) {
+    const deploymentMode = process.env.VERCEL_ENV === "production" ? "live" : "test";
+    const configuredMode = process.env.STRIPE_CHECKOUT_MODE;
+    const expectedKeyPrefix = deploymentMode === "live" ? "sk_live_" : "sk_test_";
+
+    // Match the checkout route: fail closed when the Stripe key and deployment mode disagree.
+    if (
+      process.env.STRIPE_CHECKOUT_ENABLED !== "true" ||
+      configuredMode !== deploymentMode ||
+      !secret?.startsWith(expectedKeyPrefix)
+    ) {
       return NextResponse.json(
-        { error: "Stripe is not configured." },
-        { status: 500 },
+        { error: "Membership changes are temporarily unavailable while payment configuration is verified." },
+        { status: 503 },
       );
     }
 
-    const token = request.headers
-      .get("authorization")
-      ?.replace(/^Bearer /, "");
+    const token = request.headers.get("authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
     if (!token) {
-      return NextResponse.json(
-        { error: "You must be logged in." },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "You must be logged in." }, { status: 401 });
     }
 
     const supabase = getAdminSupabase();
@@ -46,10 +47,7 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: "Your session is invalid or expired." },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Your session is invalid or expired." }, { status: 401 });
     }
 
     const { data: subscription, error } = await supabase
@@ -60,33 +58,29 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error("Subscription lookup failed:", error);
-      return NextResponse.json(
-        { error: "Unable to retrieve your subscription." },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Unable to retrieve your subscription." }, { status: 500 });
     }
-
     if (!subscription?.stripe_subscription_id) {
-      return NextResponse.json(
-        { error: "No active Stripe subscription was found." },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "No active Stripe subscription was found." }, { status: 404 });
     }
 
-    const body = await request.json().catch(() => ({}));
-    const action = body?.action ?? "cancel";
+    let body: unknown = {};
+    try {
+      body = await request.json();
+    } catch {
+      // An empty request is treated as the default cancel action for compatibility.
+    }
+    const action = body && typeof body === "object" && !Array.isArray(body)
+      ? ((body as Record<string, unknown>).action ?? "cancel")
+      : "cancel";
     if (action !== "cancel" && action !== "resume") {
-      return NextResponse.json(
-        { error: "Invalid subscription action." },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid subscription action." }, { status: 400 });
     }
 
     const stripe = new Stripe(secret);
-    const updated = await stripe.subscriptions.update(
-      subscription.stripe_subscription_id,
-      { cancel_at_period_end: action === "cancel" },
-    );
+    const updated = await stripe.subscriptions.update(subscription.stripe_subscription_id, {
+      cancel_at_period_end: action === "cancel",
+    });
 
     const currentPeriodEnd = getCurrentPeriodEnd(updated);
     const { error: syncError } = await supabase
@@ -99,18 +93,11 @@ export async function POST(request: Request) {
       .eq("user_id", user.id);
 
     if (syncError) {
-      console.error(
-        "Stripe subscription changed, but HoopCheck database sync failed:",
-        syncError,
-      );
-      return NextResponse.json(
-        {
-          error:
-            "Stripe was updated, but HoopCheck could not sync the membership status. Refresh in a moment; if it still looks wrong, contact support.",
-          stripe_updated: true,
-        },
-        { status: 500 },
-      );
+      console.error("Stripe subscription changed, but HoopCheck database sync failed:", syncError);
+      return NextResponse.json({
+        error: "Stripe was updated, but HoopCheck could not sync the membership status. Refresh in a moment; if it still looks wrong, contact support.",
+        stripe_updated: true,
+      }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -120,9 +107,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Subscription cancellation error:", error);
-    return NextResponse.json(
-      { error: "Unable to update your membership. Please try again." },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Unable to update your membership. Please try again." }, { status: 500 });
   }
 }
