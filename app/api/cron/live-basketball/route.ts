@@ -60,12 +60,27 @@ export async function GET(request: NextRequest) {
     const byProviderId = new Map<number, string>();
     for (const mapping of mappings || []) byProviderId.set(Number(mapping.provider_team_id), mapping.team_id);
 
+    // Name matching gives the integration a useful default before manual aliases
+    // are configured. Explicit provider-ID mappings always take precedence.
+    const { data: teams, error: teamsError } = await db.from("teams").select("id,name");
+    if (teamsError) throw teamsError;
+    const normalize = (name: string) => name.toLocaleLowerCase("en-US").replace(/\\b(basketball club|basketball|bc|club|team)\\b/g, " ").replace(/[^a-z0-9]/g, "");
+    const internalTeamByName = new Map<string, string>();
+    for (const team of teams || []) {
+      if (typeof team.name === "string" && team.name.trim()) {
+        const key = normalize(team.name);
+        if (key && !internalTeamByName.has(key)) internalTeamByName.set(key, team.id);
+      }
+    }
+    const internalIdFor = (providerId: number, providerName?: string) =>
+      byProviderId.get(providerId) || (providerName ? internalTeamByName.get(normalize(providerName)) : undefined);
+
     const rows = [];
     for (const game of payload.response) {
       const homeProviderId = Number(game.teams?.home?.id);
       const awayProviderId = Number(game.teams?.visitors?.id);
-      const homeInternalId = byProviderId.get(homeProviderId);
-      const awayInternalId = byProviderId.get(awayProviderId);
+      const homeInternalId = internalIdFor(homeProviderId, game.teams?.home?.name);
+      const awayInternalId = internalIdFor(awayProviderId, game.teams?.visitors?.name);
       if (!homeInternalId && !awayInternalId) continue;
 
       // Use the followed/mapped side as the primary team so score order is always
@@ -100,7 +115,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Close old provider-backed live rows only after a successful provider response.
-    const staleBefore = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+    const staleBefore = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
     let staleQuery = db.from("fan_live_games").update({ status: "final" })
       .eq("provider_source", "api-sports-basketball").eq("status", "live").lt("started_at", staleBefore);
     const liveIds = rows.map(row => row.provider_game_id);
