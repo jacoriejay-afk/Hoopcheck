@@ -102,6 +102,15 @@ begin
       r.proname,
       r.identity_args
     );
+
+    -- SECURITY DEFINER implementations must not inherit a caller-controlled
+    -- or mutable search path. All application objects referenced by these
+    -- implementations are schema-qualified, so an empty path is safe.
+    execute format(
+      'alter function private.%I(%s) set search_path = ''''',
+      r.proname,
+      r.identity_args
+    );
   end loop;
 end
 $permissions$;
