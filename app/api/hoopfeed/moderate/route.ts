@@ -98,10 +98,13 @@ export async function POST(request: Request) {
     if (bodyBytes === null) {
       return NextResponse.json({ allowed: false, message: "Request body is too large." }, { status: 413 });
     }
+    // Copy into a standalone ArrayBuffer so TypeScript's BodyInit types accept it.
+    const formBody = new ArrayBuffer(bodyBytes.byteLength);
+    new Uint8Array(formBody).set(bodyBytes);
     const formRequest = new Request(request.url, {
       method: "POST",
       headers: request.headers,
-      body: bodyBytes,
+      body: formBody,
     });
     const form = await formRequest.formData();
     const kind = String(form.get("kind") || "post");
