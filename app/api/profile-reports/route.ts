@@ -5,6 +5,30 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_BODY_BYTES = 4_096;
 
+async function readLimitedBody(request: Request, maxBytes: number): Promise<Uint8Array | null> {
+  const reader = request.body?.getReader();
+  if (!reader) return new Uint8Array();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return body;
+}
+
 export async function POST(req: NextRequest) {
   const declaredLength = Number(req.headers.get("content-length") || 0);
   if (declaredLength > MAX_BODY_BYTES) {
@@ -32,11 +56,11 @@ export async function POST(req: NextRequest) {
 
   let body: unknown;
   try {
-    const raw = await req.text();
-    if (raw.length > MAX_BODY_BYTES) {
+    const rawBytes = await readLimitedBody(req, MAX_BODY_BYTES);
+    if (rawBytes === null) {
       return NextResponse.json({ error: "Request body is too large." }, { status: 413 });
     }
-    body = JSON.parse(raw);
+    body = JSON.parse(new TextDecoder().decode(rawBytes));
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
