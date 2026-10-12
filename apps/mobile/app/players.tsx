@@ -30,7 +30,7 @@ export default function PlayersScreen() {
       setRefreshing(false);
       return;
     }
-    let query = supabase.from("profiles")
+    const query = supabase.from("profiles")
       .select("id,display_name,username,country,current_country,current_team,position,years_pro,free_agent")
       .eq("account_type", "player")
       .eq("profile_visibility", "public")
