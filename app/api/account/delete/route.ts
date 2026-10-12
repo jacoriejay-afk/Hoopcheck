@@ -10,6 +10,30 @@ const STORAGE_BUCKETS = [
   "player-verification-documents",
 ] as const;
 
+async function readLimitedBody(request: Request, maxBytes: number): Promise<Uint8Array | null> {
+  const reader = request.body?.getReader();
+  if (!reader) return new Uint8Array();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return body;
+}
+
 async function getUser() {
   const cookieStore = await cookies();
   const supabase = createServerClient(
@@ -45,23 +69,36 @@ async function removeUserStorage(
     const files: string[] = [];
 
     async function collectFiles(prefix: string): Promise<void> {
-      const { data, error } = await admin.storage.from(bucket).list(prefix, {
-        limit: 1000,
-      });
+      // Storage list is paginated. Continue until a short page is returned so
+      // accounts with more than 1,000 objects do not leave files behind.
+      const pageSize = 1000;
+      let offset = 0;
 
-      if (error) {
-        throw new Error(`Unable to list ${bucket}: ${error.message}`);
-      }
+      while (true) {
+        const { data, error } = await admin.storage.from(bucket).list(prefix, {
+          limit: pageSize,
+          offset,
+          sortBy: { column: "name", order: "asc" },
+        });
 
-      for (const item of data ?? []) {
-        if (!item.name) continue;
-        const path = `${prefix}/${item.name}`;
-        // Supabase Storage represents folders as entries without file metadata.
-        if (item.id == null && item.metadata == null) {
-          await collectFiles(path);
-        } else {
-          files.push(path);
+        if (error) {
+          throw new Error(`Unable to list ${bucket}: ${error.message}`);
         }
+
+        const page = data ?? [];
+        for (const item of page) {
+          if (!item.name) continue;
+          const path = `${prefix}/${item.name}`;
+          // Supabase Storage represents folders as entries without file metadata.
+          if (item.id == null && item.metadata == null) {
+            await collectFiles(path);
+          } else {
+            files.push(path);
+          }
+        }
+
+        if (page.length < pageSize) break;
+        offset += page.length;
       }
     }
 
@@ -92,9 +129,24 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { confirmation?: string } = {};
+  const declaredLength = Number(request.headers.get("content-length") || 0);
+  if (declaredLength > 1024) {
+    return NextResponse.json(
+      { error: "Request body is too large." },
+      { status: 413 }
+    );
+  }
+
+  let body: unknown;
   try {
-    body = await request.json();
+    const rawBytes = await readLimitedBody(request, 1024);
+    if (rawBytes === null) {
+      return NextResponse.json(
+        { error: "Request body is too large." },
+        { status: 413 }
+      );
+    }
+    body = JSON.parse(new TextDecoder().decode(rawBytes));
   } catch {
     return NextResponse.json(
       { error: "Type DELETE to confirm account deletion." },
@@ -102,7 +154,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (body.confirmation !== "DELETE") {
+  if (!body || typeof body !== "object" || Array.isArray(body) || (body as Record<string, unknown>).confirmation !== "DELETE") {
     return NextResponse.json(
       { error: "Type DELETE to confirm account deletion." },
       { status: 400 }
