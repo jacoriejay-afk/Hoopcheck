@@ -10,6 +10,30 @@ const STORAGE_BUCKETS = [
   "player-verification-documents",
 ] as const;
 
+async function readLimitedBody(request: Request, maxBytes: number): Promise<Uint8Array | null> {
+  const reader = request.body?.getReader();
+  if (!reader) return new Uint8Array();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return body;
+}
+
 async function getUser() {
   const cookieStore = await cookies();
   const supabase = createServerClient(
@@ -115,14 +139,14 @@ export async function POST(request: Request) {
 
   let body: unknown;
   try {
-    const raw = await request.text();
-    if (raw.length > 1024) {
+    const rawBytes = await readLimitedBody(request, 1024);
+    if (rawBytes === null) {
       return NextResponse.json(
         { error: "Request body is too large." },
         { status: 413 }
       );
     }
-    body = JSON.parse(raw);
+    body = JSON.parse(new TextDecoder().decode(rawBytes));
   } catch {
     return NextResponse.json(
       { error: "Type DELETE to confirm account deletion." },
