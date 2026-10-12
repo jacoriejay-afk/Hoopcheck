@@ -1,0 +1,117 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 20;
+
+type ProviderTeam = { id?: number; name?: string };
+type ProviderScore = { total?: number | null; points?: number | null };
+type ProviderGame = {
+  id: number | string;
+  date?: string;
+  timestamp?: number;
+  status?: { short?: string; long?: string };
+  teams?: { home?: ProviderTeam; visitors?: ProviderTeam };
+  scores?: { home?: ProviderScore; visitors?: ProviderScore };
+};
+type ProviderResponse = { response?: ProviderGame[]; errors?: unknown; results?: number };
+
+function score(value?: ProviderScore): number | null {
+  const n = value?.total ?? value?.points;
+  return typeof n === "number" && Number.isFinite(n) ? n : null;
+}
+
+export async function GET(request: NextRequest) {
+  const secret = process.env.LIVE_SCORES_CRON_SECRET;
+  const supplied = request.headers.get("authorization");
+  if (!secret || supplied !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: { "Cache-Control": "no-store" } });
+  }
+
+  const apiKey = process.env.API_SPORTS_BASKETBALL_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!apiKey || !supabaseUrl || !serviceRoleKey) {
+    return NextResponse.json({ error: "Live-score sync is not configured." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
+
+  try {
+    const db = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
+    const response = await fetch("https://v1.basketball.api-sports.io/games?live=all", {
+      headers: { "x-apisports-key": apiKey, "Accept": "application/json" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(12000)
+    });
+    if (!response.ok) {
+      return NextResponse.json({ error: "Basketball data provider returned an error." }, { status: 502, headers: { "Cache-Control": "no-store" } });
+    }
+
+    const payload = await response.json() as ProviderResponse;
+    if (!Array.isArray(payload.response) || (Array.isArray(payload.errors) && payload.errors.length > 0)) {
+      return NextResponse.json({ error: "Basketball data provider returned an invalid response." }, { status: 502, headers: { "Cache-Control": "no-store" } });
+    }
+
+    const { data: mappings, error: mappingError } = await db
+      .from("fan_live_team_provider_map")
+      .select("team_id,provider_team_id")
+      .eq("active", true);
+    if (mappingError) throw mappingError;
+
+    const byProviderId = new Map<number, string>();
+    for (const mapping of mappings || []) byProviderId.set(Number(mapping.provider_team_id), mapping.team_id);
+
+    const rows = [];
+    for (const game of payload.response) {
+      const homeProviderId = Number(game.teams?.home?.id);
+      const awayProviderId = Number(game.teams?.visitors?.id);
+      const homeInternalId = byProviderId.get(homeProviderId);
+      const awayInternalId = byProviderId.get(awayProviderId);
+      if (!homeInternalId && !awayInternalId) continue;
+
+      // Use the followed/mapped side as the primary team so score order is always
+      // primary-team score first, opponent score second in the chat UI.
+      const primaryIsHome = Boolean(homeInternalId);
+      const primaryId = homeInternalId || awayInternalId;
+      const opponentId = primaryIsHome ? awayInternalId || null : homeInternalId || null;
+      const opponentName = primaryIsHome ? game.teams?.visitors?.name : game.teams?.home?.name;
+      const primaryScore = primaryIsHome ? score(game.scores?.home) : score(game.scores?.visitors);
+      const opponentScore = primaryIsHome ? score(game.scores?.visitors) : score(game.scores?.home);
+      if (!primaryId || !opponentName || !game.id) continue;
+
+      const startDate = game.timestamp ? new Date(game.timestamp * 1000).toISOString()
+        : (game.date && !Number.isNaN(Date.parse(game.date)) ? new Date(game.date).toISOString() : null);
+      rows.push({
+        team_id: primaryId,
+        opponent_team_id: opponentId,
+        opponent_name: opponentName,
+        provider_source: "api-sports-basketball",
+        provider_game_id: String(game.id),
+        status: "live",
+        home_score: primaryScore,
+        away_score: opponentScore,
+        started_at: startDate
+      });
+    }
+
+    if (rows.length) {
+      const { error: upsertError } = await db.from("fan_live_games")
+        .upsert(rows, { onConflict: "provider_source,provider_game_id" });
+      if (upsertError) throw upsertError;
+    }
+
+    // Close old provider-backed live rows only after a successful provider response.
+    const staleBefore = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+    let staleQuery = db.from("fan_live_games").update({ status: "final" })
+      .eq("provider_source", "api-sports-basketball").eq("status", "live").lt("started_at", staleBefore);
+    const liveIds = rows.map(row => row.provider_game_id);
+    if (liveIds.length) staleQuery = staleQuery.not("provider_game_id", "in", `(${liveIds.map(id => `"${id.replace(/"/g, "")}"`).join(",")})`);
+    const { error: staleError } = await staleQuery;
+    if (staleError) throw staleError;
+
+    return NextResponse.json({ ok: true, providerLiveGames: payload.response.length, matchedGames: rows.length }, {
+      headers: { "Cache-Control": "no-store" }
+    });
+  } catch {
+    return NextResponse.json({ error: "Live-score sync failed. Check server logs." }, { status: 500, headers: { "Cache-Control": "no-store" } });
+  }
+}
