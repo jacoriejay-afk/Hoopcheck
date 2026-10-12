@@ -14,6 +14,13 @@ create schema if not exists private;
 -- through the SECURITY INVOKER wrappers; service-role jobs may call them too.
 grant usage on schema private to authenticated, service_role;
 
+-- Some existing installations already have an older private copy of this exact
+-- function signature. The public implementation is newer (it also updates the
+-- selected team/affiliation fields), so remove that stale copy before moving
+-- the current public implementation into private. DROP uses RESTRICT by default:
+-- if another database object depends on the old function, abort safely.
+drop function if exists private.moderate_player_verification(uuid, text, text);
+
 do $migration$
 declare
   r record;
