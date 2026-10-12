@@ -59,6 +59,7 @@ export default function RootLayout() {
         <Stack.Screen name="coaches" options={{ title: "Find a coach" }} />
         <Stack.Screen name="teams" options={{ title: "Teams" }} />
         <Stack.Screen name="teams/[id]" options={{ title: "Team profile" }} />
+        <Stack.Screen name="teams/[id]/review" options={{ title: "Write a review" }} />
         <Stack.Screen name="leagues" options={{ title: "Leagues" }} />
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile" }} />
       </Stack>
