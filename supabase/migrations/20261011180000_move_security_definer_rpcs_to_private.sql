@@ -7,6 +7,9 @@
 begin;
 set local search_path = public, pg_catalog;
 
+-- Ensure the unexposed implementation schema exists on fresh installations.
+create schema if not exists private;
+
 -- Authenticated clients need schema usage to reach private implementations
 -- through the SECURITY INVOKER wrappers; service-role jobs may call them too.
 grant usage on schema private to authenticated, service_role;
