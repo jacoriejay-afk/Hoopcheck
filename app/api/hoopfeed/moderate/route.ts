@@ -4,6 +4,30 @@ import { createClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 
 const MAX_REQUEST_BYTES = 10 * 1024 * 1024;
+
+async function readLimitedBody(request: Request, maxBytes: number): Promise<Uint8Array | null> {
+  const reader = request.body?.getReader();
+  if (!reader) return new Uint8Array();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return body;
+}
 const MAX_TEXT_LENGTH = 2000;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const IMAGE_EXTENSIONS: Record<string, string> = {
@@ -70,7 +94,16 @@ export async function POST(request: Request) {
     if (userError || !userData.user) return NextResponse.json({ allowed: false, message: "Your session is invalid. Please sign in again." }, { status: 401 });
     const user = userData.user;
 
-    const form = await request.formData();
+    const bodyBytes = await readLimitedBody(request, MAX_REQUEST_BYTES);
+    if (bodyBytes === null) {
+      return NextResponse.json({ allowed: false, message: "Request body is too large." }, { status: 413 });
+    }
+    const formRequest = new Request(request.url, {
+      method: "POST",
+      headers: request.headers,
+      body: bodyBytes,
+    });
+    const form = await formRequest.formData();
     const kind = String(form.get("kind") || "post");
     if (kind !== "post" && kind !== "comment") {
       return NextResponse.json({ allowed: false, message: "Unsupported content type." }, { status: 400 });
