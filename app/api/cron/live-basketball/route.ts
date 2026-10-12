@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     // are configured. Explicit provider-ID mappings always take precedence.
     const { data: teams, error: teamsError } = await db.from("teams").select("id,name");
     if (teamsError) throw teamsError;
-    const normalize = (name: string) => name.toLocaleLowerCase("en-US").replace(/\\b(basketball club|basketball|bc|club|team)\\b/g, " ").replace(/[^a-z0-9]/g, "");
+    const normalize = (name: string) => name.toLocaleLowerCase("en-US").replace(/\b(basketball club|basketball|bc|club|team)\b/g, " ").replace(/[^a-z0-9]/g, "");
     const internalTeamByName = new Map<string, string>();
     for (const team of teams || []) {
       if (typeof team.name === "string" && team.name.trim()) {
