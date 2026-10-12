@@ -5,7 +5,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 
-type Game = { id: string; team_id: string; opponent_name: string; status: string; home_score: number | null; away_score: number | null; started_at: string | null };
+type Game = { id: string; team_id: string; opponent_team_id: string | null; opponent_name: string; status: string; home_score: number | null; away_score: number | null; started_at: string | null };
 type Team = { id: string; name: string };
 type ChatMessage = { id: string; body: string; created_at: string; user_id: string };
 
@@ -44,14 +44,16 @@ export default function FanLivePage() {
     if (!ids.length) { setGames([]); setTeams({}); setSelected(null); setMessages([]); setLoading(false); return; }
 
     const [{ data: gameRows, error: gamesError }, { data: teamRows }] = await Promise.all([
-      supabase.from("fan_live_games").select("id,team_id,opponent_name,status,home_score,away_score,started_at")
-        .eq("status", "live").in("team_id", ids).order("started_at", { ascending: false }),
+      supabase.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at")
+        .eq("status", "live").or("team_id.in.(" + ids.join(",") + "),opponent_team_id.in.(" + ids.join(",") + ")").order("started_at", { ascending: false }),
       supabase.from("teams").select("id,name").in("id", ids)
     ]);
     if (gamesError) setMessage("Live game updates are temporarily unavailable. Reconnecting…");
     const nextGames = (gameRows || []) as Game[];
     setGames(nextGames);
-    setTeams(Object.fromEntries((teamRows || []).map((team: Team) => [team.id, team])));
+    const relatedTeamIds = Array.from(new Set([...ids, ...nextGames.map(game => game.opponent_team_id).filter((id): id is string => Boolean(id))]));
+    const { data: relatedTeams } = await supabase.from("teams").select("id,name").in("id", relatedTeamIds);
+    setTeams(Object.fromEntries((relatedTeams || teamRows || []).map((team: Team) => [team.id, team])));
     setSelected(current => nextGames.find(game => game.id === current?.id) || nextGames[0] || null);
     setLoading(false);
   }, []);
@@ -126,13 +128,13 @@ export default function FanLivePage() {
     </section> : <section className="live-chat-layout">
       <div className="dashboard-card"><span className="card-kicker">LIVE NOW · {games.length}</span>
         {games.map(game => <button key={game.id} type="button" className={selected?.id === game.id ? "live-game-row selected" : "live-game-row"} onClick={() => setSelected(game)}>
-          <strong>{teams[game.team_id]?.name || "Team"}</strong><span>vs {game.opponent_name}</span>
+          <strong>{teams[game.team_id]?.name || "Team"}</strong><span>vs {teams[game.opponent_team_id || ""]?.name || game.opponent_name}</span>
           <b>{game.home_score ?? "—"} : {game.away_score ?? "—"}</b>
         </button>)}
       </div>
       {selected && <div className="dashboard-card live-chat-card">
-        <div className="live-chat-header"><div><span className="card-kicker">REAL-TIME CHAT</span><h2>{teams[selected.team_id]?.name || "Team"} vs {selected.opponent_name}</h2></div><strong>🔴 LIVE</strong></div>
-        <div className="live-chat-score"><span>{teams[selected.team_id]?.name || "Team"}</span><strong>{selected.home_score ?? "—"} : {selected.away_score ?? "—"}</strong><span>{selected.opponent_name}</span></div>
+        <div className="live-chat-header"><div><span className="card-kicker">REAL-TIME CHAT</span><h2>{teams[selected.team_id]?.name || "Team"} vs {teams[selected.opponent_team_id || ""]?.name || selected.opponent_name}</h2></div><strong>🔴 LIVE</strong></div>
+        <div className="live-chat-score"><span>{teams[selected.team_id]?.name || "Team"}</span><strong>{selected.home_score ?? "—"} : {selected.away_score ?? "—"}</strong><span>{teams[selected.opponent_team_id || ""]?.name || selected.opponent_name}</span></div>
         <div className="live-chat-messages" aria-live="polite" aria-label="Live game chat messages">
           {messages.map(item => <div className="live-chat-message" key={item.id}><small>{new Date(item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</small><span>{item.body}</span></div>)}
           {!messages.length && <p className="muted">You're in. Be the first to react to the game.</p>}
