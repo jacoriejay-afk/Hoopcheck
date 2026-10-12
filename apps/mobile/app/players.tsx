@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -17,8 +17,10 @@ export default function PlayersScreen() {
   const [error, setError] = useState("");
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const requestId = useRef(0);
 
   const load = useCallback(async (search: string, start = 0, append = false) => {
+    const currentRequest = ++requestId.current;
     if (start === 0) setLoading(true);
     setError("");
     const clean = search.trim().replace(/^@+/, "").replace(/[^\p{L}\p{N}_]/gu, "").toLowerCase();
@@ -41,6 +43,7 @@ export default function PlayersScreen() {
       .order("username", { ascending: true })
       .range(start, start + PAGE_SIZE);
     const { data, error: queryError } = await query;
+    if (currentRequest !== requestId.current) return;
     if (queryError) {
       setError("We couldn’t load player profiles. Check your connection and try again.");
       if (!append) setItems([]);
@@ -53,6 +56,21 @@ export default function PlayersScreen() {
     setOffset(start);
     setLoading(false); setRefreshing(false);
   }, []);
+
+  function updateTerm(value: string) {
+    setTerm(value);
+    const normalized = value.trim().replace(/^@+/, "").toLowerCase();
+    if (normalized !== appliedTerm.toLowerCase()) {
+      requestId.current += 1;
+      setAppliedTerm("");
+      setItems([]);
+      setHasMore(false);
+      setOffset(0);
+      setLoading(false);
+      setRefreshing(false);
+      setError("");
+    }
+  }
 
   function search() {
     const username = term.trim().replace(/^@+/, "");
@@ -78,7 +96,7 @@ export default function PlayersScreen() {
         <Text style={styles.title}>Find players</Text>
         <Text style={styles.subtitle}>Explore public profiles of professional men’s basketball players.</Text>
         <View style={styles.searchRow}>
-          <TextInput value={term} onChangeText={setTerm} onSubmitEditing={search} returnKeyType="search" placeholder="Enter a username (e.g. @player)" placeholderTextColor="#7B8797" style={styles.input} />
+          <TextInput value={term} onChangeText={updateTerm} onSubmitEditing={search} returnKeyType="search" placeholder="Enter a username (e.g. @player)" placeholderTextColor="#7B8797" style={styles.input} />
           <Pressable onPress={search} style={styles.searchButton}><Text style={styles.searchButtonText}>Search</Text></Pressable>
         </View>
         <Text style={styles.count}>{!appliedTerm ? "Search by username to view profiles" : loading ? "Searching usernames…" : items.length + (hasMore ? "+" : "") + " results shown"}</Text>
