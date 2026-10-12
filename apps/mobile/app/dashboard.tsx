@@ -50,7 +50,7 @@ export default function DashboardScreen() {
           <Text style={styles.directoryIcon}>👤</Text>
           <View style={styles.playerWideBody}>
             <Text style={styles.directoryTitle}>Find players</Text>
-            <Text style={styles.directoryCaption}>Search public men’s professional player profiles</Text>
+            <Text style={styles.directoryCaption}>Search public professional player profiles</Text>
           </View>
           <Text style={styles.directoryAction}>Search →</Text>
         </Pressable>
@@ -76,7 +76,7 @@ export default function DashboardScreen() {
           </View>
           <Text style={styles.directoryAction}>Search →</Text>
         </Pressable>
-        <Text style={styles.note}>Directories use HoopCheck’s existing Supabase data. Player search only displays public, non-suspended men’s professional profiles. The coach table currently has no active records, so the coach directory will show an honest empty state until data is added. Reviews, membership and account controls are not yet enabled in this mobile milestone.</Text>
+        <Text style={styles.note}>Directories use HoopCheck’s existing Supabase data. Player search only displays public, non-suspended professional profiles from men’s and women’s basketball. The coach table currently has no active records, so the coach directory will show an honest empty state until data is added. Reviews, membership and account controls are not yet enabled in this mobile milestone.</Text>
         <Text style={styles.sectionTitle}>Help & privacy</Text>
         <View style={styles.legalCard}>
           <Pressable onPress={() => void openHelp("support")} style={styles.legalLink}><Text style={styles.legalText}>Support</Text><Text style={styles.chevron}>›</Text></Pressable>
