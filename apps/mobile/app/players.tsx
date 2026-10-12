@@ -37,7 +37,7 @@ export default function PlayersScreen() {
       .eq("account_type", "player")
       .eq("profile_visibility", "public")
       .eq("moderation_status", "normal")
-      .eq("basketball_type", "mens")
+      .in("basketball_type", ["mens", "womens"])
       .eq("professional_experience", true)
       .ilike("username", "%" + clean + "%")
       .order("username", { ascending: true })
@@ -94,7 +94,7 @@ export default function PlayersScreen() {
         <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
         <Text style={styles.kicker}>PLAYER DIRECTORY</Text>
         <Text style={styles.title}>Find players</Text>
-        <Text style={styles.subtitle}>Explore public profiles of professional men’s basketball players.</Text>
+        <Text style={styles.subtitle}>Explore public profiles of professional basketball players.</Text>
         <View style={styles.searchRow}>
           <TextInput value={term} onChangeText={updateTerm} onSubmitEditing={search} returnKeyType="search" placeholder="Enter a username (e.g. @player)" placeholderTextColor="#7B8797" style={styles.input} />
           <Pressable onPress={search} style={styles.searchButton}><Text style={styles.searchButtonText}>Search</Text></Pressable>
@@ -127,7 +127,7 @@ export default function PlayersScreen() {
             </Pressable>
           )}
           ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>No public player profiles found</Text><Text style={styles.emptyText}>Profiles appear here only when they are public, marked as professional, and visible under current privacy and moderation settings.</Text></View>}
-          ListFooterComponent={hasMore ? <Pressable onPress={() => void nextPage()} style={styles.more}>{loading ? <ActivityIndicator color="#101827" /> : <Text style={styles.moreText}>Load more players</Text>}</Pressable> : <Text style={styles.footer}>Only public, non-suspended men’s professional profiles are shown. Profile details depend on each player’s settings.</Text>}
+          ListFooterComponent={hasMore ? <Pressable onPress={() => void nextPage()} style={styles.more}>{loading ? <ActivityIndicator color="#101827" /> : <Text style={styles.moreText}>Load more players</Text>}</Pressable> : <Text style={styles.footer}>Only public, non-suspended professional player profiles are shown. Profile details depend on each player’s settings.</Text>}
           onEndReachedThreshold={0.5}
           onEndReached={() => { if (hasMore && !loading) void nextPage(); }}
         />
