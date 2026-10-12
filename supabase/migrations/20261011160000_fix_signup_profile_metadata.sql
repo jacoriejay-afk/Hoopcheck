@@ -4,7 +4,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path TO 'public'
+SET search_path = ''
 AS $function$
 DECLARE
   account_type_value text := coalesce(new.raw_user_meta_data->>'account_type', 'player');
