@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -12,7 +12,7 @@ export default function PlayersScreen() {
   const [items, setItems] = useState<Player[]>([]);
   const [term, setTerm] = useState("");
   const [appliedTerm, setAppliedTerm] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [offset, setOffset] = useState(0);
@@ -21,7 +21,15 @@ export default function PlayersScreen() {
   const load = useCallback(async (search: string, start = 0, append = false) => {
     if (start === 0) setLoading(true);
     setError("");
-    const clean = search.trim().replace(/[^\p{L}\p{N} '\-]/gu, " ").replace(/\s+/g, " ").trim();
+    const clean = search.trim().replace(/^@+/, "").replace(/[^\p{L}\p{N}_]/gu, "").toLowerCase();
+    if (clean.length < 2) {
+      setItems([]);
+      setHasMore(false);
+      setOffset(0);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
     let query = supabase.from("profiles")
       .select("id,display_name,username,country,current_country,current_team,position,years_pro,free_agent")
       .eq("account_type", "player")
@@ -29,9 +37,9 @@ export default function PlayersScreen() {
       .eq("moderation_status", "normal")
       .eq("basketball_type", "mens")
       .eq("professional_experience", true)
-      .order("display_name", { ascending: true })
+      .ilike("username", "%" + clean + "%")
+      .order("username", { ascending: true })
       .range(start, start + PAGE_SIZE);
-    if (clean) query = query.or(`display_name.ilike.%${clean}%,username.ilike.%${clean}%,country.ilike.%${clean}%,current_country.ilike.%${clean}%,current_team.ilike.%${clean}%`);
     const { data, error: queryError } = await query;
     if (queryError) {
       setError("We couldn’t load player profiles. Check your connection and try again.");
@@ -46,10 +54,21 @@ export default function PlayersScreen() {
     setLoading(false); setRefreshing(false);
   }, []);
 
-  useEffect(() => { void load("", 0, false); }, [load]);
-  function search() { setAppliedTerm(term.trim()); void load(term, 0, false); }
-  async function nextPage() { if (loading || !hasMore) return; setLoading(true); await load(appliedTerm, offset + PAGE_SIZE, true); }
-  const refresh = () => { setRefreshing(true); void load(appliedTerm, 0, false); };
+  function search() {
+    const username = term.trim().replace(/^@+/, "");
+    if (username.length < 2) {
+      setError("Enter at least 2 characters of a username to search.");
+      setItems([]);
+      setHasMore(false);
+      setAppliedTerm("");
+      return;
+    }
+    setError("");
+    setAppliedTerm(username);
+    void load(username, 0, false);
+  }
+  async function nextPage() { if (loading || !hasMore || !appliedTerm) return; setLoading(true); await load(appliedTerm, offset + PAGE_SIZE, true); }
+  const refresh = () => { if (!appliedTerm) return; setRefreshing(true); void load(appliedTerm, 0, false); };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -59,13 +78,18 @@ export default function PlayersScreen() {
         <Text style={styles.title}>Find players</Text>
         <Text style={styles.subtitle}>Explore public profiles of professional men’s basketball players.</Text>
         <View style={styles.searchRow}>
-          <TextInput value={term} onChangeText={setTerm} onSubmitEditing={search} returnKeyType="search" placeholder="Name, team or country" placeholderTextColor="#7B8797" style={styles.input} />
+          <TextInput value={term} onChangeText={setTerm} onSubmitEditing={search} returnKeyType="search" placeholder="Enter a username (e.g. @player)" placeholderTextColor="#7B8797" style={styles.input} />
           <Pressable onPress={search} style={styles.searchButton}><Text style={styles.searchButtonText}>Search</Text></Pressable>
         </View>
-        <Text style={styles.count}>{loading ? "Loading players…" : `${items.length}${hasMore ? "+" : ""} results shown`}</Text>
+        <Text style={styles.count}>{!appliedTerm ? "Search by username to view profiles" : loading ? "Searching usernames…" : items.length + (hasMore ? "+" : "") + " results shown"}</Text>
       </View>
       {error ? <View style={styles.errorBox}><Text style={styles.error}>{error}</Text><Pressable onPress={() => void load(appliedTerm)}><Text style={styles.retry}>Try again</Text></Pressable></View> : null}
-      {loading && items.length === 0 ? <ActivityIndicator style={styles.loader} size="large" color="#D69E18" /> : (
+      {!appliedTerm ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyTitle}>Search by username</Text>
+          <Text style={styles.emptyText}>Player profiles stay hidden until you enter a username. Search requires at least two characters.</Text>
+        </View>
+      ) : loading && items.length === 0 ? <ActivityIndicator style={styles.loader} size="large" color="#D69E18" /> : (
         <FlatList
           data={items}
           keyExtractor={item => item.id}
