@@ -8,7 +8,8 @@ export default function SiteHeader() {
   const pathname = usePathname();
   const { signedIn } = useAuthState();
 
-  if (pathname.startsWith("/admin")) return null;
+  // The dashboard renders its own complete top navigation; avoid a duplicate floating brand/header there.
+  if (pathname.startsWith("/admin") || pathname === "/dashboard") return null;
 
   return (
     <header className="site-header-global">
