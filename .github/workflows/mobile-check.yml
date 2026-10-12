@@ -4,7 +4,6 @@ on:
   pull_request:
     paths:
       - "apps/mobile/**"
-      - ".github/workflows/mobile-check.yml"
   push:
     branches:
       - "feat/expo-mobile-foundation"
