@@ -2,8 +2,9 @@ name: Sync live basketball scores
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
-  workflow_dispatch:
+    # Four runs per hour = 96 scheduled API calls per day, leaving four calls
+    # of headroom under the free tier's 100-request daily limit.
+    - cron: "*/15 * * * *"
 
 permissions:
   contents: read
