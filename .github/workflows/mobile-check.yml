@@ -1,0 +1,33 @@
+name: Mobile App Checks
+
+on:
+  pull_request:
+    paths:
+      - "apps/mobile/**"
+  push:
+    branches:
+      - "feat/expo-mobile-foundation"
+      - "fix/expo-doctor-dependencies"
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/mobile-check.yml"
+
+jobs:
+  mobile-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install mobile dependencies
+        run: npm install
+      - name: TypeScript typecheck
+        run: npm run typecheck
+      - name: Expo dependency and configuration diagnostics
+        run: npx expo-doctor
