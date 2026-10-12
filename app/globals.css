@@ -2239,3 +2239,29 @@ main > .nav{display:none!important}
     padding-top: calc(6px + env(safe-area-inset-top, 0px));
   }
 }
+
+
+/* Live game chat: compact scoreboard and clear real-time conversation area. */
+.live-chat-score {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--border-color, rgba(128,128,128,.28));
+  border-radius: 12px;
+  text-align: center;
+}
+.live-chat-score span { font-size: 12px; overflow-wrap: anywhere; }
+.live-chat-score strong { font-size: clamp(20px, 4vw, 28px); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.live-chat-messages { overflow-y: auto; overscroll-behavior: contain; scroll-behavior: smooth; }
+.live-chat-message { display: flex; align-items: baseline; gap: 9px; }
+.live-chat-message small { flex: 0 0 auto; opacity: .7; font-variant-numeric: tabular-nums; }
+.live-chat-compose input { min-width: 0; flex: 1 1 auto; }
+.live-chat-compose button:disabled { opacity: .55; cursor: not-allowed; }
+@media(max-width:700px) {
+  .live-chat-score { gap: 6px; padding: 9px 7px; }
+  .live-chat-score span { font-size: 10px; }
+  .live-chat-message { gap: 7px; }
+}
