@@ -12,12 +12,13 @@ This isolated React Native / Expo app does not replace or modify the Next.js web
 - Authenticated dashboard with Supabase-backed search directories for active men’s teams and leagues, paginated results, refresh, and search by name/location/level.
 - Team and league detail screens that show available directory fields, link to validated HTTP(S) official websites when listed, and include contract-verification cautions.
 - Team and league detail screens include read-only latest-review summaries. Review reads use the signed-in Supabase client and existing row-level security; the app does not bypass subscription policies or expose author identities.
+- Team detail includes a native team-review form with five rating categories, season, optional title, written review, and anonymous display preference. It sends the signed-in access token to the existing `/api/reviews` endpoint; the server remains responsible for email confirmation, verified-player status, active membership, verified team affiliation, and moderation status. The form is unavailable until `EXPO_PUBLIC_HOOPCHECK_API_URL` is configured to the correct deployed HoopCheck web origin.
 - Player search directory limited to public, non-suspended, men’s professional profiles, with search by name, username, team and country; selecting a result opens a public profile detail screen showing only public-facing basketball and biography fields.
 - Coach directory backed by the existing active coach table, with search by name and location and an explicit empty state when there are no records.
 - Dashboard links to the existing website’s Support, Terms, Privacy Policy, Community Guidelines, Privacy Request Center, and Account settings pages.
 - The repository now has a path-filtered GitHub Actions workflow for mobile TypeScript typechecking and Expo Doctor. Passing these checks does not establish that native builds, password recovery on a device, or the live signup trigger have been validated. The signup migration is still review-only and has not been applied to Supabase. It validates account type, username format, player position/years pro, boolean metadata, and the terms-acceptance timestamp on the trusted trigger path; the SECURITY DEFINER trigger uses an empty search path and schema-qualified table references.
 
-**Not yet release-ready:** no native iOS/Android build or physical-device recovery test has been completed. Reviews, subscriptions, account deletion, support tickets and moderation features are not wired into the mobile app. The live coach table was empty when inspected, so no coaches are fabricated.
+**Not yet release-ready:** no native iOS/Android build or physical-device recovery test has been completed. The mobile app does not include purchase/restore subscription flows, account deletion, support-ticket creation, or user moderation/reporting screens. Team review submission depends on the existing web API and still needs a configured API origin plus end-to-end verification in a safe test environment. The live coach table was empty when inspected, so no coaches are fabricated.
 
 ## EAS build profiles
 
@@ -29,7 +30,8 @@ This isolated React Native / Expo app does not replace or modify the Next.js web
 2. From this directory, install dependencies.
 3. Copy .env.example to .env.local.
 4. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY using the existing Supabase project's public client configuration. Never use a service-role key in a mobile app.
-5. Run npm run start and use Expo Go or a development build as appropriate for the selected SDK.
+5. Set `EXPO_PUBLIC_HOOPCHECK_API_URL` to the correct deployed HoopCheck web app origin (HTTPS, no trailing slash) to enable team-review submission. Do not guess the production domain; verify it against the active deployment first.
+6. Run npm run start and use Expo Go or a development build as appropriate for the selected SDK.
 
 ## Required before store release
 
