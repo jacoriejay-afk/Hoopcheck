@@ -6,8 +6,7 @@ alter table public.fan_live_games
   add column if not exists provider_game_id text;
 
 create unique index if not exists fan_live_games_provider_identity_idx
-  on public.fan_live_games(provider_source, provider_game_id)
-  where provider_source is not null and provider_game_id is not null;
+  on public.fan_live_games(provider_source, provider_game_id);
 
 create table if not exists public.fan_live_team_provider_map (
   team_id uuid primary key references public.teams(id) on delete cascade,
