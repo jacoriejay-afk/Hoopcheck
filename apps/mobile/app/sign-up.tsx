@@ -36,6 +36,7 @@ export default function SignUpScreen() {
   const [username, setUsername] = useState("");
   const [birthdate, setBirthdate] = useState("");
   const [gender, setGender] = useState("");
+  const [position, setPosition] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -51,6 +52,7 @@ export default function SignUpScreen() {
     if (!validBirthdate(birthdate)) { setErrorMessage("Enter a valid birthdate in YYYY-MM-DD format."); return; }
     if (ageAtDate(birthdate) < 18) { setErrorMessage("You must be 18 or older to create a HoopCheck account."); return; }
     if (!["male", "female", "non_binary", "prefer_not_to_say"].includes(gender)) { setErrorMessage("Select a gender option."); return; }
+    if (accountType === "player" && !["PG", "SG", "SF", "PF", "C"].includes(position)) { setErrorMessage("Select your primary basketball position."); return; }
     if (password.length < 6) { setErrorMessage("Password must be at least 6 characters."); return; }
     if (password !== confirmPassword) { setErrorMessage("Passwords do not match."); return; }
     if (!accepted) { setErrorMessage("Please agree to the Terms of Service and acknowledge the Privacy Policy and Community Guidelines."); return; }
@@ -68,7 +70,7 @@ export default function SignUpScreen() {
           account_type: accountType,
           username: username.trim().toLowerCase(),
           basketball_type: accountType === "player" && gender === "female" ? "womens" : accountType === "player" ? "mens" : null,
-          position: accountType === "player" ? "PG" : null,
+          position: accountType === "player" ? position : null,
           years_pro: accountType === "player" ? 0 : null,
           professional_experience: false,
           former_team_ids: [],
@@ -129,6 +131,18 @@ export default function SignUpScreen() {
               </Pressable>
             ))}
           </View>
+          {accountType === "player" ? (
+            <>
+              <Text style={styles.label}>Primary basketball position</Text>
+              <View style={styles.choices}>
+                {[["PG", "Point guard"], ["SG", "Shooting guard"], ["SF", "Small forward"], ["PF", "Power forward"], ["C", "Center"]].map(([value, label]) => (
+                  <Pressable key={value} accessibilityRole="radio" accessibilityState={{ selected: position === value }} onPress={() => setPosition(value)} style={[styles.choice, position === value && styles.choiceSelected]}>
+                    <Text style={[styles.choiceText, position === value && styles.choiceTextSelected]}>{label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </>
+          ) : null}
           <Text style={styles.label}>Email</Text>
           <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" style={styles.input} placeholder="you@example.com" />
           <Text style={styles.label}>Password</Text>
