@@ -57,9 +57,8 @@ export default function PlayersPage() {
         const escapedUsername = username.replace(/[\\%_]/g, "\\$&");
         let request = supabase
           .from("profiles")
-          .select("id,display_name,username,first_name,last_name,country,current_country,current_team,position,years_pro,player_verified,avatar_url,free_agent")
+          .select("id,display_name,username,first_name,last_name,country,current_country,current_team,position,years_pro,player_verified,avatar_url,basketball_type,free_agent")
           .eq("account_type", "player")
-          .or("basketball_type.is.null,basketball_type.eq.mens")
           .eq("profile_visibility", "public")
           .neq("moderation_status", "suspended")
           .not("username", "is", null)
