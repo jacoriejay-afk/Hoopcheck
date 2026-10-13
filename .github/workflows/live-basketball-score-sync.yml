@@ -21,12 +21,12 @@ jobs:
     steps:
       - name: Trigger secured live-score sync endpoint
         env:
-          LIVE_SCORES_SYNC_URL: ${{ secrets.LIVE_SCORES_SYNC_URL }}
+          LIVE_SCORES_SYNC_URL: https://hoopcheck-nine.vercel.app/api/cron/live-basketball
           LIVE_SCORES_CRON_SECRET: ${{ secrets.LIVE_SCORES_CRON_SECRET }}
         run: |
           set -eu
           if [ -z "$LIVE_SCORES_SYNC_URL" ] || [ -z "$LIVE_SCORES_CRON_SECRET" ]; then
-            echo "Configure LIVE_SCORES_SYNC_URL and LIVE_SCORES_CRON_SECRET in GitHub Actions secrets."
+            echo "Configure LIVE_SCORES_CRON_SECRET in GitHub Actions secrets."
             exit 1
           fi
           curl --fail --silent --show-error --max-time 25 \
