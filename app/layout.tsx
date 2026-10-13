@@ -11,7 +11,7 @@ import ProtectionLayer from "../components/ProtectionLayer";
 import AnalyticsTracker from "../components/AnalyticsTracker";
 import SiteHeader from "../components/SiteHeader";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://hoopcheck.com";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://hoopcheck-nine.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
