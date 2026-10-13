@@ -126,7 +126,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: true, providerLiveGames: payload.response.length, matchedGames: rows.length }, {
       headers: { "Cache-Control": "no-store" }
     });
-  } catch {
+  } catch (error) {
+    // Keep detailed diagnostics in server logs only; never expose provider or database details to callers.
+    if (error && typeof error === "object") {
+      const e = error as { name?: unknown; message?: unknown; code?: unknown; details?: unknown; hint?: unknown };
+      console.error("Live-score sync failed", {
+        name: e.name,
+        message: e.message,
+        code: e.code,
+        details: e.details,
+        hint: e.hint
+      });
+    } else {
+      console.error("Live-score sync failed", String(error));
+    }
     return NextResponse.json({ error: "Live-score sync failed. Check server logs." }, { status: 500, headers: { "Cache-Control": "no-store" } });
   }
 }
