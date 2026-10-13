@@ -37,7 +37,15 @@ export async function GET(request: NextRequest) {
 
   try {
     const db = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
-    const response = await fetch("https://v1.basketball.api-sports.io/games?live=all", {
+    const bakuDateParts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Baku",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(new Date());
+    const datePart = (type: string) => bakuDateParts.find(part => part.type === type)?.value;
+    const fixtureDate = `${datePart("year")}-${datePart("month")}-${datePart("day")}`;
+    const response = await fetch(`https://v1.basketball.api-sports.io/games?date=${fixtureDate}&timezone=Asia%2FBaku`, {
       headers: { "x-apisports-key": apiKey, "Accept": "application/json" },
       cache: "no-store",
       signal: AbortSignal.timeout(12000)
@@ -80,8 +88,8 @@ export async function GET(request: NextRequest) {
         }
       }
     }
-    // Learn provider IDs from live fixtures only when the normalized name maps to
-    // exactly one internal team. Never overwrite existing mappings or guess IDs.
+    // Learn provider IDs from date-scoped fixtures only when the normalized name maps to
+    // exactly one internal team. This discovers verified IDs before games tip off; never overwrite mappings or guess IDs.
     const mappedInternalIds = new Set((mappings || []).map((mapping: { team_id: string }) => mapping.team_id));
     const discovered = new Map<number, { team_id: string; provider_team_name: string; active: true }>();
     for (const game of payload.response) {
@@ -121,8 +129,11 @@ export async function GET(request: NextRequest) {
     const internalIdFor = (providerId: number, providerName?: string) =>
       byProviderId.get(providerId) || (providerName ? internalTeamByName.get(normalize(providerName)) : undefined);
 
+    const activeStatuses = new Set(["Q1", "Q2", "Q3", "Q4", "OT", "BT", "HT"]);
+    const liveGames = payload.response.filter(game => activeStatuses.has(String(game.status?.short || "").toUpperCase()));
+
     const rows = [];
-    for (const game of payload.response) {
+    for (const game of liveGames) {
       const homeProviderId = Number(game.teams?.home?.id);
       const awayProviderId = Number(game.teams?.visitors?.id);
       const homeInternalId = internalIdFor(homeProviderId, game.teams?.home?.name);
@@ -169,7 +180,7 @@ export async function GET(request: NextRequest) {
     const { error: staleError } = await staleQuery;
     if (staleError) throw staleError;
 
-    return NextResponse.json({ ok: true, providerLiveGames: payload.response.length, matchedGames: rows.length }, {
+    return NextResponse.json({ ok: true, fixtureDate, providerGamesForDate: payload.response.length, providerLiveGames: liveGames.length, matchedGames: rows.length }, {
       headers: { "Cache-Control": "no-store" }
     });
   } catch (error) {
