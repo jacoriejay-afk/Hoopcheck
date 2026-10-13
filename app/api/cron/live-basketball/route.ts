@@ -66,10 +66,18 @@ export async function GET(request: NextRequest) {
     if (teamsError) throw teamsError;
     const normalize = (name: string) => name.toLocaleLowerCase("en-US").replace(/\b(basketball club|basketball|bc|club|team)\b/g, " ").replace(/[^a-z0-9]/g, "");
     const internalTeamByName = new Map<string, string>();
+    const ambiguousTeamNames = new Set<string>();
     for (const team of teams || []) {
       if (typeof team.name === "string" && team.name.trim()) {
         const key = normalize(team.name);
-        if (key && !internalTeamByName.has(key)) internalTeamByName.set(key, team.id);
+        if (!key || ambiguousTeamNames.has(key)) continue;
+        if (internalTeamByName.has(key)) {
+          // Never assign a provider game to an arbitrary duplicate team record.
+          internalTeamByName.delete(key);
+          ambiguousTeamNames.add(key);
+        } else {
+          internalTeamByName.set(key, team.id);
+        }
       }
     }
     const internalIdFor = (providerId: number, providerName?: string) =>
