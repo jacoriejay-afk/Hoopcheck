@@ -60,24 +60,22 @@ export async function GET(request: NextRequest) {
     const byProviderId = new Map<number, string>();
     for (const mapping of mappings || []) byProviderId.set(Number(mapping.provider_team_id), mapping.team_id);
 
-    // Name matching gives the integration a useful default before manual aliases
-    // are configured. Explicit provider-ID mappings always take precedence.
+    // Name matching is only a fallback; explicit provider-ID mappings always win.
     const { data: teams, error: teamsError } = await db.from("teams").select("id,name");
     if (teamsError) throw teamsError;
     const normalize = (name: string) => name.toLocaleLowerCase("en-US").replace(/\b(basketball club|basketball|bc|club|team)\b/g, " ").replace(/[^a-z0-9]/g, "");
     const internalTeamByName = new Map<string, string>();
     const ambiguousTeamNames = new Set<string>();
     for (const team of teams || []) {
-      if (typeof team.name === "string" && team.name.trim()) {
-        const key = normalize(team.name);
-        if (!key || ambiguousTeamNames.has(key)) continue;
-        if (internalTeamByName.has(key)) {
-          // Never assign a provider game to an arbitrary duplicate team record.
-          internalTeamByName.delete(key);
-          ambiguousTeamNames.add(key);
-        } else {
-          internalTeamByName.set(key, team.id);
-        }
+      if (typeof team.name !== "string" || !team.name.trim()) continue;
+      const key = normalize(team.name);
+      if (!key || ambiguousTeamNames.has(key)) continue;
+      if (internalTeamByName.has(key)) {
+        // Never attach a provider score to an arbitrary duplicate team record.
+        internalTeamByName.delete(key);
+        ambiguousTeamNames.add(key);
+      } else {
+        internalTeamByName.set(key, team.id);
       }
     }
     const internalIdFor = (providerId: number, providerName?: string) =>
@@ -91,8 +89,7 @@ export async function GET(request: NextRequest) {
       const awayInternalId = internalIdFor(awayProviderId, game.teams?.visitors?.name);
       if (!homeInternalId && !awayInternalId) continue;
 
-      // Use the followed/mapped side as the primary team so score order is always
-      // primary-team score first, opponent score second in the chat UI.
+      // Store the mapped/followed side first, keeping score order consistent in chat.
       const primaryIsHome = Boolean(homeInternalId);
       const primaryId = homeInternalId || awayInternalId;
       const opponentId = primaryIsHome ? awayInternalId || null : homeInternalId || null;
