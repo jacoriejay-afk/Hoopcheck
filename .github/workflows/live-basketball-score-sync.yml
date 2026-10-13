@@ -1,6 +1,7 @@
 name: Sync live basketball scores
 
 on:
+  workflow_dispatch:
   schedule:
     # Four runs per hour = 96 scheduled API calls per day, leaving four calls
     # of headroom under the free tier's 100-request daily limit.
