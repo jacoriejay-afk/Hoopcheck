@@ -80,6 +80,44 @@ export async function GET(request: NextRequest) {
         }
       }
     }
+    // Learn provider IDs from live fixtures only when the normalized name maps to
+    // exactly one internal team. Never overwrite existing mappings or guess IDs.
+    const mappedInternalIds = new Set((mappings || []).map((mapping: { team_id: string }) => mapping.team_id));
+    const discovered = new Map<number, { team_id: string; provider_team_name: string; active: true }>();
+    for (const game of payload.response) {
+      const sides = [game.teams?.home, game.teams?.visitors];
+      for (const side of sides) {
+        const providerId = Number(side?.id);
+        const providerName = side?.name;
+        if (!Number.isInteger(providerId) || providerId <= 0 || !providerName) continue;
+        if (byProviderId.has(providerId) || discovered.has(providerId)) continue;
+        const internalId = internalTeamByName.get(normalize(providerName));
+        if (!internalId || mappedInternalIds.has(internalId)) continue;
+        discovered.set(providerId, {
+          team_id: internalId,
+          provider_team_name: providerName,
+          active: true
+        });
+        mappedInternalIds.add(internalId);
+      }
+    }
+
+    if (discovered.size) {
+      const newMappings = [...discovered.entries()].map(([provider_team_id, value]) => ({
+        provider_team_id,
+        ...value
+      }));
+      const { error: insertMappingsError } = await db
+        .from("fan_live_team_provider_map")
+        .insert(newMappings);
+      // If a concurrent run won a uniqueness race, continue safely without
+      // replacing either team's existing association.
+      if (insertMappingsError && insertMappingsError.code !== "23505") throw insertMappingsError;
+      for (const [providerId, value] of discovered.entries()) {
+        byProviderId.set(providerId, value.team_id);
+      }
+    }
+
     const internalIdFor = (providerId: number, providerName?: string) =>
       byProviderId.get(providerId) || (providerName ? internalTeamByName.get(normalize(providerName)) : undefined);
 
