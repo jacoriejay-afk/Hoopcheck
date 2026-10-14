@@ -129,12 +129,13 @@ with seed(team,country,city,league_name) as (values
 -- Australian WNBL clubs
 ('Adelaide Lightning','Australia','Adelaide','WNBL Australia'),
 ('Bendigo Spirit','Australia','Bendigo','WNBL Australia'),
-('Geelong United','Australia','Geelong','WNBL Australia'),
+('Geelong Venom','Australia','Geelong','WNBL Australia'),
 ('Perth Lynx','Australia','Perth','WNBL Australia'),
-('Southside Flyers','Australia','Melbourne','WNBL Australia'),
+('Southside Melbourne Flyers','Australia','Melbourne','WNBL Australia'),
 ('Sydney Flames','Australia','Sydney','WNBL Australia'),
 ('Townsville Fire','Australia','Townsville','WNBL Australia'),
 ('UC Capitals','Australia','Canberra','WNBL Australia'),
+('Tasmania Jewels','Australia','Hobart','WNBL Australia'),
 -- Tauihi Basketball Aotearoa women's league
 ('Mainland Pouākai','New Zealand','Christchurch','Tauihi Basketball Aotearoa'),
 ('Northern Kāhu','New Zealand','Auckland','Tauihi Basketball Aotearoa'),
@@ -153,7 +154,7 @@ update public.womens_teams t set league_name = case
  else t.league_name || ' · ' || x.league_name end
 from (values
 ('Montana 2003','Bulgaria','WABA League 2026-27'),('Cinkarna Celje','Slovenia','WABA League 2026-27'),('Budućnost Bemax','Montenegro','WABA League 2026-27'),('Partizan 1953','Serbia','WABA League 2026-27'),('Rilski Sportist','Bulgaria','WABA League 2026-27'),('Studio Zagreb','Croatia','WABA League 2026-27'),('Beroe','Bulgaria','WABA League 2026-27'),('Trešnjevka 2009','Croatia','WABA League 2026-27'),('Šibenik','Croatia','WABA League 2026-27'),('Brod na Savi','Croatia','WABA League 2026-27'),('Partizani','Albania','WABA League 2026-27'),
-('Adelaide Lightning','Australia','WNBL Australia'),('Bendigo Spirit','Australia','WNBL Australia'),('Geelong United','Australia','WNBL Australia'),('Perth Lynx','Australia','WNBL Australia'),('Southside Flyers','Australia','WNBL Australia'),('Sydney Flames','Australia','WNBL Australia'),('Townsville Fire','Australia','WNBL Australia'),('UC Capitals','Australia','WNBL Australia'),
+('Adelaide Lightning','Australia','WNBL Australia'),('Bendigo Spirit','Australia','WNBL Australia'),('Geelong Venom','Australia','WNBL Australia'),('Perth Lynx','Australia','WNBL Australia'),('Southside Melbourne Flyers','Australia','WNBL Australia'),('Sydney Flames','Australia','WNBL Australia'),('Townsville Fire','Australia','WNBL Australia'),('UC Capitals','Australia','WNBL Australia'),('Tasmania Jewels','Australia','WNBL Australia'),
 ('Mainland Pouākai','New Zealand','Tauihi Basketball Aotearoa'),('Northern Kāhu','New Zealand','Tauihi Basketball Aotearoa'),('Southern Hoiho','New Zealand','Tauihi Basketball Aotearoa'),('Tokomanawa Queens','New Zealand','Tauihi Basketball Aotearoa'),('Whai','New Zealand','Tauihi Basketball Aotearoa')
 ) x(name,country,league_name)
 where lower(t.name)=lower(x.name) and lower(t.country)=lower(x.country);
