@@ -32,17 +32,19 @@ Subscriptions are processed through Stripe. The membership page and checkout pri
 - Vercel
 ## Environment Variables
 Create a `.env.local` file for local development.
-Required variables:
+Required variables for local development:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-STRIPE_PRO_PRICE_ID=
-STRIPE_PREMIUM_PRICE_ID=
-NEXT_PUBLIC_SITE_URL=
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_CHECKOUT_ENABLED=true
+STRIPE_CHECKOUT_MODE=test
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
+
+Use Stripe **test-mode** keys and test-mode Price objects for local and preview testing. The checkout API selects Price objects by lookup key; it does not use `STRIPE_PRO_PRICE_ID` or `STRIPE_PREMIUM_PRICE_ID`. Production deployments must separately use live-mode keys and `STRIPE_CHECKOUT_MODE=live`.
 
 Never commit .env.local or any secret keys to GitHub.
 
@@ -162,4 +164,3 @@ Hoopcheck/
 
 Built for basketball players.
 
-**Commit that README, then reply `Done`.**
