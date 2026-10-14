@@ -11,8 +11,8 @@ type ProviderGame = {
   date?: string;
   timestamp?: number;
   status?: { short?: string; long?: string };
-  teams?: { home?: ProviderTeam; visitors?: ProviderTeam };
-  scores?: { home?: ProviderScore; visitors?: ProviderScore };
+  teams?: { home?: ProviderTeam; away?: ProviderTeam; visitors?: ProviderTeam };
+  scores?: { home?: ProviderScore; away?: ProviderScore; visitors?: ProviderScore };
 };
 type ProviderResponse = { response?: ProviderGame[]; errors?: unknown; results?: number };
 
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
     const mappedInternalIds = new Set((mappings || []).map((mapping: { team_id: string }) => mapping.team_id));
     const discovered = new Map<number, { team_id: string; provider_team_name: string; active: true }>();
     for (const game of payload.response) {
-      const sides = [game.teams?.home, game.teams?.visitors];
+      const sides = [game.teams?.home, (game.teams?.away ?? game.teams?.visitors)];
       for (const side of sides) {
         const providerId = Number(side?.id);
         const providerName = side?.name;
@@ -135,9 +135,9 @@ export async function GET(request: NextRequest) {
     const rows = [];
     for (const game of liveGames) {
       const homeProviderId = Number(game.teams?.home?.id);
-      const awayProviderId = Number(game.teams?.visitors?.id);
+      const awayProviderId = Number((game.teams?.away ?? game.teams?.visitors)?.id);
       const homeInternalId = internalIdFor(homeProviderId, game.teams?.home?.name);
-      const awayInternalId = internalIdFor(awayProviderId, game.teams?.visitors?.name);
+      const awayInternalId = internalIdFor(awayProviderId, (game.teams?.away ?? game.teams?.visitors)?.name);
       if (!homeInternalId && !awayInternalId) continue;
 
       // Use the followed/mapped side as the primary team so score order is always
@@ -145,9 +145,9 @@ export async function GET(request: NextRequest) {
       const primaryIsHome = Boolean(homeInternalId);
       const primaryId = homeInternalId || awayInternalId;
       const opponentId = primaryIsHome ? awayInternalId || null : homeInternalId || null;
-      const opponentName = primaryIsHome ? game.teams?.visitors?.name : game.teams?.home?.name;
-      const primaryScore = primaryIsHome ? score(game.scores?.home) : score(game.scores?.visitors);
-      const opponentScore = primaryIsHome ? score(game.scores?.visitors) : score(game.scores?.home);
+      const opponentName = primaryIsHome ? (game.teams?.away ?? game.teams?.visitors)?.name : game.teams?.home?.name;
+      const primaryScore = primaryIsHome ? score(game.scores?.home) : score((game.scores?.away ?? game.scores?.visitors));
+      const opponentScore = primaryIsHome ? score((game.scores?.away ?? game.scores?.visitors)) : score(game.scores?.home);
       if (!primaryId || !opponentName || !game.id) continue;
 
       const startDate = game.timestamp ? new Date(game.timestamp * 1000).toISOString()
@@ -183,16 +183,16 @@ export async function GET(request: NextRequest) {
     const unmatchedLiveGames = liveGames
       .filter(game => {
         const homeProviderId = Number(game.teams?.home?.id);
-        const awayProviderId = Number(game.teams?.visitors?.id);
+        const awayProviderId = Number((game.teams?.away ?? game.teams?.visitors)?.id);
         return !internalIdFor(homeProviderId, game.teams?.home?.name)
-          && !internalIdFor(awayProviderId, game.teams?.visitors?.name);
+          && !internalIdFor(awayProviderId, (game.teams?.away ?? game.teams?.visitors)?.name);
       })
       .slice(0, 10)
       .map(game => ({
         providerGameId: String(game.id),
         status: game.status?.short || null,
         home: { id: game.teams?.home?.id ?? null, name: game.teams?.home?.name ?? null },
-        away: { id: game.teams?.visitors?.id ?? null, name: game.teams?.visitors?.name ?? null }
+        away: { id: (game.teams?.away ?? game.teams?.visitors)?.id ?? null, name: (game.teams?.away ?? game.teams?.visitors)?.name ?? null }
       }));
 
     return NextResponse.json({
