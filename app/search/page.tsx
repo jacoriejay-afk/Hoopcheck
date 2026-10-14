@@ -8,6 +8,7 @@ import PlayerContactButton from "../../components/PlayerContactButton";
 
 type Coach = { id: string; name: string; country: string | null; city: string | null };
 type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null };
+type WomensTeam = { id: string; name: string; country: string | null; city: string | null; league_name: string | null };
 type League = { id: string; name: string; country: string | null; level: string | null };
 type Player = {
   id: string;
@@ -104,13 +105,14 @@ function SearchContent() {
 
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [womensTeams, setWomensTeams] = useState<WomensTeam[]>([]);
   const [leagues, setLeagues] = useState<League[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState(query);
-  const [typeFilter, setTypeFilter] = useState<"all" | "players" | "coaches" | "teams" | "leagues">(
-    initialType === "players" || initialType === "coaches" || initialType === "teams" || initialType === "leagues" ? initialType : "all"
+  const [typeFilter, setTypeFilter] = useState<"all" | "players" | "coaches" | "mens-teams" | "womens-teams" | "leagues">(
+    initialType === "players" || initialType === "coaches" || initialType === "mens-teams" || initialType === "womens-teams" || initialType === "leagues" ? initialType : "all"
   );
   const [countryFilter, setCountryFilter] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
@@ -120,6 +122,7 @@ function SearchContent() {
       if (!query) {
         setCoaches([]);
         setTeams([]);
+        setWomensTeams([]);
         setLeagues([]);
         setPlayers([]);
         return;
@@ -132,10 +135,11 @@ function SearchContent() {
         const searchTerm = `%${query}%`;
         const wantsPlayers = typeFilter === "all" || typeFilter === "players";
         const wantsCoaches = typeFilter === "all" || typeFilter === "coaches";
-        const wantsTeams = typeFilter === "all" || typeFilter === "teams";
+        const wantsMensTeams = typeFilter === "all" || typeFilter === "mens-teams";
+        const wantsWomensTeams = typeFilter === "all" || typeFilter === "womens-teams";
         const wantsLeagues = typeFilter === "all" || typeFilter === "leagues";
 
-        const [playerResult, coachResult, teamResult, leagueResult] = await Promise.all([
+        const [playerResult, coachResult, teamResult, womensTeamResult, leagueResult] = await Promise.all([
           wantsPlayers
             ? supabase.rpc("search_public_players", {
                 p_query: query,
@@ -154,11 +158,21 @@ function SearchContent() {
                 return request;
               })()
             : Promise.resolve({ data: [], error: null }),
-          wantsTeams
+          wantsMensTeams
             ? (() => {
                 let request = supabase.from("teams").select("id, name, country, city, league_name")
+                  .eq("basketball_type", "mens")
                   .or(`name.ilike.${searchTerm},country.ilike.${searchTerm},city.ilike.${searchTerm},league_name.ilike.${searchTerm}`)
-                  .order("name").limit(20);
+                  .order("name").limit(30);
+                if (countryFilter) request = request.eq("country", countryFilter);
+                return request;
+              })()
+            : Promise.resolve({ data: [], error: null }),
+          wantsWomensTeams
+            ? (() => {
+                let request = supabase.from("womens_teams").select("id, name, country, city, league_name")
+                  .or(`name.ilike.${searchTerm},country.ilike.${searchTerm},city.ilike.${searchTerm},league_name.ilike.${searchTerm}`)
+                  .order("name").limit(30);
                 if (countryFilter) request = request.eq("country", countryFilter);
                 return request;
               })()
@@ -177,12 +191,14 @@ function SearchContent() {
         if (playerResult.error) throw playerResult.error;
         if (coachResult.error) throw coachResult.error;
         if (teamResult.error) throw teamResult.error;
+        if (womensTeamResult.error) throw womensTeamResult.error;
         if (leagueResult.error) throw leagueResult.error;
 
 
         setPlayers((playerResult.data || []) as Player[]);
         setCoaches(coachResult.data || []);
         setTeams(teamResult.data || []);
+        setWomensTeams(womensTeamResult.data || []);
         setLeagues(leagueResult.data || []);
       } catch (err) {
         console.error(err);
@@ -197,7 +213,7 @@ function SearchContent() {
 
   useEffect(() => { setSearchInput(query); }, [query]);
   useEffect(() => {
-    if (initialType === "players" || initialType === "coaches" || initialType === "teams" || initialType === "leagues") {
+    if (initialType === "players" || initialType === "coaches" || initialType === "mens-teams" || initialType === "womens-teams" || initialType === "leagues") {
       setTypeFilter(initialType);
     }
   }, [initialType]);
@@ -207,8 +223,9 @@ function SearchContent() {
     ...players.map((x) => x.current_country),
     ...coaches.map((x) => x.country),
     ...teams.map((x) => x.country),
+    ...womensTeams.map((x) => x.country),
     ...leagues.map((x) => x.country),
-  ].filter(Boolean) as string[])).sort(), [players, coaches, teams, leagues]);
+  ].filter(Boolean) as string[])).sort(), [players, coaches, teams, womensTeams, leagues]);
 
   const visiblePlayers = typeFilter === "all" || typeFilter === "players"
     ? players.filter((x) => !countryFilter || x.country === countryFilter || x.current_country === countryFilter)
@@ -216,14 +233,17 @@ function SearchContent() {
   const visibleCoaches = typeFilter === "all" || typeFilter === "coaches"
     ? coaches.filter((x) => !countryFilter || x.country === countryFilter)
     : [];
-  const visibleTeams = typeFilter === "all" || typeFilter === "teams"
+  const visibleTeams = typeFilter === "all" || typeFilter === "mens-teams"
     ? teams.filter((x) => !countryFilter || x.country === countryFilter)
+    : [];
+  const visibleWomensTeams = typeFilter === "all" || typeFilter === "womens-teams"
+    ? womensTeams.filter((x) => !countryFilter || x.country === countryFilter)
     : [];
   const visibleLeagues = typeFilter === "all" || typeFilter === "leagues"
     ? leagues.filter((x) => !countryFilter || x.country === countryFilter)
     : [];
 
-  const totalResults = visiblePlayers.length + visibleCoaches.length + visibleTeams.length + visibleLeagues.length;
+  const totalResults = visiblePlayers.length + visibleCoaches.length + visibleTeams.length + visibleWomensTeams.length + visibleLeagues.length;
 
   return (
     <main className="search-page">
@@ -266,7 +286,7 @@ function SearchContent() {
 
           {!loading && !error && (
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 24 }}>
-              {(["all", "players", "coaches", "teams", "leagues"] as const).map((type) => (
+              {(["all", "players", "coaches", "mens-teams", "womens-teams", "leagues"] as const).map((type) => (
                 <button
                   key={type}
                   type="button"
@@ -274,7 +294,7 @@ function SearchContent() {
                   onClick={() => setTypeFilter(type)}
                   aria-pressed={typeFilter === type}
                 >
-                  {type === "all" ? "All" : type[0].toUpperCase() + type.slice(1)}
+                  {type === "all" ? "All" : type === "mens-teams" ? "Men’s Teams" : type === "womens-teams" ? "Women’s Teams" : type[0].toUpperCase() + type.slice(1)}
                 </button>
               ))}
               <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} aria-label="Filter by country" style={{ padding: "10px 14px", borderRadius: 8 }}>
@@ -339,7 +359,7 @@ function SearchContent() {
 
           {!loading && !error && visibleTeams.length > 0 && (
             <section className="result-group">
-              <div className="group-heading"><span>03</span><h3>Teams</h3></div>
+              <div className="group-heading"><span>03</span><h3>Men’s Teams</h3></div>
               <div className="result-grid">
                 {visibleTeams.map((team) => (
                   <Link href={`/teams/${team.id}`} key={team.id} className="result-card">
@@ -348,6 +368,23 @@ function SearchContent() {
                     <p>{team.city && team.country ? `${team.city}, ${team.country}` : team.country || team.city || "Location unavailable"}</p>
                     {team.league_name && <div className="result-meta">{team.league_name}</div>}
                     <span className="result-link">Research Team →</span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {!loading && !error && visibleWomensTeams.length > 0 && (
+            <section className="result-group">
+              <div className="group-heading"><span>04</span><h3>Women’s Teams</h3></div>
+              <div className="result-grid">
+                {visibleWomensTeams.map((team) => (
+                  <Link href={`/womens/${team.id}`} key={team.id} className="result-card">
+                    <div className="result-type">WOMEN’S TEAM</div>
+                    <h4>{team.name}</h4>
+                    <p>{team.city && team.country ? `${team.city}, ${team.country}` : team.country || team.city || "Location unavailable"}</p>
+                    {team.league_name && <div className="result-meta">{team.league_name}</div>}
+                    <span className="result-link">Research Women’s Team →</span>
                   </Link>
                 ))}
               </div>
