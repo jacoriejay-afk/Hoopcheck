@@ -8,7 +8,6 @@ from (values
  ('FIBA West Asia Super League (WASL)','Middle East / Asia','Regional club competition','2026'),
  ('Australian NBL','Australia','National first division','2026-27'),
  ('New Zealand NBL','New Zealand','National first division','2026'),
- ('EuroLeague Women','Europe','European first division','2026-27')
 ) as x(name,country,level,season)
 where not exists(select 1 from public.leagues l where lower(l.name)=lower(x.name));
 
@@ -146,6 +145,18 @@ with seed(team,country,city,league_name) as (values
 insert into public.womens_teams(name,country,city,league_name,active)
 select s.team,s.country,s.city,s.league_name,true from seed s
 where not exists(select 1 from public.womens_teams t where lower(t.name)=lower(s.team) and lower(coalesce(t.country,''))=lower(s.country));
+
+-- Add the competition labels to existing women’s team rows as well as newly inserted rows.
+update public.womens_teams t set league_name = case
+ when coalesce(t.league_name,'')='' then x.league_name
+ when position(x.league_name in t.league_name)>0 then t.league_name
+ else t.league_name || ' · ' || x.league_name end
+from (values
+('Montana 2003','Bulgaria','WABA League 2026-27'),('Cinkarna Celje','Slovenia','WABA League 2026-27'),('Budućnost Bemax','Montenegro','WABA League 2026-27'),('Partizan 1953','Serbia','WABA League 2026-27'),('Rilski Sportist','Bulgaria','WABA League 2026-27'),('Studio Zagreb','Croatia','WABA League 2026-27'),('Beroe','Bulgaria','WABA League 2026-27'),('Trešnjevka 2009','Croatia','WABA League 2026-27'),('Šibenik','Croatia','WABA League 2026-27'),('Brod na Savi','Croatia','WABA League 2026-27'),('Partizani','Albania','WABA League 2026-27'),
+('Adelaide Lightning','Australia','WNBL Australia'),('Bendigo Spirit','Australia','WNBL Australia'),('Geelong United','Australia','WNBL Australia'),('Perth Lynx','Australia','WNBL Australia'),('Southside Flyers','Australia','WNBL Australia'),('Sydney Flames','Australia','WNBL Australia'),('Townsville Fire','Australia','WNBL Australia'),('UC Capitals','Australia','WNBL Australia'),
+('Mainland Pouākai','New Zealand','Tauihi Basketball Aotearoa'),('Northern Kāhu','New Zealand','Tauihi Basketball Aotearoa'),('Southern Hoiho','New Zealand','Tauihi Basketball Aotearoa'),('Tokomanawa Queens','New Zealand','Tauihi Basketball Aotearoa'),('Whai','New Zealand','Tauihi Basketball Aotearoa')
+) x(name,country,league_name)
+where lower(t.name)=lower(x.name) and lower(t.country)=lower(x.country);
 
 -- Preserve existing women's team records; tag known teams with current regional competition labels.
 update public.womens_teams t
