@@ -180,3 +180,28 @@ select x.name,x.country,x.level,true from (values
 ('Tauihi Basketball Aotearoa','New Zealand','National women’s first division')
 ) x(name,country,level)
 where not exists(select 1 from public.womens_leagues l where lower(l.name)=lower(x.name));
+
+-- Ensure pre-existing canonical male team records are also associated with their 2026 competition.
+with seed(team,country,league_name) as (values
+('Borac Mozzart','Serbia','AdmiralBet ABA League'),('Budućnost VOLI','Montenegro','AdmiralBet ABA League'),('Cedevita Olimpija','Slovenia','AdmiralBet ABA League'),('Cibona','Croatia','AdmiralBet ABA League'),('Crvena zvezda Meridianbet','Serbia','AdmiralBet ABA League'),('FMP','Serbia','AdmiralBet ABA League'),('Igokea m:tel','Bosnia and Herzegovina','AdmiralBet ABA League'),('Krka','Slovenia','AdmiralBet ABA League'),('Široki TT Kabeli','Bosnia and Herzegovina','AdmiralBet ABA League'),('Slovan Bratislava','Slovakia','AdmiralBet ABA League'),('Bosna BH Telecom','Bosnia and Herzegovina','AdmiralBet ABA League'),('Dubai Basketball','United Arab Emirates','AdmiralBet ABA League'),('Mega Superbet','Serbia','AdmiralBet ABA League'),('Partizan Mozzart Bet','Serbia','AdmiralBet ABA League'),('Perspektiva Ilirija','Slovenia','AdmiralBet ABA League'),('SC Derby','Montenegro','AdmiralBet ABA League'),('Spartak Office Shoes','Serbia','AdmiralBet ABA League'),('U-BT Cluj-Napoca','Romania','AdmiralBet ABA League'),('BC Vienna','Austria','AdmiralBet ABA League'),('Zadar','Croatia','AdmiralBet ABA League'),
+('Borac WWIN','Bosnia and Herzegovina','ABA League 2'),('GGD Šenčur','Slovenia','ABA League 2'),('Mornar-Barsko zlato','Montenegro','ABA League 2'),('Vojvodina mts','Serbia','ABA League 2'),('Hercegovac Aling-Conel','Serbia','ABA League 2'),('Podgorica Bemax','Montenegro','ABA League 2'),('Sloboda Energoinvest','Bosnia and Herzegovina','ABA League 2'),('TFT Skopje','North Macedonia','ABA League 2'),('ECE Triglav Kranj','Slovenia','ABA League 2'),('MZT Skopje Aerodrom','North Macedonia','ABA League 2'),('Sloboda Užice','Serbia','ABA League 2'),('Sutjeska Elektroprivreda Nikšić','Montenegro','ABA League 2'),('Zlatibor Mozzart','Serbia','ABA League 2'),('Basket Živinice','Bosnia and Herzegovina','ABA League 2'),('Primorje 1945','Montenegro','ABA League 2'),('Virtus Zagreb','Croatia','ABA League 2'),
+('Al Riyadi','Lebanon','FIBA West Asia Super League (WASL)'),('Sagesse SC','Lebanon','FIBA West Asia Super League (WASL)'),('BC Astana','Kazakhstan','FIBA West Asia Super League (WASL)'),('Shahrdari Gorgan','Iran','FIBA West Asia Super League (WASL)'),('Kuwait SC','Kuwait','FIBA West Asia Super League (WASL)'),('Al Ula Club','Saudi Arabia','FIBA West Asia Super League (WASL)'),('Ittihad Club','Saudi Arabia','FIBA West Asia Super League (WASL)'),('Al Arabi SC','Qatar','FIBA West Asia Super League (WASL)'),('Indian Railways','India','FIBA West Asia Super League (WASL)'),
+('Adelaide 36ers','Australia','Australian NBL'),('BNZ Breakers','New Zealand','Australian NBL'),('Brisbane Bullets','Australia','Australian NBL'),('Cairns Taipans','Australia','Australian NBL'),('Illawarra Hawks','Australia','Australian NBL'),('Melbourne United','Australia','Australian NBL'),('Perth Wildcats','Australia','Australian NBL'),('South East Melbourne Phoenix','Australia','Australian NBL'),('Sydney Kings','Australia','Australian NBL'),('Tasmania JackJumpers','Australia','Australian NBL'),
+('Auckland Tuatara','New Zealand','New Zealand NBL'),('Canterbury Rams','New Zealand','New Zealand NBL'),('Franklin Bulls','New Zealand','New Zealand NBL'),('Hawke’s Bay Hawks','New Zealand','New Zealand NBL'),('Manawatu Jets','New Zealand','New Zealand NBL'),('Nelson Giants','New Zealand','New Zealand NBL'),('Otago Nuggets','New Zealand','New Zealand NBL'),('Southland Sharks','New Zealand','New Zealand NBL'),('Taranaki Airs','New Zealand','New Zealand NBL'),('Wellington Saints','New Zealand','New Zealand NBL')
+), linked as (
+ select t.id team_id,l.id league_id,s.league_name
+ from seed s join public.teams t on lower(t.name)=lower(s.team) and lower(coalesce(t.country,''))=lower(s.country)
+ join public.leagues l on lower(l.name)=lower(s.league_name)
+)
+update public.teams t set league_name=case when coalesce(t.league_name,'')='' then x.league_name when position(x.league_name in t.league_name)>0 then t.league_name else t.league_name || ' · ' || x.league_name end
+from linked x where t.id=x.team_id;
+
+with linked as (
+ select t.id team_id,l.id league_id
+ from public.teams t join public.leagues l on position(l.name in coalesce(t.league_name,''))>0
+ where l.name in ('AdmiralBet ABA League','ABA League 2','FIBA West Asia Super League (WASL)','Australian NBL','New Zealand NBL')
+)
+insert into public.team_league_memberships(team_id,league_id,season,active)
+select x.team_id,x.league_id,case when x.league_id=(select id from public.leagues where name='FIBA West Asia Super League (WASL)' limit 1) then '2026' else '2026-27' end,true
+from linked x
+where not exists(select 1 from public.team_league_memberships m where m.team_id=x.team_id and m.league_id=x.league_id and m.season=case when x.league_id=(select id from public.leagues where name='FIBA West Asia Super League (WASL)' limit 1) then '2026' else '2026-27' end);
