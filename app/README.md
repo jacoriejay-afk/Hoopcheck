@@ -16,13 +16,13 @@ Includes:
 - Team research
 - League research
 ### HoopCheck Premium
-$15.99/month
+$9.99/month
 Includes everything in Pro, plus:
 - Advanced research tools
 - Expanded coach, team, and league insights
 - Premium discovery features
 - Priority access to new features
-Subscriptions are processed through Stripe.
+Subscriptions are processed through Stripe. The membership page and checkout price lookup keys currently use the prices listed under “Production checkout” below; keep customer-facing pricing aligned with the Stripe price objects before enabling live checkout.
 ## Technology
 - Next.js
 - React
