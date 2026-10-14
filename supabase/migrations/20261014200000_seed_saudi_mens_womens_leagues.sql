@@ -30,3 +30,10 @@ with seed(team,city) as (values
 insert into public.womens_teams(name,country,city,league_name,active)
 select s.team,'Saudi Arabia',s.city,'Saudi Women’s Basketball League',true
 from seed s where not exists(select 1 from public.womens_teams t where lower(t.name)=lower(s.team) and lower(t.country)='saudi arabia');
+
+-- Deactivate legacy aliases in this competition membership only; preserve the team rows and any reviews.
+update public.team_league_memberships m set active=false
+from public.leagues l, public.teams t
+where l.id=m.league_id and t.id=m.team_id and l.name='Saudi Basketball League'
+and m.season='2026-27' and lower(t.country)='saudi arabia'
+and lower(t.name) in ('al ula','ittihad club');
