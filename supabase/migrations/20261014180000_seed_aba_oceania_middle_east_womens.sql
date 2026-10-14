@@ -7,7 +7,7 @@ from (values
  ('ABA League 2','Europe','Regional second division','2026-27'),
  ('FIBA West Asia Super League (WASL)','Middle East / Asia','Regional club competition','2026'),
  ('Australian NBL','Australia','National first division','2026-27'),
- ('New Zealand NBL','New Zealand','National first division','2026'),
+ ('New Zealand NBL','New Zealand','National first division','2026')
 ) as x(name,country,level,season)
 where not exists(select 1 from public.leagues l where lower(l.name)=lower(x.name));
 
