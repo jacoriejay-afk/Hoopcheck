@@ -345,7 +345,19 @@ export async function POST(
       : stripeSecretKey.startsWith("sk_test_")
         ? "test"
         : "unknown";
-    if (keyMode === "unknown" || event.livemode !== (keyMode === "live")) {
+    const deploymentMode =
+      process.env.VERCEL_ENV === "production" ? "live" : "test";
+
+    // Prevent a test-mode webhook from mutating production membership records.
+    if (keyMode === "unknown" || keyMode !== deploymentMode) {
+      console.error("Stripe key mode does not match deployment environment.");
+      return NextResponse.json(
+        { error: "Stripe webhook configuration does not match this environment." },
+        { status: 503 }
+      );
+    }
+
+    if (event.livemode !== (keyMode === "live")) {
       console.error("Stripe event mode does not match configured key mode.");
       return NextResponse.json(
         { error: "Stripe event mode does not match configured account." },
