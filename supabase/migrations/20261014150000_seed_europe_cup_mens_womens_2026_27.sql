@@ -99,6 +99,98 @@ where not exists (
 );
 
 
+-- Deactivate stale prior-season/alias memberships while preserving their team records and review history.
+with official(team,country,league_name) as (values
+('Le Mans Sarthe Basket','France','BKT EuroCup'),
+('Hapoel Midtown Jerusalem','Israel','BKT EuroCup'),
+('Recoletas Salud San Pablo Burgos','Spain','BKT EuroCup'),
+('Cedevita Olimpija Ljubljana','Slovenia','BKT EuroCup'),
+('Baglietto Derthona Tortona','Italy','BKT EuroCup'),
+('Aris Thessaloniki Betsson','Greece','BKT EuroCup'),
+('Rostock Seawolves','Germany','BKT EuroCup'),
+('Riga Zelli','Latvia','BKT EuroCup'),
+('Turk Telekom Ankara','Türkiye','BKT EuroCup'),
+('U-BT Cluj-Napoca','Romania','BKT EuroCup'),
+('La Laguna Tenerife','Spain','BKT EuroCup'),
+('Umana Reyer Venice','Italy','BKT EuroCup'),
+('Maxima Roma','Italy','BKT EuroCup'),
+('Siauliai Basketball','Lithuania','BKT EuroCup'),
+('London Lions','United Kingdom','BKT EuroCup'),
+('Skyliners Frankfurt','Germany','BKT EuroCup'),
+('Cosea JL Bourg-en-Bresse','France','BKT EuroCup'),
+('Tofas Bursa','Türkiye','BKT EuroCup'),
+('Buducnost VOLI Podgorica','Montenegro','BKT EuroCup'),
+('Dolomiti Energia Trento','Italy','BKT EuroCup'),
+('Napoli Basketball','Italy','BKT EuroCup'),
+('Neptunas Klaipeda','Lithuania','BKT EuroCup'),
+('NINERS Chemnitz','Germany','BKT EuroCup'),
+('Slask Wroclaw','Poland','BKT EuroCup'),
+('BOSNA BH Telecom Sarajevo','Bosnia & Herzegovina','BKT EuroCup'),
+('Bahcesehir College Istanbul','Türkiye','BKT EuroCup'),
+('Kids&Us Manresa','Spain','BKT EuroCup'),
+('ratiopharm ulm','Germany','BKT EuroCup'),
+('Roma Basketball','Italy','BKT EuroCup'),
+('Lietkabelis Panevezys','Lithuania','BKT EuroCup'),
+('PAOK Thessaloniki','Greece','BKT EuroCup'),
+('Balkan Botevgrad','Bulgaria','BKT EuroCup'),
+('Trepca','Kosovo','FIBA Europe Cup'),
+('Promitheas Patras BC','Greece','FIBA Europe Cup'),
+('BK Opava','Czechia','FIBA Europe Cup'),
+('VET-CONCEPT Gladiators Trier','Germany','FIBA Europe Cup'),
+('BC Split','Croatia','FIBA Europe Cup'),
+('BC Batumi 2010','Georgia','FIBA Europe Cup'),
+('Patrioti Levice','Slovakia','FIBA Europe Cup'),
+('Coretec Oostende','Belgium','FIBA Europe Cup'),
+('NHSZ-Szolnoki Olajbanyasz','Hungary','FIBA Europe Cup'),
+('FIATC Girona','Spain','FIBA Europe Cup'),
+('Zastal Zielona Gora','Poland','FIBA Europe Cup'),
+('Dinamo Bucharest','Romania','FIBA Europe Cup'),
+('Sporting CP','Portugal','FIBA Europe Cup'),
+('Rilski Sportist','Bulgaria','FIBA Europe Cup'),
+('Kolossos H Hotels','Greece','FIBA Europe Cup'),
+('Esenler Erokspor','Türkiye','FIBA Europe Cup'),
+('SCM Universitatea Craiova','Romania','FIBA Europe Cup'),
+('Gence BC','Azerbaijan','FIBA Europe Cup'),
+('Keravnos BC','Cyprus','FIBA Europe Cup'),
+('BC Parnu','Estonia','FIBA Europe Cup'),
+('King Szczecin','Poland','FIBA Europe Cup'),
+('SLUC Nancy Basket','France','FIBA Europe Cup'),
+('Nitra Blue Wings','Slovakia','FIBA Europe Cup'),
+('BC Vienna','Austria','FIBA Europe Cup'),
+('Petrolina AEK Larnaca','Cyprus','FIBA Europe Cup'),
+('Fitness First Wurzburg Baskets','Germany','FIBA Europe Cup'),
+('Tartu Ulikool Maks & Moorits','Estonia','FIBA Europe Cup'),
+('Iraklis BC','Greece','FIBA Europe Cup'),
+('Dziki Warszawa','Poland','FIBA Europe Cup'),
+('MZT Skopje Aerodrom','North Macedonia','FIBA Europe Cup'),
+('Bigbank/Kalev','Estonia','FIBA Europe Cup'),
+('Biotekno Korfez Basket','Türkiye','FIBA Europe Cup'),
+('BC Bashkimi','Kosovo','FIBA Europe Cup'),
+('Elan Chalon','France','FIBA Europe Cup'),
+('Valmiera Glass VIA','Latvia','FIBA Europe Cup'),
+('Manchester Basketball','United Kingdom','FIBA Europe Cup'),
+('Bakken Bears','Denmark','FIBA Europe Cup'),
+('SL Benfica','Portugal','FIBA Europe Cup'),
+('Landau Lions','Azerbaijan','FIBA Europe Cup'),
+('Yukatel Denizli Basket','Türkiye','FIBA Europe Cup'),
+('Lions de Geneve','Switzerland','FIBA Europe Cup'),
+('BC Prievidza','Slovakia','FIBA Europe Cup'),
+('CSM CSU Raiffeisen Oradea','Romania','FIBA Europe Cup'),
+('Fribourg Olympic Basket','Switzerland','FIBA Europe Cup'),
+('VEF Riga','Latvia','FIBA Europe Cup'),
+('Mykonos Betsson BC','Greece','FIBA Europe Cup'),
+('Lokomotiv Plovdiv','Bulgaria','FIBA Europe Cup'),
+('Neftchi SC','Azerbaijan','FIBA Europe Cup')
+), ranked as (
+ select t.id as team_id,l.id as league_id,row_number() over(partition by l.id,lower(o.team),lower(o.country) order by (t.league_id=l.id) desc,t.created_at asc,t.id) rn
+ from official o join public.leagues l on lower(l.name)=lower(o.league_name)
+ join public.teams t on lower(t.name)=lower(o.team) and lower(coalesce(t.country,''))=lower(coalesce(o.country,''))
+), canonical as (select team_id,league_id from ranked where rn=1)
+update public.team_league_memberships m set active=false
+from public.leagues l
+where m.league_id=l.id and m.season='2026-27' and lower(l.name) in ('bkt eurocup','fiba europe cup')
+ and not exists(select 1 from canonical c where c.team_id=m.team_id and c.league_id=m.league_id);
+
 -- Attach current competition membership to existing canonical team records without deleting their domestic-league affiliations.
 with seed(team,country,league_name) as (values
 ('Le Mans Sarthe Basket','France','BKT EuroCup'),
