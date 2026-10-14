@@ -180,7 +180,29 @@ export async function GET(request: NextRequest) {
     const { error: staleError } = await staleQuery;
     if (staleError) throw staleError;
 
-    return NextResponse.json({ ok: true, fixtureDate, providerGamesForDate: payload.response.length, providerLiveGames: liveGames.length, matchedGames: rows.length }, {
+    const unmatchedLiveGames = liveGames
+      .filter(game => {
+        const homeProviderId = Number(game.teams?.home?.id);
+        const awayProviderId = Number(game.teams?.visitors?.id);
+        return !internalIdFor(homeProviderId, game.teams?.home?.name)
+          && !internalIdFor(awayProviderId, game.teams?.visitors?.name);
+      })
+      .slice(0, 10)
+      .map(game => ({
+        providerGameId: String(game.id),
+        status: game.status?.short || null,
+        home: { id: game.teams?.home?.id ?? null, name: game.teams?.home?.name ?? null },
+        away: { id: game.teams?.visitors?.id ?? null, name: game.teams?.visitors?.name ?? null }
+      }));
+
+    return NextResponse.json({
+      ok: true,
+      fixtureDate,
+      providerGamesForDate: payload.response.length,
+      providerLiveGames: liveGames.length,
+      matchedGames: rows.length,
+      unmatchedLiveGames
+    }, {
       headers: { "Cache-Control": "no-store" }
     });
   } catch (error) {
