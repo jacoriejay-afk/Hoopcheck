@@ -18,14 +18,14 @@ export default function Home() {
     <main className="hoopcheck-landing hc-rebrand">
       <section className="hc-hero">
         <div className="hc-hero-copy">
-          <div className="hc-overline"><span className="hc-pulse" /> BUILT FOR THE INTERNATIONAL GAME</div>
-          <h1>DON’T SIGN<br />IN THE <span>DARK.</span></h1>
-          <p className="hc-hero-lede">Know who you’re signing with. Research teams, coaches, and leagues through the experiences of players who have been there.</p>
+          <div className="hc-overline"><span className="hc-pulse" /> REAL REVIEWS. VERIFIED PROFILES. GLOBAL BASKETBALL.</div>
+          <h1>KNOW WHO YOU’RE<br /><span>SIGNING WITH.</span></h1>
+          <p className="hc-hero-lede">Teams. Coaches. Leagues. Players. Get context from player experiences before making your next move.</p>
           <div className="hc-hero-actions">
-            <Link href="/signup" className="hc-primary-cta">GET STARTED <span aria-hidden="true">↗</span></Link>
-            <Link href="/login" className="hc-secondary-cta">I HAVE AN ACCOUNT</Link>
+            <Link href="/signup" className="hc-primary-cta">EXPLORE DIRECTORY <span aria-hidden="true">→</span></Link>
+            <Link href="/login" className="hc-secondary-cta">SIGN IN</Link>
           </div>
-          <div className="hc-hero-footnote"><span aria-hidden="true">●</span> Built for players navigating basketball worldwide</div>
+          <div className="hc-hero-footnote"><span aria-hidden="true">●</span> GLOBAL BASKETBALL. PLAYER PERSPECTIVES.</div>
         </div>
         <div className="hc-hero-art" aria-label="HoopCheck basketball court graphic">
           <div className="hc-art-label hc-art-label-top">YOUR CAREER. YOUR CALL.</div>
