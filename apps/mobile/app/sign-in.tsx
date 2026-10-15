@@ -46,15 +46,15 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F5F7FA" }, flex: { flex: 1 },
+  safeArea: { flex: 1, backgroundColor: "#050505" }, flex: { flex: 1 },
   container: { flex: 1, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 24 },
-  title: { color: "#101827", fontSize: 30, fontWeight: "800" },
-  subtitle: { color: "#586579", fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 20 },
+  title: { color: "#FFFFFF", fontSize: 30, fontWeight: "800" },
+  subtitle: { color: "#BDBDBD", fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 20 },
   label: { color: "#253247", fontSize: 13, fontWeight: "700", marginBottom: 8, marginTop: 14 },
-  input: { minHeight: 50, borderColor: "#D5DCE5", borderWidth: 1, borderRadius: 10, backgroundColor: "#FFFFFF", paddingHorizontal: 14, color: "#101827", fontSize: 16 },
+  input: { minHeight: 50, borderColor: "#D5DCE5", borderWidth: 1, borderRadius: 10, backgroundColor: "#111111", paddingHorizontal: 14, color: "#FFFFFF", fontSize: 16 },
   link: { color: "#263B59", fontWeight: "700" },
-  button: { minHeight: 52, borderRadius: 10, backgroundColor: "#101827", alignItems: "center", justifyContent: "center", marginTop: 24 },
+  button: { minHeight: 52, borderRadius: 10, backgroundColor: "#050505", alignItems: "center", justifyContent: "center", marginTop: 24 },
   buttonDim: { opacity: 0.7 }, buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
-  signupPrompt: { color: "#586579", textAlign: "center", marginTop: 22 },
+  signupPrompt: { color: "#BDBDBD", textAlign: "center", marginTop: 22 },
   backLink: { color: "#263B59", textAlign: "center", fontWeight: "700", marginTop: 24 },
 })

@@ -13,7 +13,7 @@ export default function SiteHeader() {
 
   return (
     <header className="site-header-global">
-      <Link href={signedIn ? "/dashboard" : "/"} className="site-header-brand">HOOP<span>CHECK</span></Link>
+      <Link href={signedIn ? "/dashboard" : "/"} className="site-header-brand" aria-label="HoopCheck home"><img src="/hoopcheck-mark.svg" alt="" aria-hidden="true" /><span className="site-header-wordmark">HOOP<span>CHECK</span></span></Link>
       <nav aria-label="Primary navigation">
         {signedIn ? (
           <>

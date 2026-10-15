@@ -209,7 +209,7 @@ export default function DashboardPage() {
     <main className="page-shell hc-dashboard-shell">
       <div className="page-container">
         <header className="topbar hc-app-topbar">
-          <Link href="/" className="brand">HOOPCHECK</Link>
+          <Link href="/" className="brand hc-brand-lockup" aria-label="HoopCheck home"><img src="/hoopcheck-mark.svg" alt="" aria-hidden="true" /><span>HOOP<span>CHECK</span></span></Link>
           <nav className="topnav">
             <Link href="/search">{t("search")}</Link>
             <Link href="/membership">{t("membership")}</Link>

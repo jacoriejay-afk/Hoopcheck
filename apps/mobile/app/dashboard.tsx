@@ -37,7 +37,7 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <Text style={styles.wordmark}>HoopCheck</Text>
+        <View style={styles.brandLockup}><View style={styles.brandMark}><Text style={styles.brandMarkText}>HC</Text><View style={styles.brandArrow} /></View><Text style={styles.wordmark}>HOOP<Text style={styles.wordmarkAccent}>CHECK</Text></Text></View>
         <Text style={styles.title}>You’re signed in.</Text>
         <Text style={styles.subtitle}>Welcome to your mobile account.</Text>
         <View style={styles.card}>
@@ -92,29 +92,29 @@ export default function DashboardScreen() {
   );
 }
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F5F7FA" },
+  safe: { flex: 1, backgroundColor: "#050505" },
   container: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 18, paddingBottom: 28 },
-  wordmark: { color: "#101827", fontSize: 16, fontWeight: "900", letterSpacing: 1 },
-  title: { color: "#101827", fontSize: 30, fontWeight: "800", marginTop: 18 },
-  subtitle: { color: "#586579", fontSize: 16, marginTop: 8 },
-  card: { backgroundColor: "#FFFFFF", borderRadius: 12, padding: 18, borderWidth: 1, borderColor: "#E0E6EE", marginTop: 26 },
-  cardLabel: { color: "#657287", fontSize: 11, fontWeight: "800", letterSpacing: 1 },
-  value: { color: "#101827", fontSize: 16, fontWeight: "700", marginTop: 8 },
-  role: { color: "#586579", marginTop: 8, textTransform: "capitalize" },
-  sectionTitle: { color: "#101827", fontSize: 18, fontWeight: "900", marginTop: 26, marginBottom: 12 },
-  playerWideCard: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#FFFFFF", borderRadius: 12, borderWidth: 1, borderColor: "#E0E6EE", padding: 14, marginBottom: 10 },
+  brandLockup: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }, brandMark: { width: 38, height: 38, borderWidth: 1.5, borderColor: "#FFFFFF", alignItems: "center", justifyContent: "center", position: "relative" }, brandMarkText: { color: "#FF6A00", fontSize: 14, fontWeight: "900" }, brandArrow: { position: "absolute", width: 13, height: 2, backgroundColor: "#FF6A00", right: -3, top: 8, transform: [{ rotate: "-38deg" }] }, wordmark: { color: "#FFFFFF", fontSize: 23, fontWeight: "900", letterSpacing: -0.8 }, wordmarkAccent: { color: "#FF6A00" },
+  title: { color: "#FFFFFF", fontSize: 30, fontWeight: "800", marginTop: 18 },
+  subtitle: { color: "#BDBDBD", fontSize: 16, marginTop: 8 },
+  card: { backgroundColor: "#111111", borderRadius: 12, padding: 18, borderWidth: 1, borderColor: "#303030", marginTop: 26 },
+  cardLabel: { color: "#969696", fontSize: 11, fontWeight: "800", letterSpacing: 1 },
+  value: { color: "#FFFFFF", fontSize: 16, fontWeight: "700", marginTop: 8 },
+  role: { color: "#BDBDBD", marginTop: 8, textTransform: "capitalize" },
+  sectionTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "900", marginTop: 26, marginBottom: 12 },
+  playerWideCard: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#111111", borderRadius: 12, borderWidth: 1, borderColor: "#303030", padding: 14, marginBottom: 10 },
   playerWideBody: { flex: 1 },
   directoryRow: { flexDirection: "row", gap: 10 },
-  directoryCard: { flex: 1, backgroundColor: "#FFFFFF", borderRadius: 12, borderWidth: 1, borderColor: "#E0E6EE", padding: 14, minHeight: 154 },
+  directoryCard: { flex: 1, backgroundColor: "#111111", borderRadius: 12, borderWidth: 1, borderColor: "#303030", padding: 14, minHeight: 154 },
   directoryIcon: { fontSize: 22 },
-  directoryTitle: { color: "#101827", fontSize: 16, fontWeight: "900", marginTop: 8 },
-  directoryCaption: { color: "#657287", fontSize: 12, lineHeight: 17, marginTop: 4 },
-  directoryAction: { color: "#946600", fontWeight: "800", fontSize: 12, marginTop: 10 },
-  note: { color: "#657287", fontSize: 13, lineHeight: 20, marginTop: 18 },
-  legalCard: { backgroundColor: "#FFFFFF", borderRadius: 12, borderWidth: 1, borderColor: "#E0E6EE", paddingHorizontal: 14, marginBottom: 6 },
-  legalLink: { minHeight: 46, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: "#EEF1F5" },
-  legalText: { color: "#344054", fontSize: 14, fontWeight: "700" },
-  chevron: { color: "#946600", fontSize: 23, fontWeight: "700" },
-  button: { minHeight: 52, borderRadius: 10, backgroundColor: "#101827", alignItems: "center", justifyContent: "center", marginTop: 18 },
+  directoryTitle: { color: "#FFFFFF", fontSize: 16, fontWeight: "900", marginTop: 8 },
+  directoryCaption: { color: "#969696", fontSize: 12, lineHeight: 17, marginTop: 4 },
+  directoryAction: { color: "#FF6A00", fontWeight: "800", fontSize: 12, marginTop: 10 },
+  note: { color: "#969696", fontSize: 13, lineHeight: 20, marginTop: 18 },
+  legalCard: { backgroundColor: "#111111", borderRadius: 12, borderWidth: 1, borderColor: "#303030", paddingHorizontal: 14, marginBottom: 6 },
+  legalLink: { minHeight: 46, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: "#292929" },
+  legalText: { color: "#D0D0D0", fontSize: 14, fontWeight: "700" },
+  chevron: { color: "#FF6A00", fontSize: 23, fontWeight: "700" },
+  button: { minHeight: 52, borderRadius: 10, backgroundColor: "#050505", alignItems: "center", justifyContent: "center", marginTop: 18 },
   dim: { opacity: 0.65 }, buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
 });

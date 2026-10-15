@@ -84,7 +84,7 @@ export default function RootLayout({
 
         <footer className="site-footer">
           <div className="footer-inner">
-            <div className="footer-brand">
+            <div className="footer-brand"><div className="footer-brand-lockup"><img src="/hoopcheck-mark.svg" alt="" aria-hidden="true" /><strong>HOOP<span>CHECK</span></strong></div>
               <p>Research the basketball world before you commit.</p>
             </div>
             <div className="footer-links">
