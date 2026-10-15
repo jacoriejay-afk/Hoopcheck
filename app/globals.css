@@ -2535,3 +2535,140 @@ body { background-color: var(--hc-ink); }
   .player-dashboard-stats strong { font-size: clamp(17px, 5vw, 23px); }
   .hoopcheck-landing h1 { font-size: clamp(43px, 13vw, 68px); }
 }
+
+
+/* HoopCheck dashboard: structural research command center */
+.dashboard-page,
+.page-shell {
+  position: relative;
+  isolation: isolate;
+}
+.page-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .22;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 16%, #ff6a001f 16.2% 16.6%, transparent 16.8% 27%, #ff6a0014 27.2% 27.5%, transparent 27.7%),
+    linear-gradient(90deg, transparent calc(50% - 1px), #ff6a0014 50%, transparent calc(50% + 1px)),
+    linear-gradient(0deg, transparent calc(50% - 1px), #ff6a0014 50%, transparent calc(50% + 1px));
+  background-size: min(78vw, 760px) min(78vw, 760px), 100% 100%, 100% 100%;
+  background-position: center 8rem, center, center;
+  background-repeat: no-repeat;
+}
+.dashboard-command-center {
+  margin: 26px 0 10px;
+  padding: clamp(20px, 3vw, 34px);
+  border: 1px solid #373737;
+  border-top: 3px solid var(--orange);
+  background: linear-gradient(115deg, #17120e 0%, #0d0d0d 52%, #080808 100%);
+  box-shadow: 0 18px 54px #0007;
+  position: relative;
+  overflow: hidden;
+}
+.dashboard-command-center::after {
+  content: "HC";
+  position: absolute;
+  right: -12px;
+  top: -40px;
+  color: #ff6a0008;
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  font-size: clamp(150px, 25vw, 320px);
+  line-height: 1;
+  pointer-events: none;
+}
+.dashboard-command-copy {
+  max-width: 720px;
+  position: relative;
+  z-index: 1;
+}
+.dashboard-command-copy h2 {
+  margin: 5px 0 10px;
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Black", sans-serif;
+  font-size: clamp(30px, 4.2vw, 50px);
+  line-height: .98;
+  letter-spacing: .015em;
+  text-transform: uppercase;
+}
+.dashboard-command-copy .muted {
+  max-width: 600px;
+  margin: 0;
+  font-size: 15px;
+}
+.dashboard-command-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 26px;
+}
+.dashboard-command-tile {
+  min-height: 204px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+  padding: 18px 16px 20px;
+  background: linear-gradient(150deg, #1a1a1a, #090909 82%);
+  border: 1px solid #353535;
+  border-bottom: 3px solid #414141;
+  transition: border-color .18s ease, transform .18s ease, background .18s ease;
+}
+.dashboard-command-tile:hover,
+.dashboard-command-tile:focus-visible {
+  outline: none;
+  border-color: var(--orange);
+  border-bottom-color: var(--orange);
+  background: linear-gradient(150deg, #24170f, #0a0a0a 82%);
+  transform: translateY(-3px);
+}
+.dashboard-command-number {
+  color: #aaa;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+.dashboard-command-icon {
+  color: var(--orange);
+  margin: 16px 0 8px;
+  font-size: 30px;
+  line-height: 1;
+}
+.dashboard-command-tile strong {
+  color: #fff;
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Black", sans-serif;
+  font-size: clamp(17px, 1.55vw, 21px);
+  letter-spacing: .02em;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+.dashboard-command-tile > span:not(.dashboard-command-number):not(.dashboard-command-icon):not(.dashboard-command-arrow) {
+  color: #aaa;
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.dashboard-command-arrow {
+  color: var(--orange);
+  position: absolute;
+  right: 15px;
+  top: 12px;
+  font-size: 20px;
+}
+@media (max-width: 900px) {
+  .dashboard-command-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-command-tile { min-height: 176px; }
+}
+@media (max-width: 520px) {
+  .dashboard-command-center { margin-top: 16px; padding: 18px 13px; }
+  .dashboard-command-grid { gap: 8px; margin-top: 20px; }
+  .dashboard-command-tile { min-height: 164px; padding: 14px 11px 16px; }
+  .dashboard-command-number { font-size: 9px; letter-spacing: .06em; }
+  .dashboard-command-icon { margin-top: 13px; font-size: 25px; }
+  .dashboard-command-tile strong { font-size: 16px; }
+  .dashboard-command-tile > span:not(.dashboard-command-number):not(.dashboard-command-icon):not(.dashboard-command-arrow) { font-size: 11px; }
+  .dashboard-command-arrow { right: 10px; top: 8px; }
+}
