@@ -62,7 +62,7 @@ export default function CoachesScreen() {
         <Text style={styles.title}>Find a coach</Text>
         <Text style={styles.subtitle}>Search available coach records by name or location. Verify a coach’s current role and contract details independently.</Text>
         <View style={styles.searchRow}>
-          <TextInput value={term} onChangeText={setTerm} onSubmitEditing={search} returnKeyType="search" placeholder="Coach name, country or city" placeholderTextColor="#7B8797" style={styles.input} />
+          <TextInput value={term} onChangeText={setTerm} onSubmitEditing={search} returnKeyType="search" placeholder="Coach name, country or city" placeholderTextColor="#858585" style={styles.input} />
           <Pressable onPress={search} style={styles.searchButton}><Text style={styles.searchButtonText}>Search</Text></Pressable>
         </View>
         <Text style={styles.count}>{loading ? "Loading coaches…" : `${items.length}${hasMore ? "+" : ""} results shown`}</Text>
@@ -95,33 +95,33 @@ export default function CoachesScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F4F6F9" },
-  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, backgroundColor: "#101827" },
-  back: { color: "#F5B82E", fontSize: 15, fontWeight: "700", marginBottom: 18 },
-  kicker: { color: "#F5B82E", fontSize: 11, fontWeight: "900", letterSpacing: 1.5 },
+  safe: { flex: 1, backgroundColor: "#050505" },
+  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, backgroundColor: "#050505" },
+  back: { color: "#FF6A00", fontSize: 15, fontWeight: "700", marginBottom: 18 },
+  kicker: { color: "#FF6A00", fontSize: 11, fontWeight: "900", letterSpacing: 1.5 },
   title: { color: "#FFFFFF", fontSize: 29, fontWeight: "900", marginTop: 5 },
   subtitle: { color: "#C7D0DE", fontSize: 14, lineHeight: 20, marginTop: 7 },
   searchRow: { flexDirection: "row", gap: 8, marginTop: 18 },
-  input: { flex: 1, minWidth: 0, height: 48, backgroundColor: "#FFFFFF", borderRadius: 10, paddingHorizontal: 12, color: "#101827", fontSize: 14 },
-  searchButton: { backgroundColor: "#F5B82E", borderRadius: 10, alignItems: "center", justifyContent: "center", paddingHorizontal: 15 },
-  searchButtonText: { color: "#101827", fontWeight: "900" },
+  input: { flex: 1, minWidth: 0, height: 48, backgroundColor: "#111111", borderRadius: 10, paddingHorizontal: 12, color: "#FFFFFF", fontSize: 14 },
+  searchButton: { backgroundColor: "#FF6A00", borderRadius: 10, alignItems: "center", justifyContent: "center", paddingHorizontal: 15 },
+  searchButtonText: { color: "#FFFFFF", fontWeight: "900" },
   count: { color: "#AAB5C5", fontSize: 12, marginTop: 12 },
   list: { padding: 16, paddingBottom: 30, gap: 10 },
-  card: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#E3E8EF", gap: 12 },
-  avatar: { width: 44, height: 44, borderRadius: 12, backgroundColor: "#FFF3CD", alignItems: "center", justifyContent: "center" },
-  avatarText: { color: "#101827", fontSize: 19, fontWeight: "900" },
+  card: { flexDirection: "row", alignItems: "center", backgroundColor: "#111111", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#303030", gap: 12 },
+  avatar: { width: 44, height: 44, borderRadius: 12, backgroundColor: "#1B120A", alignItems: "center", justifyContent: "center" },
+  avatarText: { color: "#FFFFFF", fontSize: 19, fontWeight: "900" },
   cardBody: { flex: 1 },
-  coachName: { color: "#101827", fontSize: 16, fontWeight: "900" },
-  meta: { color: "#657287", fontSize: 13, marginTop: 4 },
-  website: { color: "#946600", fontSize: 12, marginTop: 5 },
-  empty: { alignItems: "center", padding: 26, backgroundColor: "#FFFFFF", borderRadius: 12, borderWidth: 1, borderColor: "#E3E8EF" },
-  emptyTitle: { color: "#101827", fontSize: 17, fontWeight: "900", textAlign: "center" },
-  emptyText: { color: "#657287", fontSize: 13, lineHeight: 19, textAlign: "center", marginTop: 8 },
+  coachName: { color: "#FFFFFF", fontSize: 16, fontWeight: "900" },
+  meta: { color: "#969696", fontSize: 13, marginTop: 4 },
+  website: { color: "#FF6A00", fontSize: 12, marginTop: 5 },
+  empty: { alignItems: "center", padding: 26, backgroundColor: "#111111", borderRadius: 12, borderWidth: 1, borderColor: "#303030" },
+  emptyTitle: { color: "#FFFFFF", fontSize: 17, fontWeight: "900", textAlign: "center" },
+  emptyText: { color: "#969696", fontSize: 13, lineHeight: 19, textAlign: "center", marginTop: 8 },
   loader: { marginTop: 36 },
   errorBox: { margin: 16, padding: 14, borderRadius: 10, backgroundColor: "#FEE2E2" },
   error: { color: "#991B1B" },
   retry: { color: "#991B1B", fontWeight: "800", marginTop: 8 },
-  more: { padding: 15, borderRadius: 10, backgroundColor: "#F5B82E", alignItems: "center" },
-  moreText: { color: "#101827", fontWeight: "900" },
-  footer: { color: "#657287", fontSize: 12, lineHeight: 18, textAlign: "center", paddingHorizontal: 10, paddingTop: 10 },
+  more: { padding: 15, borderRadius: 10, backgroundColor: "#FF6A00", alignItems: "center" },
+  moreText: { color: "#FFFFFF", fontWeight: "900" },
+  footer: { color: "#969696", fontSize: 12, lineHeight: 18, textAlign: "center", paddingHorizontal: 10, paddingTop: 10 },
 });
