@@ -49,6 +49,22 @@ export default function Home() {
         <div><span>04</span><strong>PLAYER VOICES</strong><small>Learn from shared experience</small></div>
       </section>
 
+      <section className="hc-proof-section" aria-labelledby="hc-explore-heading">
+        <div className="hc-section-heading">
+          <div><p className="hc-section-kicker">START YOUR SCOUTING</p><h2 id="hc-explore-heading">EXPLORE HOOPCHECK</h2></div>
+          <p>One global basketball directory. Separate paths to the teams, people, and insights you need.</p>
+        </div>
+        <div className="hc-category-grid">
+          <Link href="/teams" className="hc-category-card" style={{"--category-color":"#f36b08"} as React.CSSProperties}><span className="hc-category-icon" aria-hidden="true">🏀</span><strong>Men’s Teams</strong><span aria-hidden="true">→</span></Link>
+          <Link href="/womens" className="hc-category-card" style={{"--category-color":"#d62972"} as React.CSSProperties}><span className="hc-category-icon" aria-hidden="true">🏀</span><strong>Women’s Teams</strong><span aria-hidden="true">→</span></Link>
+          <Link href="/coaches" className="hc-category-card" style={{"--category-color":"#1769aa"} as React.CSSProperties}><span className="hc-category-icon" aria-hidden="true">♟</span><strong>Coaches</strong><span aria-hidden="true">→</span></Link>
+          <Link href="/leagues" className="hc-category-card" style={{"--category-color":"#12805c"} as React.CSSProperties}><span className="hc-category-icon" aria-hidden="true">🏆</span><strong>Leagues</strong><span aria-hidden="true">→</span></Link>
+          <Link href="/players" className="hc-category-card" style={{"--category-color":"#6337a5"} as React.CSSProperties}><span className="hc-category-icon" aria-hidden="true">♙</span><strong>Find Players</strong><span aria-hidden="true">→</span></Link>
+          <Link href="/search" className="hc-category-card" style={{"--category-color":"#34383d"} as React.CSSProperties}><span className="hc-category-icon" aria-hidden="true">★</span><strong>Reviews</strong><span aria-hidden="true">→</span></Link>
+          <Link href="/notifications" className="hc-category-card" style={{"--category-color":"#e7a800"} as React.CSSProperties}><span className="hc-category-icon" aria-hidden="true">♧</span><strong>Alerts</strong><span aria-hidden="true">→</span></Link>
+        </div>
+      </section>
+
       <section className="hc-proof-section" aria-labelledby="hc-proof-heading">
         <div className="hc-section-heading">
           <div><p className="hc-section-kicker">A CLOSER LOOK</p><h2 id="hc-proof-heading">THE DETAILS<br /><span>MATTER.</span></h2></div>
