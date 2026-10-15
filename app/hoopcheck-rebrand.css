@@ -44,3 +44,113 @@ h1,h2,h3,h4,.site-header .brand,.brand,.logo-wordmark,[class*="category"] h2,[cl
 .hc-rebrand .hc-steps-section { background:#090909; color:#fff; }
 @media(max-width:1100px){.hc-category-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:760px){.hc-rebrand .hc-hero{grid-template-columns:1fr;padding:30px 18px;gap:20px}.hc-rebrand .hc-hero h1{font-size:clamp(48px,12vw,72px)}.hc-rebrand .hc-hero-art{min-height:245px}.hc-category-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.hc-category-card{min-height:124px;padding:14px}.hc-rebrand .hc-proof-section{padding:28px 14px 40px}}
+
+
+/* HoopCheck system-wide finish: unify navigation, controls, cards and mobile ergonomics */
+:root {
+  --hc-orange: #ff6a00;
+  --hc-ink: #080808;
+  --hc-charcoal: #111111;
+  --hc-line: #303030;
+  --hc-muted: #969696;
+  --hc-display: Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Black", sans-serif;
+  --hc-ui: "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
+}
+html { scroll-behavior: smooth; }
+body { font-family: var(--hc-ui); }
+::selection { color: #080808; background: var(--hc-orange); }
+:where(a, button, input, select, textarea) { -webkit-tap-highlight-color: rgba(255,106,0,.16); }
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--hc-orange);
+  outline-offset: 3px;
+}
+.site-header-global {
+  width: 100%;
+  max-width: none;
+  min-height: 66px;
+  padding: 10px clamp(16px, 4vw, 56px);
+  border-bottom: 2px solid var(--hc-orange);
+  background: rgba(8,8,8,.97);
+}
+.site-header-brand {
+  font-family: var(--hc-display) !important;
+  font-size: clamp(23px, 2.2vw, 30px);
+  letter-spacing: .035em;
+  line-height: .9;
+}
+.site-header-global nav { gap: clamp(3px, .7vw, 10px); }
+.site-header-global nav a {
+  min-height: 38px;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  font-family: var(--hc-ui);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  transition: color .16s ease, background .16s ease, border-color .16s ease;
+}
+.site-header-global nav a:hover { border-color: #4a2b18; background: #1b120c; color: var(--hc-orange); }
+.site-header-global nav .site-header-signin { border-color: #555; color: #fff !important; }
+.site-header-global nav .site-header-signup { border-color: var(--hc-orange); background: var(--hc-orange); color: #080808 !important; }
+.site-header-global nav .site-header-signup:hover { background: #ff812b; color: #080808 !important; }
+:where(.btn, button, input[type="submit"], input[type="button"], .button-primary, .btn-primary) {
+  border-radius: 2px;
+  font-family: var(--hc-ui);
+  font-weight: 900;
+}
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+  max-width: 100%;
+  border-radius: 3px;
+}
+:where(.dashboard-card, .player-dashboard-card, .team-card, .league-card, .coach-card, .review-card, .stat-card) {
+  border-radius: 3px;
+}
+:where(.page-shell h1, .search-page h1, .auth-page-shell h1, .membership-page h1) {
+  font-family: var(--hc-display);
+  letter-spacing: .005em;
+  text-transform: uppercase;
+}
+:where(.site-footer) { border-top: 2px solid var(--hc-orange); }
+:where(.footer-links a) { transition: color .16s ease, transform .16s ease; }
+.footer-links a:hover { transform: translateX(2px); }
+.bottom-nav {
+  border-top: 2px solid var(--hc-orange);
+  background: rgba(8,8,8,.98);
+  padding: 7px 5px calc(7px + env(safe-area-inset-bottom));
+}
+.bottom-nav a {
+  min-height: 48px;
+  border-radius: 2px;
+  gap: 4px;
+  opacity: .78;
+  transition: color .16s ease, background .16s ease, opacity .16s ease;
+}
+.bottom-nav a.active {
+  color: var(--hc-orange);
+  background: rgba(255,106,0,.1);
+  box-shadow: inset 0 2px 0 var(--hc-orange);
+}
+.bottom-nav-icon { font-size: 18px; }
+.bottom-nav a span:last-child { font-family: var(--hc-ui); font-size: 9px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+@media (max-width: 700px) {
+  .site-header-global {
+    min-height: 58px;
+    padding: 9px 14px;
+    gap: 8px;
+  }
+  .site-header-brand { font-size: 22px; }
+  .site-header-global nav { gap: 5px; }
+  .site-header-global nav a { min-height: 34px; padding: 7px 9px; font-size: 10px; letter-spacing: .04em; }
+  .site-footer { margin-top: 42px; }
+}
+@media (max-width: 360px) {
+  .site-header-global { padding-inline: 10px; }
+  .site-header-brand { font-size: 20px; }
+  .site-header-global nav a { padding-inline: 7px; font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
