@@ -56,7 +56,7 @@ export default function Home() {
         </div>
         <div className="hc-category-grid">
           <Link href="/teams" className="hc-category-card" style={{"--category-color":"#f36b08"} as React.CSSProperties}><span className="hc-category-icon" aria-hidden="true">🏀</span><strong>Men’s Teams</strong><span aria-hidden="true">→</span></Link>
-          <Link href="/womens-teams" className="hc-category-card" style={{"--category-color":"#d62972"} as React.CSSProperties}><span className="hc-category-icon" aria-hidden="true">🏀</span><strong>Women’s Teams</strong><span aria-hidden="true">→</span></Link>
+          <Link href="/womens" className="hc-category-card" style={{"--category-color":"#d62972"} as React.CSSProperties}><span className="hc-category-icon" aria-hidden="true">🏀</span><strong>Women’s Teams</strong><span aria-hidden="true">→</span></Link>
           <Link href="/coaches" className="hc-category-card" style={{"--category-color":"#1769aa"} as React.CSSProperties}><span className="hc-category-icon" aria-hidden="true">♟</span><strong>Coaches</strong><span aria-hidden="true">→</span></Link>
           <Link href="/leagues" className="hc-category-card" style={{"--category-color":"#12805c"} as React.CSSProperties}><span className="hc-category-icon" aria-hidden="true">🏆</span><strong>Leagues</strong><span aria-hidden="true">→</span></Link>
           <Link href="/players" className="hc-category-card" style={{"--category-color":"#6337a5"} as React.CSSProperties}><span className="hc-category-icon" aria-hidden="true">♙</span><strong>Find Players</strong><span aria-hidden="true">→</span></Link>
