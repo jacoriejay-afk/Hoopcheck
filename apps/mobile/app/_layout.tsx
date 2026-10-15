@@ -39,13 +39,13 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="auto" />
+      <StatusBar style="light" backgroundColor="#050505" />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: "#101827" },
+          headerStyle: { backgroundColor: "#050505" },
           headerTintColor: "#FFFFFF",
-          headerTitleStyle: { fontWeight: "700" },
-          contentStyle: { backgroundColor: "#F5F7FA" },
+          headerTitleStyle: { fontWeight: "900" },
+          contentStyle: { backgroundColor: "#0A0A0A" },
         }}
       >
         <Stack.Screen name="index" options={{ title: "HoopCheck", headerShown: false }} />
