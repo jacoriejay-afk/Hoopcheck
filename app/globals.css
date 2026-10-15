@@ -2265,3 +2265,100 @@ main > .nav{display:none!important}
   .live-chat-score span { font-size: 10px; }
   .live-chat-message { gap: 7px; }
 }
+
+
+/* HOOPCHECK BRAND REDESIGN — angular basketball identity, shared across web screens */
+:root {
+  --display-font: Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Black", sans-serif;
+  --body-font: Inter, "Segoe UI", Arial, Helvetica, sans-serif;
+  --orange: #ff6a00;
+  --orange-light: #ff8a1f;
+  --orange-dark: #d94f00;
+  --surface: #101010;
+  --surface-raised: #171717;
+  --surface-muted: #202020;
+  --text-primary: #fff;
+  --text-secondary: #b9b9b9;
+  --line: #2d2d2d;
+}
+body { font-family: var(--body-font); letter-spacing: .005em; }
+h1, h2, h3, h4, .section-title, .page-title, .logo, .footer-logo,
+.nav a, .links a, .category-title, .eyebrow, .btn, button, .tab,
+.badge, .pill, .stat-value, .card-title {
+  font-family: var(--display-font);
+  font-stretch: condensed;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+h1, .page-title { line-height: .98; letter-spacing: .015em; }
+h2, h3 { line-height: 1.08; }
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 3px;
+}
+:where(.card, .category-card, .team-card, .league-card, .coach-card,
+.player-card, .review-card, .stat-card, .dashboard-card, .feature-card) {
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  box-shadow: none;
+  transition: border-color .18s ease, transform .18s ease, background-color .18s ease;
+}
+:where(.category-card, .team-card, .league-card, .coach-card, .player-card,
+.review-card, .feature-card):hover {
+  border-color: var(--orange);
+  transform: translateY(-2px);
+}
+:where(.category-grid, .categories-grid, .directory-categories) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 155px), 1fr));
+  gap: 12px;
+}
+:where(.category-card, .category-tile, .directory-category) {
+  position: relative;
+  overflow: hidden;
+  min-height: 124px;
+  padding: 18px;
+  background: linear-gradient(145deg, #171717, #090909);
+  border: 1px solid #333;
+  border-radius: 3px;
+}
+:where(.category-card, .category-tile, .directory-category)::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--category-accent, var(--orange));
+}
+:where(.category-card, .category-tile, .directory-category) :where(h2,h3,h4,strong) {
+  font-family: var(--display-font);
+  text-transform: uppercase;
+  letter-spacing: .035em;
+}
+:where(.category-icon, .category-card-icon, .directory-category-icon) {
+  color: var(--category-accent, var(--orange));
+}
+:where(.btn, button.primary, .primary-button) {
+  border-radius: 3px;
+  letter-spacing: .045em;
+}
+:where(input, select, textarea, .search-input) {
+  border-radius: 3px;
+}
+:where(.nav, .site-header, header.site-header) {
+  border-bottom-color: #303030;
+}
+::selection { background: var(--orange); color: #080808; }
+@media (max-width: 640px) {
+  :where(.category-grid, .categories-grid, .directory-categories) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+  :where(.category-card, .category-tile, .directory-category) {
+    min-height: 108px;
+    padding: 13px;
+  }
+  h1, .page-title { letter-spacing: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
