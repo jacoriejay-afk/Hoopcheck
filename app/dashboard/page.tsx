@@ -239,6 +239,44 @@ export default function DashboardPage() {
           </div>
         </section>
 
+        <section className="dashboard-command-center" aria-labelledby="dashboard-command-heading">
+          <div className="dashboard-command-copy">
+            <p className="eyebrow">THE HOOPCHECK PLAYBOOK</p>
+            <h2 id="dashboard-command-heading">Make your next move with confidence.</h2>
+            <p className="muted">Research the people and organizations behind your next basketball opportunity.</p>
+          </div>
+          <div className="dashboard-command-grid">
+            <Link href="/teams" className="dashboard-command-tile dashboard-command-teams">
+              <span className="dashboard-command-number">01 / DIRECTORY</span>
+              <span className="dashboard-command-icon" aria-hidden="true">🏀</span>
+              <strong>Professional Teams</strong>
+              <span>Check the organization before you sign.</span>
+              <span className="dashboard-command-arrow" aria-hidden="true">↗</span>
+            </Link>
+            <Link href="/coaches" className="dashboard-command-tile">
+              <span className="dashboard-command-number">02 / PEOPLE</span>
+              <span className="dashboard-command-icon" aria-hidden="true">♟</span>
+              <strong>Coaches</strong>
+              <span>Learn about coaching and communication.</span>
+              <span className="dashboard-command-arrow" aria-hidden="true">↗</span>
+            </Link>
+            <Link href="/leagues" className="dashboard-command-tile">
+              <span className="dashboard-command-number">03 / COMPETITION</span>
+              <span className="dashboard-command-icon" aria-hidden="true">◉</span>
+              <strong>Leagues</strong>
+              <span>Explore basketball markets worldwide.</span>
+              <span className="dashboard-command-arrow" aria-hidden="true">↗</span>
+            </Link>
+            <Link href="/search" className="dashboard-command-tile">
+              <span className="dashboard-command-number">04 / FIND</span>
+              <span className="dashboard-command-icon" aria-hidden="true">⌕</span>
+              <strong>Search HoopCheck</strong>
+              <span>Find a team, coach, or league by name.</span>
+              <span className="dashboard-command-arrow" aria-hidden="true">↗</span>
+            </Link>
+          </div>
+        </section>
+
         {profile?.account_type === "fan" && <section className="grid fan-dashboard-grid" style={{ marginTop: 18 }}>
           <div className="dashboard-card fan-feature-card"><span className="card-kicker">FAN HQ</span><h2>🏀 Your Team Hub</h2><p className="muted">Keep up with the teams you follow, ratings, reviews, and new activity.</p><Link href="/teams" className="btn">Explore Teams</Link></div>
           <div className="dashboard-card fan-feature-card"><span className="card-kicker">PRO FAN</span><h2>🔔 Team Alerts</h2><p className="muted">Follow teams to keep notifications on for ratings, reviews, and team updates.</p><Link href="/teams" className="btn dark">Find Teams to Follow</Link>{subscription?.plan === "premium" && activeMembership && <Link href="/fan-live" className="btn dark">Live Game Chat</Link>}</div>
