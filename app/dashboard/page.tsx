@@ -206,9 +206,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="page-shell">
+    <main className="page-shell hc-dashboard-shell">
       <div className="page-container">
-        <header className="topbar">
+        <header className="topbar hc-app-topbar">
           <Link href="/" className="brand">HOOPCHECK</Link>
           <nav className="topnav">
             <Link href="/search">{t("search")}</Link>
@@ -223,7 +223,7 @@ export default function DashboardPage() {
           </nav>
         </header>
 
-        {(profile?.moderation_status === "warned" || profile?.moderation_status === "flagged") && <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{profile.moderation_status === "warned" ? "Account warning" : "Profile flagged for review"}</strong><p className="muted">{profile.moderation_note || "Please review the Community Guidelines and contact Support if you need clarification."}</p><Link href="/support" className="btn dark">Contact Support</Link></section>}        <section className="player-dashboard-card">
+        {(profile?.moderation_status === "warned" || profile?.moderation_status === "flagged") && <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{profile.moderation_status === "warned" ? "Account warning" : "Profile flagged for review"}</strong><p className="muted">{profile.moderation_note || "Please review the Community Guidelines and contact Support if you need clarification."}</p><Link href="/support" className="btn dark">Contact Support</Link></section>}        <section className="player-dashboard-card hc-player-hero">
           <div className="player-dashboard-main">
             <div>
               <p className="eyebrow">{profile?.account_type === "fan" ? "FAN DASHBOARD" : profile?.account_type ? profile.account_type.toUpperCase()+" DASHBOARD" : t("playerDashboard")}</p>
@@ -232,28 +232,28 @@ export default function DashboardPage() {
             </div>
             <Link href="/profile" className="btn dark">{t("editProfile")}</Link>
           </div>
-          <div className="player-dashboard-stats">
+          <div className="player-dashboard-stats hc-player-stats">
             <div><span>MEMBERSHIP</span><strong>{planLabel.replace("HoopCheck ","")}</strong><small>{statusLabel}</small></div>
             <div><span>REVIEWS</span><strong>{reviews.length}</strong><small>{reviewCounts.approved || 0} published</small></div>
             {profile?.account_type === "player" ? <div><span>PLAYER STATUS</span><strong>{profile?.player_verified ? "VERIFIED" : "UNVERIFIED"}</strong><small>{profile?.player_verified ? "Professional profile" : "Verification available"}</small></div> : <div><span>ACCOUNT</span><strong>{profile?.account_type?.toUpperCase()}</strong><small>Research profile</small></div>}
           </div>
         </section>
 
-        <section className="dashboard-command-center" aria-labelledby="dashboard-command-heading">
+        <section className="dashboard-command-center hc-command-center" aria-labelledby="dashboard-command-heading">
           <div className="dashboard-command-copy">
             <p className="eyebrow">THE HOOPCHECK PLAYBOOK</p>
             <h2 id="dashboard-command-heading">Make your next move with confidence.</h2>
             <p className="muted">Research the people and organizations behind your next basketball opportunity.</p>
           </div>
-          <div className="dashboard-command-grid">
-            <Link href="/teams" className="dashboard-command-tile dashboard-command-teams">
+          <div className="dashboard-command-grid hc-command-grid">
+            <Link href="/teams" className="dashboard-command-tile hc-command-tile dashboard-command-teams">
               <span className="dashboard-command-number">01 / DIRECTORY</span>
               <span className="dashboard-command-icon" aria-hidden="true">🏀</span>
               <strong>Professional Teams</strong>
               <span>Check the organization before you sign.</span>
               <span className="dashboard-command-arrow" aria-hidden="true">↗</span>
             </Link>
-            <Link href="/coaches" className="dashboard-command-tile">
+            <Link href="/coaches" className="dashboard-command-tile hc-command-tile">
               <span className="dashboard-command-number">02 / PEOPLE</span>
               <span className="dashboard-command-icon" aria-hidden="true">♟</span>
               <strong>Coaches</strong>

@@ -42,10 +42,10 @@ export default function RootLayout() {
       <StatusBar style="light" backgroundColor="#050505" />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: "#050505" },
-          headerTintColor: "#FFFFFF",
-          headerTitleStyle: { fontWeight: "900" },
-          contentStyle: { backgroundColor: "#0A0A0A" },
+          headerStyle: { backgroundColor: "#070707" },
+          headerTintColor: "#FF6A00",
+          headerTitleStyle: { fontWeight: "900", fontSize: 19 },
+          contentStyle: { backgroundColor: "#070707" },
         }}
       >
         <Stack.Screen name="index" options={{ title: "HoopCheck", headerShown: false }} />
