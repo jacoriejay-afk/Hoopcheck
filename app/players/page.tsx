@@ -94,7 +94,7 @@ export default function PlayersPage() {
   return (
     <main className="page-shell">
       <div className="page-container">
-        <section className="hero-card">
+        <section className="hero-card hc-directory-hero">
           <p className="eyebrow">PLAYER DIRECTORY</p>
           <h1>Find Players</h1>
           <p className="muted">
@@ -143,7 +143,7 @@ export default function PlayersPage() {
             <HoopLoading label="Searching usernames..." />
           </div>
         ) : (
-          <section className="grid" style={{ marginTop: 18 }}>
+          <section className="grid hc-player-results" style={{ marginTop: 18 }}>
             {players.map((player) => {
               const name =
                 player.display_name ||
