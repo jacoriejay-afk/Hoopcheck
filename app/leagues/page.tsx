@@ -44,7 +44,7 @@ loadLeagues();
 }, []);
 
 return (
-<main>
+<main className="hc-leagues-directory-page">
 <section className="hero hc-directory-hero">
     <div className="eyebrow">
       HoopCheck Leagues
