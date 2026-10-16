@@ -613,3 +613,134 @@ main:not(.hc-template-home) hr { border:0;border-top:1px solid #d8d8d5; }
   main:not(.hc-template-home) h2 { font-size:clamp(22px,6vw,30px); }
   .site-footer { padding-bottom:76px; }
 }
+
+
+/* Reference-led interior page pass: directory, search, profiles and account surfaces */
+main:not(.hc-template-home) {
+  color:#111;
+  background:#f4f4f2;
+}
+main:not(.hc-template-home) .page-shell,
+main:not(.hc-template-home).page-shell {
+  background:#f4f4f2!important;
+  color:#111!important;
+}
+.page-container {
+  width:min(100% - 32px,1440px)!important;
+  margin-inline:auto!important;
+}
+main:not(.hc-template-home) > .hero,
+main:not(.hc-template-home) .hero-card,
+main:not(.hc-template-home) .compact-hero {
+  position:relative;
+  overflow:hidden;
+  background:#080808!important;
+  color:#fff!important;
+  border:0!important;
+  border-bottom:4px solid var(--hc-orange)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  padding:clamp(24px,4vw,54px)!important;
+}
+main:not(.hc-template-home) .hero p,
+main:not(.hc-template-home) .hero-card p { color:#d4d4d4; }
+main:not(.hc-template-home) .eyebrow,
+main:not(.hc-template-home) .card-kicker {
+  color:var(--hc-orange)!important;
+  font-size:11px!important;
+  font-weight:900!important;
+  letter-spacing:.13em!important;
+  text-transform:uppercase!important;
+}
+main:not(.hc-template-home) .grid,
+main:not(.hc-template-home) .league-filter-grid,
+main:not(.hc-template-home) .compact-grid {
+  gap:12px!important;
+}
+main:not(.hc-template-home) .card,
+main:not(.hc-template-home) .dashboard-card,
+main:not(.hc-template-home) .compact-card,
+main:not(.hc-template-home) .panel {
+  background:#fff!important;
+  color:#111!important;
+  border:1px solid #dededb!important;
+  border-radius:2px!important;
+  box-shadow:0 2px 7px #00000008!important;
+}
+main:not(.hc-template-home) .card p,
+main:not(.hc-template-home) .dashboard-card p { color:#606060; }
+main:not(.hc-template-home) .card h2,
+main:not(.hc-template-home) .dashboard-card h2 { color:#111; }
+main:not(.hc-template-home) .research-search {
+  background:#fff!important;
+  border:1px solid #dededb!important;
+  border-left:5px solid var(--hc-orange)!important;
+  border-radius:2px!important;
+  box-shadow:none!important;
+  padding:clamp(14px,2vw,22px)!important;
+}
+main:not(.hc-template-home) .search-label {
+  color:#111!important;
+  font-size:11px!important;
+  font-weight:900!important;
+  letter-spacing:.12em!important;
+  text-transform:uppercase!important;
+}
+main:not(.hc-template-home) .team-filter-row { gap:8px!important; }
+main:not(.hc-template-home) .filter-chip {
+  border:1px solid #d9d9d6!important;
+  background:#fff!important;
+  color:#111!important;
+  border-radius:2px!important;
+}
+main:not(.hc-template-home) .filter-chip.active {
+  color:#fff!important;
+  background:#080808!important;
+  border-color:#080808!important;
+  box-shadow:inset 0 -3px 0 var(--hc-orange)!important;
+}
+main:not(.hc-template-home) .section-heading {
+  border-bottom:1px solid #d7d7d4;
+  padding-bottom:12px;
+  margin-bottom:16px;
+}
+main:not(.hc-template-home) a:not(.btn):not(.hc-template-cta):not(.hc-template-outline-link) {
+  text-underline-offset:3px;
+}
+main:not(.hc-template-home) .btn.dark {
+  color:#fff!important;
+  background:#171717!important;
+  border-color:#171717!important;
+}
+main:not(.hc-template-home) .btn.dark:hover {
+  background:#303030!important;
+  border-color:var(--hc-orange)!important;
+}
+main:not(.hc-template-home) .topbar {
+  background:#080808!important;
+  color:#fff!important;
+  border-bottom:2px solid var(--hc-orange)!important;
+  border-radius:0!important;
+}
+main:not(.hc-template-home) .topbar .brand,
+main:not(.hc-template-home) .topnav a { color:#fff!important; }
+main:not(.hc-template-home) .topnav a:hover { color:var(--hc-orange)!important; }
+@media (max-width:760px) {
+  .page-container { width:100%!important; padding-inline:12px!important; }
+  main:not(.hc-template-home) > .hero,
+  main:not(.hc-template-home) .hero-card,
+  main:not(.hc-template-home) .compact-hero {
+    padding:24px 16px!important;
+  }
+  main:not(.hc-template-home) .grid,
+  main:not(.hc-template-home) .compact-grid,
+  main:not(.hc-template-home) .league-filter-grid {
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  main:not(.hc-template-home) .card,
+  main:not(.hc-template-home) .dashboard-card {
+    padding:16px!important;
+  }
+  main:not(.hc-template-home) .team-filter-row { display:grid;grid-template-columns:1fr; }
+  main:not(.hc-template-home) .topbar { gap:10px;flex-wrap:wrap; }
+}
