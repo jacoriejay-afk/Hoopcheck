@@ -969,3 +969,68 @@ main:not(.hc-template-home) .topnav a:hover { color:var(--hc-orange)!important; 
   .hc-player-results { padding-inline:10px!important; }
   .hc-player-results > .card { padding:14px!important;gap:8px; }
 }
+
+
+/* Profile, global search and account pages: shared reference visual language */
+.hc-coach-profile-hero,.hc-league-profile-hero {
+  background:#080808!important;
+  color:#fff!important;
+  border:0!important;
+  border-bottom:4px solid var(--hc-orange)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  padding:clamp(24px,4vw,52px)!important;
+}
+.hc-coach-profile-hero h1,.hc-league-profile-hero h1 {
+  color:#fff!important;
+  font-size:clamp(30px,4.2vw,56px)!important;
+  line-height:1!important;
+  text-transform:uppercase!important;
+}
+.hc-coach-profile-hero p,.hc-league-profile-hero p { color:#ddd; }
+.hc-player-profile-hero {
+  background:#080808!important;
+  color:#fff!important;
+  border-bottom:4px solid var(--hc-orange)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.hc-player-profile-hero h1,.hc-player-profile-hero h2 { color:#fff!important;text-transform:uppercase; }
+.hc-player-profile-page .player-profile-card,
+.hc-player-profile-page .dashboard-card,
+.hc-account-page .dashboard-card,
+.hc-account-page .card {
+  border-radius:2px!important;
+  border-color:#dededb!important;
+  box-shadow:0 2px 7px #00000008!important;
+}
+.hc-account-page input:not([type="checkbox"]),
+.hc-account-page select,
+.hc-account-page textarea {
+  border-radius:2px!important;
+  border:1px solid #d8d8d5!important;
+  background:#fff!important;
+}
+.hc-account-page label { font-weight:800; }
+.hc-account-page .dashboard-card > .eyebrow { color:var(--hc-orange)!important; }
+.hc-global-search-page .result-group { margin:22px 0!important; }
+.hc-global-search-page .group-heading {
+  border-bottom:2px solid #111;
+  padding-bottom:10px;
+}
+.hc-global-search-page .group-heading h3 {
+  font-family:var(--hc-display)!important;
+  text-transform:uppercase;
+}
+.hc-global-search-page .result-card {
+  border-radius:2px!important;
+  border:1px solid #dededb!important;
+  box-shadow:none!important;
+  background:#fff!important;
+}
+.hc-global-search-page .result-link { color:var(--hc-orange)!important;font-weight:900; }
+@media(max-width:760px) {
+  .hc-coach-profile-hero,.hc-league-profile-hero { padding:24px 16px!important; }
+  .hc-player-profile-hero { padding:18px 14px!important; }
+  .hc-global-search-page .result-grid { grid-template-columns:minmax(0,1fr)!important; }
+}
