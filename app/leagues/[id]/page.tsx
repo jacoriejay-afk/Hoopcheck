@@ -398,7 +398,7 @@ export default function LeagueDetailPage() {
   if (loading) {
     return (
       <main>
-<section className="hero">
+<section className="hero hc-team-profile-hero hc-league-profile-hero">
           <div className="eyebrow">
             HoopCheck
           </div>
