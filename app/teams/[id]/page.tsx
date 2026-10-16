@@ -428,7 +428,7 @@ export default function TeamDetailPage() {
   if (loading) {
     return (
       <main>
-<section className="hero">
+<section className="hero hc-team-profile-hero">
           <div className="eyebrow">
             HoopCheck
           </div>
@@ -623,7 +623,7 @@ export default function TeamDetailPage() {
           <div className="card"><p>No historical league memberships have been added yet.</p></div>
         )}
       </section>
-      <section className="grid">
+      <section className="grid hc-profile-review-list">
         <div className="card">
           <div className="eyebrow">League</div>
           {league ? (
