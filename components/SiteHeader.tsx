@@ -7,11 +7,11 @@ import { useAuthState } from "./AuthProvider";
 
 function HoopCheckMark() {
   return (
-    <svg className="hc-brand-mark" viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M24 2 43 13v22L24 46 5 35V13Z" fill="none" stroke="currentColor" strokeWidth="2.5" />
-      <circle cx="24" cy="24" r="13" fill="none" stroke="currentColor" strokeWidth="2" />
-      <path d="M11 24h26M24 11c-7 7-7 19 0 26M24 11c7 7 7 19 0 26M14.5 15.5c6 4 13 13 19 17M33.5 15.5c-6 4-13 13-19 17" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <path d="m29 5 5 8-7-1" fill="none" stroke="var(--hc-orange)" strokeWidth="3" strokeLinejoin="miter" />
+    <svg className="hc-brand-mark" viewBox="0 0 240 240" aria-hidden="true">
+      <path d="M120 8 218 62 218 166 120 226 22 166 22 62Z" fill="#080808" stroke="currentColor" strokeWidth="9" strokeLinejoin="miter" />
+      <circle cx="120" cy="117" r="63" fill="none" stroke="currentColor" strokeWidth="6" />
+      <path d="M57 117h126M120 54c-25 26-25 100 0 126M120 54c25 26 25 100 0 126M75 72c31 18 58 61 90 90M165 72c-31 18-58 61-90 90" fill="none" stroke="currentColor" strokeWidth="5" />
+      <path d="m125 140 105-78-47 76-24-6-23 27Z" fill="var(--hc-orange)" />
     </svg>
   );
 }
