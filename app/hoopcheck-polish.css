@@ -2658,3 +2658,24 @@
     animation-duration:.01ms !important;
   }
 }
+
+
+/* Final shared interaction details across the directory pages. */
+.hc-team-directory-page :where(a,button,input,select,textarea):focus-visible,
+.hc-coaches-directory-page :where(a,button,input,select,textarea):focus-visible,
+.hc-leagues-directory-page :where(a,button,input,select,textarea):focus-visible {
+  outline:2px solid var(--hc-orange);
+  outline-offset:2px;
+}
+.footer-logo {
+  display:inline-flex;
+  align-items:baseline;
+  width:max-content;
+  max-width:100%;
+  font-family:var(--hc-display)!important;
+  font-size:clamp(27px,3vw,36px);
+  line-height:1;
+  letter-spacing:.015em;
+  text-transform:uppercase;
+}
+.footer-logo span { color:var(--hc-orange); }
