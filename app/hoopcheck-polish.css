@@ -1160,3 +1160,82 @@
   .hc-account-page .actions > *,
   .hc-member-profile-page .actions > * { flex: 1 1 140px; justify-content: center; }
 }
+
+
+/* Team, coach, and league detail screens share one editorial profile system. */
+.hc-entity-profile-page {
+  min-height: 100vh;
+  padding: 20px clamp(10px, 3vw, 38px) 36px;
+  color: #111;
+  background: #f3f3f1;
+}
+.hc-entity-profile-page > .hero:first-child {
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto 14px;
+  max-width: 1380px;
+  padding: clamp(24px, 4.5vw, 48px);
+  color: #fff;
+  background:
+    radial-gradient(ellipse at 90% 16%, rgba(255,106,0,.18), transparent 36%),
+    linear-gradient(110deg, #070707, #17110d);
+  border: 0;
+  border-bottom: 4px solid var(--hc-orange);
+  border-radius: 2px;
+}
+.hc-entity-profile-page > .hero:first-child h1 {
+  color: #fff;
+  font-family: var(--hc-display) !important;
+  font-size: clamp(34px, 5vw, 62px);
+  line-height: .96;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.hc-entity-profile-page > .hero:first-child .muted { color: #d0d0d0; line-height: 1.6; }
+.hc-entity-profile-page > .hero:not(:first-child),
+.hc-entity-profile-page > .grid {
+  max-width: 1380px;
+  margin: 14px auto;
+}
+.hc-entity-profile-page > .hero:not(:first-child) {
+  padding: clamp(18px, 3vw, 28px);
+  background: #fff;
+  border: 1px solid #dededb;
+  border-radius: 2px;
+  box-shadow: none;
+}
+.hc-entity-profile-page > .hero:not(:first-child) h2,
+.hc-entity-profile-page > .grid h2,
+.hc-entity-profile-page > .grid h3 {
+  font-family: var(--hc-display) !important;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.hc-entity-profile-page .grid .card,
+.hc-entity-profile-page .card {
+  min-width: 0;
+  border-radius: 2px;
+  box-shadow: none;
+  overflow-wrap: anywhere;
+}
+.hc-entity-profile-page .entity-actions,
+.hc-entity-profile-page .actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+}
+.hc-entity-profile-page :where(a,button,input,select,textarea):focus-visible {
+  outline: 2px solid var(--hc-orange);
+  outline-offset: 3px;
+}
+.hc-entity-profile-page .hc-profile-review-list { gap: 12px; }
+@media (max-width: 760px) {
+  .hc-entity-profile-page { padding: 10px 10px 24px; }
+  .hc-entity-profile-page > .hero:first-child { padding: 24px 16px; }
+  .hc-entity-profile-page > .hero:first-child h1 { font-size: clamp(32px, 9vw, 48px); }
+  .hc-entity-profile-page > .hero:not(:first-child) { padding: 16px; }
+  .hc-entity-profile-page .entity-actions,
+  .hc-entity-profile-page .actions { gap: 8px; }
+  .hc-entity-profile-page .actions > .btn { flex: 1 1 140px; justify-content: center; }
+}
