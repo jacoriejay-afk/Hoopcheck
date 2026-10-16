@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { useAuthState } from "./AuthProvider";
 
 function HoopCheckMark() {
@@ -25,6 +26,7 @@ function UserIcon() {
 export default function SiteHeader() {
   const pathname = usePathname();
   const { signedIn } = useAuthState();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   if (pathname.startsWith("/admin") || pathname === "/dashboard") return null;
 
@@ -35,13 +37,14 @@ export default function SiteHeader() {
         <HoopCheckMark />
         <span className="hc-wordmark">HOOP<span>CHECK</span></span>
       </Link>
-      <nav aria-label="Primary navigation">
-        <Link href="/" className={active("/") ? "is-active" : ""}>Home</Link>
-        <Link href="/teams" className={active("/teams") ? "is-active" : ""}>Directory</Link>
-        <Link href="/search" className={active("/search") ? "is-active" : ""}>Reviews</Link>
-        <Link href="/notifications" className={active("/notifications") ? "is-active" : ""}>Alerts</Link>
-        <Link href="/search" className="hc-header-icon" aria-label="Search"><SearchIcon /></Link>
-        <Link href={signedIn ? "/profile" : "/login"} className="hc-header-icon" aria-label={signedIn ? "Profile" : "Sign in"}><UserIcon /></Link>
+      <button type="button" className="hc-mobile-menu-toggle" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}><span /><span /><span /></button>
+      <nav className={menuOpen ? "hc-header-nav is-open" : "hc-header-nav"} aria-label="Primary navigation">
+        <Link href="/" className={active("/") ? "is-active" : ""} onClick={() => setMenuOpen(false)}>Home</Link>
+        <Link href="/teams" className={active("/teams") ? "is-active" : ""} onClick={() => setMenuOpen(false)}>Directory</Link>
+        <Link href="/search" className={active("/search") ? "is-active" : ""} onClick={() => setMenuOpen(false)}>Reviews</Link>
+        <Link href="/notifications" className={active("/notifications") ? "is-active" : ""} onClick={() => setMenuOpen(false)}>Alerts</Link>
+        <Link href="/search" className="hc-header-icon" aria-label="Search" onClick={() => setMenuOpen(false)}><SearchIcon /></Link>
+        <Link href={signedIn ? "/profile" : "/login"} className="hc-header-icon" aria-label={signedIn ? "Profile" : "Sign in"} onClick={() => setMenuOpen(false)}><UserIcon /></Link>
       </nav>
     </header>
   );
