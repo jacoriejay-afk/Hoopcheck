@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
-import NotificationBell from "../../components/NotificationBell";
 import PlayerContactButton from "../../components/PlayerContactButton";
 import { useLanguage } from "../../components/LanguageProvider";
 
@@ -208,20 +207,6 @@ export default function DashboardPage() {
   return (
     <main className="page-shell hc-dashboard-shell">
       <div className="page-container">
-        <header className="topbar hc-app-topbar">
-          <nav className="topnav">
-            <Link href="/search">{t("search")}</Link>
-            <Link href="/membership">{t("membership")}</Link>
-            <Link href="/account">{t("account")}</Link>
-            <Link href="/settings">{t("settings")}</Link>
-            <NotificationBell />
-            <button type="button" onClick={signOut} style={{background:"transparent",border:0,color:"inherit",cursor:"pointer",font:"inherit"}}>{t("signOut")}</button>
-            {isAdmin && (
-              <Link href="/admin/directory" className="btn">Admin</Link>
-            )}
-          </nav>
-        </header>
-
         {(profile?.moderation_status === "warned" || profile?.moderation_status === "flagged") && <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{profile.moderation_status === "warned" ? "Account warning" : "Profile flagged for review"}</strong><p className="muted">{profile.moderation_note || "Please review the Community Guidelines and contact Support if you need clarification."}</p><Link href="/support" className="btn dark">Contact Support</Link></section>}        <section className="player-dashboard-card hc-player-hero">
           <div className="player-dashboard-main">
             <div>
