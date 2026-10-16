@@ -982,3 +982,77 @@
 @media (prefers-reduced-motion: reduce) {
   .hc-womens-directory-page * { scroll-behavior: auto !important; }
 }
+
+
+/* Women's team profiles use the same hierarchy as the main team directory. */
+.hc-womens-profile-page {
+  min-height: 100vh;
+  padding-bottom: 32px;
+  color: #111;
+  background: #f3f3f1;
+}
+.hc-womens-profile-page > .page-container {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 24px clamp(12px, 3vw, 36px);
+}
+.hc-womens-profile-page .hero-card {
+  padding: clamp(24px, 4vw, 42px);
+  color: #fff;
+  background:
+    radial-gradient(ellipse at 90% 20%, rgba(255,106,0,.17), transparent 36%),
+    linear-gradient(110deg, #070707, #17110d);
+  border: 0;
+  border-bottom: 4px solid var(--hc-orange);
+  border-radius: 2px;
+}
+.hc-womens-profile-page .hero-card h1 {
+  color: #fff;
+  font-family: var(--hc-display) !important;
+  font-size: clamp(34px, 5vw, 60px);
+  line-height: .96;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.hc-womens-profile-page .hero-card .muted { color: #d0d0d0; line-height: 1.6; }
+.hc-womens-profile-page .compact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.hc-womens-profile-page .compact-grid > .card,
+.hc-womens-profile-page .compact-section {
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #dededb;
+  border-radius: 2px;
+  box-shadow: none;
+}
+.hc-womens-profile-page .compact-grid > .card { border-top: 3px solid var(--hc-orange); padding: 20px; }
+.hc-womens-profile-page .compact-grid h2,
+.hc-womens-profile-page .compact-section h2 {
+  font-family: var(--hc-display) !important;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.hc-womens-profile-page .compact-review {
+  padding: 16px 0;
+  border-top: 1px solid #e3e3df;
+}
+.hc-womens-profile-page .review-line {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.hc-womens-profile-page .review-line strong:last-child { color: #111; white-space: nowrap; }
+.hc-womens-profile-page .bottom-back { padding-top: 18px; }
+.hc-womens-profile-page :where(a,button):focus-visible { outline: 2px solid var(--hc-orange); outline-offset: 3px; }
+@media (max-width: 760px) {
+  .hc-womens-profile-page > .page-container { padding: 14px 10px; }
+  .hc-womens-profile-page .hero-card { padding: 24px 16px; }
+  .hc-womens-profile-page .compact-grid { grid-template-columns: 1fr; }
+  .hc-womens-profile-page .compact-grid > .card { padding: 16px; }
+}
