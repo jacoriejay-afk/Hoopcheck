@@ -154,3 +154,68 @@ body { font-family: var(--hc-ui); }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+
+/* Layout template refinement — clear hierarchy and consistent responsive rhythm */
+.hc-rebrand { width:100%; overflow:clip; }
+.hc-rebrand .hc-hero { align-items:stretch; }
+.hc-rebrand .hc-hero-copy { max-width:760px; }
+.hc-rebrand .hc-hero-lede,
+.hc-rebrand .hc-hero-copy > p { max-width:58ch; line-height:1.65; }
+.hc-rebrand .hc-hero-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.hc-rebrand .hc-primary-cta,
+.hc-rebrand .hc-secondary-cta { min-height:48px; display:inline-flex; align-items:center; justify-content:center; gap:12px; padding:13px 18px; }
+.hc-rebrand .hc-hero-footnote { line-height:1.5; }
+.hc-rebrand .hc-hero-art { position:relative; overflow:hidden; min-width:0; }
+.hc-rebrand .hc-art-label { font-size:10px; letter-spacing:.16em; }
+.hc-rebrand .hc-proof-section { width:100%; box-sizing:border-box; }
+.hc-rebrand .hc-section-heading { display:flex; align-items:end; justify-content:space-between; gap:24px; }
+.hc-rebrand .hc-section-heading > p { max-width:48ch; line-height:1.65; }
+.hc-category-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.hc-category-card { position:relative; min-width:0; min-height:138px; padding:17px; border-top:3px solid var(--category-color); overflow:hidden; }
+.hc-category-card::after { content:""; position:absolute; right:-20px; bottom:-30px; width:88px; height:88px; border:1px solid color-mix(in srgb,var(--category-color) 35%,transparent); transform:rotate(25deg); pointer-events:none; }
+.hc-category-card strong { max-width:100%; overflow-wrap:anywhere; }
+.hc-category-card:focus-visible { outline:3px solid var(--hc-orange); outline-offset:3px; }
+.hc-rebrand .hc-proof-grid { align-items:stretch; gap:18px; }
+.hc-rebrand .hc-topic-list > div { min-height:62px; gap:12px; }
+.hc-rebrand .hc-sample-review { min-width:0; }
+.hc-rebrand .hc-sample-review p { line-height:1.65; }
+.site-header-global { position:relative; z-index:30; }
+.site-header-brand { flex-shrink:0; white-space:nowrap; }
+.site-header-global nav { flex-wrap:wrap; justify-content:flex-end; }
+.bottom-nav { padding-bottom:calc(7px + env(safe-area-inset-bottom)); }
+.bottom-nav a { min-width:0; }
+:where(.page-shell,.dashboard-page,.search-page,.membership-page,.auth-page-shell) { box-sizing:border-box; }
+:where(.page-shell,.dashboard-page,.search-page,.membership-page,.auth-page-shell) :where(img,video,iframe,table) { max-width:100%; }
+:where(.page-shell,.dashboard-page,.search-page,.membership-page,.auth-page-shell) :where(button,a,input,select,textarea) { touch-action:manipulation; }
+@media (min-width:1200px) {
+  .hc-rebrand .hc-hero { padding-inline:max(48px,calc((100vw - 1440px)/2)); }
+  .hc-rebrand .hc-hero-copy { padding-block:18px; }
+  .hc-category-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+}
+@media (max-width:900px) {
+  .hc-rebrand .hc-section-heading { align-items:flex-start; }
+  .hc-category-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media (max-width:700px) {
+  .hc-rebrand .hc-hero { min-height:0; }
+  .hc-rebrand .hc-hero-copy { min-width:0; }
+  .hc-rebrand .hc-hero-actions > a { flex:1 1 180px; }
+  .hc-rebrand .hc-hero-art { min-height:220px; }
+  .hc-rebrand .hc-section-heading { display:grid; grid-template-columns:1fr; gap:10px; }
+  .hc-rebrand .hc-section-heading h2 { overflow-wrap:anywhere; }
+  .hc-category-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .hc-category-card { min-height:122px; padding:13px; gap:10px; }
+  .hc-category-icon { width:38px; height:38px; font-size:20px; }
+  .hc-rebrand .hc-proof-grid { grid-template-columns:1fr; }
+  .site-header-global nav a { white-space:nowrap; }
+}
+@media (max-width:380px) {
+  .hc-rebrand .hc-hero { padding:24px 14px; }
+  .hc-rebrand .hc-hero h1 { font-size:clamp(42px,12vw,54px); }
+  .hc-rebrand .hc-hero-actions > a { flex-basis:100%; }
+  .hc-category-grid { gap:8px; }
+  .hc-category-card { padding:11px; min-height:116px; }
+  .hc-category-card strong { font-size:13px; }
+  .site-header-global { align-items:center; }
+}
