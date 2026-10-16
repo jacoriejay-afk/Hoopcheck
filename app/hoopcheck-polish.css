@@ -734,3 +734,118 @@
     padding: 16px;
   }
 }
+
+
+/* Shared directory template: coach and league pages match the teams research layout. */
+.hc-coaches-directory-page,
+.hc-leagues-directory-page {
+  min-height: 100vh;
+  padding-bottom: 28px;
+  color: #111;
+  background: #f3f3f1;
+}
+.hc-coaches-directory-page > .hero:first-child,
+.hc-leagues-directory-page > .hero:first-child {
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  padding: clamp(28px, 5vw, 62px) clamp(16px, 4vw, 58px) 34px;
+  color: #fff;
+  background:
+    radial-gradient(ellipse at 88% 35%, rgba(255,106,0,.18), transparent 35%),
+    linear-gradient(110deg, #050505, #111 72%, #1b1009);
+  border: 0;
+  border-bottom: 4px solid var(--hc-orange);
+  border-radius: 0;
+}
+.hc-coaches-directory-page > .hero:first-child h1,
+.hc-leagues-directory-page > .hero:first-child h1 {
+  max-width: 900px;
+  margin: 10px 0 16px;
+  color: #fff;
+  font-family: var(--hc-display) !important;
+  font-size: clamp(38px, 5.5vw, 72px);
+  line-height: .95;
+  text-transform: uppercase;
+}
+.hc-coaches-directory-page > .hero:first-child > p,
+.hc-leagues-directory-page > .hero:first-child > p {
+  max-width: 640px;
+  color: #d0d0d0;
+  line-height: 1.65;
+}
+.hc-coaches-directory-page > .hero:first-child .actions,
+.hc-leagues-directory-page > .hero:first-child .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 22px;
+}
+.hc-coaches-directory-page > .hero:first-child .btn,
+.hc-leagues-directory-page > .hero:first-child .btn {
+  min-height: 44px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.hc-coaches-directory-page .hc-team-directory-list,
+.hc-leagues-directory-page .hc-team-directory-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 22px clamp(12px, 3.5vw, 48px) !important;
+}
+.hc-coaches-directory-page .hc-team-directory-list > .card:not(.hc-team-row),
+.hc-leagues-directory-page .hc-team-directory-list > .card:not(.hc-team-row) {
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #dededb;
+  border-top: 3px solid var(--hc-orange);
+  color: #111;
+}
+.hc-coaches-directory-page > .hero:nth-child(2),
+.hc-leagues-directory-page > .hero:nth-child(2) {
+  margin: 0;
+  padding: 20px clamp(12px, 3.5vw, 48px);
+  background: #f3f3f1;
+  border: 0;
+  border-radius: 0;
+}
+.hc-coaches-directory-page :where(a, button, input, select):focus-visible,
+.hc-leagues-directory-page :where(a, button, input, select):focus-visible {
+  outline: 2px solid var(--hc-orange);
+  outline-offset: 3px;
+}
+@media (max-width: 1000px) {
+  .hc-coaches-directory-page .hc-team-directory-list,
+  .hc-leagues-directory-page .hc-team-directory-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .hc-coaches-directory-page > .hero:first-child,
+  .hc-leagues-directory-page > .hero:first-child {
+    padding: 28px 16px 24px;
+  }
+  .hc-coaches-directory-page > .hero:first-child h1,
+  .hc-leagues-directory-page > .hero:first-child h1 {
+    font-size: clamp(36px, 10vw, 52px);
+  }
+  .hc-coaches-directory-page .hc-team-directory-list,
+  .hc-leagues-directory-page .hc-team-directory-list {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px 10px !important;
+  }
+  .hc-coaches-directory-page > .hero:first-child .actions,
+  .hc-leagues-directory-page > .hero:first-child .actions {
+    align-items: stretch;
+  }
+  .hc-coaches-directory-page > .hero:first-child .actions .btn,
+  .hc-leagues-directory-page > .hero:first-child .actions .btn {
+    flex: 1 1 150px;
+    justify-content: center;
+  }
+}
