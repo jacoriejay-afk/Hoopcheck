@@ -370,3 +370,235 @@
 @media (max-width: 360px) {
   .hc-team-directory-page .team-filter-row { grid-template-columns: 1fr; }
 }
+
+
+/* Coach and league directories inherit the shared teams template. */
+.hc-coaches-directory-page .hc-team-row,
+.hc-leagues-directory-page .hc-team-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  padding: clamp(16px, 2.5vw, 26px);
+  background: #fff;
+  border: 1px solid #dededb;
+  border-top: 3px solid var(--hc-orange);
+  border-radius: 2px;
+  box-shadow: none;
+}
+.hc-coaches-directory-page .hc-team-row h2,
+.hc-leagues-directory-page .hc-team-row h2 {
+  margin: 2px 0 0;
+  color: #111;
+  font-family: var(--hc-display) !important;
+  font-size: clamp(22px, 2.4vw, 30px);
+  line-height: 1.05;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.hc-coaches-directory-page .hc-team-row p,
+.hc-leagues-directory-page .hc-team-row p {
+  margin: 0;
+  color: #555;
+  line-height: 1.5;
+}
+.hc-coaches-directory-page .hc-team-row .btn,
+.hc-leagues-directory-page .hc-team-row .btn {
+  margin-top: auto;
+  min-height: 42px;
+  border-radius: 2px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.hc-leagues-directory-page .hc-team-row > span,
+.hc-leagues-directory-page .hc-team-row .geo-badge {
+  max-width: 100%;
+}
+.hc-leagues-directory-page select {
+  min-height: 46px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #d5d5d2;
+  border-radius: 2px;
+}
+.hc-coaches-directory-page > .hero:not(:first-child),
+.hc-leagues-directory-page > .hero:not(:first-child) {
+  color: #111;
+  background: #f3f3f1;
+  border: 0;
+  border-radius: 0;
+}
+.hc-coaches-directory-page > .hero:last-child,
+.hc-leagues-directory-page > .hero:last-child {
+  margin: 18px clamp(12px, 3.5vw, 48px) 0;
+  padding: clamp(22px, 4vw, 42px);
+  color: #fff;
+  background: #080808;
+  border-bottom: 4px solid var(--hc-orange);
+  border-radius: 2px;
+}
+.hc-coaches-directory-page > .hero:last-child h2,
+.hc-leagues-directory-page > .hero:last-child h2 { color: #fff; }
+.hc-coaches-directory-page > .hero:last-child p,
+.hc-leagues-directory-page > .hero:last-child p { color: #ccc; }
+@media (max-width: 760px) {
+  .hc-coaches-directory-page .hc-team-directory-list,
+  .hc-leagues-directory-page .hc-team-directory-list {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding-inline: 10px !important;
+  }
+  .hc-coaches-directory-page > .hero:last-child,
+  .hc-leagues-directory-page > .hero:last-child { margin-inline: 10px; }
+}
+
+/* Global search and player profiles use the same high-contrast research system. */
+.hc-global-search-page {
+  min-height: 100vh;
+  padding: clamp(12px, 3vw, 38px);
+  color: #111;
+  background: #f3f3f1;
+}
+.hc-global-search-page .search-hero {
+  padding: clamp(24px, 5vw, 58px);
+  color: #fff;
+  background:
+    radial-gradient(ellipse at 88% 15%, rgba(255,106,0,.17), transparent 35%),
+    linear-gradient(110deg, #050505, #17110d);
+  border: 0;
+  border-bottom: 4px solid var(--hc-orange);
+  border-radius: 2px;
+}
+.hc-global-search-page .search-hero h1 {
+  color: #fff;
+  font-family: var(--hc-display) !important;
+  font-size: clamp(38px, 6vw, 76px);
+  line-height: .94;
+  text-transform: uppercase;
+}
+.hc-global-search-page .search-hero > p { max-width: 640px; color: #d0d0d0; line-height: 1.6; }
+.hc-global-search-page .search-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 900px;
+  margin-top: 22px;
+}
+.hc-global-search-page .search-form input {
+  flex: 1 1 260px;
+  min-width: 0;
+  min-height: 48px;
+  color: #111;
+  background: #fff;
+  border: 1px solid #d5d5d2;
+  border-radius: 2px;
+}
+.hc-global-search-page .results-section,
+.hc-global-search-page .empty-section {
+  margin-top: 18px;
+  padding: clamp(16px, 3vw, 30px);
+  background: #fff;
+  border: 1px solid #dededb;
+  border-top: 3px solid var(--hc-orange);
+}
+.hc-global-search-page .results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.hc-global-search-page .results-header h2,
+.hc-global-search-page .empty-section h2 {
+  color: #111;
+  font-family: var(--hc-display) !important;
+  font-size: clamp(27px, 4vw, 42px);
+  line-height: 1;
+  text-transform: uppercase;
+}
+.hc-global-search-page .result-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.hc-global-search-page .result-card {
+  min-width: 0;
+  padding: 16px;
+  color: #111;
+  background: #f8f8f6;
+  border: 1px solid #dededb;
+  border-top: 3px solid var(--hc-orange);
+  border-radius: 2px;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.hc-global-search-page .result-card:hover { border-color: var(--hc-orange); background: #fff; }
+.hc-global-search-page .result-card h4 {
+  margin: 8px 0;
+  color: #111;
+  font-family: var(--hc-display) !important;
+  font-size: 21px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+.hc-global-search-page .result-card p { color: #555; line-height: 1.5; }
+.hc-global-search-page .result-type,
+.hc-global-search-page .group-heading > span { color: var(--hc-orange); font-size: 10px; font-weight: 900; letter-spacing: .12em; }
+.hc-global-search-page .group-heading { display: flex; align-items: center; gap: 10px; margin: 24px 0 12px; }
+.hc-global-search-page .group-heading h3 { margin: 0; font-family: var(--hc-display) !important; text-transform: uppercase; }
+.hc-global-search-page .quick-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+.hc-global-search-page .quick-card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 18px;
+  color: #fff;
+  background: #090909;
+  border-bottom: 3px solid var(--hc-orange);
+  text-decoration: none;
+}
+.hc-global-search-page .quick-card > span { color: var(--hc-orange); font-size: 11px; font-weight: 900; }
+.hc-global-search-page .quick-card strong { font-family: var(--hc-display) !important; text-transform: uppercase; }
+.hc-global-search-page .quick-card small { color: #c5c5c5; }
+.hc-global-search-page .dashboard-card { margin-bottom: 18px; border-radius: 2px; }
+.hc-global-search-page .state-card { padding: 22px; background: #f8f8f6; border: 1px solid #dededb; }
+.player-profile-page .player-profile-hero,
+.player-profile-page .hero-card {
+  border-radius: 2px;
+}
+.player-profile-page .player-profile-hero {
+  padding: clamp(22px, 4vw, 40px);
+  color: #fff;
+  background:
+    radial-gradient(ellipse at 90% 15%, rgba(255,106,0,.18), transparent 36%),
+    linear-gradient(110deg, #070707, #19110c);
+  border: 0;
+  border-bottom: 4px solid var(--hc-orange);
+}
+.player-profile-page .player-profile-heading h1 {
+  color: #fff;
+  font-family: var(--hc-display) !important;
+  font-size: clamp(32px, 5vw, 58px);
+  line-height: .98;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.player-profile-page .player-profile-hero .muted { color: #ccc; }
+.player-profile-page .player-profile-card,
+.player-profile-page .dashboard-card {
+  border-radius: 2px;
+  border-color: #dededb;
+}
+@media (max-width: 760px) {
+  .hc-global-search-page { padding: 10px; }
+  .hc-global-search-page .search-hero { padding: 25px 16px; }
+  .hc-global-search-page .result-grid,
+  .hc-global-search-page .quick-links { grid-template-columns: 1fr; }
+  .hc-global-search-page .results-section,
+  .hc-global-search-page .empty-section { padding: 14px 11px; }
+  .player-profile-page .page-container { padding-inline: 12px; }
+  .player-profile-page .topbar { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+  .player-profile-page .topnav { flex-wrap: wrap; gap: 8px 12px; }
+}
