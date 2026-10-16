@@ -83,7 +83,7 @@ export default function Home() {
           <div className="hc-template-directory-links">
             {categories.slice(0, 4).map((category) => (
               <Link href={category.href} key={category.label}>
-                <span className="hc-template-mini-icon" style={{ "--tile-color": category.color }}><CategoryIcon name={category.icon} /></span>
+                <span className="hc-template-mini-icon" style={{ "--tile-color": category.color } as React.CSSProperties}><CategoryIcon name={category.icon} /></span>
                 <span><strong>{category.label}</strong><small>{category.subtitle}</small></span>
                 <b aria-hidden="true">›</b>
               </Link>
