@@ -117,7 +117,7 @@ export default function TeamsPage() {
 
 
   return (
-    <main>
+    <main className="hc-team-directory-page">
       <section className="hero">
         <div className="eyebrow">
           HoopCheck Teams
