@@ -45,7 +45,7 @@ loadLeagues();
 
 return (
 <main>
-<section className="hero">
+<section className="hero hc-directory-hero">
     <div className="eyebrow">
       HoopCheck Leagues
     </div>
@@ -71,7 +71,7 @@ return (
     </div>
   </section>
   <section className="hero" style={{ paddingTop: "25px", paddingBottom: "25px" }}><div style={{ maxWidth: 520 }}><label htmlFor="league-country" style={{ display: "block", fontWeight: 900, marginBottom: 8 }}>League country</label><select id="league-country" value={country} onChange={(e) => setCountry(e.target.value)} style={{ width: "100%" }}><option value="">All countries</option>{Array.from(new Set(leagues.map((league) => league.country).filter(Boolean) as string[])).sort().map((item) => <option key={item} value={item}>{item}</option>)}</select></div></section>
-  <section className="grid">
+  <section className="grid hc-team-directory-list">
     {loading ? (<div className="card"><HoopLoading label="Scanning professional leagues..." /></div>) : leagues.length === 0 ? (
       <div className="card">
         <div className="eyebrow">
@@ -88,7 +88,7 @@ return (
     ) : (
       leagues.filter((league) => !country || league.country === country).map((league) => (
         <div
-          className="card"
+          className="card hc-team-row"
           key={league.id}
         >
           <div className="eyebrow">
