@@ -209,7 +209,6 @@ export default function DashboardPage() {
     <main className="page-shell hc-dashboard-shell">
       <div className="page-container">
         <header className="topbar hc-app-topbar">
-          <Link href="/" className="brand">HOOPCHECK</Link>
           <nav className="topnav">
             <Link href="/search">{t("search")}</Link>
             <Link href="/membership">{t("membership")}</Link>
