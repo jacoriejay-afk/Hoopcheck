@@ -55,7 +55,7 @@ export default function CoachesPage() {
 
   return (
     <main>
-<section className="hero">
+<section className="hero hc-directory-hero">
         <div className="eyebrow">
           HoopCheck Coaches
         </div>
@@ -108,7 +108,7 @@ export default function CoachesPage() {
         </div>
       </section>
 
-      <section className="grid">
+      <section className="grid hc-team-directory-list">
         {loading ? (<div className="card"><HoopLoading label="Scanning coaching profiles..." /></div>) : coaches.length === 0 ? (
           <div className="card">
             <div className="eyebrow">
@@ -128,7 +128,7 @@ export default function CoachesPage() {
         ) : (
           coaches.map((coach) => (
             <div
-              className="card"
+              className="card hc-team-row"
               key={coach.id}
             >
               <div className="eyebrow">
