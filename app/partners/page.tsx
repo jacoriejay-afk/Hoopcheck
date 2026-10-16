@@ -1,40 +1,55 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 
 export default function Sponsor() {
   const [type, setType] = useState("sponsor");
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState("");
+  const [saving, setSaving] = useState(false);
 
   async function submit() {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
-    if (!user) {
-      window.location.href = "/login";
+    if (saving) return;
+    const cleanMessage = message.trim();
+    if (cleanMessage.length < 10 || cleanMessage.length > 3000) {
+      setSent("Please enter between 10 and 3,000 characters so we can understand your inquiry.");
       return;
     }
-    const { error } = await supabase.from("sponsor_inquiries").insert({
-      user_id: user.id,
-      type,
-      message: message.trim(),
-    });
-    setSent(error ? error.message : "Thanks — your inquiry has been submitted.");
-    if (!error) setMessage("");
+    setSaving(true);
+    setSent("");
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        setSent("We couldn't verify your session. Please try again.");
+        return;
+      }
+      const user = session?.user;
+      if (!user) {
+        window.location.href = "/login";
+        return;
+      }
+      const { error } = await supabase.from("sponsor_inquiries").insert({
+        user_id: user.id,
+        type,
+        message: cleanMessage,
+      });
+      if (error) {
+        setSent("Your inquiry couldn't be submitted. Please try again.");
+        return;
+      }
+      setMessage("");
+      setSent("Thanks — your inquiry has been submitted.");
+    } catch {
+      setSent("Something went wrong while submitting your inquiry. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
-    <main className="page-shell">
+    <main className="page-shell hc-partners-page">
       <div className="page-container">
-        <header className="topbar">
-          <Link href="/dashboard" className="brand">HOOPCHECK</Link>
-          <nav className="topnav">
-            <Link href="/support">Help</Link>
-            <Link href="/membership">Membership</Link>
-          </nav>
-        </header>
         <section className="hero-card">
           <p className="eyebrow">PARTNER WITH HOOPCHECK</p>
           <h1>Sponsor, donate, or inquire.</h1>
@@ -52,10 +67,12 @@ export default function Sponsor() {
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             rows={7}
+            minLength={10}
             maxLength={3000}
+            required
             placeholder="Tell us what you have in mind..."
           />
-          <button className="btn" onClick={() => void submit()}>Submit Inquiry</button>
+          <button className="btn" disabled={saving} onClick={() => void submit()}>{saving ? "Submitting..." : "Submit Inquiry"}</button>
           {sent && <p className="muted">{sent}</p>}
         </section>
       </div>
