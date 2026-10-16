@@ -86,6 +86,7 @@ export default function RootLayout({
         <footer className="site-footer">
           <div className="footer-inner">
             <div className="footer-brand">
+              <Link href="/" className="footer-logo" aria-label="HoopCheck home">HOOP<span>CHECK</span></Link>
               <p>Research the basketball world before you commit.</p>
             </div>
             <div className="footer-links">
