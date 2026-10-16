@@ -783,3 +783,80 @@ main:not(.hc-template-home) .topnav a:hover { color:var(--hc-orange)!important; 
 @media (min-width:761px) {
   .bottom-nav { display:none!important; }
 }
+
+
+/* Compact club-list rows from the supplied desktop directory mockups */
+.hc-team-directory-list {
+  display:flex!important;
+  flex-direction:column!important;
+  gap:0!important;
+  margin:0 auto 28px!important;
+  max-width:1440px;
+  padding:0 clamp(12px,3vw,32px)!important;
+}
+.hc-team-row {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  column-gap:16px!important;
+  row-gap:5px!important;
+  min-width:0;
+  padding:14px 16px!important;
+  border:0!important;
+  border-bottom:1px solid #e4e4e1!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  background:#fff!important;
+}
+.hc-team-row .eyebrow,
+.hc-team-row .card-kicker {
+  grid-column:1;
+  grid-row:1;
+  margin:0 0 2px!important;
+  font-size:10px!important;
+  letter-spacing:.08em!important;
+  color:#6a6a6a!important;
+}
+.hc-team-row h2 {
+  grid-column:1;
+  grid-row:2;
+  margin:0!important;
+  font-size:clamp(15px,1.2vw,18px)!important;
+  line-height:1.25!important;
+  font-weight:900!important;
+  text-transform:none!important;
+  letter-spacing:0!important;
+}
+.hc-team-row p {
+  grid-column:1;
+  margin:0!important;
+  color:#626262!important;
+  font-size:12px!important;
+}
+.hc-team-row .geo-badge { grid-column:1; }
+.hc-team-row > .btn,
+.hc-team-row > .actions {
+  grid-column:2;
+  grid-row:1 / span 4;
+  justify-self:end;
+  align-self:center;
+}
+.hc-team-row .btn {
+  min-width:108px;
+  padding:10px 14px!important;
+  border-radius:2px!important;
+  font-size:11px!important;
+  font-weight:900!important;
+  text-transform:uppercase;
+}
+.hc-team-directory-list > .card:not(.hc-team-row) {
+  border-radius:2px!important;
+  margin:12px 0!important;
+}
+@media(max-width:600px) {
+  .hc-team-directory-list { padding:0 10px!important; }
+  .hc-team-row { padding:13px 10px!important; column-gap:8px!important; }
+  .hc-team-row > .btn,
+  .hc-team-row > .actions { grid-column:2; }
+  .hc-team-row .btn { min-width:88px; padding:9px 10px!important; }
+}
