@@ -849,3 +849,136 @@
     justify-content: center;
   }
 }
+
+
+/* Women's basketball directory: one global header, shared HoopCheck editorial system. */
+.hc-womens-directory-page {
+  min-height: 100vh;
+  padding-bottom: 32px;
+  color: #111;
+  background: #f3f3f1;
+}
+.hc-womens-directory-page > .page-container {
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 0 clamp(12px, 3vw, 42px);
+}
+.hc-womens-directory-page .compact-hero {
+  margin: 0 calc(clamp(12px, 3vw, 42px) * -1) 22px;
+  padding: clamp(28px, 5vw, 58px) clamp(16px, 4vw, 56px);
+  color: #fff;
+  background:
+    radial-gradient(ellipse at 88% 30%, rgba(255,106,0,.18), transparent 36%),
+    linear-gradient(110deg, #070707, #17110d);
+  border: 0;
+  border-bottom: 4px solid var(--hc-orange);
+  border-radius: 0;
+}
+.hc-womens-directory-page .compact-hero h1 {
+  max-width: 900px;
+  margin: 10px 0 14px;
+  color: #fff;
+  font-family: var(--hc-display) !important;
+  font-size: clamp(38px, 5.5vw, 72px);
+  line-height: .94;
+  text-transform: uppercase;
+}
+.hc-womens-directory-page .compact-hero .muted { max-width: 700px; color: #d0d0d0; line-height: 1.65; }
+.hc-womens-directory-page .compact-hero .actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 22px; }
+.hc-womens-directory-page .compact-section,
+.hc-womens-directory-page .dashboard-card {
+  border: 1px solid #dededb;
+  border-radius: 2px;
+  box-shadow: none;
+}
+.hc-womens-directory-page .research-search { display: grid; gap: 12px; }
+.hc-womens-directory-page .research-search input,
+.hc-womens-directory-page .team-filter-row select {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 12px 14px;
+  color: #111;
+  background: #fff;
+  border: 1px solid #d4d4d0;
+  border-radius: 2px;
+}
+.hc-womens-directory-page :where(a,button,input,select):focus-visible {
+  outline: 2px solid var(--hc-orange);
+  outline-offset: 3px;
+}
+.hc-womens-directory-page .team-filter-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.hc-womens-directory-page .league-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.hc-womens-directory-page .filter-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  min-width: 0;
+  min-height: 76px;
+  padding: 14px;
+  text-align: left;
+  color: #111;
+  background: #fff;
+  border: 1px solid #dededb;
+  border-top: 3px solid #252525;
+  border-radius: 2px;
+}
+.hc-womens-directory-page .filter-chip strong {
+  font-family: var(--hc-display) !important;
+  font-size: 17px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+.hc-womens-directory-page .filter-chip span { color: #686868; font-size: 12px; line-height: 1.4; }
+.hc-womens-directory-page .filter-chip.active { border-top-color: var(--hc-orange); background: #fff7f1; }
+.hc-womens-directory-page .section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.hc-womens-directory-page .section-heading h2 {
+  font-family: var(--hc-display) !important;
+  font-size: clamp(26px, 3vw, 38px);
+  text-transform: uppercase;
+}
+.hc-womens-directory-page .hc-team-directory-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.hc-womens-directory-page .hc-team-row {
+  min-width: 0;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #dededb;
+  border-top: 3px solid var(--hc-orange);
+}
+.hc-womens-directory-page .hc-team-row h2 { overflow-wrap: anywhere; font-size: clamp(19px, 2vw, 25px); }
+.hc-womens-directory-page .hc-team-row .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.hc-womens-directory-page .bottom-back { padding: 22px 0 0; }
+@media (max-width: 1000px) {
+  .hc-womens-directory-page .league-filter-grid,
+  .hc-womens-directory-page .hc-team-directory-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .hc-womens-directory-page > .page-container { padding-inline: 10px; }
+  .hc-womens-directory-page .compact-hero { margin-inline: -10px; padding: 28px 16px 24px; }
+  .hc-womens-directory-page .compact-hero h1 { font-size: clamp(36px, 10vw, 52px); }
+  .hc-womens-directory-page .compact-hero .actions > a { flex: 1 1 150px; justify-content: center; }
+  .hc-womens-directory-page .team-filter-row,
+  .hc-womens-directory-page .league-filter-grid,
+  .hc-womens-directory-page .hc-team-directory-list { grid-template-columns: 1fr; }
+  .hc-womens-directory-page .compact-section { padding: 15px; }
+  .hc-womens-directory-page .hc-team-row { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-womens-directory-page * { scroll-behavior: auto !important; }
+}
