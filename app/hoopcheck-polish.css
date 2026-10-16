@@ -95,7 +95,7 @@
 .hc-dashboard-shell .hc-app-topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   flex-wrap: wrap;
   gap: 14px 22px;
   margin: 0 calc(clamp(14px, 3.2vw, 44px) * -1) 20px;
