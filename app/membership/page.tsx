@@ -229,7 +229,7 @@ function MembershipContent() {
     subscription?.status === "active" || subscription?.status === "trialing";
 
   return (
-    <main>
+    <main className="hc-membership-page">
 <section className="hero membership-hero">
         <div className="eyebrow">HoopCheck Membership</div>
         <h1>
