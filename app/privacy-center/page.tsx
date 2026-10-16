@@ -50,7 +50,7 @@ export default function PrivacyCenterPage() {
     setSubmitting(false);
   }
 
-  return <main>
+  return <main className="hc-legal-page hc-privacy-center-page">
     <section className="hero">
       <div className="eyebrow">HoopCheck Privacy</div>
       <h1>Privacy<br />Request Center.</h1>
