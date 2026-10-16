@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function PrivacyPage() {
   return (
-    <main>
+    <main className="hc-legal-page hc-privacy-page">
       <section className="hero">
         <div className="eyebrow">HoopCheck Legal</div>
         <h1>Privacy<br />Policy.</h1>
