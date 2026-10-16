@@ -919,3 +919,53 @@ main:not(.hc-template-home) .topnav a:hover { color:var(--hc-orange)!important; 
   .hc-team-profile-hero::after { width:68vw;right:-30%;top:-5%; }
   .hc-profile-review-list { padding-inline:10px!important; }
 }
+
+
+/* Shared directory styling extended to coaches, leagues, and username results */
+.hc-directory-hero {
+  position:relative;
+  overflow:hidden;
+  background:#080808!important;
+  color:#fff!important;
+  border:0!important;
+  border-bottom:4px solid var(--hc-orange)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  padding:clamp(24px,4vw,52px)!important;
+}
+.hc-directory-hero h1,
+.hc-directory-hero h2 {
+  color:#fff!important;
+  max-width:900px;
+  font-size:clamp(32px,4.6vw,60px)!important;
+  line-height:.98!important;
+  text-transform:uppercase!important;
+}
+.hc-directory-hero p { color:#dedede!important;max-width:680px; }
+.hc-directory-hero .research-search {
+  max-width:760px;
+  margin-top:22px;
+}
+.hc-player-results {
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:0!important;
+  margin-bottom:28px!important;
+}
+.hc-player-results > .card {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:8px 16px!important;
+  border:0!important;
+  border-bottom:1px solid #dededb!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  background:#fff!important;
+}
+.hc-player-results > .card h2 { margin:0!important;font-size:18px!important; }
+.hc-player-results > .card .btn { grid-column:2;grid-row:1 / span 3; }
+@media(max-width:600px) {
+  .hc-directory-hero { padding:24px 16px!important; }
+  .hc-player-results { padding-inline:10px!important; }
+  .hc-player-results > .card { padding:14px!important;gap:8px; }
+}
