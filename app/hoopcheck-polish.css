@@ -670,3 +670,67 @@
   .hc-membership-page .plans { grid-template-columns: 1fr; gap: 12px; }
   .hc-membership-page .plan-card { padding: 20px 16px; }
 }
+
+
+/* Player directory: keep discovery username-first and visually consistent. */
+.hc-player-directory-page .page-container {
+  max-width: 1240px;
+}
+.hc-player-directory-page .hc-directory-hero {
+  border-bottom: 4px solid var(--hc-orange, #ff6a00);
+}
+.hc-player-directory-page .research-search {
+  display: grid;
+  gap: 12px;
+}
+.hc-player-directory-page .search-label {
+  color: var(--hc-orange, #ff6a00);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+.hc-player-directory-page .research-search input,
+.hc-player-directory-page .research-search select {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  border: 1px solid #d4d4d0;
+  border-radius: 2px;
+  background: #fff;
+  color: #111;
+  padding: 12px 14px;
+}
+.hc-player-directory-page .research-search input:focus-visible,
+.hc-player-directory-page .research-search select:focus-visible {
+  outline: 2px solid var(--hc-orange, #ff6a00);
+  outline-offset: 2px;
+}
+.hc-player-directory-page .hc-player-results {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.hc-player-directory-page .hc-player-results > .dashboard-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #dededb;
+  border-top: 3px solid var(--hc-orange, #ff6a00);
+  border-radius: 2px;
+  background: #fff;
+}
+.hc-player-directory-page .hc-player-results h2 {
+  overflow-wrap: anywhere;
+}
+.hc-player-directory-page .hc-player-results .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (max-width: 760px) {
+  .hc-player-directory-page .hc-player-results {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .hc-player-directory-page .hc-player-results > .dashboard-card {
+    padding: 16px;
+  }
+}
