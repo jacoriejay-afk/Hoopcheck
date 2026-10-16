@@ -72,8 +72,8 @@ export default function LoginPage() {
   }
 
   return (
-    <main>
-<section className="hero" style={{ paddingBottom: "30px" }}>
+    <main className="hc-auth-page">
+<section className="hero hc-auth-hero" style={{ paddingBottom: "30px" }}>
         <div className="eyebrow">PLAYER ACCESS</div>
         <h1>Welcome back.</h1>
         <p>
@@ -82,8 +82,8 @@ export default function LoginPage() {
         </p>
       </section>
 
-      <section style={{ maxWidth: "520px", margin: "0 auto", padding: "20px 6% 100px" }}>
-        <div className="form">
+      <section className="hc-auth-form-section" style={{ maxWidth: "520px", margin: "0 auto", padding: "20px 6% 100px" }}>
+        <div className="form hc-auth-card">
           <div className="eyebrow">Player Login</div>
           <h2 style={{ fontSize: "30px", letterSpacing: "-1px", marginTop: 0 }}>
             Sign in to HoopCheck
@@ -129,7 +129,7 @@ export default function LoginPage() {
         </div>
       </section>
 
-      <section style={{ maxWidth: "900px", margin: "0 auto", padding: "0 6% 100px" }}>
+      <section className="hc-auth-promo" style={{ maxWidth: "900px", margin: "0 auto", padding: "0 6% 100px" }}>
         <div className="card">
           <div className="eyebrow">HoopCheck</div>
           <h2>Research before<br />you commit.</h2>
