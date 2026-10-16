@@ -47,11 +47,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="settings-page">
-      <header className="topbar settings-topbar">
-        <Link href="/dashboard" className="brand">HOOPCHECK</Link>
-        <nav className="topnav"><Link href="/dashboard">{t("dashboard")}</Link><Link href="/search">{t("search")}</Link><Link href="/account">{t("account")}</Link></nav>
-      </header>
+    <main className="settings-page hc-settings-page">
       <section className="settings-shell">
         <div className="eyebrow">CONTROL CENTER</div>
         <h1>{t("settings")}</h1>
