@@ -605,3 +605,68 @@
 
 /* Ensure all directory pages keep a readable mobile grid. */
 @media (max-width: 760px) { .hc-team-directory-list { grid-template-columns: 1fr; } }
+
+
+/* Membership page: align plan selection with the HoopCheck athletic design. */
+.hc-membership-page .membership-hero {
+  max-width: 1180px;
+  margin: 24px auto;
+  padding: clamp(28px, 5vw, 56px);
+  border: 1px solid var(--hc-line);
+  background: linear-gradient(135deg, #171717 0%, #080808 72%);
+  color: #fff;
+}
+.hc-membership-page .membership-section {
+  max-width: 1180px;
+  margin: 0 auto 24px;
+  padding: clamp(18px, 3vw, 32px);
+}
+.hc-membership-page .plans {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+.hc-membership-page .plan-card {
+  min-width: 0;
+  padding: clamp(20px, 3vw, 32px);
+  border: 1px solid var(--hc-line);
+  border-radius: 3px;
+  background: var(--hc-paper, #fff);
+  color: var(--hc-ink, #111);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 5%);
+}
+.hc-membership-page .plan-card.featured {
+  border: 2px solid var(--hc-orange, #ff6a00);
+  box-shadow: 0 12px 30px rgb(255 106 0 / 12%);
+}
+.hc-membership-page .plan-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.hc-membership-page .plan-description {
+  color: #666;
+  line-height: 1.65;
+}
+.hc-membership-page .plan-button {
+  width: 100%;
+  justify-content: center;
+  margin-top: 18px;
+}
+.hc-membership-page .bottom-cta {
+  max-width: 1180px;
+  margin: 24px auto;
+}
+@media (max-width: 760px) {
+  .hc-membership-page .membership-hero,
+  .hc-membership-page .membership-section,
+  .hc-membership-page .bottom-cta {
+    margin: 12px 10px;
+    padding: 20px 15px;
+  }
+  .hc-membership-page .plans { grid-template-columns: 1fr; gap: 12px; }
+  .hc-membership-page .plan-card { padding: 20px 16px; }
+}
