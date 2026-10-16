@@ -40,14 +40,39 @@ export default function PrivacyCenterPage() {
   useEffect(()=>{ void load(); },[]);
 
   async function submit() {
-    setSubmitting(true); setError(""); setMessage("");
-    if (!details.trim()) { setError("Please describe what you need."); setSubmitting(false); return; }
-    const { error: insertError } = await supabase.from("privacy_requests").insert({
-      requester_id:userId, request_type:type, details:details.trim()
-    });
-    if (insertError) setError("We couldn't submit your request. Please try again.");
-    else { setMessage("Your privacy request was submitted."); setDetails(""); await load(); }
-    setSubmitting(false);
+    if (submitting) return;
+    const cleanDetails = details.trim();
+    if (cleanDetails.length < 10 || cleanDetails.length > 5000) {
+      setError("Please describe your request in 10–5,000 characters.");
+      setMessage("");
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    setMessage("");
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        window.location.href = "/login";
+        return;
+      }
+      const { error: insertError } = await supabase.from("privacy_requests").insert({
+        requester_id: user.id,
+        request_type: type,
+        details: cleanDetails,
+      });
+      if (insertError) {
+        setError("We couldn't submit your request. Please try again.");
+        return;
+      }
+      setMessage("Your privacy request was submitted.");
+      setDetails("");
+      await load();
+    } catch {
+      setError("Something went wrong while submitting your request. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return <main className="hc-legal-page hc-privacy-center-page">
@@ -71,7 +96,7 @@ export default function PrivacyCenterPage() {
         </select>
 
         <label>Details</label>
-        <textarea value={details} onChange={e=>setDetails(e.target.value)} maxLength={5000} placeholder="Tell us what information or action you are requesting." style={{width:"100%",minHeight:140,marginTop:8}} />
+        <textarea value={details} onChange={e=>setDetails(e.target.value)} minLength={10} maxLength={5000} aria-label="Privacy request details" placeholder="Tell us what information or action you are requesting." style={{width:"100%",minHeight:140,marginTop:8}} />
         <button className="btn" onClick={submit} disabled={submitting}>{submitting ? "Submitting..." : "Submit privacy request"}</button>
 
         <h2 style={{marginTop:36}}>Your requests</h2>
