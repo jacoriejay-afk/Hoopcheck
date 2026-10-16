@@ -602,3 +602,6 @@
   .player-profile-page .topbar { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
   .player-profile-page .topnav { flex-wrap: wrap; gap: 8px 12px; }
 }
+
+/* Ensure all directory pages keep a readable mobile grid. */
+@media (max-width: 760px) { .hc-team-directory-list { grid-template-columns: 1fr; } }
