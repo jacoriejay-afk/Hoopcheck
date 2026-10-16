@@ -427,7 +427,7 @@ export default function TeamDetailPage() {
 
   if (loading) {
     return (
-      <main>
+      <main className="hc-entity-profile-page hc-team-entity-profile">
 <section className="hero hc-team-profile-hero">
           <div className="eyebrow">
             HoopCheck
@@ -441,7 +441,7 @@ export default function TeamDetailPage() {
 
   if (!team) {
     return (
-      <main>
+      <main className="hc-entity-profile-page hc-team-entity-profile">
 <section className="hero">
           <div className="eyebrow">
             404
@@ -549,7 +549,7 @@ export default function TeamDetailPage() {
       : 0;
 
   return (
-    <main>
+    <main className="hc-entity-profile-page hc-team-entity-profile">
 <section className="hero">
         <div className="eyebrow">
           Team Research
