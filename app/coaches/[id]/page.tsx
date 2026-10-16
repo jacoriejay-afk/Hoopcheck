@@ -407,7 +407,7 @@ export default function CoachDetailPage() {
   if (loading) {
     return (
       <main>
-<section className="hero">
+<section className="hero hc-team-profile-hero hc-coach-profile-hero">
           <div className="eyebrow">
             HoopCheck
           </div>
