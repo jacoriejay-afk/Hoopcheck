@@ -51,7 +51,7 @@ function PlayerUsernameConnect() {
     setLoading(false);
 
     if (error) {
-      setMessage("We couldn&apos;t find that username. Try again.");
+      setMessage("We couldn’t find that username. Try again.");
       return;
     }
     if (!data) {
@@ -393,7 +393,7 @@ function SearchContent() {
 
           {!loading && !error && visibleLeagues.length > 0 && (
             <section className="result-group">
-              <div className="group-heading"><span>04</span><h3>Leagues</h3></div>
+              <div className="group-heading"><span>05</span><h3>Leagues</h3></div>
               <div className="result-grid">
                 {visibleLeagues.map((league) => (
                   <Link href={`/leagues/${league.id}`} key={league.id} className="result-card">
