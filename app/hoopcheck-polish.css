@@ -79,3 +79,161 @@
     transition: none;
   }
 }
+
+
+/* Dashboard redesign pass: match the reference template's editorial hierarchy */
+.hc-dashboard-shell {
+  min-height: 100vh;
+  background: #f3f3f1;
+  color: #111;
+}
+.hc-dashboard-shell > .page-container {
+  width: 100%;
+  max-width: 1480px;
+  padding: 0 clamp(14px, 3.2vw, 44px) 36px;
+}
+.hc-dashboard-shell .hc-app-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px 22px;
+  margin: 0 calc(clamp(14px, 3.2vw, 44px) * -1) 20px;
+  padding: 12px clamp(14px, 3.2vw, 44px);
+  background: #080808;
+  color: #fff;
+  border: 0;
+  border-bottom: 3px solid var(--hc-orange);
+  border-radius: 0;
+}
+.hc-dashboard-shell .hc-app-topbar .brand {
+  font-family: var(--hc-display) !important;
+  font-size: clamp(23px, 2.5vw, 32px);
+  letter-spacing: .025em;
+  color: #fff;
+}
+.hc-dashboard-shell .hc-app-topbar .topnav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+.hc-dashboard-shell .hc-app-topbar .topnav > a,
+.hc-dashboard-shell .hc-app-topbar .topnav > button {
+  color: #eee;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.hc-dashboard-shell .hc-app-topbar .topnav > a:hover,
+.hc-dashboard-shell .hc-app-topbar .topnav > button:hover {
+  color: var(--hc-orange);
+}
+.hc-dashboard-shell .hc-player-hero {
+  overflow: hidden;
+  padding: clamp(22px, 3.5vw, 42px);
+  background:
+    radial-gradient(ellipse at 90% 15%, rgba(255,106,0,.15), transparent 38%),
+    linear-gradient(120deg, #080808, #15110e);
+  color: #fff;
+  border: 0;
+  border-bottom: 4px solid var(--hc-orange);
+  border-radius: 2px;
+  box-shadow: none;
+}
+.hc-dashboard-shell .hc-player-hero :where(h1,h2,h3,strong) { color: #fff; }
+.hc-dashboard-shell .hc-player-hero .muted { color: #c5c5c5; }
+.hc-dashboard-shell .hc-player-hero .eyebrow { color: var(--hc-orange); }
+.hc-dashboard-shell .hc-player-stats > div {
+  border-color: #38332f;
+  background: rgba(255,255,255,.035);
+}
+.hc-dashboard-shell .hc-player-stats span { color: #aaa; }
+.hc-dashboard-shell .hc-player-stats strong { color: #fff; }
+.hc-dashboard-shell .hc-command-center {
+  margin-top: 24px;
+  padding: clamp(18px, 2.8vw, 32px);
+  background: #fff;
+  border: 1px solid #dededb;
+  border-radius: 2px;
+}
+.hc-dashboard-shell .hc-command-center .dashboard-command-copy h2 {
+  max-width: 760px;
+  font-family: var(--hc-display) !important;
+  font-size: clamp(28px, 3.5vw, 46px);
+  line-height: .98;
+  text-transform: uppercase;
+}
+.hc-dashboard-shell .hc-command-grid {
+  gap: 10px;
+  margin-top: 20px;
+}
+.hc-dashboard-shell .hc-command-grid .hc-command-tile {
+  min-width: 0;
+  min-height: 190px;
+  padding: 17px;
+  background: #0a0a0a;
+  color: #fff;
+  border: 1px solid #303030;
+  border-top: 3px solid var(--hc-orange);
+  border-radius: 2px;
+  box-shadow: none;
+}
+.hc-dashboard-shell .hc-command-grid .hc-command-tile :where(strong) {
+  color: #fff;
+  font-family: var(--hc-display) !important;
+  font-size: clamp(17px, 1.5vw, 22px);
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+.hc-dashboard-shell .hc-command-grid .hc-command-tile > span:not(.dashboard-command-number):not(.dashboard-command-icon):not(.dashboard-command-arrow) {
+  color: #bbb;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.hc-dashboard-shell .hc-command-grid .hc-command-tile:hover {
+  border-color: var(--hc-orange);
+  transform: translateY(-2px);
+}
+.hc-dashboard-shell .dashboard-card,
+.hc-dashboard-shell .player-dashboard-card,
+.hc-dashboard-shell .hc-command-tile {
+  border-radius: 2px;
+}
+.hc-dashboard-shell .dashboard-card {
+  border-color: #dededb;
+  box-shadow: 0 2px 8px rgba(0,0,0,.035);
+}
+.hc-dashboard-shell .dashboard-card .card-kicker { color: var(--hc-orange); }
+.hc-dashboard-shell :where(input,select,textarea) {
+  border-radius: 2px;
+}
+@media (max-width: 760px) {
+  .hc-dashboard-shell > .page-container { padding-inline: 10px; }
+  .hc-dashboard-shell .hc-app-topbar {
+    margin-inline: -10px;
+    padding: 11px 12px;
+    align-items: flex-start;
+  }
+  .hc-dashboard-shell .hc-app-topbar .topnav {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px 13px;
+  }
+  .hc-dashboard-shell .hc-app-topbar .topnav > a,
+  .hc-dashboard-shell .hc-app-topbar .topnav > button { font-size: 9px; }
+  .hc-dashboard-shell .hc-player-hero { padding: 20px 15px; }
+  .hc-dashboard-shell .hc-command-center { padding: 15px 12px; }
+  .hc-dashboard-shell .hc-command-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .hc-dashboard-shell .hc-command-grid .hc-command-tile {
+    min-height: 160px;
+    padding: 12px 10px;
+  }
+  .hc-dashboard-shell .hc-command-grid .hc-command-tile :where(strong) { font-size: 16px; }
+}
+@media (max-width: 390px) {
+  .hc-dashboard-shell .hc-command-grid { grid-template-columns: 1fr; }
+  .hc-dashboard-shell .hc-command-grid .hc-command-tile { min-height: 135px; }
+}
