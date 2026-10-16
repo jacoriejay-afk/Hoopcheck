@@ -54,7 +54,7 @@ export default function CoachesPage() {
   }, []);
 
   return (
-    <main>
+    <main className="hc-coaches-directory-page">
 <section className="hero hc-directory-hero">
         <div className="eyebrow">
           HoopCheck Coaches
