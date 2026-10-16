@@ -2679,3 +2679,25 @@
   text-transform:uppercase;
 }
 .footer-logo span { color:var(--hc-orange); }
+
+
+/* Global research search: keep result cards and empty states readable on narrow screens. */
+.hc-global-search-page :where(a,button,input,select,textarea):focus-visible {
+  outline:2px solid var(--hc-orange);
+  outline-offset:2px;
+}
+.hc-global-search-page .search-hero { min-width:0; }
+.hc-global-search-page .result-card { transition:background .16s ease,border-color .16s ease; }
+.hc-global-search-page .result-link { color:#a84400; font-weight:900; }
+@media (max-width:760px) {
+  .hc-global-search-page { padding:10px; }
+  .hc-global-search-page .search-hero { padding:26px 17px; border-radius:2px; }
+  .hc-global-search-page .search-form { display:grid; grid-template-columns:minmax(0,1fr); }
+  .hc-global-search-page .search-form input,
+  .hc-global-search-page .search-form button { width:100%; min-width:0; }
+  .hc-global-search-page .result-grid,
+  .hc-global-search-page .quick-links { grid-template-columns:minmax(0,1fr); }
+  .hc-global-search-page .results-section,
+  .hc-global-search-page .empty-section { padding:16px 13px; }
+  .hc-global-search-page .result-card { padding:15px 13px; }
+}
