@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 
 type Ticket = {
@@ -130,16 +129,8 @@ export default function SupportPage() {
   }
 
   return (
-    <main className="page-shell">
+    <main className="page-shell hc-support-page">
       <div className="page-container">
-        <header className="topbar">
-          <Link href="/dashboard" className="brand">HOOPCHECK</Link>
-          <nav className="topnav">
-            <Link href="/dashboard">Dashboard</Link>
-            <Link href="/profile">Profile</Link>
-          </nav>
-        </header>
-
         <section className="hero-card">
           <div>
             <p className="eyebrow">HOOPCHECK SUPPORT</p>
