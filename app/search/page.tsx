@@ -246,7 +246,7 @@ function SearchContent() {
   const totalResults = visiblePlayers.length + visibleCoaches.length + visibleTeams.length + visibleWomensTeams.length + visibleLeagues.length;
 
   return (
-    <main className="search-page">
+    <main className="search-page hc-global-search-page">
       <section className="dashboard-card" style={{ margin: "0 0 18px", padding: "16px" }}>
         <div className="eyebrow">PLAYER CONNECT</div>
         <h2 style={{ margin: "4px 0 6px" }}>Add a Player</h2>
