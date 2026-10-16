@@ -6,14 +6,30 @@ import { useRouter } from "next/navigation";
 import { getCachedSession } from "../lib/supabase";
 
 const categories = [
-  { label: "Men's Teams", subtitle: "Global men's professional and club teams", href: "/teams", color: "#ff6a00", icon: "◉" },
-  { label: "Women's Teams", subtitle: "Global women's professional and club teams", href: "/womens", color: "#e72c70", icon: "◉" },
-  { label: "Coaches", subtitle: "Verified coach experiences worldwide", href: "/coaches", color: "#1769b0", icon: "♧" },
-  { label: "Leagues", subtitle: "National and international leagues", href: "/leagues", color: "#16845c", icon: "♜" },
-  { label: "Find Players", subtitle: "Connect with players globally", href: "/players", color: "#6639a8", icon: "♙" },
-  { label: "Reviews", subtitle: "Real feedback from real players", href: "/search", color: "#34383d", icon: "★" },
-  { label: "Alerts", subtitle: "Updates, news and more", href: "/notifications", color: "#eda900", icon: "♧" },
+  { label: "Men's Teams", subtitle: "Global men's professional and club teams", href: "/teams", color: "#ff6a00", icon: "basketball" },
+  { label: "Women's Teams", subtitle: "Global women's professional and club teams", href: "/womens", color: "#e72c70", icon: "women-basketball" },
+  { label: "Coaches", subtitle: "Verified coach experiences worldwide", href: "/coaches", color: "#1769b0", icon: "whistle" },
+  { label: "Leagues", subtitle: "National and international leagues", href: "/leagues", color: "#16845c", icon: "trophy" },
+  { label: "Find Players", subtitle: "Connect with players globally", href: "/players", color: "#6639a8", icon: "player" },
+  { label: "Reviews", subtitle: "Real feedback from real players", href: "/search", color: "#34383d", icon: "star" },
+  { label: "Alerts", subtitle: "Updates, news and more", href: "/notifications", color: "#eda900", icon: "bell" },
 ];
+
+
+function CategoryIcon({ name }: { name: string }) {
+  const common = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  return (
+    <svg viewBox="0 0 32 32" aria-hidden="true" className="hc-category-svg" {...common}>
+      {name === "basketball" && <><circle cx="16" cy="16" r="11" /><path d="M5 16h22M16 5c-5 5-5 17 0 22M16 5c5 5 5 17 0 22M7.5 8.5c5 3 12 12 17 15M24.5 8.5c-5 3-12 12-17 15" /></>}
+      {name === "women-basketball" && <><circle cx="16" cy="16" r="11" /><path d="M5 16h22M16 5c-5 5-5 17 0 22M16 5c5 5 5 17 0 22M11 2v4M21 2v4M11 26v4M21 26v4" /></>}
+      {name === "whistle" && <><path d="M5 12h13l7 5-6 7H9a4 4 0 0 1-4-4z" /><circle cx="20" cy="12" r="3" /><path d="M5 16H2v5h4" /></>}
+      {name === "trophy" && <><path d="M10 5h12v7a6 6 0 0 1-12 0zM10 8H5v3a5 5 0 0 0 5 5M22 8h5v3a5 5 0 0 1-5 5M16 18v6M11 27h10M12 24h8" /></>}
+      {name === "player" && <><circle cx="13" cy="9" r="4" /><path d="M5 25v-2a8 8 0 0 1 12-7M23 15v12M17 21h12" /></>}
+      {name === "star" && <path d="m16 3 4 8 9 1-6.5 6 1.8 9L16 22.5 7.7 27l1.8-9L3 12l9-1z" />}
+      {name === "bell" && <><path d="M7 22h18l-2.5-4V12a6.5 6.5 0 0 0-13 0v6zM13 26a3 3 0 0 0 6 0" /></>}
+    </svg>
+  );
+}
 
 export default function Home() {
   const router = useRouter();
@@ -48,7 +64,7 @@ export default function Home() {
         <div className="hc-template-category-grid">
           {categories.map((category) => (
             <Link href={category.href} key={category.label} className="hc-template-category" style={{ "--tile-color": category.color } as React.CSSProperties}>
-              <span className="hc-template-category-icon" aria-hidden="true">{category.icon}</span>
+              <span className="hc-template-category-icon"><CategoryIcon name={category.icon} /></span>
               <strong>{category.label}</strong>
               <span className="hc-template-category-arrow" aria-hidden="true">→</span>
               <small>{category.subtitle}</small>
@@ -67,7 +83,7 @@ export default function Home() {
           <div className="hc-template-directory-links">
             {categories.slice(0, 4).map((category) => (
               <Link href={category.href} key={category.label}>
-                <span className="hc-template-mini-icon" style={{ "--tile-color": category.color } as React.CSSProperties}>{category.icon}</span>
+                <span className="hc-template-mini-icon" style={{ "--tile-color": category.color }}><CategoryIcon name={category.icon} /></span>
                 <span><strong>{category.label}</strong><small>{category.subtitle}</small></span>
                 <b aria-hidden="true">›</b>
               </Link>
