@@ -406,7 +406,7 @@ export default function CoachDetailPage() {
 
   if (loading) {
     return (
-      <main>
+      <main className="hc-entity-profile-page hc-coach-entity-profile">
 <section className="hero hc-team-profile-hero hc-coach-profile-hero">
           <div className="eyebrow">
             HoopCheck
@@ -420,7 +420,7 @@ export default function CoachDetailPage() {
 
   if (!coach) {
     return (
-      <main>
+      <main className="hc-entity-profile-page hc-coach-entity-profile">
 <section className="hero">
           <div className="eyebrow">
             404
@@ -528,7 +528,7 @@ export default function CoachDetailPage() {
       : 0;
 
   return (
-    <main>
+    <main className="hc-entity-profile-page hc-coach-entity-profile">
 <section className="hero">
         <div className="eyebrow">
           Coach Research
