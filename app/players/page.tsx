@@ -92,7 +92,7 @@ export default function PlayersPage() {
   ).sort();
 
   return (
-    <main className="page-shell">
+    <main className="page-shell hc-player-directory-page">
       <div className="page-container">
         <section className="hero-card hc-directory-hero">
           <p className="eyebrow">PLAYER DIRECTORY</p>
