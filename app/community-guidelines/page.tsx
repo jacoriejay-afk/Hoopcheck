@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function CommunityGuidelinesPage() {
 return (
-<main>
+<main className="hc-legal-page hc-community-guidelines-page">
 <section className="hero">
     <div className="eyebrow">
       HoopCheck Community
