@@ -397,7 +397,7 @@ export default function LeagueDetailPage() {
 
   if (loading) {
     return (
-      <main>
+      <main className="hc-entity-profile-page hc-league-entity-profile">
 <section className="hero hc-team-profile-hero hc-league-profile-hero">
           <div className="eyebrow">
             HoopCheck
@@ -411,7 +411,7 @@ export default function LeagueDetailPage() {
 
   if (!league) {
     return (
-      <main>
+      <main className="hc-entity-profile-page hc-league-entity-profile">
 <section className="hero">
           <div className="eyebrow">
             404
@@ -519,7 +519,7 @@ export default function LeagueDetailPage() {
       : 0;
 
   return (
-    <main>
+    <main className="hc-entity-profile-page hc-league-entity-profile">
 <section className="hero">
         <div className="eyebrow">
           League Research
