@@ -2216,3 +2216,112 @@
 @media (prefers-reduced-motion:reduce) {
   .hc-support-page * { scroll-behavior:auto!important; animation-duration:.01ms!important; transition-duration:.01ms!important; }
 }
+
+
+/* Fan discovery and public fan profiles. */
+.hc-fans-directory-page,
+.hc-fan-profile-page {
+  min-height:70vh;
+  padding-bottom:clamp(30px,5vw,60px);
+  background:#f3f3f1;
+  color:#111;
+}
+.hc-fans-directory-page > .page-container,
+.hc-fan-profile-page > .page-container {
+  width:min(1160px,calc(100% - 32px));
+  padding-top:clamp(18px,3vw,30px);
+}
+.hc-fans-directory-page .hero-card {
+  display:grid;
+  gap:12px;
+  padding:clamp(24px,4vw,42px);
+  background:radial-gradient(ellipse at 90% 12%,rgba(255,106,0,.2),transparent 35%),#080808;
+  color:#fff;
+  border:0;
+  border-bottom:4px solid var(--hc-orange);
+  border-radius:2px;
+  box-shadow:none;
+}
+.hc-fans-directory-page .hero-card h1 {
+  color:#fff;
+  font-family:var(--hc-display)!important;
+  font-size:clamp(40px,6vw,68px);
+  line-height:.92;
+  text-transform:uppercase;
+}
+.hc-fans-directory-page .hero-card .eyebrow { color:#ff9b57; font-weight:950; letter-spacing:.14em; }
+.hc-fans-directory-page .hero-card .muted { color:#d0d0d0; }
+.hc-fans-directory-page .hero-card input {
+  width:100%;
+  max-width:540px;
+  min-height:48px;
+  padding:12px 14px;
+  color:#111;
+  background:#fff;
+  border:1px solid #d4d4d0;
+  border-radius:2px;
+}
+.hc-fans-directory-page .grid { gap:12px; }
+.hc-fans-directory-page .dashboard-card {
+  min-width:0;
+  padding:20px;
+  background:#fff;
+  border:1px solid #dededb;
+  border-top:3px solid #191919;
+  border-radius:2px;
+  box-shadow:none;
+  overflow-wrap:anywhere;
+}
+.hc-fans-directory-page .dashboard-card h2 {
+  font-family:var(--hc-display)!important;
+  font-size:clamp(18px,2.5vw,24px);
+  line-height:1.05;
+  text-transform:uppercase;
+}
+.hc-fans-directory-page .dashboard-card .muted { color:#666; line-height:1.55; }
+.hc-fans-directory-page .dashboard-card img { flex-shrink:0; }
+.hc-fan-profile-page .player-profile-hero {
+  padding:clamp(22px,4vw,40px);
+  background:radial-gradient(ellipse at 88% 12%,rgba(255,106,0,.2),transparent 35%),#080808;
+  color:#fff;
+  border:0;
+  border-bottom:4px solid var(--hc-orange);
+  border-radius:2px;
+}
+.hc-fan-profile-page .player-profile-heading h1 {
+  color:#fff;
+  font-family:var(--hc-display)!important;
+  font-size:clamp(36px,5.5vw,62px);
+  line-height:.94;
+  text-transform:uppercase;
+  overflow-wrap:anywhere;
+}
+.hc-fan-profile-page .player-profile-heading .eyebrow { color:#ff9b57; font-weight:950; letter-spacing:.14em; }
+.hc-fan-profile-page .player-profile-heading .muted { color:#d0d0d0; }
+.hc-fan-profile-page .player-profile-avatar {
+  overflow:hidden;
+  border:2px solid var(--hc-orange);
+  background:#202020;
+}
+.hc-fan-profile-page > .page-container > .dashboard-card {
+  padding:clamp(18px,3vw,28px);
+  background:#fff;
+  border:1px solid #dededb;
+  border-radius:2px;
+  box-shadow:none;
+  line-height:1.65;
+  overflow-wrap:anywhere;
+}
+.hc-fans-directory-page :where(a,button,input):focus-visible,
+.hc-fan-profile-page :where(a,button,input):focus-visible { outline:3px solid var(--hc-orange); outline-offset:3px; }
+@media (max-width:560px) {
+  .hc-fans-directory-page > .page-container,
+  .hc-fan-profile-page > .page-container { width:calc(100% - 20px); padding-top:12px; }
+  .hc-fans-directory-page .hero-card { padding:22px 15px; }
+  .hc-fans-directory-page .dashboard-card { padding:15px 12px; }
+  .hc-fan-profile-page .player-profile-hero { padding:22px 15px; }
+  .hc-fan-profile-page > .page-container > .dashboard-card { padding:17px 13px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .hc-fans-directory-page *, .hc-fan-profile-page * { scroll-behavior:auto!important; animation-duration:.01ms!important; transition-duration:.01ms!important; }
+}
