@@ -2325,3 +2325,68 @@
 @media (prefers-reduced-motion:reduce) {
   .hc-fans-directory-page *, .hc-fan-profile-page * { scroll-behavior:auto!important; animation-duration:.01ms!important; transition-duration:.01ms!important; }
 }
+
+
+/* Partnership and sponsorship inquiry page. */
+.hc-partners-page {
+  min-height:70vh;
+  padding-bottom:clamp(30px,5vw,56px);
+  background:#f3f3f1;
+  color:#111;
+}
+.hc-partners-page > .page-container {
+  width:min(940px,calc(100% - 32px));
+  padding-top:clamp(18px,3vw,30px);
+}
+.hc-partners-page .hero-card {
+  padding:clamp(24px,4vw,42px);
+  color:#fff;
+  background:radial-gradient(ellipse at 90% 10%,rgba(255,106,0,.2),transparent 34%),#080808;
+  border:0;
+  border-bottom:4px solid var(--hc-orange);
+  border-radius:2px;
+  box-shadow:none;
+}
+.hc-partners-page .hero-card h1 {
+  color:#fff;
+  font-family:var(--hc-display)!important;
+  font-size:clamp(38px,6vw,64px);
+  line-height:.94;
+  text-transform:uppercase;
+}
+.hc-partners-page .hero-card .eyebrow { color:#ff9b57; font-weight:950; letter-spacing:.14em; }
+.hc-partners-page .hero-card .muted { max-width:65ch; color:#d0d0d0; line-height:1.65; }
+.hc-partners-page > .page-container > .dashboard-card {
+  padding:clamp(18px,3vw,30px);
+  background:#fff;
+  border:1px solid #dededb;
+  border-top:3px solid var(--hc-orange);
+  border-radius:2px;
+  box-shadow:none;
+}
+.hc-partners-page :where(select,textarea) {
+  width:100%;
+  min-width:0;
+  padding:12px 13px;
+  color:#111;
+  background:#fbfbf9;
+  border:1px solid #d5d5d0;
+  border-radius:2px;
+  font:inherit;
+  font-size:14px;
+}
+.hc-partners-page select { min-height:48px; }
+.hc-partners-page textarea { min-height:150px; resize:vertical; line-height:1.6; }
+.hc-partners-page :where(select,textarea):focus { border-color:var(--hc-orange); outline:2px solid #ff6a0033; }
+.hc-partners-page .btn { min-height:46px; justify-content:center; }
+.hc-partners-page .btn:disabled { cursor:wait; opacity:.65; }
+.hc-partners-page .muted { color:#626262; line-height:1.6; overflow-wrap:anywhere; }
+.hc-partners-page :where(a,button,select,textarea):focus-visible { outline:3px solid var(--hc-orange); outline-offset:3px; }
+@media (max-width:560px) {
+  .hc-partners-page > .page-container { width:calc(100% - 20px); padding-top:12px; }
+  .hc-partners-page .hero-card { padding:22px 15px; }
+  .hc-partners-page > .page-container > .dashboard-card { padding:17px 13px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .hc-partners-page * { scroll-behavior:auto!important; animation-duration:.01ms!important; transition-duration:.01ms!important; }
+}
