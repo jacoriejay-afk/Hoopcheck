@@ -129,7 +129,7 @@ export default function PlayerProfilePage() {
           </nav>
         </header>
 
-        <section className="player-profile-hero">
+        <section className="player-profile-hero hc-player-profile-hero">
           <div className="player-profile-avatar">{player.avatar_url ? <img src={player.avatar_url} alt="" /> : (player.display_name?.trim()?.charAt(0)?.toUpperCase() || "P")}</div>
           <div className="player-profile-heading">
             <p className="eyebrow">PLAYER PROFILE</p>
