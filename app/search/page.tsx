@@ -427,7 +427,7 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<main className="search-page"><p>Loading search...</p></main>}>
+    <Suspense fallback={<main className="search-page hc-global-search-page"><section className="search-hero"><p className="eyebrow">GLOBAL RESEARCH</p><h1>Loading search…</h1><p>Preparing teams, coaches, and league results.</p></section></main>}>
       <SearchContent />
     </Suspense>
   );
