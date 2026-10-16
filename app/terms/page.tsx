@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function TermsPage() {
   return (
-    <main>
+    <main className="hc-legal-page hc-terms-page">
       <section className="hero">
         <div className="eyebrow">HoopCheck Legal</div>
         <h1>Terms of<br />Service.</h1>
