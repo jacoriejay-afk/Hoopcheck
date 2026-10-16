@@ -238,7 +238,7 @@ export default function AccountPage() {
     }
   }
 
-  if (loading) return <main className="page-shell account-page"><div className="page-container"><HoopLoading label="Loading your account..." /></div></main>;
+  if (loading) return <main className="page-shell hc-account-page"><div className="page-container"><HoopLoading label="Loading your account..." /></div></main>;
 
   return (
     <main className="page-shell hc-account-page"><div className="page-container">
