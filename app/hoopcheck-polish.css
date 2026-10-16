@@ -1,0 +1,81 @@
+/* HoopCheck redesign continuation: stronger category identity, focus states, and mobile fit */
+.hc-template-home {
+  --hc-surface: #f4f4f2;
+  background: var(--hc-surface);
+}
+.hc-template-home :where(a, button) {
+  -webkit-tap-highlight-color: rgba(255, 106, 0, .18);
+}
+.hc-template-home :where(a, button):focus-visible {
+  outline: 3px solid var(--tile-color, var(--hc-orange));
+  outline-offset: 3px;
+}
+.hc-template-category {
+  border-top: 3px solid var(--tile-color);
+  box-shadow: 0 3px 12px rgba(0,0,0,.035);
+}
+.hc-template-category::after {
+  border: 1px solid color-mix(in srgb, var(--tile-color) 20%, transparent);
+}
+.hc-template-category-icon {
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--tile-color) 24%, transparent);
+}
+.hc-template-category strong {
+  letter-spacing: .025em;
+}
+.hc-template-category:hover {
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--tile-color) 12%, transparent);
+}
+.hc-template-directory-links > a {
+  border-left: 3px solid var(--hc-orange);
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+.hc-template-directory-links > a:hover {
+  border-left-color: var(--tile-color, var(--hc-orange));
+  background: #faf7f4;
+  transform: translateX(2px);
+}
+.hc-template-cta:focus-visible,
+.hc-template-outline-link:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+.hc-template-header .hc-mobile-menu-toggle {
+  cursor: pointer;
+}
+.hc-template-header .hc-mobile-menu-toggle:focus-visible {
+  outline: 2px solid var(--hc-orange);
+  outline-offset: 3px;
+}
+.hc-template-header .hc-header-nav a:focus-visible {
+  outline: 2px solid var(--hc-orange);
+  outline-offset: -2px;
+}
+@media (max-width: 760px) {
+  .hc-template-category {
+    min-height: 70px;
+    border-top: 1px solid #303030;
+    border-left: 3px solid var(--tile-color);
+    padding: 10px 12px;
+  }
+  .hc-template-category-icon {
+    width: 40px;
+    height: 40px;
+  }
+  .hc-template-category strong {
+    font-size: 15px;
+    line-height: 1.1;
+  }
+  .hc-template-category small {
+    line-height: 1.35;
+  }
+  .hc-template-directory-links > a:hover {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-template-category,
+  .hc-template-directory-links > a {
+    transition: none;
+  }
+}
