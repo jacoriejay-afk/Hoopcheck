@@ -241,7 +241,7 @@ export default function AccountPage() {
   if (loading) return <main className="page-shell account-page"><div className="page-container"><HoopLoading label="Loading your account..." /></div></main>;
 
   return (
-    <main className="page-shell"><div className="page-container">
+    <main className="page-shell hc-account-page"><div className="page-container">
       <header className="topbar">
         <Link href="/" className="brand">HOOPCHECK</Link>
         <nav className="topnav"><Link href="/dashboard">Dashboard</Link><Link href="/membership">Membership</Link></nav>
