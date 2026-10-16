@@ -1056,3 +1056,107 @@
   .hc-womens-profile-page .compact-grid { grid-template-columns: 1fr; }
   .hc-womens-profile-page .compact-grid > .card { padding: 16px; }
 }
+
+
+/* Member profile and account settings: consistent interior-page shell. */
+.hc-member-profile-page,
+.hc-account-page {
+  min-height: 100vh;
+  padding: 24px 0 36px;
+  color: #111;
+  background: #f3f3f1;
+}
+.hc-member-profile-page > .page-container,
+.hc-account-page > .page-container {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-inline: clamp(12px, 3vw, 36px);
+}
+.hc-member-profile-page .compact-hero,
+.hc-account-page > .page-container > .hero-card:first-child {
+  padding: clamp(24px, 4vw, 42px);
+  color: #fff;
+  background:
+    radial-gradient(ellipse at 90% 18%, rgba(255,106,0,.17), transparent 36%),
+    linear-gradient(110deg, #070707, #17110d);
+  border: 0;
+  border-bottom: 4px solid var(--hc-orange);
+  border-radius: 2px;
+}
+.hc-member-profile-page .compact-hero h1,
+.hc-account-page > .page-container > .hero-card:first-child h1 {
+  color: #fff;
+  font-family: var(--hc-display) !important;
+  font-size: clamp(32px, 4.8vw, 58px);
+  line-height: .98;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.hc-member-profile-page .compact-hero .muted,
+.hc-account-page > .page-container > .hero-card:first-child .muted { color: #d0d0d0; line-height: 1.6; }
+.hc-member-profile-page .compact-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.hc-member-profile-page .compact-grid > .card,
+.hc-member-profile-page .compact-section,
+.hc-account-page .dashboard-card {
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #dededb;
+  border-radius: 2px;
+  box-shadow: none;
+}
+.hc-member-profile-page .compact-grid > .card { padding: 20px; border-top: 3px solid var(--hc-orange); }
+.hc-member-profile-page .compact-grid h2,
+.hc-member-profile-page .compact-section h2,
+.hc-account-page .dashboard-card h2,
+.hc-account-page .hero-card h2 {
+  font-family: var(--hc-display) !important;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.hc-account-page .dashboard-card { padding: clamp(16px, 2.5vw, 26px); }
+.hc-account-page .account-profile-form :where(input,select,textarea),
+.hc-account-page :where(input:not([type="checkbox"]):not([type="file"]),select,textarea) {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 11px 12px;
+  color: #111;
+  background: #fff;
+  border: 1px solid #d4d4d0;
+  border-radius: 2px;
+}
+.hc-account-page :where(input,select,textarea):focus-visible {
+  outline: 2px solid var(--hc-orange);
+  outline-offset: 2px;
+}
+.hc-account-page .eyebrow,
+.hc-member-profile-page .eyebrow { color: var(--hc-orange); }
+.hc-account-page .account-actions,
+.hc-account-page .actions,
+.hc-member-profile-page .actions { gap: 9px; flex-wrap: wrap; }
+.hc-account-page .btn,
+.hc-member-profile-page .btn { min-height: 42px; border-radius: 2px; }
+.hc-account-page :where(a,button):focus-visible,
+.hc-member-profile-page :where(a,button):focus-visible {
+  outline: 2px solid var(--hc-orange);
+  outline-offset: 3px;
+}
+@media (max-width: 760px) {
+  .hc-member-profile-page,
+  .hc-account-page { padding-top: 12px; }
+  .hc-member-profile-page > .page-container,
+  .hc-account-page > .page-container { padding-inline: 10px; }
+  .hc-member-profile-page .compact-hero,
+  .hc-account-page > .page-container > .hero-card:first-child { padding: 24px 16px; }
+  .hc-member-profile-page .compact-grid { grid-template-columns: 1fr; }
+  .hc-member-profile-page .compact-grid > .card { padding: 16px; }
+  .hc-account-page .dashboard-card { padding: 16px; }
+  .hc-account-page .account-actions > *,
+  .hc-account-page .actions > *,
+  .hc-member-profile-page .actions > * { flex: 1 1 140px; justify-content: center; }
+}
