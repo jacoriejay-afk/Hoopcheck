@@ -187,12 +187,6 @@ export default function DashboardPage() {
     return counts;
   }, {});
 
-  async function signOut() {
-    const { error } = await supabase.auth.signOut({ scope: "local" });
-    if (error) return;
-    window.location.replace("/login");
-  }
-
   function reviewTarget(review: Review) {
     const id = review.coach_id ?? review.team_id ?? review.league_id ?? "";
     const type = review.coach_id ? "Coach" : review.team_id ? "Team" : "League";
