@@ -242,10 +242,6 @@ export default function AccountPage() {
 
   return (
     <main className="page-shell hc-account-page"><div className="page-container">
-      <header className="topbar">
-        <Link href="/" className="brand">HOOPCHECK</Link>
-        <nav className="topnav"><Link href="/dashboard">Dashboard</Link><Link href="/membership">Membership</Link></nav>
-      </header>
       <section className="hero-card"><div><p className="eyebrow">MY ACCOUNT</p><h1>{email}</h1><p className="muted">Manage your HoopCheck activity and submitted reviews.</p></div></section>
       <section className="grid" style={{marginTop:32}}>
         <div className="dashboard-card">
