@@ -44,7 +44,8 @@ export default function Home() {
     <main className="hc-template-home">
       <section className="hc-template-hero">
         <div className="hc-template-hero-copy">
-          <h1>KNOW WHO YOU’RE<br />SIGNING WITH</h1>
+          <div className="hc-home-kicker"><span /> THE GLOBAL BASKETBALL INTELLIGENCE HUB</div>
+          <h1>KNOW WHO YOU’RE<br /><em>SIGNING WITH</em></h1>
           <p>Real reviews. Verified profiles. Global basketball.<br className="hc-desktop-break" /> Coaches. Teams. Leagues. Players.</p>
           <Link href="/teams" className="hc-template-cta">EXPLORE DIRECTORY <span aria-hidden="true">→</span></Link>
         </div>
