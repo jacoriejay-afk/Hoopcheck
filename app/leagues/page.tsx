@@ -22,7 +22,13 @@ export default function LeaguesPage() {
 const [leagues, setLeagues] = useState<League[]>([]);
 const [loading, setLoading] = useState(true);
 const [country, setCountry] = useState("");
-const filteredLeagues = leagues.filter((league) => !country || league.country === country);
+const [query, setQuery] = useState("");
+const filteredLeagues = leagues.filter((league) => {
+  if (country && league.country !== country) return false;
+  const term = query.trim().toLocaleLowerCase();
+  if (!term) return true;
+  return [league.name, league.country, league.level, league.season].some((value) => value?.toLocaleLowerCase().includes(term));
+});
 
 useEffect(() => {
 async function loadLeagues() {
@@ -72,6 +78,8 @@ return (
     </div>
   </section>
   <section className="hc-league-filter" aria-label="Filter leagues">
+    <label htmlFor="league-search">Find a league</label>
+    <input id="league-search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search league, country, or division…" autoComplete="off" />
     <label htmlFor="league-country">League country</label>
     <select id="league-country" value={country} onChange={(e) => setCountry(e.target.value)}>
       <option value="">All countries</option>
@@ -97,9 +105,9 @@ return (
       filteredLeagues.length === 0 ? (
         <div className="card hc-directory-empty">
           <div className="eyebrow">No matching leagues</div>
-          <h2>Try another country</h2>
-          <p>There are no active leagues listed for this country yet. Choose another country or view all leagues.</p>
-          <button type="button" className="btn dark" onClick={() => setCountry("")}>View all countries</button>
+          <h2>Adjust your filters</h2>
+          <p>No league matches the current search and country filter. Try another search or reset the filters.</p>
+          <button type="button" className="btn dark" onClick={() => { setCountry(""); setQuery(""); }}>Clear filters</button>
         </div>
       ) : filteredLeagues.map((league) => (
         <div
