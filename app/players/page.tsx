@@ -31,6 +31,7 @@ export default function PlayersPage() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
   const size = 24;
 
   const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000, fallback?: T) =>
@@ -89,11 +90,7 @@ export default function PlayersPage() {
       mounted = false;
       window.clearTimeout(timer);
     };
-  }, [query, country, page]);
-
-  const countries = Array.from(
-    new Set(players.map((player) => player.current_country || player.country).filter(Boolean) as string[]),
-  ).sort();
+  }, [query, country, page, retryCount]);
 
   return (
     <main className="page-shell hc-player-directory-page">
@@ -148,7 +145,7 @@ export default function PlayersPage() {
           <div className="dashboard-card" style={{ marginTop: 18 }} role="alert">
             <h2>Search unavailable</h2>
             <p className="muted">{searchError}</p>
-            <button className="btn dark" type="button" onClick={() => { setPage((current) => current); setQuery((current) => current); }}>Try again</button>
+            <button className="btn dark" type="button" onClick={() => setRetryCount((current) => current + 1)}>Try again</button>
           </div>
         ) : (
           <>
