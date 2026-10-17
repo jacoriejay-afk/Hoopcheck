@@ -241,7 +241,7 @@ export default function DashboardPage() {
                 <span className="hc-mobile-card-copy"><strong>Men’s Teams</strong><small>Explore team reviews</small></span>
                 <span className="hc-mobile-chevron" aria-hidden="true">›</span>
               </Link>
-              <Link href="/womens-teams" className="hc-mobile-quick-card">
+              <Link href="/womens" className="hc-mobile-quick-card">
                 <span className="hc-mobile-icon hc-icon-pink" aria-hidden="true">♀</span>
                 <span className="hc-mobile-card-copy"><strong>Women’s Teams</strong><small>Find your next team</small></span>
                 <span className="hc-mobile-chevron" aria-hidden="true">›</span>
@@ -251,7 +251,7 @@ export default function DashboardPage() {
                 <span className="hc-mobile-card-copy"><strong>Coaches</strong><small>Check reputations</small></span>
                 <span className="hc-mobile-chevron" aria-hidden="true">›</span>
               </Link>
-              <Link href="/reviews" className="hc-mobile-quick-card">
+              <Link href="/search" className="hc-mobile-quick-card">
                 <span className="hc-mobile-icon hc-icon-green" aria-hidden="true">✎</span>
                 <span className="hc-mobile-card-copy"><strong>Player Reviews</strong><small>Real player experiences</small></span>
                 <span className="hc-mobile-chevron" aria-hidden="true">›</span>
@@ -272,7 +272,7 @@ export default function DashboardPage() {
                 <span className="hc-mobile-card-copy"><strong>Professional Teams</strong><small>Research clubs before you sign</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
               </Link>
-              <Link href="/womens-teams" className="hc-mobile-category-row">
+              <Link href="/womens" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-pink" aria-hidden="true">♀</span>
                 <span className="hc-mobile-card-copy"><strong>Women’s Basketball</strong><small>Discover women’s teams worldwide</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
@@ -292,7 +292,7 @@ export default function DashboardPage() {
                 <span className="hc-mobile-card-copy"><strong>Find Players</strong><small>Connect with basketball players</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
               </Link>
-              <Link href="/reviews" className="hc-mobile-category-row">
+              <Link href="/search" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-yellow" aria-hidden="true">✎</span>
                 <span className="hc-mobile-card-copy"><strong>Reviews &amp; Experiences</strong><small>Make informed career decisions</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
