@@ -31,20 +31,28 @@ export default function SiteHeader() {
   if (pathname.startsWith("/admin") || pathname === "/dashboard") return null;
 
   const active = (href: string) => pathname === href || (href === "/teams" && pathname.startsWith("/teams"));
+  const closeMenu = () => setMenuOpen(false);
+
   return (
     <header className="site-header-global hc-template-header">
       <Link href={signedIn ? "/dashboard" : "/"} className="site-header-brand" aria-label="HoopCheck home">
         <HoopCheckMark />
         <span className="hc-wordmark">HOOP<span>CHECK</span></span>
       </Link>
+
       <button type="button" className="hc-mobile-menu-toggle" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}><span /><span /><span /></button>
+
       <nav className={menuOpen ? "hc-header-nav is-open" : "hc-header-nav"} aria-label="Primary navigation">
-        <Link href="/" className={active("/") ? "is-active" : ""} onClick={() => setMenuOpen(false)}>Home</Link>
-        <Link href="/teams" className={active("/teams") ? "is-active" : ""} onClick={() => setMenuOpen(false)}>Directory</Link>
-        <Link href="/search" className={active("/search") ? "is-active" : ""} onClick={() => setMenuOpen(false)}>Reviews</Link>
-        <Link href="/notifications" className={active("/notifications") ? "is-active" : ""} onClick={() => setMenuOpen(false)}>Alerts</Link>
-        <Link href="/search" className="hc-header-icon" aria-label="Search" onClick={() => setMenuOpen(false)}><SearchIcon /></Link>
-        <Link href={signedIn ? "/profile" : "/login"} className="hc-header-icon" aria-label={signedIn ? "Profile" : "Sign in"} onClick={() => setMenuOpen(false)}><UserIcon /></Link>
+        <div className="hc-header-links">
+          <Link href="/" className={active("/") ? "is-active" : ""} onClick={closeMenu}>Home</Link>
+          <Link href="/teams" className={active("/teams") ? "is-active" : ""} onClick={closeMenu}>Directory</Link>
+          <Link href="/search" className={active("/search") ? "is-active" : ""} onClick={closeMenu}>Reviews</Link>
+          <Link href="/notifications" className={active("/notifications") ? "is-active" : ""} onClick={closeMenu}>Alerts</Link>
+        </div>
+        <div className="hc-header-actions">
+          <Link href="/search" className="hc-header-icon" aria-label="Search" onClick={closeMenu}><SearchIcon /></Link>
+          <Link href={signedIn ? "/profile" : "/login"} className="hc-header-icon" aria-label={signedIn ? "Profile" : "Sign in"} onClick={closeMenu}><UserIcon /></Link>
+        </div>
       </nav>
     </header>
   );
