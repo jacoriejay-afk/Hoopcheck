@@ -3173,3 +3173,160 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   }
 }
 
+/* Coach directory search: compact controls and high-contrast result feedback. */
+.hc-coaches-directory-page {
+  min-height: 100vh;
+  background: #f3f3f1;
+  color: #111;
+  padding-bottom: 24px;
+}
+.hc-coaches-directory-page > .hc-directory-hero:first-child,
+.hc-leagues-directory-page > .hc-directory-hero:first-child {
+  padding: clamp(28px, 5vw, 60px) clamp(15px, 4vw, 56px) 32px;
+  color: #fff;
+  background:
+    radial-gradient(ellipse at 90% 32%, rgba(255,106,0,.17), transparent 35%),
+    linear-gradient(110deg, #050505, #111 72%, #1b1009);
+  border: 0;
+  border-bottom: 4px solid var(--hc-orange);
+  border-radius: 0;
+}
+.hc-coaches-directory-page > .hc-directory-hero h1,
+.hc-leagues-directory-page > .hc-directory-hero h1 {
+  color: #fff;
+  font-family: var(--hc-display) !important;
+  font-size: clamp(38px, 5.3vw, 70px);
+  line-height: .94;
+  text-transform: uppercase;
+}
+.hc-coaches-directory-page > .hc-directory-hero p,
+.hc-leagues-directory-page > .hc-directory-hero p {
+  max-width: 620px;
+  color: #d0d0d0;
+  line-height: 1.6;
+}
+.hc-coach-directory-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  width: min(100% - 32px, 1280px);
+  margin: 22px auto 12px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #dededb;
+  border-top: 3px solid var(--hc-orange);
+}
+.hc-coach-directory-tools label {
+  color: #222;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.hc-coach-directory-tools input {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  color: #111;
+  background: #f8f8f6;
+  border: 1px solid #d4d4d0;
+  border-radius: 2px;
+}
+.hc-coach-directory-tools input:focus {
+  outline: 2px solid rgba(255,106,0,.2);
+  border-color: var(--hc-orange);
+}
+.hc-coach-directory-summary {
+  color: #686868;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .025em;
+}
+.hc-coaches-directory-page .hc-team-directory-list,
+.hc-leagues-directory-page .hc-team-directory-list {
+  width: min(100% - 32px, 1280px);
+  margin: 0 auto 26px;
+  align-items: stretch;
+}
+.hc-coaches-directory-page .hc-team-row,
+.hc-leagues-directory-page .hc-team-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 20px;
+  background: #fff;
+  color: #111;
+  border: 1px solid #dededb;
+  border-top: 3px solid var(--hc-orange);
+  border-radius: 2px;
+  box-shadow: 0 3px 12px rgba(0,0,0,.035);
+}
+.hc-coaches-directory-page .hc-team-row h2,
+.hc-leagues-directory-page .hc-team-row h2 {
+  overflow-wrap: anywhere;
+  color: #111;
+  font-family: var(--hc-display) !important;
+  font-size: clamp(20px, 2vw, 27px);
+  line-height: 1;
+  text-transform: uppercase;
+}
+.hc-coaches-directory-page .hc-team-row p,
+.hc-leagues-directory-page .hc-team-row p {
+  color: #626262;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.hc-coaches-directory-page .hc-team-row .btn,
+.hc-leagues-directory-page .hc-team-row .btn {
+  margin-top: auto;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.hc-coach-empty,
+.hc-directory-empty {
+  grid-column: 1 / -1;
+  width: 100%;
+  padding: clamp(20px, 4vw, 34px);
+  background: #fff;
+  border: 1px solid #dededb;
+  border-left: 4px solid var(--hc-orange);
+}
+@media (max-width: 760px) {
+  .hc-coaches-directory-page > .hc-directory-hero:first-child,
+  .hc-leagues-directory-page > .hc-directory-hero:first-child {
+    padding: 27px 14px 24px;
+  }
+  .hc-coaches-directory-page > .hc-directory-hero h1,
+  .hc-leagues-directory-page > .hc-directory-hero h1 {
+    font-size: clamp(34px, 9vw, 48px);
+  }
+  .hc-coaches-directory-page .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .hc-coaches-directory-page .actions .btn,
+  .hc-leagues-directory-page .actions .btn {
+    width: 100%;
+    min-height: 43px;
+  }
+  .hc-coach-directory-tools {
+    width: calc(100% - 20px);
+    margin-top: 12px;
+    padding: 12px;
+  }
+  .hc-coaches-directory-page .hc-team-directory-list,
+  .hc-leagues-directory-page .hc-team-directory-list {
+    width: calc(100% - 20px);
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+  .hc-coaches-directory-page .hc-team-row,
+  .hc-leagues-directory-page .hc-team-row {
+    padding: 15px;
+  }
+}
+
