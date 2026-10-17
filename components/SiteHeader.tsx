@@ -46,7 +46,7 @@ export default function SiteHeader() {
         <div className="hc-header-links">
           <Link href="/" className={active("/") ? "is-active" : ""} onClick={closeMenu}>Home</Link>
           <Link href="/teams" className={active("/teams") ? "is-active" : ""} onClick={closeMenu}>Directory</Link>
-          <Link href="/search" className={active("/search") ? "is-active" : ""} onClick={closeMenu}>Reviews</Link>
+          <Link href="/reviews" className={active("/reviews") ? "is-active" : ""} onClick={closeMenu}>Reviews</Link>
           <Link href="/notifications" className={active("/notifications") ? "is-active" : ""} onClick={closeMenu}>Alerts</Link>
         </div>
         <div className="hc-header-actions">
