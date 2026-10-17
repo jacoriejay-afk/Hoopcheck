@@ -104,6 +104,16 @@ export default function PlayersPage() {
           </p>
         </section>
 
+        <nav className="hc-directory-switcher" aria-label="Browse HoopCheck directories">
+          <span className="hc-directory-switcher-label">BROWSE DIRECTORIES</span>
+          <Link href="/teams">Men’s Teams</Link>
+          <Link href="/womens">Women’s Teams</Link>
+          <Link href="/coaches">Coaches</Link>
+          <Link href="/leagues">Leagues</Link>
+          <Link href="/players">Find Players</Link>
+          <Link href="/search">Global Search</Link>
+        </nav>
+
         <section className="dashboard-card" style={{ marginTop: 18 }}>
           <div className="research-search">
             <div className="search-label">PLAYER SEARCH</div>
