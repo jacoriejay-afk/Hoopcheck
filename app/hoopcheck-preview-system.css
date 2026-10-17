@@ -1,0 +1,167 @@
+/* Shared preview design system — applied across every HoopCheck route. */
+:root {
+  --hc-orange: #ff6a00;
+  --hc-orange-bright: #ff7a12;
+  --hc-ink: #090909;
+  --hc-ink-raised: #141414;
+  --hc-paper: #f4f4f1;
+  --hc-paper-strong: #ffffff;
+  --hc-text: #171715;
+  --hc-muted: #73736e;
+  --hc-line: #deded7;
+  --hc-display: Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Black", sans-serif;
+  --hc-ui: "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
+}
+html, body { font-family: var(--hc-ui); }
+body { background: var(--hc-paper); color: var(--hc-text); }
+h1, h2, h3, h4 { font-family: var(--hc-display) !important; text-transform: uppercase; letter-spacing: .01em; }
+:where(main, section, article) :where(input, select, textarea) {
+  border-radius: 3px;
+}
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid rgba(255,106,0,.72);
+  outline-offset: 3px;
+}
+:where(.btn, button[type="submit"], .button-primary, .btn-primary) {
+  border-radius: 3px !important;
+  font-family: var(--hc-ui);
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+:where(.card, .panel, .result-card, .review-card, .team-card, .coach-card, .league-card,
+       .player-card, .dashboard-card, .settings-card, .profile-card) {
+  border-radius: 4px;
+}
+:where(.muted, .text-muted, .description) { line-height: 1.6; }
+
+/* Branded global navigation mirrors the preview's geometric mark and editorial wordmark. */
+.site-header-global.hc-template-header {
+  min-height: 76px;
+  padding: 10px clamp(16px, 4vw, 58px);
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  background: rgba(8,8,8,.97);
+  color: #fff;
+  border: 0;
+  border-bottom: 3px solid var(--hc-orange);
+  box-shadow: none;
+}
+.site-header-global .site-header-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  min-width: 0;
+}
+.site-header-global .hc-brand-mark { width: 42px; height: 42px; color: var(--hc-orange); flex: 0 0 auto; }
+.site-header-global .hc-wordmark {
+  font-family: var(--hc-display) !important;
+  font-size: clamp(22px, 2.3vw, 30px);
+  font-weight: 900;
+  letter-spacing: .015em;
+  line-height: .9;
+  color: #fff;
+}
+.site-header-global .hc-wordmark span { color: var(--hc-orange); }
+.site-header-global .hc-header-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: clamp(12px, 2.2vw, 30px);
+}
+.site-header-global .hc-header-nav > a:not(.hc-header-icon) {
+  color: #dededb;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  transition: color .16s ease;
+}
+.site-header-global .hc-header-nav > a:hover,
+.site-header-global .hc-header-nav > a.is-active { color: var(--hc-orange); }
+.site-header-global .hc-header-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #393939;
+  color: #fff;
+}
+.site-header-global .hc-header-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.site-header-global .hc-mobile-menu-toggle { display: none; }
+.bottom-nav {
+  border-top: 1px solid #333 !important;
+  background: rgba(8,8,8,.98) !important;
+  backdrop-filter: blur(14px);
+}
+.bottom-nav a { color: #a7a7a2 !important; }
+.bottom-nav a.active { color: var(--hc-orange) !important; }
+.bottom-nav .bottom-nav-icon svg { width: 21px; height: 21px; }
+
+/* Content pages use the same light editorial canvas, dark title panels and sharp orange accents. */
+main:not(.hc-template-home) {
+  --hc-orange: #ff6a00;
+}
+:where(.hc-team-directory-page, .hc-coaches-directory-page, .hc-leagues-directory-page,
+.hc-player-directory-page, .hc-global-search-page, .hc-dashboard-shell,
+.hc-auth-page, .moderation-page, .profile-page, .settings-page) {
+  font-family: var(--hc-ui);
+}
+:where(.hc-team-directory-page, .hc-coaches-directory-page, .hc-leagues-directory-page,
+.hc-player-directory-page, .hc-global-search-page, .hc-dashboard-shell) {
+  background: var(--hc-paper);
+  color: var(--hc-text);
+}
+:where(.hc-team-directory-page, .hc-coaches-directory-page, .hc-leagues-directory-page,
+.hc-player-directory-page, .hc-global-search-page) :where(.card, .result-card, .quick-card, .review-card) {
+  border: 1px solid var(--hc-line);
+  border-radius: 4px;
+  box-shadow: 0 7px 22px rgba(0,0,0,.035);
+}
+:where(.hc-team-directory-page, .hc-coaches-directory-page, .hc-leagues-directory-page,
+.hc-player-directory-page, .hc-global-search-page) :where(.btn, button[type="submit"]) {
+  min-height: 44px;
+}
+.site-footer { margin-top: 0; border-top: 3px solid var(--hc-orange); }
+.site-footer .footer-logo { font-family: var(--hc-display); text-transform: uppercase; }
+@media (max-width: 760px) {
+  .site-header-global.hc-template-header {
+    min-height: 66px;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    padding: 9px 14px;
+  }
+  .site-header-global .hc-brand-mark { width: 35px; height: 35px; }
+  .site-header-global .hc-wordmark { font-size: 23px; }
+  .site-header-global .hc-mobile-menu-toggle {
+    display: flex;
+    width: 42px;
+    height: 42px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border: 1px solid #393939;
+    background: transparent;
+    color: #fff;
+  }
+  .site-header-global .hc-mobile-menu-toggle span { display: block; width: 18px; height: 2px; background: currentColor; }
+  .site-header-global .hc-header-nav {
+    display: none;
+    grid-column: 1 / -1;
+    align-items: stretch;
+    gap: 0;
+    padding: 4px 0 8px;
+    border-top: 1px solid #303030;
+  }
+  .site-header-global .hc-header-nav.is-open { display: flex; flex-direction: column; }
+  .site-header-global .hc-header-nav > a:not(.hc-header-icon) { padding: 14px 8px; border-bottom: 1px solid #242424; }
+  .site-header-global .hc-header-nav .hc-header-icon { display: inline-flex; width: 100%; justify-content: flex-start; padding: 10px; border: 0; }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
