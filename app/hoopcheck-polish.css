@@ -4845,3 +4845,64 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   .hc-global-search-page .result-card:hover,
   .hc-player-directory-page .hc-player-results .dashboard-card:hover { transform: none; }
 }
+
+
+/* Entity profile pages: consistent black/orange masthead and readable review surfaces. */
+.hc-entity-profile-page {
+  width: min(100% - 32px, 1240px);
+  margin-inline: auto;
+  padding-bottom: clamp(36px, 5vw, 72px);
+}
+.hc-entity-profile-page > .hero,
+.hc-entity-profile-page > .hc-team-profile-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(24px, 4vw, 44px);
+  color: #fff;
+  background: radial-gradient(ellipse at 92% 6%, rgba(255,106,0,.2), transparent 34%), #101010;
+  border-bottom: 4px solid var(--hc-orange, #ff6a00);
+  border-radius: 3px;
+}
+.hc-entity-profile-page > .hero :where(h1,h2,h3),
+.hc-entity-profile-page > .hc-team-profile-hero :where(h1,h2,h3) {
+  color: #fff;
+  font-weight: 950;
+  letter-spacing: -.03em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.hc-entity-profile-page > .hero .muted,
+.hc-entity-profile-page > .hc-team-profile-hero .muted { color: #d0d0d0; }
+.hc-entity-profile-page :where(.dashboard-card,.card,.review-card,.hc-profile-review-list > *) {
+  min-width: 0;
+  border-radius: 3px;
+  border-color: #deded9;
+  overflow-wrap: anywhere;
+}
+.hc-entity-profile-page :where(input,select,textarea) {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-height: 44px;
+  border-radius: 2px;
+}
+.hc-entity-profile-page :where(button,a,input,select,textarea):focus-visible {
+  outline: 3px solid rgba(255,106,0,.85);
+  outline-offset: 2px;
+}
+.hc-profile-directory-switcher { margin-top: 14px; margin-bottom: 20px; }
+.hc-entity-profile-page .hc-profile-review-list { gap: 14px; }
+.hc-entity-profile-page .hc-profile-review-list > * {
+  padding: clamp(15px, 2.4vw, 24px);
+  background: #fff;
+  border: 1px solid #deded9;
+  border-left: 3px solid var(--hc-orange, #ff6a00);
+  box-shadow: 0 4px 16px rgba(0,0,0,.04);
+}
+@media (max-width: 700px) {
+  .hc-entity-profile-page { width: calc(100% - 22px); }
+  .hc-entity-profile-page > .hero,
+  .hc-entity-profile-page > .hc-team-profile-hero { padding: 22px 15px; }
+  .hc-entity-profile-page .actions { flex-wrap: wrap; }
+  .hc-entity-profile-page .actions > * { flex: 1 1 auto; }
+}
