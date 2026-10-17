@@ -1769,3 +1769,122 @@ main.hc-leagues-directory-page .hc-team-directory-list > .card:hover {
   main.hc-coaches-directory-page .hc-coach-directory-tools,
   main.hc-leagues-directory-page .hc-league-filter { padding: 10px; }
 }
+
+
+/* Review submission and account workflows — consistent desktop/mobile treatment */
+main:has(.hc-review-form) > .hero:first-child,
+main:has(.hc-review-form) > .hero-card:first-child {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255,106,0,.34);
+  border-radius: 22px;
+  background: radial-gradient(ellipse at 90% 0%, rgba(255,106,0,.14), transparent 44%), #101010;
+  color: #f8f8f6;
+  padding: clamp(22px, 4vw, 42px);
+}
+main:has(.hc-review-form) > .hero:first-child h1,
+main:has(.hc-review-form) > .hero-card:first-child h1 {
+  max-width: 900px;
+  font-family: var(--hc-display);
+  font-size: clamp(2.35rem, 6vw, 4.6rem);
+  line-height: .98;
+  letter-spacing: -.025em;
+  text-transform: uppercase;
+}
+main:has(.hc-review-form) > .hero:first-child .muted,
+main:has(.hc-review-form) > .hero-card:first-child .muted { color: #c4c4c0; }
+.hc-review-form {
+  gap: 18px !important;
+  padding: clamp(18px, 3vw, 30px) !important;
+  border: 1px solid #deded9 !important;
+  border-radius: 20px !important;
+  background: #fff !important;
+  box-shadow: 0 12px 34px rgba(0,0,0,.055);
+}
+.hc-review-form > label,
+.hc-review-form .hc-rating-field {
+  display: grid;
+  gap: 9px;
+  align-content: start;
+  padding: 15px;
+  border: 1px solid #e6e6e1;
+  border-radius: 13px;
+  background: #f8f8f6;
+  color: #171717;
+  font-size: .88rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .045em;
+}
+.hc-review-form :is(input, select, textarea) {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #d4d4ce;
+  border-radius: 10px;
+  background: #fff;
+  color: #141414;
+  padding: 13px 14px;
+  font: 500 1rem/1.4 var(--hc-ui);
+  text-transform: none;
+  letter-spacing: normal;
+}
+.hc-review-form :is(input, select, textarea):focus-visible,
+.hc-account-page :is(input, select, textarea):focus-visible,
+.hc-support-page :is(input, select, textarea):focus-visible,
+.page-shell:has(.verification-topbar) :is(input, select, textarea):focus-visible {
+  outline: 3px solid rgba(255,106,0,.28);
+  border-color: var(--hc-orange);
+  outline-offset: 1px;
+}
+.hc-review-form textarea { min-height: 160px; resize: vertical; }
+.hc-review-form .btn,
+.hc-review-form button[type="submit"] {
+  min-height: 50px;
+  border-radius: 11px;
+  font-weight: 900;
+  letter-spacing: .035em;
+}
+.hc-review-form .checkbox-row { align-items: flex-start; gap: 10px; }
+.hc-account-page .account-profile-form,
+.hc-support-page .signup-form {
+  gap: 16px;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid #e0e0da;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(0,0,0,.04);
+}
+.hc-account-page .account-profile-form label,
+.hc-support-page .signup-form label {
+  display: grid;
+  gap: 8px;
+  color: #282824;
+  font-weight: 800;
+  font-size: .88rem;
+}
+.hc-account-page :is(input, select, textarea),
+.hc-support-page :is(input, select, textarea),
+.page-shell:has(.verification-topbar) :is(input, select, textarea) {
+  max-width: 100%;
+  min-width: 0;
+  border: 1px solid #d8d8d1;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #fff;
+  color: #171717;
+}
+.hc-account-page .dashboard-card,
+.hc-support-page .dashboard-card,
+.page-shell:has(.verification-topbar) .dashboard-card {
+  border-radius: 18px;
+}
+@media (max-width: 640px) {
+  .hc-review-form { padding: 14px !important; gap: 13px !important; }
+  .hc-review-form > label,
+  .hc-review-form .hc-rating-field { padding: 12px; }
+  .hc-review-form :is(input, select, textarea) { font-size: 16px; }
+  .hc-account-page .account-profile-form,
+  .hc-support-page .signup-form { padding: 15px; }
+  main:has(.hc-review-form) > .hero:first-child,
+  main:has(.hc-review-form) > .hero-card:first-child { border-radius: 16px; }
+}
