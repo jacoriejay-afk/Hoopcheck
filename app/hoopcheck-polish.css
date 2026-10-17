@@ -3330,3 +3330,37 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   }
 }
 
+/* Combined league search + country filter layout. */
+.hc-leagues-directory-page .hc-league-filter {
+  grid-template-columns: auto minmax(180px, 1.2fr) auto minmax(180px, 1fr) auto;
+  gap: 10px 12px;
+}
+.hc-leagues-directory-page .hc-league-filter input {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 10px 12px;
+  color: #111;
+  background: #fff;
+  border: 1px solid #d5d5d2;
+  border-radius: 2px;
+}
+.hc-leagues-directory-page .hc-league-filter input:focus,
+.hc-leagues-directory-page .hc-league-filter select:focus {
+  border-color: var(--hc-orange);
+  outline: 2px solid rgba(255,106,0,.16);
+}
+@media (max-width: 960px) {
+  .hc-leagues-directory-page .hc-league-filter {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .hc-leagues-directory-page .hc-league-filter p {
+    justify-self: start;
+  }
+}
+@media (max-width: 640px) {
+  .hc-leagues-directory-page .hc-league-filter {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
