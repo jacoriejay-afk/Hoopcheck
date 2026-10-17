@@ -3156,3 +3156,20 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   }
 }
 
+/* Keep the real section label visible on small screens; never replace it with a CSS-only heading. */
+@media (max-width: 760px) {
+  .hc-template-section-title h2 {
+    font-size: clamp(21px, 5.5vw, 28px) !important;
+  }
+  .hc-template-section-title h2::after {
+    content: none !important;
+  }
+  .hc-template-section-title > a {
+    flex-shrink: 0;
+    font-size: 9px;
+  }
+  .hc-template-category:active {
+    transform: scale(.99);
+  }
+}
+
