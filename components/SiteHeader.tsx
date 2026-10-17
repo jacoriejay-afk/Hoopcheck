@@ -45,7 +45,7 @@ export default function SiteHeader() {
       <nav className={menuOpen ? "hc-header-nav is-open" : "hc-header-nav"} aria-label="Primary navigation">
         <div className="hc-header-links">
           <Link href="/" className={active("/") ? "is-active" : ""} onClick={closeMenu}>Home</Link>
-          <Link href="/teams" className={active("/teams") ? "is-active" : ""} onClick={closeMenu}>Directory</Link>
+          <Link href="/directory" className={active("/directory") ? "is-active" : ""} onClick={closeMenu}>Directory</Link>
           <Link href="/reviews" className={active("/reviews") ? "is-active" : ""} onClick={closeMenu}>Reviews</Link>
           <Link href="/notifications" className={active("/notifications") ? "is-active" : ""} onClick={closeMenu}>Alerts</Link>
         </div>
