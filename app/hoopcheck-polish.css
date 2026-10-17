@@ -3524,3 +3524,36 @@ main:has(.hc-review-form) .hc-review-form > .btn {
     flex-basis: 100%;
   }
 }
+
+
+/* Player directory: clearable username-first search and visible result feedback. */
+.hc-player-directory-page .research-search .team-filter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+.hc-player-directory-page .research-search .team-filter-row input {
+  min-width: 0;
+}
+.hc-player-directory-page .research-search .team-filter-row .btn {
+  min-height: 48px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.hc-player-directory-page .hc-player-result-count {
+  margin-top: 16px;
+  color: #5c5c57;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+@media (max-width: 480px) {
+  .hc-player-directory-page .research-search .team-filter-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hc-player-directory-page .research-search .team-filter-row .btn {
+    width: 100%;
+  }
+}
