@@ -156,6 +156,16 @@ export default function TeamsPage() {
 
    </section>
 
+      <nav className="hc-directory-switcher" aria-label="Browse HoopCheck directories">
+        <span className="hc-directory-switcher-label">BROWSE DIRECTORIES</span>
+        <Link href="/teams" aria-current={undefined}>Men&apos;s Teams</Link>
+        <Link href="/womens">Women&apos;s Teams</Link>
+        <Link href="/coaches">Coaches</Link>
+        <Link href="/leagues">Leagues</Link>
+        <Link href="/players">Find Players</Link>
+        <Link href="/search">Reviews</Link>
+      </nav>
+
       <section className="hero">
         <div className="research-search">
           <div className="search-label">TEAM DIRECTORY</div>
