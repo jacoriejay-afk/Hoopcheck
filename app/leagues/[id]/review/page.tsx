@@ -31,6 +31,7 @@ function RatingField({
 }: RatingFieldProps) {
   return (
     <div
+      className="hc-rating-field"
       style={{
         padding: "20px",
         border: "1px solid var(--border)",
@@ -544,6 +545,7 @@ export default function LeagueReviewPage() {
         }}
       >
         <form
+          className="hc-review-form"
           onSubmit={handleSubmit}
           style={{
             display: "grid",
