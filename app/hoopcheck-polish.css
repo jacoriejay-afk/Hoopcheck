@@ -3557,3 +3557,97 @@ main:has(.hc-review-form) .hc-review-form > .btn {
     width: 100%;
   }
 }
+
+
+/* Global research controls: high-contrast filters and compact mobile search */
+.hc-global-search-page .results-header {
+  gap: 14px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.hc-global-search-page .results-header .result-count {
+  border: 1px solid #dededb;
+  background: #fff;
+  padding: 8px 11px;
+  color: #222;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.hc-global-search-page .results-section > div[style*="flex-wrap"] {
+  align-items: center;
+  gap: 8px !important;
+}
+.hc-global-search-page .results-section button[aria-pressed] {
+  min-height: 40px;
+  border: 1px solid #242424;
+  border-radius: 2px;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: .02em;
+}
+.hc-global-search-page .results-section button[aria-pressed="true"] {
+  background: var(--hc-orange);
+  border-color: var(--hc-orange);
+  color: #111;
+}
+.hc-global-search-page .results-section select {
+  min-height: 40px;
+  max-width: 100%;
+  border: 1px solid #c9c9c5;
+  background: #fff;
+  color: #171717;
+  font: inherit;
+}
+.hc-global-search-page .result-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  border-radius: 2px;
+  overflow-wrap: anywhere;
+}
+.hc-global-search-page .result-card h4,
+.hc-global-search-page .result-card p {
+  overflow-wrap: anywhere;
+}
+.hc-global-search-page .result-card .result-link {
+  margin-top: auto;
+  padding-top: 7px;
+}
+.hc-global-search-page .dashboard-card:has(#player-username) {
+  border-top: 3px solid var(--hc-orange);
+}
+.hc-global-search-page #player-username {
+  min-height: 44px;
+  border-radius: 2px;
+}
+.hc-global-search-page .search-form input {
+  min-width: 0;
+  border-radius: 2px;
+}
+@media (max-width: 640px) {
+  .hc-global-search-page .results-header {
+    align-items: flex-start;
+  }
+  .hc-global-search-page .results-header h2 {
+    overflow-wrap: anywhere;
+  }
+  .hc-global-search-page .results-section > div[style*="flex-wrap"] {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .hc-global-search-page .results-section button[aria-pressed],
+  .hc-global-search-page .results-section select {
+    width: 100%;
+    min-width: 0;
+  }
+  .hc-global-search-page .results-section button[aria-pressed]:first-child {
+    grid-column: 1 / -1;
+  }
+  .hc-global-search-page .results-section .result-count {
+    align-self: flex-start;
+  }
+}
