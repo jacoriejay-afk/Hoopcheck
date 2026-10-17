@@ -22,6 +22,7 @@ export default function LeaguesPage() {
 const [leagues, setLeagues] = useState<League[]>([]);
 const [loading, setLoading] = useState(true);
 const [country, setCountry] = useState("");
+const filteredLeagues = leagues.filter((league) => !country || league.country === country);
 
 useEffect(() => {
 async function loadLeagues() {
@@ -70,7 +71,14 @@ return (
       </Link>
     </div>
   </section>
-  <section className="hero" style={{ paddingTop: "25px", paddingBottom: "25px" }}><div style={{ maxWidth: 520 }}><label htmlFor="league-country" style={{ display: "block", fontWeight: 900, marginBottom: 8 }}>League country</label><select id="league-country" value={country} onChange={(e) => setCountry(e.target.value)} style={{ width: "100%" }}><option value="">All countries</option>{Array.from(new Set(leagues.map((league) => league.country).filter(Boolean) as string[])).sort().map((item) => <option key={item} value={item}>{item}</option>)}</select></div></section>
+  <section className="hc-league-filter" aria-label="Filter leagues">
+    <label htmlFor="league-country">League country</label>
+    <select id="league-country" value={country} onChange={(e) => setCountry(e.target.value)}>
+      <option value="">All countries</option>
+      {Array.from(new Set(leagues.map((league) => league.country).filter(Boolean) as string[])).sort().map((item) => <option key={item} value={item}>{item}</option>)}
+    </select>
+    <p>{loading ? "Loading leagues…" : `${filteredLeagues.length} ${filteredLeagues.length === 1 ? "league" : "leagues"} found`}</p>
+  </section>
   <section className="grid hc-team-directory-list">
     {loading ? (<div className="card"><HoopLoading label="Scanning professional leagues..." /></div>) : leagues.length === 0 ? (
       <div className="card">
@@ -86,7 +94,14 @@ return (
         </p>
       </div>
     ) : (
-      leagues.filter((league) => !country || league.country === country).map((league) => (
+      filteredLeagues.length === 0 ? (
+        <div className="card hc-directory-empty">
+          <div className="eyebrow">No matching leagues</div>
+          <h2>Try another country</h2>
+          <p>There are no active leagues listed for this country yet. Choose another country or view all leagues.</p>
+          <button type="button" className="btn dark" onClick={() => setCountry("")}>View all countries</button>
+        </div>
+      ) : filteredLeagues.map((league) => (
         <div
           className="card hc-team-row"
           key={league.id}
