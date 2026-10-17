@@ -114,6 +114,16 @@ export default function CoachesPage() {
         </div>
       </section>
 
+      <nav className="hc-directory-switcher" aria-label="Browse HoopCheck directories">
+        <span className="hc-directory-switcher-label">BROWSE DIRECTORIES</span>
+        <Link href="/teams" aria-current={undefined}>Men&apos;s Teams</Link>
+        <Link href="/womens">Women&apos;s Teams</Link>
+        <Link href="/coaches">Coaches</Link>
+        <Link href="/leagues">Leagues</Link>
+        <Link href="/players">Find Players</Link>
+        <Link href="/search">Reviews</Link>
+      </nav>
+
       <section className="hc-coach-directory-tools" aria-label="Search coaches">
         <label htmlFor="coach-directory-search">Find a coach</label>
         <input id="coach-directory-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by coach name, country, or city…" autoComplete="off" />
