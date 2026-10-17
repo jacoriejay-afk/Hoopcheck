@@ -899,3 +899,155 @@ main:not(.hc-template-home) {
   text-decoration: none;
   white-space: nowrap;
 }
+
+
+/* High-visibility signed-in dashboard hero redesign. Flat colors only. */
+.hc-dashboard-shell .hc-player-hero {
+  position: relative !important;
+  isolation: isolate;
+  display: block !important;
+  overflow: hidden;
+  min-height: 330px;
+  margin: 18px 0 20px !important;
+  padding: clamp(22px, 4vw, 42px) !important;
+  border: 1px solid #262626 !important;
+  border-radius: 12px !important;
+  background: #0d0d0d !important;
+  color: #fff !important;
+}
+.hc-dashboard-shell .hc-dashboard-hero-art {
+  position: absolute;
+  z-index: -2;
+  inset: 0 0 0 48%;
+  overflow: hidden;
+  background: #181818;
+}
+.hc-dashboard-shell .hc-dashboard-hero-art::before,
+.hc-dashboard-shell .hc-dashboard-hero-art::after {
+  position: absolute;
+  inset: -35% -8% -35% 28%;
+  border-left: 16px solid #ff5500;
+  border-right: 5px solid #ff5500;
+  transform: skewX(-25deg);
+  content: "";
+}
+.hc-dashboard-shell .hc-dashboard-hero-art::after {
+  inset: -20% 8% -20% 62%;
+  border-left-width: 4px;
+  border-right-width: 0;
+  opacity: .65;
+}
+.hc-dashboard-shell .hc-dashboard-hero-ball {
+  position: absolute;
+  top: 50%;
+  right: 9%;
+  width: clamp(150px, 28vw, 300px);
+  aspect-ratio: 1;
+  border: 3px solid #ff5500;
+  border-radius: 50%;
+  background: #292929;
+  transform: translateY(-50%) rotate(-20deg);
+  opacity: .92;
+}
+.hc-dashboard-shell .hc-dashboard-hero-ball::before,
+.hc-dashboard-shell .hc-dashboard-hero-ball::after {
+  position: absolute;
+  inset: -2px 26%;
+  border: 2px solid #0d0d0d;
+  border-radius: 50%;
+  content: "";
+}
+.hc-dashboard-shell .hc-dashboard-hero-ball::after {
+  inset: 26% -2px;
+}
+.hc-dashboard-shell .hc-dashboard-hero-copy {
+  position: relative;
+  z-index: 1;
+  display: flex !important;
+  min-height: 245px;
+  flex-direction: column;
+  align-items: flex-start !important;
+  justify-content: space-between;
+  gap: 24px;
+}
+.hc-dashboard-shell .hc-dashboard-hero-message { max-width: 720px; }
+.hc-dashboard-shell .hc-player-hero .eyebrow {
+  margin: 0 0 17px !important;
+  color: #ff5500 !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: .18em !important;
+  line-height: 1.5;
+}
+.hc-dashboard-shell .hc-player-hero h1 {
+  max-width: 700px;
+  margin: 0 !important;
+  color: #fff !important;
+  font-size: clamp(38px, 7.3vw, 76px) !important;
+  font-weight: 950 !important;
+  letter-spacing: -.055em !important;
+  line-height: .93 !important;
+  text-transform: uppercase;
+}
+.hc-dashboard-shell .hc-player-hero h1 span { color: #ff5500; }
+.hc-dashboard-shell .hc-player-hero .hc-dashboard-hero-description {
+  max-width: 420px;
+  margin: 18px 0 0 !important;
+  color: #c6c6c6 !important;
+  font-size: clamp(13px, 1.7vw, 16px) !important;
+  line-height: 1.6 !important;
+}
+.hc-dashboard-shell .hc-player-hero .hc-dashboard-profile-line {
+  margin: 20px 0 0 !important;
+  color: #888 !important;
+  font-size: 9px !important;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+.hc-dashboard-shell .hc-player-hero .hc-dashboard-profile-line strong { color: #fff; }
+.hc-dashboard-shell .hc-dashboard-edit-profile {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 0 17px;
+  border: 1px solid #ff5500;
+  border-radius: 2px;
+  background: #ff5500;
+  color: #fff !important;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .07em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.hc-dashboard-shell .hc-dashboard-edit-profile span { font-size: 17px; }
+.hc-dashboard-shell .hc-player-stats {
+  position: relative;
+  z-index: 1;
+  margin-top: 28px !important;
+  border-top: 1px solid #343434 !important;
+}
+.hc-dashboard-shell .hc-player-stats > div {
+  padding: 16px 12px 0 !important;
+  border-right: 1px solid #343434;
+}
+.hc-dashboard-shell .hc-player-stats > div:first-child { padding-left: 0 !important; }
+.hc-dashboard-shell .hc-player-stats > div:last-child { border-right: 0; }
+.hc-dashboard-shell .hc-player-stats span { color: #ff5500 !important; letter-spacing: .12em; }
+.hc-dashboard-shell .hc-player-stats strong { color: #fff !important; }
+.hc-dashboard-shell .hc-player-stats small { color: #aaa !important; }
+@media (max-width: 600px) {
+  .hc-dashboard-shell .hc-player-hero { min-height: 0; padding: 22px 18px !important; margin-top: 10px !important; }
+  .hc-dashboard-shell .hc-dashboard-hero-art { inset: 0 0 0 42%; opacity: .68; }
+  .hc-dashboard-shell .hc-dashboard-hero-ball { right: -20%; width: 210px; }
+  .hc-dashboard-shell .hc-dashboard-hero-copy { min-height: 245px; gap: 20px; }
+  .hc-dashboard-shell .hc-player-hero h1 { max-width: 340px; font-size: clamp(39px, 11vw, 56px) !important; }
+  .hc-dashboard-shell .hc-player-hero .eyebrow { max-width: 240px; font-size: 9px !important; }
+  .hc-dashboard-shell .hc-player-hero .hc-dashboard-hero-description { max-width: 285px; font-size: 13px !important; }
+  .hc-dashboard-shell .hc-player-stats { display: grid !important; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 0 !important; }
+  .hc-dashboard-shell .hc-player-stats > div { min-width: 0; padding: 12px 7px 0 !important; }
+  .hc-dashboard-shell .hc-player-stats strong { font-size: 14px !important; overflow-wrap: anywhere; }
+  .hc-dashboard-shell .hc-player-stats small { font-size: 9px !important; }
+}

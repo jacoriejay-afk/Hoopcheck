@@ -202,13 +202,15 @@ export default function DashboardPage() {
     <main className="page-shell hc-dashboard-shell">
       <div className="page-container">
         {(profile?.moderation_status === "warned" || profile?.moderation_status === "flagged") && <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{profile.moderation_status === "warned" ? "Account warning" : "Profile flagged for review"}</strong><p className="muted">{profile.moderation_note || "Please review the Community Guidelines and contact Support if you need clarification."}</p><Link href="/support" className="btn dark">Contact Support</Link></section>}        <section className="player-dashboard-card hc-player-hero">
-          <div className="player-dashboard-main">
-            <div>
-              <p className="eyebrow">{profile?.account_type === "fan" ? "FAN DASHBOARD" : profile?.account_type ? profile.account_type.toUpperCase()+" DASHBOARD" : t("playerDashboard")}</p>
-              <h1>{profile?.display_name || (profile?.account_type === "fan" ? "Fan" : profile?.account_type ? profile.account_type.charAt(0).toUpperCase()+profile.account_type.slice(1) : "Player")}</h1>
-              <p className="muted">Your HoopCheck research hub.</p>
+          <div className="hc-dashboard-hero-art" aria-hidden="true"><span className="hc-dashboard-hero-ball" /></div>
+          <div className="player-dashboard-main hc-dashboard-hero-copy">
+            <div className="hc-dashboard-hero-message">
+              <p className="eyebrow">THE OVERSEAS BASKETBALL INTELLIGENCE HUB</p>
+              <h1>KNOW WHO YOU’RE SIGNING WITH<span>.</span></h1>
+              <p className="hc-dashboard-hero-description">Real player experiences. Team and coach reputations. Make your next move with confidence.</p>
+              <p className="hc-dashboard-profile-line">SIGNED IN AS <strong>{profile?.display_name || (profile?.account_type === "fan" ? "Fan" : profile?.account_type ? profile.account_type.charAt(0).toUpperCase()+profile.account_type.slice(1) : "Player")}</strong></p>
             </div>
-            <Link href="/profile" className="btn dark">{t("editProfile")}</Link>
+            <Link href="/profile" className="hc-dashboard-edit-profile">{t("editProfile")} <span aria-hidden="true">↗</span></Link>
           </div>
           <div className="player-dashboard-stats hc-player-stats">
             <div><span>MEMBERSHIP</span><strong>{planLabel.replace("HoopCheck ","")}</strong><small>{statusLabel}</small></div>
