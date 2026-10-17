@@ -56,10 +56,24 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="hc-quick-access" aria-labelledby="hc-quick-access-heading">
+        <div className="hc-quick-access-heading">
+          <span className="hc-template-eyebrow">YOUR NEXT MOVE</span>
+          <h2 id="hc-quick-access-heading">QUICK ACCESS</h2>
+        </div>
+        <nav className="hc-quick-access-links" aria-label="Quick access">
+          <Link href="/teams"><span aria-hidden="true">◉</span> Teams <b aria-hidden="true">↗</b></Link>
+          <Link href="/coaches"><span aria-hidden="true">✳</span> Coaches <b aria-hidden="true">↗</b></Link>
+          <Link href="/leagues"><span aria-hidden="true">🏆</span> Leagues <b aria-hidden="true">↗</b></Link>
+          <Link href="/players"><span aria-hidden="true">＋</span> Find players <b aria-hidden="true">↗</b></Link>
+          <Link href="/search"><span aria-hidden="true">★</span> Reviews <b aria-hidden="true">↗</b></Link>
+        </nav>
+      </section>
+
       <section className="hc-template-explore" aria-labelledby="hc-template-explore-heading">
         <div className="hc-template-section-title">
-          <h2 id="hc-template-explore-heading">EXPLORE HOOPCHECK</h2>
-          <Link href="/teams">VIEW DIRECTORY <span aria-hidden="true">→</span></Link>
+          <h2 id="hc-template-explore-heading">BROWSE CATEGORIES</h2>
+          <Link href="/teams">ALL CATEGORIES <span aria-hidden="true">→</span></Link>
         </div>
         <div className="hc-template-category-grid">
           {categories.map((category) => (
