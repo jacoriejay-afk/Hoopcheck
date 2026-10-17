@@ -1067,3 +1067,148 @@ main.hc-auth-page .hc-auth-promo .btn { border-radius:999px; background:var(--hc
   html { scroll-behavior:auto; }
   *,*::before,*::after { transition-duration:.01ms !important; animation-duration:.01ms !important; }
 }
+
+
+/* Route-level consistency pass: target the actual classes used by directory, signup,
+   player search, and dashboard pages so the design system is visible beyond home. */
+:root {
+  --orange: #ff5500;
+  --orange-light: #ff7433;
+  --orange-dark: #e64a00;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page) {
+  color: #111;
+  background: #f8f9fa;
+  padding-bottom: clamp(32px,5vw,64px);
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page) :where(.hero,.hero-card,.hc-directory-hero) {
+  padding: clamp(24px,4.5vw,48px);
+  border: 0;
+  border-radius: 16px;
+  color: #fff;
+  background: radial-gradient(ellipse at 88% 0%,rgba(255,85,0,.2),transparent 44%),linear-gradient(135deg,#0d0d0d,#1a1a1a);
+  box-shadow: 0 10px 28px rgba(17,17,17,.07);
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page) .eyebrow {
+  color: #ff5500;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page) :where(.research-search,.dashboard-card,.hc-directory-summary,.hc-coach-directory-tools,.hc-player-result-count,.hc-directory-switcher,.team-filter-row,.hc-league-filter) {
+  border: 1px solid #ededed;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(17,17,17,.035);
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page) .research-search {
+  padding: clamp(14px,2vw,22px);
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page) :where(.team-filter-row,.hc-directory-switcher,.hc-league-filter) {
+  padding: 10px 12px;
+  gap: 8px;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page) :where(.card,.hc-team-row,.hc-team-empty,.hc-coach-empty,.hc-directory-empty,.hc-player-results .card) {
+  border: 1px solid #ededed;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(17,17,17,.04);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page) :where(.hc-team-row,.hc-player-results .card):hover {
+  transform: translateY(-2px);
+  border-color: #dedede;
+  box-shadow: 0 12px 28px rgba(17,17,17,.075);
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page) :where(input,select,textarea) {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  color: #111;
+  outline-offset: 2px;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page) :where(input,select,textarea):focus {
+  border-color: #ff5500;
+  box-shadow: 0 0 0 3px rgba(255,85,0,.12);
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page) :where(.btn,.search-button) {
+  border-radius: 999px;
+  font-weight: 800;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page) :where(.btn:not(.dark),.search-button) {
+  background: #ff5500;
+  border-color: #ff5500;
+  color: #fff;
+}
+.hc-directory-switcher a[aria-current="page"],
+.hc-directory-switcher a[aria-selected="true"],
+.hc-directory-switcher button[aria-pressed="true"] {
+  color: #ff5500;
+  border-bottom: 2px solid #ff5500;
+}
+.hc-player-directory-page .player-avatar-fallback {
+  border-radius: 12px;
+  background: #fff0e8;
+  color: #e64a00;
+}
+.hc-player-directory-page .card-kicker {
+  color: #e64a00;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+/* Signup and onboarding use a separate shell from the login route; align both. */
+:where(.auth-page-shell,.auth-page.signup-page) {
+  color: #111;
+  background: #f8f9fa;
+}
+.auth-page-shell .signup-nav {
+  border-bottom: 1px solid #ededed;
+  background: rgba(255,255,255,.94);
+  backdrop-filter: blur(14px);
+}
+.auth-page-shell .signup-nav .logo { color: #111; }
+.auth-page-shell .auth-hero {
+  border: 0;
+  border-radius: 16px;
+  background: radial-gradient(ellipse at 90% 0%,rgba(255,85,0,.2),transparent 42%),linear-gradient(135deg,#0d0d0d,#1a1a1a);
+  color: #fff;
+}
+.auth-page-shell .feature-grid { gap: 12px; }
+.auth-page-shell .feature,
+.auth-page-shell .auth-card,
+.auth-page-shell .signup-card,
+.auth-page-shell .account-type-grid > *,
+.auth-page-shell .non-player-preferences {
+  border: 1px solid #ededed;
+  border-radius: 12px;
+  box-shadow: 0 4px 18px rgba(17,17,17,.04);
+}
+.auth-page-shell .auth-card,
+.auth-page-shell .signup-card { background: #fff; }
+.auth-page-shell .account-type-grid > * { transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+.auth-page-shell .account-type-grid > *:hover { transform: translateY(-2px); border-color: #ffb38e; }
+.auth-page-shell :where(input,select,textarea) { border-radius: 10px; }
+.auth-page-shell .btn.submit,
+.auth-page-shell .signup-gate .btn { border-radius: 999px; background: #ff5500; border-color: #ff5500; color: #fff; }
+
+/* Dashboard cards and review summaries share the same soft surface language. */
+:where(.hc-dashboard-shell,.dashboard-page,.dashboard-main,.hc-dashboard-page) {
+  --hc-orange: #ff5500;
+  --hc-border: #ededed;
+}
+:where(.hc-dashboard-shell,.dashboard-page,.dashboard-main,.hc-dashboard-page) :where(.dashboard-card,.card,.review-card,.subscription-card,.profile-card,.stat-card,.empty-state) {
+  border: 1px solid #ededed;
+  border-radius: 12px;
+  box-shadow: 0 4px 18px rgba(17,17,17,.04);
+}
+:where(.hc-dashboard-shell,.dashboard-page,.dashboard-main,.hc-dashboard-page) :where(.btn,button,a[role="button"]) { border-radius: 999px; }
+:where(.hc-dashboard-shell,.dashboard-page,.dashboard-main,.hc-dashboard-page) :where(input,select,textarea) { border-radius: 10px; }
+@media (max-width: 640px) {
+  :where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page) :where(.hero,.hero-card,.hc-directory-hero) {
+    border-radius: 13px;
+    padding: 24px 18px;
+  }
+  :where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page) :where(.research-search,.dashboard-card,.hc-directory-summary,.hc-coach-directory-tools,.hc-directory-switcher,.team-filter-row,.hc-league-filter) {
+    border-radius: 10px;
+  }
+}
