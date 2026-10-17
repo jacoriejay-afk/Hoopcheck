@@ -4687,3 +4687,57 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 @media (prefers-reduced-motion: reduce) {
   .hc-template-home .hc-quick-access-links a { transition: none; }
 }
+
+
+/* Shared directory switcher: keep browsing paths visible across directory pages */
+.hc-directory-switcher {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: min(100% - 40px, 1240px);
+  margin: 16px auto 22px;
+  padding: 12px 14px;
+  background: #101010;
+  color: #fff;
+  border-bottom: 3px solid var(--hc-orange, #ff6a00);
+}
+.hc-directory-switcher-label {
+  margin-right: 6px;
+  color: #ff8a38;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .14em;
+}
+.hc-directory-switcher a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 8px 11px;
+  color: #f3f3f3;
+  background: #1b1b1b;
+  border: 1px solid #383838;
+  font-size: 11px;
+  font-weight: 850;
+  text-decoration: none;
+  transition: background .16s ease, border-color .16s ease, color .16s ease;
+}
+.hc-directory-switcher a:hover,
+.hc-directory-switcher a:focus-visible {
+  color: #fff;
+  background: #302219;
+  border-color: var(--hc-orange, #ff6a00);
+}
+.hc-directory-switcher a:focus-visible { outline: 2px solid #ff8a38; outline-offset: 2px; }
+@media (max-width: 700px) {
+  .hc-directory-switcher {
+    width: calc(100% - 22px);
+    margin: 12px auto 16px;
+    padding: 12px;
+    gap: 7px;
+  }
+  .hc-directory-switcher-label { width: 100%; margin: 0 0 3px; }
+  .hc-directory-switcher a { flex: 1 1 calc(33.333% - 7px); min-width: 0; padding: 9px 6px; font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .hc-directory-switcher a { transition: none; } }
