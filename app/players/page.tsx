@@ -69,7 +69,8 @@ export default function PlayersPage() {
           .ilike("username", `%${escapedUsername}%`)
           .order("username", { ascending: true });
 
-        if (country.trim()) request = request.ilike("current_country", `%${country.trim().replace(/[\\%_]/g, "\\        if (country) request = request.eq("current_country", country);")}%`);
+        const escapedCountry = country.trim().replace(/[\\%_]/g, "\\        if (country.trim()) request = request.ilike("current_country", `%${country.trim().replace(/[\\%_]/g, "\\        if (country) request = request.eq("current_country", country);")}%`);");
+        if (escapedCountry) request = request.ilike("current_country", `%${escapedCountry}%`);
 
         const { data, error } = await withTimeout<any>(
           request.range(page * size, page * size + size - 1),
