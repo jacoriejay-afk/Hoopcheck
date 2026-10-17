@@ -3785,3 +3785,81 @@ main:has(.hc-review-form) .hc-review-form > .btn {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+
+/* Coach and league directory search panels share the research-system controls */
+.hc-coaches-directory-page .hc-coach-directory-tools,
+.hc-leagues-directory-page .hc-league-filter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 9px;
+  margin: 18px 0;
+  padding: clamp(14px, 2.5vw, 22px);
+  border: 1px solid #dededb;
+  border-top: 3px solid var(--hc-orange);
+  border-radius: 2px;
+  background: #f8f8f6;
+}
+.hc-coaches-directory-page .hc-coach-directory-tools label,
+.hc-leagues-directory-page .hc-league-filter label {
+  color: #242424;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.hc-coaches-directory-page #coach-directory-search,
+.hc-leagues-directory-page #league-search,
+.hc-leagues-directory-page #league-country {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 11px 13px;
+  border: 1px solid #c9c9c4;
+  border-radius: 2px;
+  background: #fff;
+  color: #171717;
+  font: inherit;
+}
+.hc-coaches-directory-page .hc-coach-directory-summary,
+.hc-leagues-directory-page .hc-league-filter > p {
+  margin: 3px 0 0;
+  color: #595954;
+  font-size: 12px;
+  font-weight: 750;
+}
+.hc-coaches-directory-page .hc-coach-empty,
+.hc-leagues-directory-page .hc-directory-empty {
+  border-top: 3px solid var(--hc-orange);
+  border-radius: 2px;
+  background: #f8f8f6;
+}
+.hc-coaches-directory-page .hc-team-directory-list > .hc-team-row,
+.hc-leagues-directory-page .hc-team-directory-list > .hc-team-row {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 700px) {
+  .hc-leagues-directory-page .hc-league-filter {
+    grid-template-columns: minmax(0, 1fr) minmax(180px, .55fr);
+    align-items: end;
+  }
+  .hc-leagues-directory-page .hc-league-filter label[for="league-country"] {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .hc-leagues-directory-page #league-country {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .hc-leagues-directory-page .hc-league-filter > p {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 420px) {
+  .hc-coaches-directory-page .hc-coach-directory-tools,
+  .hc-leagues-directory-page .hc-league-filter {
+    padding: 13px 11px;
+  }
+}
