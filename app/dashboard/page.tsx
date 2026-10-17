@@ -265,6 +265,7 @@ export default function DashboardPage() {
                 <p className="hc-mobile-eyebrow">EXPLORE HOOPCHECK</p>
                 <h2 id="hc-browse-categories-heading">Browse Categories</h2>
               </div>
+              <Link href="/directory" className="hc-mobile-view-all">VIEW ALL →</Link>
             </div>
             <div className="hc-mobile-category-list">
               <Link href="/teams" className="hc-mobile-category-row">

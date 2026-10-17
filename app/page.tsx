@@ -74,7 +74,7 @@ export default function Home() {
       <section className="hc-template-explore" aria-labelledby="hc-template-explore-heading">
         <div className="hc-template-section-title">
           <h2 id="hc-template-explore-heading">BROWSE CATEGORIES</h2>
-          <Link href="/teams">ALL CATEGORIES <span aria-hidden="true">→</span></Link>
+          <Link href="/directory">ALL CATEGORIES <span aria-hidden="true">→</span></Link>
         </div>
         <div className="hc-template-category-grid">
           {categories.map((category) => (
