@@ -247,6 +247,15 @@ function SearchContent() {
 
   return (
     <main className="search-page hc-global-search-page">
+      <nav className="hc-directory-switcher" aria-label="Browse HoopCheck directories">
+        <span className="hc-directory-switcher-label">BROWSE DIRECTORIES</span>
+        <Link href="/teams">Men’s Teams</Link>
+        <Link href="/womens">Women’s Teams</Link>
+        <Link href="/coaches">Coaches</Link>
+        <Link href="/leagues">Leagues</Link>
+        <Link href="/players">Find Players</Link>
+        <Link href="/search">Global Search</Link>
+        </nav>
       <section className="dashboard-card" style={{ margin: "0 0 18px", padding: "16px" }}>
         <div className="eyebrow">PLAYER CONNECT</div>
         <h2 style={{ margin: "4px 0 6px" }}>Add a Player</h2>
