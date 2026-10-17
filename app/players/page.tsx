@@ -30,6 +30,7 @@ export default function PlayersPage() {
   const [country, setCountry] = useState("");
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const [searchError, setSearchError] = useState("");
   const size = 24;
 
   const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000, fallback?: T) =>
@@ -45,6 +46,7 @@ export default function PlayersPage() {
     if (!username) {
       setPlayers([]);
       setHasMore(false);
+      setSearchError("");
       setLoading(false);
       return () => {
         mounted = false;
@@ -54,6 +56,7 @@ export default function PlayersPage() {
     const timer = window.setTimeout(() => {
       void (async () => {
         setLoading(true);
+        setSearchError("");
         const escapedUsername = username.replace(/[\\%_]/g, "\\$&");
         let request = supabase
           .from("profiles")
@@ -65,7 +68,7 @@ export default function PlayersPage() {
           .ilike("username", `%${escapedUsername}%`)
           .order("username", { ascending: true });
 
-        if (country) request = request.eq("current_country", country);
+        if (country.trim()) request = request.ilike("current_country", `%${country.trim().replace(/[\\%_]/g, "\\        if (country) request = request.eq("current_country", country);")}%`);
 
         const { data, error } = await withTimeout<any>(
           request.range(page * size, page * size + size - 1),
@@ -75,6 +78,7 @@ export default function PlayersPage() {
 
         if (mounted) {
           setPlayers(error ? [] : ((data || []) as Player[]));
+          setSearchError(error ? "Search could not be completed. Please try again." : "");
           setHasMore(!error && (data?.length || 0) === size);
           setLoading(false);
         }
@@ -116,19 +120,17 @@ export default function PlayersPage() {
               autoComplete="off"
             />
             <div className="team-filter-row">
-              <select
+              <input
                 value={country}
                 onChange={(event) => {
                   setCountry(event.target.value);
                   setPage(0);
                 }}
+                placeholder="Optional country filter"
                 aria-label="Filter matching players by country"
-              >
-                <option value="">All countries</option>
-                {countries.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
+                autoComplete="country-name"
+              />
+              {(query || country) && <button type="button" className="btn dark" onClick={() => { setQuery(""); setCountry(""); setPage(0); }} aria-label="Clear player search">Clear search</button>}
             </div>
           </div>
         </section>
@@ -142,7 +144,15 @@ export default function PlayersPage() {
           <div className="dashboard-card" style={{ marginTop: 18 }}>
             <HoopLoading label="Searching usernames..." />
           </div>
+        ) : searchError ? (
+          <div className="dashboard-card" style={{ marginTop: 18 }} role="alert">
+            <h2>Search unavailable</h2>
+            <p className="muted">{searchError}</p>
+            <button className="btn dark" type="button" onClick={() => { setPage((current) => current); setQuery((current) => current); }}>Try again</button>
+          </div>
         ) : (
+          <>
+          <div className="hc-player-result-count" role="status" aria-live="polite">{players.length ? `Showing ${players.length} player${players.length === 1 ? "" : "s"}` : "No matching players"}</div>
           <section className="grid hc-player-results" style={{ marginTop: 18 }}>
             {players.map((player) => {
               const name =
@@ -201,9 +211,10 @@ export default function PlayersPage() {
               </div>
             )}
           </section>
+          </>
         )}
 
-        {query.trim() && !loading && players.length > 0 && (
+        {query.trim() && !loading && !searchError && players.length > 0 && (
           <div style={{ display: "flex", justifyContent: "center", gap: 12, padding: "20px 0 40px", flexWrap: "wrap" }}>
             <button className="btn dark" disabled={page === 0} onClick={() => setPage((current) => Math.max(0, current - 1))}>
               ← Previous
