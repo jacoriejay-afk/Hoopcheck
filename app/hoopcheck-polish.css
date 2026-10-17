@@ -4741,3 +4741,107 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   .hc-directory-switcher a { flex: 1 1 calc(33.333% - 7px); min-width: 0; padding: 9px 6px; font-size: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { .hc-directory-switcher a { transition: none; } }
+
+
+/* Cross-site visual system: consistent spacing, hierarchy, cards, forms and mobile behavior. */
+:root {
+  --hc-orange: #ff6a00;
+  --hc-ink: #101010;
+  --hc-paper: #f3f3f1;
+  --hc-line: #deded9;
+}
+:where(.hc-player-directory-page,.hc-womens-directory-page,.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-global-search-page,.hc-team-profile-page,.hc-coach-profile-page,.hc-league-profile-page,.hc-dashboard-shell) {
+  color: #171717;
+}
+:where(.hc-player-directory-page,.hc-womens-directory-page,.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-global-search-page) :where(h1,h2,h3) {
+  letter-spacing: -.025em;
+  overflow-wrap: anywhere;
+}
+:where(.hc-player-directory-page,.hc-womens-directory-page,.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-global-search-page) :where(.hero-card,.hero,.search-hero) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 3px;
+}
+:where(.hc-player-directory-page,.hc-womens-directory-page,.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-global-search-page) :where(.dashboard-card,.card,.result-card,.quick-card) {
+  min-width: 0;
+  border-radius: 3px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.045);
+  overflow-wrap: anywhere;
+}
+:where(.hc-player-directory-page,.hc-womens-directory-page,.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-global-search-page) :where(input,select,textarea) {
+  max-width: 100%;
+  min-height: 44px;
+  border-radius: 2px;
+}
+:where(.hc-player-directory-page,.hc-womens-directory-page,.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-global-search-page) :where(button,a,input,select,textarea):focus-visible {
+  outline: 3px solid rgba(255,106,0,.8);
+  outline-offset: 2px;
+}
+:where(.hc-player-directory-page,.hc-womens-directory-page,.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-global-search-page) .btn {
+  min-height: 42px;
+  border-radius: 2px;
+  font-weight: 850;
+  letter-spacing: .01em;
+}
+.hc-player-directory-page .hc-directory-hero,
+.hc-womens-directory-page .compact-hero {
+  padding: clamp(22px, 4vw, 42px);
+  background: radial-gradient(ellipse at 94% 5%, rgba(255,106,0,.19), transparent 34%), #101010;
+  color: #fff;
+  border-bottom: 4px solid var(--hc-orange);
+}
+.hc-player-directory-page .hc-directory-hero :where(h1,h2),
+.hc-womens-directory-page .compact-hero :where(h1,h2) { color: #fff; text-transform: uppercase; font-weight: 950; }
+.hc-player-directory-page .hc-directory-hero .muted,
+.hc-womens-directory-page .compact-hero .muted { color: #d1d1d1; }
+.hc-global-search-page .search-hero {
+  padding: clamp(26px, 5vw, 58px);
+  color: #fff;
+  background: radial-gradient(ellipse at 92% 10%, rgba(255,106,0,.24), transparent 36%), #101010;
+  border-bottom: 4px solid var(--hc-orange);
+}
+.hc-global-search-page .search-hero :where(h1,h2) {
+  color: #fff;
+  font-size: clamp(34px, 6vw, 66px);
+  font-weight: 950;
+  line-height: .98;
+  letter-spacing: -.045em;
+  text-transform: uppercase;
+}
+.hc-global-search-page .search-hero p { max-width: 58ch; color: #d0d0d0; line-height: 1.65; }
+.hc-global-search-page .search-form { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 22px; }
+.hc-global-search-page .search-form input { flex: 1 1 260px; min-width: 0; }
+.hc-global-search-page .result-group { margin-top: 24px; }
+.hc-global-search-page .group-heading { border-bottom: 1px solid #d9d9d4; padding-bottom: 10px; }
+.hc-global-search-page .group-heading span { color: var(--hc-orange); font-weight: 950; }
+.hc-global-search-page .result-card { border: 1px solid var(--hc-line); transition: border-color .16s ease, transform .16s ease; }
+.hc-global-search-page .result-card:hover { border-color: var(--hc-orange); transform: translateY(-2px); }
+.hc-player-directory-page .hc-player-result-count { margin-top: 22px; padding: 12px 14px; background: #101010; color: #fff; border-left: 4px solid var(--hc-orange); font-size: 12px; font-weight: 850; }
+.hc-player-directory-page .hc-player-results .dashboard-card { border-top: 3px solid var(--hc-orange); transition: transform .16s ease, box-shadow .16s ease; }
+.hc-player-directory-page .hc-player-results .dashboard-card:hover { transform: translateY(-2px); box-shadow: 0 9px 24px rgba(0,0,0,.09); }
+.hc-womens-directory-page .compact-section { margin-top: 18px; }
+.hc-womens-directory-page .league-filter-grid { gap: 9px; }
+.hc-womens-directory-page .filter-chip { border-radius: 2px; border-color: #d9d9d4; }
+.hc-womens-directory-page .filter-chip.active { border-color: var(--hc-orange); box-shadow: inset 0 -3px var(--hc-orange); }
+.hc-team-profile-page :where(.dashboard-card,.card),
+.hc-coach-profile-page :where(.dashboard-card,.card),
+.hc-league-profile-page :where(.dashboard-card,.card) { border-radius: 3px; border-color: var(--hc-line); }
+@media (max-width: 700px) {
+  .hc-player-directory-page > .page-container,
+  .hc-womens-directory-page > .page-container { width: calc(100% - 22px); }
+  .hc-player-directory-page .hc-directory-hero,
+  .hc-womens-directory-page .compact-hero,
+  .hc-global-search-page .search-hero { padding: 23px 16px; }
+  .hc-global-search-page .search-form { display: grid; grid-template-columns: minmax(0,1fr); }
+  .hc-global-search-page .search-form > * { width: 100%; min-width: 0; }
+  .hc-player-directory-page .hc-player-results { grid-template-columns: minmax(0,1fr); }
+  .hc-womens-directory-page .actions { flex-wrap: wrap; }
+  .hc-womens-directory-page .actions > * { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-global-search-page .result-card,
+  .hc-player-directory-page .hc-player-results .dashboard-card { transition: none; }
+  .hc-global-search-page .result-card:hover,
+  .hc-player-directory-page .hc-player-results .dashboard-card:hover { transform: none; }
+}
