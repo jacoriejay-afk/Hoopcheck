@@ -4061,3 +4061,216 @@ main:has(.hc-review-form) .hc-review-form > .btn {
     text-align: left;
   }
 }
+
+
+/* Entity and member profile consistency pass */
+.hc-entity-profile-page,
+.hc-member-profile-page,
+.player-profile-page,
+.hc-account-page {
+  min-width: 0;
+}
+.hc-entity-profile-page .page-container,
+.hc-member-profile-page .page-container,
+.player-profile-page .page-container,
+.hc-account-page .page-container {
+  width: min(100% - 36px, 1180px);
+  margin-inline: auto;
+}
+.hc-entity-profile-page .hc-team-profile-hero,
+.hc-member-profile-page .compact-hero,
+.player-profile-page .hc-player-profile-hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #292929;
+  border-bottom: 4px solid var(--hc-orange, #ff6a00);
+  border-radius: 3px;
+  background: #151515;
+  color: #fff;
+  box-shadow: 0 8px 26px rgba(0,0,0,.08);
+}
+.hc-entity-profile-page .hc-team-profile-hero h1,
+.hc-member-profile-page .compact-hero h1,
+.player-profile-page .hc-player-profile-hero h1 {
+  color: inherit;
+  font-weight: 950;
+  line-height: .98;
+  letter-spacing: -.025em;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+.hc-entity-profile-page .hc-team-profile-hero .muted,
+.hc-member-profile-page .compact-hero .muted,
+.player-profile-page .hc-player-profile-hero .muted {
+  color: #c7c7c7;
+}
+.hc-entity-profile-page .hc-team-profile-hero .eyebrow,
+.hc-member-profile-page .compact-hero .eyebrow,
+.player-profile-page .hc-player-profile-hero .eyebrow {
+  color: #ff8a38;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+.hc-entity-profile-page .hero,
+.hc-entity-profile-page .card,
+.hc-member-profile-page .card,
+.hc-member-profile-page .dashboard-card,
+.player-profile-page .dashboard-card,
+.player-profile-page .player-profile-card,
+.hc-account-page .dashboard-card,
+.hc-account-page .card {
+  min-width: 0;
+  border-radius: 3px;
+}
+.hc-entity-profile-page .card,
+.hc-member-profile-page .card,
+.player-profile-page .player-profile-card,
+.hc-account-page .card {
+  overflow-wrap: anywhere;
+}
+.hc-entity-profile-page .hc-profile-review-list {
+  align-items: stretch;
+  gap: 12px;
+}
+.hc-entity-profile-page .hc-profile-review-list > .card,
+.hc-entity-profile-page .review-card,
+.hc-entity-profile-page .review-item {
+  border: 1px solid #dededb;
+  border-top: 3px solid var(--hc-orange, #ff6a00);
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(0,0,0,.035);
+}
+.hc-entity-profile-page .rating-locked-card {
+  border: 1px solid #d8d8d3;
+  border-top: 3px solid var(--hc-orange, #ff6a00);
+  border-radius: 3px;
+  background: #f7f7f4;
+}
+.hc-entity-profile-page .review-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.hc-member-profile-page .compact-hero > div:first-child {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.hc-member-profile-page .compact-hero img,
+.player-profile-page .player-profile-avatar img {
+  flex-shrink: 0;
+  border: 3px solid var(--hc-orange, #ff6a00);
+  object-fit: cover;
+}
+.hc-member-profile-page .compact-hero .actions,
+.hc-account-page .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 18px;
+}
+.hc-member-profile-page .compact-hero .btn,
+.player-profile-page .hc-player-profile-hero .btn,
+.hc-account-page .btn {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.player-profile-page .player-profile-grid {
+  align-items: stretch;
+  gap: 14px;
+}
+.player-profile-page .player-profile-card {
+  border: 1px solid #dededb;
+  border-top: 3px solid var(--hc-orange, #ff6a00);
+  background: #fff;
+}
+.player-profile-page .player-profile-card h2,
+.hc-account-page .dashboard-card h2 {
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.hc-account-page .account-profile-form label {
+  display: block;
+  min-width: 0;
+  color: #262626;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+.hc-account-page .account-profile-form input,
+.hc-account-page .account-profile-form select,
+.hc-account-page .account-profile-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  margin-top: 6px;
+  border: 1px solid #c9c9c4;
+  border-radius: 2px;
+  background: #fff;
+  color: #171717;
+  font: inherit;
+}
+.hc-account-page .account-profile-form textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+.hc-account-page :where(input, select, textarea, button, a):focus-visible,
+.hc-member-profile-page :where(button, a):focus-visible,
+.player-profile-page :where(button, a):focus-visible,
+.hc-entity-profile-page :where(button, a):focus-visible {
+  outline: 3px solid var(--hc-orange, #ff6a00);
+  outline-offset: 3px;
+}
+@media (max-width: 680px) {
+  .hc-entity-profile-page .page-container,
+  .hc-member-profile-page .page-container,
+  .player-profile-page .page-container,
+  .hc-account-page .page-container {
+    width: calc(100% - 24px);
+  }
+  .hc-entity-profile-page .hc-team-profile-hero,
+  .hc-member-profile-page .compact-hero,
+  .player-profile-page .hc-player-profile-hero {
+    padding: 20px 15px;
+  }
+  .hc-entity-profile-page .hc-team-profile-hero h1,
+  .hc-member-profile-page .compact-hero h1,
+  .player-profile-page .hc-player-profile-hero h1 {
+    font-size: clamp(27px, 8vw, 38px);
+  }
+  .hc-member-profile-page .compact-hero > div:first-child {
+    align-items: flex-start;
+  }
+  .hc-member-profile-page .compact-hero .actions,
+  .hc-account-page .actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hc-member-profile-page .compact-hero .actions .btn,
+  .hc-account-page .actions .btn {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .hc-entity-profile-page .review-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+@media (max-width: 380px) {
+  .hc-entity-profile-page .page-container,
+  .hc-member-profile-page .page-container,
+  .player-profile-page .page-container,
+  .hc-account-page .page-container {
+    width: calc(100% - 18px);
+  }
+  .hc-member-profile-page .compact-hero img {
+    width: 58px !important;
+    height: 58px !important;
+  }
+}
