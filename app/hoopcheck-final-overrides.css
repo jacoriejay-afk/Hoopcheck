@@ -17,3 +17,198 @@ main.hc-auth-page .hc-auth-promo h2 { color:#fff; font-size:clamp(2.2rem,5vw,4.6
 main.hc-auth-page .hc-auth-promo p { max-width:650px; color:#d0d0ca; line-height:1.7; }
 main.hc-auth-page .hc-auth-promo .btn { min-height:48px; border-radius:3px; background:#ff6a00; color:#111; font-weight:950; }
 @media(max-width:640px) { main.hc-auth-page { padding:12px 12px 32px; } main.hc-auth-page > .hc-auth-hero { padding:30px 20px 28px !important; } main.hc-auth-page > .hc-auth-hero h1 { font-size:clamp(2.7rem,13vw,4.1rem); } main.hc-auth-page > .hc-auth-form-section { padding:16px 0 24px !important; } main.hc-auth-page .hc-auth-card { padding:22px 18px !important; } main.hc-auth-page .hc-auth-promo > .card { padding:24px 20px; } }
+
+
+/* Directory, dashboard and signup surfaces share the refreshed editorial system. */
+.hc-team-directory-page, .hc-coaches-directory-page, .hc-leagues-directory-page,
+.hc-player-directory-page, .hc-global-search-page, .hc-dashboard-shell {
+  --hc-orange: #ff6a00;
+}
+.hc-team-directory-page > .hero, .hc-coaches-directory-page > .hero,
+.hc-leagues-directory-page > .hero, .hc-player-directory-page .hc-directory-hero,
+.hc-global-search-page .search-hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #292925;
+  border-radius: 4px;
+  background: radial-gradient(ellipse at 90% 0%,rgba(255,106,0,.2),transparent 42%), #111110;
+  color: #fff;
+  padding: clamp(26px,5vw,56px);
+}
+.hc-team-directory-page > .hero h1, .hc-coaches-directory-page > .hero h1,
+.hc-leagues-directory-page > .hero h1, .hc-player-directory-page .hc-directory-hero h1,
+.hc-global-search-page .search-hero h1 {
+  color: #fff;
+  font-size: clamp(2.5rem,6vw,5rem);
+  font-weight: 950;
+  letter-spacing: -.065em;
+  line-height: .96;
+  text-transform: uppercase;
+}
+.hc-team-directory-page .hc-directory-switcher,
+.hc-coaches-directory-page .hc-directory-switcher,
+.hc-leagues-directory-page .hc-directory-switcher,
+.hc-player-directory-page .hc-directory-switcher,
+.hc-global-search-page .hc-directory-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 20px;
+}
+.hc-team-directory-page .hc-directory-switcher a,
+.hc-coaches-directory-page .hc-directory-switcher a,
+.hc-leagues-directory-page .hc-directory-switcher a,
+.hc-player-directory-page .hc-directory-switcher a,
+.hc-global-search-page .hc-directory-switcher a {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border: 1px solid #d5d5ce;
+  border-radius: 3px;
+  background: #fff;
+  color: #252521;
+  font-size: .78rem;
+  font-weight: 900;
+  letter-spacing: .025em;
+}
+.hc-team-directory-page .hc-directory-switcher a[aria-current="page"],
+.hc-coaches-directory-page .hc-directory-switcher a[aria-current="page"],
+.hc-leagues-directory-page .hc-directory-switcher a[aria-current="page"],
+.hc-player-directory-page .hc-directory-switcher a[aria-current="page"],
+.hc-global-search-page .hc-directory-switcher a[aria-current="page"] {
+  border-color: #ff6a00;
+  background: #ff6a00;
+  color: #111;
+}
+.hc-team-directory-page .hc-team-directory-list,
+.hc-coaches-directory-page .hc-team-directory-list,
+.hc-leagues-directory-page .hc-team-directory-list {
+  gap: 14px;
+}
+.hc-team-directory-page .hc-team-directory-list > .card,
+.hc-coaches-directory-page .hc-team-directory-list > .card,
+.hc-leagues-directory-page .hc-team-directory-list > .card {
+  position: relative;
+  border: 1px solid #deded8;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,.035);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.hc-team-directory-page .hc-team-directory-list > .card:hover,
+.hc-coaches-directory-page .hc-team-directory-list > .card:hover,
+.hc-leagues-directory-page .hc-team-directory-list > .card:hover {
+  transform: translateY(-3px);
+  border-color: #ff6a00;
+  box-shadow: 0 14px 28px rgba(0,0,0,.075);
+}
+.hc-team-directory-page .research-search,
+.hc-coaches-directory-page .research-search,
+.hc-player-directory-page .research-search,
+.hc-global-search-page .search-form {
+  border: 1px solid #deded8;
+  border-radius: 4px;
+  background: #fff;
+  padding: clamp(14px,2.5vw,24px);
+  box-shadow: 0 8px 24px rgba(0,0,0,.035);
+}
+.hc-team-directory-page :is(input,select),
+.hc-coaches-directory-page :is(input,select),
+.hc-leagues-directory-page :is(input,select),
+.hc-player-directory-page :is(input,select),
+.hc-global-search-page .search-form :is(input,select) {
+  min-height: 48px;
+  border: 1px solid #d1d1ca;
+  border-radius: 3px;
+  background: #fafaf8;
+  color: #171715;
+}
+.hc-team-directory-page :is(input,select):focus-visible,
+.hc-coaches-directory-page :is(input,select):focus-visible,
+.hc-leagues-directory-page :is(input,select):focus-visible,
+.hc-player-directory-page :is(input,select):focus-visible,
+.hc-global-search-page .search-form :is(input,select):focus-visible {
+  outline: 3px solid rgba(255,106,0,.22);
+  border-color: #ff6a00;
+}
+.hc-global-search-page .result-card,
+.hc-global-search-page .quick-card {
+  border: 1px solid #deded8;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(0,0,0,.035);
+  transition: border-color .15s ease, transform .15s ease;
+}
+.hc-global-search-page .result-card:hover,
+.hc-global-search-page .quick-card:hover {
+  border-color: #ff6a00;
+  transform: translateY(-2px);
+}
+.hc-dashboard-shell .dashboard-command-tile,
+.hc-dashboard-shell .fan-feature-card {
+  border: 1px solid #deded8;
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.035);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.hc-dashboard-shell .dashboard-command-tile:hover,
+.hc-dashboard-shell .fan-feature-card:hover {
+  transform: translateY(-3px);
+  border-color: #ff6a00;
+  box-shadow: 0 14px 28px rgba(0,0,0,.075);
+}
+.hc-dashboard-shell .dashboard-command-tile .dashboard-command-icon {
+  border-radius: 3px;
+  background: #fff0e5;
+  color: #e65f00;
+}
+.auth-page-shell:has(.signup-page) .auth-hero {
+  border: 1px solid #292925;
+  border-radius: 4px;
+  background: radial-gradient(ellipse at 90% 0%,rgba(255,106,0,.2),transparent 42%), #111110;
+  color: #fff;
+  padding: clamp(26px,5vw,56px);
+}
+.auth-page-shell:has(.signup-page) .auth-hero h1 {
+  color: #fff;
+  font-size: clamp(2.5rem,6vw,5rem);
+  font-weight: 950;
+  letter-spacing: -.065em;
+  line-height: .96;
+  text-transform: uppercase;
+}
+.auth-page-shell:has(.signup-page) .signup-card {
+  border: 1px solid #deded8;
+  border-radius: 4px;
+  box-shadow: 0 14px 36px rgba(0,0,0,.065);
+}
+.auth-page-shell:has(.signup-page) .account-type-choice {
+  border: 1px solid #d8d8d1;
+  border-radius: 4px;
+  background: #fafaf8;
+}
+.auth-page-shell:has(.signup-page) .account-type-choice.selected {
+  border-color: #ff6a00;
+  background: #fff0e5;
+  box-shadow: inset 0 0 0 1px #ff6a00;
+}
+.auth-page-shell:has(.signup-page) .signup-form .btn.submit {
+  min-height: 54px;
+  border-radius: 3px;
+  background: #ff6a00;
+  color: #111;
+  font-weight: 950;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+@media(max-width:640px) {
+  .hc-team-directory-page > .hero, .hc-coaches-directory-page > .hero,
+  .hc-leagues-directory-page > .hero, .hc-player-directory-page .hc-directory-hero,
+  .hc-global-search-page .search-hero { padding: 24px 18px; border-radius: 4px; }
+  .hc-team-directory-page .hc-team-directory-list,
+  .hc-coaches-directory-page .hc-team-directory-list,
+  .hc-leagues-directory-page .hc-team-directory-list { gap: 10px; }
+  .hc-dashboard-shell .dashboard-command-grid { gap: 10px; }
+}
