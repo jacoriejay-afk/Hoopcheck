@@ -4274,3 +4274,199 @@ main:has(.hc-review-form) .hc-review-form > .btn {
     height: 58px !important;
   }
 }
+
+
+/* Final responsive pass for dashboard, settings, alerts, and authentication screens. */
+.hc-dashboard-shell .hc-command-tile,
+.hc-dashboard-shell .dashboard-command-tile {
+  text-decoration: none;
+  transition: transform .16s ease, border-color .16s ease, background-color .16s ease;
+}
+.hc-dashboard-shell .hc-command-tile:hover,
+.hc-dashboard-shell .dashboard-command-tile:hover {
+  transform: translateY(-2px);
+  border-color: var(--hc-orange);
+  background: #fff;
+}
+.hc-dashboard-shell .dashboard-card {
+  min-width: 0;
+  border-radius: 3px;
+  overflow-wrap: anywhere;
+}
+.hc-dashboard-shell :where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid var(--hc-orange);
+  outline-offset: 3px;
+}
+.hc-settings-page .settings-shell {
+  width: min(100%, 1120px);
+  margin-inline: auto;
+}
+.hc-settings-page .settings-shell > h1 {
+  font-weight: 950;
+  letter-spacing: -.025em;
+  line-height: .98;
+  text-transform: uppercase;
+}
+.hc-settings-page .settings-card {
+  min-width: 0;
+  border-radius: 3px;
+  border-top: 3px solid var(--hc-orange);
+}
+.hc-settings-page .settings-card :where(select, input, textarea) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border-radius: 2px;
+}
+.hc-settings-page .theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+.hc-settings-page .theme-option {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.hc-notifications-page .hero-card {
+  border-radius: 3px;
+  border-bottom: 3px solid var(--hc-orange);
+}
+.hc-notifications-page .hero-card h1 {
+  font-weight: 950;
+  letter-spacing: -.025em;
+  text-transform: uppercase;
+}
+.hc-notifications-page .notification-item {
+  min-width: 0;
+  border-radius: 3px;
+  overflow-wrap: anywhere;
+}
+.hc-notifications-page :where(button, a):focus-visible,
+.hc-auth-page :where(button, a, input, select, textarea):focus-visible,
+.auth-page-shell :where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid var(--hc-orange, #ff6a00);
+  outline-offset: 3px;
+}
+.hc-auth-page .hc-auth-hero {
+  overflow: hidden;
+  border-bottom: 4px solid var(--hc-orange);
+}
+.hc-auth-page .hc-auth-hero h1 {
+  font-weight: 950;
+  line-height: .95;
+  letter-spacing: -.025em;
+  text-transform: uppercase;
+}
+.hc-auth-page .hc-auth-card {
+  border-radius: 3px;
+  border-top: 3px solid var(--hc-orange);
+}
+.hc-auth-page .hc-auth-card :where(input, select, textarea) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  border-radius: 2px;
+}
+.auth-page-shell .signup-page .auth-hero h1 {
+  font-weight: 950;
+  line-height: .94;
+  letter-spacing: -.025em;
+  text-transform: uppercase;
+}
+.auth-page-shell .signup-card {
+  min-width: 0;
+  border-radius: 3px;
+  border-top: 4px solid var(--hc-orange);
+}
+.auth-page-shell .account-type-choice {
+  min-width: 0;
+  border-radius: 3px;
+  transition: border-color .16s ease, background-color .16s ease, transform .16s ease;
+}
+.auth-page-shell .account-type-choice:hover {
+  border-color: var(--hc-orange);
+}
+.auth-page-shell .signup-form :where(input, select, textarea) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border-radius: 2px;
+}
+@media (max-width: 760px) {
+  .hc-dashboard-shell > .page-container {
+    width: calc(100% - 24px);
+  }
+  .hc-dashboard-shell .hc-player-hero {
+    padding: 22px 15px;
+  }
+  .hc-dashboard-shell .hc-player-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .hc-dashboard-shell .hc-player-stats > div {
+    padding: 12px 10px;
+  }
+  .hc-dashboard-shell .hc-command-center {
+    padding: 19px 13px;
+  }
+  .hc-dashboard-shell .hc-command-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .hc-dashboard-shell .hc-command-tile,
+  .hc-dashboard-shell .dashboard-command-tile {
+    min-height: 145px;
+    padding: 13px;
+  }
+  .hc-settings-page .theme-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hc-settings-page .settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hc-notifications-page .hero-card {
+    padding: 20px 15px;
+  }
+  .hc-auth-page .hc-auth-hero {
+    padding: 30px 18px;
+  }
+  .hc-auth-page .hc-auth-form-section {
+    width: auto;
+    max-width: none !important;
+    padding: 18px 14px 90px !important;
+  }
+  .auth-page-shell .signup-page {
+    width: auto;
+    max-width: none;
+    padding-inline: 12px;
+  }
+  .auth-page-shell .signup-two-col {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 390px) {
+  .hc-dashboard-shell > .page-container {
+    width: calc(100% - 18px);
+  }
+  .hc-dashboard-shell .hc-command-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hc-dashboard-shell .hc-command-tile,
+  .hc-dashboard-shell .dashboard-command-tile {
+    min-height: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-dashboard-shell .hc-command-tile,
+  .hc-dashboard-shell .dashboard-command-tile,
+  .auth-page-shell .account-type-choice {
+    transition: none;
+  }
+  .hc-dashboard-shell .hc-command-tile:hover,
+  .hc-dashboard-shell .dashboard-command-tile:hover {
+    transform: none;
+  }
+}
