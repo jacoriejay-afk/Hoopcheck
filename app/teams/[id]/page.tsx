@@ -550,6 +550,15 @@ export default function TeamDetailPage() {
 
   return (
     <main className="hc-entity-profile-page hc-team-entity-profile">
+      <nav className="hc-directory-switcher hc-profile-directory-switcher" aria-label="Browse HoopCheck directories">
+        <span className="hc-directory-switcher-label">EXPLORE HOOPCHECK</span>
+        <Link href="/teams">Men’s Teams</Link>
+        <Link href="/womens">Women’s Teams</Link>
+        <Link href="/coaches">Coaches</Link>
+        <Link href="/leagues">Leagues</Link>
+        <Link href="/players">Players</Link>
+        <Link href="/search">Global Search</Link>
+      </nav>
 <section className="hero">
         <div className="eyebrow">
           Team Research
