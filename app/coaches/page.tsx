@@ -108,22 +108,17 @@ export default function CoachesPage() {
         </div>
       </section>
 
+      <div className="hc-coach-directory-summary" aria-live="polite">
+        {loading ? "Searching coaching profiles…" : `${coaches.length} coach${coaches.length === 1 ? "" : "es"} listed`}
+      </div>
+
       <section className="grid hc-team-directory-list">
         {loading ? (<div className="card"><HoopLoading label="Scanning coaching profiles..." /></div>) : coaches.length === 0 ? (
-          <div className="card">
-            <div className="eyebrow">
-              Coming Soon
-            </div>
-
-            <h2>
-              No coaches yet
-            </h2>
-
-            <p>
-              Coaches will appear here as
-              HoopCheck&apos;s global basketball
-              database grows.
-            </p>
+          <div className="card hc-coach-empty">
+            <div className="eyebrow">Coming Soon</div>
+            <h2>No coaches yet</h2>
+            <p>Coach profiles will appear here as HoopCheck’s global basketball database grows.</p>
+            <Link href="/search" className="btn dark">Search all directories</Link>
           </div>
         ) : (
           coaches.map((coach) => (
