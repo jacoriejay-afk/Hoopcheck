@@ -217,42 +217,88 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="dashboard-command-center hc-command-center" aria-labelledby="dashboard-command-heading">
-          <div className="dashboard-command-copy">
-            <p className="eyebrow">THE HOOPCHECK PLAYBOOK</p>
-            <h2 id="dashboard-command-heading">Make your next move with confidence.</h2>
-            <p className="muted">Research the people and organizations behind your next basketball opportunity.</p>
-          </div>
-          <div className="dashboard-command-grid hc-command-grid">
-            <Link href="/teams" className="dashboard-command-tile hc-command-tile dashboard-command-teams">
-              <span className="dashboard-command-number">01 / DIRECTORY</span>
-              <span className="dashboard-command-icon" aria-hidden="true">🏀</span>
-              <strong>Professional Teams</strong>
-              <span>Check the organization before you sign.</span>
-              <span className="dashboard-command-arrow" aria-hidden="true">↗</span>
-            </Link>
-            <Link href="/coaches" className="dashboard-command-tile hc-command-tile">
-              <span className="dashboard-command-number">02 / PEOPLE</span>
-              <span className="dashboard-command-icon" aria-hidden="true">♟</span>
-              <strong>Coaches</strong>
-              <span>Learn about coaching and communication.</span>
-              <span className="dashboard-command-arrow" aria-hidden="true">↗</span>
-            </Link>
-            <Link href="/leagues" className="dashboard-command-tile">
-              <span className="dashboard-command-number">03 / COMPETITION</span>
-              <span className="dashboard-command-icon" aria-hidden="true">◉</span>
-              <strong>Leagues</strong>
-              <span>Explore basketball markets worldwide.</span>
-              <span className="dashboard-command-arrow" aria-hidden="true">↗</span>
-            </Link>
-            <Link href="/search" className="dashboard-command-tile">
-              <span className="dashboard-command-number">04 / FIND</span>
-              <span className="dashboard-command-icon" aria-hidden="true">⌕</span>
-              <strong>Search HoopCheck</strong>
-              <span>Find a team, coach, or league by name.</span>
-              <span className="dashboard-command-arrow" aria-hidden="true">↗</span>
-            </Link>
-          </div>
+        <section className="hc-mobile-dashboard" aria-label="HoopCheck discovery">
+          <form className="hc-mobile-search" action="/search" method="get" role="search">
+            <label className="hc-mobile-search-field">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.2 4.2"/></svg>
+              <span className="hc-sr-only">Search teams, coaches, and leagues</span>
+              <input type="search" name="q" placeholder="Search teams, coaches, leagues..." />
+            </label>
+            <button type="submit">Search</button>
+          </form>
+
+          <section className="hc-mobile-section" aria-labelledby="hc-quick-access-heading">
+            <div className="hc-mobile-section-heading">
+              <div>
+                <p className="hc-mobile-eyebrow">YOUR SHORTCUTS</p>
+                <h2 id="hc-quick-access-heading">Quick Access</h2>
+              </div>
+              <span className="hc-mobile-section-count" aria-hidden="true">04</span>
+            </div>
+            <div className="hc-mobile-quick-grid">
+              <Link href="/teams" className="hc-mobile-quick-card">
+                <span className="hc-mobile-icon hc-icon-orange" aria-hidden="true">🏀</span>
+                <span className="hc-mobile-card-copy"><strong>Men’s Teams</strong><small>Explore team reviews</small></span>
+                <span className="hc-mobile-chevron" aria-hidden="true">›</span>
+              </Link>
+              <Link href="/womens-teams" className="hc-mobile-quick-card">
+                <span className="hc-mobile-icon hc-icon-pink" aria-hidden="true">♀</span>
+                <span className="hc-mobile-card-copy"><strong>Women’s Teams</strong><small>Find your next team</small></span>
+                <span className="hc-mobile-chevron" aria-hidden="true">›</span>
+              </Link>
+              <Link href="/coaches" className="hc-mobile-quick-card">
+                <span className="hc-mobile-icon hc-icon-blue" aria-hidden="true">♟</span>
+                <span className="hc-mobile-card-copy"><strong>Coaches</strong><small>Check reputations</small></span>
+                <span className="hc-mobile-chevron" aria-hidden="true">›</span>
+              </Link>
+              <Link href="/reviews" className="hc-mobile-quick-card">
+                <span className="hc-mobile-icon hc-icon-green" aria-hidden="true">✎</span>
+                <span className="hc-mobile-card-copy"><strong>Player Reviews</strong><small>Real player experiences</small></span>
+                <span className="hc-mobile-chevron" aria-hidden="true">›</span>
+              </Link>
+            </div>
+          </section>
+
+          <section className="hc-mobile-section hc-mobile-browse" aria-labelledby="hc-browse-categories-heading">
+            <div className="hc-mobile-section-heading">
+              <div>
+                <p className="hc-mobile-eyebrow">EXPLORE HOOPCHECK</p>
+                <h2 id="hc-browse-categories-heading">Browse Categories</h2>
+              </div>
+            </div>
+            <div className="hc-mobile-category-list">
+              <Link href="/teams" className="hc-mobile-category-row">
+                <span className="hc-mobile-category-icon hc-icon-orange" aria-hidden="true">🏀</span>
+                <span className="hc-mobile-card-copy"><strong>Professional Teams</strong><small>Research clubs before you sign</small></span>
+                <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
+              </Link>
+              <Link href="/womens-teams" className="hc-mobile-category-row">
+                <span className="hc-mobile-category-icon hc-icon-pink" aria-hidden="true">♀</span>
+                <span className="hc-mobile-card-copy"><strong>Women’s Basketball</strong><small>Discover women’s teams worldwide</small></span>
+                <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
+              </Link>
+              <Link href="/coaches" className="hc-mobile-category-row">
+                <span className="hc-mobile-category-icon hc-icon-blue" aria-hidden="true">♟</span>
+                <span className="hc-mobile-card-copy"><strong>Coaches</strong><small>Learn from player feedback</small></span>
+                <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
+              </Link>
+              <Link href="/leagues" className="hc-mobile-category-row">
+                <span className="hc-mobile-category-icon hc-icon-green" aria-hidden="true">◎</span>
+                <span className="hc-mobile-card-copy"><strong>Leagues &amp; Competitions</strong><small>Explore leagues by country</small></span>
+                <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
+              </Link>
+              <Link href="/players" className="hc-mobile-category-row">
+                <span className="hc-mobile-category-icon hc-icon-purple" aria-hidden="true">♙</span>
+                <span className="hc-mobile-card-copy"><strong>Find Players</strong><small>Connect with basketball players</small></span>
+                <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
+              </Link>
+              <Link href="/reviews" className="hc-mobile-category-row">
+                <span className="hc-mobile-category-icon hc-icon-yellow" aria-hidden="true">✎</span>
+                <span className="hc-mobile-card-copy"><strong>Reviews &amp; Experiences</strong><small>Make informed career decisions</small></span>
+                <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
+              </Link>
+            </div>
+          </section>
         </section>
 
         {profile?.account_type === "fan" && <section className="grid fan-dashboard-grid" style={{ marginTop: 18 }}>
