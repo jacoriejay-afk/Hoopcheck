@@ -5084,3 +5084,37 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 @media (prefers-reduced-motion: reduce) {
   .hc-notifications-page .notification-item { transition: none; }
 }
+
+
+/* Final cross-app baseline for pages not using a dedicated page class yet. */
+.page-shell > .page-container { min-width: 0; }
+.page-shell :where(.hero-card,.compact-hero) {
+  border-radius: 3px;
+  overflow-wrap: anywhere;
+}
+.page-shell :where(.dashboard-card,.card) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.page-shell :where(input,select,textarea) {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+.page-shell :where(button,a) { touch-action: manipulation; }
+.page-shell :where(button,a,input,select,textarea):focus-visible {
+  outline: 3px solid rgba(255,106,0,.82);
+  outline-offset: 2px;
+}
+.page-shell .hero-card .eyebrow,
+.page-shell .compact-hero .eyebrow { color: #ff8a38; font-weight: 950; letter-spacing: .15em; }
+.page-shell .dashboard-card :where(h1,h2,h3) { letter-spacing: -.025em; overflow-wrap: anywhere; }
+.page-shell .dashboard-card .btn { min-height: 42px; border-radius: 2px; font-weight: 850; }
+@media (max-width: 700px) {
+  .page-shell > .page-container { width: calc(100% - 22px); }
+  .page-shell :where(.hero-card,.compact-hero) { padding: 22px 15px; }
+  .page-shell .actions { flex-wrap: wrap; }
+  .page-shell .actions > * { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-shell :where(a,button) { scroll-behavior: auto; }
+}
