@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
 export type CategoryTileKind = "teams" | "womens" | "coaches" | "leagues" | "players" | "reviews" | "alerts";
@@ -43,6 +44,6 @@ export default function CategoryTile({ label, category, href, description, class
     <span className="hc-category-tile__arrow" aria-hidden="true">↗</span>
   </>;
   return href
-    ? <a className={`hc-category-tile ${className}`.trim()} style={style} href={href}>{content}</a>
+    ? <Link className={`hc-category-tile ${className}`.trim()} style={style} href={href}>{content}</Link>
     : <div className={`hc-category-tile ${className}`.trim()} style={style}>{content}</div>;
 }
