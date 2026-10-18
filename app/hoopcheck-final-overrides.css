@@ -2580,3 +2580,226 @@ main :where(.dashboard-command-icon, .feature-icon, .category-icon, .stat-icon, 
     max-height: 36px;
   }
 }
+
+
+/* Screenshot-driven homepage repair: restore contrast, hero geometry and mobile flow. */
+.hc-redesign-home {
+  min-height: 100vh;
+  overflow-x: clip;
+  background: #0d0d0d !important;
+  color: #f8f9fa !important;
+}
+.hc-redesign-home :where(h1,h2,h3,h4,p,span,small,strong,label) {
+  text-shadow: none;
+}
+.hc-redesign-home .hc-redesign-intro,
+.hc-redesign-home .hc-redesign-section-heading > p,
+.hc-redesign-home .hc-redesign-category-copy p,
+.hc-redesign-home .hc-redesign-leaderboard-intro,
+.hc-redesign-home .hc-redesign-team-main small,
+.hc-redesign-home .hc-redesign-review-description,
+.hc-redesign-home .hc-redesign-data-note {
+  color: #c6cbd2 !important;
+}
+.hc-redesign-home .hc-redesign-hero {
+  min-height: 0;
+  padding-block: clamp(44px, 7vw, 92px);
+  background: radial-gradient(ellipse at 78% 30%, rgba(255,85,0,.14), transparent 38%), #0d0d0d !important;
+}
+.hc-redesign-home .hc-redesign-hero-grid {
+  align-items: center;
+  gap: clamp(28px, 5vw, 72px);
+}
+.hc-redesign-home .hc-redesign-hero-copy {
+  min-width: 0;
+}
+.hc-redesign-home .hc-redesign-hero-copy h1 {
+  max-width: 760px;
+  color: #f8f9fa !important;
+  font-size: clamp(2.65rem, 7.2vw, 6.5rem);
+  line-height: .92;
+  overflow-wrap: normal;
+}
+.hc-redesign-home .hc-redesign-hero-copy p:not(.hc-redesign-eyebrow) {
+  max-width: 580px;
+  color: #c6cbd2 !important;
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  line-height: 1.7;
+}
+.hc-redesign-home .hc-redesign-eyebrow {
+  color: #ff7a36 !important;
+}
+.hc-redesign-home .hc-redesign-visual {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: clamp(260px, 34vw, 440px);
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #292929;
+  border-radius: 16px;
+  background: radial-gradient(circle at center, rgba(255,85,0,.12), transparent 58%), linear-gradient(145deg,#171717,#0d0d0d);
+}
+.hc-redesign-home .hc-redesign-visual > * {
+  max-width: 100%;
+}
+.hc-redesign-home .hc-redesign-visual svg {
+  width: min(100%, 330px);
+  height: auto;
+  max-height: 350px;
+}
+.hc-redesign-home .hc-redesign-directory,
+.hc-redesign-home .hc-redesign-leaderboard {
+  padding-block: clamp(38px, 5vw, 68px);
+  background: #0d0d0d !important;
+}
+.hc-redesign-home .hc-redesign-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 26px;
+}
+.hc-redesign-home .hc-redesign-section-heading h2,
+.hc-redesign-home .hc-redesign-leaderboard-heading h2 {
+  color: #f8f9fa !important;
+  line-height: 1;
+}
+.hc-redesign-home .hc-redesign-category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  border: 0;
+}
+.hc-redesign-home .hc-redesign-category {
+  display: flex;
+  min-width: 0;
+  min-height: 200px;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px;
+  border: 1px solid #303030;
+  border-radius: 12px;
+  background: #171717 !important;
+  color: #f8f9fa !important;
+  text-decoration: none;
+}
+.hc-redesign-home .hc-redesign-category:hover {
+  border-color: #ff5500;
+  background: #1d1d1d !important;
+}
+.hc-redesign-home .hc-redesign-category-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #ff6a1a !important;
+}
+.hc-redesign-home .hc-redesign-category-copy {
+  gap: 8px;
+  margin: 18px 0;
+}
+.hc-redesign-home .hc-redesign-category-copy h3 {
+  color: #f8f9fa !important;
+  font-size: clamp(1.2rem, 2vw, 1.7rem);
+}
+.hc-redesign-home .hc-redesign-category-copy p {
+  color: #c6cbd2 !important;
+  font-size: .94rem;
+  line-height: 1.55;
+}
+.hc-redesign-home .hc-redesign-category-link {
+  color: #ff6a1a !important;
+}
+.hc-redesign-home .hc-redesign-directory-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 22px;
+  color: #d0d5dd;
+}
+.hc-redesign-home .hc-redesign-directory-footer a {
+  color: #ff6a1a !important;
+}
+.hc-redesign-home .hc-redesign-region-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.hc-redesign-home .hc-redesign-region-tabs button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #363636;
+  border-radius: 10px;
+  background: #191919;
+  color: #e5e7eb;
+}
+.hc-redesign-home .hc-redesign-region-tabs button[aria-pressed="true"],
+.hc-redesign-home .hc-redesign-region-tabs button.active {
+  border-color: #ff5500;
+  background: #ff5500;
+  color: #0d0d0d;
+}
+.hc-redesign-home .hc-redesign-team-list {
+  border: 1px solid #303030;
+  border-radius: 12px;
+  background: #171717;
+}
+.hc-redesign-home .hc-redesign-team-row {
+  color: #f8f9fa;
+}
+.hc-redesign-home .hc-redesign-team-row :where(h3,strong,span) {
+  color: inherit;
+}
+.hc-redesign-home .hc-redesign-review-trigger {
+  background: #ff5500;
+  color: #0d0d0d;
+}
+@media (max-width: 760px) {
+  .hc-redesign-home .hc-redesign-hero {
+    padding-block: 32px 40px;
+  }
+  .hc-redesign-home .hc-redesign-hero-grid {
+    grid-template-columns: minmax(0,1fr);
+    gap: 26px;
+  }
+  .hc-redesign-home .hc-redesign-hero-copy h1 {
+    font-size: clamp(2.7rem, 12vw, 4.5rem);
+  }
+  .hc-redesign-home .hc-redesign-visual {
+    min-height: 220px;
+    max-height: 280px;
+  }
+  .hc-redesign-home .hc-redesign-visual svg {
+    width: min(70%, 220px);
+    max-height: 220px;
+  }
+  .hc-redesign-home .hc-redesign-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .hc-redesign-home .hc-redesign-category-grid {
+    grid-template-columns: minmax(0,1fr);
+    gap: 10px;
+  }
+  .hc-redesign-home .hc-redesign-category {
+    min-height: 0;
+    padding: 17px;
+  }
+  .hc-redesign-home .hc-redesign-category-copy {
+    margin: 14px 0;
+  }
+  .hc-redesign-home .hc-redesign-directory-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .hc-redesign-home .hc-redesign-leaderboard {
+    padding-block: 36px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-redesign-home * { scroll-behavior: auto !important; }
+}
