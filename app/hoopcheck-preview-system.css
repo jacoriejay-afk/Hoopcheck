@@ -1601,3 +1601,186 @@ main:not(.hc-template-home) :where(.dashboard-card,.player-dashboard-card,.fan-f
     grid-template-columns: minmax(0,1fr);
   }
 }
+
+
+/* Final shared page system: consistent hierarchy, restrained icon sizing,
+   readable content width, and predictable mobile spacing on every route. */
+:root {
+  --hc-orange: #ff5500;
+  --hc-orange-hover: #e64a00;
+  --hc-ink: #171717;
+  --hc-muted: #626262;
+  --hc-border: #e7e7e7;
+  --hc-surface: #ffffff;
+  --hc-canvas: #ffffff;
+}
+body {
+  background: #fff !important;
+  color: var(--hc-ink);
+}
+.site-header-global {
+  min-height: 68px;
+}
+.site-header-global .hc-brand-mark {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+}
+.site-header-global .hc-wordmark {
+  font-size: clamp(1rem, 1.4vw, 1.22rem);
+  letter-spacing: -.045em;
+}
+.site-header-global .hc-header-icon,
+.site-header-global .hc-header-icon svg {
+  width: 40px;
+  height: 40px;
+}
+main:not(.hc-template-home) {
+  min-height: 55vh;
+  padding-bottom: clamp(32px, 5vw, 64px);
+}
+main:not(.hc-template-home) > .page-container,
+main:not(.hc-template-home) > .container,
+main:not(.hc-template-home) > .content-container {
+  width: 100%;
+  padding-inline: clamp(16px, 3vw, 40px);
+  margin-inline: auto;
+}
+main:not(.hc-template-home) h1 {
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: .98;
+  letter-spacing: -.045em;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+main:not(.hc-template-home) h2 {
+  font-size: clamp(1.25rem, 2.2vw, 1.8rem);
+  line-height: 1.12;
+  letter-spacing: -.025em;
+  font-weight: 900;
+}
+main:not(.hc-template-home) h3 {
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+  line-height: 1.2;
+  font-weight: 850;
+}
+main:not(.hc-template-home) p {
+  line-height: 1.55;
+}
+main:not(.hc-template-home) :where(.dashboard-card,.player-dashboard-card,.fan-feature-card,
+  .profile-card,.review-card,.team-card,.coach-card,.league-card,.result-card,
+  .settings-card,.admin-section,.card,.panel) {
+  border-color: var(--hc-border);
+  border-radius: 10px;
+  box-shadow: none;
+}
+main:not(.hc-template-home) :where(.dashboard-card,.profile-card,.review-card,.team-card,
+  .coach-card,.league-card,.result-card,.settings-card,.admin-section,.card,.panel) {
+  background: #fff;
+  color: var(--hc-ink);
+}
+main:not(.hc-template-home) :where(.dashboard-card,.profile-card,.review-card,.team-card,
+  .coach-card,.league-card,.result-card,.settings-card,.admin-section) {
+  padding: clamp(16px, 2.1vw, 24px);
+}
+main:not(.hc-template-home) :where(.card-kicker,.eyebrow,.section-kicker) {
+  color: #e64a00;
+  font-size: .72rem;
+  line-height: 1.35;
+  font-weight: 900;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+main:not(.hc-template-home) :where(.grid,.directory-grid,.results-grid) {
+  align-items: stretch;
+}
+main:not(.hc-template-home) :where(.grid,.directory-grid,.results-grid) > * {
+  min-width: 0;
+}
+main:not(.hc-template-home) :where(svg:not(.hc-brand-mark), .icon, .emoji-icon) {
+  flex-shrink: 0;
+}
+main:not(.hc-template-home) :where(.card-icon,.category-icon,.feature-icon,.tile-icon) {
+  width: 42px;
+  height: 42px;
+  max-width: 42px;
+  max-height: 42px;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+main:not(.hc-template-home) :where(button,a.btn,.btn) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+main:not(.hc-template-home) :where(input,select,textarea) {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+main:not(.hc-template-home) :where(.form,.form-card,.hc-auth-card) form {
+  display: grid;
+  gap: 10px;
+}
+main:not(.hc-template-home) :where(.form,.form-card,.hc-auth-card) label {
+  display: block;
+  margin-top: 5px;
+  color: #333;
+  font-size: .88rem;
+  font-weight: 750;
+}
+main:not(.hc-template-home) :where(.form,.form-card,.hc-auth-card) button[type="submit"] {
+  width: 100%;
+  margin-top: 8px;
+}
+main:not(.hc-template-home) :where(.empty-state,.error-state,.loading-state) {
+  padding: clamp(22px, 4vw, 40px);
+  border: 1px solid var(--hc-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--hc-ink);
+}
+.site-footer {
+  background: #101010;
+  color: #fff;
+}
+.site-footer :where(p,span,a) {
+  overflow-wrap: anywhere;
+}
+@media (min-width: 1000px) {
+  main:not(.hc-template-home) > .page-container,
+  main:not(.hc-template-home) > .container,
+  main:not(.hc-template-home) > .content-container {
+    padding-inline: clamp(28px, 3vw, 48px);
+  }
+}
+@media (max-width: 760px) {
+  .site-header-global {
+    min-height: 60px;
+  }
+  .site-header-global .hc-brand-mark {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+  }
+  .site-header-global .hc-wordmark {
+    font-size: 1rem;
+  }
+  main:not(.hc-template-home) {
+    padding-bottom: 36px;
+  }
+  main:not(.hc-template-home) > .page-container,
+  main:not(.hc-template-home) > .container,
+  main:not(.hc-template-home) > .content-container {
+    padding-inline: 14px;
+  }
+  main:not(.hc-template-home) h1 {
+    font-size: clamp(1.9rem, 9vw, 3rem);
+  }
+  main:not(.hc-template-home) :where(.grid,.directory-grid,.results-grid) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  main:not(.hc-template-home) :where(.dashboard-card,.profile-card,.review-card,.team-card,
+    .coach-card,.league-card,.result-card,.settings-card,.admin-section) {
+    padding: 16px;
+  }
+}
