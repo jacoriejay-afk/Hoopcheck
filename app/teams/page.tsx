@@ -53,19 +53,44 @@ export default function TeamsPage() {
   }
 
   useEffect(() => {
-    withTimeout<any>(Promise.all([
+    let active = true;
+    void withTimeout<any>(Promise.all([
       supabase.from("leagues").select("id,name,country,level").eq("active", true).order("name").limit(300),
       supabase.from("teams").select("country").eq("active", true).not("country", "is", null).limit(2000),
-    ]), 2500, [{data:[],error:new Error("timeout")},{data:[],error:new Error("timeout")}]).then(([leagueResult, countryResult]) => {
-      setLeagueOptions(leagueResult.data || []);
-      setDirectoryCountries(Array.from(new Set(((countryResult.data || []) as Array<{country:string|null}>).map((row) => row.country).filter(Boolean) as string[])).sort());
-    });
+    ]), 2500, [{data:[],error:new Error("timeout")},{data:[],error:new Error("timeout")}])
+      .then(([leagueResult, countryResult]) => {
+        if (!active) return;
+        setLeagueOptions(leagueResult.data || []);
+        setDirectoryCountries(Array.from(new Set(((countryResult.data || []) as Array<{country:string|null}>).map((row) => row.country).filter(Boolean) as string[])).sort());
+      })
+      .catch((error) => {
+        console.error("Could not load team directory filters:", error);
+        if (active) {
+          setLeagueOptions([]);
+          setDirectoryCountries([]);
+        }
+      });
+    return () => { active = false; };
   }, []);
 
   const countries = directoryCountries;
   const divisions = Array.from(new Set(leagueOptions.map((item) => item.level).filter(Boolean) as string[])).sort();
 
   useEffect(() => {
+    let active = true;
+    const timer = window.setTimeout(() => {
+      async function loadTeams() {
+        setLoading(true);
+        try {
+          let request = supabase
+            .from("teams")
+            .select("id, name, country, league_name, league_id, city")
+            .eq("active", true)
+            .order("name");
+
+          const term = query.trim();
+          if (term) {
+            const escaped = term.replace(/[%_]/g, "\\  useEffect(() => {
     const timer = window.setTimeout(() => {
       async function loadTeams() {
         setLoading(true);
@@ -113,6 +138,54 @@ export default function TeamsPage() {
     }, 250);
 
     return () => window.clearTimeout(timer);
+  }, [query, country, continent, league, division, leagueOptions, page]);");
+            request = request.or(
+              `name.ilike.%${escaped}%,country.ilike.%${escaped}%,city.ilike.%${escaped}%,league_name.ilike.%${escaped}%`
+            );
+          }
+          if (country) request = request.eq("country", country);
+          if (league) request = request.eq("league_id", league);
+          if (division) {
+            const divisionLeagueIds = leagueOptions.filter((item) => item.level === division).map((item) => item.id);
+            request = divisionLeagueIds.length ? request.in("league_id", divisionLeagueIds) : request.eq("league_id", "00000000-0000-0000-0000-000000000000");
+          }
+          const continentCountries = continent ? CONTINENT_COUNTRIES[continent] || [] : [];
+          if (continentCountries.length) request = request.in("country", continentCountries);
+
+          const { data, error } = await withTimeout<any>(request.range(
+            page * pageSize,
+            page * pageSize + pageSize - 1
+          ), 2500, { data: [], error: new Error("timeout") });
+          if (!active) return;
+          if (error) {
+            console.error("Error loading teams:", error);
+            setTeams([]);
+            setHasMore(false);
+            setTotalCount(0);
+          } else {
+            setTeams(data || []);
+            setTotalCount((page * pageSize) + (data?.length ?? 0));
+            setHasMore((data?.length ?? 0) === pageSize);
+          }
+        } catch (error) {
+          console.error("Unexpected team directory failure:", error);
+          if (active) {
+            setTeams([]);
+            setHasMore(false);
+            setTotalCount(0);
+          }
+        } finally {
+          if (active) setLoading(false);
+        }
+      }
+
+      void loadTeams();
+    }, 250);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
   }, [query, country, continent, league, division, leagueOptions, page]);
 
 
