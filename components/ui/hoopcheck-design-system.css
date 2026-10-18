@@ -211,3 +211,19 @@ main { color: var(--hc-ink); }
   .hc-category-row__title { font-size: 14px; }
   .hc-rating-card__summary { gap: 14px; }
 }
+
+/* Homepage category section now uses individual cards, not the old boxed-in grid. */
+.hc-scratch-category-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  border: 0;
+}
+.hc-scratch-category-grid > .hc-category-row { min-height: 100px; }
+.hc-scratch-section-heading h2 { color: #fff; }
+.hc-scratch-section-heading p { color: #b6b6b6; }
+.hc-scratch-bottom { border-radius: var(--hc-radius); }
+.hc-scratch-bottom .hc-button-primary { border-radius: 10px; }
+@media (max-width: 700px) {
+  .hc-scratch-container { width: calc(100% - 32px); }
+  .hc-scratch-category-grid { grid-template-columns: minmax(0, 1fr); }
+}
