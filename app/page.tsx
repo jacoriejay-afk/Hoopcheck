@@ -31,6 +31,8 @@ export default function Home() {
   const [activeRegion, setActiveRegion] = useState<"all" | "europe" | "asia" | "americas">("all");
   const [directoryTeams, setDirectoryTeams] = useState<DirectoryTeam[]>([]);
   const [teamsLoading, setTeamsLoading] = useState(true);
+  const [isEvaluationOpen, setIsEvaluationOpen] = useState(false);
+  const [selectedReviewTeam, setSelectedReviewTeam] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -40,7 +42,7 @@ export default function Home() {
       .eq("active", true)
       .eq("basketball_type", "mens")
       .order("name", { ascending: true })
-      .limit(12)
+      .limit(300)
       .then(({ data, error }) => {
         if (!mounted) return;
         if (error) {
@@ -152,7 +154,7 @@ export default function Home() {
               <h2 id="hc-redesign-leaderboard-title">Men&apos;s <em>teams.</em></h2>
               <p className="hc-redesign-leaderboard-intro">Browse active clubs in HoopCheck&apos;s directory. Open a team profile to explore available information and player reviews.</p>
             </div>
-            <Link href="/teams" className="hc-redesign-leaderboard-all">View all teams <ArrowIcon /></Link>
+            <div className="hc-redesign-leaderboard-actions"><button type="button" className="hc-redesign-review-trigger" onClick={() => setIsEvaluationOpen(true)}>Review a team</button><Link href="/teams" className="hc-redesign-leaderboard-all">View all teams <ArrowIcon /></Link></div>
           </div>
 
           <div className="hc-redesign-region-tabs" role="group" aria-label="Filter teams by region">
@@ -173,7 +175,7 @@ export default function Home() {
             {teamsLoading ? (
               <p className="hc-redesign-team-state">Loading teams from the directory…</p>
             ) : filteredTeams.length ? (
-              filteredTeams.map((team) => (
+              filteredTeams.slice(0, 12).map((team) => (
                 <Link href={`/teams/${team.id}`} key={team.id} className="hc-redesign-team-row">
                   <span className="hc-redesign-team-mark" aria-hidden="true">{team.name.charAt(0)}</span>
                   <span className="hc-redesign-team-main">
@@ -194,6 +196,27 @@ export default function Home() {
           <p className="hc-redesign-data-note">Team listings reflect directory records and are not live game scores or a ranking.</p>
         </div>
       </section>
+
+
+      {isEvaluationOpen && (
+        <div className="hc-redesign-review-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setIsEvaluationOpen(false); }}>
+          <section className="hc-redesign-review-modal" role="dialog" aria-modal="true" aria-labelledby="hc-redesign-review-title">
+            <button type="button" className="hc-redesign-review-close" aria-label="Close review selector" onClick={() => setIsEvaluationOpen(false)}>×</button>
+            <p className="hc-redesign-eyebrow"><span /> Player experience</p>
+            <h2 id="hc-redesign-review-title">Submit a team <em>review.</em></h2>
+            <p className="hc-redesign-review-description">Choose the club you want to review. HoopCheck will take you to its review form, where account, membership, and player-eligibility requirements are checked before submission.</p>
+            <label className="hc-redesign-review-label" htmlFor="hc-redesign-review-team">Team or club</label>
+            <select id="hc-redesign-review-team" value={selectedReviewTeam} onChange={(event) => setSelectedReviewTeam(event.target.value)}>
+              <option value="">Select a team…</option>
+              {directoryTeams.map((team) => <option key={team.id} value={team.id}>{team.name}{team.country ? ` — ${team.country}` : ""}</option>)}
+            </select>
+            <div className="hc-redesign-review-actions">
+              <button type="button" className="hc-redesign-review-cancel" onClick={() => setIsEvaluationOpen(false)}>Cancel</button>
+              <Link aria-disabled={!selectedReviewTeam} className={selectedReviewTeam ? "hc-redesign-primary" : "hc-redesign-primary is-disabled"} href={selectedReviewTeam ? `/teams/${selectedReviewTeam}/review` : "#"} onClick={(event) => { if (!selectedReviewTeam) event.preventDefault(); else setIsEvaluationOpen(false); }}>Continue to review <ArrowIcon /></Link>
+            </div>
+          </section>
+        </div>
+      )}
 
       <section className="hc-redesign-cta-section">
         <div className="hc-redesign-container">
