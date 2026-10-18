@@ -46,6 +46,9 @@ export default function ReviewSubmissionModal({
   const descriptionId = useId();
   const nameRef = useRef<HTMLInputElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  const submittingRef = useRef(false);
+  onCloseRef.current = onClose;
   const [mounted, setMounted] = useState(false);
   const [entityName, setEntityName] = useState("");
   const [rating, setRating] = useState(0);
@@ -66,7 +69,7 @@ export default function ReviewSubmissionModal({
     const frame = window.requestAnimationFrame(() => nameRef.current?.focus());
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && !submitting) onClose();
+      if (event.key === "Escape" && !submittingRef.current) onCloseRef.current();
 
       if (event.key === "Tab") {
         const dialog = document.getElementById(titleId)?.closest('[role="dialog"]');
@@ -93,7 +96,7 @@ export default function ReviewSubmissionModal({
       window.removeEventListener("keydown", onKeyDown);
       previousFocusRef.current?.focus();
     };
-  }, [isOpen, onClose, submitting, titleId]);
+  }, [isOpen, titleId]);
 
   if (!mounted || !isOpen) return null;
 
@@ -119,6 +122,7 @@ export default function ReviewSubmissionModal({
     }
 
     setSubmitting(true);
+    submittingRef.current = true;
     try {
       await onSubmit({
         entityName: cleanName,
@@ -135,6 +139,7 @@ export default function ReviewSubmissionModal({
     } catch {
       setError("Evaluation could not be submitted. Please try again.");
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }
