@@ -900,3 +900,218 @@ input, select, textarea, button { max-width: 100%; }
 @media (prefers-reduced-motion: reduce) {
   .site-header-global.hc-template-header * { transition-duration: .01ms !important; }
 }
+
+
+/* =========================================================
+   MOBILE FIT + BIGGER TYPE + SOFTER SHAPES
+   Mobile-first override: readable text, no clipped content,
+   rounded silhouettes instead of hard square UI.
+   ========================================================= */
+:root {
+  --hc-mobile-gutter: 18px;
+  --hc-soft-radius: 20px;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { width: 100%; min-width: 0; }
+main { width: 100%; min-width: 0; }
+main img, main svg { max-width: 100%; }
+main p, main li { overflow-wrap: anywhere; }
+
+/* Replace harsh rectangular outlines and squared controls site-wide. */
+main :is(.card, .result-card, .quick-card, .feature-card, .directory-card,
+.team-card, .player-card, .coach-card, .league-card, .review-card,
+.dashboard-card, .form, .hero-card, .hc-mobile-category-list, .hc-directory-list,
+.hc-review-summary, .hc-review-card, .hc-directory-row, .hc-mobile-quick-card,
+.hc-mobile-category-row) {
+  border-radius: var(--hc-soft-radius) !important;
+}
+main :is(input, select, textarea, .input, button, .btn, .button,
+.primary-button, .secondary-button) {
+  border-radius: 999px !important;
+}
+main :is(.card, .result-card, .quick-card, .feature-card, .directory-card,
+.team-card, .player-card, .coach-card, .league-card, .review-card,
+.dashboard-card) {
+  overflow: hidden;
+}
+main :is(.grid, .result-grid, .feature-grid, .category-grid, .directory-grid,
+.team-grid, .player-grid, .coach-grid, .league-grid) > * { min-width: 0; }
+
+/* Larger, comfortable controls on touch devices. */
+main :is(button, .btn, .button, .primary-button, .secondary-button, a[role="button"]) {
+  min-height: 48px;
+}
+main :is(input, select, textarea) {
+  min-height: 48px;
+  font-size: 16px !important;
+}
+main :is(input, textarea)::placeholder { font-size: 15px; }
+
+/* Reviews: let names/tags wrap rather than collide or overflow. */
+.hc-reviews-page .hc-review-card-head { align-items: center; }
+.hc-reviews-page .hc-review-tag { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.hc-reviews-page .hc-review-author strong { font-size: 15px; line-height: 1.35; overflow-wrap: anywhere; }
+.hc-reviews-page .hc-review-author small { font-size: 12px; line-height: 1.45; }
+.hc-reviews-page .hc-review-body { font-size: 16px; line-height: 1.65; }
+.hc-reviews-page .hc-review-target { font-size: 13px; line-height: 1.5; }
+
+@media (max-width: 760px) {
+  :root { --hc-mobile-gutter: 18px; }
+  body:has(.site-header-global.hc-template-header) { padding-top: 66px !important; }
+  main { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+  main > * { max-width: 100%; }
+  main :is(.container, .page-container, .content-container, .page-content, .directory-container,
+  .dashboard-container, .search-container, .profile-container, .membership-container) {
+    width: calc(100% - 2 * var(--hc-mobile-gutter)) !important;
+    max-width: 100% !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+  }
+
+  /* One clear, full-width content column: no squeezed miniature cards. */
+  main :is(.grid, .result-grid, .feature-grid, .category-grid, .directory-grid,
+  .team-grid, .player-grid, .coach-grid, .league-grid, .hc-mobile-quick-grid) {
+    display: grid !important;
+    width: calc(100% - 2 * var(--hc-mobile-gutter)) !important;
+    max-width: 100% !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    margin-inline: auto !important;
+  }
+  main :is(.grid, .result-grid, .feature-grid, .category-grid, .directory-grid,
+  .team-grid, .player-grid, .coach-grid, .league-grid) > * {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  main :is(.card, .result-card, .quick-card, .feature-card, .directory-card,
+  .team-card, .player-card, .coach-card, .league-card, .review-card, .dashboard-card) {
+    padding: 20px !important;
+    border: 0 !important;
+    border-radius: 22px !important;
+    background: #171717 !important;
+    box-shadow: none !important;
+  }
+
+  main :is(h1, .page-title, .hero-title) {
+    max-width: 100%;
+    font-size: clamp(34px, 9vw, 48px) !important;
+    line-height: .98 !important;
+    overflow-wrap: anywhere;
+  }
+  main h2 { font-size: clamp(25px, 6.5vw, 32px) !important; line-height: 1.08 !important; }
+  main h3 { font-size: clamp(20px, 5.5vw, 25px) !important; line-height: 1.2 !important; }
+  main :is(p, li, .description, .muted, .text-muted) {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  main :is(label, .field-label) { font-size: 14px; }
+  main :is(small, .eyebrow, .kicker, .section-kicker) { line-height: 1.5; }
+  main :is(.hero, .page-hero, .directory-hero, .search-hero, .profile-hero, .membership-hero) {
+    width: calc(100% - 2 * var(--hc-mobile-gutter)) !important;
+    max-width: 100% !important;
+    margin-inline: auto !important;
+    padding: 30px 0 24px !important;
+  }
+
+  .hc-mobile-dashboard { width: calc(100% - 2 * var(--hc-mobile-gutter)); margin: 20px auto 0; }
+  .hc-mobile-search { gap: 8px; margin-bottom: 28px; padding: 5px; }
+  .hc-mobile-search-field { gap: 10px; padding-left: 12px; }
+  .hc-mobile-search-field input { height: 48px; font-size: 16px !important; }
+  .hc-mobile-search button { min-height: 48px; padding-inline: 20px; font-size: 14px; }
+  .hc-mobile-section { margin-bottom: 30px; }
+  .hc-mobile-section-heading { align-items: flex-end; gap: 10px; margin-bottom: 14px; }
+  .hc-mobile-section-heading h2 { font-size: clamp(24px, 6.5vw, 30px); }
+  .hc-mobile-eyebrow { font-size: 12px; }
+  .hc-mobile-quick-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .hc-mobile-quick-card {
+    min-height: 84px;
+    gap: 14px;
+    padding: 17px 18px;
+    border: 0;
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: none;
+  }
+  .hc-mobile-icon { flex-basis: 48px; width: 48px; height: 48px; border-radius: 50%; font-size: 22px; }
+  .hc-mobile-card-copy strong { font-size: 17px; line-height: 1.35; }
+  .hc-mobile-card-copy small { font-size: 14px; line-height: 1.45; }
+  .hc-mobile-chevron { font-size: 30px; }
+  .hc-mobile-category-list { border: 0; border-radius: 22px; box-shadow: none; background: transparent; overflow: visible; }
+  .hc-mobile-category-row {
+    min-height: 88px;
+    gap: 14px;
+    margin-bottom: 9px;
+    padding: 17px;
+    border: 0 !important;
+    border-radius: 22px;
+    background: #fff;
+  }
+  .hc-mobile-category-icon { flex-basis: 50px; width: 50px; height: 50px; font-size: 22px; }
+  .hc-mobile-category-row .hc-mobile-card-copy strong { font-size: 17px; }
+  .hc-mobile-category-row .hc-mobile-card-copy small { font-size: 14px; }
+  .hc-mobile-row-arrow { flex-basis: 36px; width: 36px; height: 36px; font-size: 24px; }
+
+  .hc-directory-page, .hc-reviews-page { width: calc(100% - 2 * var(--hc-mobile-gutter)); padding: 28px 0 40px; }
+  .hc-directory-intro h1, .hc-reviews-page .hc-review-page-title { font-size: clamp(34px, 9vw, 46px); }
+  .hc-directory-intro > p:last-child { font-size: 16px; line-height: 1.6; }
+  .hc-directory-search { min-height: 54px; border-radius: 999px; }
+  .hc-directory-search input { min-height: 50px; font-size: 16px; }
+  .hc-directory-filters, .hc-review-filters { gap: 8px; padding-bottom: 8px; }
+  .hc-directory-filter, .hc-review-filter { min-height: 44px; padding: 10px 16px; font-size: 14px; }
+  .hc-directory-list { overflow: visible; border: 0; border-radius: 0; background: transparent; }
+  .hc-directory-row {
+    min-height: 86px;
+    gap: 13px;
+    margin-bottom: 10px;
+    padding: 17px;
+    border: 0 !important;
+    border-radius: 22px;
+    background: #fff;
+  }
+  .hc-directory-emblem { width: 48px; height: 48px; font-size: 18px; }
+  .hc-directory-copy strong { font-size: 17px; line-height: 1.35; }
+  .hc-directory-copy small { font-size: 13px; line-height: 1.5; }
+  .hc-directory-arrow { font-size: 28px; }
+
+  .hc-reviews-page .hc-review-summary { grid-template-columns: minmax(0, 1fr); padding: 22px; gap: 18px; border: 0; border-radius: 22px; }
+  .hc-reviews-page .hc-review-score { font-size: 64px; }
+  .hc-reviews-page .hc-review-bars { gap: 12px; }
+  .hc-reviews-page .hc-review-bar-row { grid-template-columns: 22px minmax(0, 1fr) 42px; gap: 10px; font-size: 13px; }
+  .hc-reviews-page .hc-review-bar-track { height: 9px; }
+  .hc-reviews-page .hc-review-card { padding: 20px !important; border: 0; border-radius: 22px; }
+  .hc-reviews-page .hc-review-card-head { gap: 12px; }
+  .hc-reviews-page .hc-review-avatar { width: 46px; height: 46px; }
+  .hc-reviews-page .hc-review-tag { font-size: 12px; padding: 7px 11px; }
+
+  .hc-dashboard-shell { width: 100%; max-width: 100%; padding-inline: var(--hc-mobile-gutter); }
+  .hc-dashboard-shell .hc-player-hero { width: 100%; margin-inline: 0 !important; padding: 24px 20px !important; border: 0 !important; border-radius: 24px !important; }
+  .hc-dashboard-shell .hc-player-hero h1 { font-size: clamp(38px, 10vw, 54px) !important; }
+  .hc-dashboard-shell .hc-player-hero .hc-dashboard-hero-description { font-size: 16px !important; }
+  .hc-dashboard-shell .hc-dashboard-hero-copy { min-height: 0; gap: 24px; }
+  .hc-dashboard-shell .hc-player-stats { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .hc-dashboard-shell .hc-player-stats > div { padding-inline: 8px !important; }
+  .hc-dashboard-shell .hc-player-stats small { font-size: 11px !important; }
+  .hc-dashboard-shell .hc-mobile-quick-card { grid-template-columns: 48px minmax(0,1fr) 20px; gap: 12px; padding: 16px !important; border: 0 !important; border-radius: 20px !important; }
+  .hc-dashboard-shell .hc-mobile-card-copy strong { font-size: 16px; }
+  .hc-dashboard-shell .hc-mobile-card-copy small { font-size: 13px; }
+
+  .site-footer .footer-inner { width: calc(100% - 2 * var(--hc-mobile-gutter)); }
+  .site-footer .footer-links { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; }
+  .site-footer .footer-links a { overflow-wrap: anywhere; }
+}
+@media (max-width: 420px) {
+  :root { --hc-mobile-gutter: 16px; }
+  .site-header-global.hc-template-header { padding-inline: 14px; }
+  main :is(h1, .page-title, .hero-title) { font-size: clamp(32px, 9vw, 40px) !important; }
+  .hc-mobile-search-field input { font-size: 15px !important; }
+  .hc-mobile-search button { padding-inline: 16px; }
+  .hc-mobile-card-copy strong, .hc-mobile-category-row .hc-mobile-card-copy strong { font-size: 16px; }
+  .hc-directory-page, .hc-reviews-page { width: calc(100% - 32px); }
+  .hc-dashboard-shell .hc-player-stats { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .hc-dashboard-shell .hc-player-stats > div { padding-inline: 5px !important; }
+  .hc-dashboard-shell .hc-player-stats strong { font-size: 13px !important; }
+  .hc-dashboard-shell .hc-player-stats small { font-size: 10px !important; }
+  .site-footer .footer-links { grid-template-columns: minmax(0, 1fr); }
+}
