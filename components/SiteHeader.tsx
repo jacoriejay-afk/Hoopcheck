@@ -59,8 +59,8 @@ export default function SiteHeader() {
         <div className="hc-header-links">
           <Link href="/directory" className={active("/directory") ? "is-active" : ""} aria-current={active("/directory") ? "page" : undefined} onClick={closeMenu}>Directory</Link>
           <Link href="/leagues" className={active("/leagues") ? "is-active" : ""} aria-current={active("/leagues") ? "page" : undefined} onClick={closeMenu}>Leagues</Link>
-          <Link href="/reviews" className={active("/reviews") ? "is-active" : ""} aria-current={active("/reviews") ? "page" : undefined} onClick={closeMenu}>Analytics</Link>
-          <Link href="/reviews" className={active("/reviews") ? "is-active" : ""} aria-current={active("/reviews") ? "page" : undefined} onClick={closeMenu}>Ratings</Link>
+          <Link href="/reviews?view=analytics" className="" onClick={closeMenu}>Analytics</Link>
+          <Link href="/reviews" className={pathname === "/reviews" ? "is-active" : ""} aria-current={pathname === "/reviews" ? "page" : undefined} onClick={closeMenu}>Ratings</Link>
         </div>
         <div className="hc-header-actions">
           <Link href="/search" className="hc-header-icon" aria-label="Search HoopCheck" onClick={closeMenu}><SearchIcon /></Link>
