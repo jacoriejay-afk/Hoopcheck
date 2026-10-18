@@ -8,7 +8,7 @@ import { useAuthState } from "./AuthProvider";
 function HoopCheckMark() {
   return (
     <svg className="hc-brand-mark" viewBox="0 0 240 240" aria-hidden="true">
-      <path d="M120 8 218 62 218 166 120 226 22 166 22 62Z" fill="#FFFFFF" stroke="currentColor" strokeWidth="9" strokeLinejoin="miter" />
+      <path d="M120 8 218 62 218 166 120 226 22 166 22 62Z" fill="var(--hc-paper-strong)" stroke="currentColor" strokeWidth="9" strokeLinejoin="miter" />
       <circle cx="120" cy="117" r="63" fill="none" stroke="currentColor" strokeWidth="6" />
       <path d="M57 117h126M120 54c-25 26-25 100 0 126M120 54c25 26 25 100 0 126M75 72c31 18 58 61 90 90M165 72c-31 18-58 61-90 90" fill="none" stroke="currentColor" strokeWidth="5" />
       <path d="m125 140 105-78-47 76-24-6-23 27Z" fill="var(--hc-orange)" />
