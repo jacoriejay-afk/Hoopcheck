@@ -2449,3 +2449,134 @@ main.page-shell :where(a, button) > svg {
     flex-basis: 20px;
   }
 }
+
+
+/* HOOPCHECK SHARED UI SYSTEM — one page width, card language, controls, and type scale. */
+:root {
+  --hc-orange: #ff5500;
+  --hc-orange-hover: #e64a00;
+  --hc-ink: #0d0d0d;
+  --hc-charcoal: #1a1a1a;
+  --hc-paper: #f8f9fa;
+  --hc-surface: #ffffff;
+  --hc-border: #e5e7eb;
+  --hc-muted: #667085;
+  --hc-radius-card: 12px;
+  --hc-radius-control: 9px;
+  --hc-page-max: 1440px;
+}
+main:not(.hc-auth-page) {
+  color: #111827;
+}
+main.page-shell,
+main.hc-team-directory-page,
+main.hc-scratch-home,
+main.hc-redesign-home,
+main.hc-player-directory-page,
+main.hc-dashboard-shell,
+main.hc-membership-page,
+main.hc-legal-page,
+main.hc-support-page,
+main.hc-notifications-page,
+main.hc-fans-directory-page,
+main.hc-onboarding-page {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+main.page-shell > .page-container,
+main.hc-team-directory-page > .page-container,
+main.hc-player-directory-page > .page-container,
+main.hc-dashboard-shell > .page-container {
+  box-sizing: border-box;
+  width: min(calc(100% - 48px), var(--hc-page-max));
+  max-width: var(--hc-page-max);
+  margin-inline: auto;
+}
+main :where(.card, .dashboard-card, .team-card, .player-card, .category-card, .stat-card, .feature-card, .review-card, .legal-card, .membership-card, .directory-card, .notification-item, .support-card, .account-card, .quick-access-card, .hc-team-card, .hc-player-card, .hc-category-card) {
+  box-sizing: border-box;
+  min-width: 0;
+  border: 1px solid var(--hc-border);
+  border-radius: var(--hc-radius-card);
+  box-shadow: none;
+}
+main :where(.dashboard-card, .team-card, .player-card, .category-card, .stat-card, .feature-card, .review-card, .membership-card, .directory-card, .notification-item, .support-card, .account-card, .quick-access-card, .hc-team-card, .hc-player-card, .hc-category-card) {
+  background: var(--hc-surface);
+  color: #111827;
+}
+main :where(.card, .dashboard-card, .team-card, .player-card, .category-card, .stat-card, .feature-card, .review-card, .legal-card, .membership-card, .directory-card, .notification-item, .support-card, .account-card, .quick-access-card, .hc-team-card, .hc-player-card, .hc-category-card) :where(h1,h2,h3,h4) {
+  color: inherit;
+  letter-spacing: -.035em;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+main :where(.eyebrow, .section-eyebrow, .section-label) {
+  color: var(--hc-orange);
+  font-weight: 850;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+main :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 46px;
+  border-radius: var(--hc-radius-control);
+  border-color: #d0d5dd;
+  color: #111827;
+}
+main :where(button, .btn, [role="button"]) {
+  border-radius: var(--hc-radius-control);
+  font-weight: 800;
+  touch-action: manipulation;
+}
+main :where(.btn-primary, .primary-button, button[type="submit"]) {
+  border-color: var(--hc-orange);
+}
+main :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid rgba(255,85,0,.65);
+  outline-offset: 3px;
+}
+main :where(.grid, .compact-grid, .hc-directory-grid, .team-grid, .player-grid, .category-grid) > * {
+  min-width: 0;
+}
+main :where(.muted, .text-muted, .card-description, .helper-text) {
+  color: var(--hc-muted);
+}
+main :where(.dashboard-command-icon, .feature-icon, .category-icon, .stat-icon, .hc-category-icon, .team-icon, .player-icon) {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  max-width: 40px;
+  max-height: 40px;
+  border-radius: 10px;
+  line-height: 1;
+}
+main :where(.dashboard-command-icon, .feature-icon, .category-icon, .stat-icon, .hc-category-icon, .team-icon, .player-icon) svg {
+  width: 21px;
+  height: 21px;
+  max-width: 21px;
+  max-height: 21px;
+  flex: 0 0 21px;
+}
+@media (max-width: 700px) {
+  main.page-shell > .page-container,
+  main.hc-team-directory-page > .page-container,
+  main.hc-player-directory-page > .page-container,
+  main.hc-dashboard-shell > .page-container {
+    width: calc(100% - 28px);
+  }
+  main :where(.card, .dashboard-card, .team-card, .player-card, .category-card, .stat-card, .feature-card, .review-card, .legal-card, .membership-card, .directory-card, .notification-item, .support-card, .account-card, .quick-access-card, .hc-team-card, .hc-player-card, .hc-category-card) {
+    border-radius: 10px;
+  }
+  main :where(.dashboard-command-icon, .feature-icon, .category-icon, .stat-icon, .hc-category-icon, .team-icon, .player-icon) {
+    width: 36px;
+    height: 36px;
+    max-width: 36px;
+    max-height: 36px;
+  }
+}
