@@ -1950,3 +1950,124 @@ h1,h2,h3,h4,h5,h6,
 @media (prefers-reduced-motion: reduce) {
   *,*::before,*::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+
+/* Route-specific refinements: override legacy per-page theme rules consistently. */
+.hc-team-directory-page,
+.hc-coaches-directory-page,
+.hc-leagues-directory-page,
+.hc-player-directory-page,
+.hc-global-search-page,
+.hc-fans-directory-page,
+.hc-dashboard-shell {
+  background: #F8F9FA !important;
+  color: #111111;
+}
+.hc-team-directory-page > .hero:first-child,
+.hc-coaches-directory-page > .hero:first-child,
+.hc-leagues-directory-page > .hero:first-child,
+.hc-player-directory-page .hc-directory-hero,
+.hc-global-search-page .search-hero {
+  border: 1px solid #303030 !important;
+  border-radius: 12px !important;
+  border-bottom: 1px solid #303030 !important;
+  background: #0D0D0D !important;
+  box-shadow: none !important;
+}
+.hc-team-directory-page .hc-team-directory-list > .card:not(.hc-team-row),
+.hc-coaches-directory-page .hc-team-row,
+.hc-leagues-directory-page .hc-team-row,
+.hc-global-search-page .result-card,
+.hc-global-search-page .quick-card,
+.hc-player-directory-page .player-card,
+.hc-fans-directory-page .dashboard-card {
+  border: 1px solid #EDEDED !important;
+  border-radius: 12px !important;
+  border-top: 1px solid #EDEDED !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%) !important;
+  color: #111111;
+}
+.hc-team-directory-page .hc-team-directory-list > .card:hover,
+.hc-coaches-directory-page .hc-team-row:hover,
+.hc-leagues-directory-page .hc-team-row:hover,
+.hc-global-search-page .result-card:hover,
+.hc-global-search-page .quick-card:hover {
+  border-color: #FF5500 !important;
+  box-shadow: 0 2px 5px rgb(0 0 0 / 5%) !important;
+  transform: none;
+}
+.hc-team-directory-page .research-search,
+.hc-coaches-directory-page .research-search,
+.hc-player-directory-page .research-search,
+.hc-global-search-page .search-form {
+  border: 1px solid #EDEDED !important;
+  border-radius: 12px !important;
+  background: #FFFFFF !important;
+  box-shadow: none !important;
+}
+.hc-team-directory-page .team-filter-row select,
+.hc-team-directory-page .research-search input,
+.hc-coaches-directory-page :is(input,select),
+.hc-leagues-directory-page :is(input,select),
+.hc-player-directory-page :is(input,select),
+.hc-global-search-page .search-form :is(input,select) {
+  border-radius: 12px !important;
+  border-color: #DADDE1 !important;
+  background: #FFFFFF !important;
+}
+.hc-team-directory-page > .hero:nth-child(2) {
+  background: #F8F9FA !important;
+}
+.hc-team-directory-page > .hero:nth-last-of-type(1) {
+  border: 1px solid #303030 !important;
+  border-radius: 12px !important;
+  background: #0D0D0D !important;
+  box-shadow: none !important;
+}
+main.hc-auth-page { background: #F8F9FA !important; color: #111111; }
+main.hc-auth-page > .hc-auth-hero {
+  border-radius: 12px !important;
+  border-bottom: 1px solid #303030 !important;
+  background: #0D0D0D !important;
+  box-shadow: none !important;
+}
+main.hc-auth-page .hc-auth-card,
+main.hc-auth-page .hc-auth-promo > .card {
+  border-radius: 12px !important;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%) !important;
+}
+.hc-redesign-category {
+  border: 1px solid #303030 !important;
+  border-radius: 12px !important;
+  border-top: 1px solid #303030 !important;
+  background: #1A1A1A !important;
+  box-shadow: none !important;
+}
+.hc-redesign-category:hover {
+  border-color: #FF5500 !important;
+  background: #202020 !important;
+  box-shadow: none !important;
+  transform: none;
+}
+.hc-redesign-category-copy h3 { color: #F8F9FA; }
+.hc-redesign-category-copy p { color: #B8BDC5; }
+.hc-redesign-category-link { border-top-color: #303030; }
+.hc-category-card {
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+.hc-category-card:hover {
+  border-color: #FF5500 !important;
+  box-shadow: none !important;
+  transform: none;
+}
+@media (max-width: 760px) {
+  .hc-team-directory-page .team-filter-row { grid-template-columns: 1fr 1fr; }
+  .hc-team-directory-page .hc-team-directory-list > .card:not(.hc-team-row),
+  .hc-coaches-directory-page .hc-team-row,
+  .hc-leagues-directory-page .hc-team-row { padding: 17px !important; }
+}
+@media (max-width: 390px) {
+  .hc-team-directory-page .team-filter-row { grid-template-columns: 1fr; }
+}
