@@ -74,7 +74,7 @@ export default function Home() {
             <p>One place to explore the organizations and people that can shape your career. Start with a category and get the context you need.</p>
           </div>
           <div className="hc-scratch-category-grid">
-            {categories.map((category, index) => (
+            {categories.map((category) => (
               <Link href={category.href} className="hc-scratch-category" key={category.label}>
                 <span className="hc-scratch-category-icon" aria-hidden="true">{category.icon}</span>
                 <span className="hc-scratch-category-arrow" aria-hidden="true">↗</span>
