@@ -1300,3 +1300,193 @@ main:not(.hc-dashboard-shell) .page-container { width:min(100% - 32px,1280px); m
   .hc-template-home .hc-template-category-grid { grid-template-columns:minmax(0,1fr); }
   .hc-template-home .hc-template-category { min-height:130px; }
 }
+
+
+/* Main-branch consistency pass: remove dashboard canvas artwork, eliminate narrow
+   centered wrappers, and guarantee readable text/background contrast. */
+:root {
+  --hc-orange: #ff5500;
+  --hc-orange-bright: #ff5500;
+  --hc-paper: #ffffff;
+  --hc-paper-strong: #ffffff;
+  --hc-text: #171717;
+  --hc-muted: #626262;
+  --hc-line: #e7e7e7;
+}
+html, body {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  background: #fff !important;
+  color: #171717;
+}
+body { overflow-x: hidden; }
+main, .page-shell, .page-container, .page-content, .content-wrapper,
+.dashboard-page, .hc-dashboard-shell {
+  box-sizing: border-box;
+  width: 100% !important;
+  max-width: none !important;
+}
+.page-shell, .dashboard-page, .hc-dashboard-shell {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+.page-container, .hc-dashboard-shell {
+  padding-left: clamp(16px, 2.2vw, 32px) !important;
+  padding-right: clamp(16px, 2.2vw, 32px) !important;
+}
+/* Dashboard should be a clean, flat canvas—not a decorative dark background. */
+.hc-dashboard-shell,
+.dashboard-page,
+.hc-dashboard-shell.page-shell,
+.hc-dashboard-shell .page-container,
+.hc-mobile-dashboard {
+  background: #fff !important;
+  background-image: none !important;
+  color: #171717 !important;
+  box-shadow: none !important;
+}
+.hc-dashboard-shell::before,
+.hc-dashboard-shell::after,
+.dashboard-page::before,
+.dashboard-page::after,
+.hc-dashboard-hero-art,
+.hc-dashboard-hero-ball {
+  display: none !important;
+  content: none !important;
+}
+.hc-dashboard-shell .hc-player-hero,
+.hc-dashboard-shell .player-dashboard-card.hc-player-hero {
+  color: #171717 !important;
+  background: #fff !important;
+  background-image: none !important;
+  border: 1px solid #e7e7e7 !important;
+  border-top: 3px solid #ff5500 !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+.hc-dashboard-shell .hc-player-hero h1,
+.hc-dashboard-shell .hc-player-hero h2,
+.hc-dashboard-shell .hc-player-hero h3,
+.hc-dashboard-shell .hc-player-hero p,
+.hc-dashboard-shell .hc-player-hero strong,
+.hc-dashboard-shell .hc-player-hero a,
+.hc-dashboard-shell .hc-player-hero .hc-dashboard-hero-description,
+.hc-dashboard-shell .hc-player-hero .hc-dashboard-profile-line {
+  color: #171717 !important;
+}
+.hc-dashboard-shell .hc-player-stats {
+  border-top-color: #e7e7e7 !important;
+}
+.hc-dashboard-shell .hc-player-stats > div,
+.hc-dashboard-shell .hc-player-stats > div + div {
+  border-right-color: #e7e7e7 !important;
+  border-bottom-color: #e7e7e7 !important;
+}
+.hc-dashboard-shell .hc-player-stats span,
+.hc-dashboard-shell .hc-player-stats small,
+.hc-dashboard-shell .muted,
+.hc-dashboard-shell .hc-dashboard-hero-description {
+  color: #626262 !important;
+}
+.hc-dashboard-shell .hc-player-stats strong {
+  color: #171717 !important;
+}
+/* One shared surface system across dashboard, account, directory and review routes. */
+:where(.dashboard-card, .player-dashboard-card, .fan-feature-card, .settings-card,
+       .profile-card, .review-card, .team-card, .coach-card, .league-card,
+       .result-card, .admin-section, .hc-mobile-quick-card, .hc-mobile-category-row) {
+  color: #171717;
+  background-color: #fff;
+  border: 1px solid #e7e7e7;
+  border-radius: 10px;
+  box-shadow: none;
+}
+.hc-dashboard-shell .hc-command-tile,
+.hc-dashboard-shell .hc-mobile-quick-card,
+.hc-dashboard-shell .hc-mobile-category-row,
+.hc-dashboard-shell .dashboard-card,
+.hc-dashboard-shell .player-dashboard-card,
+.hc-dashboard-shell .fan-feature-card {
+  color: #171717 !important;
+  background: #fff !important;
+  background-image: none !important;
+  border: 1px solid #e7e7e7 !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+.hc-dashboard-shell .hc-command-tile strong,
+.hc-dashboard-shell .hc-command-tile h2,
+.hc-dashboard-shell .hc-command-tile h3,
+.hc-dashboard-shell .hc-command-tile p,
+.hc-dashboard-shell .hc-command-tile > span:not(.dashboard-command-number):not(.dashboard-command-icon):not(.dashboard-command-arrow),
+.hc-dashboard-shell .dashboard-card h1,
+.hc-dashboard-shell .dashboard-card h2,
+.hc-dashboard-shell .dashboard-card h3,
+.hc-dashboard-shell .dashboard-card p,
+.hc-dashboard-shell .player-dashboard-card h1,
+.hc-dashboard-shell .player-dashboard-card h2,
+.hc-dashboard-shell .player-dashboard-card h3,
+.hc-dashboard-shell .player-dashboard-card p,
+.hc-dashboard-shell .hc-mobile-card-copy,
+.hc-dashboard-shell .hc-mobile-category-row,
+.hc-dashboard-shell .hc-mobile-category-row strong {
+  color: #171717 !important;
+}
+.hc-dashboard-shell .hc-command-tile .dashboard-command-number,
+.hc-dashboard-shell .hc-command-tile .dashboard-command-icon,
+.hc-dashboard-shell .hc-command-tile .dashboard-command-arrow,
+.hc-dashboard-shell .card-kicker,
+.hc-dashboard-shell .eyebrow,
+.hc-dashboard-shell .hc-mobile-eyebrow,
+.hc-dashboard-shell .hc-mobile-icon,
+.hc-dashboard-shell .hc-mobile-row-arrow {
+  color: #e64a00 !important;
+}
+.hc-dashboard-shell .btn,
+.hc-dashboard-shell .btn.dark,
+.hc-dashboard-shell a.btn,
+.hc-dashboard-shell button {
+  background-color: #ff5500;
+  border-color: #ff5500;
+  color: #111 !important;
+}
+.hc-dashboard-shell .btn:hover,
+.hc-dashboard-shell .btn.dark:hover,
+.hc-dashboard-shell a.btn:hover,
+.hc-dashboard-shell button:hover {
+  background-color: #e64a00;
+  border-color: #e64a00;
+}
+/* Explicitly repair common dark-surface text collisions across legacy routes. */
+:where(.card, .panel, .dashboard-card, .player-dashboard-card, .settings-card,
+       .profile-card, .review-card, .team-card, .coach-card, .league-card,
+       .result-card, .admin-card, .modal-content, .form-card, .auth-card) {
+  --hc-surface-text: #171717;
+}
+:where(.card, .panel, .dashboard-card, .player-dashboard-card, .settings-card,
+       .profile-card, .review-card, .team-card, .coach-card, .league-card,
+       .result-card, .admin-card, .modal-content, .form-card, .auth-card):not(.is-dark):not([data-theme="dark"]) {
+  color: #171717;
+  background-color: #fff;
+}
+:where(.card, .panel, .dashboard-card, .player-dashboard-card, .settings-card,
+       .profile-card, .review-card, .team-card, .coach-card, .league-card,
+       .result-card, .admin-card, .modal-content, .form-card, .auth-card) :where(h1,h2,h3,h4,p,span,label,small,strong,li) {
+  color: inherit;
+}
+:where(.card, .panel, .dashboard-card, .player-dashboard-card, .settings-card,
+       .profile-card, .review-card, .team-card, .coach-card, .league-card,
+       .result-card, .admin-card, .modal-content, .form-card, .auth-card) :where(.muted,.text-muted,.description,small) {
+  color: #626262;
+}
+@media (max-width: 760px) {
+  .page-container, .hc-dashboard-shell {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+  .hc-dashboard-shell .hc-player-hero::after { display: none !important; }
+  .hc-dashboard-shell .hc-player-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
