@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Archivo_Black, Inter } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import "./hoopcheck-rebrand.css";
@@ -14,6 +15,9 @@ import BottomNav from "../components/BottomNav";
 import ProtectionLayer from "../components/ProtectionLayer";
 import AnalyticsTracker from "../components/AnalyticsTracker";
 import SiteHeader from "../components/SiteHeader";
+
+const displayFont = Archivo_Black({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
+const sansFont = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://hoopcheck-nine.vercel.app";
 
@@ -70,8 +74,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body><ProtectionLayer />
+    <html lang="en" className={`${displayFont.variable} ${sansFont.variable}`}>
+      <body className={sansFont.className}><ProtectionLayer />
         <ThemeProvider>
           <AuthProvider>
           <LanguageProvider>
