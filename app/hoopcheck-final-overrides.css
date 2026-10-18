@@ -2071,3 +2071,260 @@ main.hc-auth-page .hc-auth-promo > .card {
 @media (max-width: 390px) {
   .hc-team-directory-page .team-filter-row { grid-template-columns: 1fr; }
 }
+
+
+/* STRUCTURE REPAIR — restore the missing shared page component styles.
+   Keep iconography subordinate to headings, copy, filters, and actions. */
+:root {
+  --hc-orange: #FF5500;
+  --hc-bg: #0D0D0D;
+  --hc-panel: #1A1A1A;
+  --hc-radius: 12px;
+}
+.auth-page-shell {
+  min-height: 100vh;
+  background: #F8F9FA !important;
+  color: #111111 !important;
+}
+.auth-page-shell .signup-nav {
+  min-height: 64px;
+  border-bottom: 1px solid #303030;
+}
+.auth-page-shell .signup-page {
+  width: min(1240px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
+  align-items: start;
+  gap: clamp(16px, 2.5vw, 32px);
+  margin-inline: auto;
+  padding: clamp(18px, 3vw, 36px) clamp(12px, 3vw, 28px) 48px;
+}
+.auth-page-shell .signup-page .auth-hero {
+  position: sticky;
+  top: 20px;
+  min-width: 0;
+  padding: clamp(20px, 3vw, 34px);
+  border: 1px solid #303030;
+  border-radius: 12px;
+  border-bottom: 1px solid #303030;
+  background: #0D0D0D;
+}
+.auth-page-shell .signup-page .auth-hero h1 {
+  max-width: 560px;
+  font-size: clamp(2.25rem, 4vw, 4.1rem);
+  line-height: .94;
+  letter-spacing: -.055em;
+}
+.auth-page-shell .signup-page .feature-grid { display: grid; grid-template-columns: 1fr; gap: 9px; }
+.auth-page-shell .signup-page .feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #303030;
+  border-radius: 12px;
+  background: #1A1A1A;
+}
+.auth-page-shell .signup-page .feature strong {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border-radius: 8px;
+  background: #FF5500;
+  color: #0D0D0D;
+  font-size: 13px;
+}
+.auth-page-shell .signup-page .feature span { color: #E4E4E4; font-size: 12px; line-height: 1.5; }
+.auth-page-shell .signup-card {
+  min-width: 0;
+  padding: clamp(18px, 2.6vw, 30px);
+  border: 1px solid #EDEDED;
+  border-radius: 12px;
+  border-top: 3px solid #FF5500;
+  background: #FFFFFF;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+}
+.auth-page-shell .signup-card .intro { color: #626872; font-size: 14px; line-height: 1.65; }
+.auth-page-shell .account-type-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.auth-page-shell .account-type-choice {
+  display: grid;
+  grid-template-columns: 30px minmax(0,1fr) auto;
+  align-items: start;
+  gap: 10px;
+  min-width: 0;
+  min-height: 112px;
+  padding: 13px;
+  border: 1px solid #EDEDED;
+  border-radius: 12px;
+  background: #F8F9FA;
+  color: #111111;
+  box-shadow: none;
+  transform: none;
+}
+.auth-page-shell .account-type-choice.selected { border-color: #FF5500; background: #FFF2EB; }
+.auth-page-shell .account-type-icon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 8px;
+  background: #FFE6D9;
+  color: #FF5500;
+  font-size: 17px;
+  line-height: 1;
+}
+.auth-page-shell .account-type-choice strong { font-size: 12px; line-height: 1.3; }
+.auth-page-shell .account-type-choice small { font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.auth-page-shell .signup-form { display: grid; gap: 12px; margin-top: 20px; }
+.auth-page-shell .signup-form > .signup-two-col,
+.auth-page-shell .signup-form .signup-two-col { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.auth-page-shell .signup-form > div { min-width: 0; }
+.auth-page-shell .signup-form :is(input:not([type="checkbox"]),select,textarea) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid #DADDE1;
+  border-radius: 10px;
+  background: #FFFFFF;
+  color: #111111;
+  font: 14px var(--hc-ui-font);
+}
+.auth-page-shell .signup-form :is(input,select,textarea):focus-visible {
+  border-color: #FF5500;
+  outline: 3px solid rgb(255 85 0 / 16%);
+  outline-offset: 1px;
+}
+.auth-page-shell .signup-form .submit { min-height: 48px; border-radius: 12px; }
+.auth-page-shell .signup-gate {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 24px 14px;
+  border: 1px dashed #DADDE1;
+  border-radius: 12px;
+  background: #F8F9FA;
+  text-align: center;
+}
+.auth-page-shell .signup-gate > span { display: none; }
+.auth-page-shell .signup-gate strong { font-size: 13px; }
+.auth-page-shell .login-link { padding-top: 14px; border-top: 1px solid #EDEDED; }
+
+main.hc-auth-page {
+  min-height: 70vh;
+  padding: 24px clamp(12px, 3vw, 36px) 48px;
+  background: #F8F9FA !important;
+  color: #111111 !important;
+}
+main.hc-auth-page > .hc-auth-hero {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(26px, 4.5vw, 52px) clamp(18px, 4vw, 48px) !important;
+  border: 1px solid #303030;
+  border-radius: 12px;
+  background: #0D0D0D;
+  color: #FFFFFF;
+  box-shadow: none;
+}
+main.hc-auth-page > .hc-auth-hero h1 {
+  max-width: 900px;
+  margin: 12px 0;
+  font-size: clamp(2.6rem, 6.4vw, 5.6rem);
+  line-height: .92;
+  letter-spacing: -.055em;
+}
+main.hc-auth-page > .hc-auth-form-section {
+  width: 100%;
+  max-width: 600px !important;
+  padding: 24px 0 32px !important;
+  margin-inline: auto !important;
+}
+main.hc-auth-page .hc-auth-card {
+  width: 100%;
+  padding: clamp(20px, 3.4vw, 34px) !important;
+  border: 1px solid #EDEDED;
+  border-top: 3px solid #FF5500;
+  border-radius: 12px;
+  background: #FFFFFF;
+  color: #111111;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+}
+main.hc-auth-page .hc-auth-card :is(h2,p,.eyebrow) { color: #111111; }
+main.hc-auth-page .hc-auth-card .eyebrow { color: #FF5500; }
+main.hc-auth-page .hc-auth-card .muted { color: #626872; line-height: 1.6; }
+main.hc-auth-page .hc-auth-card form {
+  display: grid;
+  grid-template-columns: minmax(0,1fr);
+  gap: 8px;
+  margin-top: 18px;
+}
+main.hc-auth-page .hc-auth-card form label {
+  margin-top: 8px;
+  color: #292D32;
+  font-size: 12px;
+  font-weight: 800;
+}
+main.hc-auth-page .hc-auth-card form input.input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #DADDE1;
+  border-radius: 10px;
+  background: #FFFFFF;
+  color: #111111;
+  font: 15px var(--hc-ui-font);
+}
+main.hc-auth-page .hc-auth-card form input.input:focus-visible {
+  border-color: #FF5500;
+  outline: 3px solid rgb(255 85 0 / 16%);
+  outline-offset: 1px;
+}
+main.hc-auth-page .hc-auth-card form .btn {
+  min-height: 48px;
+  margin-top: 10px !important;
+  border-radius: 12px;
+}
+main.hc-auth-page .hc-auth-card > button:not(.btn) {
+  min-height: 40px;
+  color: #D94A00 !important;
+  text-align: left;
+}
+main.hc-auth-page .hc-auth-promo { max-width: 1240px !important; padding: 0 0 36px !important; }
+main.hc-auth-page .hc-auth-promo > .card {
+  padding: clamp(20px, 3.5vw, 36px);
+  border: 1px solid #EDEDED;
+  border-radius: 12px;
+  background: #FFFFFF;
+  color: #111111;
+}
+main.hc-auth-page .hc-auth-promo > .card :is(h2,p) { color: #111111; }
+main.hc-auth-page .hc-auth-promo > .card p { max-width: 600px; color: #626872; line-height: 1.7; }
+
+@media (max-width: 900px) {
+  .auth-page-shell .signup-page { grid-template-columns: minmax(0,1fr); max-width: 760px; }
+  .auth-page-shell .signup-page .auth-hero { position: relative; top: auto; }
+  .auth-page-shell .signup-page .feature-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+@media (max-width: 640px) {
+  .auth-page-shell .signup-page { padding: 12px; gap: 12px; }
+  .auth-page-shell .signup-page .auth-hero { padding: 22px 18px; }
+  .auth-page-shell .signup-page .auth-hero h1 { font-size: clamp(2.2rem, 11vw, 3.4rem); }
+  .auth-page-shell .signup-page .feature-grid { grid-template-columns: 1fr; }
+  .auth-page-shell .account-type-grid { grid-template-columns: minmax(0,1fr); }
+  .auth-page-shell .account-type-choice { min-height: 0; }
+  .auth-page-shell .signup-form > .signup-two-col,
+  .auth-page-shell .signup-form .signup-two-col { grid-template-columns: minmax(0,1fr); }
+  main.hc-auth-page { padding: 12px 12px 32px; }
+  main.hc-auth-page > .hc-auth-hero { padding: 24px 18px !important; }
+  main.hc-auth-page > .hc-auth-hero h1 { font-size: clamp(2.5rem, 12vw, 4rem); }
+  main.hc-auth-page > .hc-auth-form-section { padding: 16px 0 24px !important; }
+  main.hc-auth-page .hc-auth-card { padding: 22px 17px !important; }
+  main.hc-auth-page .hc-auth-promo { padding: 0 0 24px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-page-shell *, main.hc-auth-page * { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
