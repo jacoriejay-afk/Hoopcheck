@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 export interface ReviewCardProps {
@@ -17,7 +18,7 @@ export default function ReviewCard({ username, date, rating, text, avatarUrl, av
   return <article className={`hc-review-card ${className}`.trim()}>
     <header className="hc-review-card__header">
       <span className="hc-review-card__avatar">
-        {avatarUrl ? <img src={avatarUrl} alt="" loading="lazy" /> : <span aria-hidden="true">{initials}</span>}
+        {avatarUrl ? <Image src={avatarUrl} alt="" width={42} height={42} unoptimized /> : <span aria-hidden="true">{initials}</span>}
       </span>
       <span className="hc-review-card__identity"><strong>{username}</strong><time>{date}</time></span>
       <span className="hc-review-card__stars" aria-label={`${score} out of 5 stars`}>{[1, 2, 3, 4, 5].map((star) => <span key={star} aria-hidden="true">{star <= Math.round(score) ? "★" : "☆"}</span>)}</span>
