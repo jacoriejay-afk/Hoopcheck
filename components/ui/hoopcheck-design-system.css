@@ -641,3 +641,24 @@ main:not(.hc-scratch-home) .quick-card:hover {
   --hc-orange-bright: #ff6a1a;
   --hc-orange-deep: #e94b00;
 }
+
+
+/* Desktop header alignment: centered links, independent right-side utilities. */
+@media (min-width: 701px) {
+  .site-header-global.hc-template-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 20px;
+  }
+  .site-header-global.hc-template-header .site-header-brand { grid-column: 1; justify-self: start; }
+  .site-header-global.hc-template-header .hc-mobile-menu-toggle { display: none; }
+  .site-header-global.hc-template-header .hc-header-nav { display: contents; }
+  .site-header-global.hc-template-header .hc-header-links { grid-column: 2; justify-self: center; }
+  .site-header-global.hc-template-header .hc-header-actions { grid-column: 3; justify-self: end; }
+  .site-header-global.hc-template-header .hc-header-links a {
+    font-size: 10px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+}
+.hc-directory-emblem svg { width: 22px; height: 22px; }
