@@ -1923,3 +1923,81 @@ main:not(.hc-rebrand):not(.hc-template-home) :where(input,select,textarea)::plac
   .hc-dashboard-shell .hc-player-stats { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
   .hc-dashboard-shell .hc-app-topbar { flex-direction: row !important; align-items: center !important; flex-wrap: wrap; }
 }
+
+
+/* Signup/auth screens use a separate legacy class family; normalize it too. */
+main.auth-page-shell,
+main.auth-page-shell .signup-page,
+main.auth-page-shell .auth-hero,
+main.auth-page-shell .signup-card,
+main.auth-page-shell .auth-card,
+main.auth-page-shell .signup-form,
+main.auth-page-shell .non-player-preferences,
+main.auth-page-shell .signup-account-badge,
+main.auth-page-shell .signup-gate,
+main.auth-page-shell .feature,
+main.auth-page-shell .account-type-choice {
+  color: #171717 !important;
+}
+main.auth-page-shell { background: #fff !important; }
+main.auth-page-shell .auth-hero,
+main.auth-page-shell .signup-card,
+main.auth-page-shell .auth-card,
+main.auth-page-shell .feature,
+main.auth-page-shell .account-type-choice,
+main.auth-page-shell .signup-account-badge,
+main.auth-page-shell .signup-gate {
+  background: #fff !important;
+  background-image: none !important;
+  border-color: #e2e2e2 !important;
+  box-shadow: none !important;
+}
+main.auth-page-shell :where(h1,h2,h3,h4,strong,.logo) {
+  color: #171717 !important;
+}
+main.auth-page-shell :where(p,small,.muted,.intro,.form-hint,.login-link,.signup-gate) {
+  color: #5f5f5f !important;
+}
+main.auth-page-shell .eyebrow,
+main.auth-page-shell .feature > strong,
+main.auth-page-shell .account-type-check,
+main.auth-page-shell :where(.login-link a,.auth-page-shell a:not(.logo)) {
+  color: #d94300 !important;
+}
+main.auth-page-shell .signup-nav {
+  background: #111 !important;
+  color: #fff !important;
+}
+main.auth-page-shell .signup-nav :where(a,span) { color: #fff !important; }
+main.auth-page-shell .account-type-choice.selected {
+  border-color: #ff5500 !important;
+  background: #fff7f2 !important;
+}
+main.auth-page-shell .account-type-choice :where(strong,small,span) {
+  color: #171717 !important;
+}
+main.auth-page-shell .signup-form :where(input,select,textarea) {
+  color: #171717 !important;
+  background: #fff !important;
+  border-color: #cfcfcf !important;
+  -webkit-text-fill-color: #171717 !important;
+}
+main.auth-page-shell .signup-form :where(input,select,textarea)::placeholder {
+  color: #666 !important;
+  -webkit-text-fill-color: #666 !important;
+}
+main.auth-page-shell .signup-form .btn,
+main.auth-page-shell .signup-form button[type="submit"] {
+  color: #fff !important;
+  background: #e64a00 !important;
+  border-color: #e64a00 !important;
+}
+main.auth-page-shell .signup-form .checkbox-row,
+main.auth-page-shell .signup-form .checkbox-row span {
+  color: #333 !important;
+}
+main.auth-page-shell .signup-form .message.error {
+  color: #8c1d18 !important;
+  background: #fff1f0 !important;
+  border-color: #e5aaa6 !important;
+}
