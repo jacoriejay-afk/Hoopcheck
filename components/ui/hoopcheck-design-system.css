@@ -2323,3 +2323,116 @@ main:not(.hc-scratch-home) .form {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+
+/* Requested brand direction: electric orange surfaces, black/white type.
+   Overrides legacy contract/consulting-style neutrals across all routes. */
+:root {
+  color-scheme: light;
+  --hc-orange: #ff5500;
+  --hc-obsidian: #0d0d0d;
+  --hc-charcoal: #1a1a1a;
+  --hc-paper: #ffffff;
+  --hc-ink: #0d0d0d;
+  --hc-muted: #222222;
+  --hc-divider: rgba(13,13,13,.24);
+}
+html, body { background: #ff5500 !important; color: #0d0d0d; }
+body, body > div { --background: #ff5500; }
+header, nav, footer, main, section, article, aside, form,
+[role="main"], .page, .page-shell, .app-shell, .site-shell, .content-shell {
+  --hc-page-orange: #ff5500;
+}
+body > div, #__next { background: #ff5500; }
+main, [role="main"], .page, .page-shell, .app-shell, .site-shell {
+  background-color: #ff5500;
+  color: #0d0d0d;
+}
+h1, h2, h3, h4, h5, h6, p, label, legend, li, dt, dd, small, strong, em {
+  color: #0d0d0d;
+}
+a { color: #0d0d0d; }
+button, .btn, a.btn, [role="button"], input[type="submit"] {
+  border-color: #0d0d0d !important;
+  background: #0d0d0d !important;
+  color: #ffffff !important;
+}
+button:hover, .btn:hover, a.btn:hover, [role="button"]:hover {
+  border-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #0d0d0d !important;
+}
+.card, .dashboard-card, .compact-card, .state-card, .hc-directory-card,
+.panel, .form, .modal, .auth-card, .review-card {
+  border-color: rgba(13,13,13,.32) !important;
+  border-radius: 4px !important;
+  background: #ffffff !important;
+  color: #0d0d0d !important;
+}
+.card *, .dashboard-card *, .compact-card *, .state-card *, .hc-directory-card *,
+.panel *, .form *, .modal *, .auth-card *, .review-card * {
+  color: #0d0d0d;
+}
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+  border-color: #0d0d0d !important;
+  background: #ffffff !important;
+  color: #0d0d0d !important;
+}
+input::placeholder, textarea::placeholder { color: #4b4b4b !important; opacity: 1; }
+input:focus, select:focus, textarea:focus {
+  border-color: #0d0d0d !important;
+  box-shadow: 0 0 0 3px rgba(13,13,13,.18) !important;
+}
+header, .site-header, .site-nav, .navbar, footer, .site-footer {
+  background: #0d0d0d !important;
+  color: #ffffff !important;
+}
+header *, .site-header *, .site-nav *, .navbar *, footer *, .site-footer * {
+  color: #ffffff;
+}
+header a:hover, .site-header a:hover, .site-nav a:hover, .navbar a:hover,
+footer a:hover, .site-footer a:hover { color: #ff5500 !important; }
+main:not(.hc-scratch-home) > .hero,
+main:not(.hc-scratch-home) > .hero-card,
+main:not(.hc-scratch-home) > .search-hero,
+main:not(.hc-scratch-home) .hc-directory-hero {
+  border-color: #0d0d0d;
+  background: #ff5500;
+  color: #0d0d0d;
+}
+main:not(.hc-scratch-home) > .hero h1,
+main:not(.hc-scratch-home) > .hero-card h1,
+main:not(.hc-scratch-home) > .search-hero h1,
+main:not(.hc-scratch-home) .hc-directory-hero h1,
+main:not(.hc-scratch-home) > .hero p,
+main:not(.hc-scratch-home) > .hero-card p,
+main:not(.hc-scratch-home) > .search-hero p,
+main:not(.hc-scratch-home) .hc-directory-hero p { color: #0d0d0d; }
+.eyebrow, .card-kicker, .search-label, .hc-directory-switcher-label {
+  color: #0d0d0d !important;
+}
+.hc-directory-switcher a {
+  border-color: #0d0d0d;
+  background: #ffffff;
+  color: #0d0d0d;
+}
+.hc-directory-switcher a:hover,
+.hc-directory-switcher a[aria-current="page"] {
+  border-color: #0d0d0d;
+  background: #0d0d0d;
+  color: #ffffff;
+}
+table th { background: #0d0d0d !important; color: #ffffff !important; }
+table td { background: #ffffff; color: #0d0d0d; }
+.hc-review-backdrop { background: rgba(0,0,0,.72) !important; }
+.hc-review-modal { background: #ffffff !important; color: #0d0d0d !important; }
+.hc-review-modal h1, .hc-review-modal h2, .hc-review-modal p,
+.hc-review-modal label { color: #0d0d0d !important; }
+.hc-review-modal .hc-review-submit { background: #ff5500 !important; color: #0d0d0d !important; }
+.hc-review-modal .hc-review-cancel { background: #0d0d0d !important; color: #ffffff !important; }
+@media (prefers-color-scheme: dark) {
+  html, body, main, [role="main"], .page, .page-shell, .app-shell, .site-shell {
+    background-color: #ff5500;
+    color: #0d0d0d;
+  }
+}
