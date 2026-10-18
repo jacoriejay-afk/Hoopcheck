@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCachedSession } from "../lib/supabase";
+import { getCachedSession, supabase } from "../lib/supabase";
+
+type DirectoryTeam = { id: string; name: string; country: string | null; league_name: string | null; city: string | null };
 
 const categories = [
   { number: "01", label: "Men's Teams", description: "Research professional clubs before you sign.", href: "/teams", tag: "CLUB DIRECTORY" },
@@ -26,6 +28,40 @@ function ArrowIcon() {
 
 export default function Home() {
   const router = useRouter();
+  const [activeRegion, setActiveRegion] = useState<"all" | "europe" | "asia" | "americas">("all");
+  const [directoryTeams, setDirectoryTeams] = useState<DirectoryTeam[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    supabase
+      .from("teams")
+      .select("id,name,country,league_name,city")
+      .eq("active", true)
+      .eq("basketball_type", "mens")
+      .order("name", { ascending: true })
+      .limit(12)
+      .then(({ data, error }) => {
+        if (!mounted) return;
+        if (error) {
+          console.error("Unable to load homepage teams:", error);
+          setDirectoryTeams([]);
+        } else {
+          setDirectoryTeams((data || []) as DirectoryTeam[]);
+        }
+        setTeamsLoading(false);
+      });
+    return () => { mounted = false; };
+  }, []);
+
+  const filteredTeams = useMemo(() => {
+    const europe = ["Albania", "Andorra", "Armenia", "Austria", "Azerbaijan", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Georgia", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Israel", "Italy", "Kosovo", "Latvia", "Lithuania", "Luxembourg", "Malta", "Moldova", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "Russia", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Türkiye", "Turkey", "Ukraine", "United Kingdom"];
+    const asia = ["China", "Japan", "South Korea", "Philippines", "India", "Indonesia", "Lebanon", "Jordan", "Saudi Arabia", "United Arab Emirates", "Qatar", "Bahrain", "Iran", "Iraq", "Kazakhstan", "Uzbekistan", "Mongolia", "Kyrgyzstan", "Tajikistan", "Turkmenistan", "Afghanistan", "Bangladesh", "Bhutan", "Brunei", "Cambodia", "Laos", "Malaysia", "Maldives", "Myanmar", "Nepal", "North Korea", "Pakistan", "Singapore", "Sri Lanka", "Taiwan", "Vietnam", "Palestine"];
+    const americas = ["United States", "USA", "Canada", "Mexico", "Argentina", "Brazil", "Chile", "Colombia", "Uruguay", "Venezuela", "Peru", "Puerto Rico", "Dominican Republic", "Bahamas", "Jamaica"];
+    if (activeRegion === "all") return directoryTeams;
+    const allowed = activeRegion === "europe" ? europe : activeRegion === "asia" ? asia : americas;
+    return directoryTeams.filter((team) => allowed.includes(team.country || ""));
+  }, [activeRegion, directoryTeams]);
 
   useEffect(() => {
     getCachedSession()
@@ -104,6 +140,58 @@ export default function Home() {
             <span>THE GLOBAL BASKETBALL NETWORK</span>
             <Link href="/directory">View full directory <ArrowIcon /></Link>
           </div>
+        </div>
+      </section>
+
+
+      <section className="hc-redesign-leaderboard" aria-labelledby="hc-redesign-leaderboard-title">
+        <div className="hc-redesign-container">
+          <div className="hc-redesign-leaderboard-heading">
+            <div>
+              <p className="hc-redesign-eyebrow"><span /> Explore the club directory</p>
+              <h2 id="hc-redesign-leaderboard-title">Men&apos;s <em>teams.</em></h2>
+              <p className="hc-redesign-leaderboard-intro">Browse active clubs in HoopCheck&apos;s directory. Open a team profile to explore available information and player reviews.</p>
+            </div>
+            <Link href="/teams" className="hc-redesign-leaderboard-all">View all teams <ArrowIcon /></Link>
+          </div>
+
+          <div className="hc-redesign-region-tabs" role="group" aria-label="Filter teams by region">
+            {(["all", "europe", "asia", "americas"] as const).map((region) => (
+              <button
+                key={region}
+                type="button"
+                onClick={() => setActiveRegion(region)}
+                aria-pressed={activeRegion === region}
+                className={activeRegion === region ? "is-active" : ""}
+              >
+                {region}
+              </button>
+            ))}
+          </div>
+
+          <div className="hc-redesign-team-list" aria-live="polite">
+            {teamsLoading ? (
+              <p className="hc-redesign-team-state">Loading teams from the directory…</p>
+            ) : filteredTeams.length ? (
+              filteredTeams.map((team) => (
+                <Link href={`/teams/${team.id}`} key={team.id} className="hc-redesign-team-row">
+                  <span className="hc-redesign-team-mark" aria-hidden="true">{team.name.charAt(0)}</span>
+                  <span className="hc-redesign-team-main">
+                    <strong>{team.name}</strong>
+                    <small>{[team.city, team.country].filter(Boolean).join(", ") || "Location not listed"}</small>
+                  </span>
+                  <span className="hc-redesign-team-league">{team.league_name || "League not listed"}</span>
+                  <ArrowIcon />
+                </Link>
+              ))
+            ) : (
+              <div className="hc-redesign-team-state">
+                {activeRegion === "all" ? "No active teams are available right now." : `No teams from ${activeRegion} are in this current selection.`}
+                <p>Try another region or open the full directory to search all active teams.</p>
+              </div>
+            )}
+          </div>
+          <p className="hc-redesign-data-note">Team listings reflect directory records and are not live game scores or a ranking.</p>
         </div>
       </section>
 
