@@ -12,7 +12,7 @@ const categories = [
   { number: "04", label: "Leagues", description: "Compare leagues and understand the competition.", href: "/leagues", tag: "LEAGUE DIRECTORY" },
   { number: "05", label: "Find Players", description: "Search for players by username and connect.", href: "/players", tag: "PLAYER NETWORK" },
   { number: "06", label: "Player Reviews", description: "Read first-hand experiences and ratings.", href: "/search", tag: "PLAYER VOICES" },
-  { number: "07", label: "Ratings & Analytics", description: "Explore ratings and review insights.", href: "/reviews", tag: "RESEARCH TOOLS" },
+  { number: "07", label: "Ratings & Analytics", description: "Explore ratings and review insights.", href: "/search", tag: "RESEARCH TOOLS" },
   { number: "08", label: "Notifications", description: "Keep track of activity on your account.", href: "/notifications", tag: "YOUR ACTIVITY" },
 ];
 
