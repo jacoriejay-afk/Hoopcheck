@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import PlayerContactButton from "../../components/PlayerContactButton";
@@ -31,6 +32,7 @@ const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000, fallback?: T) =>
   Promise.race([Promise.resolve(promise), new Promise<T>((resolve) => setTimeout(() => resolve(fallback as T), ms))]);
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { t } = useLanguage();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -60,7 +62,7 @@ export default function DashboardPage() {
       );
       const user = session?.user ?? null;
       if (!user) {
-        if (mounted) setLoading(false);
+        if (mounted) router.replace("/login?next=/dashboard");
         return;
       }
 
@@ -154,7 +156,10 @@ export default function DashboardPage() {
       setLoading(false);
     }
 
-    loadDashboard();
+    loadDashboard().catch((error) => {
+      console.error("Unable to load HoopCheck dashboard:", error);
+      if (mounted) setLoading(false);
+    });
     return () => {
       mounted = false;
     };
