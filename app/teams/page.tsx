@@ -92,7 +92,8 @@ export default function TeamsPage() {
           if (term) {
             const escaped = term.replace(/[%_]/g, (match) => "\\" + match);
             request = request.or(
-              \`name.ilike.%\${escaped}%,country.ilike.%\${escaped}%,city.ilike.%\${escaped}%,league_name.ilike.%\${escaped}%\`
+              "name.ilike.%" + escaped + "%,country.ilike.%" + escaped +
+              "%,city.ilike.%" + escaped + "%,league_name.ilike.%" + escaped + "%"
             );
           }
           if (country) request = request.eq("country", country);
