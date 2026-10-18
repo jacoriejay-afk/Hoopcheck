@@ -1490,3 +1490,114 @@ main, .page-shell, .page-container, .page-content, .content-wrapper,
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* Route-wide normalization for the remaining legacy screens. */
+main:not(.hc-template-home) {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  color: #171717;
+  background: #fff;
+}
+main:not(.hc-template-home) > .page-container,
+main:not(.hc-template-home) > .page-shell,
+main:not(.hc-template-home) > .container,
+main:not(.hc-template-home) > section:not(.hero):not(.hc-auth-hero) {
+  max-width: none;
+}
+main:not(.hc-template-home) :where(h1,h2,h3,h4) {
+  color: #171717;
+}
+main:not(.hc-template-home) :where(p,li,label,small,.muted,.description,.text-muted) {
+  color: #626262;
+}
+main:not(.hc-template-home) :where(input,select,textarea) {
+  min-height: 44px;
+  color: #171717 !important;
+  background: #fff !important;
+  border: 1px solid #d9d9d9 !important;
+  border-radius: 7px !important;
+}
+main:not(.hc-template-home) textarea { min-height: 100px; }
+main:not(.hc-template-home) :where(input,select,textarea)::placeholder {
+  color: #777 !important;
+  opacity: 1;
+}
+main:not(.hc-template-home) :where(.hero:not(.hc-template-hero), .hc-auth-hero) {
+  color: #171717;
+  background: #fff !important;
+  background-image: none !important;
+  border: 0;
+  border-top: 3px solid #ff5500;
+  border-bottom: 1px solid #e7e7e7;
+  border-radius: 0;
+  box-shadow: none;
+  padding: clamp(24px, 4vw, 44px) clamp(16px, 2.2vw, 32px) !important;
+  margin: 0 0 24px;
+}
+main:not(.hc-template-home) :where(.hero:not(.hc-template-hero), .hc-auth-hero) :where(h1,h2,h3,p,.eyebrow) {
+  color: #171717;
+}
+main:not(.hc-template-home) :where(.hero:not(.hc-template-hero), .hc-auth-hero) .eyebrow {
+  color: #e64a00;
+}
+main:not(.hc-template-home) :where(.form,.hc-auth-card,.hc-auth-form-section,.form-section) {
+  color: #171717;
+}
+main:not(.hc-template-home) :where(.form,.hc-auth-card,.form-card) {
+  background: #fff;
+  border: 1px solid #e7e7e7;
+  border-radius: 10px;
+  box-shadow: none;
+  padding: clamp(18px, 3vw, 30px);
+}
+main:not(.hc-template-home) :where(.btn,button[type="submit"],.button-primary,.btn-primary) {
+  min-height: 42px;
+  padding: 11px 16px;
+  color: #111 !important;
+  background: #ff5500;
+  border: 1px solid #ff5500;
+  border-radius: 7px;
+  font-weight: 900;
+}
+main:not(.hc-template-home) :where(.btn,button[type="submit"],.button-primary,.btn-primary):hover {
+  color: #111 !important;
+  background: #e64a00;
+  border-color: #e64a00;
+}
+main:not(.hc-template-home) :where(.btn.dark,.button-dark) {
+  color: #fff !important;
+  background: #171717;
+  border-color: #171717;
+}
+main:not(.hc-template-home) :where(.btn.dark,.button-dark):hover {
+  color: #fff !important;
+  background: #333;
+  border-color: #333;
+}
+main:not(.hc-template-home) :where(.grid,.directory-grid,.results-grid) {
+  gap: 14px;
+}
+main:not(.hc-template-home) :where(.dashboard-card,.player-dashboard-card,.fan-feature-card,
+  .profile-card,.review-card,.team-card,.coach-card,.league-card,.result-card,
+  .settings-card,.form,.hc-auth-card,.admin-section) {
+  overflow-wrap: anywhere;
+}
+main:not(.hc-template-home) :where(.dashboard-card,.player-dashboard-card,.fan-feature-card,
+  .profile-card,.review-card,.team-card,.coach-card,.league-card,.result-card,
+  .settings-card,.admin-section) > :where(h1,h2,h3,h4,p,span,strong,label,small) {
+  max-width: 100%;
+}
+@media (max-width: 640px) {
+  main:not(.hc-template-home) :where(.hero:not(.hc-template-hero), .hc-auth-hero) {
+    padding: 24px 16px !important;
+    margin-bottom: 18px;
+  }
+  main:not(.hc-template-home) :where(.form,.hc-auth-card,.form-card) {
+    padding: 18px 16px;
+  }
+  main:not(.hc-template-home) :where(.grid,.directory-grid,.results-grid) {
+    grid-template-columns: minmax(0,1fr);
+  }
+}
