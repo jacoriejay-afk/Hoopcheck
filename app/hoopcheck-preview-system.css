@@ -1,7 +1,7 @@
 /* Shared preview design system — applied across every HoopCheck route. */
 :root {
-  --hc-orange: #ff6a00;
-  --hc-orange-bright: #ff7a12;
+  --hc-orange: #ff5a1f;
+  --hc-orange-bright: #e64a00;
   --hc-ink: #090909;
   --hc-ink-raised: #141414;
   --hc-paper: #f4f4f1;
@@ -20,6 +20,8 @@
   --hc-mobile-row-border: #30302e;
   --hc-hover-wash: #fffaf7;
   --hc-hover-border: #ffb69b;
+  --hc-muted-on-dark: #d1d1cb;
+  --hc-subtle-on-dark: #bcbcb6;
   --hc-display: var(--font-display), Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Black", sans-serif;
   --hc-ui: var(--font-sans), "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
 }
@@ -2524,7 +2526,7 @@ main.auth-page-shell .signup-form .message.error {
   border: 1px solid var(--hc-mobile-row-border);
   background:
     linear-gradient(115deg, rgba(9,9,9,.97), rgba(20,20,20,.82)),
-    radial-gradient(ellipse at 82% 18%, rgba(255,90,31,.35), transparent 40%),
+    radial-gradient(ellipse at 82% 18%, color-mix(in srgb, var(--hc-orange) 35%, transparent), transparent 40%),
     #090909;
   color: var(--hc-paper-strong);
 }
@@ -2535,13 +2537,13 @@ main.auth-page-shell .signup-form .message.error {
   right: -8%;
   width: 46%;
   height: 150%;
-  border: 1px solid rgba(255,90,31,.38);
+  border: 1px solid color-mix(in srgb, var(--hc-orange) 38%, transparent);
   transform: rotate(24deg);
   content: "";
   pointer-events: none;
 }
 .hc-team-entity-profile > section.hero:first-of-type h1 { color: var(--hc-paper-strong); font-size: clamp(2.7rem, 7vw, 6.5rem); line-height: .92; overflow-wrap: anywhere; }
-.hc-team-entity-profile > section.hero:first-of-type p { color: #d1d1cb; }
+.hc-team-entity-profile > section.hero:first-of-type p { color: var(--hc-muted-on-dark); }
 .hc-team-entity-profile > section.hero:first-of-type .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
 .hc-team-entity-profile > section.hero:first-of-type .entity-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .hc-team-entity-profile > section.hero:not(:first-of-type) { background: var(--hc-paper-strong); border: 1px solid var(--hc-line); color: #171715; }
@@ -2617,7 +2619,7 @@ main.auth-page-shell .signup-form .message.error {
     grid-column: 2;
     align-self: start;
     margin: 0;
-    color: #bcbcb6;
+    color: var(--hc-subtle-on-dark);
     font-size: 11px;
     text-align: left;
   }
