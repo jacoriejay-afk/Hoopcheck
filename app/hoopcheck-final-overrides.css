@@ -2328,3 +2328,124 @@ main.hc-auth-page .hc-auth-promo > .card p { max-width: 600px; color: #626872; l
 @media (prefers-reduced-motion: reduce) {
   .auth-page-shell *, main.hc-auth-page * { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+
+/* Cross-route layout guardrails: keep content structured and utility icons compact. */
+:where(main.page-shell, main.page-shell *) {
+  box-sizing: border-box;
+}
+main.page-shell {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+main.page-shell > .page-container {
+  width: 100%;
+  max-width: 1440px;
+  min-width: 0;
+  margin-inline: auto;
+}
+main.page-shell .page-container > :where(section, article, form) {
+  min-width: 0;
+}
+main.page-shell :where(h1, h2, h3) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+main.page-shell :where(p, li, small, label) {
+  overflow-wrap: anywhere;
+}
+main.page-shell :where(input, select, textarea, button) {
+  max-width: 100%;
+}
+main.page-shell :where(.grid, .compact-grid, .hc-directory-grid, .hc-team-directory-list) {
+  min-width: 0;
+}
+main.page-shell :where(.grid, .compact-grid, .hc-directory-grid) > *,
+main.page-shell .hc-team-directory-list > * {
+  min-width: 0;
+}
+main.page-shell :where(.dashboard-command-icon, .feature-icon, .category-icon, .stat-icon, .hc-category-icon) {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  max-width: 42px;
+  max-height: 42px;
+  font-size: 22px;
+  line-height: 1;
+}
+main.page-shell :where(.dashboard-command-icon, .feature-icon, .category-icon, .stat-icon, .hc-category-icon) svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  max-width: 22px;
+  max-height: 22px;
+  flex: 0 0 22px;
+}
+main.page-shell :where(a, button) > svg {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  max-width: 20px;
+  max-height: 20px;
+  flex: 0 0 20px;
+}
+.hc-template-header .site-header-brand .hc-brand-mark {
+  display: block;
+  width: clamp(34px, 3.3vw, 43px);
+  height: clamp(34px, 3.3vw, 43px);
+  max-width: 43px;
+  max-height: 43px;
+  flex: 0 0 auto;
+}
+.hc-template-header .hc-header-nav .hc-header-icon svg {
+  width: 19px;
+  height: 19px;
+  max-width: 19px;
+  max-height: 19px;
+  flex: 0 0 19px;
+}
+.hc-dashboard-shell .hc-dashboard-hero-ball {
+  pointer-events: none;
+}
+.hc-dashboard-shell .dashboard-command-icon {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  font-size: 22px;
+}
+.auth-page-shell .account-type-icon {
+  display: inline-flex;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+}
+.auth-page-shell .account-type-icon svg {
+  width: 18px;
+  height: 18px;
+  max-width: 18px;
+  max-height: 18px;
+}
+@media (max-width: 640px) {
+  main.page-shell > .page-container { padding-inline: 12px; }
+  main.page-shell :where(.dashboard-command-icon, .feature-icon, .category-icon, .stat-icon, .hc-category-icon) {
+    width: 38px;
+    height: 38px;
+    max-width: 38px;
+    max-height: 38px;
+  }
+  main.page-shell :where(.dashboard-command-icon, .feature-icon, .category-icon, .stat-icon, .hc-category-icon) svg {
+    width: 20px;
+    height: 20px;
+    max-width: 20px;
+    max-height: 20px;
+    flex-basis: 20px;
+  }
+}
