@@ -30,7 +30,20 @@ export default function SignupPage() {
   const [birthMonth,setBirthMonth]=useState(""); const [birthDay,setBirthDay]=useState(""); const [birthYear,setBirthYear]=useState(""); const [gender,setGender]=useState(""); const [agreedToTerms,setAgreedToTerms]=useState(false);
   const [loading,setLoading]=useState(false); const [error,setError]=useState("");
 
-  useEffect(()=>{if(!accountType)return; let mounted=true; supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(300).then(({data})=>{if(mounted)setTeams(data||[])}); return()=>{mounted=false}},[accountType]);
+  useEffect(()=>{
+    if(!accountType)return;
+    let mounted=true;
+    supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(300)
+      .then(({data,error})=>{
+        if(error) throw error;
+        if(mounted)setTeams(data||[]);
+      })
+      .catch(error=>{
+        console.error("Could not load teams for signup:",error);
+        if(mounted)setTeams([]);
+      });
+    return()=>{mounted=false};
+  },[accountType]);
 
   const isPlayer = accountType === "player";
   const teamCountries=Array.from(new Set(teams.map(t=>t.country).filter(Boolean) as string[])).sort();
@@ -52,6 +65,7 @@ export default function SignupPage() {
     if(!gender){setError("Gender is required.");setLoading(false);return;}
     if(!agreedToTerms){setError("Please agree to the Terms of Service and acknowledge the Privacy Policy.");setLoading(false);return;}
 
+    try {
     const favoriteTeamName=teams.find(t=>t.id===favoriteTeamId)?.name||"";
     const {data,error}=await supabase.auth.signUp({
       email:email.trim().toLowerCase(), password,
@@ -64,9 +78,13 @@ export default function SignupPage() {
         is_adult:true, birthdate, gender, agreed_to_terms:true, terms_accepted_at:new Date().toISOString(), terms_version:TERMS_VERSION,
       }}
     });
-    if(error){setError(error.message);setLoading(false);return;}
-    if(data.session){router.push(`/signup/complete?email=${encodeURIComponent(email.trim().toLowerCase())}`);return;}
+    if(error) throw error;
     router.push(`/signup/complete?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+    } catch (signupError) {
+      console.error("Signup failed:",signupError);
+      setError(signupError instanceof Error ? signupError.message : "We couldn't create your account right now. Please try again.");
+      setLoading(false);
+    }
   }
 
   return <main className="auth-page-shell">
