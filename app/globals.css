@@ -1,52 +1,87 @@
 * {
   box-sizing: border-box;
 }
+
 :root {
-  --orange: #ff6a00;
-  --orange-light: #ff8a1f;
-  --orange-dark: #d94f00;
-  --black: #050505;
-  --black-soft: #0a0a0a;
+  color-scheme: light;
+  --ink: #0A0A0A;
+  --paper: #F7F7F5;
+  --brand-orange: #FF5A1F;
+  --category-teams: #FF5A1F;
+  --category-womens: #E84393;
+  --category-coaches: #2456C8;
+  --category-leagues: #1E9E50;
+  --category-players: #6C3FD4;
+  --category-reviews: #0A0A0A;
+  --category-alerts: #F5B800;
+
+  /* Backward-compatible aliases for existing component styles. */
+  --orange: var(--brand-orange);
+  --orange-light: #FF7848;
+  --orange-dark: #E64A16;
+  --black: var(--ink);
+  --black-soft: #0A0A0A;
   --charcoal: #111111;
-  --charcoal-light: #181818;
-  --white: #ffffff;
-  --gray-100: #f4f4f4;
-  --gray-300: #c7c7c7;
-  --gray-500: #858585;
-  --gray-700: #3a3a3a;
-  --border: #252525;
+  --charcoal-light: #1A1A1A;
+  --white: #FFFFFF;
+  --gray-100: #F0F0EE;
+  --gray-300: #D1D1CE;
+  --gray-500: #737373;
+  --gray-700: #3A3A3A;
+  --border: #E5E5E2;
 }
+
 html {
-  background: var(--black);
+  background: var(--paper);
+  color: var(--ink);
   scroll-behavior: smooth;
 }
+
 html,
 body {
   margin: 0;
   padding: 0;
   min-height: 100%;
 }
+
 body {
-  background: var(--black);
-  color: var(--white);
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), Inter, Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--ink);
+  font-family: var(--font-display), "Arial Black", Impact, sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+  text-transform: uppercase;
+}
+
 button,
 input,
 textarea,
 select {
   font: inherit;
 }
+
 button {
   appearance: none;
 }
+
 a {
   text-decoration: none;
   color: inherit;
 }
+
 /* =========================
    NAVIGATION
 ========================= */
