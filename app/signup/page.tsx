@@ -33,15 +33,16 @@ export default function SignupPage() {
   useEffect(()=>{
     if(!accountType)return;
     let mounted=true;
-    supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(300)
-      .then(({data,error})=>{
+    void (async()=>{
+      try {
+        const {data,error}=await supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(300);
         if(error) throw error;
         if(mounted)setTeams(data||[]);
-      })
-      .catch(error=>{
-        console.error("Could not load teams for signup:",error);
+      } catch(loadError) {
+        console.error("Could not load teams for signup:",loadError);
         if(mounted)setTeams([]);
-      });
+      }
+    })();
     return()=>{mounted=false};
   },[accountType]);
 
@@ -121,7 +122,7 @@ export default function SignupPage() {
             <div><label htmlFor="first-name">First Name</label><input id="first-name" value={firstName} onChange={e=>setFirstName(e.target.value)} autoComplete="given-name" required /></div>
             <div><label htmlFor="last-name">Last Name</label><input id="last-name" value={lastName} onChange={e=>setLastName(e.target.value)} autoComplete="family-name" required /></div>
           </div>
-          <label htmlFor="username">Username</label><input id="username" value={username} onChange={e=>setUsername(e.target.value.replace(/\s+/g,"").toLowerCase())} autoComplete="username" inputMode="text" placeholder="yourname" required />
+          <label htmlFor="username">Username</label><input id="username" value={username} onChange={e=>setUsername(e.target.value.replace(/\\s+/g,"").toLowerCase())} autoComplete="username" inputMode="text" placeholder="yourname" required />
 
           {isPlayer ? <>
             <div className="signup-two-col">
