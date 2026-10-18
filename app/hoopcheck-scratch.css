@@ -334,3 +334,122 @@ body {
   }
   .footer-links { gap: 20px; }
 }
+
+
+/* High-specificity final pass: take precedence over legacy page fragments. */
+main .grid,
+main .result-grid,
+main .feature-grid,
+main .category-grid,
+main .directory-grid,
+main .team-grid,
+main .player-grid,
+main .coach-grid,
+main .league-grid {
+  width: min(1240px, calc(100% - 2 * clamp(16px, 4vw, 56px)));
+  max-width: 1240px;
+  margin-right: auto;
+  margin-left: auto;
+  gap: clamp(10px, 1.4vw, 16px);
+}
+main .card,
+main .result-card,
+main .quick-card,
+main .feature-card,
+main .directory-card,
+main .team-card,
+main .player-card,
+main .coach-card,
+main .league-card,
+main .review-card,
+main .dashboard-card {
+  border: 1px solid #2b2b2b !important;
+  border-radius: 3px !important;
+  background: linear-gradient(145deg, #141414, #0c0c0c) !important;
+  box-shadow: none !important;
+}
+main .card:hover,
+main .result-card:hover,
+main .quick-card:hover,
+main .feature-card:hover,
+main .directory-card:hover,
+main .team-card:hover,
+main .player-card:hover,
+main .coach-card:hover,
+main .league-card:hover,
+main .review-card:hover,
+main .dashboard-card:hover {
+  border-color: #6a381d !important;
+  box-shadow: 0 12px 28px #0006 !important;
+}
+main .btn,
+main a.btn,
+main button.btn,
+main .button,
+main .primary-button {
+  min-height: 44px;
+  border-radius: 3px !important;
+  box-shadow: none !important;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+main .btn:hover,
+main a.btn:hover,
+main button.btn:hover,
+main .button:hover,
+main .primary-button:hover {
+  box-shadow: none !important;
+}
+main input,
+main select,
+main textarea,
+main .input {
+  border-radius: 3px !important;
+}
+main .hero {
+  width: min(1240px, calc(100% - 2 * clamp(16px, 4vw, 56px)));
+  max-width: 1240px;
+  padding: clamp(38px, 6vw, 76px) 0 clamp(30px, 4vw, 54px);
+}
+main .hero h1 {
+  font-size: clamp(42px, 6.8vw, 82px);
+}
+main .form {
+  border: 1px solid #2b2b2b;
+  border-radius: 3px !important;
+  background: #101010;
+  box-shadow: none;
+}
+@media (max-width: 760px) {
+  main .grid,
+  main .result-grid,
+  main .feature-grid,
+  main .category-grid,
+  main .directory-grid,
+  main .team-grid,
+  main .player-grid,
+  main .coach-grid,
+  main .league-grid {
+    width: calc(100% - 32px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  main .hero {
+    width: calc(100% - 32px);
+    padding: 36px 0 28px;
+  }
+}
+@media (max-width: 440px) {
+  main .grid,
+  main .result-grid,
+  main .feature-grid,
+  main .category-grid,
+  main .directory-grid,
+  main .team-grid,
+  main .player-grid,
+  main .coach-grid,
+  main .league-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
