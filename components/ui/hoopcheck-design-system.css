@@ -644,7 +644,7 @@ main:not(.hc-scratch-home) .quick-card:hover {
 
 
 /* Desktop header alignment: centered links, independent right-side utilities. */
-@media (min-width: 701px) {
+@media (min-width: 761px) {
   .site-header-global.hc-template-header {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
