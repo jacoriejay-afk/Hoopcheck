@@ -239,22 +239,22 @@ export default function DashboardPage() {
             </div>
             <div className="hc-mobile-quick-grid">
               <Link href="/teams" className="hc-mobile-quick-card">
-                <span className="hc-mobile-icon hc-icon-orange" aria-hidden="true">🏀</span>
+                <span className="hc-mobile-icon hc-icon-orange" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.8"/><path d="M3.7 9h16.6M3.7 15h16.6M9 3.9c2.7 3 2.7 13.2 0 16.2M15 3.9c-2.7 3-2.7 13.2 0 16.2" stroke="currentColor" strokeWidth="1.4"/></svg></span>
                 <span className="hc-mobile-card-copy"><strong>Men’s Teams</strong><small>Explore team reviews</small></span>
                 <span className="hc-mobile-chevron" aria-hidden="true">›</span>
               </Link>
               <Link href="/womens" className="hc-mobile-quick-card">
-                <span className="hc-mobile-icon hc-icon-pink" aria-hidden="true">♀</span>
+                <span className="hc-mobile-icon hc-icon-pink" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 2.5 8 3.8v6c0 4.2-3.1 7.2-8 9.2-4.9-2-8-5-8-9.2v-6l8-3.8Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M8 9h8v6H8zM8 12h8" stroke="currentColor" strokeWidth="1.5"/></svg></span>
                 <span className="hc-mobile-card-copy"><strong>Women’s Teams</strong><small>Find your next team</small></span>
                 <span className="hc-mobile-chevron" aria-hidden="true">›</span>
               </Link>
               <Link href="/coaches" className="hc-mobile-quick-card">
-                <span className="hc-mobile-icon hc-icon-blue" aria-hidden="true">♟</span>
+                <span className="hc-mobile-icon hc-icon-blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="7.5" r="3.7" stroke="currentColor" strokeWidth="1.8"/><path d="M4 21c.5-4.5 3.2-6.8 8-6.8s7.5 2.3 8 6.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg></span>
                 <span className="hc-mobile-card-copy"><strong>Coaches</strong><small>Check reputations</small></span>
                 <span className="hc-mobile-chevron" aria-hidden="true">›</span>
               </Link>
               <Link href="/search" className="hc-mobile-quick-card">
-                <span className="hc-mobile-icon hc-icon-green" aria-hidden="true">✎</span>
+                <span className="hc-mobile-icon hc-icon-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L2.9 9.4l6.3-.9L12 2.8Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/></svg></span>
                 <span className="hc-mobile-card-copy"><strong>Player Reviews</strong><small>Real player experiences</small></span>
                 <span className="hc-mobile-chevron" aria-hidden="true">›</span>
               </Link>
@@ -271,32 +271,32 @@ export default function DashboardPage() {
             </div>
             <div className="hc-mobile-category-list">
               <Link href="/teams" className="hc-mobile-category-row">
-                <span className="hc-mobile-category-icon hc-icon-orange" aria-hidden="true">🏀</span>
+                <span className="hc-mobile-category-icon hc-icon-orange" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.8"/><path d="M3.7 9h16.6M3.7 15h16.6M9 3.9c2.7 3 2.7 13.2 0 16.2M15 3.9c-2.7 3-2.7 13.2 0 16.2" stroke="currentColor" strokeWidth="1.4"/></svg></span>
                 <span className="hc-mobile-card-copy"><strong>Professional Teams</strong><small>Research clubs before you sign</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
               </Link>
               <Link href="/womens" className="hc-mobile-category-row">
-                <span className="hc-mobile-category-icon hc-icon-pink" aria-hidden="true">♀</span>
+                <span className="hc-mobile-category-icon hc-icon-pink" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 2.5 8 3.8v6c0 4.2-3.1 7.2-8 9.2-4.9-2-8-5-8-9.2v-6l8-3.8Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M8 9h8v6H8zM8 12h8" stroke="currentColor" strokeWidth="1.5"/></svg></span>
                 <span className="hc-mobile-card-copy"><strong>Women’s Basketball</strong><small>Discover women’s teams worldwide</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
               </Link>
               <Link href="/coaches" className="hc-mobile-category-row">
-                <span className="hc-mobile-category-icon hc-icon-blue" aria-hidden="true">♟</span>
+                <span className="hc-mobile-category-icon hc-icon-blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="7.5" r="3.7" stroke="currentColor" strokeWidth="1.8"/><path d="M4 21c.5-4.5 3.2-6.8 8-6.8s7.5 2.3 8 6.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg></span>
                 <span className="hc-mobile-card-copy"><strong>Coaches</strong><small>Learn from player feedback</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
               </Link>
               <Link href="/leagues" className="hc-mobile-category-row">
-                <span className="hc-mobile-category-icon hc-icon-green" aria-hidden="true">◎</span>
+                <span className="hc-mobile-category-icon hc-icon-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8"/><path d="M3 12h18M12 3c3 3 4.5 6 4.5 9S15 18 12 21c-3-3-4.5-6-4.5-9S9 6 12 3Z" stroke="currentColor" strokeWidth="1.5"/></svg></span>
                 <span className="hc-mobile-card-copy"><strong>Leagues &amp; Competitions</strong><small>Explore leagues by country</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
               </Link>
               <Link href="/players" className="hc-mobile-category-row">
-                <span className="hc-mobile-category-icon hc-icon-purple" aria-hidden="true">♙</span>
+                <span className="hc-mobile-category-icon hc-icon-purple" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="7.5" r="3.7" stroke="currentColor" strokeWidth="1.8"/><path d="M4 21c.5-4.5 3.2-6.8 8-6.8s7.5 2.3 8 6.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><path d="m16.5 4.5 1.2 1.2 2.1-2.1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
                 <span className="hc-mobile-card-copy"><strong>Find Players</strong><small>Connect with basketball players</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
               </Link>
               <Link href="/search" className="hc-mobile-category-row">
-                <span className="hc-mobile-category-icon hc-icon-yellow" aria-hidden="true">✎</span>
+                <span className="hc-mobile-category-icon hc-icon-yellow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L2.9 9.4l6.3-.9L12 2.8Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/></svg></span>
                 <span className="hc-mobile-card-copy"><strong>Reviews &amp; Experiences</strong><small>Make informed career decisions</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
               </Link>
