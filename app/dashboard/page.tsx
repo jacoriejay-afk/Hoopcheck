@@ -369,8 +369,8 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          {profile?.account_type === "player" && <div className="dashboard-card">
-            <span className="card-kicker">PLAYER PROFILE</span>
+          {profile?.account_type === "player" && <section className="hc-profile-command" aria-label="Player profile status">
+            <span className="card-kicker">PLAYER PROFILE / IDENTITY</span>
             <h2>
               {profile?.player_verified ? "✓ Verified Player" : "Build your player profile"}
             </h2>
@@ -383,7 +383,7 @@ export default function DashboardPage() {
               <Link href="/account" className="btn dark">Open Account</Link>
               {userId && <Link href={`/players/${userId}`} className="btn dark">View Public Profile</Link>}
             </div>
-          </div>}
+          </section>}
 
           <Link href="/coaches" className="dashboard-card">
             <span className="card-kicker">COACHES</span>
