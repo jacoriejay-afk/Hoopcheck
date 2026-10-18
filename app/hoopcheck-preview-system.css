@@ -1784,3 +1784,142 @@ main:not(.hc-template-home) :where(.empty-state,.error-state,.loading-state) {
     padding: 16px;
   }
 }
+
+
+/* FINAL CONTRAST REPAIR — wins over legacy route and dashboard theme rules.
+   Intentional dark marketing sections and the footer retain their own palette. */
+:root {
+  color-scheme: light;
+  --hc-ink: #171717;
+  --hc-muted: #5f5f5f;
+  --hc-border: #e2e2e2;
+  --hc-surface: #ffffff;
+  --hc-canvas: #ffffff;
+}
+body { background: #fff !important; color: #171717 !important; }
+main:not(.hc-rebrand):not(.hc-template-home),
+main:not(.hc-rebrand):not(.hc-template-home) > section:not(.hero) {
+  background-color: #fff !important;
+  color: #171717 !important;
+}
+/* Dashboard had late legacy rules reintroducing near-black surfaces. */
+.hc-dashboard-shell {
+  background: #fff !important;
+  color: #171717 !important;
+}
+.hc-dashboard-shell .hc-app-topbar {
+  background: #111 !important;
+  color: #fff !important;
+  border-bottom-color: #333 !important;
+}
+.hc-dashboard-shell .hc-app-topbar :where(a,button,span,strong,p) {
+  color: #fff !important;
+}
+.hc-dashboard-shell .hc-player-hero,
+.hc-dashboard-shell .hc-command-tile,
+.hc-dashboard-shell .dashboard-card,
+.hc-dashboard-shell .player-dashboard-card,
+.hc-dashboard-shell .fan-feature-card,
+.hc-dashboard-shell .hc-mobile-quick-card,
+.hc-dashboard-shell .hc-mobile-category-row,
+.hc-dashboard-shell .hc-command-tile:hover {
+  background: #fff !important;
+  background-image: none !important;
+  color: #171717 !important;
+  border: 1px solid #e2e2e2 !important;
+  border-top: 3px solid #ff5500 !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+.hc-dashboard-shell :where(.hc-player-hero,.hc-command-tile,.dashboard-card,
+  .player-dashboard-card,.fan-feature-card,.hc-mobile-quick-card,.hc-mobile-category-row)
+  :where(h1,h2,h3,h4,p,span,strong,small,label,a,li,div) {
+  color: #171717 !important;
+}
+.hc-dashboard-shell :where(.eyebrow,.card-kicker,.hc-mobile-eyebrow,
+  .dashboard-command-number,.dashboard-command-icon,.dashboard-command-arrow,
+  .hc-mobile-icon,.hc-mobile-row-arrow) {
+  color: #d94300 !important;
+}
+.hc-dashboard-shell .hc-player-stats,
+.hc-dashboard-shell .hc-player-stats > div,
+.hc-dashboard-shell .hc-player-stats > div + div {
+  border-color: #e2e2e2 !important;
+}
+.hc-dashboard-shell .hc-player-stats :where(span,small,.muted) {
+  color: #5f5f5f !important;
+}
+.hc-dashboard-shell .btn,
+.hc-dashboard-shell .btn.dark,
+.hc-dashboard-shell a.btn,
+.hc-dashboard-shell button,
+main:not(.hc-rebrand):not(.hc-template-home) :where(.btn,button[type="submit"],.button-primary,.btn-primary) {
+  color: #fff !important;
+  background: #e64a00 !important;
+  border-color: #e64a00 !important;
+}
+.hc-dashboard-shell .btn.dark,
+main:not(.hc-rebrand):not(.hc-template-home) :where(.btn.dark,.button-dark) {
+  color: #fff !important;
+  background: #171717 !important;
+  border-color: #171717 !important;
+}
+/* Fix light text on light cards and dark text on dark cards on legacy routes. */
+main:not(.hc-rebrand):not(.hc-template-home) :where(
+  .card,.panel,.dashboard-card,.player-dashboard-card,.fan-feature-card,
+  .profile-card,.review-card,.team-card,.coach-card,.league-card,.result-card,
+  .settings-card,.admin-card,.admin-section,.modal-content,.form-card,.auth-card,
+  .hc-auth-card,.hc-coach-empty,.hc-team-row,.hc-command-tile
+) {
+  background: #fff !important;
+  background-image: none !important;
+  color: #171717 !important;
+  border-color: #e2e2e2 !important;
+  box-shadow: none !important;
+}
+main:not(.hc-rebrand):not(.hc-template-home) :where(
+  .card,.panel,.dashboard-card,.player-dashboard-card,.fan-feature-card,
+  .profile-card,.review-card,.team-card,.coach-card,.league-card,.result-card,
+  .settings-card,.admin-card,.admin-section,.modal-content,.form-card,.auth-card,
+  .hc-auth-card,.hc-coach-empty,.hc-team-row,.hc-command-tile
+) :where(h1,h2,h3,h4,p,span,strong,small,label,li,a:not(.btn),div) {
+  color: #171717 !important;
+}
+main:not(.hc-rebrand):not(.hc-template-home) :where(
+  .card,.panel,.dashboard-card,.player-dashboard-card,.fan-feature-card,
+  .profile-card,.review-card,.team-card,.coach-card,.league-card,.result-card,
+  .settings-card,.admin-card,.admin-section,.modal-content,.form-card,.auth-card,
+  .hc-auth-card,.hc-coach-empty,.hc-team-row,.hc-command-tile
+) :where(.muted,.text-muted,.description,small) {
+  color: #5f5f5f !important;
+}
+/* Explicitly dark components must carry a contrasting light foreground. */
+main:not(.hc-rebrand):not(.hc-template-home) :where(
+  .is-dark,[data-theme="dark"],.dark-panel,.dark-card,.hc-dark-panel
+) {
+  color: #fff !important;
+}
+main:not(.hc-rebrand):not(.hc-template-home) :where(
+  .is-dark,[data-theme="dark"],.dark-panel,.dark-card,.hc-dark-panel
+) :where(h1,h2,h3,h4,p,span,strong,small,label,li,a) {
+  color: #fff !important;
+}
+main:not(.hc-rebrand):not(.hc-template-home) :where(input,select,textarea) {
+  color: #171717 !important;
+  background: #fff !important;
+  border-color: #cfcfcf !important;
+  -webkit-text-fill-color: #171717 !important;
+}
+main:not(.hc-rebrand):not(.hc-template-home) :where(input,select,textarea)::placeholder {
+  color: #666 !important;
+  -webkit-text-fill-color: #666 !important;
+  opacity: 1 !important;
+}
+.site-footer { background: #101010 !important; color: #fff !important; }
+.site-footer :where(h1,h2,h3,h4,p,span,strong,small,label,li,a) { color: #fff !important; }
+@media (max-width: 760px) {
+  .hc-dashboard-shell { padding-inline: 14px !important; }
+  .hc-dashboard-shell .hc-command-grid { grid-template-columns: minmax(0,1fr) !important; }
+  .hc-dashboard-shell .hc-player-stats { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+  .hc-dashboard-shell .hc-app-topbar { flex-direction: row !important; align-items: center !important; flex-wrap: wrap; }
+}
