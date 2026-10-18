@@ -3,6 +3,7 @@ import Link from "next/link";
 import "./globals.css";
 import "./hoopcheck-scratch.css";
 import "../components/ui/hoopcheck-design-system.css";
+import "./hoopcheck-final-overrides.css";
 import ThemeProvider from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
 import MobileAuth from "../components/MobileAuth";
