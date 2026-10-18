@@ -1,0 +1,106 @@
+/* Player dossier: flat, text-dense layout using HoopCheck athletic tokens. */
+:root {
+  --athletic-orange: #FF5500;
+  --athletic-darkBg: #0A0A0A;
+}
+.hc-player-dossier { display:grid; gap:18px; margin-top:20px; color:#111; }
+.hc-player-dossier .rounded-xl { border-radius:12px; }
+.hc-dossier-identity { position:relative; display:grid; grid-template-columns:minmax(0,1fr) minmax(220px,280px); gap:24px; overflow:hidden; border:1px solid #252525; background:var(--athletic-darkBg); color:#fff; padding:clamp(20px,3vw,32px); }
+.hc-dossier-identity-main { min-width:0; }
+.hc-profile-eyebrow { margin:0 0 8px; color:var(--athletic-orange); font-size:10px; font-weight:900; letter-spacing:.18em; line-height:1.5; text-transform:uppercase; }
+.hc-dossier-name { margin:0; color:#fff; font-family:Impact,Haettenschweiler,"Arial Narrow Bold","Arial Black",sans-serif; font-size:clamp(30px,5vw,48px); font-weight:950; letter-spacing:-.025em; line-height:1; text-transform:uppercase; overflow-wrap:anywhere; }
+.hc-dossier-username { margin:8px 0 0; color:#aaa; font-size:12px; }
+.hc-dossier-tags { display:flex; flex-wrap:wrap; gap:7px; margin-top:17px; }
+.hc-dossier-tag { display:inline-flex; align-items:center; min-height:27px; border:1px solid #414141; border-radius:8px; padding:5px 9px; color:#ddd; font-size:9px; font-weight:850; letter-spacing:.08em; }
+.hc-dossier-tag-orange { border-color:var(--athletic-orange); color:var(--athletic-orange); }
+.hc-dossier-team-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; margin-top:22px; border-top:1px solid #303030; }
+.hc-dossier-team-grid>div { display:grid; gap:6px; min-width:0; padding:14px 12px 0 0; }
+.hc-dossier-team-grid>div+div { border-left:1px solid #303030; padding-left:14px; }
+.hc-dossier-team-grid span,.hc-dossier-overview-stats span { color:#999; font-size:9px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; }
+.hc-dossier-team-grid strong { color:#fff; font-size:13px; line-height:1.45; overflow-wrap:anywhere; }
+.hc-dossier-overview-stats { display:grid; align-content:start; gap:10px; }
+.hc-dossier-overview-stats>div { display:grid; gap:7px; border:1px solid #343434; border-radius:12px; padding:14px; }
+.hc-dossier-overview-stats strong { color:#fff; font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif; font-size:29px; line-height:1; }
+.hc-dossier-overview-stats small { color:#aaa; font-size:10px; }
+.hc-dossier-accent { position:absolute; inset:0 auto 0 0; width:4px; background:var(--athletic-orange); }
+.hc-profile-panel { overflow:hidden; border:1px solid #e1e4e8; background:#fff; }
+.hc-profile-panel-heading { display:flex; flex-wrap:wrap; align-items:end; justify-content:space-between; gap:12px; padding:18px 20px; border-bottom:1px solid #e1e4e8; }
+.hc-profile-panel-heading h2 { margin:0; color:#111; font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif; font-size:clamp(21px,3vw,27px); font-weight:950; letter-spacing:-.01em; line-height:1.05; text-transform:uppercase; }
+.hc-profile-record-count { flex:0 0 auto; border:1px solid #e1e4e8; border-radius:8px; padding:7px 9px; color:#555; font-size:9px; font-weight:900; letter-spacing:.09em; }
+.hc-profile-stat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border-bottom:1px solid #e1e4e8; }
+.hc-profile-stat-cell { display:grid; gap:9px; min-width:0; padding:16px 18px; border-right:1px solid #e1e4e8; }
+.hc-profile-stat-cell:last-child { border-right:0; }
+.hc-profile-stat-cell span { color:#656b73; font-size:9px; font-weight:900; letter-spacing:.08em; line-height:1.45; text-transform:uppercase; }
+.hc-profile-stat-cell strong { color:#111; font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif; font-size:27px; line-height:1; }
+.hc-profile-empty { display:grid; justify-items:center; gap:6px; padding:32px 20px; text-align:center; }
+.hc-profile-empty strong { color:#171717; font-size:14px; }
+.hc-profile-empty p,.hc-profile-disclaimer,.hc-profile-panel-footer p { max-width:620px; margin:0; color:#686e75; font-size:11px; line-height:1.7; }
+.hc-profile-disclaimer { max-width:none; border-top:1px solid #e1e4e8; padding:12px 20px; }
+.hc-contract-table-wrap { overflow-x:auto; }
+.hc-contract-table { width:100%; min-width:850px; border-collapse:collapse; text-align:left; font-size:12px; }
+.hc-contract-table th { padding:12px 14px; border-right:1px solid #e1e4e8; border-bottom:1px solid #d9dde2; background:#f7f8f9; color:#656b73; font-size:9px; font-weight:900; letter-spacing:.1em; text-transform:uppercase; white-space:nowrap; }
+.hc-contract-table th:last-child { border-right:0; }
+.hc-contract-table td { padding:14px; border-right:1px solid #e1e4e8; border-bottom:1px solid #e1e4e8; color:#25282c; vertical-align:top; }
+.hc-contract-table td:last-child { border-right:0; }
+.hc-contract-table tbody tr:last-child td { border-bottom:0; }
+.hc-contract-table td strong,.hc-contract-table td small { display:block; }
+.hc-contract-table td strong { color:#111; font-size:12px; }
+.hc-contract-table td small { margin-top:4px; color:#737982; font-size:10px; line-height:1.5; }
+.hc-number-cell { text-align:right; font-variant-numeric:tabular-nums; }
+.hc-contract-status { display:inline-flex; align-items:center; border:1px solid #d6d9dd; border-radius:8px; padding:5px 7px; font-size:9px; font-weight:900; text-transform:uppercase; white-space:nowrap; }
+.hc-contract-status-active { border-color:#ffc19f; color:#b64000; }
+.hc-contract-status-completed { color:#555d66; }
+.hc-contract-status-disputed { border-color:#f1b7b7; color:#b42318; }
+.hc-verified-text { color:#087443; font-size:10px; font-weight:850; }
+.hc-muted-text { color:#777; font-size:10px; }
+.hc-contract-mobile-list { display:none; }
+.hc-agent-review-list { display:grid; }
+.hc-agent-review-row { display:grid; grid-template-columns:minmax(0,1fr) 100px; gap:20px; padding:20px; border-bottom:1px solid #e1e4e8; }
+.hc-agent-review-row:last-child { border-bottom:0; }
+.hc-agent-review-copy { min-width:0; }
+.hc-agent-review-title { display:flex; flex-wrap:wrap; align-items:center; gap:9px; }
+.hc-agent-review-title h3 { margin:0; color:#111; font-size:14px; font-weight:850; }
+.hc-agent-verified { display:inline-flex; border:1px solid #b7e4cb; border-radius:8px; padding:5px 7px; color:#087443; font-size:9px; font-weight:900; letter-spacing:.06em; }
+.hc-agent-review-meta { margin:6px 0 0; color:#747a82; font-size:10px; }
+.hc-agent-review-summary { margin:12px 0 0; color:#34383d; font-size:12px; line-height:1.7; white-space:pre-line; }
+.hc-agent-rating { display:grid; align-content:center; justify-items:center; gap:7px; border:1px solid #e1e4e8; border-radius:12px; padding:12px 8px; }
+.hc-agent-rating>span { color:#6d737b; font-size:9px; font-weight:900; letter-spacing:.1em; }
+.hc-agent-rating strong { color:#111; font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif; font-size:25px; line-height:1; }
+.hc-agent-rating small { color:#81868d; font-family:Arial,sans-serif; font-size:11px; }
+.hc-profile-bio { margin:0; padding:18px 20px; color:#383c42; font-size:13px; line-height:1.8; white-space:pre-line; }
+.hc-profile-panel-footer { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; border-top:1px solid #e1e4e8; background:#f8f9fa; padding:15px 20px; }
+.hc-profile-outline-link { display:inline-flex; align-items:center; justify-content:center; min-height:38px; border:1px solid #d6d9dd; border-radius:8px; padding:8px 12px; color:#222; font-size:10px; font-weight:900; letter-spacing:.04em; text-transform:uppercase; }
+.hc-profile-outline-link:hover { border-color:var(--athletic-orange); color:#b64000; }
+@media(max-width:760px) {
+  .hc-dossier-identity { grid-template-columns:minmax(0,1fr); gap:16px; padding:21px 18px; }
+  .hc-dossier-overview-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .hc-profile-stat-cell { padding:13px 10px; }
+  .hc-profile-stat-cell strong { font-size:24px; }
+  .hc-profile-stat-cell span { font-size:8px; }
+  .hc-profile-panel-heading { padding:16px; }
+  .hc-contract-table-wrap { display:none; }
+  .hc-contract-mobile-list { display:grid; }
+  .hc-contract-mobile-row { padding:16px; border-bottom:1px solid #e1e4e8; }
+  .hc-contract-mobile-row:last-child { border-bottom:0; }
+  .hc-contract-mobile-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .hc-contract-mobile-top>div { display:grid; gap:5px; min-width:0; }
+  .hc-contract-mobile-top strong { font-size:13px; overflow-wrap:anywhere; }
+  .hc-contract-mobile-top>div>span { color:#6f757d; font-size:10px; line-height:1.5; }
+  .hc-contract-mobile-row dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:14px 0 0; padding-top:12px; border-top:1px solid #eef0f2; }
+  .hc-contract-mobile-row dl>div { min-width:0; }
+  .hc-contract-mobile-row dt { color:#727881; font-size:9px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; }
+  .hc-contract-mobile-row dd { margin:5px 0 0; color:#202328; font-size:11px; font-weight:750; overflow-wrap:anywhere; }
+  .hc-contract-verification { margin:12px 0 0; color:#747a82; font-size:10px; }
+  .hc-agent-review-row { grid-template-columns:minmax(0,1fr); gap:12px; padding:16px; }
+  .hc-agent-rating { grid-template-columns:1fr auto; justify-items:start; align-items:center; }
+  .hc-agent-rating strong { justify-self:end; }
+  .hc-profile-disclaimer { padding:12px 16px; }
+  .hc-profile-panel-footer { padding:14px 16px; }
+}
+@media(max-width:420px) {
+  .hc-profile-stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .hc-profile-stat-cell:nth-child(2) { border-right:0; }
+  .hc-profile-stat-cell:nth-child(-n+2) { border-bottom:1px solid #e1e4e8; }
+  .hc-dossier-team-grid { grid-template-columns:minmax(0,1fr); }
+  .hc-dossier-team-grid>div+div { border-left:0; border-top:1px solid #303030; padding:12px 0 0; }
+}
