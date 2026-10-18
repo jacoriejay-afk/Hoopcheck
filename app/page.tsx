@@ -16,13 +16,13 @@ const categories: {
   icon: string;
   category: CategoryTileKind;
 }[] = [
-  { label: "Men's Teams", subtitle: "Global men's professional and club teams", href: "/teams", color: "#ff6a00", icon: "basketball", category: "teams" },
-  { label: "Women's Teams", subtitle: "Global women's professional and club teams", href: "/womens", color: "#e72c70", icon: "women-basketball", category: "womens" },
-  { label: "Coaches", subtitle: "Verified coach experiences worldwide", href: "/coaches", color: "#1769b0", icon: "whistle", category: "coaches" },
-  { label: "Leagues", subtitle: "National and international leagues", href: "/leagues", color: "#16845c", icon: "trophy", category: "leagues" },
-  { label: "Find Players", subtitle: "Connect with players globally", href: "/players", color: "#6639a8", icon: "player", category: "players" },
-  { label: "Reviews", subtitle: "Real feedback from real players", href: "/search", color: "#34383d", icon: "star", category: "reviews" },
-  { label: "Alerts", subtitle: "Updates, news and more", href: "/notifications", color: "#eda900", icon: "bell", category: "alerts" },
+  { label: "Men's Teams", subtitle: "Global men's professional and club teams", href: "/teams", color: "var(--hc-category-teams)", icon: "basketball", category: "teams" },
+  { label: "Women's Teams", subtitle: "Global women's professional and club teams", href: "/womens", color: "var(--hc-category-womens)", icon: "women-basketball", category: "womens" },
+  { label: "Coaches", subtitle: "Verified coach experiences worldwide", href: "/coaches", color: "var(--hc-category-coaches)", icon: "whistle", category: "coaches" },
+  { label: "Leagues", subtitle: "National and international leagues", href: "/leagues", color: "var(--hc-category-leagues)", icon: "trophy", category: "leagues" },
+  { label: "Find Players", subtitle: "Connect with players globally", href: "/players", color: "var(--hc-category-players)", icon: "player", category: "players" },
+  { label: "Reviews", subtitle: "Real feedback from real players", href: "/search", color: "var(--hc-category-reviews)", icon: "star", category: "reviews" },
+  { label: "Alerts", subtitle: "Updates, news and more", href: "/notifications", color: "var(--hc-category-alerts)", icon: "bell", category: "alerts" },
 ];
 
 function CategoryIcon({ name }: { name: string }) {
