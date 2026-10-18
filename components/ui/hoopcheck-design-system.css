@@ -1954,3 +1954,93 @@ body :where(.bottom-nav, .bottom-nav *) {
   .hc-dashboard-shell .hc-profile-command > div { gap: 8px !important; }
   .hc-dashboard-shell .hc-profile-command .btn { flex: 1 1 150px; text-align: center; }
 }
+
+
+/* LAST-WORD LIGHT-SURFACE CONTRAST FIX
+   These components intentionally use light surfaces; their text must
+   stay dark even when global/dark theme selectors are present. */
+.hc-category-row,
+.hc-category-row__copy,
+.hc-dashboard-shell .hc-mobile-quick-card,
+.hc-dashboard-shell .hc-mobile-category-row,
+.hc-dashboard-shell .hc-mobile-search-field,
+.hc-dashboard-shell .fan-feature-card,
+.hc-dashboard-shell .premium-fan-card,
+.hc-directory-page .hc-directory-row,
+.hc-directory-page .hc-directory-empty,
+.hc-directory-page .hc-directory-filter:not([aria-pressed="true"]),
+.hc-directory-page .hc-directory-search input,
+.hc-directory-page .hc-directory-search select {
+  color: #171717 !important;
+}
+.hc-category-row,
+.hc-dashboard-shell .hc-mobile-quick-card,
+.hc-dashboard-shell .hc-mobile-category-row,
+.hc-dashboard-shell .hc-mobile-search-field,
+.hc-dashboard-shell .fan-feature-card,
+.hc-dashboard-shell .premium-fan-card,
+.hc-directory-page .hc-directory-row,
+.hc-directory-page .hc-directory-empty {
+  background-color: #f7f7f5 !important;
+  border-color: #dededb !important;
+}
+.hc-category-row :where(h1,h2,h3,h4,h5,h6,p,span,strong,b,small,a,svg),
+.hc-category-row__copy :where(h1,h2,h3,h4,h5,h6,p,span,strong,b,small,a),
+.hc-dashboard-shell .hc-mobile-quick-card :where(h1,h2,h3,h4,h5,h6,p,span,strong,b,small,a),
+.hc-dashboard-shell .hc-mobile-category-row :where(h1,h2,h3,h4,h5,h6,p,span,strong,b,small,a),
+.hc-dashboard-shell .hc-mobile-search-field :where(input,button,span,svg),
+.hc-dashboard-shell .fan-feature-card :where(h1,h2,h3,h4,h5,h6,p,span,strong,b,small,a),
+.hc-dashboard-shell .premium-fan-card :where(h1,h2,h3,h4,h5,h6,p,span,strong,b,small,a),
+.hc-directory-page .hc-directory-row :where(h1,h2,h3,h4,h5,h6,p,span,strong,b,small,a),
+.hc-directory-page .hc-directory-empty :where(h1,h2,h3,h4,h5,h6,p,span,strong,b,small,a) {
+  color: #171717 !important;
+}
+.hc-category-row :where(.muted,.text-muted,small,figcaption,caption),
+.hc-dashboard-shell .hc-mobile-quick-card :where(.muted,.text-muted,small,figcaption,caption),
+.hc-dashboard-shell .hc-mobile-category-row :where(.muted,.text-muted,small,figcaption,caption),
+.hc-dashboard-shell .fan-feature-card :where(.muted,.text-muted,small,figcaption,caption),
+.hc-dashboard-shell .premium-fan-card :where(.muted,.text-muted,small,figcaption,caption),
+.hc-directory-page .hc-directory-row :where(.muted,.text-muted,small,figcaption,caption) {
+  color: #4b4b4b !important;
+}
+.hc-dashboard-shell .hc-mobile-search-field input {
+  background: transparent !important;
+  color: #171717 !important;
+  border-color: transparent !important;
+}
+.hc-dashboard-shell .hc-mobile-search-field input::placeholder {
+  color: #626262 !important;
+}
+.hc-directory-page .hc-directory-search input,
+.hc-directory-page .hc-directory-search select {
+  background: #fff !important;
+  color: #171717 !important;
+  border-color: #cfcfcf !important;
+}
+.hc-directory-page .hc-directory-filter[aria-pressed="true"] {
+  background: #ff6a00 !important;
+  color: #111 !important;
+  border-color: #ff6a00 !important;
+}
+.hc-directory-page .hc-directory-filter:not([aria-pressed="true"]) {
+  background: #fff !important;
+  border-color: #d5d5d5 !important;
+}
+.hc-dashboard-shell .hc-mobile-icon,
+.hc-dashboard-shell .hc-mobile-category-icon {
+  color: #d94b00 !important;
+}
+@media (max-width: 520px) {
+  .hc-dashboard-shell .hc-mobile-quick-card,
+  .hc-dashboard-shell .hc-mobile-category-row,
+  .hc-dashboard-shell .fan-feature-card,
+  .hc-dashboard-shell .premium-fan-card {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .hc-dashboard-shell .hc-mobile-quick-card :where(strong,small),
+  .hc-dashboard-shell .hc-mobile-category-row :where(strong,small) {
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+}
