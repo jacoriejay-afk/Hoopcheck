@@ -4,16 +4,17 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getCachedSession } from "../lib/supabase";
+import CategoryRow from "../components/ui/CategoryRow";
 
 const categories = [
-  { label: "Men's Teams", subtitle: "Explore men's professional teams worldwide", href: "/teams", icon: "◉" },
-  { label: "Women's Teams", subtitle: "Women's clubs, leagues, and player experiences", href: "/womens", icon: "◎" },
-  { label: "Coaches", subtitle: "Research coaching reputations and experiences", href: "/coaches", icon: "✳" },
-  { label: "Leagues", subtitle: "Compare leagues before your next move", href: "/leagues", icon: "⌁" },
-  { label: "Find Players", subtitle: "Connect with players around the world", href: "/players", icon: "＋" },
-  { label: "Player Reviews", subtitle: "Learn from first-hand player feedback", href: "/search", icon: "★" },
-  { label: "Alerts", subtitle: "Keep up with your account activity", href: "/notifications", icon: "↗" },
-  { label: "Directory", subtitle: "Browse the global basketball network", href: "/directory", icon: "▦" },
+  { label: "Men's Teams", subtitle: "Explore men's professional teams worldwide", href: "/teams", icon: "team" as const, tone: "orange" as const },
+  { label: "Women's Teams", subtitle: "Women's clubs, leagues, and player experiences", href: "/womens", icon: "team" as const, tone: "slate" as const },
+  { label: "Coaches", subtitle: "Research coaching reputations and experiences", href: "/coaches", icon: "coach" as const, tone: "ink" as const },
+  { label: "Leagues", subtitle: "Compare leagues before your next move", href: "/leagues", icon: "league" as const, tone: "orange" as const },
+  { label: "Find Players", subtitle: "Connect with players around the world", href: "/players", icon: "player" as const, tone: "slate" as const },
+  { label: "Player Reviews", subtitle: "Learn from first-hand player feedback", href: "/search", icon: "review" as const, tone: "orange" as const },
+  { label: "Alerts", subtitle: "Keep up with your account activity", href: "/notifications", icon: "review" as const, tone: "ink" as const },
+  { label: "Directory", subtitle: "Browse the global basketball network", href: "/directory", icon: "basketball" as const, tone: "orange" as const },
 ];
 
 export default function Home() {
@@ -75,12 +76,14 @@ export default function Home() {
           </div>
           <div className="hc-scratch-category-grid">
             {categories.map((category) => (
-              <Link href={category.href} className="hc-scratch-category" key={category.label}>
-                <span className="hc-scratch-category-icon" aria-hidden="true">{category.icon}</span>
-                <span className="hc-scratch-category-arrow" aria-hidden="true">↗</span>
-                <strong>{category.label}</strong>
-                <small>{category.subtitle}</small>
-              </Link>
+              <CategoryRow
+                key={category.label}
+                href={category.href}
+                title={category.label}
+                description={category.subtitle}
+                icon={category.icon}
+                tone={category.tone}
+              />
             ))}
           </div>
         </div>
