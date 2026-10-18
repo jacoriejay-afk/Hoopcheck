@@ -2252,3 +2252,137 @@ main.auth-page-shell .signup-form .message.error {
 @media (prefers-reduced-motion: reduce) {
   .hc-category-tile, .hc-header-links a, .hc-header-icon { transition: none !important; }
 }
+
+
+/* Homepage-only layout refinement: bold black hero, real basketball imagery, and seven shared category tiles. */
+.hc-template-home.hc-home-redesign { background: #F7F7F5; color: #0A0A0A; }
+.hc-template-home.hc-home-redesign .hc-home-hero {
+  grid-template-columns: minmax(0, 1.05fr) minmax(260px, .95fr);
+  min-height: clamp(500px, 55vw, 690px);
+  background: #0A0A0A;
+  color: #fff;
+}
+.hc-template-home.hc-home-redesign .hc-home-hero h1 { color: #fff; }
+.hc-template-home.hc-home-redesign .hc-home-hero h1 em { color: #fff; }
+.hc-template-home.hc-home-redesign .hc-home-cta {
+  background: #FF5A1F;
+  border-color: #FF5A1F;
+  color: #fff;
+  border-radius: 8px;
+}
+.hc-template-home.hc-home-redesign .hc-home-hero-art {
+  min-width: 0;
+  overflow: hidden;
+  background: radial-gradient(ellipse at center, rgba(255,90,31,.16), transparent 66%);
+}
+.hc-template-home.hc-home-redesign .hc-home-image-frame {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 410px);
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: 2px solid #FF5A1F;
+  border-radius: 12px;
+  transform: rotate(2deg);
+  box-shadow: 0 24px 70px rgba(0,0,0,.48);
+}
+.hc-template-home.hc-home-redesign .hc-home-basketball-image {
+  object-fit: cover;
+  object-position: center;
+  filter: saturate(.86) contrast(1.08);
+}
+.hc-template-home.hc-home-redesign .hc-home-diagonal {
+  position: absolute;
+  z-index: 2;
+  width: 145%;
+  height: 12px;
+  background: #FF5A1F;
+  pointer-events: none;
+  transform: rotate(-42deg);
+}
+.hc-template-home.hc-home-redesign .hc-home-diagonal-one { top: 18%; right: -47%; }
+.hc-template-home.hc-home-redesign .hc-home-diagonal-two {
+  bottom: 14%;
+  left: -38%;
+  height: 4px;
+  opacity: .78;
+}
+.hc-template-home.hc-home-redesign .hc-home-explore {
+  padding: clamp(34px, 5vw, 64px) clamp(18px, 4vw, 56px);
+  background: #F7F7F5;
+}
+.hc-template-home.hc-home-redesign .hc-template-section-title {
+  align-items: end;
+  margin-bottom: 26px;
+}
+.hc-template-home.hc-home-redesign .hc-template-section-title h2 {
+  margin-top: 8px;
+  color: #0A0A0A;
+  font-size: clamp(30px, 4vw, 46px);
+}
+.hc-template-home.hc-home-redesign .hc-template-section-title > a {
+  color: #0A0A0A;
+}
+.hc-template-home.hc-home-redesign .hc-home-category-grid {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 12px;
+}
+.hc-template-home.hc-home-redesign .hc-home-category-tile {
+  min-height: 0;
+  padding: 16px 10px 14px;
+  align-items: center;
+  border: 1px solid #E7E7E4;
+  border-radius: 10px;
+  border-top: 1px solid #E7E7E4;
+  background: #fff;
+  text-align: center;
+}
+.hc-template-home.hc-home-redesign .hc-home-category-tile .hc-category-tile__hex {
+  width: 54px;
+  height: 60px;
+}
+.hc-template-home.hc-home-redesign .hc-home-category-tile .hc-category-tile__label {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.hc-template-home.hc-home-redesign .hc-home-category-tile .hc-category-tile__description {
+  font-size: 11px;
+}
+@media (max-width: 1100px) {
+  .hc-template-home.hc-home-redesign .hc-home-category-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .hc-template-home.hc-home-redesign .hc-home-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 26px;
+    padding: 42px 20px 32px;
+  }
+  .hc-template-home.hc-home-redesign .hc-home-hero h1 {
+    font-size: clamp(42px, 11vw, 68px);
+  }
+  .hc-template-home.hc-home-redesign .hc-home-hero-art {
+    min-height: 280px;
+    height: 310px;
+  }
+  .hc-template-home.hc-home-redesign .hc-home-image-frame {
+    width: min(70%, 300px);
+    height: 280px;
+    aspect-ratio: auto;
+  }
+  .hc-template-home.hc-home-redesign .hc-home-explore {
+    padding: 34px 16px;
+  }
+  .hc-template-home.hc-home-redesign .hc-template-section-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .hc-template-home.hc-home-redesign .hc-home-category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-template-home.hc-home-redesign .hc-home-category-tile { transition: none; }
+}
