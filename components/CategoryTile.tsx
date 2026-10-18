@@ -4,13 +4,13 @@ import type { CSSProperties, ReactNode } from "react";
 export type CategoryTileKind = "teams" | "womens" | "coaches" | "leagues" | "players" | "reviews" | "alerts";
 
 const categoryColors: Record<CategoryTileKind, string> = {
-  teams: "#FF5A1F",
-  womens: "#E84393",
-  coaches: "#2456C8",
-  leagues: "#1E9E50",
-  players: "#6C3FD4",
-  reviews: "#0A0A0A",
-  alerts: "#F5B800",
+  teams: "var(--hc-category-teams)",
+  womens: "var(--hc-category-womens)",
+  coaches: "var(--hc-category-coaches)",
+  leagues: "var(--hc-category-leagues)",
+  players: "var(--hc-category-players)",
+  reviews: "var(--hc-category-reviews)",
+  alerts: "var(--hc-category-alerts)",
 };
 
 function CategoryIcon({ kind }: { kind: CategoryTileKind }) {
