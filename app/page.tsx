@@ -93,7 +93,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="hc-redesign-visual" aria-label="HoopCheck basketball graphic">
+          <div className="hc-redesign-visual" role="img" aria-label="HoopCheck basketball graphic">
             <div className="hc-redesign-visual-top"><span>HOOPCHECK / FIELD GUIDE</span><span>NO. 001</span></div>
             <div className="hc-redesign-orbit hc-redesign-orbit-one" />
             <div className="hc-redesign-orbit hc-redesign-orbit-two" />
@@ -130,7 +130,7 @@ export default function Home() {
               <Link href={category.href} key={category.number} className="hc-redesign-category">
                 <div className="hc-redesign-category-top"><span>{category.number}</span><ArrowIcon /></div>
                 <div className="hc-redesign-category-copy">
-                  <small>{category.tag}</small>
+                  <span className="hc-redesign-shield">{category.tag}</span>
                   <h3>{category.label}</h3>
                   <p>{category.description}</p>
                 </div>
