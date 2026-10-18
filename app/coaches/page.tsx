@@ -31,32 +31,31 @@ export default function CoachesPage() {
   });
 
   useEffect(() => {
+    let active = true;
+
     async function loadCoaches() {
-      const {
-        data,
-        error,
-      } = await supabase
-        .from("coaches")
-        .select(
-          "id, name, country, city"
-        )
-        .order("name");
+      try {
+        const { data, error } = await supabase
+          .from("coaches")
+          .select("id, name, country, city")
+          .order("name");
 
-      if (error) {
-        console.error(
-          "Error loading coaches:",
-          error
-        );
-
-        setCoaches([]);
-      } else {
-        setCoaches(data || []);
+        if (error) throw error;
+        if (active) setCoaches(data || []);
+      } catch (error) {
+        console.error("Error loading coaches:", error);
+        if (active) setCoaches([]);
+      } finally {
+        // Never leave the directory stuck on its loading screen after a
+        // network, Supabase, or unexpected runtime error.
+        if (active) setLoading(false);
       }
-
-      setLoading(false);
     }
 
-    loadCoaches();
+    void loadCoaches();
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (
