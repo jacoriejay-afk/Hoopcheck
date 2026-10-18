@@ -6,30 +6,15 @@ import { useRouter } from "next/navigation";
 import { getCachedSession } from "../lib/supabase";
 
 const categories = [
-  { label: "Men's Teams", subtitle: "Global men's professional and club teams", href: "/teams", color: "#ff6a00", icon: "basketball" },
-  { label: "Women's Teams", subtitle: "Global women's professional and club teams", href: "/womens", color: "#e72c70", icon: "women-basketball" },
-  { label: "Coaches", subtitle: "Verified coach experiences worldwide", href: "/coaches", color: "#1769b0", icon: "whistle" },
-  { label: "Leagues", subtitle: "National and international leagues", href: "/leagues", color: "#16845c", icon: "trophy" },
-  { label: "Find Players", subtitle: "Connect with players globally", href: "/players", color: "#6639a8", icon: "player" },
-  { label: "Reviews", subtitle: "Real feedback from real players", href: "/search", color: "#34383d", icon: "star" },
-  { label: "Alerts", subtitle: "Updates, news and more", href: "/notifications", color: "#eda900", icon: "bell" },
+  { label: "Men's Teams", subtitle: "Explore men's professional teams worldwide", href: "/teams", icon: "◉" },
+  { label: "Women's Teams", subtitle: "Women's clubs, leagues, and player experiences", href: "/womens", icon: "◎" },
+  { label: "Coaches", subtitle: "Research coaching reputations and experiences", href: "/coaches", icon: "✳" },
+  { label: "Leagues", subtitle: "Compare leagues before your next move", href: "/leagues", icon: "⌁" },
+  { label: "Find Players", subtitle: "Connect with players around the world", href: "/players", icon: "＋" },
+  { label: "Player Reviews", subtitle: "Learn from first-hand player feedback", href: "/search", icon: "★" },
+  { label: "Alerts", subtitle: "Keep up with your account activity", href: "/notifications", icon: "↗" },
+  { label: "Directory", subtitle: "Browse the global basketball network", href: "/directory", icon: "▦" },
 ];
-
-
-function CategoryIcon({ name }: { name: string }) {
-  const common = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-  return (
-    <svg viewBox="0 0 32 32" aria-hidden="true" className="hc-category-svg" {...common}>
-      {name === "basketball" && <><circle cx="16" cy="16" r="11" /><path d="M5 16h22M16 5c-5 5-5 17 0 22M16 5c5 5 5 17 0 22M7.5 8.5c5 3 12 12 17 15M24.5 8.5c-5 3-12 12-17 15" /></>}
-      {name === "women-basketball" && <><circle cx="16" cy="16" r="11" /><path d="M5 16h22M16 5c-5 5-5 17 0 22M16 5c5 5 5 17 0 22M11 2v4M21 2v4M11 26v4M21 26v4" /></>}
-      {name === "whistle" && <><path d="M5 12h13l7 5-6 7H9a4 4 0 0 1-4-4z" /><circle cx="20" cy="12" r="3" /><path d="M5 16H2v5h4" /></>}
-      {name === "trophy" && <><path d="M10 5h12v7a6 6 0 0 1-12 0zM10 8H5v3a5 5 0 0 0 5 5M22 8h5v3a5 5 0 0 1-5 5M16 18v6M11 27h10M12 24h8" /></>}
-      {name === "player" && <><circle cx="13" cy="9" r="4" /><path d="M5 25v-2a8 8 0 0 1 12-7M23 15v12M17 21h12" /></>}
-      {name === "star" && <path d="m16 3 4 8 9 1-6.5 6 1.8 9L16 22.5 7.7 27l1.8-9L3 12l9-1z" />}
-      {name === "bell" && <><path d="M7 22h18l-2.5-4V12a6.5 6.5 0 0 0-13 0v6zM13 26a3 3 0 0 0 6 0" /></>}
-    </svg>
-  );
-}
 
 export default function Home() {
   const router = useRouter();
@@ -37,80 +22,80 @@ export default function Home() {
   useEffect(() => {
     getCachedSession().then(({ data }) => {
       if (data.session) router.replace("/dashboard");
-    });
+    }).catch(() => undefined);
   }, [router]);
 
   return (
-    <main className="hc-template-home">
-      <section className="hc-template-hero">
-        <div className="hc-template-hero-copy">
-          <div className="hc-home-kicker"><span /> THE GLOBAL BASKETBALL INTELLIGENCE HUB</div>
-          <h1>KNOW WHO YOU’RE<br /><em>SIGNING WITH</em></h1>
-          <p>Real reviews. Verified profiles. Global basketball.<br className="hc-desktop-break" /> Coaches. Teams. Leagues. Players.</p>
-          <Link href="/teams" className="hc-template-cta">EXPLORE DIRECTORY <span aria-hidden="true">→</span></Link>
-        </div>
-        <div className="hc-template-hero-art" aria-hidden="true">
-          <div className="hc-template-court-lines" />
-          <div className="hc-template-ball"><span /><i /><b /></div>
-          <div className="hc-template-slash hc-template-slash-one" />
-          <div className="hc-template-slash hc-template-slash-two" />
-        </div>
-      </section>
-
-      <section className="hc-quick-access" aria-labelledby="hc-quick-access-heading">
-        <div className="hc-quick-access-heading">
-          <span className="hc-template-eyebrow">YOUR NEXT MOVE</span>
-          <h2 id="hc-quick-access-heading">QUICK ACCESS</h2>
-        </div>
-        <nav className="hc-quick-access-links" aria-label="Quick access">
-          <Link href="/teams"><span aria-hidden="true">◉</span> Teams <b aria-hidden="true">↗</b></Link>
-          <Link href="/coaches"><span aria-hidden="true">✳</span> Coaches <b aria-hidden="true">↗</b></Link>
-          <Link href="/leagues"><span aria-hidden="true">🏆</span> Leagues <b aria-hidden="true">↗</b></Link>
-          <Link href="/players"><span aria-hidden="true">＋</span> Find players <b aria-hidden="true">↗</b></Link>
-          <Link href="/search"><span aria-hidden="true">★</span> Reviews <b aria-hidden="true">↗</b></Link>
-        </nav>
-      </section>
-
-      <section className="hc-template-explore" aria-labelledby="hc-template-explore-heading">
-        <div className="hc-template-section-title">
-          <h2 id="hc-template-explore-heading">BROWSE CATEGORIES</h2>
-          <Link href="/directory">ALL CATEGORIES <span aria-hidden="true">→</span></Link>
-        </div>
-        <div className="hc-template-category-grid">
-          {categories.map((category) => (
-            <Link href={category.href} key={category.label} className="hc-template-category" style={{ "--tile-color": category.color } as React.CSSProperties}>
-              <span className="hc-template-category-icon"><CategoryIcon name={category.icon} /></span>
-              <strong>{category.label}</strong>
-              <span className="hc-template-category-arrow" aria-hidden="true">→</span>
-              <small>{category.subtitle}</small>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="hc-template-directory" aria-label="Directory preview">
-        <div className="hc-template-panel hc-template-directory-panel">
-          <div className="hc-template-panel-top">
-            <div><span className="hc-template-eyebrow">GLOBAL BASKETBALL</span><h2>DIRECTORY</h2></div>
-            <Link href="/teams">VIEW ALL →</Link>
+    <main className="hc-scratch-home">
+      <div className="hc-scratch-container">
+        <section className="hc-scratch-hero">
+          <div className="hc-scratch-copy">
+            <div className="hc-scratch-kicker">The global basketball intelligence hub</div>
+            <h1 className="hc-scratch-title">Know who<br />you’re <span>signing with.</span></h1>
+            <p className="hc-scratch-description">
+              Your next contract should come with confidence. Research teams, coaches, and leagues through player experiences before you make the move.
+            </p>
+            <div className="hc-scratch-actions">
+              <Link href="/directory" className="hc-button-primary">Explore the directory <span aria-hidden="true">↗</span></Link>
+              <Link href="/search" className="hc-button-secondary">Read player reviews <span aria-hidden="true">→</span></Link>
+            </div>
+            <div className="hc-scratch-proof">
+              <span>Built for overseas players</span>
+              <span>Teams · Coaches · Leagues</span>
+            </div>
           </div>
-          <p>Find teams, coaches, and leagues from around the world.</p>
-          <div className="hc-template-directory-links">
-            {categories.slice(0, 4).map((category) => (
-              <Link href={category.href} key={category.label}>
-                <span className="hc-template-mini-icon" style={{ "--tile-color": category.color } as React.CSSProperties}><CategoryIcon name={category.icon} /></span>
-                <span><strong>{category.label}</strong><small>{category.subtitle}</small></span>
-                <b aria-hidden="true">›</b>
+          <div className="hc-scratch-art" aria-label="Basketball artwork">
+            <span className="hc-scratch-index">HC / 001</span>
+            <div className="hc-scratch-art-frame"><span className="hc-scratch-art-label">Make your next move informed</span></div>
+            <div className="hc-scratch-ball" aria-hidden="true">
+              <i className="hc-ball-line-a" /><i className="hc-ball-line-b" /><i className="hc-ball-line-c" />
+            </div>
+            <span className="hc-scratch-vertical">RESEARCH BEFORE YOU SIGN</span>
+          </div>
+        </section>
+      </div>
+
+      <div className="hc-scratch-strip">
+        <div className="hc-scratch-container hc-scratch-strip-inner">
+          <div className="hc-scratch-stat"><strong>Know the team</strong><span>Before you commit</span></div>
+          <div className="hc-scratch-stat"><strong>Know the coach</strong><span>Learn from players</span></div>
+          <div className="hc-scratch-stat"><strong>Know the league</strong><span>Compare your options</span></div>
+          <div className="hc-scratch-stat"><strong>Own your move</strong><span>Make informed choices</span></div>
+        </div>
+      </div>
+
+      <section className="hc-scratch-section">
+        <div className="hc-scratch-container">
+          <div className="hc-scratch-section-heading">
+            <div>
+              <div className="hc-scratch-eyebrow">Your next move starts here</div>
+              <h2>Research the<br />basketball world.</h2>
+            </div>
+            <p>One place to explore the organizations and people that can shape your career. Start with a category and get the context you need.</p>
+          </div>
+          <div className="hc-scratch-category-grid">
+            {categories.map((category, index) => (
+              <Link href={category.href} className="hc-scratch-category" key={category.label}>
+                <span className="hc-scratch-category-icon" aria-hidden="true">{category.icon}</span>
+                <span className="hc-scratch-category-arrow" aria-hidden="true">↗</span>
+                <strong>{category.label}</strong>
+                <small>{category.subtitle}</small>
               </Link>
             ))}
           </div>
         </div>
-        <div className="hc-template-panel hc-template-player-panel">
-          <span className="hc-template-eyebrow">BEFORE YOU SIGN</span>
-          <h2>REAL TEAMS.<br />REAL COACHES.<br /><span>REAL REVIEWS.</span></h2>
-          <p>Use shared player experiences to ask better questions and make informed decisions about your next opportunity.</p>
-          <Link href="/search" className="hc-template-outline-link">EXPLORE REVIEWS <span aria-hidden="true">→</span></Link>
-          <div className="hc-template-orbit" aria-hidden="true" />
+      </section>
+
+      <section className="hc-scratch-section" style={{ paddingTop: 0 }}>
+        <div className="hc-scratch-container">
+          <div className="hc-scratch-bottom">
+            <div>
+              <div className="hc-scratch-eyebrow">Before you sign</div>
+              <h2>Real experiences.<br /><span>Smarter decisions.</span></h2>
+              <p>Use player-shared experiences to ask better questions, spot concerns, and prepare for your next opportunity. Reviews are a starting point for research—not a substitute for your own due diligence.</p>
+            </div>
+            <Link href="/search" className="hc-button-primary">Explore reviews <span aria-hidden="true">↗</span></Link>
+          </div>
         </div>
       </section>
     </main>
