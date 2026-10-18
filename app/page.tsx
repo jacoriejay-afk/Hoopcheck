@@ -36,7 +36,7 @@ export default function Home() {
   }, [router]);
 
   return (
-    <main className="hc-redesign-home">
+    <main className="hc-scratch-home hc-redesign-home">
       <section className="hc-redesign-hero">
         <div className="hc-redesign-container hc-redesign-hero-grid">
           <div className="hc-redesign-hero-copy">
