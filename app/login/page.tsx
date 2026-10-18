@@ -13,39 +13,48 @@ export default function LoginPage() {
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (loading) return;
     setLoading(true);
     setMessage("");
 
-    const normalizedEmail = email.trim().toLowerCase();
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: normalizedEmail,
-      password,
-    });
+    try {
+      const normalizedEmail = email.trim().toLowerCase();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      });
 
-    if (error) {
-      setMessage(error.message);
+      if (error) throw error;
+      if (!data.user) {
+        setMessage("Login could not be completed. Please try again.");
+        return;
+      }
+
+      // A missing profile row or a temporary profile query failure should not
+      // strand a valid user on the login screen after authentication succeeds.
+      let profile: { display_name?: string | null; position?: string | null; years_pro?: number | null } | null = null;
+      try {
+        const result = await supabase
+          .from("profiles")
+          .select("display_name,position,years_pro")
+          .eq("id", data.user.id)
+          .maybeSingle();
+        profile = result.data;
+      } catch (profileError) {
+        console.error("Could not load profile after login:", profileError);
+      }
+
+      const needsOnboarding =
+        !profile?.display_name ||
+        (!profile?.position && profile?.years_pro == null);
+
+      window.location.replace(needsOnboarding ? "/onboarding" : "/dashboard");
+    } catch (error) {
+      console.error("Login failed:", error);
+      setMessage(error instanceof Error ? error.message : "Unable to sign in right now. Please try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const user = data.user;
-    if (!user) {
-      setMessage("Login succeeded, but your session could not be restored. Please try again.");
-      setLoading(false);
-      return;
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("display_name,position,years_pro")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    const needsOnboarding =
-      !profile?.display_name ||
-      (!profile?.position && profile?.years_pro === null);
-
-    window.location.replace(needsOnboarding ? "/onboarding" : "/dashboard");
   }
 
   async function handlePasswordReset() {
@@ -55,20 +64,23 @@ export default function LoginPage() {
       setMessage("Enter your email address first, then select Forgot password.");
       return;
     }
+    if (resetLoading) return;
 
     setResetLoading(true);
     setMessage("");
 
-    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-
-    setMessage(
-      error
-        ? error.message
-        : "If an account exists for that email, we sent a password reset link."
-    );
-    setResetLoading(false);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      setMessage("If an account exists for that email, we sent a password reset link.");
+    } catch (error) {
+      console.error("Password reset request failed:", error);
+      setMessage(error instanceof Error ? error.message : "Unable to send a reset link right now. Please try again.");
+    } finally {
+      setResetLoading(false);
+    }
   }
 
   return (
