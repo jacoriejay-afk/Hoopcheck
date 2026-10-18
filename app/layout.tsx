@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import "./globals.css";
 import "./hoopcheck-scratch.css";
+import "../components/ui/hoopcheck-design-system.css";
 import ThemeProvider from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
 import MobileAuth from "../components/MobileAuth";
@@ -55,7 +56,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ff6a00",
+  themeColor: "#0d0d0d",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
