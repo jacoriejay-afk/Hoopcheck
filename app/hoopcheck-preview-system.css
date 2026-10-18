@@ -20,8 +20,8 @@
   --hc-mobile-row-border: #30302e;
   --hc-hover-wash: #fffaf7;
   --hc-hover-border: #ffb69b;
-  --hc-display: Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Black", sans-serif;
-  --hc-ui: "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
+  --hc-display: var(--font-display), Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Black", sans-serif;
+  --hc-ui: var(--font-sans), "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
 }
 html, body { font-family: var(--hc-ui); }
 body { background: var(--hc-paper); color: var(--hc-text); }
