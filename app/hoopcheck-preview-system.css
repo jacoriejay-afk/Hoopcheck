@@ -1229,3 +1229,74 @@ main:not(.hc-dashboard-shell) .page-container { width:min(100% - 32px,1280px); m
 @media (prefers-reduced-motion:reduce) {
   .hc-dashboard-shell .hc-mobile-quick-card { transition:none; }
 }
+
+
+/* Homepage refinements to match the approved HoopCheck reference. */
+.hc-template-home { background:#f8f9fa; color:#111; }
+.hc-template-home .hc-template-hero { background:radial-gradient(ellipse at 76% 35%,rgba(255,85,0,.13),transparent 34%),#0d0d0d; }
+.hc-template-home .hc-home-kicker, .hc-template-home .hc-template-eyebrow { color:#ff5500; }
+.hc-template-home .hc-home-kicker > span { background:#ff5500; }
+.hc-template-home .hc-template-hero h1 { font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif !important; font-weight:950; letter-spacing:-.035em; }
+.hc-template-home .hc-template-hero h1 em { color:#ff5500; }
+.hc-template-home .hc-template-cta { background:#ff5500; border-color:#ff5500; color:#101010; border-radius:6px; }
+.hc-template-home .hc-template-cta:hover { background:#e64a00; border-color:#e64a00; }
+.hc-template-home .hc-template-hero-art { background:radial-gradient(ellipse at 50% 52%,rgba(255,85,0,.17),transparent 55%); }
+.hc-template-home .hc-template-ball { border-color:#ff7733; background:radial-gradient(circle at 32% 25%,#ff9a58,#ff5500 52%,#962e00 100%); box-shadow:0 24px 60px rgba(0,0,0,.45),0 0 60px rgba(255,85,0,.12); }
+.hc-template-home .hc-template-slash { background:#ff5500; }
+.hc-template-home .hc-quick-access { background:#fff; color:#111; border-bottom:1px solid #ededed; }
+.hc-template-home .hc-quick-access .hc-template-eyebrow { color:#e64a00; }
+.hc-template-home .hc-quick-access-heading h2 { color:#111; }
+.hc-template-home .hc-quick-access-links a { border-left:1px solid #ededed; color:#222; }
+.hc-template-home .hc-quick-access-links a > span, .hc-template-home .hc-quick-access-links a b { color:#e64a00; }
+.hc-template-home .hc-template-explore { background:#f8f9fa; }
+.hc-template-home .hc-template-section-title h2 { color:#111; }
+.hc-template-home .hc-template-section-title > a, .hc-template-home .hc-template-panel-top > a { color:#e64a00; }
+.hc-template-home .hc-template-category { min-height:178px; padding:22px; border:1px solid #ededed; border-top:3px solid var(--tile-color,#ff5500); border-radius:10px; box-shadow:none; }
+.hc-template-home .hc-template-category:hover { transform:translateY(-2px); border-color:#d7d7d7; box-shadow:0 8px 22px rgba(0,0,0,.055); }
+.hc-template-home .hc-template-category-icon { border-radius:8px; }
+.hc-template-home .hc-template-category strong { font-size:clamp(.95rem,1.2vw,1.1rem); letter-spacing:-.025em; }
+.hc-template-home .hc-template-category small { color:#666; }
+.hc-template-home .hc-template-directory { background:#f8f9fa; }
+.hc-template-home .hc-template-panel { border:1px solid #ededed; border-radius:10px; }
+.hc-template-home .hc-template-directory-panel { background:#fff; color:#111; }
+.hc-template-home .hc-template-directory-panel > p { color:#666; }
+.hc-template-home .hc-template-directory-links > a { border-bottom:1px solid #ededed; }
+.hc-template-home .hc-template-directory-links > a:last-child { border-bottom:0; }
+.hc-template-home .hc-template-directory-links > a > span strong { color:#171717; }
+.hc-template-home .hc-template-directory-links > a > span small { color:#666; }
+.hc-template-home .hc-template-player-panel { background:#0d0d0d; color:#fff; }
+.hc-template-home .hc-template-player-panel h2 span { color:#ff5500; }
+.hc-template-home .hc-template-outline-link { background:#ff5500; border-color:#ff5500; color:#111; border-radius:6px; }
+.hc-template-home .hc-template-outline-link:hover { background:#e64a00; border-color:#e64a00; }
+@media (max-width:900px) {
+  .hc-template-home .hc-template-hero { grid-template-columns:minmax(0,1fr) minmax(220px,.8fr); padding:54px 28px; }
+  .hc-template-home .hc-quick-access { grid-template-columns:1fr; gap:16px; padding:22px 28px; }
+  .hc-template-home .hc-quick-access-links { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .hc-template-home .hc-quick-access-links a { border:1px solid #ededed; border-radius:6px; margin:3px; }
+  .hc-template-home .hc-template-explore { padding:48px 28px; }
+  .hc-template-home .hc-template-category-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .hc-template-home .hc-template-directory { padding:0 28px 48px; }
+}
+@media (max-width:640px) {
+  .hc-template-home .hc-template-hero { grid-template-columns:minmax(0,1fr); min-height:0; padding:42px 20px 24px; gap:14px; }
+  .hc-template-home .hc-template-hero h1 { margin:22px 0 18px; font-size:clamp(2.8rem,13vw,4.6rem); line-height:.92; }
+  .hc-template-home .hc-template-hero-copy > p { font-size:15px; margin-bottom:22px; }
+  .hc-template-home .hc-template-hero-art { min-height:220px; max-height:270px; }
+  .hc-template-home .hc-template-ball { width:clamp(155px,48vw,220px); }
+  .hc-template-home .hc-quick-access { padding:22px 16px; }
+  .hc-template-home .hc-quick-access-links { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .hc-template-home .hc-quick-access-links a { min-width:0; padding:10px; font-size:.7rem; }
+  .hc-template-home .hc-template-explore { padding:38px 16px; }
+  .hc-template-home .hc-template-section-title { align-items:flex-start; flex-direction:column; gap:10px; margin-bottom:18px; }
+  .hc-template-home .hc-template-category-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .hc-template-home .hc-template-category { min-height:160px; padding:14px; }
+  .hc-template-home .hc-template-category-icon { width:38px; height:38px; margin-bottom:14px; }
+  .hc-template-home .hc-template-category strong { font-size:.88rem; }
+  .hc-template-home .hc-template-category small { font-size:.72rem; }
+  .hc-template-home .hc-template-directory { grid-template-columns:minmax(0,1fr); gap:12px; padding:0 16px 38px; }
+  .hc-template-home .hc-template-panel { padding:24px 18px; }
+}
+@media (max-width:360px) {
+  .hc-template-home .hc-template-category-grid { grid-template-columns:minmax(0,1fr); }
+  .hc-template-home .hc-template-category { min-height:130px; }
+}
