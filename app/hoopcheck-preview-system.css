@@ -2654,3 +2654,33 @@ main.auth-page-shell .signup-form .message.error {
   .hc-team-directory-page .hc-directory-switcher a { padding-inline: 9px; }
   .hc-team-entity-profile > .hero:first-of-type .entity-actions { align-items: flex-start; }
 }
+
+/* Align the shared mobile header and bottom navigation to the md breakpoint. */
+@media (max-width: 767px) {
+  .site-header-global.hc-template-header {
+    position: sticky;
+    z-index: 1200;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    min-height: 64px;
+    gap: 10px;
+    padding: 8px 14px;
+  }
+  .site-header-global .hc-mobile-menu-toggle { display: flex; }
+  .site-header-global .hc-header-nav { display: none; }
+  .site-header-global .hc-header-nav.is-open {
+    position: absolute;
+    top: calc(100% - 1px);
+    right: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid var(--hc-line);
+    background: #fff;
+  }
+  .site-header-global .hc-header-links { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+  .site-header-global .hc-header-links a { min-height: 44px; }
+  .hc-bottom-tab-bar { display: grid; }
+}
