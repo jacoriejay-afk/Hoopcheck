@@ -48,7 +48,10 @@ export default function ReviewSubmissionModal({
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const onCloseRef = useRef(onClose);
   const submittingRef = useRef(false);
-  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
   const [mounted, setMounted] = useState(false);
   const [entityName, setEntityName] = useState("");
   const [rating, setRating] = useState(0);
