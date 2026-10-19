@@ -54,7 +54,9 @@ export async function POST(req:Request){
    if (eligibilityError || canReview !== true) return NextResponse.json({error:"Only verified professional players who currently or previously played for this team can submit a team review."},{status:403});
  }
  const categoryKeys=["pay_on_time_rating","housing_rating","medical_support_rating","communication_rating","coaching_quality_rating","facilities_rating","playing_time_honesty_rating"];
- const hasAnyCategory=categoryKeys.some(k=>b[k]!==undefined&&b[k]!==null);
+ // communication_rating is shared by the legacy and seven-category forms;
+ // only the newer form-specific fields should switch validation modes.
+ const hasAnyCategory=["pay_on_time_rating","housing_rating","medical_support_rating","coaching_quality_rating","facilities_rating","playing_time_honesty_rating"].some(k=>b[k]!==undefined&&b[k]!==null);
  const hasAllCategories=categoryKeys.every(k=>Number.isFinite(Number(b[k]))&&Number(b[k])>=1&&Number(b[k])<=5);
  if(hasAnyCategory&&!hasAllCategories)return NextResponse.json({error:"Please rate all seven signing categories from 1 to 5."},{status:400});
  if(!hasAnyCategory){
