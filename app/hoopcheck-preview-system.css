@@ -4196,3 +4196,6 @@ main, section, article, aside, header, footer, nav, form, .card, .result-card, .
   .hc-entity-profile-page .hc-team-profile-hero h1 { font-size:28px; }
   .hc-review-form { padding-inline:20px; }
 }
+
+.hc-feed-location { display:inline-flex; align-items:center; gap:5px; min-width:0; overflow-wrap:anywhere; }
+.hc-feed-location svg { flex:0 0 14px; color:var(--hc-orange,#ff5a1f); }
