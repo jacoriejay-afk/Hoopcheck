@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import FollowButton from "../../../components/FollowButton";
 import PlayerContactButton from "../../../components/PlayerContactButton";
+import { HoopIcon, VerifiedBadge } from "../../../components/HoopCheckUI";
 
 type Player = {
   id: string;
@@ -136,7 +137,7 @@ export default function PlayerProfilePage() {
             <h1>
               {player.display_name || "HoopCheck Player"}
               {player.player_verified && (
-                <span title="Verified professional player" style={{ color: "var(--orange)", marginLeft: 10 }}>✓</span>
+                <VerifiedBadge label="Verified professional player" />
               )}
             </h1>
             <p className="muted">
@@ -175,7 +176,7 @@ export default function PlayerProfilePage() {
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 12 }}>
             <Link href="/search" className="btn">Explore HoopCheck</Link>
             <Link href={isOwnProfile ? "/account#edit-profile" : "/account"} className="btn dark">{isOwnProfile ? "Edit Profile" : "My Account"}</Link><button type="button" className="btn dark" onClick={reportProfile}>Report Profile</button>{reportMessage&&<span className="muted">{reportMessage}</span>}
-            <div className="bottom-back"><button type="button" className="btn dark" onClick={() => window.history.back()}>← Back</button></div>
+            <div className="bottom-back"><button type="button" className="btn dark" onClick={() => window.history.back()}><HoopIcon name="arrow-right" size={16} style={{ transform: "rotate(180deg)" }} /> Back</button></div>
           </div>
         </section>
       </div>
