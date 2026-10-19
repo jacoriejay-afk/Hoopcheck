@@ -19,7 +19,7 @@ export default function Logo({ variant = "full", className = "", wordmarkClassNa
         <path d="M24 49h50M49 24c-10 9-10 41 0 50M49 24c10 9 10 41 0 50M31 31c13 8 23 26 36 36M67 31C54 39 44 57 31 67" strokeWidth="2.8" />
         <path d="m48 59 13 11 32-40" stroke="currentColor" strokeWidth="7" strokeLinecap="square" strokeLinejoin="miter" />
       </svg>
-      {variant === "full" && <span className={`hc-logo__wordmark ${wordmarkClassName}`.trim()}>HOOPCHECK</span>}
+      {variant === "full" && <span className={`hc-logo__wordmark ${wordmarkClassName}`.trim()}>HOOP<span>CHECK</span></span>}
     </span>
   );
 }
