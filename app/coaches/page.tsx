@@ -158,7 +158,7 @@ export default function CoachesPage() {
                 <span>Directory profile</span>
               </div>
               <div className="hc-scout-card__identity">
-                <span className="hc-scout-card__jersey" aria-hidden="true">{coach.name.split(/\\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span>
+                <span className="hc-scout-card__jersey" aria-hidden="true">{coach.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span>
                 <div className="hc-scout-card__identity-copy">
                   <h2>{coach.name}</h2>
                   <p>{coach.city && coach.country ? `${coach.city}, ${coach.country}` : coach.country || coach.city || "Location not listed"}</p>
