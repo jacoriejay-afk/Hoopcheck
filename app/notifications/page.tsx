@@ -7,7 +7,7 @@ import HoopLoading from "../../components/HoopLoading";
 import WatchButton from "../../components/WatchButton";
 import { HoopIcon } from "../../components/HoopCheckUI";
 
-type Notice={id:string;target_type:"team"|"coach"|"league";target_id:string;notification_type:"review"|"rating"|"update"|"trust_score"|"roster_spot"|"pay_warning";title:string;body:string;read_at:string|null;created_at:string};
+type Notice={id:string;target_type:"team"|"coach"|"league"|"game";target_id:string;notification_type:"review"|"rating"|"update"|"trust_score"|"roster_spot"|"pay_warning"|"game_reminder";title:string;body:string;read_at:string|null;created_at:string};
 
 export default function NotificationsPage(){
   const [items,setItems]=useState<Notice[]>([]);
@@ -32,18 +32,20 @@ export default function NotificationsPage(){
     <section className="hero-card" style={{marginTop:20}}><p className="eyebrow">NOTIFICATIONS</p><h1>Alerts</h1><p className="muted">Only teams, coaches, and leagues you manually follow can send you review, rating, or update alerts.</p><button className="btn dark" type="button" onClick={markAll}>Mark all as read</button></section>
     <section style={{marginTop:24,display:"grid",gap:10}}>
       {items.length ? items.map(n => {
-        const path = n.target_type === "team" ? "teams" : n.target_type === "coach" ? "coaches" : "leagues";
-        const meta: Record<string, { label: string; icon: "message-square" | "star" | "external-link" | "shield-check" | "users" | "whistle" }> = {
+        const path = n.target_type === "team" ? "teams" : n.target_type === "coach" ? "coaches" : n.target_type === "game" ? "fan-live?gameId=" + n.target_id : "leagues";
+        const href = n.target_type === "game" ? "/" + path : "/" + path + "/" + n.target_id;
+        const meta: Record<string, { label: string; icon: "message-square" | "star" | "external-link" | "shield-check" | "users" | "whistle" | "bell" }> = {
           review: { label: "NEW REVIEW", icon: "message-square" },
           rating: { label: "NEW RATING", icon: "star" },
           update: { label: "PROFILE UPDATE", icon: "external-link" },
           trust_score: { label: "TRUST SCORE CHANGE", icon: "shield-check" },
           roster_spot: { label: "ROSTER SPOT", icon: "users" },
           pay_warning: { label: "PAY WARNING", icon: "whistle" },
+          game_reminder: { label: "GAME REMINDER", icon: "bell" },
         };
         const item = meta[n.notification_type] || meta.update;
         return <article key={n.id} className={"hc-alert-card " + (!n.read_at ? "unread" : "")}>
-          <Link href={"/" + path + "/" + n.target_id} className="hc-alert-card__main">
+          <Link href={href} className="hc-alert-card__main">
             <span className={"hc-alert-type hc-alert-type--" + n.notification_type}><HoopIcon name={item.icon} size={14} />{item.label} · {new Date(n.created_at).toLocaleString()}</span>
             <strong>{n.title}</strong><small>{n.body}</small>
           </Link>
