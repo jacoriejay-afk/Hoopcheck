@@ -191,6 +191,10 @@ create index if not exists profile_claim_requests_status_created_idx
   on public.profile_claim_requests(status, created_at desc);
 create index if not exists profile_claim_requests_entity_idx
   on public.profile_claim_requests(entity_type, entity_id, status);
+create unique index if not exists profile_claim_one_pending_per_entity_idx
+  on public.profile_claim_requests(entity_type,entity_id) where status='pending';
+create unique index if not exists profile_claim_one_approved_per_entity_idx
+  on public.profile_claim_requests(entity_type,entity_id) where status='approved';
 alter table public.profile_claim_requests enable row level security;
 drop policy if exists "claim request owners can read own" on public.profile_claim_requests;
 create policy "claim request owners can read own"
