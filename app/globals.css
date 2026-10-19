@@ -3210,3 +3210,14 @@ body { background-color: var(--hc-ink); }
  .hc-trust-score--full .hc-trust-score__copy>span { font-size:10px; }
  .hc-trust-score--full .hc-trust-score__copy small { font-size:10px; }
 }
+
+
+/* Signing scorecard category form. */
+.hc-review-category-intro { display:grid; gap:7px; padding:18px 20px; border:1px solid #e5e5df; border-radius:12px; background:#fff; }
+.hc-review-category-intro .eyebrow { color:#c74719; }
+.hc-review-category-intro h2 { margin:0; color:#151515; font-size:clamp(20px,3vw,26px); }
+.hc-review-category-intro>p { margin:0; font-size:12px; line-height:1.5; }
+.hc-review-derived-overall { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:6px; padding-top:12px; border-top:1px dashed #d7d7d1; }
+.hc-review-derived-overall>span { color:#66665f; font-size:11px; font-weight:850; letter-spacing:.06em; text-transform:uppercase; }
+.hc-review-derived-overall strong { color:#c74719; font-family:var(--font-display),Impact,sans-serif; font-size:25px; }
+.hc-review-derived-overall small { color:#777770; font-family:Inter,sans-serif; font-size:11px; }
