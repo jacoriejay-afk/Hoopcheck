@@ -443,7 +443,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   eyebrow: {
     margin: "0 0 8px",
-    color: "#ff6a00",
+    color: "#C2410C",
     fontSize: "12px",
     fontWeight: 900,
     letterSpacing: "0.16em",
@@ -516,7 +516,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   statValue: {
     fontSize: "2.5rem",
-    color: "#FF5A1F",
+    color: "#C2410C",
     lineHeight: 1,
     fontWeight: 950,
     letterSpacing: "-0.06em",
@@ -566,7 +566,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "7px 11px",
     background: "rgba(255,106,0,0.1)",
     border: "1px solid rgba(255,106,0,0.3)",
-    color: "#ffad72",
+    color: "#9A3412",
     fontSize: "10px",
     fontWeight: 900,
     letterSpacing: "0.08em",
