@@ -22,18 +22,8 @@ export async function POST(req:Request){
  if(!user)return NextResponse.json({error:"Invalid session"},{status:401});
  if(!user.email_confirmed_at)return NextResponse.json({error:"Please confirm your email address before submitting a review."},{status:403});
 
- const { count: recentCount, error: rateLimitError } = await s
-   .from("reviews")
-   .select("id", { count: "exact", head: true })
-   .eq("author_id", user.id)
-   .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
- if (rateLimitError) {
-   console.error("Review rate-limit lookup failed:", rateLimitError);
-   return NextResponse.json({error:"Unable to submit your review right now."},{status:500});
- }
- if ((recentCount ?? 0) >= 5) {
-   return NextResponse.json({error:"Review limit reached. You can submit up to 5 reviews in a 24-hour period."},{status:429});
- }
+ // The database RPC serializes claims per user, preventing concurrent requests
+ // from bypassing the rolling 24-hour limit.
  const { data: subscription, error: subscriptionError } = await s.from("subscriptions").select("status,current_period_end").eq("user_id", user.id).maybeSingle();
  if (subscriptionError) {
    console.error("Review subscription lookup failed:", subscriptionError);
@@ -91,6 +81,14 @@ export async function POST(req:Request){
    playing_time_honesty_rating:hasAllCategories?Number(b.playing_time_honesty_rating):null,
    title:title||null,body,is_anonymous:anonymous,status:"pending"
  };
+ const { data: hasReviewSlot, error: slotError } = await s.rpc("claim_review_submission_slot");
+ if (slotError) {
+   console.error("Atomic review rate-limit claim failed:", slotError);
+   return NextResponse.json({error:"Unable to submit your review right now."},{status:500});
+ }
+ if (hasReviewSlot !== true) {
+   return NextResponse.json({error:"Review limit reached. You can submit up to 5 reviews in a 24-hour period."},{status:429});
+ }
  const {data,error}=await s.from("reviews").insert(payload).select("id,status,created_at").single();
  if(error){
    console.error("Review submission failed:", { code: error.code, message: error.message });
