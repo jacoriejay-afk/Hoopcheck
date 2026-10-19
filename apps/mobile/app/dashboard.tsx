@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   playerWideBody: { flex: 1 },
   directoryRow: { flexDirection: "row", gap: 10 },
   directoryCard: { flex: 1, backgroundColor: "#FFFFFF", borderRadius: 12, borderWidth: 1, borderColor: "#E0E6EE", padding: 14, minHeight: 154 },
-  directoryIcon: { fontSize: 22 },
+  directoryIcon: { width: 40, height: 40, borderRadius: 10, backgroundColor: "#FFF0E8", alignItems: "center", justifyContent: "center" },
   directoryTitle: { color: "#101827", fontSize: 16, fontWeight: "900", marginTop: 8 },
   directoryCaption: { color: "#657287", fontSize: 12, lineHeight: 17, marginTop: 4 },
   directoryAction: { color: "#946600", fontWeight: "800", fontSize: 12, marginTop: 10 },
