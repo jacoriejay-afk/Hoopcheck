@@ -519,6 +519,17 @@ export async function POST(
           subscriptionId
         );
 
+      // Bind the signed Checkout event and its Stripe subscription to the same
+      // HoopCheck account before granting membership.
+      if (
+        session.metadata?.user_id !== userId ||
+        subscription.metadata?.user_id !== userId
+      ) {
+        throw new Error(
+          "Checkout session and subscription do not match the same HoopCheck user."
+        );
+      }
+
       await saveSubscription(
         userId,
         subscription
