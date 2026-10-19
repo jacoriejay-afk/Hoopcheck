@@ -4312,3 +4312,10 @@ main.admin-light-shell .admin-brand .hc-logo { color:#111111!important; }
 /* The full mark stacks the varsity wordmark below the basketball-check icon. */
 .hc-logo--full { flex-direction:column!important; align-items:center!important; justify-content:center!important; gap:3px!important; }
 .hc-logo--full .hc-logo__wordmark { display:block; font-size:12px!important; line-height:1!important; letter-spacing:.12em!important; text-align:center; }
+
+
+/* The global back chip can overlap admin toolbar rows; admin navigation lives in the page header. */
+body:has(main.admin-light-shell) .global-back-button,
+body:has(main.admin-directory-shell) .global-back-button { display:none!important; }
+.admin-directory-shell [style*="headerActions"] { gap:10px!important; }
+.admin-directory-shell .admin-stats-grid > * { min-height:112px; }
