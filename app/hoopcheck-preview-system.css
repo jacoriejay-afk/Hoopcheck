@@ -4307,3 +4307,8 @@ main.admin-light-shell .admin-brand .hc-logo { color:#111111!important; }
 .hc-searchbar input[type="search"]::-webkit-search-decoration { -webkit-appearance:none; appearance:none; }
 .hc-searchbar .hc-searchbar__input:focus { outline:none!important; box-shadow:none!important; }
 .hc-searchbar:focus-within { outline:3px solid rgba(255,90,31,.28)!important; outline-offset:1px; border-color:#FF5A1F!important; }
+
+
+/* The full mark stacks the varsity wordmark below the basketball-check icon. */
+.hc-logo--full { flex-direction:column!important; align-items:center!important; justify-content:center!important; gap:3px!important; }
+.hc-logo--full .hc-logo__wordmark { display:block; font-size:12px!important; line-height:1!important; letter-spacing:.12em!important; text-align:center; }
