@@ -11,6 +11,7 @@ type ProviderGame = {
   date?: string;
   timestamp?: number;
   status?: { short?: string; long?: string };
+  league?: { id?: number; name?: string; country?: string };
   teams?: { home?: ProviderTeam; away?: ProviderTeam; visitors?: ProviderTeam };
   scores?: { home?: ProviderScore; away?: ProviderScore; visitors?: ProviderScore };
 };
@@ -129,11 +130,19 @@ export async function GET(request: NextRequest) {
     const internalIdFor = (providerId: number, providerName?: string) =>
       byProviderId.get(providerId) || (providerName ? internalTeamByName.get(normalize(providerName)) : undefined);
 
-    const activeStatuses = new Set(["Q1", "Q2", "Q3", "Q4", "OT", "BT", "HT"]);
-    const liveGames = payload.response.filter(game => activeStatuses.has(String(game.status?.short || "").toUpperCase()));
+    const liveStatuses = new Set(["Q1", "Q2", "Q3", "Q4", "OT", "BT", "HT"]);
+    const scheduledStatuses = new Set(["NS", "TBD"]);
+    const finalStatuses = new Set(["FT", "AOT", "AP", "AWD"]);
+    const cancelledStatuses = new Set(["POST", "CANC", "ABD", "SUSP"]);
+    const statusOf = (game: ProviderGame) => String(game.status?.short || "").toUpperCase();
+    const liveGames = payload.response.filter(game => liveStatuses.has(statusOf(game)));
+    const trackedGames = payload.response.filter(game =>
+      liveStatuses.has(statusOf(game)) || scheduledStatuses.has(statusOf(game)) ||
+      finalStatuses.has(statusOf(game)) || cancelledStatuses.has(statusOf(game))
+    );
 
     const rows = [];
-    for (const game of liveGames) {
+    for (const game of trackedGames) {
       const homeProviderId = Number(game.teams?.home?.id);
       const awayProviderId = Number((game.teams?.away ?? game.teams?.visitors)?.id);
       const homeInternalId = internalIdFor(homeProviderId, game.teams?.home?.name);
@@ -152,16 +161,25 @@ export async function GET(request: NextRequest) {
 
       const startDate = game.timestamp ? new Date(game.timestamp * 1000).toISOString()
         : (game.date && !Number.isNaN(Date.parse(game.date)) ? new Date(game.date).toISOString() : null);
+      const providerStatus = statusOf(game);
+      const storedStatus = liveStatuses.has(providerStatus) ? "live"
+        : scheduledStatuses.has(providerStatus) ? "scheduled"
+        : finalStatuses.has(providerStatus) ? "final"
+        : "cancelled";
       rows.push({
         team_id: primaryId,
         opponent_team_id: opponentId,
         opponent_name: opponentName,
         provider_source: "api-sports-basketball",
         provider_game_id: String(game.id),
-        status: "live",
-        home_score: primaryScore,
-        away_score: opponentScore,
-        started_at: startDate
+        status: storedStatus,
+        home_score: storedStatus === "scheduled" ? null : primaryScore,
+        away_score: storedStatus === "scheduled" ? null : opponentScore,
+        started_at: storedStatus === "scheduled" ? null : startDate,
+        scheduled_at: startDate,
+        league_name: game.league?.name || null,
+        country: game.league?.country || null,
+        period_label: liveStatuses.has(providerStatus) ? (game.status?.long || providerStatus) : null
       });
     }
 
@@ -200,6 +218,8 @@ export async function GET(request: NextRequest) {
       fixtureDate,
       providerGamesForDate: payload.response.length,
       providerLiveGames: liveGames.length,
+      providerScheduledGames: rows.filter(row => row.status === "scheduled").length,
+      providerFinishedGames: rows.filter(row => row.status === "final").length,
       matchedGames: rows.length,
       unmatchedLiveGames
     }, {
