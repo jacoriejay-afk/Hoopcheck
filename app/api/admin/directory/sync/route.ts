@@ -33,7 +33,22 @@ export async function POST(req: Request) {
     { auth: { autoRefreshToken: false, persistSession: false } },
   );
 
-  const body = await req.json().catch(() => ({}));
+  const declaredLength = Number(req.headers.get("content-length") ?? "0");
+  if (Number.isFinite(declaredLength) && declaredLength > 8_192) {
+    return NextResponse.json({ error: "Request body is too large." }, { status: 413 });
+  }
+  let body: Record<string, unknown>;
+  try {
+    const rawBody = await req.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 8_192) {
+      return NextResponse.json({ error: "Request body is too large." }, { status: 413 });
+    }
+    const parsed: unknown = JSON.parse(rawBody);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Invalid body");
+    body = parsed as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  }
   const sourceId = typeof body.source_id === "string" ? body.source_id : null;
   const entityType = ["leagues", "teams", "coaches"].includes(body.entity_type)
     ? body.entity_type as "leagues"|"teams"|"coaches"
