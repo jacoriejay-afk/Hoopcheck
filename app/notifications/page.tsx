@@ -49,7 +49,7 @@ export default function NotificationsPage(){
             <span className={"hc-alert-type hc-alert-type--" + n.notification_type}><HoopIcon name={item.icon} size={14} />{item.label} · {new Date(n.created_at).toLocaleString()}</span>
             <strong>{n.title}</strong><small>{n.body}</small>
           </Link>
-          <div className="hc-alert-card__controls"><WatchButton targetType={n.target_type} targetId={n.target_id} targetName={n.title} /></div>
+          {n.target_type !== "game" && <div className="hc-alert-card__controls"><WatchButton targetType={n.target_type} targetId={n.target_id} targetName={n.title} /></div>}
         </article>;
       }) : <div className="card"><h2>No notifications yet</h2><p className="muted">Follow a team and choose the alerts you want to receive.</p><Link href="/teams" className="btn">Find Teams</Link></div>}
     </section>
