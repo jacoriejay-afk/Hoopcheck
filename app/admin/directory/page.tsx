@@ -380,7 +380,7 @@ function DirectoryCard({
       <p style={styles.cardText}>{description}</p>
 
       <Link href={href} style={styles.cardButton}>
-        Open
+        Open →
       </Link>
     </article>
   );
