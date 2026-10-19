@@ -8,6 +8,7 @@ import { supabase } from "../../../lib/supabase";
 import FollowButton from "../../../components/FollowButton";
 import PlayerContactButton from "../../../components/PlayerContactButton";
 import { HoopIcon, VerifiedBadge } from "../../../components/HoopCheckUI";
+import PlayerJourney from "../../../components/PlayerJourney";
 
 type Player = {
   id: string;
@@ -31,6 +32,7 @@ export default function PlayerProfilePage() {
   const [reportMessage, setReportMessage] = useState("");
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [countryPublic, setCountryPublic] = useState(false);
+  const [canManageJourney, setCanManageJourney] = useState(false);
   const [viewerType, setViewerType] = useState("");
   const [connectionAccepted, setConnectionAccepted] = useState(false);
 
@@ -77,6 +79,14 @@ export default function PlayerProfilePage() {
 
       if(user){
         setIsOwnProfile(user.id===params.id);
+        if (user.id === params.id) {
+          const { data: ownSubscription } = await supabase.from("subscriptions").select("plan,status,current_period_end").eq("user_id", user.id).maybeSingle();
+          setCanManageJourney(
+            ownSubscription?.plan === "premium" &&
+            (ownSubscription.status === "active" || ownSubscription.status === "trialing") &&
+            (!ownSubscription.current_period_end || new Date(ownSubscription.current_period_end).getTime() > Date.now())
+          );
+        }
         const {data:p}=await supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle();
         setViewerType(p?.account_type||"");
         if(user.id!==params.id && p?.account_type==="player"){
@@ -172,6 +182,10 @@ export default function PlayerProfilePage() {
             <p>{player.bio || "This player has not added a public bio yet."}</p>
           </div>
         </section>)}
+
+        {(isOwnProfile || viewerType !== "player" || connectionAccepted) && (
+          <PlayerJourney playerId={player.id} isOwnProfile={isOwnProfile} canManage={isOwnProfile && canManageJourney} />
+        )}
 
         <section className="dashboard-card" style={{ marginTop: 24 }}>
           <span className="card-kicker">HOOPCHECK</span>
