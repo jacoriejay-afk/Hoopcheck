@@ -91,7 +91,7 @@ export default function WatchButton({ targetType, targetId, targetName }: Props)
       target_type: targetType,
       target_id: targetId,
       follow: next.follow,
-      notify: next.alert_reviews || next.alert_ratings || next.alert_updates,
+      notify: !next.muted && (next.alert_reviews || next.alert_ratings || next.alert_updates || next.alert_trust_score || (targetType === "team" && (next.alert_roster_spots || next.alert_pay_warning))),
       alert_reviews: next.alert_reviews,
       alert_ratings: next.alert_ratings,
       alert_updates: next.alert_updates,
