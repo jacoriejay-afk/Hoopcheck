@@ -4252,3 +4252,7 @@ main.admin-light-shell .topnav a,main.admin-light-shell .brand { color:#222!impo
 .admin-directory-shell .admin-directory-panel .cardText { display:-webkit-box; overflow:hidden; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
 .admin-directory-shell .admin-directory-panel .cardButton { background:#FF5A1F!important; color:#111!important; }
 .admin-directory-shell .admin-directory-panel .roadmapItem { background:#fff!important; color:#111!important; }
+
+main.admin-light-shell div[style*="background"] { background:#fff!important; border-color:#E2E2DE!important; color:#111!important; }
+main.admin-light-shell div[style*="background"] h1,main.admin-light-shell div[style*="background"] h2,main.admin-light-shell div[style*="background"] h3,main.admin-light-shell div[style*="background"] p { color:#111!important; }
+main.admin-light-shell div[style*="background"] p.muted,main.admin-light-shell div[style*="background"] small { color:#525252!important; }
