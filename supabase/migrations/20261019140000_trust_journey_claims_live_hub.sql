@@ -14,6 +14,11 @@ alter table public.fan_live_games
   add column if not exists country text,
   add column if not exists period_label text;
 
+alter table public.fan_live_games drop constraint if exists fan_live_games_status_check;
+alter table public.fan_live_games
+  add constraint fan_live_games_status_check
+  check (status in ('scheduled','live','final','cancelled','postponed','abandoned'));
+
 create index if not exists fan_live_games_scheduled_at_idx
   on public.fan_live_games(scheduled_at)
   where scheduled_at is not null;
