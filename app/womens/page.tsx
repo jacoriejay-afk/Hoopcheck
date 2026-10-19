@@ -1,28 +1,139 @@
 "use client";
-import {supabase} from "../../lib/supabase";
-import {useEffect,useMemo,useState} from "react";
+
+import { supabase } from "../../lib/supabase";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import FollowButton from "../../components/FollowButton";
 import HoopLoading from "../../components/HoopLoading";
 
-export default function Womens(){
- const [teams,setTeams]=useState<any[]>([]); const [leagues,setLeagues]=useState<any[]>([]); const [q,setQ]=useState(""); const [country,setCountry]=useState(""); const [league,setLeague]=useState(""); const [loading,setLoading]=useState(true);
- useEffect(()=>{let mounted=true;Promise.race([Promise.all([supabase.from("womens_teams").select("id,name,country,city,league_id,league_name").eq("active",true).order("name"),supabase.from("womens_leagues").select("id,name,country,level").eq("active",true).order("name")]),new Promise<any>(resolve=>setTimeout(()=>resolve([{data:[]},{data:[]}]),2500))]).then(([t,l])=>{if(!mounted)return;setTeams(t.data||[]);setLeagues(l.data||[]);setLoading(false)});return()=>{mounted=false}},[]);
- const countries=useMemo(()=>Array.from(new Set(teams.map(t=>t.country).filter(Boolean))).sort(),[teams]);
- const filtered=useMemo(()=>teams.filter(t=>(!q||[t.name,t.city,t.country,t.league_name].join(" ").toLowerCase().includes(q.toLowerCase()))&&(!country||t.country===country)&&(!league||t.league_id===league)),[teams,q,country,league]);
- return <main className="page-shell hc-womens-directory-page"><div className="page-container">
- <section className="hero-card compact-hero"><p className="eyebrow">WOMEN’S BASKETBALL</p><h1>Women’s HoopCheck</h1><p className="muted">Research women’s professional teams and leagues with the same core HoopCheck membership, following, ratings and review experience.</p><div className="actions"><Link href="/teams" className="btn dark">Men’s Basketball</Link><Link href="/search" className="btn dark">Women’s Global Search</Link></div></section>
- <nav className="hc-directory-switcher" aria-label="Browse HoopCheck directories">
-          <span className="hc-directory-switcher-label">BROWSE DIRECTORIES</span>
+type WomensTeam = {
+  id: string;
+  name: string;
+  country: string | null;
+  city: string | null;
+  league_id: string | null;
+  league_name: string | null;
+};
+
+export default function Womens() {
+  const [teams, setTeams] = useState<WomensTeam[]>([]);
+  const [leagues, setLeagues] = useState<{id:string;name:string;country:string|null;level:string|null}[]>([]);
+  const [query, setQuery] = useState("");
+  const [country, setCountry] = useState("");
+  const [league, setLeague] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      const [teamResult, leagueResult] = await Promise.all([
+        supabase.from("womens_teams")
+          .select("id,name,country,city,league_id,league_name")
+          .eq("active", true).order("name"),
+        supabase.from("womens_leagues")
+          .select("id,name,country,level")
+          .eq("active", true).order("name"),
+      ]);
+      if (!mounted) return;
+      if (teamResult.error) console.error("Unable to load women's teams:", teamResult.error);
+      if (leagueResult.error) console.error("Unable to load women's leagues:", leagueResult.error);
+      setTeams(teamResult.data || []);
+      setLeagues(leagueResult.data || []);
+      setLoading(false);
+    }
+    void load();
+    return () => { mounted = false; };
+  }, []);
+
+  const countries = useMemo(
+    () => Array.from(new Set(teams.map(team => team.country).filter(Boolean) as string[])).sort(),
+    [teams]
+  );
+  const filtered = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    return teams.filter(team =>
+      (!term || [team.name, team.city, team.country, team.league_name].join(" ").toLowerCase().includes(term)) &&
+      (!country || team.country === country) &&
+      (!league || team.league_id === league)
+    );
+  }, [teams, query, country, league]);
+
+  return (
+    <main className="page-shell hc-womens-directory-page">
+      <div className="page-container">
+        <header className="hc-womens-directory-header">
+          <div>
+            <p className="eyebrow">WOMEN’S BASKETBALL</p>
+            <h1>Find a team</h1>
+            <p className="muted">Search professional women’s teams by club, league, city, or country.</p>
+          </div>
+          <Link href="/teams" className="hc-womens-switch-link">Men’s teams <span aria-hidden="true">→</span></Link>
+        </header>
+
+        <nav className="hc-directory-switcher hc-womens-compact-switcher" aria-label="Browse HoopCheck directories">
           <Link href="/teams">Men’s Teams</Link>
-          <Link href="/womens">Women’s Teams</Link>
+          <Link href="/womens" aria-current="page" className="is-active">Women’s Teams</Link>
           <Link href="/coaches">Coaches</Link>
           <Link href="/leagues">Leagues</Link>
           <Link href="/players">Find Players</Link>
-          <Link href="/search">Global Search</Link>
         </nav>
- <section className="dashboard-card compact-section"><div className="research-search"><div className="search-label">WOMEN’S DIRECTORY</div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search teams, cities, countries..." /><div className="team-filter-row"><select value={country} onChange={e=>setCountry(e.target.value)}><option value="">All countries</option>{countries.map(c=><option key={c} value={c}>{c}</option>)}</select><select value={league} onChange={e=>setLeague(e.target.value)}><option value="">All leagues</option>{leagues.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></div></div></section>
- <section className="compact-section"><div className="section-heading"><div><p className="eyebrow">LEAGUES</p><h2>Women’s leagues</h2></div><span className="muted">{leagues.length} leagues</span></div><div className="league-filter-grid">{leagues.map(l=><button key={l.id} className={league===l.id?"filter-chip active":"filter-chip"} onClick={()=>setLeague(league===l.id?"":l.id)}><strong>{l.name}</strong><span>{l.country||"International"}{l.level?" · "+l.level:""}</span></button>)}</div></section>
- {loading?<div className="dashboard-card"><HoopLoading label="Loading women’s basketball..." /></div>:<section className="grid compact-grid hc-team-directory-list">{filtered.map(t=><article className="dashboard-card compact-card hc-team-row" key={t.id} aria-label={t.name+" team listing"}><span className="card-kicker">{t.league_name||"Women’s Basketball"}</span><Link href={"/womens/"+t.id} className="hc-womens-team-main-link" aria-label={"View "+t.name+" profile"}><h2>{t.name}</h2><p className="muted">{t.city?t.city+", ":""}{t.country||"International"}</p></Link><div className="actions"><FollowButton targetType="team" targetId={t.id}/><Link href={"/womens/"+t.id} className="btn hc-womens-profile-button">View Profile <span aria-hidden="true">→</span></Link></div></article>)}{!filtered.length&&<div className="dashboard-card"><h2>No women’s teams found.</h2><p className="muted">Try another country, league, or search.</p></div>}</section>}
- <div className="bottom-back"><button type="button" className="btn dark" onClick={()=>window.history.back()}>← Back</button></div></div></main>
+
+        <section className="hc-womens-search-panel" aria-label="Search women’s teams">
+          <label htmlFor="womens-team-search">SEARCH TEAMS</label>
+          <div className="hc-womens-search-input-wrap">
+            <span aria-hidden="true">⌕</span>
+            <input id="womens-team-search" type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Team, league, city, country..." autoComplete="off" />
+            {query && <button type="button" className="hc-womens-clear-search" onClick={() => setQuery("")} aria-label="Clear search">×</button>}
+          </div>
+          <div className="hc-womens-filters">
+            <label>
+              <span>COUNTRY</span>
+              <select value={country} onChange={event => setCountry(event.target.value)}>
+                <option value="">All countries</option>
+                {countries.map(item => <option key={item} value={item}>{item}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>LEAGUE</span>
+              <select value={league} onChange={event => setLeague(event.target.value)}>
+                <option value="">All leagues</option>
+                {leagues.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </label>
+            {(country || league) && <button type="button" className="hc-womens-reset" onClick={() => { setCountry(""); setLeague(""); }}>Clear filters</button>}
+          </div>
+        </section>
+
+        <div className="hc-womens-results-heading">
+          <h2>Teams</h2>
+          <span>{loading ? "Loading…" : `${filtered.length} ${filtered.length === 1 ? "team" : "teams"}`}</span>
+        </div>
+
+        {loading ? <div className="hc-womens-loading"><HoopLoading label="Loading women’s teams…" /></div> : filtered.length ? (
+          <section className="hc-womens-team-list" aria-label="Women’s team results">
+            {filtered.map(team => (
+              <article className="hc-womens-team-row" key={team.id}>
+                <Link href={`/womens/${team.id}`} className="hc-womens-team-link" aria-label={`Open ${team.name} team profile`}>
+                  <span className="hc-womens-team-monogram" aria-hidden="true">{team.name.split(/\s+/).slice(0,2).map(part => part[0]).join("").toUpperCase()}</span>
+                  <span className="hc-womens-team-details">
+                    <strong>{team.name}</strong>
+                    <span>{[team.city, team.country].filter(Boolean).join(", ") || "International"}</span>
+                    <small>{team.league_name || "Women’s professional basketball"}</small>
+                  </span>
+                  <span className="hc-womens-team-arrow" aria-hidden="true">↗</span>
+                </Link>
+                <div className="hc-womens-team-follow"><FollowButton targetType="team" targetId={team.id} /></div>
+              </article>
+            ))}
+          </section>
+        ) : (
+          <section className="hc-womens-empty-state">
+            <h2>No teams match that search</h2>
+            <p>Try another team name or clear your filters.</p>
+            <button type="button" onClick={() => { setQuery(""); setCountry(""); setLeague(""); }}>Reset search</button>
+          </section>
+        )}
+      </div>
+    </main>
+  );
 }
