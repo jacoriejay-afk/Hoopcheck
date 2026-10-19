@@ -154,7 +154,7 @@ export default function AdminPrivacyRequestsPage() {
   }
 
   return (
-    <main className="page-shell">
+    <main className="page-shell admin-light-shell">
       <div className="page-container">
         <header className="topbar">
           <Link href="/admin/directory" className="brand">HOOPCHECK ADMIN</Link>
