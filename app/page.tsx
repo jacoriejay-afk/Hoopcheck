@@ -59,9 +59,12 @@ export default function Home() {
             Real reviews. Verified profiles. Global basketball.
             <br className="hc-desktop-break" /> Coaches. Teams. Leagues. Players.
           </p>
-          <Link href="/teams" className="hc-template-cta hc-home-cta">
-            EXPLORE DIRECTORY <span aria-hidden="true">→</span>
-          </Link>
+          <div className="hc-home-hero-actions">
+            <Link href="/teams" className="hc-template-cta hc-home-cta">
+              EXPLORE DIRECTORY <span aria-hidden="true">→</span>
+            </Link>
+            <Link href="/login" className="hc-home-signin">SIGN IN <span aria-hidden="true">↗</span></Link>
+          </div>
         </div>
 
         <div className="hc-template-hero-art hc-home-hero-art" aria-hidden="true">
