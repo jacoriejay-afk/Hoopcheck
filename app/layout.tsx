@@ -21,7 +21,7 @@ import CourtLines from "../components/CourtLines";
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
 const sansFont = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://hoopcheck-nine.vercel.app";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://hoopcheck.online";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -45,9 +45,10 @@ export const metadata: Metadata = {
     siteName: "HoopCheck",
     title: "HoopCheck | Overseas Basketball Team & Coach Reviews",
     description: "Research professional basketball teams, coaches, and leagues worldwide before you sign.",
+    images: [{ url: "/hoopcheck-logo.svg", alt: "HoopCheck" }],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "HoopCheck | Overseas Basketball Team & Coach Reviews",
     description: "Research professional basketball teams, coaches, and leagues worldwide before you sign.",
   },
