@@ -128,6 +128,7 @@ export default function AdminDirectoryPage() {
 
           <div style={styles.headerActions}>
             <Link href="/admin/reviews" className="admin-primary-action" style={styles.secondaryButton}>Review Queue</Link>
+            <Link href="/admin/claims" style={styles.secondaryButton}>Profile Claims</Link>
             <Link href="/admin/support" style={styles.secondaryButton}>Community Inbox</Link>
 
             <Link
