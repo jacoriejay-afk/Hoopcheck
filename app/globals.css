@@ -3017,3 +3017,13 @@ body { background-color: var(--hc-ink); }
 .hc-team-directory-row__follow > div > button[aria-label="Toggle notifications"] { display:none!important; }
 .result-grid:has(.hc-team-directory-row) { display:flex!important; flex-direction:column!important; gap:12px!important; }
 @media(max-width:480px) { .hc-team-directory-row { gap:8px; padding:10px; } .hc-team-directory-row__main { gap:9px; } .hc-team-directory-row__details strong { font-size:14px; } .hc-team-directory-row__follow { max-width:84px; } .hc-team-directory-row__follow .btn { max-width:84px; padding:0 7px!important; font-size:9px!important; } }
+
+.hc-team-directory-row__follow .follow-count { display:block; color:#666!important; font-size:10px!important; line-height:1.2; text-align:right; white-space:nowrap; }
+.hc-team-directory-row__follow .btn .muted { font-size:inherit; }
+.hc-team-directory-row__follow .btn { color:#171717!important; background:#fff!important; border-color:#deded9!important; }
+.hc-team-directory-row__follow .btn:hover { border-color:#ff5a1f!important; }
+.admin-directory-shell .admin-directory-panel { background:#fff!important; color:#111!important; }
+.admin-directory-shell .admin-directory-panel h2,.admin-directory-shell .admin-directory-panel h3 { color:#111!important; }
+.admin-directory-shell .admin-directory-panel p { color:#525252!important; }
+.admin-directory-shell .admin-directory-panel .badge { color:#9a3412!important; }
+@media(max-width:700px) { .admin-directory-shell .admin-stats-grid { grid-template-columns:1fr!important; gap:10px!important; } .admin-directory-shell .admin-directory-panel { padding:16px!important; } }
