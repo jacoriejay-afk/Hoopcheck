@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import SearchBar from "../../../components/SearchBar";
 import { supabase } from "../../../lib/supabase";
 
 type ReviewStatus = "pending" | "approved" | "rejected" | "flagged" | "removed";
@@ -576,13 +577,7 @@ export default function AdminReviewsPage() {
             <label className="visually-hidden" htmlFor="review-search">
               Search reviews
             </label>
-            <input
-              id="review-search"
-              className="input"
-              value={reviewSearch}
-              onChange={(event) => setReviewSearch(event.target.value)}
-              placeholder="Search target, author, title, or review text"
-            />
+            <SearchBar inputId="review-search" value={reviewSearch} onChange={setReviewSearch} onSubmit={setReviewSearch} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search reviews" />
 
             <label className="visually-hidden" htmlFor="review-filter">
               Filter reviews
