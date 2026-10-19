@@ -69,7 +69,6 @@ export default function FanLivePage() {
   useEffect(() => {
     if (!selected || !allowed) return;
     let stopped = false;
-    let interval: number | undefined;
     let currentUserId: string | null = null;
     const heartbeat = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -81,7 +80,7 @@ export default function FanLivePage() {
       await supabase.from("fan_live_chat_presence").upsert({ game_id: selected.id, user_id: user.id, last_seen_at: new Date().toISOString() }, { onConflict: "game_id,user_id" });
     };
     void heartbeat();
-    interval = window.setInterval(() => { void heartbeat(); }, 30_000);
+    const interval = window.setInterval(() => { void heartbeat(); }, 30_000);
     return () => {
       stopped = true;
       if (interval) window.clearInterval(interval);
