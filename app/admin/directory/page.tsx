@@ -459,7 +459,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   subtitle: {
-    color: "#8d8d8d",
+    color: "#525252",
     margin: "14px 0 0",
     fontSize: "15px",
   },
@@ -471,8 +471,8 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: "44px",
     padding: "0 15px",
     borderRadius: "9px",
-    border: "1px solid #303030",
-    background: "#151515",
+    border: "1px solid #D8D8D4",
+    background: "#FFFFFF",
     color: "#fff",
     textDecoration: "none",
     fontSize: "12px",
@@ -507,7 +507,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   statLabel: {
     display: "block",
-    color: "#858585",
+    color: "#525252",
     fontSize: "11px",
     fontWeight: 900,
     letterSpacing: "0.1em",
@@ -554,7 +554,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   panelText: {
-    color: "#888",
+    color: "#525252",
     maxWidth: "700px",
     lineHeight: 1.6,
     margin: "8px 0 0",
@@ -587,11 +587,11 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid #282828",
     borderRadius: "13px",
     padding: "18px",
-    minHeight: "190px",
+    minHeight: "0",
   },
 
   cardNumber: {
-    color: "#555",
+    color: "#6B6B66",
     fontSize: "11px",
     fontWeight: 900,
     letterSpacing: "0.1em",
@@ -605,7 +605,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   cardText: {
     margin: 0,
-    color: "#999",
+    color: "#525252",
     lineHeight: 1.55,
     flex: 1,
     fontSize: "13px",
@@ -616,7 +616,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    minHeight: "38px",
+    minHeight: "34px",
     padding: "0 13px",
     borderRadius: "8px",
     background: "#ff6a00",
@@ -647,13 +647,13 @@ const styles: Record<string, React.CSSProperties> = {
 
   roadmapComplete: {
     borderColor: "rgba(255,106,0,0.35)",
-    background: "rgba(255,106,0,0.04)",
+    background: "#FFF7F3",
   },
 
   loader: {
     minHeight: "60vh",
     display: "grid",
     placeItems: "center",
-    color: "#aaa",
+    color: "#525252",
   },
 };
