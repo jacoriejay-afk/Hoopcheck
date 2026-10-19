@@ -10,6 +10,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import GeoBadge from "../../components/GeoBadge";
+import SearchBar from "../../components/SearchBar";
 
 type Team = {
   id: string;
@@ -194,13 +195,7 @@ export default function TeamsPage() {
       <section className="hero">
         <div className="research-search">
           <div className="search-label">TEAM DIRECTORY</div>
-          <input
-            value={query}
-            onChange={(e) => { setQuery(e.target.value); setPage(0); }}
-            placeholder="Search teams, leagues, countries, or cities..."
-            aria-label="Search teams"
-            style={{ width: "100%", padding: "14px 16px", borderRadius: 10, border: "1px solid #333", background: "#0d0d0d", color: "#fff", fontSize: 15 }}
-          />
+          <SearchBar value={query} onChange={(value) => { setQuery(value); setPage(0); }} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search teams" onSubmit={(value) => { setQuery(value); setPage(0); }} />
           <div className="team-filter-row">
             <select value={continent} onChange={(e) => { setContinent(e.target.value); setCountry(""); setPage(0); }} aria-label="Filter teams by continent">
               <option value="">All continents</option>
