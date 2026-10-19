@@ -33,6 +33,9 @@ export default function TeamsPage() {
     useState<Team[]>([]);
   const [trustScores, setTrustScores] = useState<Record<string, TrustSummary>>({});
   const [teamCoordinates, setTeamCoordinates] = useState<Record<string, { latitude: number | null; longitude: number | null }>>({});
+  const [mapTeams, setMapTeams] = useState<Team[]>([]);
+  const [mapTrustScores, setMapTrustScores] = useState<Record<string, TrustSummary>>({});
+  const [mapCoordinates, setMapCoordinates] = useState<Record<string, { latitude: number | null; longitude: number | null }>>({});
 
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
@@ -181,6 +184,60 @@ export default function TeamsPage() {
     return () => { active = false; };
   }, [teams]);
 
+  useEffect(() => {
+    if (viewMode !== "map") return;
+    let active = true;
+    const loadAllMapTeams = async () => {
+      const all: Team[] = [];
+      for (let offset = 0; offset < 5000; offset += 500) {
+        let request = supabase.from("teams")
+          .select("id,name,country,league_name,league_id,city")
+          .eq("active", true).order("name");
+        const term = query.trim();
+        if (term) {
+          const escaped = term.replace(/[%_]/g, (match) => "\\" + match);
+          request = request.or("name.ilike.%" + escaped + "%,country.ilike.%" + escaped + "%,city.ilike.%" + escaped + "%,league_name.ilike.%" + escaped + "%");
+        }
+        if (country) request = request.eq("country", country);
+        if (league) request = request.eq("league_id", league);
+        if (division) {
+          const divisionLeagueIds = leagueOptions.filter(item => item.level === division).map(item => item.id);
+          request = divisionLeagueIds.length ? request.in("league_id", divisionLeagueIds) : request.eq("league_id", "00000000-0000-0000-0000-000000000000");
+        }
+        const continentCountries = continent ? CONTINENT_COUNTRIES[continent] || [] : [];
+        if (continentCountries.length) request = request.in("country", continentCountries);
+        const { data, error } = await request.range(offset, offset + 499);
+        if (!active) return;
+        if (error) { setMapTeams([]); return; }
+        all.push(...((data || []) as Team[]));
+        if (!data || data.length < 500) break;
+      }
+      if (!active) return;
+      setMapTeams(all);
+      const ids = all.map(team => team.id).filter(Boolean);
+      const summaries: Record<string, TrustSummary> = {};
+      for (let offset = 0; offset < ids.length; offset += 100) {
+        const batch = ids.slice(offset, offset + 100);
+        if (!batch.length) continue;
+        const response = await fetch(`/api/trust-score?entityType=team&entityIds=${batch.map(encodeURIComponent).join(",")}`);
+        if (!active) return;
+        if (response.ok) {
+          const payload = await response.json();
+          Object.assign(summaries, payload?.scores || {});
+        }
+      }
+      if (active) setMapTrustScores(summaries);
+      const { data: coordinates, error: coordinateError } = await supabase.from("teams")
+        .select("id,latitude,longitude").in("id", ids);
+      if (active) setMapCoordinates(!coordinateError ? Object.fromEntries((coordinates || []).map((row: any) => [row.id, {
+        latitude: row.latitude == null ? null : Number(row.latitude),
+        longitude: row.longitude == null ? null : Number(row.longitude),
+      }])) : {});
+    };
+    void loadAllMapTeams().catch(() => { if (active) setMapTeams([]); });
+    return () => { active = false; };
+  }, [viewMode, query, country, continent, league, division, leagueOptions]);
+
   return (
     <main className="hc-team-directory-page">
       <section className="hero">
@@ -274,12 +331,12 @@ export default function TeamsPage() {
       </div>
 
       {viewMode === "map" && (
-        <TeamMap teams={teams.map(team => ({
+        <TeamMap teams={mapTeams.map(team => ({
           ...team,
-          latitude: teamCoordinates[team.id]?.latitude ?? null,
-          longitude: teamCoordinates[team.id]?.longitude ?? null,
-          trustScore: trustScores[team.id]?.score ?? null,
-          averageRating: trustScores[team.id]?.averageRating ?? null,
+          latitude: mapCoordinates[team.id]?.latitude ?? null,
+          longitude: mapCoordinates[team.id]?.longitude ?? null,
+          trustScore: mapTrustScores[team.id]?.score ?? null,
+          averageRating: mapTrustScores[team.id]?.averageRating ?? null,
         }))} />
       )}
       {viewMode === "list" && (
