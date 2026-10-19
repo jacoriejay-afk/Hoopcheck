@@ -3408,3 +3408,19 @@ body { background-color: var(--hc-ink); }
 .hc-alert-card__controls .watch-control { position:relative; }
 .hc-watch-mute { padding-top:8px; border-top:1px dashed #d9d9d2; color:#a83a13!important; }
 @media(max-width:560px) { .hc-alert-card { grid-template-columns:minmax(0,1fr); } .hc-alert-card__controls { justify-content:flex-start; } }
+
+
+/* Official organization response — visually separate from player-authored reviews. */
+.hc-official-response { margin-top:14px; padding:14px; border:1px solid #2d2d2d; border-radius:11px; background:#111; color:#f6f6f2; }
+.hc-official-response__label { display:flex; align-items:center; gap:9px; }
+.hc-official-response__crest { display:grid; flex:0 0 35px; width:35px; height:35px; place-items:center; border:1px solid #ff5a1f; border-radius:8px; background:#1f1f1f; color:#ff8b5b; font-family:var(--font-display),Impact,sans-serif; font-size:10px; }
+.hc-official-response__label>span:last-child { display:grid; gap:4px; }
+.hc-official-response__label strong { color:#ff8b5b; font-size:10px; font-weight:950; letter-spacing:.09em; text-transform:uppercase; }
+.hc-official-response__label small { color:#a7a7a0; font-size:10px; }
+.hc-official-response>p { margin:12px 0 0; color:#efefeb; font-size:12px; line-height:1.6; white-space:pre-wrap; }
+.hc-official-response-action { margin-top:12px; }
+.hc-official-response-action>button { padding:7px 10px; border:1px solid #e1b19d; border-radius:7px; background:#fff0e9; color:#a83a13; font-size:10px; font-weight:900; }
+.hc-official-response-form { display:grid; gap:10px; margin-top:10px; padding:13px; border:1px solid #e1e1dc; border-radius:10px; background:#fafaf8; }
+.hc-official-response-form label { display:grid; gap:6px; color:#52524d; font-size:11px; font-weight:850; }
+.hc-official-response-form textarea { width:100%; padding:10px; border:1px solid #deded8; border-radius:8px; background:#fff; color:#171717; font:inherit; font-size:12px; }
+.hc-official-response-form small,.hc-official-response-form p { margin:0; color:#6b6b65; font-size:10px; line-height:1.45; }
