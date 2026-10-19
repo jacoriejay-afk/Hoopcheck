@@ -127,6 +127,20 @@ alter table public.feed_posts
   add column if not exists show_country boolean not null default false,
   add column if not exists team_tag_id uuid references public.teams(id) on delete set null;
 
+create or replace function public.is_player_country_public(p_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $
+  select coalesce(p.current_country_public, false)
+  from public.profiles p
+  where p.id = p_user_id and p.account_type = 'player'
+$;
+revoke all on function public.is_player_country_public(uuid) from public;
+grant execute on function public.is_player_country_public(uuid) to anon, authenticated;
+
 -- Organization claim queue. Proof URLs must point to a private storage location;
 -- do not store uploaded documents in a publicly readable bucket.
 create table if not exists public.profile_claim_requests (
