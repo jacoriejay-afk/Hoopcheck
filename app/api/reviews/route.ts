@@ -11,11 +11,15 @@ export async function POST(req:Request){
  if(!user)return NextResponse.json({error:"Invalid session"},{status:401});
  if(!user.email_confirmed_at)return NextResponse.json({error:"Please confirm your email address before submitting a review."},{status:403});
 
- const { count: recentCount } = await s
+ const { count: recentCount, error: rateLimitError } = await s
    .from("reviews")
    .select("id", { count: "exact", head: true })
    .eq("author_id", user.id)
    .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+ if (rateLimitError) {
+   console.error("Review rate-limit lookup failed:", rateLimitError);
+   return NextResponse.json({error:"Unable to submit your review right now."},{status:500});
+ }
  if ((recentCount ?? 0) >= 5) {
    return NextResponse.json({error:"Review limit reached. You can submit up to 5 reviews in a 24-hour period."},{status:429});
  }
