@@ -4247,3 +4247,8 @@ main.admin-light-shell .eyebrow { color:#9A3412!important; }
 main.admin-light-shell .admin-stat strong,main.admin-light-shell .stat-value { color:#C2410C!important; }
 main.admin-light-shell .topbar,main.admin-light-shell .topnav { color:#111!important; }
 main.admin-light-shell .topnav a,main.admin-light-shell .brand { color:#222!important; }
+
+.admin-directory-shell .admin-primary-action { background:#FF5A1F!important; border-color:#FF5A1F!important; color:#111!important; }
+.admin-directory-shell .admin-directory-panel .cardText { display:-webkit-box; overflow:hidden; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+.admin-directory-shell .admin-directory-panel .cardButton { background:#FF5A1F!important; color:#111!important; }
+.admin-directory-shell .admin-directory-panel .roadmapItem { background:#fff!important; color:#111!important; }
