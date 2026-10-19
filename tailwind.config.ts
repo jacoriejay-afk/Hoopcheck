@@ -23,7 +23,7 @@ const config = {
         },
       },
       fontFamily: {
-        display: ["var(--font-display)", "Archivo Black", "Anton", "sans-serif"],
+        display: ["var(--font-display)", "Graduate", "serif"],
         sans: ["var(--font-sans)", "Inter", "sans-serif"],
       },
     },
