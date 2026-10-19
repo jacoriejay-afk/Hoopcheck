@@ -179,8 +179,7 @@ export default function TeamsPage() {
           latitude: row.latitude == null ? null : Number(row.latitude),
           longitude: row.longitude == null ? null : Number(row.longitude),
         }])));
-      })
-      .catch(() => { if (active) setTeamCoordinates({}); });
+      }, () => { if (active) setTeamCoordinates({}); });
     return () => { active = false; };
   }, [teams]);
 
