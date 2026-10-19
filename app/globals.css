@@ -3035,3 +3035,55 @@ body { background-color: var(--hc-ink); }
 .hc-auth-logo { display:flex; width:fit-content; margin:0 auto 20px; color:#111; }
 .hc-auth-logo .hc-logo__wordmark span { color:#FF5A1F; }
 .hoop-loading-copy > .hc-logo { margin-bottom:5px; color:currentColor; }
+
+
+/* HoopCheck signature language: restrained court markings + shot-chart dots. */
+.hc-court-lines { display:block; width:100%; height:auto; pointer-events:none; user-select:none; }
+.hc-court-lines--arc { max-width:220px; }
+.hc-court-lines--circle { max-width:150px; }
+.hc-court-lines--full-court { width:min(100%,340px); }
+.hc-court-footer-art { position:absolute; right:clamp(12px,4vw,64px); top:50%; width:min(35vw,320px); transform:translateY(-50%); color:rgba(255,90,31,.38); }
+.site-footer { position:relative; overflow:hidden; }
+.site-footer .footer-inner,.site-footer .footer-bottom { position:relative; z-index:1; }
+.hc-court-divider-art { width:clamp(110px,20vw,220px); margin:10px auto 24px; color:#d7d7d2; }
+.hc-court-empty-art { width:clamp(120px,22vw,200px); margin:8px auto 18px; color:#d5d5d0; }
+.hc-directory-switcher-label { display:inline-flex; align-items:center; gap:9px; }
+.hc-directory-switcher-label::before { content:""; width:24px; height:15px; flex:0 0 auto; background-image:radial-gradient(circle,currentColor 1.2px,transparent 1.5px); background-size:6px 6px; color:#ff5a1f; opacity:.9; }
+.hc-court-section-kicker { display:flex; align-items:center; gap:9px; }
+.hc-court-section-kicker::before { content:""; width:24px; height:15px; flex:0 0 auto; background-image:radial-gradient(circle,currentColor 1.2px,transparent 1.5px); background-size:6px 6px; color:#ff5a1f; }
+.hc-scout-card { position:relative; display:flex; flex-direction:column; gap:0; min-width:0; overflow:hidden; padding:0!important; border:1px solid #deded9!important; border-radius:12px!important; background:#fff!important; color:#111!important; box-shadow:0 5px 20px rgba(0,0,0,.035)!important; }
+.hc-scout-card:hover { transform:translateY(-2px); border-color:#ffb08f!important; box-shadow:0 12px 28px rgba(0,0,0,.08)!important; }
+.hc-scout-card__report { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:31px; padding:8px 13px; border-bottom:1px solid #e9e9e5; background:#f7f7f5; color:#5b5b55; font-size:9px; font-weight:900; letter-spacing:.105em; line-height:1.2; text-transform:uppercase; }
+.hc-scout-card__report span:last-child { display:inline-flex; align-items:center; gap:5px; color:#a33b16; white-space:nowrap; }
+.hc-scout-card__report span:last-child::before { content:""; width:5px; height:5px; border-radius:50%; background:#ff5a1f; }
+.hc-scout-card__identity { display:flex; align-items:center; gap:14px; min-width:0; padding:18px 16px 15px; }
+.hc-scout-card__jersey { display:grid; flex:0 0 58px; width:58px; height:66px; place-items:center; clip-path:polygon(16% 0,36% 0,40% 10%,60% 10%,64% 0,84% 0,100% 18%,88% 34%,82% 27%,82% 100%,18% 100%,18% 27%,12% 34%,0 18%); background:#fff0e9; color:#c74719; font-family:var(--font-display),Impact,sans-serif; font-size:20px; letter-spacing:-.03em; }
+.hc-scout-card__identity-copy { flex:1; min-width:0; }
+.hc-scout-card__identity-copy h2,.hc-scout-card__identity-copy h3 { margin:0!important; color:#111!important; font-size:clamp(18px,2vw,23px)!important; line-height:1.05!important; overflow-wrap:anywhere; }
+.hc-scout-card__identity-copy p { margin:7px 0 0!important; color:#64645f!important; font-size:12px!important; line-height:1.4!important; }
+.hc-scout-card__stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin:0 16px; padding:13px 0 14px; border-top:1px dashed #d8d8d2; border-bottom:1px dashed #d8d8d2; }
+.hc-scout-card__stat { min-width:0; padding:0 9px; border-right:1px solid #e9e9e5; }
+.hc-scout-card__stat:first-child { padding-left:0; }
+.hc-scout-card__stat:last-child { padding-right:0; border-right:0; }
+.hc-scout-card__stat span { display:block; color:#73736d; font-size:9px; font-weight:850; letter-spacing:.045em; line-height:1.25; text-transform:uppercase; }
+.hc-scout-card__stat strong { display:block; margin-top:5px; color:#171717; font-family:var(--font-display),Impact,sans-serif; font-size:20px; line-height:1; }
+.hc-scout-card__stat small { display:block; margin-top:4px; color:#777770; font-size:9px; line-height:1.2; }
+.hc-scout-card__ticket { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px 14px; }
+.hc-scout-card__ticket::before { content:""; position:absolute; left:0; right:0; height:1px; margin-top:-40px; background:radial-gradient(circle at 4px 1px,#d8d8d2 2px,transparent 2.5px) left top/8px 4px repeat-x; }
+.hc-scout-card__ticket a { color:#b83e14; font-size:11px; font-weight:900; letter-spacing:.04em; text-transform:uppercase; }
+.hc-scout-card__ticket .hc-team-directory-row__follow { max-width:118px; }
+.hc-scout-card .hc-team-directory-row__main { display:block; flex:1; color:inherit; }
+.hc-scout-card__coach-link { display:inline-flex; align-items:center; gap:7px; color:#b83e14; font-size:11px; font-weight:900; letter-spacing:.04em; text-transform:uppercase; }
+.hc-court-empty-art + .eyebrow { justify-content:center; }
+@media(max-width:480px) {
+ .hc-scout-card__report { font-size:8px; letter-spacing:.06em; padding-inline:10px; }
+ .hc-scout-card__identity { gap:10px; padding:15px 12px 13px; }
+ .hc-scout-card__jersey { flex-basis:50px; width:50px; height:58px; font-size:17px; }
+ .hc-scout-card__stats { margin-inline:12px; }
+ .hc-scout-card__stat { padding-inline:6px; }
+ .hc-scout-card__stat span { font-size:8px; }
+ .hc-scout-card__stat strong { font-size:18px; }
+ .hc-scout-card__ticket { padding-inline:12px; }
+ .hc-court-footer-art { width:38vw; opacity:.7; }
+}
+@media(prefers-reduced-motion:reduce) { .hc-scout-card { transition:none!important; } }
