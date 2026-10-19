@@ -391,7 +391,7 @@ alter table public.team_pay_warning_events enable row level security;
 
 create or replace function public.create_review_notifications()
 returns trigger language plpgsql security definer set search_path = public
-as $
+as $$
 declare target_kind text; target_uuid uuid; target_label text;
 begin
   if new.status <> 'approved' then return new; end if;
@@ -415,7 +415,7 @@ begin
   where w.target_type=target_kind and w.target_id=target_uuid and w.follow=true and w.alert_ratings=true
     and coalesce(w.muted,false)=false and p.notifications_enabled=true;
   return new;
-end; $;
+end; $$;
 
 create or replace function public.create_entity_update_notifications()
 returns trigger language plpgsql security definer set search_path = public
@@ -435,7 +435,7 @@ revoke execute on function public.create_entity_update_notifications() from publ
 
 create or replace function public.notify_roster_spot_watchers()
 returns trigger language plpgsql security definer set search_path=public
-as $
+as $$
 declare team_label text;
 begin
   select name into team_label from public.teams where id=new.team_id;
@@ -446,7 +446,7 @@ begin
   where w.target_type='team' and w.target_id=new.team_id and w.follow=true
     and w.alert_roster_spots=true and coalesce(w.muted,false)=false and p.notifications_enabled=true;
   return new;
-end; $;
+end; $$;
 drop trigger if exists team_roster_spot_notifications on public.team_roster_spots;
 create trigger team_roster_spot_notifications after insert on public.team_roster_spots
 for each row when (new.status='open') execute function public.notify_roster_spot_watchers();
@@ -454,7 +454,7 @@ revoke execute on function public.notify_roster_spot_watchers() from public,anon
 
 create or replace function public.detect_team_pay_warning()
 returns trigger language plpgsql security definer set search_path=public
-as $
+as $$
 declare late_count integer; event_uuid uuid; team_label text;
 begin
   if new.status <> 'approved' or new.team_id is null or new.player_season is null or new.pay_on_time_rating is null or new.pay_on_time_rating > 2 then
@@ -477,7 +477,7 @@ begin
   where w.target_type='team' and w.target_id=new.team_id and w.follow=true
     and w.alert_pay_warning=true and coalesce(w.muted,false)=false and p.notifications_enabled=true;
   return new;
-end; $;
+end; $$;
 drop trigger if exists reviews_detect_team_pay_warning on public.reviews;
 create trigger reviews_detect_team_pay_warning after insert or update of status,pay_on_time_rating,player_season on public.reviews
 for each row execute function public.detect_team_pay_warning();
