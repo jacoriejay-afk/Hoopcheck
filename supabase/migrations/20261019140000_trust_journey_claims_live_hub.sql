@@ -257,6 +257,7 @@ create table if not exists public.fan_live_game_reminders (
   created_at timestamptz not null default now(),
   unique(game_id, user_id)
 );
+alter table public.fan_live_game_reminders add column if not exists notified_at timestamptz;
 alter table public.fan_live_game_reminders enable row level security;
 drop policy if exists "users manage own game reminders" on public.fan_live_game_reminders;
 create policy "users manage own game reminders"
@@ -329,7 +330,11 @@ alter table public.user_watchlists
 alter table public.notifications drop constraint if exists notifications_notification_type_check;
 alter table public.notifications
   add constraint notifications_notification_type_check
-  check (notification_type in ('review','rating','update','trust_score','roster_spot','pay_warning'));
+  check (notification_type in ('review','rating','update','trust_score','roster_spot','pay_warning','game_reminder'));
+alter table public.notifications drop constraint if exists notifications_target_type_check;
+alter table public.notifications
+  add constraint notifications_target_type_check
+  check (target_type in ('team','coach','league','game'));
 
 -- Score snapshots prevent duplicate trust-score movement alerts from page refreshes.
 create table if not exists public.trust_score_snapshots (
