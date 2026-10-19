@@ -270,22 +270,22 @@ async function saveEvent(
 async function getSubscriptionUserId(
   subscription: Stripe.Subscription
 ) {
-  const metadataUserId =
-    subscription.metadata?.user_id;
-
-  if (metadataUserId) {
-    return metadataUserId;
-  }
-
+  const metadataUserId = subscription.metadata?.user_id || null;
   const customerId =
-    typeof subscription.customer ===
-    "string"
+    typeof subscription.customer === "string"
       ? subscription.customer
       : subscription.customer.id;
 
-  return findUserByStripeCustomer(
-    customerId
-  );
+  // Metadata is written by HoopCheck at Checkout, but it must never override
+  // an existing customer-to-account binding in our database.
+  const customerOwnerId = await findUserByStripeCustomer(customerId);
+  if (metadataUserId && customerOwnerId && metadataUserId !== customerOwnerId) {
+    throw new Error(
+      "Stripe subscription metadata does not match the saved Stripe customer owner."
+    );
+  }
+
+  return metadataUserId || customerOwnerId;
 }
 
 function getInvoiceSubscriptionId(
