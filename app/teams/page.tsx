@@ -253,13 +253,14 @@ export default function TeamsPage() {
         <button type="button" className={viewMode === "map" ? "is-active" : ""} onClick={() => setViewMode("map")}>◎ Map</button>
       </div>
 
-      {viewMode === "map" ? (
+      {viewMode === "map" && (
         <TeamMap teams={teams.map(team => ({
           ...team,
           trustScore: trustScores[team.id]?.score ?? null,
           averageRating: trustScores[team.id]?.averageRating ?? null,
         }))} />
-      ) : (
+      )}
+      {viewMode === "list" && (
       <section className="grid hc-team-directory-list">
         {loading ? (<div className="card"><HoopLoading label="Scanning professional teams..." /></div>) : teams.length === 0 ? (
           <div className="card hc-team-empty">
@@ -289,7 +290,8 @@ export default function TeamsPage() {
           ))
         )}
       </section>
-      )}      {!loading && teams.length > 0 && (
+      )}
+      {viewMode === "list" && !loading && teams.length > 0 && (
         <div style={{ display: "flex", justifyContent: "center", gap: 12, padding: "0 24px 40px" }}>
           <button
             className="btn dark"
