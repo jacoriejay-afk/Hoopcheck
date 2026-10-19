@@ -92,10 +92,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid review request." }, { status: 400 });
   }
 
+  const reviewInput = body as Record<string, unknown>;
+
   if (
-    typeof body.womens_team_id !== "string" ||
-    !body.womens_team_id ||
-    body.womens_team_id !== profile.selected_womens_team_id
+    typeof reviewInput.womens_team_id !== "string" ||
+    !reviewInput.womens_team_id ||
+    reviewInput.womens_team_id !== profile.selected_womens_team_id
   ) {
     return NextResponse.json({ error: "You must be verified with this women’s team before reviewing it." }, { status: 403 });
   }
@@ -110,8 +112,8 @@ export async function POST(req: Request) {
     ratingValues[key] = value;
   }
 
-  const reviewBody = typeof body.body === "string" ? body.body.trim() : "";
-  const title = typeof body.title === "string" ? body.title.trim() : "";
+  const reviewBody = typeof reviewInput.body === "string" ? reviewInput.reviewInput.trim() : "";
+  const title = typeof reviewInput.title === "string" ? reviewInput.title.trim() : "";
   if (reviewBody.length < 10 || reviewBody.length > 5000) {
     return NextResponse.json({ error: "Review must be 10–5,000 characters." }, { status: 400 });
   }
@@ -126,12 +128,12 @@ export async function POST(req: Request) {
     .from("womens_team_reviews")
     .insert({
       author_id: user.id,
-      womens_team_id: body.womens_team_id,
+      womens_team_id: reviewInput.womens_team_id,
       ...ratingValues,
       title: title || null,
       body: reviewBody,
       status: "pending",
-      is_anonymous: body.is_anonymous === true,
+      is_anonymous: reviewInput.is_anonymous === true,
     })
     .select("id,status")
     .single();
