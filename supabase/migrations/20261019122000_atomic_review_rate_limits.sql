@@ -28,7 +28,7 @@ create or replace function public.claim_review_submission_slot()
 returns bigint
 language plpgsql
 security definer
-set search_path = public, pg_catalog
+set search_path = pg_catalog, public
 as $function$
 declare
   v_user_id uuid;
@@ -71,7 +71,7 @@ create or replace function public.release_review_submission_slot(
 returns boolean
 language plpgsql
 security definer
-set search_path = public, pg_catalog
+set search_path = pg_catalog, public
 as $function$
 declare
   v_deleted_count integer;
