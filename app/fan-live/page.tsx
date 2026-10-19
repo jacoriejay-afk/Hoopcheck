@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { getGameAvailability } from "../../lib/game-availability";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
@@ -12,8 +11,6 @@ type Team = { id: string; name: string };
 type ChatMessage = { id: string; body: string; created_at: string; user_id: string };
 
 export default function FanLivePage() {
-  const searchParams = useSearchParams();
-  const requestedGameId = searchParams.get("gameId");
   const [games, setGames] = useState<Game[]>([]);
   const [teams, setTeams] = useState<Record<string, Team>>({});
   const [selected, setSelected] = useState<Game | null>(null);
@@ -53,9 +50,10 @@ export default function FanLivePage() {
       ? await supabase.from("teams").select("id,name").in("id", relatedTeamIds)
       : { data: [] as Team[] };
     setTeams(Object.fromEntries((relatedTeams || []).map((team: Team) => [team.id, team])));
+    const requestedGameId = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("gameId") : null;
     setSelected(current => nextGames.find(game => game.id === requestedGameId) || nextGames.find(game => game.id === current?.id) || nextGames[0] || null);
     setLoading(false);
-  }, [requestedGameId]);
+  }, []);
 
   const loadMessages = useCallback(async (gameId: string) => {
     const { data, error } = await supabase.from("fan_live_chat_messages")
