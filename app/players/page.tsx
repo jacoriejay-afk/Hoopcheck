@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import FollowButton from "../../components/FollowButton";
+import { VerifiedBadge } from "../../components/HoopCheckUI";
 
 type Player = {
   id: string;
