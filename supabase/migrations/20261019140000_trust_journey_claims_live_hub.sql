@@ -161,6 +161,32 @@ create table if not exists public.profile_claim_requests (
     or (verification_method = 'document' and proof_document_path is not null)
   )
 );
+
+-- Private storage for claim evidence. Only the uploader and admin/moderator
+-- accounts can read the object; public profile pages never receive the raw path.
+insert into storage.buckets(id, name, public)
+values ('profile-claim-proofs', 'profile-claim-proofs', false)
+on conflict (id) do nothing;
+
+drop policy if exists "claim proof owner upload" on storage.objects;
+create policy "claim proof owner upload"
+on storage.objects for insert to authenticated
+with check (
+  bucket_id = 'profile-claim-proofs'
+  and (storage.foldername(name))[1] = (select auth.uid())::text
+);
+
+drop policy if exists "claim proof owner and admin read" on storage.objects;
+create policy "claim proof owner and admin read"
+on storage.objects for select to authenticated
+using (
+  bucket_id = 'profile-claim-proofs'
+  and (
+    (storage.foldername(name))[1] = (select auth.uid())::text
+    or public.is_current_user_admin_or_moderator()
+  )
+);
+
 create index if not exists profile_claim_requests_status_created_idx
   on public.profile_claim_requests(status, created_at desc);
 create index if not exists profile_claim_requests_entity_idx
