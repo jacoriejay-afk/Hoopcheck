@@ -23,6 +23,7 @@ type Profile = {
   position: string | null;
   years_pro: number | null;
   current_country: string | null;
+  current_country_public: boolean;
   current_team: string | null;
   profile_visibility: "public" | "private";
   player_verified: boolean; coach_verified?: boolean; coach_profile_id?: string | null; experience_summary?: string | null;
@@ -36,7 +37,7 @@ type Target = { id: string; name: string };
 const emptyProfile: Profile = {
   account_type: "player",
   display_name: null, first_name: null, last_name: null, professional_experience: false,
-  bio: null, position: null, years_pro: null, current_country: null, current_team: null,
+  bio: null, position: null, years_pro: null, current_country: null, current_country_public: false, current_team: null,
   profile_visibility: "public", player_verified: false, profile_claimed: true,
   avatar_url: null, avatar_moderation_status: "approved"
 };
@@ -54,6 +55,7 @@ export default function AccountPage() {
   const [position, setPosition] = useState("");
   const [yearsPro, setYearsPro] = useState("");
   const [currentCountry, setCurrentCountry] = useState("");
+  const [countryPublic, setCountryPublic] = useState(false);
   const [currentTeam, setCurrentTeam] = useState("");
   const [hometown, setHometown] = useState("");
   const [nationality, setNationality] = useState("");
@@ -79,7 +81,7 @@ export default function AccountPage() {
       setEmail(user.email ?? "");
       setUserId(user.id);
       const [{ data: profileData }, { data: subscriptionData }] = await Promise.all([
-        supabase.from("profiles").select("account_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_team,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("account_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
       ]);
       const nextProfile: Profile = profileData
@@ -91,6 +93,7 @@ export default function AccountPage() {
       setPosition(nextProfile.position ?? "");
       setYearsPro(nextProfile.years_pro?.toString() ?? "");
       setCurrentCountry(nextProfile.current_country ?? "");
+      setCountryPublic(Boolean(nextProfile.current_country_public));
       setCurrentTeam(nextProfile.current_team ?? "");
       setHometown((nextProfile as any).hometown ?? "");
       setNationality((nextProfile as any).nationality ?? "");
@@ -191,6 +194,7 @@ export default function AccountPage() {
       display_name: name || null, bio: bio.trim().slice(0, 500) || null,
       years_pro: years,
       current_country: currentCountry.trim().slice(0, 80) || null,
+      current_country_public: profile.account_type === "player" ? countryPublic : false,
       current_team: currentTeam.trim().slice(0, 120) || null,
       hometown: hometown.trim().slice(0,120) || null,
       nationality: nationality.trim().slice(0,80) || null,
@@ -300,7 +304,7 @@ export default function AccountPage() {
               </optgroup>
             </select>
                         {profile.account_type === "player" && <>
-              <label htmlFor="current-country" className="muted">Current country</label><select id="current-country" value={currentCountry} disabled><option value={currentCountry}>{currentCountry || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Current country is managed through verified team changes.</p>
+              <label htmlFor="current-country" className="muted">Current country</label><select id="current-country" value={currentCountry} disabled><option value={currentCountry}>{currentCountry || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Current country is managed through verified team changes.</p><label className="hc-country-public-toggle"><input type="checkbox" checked={countryPublic} onChange={event=>setCountryPublic(event.target.checked)} disabled={!currentCountry} /><span><strong>Show my current country publicly</strong><small>Optional. Only the country is displayed — never your city or precise location. Off by default.</small></span></label>
               <label htmlFor="current-team" className="muted">Current team</label><select id="current-team" value={currentTeam} disabled><option value={currentTeam}>{currentTeam || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Current team is managed through player verification.</p>
             </>}
             <label htmlFor="bio" className="muted">Player bio</label><textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder="Tell other players a little about your experience." />
