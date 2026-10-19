@@ -2,6 +2,25 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export async function POST(req: Request) {
+  const contentLength = Number(req.headers.get("content-length") ?? "0");
+  if (Number.isFinite(contentLength) && contentLength > 16 * 1024) {
+    return NextResponse.json({ error: "Review request is too large." }, { status: 413 });
+  }
+  const rawBody = await req.text();
+  if (new TextEncoder().encode(rawBody).byteLength > 16 * 1024) {
+    return NextResponse.json({ error: "Review request is too large." }, { status: 413 });
+  }
+  let body: unknown = null;
+  try {
+    body = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ error: "Invalid review request." }, { status: 400 });
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Invalid review request." }, { status: 400 });
+  }
+
+  const reviewInput = body as Record<string, unknown>;
   const token = req.headers.get("authorization")?.replace(/^Bearer /, "");
   if (!token) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
@@ -74,25 +93,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Review limit reached. You can submit up to 5 reviews in a 24-hour period." }, { status: 429 });
   }
 
-  const contentLength = Number(req.headers.get("content-length") ?? "0");
-  if (Number.isFinite(contentLength) && contentLength > 16 * 1024) {
-    return NextResponse.json({ error: "Review request is too large." }, { status: 413 });
-  }
-  const rawBody = await req.text();
-  if (new TextEncoder().encode(rawBody).byteLength > 16 * 1024) {
-    return NextResponse.json({ error: "Review request is too large." }, { status: 413 });
-  }
-  let body: unknown = null;
-  try {
-    body = JSON.parse(rawBody);
-  } catch {
-    return NextResponse.json({ error: "Invalid review request." }, { status: 400 });
-  }
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    return NextResponse.json({ error: "Invalid review request." }, { status: 400 });
-  }
 
-  const reviewInput = body as Record<string, unknown>;
 
   if (
     typeof reviewInput.womens_team_id !== "string" ||
