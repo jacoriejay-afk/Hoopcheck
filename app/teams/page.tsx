@@ -12,6 +12,7 @@ import HoopLoading from "../../components/HoopLoading";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import SearchBar from "../../components/SearchBar";
 import CourtLines from "../../components/CourtLines";
+import TeamMap from "../../components/TeamMap";
 
 type Team = {
   id: string;
@@ -33,6 +34,7 @@ export default function TeamsPage() {
   const [trustScores, setTrustScores] = useState<Record<string, TrustSummary>>({});
 
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
   const [continent, setContinent] = useState("");
@@ -91,7 +93,7 @@ export default function TeamsPage() {
         try {
           let request = supabase
             .from("teams")
-            .select("id, name, country, league_name, league_id, city")
+            .select("id, name, country, league_name, league_id, city, latitude, longitude")
             .eq("active", true)
             .order("name");
 
@@ -245,6 +247,18 @@ export default function TeamsPage() {
         )}
       </div>
 
+      {viewMode === "map" ? (
+        <TeamMap teams={teams.map(team => ({
+          ...team,
+          trustScore: trustScores[team.id]?.score ?? null,
+          averageRating: trustScores[team.id]?.averageRating ?? null,
+        }))} />
+      ) : (
+        <div className="hc-directory-view-toggle" role="group" aria-label="Team directory view">
+        <span>DIRECTORY VIEW</span>
+        <button type="button" className={viewMode === "list" ? "is-active" : ""} onClick={() => setViewMode("list")}>☷ List</button>
+        <button type="button" className={viewMode === "map" ? "is-active" : ""} onClick={() => setViewMode("map")}>◎ Map</button>
+      </div>
       <section className="grid hc-team-directory-list">
         {loading ? (<div className="card"><HoopLoading label="Scanning professional teams..." /></div>) : teams.length === 0 ? (
           <div className="card hc-team-empty">
@@ -274,8 +288,7 @@ export default function TeamsPage() {
           ))
         )}
       </section>
-
-      {!loading && teams.length > 0 && (
+      )}      {!loading && teams.length > 0 && (
         <div style={{ display: "flex", justifyContent: "center", gap: 12, padding: "0 24px 40px" }}>
           <button
             className="btn dark"
