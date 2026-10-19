@@ -101,7 +101,7 @@ export default function AdminDirectoryPage() {
 
   if (loading) {
     return (
-      <main style={styles.page}>
+      <main className="admin-directory-shell" style={styles.page}>
         <div style={styles.loader}>
           Loading directory controls...
         </div>
