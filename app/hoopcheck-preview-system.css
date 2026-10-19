@@ -3928,3 +3928,58 @@ input::placeholder, textarea::placeholder {
 @media (prefers-reduced-motion: reduce) {
   :where(.btn, .button-primary, .btn-primary, button[type="submit"]) { transition: none !important; }
 }
+
+
+/* Reusable primitives from components/HoopCheckUI.tsx */
+.hc-button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font: 800 14px/1.2 var(--hc-ui);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s ease;
+}
+.hc-button--primary { background: var(--hc-orange); color: var(--hc-ink); border-color: var(--hc-orange); }
+.hc-button--primary:hover { background: #F04D16; border-color: #F04D16; }
+.hc-button--secondary { background: transparent; color: var(--hc-ink); border-color: #CFCFC9; }
+.hc-button--secondary:hover { background: #FFFFFF; border-color: var(--hc-ink); }
+.hc-button:focus-visible { outline: 3px solid rgba(255,90,31,.38); outline-offset: 3px; }
+.hc-button:disabled { opacity: .55; cursor: not-allowed; }
+.hc-category-icon-tile {
+  --hc-category-color: var(--hc-orange);
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: var(--hc-category-color);
+  background: color-mix(in srgb, var(--hc-category-color) 12%, white);
+  border: 1px solid color-mix(in srgb, var(--hc-category-color) 28%, white);
+  clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%);
+}
+.hc-category-icon-tile svg { display: block; stroke: currentColor; }
+.hc-category-icon-tile--sm { width: 34px; height: 34px; }
+.hc-category-icon-tile--md { width: 44px; height: 44px; }
+.hc-category-icon-tile--lg { width: 54px; height: 54px; }
+.hc-category-icon-tile--teams { --hc-category-color: #FF5A1F; }
+.hc-category-icon-tile--womens { --hc-category-color: #D83A87; }
+.hc-category-icon-tile--coaches { --hc-category-color: #2456C8; }
+.hc-category-icon-tile--leagues { --hc-category-color: #16834A; }
+.hc-category-icon-tile--players { --hc-category-color: #6C3FD4; }
+.hc-category-icon-tile--reviews { --hc-category-color: #0A0A0A; }
+.hc-category-icon-tile--alerts { --hc-category-color: #A97900; }
+.hc-section-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; min-width: 0; margin: 0 0 12px; }
+.hc-section-header__titles { min-width: 0; }
+.hc-section-header__titles .hc-kicker { margin: 0 0 6px; color: var(--hc-orange); font-size: 10px; font-weight: 850; letter-spacing: .13em; line-height: 1.2; text-transform: uppercase; }
+.hc-section-header__titles h2 { margin: 0; font-size: clamp(20px, 3vw, 24px); line-height: 1.12; }
+.hc-section-header__view-all { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; color: var(--hc-ink); font-size: 12px; font-weight: 800; white-space: nowrap; }
+.hc-section-header__view-all:hover { color: var(--hc-orange); }
+@media (max-width: 390px) {
+  .hc-section-header { gap: 8px; }
+  .hc-section-header__view-all { font-size: 11px; }
+}
