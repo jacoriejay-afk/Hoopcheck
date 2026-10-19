@@ -335,7 +335,7 @@ function SearchContent() {
                 {visiblePlayers.map((player) => (
                   <Link href={`/players/${player.id}`} key={player.id} className="result-card">
                     <div className="result-type">PLAYER</div>
-                    <h4>{player.display_name || "HoopCheck Player"} {player.player_verified ? "✓" : ""}</h4>
+                    <h4>{player.display_name || "HoopCheck Player"} {player.player_verified && <VerifiedBadge label="Verified player" />}</h4>
                     <p>
                       {[
                         player.player_position,
