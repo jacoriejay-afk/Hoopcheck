@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo_Black, Inter } from "next/font/google";
+import { Graduate, Inter } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import "./hoopcheck-rebrand.css";
@@ -15,8 +15,9 @@ import BottomNav from "../components/BottomNav";
 import ProtectionLayer from "../components/ProtectionLayer";
 import AnalyticsTracker from "../components/AnalyticsTracker";
 import SiteHeader from "../components/SiteHeader";
+import Logo from "../components/Logo";
 
-const displayFont = Archivo_Black({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
+const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
 const sansFont = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://hoopcheck-nine.vercel.app";
@@ -92,7 +93,7 @@ export default function RootLayout({
         <footer className="site-footer">
           <div className="footer-inner">
             <div className="footer-brand">
-              <Link href="/" className="footer-logo" aria-label="HoopCheck home">HOOP<span>CHECK</span></Link>
+              <Link href="/" className="footer-logo" aria-label="HoopCheck home"><Logo variant="full" size={42} /></Link>
               <p>Research the basketball world before you commit.</p>
             </div>
             <div className="footer-links">
