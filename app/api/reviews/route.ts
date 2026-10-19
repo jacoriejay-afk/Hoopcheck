@@ -34,9 +34,17 @@ export async function POST(req:Request){
  } catch {
    return NextResponse.json({error:"Invalid review request body."},{status:400});
  }
- const { data: subscription } = await s.from("subscriptions").select("status,current_period_end").eq("user_id", user.id).maybeSingle();
+ const { data: subscription, error: subscriptionError } = await s.from("subscriptions").select("status,current_period_end").eq("user_id", user.id).maybeSingle();
+ if (subscriptionError) {
+   console.error("Review subscription lookup failed:", subscriptionError);
+   return NextResponse.json({error:"Unable to verify your membership right now."},{status:500});
+ }
  const paid = (subscription?.status === "active" || subscription?.status === "trialing") && (!subscription?.current_period_end || new Date(subscription.current_period_end) > new Date());
- const { data: authorProfile } = await s.from("profiles").select("account_type,player_verified,basketball_type").eq("id", user.id).maybeSingle();
+ const { data: authorProfile, error: profileError } = await s.from("profiles").select("account_type,player_verified,basketball_type").eq("id", user.id).maybeSingle();
+ if (profileError) {
+   console.error("Review author profile lookup failed:", profileError);
+   return NextResponse.json({error:"Unable to verify your player account right now."},{status:500});
+ }
  if (authorProfile?.account_type !== "player" || authorProfile?.player_verified !== true) return NextResponse.json({error:"Only verified professional player accounts can submit ratings or reviews. Scouts, agents, and fans can research but cannot post."},{status:403});
  if (!paid) return NextResponse.json({error:"An active HoopCheck membership is required to submit ratings or reviews."},{status:403});
  const anonymous = b.is_anonymous === true; const targetKeys=["coach_id","team_id","league_id"].filter(k=>typeof b[k]==="string"&&b[k]);
