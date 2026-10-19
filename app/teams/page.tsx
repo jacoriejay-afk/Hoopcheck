@@ -21,11 +21,16 @@ type Team = {
   league_id: string | null;
   division?: string | null;
   city: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 };
+
+type TrustSummary = { score: number | null; reviewCount: number; verifiedReviewCount: number; explanation: string; averageRating: number | null };
 
 export default function TeamsPage() {
   const [teams, setTeams] =
     useState<Team[]>([]);
+  const [trustScores, setTrustScores] = useState<Record<string, TrustSummary>>({});
 
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -143,6 +148,17 @@ export default function TeamsPage() {
   }, [query, country, continent, league, division, leagueOptions, page]);
 
 
+  useEffect(() => {
+    if (!teams.length) { setTrustScores({}); return; }
+    let active = true;
+    const ids = teams.map(team => team.id).filter(Boolean);
+    void fetch(`/api/trust-score?entityType=team&entityIds=${ids.map(encodeURIComponent).join(",")}`)
+      .then(response => response.ok ? response.json() : null)
+      .then(payload => { if (active && payload?.scores) setTrustScores(payload.scores as Record<string, TrustSummary>); })
+      .catch(() => { if (active) setTrustScores({}); });
+    return () => { active = false; };
+  }, [teams]);
+
   return (
     <main className="hc-team-directory-page">
       <section className="hero">
@@ -254,7 +270,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           teams.map((team) => (
-            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" />
+            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount} trustExplanation={trustScores[team.id]?.explanation} averageRating={trustScores[team.id]?.averageRating} />
           ))
         )}
       </section>
