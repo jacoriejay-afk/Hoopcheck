@@ -2784,3 +2784,191 @@ main.auth-page-shell .signup-form .message.error {
   .hc-home-hero-actions > a { width:100%; }
   .site-header-global .hc-signin-button { justify-content:flex-start; width:100%; min-height:42px; padding:10px 8px; border:0; border-bottom:1px solid #242424; }
 }
+
+
+/* Contrast/accessibility repair: dashboard metrics, menus, connection requests and team links. */
+.hc-dashboard-shell .hc-player-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+}
+.hc-dashboard-shell .hc-player-stats {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.045);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.hc-dashboard-shell .hc-player-stats > div {
+  flex: 1 1 155px;
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  padding: 15px 18px;
+  border: 0;
+  border-right: 1px solid rgba(255,255,255,.16);
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.hc-dashboard-shell .hc-player-stats > div:last-child { border-right: 0; }
+.hc-dashboard-shell .hc-player-stats > div > span {
+  color: #c8c8c3 !important;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .13em;
+}
+.hc-dashboard-shell .hc-player-stats > div > strong {
+  color: #ffffff !important;
+  font-size: clamp(17px, 2vw, 23px);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.hc-dashboard-shell .hc-player-stats > div > small {
+  color: #d0d0ca !important;
+  font-size: 12px;
+  line-height: 1.35;
+  text-transform: capitalize;
+}
+.hc-dashboard-shell .hc-player-stats > div:first-child > strong { color: var(--hc-orange) !important; }
+.hc-dashboard-shell .hc-player-stats > div:nth-child(2) > strong { font-family: var(--hc-ui); font-size: 28px; }
+@media (min-width: 900px) {
+  .hc-dashboard-shell .hc-player-hero { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 560px) {
+  .hc-dashboard-shell .hc-player-stats > div { flex: 1 1 44%; padding: 13px 12px; }
+  .hc-dashboard-shell .hc-player-stats > div:nth-child(2) { border-right: 0; }
+  .hc-dashboard-shell .hc-player-stats > div:nth-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,.16); }
+}
+
+/* The fixed bottom tabs and the mobile top dropdown must stay legible on every route. */
+.bottom-nav.hc-bottom-tab-bar {
+  background: #090909 !important;
+  color: #ffffff !important;
+  border-top: 1px solid #393939 !important;
+  box-shadow: 0 -8px 24px rgba(0,0,0,.16);
+}
+.bottom-nav.hc-bottom-tab-bar a,
+.bottom-nav.hc-bottom-tab-bar a:visited {
+  color: #c9c9c4 !important;
+  background: transparent !important;
+}
+.bottom-nav.hc-bottom-tab-bar a.active,
+.bottom-nav.hc-bottom-tab-bar a.active .bottom-nav-label {
+  color: var(--hc-orange) !important;
+}
+.bottom-nav.hc-bottom-tab-bar .bottom-nav-label {
+  color: inherit !important;
+  font-weight: 800;
+}
+.bottom-nav.hc-bottom-tab-bar svg { stroke: currentColor !important; }
+.site-header-global.hc-template-header .hc-header-nav.is-open {
+  background: #090909 !important;
+  color: #ffffff !important;
+  border-top: 1px solid #393939 !important;
+  box-shadow: 0 18px 30px rgba(0,0,0,.28);
+  z-index: 20;
+}
+.site-header-global.hc-template-header .hc-header-nav.is-open a,
+.site-header-global.hc-template-header .hc-header-nav.is-open .hc-header-icon {
+  color: #f4f4f1 !important;
+}
+.site-header-global.hc-template-header .hc-header-nav.is-open a:hover,
+.site-header-global.hc-template-header .hc-header-nav.is-open a.is-active {
+  color: var(--hc-orange) !important;
+}
+.site-header-global .hc-mobile-menu-toggle {
+  background: #090909 !important;
+  color: #ffffff !important;
+}
+
+/* Contact/request composer: always a white surface with dark readable text and controls. */
+.contact-box,
+.contact-gate {
+  background: #ffffff !important;
+  color: #171715 !important;
+  border: 1px solid #d4d4cd !important;
+  border-radius: 8px !important;
+  padding: 18px !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,.045);
+}
+.contact-box :where(h1,h2,h3,h4,strong,label,.card-kicker),
+.contact-gate :where(h1,h2,h3,h4,strong,label,.card-kicker) {
+  color: #171715 !important;
+}
+.contact-box :where(p,small,.muted),
+.contact-gate :where(p,small,.muted) { color: #55554f !important; }
+.contact-box :where(textarea,input,select) {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  margin: 12px 0;
+  padding: 12px;
+  background: #fafaf8 !important;
+  color: #171715 !important;
+  border: 1px solid #c9c9c1 !important;
+  border-radius: 5px !important;
+  caret-color: #171715;
+}
+.contact-box textarea::placeholder { color: #686861 !important; opacity: 1; }
+.contact-box .btn:not(.dark) {
+  background: var(--hc-orange) !important;
+  color: #111111 !important;
+  border-color: var(--hc-orange) !important;
+}
+.contact-box .btn.dark {
+  background: #171715 !important;
+  color: #ffffff !important;
+  border-color: #171715 !important;
+}
+.contact-messages { color: #171715 !important; }
+.contact-message { background: #f1f1ed !important; color: #171715 !important; }
+.contact-message.mine { background: #fff0e9 !important; color: #171715 !important; }
+.contact-message small { color: #55554f !important; }
+
+/* Women’s directory: make each team entry read and behave like an accessible destination. */
+.hc-womens-directory-page .hc-team-row {
+  position: relative;
+  background: #ffffff !important;
+  color: #171715 !important;
+  border: 1px solid #d4d4cd !important;
+  padding: 18px !important;
+}
+.hc-womens-directory-page .hc-team-row .hc-womens-team-main-link {
+  position: relative;
+  z-index: 1;
+  min-height: 64px;
+  color: #171715 !important;
+  cursor: pointer;
+}
+.hc-womens-directory-page .hc-team-row .hc-womens-team-main-link h2 {
+  color: #171715 !important;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+}
+.hc-womens-directory-page .hc-team-row .hc-womens-team-main-link:hover h2,
+.hc-womens-directory-page .hc-team-row .hc-womens-team-main-link:focus-visible h2 {
+  color: var(--hc-orange-bright) !important;
+  text-decoration-color: currentColor;
+}
+.hc-womens-directory-page .hc-team-row .actions { position: relative; z-index: 2; }
+.hc-womens-profile-page .hero-card,
+.hc-womens-profile-page .dashboard-card,
+.hc-womens-profile-page .card {
+  color: #171715;
+}
+.hc-womens-profile-page .hero-card :where(h1,h2,h3) { color: #ffffff; }
+.hc-womens-profile-page .hero-card :where(p,.muted) { color: #e1e1dc !important; }
+.hc-womens-profile-page .dashboard-card,
+.hc-womens-profile-page .card {
+  background: #ffffff !important;
+  border: 1px solid #d4d4cd !important;
+}
+.hc-womens-profile-page .dashboard-card :where(h1,h2,h3,strong) { color: #171715 !important; }
+.hc-womens-profile-page .dashboard-card :where(p,.muted,small) { color: #55554f !important; }
