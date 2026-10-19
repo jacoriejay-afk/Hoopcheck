@@ -114,21 +114,24 @@ export async function POST(
       );
     }
 
-    let body: {
-      plan?: string;
-      interval?: string;
-    } = {};
+    const declaredLength = Number(request.headers.get("content-length") ?? "0");
+    if (Number.isFinite(declaredLength) && declaredLength > 8_192) {
+      return NextResponse.json({ error: "Request body is too large." }, { status: 413 });
+    }
 
+    let body: { plan?: string; interval?: string } = {};
     try {
-      body = await request.json();
+      const rawBody = await request.text();
+      if (new TextEncoder().encode(rawBody).byteLength > 8_192) {
+        return NextResponse.json({ error: "Request body is too large." }, { status: 413 });
+      }
+      const parsed: unknown = JSON.parse(rawBody);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+      }
+      body = parsed as { plan?: string; interval?: string };
     } catch {
-      return NextResponse.json(
-        {
-          error:
-            "Invalid request body.",
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
     }
 
     const plan = body.plan;
