@@ -281,6 +281,8 @@ export default function TeamsPage() {
         </div>
       )}
 
+      <CourtLines variant="circle" className="hc-court-divider-art" />
+
       <section className="hero">
         <div className="eyebrow">
           Player Intelligence
