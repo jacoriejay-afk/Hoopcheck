@@ -21,7 +21,7 @@ import CourtLines from "../components/CourtLines";
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
 const sansFont = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://hoopcheck.online";
+const siteUrl = "https://hoopcheck.online";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

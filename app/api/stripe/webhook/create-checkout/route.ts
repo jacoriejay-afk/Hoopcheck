@@ -34,7 +34,9 @@ export async function POST(
     process.env.STRIPE_SECRET_KEY;
 
   const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL;
+    process.env.VERCEL_ENV === "production"
+      ? "https://hoopcheck.online"
+      : process.env.NEXT_PUBLIC_SITE_URL;
 
   // Fail closed until the deployment explicitly declares and enables the
   // matching Stripe mode. Production must use live keys; non-production must

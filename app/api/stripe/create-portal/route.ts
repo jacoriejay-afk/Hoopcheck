@@ -14,7 +14,9 @@ function getAdminSupabase() {
 export async function POST(request: Request) {
   try {
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    const siteUrl = process.env.VERCEL_ENV === "production"
+      ? "https://hoopcheck.online"
+      : process.env.NEXT_PUBLIC_SITE_URL;
 
     // Keep the billing portal aligned with checkout and cancellation:
     // fail closed unless the deployment explicitly enables the matching Stripe mode.
