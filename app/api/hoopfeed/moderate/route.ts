@@ -163,11 +163,12 @@ export async function POST(request: Request) {
       if (error) return NextResponse.json({ allowed:false,message:"Photo upload failed. Your post was not published." },{status:400});
       image_url = db.storage.from("feed-images").getPublicUrl(path).data.publicUrl;
     }
-    const shareCountry = String(form.get("share_country") || "true") === "true";
+    const shareCountry = String(form.get("share_country") || "false") === "true";
     const submittedCountry = String(form.get("post_country") || "").trim().slice(0, 100);
     const { error } = await db.from("feed_posts").insert({
       author_id:user.id, body:text || " ", image_url,
       location_country:shareCountry ? (submittedCountry || profile?.current_country || null) : null,
+      show_country:shareCountry,
       status:"approved", expires_at:new Date(Date.now()+86400000).toISOString()
     });
     if (error) return NextResponse.json({ allowed:false,message:"We couldn't publish your post. Please try again." },{status:400});
