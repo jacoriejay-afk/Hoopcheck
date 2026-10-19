@@ -62,7 +62,7 @@ export async function GET(request: Request) {
         createdAt: row.created_at,
         reviewerVerified: Boolean(verifiedByAuthor[row.author_id]),
       }));
-      scores[id] = calculateTrustScore({ averageRating, reviews: scoreReviews });
+      scores[id] = { ...calculateTrustScore({ averageRating, reviews: scoreReviews }), averageRating };
     }
 
     const headers = { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" };
