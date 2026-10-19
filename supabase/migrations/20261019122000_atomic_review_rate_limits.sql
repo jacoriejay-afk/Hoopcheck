@@ -12,7 +12,7 @@ create index if not exists review_submission_rate_limits_user_created_idx
   on public.review_submission_rate_limits (user_id, created_at desc);
 
 alter table public.review_submission_rate_limits enable row level security;
-revoke all on table public.review_submission_rate_limits from anon, authenticated;
+revoke all on table public.review_submission_rate_limits from public, anon, authenticated;
 
 -- Seed from existing reviews so rollout does not reset the rolling allowance.
 insert into public.review_submission_rate_limits (user_id, created_at)
