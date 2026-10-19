@@ -5,6 +5,17 @@ export async function POST(req:Request){
  if (Number.isFinite(contentLength) && contentLength > 16_384) {
    return NextResponse.json({error:"Review request is too large."},{status:413});
  }
+ let b: Record<string, unknown>;
+ try {
+   const rawBody = await req.text();
+   if (new TextEncoder().encode(rawBody).byteLength > 16_384) {
+     return NextResponse.json({error:"Review request is too large."},{status:413});
+   }
+   b = JSON.parse(rawBody);
+   if (!b || typeof b !== "object" || Array.isArray(b)) throw new Error("Invalid body");
+ } catch {
+   return NextResponse.json({error:"Invalid review request body."},{status:400});
+ }
  const token=req.headers.get("authorization")?.replace(/^Bearer /,""); if(!token)return NextResponse.json({error:"Authentication required"},{status:401});
  const s=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,{global:{headers:{Authorization:`Bearer ${token}`}}});
  const {data:{user}}=await s.auth.getUser(token);
@@ -22,17 +33,6 @@ export async function POST(req:Request){
  }
  if ((recentCount ?? 0) >= 5) {
    return NextResponse.json({error:"Review limit reached. You can submit up to 5 reviews in a 24-hour period."},{status:429});
- }
- let b: Record<string, unknown>;
- try {
-   const rawBody = await req.text();
-   if (new TextEncoder().encode(rawBody).byteLength > 16_384) {
-     return NextResponse.json({error:"Review request is too large."},{status:413});
-   }
-   b = JSON.parse(rawBody);
-   if (!b || typeof b !== "object" || Array.isArray(b)) throw new Error("Invalid body");
- } catch {
-   return NextResponse.json({error:"Invalid review request body."},{status:400});
  }
  const { data: subscription, error: subscriptionError } = await s.from("subscriptions").select("status,current_period_end").eq("user_id", user.id).maybeSingle();
  if (subscriptionError) {
