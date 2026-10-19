@@ -21,6 +21,7 @@ import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
 import TrustScoreDial from "../../../components/TrustScoreDial";
 import ClaimProfileButton from "../../../components/ClaimProfileButton";
+import OfficialReviewResponse from "../../../components/OfficialReviewResponse";
 
 type Team = {
   id: string;
@@ -980,6 +981,7 @@ export default function TeamDetailPage() {
                       <p>
                         {review.body}
                       </p>
+                      <OfficialReviewResponse reviewId={review.id} entityType="team" entityId={team.id} entityName={team.name} />
 
                       <div className="review-footer">
                         <p
