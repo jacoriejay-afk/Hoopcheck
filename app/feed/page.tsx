@@ -28,7 +28,7 @@ export default function Feed(){
   const [open,setOpen]=useState<Record<string,boolean>>({});
   const [body,setBody]=useState(""); const [photo,setPhoto]=useState<File|null>(null); const [preview,setPreview]=useState(""); const [showCountry,setShowCountry]=useState(false); 
   const [user,setUser]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [subscription,setSubscription]=useState<Subscription|null>(null);
-  const [msg,setMsg]=useState(""); const [loading,setLoading]=useState(true); const [posting,setPosting]=useState(false);
+  const [msg,setMsg]=useState(""); const [loading,setLoading]=useState(true); const [posting,setPosting]=useState(false); const [now,setNow]=useState(0);
 
   const access=["player","fan","scout","agent"].includes(profile?.account_type||"") &&
     (subscription?.plan==="pro"||subscription?.plan==="premium") &&
