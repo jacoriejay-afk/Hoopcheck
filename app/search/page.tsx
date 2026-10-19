@@ -312,7 +312,7 @@ function SearchContent() {
                 {countries.map((country) => <option key={country} value={country}>{country}</option>)}
               </select>
               <button type="button" className="btn dark" onClick={() => setVerifiedOnly((value) => !value)} aria-pressed={verifiedOnly}>
-                {verifiedOnly ? "✓ Verified only" : "Verified only"}
+                {verifiedOnly ? <><VerifiedBadge label="Verified filter active" /> Verified only</> : "Verified only"}
               </button>
             </div>
           )}
