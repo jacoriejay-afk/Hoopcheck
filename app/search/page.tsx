@@ -7,6 +7,7 @@ import { supabase } from "../../lib/supabase";
 import PlayerContactButton from "../../components/PlayerContactButton";
 import { VerifiedBadge } from "../../components/HoopCheckUI";
 import SearchBar from "../../components/SearchBar";
+import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 
 type Coach = { id: string; name: string; country: string | null; city: string | null };
 type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null };
@@ -370,13 +371,7 @@ function SearchContent() {
               <div className="group-heading"><span>03</span><h3>Men’s Teams</h3></div>
               <div className="result-grid">
                 {visibleTeams.map((team) => (
-                  <Link href={`/teams/${team.id}`} key={team.id} className="result-card">
-                    <div className="result-type">TEAM</div>
-                    <h4>{team.name}</h4>
-                    <p>{team.city && team.country ? `${team.city}, ${team.country}` : team.country || team.city || "Location unavailable"}</p>
-                    {team.league_name && <div className="result-meta">{team.league_name}</div>}
-                    <span className="result-link">Research Team →</span>
-                  </Link>
+                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" />
                 ))}
               </div>
             </section>
@@ -387,13 +382,7 @@ function SearchContent() {
               <div className="group-heading"><span>04</span><h3>Women’s Teams</h3></div>
               <div className="result-grid">
                 {visibleWomensTeams.map((team) => (
-                  <Link href={`/womens/${team.id}`} key={team.id} className="result-card">
-                    <div className="result-type">WOMEN’S TEAM</div>
-                    <h4>{team.name}</h4>
-                    <p>{team.city && team.country ? `${team.city}, ${team.country}` : team.country || team.city || "Location unavailable"}</p>
-                    {team.league_name && <div className="result-meta">{team.league_name}</div>}
-                    <span className="result-link">Research Women’s Team →</span>
-                  </Link>
+                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" />
                 ))}
               </div>
             </section>
