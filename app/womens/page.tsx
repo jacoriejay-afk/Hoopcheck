@@ -6,6 +6,7 @@ import Link from "next/link";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
+import TeamMap from "../../components/TeamMap";
 
 
 type WomensTeam = {
@@ -24,6 +25,7 @@ export default function Womens() {
   const [country, setCountry] = useState("");
   const [league, setLeague] = useState("");
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
   useEffect(() => {
     let mounted = true;
@@ -106,7 +108,14 @@ export default function Womens() {
           <span>{loading ? "Loading…" : `${filtered.length} ${filtered.length === 1 ? "team" : "teams"}`}</span>
         </div>
 
-        {loading ? <div className="hc-womens-loading"><HoopLoading label="Loading women’s teams…" /></div> : filtered.length ? (
+        <div className="hc-directory-view-toggle hc-womens-view-toggle" role="group" aria-label="Women’s team directory view">
+          <span>DIRECTORY VIEW</span>
+          <button type="button" className={viewMode === "list" ? "is-active" : ""} onClick={() => setViewMode("list")}>☷ List</button>
+          <button type="button" className={viewMode === "map" ? "is-active" : ""} onClick={() => setViewMode("map")}>◎ Map</button>
+        </div>
+        {loading ? <div className="hc-womens-loading"><HoopLoading label="Loading women’s teams…" /></div> : viewMode === "map" ? (
+          <TeamMap profileBasePath="womens" teams={filtered.map(team => ({...team, latitude:null, longitude:null}))} />
+        ) : filtered.length ? (
           <section className="hc-womens-team-list" aria-label="Women’s team results">
             {filtered.map(team => (
               <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" />
