@@ -6,17 +6,6 @@ import { useState } from "react";
 import { useAuthState } from "./AuthProvider";
 import Logo from "./Logo";
 
-function HoopCheckMark() {
-  return (
-    <svg className="hc-brand-mark" viewBox="0 0 240 240" aria-hidden="true">
-      <path d="M120 8 218 62 218 166 120 226 22 166 22 62Z" fill="var(--hc-paper-strong)" stroke="currentColor" strokeWidth="9" strokeLinejoin="miter" />
-      <circle cx="120" cy="117" r="63" fill="none" stroke="currentColor" strokeWidth="6" />
-      <path d="M57 117h126M120 54c-25 26-25 100 0 126M120 54c25 26 25 100 0 126M75 72c31 18 58 61 90 90M165 72c-31 18-58 61-90 90" fill="none" stroke="currentColor" strokeWidth="5" />
-      <path d="m125 140 105-78-47 76-24-6-23 27Z" fill="var(--hc-orange)" />
-    </svg>
-  );
-}
-
 function SearchIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.4" /><path d="m16 16 4.5 4.5" /></svg>;
 }
@@ -37,8 +26,7 @@ export default function SiteHeader() {
   return (
     <header className="site-header-global hc-template-header">
       <Link href={signedIn ? "/dashboard" : "/"} className="site-header-brand" aria-label="HoopCheck home">
-        <HoopCheckMark />
-        <span className="hc-wordmark">HOOP<span>CHECK</span></span>
+        <Logo variant="full" size={42} />
       </Link>
 
       <button type="button" className="hc-mobile-menu-toggle" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}><span /><span /><span /></button>
