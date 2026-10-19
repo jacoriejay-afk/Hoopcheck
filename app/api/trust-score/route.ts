@@ -53,7 +53,7 @@ export async function GET(request: Request) {
       for (const author of authors || []) verifiedByAuthor[author.id] = author.player_verified === true;
     }
 
-    const scores: Record<string, ReturnType<typeof calculateTrustScore>> = {};
+    const scores: Record<string, ReturnType<typeof calculateTrustScore> & { averageRating: number | null }> = {};
     for (const id of ids) {
       const entityReviews = reviews.filter(row => (entityType === "team" ? row.team_id : row.coach_id) === id);
       const ratings = entityReviews.map(row => Number(row.overall_rating)).filter(value => Number.isFinite(value) && value >= 1 && value <= 5);
