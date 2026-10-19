@@ -66,6 +66,14 @@ type Review = {
   player_season?: string | null;
 };
 
+function averageCategory(
+  reviews: Review[],
+  key: "pay_on_time_rating" | "housing_rating" | "medical_support_rating" | "communication_rating" | "coaching_quality_rating" | "facilities_rating" | "playing_time_honesty_rating",
+): number | null {
+  const values = reviews.map(review => review[key]).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+}
+
 function RatingBar({
   label,
   value,
@@ -814,10 +822,13 @@ export default function TeamDetailPage() {
             <div className="card" style={{ position: "relative", overflow: "hidden" }}>
               <div className="eyebrow">Team Breakdown</div>
               {hasAccess ? (reviews.length === 0 ? <p>No approved reviews yet.</p> : <>
-                  <RatingBar label="Communication" value={communication} />
-                  <RatingBar label="Professionalism" value={professionalism} />
-                  <RatingBar label="Development" value={development} />
-                  <RatingBar label="Payment" value={payment} />
+                  {averageCategory(reviews, "pay_on_time_rating") !== null && <RatingBar label="Pay On Time" value={averageCategory(reviews, "pay_on_time_rating")!} />}
+                  {averageCategory(reviews, "housing_rating") !== null && <RatingBar label="Housing" value={averageCategory(reviews, "housing_rating")!} />}
+                  {averageCategory(reviews, "medical_support_rating") !== null && <RatingBar label="Medical Support" value={averageCategory(reviews, "medical_support_rating")!} />}
+                  {averageCategory(reviews, "communication_rating") !== null && <RatingBar label="Communication" value={averageCategory(reviews, "communication_rating")!} />}
+                  {averageCategory(reviews, "coaching_quality_rating") !== null && <RatingBar label="Coaching Quality" value={averageCategory(reviews, "coaching_quality_rating")!} />}
+                  {averageCategory(reviews, "facilities_rating") !== null && <RatingBar label="Facilities" value={averageCategory(reviews, "facilities_rating")!} />}
+                  {averageCategory(reviews, "playing_time_honesty_rating") !== null && <RatingBar label="Playing Time Honesty" value={averageCategory(reviews, "playing_time_honesty_rating")!} />}
                 </>) : (
                 <div style={{ padding: "24px 0" }}>
                   <div style={{ filter: "blur(7px)", opacity: 0.35, pointerEvents: "none" }}>
