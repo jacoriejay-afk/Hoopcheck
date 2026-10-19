@@ -252,45 +252,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           teams.map((team) => (
-            <div
-              className="card hc-team-row"
-              key={team.id}
-            >
-              <div className="eyebrow">
-                Professional Team
-              </div>
-
-              <GeoBadge country={team.country} />
-
-              <h2>
-                {team.name}
-              </h2>
-
-              <p>
-                {team.city &&
-                team.country
-                  ? `${team.city}, ${team.country}`
-                  : team.country ||
-                    team.city ||
-                    "Location not listed"}
-              </p>
-
-              {team.league_name && (
-                <p>
-                  League:{" "}
-                  <strong>
-                    {team.league_name}
-                  </strong>
-                </p>
-              )}
-
-              <Link
-                href={`/teams/${team.id}`}
-                className="btn"
-              >
-                View Team
-              </Link>
-            </div>
+            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" />
           ))
         )}
       </section>
