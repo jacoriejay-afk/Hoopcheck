@@ -3669,3 +3669,262 @@ main.auth-page-shell .signup-form .message.error {
 @media (prefers-reduced-motion: reduce) {
   .hc-dashboard-shell :where(a,button) { transition: none !important; }
 }
+
+
+/* =========================================================
+   HOOPCHECK GLOBAL VISUAL SYSTEM — shared component baseline
+   Styling only: preserve component behavior, routes and data.
+========================================================= */
+:root {
+  --hc-orange: #FF5A1F;
+  --hc-ink: #0A0A0A;
+  --hc-paper: #F7F7F5;
+  --hc-white: #FFFFFF;
+  --hc-muted: #6B6B67;
+  --hc-border: #E4E4DF;
+  --hc-radius: 12px;
+  --hc-card-padding: 18px;
+  --hc-section-gap: 16px;
+  --hc-page-gutter: 20px;
+  --hc-control-height: 44px;
+  --hc-display: var(--font-display), "Arial Black", Impact, sans-serif;
+  --hc-ui: var(--font-sans), Inter, Arial, sans-serif;
+}
+html, body {
+  max-width: 100%;
+  overflow-x: clip;
+  background: var(--hc-paper);
+  color: var(--hc-ink);
+  font-family: var(--hc-ui);
+}
+body { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--hc-display) !important;
+  color: var(--hc-ink);
+  text-transform: uppercase;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+h1 { font-size: clamp(28px, 5vw, 44px); line-height: 1.02; }
+h2 { font-size: clamp(20px, 3vw, 24px); line-height: 1.12; }
+h3, h4 { font-size: 18px; line-height: 1.2; }
+p, label, input, textarea, select, button { font-family: var(--hc-ui); }
+p { overflow-wrap: anywhere; }
+img, svg, video, canvas { max-width: 100%; }
+main, section, article, form, fieldset { min-width: 0; }
+:where(main, .page-container, .container, .hc-dashboard-shell, .profile-page,
+       .hc-team-directory-page, .hc-coaches-directory-page, .hc-leagues-directory-page,
+       .hc-player-directory-page, .hc-global-search-page, .hc-auth-page, .settings-page) {
+  min-width: 0;
+}
+:where(.page-container, .container, .hc-dashboard-shell, .profile-page,
+       .hc-team-directory-page, .hc-coaches-directory-page, .hc-leagues-directory-page,
+       .hc-player-directory-page, .hc-global-search-page, .hc-auth-page, .settings-page) {
+  padding-left: var(--hc-page-gutter);
+  padding-right: var(--hc-page-gutter);
+}
+:where(.btn, .button-primary, .btn-primary, button[type="submit"], .hc-button-primary) {
+  min-height: var(--hc-control-height);
+  border-radius: 10px !important;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--hc-ui);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: normal;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: none;
+  transform: none;
+}
+:where(.btn, .button-primary, .btn-primary, button[type="submit"], .hc-button-primary):hover {
+  transform: translateY(-1px);
+}
+:where(.btn, .button-primary, .btn-primary, button[type="submit"], .hc-button-primary):focus-visible {
+  outline: 3px solid rgba(255,90,31,.35);
+  outline-offset: 2px;
+}
+:where(.btn, .button-primary, .btn-primary, button[type="submit"], .hc-button-primary):disabled {
+  transform: none;
+}
+:where(.dark, .button-secondary, .btn-secondary, .hc-button-secondary) {
+  min-height: var(--hc-control-height);
+  border: 1px solid #D1D1CC !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: var(--hc-ink) !important;
+  box-shadow: none !important;
+}
+:where(.card, .panel, .result-card, .review-card, .team-card, .coach-card, .league-card,
+       .player-card, .dashboard-card, .settings-card, .profile-card, .quick-card, .hc-card) {
+  min-width: 0;
+  border: 1px solid var(--hc-border);
+  border-radius: var(--hc-radius);
+  padding: var(--hc-card-padding);
+  background: var(--hc-white);
+  box-shadow: none;
+}
+:where(.card, .panel, .result-card, .review-card, .team-card, .coach-card, .league-card,
+       .player-card, .dashboard-card, .settings-card, .profile-card, .quick-card, .hc-card) > :first-child {
+  margin-top: 0;
+}
+:where(.card, .panel, .result-card, .review-card, .team-card, .coach-card, .league-card,
+       .player-card, .dashboard-card, .settings-card, .profile-card, .quick-card, .hc-card) > :last-child {
+  margin-bottom: 0;
+}
+:where(.section-heading, .hc-section-header, .section-header) {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  margin: 0 0 12px;
+}
+:where(.section-heading, .hc-section-header, .section-header) h2,
+:where(.section-heading, .hc-section-header, .section-header) h3 {
+  margin: 0;
+  font-size: clamp(20px, 3vw, 24px);
+  line-height: 1.12;
+}
+:where(.hc-kicker, .section-kicker, .eyebrow) {
+  margin: 0 0 6px;
+  color: var(--hc-orange);
+  font-family: var(--hc-ui);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .13em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+:where(.section-heading, .hc-section-header, .section-header) > a {
+  flex: 0 0 auto;
+  color: var(--hc-ink);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+:where(input, select, textarea, .search-input, .search-bar) {
+  min-width: 0;
+  max-width: 100%;
+}
+input::placeholder, textarea::placeholder {
+  color: #6B6B67;
+  opacity: 1;
+  overflow: visible;
+  text-overflow: clip;
+}
+:where(input, textarea, select) { overflow-wrap: normal; }
+:where(.search-bar, .search-box, .search-control, .hc-search) {
+  min-width: 0;
+  max-width: 100%;
+}
+:where(.search-bar, .search-box, .search-control, .hc-search) input {
+  width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+:where(.category-row, .hc-category-row, .directory-row, .list-row) {
+  min-width: 0;
+  max-width: 100%;
+}
+:where(.category-row, .hc-category-row, .directory-row, .list-row) > :last-child {
+  flex: 0 0 auto;
+}
+:where(.category-row, .hc-category-row, .directory-row, .list-row) svg {
+  flex-shrink: 0;
+}
+:where(.directory-grid, .category-grid, .quick-grid, .hc-directory-grid) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 12px;
+}
+:where(.directory-grid, .category-grid, .quick-grid, .hc-directory-grid) > * {
+  min-width: 0;
+  min-height: 100%;
+  height: 100%;
+}
+:where(.verified, .hc-verified, .verified-badge) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+:where(.verified, .hc-verified, .verified-badge) svg { flex: 0 0 auto; }
+:where(.floating-dashboard-chip, .dashboard-floating-chip, .hc-floating-chip) { display: none !important; }
+:where(.profile-email, .hc-profile-email, .profile-header-email) {
+  color: var(--hc-muted);
+  text-decoration: none !important;
+  overflow-wrap: anywhere;
+}
+:where(.hc-profile-header, .profile-header, .profile-identity) {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+:where(.hc-profile-header, .profile-header, .profile-identity) :where(h1,h2,h3,p,a,span) {
+  min-width: 0;
+}
+:where(.hc-profile-actions, .profile-actions) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+:where(.hc-profile-actions, .profile-actions) > * { flex: 1 1 160px; }
+:where(.hc-stat-grid, .profile-info-grid, .hc-profile-info-grid) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 12px;
+}
+:where(.hc-stat-grid, .profile-info-grid, .hc-profile-info-grid) > * {
+  min-width: 0;
+  min-height: 112px;
+  height: 100%;
+}
+:where(.hc-stat-label, .profile-info-label, .stat-label) {
+  color: var(--hc-muted);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+:where(.hc-stat-value, .profile-info-value, .stat-value) {
+  margin-top: 8px;
+  font-size: 17px;
+  font-weight: 850;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 480px) {
+  :root { --hc-page-gutter: 20px; --hc-card-padding: 16px; --hc-section-gap: 16px; }
+  body { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .nav { padding-left: 20px; padding-right: 20px; }
+  .site-header-global.hc-template-header { max-width: 100%; }
+  :where(.page-container, .container, .hc-dashboard-shell, .profile-page,
+         .hc-team-directory-page, .hc-coaches-directory-page, .hc-leagues-directory-page,
+         .hc-player-directory-page, .hc-global-search-page, .hc-auth-page, .settings-page) {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  :where(.directory-grid, .category-grid, .quick-grid, .hc-directory-grid) { gap: 10px; }
+  :where(.directory-grid, .category-grid, .quick-grid, .hc-directory-grid) > * {
+    overflow-wrap: anywhere;
+  }
+  :where(.section-heading, .hc-section-header, .section-header) { align-items: center; }
+  :where(.section-heading, .hc-section-header, .section-header) h2,
+  :where(.section-heading, .hc-section-header, .section-header) h3 { font-size: 21px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.btn, .button-primary, .btn-primary, button[type="submit"]) { transition: none !important; }
+}
