@@ -91,10 +91,10 @@ export default function DirectoryImportPage(){
     setBusy(false); await loadJobs();
   }
 
-  return <main style={{minHeight:"100vh",background:"#050505",color:"#fff",padding:"35px 20px 80px"}}><div style={{maxWidth:1200,margin:"0 auto"}}>
+  return <main className="admin-light-shell" style={{minHeight:"100vh",background:"#F7F7F5",color:"#111111",padding:"35px 20px 80px"}}><div style={{maxWidth:1200,margin:"0 auto"}}>
     <div style={{display:"flex",justifyContent:"space-between",gap:15,flexWrap:"wrap",alignItems:"center"}}><div><div style={{color:"#ff6a00",fontSize:11,fontWeight:900,letterSpacing:".15em"}}>HOOPCHECK ADMIN</div><h1 style={{fontSize:"clamp(2rem,5vw,3.5rem)",margin:"7px 0"}}>Directory Import</h1><p style={{color:"#888"}}>Bulk-load leagues, teams, and coaches with CSV. Full Directory automatically connects League → Team → Coach and records historical relationships.</p></div><Link href="/admin/directory" style={{color:"#fff"}}>← Control Center</Link></div>
     <div style={{display:"flex",gap:8,margin:"25px 0"}}>{(["full_directory","leagues","teams","coaches"] as Kind[]).map(k=><button key={k} onClick={()=>setKind(k)} style={{padding:"11px 15px",borderRadius:8,border:"1px solid #333",background:kind===k?"#ff6a00":"#111",color:"#fff",fontWeight:900}}>{k === "full_directory" ? "full directory" : k}</button>)}</div>
-    <section style={{background:"#101010",border:"1px solid #292929",borderRadius:12,padding:20}}>
+    <section style={{background:"#FFFFFF",border:"1px solid #E2E2DE",borderRadius:12,padding:20}}>
       <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}><input type="file" accept=".csv,text/csv" onChange={async e=>{const f=e.target.files?.[0];if(f){setFileName(f.name);setCsv(await f.text())}}}/><button onClick={()=>setCsv(templates[kind])} style={{padding:"10px 12px"}}>Load Template</button></div>
       <textarea value={csv} onChange={e=>setCsv(e.target.value)} placeholder={templates[kind]} style={{width:"100%",minHeight:220,marginTop:15,background:"#080808",color:"#fff",border:"1px solid #333",borderRadius:8,padding:12,boxSizing:"border-box",fontFamily:"monospace"}}/>
       <p style={{color:"#888"}}>{rows.length} rows detected • {valid.length} valid</p>
