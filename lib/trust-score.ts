@@ -22,15 +22,19 @@ export type TrustScoreResult = {
 };
 
 /**
- * HoopCheck Trust Score v1 (0–100):
- * 50% normalized average rating + 20% review-volume confidence
- * + 20% verified-review share + 10% review recency.
+ * HoopCheck Trust Score v1 (0–100), all terms normalized to 0–100:
+ * 40% rating + 20% review-volume confidence + 20% verified-review share
+ * + 20% recency.
  *
- * Rating: 1 star => 0, 5 stars => 100.
- * Volume confidence: min(approved reviews / 30, 1) * 100.
- * Verification: verified reviewers / all included reviews * 100.
- * Recency: mean exponential decay of each review's age, using a 180-day half-life.
- * No reviews or no usable rating => no score, not a misleading zero.
+ * R = (average rating / 5) * 100.
+ * N = (1 - exp(-approved review count / 10)) * 100.
+ * V = verified reviewers / all included reviewers * 100.
+ * F = mean exponential freshness, with a 30-day half-life:
+ *     mean(100 * 0.5^(review age in days / 30)).
+ * Score = round(0.40R + 0.20N + 0.20V + 0.20F).
+ *
+ * Only approved reviews should be passed in. Invalid timestamps are ignored for
+ * freshness; an absent usable rating or no reviews means no score, not zero.
  */
 export function calculateTrustScore({
   averageRating,
@@ -44,27 +48,27 @@ export function calculateTrustScore({
     : null;
   const ratingQuality =
     typeof averageRating === "number" && Number.isFinite(averageRating)
-      ? (Math.max(1, Math.min(5, averageRating)) - 1) * 25
+      ? Math.max(0, Math.min(100, (Math.max(1, Math.min(5, averageRating)) / 5) * 100))
       : null;
-  const reviewConfidence = Math.min(reviewCount / 30, 1) * 100;
+  const reviewConfidence = (1 - Math.exp(-reviewCount / 10)) * 100;
 
   const validAges = reviews
     .map((review) => Date.parse(review.createdAt))
     .filter((timestamp) => Number.isFinite(timestamp))
     .map((timestamp) => Math.max(0, now.getTime() - timestamp) / 86_400_000);
   const recency = validAges.length
-    ? validAges.reduce((sum, ageDays) => sum + 100 * Math.pow(0.5, ageDays / 180), 0) /
+    ? validAges.reduce((sum, ageDays) => sum + 100 * Math.pow(0.5, ageDays / 30), 0) /
       validAges.length
     : null;
 
   const score =
     reviewCount > 0 && ratingQuality !== null && verifiedPercentage !== null && recency !== null
-      ? Math.round(
-          ratingQuality * 0.5 +
+      ? Math.max(0, Math.min(100, Math.round(
+          ratingQuality * 0.4 +
           reviewConfidence * 0.2 +
           verifiedPercentage * 0.2 +
-          recency * 0.1
-        )
+          recency * 0.2
+        )))
       : null;
 
   return {
