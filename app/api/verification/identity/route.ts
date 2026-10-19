@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
+
+function stripeIdentityModeConfigured() {
+  const key = process.env.STRIPE_SECRET_KEY || "";
+  const deploymentMode = process.env.VERCEL_ENV === "production" ? "live" : "test";
+  const expectedPrefix = deploymentMode === "live" ? "sk_live_" : "sk_test_";
+  return key.startsWith(expectedPrefix);
+}
+
 function getSupabase(token:string){
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,6 +30,7 @@ export async function POST(req:Request){
   const token=req.headers.get("authorization")?.replace(/^Bearer /,"");
   if(!token)return NextResponse.json({error:"Authentication required"},{status:401});
   if(!process.env.STRIPE_SECRET_KEY)return NextResponse.json({error:"Identity verification is not configured yet."},{status:503});
+  if(!stripeIdentityModeConfigured())return NextResponse.json({error:"Identity verification is temporarily unavailable while payment configuration is verified."},{status:503});
 
   const supabase=getSupabase(token);
   const {data:{user},error:userError}=await supabase.auth.getUser(token);
@@ -88,6 +97,7 @@ export async function GET(req:Request){
   const token=req.headers.get("authorization")?.replace(/^Bearer /,"");
   if(!token)return NextResponse.json({error:"Authentication required"},{status:401});
   if(!process.env.STRIPE_SECRET_KEY)return NextResponse.json({error:"Identity verification is not configured yet."},{status:503});
+  if(!stripeIdentityModeConfigured())return NextResponse.json({error:"Identity verification is temporarily unavailable while payment configuration is verified."},{status:503});
 
   const supabase=getSupabase(token);
   const {data:{user},error:userError}=await supabase.auth.getUser(token);
