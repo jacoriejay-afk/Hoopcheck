@@ -27,7 +27,7 @@ export default function AdminAnalyticsPage(){
   const [kpis,setKpis]=useState<Record<string,number>|null>(null);
   const [error,setError]=useState("");
   useEffect(()=>{supabase.rpc("get_hoopcheck_kpis").then(({data,error})=>{if(error)setError(error.message);else setKpis((data||{}) as Record<string,number>);});},[]);
-  return <main className="page-shell"><div className="page-container">
+  return <main className="page-shell admin-light-shell"><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/admin/users">Users</Link><Link href="/admin/reviews">Reviews</Link><Link href="/admin/support">Support</Link></nav></header>
     <section className="hero-card"><div><p className="eyebrow">FOUNDER ANALYTICS</p><h1>HoopCheck KPI Dashboard</h1><p className="muted">Your operating dashboard for growth, subscriptions, reviews, safety, content and support.</p></div></section>
     {error?<div className="message error" style={{marginTop:18}}>{error}</div>:<section className="grid" style={{marginTop:18}}>{Object.entries(labels).map(([key,label])=><article className="dashboard-card" key={key}><p className="eyebrow">{label}</p><strong style={{fontSize:34}}>{kpis?.[key] ?? "—"}</strong></article>)}</section>}
