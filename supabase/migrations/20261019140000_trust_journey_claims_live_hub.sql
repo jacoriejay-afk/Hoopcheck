@@ -326,6 +326,11 @@ alter table public.user_watchlists
   add column if not exists alert_roster_spots boolean not null default true,
   add column if not exists alert_pay_warning boolean not null default true;
 
+alter table public.notifications drop constraint if exists notifications_notification_type_check;
+alter table public.notifications
+  add constraint notifications_notification_type_check
+  check (notification_type in ('review','rating','update','trust_score','roster_spot','pay_warning'));
+
 -- Score snapshots prevent duplicate trust-score movement alerts from page refreshes.
 create table if not exists public.trust_score_snapshots (
   id uuid primary key default gen_random_uuid(),
