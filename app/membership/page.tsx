@@ -24,6 +24,8 @@ function MembershipContent() {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [billingInterval, setBillingInterval] = useState<BillingInterval>("month");
+  const [accountType, setAccountType] = useState<string | null>(null);
+  const [promoCode, setPromoCode] = useState("");
   const [portalLoading, setPortalLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
 
@@ -40,9 +42,17 @@ function MembershipContent() {
 
     if (!user) {
       setSubscription(null);
+      setAccountType(null);
       setLoading(false);
       return;
     }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("account_type")
+      .eq("id", user.id)
+      .maybeSingle();
+    setAccountType(profile?.account_type ?? null);
 
     const { data, error } = await supabase
       .from("subscriptions")
@@ -94,7 +104,7 @@ function MembershipContent() {
     return undefined;
   }, [searchParams]);
 
-  async function startCheckout(plan: Plan, interval: BillingInterval = billingInterval) {
+  async function startCheckout(plan: Plan, interval: BillingInterval = billingInterval, code?: string) {
     setCheckoutLoading(`${plan}-${interval}`);
     setError("");
     setMessage("");
@@ -116,7 +126,7 @@ function MembershipContent() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ plan, interval }),
+        body: JSON.stringify({ plan, interval, promoCode: code?.trim() || undefined }),
       });
 
       const data = await response.json();
@@ -306,6 +316,28 @@ function MembershipContent() {
               </h2>
               <p>Start with the level of research access that fits you.</p>
             </div>
+
+            {accountType === "player" && (
+              <div className="dashboard-card" style={{ marginBottom: 24, padding: 20 }}>
+                <div className="eyebrow">PLAYER LAUNCH OFFER</div>
+                <h3 style={{ margin: "8px 0" }}>Have a first-month code?</h3>
+                <p className="muted" style={{ marginBottom: 14 }}>Eligible Player accounts can redeem a limited promo code for one month of HoopCheck Pro at no charge. The regular monthly price applies after the free month unless you cancel before renewal.</p>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <input
+                    aria-label="First month free promo code"
+                    autoComplete="off"
+                    maxLength={64}
+                    placeholder="Enter promo code"
+                    value={promoCode}
+                    onChange={(event) => setPromoCode(event.target.value)}
+                    style={{ flex: "1 1 220px", minHeight: 48, padding: "12px 14px", border: "1px solid #d1d1ca", borderRadius: 4, background: "#fff", color: "#171715" }}
+                  />
+                  <button className="btn" onClick={() => startCheckout("pro", "month", promoCode)} disabled={!promoCode.trim() || checkoutLoading !== null || loading}>
+                    {checkoutLoading === "pro-month" ? "Validating code..." : "Redeem & Start Free Month"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",marginBottom:24}}>
               <button className={billingInterval==="month" ? "btn" : "btn dark"} onClick={()=>setBillingInterval("month")}>Monthly</button>
