@@ -7,6 +7,7 @@ useState,
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
+import SearchBar from "../../components/SearchBar";
 import GeoBadge from "../../components/GeoBadge";
 
 type League = {
@@ -89,7 +90,7 @@ return (
 
   <section className="hc-league-filter" aria-label="Filter leagues">
     <label htmlFor="league-search">Find a league</label>
-    <input id="league-search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search league, country, or division…" autoComplete="off" />
+    <SearchBar inputId="league-search" value={query} onChange={setQuery} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search leagues" onSubmit={setQuery} />
     <label htmlFor="league-country">League country</label>
     <select id="league-country" value={country} onChange={(e) => setCountry(e.target.value)}>
       <option value="">All countries</option>
