@@ -325,3 +325,139 @@ alter table public.user_watchlists
   add column if not exists alert_trust_score boolean not null default true,
   add column if not exists alert_roster_spots boolean not null default true,
   add column if not exists alert_pay_warning boolean not null default true;
+
+-- Score snapshots prevent duplicate trust-score movement alerts from page refreshes.
+create table if not exists public.trust_score_snapshots (
+  id uuid primary key default gen_random_uuid(),
+  target_type text not null check (target_type in ('team','coach')),
+  target_id uuid not null,
+  score integer not null check (score between 0 and 100),
+  snapshot_day date not null default current_date,
+  created_at timestamptz not null default now(),
+  unique(target_type,target_id,snapshot_day)
+);
+alter table public.trust_score_snapshots enable row level security;
+
+-- Organization-posted roster opportunities feed meaningful roster alerts.
+create table if not exists public.team_roster_spots (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references public.teams(id) on delete cascade,
+  created_by uuid not null references public.profiles(id) on delete cascade,
+  title text not null check (char_length(trim(title)) between 3 and 160),
+  description text,
+  season text,
+  status text not null default 'open' check (status in ('open','closed')),
+  expires_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists team_roster_spots_team_status_idx on public.team_roster_spots(team_id,status,created_at desc);
+alter table public.team_roster_spots enable row level security;
+drop policy if exists "open roster spots are readable" on public.team_roster_spots;
+create policy "open roster spots are readable"
+  on public.team_roster_spots for select to anon,authenticated
+  using (status='open' and (expires_at is null or expires_at > now()));
+drop policy if exists "claimed organizations can post roster spots" on public.team_roster_spots;
+create policy "claimed organizations can post roster spots"
+  on public.team_roster_spots for insert to authenticated
+  with check (
+    created_by=(select auth.uid())
+    and exists (
+      select 1 from public.profile_claim_requests c
+      where c.entity_type='team' and c.entity_id=team_roster_spots.team_id
+        and c.requester_id=(select auth.uid()) and c.status='approved'
+    )
+  );
+drop policy if exists "roster post owners and admins can update" on public.team_roster_spots;
+create policy "roster post owners and admins can update"
+  on public.team_roster_spots for update to authenticated
+  using (created_by=(select auth.uid()) or public.is_current_user_admin_or_moderator())
+  with check (created_by=(select auth.uid()) or public.is_current_user_admin_or_moderator());
+
+-- One pay-warning event per team/season after three approved late-pay reports.
+create table if not exists public.team_pay_warning_events (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references public.teams(id) on delete cascade,
+  player_season text not null,
+  report_count integer not null default 3,
+  created_at timestamptz not null default now(),
+  unique(team_id,player_season)
+);
+alter table public.team_pay_warning_events enable row level security;
+
+create or replace function public.create_review_notifications()
+returns trigger language plpgsql security definer set search_path = public
+as $
+declare target_kind text; target_uuid uuid; target_label text;
+begin
+  if new.status <> 'approved' then return new; end if;
+  if new.team_id is not null then
+    target_kind := 'team'; target_uuid := new.team_id; select name into target_label from public.teams where id = new.team_id;
+  elsif new.league_id is not null then
+    target_kind := 'league'; target_uuid := new.league_id; select name into target_label from public.leagues where id = new.league_id;
+  elsif new.coach_id is not null then
+    target_kind := 'coach'; target_uuid := new.coach_id; select name into target_label from public.coaches where id = new.coach_id;
+  else return new; end if;
+
+  insert into public.notifications(user_id,target_type,target_id,notification_type,title,body)
+  select w.user_id,target_kind,target_uuid,'review','New review: '||coalesce(target_label,'HoopCheck profile'),'A new approved player review is available.'
+  from public.user_watchlists w join public.user_preferences p on p.user_id=w.user_id
+  where w.target_type=target_kind and w.target_id=target_uuid and w.follow=true and w.alert_reviews=true
+    and coalesce(w.muted,false)=false and p.notifications_enabled=true;
+
+  insert into public.notifications(user_id,target_type,target_id,notification_type,title,body)
+  select w.user_id,target_kind,target_uuid,'rating','New rating: '||coalesce(target_label,'HoopCheck profile'),'A new approved rating may change the community rating.'
+  from public.user_watchlists w join public.user_preferences p on p.user_id=w.user_id
+  where w.target_type=target_kind and w.target_id=target_uuid and w.follow=true and w.alert_ratings=true
+    and coalesce(w.muted,false)=false and p.notifications_enabled=true;
+  return new;
+end; $;
+
+create or replace function public.notify_roster_spot_watchers()
+returns trigger language plpgsql security definer set search_path=public
+as $
+declare team_label text;
+begin
+  select name into team_label from public.teams where id=new.team_id;
+  insert into public.notifications(user_id,target_type,target_id,notification_type,title,body)
+  select w.user_id,'team',new.team_id,'roster_spot','Roster spot: '||coalesce(team_label,'Team'),
+    coalesce(new.title,'A new roster opportunity was posted.')||case when new.season is not null then ' Season: '||new.season else '' end
+  from public.user_watchlists w join public.user_preferences p on p.user_id=w.user_id
+  where w.target_type='team' and w.target_id=new.team_id and w.follow=true
+    and w.alert_roster_spots=true and coalesce(w.muted,false)=false and p.notifications_enabled=true;
+  return new;
+end; $;
+drop trigger if exists team_roster_spot_notifications on public.team_roster_spots;
+create trigger team_roster_spot_notifications after insert on public.team_roster_spots
+for each row when (new.status='open') execute function public.notify_roster_spot_watchers();
+revoke execute on function public.notify_roster_spot_watchers() from public,anon,authenticated;
+
+create or replace function public.detect_team_pay_warning()
+returns trigger language plpgsql security definer set search_path=public
+as $
+declare late_count integer; event_uuid uuid; team_label text;
+begin
+  if new.status <> 'approved' or new.team_id is null or new.player_season is null or new.pay_on_time_rating is null or new.pay_on_time_rating > 2 then
+    return new;
+  end if;
+  select count(*) into late_count from public.reviews r
+  where r.team_id=new.team_id and r.player_season=new.player_season and r.status='approved'
+    and r.pay_on_time_rating is not null and r.pay_on_time_rating <= 2;
+  if late_count < 3 then return new; end if;
+  insert into public.team_pay_warning_events(team_id,player_season,report_count)
+  values(new.team_id,new.player_season,late_count)
+  on conflict(team_id,player_season) do nothing
+  returning id into event_uuid;
+  if event_uuid is null then return new; end if;
+  select name into team_label from public.teams where id=new.team_id;
+  insert into public.notifications(user_id,target_type,target_id,notification_type,title,body)
+  select w.user_id,'team',new.team_id,'pay_warning','Pay warning: '||coalesce(team_label,'Team'),
+    late_count||' approved late-pay reports were recorded for season '||new.player_season||'. Review the latest player experiences before signing.'
+  from public.user_watchlists w join public.user_preferences p on p.user_id=w.user_id
+  where w.target_type='team' and w.target_id=new.team_id and w.follow=true
+    and w.alert_pay_warning=true and coalesce(w.muted,false)=false and p.notifications_enabled=true;
+  return new;
+end; $;
+drop trigger if exists reviews_detect_team_pay_warning on public.reviews;
+create trigger reviews_detect_team_pay_warning after insert or update of status,pay_on_time_rating,player_season on public.reviews
+for each row execute function public.detect_team_pay_warning();
+revoke execute on function public.detect_team_pay_warning() from public,anon,authenticated;
