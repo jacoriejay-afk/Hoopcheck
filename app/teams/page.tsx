@@ -247,6 +247,12 @@ export default function TeamsPage() {
         )}
       </div>
 
+      <div className="hc-directory-view-toggle" role="group" aria-label="Team directory view">
+        <span>DIRECTORY VIEW</span>
+        <button type="button" className={viewMode === "list" ? "is-active" : ""} onClick={() => setViewMode("list")}>☷ List</button>
+        <button type="button" className={viewMode === "map" ? "is-active" : ""} onClick={() => setViewMode("map")}>◎ Map</button>
+      </div>
+
       {viewMode === "map" ? (
         <TeamMap teams={teams.map(team => ({
           ...team,
@@ -254,11 +260,6 @@ export default function TeamsPage() {
           averageRating: trustScores[team.id]?.averageRating ?? null,
         }))} />
       ) : (
-        <div className="hc-directory-view-toggle" role="group" aria-label="Team directory view">
-        <span>DIRECTORY VIEW</span>
-        <button type="button" className={viewMode === "list" ? "is-active" : ""} onClick={() => setViewMode("list")}>☷ List</button>
-        <button type="button" className={viewMode === "map" ? "is-active" : ""} onClick={() => setViewMode("map")}>◎ Map</button>
-      </div>
       <section className="grid hc-team-directory-list">
         {loading ? (<div className="card"><HoopLoading label="Scanning professional teams..." /></div>) : teams.length === 0 ? (
           <div className="card hc-team-empty">
