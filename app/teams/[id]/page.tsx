@@ -20,7 +20,6 @@ import FollowButton from "../../../components/FollowButton";
 import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
 import TrustScoreDial from "../../../components/TrustScoreDial";
-import { calculateTrustScore } from "../../../lib/trust-score";
 
 type Team = {
   id: string;
@@ -158,6 +157,8 @@ export default function TeamDetailPage() {
 
   const [reviews, setReviews] =
     useState<Review[]>([]);
+
+  const [trustScoreData, setTrustScoreData] = useState<{score:number|null;reviewCount:number;verifiedReviewCount:number;explanation:string;averageRating:number|null}|null>(null);
 
   const [publicSummary, setPublicSummary] = useState({
     review_count: 0,
@@ -405,6 +406,16 @@ export default function TeamDetailPage() {
     loadTeam();
   }, [id]);
 
+  useEffect(() => {
+    if (!id) return;
+    let active = true;
+    void fetch(`/api/trust-score?entityType=team&entityId=${encodeURIComponent(id)}`)
+      .then(response => response.ok ? response.json() : null)
+      .then(payload => { if (active && payload) setTrustScoreData(payload); })
+      .catch(() => { if (active) setTrustScoreData(null); });
+    return () => { active = false; };
+  }, [id]);
+
   async function submitReport() {
     if (!reportReviewId) {
       return;
@@ -507,11 +518,6 @@ export default function TeamDetailPage() {
         ) / reviews.length
       : 0;
 
-  const trustScore = calculateTrustScore({
-    averageRating: reviews.length > 0 ? average : publicSummary.overall_rating,
-    reviews: reviews.map(review => ({ createdAt: review.created_at, reviewerVerified: Boolean(review.player_verified) })),
-  });
-
   const communication =
     reviews.length > 0
       ? reviews.reduce(
@@ -597,10 +603,10 @@ export default function TeamDetailPage() {
         </h1>
         <div className="hc-entity-trust-score">
           <TrustScoreDial
-            score={hasAccess ? trustScore.score : null}
-            explanation={hasAccess ? trustScore.explanation : publicSummary.review_count > 0 ? "Unlock member insights to view this score's verified-review breakdown." : "No approved player reviews yet."}
-            reviewCount={hasAccess ? trustScore.reviewCount : publicSummary.review_count}
-            verifiedReviewCount={hasAccess ? trustScore.verifiedReviewCount : 0}
+            score={trustScoreData?.score ?? null}
+            explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? "Trust Score is temporarily unavailable." : "No approved player reviews yet.")}
+            reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count}
+            verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0}
           />
         </div>
 
