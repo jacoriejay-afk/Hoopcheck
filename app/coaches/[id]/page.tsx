@@ -16,6 +16,7 @@ import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
 import WatchButton from "../../../components/WatchButton";
 import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import TrustScoreDial from "../../../components/TrustScoreDial";
+import ClaimProfileButton from "../../../components/ClaimProfileButton";
 
 type Coach = {
   id: string;
@@ -582,6 +583,7 @@ export default function CoachDetailPage() {
         </div>
 
         <div className="entity-actions"><WatchButton targetType="coach" targetId={coach.id} targetName={coach.name} /></div>
+        <ClaimProfileButton entityType="coach" entityId={coach.id} entityName={coach.name} />
 
         <p>
           {coach.city &&
