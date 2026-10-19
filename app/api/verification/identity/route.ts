@@ -68,16 +68,10 @@ export async function POST(req:Request){
   }
 
   const admin=getAdminSupabase();
-  const {error:profileUpdateError}=await admin.from("profiles").update({
-    stripe_identity_verification_session_id:session.id,
-    identity_verification_status:session.status==="verified"?"verified":"requires_input"
-  }).eq("id",user.id);
 
-  if(profileUpdateError){
-    console.error("Identity profile update failed:",profileUpdateError);
-    return NextResponse.json({error:"Verification was created but HoopCheck could not save the verification state. Please contact support."},{status:500});
-  }
-
+  // Persist the server-side ownership record before pointing the profile at
+  // this session. If either write fails, never leave a profile referencing a
+  // session that the ownership registry does not know about.
   const {error:sessionSaveError}=await admin.from("identity_verification_sessions").upsert({
     user_id:user.id,
     stripe_session_id:session.id,
@@ -87,7 +81,17 @@ export async function POST(req:Request){
 
   if(sessionSaveError){
     console.error("Identity session save failed:",sessionSaveError);
-    return NextResponse.json({error:"Verification was created but HoopCheck could not save the verification session. Please try again."},{status:500});
+    return NextResponse.json({error:"Verification was created but HoopCheck could not save the verification session. Please contact support."},{status:500});
+  }
+
+  const {error:profileUpdateError}=await admin.from("profiles").update({
+    stripe_identity_verification_session_id:session.id,
+    identity_verification_status:session.status==="verified"?"verified":"requires_input"
+  }).eq("id",user.id);
+
+  if(profileUpdateError){
+    console.error("Identity profile update failed:",profileUpdateError);
+    return NextResponse.json({error:"Verification was created but HoopCheck could not save the verification state. Please contact support."},{status:500});
   }
 
   return NextResponse.json({url:session.url,client_secret:session.client_secret,status:session.status});
@@ -167,11 +171,16 @@ export async function GET(req:Request){
     return NextResponse.json({error:"Verification completed but HoopCheck could not update your player badge."},{status:500});
   }
 
-  await admin.from("identity_verification_sessions").update({
+  const {error:sessionUpdateError}=await admin.from("identity_verification_sessions").update({
     status,
     updated_at:new Date().toISOString(),
     completed_at:verified?new Date().toISOString():null
-  }).eq("stripe_session_id",session.id);
+  }).eq("stripe_session_id",session.id).eq("user_id",user.id);
+
+  if(sessionUpdateError){
+    console.error("Identity session status update failed:",sessionUpdateError);
+    return NextResponse.json({error:"Verification status was checked but HoopCheck could not save the session status."},{status:500});
+  }
 
   return NextResponse.json({status,verified});
 }
