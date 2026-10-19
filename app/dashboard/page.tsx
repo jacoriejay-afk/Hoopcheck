@@ -206,22 +206,43 @@ export default function DashboardPage() {
   return (
     <main className="page-shell hc-dashboard-shell">
       <div className="page-container">
-        {(profile?.moderation_status === "warned" || profile?.moderation_status === "flagged") && <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{profile.moderation_status === "warned" ? "Account warning" : "Profile flagged for review"}</strong><p className="muted">{profile.moderation_note || "Please review the Community Guidelines and contact Support if you need clarification."}</p><Link href="/support" className="btn dark">Contact Support</Link></section>}        <section className="player-dashboard-card hc-player-hero">
-          <div className="hc-dashboard-hero-art" aria-hidden="true"><span className="hc-dashboard-hero-ball" /></div>
-          <div className="player-dashboard-main hc-dashboard-hero-copy">
-            <div className="hc-dashboard-hero-message">
-              <p className="eyebrow">THE OVERSEAS BASKETBALL INTELLIGENCE HUB</p>
-              <h1>KNOW WHO YOU’RE SIGNING WITH<span>.</span></h1>
-              <p className="hc-dashboard-hero-description">Real player experiences. Team and coach reputations. Make your next move with confidence.</p>
-              <p className="hc-dashboard-profile-line">SIGNED IN AS <strong>{profile?.display_name || (profile?.account_type === "fan" ? "Fan" : profile?.account_type ? profile.account_type.charAt(0).toUpperCase()+profile.account_type.slice(1) : "Player")}</strong></p>
+        {(profile?.moderation_status === "warned" || profile?.moderation_status === "flagged") && <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{profile.moderation_status === "warned" ? "Account warning" : "Profile flagged for review"}</strong><p className="muted">{profile.moderation_note || "Please review the Community Guidelines and contact Support if you need clarification."}</p><Link href="/support" className="btn dark">Contact Support</Link></section>}        <section className="hc-dashboard-welcome" aria-labelledby="hc-dashboard-welcome-title">
+          <div className="hc-dashboard-page-label">DASHBOARD</div>
+          <p className="eyebrow hc-dashboard-kicker">THE OVERSEAS BASKETBALL INTELLIGENCE HUB</p>
+          <h1 id="hc-dashboard-welcome-title">KNOW WHO YOU’RE SIGNING WITH<span>.</span></h1>
+          <p className="hc-dashboard-hero-description">Real player experiences. Team and coach reputations. Make your next move with confidence.</p>
+        </section>
+
+        <section className="hc-dashboard-profile-block" aria-label="Your profile">
+          <div className="hc-dashboard-profile-identity">
+            <div className="hc-dashboard-avatar" aria-hidden="true">
+              {(profile?.display_name?.trim()?.charAt(0) || email.split("@")[0]?.charAt(0) || "H").toUpperCase()}
             </div>
-            <Link href="/profile" className="hc-dashboard-edit-profile">{t("editProfile")} <span aria-hidden="true">↗</span></Link>
+            <div className="hc-dashboard-profile-copy">
+              <span className="hc-dashboard-profile-label">SIGNED IN AS</span>
+              <strong className="hc-dashboard-username">{profile?.display_name || (email ? email.split("@")[0] : profile?.account_type === "fan" ? "Fan" : profile?.account_type ? profile.account_type.charAt(0).toUpperCase()+profile.account_type.slice(1) : "Player")}</strong>
+              <span className="hc-dashboard-membership-badge">{planLabel.replace("HoopCheck ","")}{activeMembership ? " · ACTIVE" : " · "+statusLabel.toUpperCase()}</span>
+            </div>
           </div>
-          <div className="player-dashboard-stats hc-player-stats">
-            <div><span>MEMBERSHIP</span><strong>{planLabel.replace("HoopCheck ","")}</strong><small>{statusLabel}</small></div>
-            <div><span>REVIEWS</span><strong>{reviews.length}</strong><small>{reviewCounts.approved || 0} published</small></div>
-            {profile?.account_type === "player" ? <div><span>PLAYER STATUS</span><strong>{profile?.player_verified ? "VERIFIED" : "UNVERIFIED"}</strong><small>{profile?.player_verified ? "Professional profile" : "Verification available"}</small></div> : <div><span>ACCOUNT</span><strong>{profile?.account_type?.toUpperCase()}</strong><small>Research profile</small></div>}
-          </div>
+          <Link href="/profile" className="hc-dashboard-edit-profile">{t("editProfile")} <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4.5 10h10.75M10.5 5.25 15.25 10l-4.75 4.75" /></svg></Link>
+        </section>
+
+        <section className="hc-dashboard-stat-grid" aria-label="Account overview">
+          <article className="hc-dashboard-stat-card">
+            <span className="hc-dashboard-stat-label">MEMBERSHIP</span>
+            <strong className="hc-dashboard-stat-value">{planLabel.replace("HoopCheck ","")}</strong>
+            <small className="hc-dashboard-stat-note">{statusLabel}</small>
+          </article>
+          <article className="hc-dashboard-stat-card">
+            <span className="hc-dashboard-stat-label">REVIEWS</span>
+            <strong className="hc-dashboard-stat-value">{reviews.length}</strong>
+            <small className="hc-dashboard-stat-note">{reviewCounts.approved || 0} published</small>
+          </article>
+          <article className="hc-dashboard-stat-card">
+            <span className="hc-dashboard-stat-label">{profile?.account_type === "player" ? "PLAYER STATUS" : "ACCOUNT"}</span>
+            <strong className="hc-dashboard-stat-value">{profile?.account_type === "player" ? (profile.player_verified ? "VERIFIED" : "UNVERIFIED") : profile?.account_type?.toUpperCase()}</strong>
+            <small className="hc-dashboard-stat-note">{profile?.account_type === "player" ? (profile.player_verified ? "Professional profile" : "Verification available") : "Research profile"}</small>
+          </article>
         </section>
 
         <section className="hc-mobile-dashboard" aria-label="HoopCheck discovery">
