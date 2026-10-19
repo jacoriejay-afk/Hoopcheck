@@ -6,7 +6,7 @@ import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
 import CourtLines from "../../components/CourtLines";
-import { getGameAvailability, formatViewerLocalTime, type GameAvailability } from "../../lib/game-availability";
+import { getGameAvailability, formatViewerLocalTime } from "../../lib/game-availability";
 import { HoopIcon } from "../../components/HoopCheckUI";
 
 type Game = {
@@ -212,9 +212,9 @@ export default function LiveGamesPage() {
         </div>
         <div className="hc-live-card__meta">
           {isLive && <span><HoopIcon name="users" size={15} /> {presenceCounts[game.id] || 0} {presenceCounts[game.id] === 1 ? "fan chatting" : "fans chatting"}</span>}
-          {isUpcoming && <span><HoopIcon name="calendar-clock" size={15} /> {formatViewerLocalTime(tip)}</span>}
-          {isRecent && <span><HoopIcon name="check-circle-2" size={15} /> Chat closed</span>}
-          {variant === "postgame" && <span><HoopIcon name="messages-square" size={15} /> Post-game chat remains open</span>}
+          {isUpcoming && <span><HoopIcon name="calendar" size={15} /> {formatViewerLocalTime(tip)}</span>}
+          {isRecent && <span><HoopIcon name="check" size={15} /> Chat closed</span>}
+          {variant === "postgame" && <span><HoopIcon name="message-square" size={15} /> Post-game chat remains open</span>}
         </div>
         {isUpcoming && availability.opensAt && <p className="hc-live-card__muted">Chat opens {formatViewerLocalTime(availability.opensAt.toISOString(), { weekday: undefined })} · Remind Me sends an in-app reminder.</p>}
         <div className="hc-live-card__actions">
@@ -254,14 +254,14 @@ export default function LiveGamesPage() {
     <section className="hc-live-hub-section">
       <div className="hc-live-section-heading"><div><p className="eyebrow">RIGHT NOW</p><h2>LIVE NOW <span>{live.length}</span></h2></div><p>Real-time conversations, one game at a time.</p></div>
       {live.length ? <div className="hc-live-hub-grid">{live.map(entry => <GameCard key={entry.game.id} entry={entry} variant="live" />)}</div>
-        : <div className="hc-live-empty"><div className="hc-live-empty__icon"><HoopIcon name="radio-tower" size={24} /></div><div><h3>No live games right now</h3><p>When a game is live, its chat will appear here. You can set a reminder for the next scheduled tip-off below.</p></div></div>}
+        : <div className="hc-live-empty"><div className="hc-live-empty__icon"><HoopIcon name="basketball" size={24} /></div><div><h3>No live games right now</h3><p>When a game is live, its chat will appear here. You can set a reminder for the next scheduled tip-off below.</p></div></div>}
       {postGameOpen.length > 0 && <><div className="hc-live-section-heading hc-live-post-heading"><div><p className="eyebrow">STAY IN THE CONVERSATION</p><h2>POST-GAME CHAT <span>{postGameOpen.length}</span></h2></div></div><div className="hc-live-hub-grid">{postGameOpen.map(entry => <GameCard key={entry.game.id} entry={entry} variant="postgame" />)}</div></>}
     </section>
 
     <section className="hc-live-hub-section">
       <div className="hc-live-section-heading"><div><p className="eyebrow">NEXT UP</p><h2>UPCOMING <span>{upcoming.length}</span></h2></div><p>Tip-off times are shown in your local timezone.</p></div>
       {upcoming.length ? <div className="hc-live-hub-grid">{upcoming.map(entry => <GameCard key={entry.game.id} entry={entry} variant="upcoming" />)}</div>
-        : <div className="hc-live-empty"><div className="hc-live-empty__icon"><HoopIcon name="calendar-clock" size={24} /></div><div><h3>No confirmed upcoming games</h3><p>There are no scheduled fixtures in the current game feed yet. We’ll show them here when the provider supplies confirmed tip-off times.</p></div></div>}
+        : <div className="hc-live-empty"><div className="hc-live-empty__icon"><HoopIcon name="calendar" size={24} /></div><div><h3>No confirmed upcoming games</h3><p>There are no scheduled fixtures in the current game feed yet. We’ll show them here when the provider supplies confirmed tip-off times.</p></div></div>}
     </section>
 
     <section className="hc-live-hub-section hc-live-recent-section">
