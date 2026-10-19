@@ -467,7 +467,8 @@ export async function POST(
             stripe_identity_verification_session_id: verificationSession.id,
             identity_verification_status: "processing",
           })
-          .eq("id", userId);
+          .eq("id", userId)
+          .neq("identity_verification_status", "verified");
         if (profileError) {
           throw new Error(`Unable to update processing profile: ${profileError.message}`);
         }
@@ -478,7 +479,8 @@ export async function POST(
             status: "processing",
             updated_at: new Date().toISOString(),
           })
-          .eq("stripe_session_id", verificationSession.id);
+          .eq("stripe_session_id", verificationSession.id)
+          .neq("status", "verified");
         if (sessionError) {
           throw new Error(`Unable to update verification session: ${sessionError.message}`);
         }
