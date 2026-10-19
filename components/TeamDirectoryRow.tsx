@@ -1,6 +1,7 @@
 import Link from "next/link";
 import FollowButton from "./FollowButton";
 import { HoopIcon } from "./HoopCheckUI";
+import TrustScoreDial from "./TrustScoreDial";
 
 type TeamDirectoryRowProps = {
   id: string;
@@ -11,10 +12,16 @@ type TeamDirectoryRowProps = {
   href: string;
   kind?: "mens" | "womens";
   showFollow?: boolean;
+  trustScore?: number | null;
+  trustReviewCount?: number;
+  trustVerifiedReviewCount?: number;
+  trustExplanation?: string;
+  averageRating?: number | null;
 };
 
 export default function TeamDirectoryRow({
   id, name, city, country, leagueName, href, kind = "mens", showFollow = true,
+  trustScore, trustReviewCount = 0, trustVerifiedReviewCount = 0, trustExplanation = "Trust Score unavailable", averageRating = null,
 }: TeamDirectoryRowProps) {
   const monogram = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   const metadata = [city, [country, leagueName].filter(Boolean).join(" · ")].filter(Boolean).join(", ") || "International";
@@ -34,9 +41,12 @@ export default function TeamDirectoryRow({
           <span className="hc-team-directory-row__arrow" aria-hidden="true"><HoopIcon name="arrow-up-right" size={17} /></span>
         </span>
       </Link>
-      <div className="hc-scout-card__stats" aria-label="Team review statistics; data not available in this directory listing">
-        <div className="hc-scout-card__stat"><span>Overall rating</span><strong>—</strong><small>Not listed</small></div>
-        <div className="hc-scout-card__stat"><span>Reviews</span><strong>—</strong><small>Not listed</small></div>
+      {trustScore !== undefined && <div className="hc-team-directory-row__trust">
+        <TrustScoreDial score={trustScore} explanation={trustExplanation} reviewCount={trustReviewCount} verifiedReviewCount={trustVerifiedReviewCount} size="mini" />
+      </div>}
+      <div className="hc-scout-card__stats" aria-label="Team review statistics">
+        <div className="hc-scout-card__stat"><span>Overall rating</span><strong>{averageRating === null || averageRating === undefined ? "—" : averageRating.toFixed(1)}</strong><small>{averageRating == null ? "Not available" : "Out of 5"}</small></div>
+        <div className="hc-scout-card__stat"><span>Reviews</span><strong>{trustReviewCount}</strong><small>{trustReviewCount === 1 ? "Approved review" : "Approved reviews"}</small></div>
         <div className="hc-scout-card__stat"><span>Seasons tracked</span><strong>—</strong><small>Not listed</small></div>
       </div>
       <div className="hc-scout-card__ticket">
