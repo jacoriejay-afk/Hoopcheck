@@ -93,3 +93,7 @@ set league_id=l.id
 from public.womens_leagues l
 where t.league_id is null and t.active=true and t.league_name is not null
   and lower(trim(t.league_name))=lower(trim(l.name));
+
+-- Retire the old Canberra Capitals label; the current franchise is listed as UC Capitals.
+update public.womens_teams set active=false
+where lower(name)='canberra capitals' and lower(coalesce(country,''))='australia' and active=true;
