@@ -81,6 +81,39 @@ function getBillingInterval(
     : "month";
 }
 
+async function verifyIdentitySessionOwner(
+  sessionId: string,
+  requestedUserId: string | undefined,
+  role: string | undefined
+) {
+  if (!requestedUserId || (role !== "player" && role !== "coach")) {
+    throw new Error("Identity verification event is missing a valid HoopCheck owner or role.");
+  }
+
+  const supabase = getAdminSupabase();
+  const { data: identitySession, error: identitySessionError } = await supabase
+    .from("identity_verification_sessions")
+    .select("user_id")
+    .eq("stripe_session_id", sessionId)
+    .maybeSingle();
+
+  if (identitySessionError || !identitySession || identitySession.user_id !== requestedUserId) {
+    throw new Error("Identity verification session does not match the saved HoopCheck owner.");
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("account_type")
+    .eq("id", identitySession.user_id)
+    .maybeSingle();
+
+  if (profileError || !profile || profile.account_type !== role) {
+    throw new Error("Identity verification role does not match the saved HoopCheck profile.");
+  }
+
+  return identitySession.user_id as string;
+}
+
 async function saveSubscription(
   userId: string,
   subscription: Stripe.Subscription
@@ -297,8 +330,15 @@ export async function POST(
   const stripe = new Stripe(stripeSecretKey);
 
   try {
-    const rawBody =
-      await request.text();
+    const contentLength = Number(request.headers.get("content-length") ?? "0");
+    if (Number.isFinite(contentLength) && contentLength > 1_048_576) {
+      return NextResponse.json({ error: "Webhook request is too large." }, { status: 413 });
+    }
+
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 1_048_576) {
+      return NextResponse.json({ error: "Webhook request is too large." }, { status: 413 });
+    }
 
     const signature =
       request.headers.get(
@@ -379,8 +419,12 @@ export async function POST(
 
     if (event.type === "identity.verification_session.verified") {
       const verificationSession = event.data.object as any;
-      const userId = verificationSession.metadata?.user_id || verificationSession.client_reference_id;
-      if (userId) {
+      const userId = await verifyIdentitySessionOwner(
+        verificationSession.id,
+        verificationSession.metadata?.user_id || verificationSession.client_reference_id,
+        verificationSession.metadata?.hoopcheck_role
+      );
+      {
         const supabase = getAdminSupabase();
         const role = verificationSession.metadata?.hoopcheck_role;
         const verificationUpdate = role === "coach"
@@ -410,8 +454,12 @@ export async function POST(
 
     if (event.type === "identity.verification_session.processing") {
       const verificationSession = event.data.object as any;
-      const userId = verificationSession.metadata?.user_id || verificationSession.client_reference_id;
-      if (userId) {
+      const userId = await verifyIdentitySessionOwner(
+        verificationSession.id,
+        verificationSession.metadata?.user_id || verificationSession.client_reference_id,
+        verificationSession.metadata?.hoopcheck_role
+      );
+      {
         const supabase = getAdminSupabase();
         const { error: profileError } = await supabase
           .from("profiles")
