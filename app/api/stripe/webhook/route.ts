@@ -211,60 +211,43 @@ async function findUserByStripeCustomer(
   return data?.user_id || null;
 }
 
-async function eventAlreadyProcessed(
-  eventId: string
-) {
-  const supabase =
-    getAdminSupabase();
-
-  const { data, error } =
-    await supabase
-      .from("subscription_events")
-      .select("stripe_event_id")
-      .eq(
-        "stripe_event_id",
-        eventId
-      )
-      .maybeSingle();
+async function claimStripeWebhookEvent(event: Stripe.Event) {
+  const supabase = getAdminSupabase();
+  const { data, error } = await supabase.rpc("claim_stripe_webhook_event", {
+    p_stripe_event_id: event.id,
+    p_event_type: event.type,
+  });
 
   if (error) {
-    throw new Error(
-      `Unable to check Stripe event: ${error.message}`
-    );
+    throw new Error(`Unable to claim Stripe event: ${error.message}`);
   }
 
-  return Boolean(data);
+  return data === true;
 }
 
-async function saveEvent(
-  event: Stripe.Event
-) {
-  const supabase =
-    getAdminSupabase();
+async function completeStripeWebhookEvent(event: Stripe.Event) {
+  const supabase = getAdminSupabase();
+  const { error } = await supabase.rpc("complete_stripe_webhook_event", {
+    p_stripe_event_id: event.id,
+    p_event_type: event.type,
+    p_payload: event,
+  });
 
-  const { error } =
-    await supabase
-      .from("subscription_events")
-      .insert({
-        stripe_event_id:
-          event.id,
-        event_type:
-          event.type,
-        payload:
-          event,
-      });
-
-  if (!error) {
-    return;
+  if (error) {
+    throw new Error(`Unable to complete Stripe event: ${error.message}`);
   }
+}
 
-  if (error.code === "23505") {
-    return;
+async function releaseStripeWebhookEvent(eventId: string, errorMessage: string) {
+  const supabase = getAdminSupabase();
+  const { error } = await supabase.rpc("release_stripe_webhook_event", {
+    p_stripe_event_id: eventId,
+    p_error: errorMessage.slice(0, 1000),
+  });
+
+  if (error) {
+    console.error("Unable to release Stripe event claim:", error);
   }
-
-  throw new Error(
-    `Unable to save Stripe event: ${error.message}`
-  );
 }
 
 async function getSubscriptionUserId(
@@ -328,6 +311,7 @@ export async function POST(
   }
 
   const stripe = new Stripe(stripeSecretKey);
+  let claimedEventId: string | null = null;
 
   try {
     const contentLength = Number(request.headers.get("content-length") ?? "0");
@@ -405,17 +389,14 @@ export async function POST(
       );
     }
 
-    const alreadyProcessed =
-      await eventAlreadyProcessed(
-        event.id
-      );
-
-    if (alreadyProcessed) {
+    const claimed = await claimStripeWebhookEvent(event);
+    if (!claimed) {
       return NextResponse.json({
         received: true,
         duplicate: true,
       });
     }
+    claimedEventId = event.id;
 
     if (event.type === "identity.verification_session.verified") {
       const verificationSession = event.data.object as any;
@@ -638,12 +619,18 @@ export async function POST(
       }
     }
 
-    await saveEvent(event);
+    await completeStripeWebhookEvent(event);
+    claimedEventId = null;
 
     return NextResponse.json({
       received: true,
     });
   } catch (error) {
+    if (claimedEventId) {
+      const message = error instanceof Error ? error.message : "Unknown webhook processing error";
+      await releaseStripeWebhookEvent(claimedEventId, message);
+    }
+
     console.error(
       "Stripe webhook error:",
       error
