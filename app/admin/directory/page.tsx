@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
+import Logo from "../../../components/Logo";
 
 type DirectoryCounts = {
   coaches: number;
@@ -114,7 +115,7 @@ export default function AdminDirectoryPage() {
       <div style={styles.shell}>
         <header style={styles.header}>
           <div>
-            <p style={styles.eyebrow}>HOOPCHECK ADMIN</p>
+            <div className="admin-brand"><Logo variant="icon" size={34} /><p style={styles.eyebrow}>HOOPCHECK ADMIN</p></div>
 
             <h1 style={styles.title}>
               Directory Control Center
