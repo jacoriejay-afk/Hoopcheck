@@ -3031,3 +3031,8 @@ body { background-color: var(--hc-ink); }
 .site-header-global .hc-logo__wordmark span,.footer-logo .hc-logo__wordmark span { color:#FF5A1F; }
 .hc-logo__wordmark { font-family:var(--font-display),Graduate,serif!important; }
 .ho​​op-loading-logo { color:var(--orange); }
+
+.hc-auth-logo { display:flex; width:fit-content; margin:0 auto 20px; color:#111; }
+.hc-auth-logo .hc-logo__wordmark span { color:#FF5A1F; }
+.ho​​p-loading-logo { color:var(--orange); }
+.hoop-loading-copy > .hc-logo { margin-bottom:5px; color:currentColor; }
