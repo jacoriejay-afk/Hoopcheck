@@ -3449,7 +3449,7 @@ main.auth-page-shell .signup-form .message.error {
   max-width: 100%;
   margin: 0;
   color: #111111;
-  font-family: var(--hc-display, "Archivo Black", Impact, sans-serif);
+  font-family: var(--font-display), Graduate, serif;
   font-size: clamp(25px, 3vw, 32px);
   font-weight: 900;
   line-height: 1.08;
@@ -4256,3 +4256,32 @@ main.admin-light-shell .topnav a,main.admin-light-shell .brand { color:#222!impo
 main.admin-light-shell div[style*="background"] { background:#fff!important; border-color:#E2E2DE!important; color:#111!important; }
 main.admin-light-shell div[style*="background"] h1,main.admin-light-shell div[style*="background"] h2,main.admin-light-shell div[style*="background"] h3,main.admin-light-shell div[style*="background"] p { color:#111!important; }
 main.admin-light-shell div[style*="background"] p.muted,main.admin-light-shell div[style*="background"] small { color:#525252!important; }
+
+
+/* Admin routes share a readable light canvas and consistent card contrast. */
+main.admin-light-shell div[style*="#101010"],
+main.admin-light-shell div[style*="#111"],
+main.admin-light-shell div[style*="#151515"],
+main.admin-light-shell section[style*="#101010"],
+main.admin-light-shell section[style*="#111"],
+main.admin-light-shell article[style*="#101010"],
+main.admin-light-shell article[style*="#111"] {
+  background:#FFFFFF!important;
+  color:#111111!important;
+  border-color:#E2E2DE!important;
+}
+main.admin-light-shell div[style*="#101010"] :is(h1,h2,h3,h4,p,span,strong,small,label),
+main.admin-light-shell div[style*="#111"] :is(h1,h2,h3,h4,p,span,strong,small,label),
+main.admin-light-shell div[style*="#151515"] :is(h1,h2,h3,h4,p,span,strong,small,label),
+main.admin-light-shell section[style*="#101010"] :is(h1,h2,h3,h4,p,span,strong,small,label),
+main.admin-light-shell section[style*="#111"] :is(h1,h2,h3,h4,p,span,strong,small,label) {
+  color:#333333!important;
+}
+main.admin-light-shell div[style*="#101010"] h1,
+main.admin-light-shell div[style*="#101010"] h2,
+main.admin-light-shell div[style*="#101010"] h3,
+main.admin-light-shell div[style*="#111"] h1,
+main.admin-light-shell div[style*="#111"] h2,
+main.admin-light-shell div[style*="#111"] h3 { color:#111111!important; }
+main.admin-light-shell .admin-brand { color:#111111!important; }
+main.admin-light-shell .admin-brand .hc-logo { color:#111111!important; }
