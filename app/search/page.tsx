@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import PlayerContactButton from "../../components/PlayerContactButton";
 import { VerifiedBadge } from "../../components/HoopCheckUI";
+import SearchBar from "../../components/SearchBar";
 
 type Coach = { id: string; name: string; country: string | null; city: string | null };
 type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null };
@@ -271,17 +272,14 @@ function SearchContent() {
         <h1>Search the<br />basketball world.</h1>
         <p>Find players, coaches, professional teams, and leagues from around the world.</p>
 
-        <form action="/search" method="get" className="search-form">
-          <input
-            type="search"
-            name="q"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Search players, coaches, teams, or leagues..."
-            aria-label="Search players, coaches, teams, or leagues"
-          />
-          <button type="submit" className="btn">Search</button>
-        </form>
+        <SearchBar
+          className="search-form"
+          name="q"
+          value={searchInput}
+          onChange={setSearchInput}
+          placeholder="Search players, coaches, teams, or leagues"
+          ariaLabel="Search players, coaches, teams, or leagues"
+        />
       </section>
 
       {query && (
