@@ -211,7 +211,7 @@ async function findUserByStripeCustomer(
   return data?.user_id || null;
 }
 
-async function claimStripeWebhookEvent(event: Stripe.Event) {
+async function claimStripeWebhookEvent(event: Stripe.Event): Promise<string | null> {
   const supabase = getAdminSupabase();
   const { data, error } = await supabase.rpc("claim_stripe_webhook_event", {
     p_stripe_event_id: event.id,
@@ -222,14 +222,15 @@ async function claimStripeWebhookEvent(event: Stripe.Event) {
     throw new Error(`Unable to claim Stripe event: ${error.message}`);
   }
 
-  return data === true;
+  return typeof data === "string" ? data : null;
 }
 
-async function completeStripeWebhookEvent(event: Stripe.Event) {
+async function completeStripeWebhookEvent(event: Stripe.Event, claimToken: string) {
   const supabase = getAdminSupabase();
   const { error } = await supabase.rpc("complete_stripe_webhook_event", {
     p_stripe_event_id: event.id,
     p_event_type: event.type,
+    p_claim_token: claimToken,
     p_payload: event,
   });
 
@@ -238,15 +239,20 @@ async function completeStripeWebhookEvent(event: Stripe.Event) {
   }
 }
 
-async function releaseStripeWebhookEvent(eventId: string, errorMessage: string) {
-  const supabase = getAdminSupabase();
-  const { error } = await supabase.rpc("release_stripe_webhook_event", {
-    p_stripe_event_id: eventId,
-    p_error: errorMessage.slice(0, 1000),
-  });
+async function releaseStripeWebhookEvent(eventId: string, claimToken: string, errorMessage: string) {
+  try {
+    const supabase = getAdminSupabase();
+    const { error } = await supabase.rpc("release_stripe_webhook_event", {
+      p_stripe_event_id: eventId,
+      p_claim_token: claimToken,
+      p_error: errorMessage.slice(0, 1000),
+    });
 
-  if (error) {
-    console.error("Unable to release Stripe event claim:", error);
+    if (error) {
+      console.error("Unable to release Stripe event claim:", error);
+    }
+  } catch (releaseError) {
+    console.error("Unable to release Stripe event claim:", releaseError);
   }
 }
 
@@ -312,6 +318,7 @@ export async function POST(
 
   const stripe = new Stripe(stripeSecretKey);
   let claimedEventId: string | null = null;
+  let claimedEventToken: string | null = null;
 
   try {
     const contentLength = Number(request.headers.get("content-length") ?? "0");
@@ -389,14 +396,15 @@ export async function POST(
       );
     }
 
-    const claimed = await claimStripeWebhookEvent(event);
-    if (!claimed) {
+    const claimToken = await claimStripeWebhookEvent(event);
+    if (!claimToken) {
       return NextResponse.json({
         received: true,
         duplicate: true,
       });
     }
     claimedEventId = event.id;
+    claimedEventToken = claimToken;
 
     if (event.type === "identity.verification_session.verified") {
       const verificationSession = event.data.object as any;
@@ -619,8 +627,10 @@ export async function POST(
       }
     }
 
-    await completeStripeWebhookEvent(event);
+    if (!claimedEventToken) throw new Error("Stripe webhook claim token is missing.");
+    await completeStripeWebhookEvent(event, claimedEventToken);
     claimedEventId = null;
+    claimedEventToken = null;
 
     return NextResponse.json({
       received: true,
@@ -628,7 +638,7 @@ export async function POST(
   } catch (error) {
     if (claimedEventId) {
       const message = error instanceof Error ? error.message : "Unknown webhook processing error";
-      await releaseStripeWebhookEvent(claimedEventId, message);
+      if (claimedEventToken) await releaseStripeWebhookEvent(claimedEventId, claimedEventToken, message);
     }
 
     console.error(
