@@ -50,7 +50,7 @@ export default function DirectoryProvidersPage(){
  finally{setSyncing(null);}
  }
  async function toggleSource(s:Source){setError("");const {error:e1}=await supabase.from("directory_sources").update({active:!s.active}).eq("id",s.id);if(e1)setError(e1.message);else await load();}
- if(loading)return <main className="admin-light-shell" style={styles.page><div style={styles.loader}>Loading provider center...</div></main>;
+ if(loading)return <main className="admin-light-shell" style={styles.page}><div style={styles.loader}>Loading provider center...</div></main>;
  return <main style={styles.page}><div style={styles.shell}>
   <header style={styles.header}><div><p style={styles.eyebrow}>HOOPCHECK ADMIN</p><h1 style={styles.title}>Data Provider Center</h1><p style={styles.subtitle}>Register licensed or approved basketball data sources before connecting a sync.</p></div><div style={styles.actions}><Link href="/admin/directory/import" style={styles.secondary}>CSV Import</Link><Link href="/admin/directory" style={styles.secondary}>Directory</Link></div></header>
   {message&&<div style={styles.success}>{message}</div>}{error&&<div style={styles.error}>{error}</div>}{preview&&<section style={styles.panel}><p style={styles.section}>PENDING APPROVAL</p><h2 style={styles.heading}>{preview.entity_type} sync preview</h2><p style={styles.muted}>{preview.create_count} create · {preview.update_count} update · {preview.skip_count} skip · expires {new Date(preview.expires_at).toLocaleTimeString()}</p><button onClick={()=>void approvePreview()} style={styles.primary}>Approve & Import This Preview</button></section>}
