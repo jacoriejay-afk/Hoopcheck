@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import PlayerContactButton from "../../components/PlayerContactButton";
+import SearchBar from "../../components/SearchBar";
 import { useLanguage } from "../../components/LanguageProvider";
 import { HoopIcon, CategoryIconTile, VerifiedBadge } from "../../components/HoopCheckUI";
 
@@ -247,14 +248,7 @@ export default function DashboardPage() {
         </section>
 
         <section className="hc-mobile-dashboard" aria-label="HoopCheck discovery">
-          <form className="hc-mobile-search" action="/search" method="get" role="search">
-            <label className="hc-mobile-search-field">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.2 4.2"/></svg>
-              <span className="hc-sr-only">Search teams, coaches, and leagues</span>
-              <input type="search" name="q" placeholder="Search teams, coaches, leagues..." />
-            </label>
-            <button type="submit">Search</button>
-          </form>
+          <SearchBar className="hc-mobile-search" name="q" placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search teams, coaches, and leagues" />
 
           <section className="hc-mobile-section" aria-labelledby="hc-quick-access-heading">
             <div className="hc-mobile-section-heading">
