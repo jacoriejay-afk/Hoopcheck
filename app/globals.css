@@ -3290,3 +3290,9 @@ body { background-color: var(--hc-ink); }
  .hc-feed-expiry { font-size:9px; }
  .hc-feed-expiry svg { width:30px; height:30px; flex-basis:30px; }
 }
+
+.hc-country-public-toggle { display:flex; align-items:flex-start; gap:10px; margin:8px 0 16px; padding:12px; border:1px solid #e1e1dc; border-radius:10px; background:#fafaf8; cursor:pointer; }
+.hc-country-public-toggle input { flex:0 0 auto; width:17px; height:17px; margin-top:2px; accent-color:#ff5a1f; }
+.hc-country-public-toggle span { display:grid; gap:4px; }
+.hc-country-public-toggle strong { color:#242424; font-size:12px; }
+.hc-country-public-toggle small { color:#686861; font-size:11px; line-height:1.45; }
