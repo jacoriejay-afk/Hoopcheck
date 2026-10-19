@@ -144,7 +144,7 @@ export default function AdminDirectoryPage() {
           </div>
         )}
 
-        <section style={styles.statsGrid}>
+        <section className="admin-stats-grid" style={styles.statsGrid}>
           <StatCard
             label="Active Coaches"
             value={counts.coaches}
@@ -164,7 +164,7 @@ export default function AdminDirectoryPage() {
           />
         </section>
 
-        <section style={styles.panel}>
+        <section className="admin-directory-panel" style={styles.panel}>
           <div style={styles.panelHeader}>
             <div>
               <p style={styles.sectionEyebrow}>
