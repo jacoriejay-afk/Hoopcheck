@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { HoopIcon } from "./HoopCheckUI";
 
 type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string };
 
@@ -99,7 +100,7 @@ export default function FollowButton({ targetType, targetId }: Props) {
         disabled={busy}
         title={following ? "You are following this profile" : "Follow this profile"}
       >
-        {following ? "✓" : "＋"} {following ? "Following" : "Follow"} <span className="muted">· {count} followers</span>
+        {following ? <HoopIcon name="check" size={15} /> : <HoopIcon name="user" size={15} />} {following ? "Following" : "Follow"} <span className="muted">· {count} followers</span>
       </button>
       {following && (
         <button
@@ -109,7 +110,7 @@ export default function FollowButton({ targetType, targetId }: Props) {
           onClick={toggleNotify}
           style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px", background: "transparent", color: "inherit", cursor: "pointer" }}
         >
-          {notify ? "🔔 On" : "🔕 Off"}
+          <><HoopIcon name="bell" size={15} /> {notify ? "On" : "Off"}</>
         </button>
       )}
       {!signedIn && <span className="muted" style={{ fontSize: 12 }}>Sign in to follow</span>}
