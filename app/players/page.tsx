@@ -192,7 +192,7 @@ export default function PlayersPage() {
                       <h2>
                         {name}{" "}
                         {player.player_verified && (
-                          <span title="Verified professional player" style={{ color: "var(--orange)" }}>✓</span>
+                          <VerifiedBadge label="Verified professional player" />
                         )}
                       </h2>
                     </div>
