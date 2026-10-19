@@ -1,6 +1,6 @@
 -- Serialize review submission rate-limit claims so concurrent requests cannot
 -- exceed the five-review rolling 24-hour limit.
--- Review this migration before applying it to any live database.
+-- Review before applying to any live database.
 
 create table if not exists public.review_submission_rate_limits (
   id bigint generated always as identity primary key,
@@ -14,8 +14,7 @@ create index if not exists review_submission_rate_limits_user_created_idx
 alter table public.review_submission_rate_limits enable row level security;
 revoke all on table public.review_submission_rate_limits from anon, authenticated;
 
--- Seed the limiter with existing reviews from the last 24 hours so rollout
--- does not reset a user's current rolling-window allowance.
+-- Seed from existing reviews so rollout does not reset the rolling allowance.
 insert into public.review_submission_rate_limits (user_id, created_at)
 select author_id, created_at
 from public.reviews
@@ -26,7 +25,7 @@ from public.womens_team_reviews
 where created_at >= now() - interval '24 hours';
 
 create or replace function public.claim_review_submission_slot()
-returns boolean
+returns bigint
 language plpgsql
 security definer
 set search_path = public, pg_catalog
@@ -34,13 +33,13 @@ as $function$
 declare
   v_user_id uuid;
   v_recent_count integer;
+  v_slot_id bigint;
 begin
   v_user_id := auth.uid();
   if v_user_id is null then
     raise exception 'Authentication required';
   end if;
 
-  -- Serialize claims per user inside the transaction.
   perform pg_advisory_xact_lock(hashtextextended(v_user_id::text, 0));
 
   delete from public.review_submission_rate_limits
@@ -54,15 +53,42 @@ begin
     and created_at >= now() - interval '24 hours';
 
   if v_recent_count >= 5 then
-    return false;
+    return null;
   end if;
 
   insert into public.review_submission_rate_limits (user_id)
-  values (v_user_id);
+  values (v_user_id)
+  returning id into v_slot_id;
 
-  return true;
+  return v_slot_id;
+end;
+$function$;
+
+create or replace function public.release_review_submission_slot(p_slot_id bigint)
+returns boolean
+language plpgsql
+security definer
+set search_path = public, pg_catalog
+as $function$
+declare
+  v_user_id uuid;
+  v_deleted_count integer;
+begin
+  v_user_id := auth.uid();
+  if v_user_id is null then
+    raise exception 'Authentication required';
+  end if;
+
+  delete from public.review_submission_rate_limits
+  where id = p_slot_id
+    and user_id = v_user_id;
+
+  get diagnostics v_deleted_count = row_count;
+  return v_deleted_count = 1;
 end;
 $function$;
 
 revoke all on function public.claim_review_submission_slot() from public, anon;
+revoke all on function public.release_review_submission_slot(bigint) from public, anon;
 grant execute on function public.claim_review_submission_slot() to authenticated;
+grant execute on function public.release_review_submission_slot(bigint) to authenticated;
