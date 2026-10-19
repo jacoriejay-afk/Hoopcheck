@@ -198,6 +198,41 @@ export async function GET(request: NextRequest) {
     const { error: staleError } = await staleQuery;
     if (staleError) throw staleError;
 
+    // Send one in-app reminder when the 30-minute chat window opens.
+    const { data: pendingReminders, error: reminderReadError } = await db.from("fan_live_game_reminders")
+      .select("id,game_id,user_id").is("notified_at", null).limit(1000);
+    if (reminderReadError) throw reminderReadError;
+    const reminderGameIds = Array.from(new Set((pendingReminders || []).map(reminder => reminder.game_id)));
+    if (reminderGameIds.length) {
+      const { data: reminderGames, error: reminderGamesError } = await db.from("fan_live_games")
+        .select("id,team_id,opponent_name,status,scheduled_at,started_at,ends_at")
+        .in("id", reminderGameIds);
+      if (reminderGamesError) throw reminderGamesError;
+      const byId = new Map((reminderGames || []).map(game => [game.id, game]));
+      const now = Date.now();
+      for (const reminder of pendingReminders || []) {
+        const game = byId.get(reminder.game_id);
+        if (!game || !game.scheduled_at || ["cancelled","canceled","postponed","abandoned","final"].includes(String(game.status).toLowerCase())) continue;
+        const tipoff = Date.parse(game.scheduled_at);
+        const opens = tipoff - 30 * 60 * 1000;
+        const closes = game.ends_at ? Date.parse(game.ends_at) + 60 * 60 * 1000 : tipoff + 4 * 60 * 60 * 1000;
+        if (!Number.isFinite(tipoff) || now < opens || now >= closes) continue;
+        const { data: preferences } = await db.from("user_preferences").select("notifications_enabled")
+          .eq("user_id", reminder.user_id).maybeSingle();
+        if (preferences?.notifications_enabled !== false) {
+          const { error: notificationError } = await db.from("notifications").insert({
+            user_id: reminder.user_id, target_type: "game", target_id: game.id,
+            notification_type: "game_reminder", title: "Game chat is open",
+            body: "Chat opens soon for " + (game.opponent_name || "your scheduled game") + ". Join the game room now.",
+          });
+          if (notificationError) throw notificationError;
+        }
+        const { error: markReminderError } = await db.from("fan_live_game_reminders")
+          .update({ notified_at: new Date().toISOString() }).eq("id", reminder.id).is("notified_at", null);
+        if (markReminderError) throw markReminderError;
+      }
+    }
+
     const unmatchedLiveGames = liveGames
       .filter(game => {
         const homeProviderId = Number(game.teams?.home?.id);
