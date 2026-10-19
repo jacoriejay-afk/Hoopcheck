@@ -9,10 +9,17 @@ language plpgsql
 set search_path = 'public', 'pg_catalog'
 as $function$
 begin
-  -- Server-side service-role operations have no end-user auth.uid(); admin
-  -- workflows are checked separately before reaching privileged update paths.
-  if (select auth.uid()) is null
-     or public.is_current_user_admin_or_moderator() then
+  -- Allow trusted server-side service-role operations, but never treat a
+  -- missing end-user identity alone as proof of trust.
+  if coalesce((select auth.role()), '') = 'service_role' then
+    return new;
+  end if;
+
+  if (select auth.uid()) is null then
+    raise exception 'Authentication required';
+  end if;
+
+  if public.is_current_user_admin_or_moderator() then
     return new;
   end if;
 
