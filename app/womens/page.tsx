@@ -3,10 +3,10 @@
 import { supabase } from "../../lib/supabase";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import FollowButton from "../../components/FollowButton";
+import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
-import { HoopIcon } from "../../components/HoopCheckUI";
+
 
 type WomensTeam = {
   id: string;
@@ -109,19 +109,7 @@ export default function Womens() {
         {loading ? <div className="hc-womens-loading"><HoopLoading label="Loading women’s teams…" /></div> : filtered.length ? (
           <section className="hc-womens-team-list" aria-label="Women’s team results">
             {filtered.map(team => (
-              <article className="hc-womens-team-row" key={team.id}>
-                <Link href={`/womens/${team.id}`} className="hc-womens-team-link" aria-label={`Open ${team.name} team profile`}>
-                  <span className="hc-womens-team-monogram" aria-hidden="true">{team.name.split(/\s+/).slice(0,2).map(part => part[0]).join("").toUpperCase()}</span>
-                  <span className="hc-womens-team-details">
-                    <strong>{team.name}</strong>
-                    <span>{[team.city, team.country].filter(Boolean).join(", ") || "International"}</span>
-                    <small>{team.league_name || "Women’s professional basketball"}</small>
-                  </span>
-                  <span className="hc-womens-team-arrow" aria-hidden="true"><HoopIcon name="arrow-up-right" size={17} /></span>
-                </Link>
-                <div className="hc-womens-team-follow"><FollowButton targetType="team" targetId={team.id} /></div>
-              </article>
-            ))}
+              <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" />           ))}
           </section>
         ) : (
           <section className="hc-womens-empty-state">
