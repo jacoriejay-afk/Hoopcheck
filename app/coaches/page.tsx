@@ -9,6 +9,7 @@ import Link from "next/link";
 
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
+import SearchBar from "../../components/SearchBar";
 
 type Coach = {
   id: string;
@@ -125,7 +126,7 @@ export default function CoachesPage() {
 
       <section className="hc-coach-directory-tools" aria-label="Search coaches">
         <label htmlFor="coach-directory-search">Find a coach</label>
-        <input id="coach-directory-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by coach name, country, or city…" autoComplete="off" />
+        <SearchBar inputId="coach-directory-search" value={query} onChange={setQuery} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search coaches" onSubmit={setQuery} />
         <div className="hc-coach-directory-summary" aria-live="polite">
           {loading ? "Searching coaching profiles…" : `${filteredCoaches.length} of ${coaches.length} coach${coaches.length === 1 ? "" : "es"} shown`}
         </div>
