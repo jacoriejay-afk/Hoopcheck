@@ -183,7 +183,7 @@ export default function LiveGamesPage() {
     const isLive = variant === "live";
     const isUpcoming = variant === "upcoming";
     const isRecent = variant === "recent";
-    const canJoin = availability.chatOpen && !isRecent;
+    const canJoin = availability.chatOpen && !isRecent && (!isUpcoming || Boolean(game.scheduled_at && Date.parse(game.scheduled_at) <= nowMs));
     const score = scoreText(game);
     const tip = game.scheduled_at || game.started_at;
     return (
@@ -254,7 +254,7 @@ export default function LiveGamesPage() {
     <section className="hc-live-hub-section">
       <div className="hc-live-section-heading"><div><p className="eyebrow">RIGHT NOW</p><h2>LIVE NOW <span>{live.length}</span></h2></div><p>Real-time conversations, one game at a time.</p></div>
       {live.length ? <div className="hc-live-hub-grid">{live.map(entry => <GameCard key={entry.game.id} entry={entry} variant="live" />)}</div>
-        : <div className="hc-live-empty"><div className="hc-live-empty__icon"><HoopIcon name="basketball" size={24} /></div><div><h3>No live games right now</h3><p>When a game is live, its chat will appear here. You can set a reminder for the next scheduled tip-off below.</p></div></div>}
+        : <div className="hc-live-empty"><div className="hc-live-empty__icon"><HoopIcon name="basketball" size={24} /></div><div><h3>No live games right now</h3><p>{upcoming[0] ? <>Next tip-off: {formatViewerLocalTime(upcoming[0].game.scheduled_at || upcoming[0].game.started_at)}. Set a reminder and we’ll keep it on your list.<div className="hc-live-empty__actions"><button type="button" className={`hc-remind-button ${reminders.includes(upcoming[0].game.id) ? "is-set" : ""}`} disabled={reminding===upcoming[0].game.id} onClick={() => void toggleReminder(upcoming[0].game.id)}><HoopIcon name="bell" size={16}/>{reminders.includes(upcoming[0].game.id) ? "REMINDER SET" : "REMIND ME"}</button></div></> : "When a game is live, its chat will appear here. There are no confirmed upcoming tip-off times yet."}</p></div></div>}
       {postGameOpen.length > 0 && <><div className="hc-live-section-heading hc-live-post-heading"><div><p className="eyebrow">STAY IN THE CONVERSATION</p><h2>POST-GAME CHAT <span>{postGameOpen.length}</span></h2></div></div><div className="hc-live-hub-grid">{postGameOpen.map(entry => <GameCard key={entry.game.id} entry={entry} variant="postgame" />)}</div></>}
     </section>
 
@@ -270,7 +270,7 @@ export default function LiveGamesPage() {
         : <div className="hc-live-recent-empty">Recent final scores will appear here when available.</div>}
     </section>
 
-    {!filtered.length && <section className="hc-live-no-games"><CourtLines variant="circle" className="hc-court-empty-art" /><h2>No games match these filters</h2><p>Try another team, league, or filter — or browse the full team directory.</p><Link href="/teams" className="btn">Browse Teams</Link></section>}
+    {!filtered.length && <section className="hc-live-no-games"><CourtLines variant="circle" className="hc-court-empty-art" /><h2>{games.length ? "No games match these filters" : "No games scheduled yet"}</h2><p>{games.length ? "Try another team, league, or filter — or browse the full team directory." : "The game schedule has no fixtures yet. Browse the team directory while the schedule feed is being populated."}</p><Link href="/teams" className="btn">Browse Teams</Link></section>}
     <div className="hc-live-hub-footer"><span>Game states refresh automatically every 60 seconds.</span><Link href="/teams">Explore teams <span aria-hidden="true">→</span></Link></div>
   </div></main>;
 }
