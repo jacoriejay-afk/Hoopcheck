@@ -3350,3 +3350,43 @@ body { background-color: var(--hc-ink); }
  .hc-journey-form__row { grid-template-columns:1fr; }
  .hc-journey-stop__footer { align-items:flex-start; flex-direction:column; }
 }
+
+
+/* Organization claim request + admin review queue. */
+.hc-claim-control { display:inline-flex; flex-direction:column; align-items:flex-start; gap:8px; margin:10px 0; }
+.hc-claim-trigger { display:inline-flex; min-height:38px; align-items:center; gap:8px; padding:8px 12px; border:1px solid #e3a58c; border-radius:9px; background:#fff0e9; color:#a83a13; font-size:10px; font-weight:950; letter-spacing:.04em; }
+.hc-claim-trigger span { display:grid; width:18px; height:18px; place-items:center; border:1px solid #e8a78d; border-radius:50%; }
+.hc-claim-panel { width:min(100%,430px); padding:17px; border:1px solid #e3e3dc; border-radius:13px; background:#fff; color:#171717; box-shadow:0 10px 30px rgba(0,0,0,.08); }
+.hc-claim-panel__heading { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+.hc-claim-panel__heading .eyebrow { margin:0 0 5px; color:#c74719; font-size:9px; }
+.hc-claim-panel__heading h3 { margin:0; font-size:17px; }
+.hc-claim-panel__heading>button { width:29px; height:29px; border:1px solid #e1e1dc; border-radius:7px; background:#fff; color:#333; font-size:18px; }
+.hc-claim-panel>p { margin:10px 0 13px; color:#686861; font-size:11px; line-height:1.55; }
+.hc-claim-methods { display:grid; gap:8px; }
+.hc-claim-methods label { display:flex; align-items:flex-start; gap:9px; padding:10px; border:1px solid #e1e1dc; border-radius:9px; background:#fafaf8; cursor:pointer; }
+.hc-claim-methods input { margin-top:2px; accent-color:#ff5a1f; }
+.hc-claim-methods span { display:grid; gap:3px; }
+.hc-claim-methods strong { font-size:11px; }
+.hc-claim-methods small { color:#73736d; font-size:10px; line-height:1.4; }
+.hc-claim-field { display:grid; gap:6px; margin:12px 0; color:#5c5c56; font-size:10px; font-weight:900; }
+.hc-claim-field input { min-height:42px; padding:9px 11px; border:1px solid #deded8; border-radius:8px; background:#fff; color:#171717; font:inherit; font-size:12px; }
+.hc-claim-field small { color:#777770; font-size:9px; font-weight:500; }
+.hc-claim-message { display:block; margin:9px 0; color:#a83a13; font-size:11px; line-height:1.5; }
+.hc-claim-admin-message { padding:11px 13px; border-radius:9px; background:#fff0e9; color:#a83a13; font-size:12px; }
+.hc-claim-admin-summary { display:grid; grid-template-columns:auto 1fr auto 1fr auto 1fr; align-items:center; gap:10px; margin:18px 0; padding:15px; border:1px solid #e2e2dc; border-radius:12px; background:#fff; }
+.hc-claim-admin-summary strong { color:#b83e14; font-family:var(--font-display),Impact,sans-serif; font-size:24px; }
+.hc-claim-admin-summary span { color:#6b6b65; font-size:10px; font-weight:850; }
+.hc-claim-admin-list { display:grid; gap:14px; }
+.hc-claim-admin-card { padding:18px!important; }
+.hc-claim-admin-card__top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+.hc-claim-admin-card__top h2 { margin:8px 0 5px; font-size:19px; }
+.hc-claim-admin-card__top p { margin:0; font-size:11px; }
+.hc-claim-admin-status { display:inline-flex; padding:5px 8px; border-radius:5px; background:#f1f1ee; color:#565650; font-size:9px; font-weight:950; text-transform:uppercase; }
+.hc-claim-admin-status.is-pending { background:#fff0e9; color:#a83a13; }
+.hc-claim-admin-status.is-approved { background:#edf7ed; color:#28723a; }
+.hc-claim-admin-status.is-rejected { background:#fceeee; color:#a12d2d; }
+.hc-claim-admin-open { color:#b83e14; font-size:11px; font-weight:900; }
+.hc-claim-admin-note { display:grid; gap:6px; margin:12px 0; color:#5f5f58; font-size:10px; font-weight:900; }
+.hc-claim-admin-note textarea { width:100%; padding:10px; border:1px solid #deded8; border-radius:8px; background:#fff; color:#171717; font:inherit; font-size:12px; }
+.hc-claim-admin-actions { display:flex; gap:9px; flex-wrap:wrap; }
+@media(max-width:520px) { .hc-claim-admin-summary { grid-template-columns:auto 1fr; } .hc-claim-admin-card { padding:13px!important; } }
