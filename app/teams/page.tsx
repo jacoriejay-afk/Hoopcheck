@@ -9,7 +9,7 @@ import Link from "next/link";
 
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
-import GeoBadge from "../../components/GeoBadge";
+import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import SearchBar from "../../components/SearchBar";
 
 type Team = {
