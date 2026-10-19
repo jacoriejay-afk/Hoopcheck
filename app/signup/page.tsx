@@ -3,18 +3,19 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { HoopIcon, type HoopIconName } from "../../components/HoopCheckUI";
 import { getCachedSession, supabase } from "../../lib/supabase";
 
 const TERMS_VERSION = "2026-10-01";
 type AccountType = "player" | "coach" | "scout" | "agent" | "fan";
 type Team = { id:string; name:string; country:string|null; league_name:string|null };
 
-const ACCOUNT_TYPES: {value:AccountType; title:string; description:string; icon:string}[] = [
-  {value:"player",title:"Player",description:"Professional basketball player: build a verified career profile, research before signing, review teams you played for, and connect with the basketball industry.",icon:"🏀"},
-  {value:"coach",title:"Coach",description:"Coach: build a coaching profile, research organizations, pursue verification, and connect with players when eligible.",icon:"📋"},
-  {value:"scout",title:"Scout",description:"Scout: discover players and research teams, leagues, markets, and talent around the world.",icon:"🔎"},
-  {value:"agent",title:"Agent",description:"Agent: research players, teams, leagues, markets, and recruiting opportunities.",icon:"🤝"},
-  {value:"fan",title:"Fan",description:"Fan: follow favorite teams, track leagues, and personalize a basketball-first experience.",icon:"🔥"},
+const ACCOUNT_TYPES: {value:AccountType; title:string; description:string; icon:HoopIconName}[] = [
+  {value:"player",title:"Player",description:"Professional basketball player: build a verified career profile, research before signing, review teams you played for, and connect with the basketball industry.",icon:"basketball"},
+  {value:"coach",title:"Coach",description:"Coach: build a coaching profile, research organizations, pursue verification, and connect with players when eligible.",icon:"clipboard-check"},
+  {value:"scout",title:"Scout",description:"Scout: discover players and research teams, leagues, markets, and talent around the world.",icon:"search"},
+  {value:"agent",title:"Agent",description:"Agent: research players, teams, leagues, markets, and recruiting opportunities.",icon:"users"},
+  {value:"fan",title:"Fan",description:"Fan: follow favorite teams, track leagues, and personalize a basketball-first experience.",icon:"star"},
 ];
 
 export default function SignupPage() {
@@ -111,7 +112,7 @@ export default function SignupPage() {
         <p className="intro">Choose this first. We’ll only show you the questions that apply to your account.</p>
         <div className="account-type-grid">
           {ACCOUNT_TYPES.map(type=><button key={type.value} type="button" onClick={()=>{if(!accountType){setAccountType(type.value);setError("");}}} className={`account-type-choice ${accountType===type.value?"selected":""}`}>
-            <span className="account-type-icon">{type.icon}</span><span><strong>{type.title}</strong><small>{type.description}</small></span><span className="account-type-check">{accountType===type.value?"✓":"+"}</span>
+            <span className="account-type-icon"><HoopIcon name={type.icon} size={22} /></span><span><strong>{type.title}</strong><small>{type.description}</small></span><span className="account-type-check">{accountType===type.value?<HoopIcon name="check" size={16} />:<HoopIcon name="arrow-right" size={16} />}</span>
           </button>)}
         </div>
 
@@ -161,7 +162,7 @@ export default function SignupPage() {
           {error&&<div className="message error">{error}</div>}
           <button type="submit" className="btn submit" disabled={loading}>{loading?"Creating Account...":`Create ${ACCOUNT_TYPES.find(x=>x.value===accountType)?.title} Account`}</button>
         </form>}
-        {!accountType&&<div className="signup-gate"><span>👆</span><strong>Select an account type to continue.</strong><small>Your choices are tailored to your role.</small></div>}
+        {!accountType&&<div className="signup-gate"><span aria-hidden="true"><HoopIcon name="arrow-right" size={18} /></span><strong>Select an account type to continue.</strong><small>Your choices are tailored to your role.</small></div>}
         <div className="login-link">Already have an account? <Link href="/login">Log in</Link></div>
       </div>
     </section>
