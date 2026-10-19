@@ -4238,3 +4238,12 @@ main.admin-light-shell input::placeholder,main.admin-light-shell textarea::place
 main.admin-light-shell table { background:#fff; color:#111; }
 main.admin-light-shell th { color:#333!important; background:#F0F0ED!important; }
 main.admin-light-shell td { color:#333!important; border-color:#E2E2DE!important; }
+
+main.admin-light-shell .page-container { color:#111!important; }
+main.admin-light-shell .dashboard-card,main.admin-light-shell .hero-card,main.admin-light-shell .card,main.admin-light-shell .panel,main.admin-light-shell .settings-card,main.admin-light-shell .admin-stat,main.admin-light-shell .admin-role { background:#fff!important; color:#111!important; border-color:#E2E2DE!important; }
+main.admin-light-shell .dashboard-card h1,main.admin-light-shell .dashboard-card h2,main.admin-light-shell .dashboard-card h3,main.admin-light-shell .hero-card h1,main.admin-light-shell .hero-card h2,main.admin-light-shell .hero-card h3 { color:#111!important; }
+main.admin-light-shell .dashboard-card p,main.admin-light-shell .hero-card p,main.admin-light-shell .dashboard-card .muted,main.admin-light-shell .hero-card .muted { color:#525252!important; }
+main.admin-light-shell .eyebrow { color:#9A3412!important; }
+main.admin-light-shell .admin-stat strong,main.admin-light-shell .stat-value { color:#C2410C!important; }
+main.admin-light-shell .topbar,main.admin-light-shell .topnav { color:#111!important; }
+main.admin-light-shell .topnav a,main.admin-light-shell .brand { color:#222!important; }
