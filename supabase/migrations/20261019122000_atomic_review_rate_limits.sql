@@ -14,6 +14,17 @@ create index if not exists review_submission_rate_limits_user_created_idx
 alter table public.review_submission_rate_limits enable row level security;
 revoke all on table public.review_submission_rate_limits from anon, authenticated;
 
+-- Seed the limiter with existing reviews from the last 24 hours so rollout
+-- does not reset a user's current rolling-window allowance.
+insert into public.review_submission_rate_limits (user_id, created_at)
+select author_id, created_at
+from public.reviews
+where created_at >= now() - interval '24 hours'
+union all
+select author_id, created_at
+from public.womens_team_reviews
+where created_at >= now() - interval '24 hours';
+
 create or replace function public.claim_review_submission_slot()
 returns boolean
 language plpgsql
