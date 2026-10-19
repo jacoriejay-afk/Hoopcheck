@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import SearchBar from "../../components/SearchBar";
 
 const categories = [
   { title: "Professional Teams", description: "Research clubs, contracts, and player experiences before you sign.", href: "/teams", icon: "T", color: "#ff5500", group: "Teams" },
@@ -38,16 +39,7 @@ export default function DirectoryPage() {
         <p>Find the teams, coaches, leagues, and player information you need to make an informed decision.</p>
       </header>
 
-      <label className="hc-directory-search">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4 4" /></svg>
-        <span className="sr-only">Search directory categories</span>
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search categories…"
-        />
-      </label>
+      <SearchBar className="hc-directory-search" value={query} onChange={setQuery} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search directory categories" onSubmit={setQuery} />
 
       <div className="hc-directory-filters" aria-label="Filter directory categories">
         {groups.map((option) => (
