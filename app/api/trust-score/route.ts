@@ -55,7 +55,7 @@ export async function GET(request: Request) {
 
     const scores: Record<string, ReturnType<typeof calculateTrustScore>> = {};
     for (const id of ids) {
-      const entityReviews = reviews.filter(row => row[targetColumn] === id);
+      const entityReviews = reviews.filter(row => (entityType === "team" ? row.team_id : row.coach_id) === id);
       const ratings = entityReviews.map(row => Number(row.overall_rating)).filter(value => Number.isFinite(value) && value >= 1 && value <= 5);
       const averageRating = ratings.length ? ratings.reduce((sum, value) => sum + value, 0) / ratings.length : null;
       const scoreReviews: TrustScoreReview[] = entityReviews.map(row => ({
