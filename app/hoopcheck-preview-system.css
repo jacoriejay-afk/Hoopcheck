@@ -4225,3 +4225,16 @@ main, section, article, aside, header, footer, nav, form, .card, .result-card, .
 .admin-directory-shell .admin-directory-panel .hc-kicker { color:#9A3412!important; }
 .hc-auth-logo .hc-logo__wordmark { color:#111!important; }
 .hc-auth-logo .hc-logo__wordmark span { color:#FF5A1F!important; }
+
+
+/* Shared light admin canvas for the remaining directory-control routes. */
+main.admin-light-shell { min-height:100vh; background:#F7F7F5!important; color:#111!important; }
+main.admin-light-shell h1,main.admin-light-shell h2,main.admin-light-shell h3,main.admin-light-shell h4 { color:#111!important; }
+main.admin-light-shell p:not(.eyebrow),main.admin-light-shell small { color:#525252; }
+main.admin-light-shell section,main.admin-light-shell article { border-color:#E2E2DE!important; }
+main.admin-light-shell section[style*="background"],main.admin-light-shell article[style*="background"] { background:#fff!important; color:#111!important; }
+main.admin-light-shell input:not([type="checkbox"]),main.admin-light-shell select,main.admin-light-shell textarea { background:#fff!important; color:#111!important; border-color:#D6D6D1!important; }
+main.admin-light-shell input::placeholder,main.admin-light-shell textarea::placeholder { color:#666!important; }
+main.admin-light-shell table { background:#fff; color:#111; }
+main.admin-light-shell th { color:#333!important; background:#F0F0ED!important; }
+main.admin-light-shell td { color:#333!important; border-color:#E2E2DE!important; }
