@@ -44,7 +44,7 @@ function locationFor(team: TeamMapItem) {
   return fallback ? { lat: fallback[0], lon: fallback[1], approximate: true } : null;
 }
 
-export default function TeamMap({ teams }: { teams: TeamMapItem[] }) {
+export default function TeamMap({ teams, profileBasePath = "teams" }: { teams: TeamMapItem[]; profileBasePath?: "teams" | "womens" }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const mapped = useMemo(() => teams.map(team => ({ team, location: locationFor(team) })).filter((item): item is {team:TeamMapItem;location:{lat:number;lon:number;approximate:boolean}} => Boolean(item.location)), [teams]);
   const selected = mapped.find(item => item.team.id === selectedId) || null;
@@ -97,7 +97,7 @@ export default function TeamMap({ teams }: { teams: TeamMapItem[] }) {
         <p>{selected.team.league_name || "League not listed"}{selected.team.country ? ` · ${selected.team.country}` : ""}</p>
         <div className="hc-world-map__rating"><span>Rating</span><strong>{selected.team.averageRating == null ? "—" : selected.team.averageRating.toFixed(1) + " / 5"}</strong></div>
         {selected.location.approximate && <small>Approximate country placement</small>}
-        <Link href={`/teams/${selected.team.id}`} className="hc-world-map__open">Open team profile →</Link>
+        <Link href={`/${profileBasePath}/${selected.team.id}`} className="hc-world-map__open">Open team profile →</Link>
       </aside>}
       {!mapped.length && <div className="hc-world-map__empty"><strong>Global team map</strong><span>Team dots appear as location data is available.</span></div>}
     </div>
