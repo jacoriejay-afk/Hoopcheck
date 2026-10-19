@@ -3390,3 +3390,21 @@ body { background-color: var(--hc-ink); }
 .hc-claim-admin-note textarea { width:100%; padding:10px; border:1px solid #deded8; border-radius:8px; background:#fff; color:#171717; font:inherit; font-size:12px; }
 .hc-claim-admin-actions { display:flex; gap:9px; flex-wrap:wrap; }
 @media(max-width:520px) { .hc-claim-admin-summary { grid-template-columns:auto 1fr; } .hc-claim-admin-card { padding:13px!important; } }
+
+
+/* Alerts: clear semantic type markers and organization-level controls. */
+.hc-alert-card { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:center; padding:14px; border:1px solid #e2e2dc; border-radius:12px; background:#fff; }
+.hc-alert-card.unread { border-left:3px solid #ff5a1f; background:#fffdfa; }
+.hc-alert-card__main { display:grid; gap:7px; min-width:0; color:#171717!important; text-decoration:none!important; }
+.hc-alert-card__main>strong { font-size:14px; line-height:1.35; }
+.hc-alert-card__main>small { color:#696963; font-size:12px; line-height:1.5; }
+.hc-alert-type { display:inline-flex; align-items:center; gap:6px; color:#62625c; font-size:9px; font-weight:950; letter-spacing:.075em; }
+.hc-alert-type svg { color:#b83e14; }
+.hc-alert-type--pay_warning { color:#a12d2d; }
+.hc-alert-type--pay_warning svg { color:#c12b2b; }
+.hc-alert-type--trust_score { color:#a83a13; }
+.hc-alert-type--roster_spot { color:#2f5b9a; }
+.hc-alert-card__controls { display:flex; justify-content:flex-end; }
+.hc-alert-card__controls .watch-control { position:relative; }
+.hc-watch-mute { padding-top:8px; border-top:1px dashed #d9d9d2; color:#a83a13!important; }
+@media(max-width:560px) { .hc-alert-card { grid-template-columns:minmax(0,1fr); } .hc-alert-card__controls { justify-content:flex-start; } }
