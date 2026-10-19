@@ -3221,3 +3221,9 @@ body { background-color: var(--hc-ink); }
 .hc-review-derived-overall>span { color:#66665f; font-size:11px; font-weight:850; letter-spacing:.06em; text-transform:uppercase; }
 .hc-review-derived-overall strong { color:#c74719; font-family:var(--font-display),Impact,sans-serif; font-size:25px; }
 .hc-review-derived-overall small { color:#777770; font-family:Inter,sans-serif; font-size:11px; }
+
+.hc-team-directory-row__trust { padding:0 16px 10px; }
+.hc-team-directory-row__trust .hc-trust-score { padding:0; }
+.hc-team-directory-row__trust .hc-trust-score__dial strong { font-size:17px; }
+.hc-team-directory-row__trust .hc-trust-score__copy>span { font-size:9px; }
+.hc-team-directory-row__trust .hc-trust-score__copy small { font-size:9px; }
