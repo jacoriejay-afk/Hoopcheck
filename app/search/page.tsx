@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import PlayerContactButton from "../../components/PlayerContactButton";
+import { VerifiedBadge } from "../../components/HoopCheckUI";
 
 type Coach = { id: string; name: string; country: string | null; city: string | null };
 type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null };
@@ -87,7 +88,7 @@ function PlayerUsernameConnect() {
             <div className="player-avatar-fallback">HC</div>
           )}
           <div style={{ minWidth: 150, flex: "1 1 180px" }}>
-            <strong>{player.display_name || "HoopCheck Player"} {player.player_verified ? "✓" : ""}</strong>
+            <strong>{player.display_name || "HoopCheck Player"} {player.player_verified && <VerifiedBadge label="Verified player" />}</strong>
             <div className="muted">@{player.username}</div>
             <div className="muted">{[player.current_team, player.current_country].filter(Boolean).join(" · ")}</div>
           </div>
