@@ -27,8 +27,17 @@ export async function POST(req:Request){
    const { data: canReview, error: eligibilityError } = await s.rpc("can_user_review_team", { p_user_id: user.id, p_team_id: b.team_id });
    if (eligibilityError || canReview !== true) return NextResponse.json({error:"Only verified professional players who currently or previously played for this team can submit a team review."},{status:403});
  }
- const ratings=["overall_rating","communication_rating","professionalism_rating","development_rating","payment_rating"];
- for(const k of ratings){if(!Number.isFinite(Number(b[k]))||Number(b[k])<1||Number(b[k])>5)return NextResponse.json({error:`${k} must be between 1 and 5.`},{status:400});}
+ const categoryKeys=["pay_on_time_rating","housing_rating","medical_support_rating","communication_rating","coaching_quality_rating","facilities_rating","playing_time_honesty_rating"];
+ const hasAnyCategory=categoryKeys.some(k=>b[k]!==undefined&&b[k]!==null);
+ const hasAllCategories=categoryKeys.every(k=>Number.isFinite(Number(b[k]))&&Number(b[k])>=1&&Number(b[k])<=5);
+ if(hasAnyCategory&&!hasAllCategories)return NextResponse.json({error:"Please rate all seven signing categories from 1 to 5."},{status:400});
+ if(!hasAnyCategory){
+   const legacyRatings=["overall_rating","communication_rating","professionalism_rating","development_rating","payment_rating"];
+   for(const k of legacyRatings){if(!Number.isFinite(Number(b[k]))||Number(b[k])<1||Number(b[k])>5)return NextResponse.json({error:`${k} must be between 1 and 5.`},{status:400});}
+ }
+ const categoryOverall=hasAllCategories
+   ? Number((categoryKeys.reduce((sum,k)=>sum+Number(b[k]),0)/categoryKeys.length).toFixed(2))
+   : Number(b.overall_rating);
  const body=typeof b.body==="string"?b.body.trim():"";
  const title=typeof b.title==="string"?b.title.trim():"";
  const prohibited=/\b(?:porn|xxx|sexcam)\b/i;
@@ -39,7 +48,21 @@ export async function POST(req:Request){
  if(title.length>120)return NextResponse.json({error:"Review title must be 120 characters or fewer."},{status:400});
  const playerSeason=typeof b.player_season==="string"?b.player_season.trim():"";
  if(!/^\d{4}(-\d{2,4})?$/.test(playerSeason))return NextResponse.json({error:"Select the season you played for this team."},{status:400});
- const payload:any={author_id:user.id,coach_id:b.coach_id??null,team_id:b.team_id??null,league_id:b.league_id??null,player_season:playerSeason,overall_rating:Number(b.overall_rating),communication_rating:Number(b.communication_rating),professionalism_rating:Number(b.professionalism_rating),development_rating:Number(b.development_rating),payment_rating:Number(b.payment_rating),title:title||null,body,is_anonymous:anonymous,status:"pending"};
+ const payload:any={
+   author_id:user.id,coach_id:b.coach_id??null,team_id:b.team_id??null,league_id:b.league_id??null,
+   player_season:playerSeason,overall_rating:categoryOverall,
+   communication_rating:Number(b.communication_rating),
+   professionalism_rating:b.professionalism_rating==null?null:Number(b.professionalism_rating),
+   development_rating:b.development_rating==null?null:Number(b.development_rating),
+   payment_rating:b.payment_rating==null?(b.pay_on_time_rating==null?null:Number(b.pay_on_time_rating)):Number(b.payment_rating),
+   pay_on_time_rating:hasAllCategories?Number(b.pay_on_time_rating):null,
+   housing_rating:hasAllCategories?Number(b.housing_rating):null,
+   medical_support_rating:hasAllCategories?Number(b.medical_support_rating):null,
+   coaching_quality_rating:hasAllCategories?Number(b.coaching_quality_rating):null,
+   facilities_rating:hasAllCategories?Number(b.facilities_rating):null,
+   playing_time_honesty_rating:hasAllCategories?Number(b.playing_time_honesty_rating):null,
+   title:title||null,body,is_anonymous:anonymous,status:"pending"
+ };
  const {data,error}=await s.from("reviews").insert(payload).select("id,status,created_at").single();
  if(error)return NextResponse.json({error:error.message},{status:error.code==="42501"?403:400}); return NextResponse.json(data,{status:201});
 }
