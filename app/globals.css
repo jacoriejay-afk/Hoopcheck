@@ -3027,3 +3027,7 @@ body { background-color: var(--hc-ink); }
 .admin-directory-shell .admin-directory-panel p { color:#525252!important; }
 .admin-directory-shell .admin-directory-panel .badge { color:#9a3412!important; }
 @media(max-width:700px) { .admin-directory-shell .admin-stats-grid { grid-template-columns:1fr!important; gap:10px!important; } .admin-directory-shell .admin-directory-panel { padding:16px!important; } }
+
+.site-header-global .hc-logo__wordmark span,.footer-logo .hc-logo__wordmark span { color:#FF5A1F; }
+.hc-logo__wordmark { font-family:var(--font-display),Graduate,serif!important; }
+.ho​​op-loading-logo { color:var(--orange); }
