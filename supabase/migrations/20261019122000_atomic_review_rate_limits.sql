@@ -64,24 +64,31 @@ begin
 end;
 $function$;
 
-create or replace function public.release_review_submission_slot(p_slot_id bigint)
+create or replace function public.release_review_submission_slot(
+  p_slot_id bigint,
+  p_user_id uuid
+)
 returns boolean
 language plpgsql
 security definer
 set search_path = public, pg_catalog
 as $function$
 declare
-  v_user_id uuid;
   v_deleted_count integer;
 begin
-  v_user_id := auth.uid();
-  if v_user_id is null then
-    raise exception 'Authentication required';
+  -- This is an internal rollback operation used only when the server-side
+  -- review insert fails. Do not let authenticated clients erase their own
+  -- rate-limit history through a directly callable RPC.
+  if coalesce((select auth.role()), '') <> 'service_role' then
+    raise exception 'Service role required';
+  end if;
+  if p_user_id is null then
+    raise exception 'Review owner is required';
   end if;
 
   delete from public.review_submission_rate_limits
   where id = p_slot_id
-    and user_id = v_user_id;
+    and user_id = p_user_id;
 
   get diagnostics v_deleted_count = row_count;
   return v_deleted_count = 1;
@@ -89,6 +96,6 @@ end;
 $function$;
 
 revoke all on function public.claim_review_submission_slot() from public, anon;
-revoke all on function public.release_review_submission_slot(bigint) from public, anon;
+revoke all on function public.release_review_submission_slot(bigint, uuid) from public, anon, authenticated;
 grant execute on function public.claim_review_submission_slot() to authenticated;
-grant execute on function public.release_review_submission_slot(bigint) to authenticated;
+grant execute on function public.release_review_submission_slot(bigint, uuid) to service_role;
