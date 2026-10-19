@@ -11,6 +11,7 @@ import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import SearchBar from "../../components/SearchBar";
+import CourtLines from "../../components/CourtLines";
 
 type Team = {
   id: string;
@@ -231,7 +232,8 @@ export default function TeamsPage() {
       <section className="grid hc-team-directory-list">
         {loading ? (<div className="card"><HoopLoading label="Scanning professional teams..." /></div>) : teams.length === 0 ? (
           <div className="card hc-team-empty">
-            <div className="eyebrow">
+            <CourtLines variant="arc" className="hc-court-empty-art" />
+            <div className="eyebrow hc-court-section-kicker">
               {query.trim() || country || continent || league || division ? "No matching results" : "Coming Soon"}
             </div>
 
