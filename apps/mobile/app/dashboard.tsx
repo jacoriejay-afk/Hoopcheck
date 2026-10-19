@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../src/lib/supabase";
 
 export default function DashboardScreen() {
@@ -47,7 +48,7 @@ export default function DashboardScreen() {
         </View>
         <Text style={styles.sectionTitle}>Explore basketball</Text>
         <Pressable onPress={() => router.push("/players")} style={styles.playerWideCard}>
-          <Text style={styles.directoryIcon}>👤</Text>
+          <View style={styles.directoryIcon}><Ionicons name="people-outline" size={22} color="#FF5A1F" /></View>
           <View style={styles.playerWideBody}>
             <Text style={styles.directoryTitle}>Find players</Text>
             <Text style={styles.directoryCaption}>Search public professional player profiles</Text>
@@ -56,7 +57,7 @@ export default function DashboardScreen() {
         </Pressable>
         <View style={styles.directoryRow}>
           <Pressable onPress={() => router.push("/teams")} style={styles.directoryCard}>
-            <Text style={styles.directoryIcon}>🏀</Text>
+            <View style={styles.directoryIcon}><Ionicons name="basketball-outline" size={22} color="#FF5A1F" /></View>
             <Text style={styles.directoryTitle}>Teams</Text>
             <Text style={styles.directoryCaption}>Search professional clubs</Text>
             <Text style={styles.directoryAction}>Browse teams →</Text>
