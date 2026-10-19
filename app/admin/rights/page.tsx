@@ -139,7 +139,7 @@ export default function RightsCenterPage() {
   ).length;
 
   return (
-    <main style={styles.page}>
+    <main className="admin-light-shell" style={styles.page}>
       <div style={styles.shell}>
         <header style={styles.header}>
           <div>
