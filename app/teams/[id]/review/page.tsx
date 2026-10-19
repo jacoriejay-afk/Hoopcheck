@@ -107,20 +107,17 @@ export default function TeamReviewPage() {
 
   const [playerSeason, setPlayerSeason] = useState("2026-27");
 
-  const [overall, setOverall] =
-    useState(0);
-
-  const [communication, setCommunication] =
-    useState(0);
-
-  const [professionalism, setProfessionalism] =
-    useState(0);
-
-  const [development, setDevelopment] =
-    useState(0);
-
-  const [payment, setPayment] =
-    useState(0);
+  const [communication, setCommunication] = useState(0);
+  const [payment, setPayment] = useState(0);
+  const [housing, setHousing] = useState(0);
+  const [medicalSupport, setMedicalSupport] = useState(0);
+  const [coachingQuality, setCoachingQuality] = useState(0);
+  const [facilities, setFacilities] = useState(0);
+  const [playingTimeHonesty, setPlayingTimeHonesty] = useState(0);
+  const categoryValues = [payment, housing, medicalSupport, communication, coachingQuality, facilities, playingTimeHonesty];
+  const overall = categoryValues.every(value => value >= 1 && value <= 5)
+    ? Number((categoryValues.reduce((sum, value) => sum + value, 0) / categoryValues.length).toFixed(2))
+    : 0;
 
   const [title, setTitle] =
     useState("");
@@ -269,16 +266,8 @@ export default function TeamReviewPage() {
 
     setMessage("");
 
-    if (
-      overall < 1 ||
-      communication < 1 ||
-      professionalism < 1 ||
-      development < 1 ||
-      payment < 1
-    ) {
-      setMessage(
-        "Please rate every category."
-      );
+    if (categoryValues.some(value => value < 1 || value > 5)) {
+      setMessage("Please rate all seven signing categories.");
       return;
     }
 
@@ -356,9 +345,13 @@ export default function TeamReviewPage() {
         player_season: playerSeason,
         overall_rating: overall,
         communication_rating: communication,
-        professionalism_rating: professionalism,
-        development_rating: development,
         payment_rating: payment,
+        pay_on_time_rating: payment,
+        housing_rating: housing,
+        medical_support_rating: medicalSupport,
+        coaching_quality_rating: coachingQuality,
+        facilities_rating: facilities,
+        playing_time_honesty_rating: playingTimeHonesty,
         title: trimmedTitle || null,
         body: trimmedBody,
         is_anonymous: anonymous,
@@ -583,35 +576,20 @@ export default function TeamReviewPage() {
             <p className="muted" style={{fontSize:12,marginTop:8}}>This season will appear publicly with your player review.</p>
           </div>
 
-          <RatingField
-            label="Overall"
-            value={overall}
-            onChange={setOverall}
-          />
+          <div className="hc-review-category-intro">
+            <div className="eyebrow">SIGNING SCORECARD</div>
+            <h2>Rate the things that decide a signing</h2>
+            <p className="muted">Your overall rating is calculated automatically from these seven categories.</p>
+            <div className="hc-review-derived-overall"><span>Calculated overall</span><strong>{overall ? overall.toFixed(2) : "—"} <small>/ 5</small></strong></div>
+          </div>
 
-          <RatingField
-            label="Communication"
-            value={communication}
-            onChange={setCommunication}
-          />
-
-          <RatingField
-            label="Professionalism"
-            value={professionalism}
-            onChange={setProfessionalism}
-          />
-
-          <RatingField
-            label="Player Development"
-            value={development}
-            onChange={setDevelopment}
-          />
-
-          <RatingField
-            label="Payment Experience"
-            value={payment}
-            onChange={setPayment}
-          />
+          <RatingField label="Pay On Time" value={payment} onChange={setPayment} />
+          <RatingField label="Housing" value={housing} onChange={setHousing} />
+          <RatingField label="Medical Support" value={medicalSupport} onChange={setMedicalSupport} />
+          <RatingField label="Communication" value={communication} onChange={setCommunication} />
+          <RatingField label="Coaching Quality" value={coachingQuality} onChange={setCoachingQuality} />
+          <RatingField label="Facilities" value={facilities} onChange={setFacilities} />
+          <RatingField label="Playing Time Honesty" value={playingTimeHonesty} onChange={setPlayingTimeHonesty} />
 
           <div className="card">
             <div className="eyebrow">
