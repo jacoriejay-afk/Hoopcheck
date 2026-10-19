@@ -9,12 +9,12 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#10151f",
-    theme_color: "#ff6a00",
+    background_color: "#F7F7F5",
+    theme_color: "#FF5A1F",
     orientation: "portrait-primary",
     icons: [
       {
-        src: "/hoopcheck-app-icon.svg",
+        src: "/favicon.svg",
         sizes: "any",
         type: "image/svg+xml",
         purpose: "any"
