@@ -29,10 +29,18 @@ begin
 
   if new.player_verified is distinct from old.player_verified
      or new.player_verified_at is distinct from old.player_verified_at
-     or new.selected_team_id is distinct from old.selected_team_id
-     or new.selected_womens_team_id is distinct from old.selected_womens_team_id
      or new.selected_team_verified is distinct from old.selected_team_verified then
-    raise exception 'Player verification and team affiliation can only be changed through verification';
+    raise exception 'Player verification can only be changed through verification';
+  end if;
+
+  -- Unverified players may choose/update their intended team during onboarding.
+  -- Once verified, team affiliations are locked against self-service changes.
+  if old.player_verified is true
+     and (
+       new.selected_team_id is distinct from old.selected_team_id
+       or new.selected_womens_team_id is distinct from old.selected_womens_team_id
+     ) then
+    raise exception 'Verified player team affiliation can only be changed through an authorized workflow';
   end if;
 
   if new.coach_profile_id is distinct from old.coach_profile_id
