@@ -10,6 +10,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
+import CourtLines from "../../components/CourtLines";
 
 type Coach = {
   id: string;
@@ -135,48 +136,43 @@ export default function CoachesPage() {
       <section className="grid hc-team-directory-list">
         {loading ? (<div className="card"><HoopLoading label="Scanning coaching profiles..." /></div>) : coaches.length === 0 ? (
           <div className="card hc-coach-empty">
-            <div className="eyebrow">Coming Soon</div>
+            <CourtLines variant="circle" className="hc-court-empty-art" />
+            <div className="eyebrow hc-court-section-kicker">Coming Soon</div>
             <h2>No coaches yet</h2>
             <p>Coach profiles will appear here as HoopCheck’s global basketball database grows.</p>
             <Link href="/search" className="btn dark">Search all directories</Link>
           </div>
         ) : filteredCoaches.length === 0 ? (
           <div className="card hc-coach-empty">
-            <div className="eyebrow">No matching coaches</div>
+            <CourtLines variant="arc" className="hc-court-empty-art" />
+            <div className="eyebrow hc-court-section-kicker">No matching coaches</div>
             <h2>Try another search</h2>
             <p>No coach profile matches “{query}”. Try a different name, country, or city.</p>
             <button type="button" className="btn dark" onClick={() => setQuery("")}>Clear search</button>
           </div>
         ) : (
           filteredCoaches.map((coach) => (
-            <div
-              className="card hc-team-row"
-              key={coach.id}
-            >
-              <div className="eyebrow">
-                Coach
+            <article className="card hc-scout-card hc-team-row" key={coach.id}>
+              <div className="hc-scout-card__report">
+                <span>HoopCheck Scouting Report</span>
+                <span>Directory profile</span>
               </div>
-
-              <h2>
-                {coach.name}
-              </h2>
-
-              <p>
-                {coach.city &&
-                coach.country
-                  ? `${coach.city}, ${coach.country}`
-                  : coach.country ||
-                    coach.city ||
-                    "Location not listed"}
-              </p>
-
-              <Link
-                href={`/coaches/${coach.id}`}
-                className="btn"
-              >
-                View Coach
-              </Link>
-            </div>
+              <div className="hc-scout-card__identity">
+                <span className="hc-scout-card__jersey" aria-hidden="true">{coach.name.split(/\\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span>
+                <div className="hc-scout-card__identity-copy">
+                  <h2>{coach.name}</h2>
+                  <p>{coach.city && coach.country ? `${coach.city}, ${coach.country}` : coach.country || coach.city || "Location not listed"}</p>
+                </div>
+              </div>
+              <div className="hc-scout-card__stats" aria-label="Coach review statistics; data not available in this directory listing">
+                <div className="hc-scout-card__stat"><span>Overall rating</span><strong>—</strong><small>Not listed</small></div>
+                <div className="hc-scout-card__stat"><span>Reviews</span><strong>—</strong><small>Not listed</small></div>
+                <div className="hc-scout-card__stat"><span>Seasons tracked</span><strong>—</strong><small>Not listed</small></div>
+              </div>
+              <div className="hc-scout-card__ticket">
+                <Link href={`/coaches/${coach.id}`} className="hc-scout-card__coach-link">View coach report <span aria-hidden="true">→</span></Link>
+              </div>
+            </article>
           ))
         )}
       </section>
