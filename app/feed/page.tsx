@@ -5,9 +5,10 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon } from "../../components/HoopCheckUI";
+import CourtLines from "../../components/CourtLines";
 
 type MiniProfile = { display_name: string | null; avatar_url: string | null; current_country?: string | null; current_team?: string | null };
-type Post = { id:string; body:string; image_url:string|null; location_country:string|null; created_at:string; expires_at:string; author_id:string; ageLabel?:string; expiresLabel?:string; profiles?:MiniProfile|null };
+type Post = { id:string; body:string; image_url:string|null; location_country:string|null; show_country?:boolean; created_at:string; expires_at:string; author_id:string; ageLabel?:string; expiresLabel?:string; profiles?:MiniProfile|null };
 type Comment = { id:string; post_id:string; body:string; created_at:string; author_id:string; profiles?:MiniProfile|null };
 type Profile = { account_type:string; current_country:string|null };
 type Subscription = { plan:string|null; status:string|null; access_status:string|null };
@@ -25,7 +26,7 @@ export default function Feed(){
   const [mine,setMine]=useState<Record<string,boolean>>({});
   const [drafts,setDrafts]=useState<Record<string,string>>({});
   const [open,setOpen]=useState<Record<string,boolean>>({});
-  const [body,setBody]=useState(""); const [photo,setPhoto]=useState<File|null>(null); const [preview,setPreview]=useState(""); 
+  const [body,setBody]=useState(""); const [photo,setPhoto]=useState<File|null>(null); const [preview,setPreview]=useState(""); const [showCountry,setShowCountry]=useState(false); 
   const [user,setUser]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [subscription,setSubscription]=useState<Subscription|null>(null);
   const [msg,setMsg]=useState(""); const [loading,setLoading]=useState(true); const [posting,setPosting]=useState(false);
 
@@ -43,7 +44,7 @@ export default function Feed(){
       : Promise.resolve({data:[]});
     const [connectionsResult,followsResult,feedResult]=await Promise.all([
       connectionPromise,followPromise,
-      supabase.from("feed_posts").select("id,body,image_url,location_country,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country,current_team)")
+      supabase.from("feed_posts").select("id,body,image_url,location_country,show_country,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country,current_team)")
         .eq("status","approved").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(30)
     ]);
     const connectedPlayerIds=(connectionsResult.data||[]).flatMap((x:any)=>x.requester_id===currentUser.id?[x.player_id]:[x.requester_id]).filter(Boolean);
@@ -101,11 +102,12 @@ export default function Feed(){
       const form=new FormData();
       form.append("kind","post");
       form.append("text",body.trim());
+      form.append("share_country", showCountry ? "true" : "false");
       if(photo)form.append("image",photo);
       const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
       const result=await moderation.json().catch(()=>({}));
       if(!moderation.ok||result.allowed!==true){setMsg(result.message||"This post could not be published because it did not pass HoopFeed safety checks.");setPosting(false);return;}
-      setBody("");clearPhoto();setMsg("Posted to HoopFeed. AI safety checks passed. It stays live for 24 hours.");await load(user, profile!);
+      setBody("");setShowCountry(false);clearPhoto();setMsg("Posted to HoopFeed. AI safety checks passed. It stays live for 24 hours.");await load(user, profile!);
     }catch(e:any){setMsg(e?.message||"Safety check failed. Your content was not published.");}
     setPosting(false);
   }
