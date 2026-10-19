@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+
+function getAdminSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceRoleKey) throw new Error("Missing server-side Supabase configuration.");
+  return createClient(url, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
+}
+
 export async function POST(req:Request){
  const contentLength = Number(req.headers.get("content-length") ?? "0");
  if (Number.isFinite(contentLength) && contentLength > 16_384) {
@@ -91,8 +99,16 @@ export async function POST(req:Request){
  }
  const {data,error}=await s.from("reviews").insert(payload).select("id,status,created_at").single();
  if(error){
-   const { error: releaseError } = await s.rpc("release_review_submission_slot", { p_slot_id: reviewSlotId });
-   if (releaseError) console.error("Unable to release failed review slot:", releaseError);
+   try {
+     const admin = getAdminSupabase();
+     const { error: releaseError } = await admin.rpc("release_review_submission_slot", {
+       p_slot_id: reviewSlotId,
+       p_user_id: user.id,
+     });
+     if (releaseError) console.error("Unable to release failed review slot:", releaseError);
+   } catch (releaseError) {
+     console.error("Unable to release failed review slot:", releaseError);
+   }
    console.error("Review submission failed:", { code: error.code, message: error.message });
    return NextResponse.json({error:"Unable to submit review. Please check your entries and try again."},{status:error.code==="42501"?403:400});
  }
