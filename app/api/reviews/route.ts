@@ -21,7 +21,11 @@ export async function POST(req:Request){
  }
  let b: Record<string, unknown>;
  try {
-   b = await req.json();
+   const rawBody = await req.text();
+   if (new TextEncoder().encode(rawBody).byteLength > 16_384) {
+     return NextResponse.json({error:"Review request is too large."},{status:413});
+   }
+   b = JSON.parse(rawBody);
    if (!b || typeof b !== "object" || Array.isArray(b)) throw new Error("Invalid body");
  } catch {
    return NextResponse.json({error:"Invalid review request body."},{status:400});
