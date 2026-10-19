@@ -434,7 +434,11 @@ begin
   where w.target_type=target_kind and w.target_id=target_uuid and w.follow=true and w.alert_ratings=true
     and coalesce(w.muted,false)=false and p.notifications_enabled=true;
   return new;
-end; $$;
+end; $;
+drop trigger if exists reviews_create_watch_notifications on public.reviews;
+create trigger reviews_create_watch_notifications after insert or update of status on public.reviews
+for each row when (new.status = 'approved') execute function public.create_review_notifications();
+revoke execute on function public.create_review_notifications() from public,anon,authenticated;
 
 create or replace function public.create_entity_update_notifications()
 returns trigger language plpgsql security definer set search_path = public
