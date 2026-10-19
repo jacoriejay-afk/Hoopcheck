@@ -62,7 +62,44 @@ export async function GET(request: Request) {
         createdAt: row.created_at,
         reviewerVerified: Boolean(verifiedByAuthor[row.author_id]),
       }));
-      scores[id] = { ...calculateTrustScore({ averageRating, reviews: scoreReviews }), averageRating };
+      const calculated = calculateTrustScore({ averageRating, reviews: scoreReviews });
+      scores[id] = { ...calculated, averageRating };
+
+      // Record at most one snapshot per entity per day. The shared TS utility
+      // remains the only place where the score formula is calculated.
+      if (calculated.score !== null) {
+        const today = new Date().toISOString().slice(0, 10);
+        const { data: todaySnapshot } = await db.from("trust_score_snapshots")
+          .select("id").eq("target_type", entityType).eq("target_id", id).eq("snapshot_day", today).maybeSingle();
+        if (!todaySnapshot) {
+          const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
+          const { data: previousSnapshot } = await db.from("trust_score_snapshots")
+            .select("score,created_at").eq("target_type", entityType).eq("target_id", id)
+            .gte("created_at", thirtyDaysAgo).lt("snapshot_day", today)
+            .order("created_at", { ascending: false }).limit(1).maybeSingle();
+          const { error: snapshotError } = await db.from("trust_score_snapshots").insert({
+            target_type: entityType, target_id: id, score: calculated.score, snapshot_day: today,
+          });
+          if (!snapshotError && previousSnapshot && Math.abs(Number(previousSnapshot.score) - calculated.score) > 5) {
+            const { data: watchers } = await db.from("user_watchlists").select("user_id")
+              .eq("target_type", entityType).eq("target_id", id).eq("follow", true)
+              .eq("alert_trust_score", true).eq("muted", false);
+            const watcherIds = Array.from(new Set((watchers || []).map(row => row.user_id)));
+            if (watcherIds.length) {
+              const { data: preferences } = await db.from("user_preferences").select("user_id,notifications_enabled")
+                .in("user_id", watcherIds);
+              const enabledIds = (preferences || []).filter(row => row.notifications_enabled).map(row => row.user_id);
+              if (enabledIds.length) {
+                await db.from("notifications").insert(enabledIds.map(userId => ({
+                  user_id: userId, target_type: entityType, target_id: id, notification_type: "trust_score",
+                  title: "Trust Score changed",
+                  body: `HoopCheck Trust Score moved from ${previousSnapshot.score} to ${calculated.score} in the last 30 days.`,
+                })));
+              }
+            }
+          }
+        }
+      }
     }
 
     const headers = { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" };
