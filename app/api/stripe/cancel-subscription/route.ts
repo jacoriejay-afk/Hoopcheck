@@ -64,15 +64,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No active Stripe subscription was found." }, { status: 404 });
     }
 
+    const declaredLength = Number(request.headers.get("content-length") ?? "0");
+    if (Number.isFinite(declaredLength) && declaredLength > 8_192) {
+      return NextResponse.json({ error: "Request body is too large." }, { status: 413 });
+    }
     let body: unknown = {};
     try {
-      body = await request.json();
+      const rawBody = await request.text();
+      if (new TextEncoder().encode(rawBody).byteLength > 8_192) {
+        return NextResponse.json({ error: "Request body is too large." }, { status: 413 });
+      }
+      if (rawBody.trim()) {
+        body = JSON.parse(rawBody);
+      }
     } catch {
-      // An empty request is treated as the default cancel action for compatibility.
+      return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
     }
-    const action = body && typeof body === "object" && !Array.isArray(body)
-      ? ((body as Record<string, unknown>).action ?? "cancel")
-      : "cancel";
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+    }
+    const action = (body as Record<string, unknown>).action ?? "cancel";
     if (action !== "cancel" && action !== "resume") {
       return NextResponse.json({ error: "Invalid subscription action." }, { status: 400 });
     }
