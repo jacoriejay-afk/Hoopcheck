@@ -211,7 +211,9 @@ async function findUserByStripeCustomer(
   return data?.user_id || null;
 }
 
-async function claimStripeWebhookEvent(event: Stripe.Event): Promise<string | null> {
+async function claimStripeWebhookEvent(
+  event: Stripe.Event
+): Promise<{ status: "claimed" | "processed" | "in_progress"; claimToken: string | null }> {
   const supabase = getAdminSupabase();
   const { data, error } = await supabase.rpc("claim_stripe_webhook_event", {
     p_stripe_event_id: event.id,
@@ -222,7 +224,19 @@ async function claimStripeWebhookEvent(event: Stripe.Event): Promise<string | nu
     throw new Error(`Unable to claim Stripe event: ${error.message}`);
   }
 
-  return typeof data === "string" ? data : null;
+  if (
+    !data ||
+    typeof data !== "object" ||
+    !("status" in data) ||
+    (data.status !== "claimed" && data.status !== "processed" && data.status !== "in_progress")
+  ) {
+    throw new Error("Stripe webhook claim returned an invalid result.");
+  }
+
+  return {
+    status: data.status,
+    claimToken: typeof data.claim_token === "string" ? data.claim_token : null,
+  };
 }
 
 async function completeStripeWebhookEvent(event: Stripe.Event, claimToken: string) {
@@ -396,15 +410,17 @@ export async function POST(
       );
     }
 
-    const claimToken = await claimStripeWebhookEvent(event);
-    if (!claimToken) {
-      return NextResponse.json({
-        received: true,
-        duplicate: true,
-      });
+    const claimResult = await claimStripeWebhookEvent(event);
+    if (claimResult.status === "processed") {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    if (claimResult.status === "in_progress" || !claimResult.claimToken) {
+      // Ask Stripe to retry rather than acknowledging an event another worker
+      // may still fail to process.
+      return NextResponse.json({ error: "Webhook event is already processing." }, { status: 503 });
     }
     claimedEventId = event.id;
-    claimedEventToken = claimToken;
+    claimedEventToken = claimResult.claimToken;
 
     if (event.type === "identity.verification_session.verified") {
       const verificationSession = event.data.object as any;
