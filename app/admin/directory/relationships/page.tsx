@@ -67,7 +67,7 @@ export default function RelationshipsPage() {
   const coachRows = assignments.map(a => ({...a, coach: coaches.find(c=>c.id===a.coach_id), team: teams.find(t=>t.id===a.team_id)}));
   const leagueRows = memberships.map(m => ({...m, team: teams.find(t=>t.id===m.team_id), league: leagues.find(l=>l.id===m.league_id)}));
 
-  return <main style={{minHeight:"100vh",background:"#050505",color:"#fff",padding:"35px 20px 80px"}}>
+  return <main className="admin-light-shell" style={{minHeight:"100vh",background:"#F7F7F5",color:"#111111",padding:"35px 20px 80px"}}>
     <div style={{maxWidth:1100,margin:"0 auto"}}>
       <Link href="/admin/directory/manage" style={{color:"#aaa",textDecoration:"none"}}>← Directory Manager</Link>
       <h1 style={{fontSize:"clamp(2rem,5vw,3.5rem)",margin:"15px 0 5px"}}>Relationship Manager</h1>
