@@ -63,14 +63,14 @@ export default function DashboardScreen() {
             <Text style={styles.directoryAction}>Browse teams →</Text>
           </Pressable>
           <Pressable onPress={() => router.push("/leagues")} style={styles.directoryCard}>
-            <Text style={styles.directoryIcon}>🌍</Text>
+            <View style={styles.directoryIcon}><Ionicons name="earth-outline" size={22} color="#FF5A1F" /></View>
             <Text style={styles.directoryTitle}>Leagues</Text>
             <Text style={styles.directoryCaption}>Explore competitions</Text>
             <Text style={styles.directoryAction}>Browse leagues →</Text>
           </Pressable>
         </View>
         <Pressable onPress={() => router.push("/coaches")} style={styles.playerWideCard}>
-          <Text style={styles.directoryIcon}>🧑‍🏫</Text>
+          <View style={styles.directoryIcon}><Ionicons name="school-outline" size={22} color="#FF5A1F" /></View>
           <View style={styles.playerWideBody}>
             <Text style={styles.directoryTitle}>Find coaches</Text>
             <Text style={styles.directoryCaption}>Search the existing coach directory</Text>
