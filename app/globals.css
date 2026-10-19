@@ -3429,3 +3429,24 @@ body { background-color: var(--hc-ink); }
 .hc-live-next-tip strong { color:#222; font-size:11px; line-height:1.4; }
 .hc-live-next-tip>span { color:#686861; font-size:10px; }
 .hc-live-next-tip .hc-remind-button { justify-self:start; min-height:38px; }
+
+
+/* Claimed-team roster opportunity board. */
+.hc-roster-spots { margin-top:22px; padding:18px; border:1px solid #e1e1dc; border-radius:14px; background:#fafaf8; }
+.hc-roster-spots__heading { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; }
+.hc-roster-spots__heading .eyebrow { margin:0 0 5px; color:#c74719; }
+.hc-roster-spots__heading h2 { margin:0; font-family:var(--font-display),Impact,sans-serif; font-size:24px; }
+.hc-roster-spots__heading h2 span { color:#ff5a1f; }
+.hc-roster-post-toggle { min-height:38px; padding:8px 11px; border:1px solid #ffb08f; border-radius:8px; background:#fff0e9; color:#a83a13; font-size:10px; font-weight:950; white-space:nowrap; }
+.hc-roster-spots__list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.hc-roster-spot { position:relative; padding:14px; border:1px solid #e1e1dc; border-radius:10px; background:#fff; }
+.hc-roster-spot__badge { display:inline-flex; padding:4px 6px; border-radius:4px; background:#edf7ed; color:#28723a; font-size:8px; font-weight:950; letter-spacing:.1em; }
+.hc-roster-spot h3 { margin:9px 0 6px; color:#171717; font-size:14px; }
+.hc-roster-spot p { margin:8px 0; color:#62625c; font-size:11px; line-height:1.5; }
+.hc-roster-spot small { color:#7b7b74; font-size:9px; }
+.hc-roster-spots__empty { margin:0; padding:15px; border:1px dashed #d8d8d2; border-radius:9px; color:#70706a; font-size:11px; }
+.hc-roster-post-form { display:grid; gap:10px; margin-top:14px; padding:14px; border:1px solid #deded8; border-radius:10px; background:#fff; }
+.hc-roster-post-form label { display:grid; gap:6px; color:#565650; font-size:10px; font-weight:900; }
+.hc-roster-post-form input,.hc-roster-post-form textarea { width:100%; min-width:0; padding:10px; border:1px solid #deded8; border-radius:8px; background:#fff; color:#171717; font:inherit; font-size:12px; }
+.hc-roster-post-form p { margin:0; color:#a83a13; font-size:11px; }
+@media(max-width:540px) { .hc-roster-spots__list { grid-template-columns:1fr; } .hc-roster-spots__heading { align-items:flex-start; } }
