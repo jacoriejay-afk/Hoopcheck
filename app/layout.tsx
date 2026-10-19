@@ -16,6 +16,7 @@ import ProtectionLayer from "../components/ProtectionLayer";
 import AnalyticsTracker from "../components/AnalyticsTracker";
 import SiteHeader from "../components/SiteHeader";
 import Logo from "../components/Logo";
+import CourtLines from "../components/CourtLines";
 
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
 const sansFont = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
@@ -91,6 +92,7 @@ export default function RootLayout({
         </ThemeProvider>
 
         <footer className="site-footer">
+          <CourtLines variant="full-court" className="hc-court-footer-art" />
           <div className="footer-inner">
             <div className="footer-brand">
               <Link href="/" className="footer-logo" aria-label="HoopCheck home"><Logo variant="full" size={42} /></Link>
