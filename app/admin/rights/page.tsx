@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import SearchBar from "../../../components/SearchBar";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 
@@ -174,13 +175,7 @@ export default function RightsCenterPage() {
 
         <section style={styles.panel}>
           <div style={styles.toolbar}>
-            <input
-              aria-label="Search rights registry"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search country, league, provider..."
-              style={styles.input}
-            />
+            <SearchBar value={query} onChange={setQuery} onSubmit={setQuery} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search rights registry" />
 
             <div style={styles.filters}>
               {(["all", "blocked", "approved"] as const).map((value) => (
