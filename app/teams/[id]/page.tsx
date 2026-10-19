@@ -20,6 +20,7 @@ import FollowButton from "../../../components/FollowButton";
 import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
 import TrustScoreDial from "../../../components/TrustScoreDial";
+import ClaimProfileButton from "../../../components/ClaimProfileButton";
 
 type Team = {
   id: string;
@@ -610,7 +611,8 @@ export default function TeamDetailPage() {
           />
         </div>
 
-        <div className="entity-actions"><GeoBadge country={team.country} /><FollowButton targetType="team" targetId={team.id} /><WatchButton targetType="team" targetId={team.id} targetName={team.name} /></div><p className="muted" style={{fontSize:13}}>{followerCount.toLocaleString()} follower{followerCount===1?"":"s"}</p>
+        <div className="entity-actions"><GeoBadge country={team.country} /><FollowButton targetType="team" targetId={team.id} /><WatchButton targetType="team" targetId={team.id} targetName={team.name} /></div>
+        <ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} /><p className="muted" style={{fontSize:13}}>{followerCount.toLocaleString()} follower{followerCount===1?"":"s"}</p>
 
         <p>
           {team.city &&
