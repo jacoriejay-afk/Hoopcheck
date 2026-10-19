@@ -17,6 +17,7 @@ import WatchButton from "../../../components/WatchButton";
 import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import TrustScoreDial from "../../../components/TrustScoreDial";
 import ClaimProfileButton from "../../../components/ClaimProfileButton";
+import OfficialReviewResponse from "../../../components/OfficialReviewResponse";
 
 type Coach = {
   id: string;
@@ -906,6 +907,7 @@ export default function CoachDetailPage() {
                       <p>
                         {review.body}
                       </p>
+                      <OfficialReviewResponse reviewId={review.id} entityType="coach" entityId={coach.id} entityName={coach.name} />
                       <ReviewCommunityActions reviewId={review.id} />
 
                       <div className="review-footer">
