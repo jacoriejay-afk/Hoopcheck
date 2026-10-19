@@ -415,9 +415,8 @@ function RoadmapItem({
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
-    background:
-      "radial-gradient(circle at 50% -10%, rgba(255,106,0,0.14), transparent 35%), #050505",
-    color: "#fff",
+    background: "#F7F7F5",
+    color: "#111111",
     padding: "40px 24px 80px",
   },
 
@@ -473,7 +472,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "9px",
     border: "1px solid #D8D8D4",
     background: "#FFFFFF",
-    color: "#fff",
+    color: "#111111",
     textDecoration: "none",
     fontSize: "12px",
     fontWeight: 900,
@@ -484,7 +483,7 @@ const styles: Record<string, React.CSSProperties> = {
   errorBox: {
     background: "rgba(255,60,60,0.08)",
     border: "1px solid rgba(255,60,60,0.35)",
-    color: "#ff8585",
+    color: "#B42318",
     borderRadius: "10px",
     padding: "13px 15px",
     marginBottom: "20px",
@@ -492,15 +491,14 @@ const styles: Record<string, React.CSSProperties> = {
 
   statsGrid: {
     display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(210px, 1fr))",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
     gap: "16px",
     marginBottom: "22px",
   },
 
   statCard: {
-    background: "#111",
-    border: "1px solid #252525",
+    background: "#FFFFFF",
+    border: "1px solid #E2E2DE",
     borderRadius: "14px",
     padding: "19px",
   },
@@ -517,14 +515,15 @@ const styles: Record<string, React.CSSProperties> = {
 
   statValue: {
     fontSize: "2.5rem",
+    color: "#FF5A1F",
     lineHeight: 1,
     fontWeight: 950,
     letterSpacing: "-0.06em",
   },
 
   panel: {
-    background: "rgba(17,17,17,0.94)",
-    border: "1px solid #252525",
+    background: "#FFFFFF",
+    border: "1px solid #E2E2DE",
     borderRadius: "16px",
     padding: "24px",
     marginBottom: "20px",
@@ -550,6 +549,7 @@ const styles: Record<string, React.CSSProperties> = {
   panelTitle: {
     margin: 0,
     fontSize: "1.45rem",
+    color: "#111111",
     fontWeight: 950,
   },
 
@@ -583,8 +583,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     gap: "12px",
-    background: "#0c0c0c",
-    border: "1px solid #282828",
+    background: "#FFFFFF",
+    border: "1px solid #E2E2DE",
     borderRadius: "13px",
     padding: "18px",
     minHeight: "0",
@@ -600,6 +600,7 @@ const styles: Record<string, React.CSSProperties> = {
   cardTitle: {
     margin: 0,
     fontSize: "1.15rem",
+    color: "#111111",
     fontWeight: 950,
   },
 
@@ -630,8 +631,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   roadmap: {
     display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(210px, 1fr))",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
     gap: "10px",
   },
 
@@ -639,8 +639,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     gap: "7px",
-    background: "#0b0b0b",
-    border: "1px solid #252525",
+    background: "#FFFFFF",
+    border: "1px solid #E2E2DE",
     borderRadius: "11px",
     padding: "15px",
   },
