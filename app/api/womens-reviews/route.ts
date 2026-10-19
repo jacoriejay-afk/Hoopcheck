@@ -1,7 +1,33 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+function getAdminSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceRoleKey) throw new Error("Missing server-side Supabase configuration.");
+  return createClient(url, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
+}
+
 export async function POST(req: Request) {
+  const contentLength = Number(req.headers.get("content-length") ?? "0");
+  if (Number.isFinite(contentLength) && contentLength > 16 * 1024) {
+    return NextResponse.json({ error: "Review request is too large." }, { status: 413 });
+  }
+  const rawBody = await req.text();
+  if (new TextEncoder().encode(rawBody).byteLength > 16 * 1024) {
+    return NextResponse.json({ error: "Review request is too large." }, { status: 413 });
+  }
+  let body: unknown = null;
+  try {
+    body = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ error: "Invalid review request." }, { status: 400 });
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Invalid review request." }, { status: 400 });
+  }
+
+  const reviewInput = body as Record<string, unknown>;
   const token = req.headers.get("authorization")?.replace(/^Bearer /, "");
   if (!token) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
@@ -60,29 +86,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "An active HoopCheck membership is required to submit ratings or reviews." }, { status: 403 });
   }
 
-  const { count: recentCount, error: rateLimitError } = await supabase
-    .from("womens_team_reviews")
-    .select("id", { count: "exact", head: true })
-    .eq("author_id", user.id)
-    .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
-
-  if (rateLimitError) {
-    console.error("Women's review rate-limit lookup failed:", rateLimitError);
-    return NextResponse.json({ error: "Unable to submit your review right now." }, { status: 500 });
-  }
-  if ((recentCount ?? 0) >= 5) {
-    return NextResponse.json({ error: "Review limit reached. You can submit up to 5 reviews in a 24-hour period." }, { status: 429 });
-  }
-
-  const body = await req.json().catch(() => null);
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    return NextResponse.json({ error: "Invalid review request." }, { status: 400 });
-  }
-
   if (
-    typeof body.womens_team_id !== "string" ||
-    !body.womens_team_id ||
-    body.womens_team_id !== profile.selected_womens_team_id
+    typeof reviewInput.womens_team_id !== "string" ||
+    !reviewInput.womens_team_id ||
+    reviewInput.womens_team_id !== profile.selected_womens_team_id
   ) {
     return NextResponse.json({ error: "You must be verified with this women’s team before reviewing it." }, { status: 403 });
   }
@@ -90,15 +97,15 @@ export async function POST(req: Request) {
   const ratings = ["overall_rating", "communication_rating", "professionalism_rating", "development_rating", "payment_rating"] as const;
   const ratingValues: Record<string, number> = {};
   for (const key of ratings) {
-    const value = Number(body[key]);
+    const value = Number(reviewInput[key]);
     if (!Number.isFinite(value) || value < 1 || value > 5) {
       return NextResponse.json({ error: `${key} must be between 1 and 5.` }, { status: 400 });
     }
     ratingValues[key] = value;
   }
 
-  const reviewBody = typeof body.body === "string" ? body.body.trim() : "";
-  const title = typeof body.title === "string" ? body.title.trim() : "";
+  const reviewBody = typeof reviewInput.body === "string" ? reviewInput.body.trim() : "";
+  const title = typeof reviewInput.title === "string" ? reviewInput.title.trim() : "";
   if (reviewBody.length < 10 || reviewBody.length > 5000) {
     return NextResponse.json({ error: "Review must be 10–5,000 characters." }, { status: 400 });
   }
@@ -109,21 +116,40 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Review contains prohibited language." }, { status: 400 });
   }
 
+  const { data: reviewSlotId, error: slotError } = await supabase.rpc("claim_review_submission_slot");
+  if (slotError) {
+    console.error("Atomic women's review rate-limit claim failed:", slotError);
+    return NextResponse.json({ error: "Unable to submit your review right now." }, { status: 500 });
+  }
+  if (typeof reviewSlotId !== "number" || !Number.isSafeInteger(reviewSlotId)) {
+    return NextResponse.json({ error: "Review limit reached. You can submit up to 5 reviews in a 24-hour period." }, { status: 429 });
+  }
+
   const { data, error } = await supabase
     .from("womens_team_reviews")
     .insert({
       author_id: user.id,
-      womens_team_id: body.womens_team_id,
+      womens_team_id: reviewInput.womens_team_id,
       ...ratingValues,
       title: title || null,
       body: reviewBody,
       status: "pending",
-      is_anonymous: body.is_anonymous === true,
+      is_anonymous: reviewInput.is_anonymous === true,
     })
     .select("id,status")
     .single();
 
   if (error) {
+    try {
+      const admin = getAdminSupabase();
+      const { error: releaseError } = await admin.rpc("release_review_submission_slot", {
+        p_slot_id: reviewSlotId,
+        p_user_id: user.id,
+      });
+      if (releaseError) console.error("Unable to release failed women's review slot:", releaseError);
+    } catch (releaseError) {
+      console.error("Unable to release failed women's review slot:", releaseError);
+    }
     console.error("Women's review insert failed:", error);
     return NextResponse.json({ error: error.code === "42501" ? "You are not authorized to submit this review." : "Unable to submit your review." }, { status: error.code === "42501" ? 403 : 400 });
   }

@@ -1,24 +1,48 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+
+function getAdminSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceRoleKey) throw new Error("Missing server-side Supabase configuration.");
+  return createClient(url, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
+}
+
 export async function POST(req:Request){
+ const contentLength = Number(req.headers.get("content-length") ?? "0");
+ if (Number.isFinite(contentLength) && contentLength > 16_384) {
+   return NextResponse.json({error:"Review request is too large."},{status:413});
+ }
+ let b: Record<string, unknown>;
+ try {
+   const rawBody = await req.text();
+   if (new TextEncoder().encode(rawBody).byteLength > 16_384) {
+     return NextResponse.json({error:"Review request is too large."},{status:413});
+   }
+   b = JSON.parse(rawBody);
+   if (!b || typeof b !== "object" || Array.isArray(b)) throw new Error("Invalid body");
+ } catch {
+   return NextResponse.json({error:"Invalid review request body."},{status:400});
+ }
  const token=req.headers.get("authorization")?.replace(/^Bearer /,""); if(!token)return NextResponse.json({error:"Authentication required"},{status:401});
  const s=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,{global:{headers:{Authorization:`Bearer ${token}`}}});
  const {data:{user}}=await s.auth.getUser(token);
  if(!user)return NextResponse.json({error:"Invalid session"},{status:401});
  if(!user.email_confirmed_at)return NextResponse.json({error:"Please confirm your email address before submitting a review."},{status:403});
 
- const { count: recentCount } = await s
-   .from("reviews")
-   .select("id", { count: "exact", head: true })
-   .eq("author_id", user.id)
-   .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
- if ((recentCount ?? 0) >= 5) {
-   return NextResponse.json({error:"Review limit reached. You can submit up to 5 reviews in a 24-hour period."},{status:429});
+ // The database RPC serializes claims per user, preventing concurrent requests
+ // from bypassing the rolling 24-hour limit.
+ const { data: subscription, error: subscriptionError } = await s.from("subscriptions").select("status,current_period_end").eq("user_id", user.id).maybeSingle();
+ if (subscriptionError) {
+   console.error("Review subscription lookup failed:", subscriptionError);
+   return NextResponse.json({error:"Unable to verify your membership right now."},{status:500});
  }
- const b=await req.json().catch(()=>({}));
- const { data: subscription } = await s.from("subscriptions").select("status,current_period_end").eq("user_id", user.id).maybeSingle();
  const paid = (subscription?.status === "active" || subscription?.status === "trialing") && (!subscription?.current_period_end || new Date(subscription.current_period_end) > new Date());
- const { data: authorProfile } = await s.from("profiles").select("account_type,player_verified,basketball_type").eq("id", user.id).maybeSingle();
+ const { data: authorProfile, error: profileError } = await s.from("profiles").select("account_type,player_verified,basketball_type").eq("id", user.id).maybeSingle();
+ if (profileError) {
+   console.error("Review author profile lookup failed:", profileError);
+   return NextResponse.json({error:"Unable to verify your player account right now."},{status:500});
+ }
  if (authorProfile?.account_type !== "player" || authorProfile?.player_verified !== true) return NextResponse.json({error:"Only verified professional player accounts can submit ratings or reviews. Scouts, agents, and fans can research but cannot post."},{status:403});
  if (!paid) return NextResponse.json({error:"An active HoopCheck membership is required to submit ratings or reviews."},{status:403});
  const anonymous = b.is_anonymous === true; const targetKeys=["coach_id","team_id","league_id"].filter(k=>typeof b[k]==="string"&&b[k]);
@@ -28,7 +52,9 @@ export async function POST(req:Request){
    if (eligibilityError || canReview !== true) return NextResponse.json({error:"Only verified professional players who currently or previously played for this team can submit a team review."},{status:403});
  }
  const categoryKeys=["pay_on_time_rating","housing_rating","medical_support_rating","communication_rating","coaching_quality_rating","facilities_rating","playing_time_honesty_rating"];
- const hasAnyCategory=categoryKeys.some(k=>b[k]!==undefined&&b[k]!==null);
+ // communication_rating is shared by the legacy and seven-category forms;
+ // only the newer form-specific fields should switch validation modes.
+ const hasAnyCategory=["pay_on_time_rating","housing_rating","medical_support_rating","coaching_quality_rating","facilities_rating","playing_time_honesty_rating"].some(k=>b[k]!==undefined&&b[k]!==null);
  const hasAllCategories=categoryKeys.every(k=>Number.isFinite(Number(b[k]))&&Number(b[k])>=1&&Number(b[k])<=5);
  if(hasAnyCategory&&!hasAllCategories)return NextResponse.json({error:"Please rate all seven signing categories from 1 to 5."},{status:400});
  if(!hasAnyCategory){
@@ -63,6 +89,28 @@ export async function POST(req:Request){
    playing_time_honesty_rating:hasAllCategories?Number(b.playing_time_honesty_rating):null,
    title:title||null,body,is_anonymous:anonymous,status:"pending"
  };
+ const { data: reviewSlotId, error: slotError } = await s.rpc("claim_review_submission_slot");
+ if (slotError) {
+   console.error("Atomic review rate-limit claim failed:", slotError);
+   return NextResponse.json({error:"Unable to submit your review right now."},{status:500});
+ }
+ if (typeof reviewSlotId !== "number" || !Number.isSafeInteger(reviewSlotId)) {
+   return NextResponse.json({error:"Review limit reached. You can submit up to 5 reviews in a 24-hour period."},{status:429});
+ }
  const {data,error}=await s.from("reviews").insert(payload).select("id,status,created_at").single();
- if(error)return NextResponse.json({error:error.message},{status:error.code==="42501"?403:400}); return NextResponse.json(data,{status:201});
+ if(error){
+   try {
+     const admin = getAdminSupabase();
+     const { error: releaseError } = await admin.rpc("release_review_submission_slot", {
+       p_slot_id: reviewSlotId,
+       p_user_id: user.id,
+     });
+     if (releaseError) console.error("Unable to release failed review slot:", releaseError);
+   } catch (releaseError) {
+     console.error("Unable to release failed review slot:", releaseError);
+   }
+   console.error("Review submission failed:", { code: error.code, message: error.message });
+   return NextResponse.json({error:"Unable to submit review. Please check your entries and try again."},{status:error.code==="42501"?403:400});
+ }
+ return NextResponse.json(data,{status:201});
 }

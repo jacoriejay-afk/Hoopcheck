@@ -81,6 +81,39 @@ function getBillingInterval(
     : "month";
 }
 
+async function verifyIdentitySessionOwner(
+  sessionId: string,
+  requestedUserId: string | undefined,
+  role: string | undefined
+) {
+  if (!requestedUserId || (role !== "player" && role !== "coach")) {
+    throw new Error("Identity verification event is missing a valid HoopCheck owner or role.");
+  }
+
+  const supabase = getAdminSupabase();
+  const { data: identitySession, error: identitySessionError } = await supabase
+    .from("identity_verification_sessions")
+    .select("user_id")
+    .eq("stripe_session_id", sessionId)
+    .maybeSingle();
+
+  if (identitySessionError || !identitySession || identitySession.user_id !== requestedUserId) {
+    throw new Error("Identity verification session does not match the saved HoopCheck owner.");
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("account_type")
+    .eq("id", identitySession.user_id)
+    .maybeSingle();
+
+  if (profileError || !profile || profile.account_type !== role) {
+    throw new Error("Identity verification role does not match the saved HoopCheck profile.");
+  }
+
+  return identitySession.user_id as string;
+}
+
 async function saveSubscription(
   userId: string,
   subscription: Stripe.Subscription
@@ -178,81 +211,84 @@ async function findUserByStripeCustomer(
   return data?.user_id || null;
 }
 
-async function eventAlreadyProcessed(
-  eventId: string
-) {
-  const supabase =
-    getAdminSupabase();
-
-  const { data, error } =
-    await supabase
-      .from("subscription_events")
-      .select("stripe_event_id")
-      .eq(
-        "stripe_event_id",
-        eventId
-      )
-      .maybeSingle();
+async function claimStripeWebhookEvent(
+  event: Stripe.Event
+): Promise<{ status: "claimed" | "processed" | "in_progress"; claimToken: string | null }> {
+  const supabase = getAdminSupabase();
+  const { data, error } = await supabase.rpc("claim_stripe_webhook_event", {
+    p_stripe_event_id: event.id,
+    p_event_type: event.type,
+  });
 
   if (error) {
-    throw new Error(
-      `Unable to check Stripe event: ${error.message}`
-    );
+    throw new Error(`Unable to claim Stripe event: ${error.message}`);
   }
 
-  return Boolean(data);
+  if (
+    !data ||
+    typeof data !== "object" ||
+    !("status" in data) ||
+    (data.status !== "claimed" && data.status !== "processed" && data.status !== "in_progress")
+  ) {
+    throw new Error("Stripe webhook claim returned an invalid result.");
+  }
+
+  return {
+    status: data.status,
+    claimToken: typeof data.claim_token === "string" ? data.claim_token : null,
+  };
 }
 
-async function saveEvent(
-  event: Stripe.Event
-) {
-  const supabase =
-    getAdminSupabase();
+async function completeStripeWebhookEvent(event: Stripe.Event, claimToken: string) {
+  const supabase = getAdminSupabase();
+  const { error } = await supabase.rpc("complete_stripe_webhook_event", {
+    p_stripe_event_id: event.id,
+    p_event_type: event.type,
+    p_claim_token: claimToken,
+    p_payload: event,
+  });
 
-  const { error } =
-    await supabase
-      .from("subscription_events")
-      .insert({
-        stripe_event_id:
-          event.id,
-        event_type:
-          event.type,
-        payload:
-          event,
-      });
-
-  if (!error) {
-    return;
+  if (error) {
+    throw new Error(`Unable to complete Stripe event: ${error.message}`);
   }
+}
 
-  if (error.code === "23505") {
-    return;
+async function releaseStripeWebhookEvent(eventId: string, claimToken: string, errorMessage: string) {
+  try {
+    const supabase = getAdminSupabase();
+    const { error } = await supabase.rpc("release_stripe_webhook_event", {
+      p_stripe_event_id: eventId,
+      p_claim_token: claimToken,
+      p_error: errorMessage.slice(0, 1000),
+    });
+
+    if (error) {
+      console.error("Unable to release Stripe event claim:", error);
+    }
+  } catch (releaseError) {
+    console.error("Unable to release Stripe event claim:", releaseError);
   }
-
-  throw new Error(
-    `Unable to save Stripe event: ${error.message}`
-  );
 }
 
 async function getSubscriptionUserId(
   subscription: Stripe.Subscription
 ) {
-  const metadataUserId =
-    subscription.metadata?.user_id;
-
-  if (metadataUserId) {
-    return metadataUserId;
-  }
-
+  const metadataUserId = subscription.metadata?.user_id || null;
   const customerId =
-    typeof subscription.customer ===
-    "string"
+    typeof subscription.customer === "string"
       ? subscription.customer
       : subscription.customer.id;
 
-  return findUserByStripeCustomer(
-    customerId
-  );
+  // Metadata is written by HoopCheck at Checkout, but it must never override
+  // an existing customer-to-account binding in our database.
+  const customerOwnerId = await findUserByStripeCustomer(customerId);
+  if (metadataUserId && customerOwnerId && metadataUserId !== customerOwnerId) {
+    throw new Error(
+      "Stripe subscription metadata does not match the saved Stripe customer owner."
+    );
+  }
+
+  return metadataUserId || customerOwnerId;
 }
 
 function getInvoiceSubscriptionId(
@@ -295,10 +331,19 @@ export async function POST(
   }
 
   const stripe = new Stripe(stripeSecretKey);
+  let claimedEventId: string | null = null;
+  let claimedEventToken: string | null = null;
 
   try {
-    const rawBody =
-      await request.text();
+    const contentLength = Number(request.headers.get("content-length") ?? "0");
+    if (Number.isFinite(contentLength) && contentLength > 1_048_576) {
+      return NextResponse.json({ error: "Webhook request is too large." }, { status: 413 });
+    }
+
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 1_048_576) {
+      return NextResponse.json({ error: "Webhook request is too large." }, { status: 413 });
+    }
 
     const signature =
       request.headers.get(
@@ -365,22 +410,26 @@ export async function POST(
       );
     }
 
-    const alreadyProcessed =
-      await eventAlreadyProcessed(
-        event.id
-      );
-
-    if (alreadyProcessed) {
-      return NextResponse.json({
-        received: true,
-        duplicate: true,
-      });
+    const claimResult = await claimStripeWebhookEvent(event);
+    if (claimResult.status === "processed") {
+      return NextResponse.json({ received: true, duplicate: true });
     }
+    if (claimResult.status === "in_progress" || !claimResult.claimToken) {
+      // Ask Stripe to retry rather than acknowledging an event another worker
+      // may still fail to process.
+      return NextResponse.json({ error: "Webhook event is already processing." }, { status: 503 });
+    }
+    claimedEventId = event.id;
+    claimedEventToken = claimResult.claimToken;
 
     if (event.type === "identity.verification_session.verified") {
       const verificationSession = event.data.object as any;
-      const userId = verificationSession.metadata?.user_id || verificationSession.client_reference_id;
-      if (userId) {
+      const userId = await verifyIdentitySessionOwner(
+        verificationSession.id,
+        verificationSession.metadata?.user_id || verificationSession.client_reference_id,
+        verificationSession.metadata?.hoopcheck_role
+      );
+      {
         const supabase = getAdminSupabase();
         const role = verificationSession.metadata?.hoopcheck_role;
         const verificationUpdate = role === "coach"
@@ -410,8 +459,12 @@ export async function POST(
 
     if (event.type === "identity.verification_session.processing") {
       const verificationSession = event.data.object as any;
-      const userId = verificationSession.metadata?.user_id || verificationSession.client_reference_id;
-      if (userId) {
+      const userId = await verifyIdentitySessionOwner(
+        verificationSession.id,
+        verificationSession.metadata?.user_id || verificationSession.client_reference_id,
+        verificationSession.metadata?.hoopcheck_role
+      );
+      {
         const supabase = getAdminSupabase();
         const { error: profileError } = await supabase
           .from("profiles")
@@ -419,7 +472,8 @@ export async function POST(
             stripe_identity_verification_session_id: verificationSession.id,
             identity_verification_status: "processing",
           })
-          .eq("id", userId);
+          .eq("id", userId)
+          .neq("identity_verification_status", "verified");
         if (profileError) {
           throw new Error(`Unable to update processing profile: ${profileError.message}`);
         }
@@ -430,7 +484,8 @@ export async function POST(
             status: "processing",
             updated_at: new Date().toISOString(),
           })
-          .eq("stripe_session_id", verificationSession.id);
+          .eq("stripe_session_id", verificationSession.id)
+          .neq("status", "verified");
         if (sessionError) {
           throw new Error(`Unable to update verification session: ${sessionError.message}`);
         }
@@ -470,6 +525,17 @@ export async function POST(
         await stripe.subscriptions.retrieve(
           subscriptionId
         );
+
+      // Bind the signed Checkout event and its Stripe subscription to the same
+      // HoopCheck account before granting membership.
+      if (
+        session.metadata?.user_id !== userId ||
+        subscription.metadata?.user_id !== userId
+      ) {
+        throw new Error(
+          "Checkout session and subscription do not match the same HoopCheck user."
+        );
+      }
 
       await saveSubscription(
         userId,
@@ -577,12 +643,20 @@ export async function POST(
       }
     }
 
-    await saveEvent(event);
+    if (!claimedEventToken) throw new Error("Stripe webhook claim token is missing.");
+    await completeStripeWebhookEvent(event, claimedEventToken);
+    claimedEventId = null;
+    claimedEventToken = null;
 
     return NextResponse.json({
       received: true,
     });
   } catch (error) {
+    if (claimedEventId) {
+      const message = error instanceof Error ? error.message : "Unknown webhook processing error";
+      if (claimedEventToken) await releaseStripeWebhookEvent(claimedEventId, claimedEventToken, message);
+    }
+
     console.error(
       "Stripe webhook error:",
       error

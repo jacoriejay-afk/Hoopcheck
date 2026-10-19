@@ -11,7 +11,10 @@ export async function POST(req:Request){
  const serviceRoleKey=process.env.SUPABASE_SERVICE_ROLE_KEY;
  if(!serviceRoleKey)return NextResponse.json({error:"Server directory sync is not configured"},{status:503});
  const adminSupabase=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,serviceRoleKey,{auth:{autoRefreshToken:false,persistSession:false}});
- const body=await req.json().catch(()=>({})); const previewId=typeof body.preview_id==="string"?body.preview_id:null; if(!previewId)return NextResponse.json({error:"preview_id is required"},{status:400});
+ const declaredLength=Number(req.headers.get("content-length")??"0");
+ if(Number.isFinite(declaredLength)&&declaredLength>8192)return NextResponse.json({error:"Request body is too large."},{status:413});
+ let body:Record<string,unknown>;
+ try{const raw=await req.text();if(new TextEncoder().encode(raw).byteLength>8192)return NextResponse.json({error:"Request body is too large."},{status:413});const parsed:unknown=JSON.parse(raw);if(!parsed||typeof parsed!=="object"||Array.isArray(parsed))throw new Error("Invalid body");body=parsed as Record<string,unknown>;}catch{return NextResponse.json({error:"Invalid request body."},{status:400});} const previewId=typeof body.preview_id==="string"?body.preview_id:null; if(!previewId)return NextResponse.json({error:"preview_id is required"},{status:400});
  const {data:p,error}=await adminSupabase.from("directory_sync_previews").select("*,directory_sources!inner(active,license_status,commercial_use_allowed,redistribution_allowed)").eq("id",previewId).single();
  if(error||!p)return NextResponse.json({error:"Preview not found"},{status:404});
  const source=p.directory_sources;
