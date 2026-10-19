@@ -324,7 +324,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: 22,
   },
   back: { color: "#999", textDecoration: "none", fontSize: 13, display: "inline-block", marginBottom: 18 },
-  eyebrow: { margin: "0 0 8px", color: "#ff6a00", fontSize: 11, fontWeight: 900, letterSpacing: ".15em" },
+  eyebrow: { margin: "0 0 8px", color: "#C2410C", fontSize: 11, fontWeight: 900, letterSpacing: ".15em" },
   title: { margin: 0, fontSize: "clamp(2.2rem, 5vw, 4rem)", lineHeight: .98, letterSpacing: "-.06em", fontWeight: 950 },
   subtitle: { color: "#888", margin: "12px 0 0", maxWidth: 680 },
   refresh: { background: "#ff6a00", border: 0, borderRadius: 9, padding: "12px 16px", fontWeight: 900, cursor: "pointer" },
