@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import Logo from "../../components/Logo";
 import { useRouter } from "next/navigation";
 import { HoopIcon, type HoopIconName } from "../../components/HoopCheckUI";
 import { getCachedSession, supabase } from "../../lib/supabase";
