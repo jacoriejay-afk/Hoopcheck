@@ -17,6 +17,7 @@ import HoopLoading from "../../../components/HoopLoading";
 import WatchButton from "../../../components/WatchButton";
 import GeoBadge from "../../../components/GeoBadge";
 import FollowButton from "../../../components/FollowButton";
+import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
 
 type Team = {
@@ -912,9 +913,7 @@ export default function TeamDetailPage() {
                             {review.title || "Player experience"}
                           </h3>
                           {review.player_verified && (
-                            <div style={{ marginTop: "6px", fontSize: "12px", fontWeight: 800, color: "var(--orange)" }}>
-                              ✓ Verified Player
-                            </div>
+                            <div className="hc-review-verified"><VerifiedBadge label="Verified player" /><span>Verified Player</span></div>
                           )}
                         </div>
 
