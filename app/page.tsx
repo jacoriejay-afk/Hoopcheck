@@ -26,7 +26,18 @@ const categories: {
   { label: "Alerts", subtitle: "Updates, news and more", href: "/notifications", color: "var(--hc-category-alerts)", icon: "bell", category: "alerts" },
 ];
 
-function CategoryIcon({ name }: { name: string }) {\n  const iconByCategory: Record<string, HoopIconName> = { basketball: "basketball", "women-basketball": "users", whistle: "whistle", trophy: "trophy", player: "user", star: "star", bell: "shield-check" };\n  return <HoopIcon name={iconByCategory[name] || "arrow-right"} size={21} className="hc-category-svg" />;\n}
+function CategoryIcon({ name }: { name: string }) {
+  const iconByCategory: Record<string, HoopIconName> = {
+    basketball: "basketball",
+    "women-basketball": "users",
+    whistle: "whistle",
+    trophy: "trophy",
+    player: "user",
+    star: "star",
+    bell: "shield-check",
+  };
+  return <HoopIcon name={iconByCategory[name] || "arrow-right"} size={21} className="hc-category-svg" />;
+}
 
 export default function Home() {
   const router = useRouter();
