@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import FollowButton from "../../components/FollowButton";
 import HoopLoading from "../../components/HoopLoading";
+import SearchBar from "../../components/SearchBar";
+import { HoopIcon } from "../../components/HoopCheckUI";
 
 type WomensTeam = {
   id: string;
@@ -79,12 +81,7 @@ export default function Womens() {
         </nav>
 
         <section className="hc-womens-search-panel" aria-label="Search women’s teams">
-          <label htmlFor="womens-team-search">SEARCH TEAMS</label>
-          <div className="hc-womens-search-input-wrap">
-            <span aria-hidden="true">⌕</span>
-            <input id="womens-team-search" type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Team, league, city, country..." autoComplete="off" />
-            {query && <button type="button" className="hc-womens-clear-search" onClick={() => setQuery("")} aria-label="Clear search">×</button>}
-          </div>
+          <SearchBar inputId="womens-team-search" value={query} onChange={setQuery} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search women’s teams" onSubmit={(value) => setQuery(value)} />
           <div className="hc-womens-filters">
             <label>
               <span>COUNTRY</span>
@@ -120,7 +117,7 @@ export default function Womens() {
                     <span>{[team.city, team.country].filter(Boolean).join(", ") || "International"}</span>
                     <small>{team.league_name || "Women’s professional basketball"}</small>
                   </span>
-                  <span className="hc-womens-team-arrow" aria-hidden="true">↗</span>
+                  <span className="hc-womens-team-arrow" aria-hidden="true"><HoopIcon name="arrow-up-right" size={17} /></span>
                 </Link>
                 <div className="hc-womens-team-follow"><FollowButton targetType="team" targetId={team.id} /></div>
               </article>
