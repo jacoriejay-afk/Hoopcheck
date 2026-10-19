@@ -2697,3 +2697,105 @@ main.auth-page-shell .signup-form .message.error {
   .site-header-global .hc-header-links a { min-height: 44px; }
   .hc-bottom-tab-bar { display: grid; }
 }
+
+
+/* October polish: enforce readable contrast and consistent surfaces on all routes. */
+:root {
+  --hc-surface: #ffffff;
+  --hc-surface-muted: #f1f1ed;
+  --hc-text-primary: #171715;
+  --hc-text-secondary: #55554f;
+  --hc-border-strong: #d4d4cd;
+}
+:where(.dashboard-card, .card, .panel, .contact-dashboard-card, .hc-review-form, .compact-card) {
+  color: var(--hc-text-primary);
+}
+:where(.dashboard-card, .card, .panel, .contact-dashboard-card, .hc-review-form, .compact-card) :where(h1,h2,h3,h4,strong,label) {
+  color: var(--hc-text-primary);
+}
+:where(.dashboard-card, .card, .panel, .contact-dashboard-card, .hc-review-form, .compact-card) :where(p,small,.muted,.description) {
+  color: var(--hc-text-secondary);
+}
+/* Recruiting requests are a standard paper surface, not a stray dark tile. */
+.contact-dashboard-card {
+  background: var(--hc-surface) !important;
+  color: var(--hc-text-primary) !important;
+  border: 1px solid var(--hc-border-strong) !important;
+}
+.contact-dashboard-card :where(h1,h2,h3,strong,label) { color: var(--hc-text-primary) !important; }
+.contact-dashboard-card :where(p,.muted,small) { color: var(--hc-text-secondary) !important; }
+.contact-dashboard-card :where(input,select,textarea) {
+  background: #fafaf8 !important;
+  color: #171715 !important;
+  border-color: var(--hc-border-strong) !important;
+}
+.contact-dashboard-card .btn.dark {
+  background: #171715 !important;
+  color: #ffffff !important;
+  border-color: #171715 !important;
+}
+.contact-dashboard-card .btn:not(.dark) {
+  background: var(--hc-orange) !important;
+  color: #111111 !important;
+}
+/* Any light card with a legacy dark button keeps a clear, legible label. */
+:where(.dashboard-card, .card, .panel, .compact-card) .btn.dark {
+  background: #171715;
+  color: #ffffff;
+  border-color: #171715;
+}
+.hc-home-hero-actions { display:flex; align-items:center; flex-wrap:wrap; gap:14px; }
+.hc-home-signin, .hc-signin-button {
+  min-height:44px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:0 17px;
+  border:1px solid rgba(255,255,255,.42);
+  background:transparent;
+  color:#ffffff !important;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+  transition:background .16s ease,border-color .16s ease,color .16s ease;
+}
+.hc-home-signin:hover, .hc-signin-button:hover {
+  border-color:var(--hc-orange);
+  background:var(--hc-orange);
+  color:#111111 !important;
+}
+.site-header-global .hc-signin-button { min-height:36px; padding:0 13px; pointer-events:auto; }
+.hc-womens-directory-page .hc-womens-team-main-link {
+  display:block;
+  padding:4px 0 10px;
+  border-radius:3px;
+}
+.hc-womens-directory-page .hc-womens-team-main-link h2 {
+  color:var(--hc-text-primary) !important;
+  transition:color .15s ease;
+}
+.hc-womens-directory-page .hc-womens-team-main-link:hover h2 { color:var(--hc-orange-bright) !important; }
+.hc-womens-directory-page .hc-womens-team-main-link:focus-visible {
+  outline:3px solid var(--hc-orange);
+  outline-offset:4px;
+}
+.hc-womens-directory-page .hc-womens-team-main-link p { color:var(--hc-text-secondary) !important; }
+.hc-womens-directory-page .hc-womens-profile-button {
+  min-height:44px;
+  gap:8px;
+  background:#171715 !important;
+  color:#ffffff !important;
+  border:1px solid #171715 !important;
+}
+.hc-womens-directory-page .hc-womens-profile-button:hover {
+  background:var(--hc-orange) !important;
+  border-color:var(--hc-orange) !important;
+  color:#111111 !important;
+}
+@media (max-width:760px) {
+  .hc-home-hero-actions { align-items:stretch; }
+  .hc-home-hero-actions > a { width:100%; }
+  .site-header-global .hc-signin-button { justify-content:flex-start; width:100%; min-height:42px; padding:10px 8px; border:0; border-bottom:1px solid #242424; }
+}
