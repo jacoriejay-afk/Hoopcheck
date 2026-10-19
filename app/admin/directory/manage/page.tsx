@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import SearchBar from "../../../../components/SearchBar";
 import { supabase } from "../../../../lib/supabase";
 
 type Kind = "coaches" | "teams-mens" | "teams-womens" | "leagues-mens" | "leagues-womens";
@@ -51,7 +52,7 @@ function Manager(){
   <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:18}}>{tabs.map(([value,label])=><button key={value} onClick={()=>{setKind(value);cancel()}} style={{padding:"11px 14px",borderRadius:8,border:kind===value?"1px solid #ff6a00":"1px solid #333",background:kind===value?"#ff6a00":"#111",color:kind===value?"#050505":"#fff",fontWeight:900}}>{label}</button>)}<button onClick={startNew} style={{marginLeft:"auto",padding:"11px 15px",border:0,borderRadius:8,background:"#ff6a00",fontWeight:900}}>+ Add {base==="coaches"?"Coach":base==="teams"?"Team":"League"}</button></div>
   {base!=="coaches"&&<div style={{padding:"10px 12px",marginBottom:12,border:"1px solid #292929",borderRadius:8,color:"#aaa"}}>{gender==="womens"?"Women’s":"Men’s"} directory only · {list.length} matching records</div>}
   <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>{["all","Europe","Oceania","Asia","Africa","Americas","Other"].map(r=><button key={r} onClick={()=>setRegion(r)} style={{padding:"8px 11px",borderRadius:7,border:region===r?"1px solid #ff6a00":"1px solid #333",background:region===r?"#ff6a00":"#111",color:region===r?"#050505":"#fff"}}>{r==="all"?"All regions":r}</button>)}<button onClick={()=>setActiveOnly(v=>!v)} style={{padding:"8px 11px",borderRadius:7,border:"1px solid #333",background:"#111",color:"#fff"}}>{activeOnly?"Showing active":"Showing active + archived"}</button></div>
-  <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={"Search "+(base==="coaches"?"coaches":base)+"..."} style={{...inputStyle,marginBottom:18}}/>
+  <div style={{marginBottom:18}}><SearchBar value={search} onChange={setSearch} onSubmit={setSearch} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search directory records" /></div>
   {editing&&<section style={{background:"#101010",border:"1px solid #292929",borderRadius:12,padding:20,marginBottom:20}}><h2 style={{marginTop:0}}>{editing==="new"?"Add record":"Edit record"}</h2><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12}}>
    <label>Name<input style={inputStyle} value={String(form.name||"")} onChange={e=>setForm({...form,name:e.target.value})}/></label>
    {base!=="leagues"&&<><label>Country<input style={inputStyle} value={String(form.country||"")} onChange={e=>setForm({...form,country:e.target.value})}/></label><label>City<input style={inputStyle} value={String(form.city||"")} onChange={e=>setForm({...form,city:e.target.value})}/></label></>}
