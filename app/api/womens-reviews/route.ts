@@ -105,14 +105,14 @@ export async function POST(req: Request) {
   const ratings = ["overall_rating", "communication_rating", "professionalism_rating", "development_rating", "payment_rating"] as const;
   const ratingValues: Record<string, number> = {};
   for (const key of ratings) {
-    const value = Number(body[key]);
+    const value = Number(reviewInput[key]);
     if (!Number.isFinite(value) || value < 1 || value > 5) {
       return NextResponse.json({ error: `${key} must be between 1 and 5.` }, { status: 400 });
     }
     ratingValues[key] = value;
   }
 
-  const reviewBody = typeof reviewInput.body === "string" ? reviewInput.reviewInput.trim() : "";
+  const reviewBody = typeof reviewInput.body === "string" ? reviewInput.body.trim() : "";
   const title = typeof reviewInput.title === "string" ? reviewInput.title.trim() : "";
   if (reviewBody.length < 10 || reviewBody.length > 5000) {
     return NextResponse.json({ error: "Review must be 10–5,000 characters." }, { status: 400 });
