@@ -14,6 +14,10 @@ type WatchState = {
   alert_reviews: boolean;
   alert_ratings: boolean;
   alert_updates: boolean;
+  muted: boolean;
+  alert_trust_score: boolean;
+  alert_roster_spots: boolean;
+  alert_pay_warning: boolean;
 };
 
 const DEFAULTS: WatchState = {
@@ -21,6 +25,10 @@ const DEFAULTS: WatchState = {
   alert_reviews: false,
   alert_ratings: false,
   alert_updates: false,
+  muted: false,
+  alert_trust_score: true,
+  alert_roster_spots: true,
+  alert_pay_warning: true,
 };
 
 export default function WatchButton({ targetType, targetId, targetName }: Props) {
@@ -39,7 +47,7 @@ export default function WatchButton({ targetType, targetId, targetName }: Props)
       }
       const { data: row } = await supabase
         .from("user_watchlists")
-        .select("follow,alert_reviews,alert_ratings,alert_updates")
+        .select("follow,alert_reviews,alert_ratings,alert_updates,muted,alert_trust_score,alert_roster_spots,alert_pay_warning")
         .eq("user_id", user.id)
         .eq("target_type", targetType)
         .eq("target_id", targetId)
@@ -52,6 +60,10 @@ export default function WatchButton({ targetType, targetId, targetName }: Props)
             alert_reviews: row.alert_reviews ?? false,
             alert_ratings: row.alert_ratings ?? false,
             alert_updates: row.alert_updates ?? false,
+            muted: row.muted ?? false,
+            alert_trust_score: row.alert_trust_score ?? true,
+            alert_roster_spots: row.alert_roster_spots ?? true,
+            alert_pay_warning: row.alert_pay_warning ?? true,
           });
         }
         setBusy(false);
@@ -83,6 +95,10 @@ export default function WatchButton({ targetType, targetId, targetName }: Props)
       alert_reviews: next.alert_reviews,
       alert_ratings: next.alert_ratings,
       alert_updates: next.alert_updates,
+      muted: next.muted,
+      alert_trust_score: next.alert_trust_score,
+      alert_roster_spots: next.alert_roster_spots,
+      alert_pay_warning: next.alert_pay_warning,
     };
     const result = exists
       ? await supabase.from("user_watchlists").update(payload).eq("user_id", user.id).eq("target_type", targetType).eq("target_id", targetId)
@@ -99,12 +115,12 @@ export default function WatchButton({ targetType, targetId, targetName }: Props)
     await save(next);
   }
 
-  async function toggleAlert(key: "alert_reviews" | "alert_ratings" | "alert_updates") {
+  async function toggleAlert(key: "alert_reviews" | "alert_ratings" | "alert_updates" | "alert_trust_score" | "alert_roster_spots" | "alert_pay_warning") {
     const next = { ...state, [key]: !state[key] };
     await save(next);
   }
 
-  const alertCount = [state.alert_reviews, state.alert_ratings, state.alert_updates].filter(Boolean).length;
+  const alertCount = [state.alert_reviews, state.alert_ratings, state.alert_updates, state.alert_trust_score, ...(targetType === "team" ? [state.alert_roster_spots, state.alert_pay_warning] : [])].filter(Boolean).length;
 
   return (
     <div className="watch-control">
@@ -124,10 +140,14 @@ export default function WatchButton({ targetType, targetId, targetName }: Props)
           <button type="button" onClick={toggleFollow} disabled={busy}>
             {state.follow ? "✓ Following this " + targetType : "＋ Follow this " + targetType}
           </button>
-          <label><input type="checkbox" checked={state.alert_reviews} onChange={() => toggleAlert("alert_reviews")} disabled={busy || !state.follow} /> Team/player reviews</label>
+          <label><input type="checkbox" checked={state.alert_reviews} onChange={() => toggleAlert("alert_reviews")} disabled={busy || !state.follow} /> New player reviews</label>
           <label><input type="checkbox" checked={state.alert_ratings} onChange={() => toggleAlert("alert_ratings")} disabled={busy || !state.follow} /> New ratings</label>
           <label><input type="checkbox" checked={state.alert_updates} onChange={() => toggleAlert("alert_updates")} disabled={busy || !state.follow} /> Organization updates</label>
-          <small>{state.follow ? `${alertCount} alert type${alertCount === 1 ? "" : "s"} enabled` : "Follow this organization first to receive alerts."}</small>
+          <label><input type="checkbox" checked={state.alert_trust_score} onChange={() => toggleAlert("alert_trust_score")} disabled={busy || !state.follow} /> Trust Score moves 5+ points</label>
+          {targetType === "team" && <label><input type="checkbox" checked={state.alert_roster_spots} onChange={() => toggleAlert("alert_roster_spots")} disabled={busy || !state.follow} /> New roster spots</label>}
+          {targetType === "team" && <label><input type="checkbox" checked={state.alert_pay_warning} onChange={() => toggleAlert("alert_pay_warning")} disabled={busy || !state.follow} /> Pay warnings</label>}
+          <label className="hc-watch-mute"><input type="checkbox" checked={state.muted} onChange={() => save({ ...state, muted: !state.muted })} disabled={busy || !state.follow} /> Mute all alerts for this {targetType}</label>
+          <small>{!state.follow ? "Follow this organization first to receive alerts." : state.muted ? "Alerts are muted for this profile." : `${alertCount} alert type${alertCount === 1 ? "" : "s"} enabled`}</small>
         </div>
       )}
     </div>
