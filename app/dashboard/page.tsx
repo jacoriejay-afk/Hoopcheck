@@ -7,6 +7,7 @@ import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import PlayerContactButton from "../../components/PlayerContactButton";
 import { useLanguage } from "../../components/LanguageProvider";
+import { HoopIcon, CategoryIconTile, VerifiedBadge } from "../../components/HoopCheckUI";
 
 type Profile = { display_name: string | null; player_verified: boolean; coach_verified?: boolean; account_type: "player"|"coach"|"scout"|"agent"|"fan"; moderation_status?: string; moderation_note?: string | null };
 type Subscription = {
@@ -265,24 +266,24 @@ export default function DashboardPage() {
             </div>
             <div className="hc-mobile-quick-grid">
               <Link href="/teams" className="hc-mobile-quick-card">
-                <span className="hc-mobile-icon hc-icon-orange" aria-hidden="true">🏀</span>
+                <span className="hc-mobile-icon hc-icon-orange" aria-hidden="true"><CategoryIconTile category="teams" size="sm" /></span>
                 <span className="hc-mobile-card-copy"><strong>Men’s Teams</strong><small>Explore team reviews</small></span>
-                <span className="hc-mobile-chevron" aria-hidden="true">›</span>
+                <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
               </Link>
               <Link href="/womens" className="hc-mobile-quick-card">
-                <span className="hc-mobile-icon hc-icon-pink" aria-hidden="true">♀</span>
+                <span className="hc-mobile-icon hc-icon-pink" aria-hidden="true"><CategoryIconTile category="womens" size="sm" /></span>
                 <span className="hc-mobile-card-copy"><strong>Women’s Teams</strong><small>Find your next team</small></span>
-                <span className="hc-mobile-chevron" aria-hidden="true">›</span>
+                <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
               </Link>
               <Link href="/coaches" className="hc-mobile-quick-card">
-                <span className="hc-mobile-icon hc-icon-blue" aria-hidden="true">♟</span>
+                <span className="hc-mobile-icon hc-icon-blue" aria-hidden="true"><CategoryIconTile category="coaches" size="sm" /></span>
                 <span className="hc-mobile-card-copy"><strong>Coaches</strong><small>Check reputations</small></span>
-                <span className="hc-mobile-chevron" aria-hidden="true">›</span>
+                <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
               </Link>
               <Link href="/search" className="hc-mobile-quick-card">
-                <span className="hc-mobile-icon hc-icon-green" aria-hidden="true">✎</span>
+                <span className="hc-mobile-icon hc-icon-green" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
                 <span className="hc-mobile-card-copy"><strong>Player Reviews</strong><small>Real player experiences</small></span>
-                <span className="hc-mobile-chevron" aria-hidden="true">›</span>
+                <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
               </Link>
             </div>
           </section>
@@ -293,47 +294,47 @@ export default function DashboardPage() {
                 <p className="hc-mobile-eyebrow">EXPLORE HOOPCHECK</p>
                 <h2 id="hc-browse-categories-heading">Browse Categories</h2>
               </div>
-              <Link href="/directory" className="hc-mobile-view-all">VIEW ALL →</Link>
+              <Link href="/directory" className="hc-mobile-view-all">VIEW ALL</Link>
             </div>
             <div className="hc-mobile-category-list">
               <Link href="/teams" className="hc-mobile-category-row">
-                <span className="hc-mobile-category-icon hc-icon-orange" aria-hidden="true">🏀</span>
+                <span className="hc-mobile-category-icon hc-icon-orange" aria-hidden="true"><CategoryIconTile category="teams" size="sm" /></span>
                 <span className="hc-mobile-card-copy"><strong>Professional Teams</strong><small>Research clubs before you sign</small></span>
-                <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
+                <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/womens" className="hc-mobile-category-row">
-                <span className="hc-mobile-category-icon hc-icon-pink" aria-hidden="true">♀</span>
+                <span className="hc-mobile-category-icon hc-icon-pink" aria-hidden="true"><CategoryIconTile category="womens" size="sm" /></span>
                 <span className="hc-mobile-card-copy"><strong>Women’s Basketball</strong><small>Discover women’s teams worldwide</small></span>
-                <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
+                <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/coaches" className="hc-mobile-category-row">
-                <span className="hc-mobile-category-icon hc-icon-blue" aria-hidden="true">♟</span>
+                <span className="hc-mobile-category-icon hc-icon-blue" aria-hidden="true"><CategoryIconTile category="coaches" size="sm" /></span>
                 <span className="hc-mobile-card-copy"><strong>Coaches</strong><small>Learn from player feedback</small></span>
-                <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
+                <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/leagues" className="hc-mobile-category-row">
-                <span className="hc-mobile-category-icon hc-icon-green" aria-hidden="true">◎</span>
+                <span className="hc-mobile-category-icon hc-icon-green" aria-hidden="true"><CategoryIconTile category="leagues" size="sm" /></span>
                 <span className="hc-mobile-card-copy"><strong>Leagues &amp; Competitions</strong><small>Explore leagues by country</small></span>
-                <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
+                <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/players" className="hc-mobile-category-row">
-                <span className="hc-mobile-category-icon hc-icon-purple" aria-hidden="true">♙</span>
+                <span className="hc-mobile-category-icon hc-icon-purple" aria-hidden="true"><CategoryIconTile category="players" size="sm" /></span>
                 <span className="hc-mobile-card-copy"><strong>Find Players</strong><small>Connect with basketball players</small></span>
-                <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
+                <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/search" className="hc-mobile-category-row">
-                <span className="hc-mobile-category-icon hc-icon-yellow" aria-hidden="true">✎</span>
+                <span className="hc-mobile-category-icon hc-icon-yellow" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
                 <span className="hc-mobile-card-copy"><strong>Reviews &amp; Experiences</strong><small>Make informed career decisions</small></span>
-                <span className="hc-mobile-row-arrow" aria-hidden="true">→</span>
+                <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
             </div>
           </section>
         </section>
 
         {profile?.account_type === "fan" && <section className="grid fan-dashboard-grid" style={{ marginTop: 18 }}>
-          <div className="dashboard-card fan-feature-card"><span className="card-kicker">FAN HQ</span><h2>🏀 Your Team Hub</h2><p className="muted">Keep up with the teams you follow, ratings, reviews, and new activity.</p><Link href="/teams" className="btn">Explore Teams</Link></div>
-          <div className="dashboard-card fan-feature-card"><span className="card-kicker">PRO FAN</span><h2>🔔 Team Alerts</h2><p className="muted">Follow teams to keep notifications on for ratings, reviews, and team updates.</p><Link href="/teams" className="btn dark">Find Teams to Follow</Link>{subscription?.plan === "premium" && activeMembership && <Link href="/fan-live" className="btn dark">Live Game Chat</Link>}</div>
-          {subscription?.plan === "premium" && activeMembership ? <div className="dashboard-card fan-feature-card premium-fan-card"><span className="card-kicker">PREMIUM FAN</span><h2>📊 Fan Base Insights</h2><p className="muted">See follower momentum, community size, review activity, and team sentiment as your fan intelligence hub grows.</p><strong>{followedTeams.length} followed team{followedTeams.length===1?"":"s"}</strong></div> : <div className="dashboard-card fan-feature-card"><span className="card-kicker">PREMIUM FAN</span><h2>Unlock Fan Intelligence</h2><p className="muted">Premium fans get deeper team and fan-base insights, including community activity and team pulse features.</p><Link href="/membership" className="btn">Explore Premium</Link></div>}
+          <div className="dashboard-card fan-feature-card"><span className="card-kicker">FAN HQ</span><h2><HoopIcon name="basketball" size={20} /> Your Team Hub</h2><p className="muted">Keep up with the teams you follow, ratings, reviews, and new activity.</p><Link href="/teams" className="btn">Explore Teams</Link></div>
+          <div className="dashboard-card fan-feature-card"><span className="card-kicker">PRO FAN</span><h2><HoopIcon name="shield-check" size={20} /> Team Alerts</h2><p className="muted">Follow teams to keep notifications on for ratings, reviews, and team updates.</p><Link href="/teams" className="btn dark">Find Teams to Follow</Link>{subscription?.plan === "premium" && activeMembership && <Link href="/fan-live" className="btn dark">Live Game Chat</Link>}</div>
+          {subscription?.plan === "premium" && activeMembership ? <div className="dashboard-card fan-feature-card premium-fan-card"><span className="card-kicker">PREMIUM FAN</span><h2><HoopIcon name="users" size={20} /> Fan Base Insights</h2><p className="muted">See follower momentum, community size, review activity, and team sentiment as your fan intelligence hub grows.</p><strong>{followedTeams.length} followed team{followedTeams.length===1?"":"s"}</strong></div> : <div className="dashboard-card fan-feature-card"><span className="card-kicker">PREMIUM FAN</span><h2>Unlock Fan Intelligence</h2><p className="muted">Premium fans get deeper team and fan-base insights, including community activity and team pulse features.</p><Link href="/membership" className="btn">Explore Premium</Link></div>}
           <div className="dashboard-card fan-feature-card"><span className="card-kicker">FAN NETWORK</span><h2>Connect with Fans</h2><p className="muted">Pro and Premium Fans can follow and send connection requests to other fans.</p><Link href="/fans" className="btn">Find Fans</Link></div>{followedTeams.length > 0 && <div className="dashboard-card fan-feature-card"><span className="card-kicker">FOLLOWING</span><h2>My Teams</h2><div className="fan-followed-list">{followedTeams.slice(0,6).map(t=><Link key={t.id} href={"/teams/"+t.id} className="fan-team-row"><span><strong>{t.name}</strong><small>{t.country || "Global"}{t.league_name ? " · "+t.league_name : ""}</small></span><span>›</span></Link>)}</div></div>}
         </section>}
 
@@ -398,7 +399,7 @@ export default function DashboardPage() {
           {profile?.account_type === "player" && <div className="dashboard-card">
             <span className="card-kicker">PLAYER PROFILE</span>
             <h2>
-              {profile?.player_verified ? "✓ Verified Player" : "Build your player profile"}
+              {profile?.player_verified ? <><VerifiedBadge label="Verified player" /> Verified Player</> : "Build your player profile"}
             </h2>
             <p className="muted">
               {profile?.player_verified
