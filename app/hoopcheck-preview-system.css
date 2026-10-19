@@ -2707,15 +2707,6 @@ main.auth-page-shell .signup-form .message.error {
   --hc-text-secondary: #55554f;
   --hc-border-strong: #d4d4cd;
 }
-:where(.dashboard-card, .card, .panel, .contact-dashboard-card, .hc-review-form, .compact-card) {
-  color: var(--hc-text-primary);
-}
-:where(.dashboard-card, .card, .panel, .contact-dashboard-card, .hc-review-form, .compact-card) :where(h1,h2,h3,h4,strong,label) {
-  color: var(--hc-text-primary);
-}
-:where(.dashboard-card, .card, .panel, .contact-dashboard-card, .hc-review-form, .compact-card) :where(p,small,.muted,.description) {
-  color: var(--hc-text-secondary);
-}
 /* Recruiting requests are a standard paper surface, not a stray dark tile. */
 .contact-dashboard-card {
   background: var(--hc-surface) !important;
@@ -2737,12 +2728,6 @@ main.auth-page-shell .signup-form .message.error {
 .contact-dashboard-card .btn:not(.dark) {
   background: var(--hc-orange) !important;
   color: #111111 !important;
-}
-/* Any light card with a legacy dark button keeps a clear, legible label. */
-:where(.dashboard-card, .card, .panel, .compact-card) .btn.dark {
-  background: #171715;
-  color: #ffffff;
-  border-color: #171715;
 }
 .hc-home-hero-actions { display:flex; align-items:center; flex-wrap:wrap; gap:14px; }
 .hc-home-signin, .hc-signin-button {
