@@ -2956,3 +2956,47 @@ body { background-color: var(--hc-ink); }
  .hc-dashboard-shell .hc-command-grid { grid-template-columns:1fr; }
  .hc-dashboard-shell .hc-command-tile { min-height:190px; }
 }
+
+
+/* Shared HoopCheck logo, varsity display type, and reusable search bar. */
+.hc-logo { display:inline-flex; align-items:center; gap:10px; min-width:0; color:currentColor; }
+.hc-logo__icon { display:block; flex:0 0 auto; overflow:visible; }
+.hc-logo__wordmark { color:currentColor; font-family:var(--font-display), "Graduate", serif; font-size:clamp(20px,2.2vw,29px); font-weight:400; letter-spacing:.025em; line-height:.98; white-space:nowrap; }
+.hc-logo--icon { gap:0; }
+.footer-logo .hc-logo { color:#fff; }
+.site-header-global .hc-logo { color:var(--hc-orange, #FF5A1F); }
+.site-header-global .hc-logo__wordmark { color:#fff; }
+.site-header-global .hc-logo__wordmark::first-letter { color:currentColor; }
+.footer-logo .hc-logo__wordmark { color:#fff; }
+.footer-logo .hc-logo__wordmark::first-letter { color:#FF5A1F; }
+.hc-searchbar { display:flex; align-items:center; gap:10px; width:100%; min-width:0; min-height:54px; padding:5px; border:1px solid #deded9; border-radius:12px; background:#fff; color:#171717; }
+.hc-searchbar:focus-within { border-color:#FF5A1F; box-shadow:0 0 0 3px rgba(255,90,31,.22); }
+.hc-searchbar__icon { flex:0 0 20px; width:20px; height:20px; margin-left:10px; color:#6b6b66; }
+.hc-searchbar__input { display:block; flex:1 1 0%; width:100%; min-width:0; height:42px; padding:0 4px; border:0!important; outline:0!important; background:transparent!important; color:#171717!important; font:500 15px/1.2 var(--font-sans),Inter,sans-serif; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; box-shadow:none!important; }
+.hc-searchbar__input::placeholder { color:#737373; opacity:1; white-space:nowrap; text-overflow:ellipsis; }
+.hc-searchbar__input::-webkit-search-cancel-button { display:none; }
+.hc-searchbar__clear { display:grid; flex:0 0 30px; place-items:center; width:30px; height:30px; border:0; border-radius:50%; background:#f1f1ee; color:#333; font-size:22px; line-height:1; cursor:pointer; }
+.hc-searchbar__submit { display:inline-flex; flex:0 0 auto; align-items:center; justify-content:center; min-width:104px; height:42px; padding:0 18px; border:0; border-radius:9px; background:#FF5A1F; color:#111; font-size:12px; font-weight:900; letter-spacing:.07em; text-transform:uppercase; cursor:pointer; }
+.hc-searchbar__submit:disabled { opacity:.55; cursor:not-allowed; }
+.global-search.hc-searchbar { max-width:100%; }
+@media(max-width:600px) {
+ .hc-searchbar { display:grid; grid-template-columns:20px minmax(0,1fr) 30px; gap:8px; padding:7px; border-radius:12px; }
+ .hc-searchbar__icon { margin-left:5px; }
+ .hc-searchbar__input { grid-column:2; grid-row:1; font-size:14px; }
+ .hc-searchbar__clear { grid-column:3; grid-row:1; }
+ .hc-searchbar__submit { grid-column:1 / -1; width:100%; min-height:42px; }
+ .hc-logo__wordmark { font-size:20px; }
+}
+.hc-womens-team-list { display:flex!important; flex-direction:column!important; gap:12px!important; }
+.hc-womens-team-row { display:flex!important; align-items:center!important; gap:12px!important; width:100%; min-width:0; min-height:72px; height:auto!important; padding:12px!important; border:1px solid #e2e2de!important; border-radius:12px!important; background:#fff!important; box-shadow:none!important; }
+.hc-womens-team-link { display:flex!important; flex:1 1 0%; align-items:center!important; gap:12px!important; min-width:0!important; width:auto!important; color:#111!important; }
+.hc-womens-team-monogram { display:grid!important; flex:0 0 48px!important; width:48px!important; height:48px!important; place-items:center; border-radius:10px!important; background:#fff0e9!important; color:#d94712!important; font-size:14px!important; font-weight:900!important; }
+.hc-womens-team-details { display:flex!important; flex:1 1 0%!important; flex-direction:column!important; gap:3px!important; min-width:0!important; }
+.hc-womens-team-details strong { display:-webkit-box!important; min-width:0; max-width:100%; overflow:hidden; overflow-wrap:anywhere; -webkit-box-orient:vertical; -webkit-line-clamp:2; color:#111!important; font-size:15px!important; line-height:1.25!important; }
+.hc-womens-team-details > span,.hc-womens-team-details small { display:block!important; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#666!important; font-size:11px!important; line-height:1.3!important; }
+.hc-womens-team-arrow { display:grid!important; flex:0 0 28px!important; place-items:center; color:#FF5A1F!important; }
+.hc-womens-team-follow { display:flex!important; flex:0 0 auto!important; align-items:center; justify-content:center; max-width:108px; }
+.hc-womens-team-follow button { min-height:36px!important; height:36px!important; padding:0 11px!important; border-radius:9px!important; font-size:11px!important; white-space:nowrap!important; }
+@media(max-width:480px) { .hc-womens-team-row { gap:8px!important; padding:10px!important; } .hc-womens-team-link { gap:9px!important; } .hc-womens-team-details strong { font-size:14px!important; } .hc-womens-team-follow { max-width:92px; } }
+.admin-directory-shell { background:#F7F7F5!important; color:#111!important; }
+@media(max-width:700px) { .admin-directory-shell { padding:24px 14px 60px!important; } .admin-directory-shell .admin-stats-grid { grid-template-columns:1fr!important; } }
