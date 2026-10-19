@@ -15,6 +15,15 @@ create table if not exists public.stripe_webhook_event_claims (
 create index if not exists stripe_webhook_event_claims_status_lease_idx
   on public.stripe_webhook_event_claims (status, lease_expires_at);
 
+-- Preserve prior deduplication history so migration rollout does not replay
+-- Stripe events already recorded by the existing webhook implementation.
+insert into public.stripe_webhook_event_claims (
+  stripe_event_id, event_type, status, lease_expires_at, created_at, updated_at
+)
+select stripe_event_id, event_type, 'processed', null, now(), now()
+from public.subscription_events
+on conflict (stripe_event_id) do nothing;
+
 alter table public.stripe_webhook_event_claims enable row level security;
 revoke all on table public.stripe_webhook_event_claims from anon, authenticated;
 
