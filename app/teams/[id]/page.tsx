@@ -19,6 +19,8 @@ import GeoBadge from "../../../components/GeoBadge";
 import FollowButton from "../../../components/FollowButton";
 import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
+import TrustScoreDial from "../../../components/TrustScoreDial";
+import { calculateTrustScore } from "../../../lib/trust-score";
 
 type Team = {
   id: string;
@@ -50,6 +52,12 @@ type Review = {
   professionalism_rating: number | null;
   development_rating: number | null;
   payment_rating: number | null;
+  pay_on_time_rating: number | null;
+  housing_rating: number | null;
+  medical_support_rating: number | null;
+  coaching_quality_rating: number | null;
+  facilities_rating: number | null;
+  playing_time_honesty_rating: number | null;
   title: string | null;
   body: string;
   created_at: string;
@@ -346,6 +354,12 @@ export default function TeamDetailPage() {
               professionalism_rating,
               development_rating,
               payment_rating,
+              pay_on_time_rating,
+              housing_rating,
+              medical_support_rating,
+              coaching_quality_rating,
+              facilities_rating,
+              playing_time_honesty_rating,
               title,
               body,
               created_at,
@@ -485,6 +499,11 @@ export default function TeamDetailPage() {
         ) / reviews.length
       : 0;
 
+  const trustScore = calculateTrustScore({
+    averageRating: reviews.length > 0 ? average : publicSummary.overall_rating,
+    reviews: reviews.map(review => ({ createdAt: review.created_at, reviewerVerified: Boolean(review.player_verified) })),
+  });
+
   const communication =
     reviews.length > 0
       ? reviews.reduce(
@@ -568,6 +587,14 @@ export default function TeamDetailPage() {
         <h1>
           {team.name}
         </h1>
+        <div className="hc-entity-trust-score">
+          <TrustScoreDial
+            score={hasAccess ? trustScore.score : null}
+            explanation={hasAccess ? trustScore.explanation : publicSummary.review_count > 0 ? "Unlock member insights to view this score's verified-review breakdown." : "No approved player reviews yet."}
+            reviewCount={hasAccess ? trustScore.reviewCount : publicSummary.review_count}
+            verifiedReviewCount={hasAccess ? trustScore.verifiedReviewCount : 0}
+          />
+        </div>
 
         <div className="entity-actions"><GeoBadge country={team.country} /><FollowButton targetType="team" targetId={team.id} /><WatchButton targetType="team" targetId={team.id} targetName={team.name} /></div><p className="muted" style={{fontSize:13}}>{followerCount.toLocaleString()} follower{followerCount===1?"":"s"}</p>
 
