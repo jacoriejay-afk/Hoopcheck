@@ -1,18 +1,12 @@
 "use client";
 
+import Logo from "./Logo";
+
 export default function HoopLoading({ label = "Loading..." }: { label?: string }) {
   return (
     <div className="hoop-loading-inline" role="status" aria-live="polite">
-      <div className="hoop-loading-globe" aria-hidden="true">
-        <span className="globe-line globe-line-a" />
-        <span className="globe-line globe-line-b" />
-        <span className="globe-line globe-line-c" />
-        <span className="globe-line globe-line-d" />
-      </div>
-      <div className="hoop-loading-copy">
-        <strong>HOOP<span>CHECK</span></strong>
-        <small>{label}</small>
-      </div>
+      <Logo variant="icon" size={42} className="hoop-loading-logo" />
+      <div className="hoop-loading-copy"><strong><Logo variant="full" size={26} /></strong><small>{label}</small></div>
     </div>
   );
 }
