@@ -32,6 +32,7 @@ export default function TeamsPage() {
   const [teams, setTeams] =
     useState<Team[]>([]);
   const [trustScores, setTrustScores] = useState<Record<string, TrustSummary>>({});
+  const [teamCoordinates, setTeamCoordinates] = useState<Record<string, { latitude: number | null; longitude: number | null }>>({});
 
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
@@ -161,6 +162,25 @@ export default function TeamsPage() {
     return () => { active = false; };
   }, [teams]);
 
+  useEffect(() => {
+    if (!teams.length) { setTeamCoordinates({}); return; }
+    let active = true;
+    const ids = teams.map(team => team.id).filter(Boolean);
+    // Coordinates are optional until the location migration is applied. A
+    // missing column must never break the core team directory.
+    void supabase.from("teams").select("id,latitude,longitude").in("id", ids)
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) { setTeamCoordinates({}); return; }
+        setTeamCoordinates(Object.fromEntries((data || []).map((row: any) => [row.id, {
+          latitude: row.latitude == null ? null : Number(row.latitude),
+          longitude: row.longitude == null ? null : Number(row.longitude),
+        }])));
+      })
+      .catch(() => { if (active) setTeamCoordinates({}); });
+    return () => { active = false; };
+  }, [teams]);
+
   return (
     <main className="hc-team-directory-page">
       <section className="hero">
@@ -256,6 +276,8 @@ export default function TeamsPage() {
       {viewMode === "map" && (
         <TeamMap teams={teams.map(team => ({
           ...team,
+          latitude: teamCoordinates[team.id]?.latitude ?? null,
+          longitude: teamCoordinates[team.id]?.longitude ?? null,
           trustScore: trustScores[team.id]?.score ?? null,
           averageRating: trustScores[team.id]?.averageRating ?? null,
         }))} />
