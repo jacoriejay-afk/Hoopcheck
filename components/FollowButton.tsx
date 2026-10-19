@@ -102,6 +102,7 @@ export default function FollowButton({ targetType, targetId }: Props) {
       >
         {following ? <HoopIcon name="check" size={15} /> : <HoopIcon name="user" size={15} />} {following ? "Following" : "Follow"}
       </button>
+      <span className="follow-count muted">{count} followers</span>
       {following && (
         <button
           type="button"
