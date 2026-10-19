@@ -496,7 +496,7 @@ export default function AdminReviewsPage() {
 
   if (loading) {
     return (
-      <main className="page-shell review-moderation-center">
+      <main className="page-shell review-moderation-center admin-light-shell">
         <div className="container">
           <div className="admin-panel">
             <p className="eyebrow">HOOPCHECK ADMIN</p>
