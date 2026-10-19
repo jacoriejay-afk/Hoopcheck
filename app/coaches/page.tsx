@@ -11,6 +11,7 @@ import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
 import CourtLines from "../../components/CourtLines";
+import TrustScoreDial from "../../components/TrustScoreDial";
 
 type Coach = {
   id: string;
@@ -19,9 +20,12 @@ type Coach = {
   city: string | null;
 };
 
+type TrustSummary = { score: number | null; reviewCount: number; verifiedReviewCount: number; explanation: string; averageRating: number | null };
+
 export default function CoachesPage() {
   const [coaches, setCoaches] =
     useState<Coach[]>([]);
+  const [trustScores, setTrustScores] = useState<Record<string, TrustSummary>>({});
 
   const [loading, setLoading] =
     useState(true);
@@ -59,6 +63,17 @@ export default function CoachesPage() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!coaches.length) { setTrustScores({}); return; }
+    let active = true;
+    const ids = coaches.map(coach => coach.id);
+    void fetch(`/api/trust-score?entityType=coach&entityIds=${ids.map(encodeURIComponent).join(",")}`)
+      .then(response => response.ok ? response.json() : null)
+      .then(payload => { if (active && payload?.scores) setTrustScores(payload.scores as Record<string, TrustSummary>); })
+      .catch(() => { if (active) setTrustScores({}); });
+    return () => { active = false; };
+  }, [coaches]);
 
   return (
     <main className="hc-coaches-directory-page">
@@ -164,9 +179,10 @@ export default function CoachesPage() {
                   <p>{coach.city && coach.country ? `${coach.city}, ${coach.country}` : coach.country || coach.city || "Location not listed"}</p>
                 </div>
               </div>
-              <div className="hc-scout-card__stats" aria-label="Coach review statistics; data not available in this directory listing">
-                <div className="hc-scout-card__stat"><span>Overall rating</span><strong>—</strong><small>Not listed</small></div>
-                <div className="hc-scout-card__stat"><span>Reviews</span><strong>—</strong><small>Not listed</small></div>
+              {trustScores[coach.id] && <div className="hc-team-directory-row__trust"><TrustScoreDial score={trustScores[coach.id].score} explanation={trustScores[coach.id].explanation} reviewCount={trustScores[coach.id].reviewCount} verifiedReviewCount={trustScores[coach.id].verifiedReviewCount} size="mini" /></div>}
+              <div className="hc-scout-card__stats" aria-label="Coach review statistics">
+                <div className="hc-scout-card__stat"><span>Overall rating</span><strong>{trustScores[coach.id]?.averageRating == null ? "—" : trustScores[coach.id].averageRating!.toFixed(1)}</strong><small>{trustScores[coach.id]?.averageRating == null ? "Not available" : "Out of 5"}</small></div>
+                <div className="hc-scout-card__stat"><span>Reviews</span><strong>{trustScores[coach.id]?.reviewCount ?? "—"}</strong><small>Approved reviews</small></div>
                 <div className="hc-scout-card__stat"><span>Seasons tracked</span><strong>—</strong><small>Not listed</small></div>
               </div>
               <div className="hc-scout-card__ticket">
