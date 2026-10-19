@@ -16,7 +16,10 @@ export async function POST(req:Request){
  const serviceRoleKey=process.env.SUPABASE_SERVICE_ROLE_KEY;
  if(!serviceRoleKey)return NextResponse.json({error:"Server directory sync is not configured"},{status:503});
  const adminSupabase=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,serviceRoleKey,{auth:{autoRefreshToken:false,persistSession:false}});
- const body=await req.json().catch(()=>({})); const sourceId=typeof body.source_id==="string"?body.source_id:null;
+ const declaredLength=Number(req.headers.get("content-length")??"0");
+ if(Number.isFinite(declaredLength)&&declaredLength>8192)return NextResponse.json({error:"Request body is too large."},{status:413});
+ let body:Record<string,unknown>;
+ try{const raw=await req.text();if(new TextEncoder().encode(raw).byteLength>8192)return NextResponse.json({error:"Request body is too large."},{status:413});const parsed:unknown=JSON.parse(raw);if(!parsed||typeof parsed!=="object"||Array.isArray(parsed))throw new Error("Invalid body");body=parsed as Record<string,unknown>;}catch{return NextResponse.json({error:"Invalid request body."},{status:400});} const sourceId=typeof body.source_id==="string"?body.source_id:null;
  const entityType:SyncEntityType|undefined=["leagues","teams","coaches"].includes(body.entity_type)?body.entity_type:undefined;
  if(!sourceId||!entityType)return NextResponse.json({error:"source_id and entity_type are required"},{status:400});
  const offset=typeof body.offset==="number"&&Number.isFinite(body.offset)?Math.max(0,Math.floor(body.offset)):0;
