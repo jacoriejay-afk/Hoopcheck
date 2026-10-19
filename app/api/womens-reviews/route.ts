@@ -79,22 +79,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "An active HoopCheck membership is required to submit ratings or reviews." }, { status: 403 });
   }
 
-  const { count: recentCount, error: rateLimitError } = await supabase
-    .from("womens_team_reviews")
-    .select("id", { count: "exact", head: true })
-    .eq("author_id", user.id)
-    .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
-
-  if (rateLimitError) {
-    console.error("Women's review rate-limit lookup failed:", rateLimitError);
-    return NextResponse.json({ error: "Unable to submit your review right now." }, { status: 500 });
-  }
-  if ((recentCount ?? 0) >= 5) {
-    return NextResponse.json({ error: "Review limit reached. You can submit up to 5 reviews in a 24-hour period." }, { status: 429 });
-  }
-
-
-
   if (
     typeof reviewInput.womens_team_id !== "string" ||
     !reviewInput.womens_team_id ||
@@ -123,6 +107,15 @@ export async function POST(req: Request) {
   }
   if (/\b(fuck|shit|bitch|cunt|nigger|nigga|porn|xxx|sexcam)\b/i.test(`${reviewBody} ${title}`)) {
     return NextResponse.json({ error: "Review contains prohibited language." }, { status: 400 });
+  }
+
+  const { data: hasReviewSlot, error: slotError } = await supabase.rpc("claim_review_submission_slot");
+  if (slotError) {
+    console.error("Atomic women's review rate-limit claim failed:", slotError);
+    return NextResponse.json({ error: "Unable to submit your review right now." }, { status: 500 });
+  }
+  if (hasReviewSlot !== true) {
+    return NextResponse.json({ error: "Review limit reached. You can submit up to 5 reviews in a 24-hour period." }, { status: 429 });
   }
 
   const { data, error } = await supabase
