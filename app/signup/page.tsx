@@ -92,7 +92,7 @@ export default function SignupPage() {
 
   return <main className="auth-page-shell">
     <nav className="nav signup-nav">
-      <Link href="/" className="logo">HOOP<span>CHECK</span></Link>
+      <Link href="/" className="logo signup-logo" aria-label="HoopCheck home"><Logo variant="full" size={38} /></Link>
       <Link href="/login">Log In</Link>
     </nav>
     <section className="auth-page signup-page">
