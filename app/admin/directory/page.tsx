@@ -111,7 +111,7 @@ export default function AdminDirectoryPage() {
   }
 
   return (
-    <main style={styles.page}>
+    <main className="admin-directory-shell" style={styles.page}>
       <div style={styles.shell}>
         <header style={styles.header}>
           <div>
