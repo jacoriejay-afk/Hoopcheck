@@ -7,6 +7,7 @@ create table if not exists public.stripe_webhook_event_claims (
   status text not null default 'processing'
     check (status in ('processing', 'processed', 'failed')),
   lease_expires_at timestamptz,
+  claim_token uuid,
   last_error text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -24,6 +25,8 @@ select stripe_event_id, event_type, 'processed', null, now(), now()
 from public.subscription_events
 on conflict (stripe_event_id) do nothing;
 
+alter table public.stripe_webhook_event_claims add column if not exists claim_token uuid;
+
 alter table public.stripe_webhook_event_claims enable row level security;
 revoke all on table public.stripe_webhook_event_claims from anon, authenticated;
 
@@ -31,13 +34,14 @@ create or replace function public.claim_stripe_webhook_event(
   p_stripe_event_id text,
   p_event_type text
 )
-returns boolean
+returns uuid
 language plpgsql
 security definer
 set search_path = public, pg_catalog
 as $function$
 declare
-  v_claimed_id text;
+  v_claim_token uuid := gen_random_uuid();
+  v_claimed_token uuid;
 begin
   if nullif(trim(p_stripe_event_id), '') is null
      or nullif(trim(p_event_type), '') is null then
@@ -45,15 +49,16 @@ begin
   end if;
 
   insert into public.stripe_webhook_event_claims (
-    stripe_event_id, event_type, status, lease_expires_at, updated_at
+    stripe_event_id, event_type, status, lease_expires_at, claim_token, updated_at
   )
   values (
-    p_stripe_event_id, p_event_type, 'processing', now() + interval '5 minutes', now()
+    p_stripe_event_id, p_event_type, 'processing', now() + interval '5 minutes', v_claim_token, now()
   )
   on conflict (stripe_event_id) do update
     set event_type = excluded.event_type,
         status = 'processing',
         lease_expires_at = now() + interval '5 minutes',
+        claim_token = v_claim_token,
         last_error = null,
         updated_at = now()
     where public.stripe_webhook_event_claims.status = 'failed'
@@ -61,15 +66,16 @@ begin
          public.stripe_webhook_event_claims.status = 'processing'
          and public.stripe_webhook_event_claims.lease_expires_at < now()
        )
-  returning stripe_event_id into v_claimed_id;
+  returning claim_token into v_claimed_token;
 
-  return v_claimed_id is not null;
+  return v_claimed_token;
 end;
 $function$;
 
 create or replace function public.complete_stripe_webhook_event(
   p_stripe_event_id text,
   p_event_type text,
+  p_claim_token uuid,
   p_payload jsonb
 )
 returns void
@@ -83,6 +89,7 @@ begin
     from public.stripe_webhook_event_claims
     where stripe_event_id = p_stripe_event_id
       and status = 'processing'
+      and claim_token = p_claim_token
   ) then
     raise exception 'Stripe webhook event is not currently claimed';
   end if;
@@ -94,6 +101,7 @@ begin
   update public.stripe_webhook_event_claims
   set status = 'processed',
       lease_expires_at = null,
+      claim_token = null,
       last_error = null,
       updated_at = now()
   where stripe_event_id = p_stripe_event_id;
@@ -102,6 +110,7 @@ $function$;
 
 create or replace function public.release_stripe_webhook_event(
   p_stripe_event_id text,
+  p_claim_token uuid,
   p_error text
 )
 returns void
@@ -116,13 +125,14 @@ begin
       last_error = left(coalesce(p_error, 'Webhook processing failed'), 1000),
       updated_at = now()
   where stripe_event_id = p_stripe_event_id
-    and status = 'processing';
+    and status = 'processing'
+    and claim_token = p_claim_token;
 end;
 $function$;
 
 revoke all on function public.claim_stripe_webhook_event(text, text) from public, anon, authenticated;
-revoke all on function public.complete_stripe_webhook_event(text, text, jsonb) from public, anon, authenticated;
-revoke all on function public.release_stripe_webhook_event(text, text) from public, anon, authenticated;
+revoke all on function public.complete_stripe_webhook_event(text, text, uuid, jsonb) from public, anon, authenticated;
+revoke all on function public.release_stripe_webhook_event(text, uuid, text) from public, anon, authenticated;
 grant execute on function public.claim_stripe_webhook_event(text, text) to service_role;
-grant execute on function public.complete_stripe_webhook_event(text, text, jsonb) to service_role;
-grant execute on function public.release_stripe_webhook_event(text, text) to service_role;
+grant execute on function public.complete_stripe_webhook_event(text, text, uuid, jsonb) to service_role;
+grant execute on function public.release_stripe_webhook_event(text, uuid, text) to service_role;
