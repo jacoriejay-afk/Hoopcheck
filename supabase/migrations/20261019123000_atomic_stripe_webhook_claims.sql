@@ -37,7 +37,7 @@ create or replace function public.claim_stripe_webhook_event(
 returns jsonb
 language plpgsql
 security definer
-set search_path = public, pg_catalog
+set search_path = pg_catalog, public
 as $function$
 declare
   v_claim_token uuid := gen_random_uuid();
@@ -94,7 +94,7 @@ create or replace function public.complete_stripe_webhook_event(
 returns void
 language plpgsql
 security definer
-set search_path = public, pg_catalog
+set search_path = pg_catalog, public
 as $function$
 begin
   if not exists (
@@ -135,7 +135,7 @@ create or replace function public.release_stripe_webhook_event(
 returns void
 language plpgsql
 security definer
-set search_path = public, pg_catalog
+set search_path = pg_catalog, public
 as $function$
 begin
   update public.stripe_webhook_event_claims
