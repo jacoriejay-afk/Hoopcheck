@@ -1,5 +1,16 @@
 "use client";
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import SearchBar from "./SearchBar";
+import { useRouter, useSearchParams } from "next/navigation";
+
+export default function GlobalSearch({ compact = false }: { compact?: boolean }) {
+  const router = useRouter();
+  const params = useSearchParams();
+  const [value, setValue] = useState(params.get("q") || "");
+
+e client";
+import { useState } from "react";
+import SearchBar from "./SearchBar";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function GlobalSearch({ compact = false }: { compact?: boolean }) {
@@ -15,10 +26,13 @@ export default function GlobalSearch({ compact = false }: { compact?: boolean })
   }
 
   return (
-    <form className={compact ? "global-search compact" : "global-search"} onSubmit={submit} role="search">
-      <span aria-hidden="true">⌕</span>
-      <input value={value} onChange={(e) => setValue(e.target.value)} placeholder="Search HoopCheck..." aria-label="Global search" />
-      <button type="submit">Search</button>
-    </form>
+    <SearchBar
+      className={compact ? "global-search compact" : "global-search"}
+      value={value}
+      onChange={setValue}
+      onSubmit={(q) => { if (q) router.push(`/search?q=${encodeURIComponent(q)}`); }}
+      placeholder="Search players, coaches, teams, or leagues"
+      ariaLabel="Global search"
+    />
   );
 }
