@@ -2972,3 +2972,421 @@ main.auth-page-shell .signup-form .message.error {
 }
 .hc-womens-profile-page .dashboard-card :where(h1,h2,h3,strong) { color: #171715 !important; }
 .hc-womens-profile-page .dashboard-card :where(p,.muted,small) { color: #55554f !important; }
+
+
+/* Product polish pass: shared 8px rhythm, search-first women’s directory, refined player profiles. */
+:root {
+  --hc-space-1: 8px;
+  --hc-space-2: 16px;
+  --hc-space-3: 24px;
+  --hc-space-4: 32px;
+  --hc-content-max: 1184px;
+}
+:where(.page-container, .hc-team-directory-page, .hc-womens-directory-page, .player-profile-page) {
+  min-width: 0;
+}
+:where(.page-container) {
+  width: min(100% - 32px, var(--hc-content-max));
+  margin-inline: auto;
+}
+:where(a, button, select, input, textarea) {
+  transition: color .16s ease, background-color .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+:where(button, .btn, a[role="button"]):active { transform: translateY(1px); }
+:where(button, .btn, a[role="button"]):focus-visible,
+:where(input, select, textarea):focus-visible {
+  outline: 3px solid rgba(255,90,31,.72);
+  outline-offset: 3px;
+}
+.hc-womens-directory-page .page-container {
+  padding-block: 24px 40px;
+}
+.hc-womens-directory-header {
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:24px;
+  margin:0 0 16px;
+}
+.hc-womens-directory-header h1 {
+  margin:4px 0 8px;
+  font-size:clamp(32px,4vw,48px);
+  line-height:1;
+  letter-spacing:-.025em;
+}
+.hc-womens-directory-header p { margin:0; }
+.hc-womens-switch-link {
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  flex:0 0 auto;
+  min-height:44px;
+  padding:0 16px;
+  border:1px solid #d5d5ce;
+  border-radius:8px;
+  background:#fff;
+  color:#171715;
+  font-size:13px;
+  font-weight:800;
+}
+.hc-womens-switch-link:hover { border-color:#171715; background:#171715; color:#fff; }
+.hc-womens-compact-switcher {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:0 0 16px;
+  padding:0;
+}
+.hc-womens-compact-switcher a {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:40px;
+  padding:8px 12px;
+  border:1px solid #deded7;
+  border-radius:8px;
+  background:#fff;
+  color:#454540;
+  font-size:12px;
+  font-weight:800;
+}
+.hc-womens-compact-switcher a:hover,
+.hc-womens-compact-switcher a.is-active {
+  border-color:#171715;
+  background:#171715;
+  color:#fff;
+}
+.hc-womens-search-panel {
+  padding:16px;
+  border:1px solid #deded7;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 4px 16px rgba(0,0,0,.035);
+}
+.hc-womens-search-panel > label {
+  display:block;
+  margin:0 0 8px;
+  color:#454540;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.1em;
+}
+.hc-womens-search-input-wrap {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-height:54px;
+  padding:0 14px;
+  border:1px solid #bdbdb5;
+  border-radius:8px;
+  background:#fafaf8;
+  color:#55554f;
+}
+.hc-womens-search-input-wrap:focus-within {
+  border-color:#171715;
+  box-shadow:0 0 0 3px rgba(23,23,21,.08);
+}
+.hc-womens-search-input-wrap > span { font-size:24px; line-height:1; }
+.hc-womens-search-input-wrap input {
+  width:100%;
+  min-width:0;
+  min-height:50px;
+  padding:0;
+  border:0 !important;
+  outline:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#171715 !important;
+  font-size:15px;
+}
+.hc-womens-search-input-wrap input::placeholder { color:#73736e; opacity:1; }
+.hc-womens-clear-search {
+  display:grid;
+  place-items:center;
+  width:32px;
+  height:32px;
+  border:0;
+  border-radius:6px;
+  background:#e9e9e3;
+  color:#171715;
+  font-size:22px;
+}
+.hc-womens-clear-search:hover { background:#d8d8d1; }
+.hc-womens-filters {
+  display:flex;
+  align-items:flex-end;
+  flex-wrap:wrap;
+  gap:16px;
+  margin-top:16px;
+}
+.hc-womens-filters label {
+  display:grid;
+  gap:6px;
+  min-width:min(220px,100%);
+  color:#55554f;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.08em;
+}
+.hc-womens-filters select {
+  width:100%;
+  min-height:42px;
+  padding:0 32px 0 12px;
+  border:1px solid #d0d0c8;
+  border-radius:8px;
+  background:#fff;
+  color:#171715;
+  font-size:13px;
+  font-weight:600;
+}
+.hc-womens-filters select:hover { border-color:#85857d; }
+.hc-womens-reset {
+  min-height:42px;
+  padding:0 12px;
+  border:1px solid #deded7;
+  border-radius:8px;
+  background:#f4f4f1;
+  color:#454540;
+  font-size:12px;
+  font-weight:800;
+}
+.hc-womens-reset:hover { background:#e8e8e2; }
+.hc-womens-results-heading {
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:16px;
+  margin:24px 0 8px;
+  padding-bottom:12px;
+  border-bottom:1px solid #deded7;
+}
+.hc-womens-results-heading h2 { margin:0; font-size:22px; line-height:1.15; }
+.hc-womens-results-heading > span { color:#66665f; font-size:12px; font-weight:700; }
+.hc-womens-team-list { display:grid; gap:8px; }
+.hc-womens-team-row {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+  padding:12px;
+  border:1px solid #deded7;
+  border-radius:10px;
+  background:#fff;
+  color:#171715;
+}
+.hc-womens-team-row:hover {
+  border-color:#a9a9a0;
+  box-shadow:0 4px 14px rgba(0,0,0,.045);
+}
+.hc-womens-team-link {
+  display:flex;
+  align-items:center;
+  flex:1 1 auto;
+  gap:12px;
+  min-width:0;
+  color:inherit;
+}
+.hc-womens-team-monogram {
+  display:grid;
+  place-items:center;
+  flex:0 0 44px;
+  width:44px;
+  height:44px;
+  border:1px solid #deded7;
+  border-radius:10px;
+  background:#f4f4f1;
+  color:#171715;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:-.02em;
+}
+.hc-womens-team-details { display:grid; gap:4px; min-width:0; }
+.hc-womens-team-details strong {
+  overflow-wrap:anywhere;
+  color:#171715;
+  font-family:var(--hc-ui) !important;
+  font-size:15px;
+  font-weight:850;
+  line-height:1.25;
+  text-transform:none;
+  letter-spacing:0;
+}
+.hc-womens-team-details > span { color:#55554f; font-size:12px; line-height:1.35; }
+.hc-womens-team-details small { color:#77776f; font-size:11px; line-height:1.35; }
+.hc-womens-team-arrow { margin-left:auto; color:#77776f; font-size:18px; }
+.hc-womens-team-link:hover .hc-womens-team-details strong { text-decoration:underline; text-underline-offset:3px; }
+.hc-womens-team-link:hover .hc-womens-team-arrow { color:#171715; }
+.hc-womens-team-follow { flex:0 0 auto; }
+.hc-womens-team-follow :where(button,a) { min-height:38px; }
+.hc-womens-empty-state, .hc-womens-loading {
+  margin-top:8px;
+  padding:24px;
+  border:1px solid #deded7;
+  border-radius:10px;
+  background:#fff;
+  color:#171715;
+}
+.hc-womens-empty-state h2 { margin:0 0 8px; font-size:22px; }
+.hc-womens-empty-state p { margin:0 0 16px; color:#55554f; font-size:14px; }
+.hc-womens-empty-state button {
+  min-height:42px;
+  padding:0 14px;
+  border:1px solid #171715;
+  border-radius:8px;
+  background:#171715;
+  color:#fff;
+  font-weight:800;
+}
+.hc-womens-empty-state button:hover { background:var(--hc-orange); border-color:var(--hc-orange); color:#171715; }
+
+/* Player profile: editorial identity header, balanced information cards, no inline-style collisions. */
+.player-profile-page { padding:16px 0 40px; }
+.player-profile-page .topbar {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin:0 0 16px;
+  padding:0 0 12px;
+  border-bottom:1px solid #deded7;
+}
+.player-profile-page .topnav { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+.player-profile-page .topnav a { color:#55554f; font-size:12px; font-weight:800; }
+.player-profile-page .topnav a:hover { color:#171715; }
+.player-profile-page .player-profile-hero {
+  display:grid;
+  grid-template-columns:88px minmax(0,1fr);
+  align-items:center;
+  gap:16px;
+  margin:0 0 16px;
+  padding:24px;
+  border:1px solid #242424;
+  border-radius:14px;
+  background:#101010;
+  color:#fff;
+}
+.player-profile-page .player-profile-avatar {
+  display:grid;
+  place-items:center;
+  width:88px;
+  height:88px;
+  overflow:hidden;
+  border:1px solid #55554f;
+  border-radius:50%;
+  background:#242424;
+  color:#fff;
+  font-family:var(--hc-display);
+  font-size:34px;
+  line-height:1;
+}
+.player-profile-page .player-profile-avatar img { width:100%; height:100%; object-fit:cover; }
+.player-profile-page .player-profile-heading { min-width:0; }
+.player-profile-page .player-profile-heading .eyebrow { margin:0 0 8px; color:#bdbdb5; font-size:10px; font-weight:900; letter-spacing:.14em; }
+.player-profile-page .player-profile-heading h1 {
+  margin:0;
+  max-width:22ch;
+  color:#fff;
+  font-size:clamp(28px,4vw,42px);
+  line-height:1.05;
+  overflow-wrap:anywhere;
+  letter-spacing:-.02em;
+}
+.player-profile-page .player-profile-heading h1 span { color:#fff !important; }
+.player-profile-page .player-profile-heading .muted { margin:8px 0 0; color:#d1d1cb !important; font-size:13px; line-height:1.4; }
+.player-profile-page .hc-player-profile-hero > div:last-child {
+  grid-column:2;
+  display:flex !important;
+  flex-wrap:wrap;
+  gap:8px !important;
+  margin-top:0 !important;
+}
+.player-profile-page .hc-player-profile-hero :where(.btn,button) {
+  min-height:42px;
+  padding:0 14px;
+  border:1px solid #55554f;
+  border-radius:8px !important;
+  background:transparent;
+  color:#fff;
+  font-size:11px;
+}
+.player-profile-page .hc-player-profile-hero :where(.btn,button):hover {
+  border-color:var(--hc-orange);
+  background:var(--hc-orange);
+  color:#171715;
+}
+.player-profile-page .player-profile-grid {
+  display:grid;
+  grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+  gap:16px;
+}
+.player-profile-page :where(.player-profile-card,.dashboard-card) {
+  min-width:0;
+  margin-top:0 !important;
+  padding:20px;
+  border:1px solid #deded7;
+  border-radius:12px;
+  background:#fff;
+  color:#171715;
+  box-shadow:0 4px 18px rgba(0,0,0,.035);
+}
+.player-profile-page :where(.player-profile-card,.dashboard-card) .card-kicker {
+  display:block;
+  margin:0 0 8px;
+  color:#66665f;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.12em;
+}
+.player-profile-page :where(.player-profile-card,.dashboard-card) h2 {
+  margin:0 0 12px;
+  color:#171715;
+  font-size:22px;
+  line-height:1.15;
+}
+.player-profile-page :where(.player-profile-card,.dashboard-card) p {
+  color:#454540;
+  font-size:14px;
+  line-height:1.6;
+  overflow-wrap:anywhere;
+}
+.player-profile-page .player-profile-card strong { color:#171715; }
+.player-profile-page .dashboard-card > div[style] { gap:8px !important; margin-top:16px !important; }
+.player-profile-page .dashboard-card > div[style] :where(a,button) { min-height:42px; }
+.player-profile-page .dashboard-card .btn:not(.dark) {
+  border-color:var(--hc-orange);
+  background:var(--hc-orange);
+  color:#171715;
+}
+.player-profile-page .dashboard-card .btn.dark,
+.player-profile-page .dashboard-card button.dark {
+  border-color:#171715;
+  background:#171715;
+  color:#fff;
+}
+.player-profile-page .dashboard-card :where(a,button):hover { filter:brightness(.94); }
+@media (max-width: 700px) {
+  .hc-womens-directory-page .page-container { width:calc(100% - 24px); padding-block:16px 28px; }
+  .hc-womens-directory-header { align-items:flex-start; flex-direction:column; gap:12px; }
+  .hc-womens-directory-header h1 { font-size:34px; }
+  .hc-womens-switch-link { min-height:40px; }
+  .hc-womens-compact-switcher { flex-wrap:nowrap; overflow-x:auto; padding:2px 2px 6px; }
+  .hc-womens-compact-switcher a { flex:0 0 auto; }
+  .hc-womens-search-panel { padding:12px; }
+  .hc-womens-filters { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; }
+  .hc-womens-filters label { min-width:0; }
+  .hc-womens-team-row { padding:10px; gap:8px; }
+  .hc-womens-team-link { gap:10px; }
+  .hc-womens-team-monogram { flex-basis:40px; width:40px; height:40px; }
+  .hc-womens-team-details strong { font-size:14px; }
+  .hc-womens-team-details small { font-size:10px; }
+  .hc-womens-team-follow :where(button,a) { min-height:36px; padding-inline:10px; }
+  .player-profile-page .page-container { width:calc(100% - 24px); }
+  .player-profile-page .topbar { align-items:flex-start; }
+  .player-profile-page .topnav { justify-content:flex-end; gap:10px; }
+  .player-profile-page .player-profile-hero { grid-template-columns:64px minmax(0,1fr); gap:12px; padding:16px; }
+  .player-profile-page .player-profile-avatar { width:64px; height:64px; font-size:26px; }
+  .player-profile-page .player-profile-heading h1 { font-size:28px; }
+  .player-profile-page .hc-player-profile-hero > div:last-child { grid-column:1 / -1; }
+  .player-profile-page .player-profile-grid { grid-template-columns:minmax(0,1fr); gap:12px; }
+  .player-profile-page :where(.player-profile-card,.dashboard-card) { padding:16px; }
+}
