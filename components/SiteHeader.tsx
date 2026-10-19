@@ -51,6 +51,7 @@ export default function SiteHeader() {
         </div>
         <div className="hc-header-actions">
           <Link href="/search" className="hc-header-icon" aria-label="Search" onClick={closeMenu}><SearchIcon /></Link>
+          {!signedIn && <Link href="/login" className="hc-signin-button" onClick={closeMenu}>SIGN IN <span aria-hidden="true">↗</span></Link>}
           <Link href={signedIn ? "/profile" : "/login"} className="hc-header-icon" aria-label={signedIn ? "Profile" : "Sign in"} onClick={closeMenu}><UserIcon /></Link>
         </div>
       </nav>
