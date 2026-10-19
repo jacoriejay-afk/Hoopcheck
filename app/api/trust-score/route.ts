@@ -67,7 +67,7 @@ export async function GET(request: Request) {
 
       // Record at most one snapshot per entity per day. The shared TS utility
       // remains the only place where the score formula is calculated.
-      if (calculated.score !== null) {
+      if (singularId && calculated.score !== null) {
         const today = new Date().toISOString().slice(0, 10);
         const { data: todaySnapshot } = await db.from("trust_score_snapshots")
           .select("id").eq("target_type", entityType).eq("target_id", id).eq("snapshot_day", today).maybeSingle();
