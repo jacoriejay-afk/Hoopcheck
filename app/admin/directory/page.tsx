@@ -541,7 +541,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   sectionEyebrow: {
     margin: "0 0 7px",
-    color: "#ff6a00",
+    color: "#C2410C",
     fontSize: "10px",
     fontWeight: 900,
     letterSpacing: "0.14em",
