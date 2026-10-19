@@ -34,7 +34,7 @@ create or replace function public.claim_stripe_webhook_event(
   p_stripe_event_id text,
   p_event_type text
 )
-returns uuid
+returns jsonb
 language plpgsql
 security definer
 set search_path = public, pg_catalog
@@ -42,6 +42,7 @@ as $function$
 declare
   v_claim_token uuid := gen_random_uuid();
   v_claimed_token uuid;
+  v_current_status text;
 begin
   if nullif(trim(p_stripe_event_id), '') is null
      or nullif(trim(p_event_type), '') is null then
@@ -68,7 +69,19 @@ begin
        )
   returning claim_token into v_claimed_token;
 
-  return v_claimed_token;
+  if v_claimed_token is not null then
+    return jsonb_build_object('status', 'claimed', 'claim_token', v_claimed_token);
+  end if;
+
+  select status into v_current_status
+  from public.stripe_webhook_event_claims
+  where stripe_event_id = p_stripe_event_id;
+
+  if v_current_status = 'processed' then
+    return jsonb_build_object('status', 'processed', 'claim_token', null);
+  end if;
+
+  return jsonb_build_object('status', 'in_progress', 'claim_token', null);
 end;
 $function$;
 
