@@ -133,11 +133,11 @@ language sql
 stable
 security definer
 set search_path = public
-as $
+as $$
   select coalesce(p.current_country_public, false)
   from public.profiles p
   where p.id = p_user_id and p.account_type = 'player'
-$;
+$$;
 revoke all on function public.is_player_country_public(uuid) from public;
 grant execute on function public.is_player_country_public(uuid) to anon, authenticated;
 
