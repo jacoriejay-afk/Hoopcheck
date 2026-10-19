@@ -14,6 +14,7 @@ import { submitReviewReport } from "../../../lib/review-reports";
 import HoopLoading from "../../../components/HoopLoading";
 import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
 import WatchButton from "../../../components/WatchButton";
+import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import GeoBadge from "../../../components/GeoBadge";
 
 type League = {
@@ -823,9 +824,7 @@ export default function LeagueDetailPage() {
                             {review.title || "Player experience"}
                           </h3>
                           {review.player_verified && (
-                            <div style={{ marginTop: "6px", fontSize: "12px", fontWeight: 800, color: "var(--orange)" }}>
-                              ✓ Verified Player
-                            </div>
+                            <div className="hc-review-verified"><VerifiedBadge label="Verified player" /><span>Verified Player</span></div>
                           )}
                         </div>
 
