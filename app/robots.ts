@@ -1,13 +1,13 @@
 import type { MetadataRoute } from "next";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://hoopcheck.online";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://hoopcheck-nine.vercel.app";
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/dashboard", "/admin", "/account", "/privacy-center", "/api/", "/onboarding", "/notifications", "/fan-live"],
+      disallow: ["/dashboard", "/admin", "/account", "/privacy-center"],
     },
     sitemap: `${siteUrl}/sitemap.xml`,
   };

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 export async function POST(req:Request){
+ const contentLength = Number(req.headers.get("content-length") ?? "0");
+ if (Number.isFinite(contentLength) && contentLength > 16_384) {
+   return NextResponse.json({error:"Review request is too large."},{status:413});
+ }
  const token=req.headers.get("authorization")?.replace(/^Bearer /,""); if(!token)return NextResponse.json({error:"Authentication required"},{status:401});
  const s=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,{global:{headers:{Authorization:`Bearer ${token}`}}});
  const {data:{user}}=await s.auth.getUser(token);
@@ -15,7 +19,13 @@ export async function POST(req:Request){
  if ((recentCount ?? 0) >= 5) {
    return NextResponse.json({error:"Review limit reached. You can submit up to 5 reviews in a 24-hour period."},{status:429});
  }
- const b=await req.json().catch(()=>({}));
+ let b: Record<string, unknown>;
+ try {
+   b = await req.json();
+   if (!b || typeof b !== "object" || Array.isArray(b)) throw new Error("Invalid body");
+ } catch {
+   return NextResponse.json({error:"Invalid review request body."},{status:400});
+ }
  const { data: subscription } = await s.from("subscriptions").select("status,current_period_end").eq("user_id", user.id).maybeSingle();
  const paid = (subscription?.status === "active" || subscription?.status === "trialing") && (!subscription?.current_period_end || new Date(subscription.current_period_end) > new Date());
  const { data: authorProfile } = await s.from("profiles").select("account_type,player_verified,basketball_type").eq("id", user.id).maybeSingle();
@@ -64,5 +74,9 @@ export async function POST(req:Request){
    title:title||null,body,is_anonymous:anonymous,status:"pending"
  };
  const {data,error}=await s.from("reviews").insert(payload).select("id,status,created_at").single();
- if(error)return NextResponse.json({error:error.message},{status:error.code==="42501"?403:400}); return NextResponse.json(data,{status:201});
+ if(error){
+   console.error("Review submission failed:", { code: error.code, message: error.message });
+   return NextResponse.json({error:"Unable to submit review. Please check your entries and try again."},{status:error.code==="42501"?403:400});
+ }
+ return NextResponse.json(data,{status:201});
 }
