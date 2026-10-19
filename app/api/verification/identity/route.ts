@@ -51,7 +51,7 @@ export async function POST(req:Request){
     return NextResponse.json({error:`This ${profile.account_type} is already identity verified.`},{status:409});
 
   const stripe=new Stripe(process.env.STRIPE_SECRET_KEY);
-  const origin=process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
+  const origin=process.env.VERCEL_ENV === "production" ? "https://hoopcheck.online" : (process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin);
 
   let session:Stripe.Identity.VerificationSession;
   try{
