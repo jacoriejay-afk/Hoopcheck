@@ -93,7 +93,7 @@ export default function TeamsPage() {
         try {
           let request = supabase
             .from("teams")
-            .select("id, name, country, league_name, league_id, city, latitude, longitude")
+            .select("id, name, country, league_name, league_id, city")
             .eq("active", true)
             .order("name");
 
