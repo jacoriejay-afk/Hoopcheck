@@ -4302,3 +4302,8 @@ main.admin-light-shell .admin-brand .hc-logo { color:#111111!important; }
   font-size:inherit!important;
 }
 .brand:has(.hc-logo)::after { content:none!important; }
+
+.hc-searchbar input[type="search"]::-webkit-search-cancel-button,
+.hc-searchbar input[type="search"]::-webkit-search-decoration { -webkit-appearance:none; appearance:none; }
+.hc-searchbar .hc-searchbar__input:focus { outline:none!important; box-shadow:none!important; }
+.hc-searchbar:focus-within { outline:3px solid rgba(255,90,31,.28)!important; outline-offset:1px; border-color:#FF5A1F!important; }
