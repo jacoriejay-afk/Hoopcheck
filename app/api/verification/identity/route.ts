@@ -103,14 +103,35 @@ export async function GET(req:Request){
   const {data:{user},error:userError}=await supabase.auth.getUser(token);
   if(userError||!user)return NextResponse.json({error:"Invalid session"},{status:401});
 
-  const {data:profile}=await supabase.from("profiles")
+  const {data:profile,error:profileLookupError}=await supabase.from("profiles")
     .select("account_type,stripe_identity_verification_session_id")
     .eq("id",user.id).maybeSingle();
 
+  if(profileLookupError){
+    console.error("Identity profile lookup failed:",profileLookupError);
+    return NextResponse.json({error:"Unable to check your identity verification right now."},{status:500});
+  }
   if(!profile || !["player","coach"].includes(profile.account_type || ""))
     return NextResponse.json({error:"Only player and coach accounts can check identity verification."},{status:403});
   if(!profile.stripe_identity_verification_session_id)
     return NextResponse.json({status:"not_started",verified:false});
+
+  // Never trust a session ID stored on the profile by itself. Confirm that the
+  // server-side session registry binds this exact Stripe session to this user.
+  const admin=getAdminSupabase();
+  const {data:savedSession,error:savedSessionError}=await admin
+    .from("identity_verification_sessions")
+    .select("user_id")
+    .eq("stripe_session_id",profile.stripe_identity_verification_session_id)
+    .maybeSingle();
+  if(savedSessionError){
+    console.error("Identity session ownership lookup failed:",savedSessionError);
+    return NextResponse.json({error:"Unable to verify identity session ownership."},{status:500});
+  }
+  if(!savedSession || savedSession.user_id!==user.id){
+    console.error("Identity session owner mismatch for user:",user.id);
+    return NextResponse.json({error:"Identity verification session does not belong to this account."},{status:403});
+  }
 
   const stripe=new Stripe(process.env.STRIPE_SECRET_KEY);
   let session:Stripe.Identity.VerificationSession;
@@ -121,9 +142,19 @@ export async function GET(req:Request){
     return NextResponse.json({error:"Unable to check your identity verification right now."},{status:502});
   }
 
+  // Bind the Stripe object itself to the authenticated account and its role,
+  // even if the local profile pointer or session registry is inconsistent.
+  if(
+    session.client_reference_id!==user.id ||
+    session.metadata?.user_id!==user.id ||
+    session.metadata?.hoopcheck_role!==profile.account_type
+  ){
+    console.error("Stripe Identity session metadata owner mismatch for user:",user.id);
+    return NextResponse.json({error:"Identity verification session does not match this account."},{status:403});
+  }
+
   const status=session.status||"requires_input";
   const verified=status==="verified";
-  const admin=getAdminSupabase();
 
   const {error:profileError}=await admin.from("profiles").update({
     identity_verification_status:verified?"verified":status,
