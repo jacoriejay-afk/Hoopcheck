@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import FollowButton from "../../components/FollowButton";
+import SearchBar from "../../components/SearchBar";
 import { VerifiedBadge } from "../../components/HoopCheckUI";
 
 type Player = {
@@ -118,16 +119,7 @@ export default function PlayersPage() {
         <section className="dashboard-card" style={{ marginTop: 18 }}>
           <div className="research-search">
             <div className="search-label">PLAYER SEARCH</div>
-            <input
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setPage(0);
-              }}
-              placeholder="Type a player’s username to search..."
-              aria-label="Search by player username"
-              autoComplete="off"
-            />
+            <SearchBar value={query} onChange={(value) => { setQuery(value); setPage(0); }} onSubmit={(value) => { setQuery(value); setPage(0); }} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search by player username" />
             <div className="team-filter-row">
               <input
                 value={country}
