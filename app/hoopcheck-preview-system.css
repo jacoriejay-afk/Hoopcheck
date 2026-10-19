@@ -4285,3 +4285,20 @@ main.admin-light-shell div[style*="#111"] h2,
 main.admin-light-shell div[style*="#111"] h3 { color:#111111!important; }
 main.admin-light-shell .admin-brand { color:#111111!important; }
 main.admin-light-shell .admin-brand .hc-logo { color:#111111!important; }
+
+
+/* Let the new inline SVG inherit the foreground color; suppress legacy logo-image backgrounds. */
+.hc-logo { color:currentColor!important; }
+.hc-logo__wordmark { color:currentColor!important; }
+.brand:has(.hc-logo),.footer-logo:has(.hc-logo) {
+  display:inline-flex!important;
+  align-items:center!important;
+  width:auto!important;
+  min-width:0!important;
+  height:auto!important;
+  flex:0 1 auto!important;
+  padding:0!important;
+  background:none!important;
+  font-size:inherit!important;
+}
+.brand:has(.hc-logo)::after { content:none!important; }
