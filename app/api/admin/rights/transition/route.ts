@@ -14,7 +14,22 @@ export async function POST(req:Request){
   const client=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,{global:{headers:{Authorization:`Bearer ${token}`}}});
   const {data:{user}}=await client.auth.getUser(token); if(!user)return NextResponse.json({error:"Invalid session"},{status:401});
   const {data:isAdmin}=await client.rpc("is_current_user_admin_or_moderator"); if(!isAdmin)return NextResponse.json({error:"Admin or moderator access required"},{status:403});
-  const body=await req.json().catch(()=>({})); const id=typeof body.id==="string"?body.id:null; const toStatus=typeof body.to_status==="string"?body.to_status:null; const note=typeof body.note==="string"?body.note.trim():null;
+  const declaredLength = Number(req.headers.get("content-length") ?? "0");
+  if (Number.isFinite(declaredLength) && declaredLength > 8_192) {
+    return NextResponse.json({ error: "Request body is too large." }, { status: 413 });
+  }
+  let body: Record<string, unknown>;
+  try {
+    const rawBody = await req.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 8_192) {
+      return NextResponse.json({ error: "Request body is too large." }, { status: 413 });
+    }
+    const parsed: unknown = JSON.parse(rawBody);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Invalid body");
+    body = parsed as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  } const id=typeof body.id==="string"?body.id:null; const toStatus=typeof body.to_status==="string"?body.to_status:null; const note=typeof body.note==="string"?body.note.trim():null;
   if(!id||!toStatus)return NextResponse.json({error:"id and to_status are required"},{status:400});
   const key=process.env.SUPABASE_SERVICE_ROLE_KEY; if(!key)return NextResponse.json({error:"Server configuration missing"},{status:503});
   const db=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,key,{auth:{autoRefreshToken:false,persistSession:false}});
