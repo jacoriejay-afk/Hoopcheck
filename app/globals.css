@@ -3034,5 +3034,4 @@ body { background-color: var(--hc-ink); }
 
 .hc-auth-logo { display:flex; width:fit-content; margin:0 auto 20px; color:#111; }
 .hc-auth-logo .hc-logo__wordmark span { color:#FF5A1F; }
-.ho​​p-loading-logo { color:var(--orange); }
 .hoop-loading-copy > .hc-logo { margin-bottom:5px; color:currentColor; }
