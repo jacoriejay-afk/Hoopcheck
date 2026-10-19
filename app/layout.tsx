@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
   },
   icons: {
-    icon: [{ url: "/hoopcheck-app-icon.svg", type: "image/svg+xml", sizes: "any" }],
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml", sizes: "any" }],
     apple: [{ url: "/hoopcheck-app-icon.svg" }],
   },
 };
