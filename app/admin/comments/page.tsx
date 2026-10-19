@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Logo from "../../../components/Logo";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
 
@@ -41,7 +42,7 @@ export default function Comments() {
     <main className="page-shell admin-light-shell">
       <div className="page-container">
         <header className="topbar">
-          <Link href="/admin/directory" className="brand">HOOPCHECK ADMIN</Link>
+          <Link href="/admin/directory" className="brand" aria-label="HoopCheck Admin"><Logo variant="full" size={30} /></Link>
           <nav className="topnav">
             <Link href="/admin/reviews">Reviews</Link>
             <Link href="/admin/users">Users</Link>
