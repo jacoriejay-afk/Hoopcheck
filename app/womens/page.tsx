@@ -109,7 +109,8 @@ export default function Womens() {
         {loading ? <div className="hc-womens-loading"><HoopLoading label="Loading women’s teams…" /></div> : filtered.length ? (
           <section className="hc-womens-team-list" aria-label="Women’s team results">
             {filtered.map(team => (
-              <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" />\n            ))}
+              <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" />
+            ))}
           </section>
         ) : (
           <section className="hc-womens-empty-state">
