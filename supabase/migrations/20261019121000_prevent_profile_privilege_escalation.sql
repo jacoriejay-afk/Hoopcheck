@@ -6,7 +6,7 @@
 create or replace function public.prevent_user_privileged_profile_fields()
 returns trigger
 language plpgsql
-set search_path = 'public', 'pg_catalog'
+set search_path = 'pg_catalog', 'public'
 as $function$
 begin
   -- Allow trusted server-side service-role operations, but never treat a
@@ -57,6 +57,18 @@ begin
   if new.identity_verification_status is distinct from old.identity_verification_status
      or new.stripe_identity_verification_session_id is distinct from old.stripe_identity_verification_session_id then
     raise exception 'Identity verification can only be changed through the verification workflow';
+  end if;
+
+  -- Moderation decisions and audit attribution are admin-controlled. Ordinary
+  -- users may edit their profile content, but cannot approve/reject themselves
+  -- or rewrite moderation notes and attribution.
+  if new.moderation_status is distinct from old.moderation_status
+     or new.moderation_note is distinct from old.moderation_note
+     or new.moderation_updated_at is distinct from old.moderation_updated_at
+     or new.moderation_updated_by is distinct from old.moderation_updated_by
+     or new.avatar_moderation_status is distinct from old.avatar_moderation_status
+     or new.avatar_moderation_note is distinct from old.avatar_moderation_note then
+    raise exception 'Profile moderation fields can only be changed through an authorized moderation workflow';
   end if;
 
   if new.basketball_type is distinct from old.basketball_type
