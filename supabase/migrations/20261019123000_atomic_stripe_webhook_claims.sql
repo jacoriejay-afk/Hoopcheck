@@ -28,7 +28,7 @@ on conflict (stripe_event_id) do nothing;
 alter table public.stripe_webhook_event_claims add column if not exists claim_token uuid;
 
 alter table public.stripe_webhook_event_claims enable row level security;
-revoke all on table public.stripe_webhook_event_claims from anon, authenticated;
+revoke all on table public.stripe_webhook_event_claims from public, anon, authenticated;
 
 create or replace function public.claim_stripe_webhook_event(
   p_stripe_event_id text,
