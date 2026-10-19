@@ -29,3 +29,6 @@ alter table public.fan_live_games
 
 create index if not exists fan_live_games_status_scheduled_at_idx
   on public.fan_live_games(status, scheduled_at);
+
+-- The provider map is server-only; RLS remains enabled as defense in depth.
+revoke all on table public.fan_live_team_provider_map from anon, authenticated;
