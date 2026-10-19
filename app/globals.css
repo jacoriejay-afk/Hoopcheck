@@ -3262,3 +3262,31 @@ body { background-color: var(--hc-ink); }
  .hc-world-map__legend { top:10px; left:10px; font-size:8px; }
  .hc-world-map__popup { right:9px; bottom:9px; width:min(280px,calc(100% - 18px)); }
 }
+
+
+/* HoopFeed's short-lived locker-room ticket identity. */
+.hc-feed-composer { position:relative; overflow:hidden; border:1px solid #2d2d2d!important; background:#111!important; color:#f8f8f5!important; }
+.hc-feed-composer>*:not(.hc-feed-composer__court) { position:relative; z-index:1; }
+.hc-feed-composer .card-kicker,.hc-feed-composer .eyebrow { color:#ff7b48; }
+.hc-feed-composer textarea { position:relative; z-index:1; border-color:#414141!important; background:rgba(20,20,20,.92)!important; color:#fff!important; }
+.hc-feed-composer textarea::placeholder { color:#9b9b95; }
+.hc-feed-composer__court { position:absolute; z-index:0; top:8px; right:-16px; width:min(42%,240px); color:rgba(255,90,31,.38); opacity:.7; }
+.hc-feed-country-optin { position:relative; z-index:1; display:flex; align-items:flex-start; gap:10px; margin-top:13px; padding:11px 12px; border:1px solid #383838; border-radius:10px; background:rgba(255,255,255,.035); cursor:pointer; }
+.hc-feed-country-optin input { flex:0 0 auto; width:17px; height:17px; margin-top:2px; accent-color:#ff5a1f; }
+.hc-feed-country-optin span { display:grid; gap:3px; }
+.hc-feed-country-optin strong { color:#f4f4ef; font-size:11px; }
+.hc-feed-country-optin small { color:#a9a9a2; font-size:10px; line-height:1.4; }
+.hc-feed-ticket { position:relative; overflow:hidden; border:1px solid #e3e3dd!important; border-radius:14px!important; background:#fff!important; }
+.hc-feed-ticket::after { content:""; position:absolute; left:0; right:0; bottom:0; height:4px; background:radial-gradient(circle at 4px 2px,#d8d8d2 2px,transparent 2.5px) left center/8px 4px repeat-x; opacity:.9; }
+.hc-feed-ticket>div:first-child { padding-bottom:13px; border-bottom:1px dashed #deded8; }
+.hc-feed-jersey-tag { display:inline-flex; align-items:center; max-width:220px; margin-top:5px; padding:4px 7px; overflow:hidden; border:1px solid #f2b79f; border-radius:4px 10px 4px 10px; background:#fff0e9; color:#b83e14; font-size:9px; font-weight:950; letter-spacing:.08em; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
+.hc-feed-expiry { display:inline-flex; align-items:center; gap:6px; color:#777770; font-size:10px; font-weight:850; white-space:nowrap; }
+.hc-feed-expiry svg { width:34px; height:34px; flex:0 0 34px; color:#b8b8b0; }
+.hc-feed-expiry span { text-transform:lowercase; }
+.hc-feed-page .hc-feed-ticket .hc-feed-location { color:#777770; }
+@media(max-width:480px) {
+ .hc-feed-composer__court { width:45%; opacity:.45; }
+ .hc-feed-country-optin { padding:10px; }
+ .hc-feed-expiry { font-size:9px; }
+ .hc-feed-expiry svg { width:30px; height:30px; flex-basis:30px; }
+}
