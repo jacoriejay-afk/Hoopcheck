@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getDirectoryConnector } from "../../../../../lib/directory-sync/connectors";
 import { syncNormalizedDirectory } from "../../../../../lib/directory-sync/sync-directory";
+import type { SyncEntityType } from "../../../../../lib/directory-sync/types";
 
 const DEFAULT_BATCH_SIZE = 25;
 const MAX_BATCH_SIZE = 50;
@@ -50,9 +51,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
   const sourceId = typeof body.source_id === "string" ? body.source_id : null;
-  const entityType = ["leagues", "teams", "coaches"].includes(body.entity_type)
-    ? body.entity_type as "leagues"|"teams"|"coaches"
-    : null;
+  const rawEntityType = body.entity_type;
+  const entityType: SyncEntityType | null =
+    rawEntityType === "leagues" || rawEntityType === "teams" || rawEntityType === "coaches"
+      ? rawEntityType
+      : null;
   if (!sourceId || !entityType) {
     return NextResponse.json({ error: "source_id and entity_type are required" }, { status: 400 });
   }
