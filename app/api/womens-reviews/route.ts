@@ -74,7 +74,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Review limit reached. You can submit up to 5 reviews in a 24-hour period." }, { status: 429 });
   }
 
-  const body = await req.json().catch(() => null);
+  const contentLength = Number(req.headers.get("content-length") ?? "0");
+  if (Number.isFinite(contentLength) && contentLength > 16 * 1024) {
+    return NextResponse.json({ error: "Review request is too large." }, { status: 413 });
+  }
+  const rawBody = await req.text();
+  if (new TextEncoder().encode(rawBody).byteLength > 16 * 1024) {
+    return NextResponse.json({ error: "Review request is too large." }, { status: 413 });
+  }
+  let body: unknown = null;
+  try {
+    body = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ error: "Invalid review request." }, { status: 400 });
+  }
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return NextResponse.json({ error: "Invalid review request." }, { status: 400 });
   }

@@ -17,9 +17,19 @@ export async function POST(request: Request) {
   const auth = await authenticateModerationRequest(request);
   if (!auth.ok) return auth.response;
 
+  const contentLength = Number(request.headers.get("content-length") ?? "0");
+  if (Number.isFinite(contentLength) && contentLength > 16 * 1024) {
+    return NextResponse.json({ error: "Report request is too large." }, { status: 413 });
+  }
+
+  const rawBody = await request.text();
+  if (new TextEncoder().encode(rawBody).byteLength > 16 * 1024) {
+    return NextResponse.json({ error: "Report request is too large." }, { status: 413 });
+  }
+
   let body: { reviewId?: unknown; reason?: unknown };
   try {
-    body = await request.json();
+    body = JSON.parse(rawBody);
   } catch {
     return NextResponse.json(
       { error: "Invalid request body." },
