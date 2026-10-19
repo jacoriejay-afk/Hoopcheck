@@ -334,7 +334,7 @@ export default function AdminCoachDirectoryPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-black px-6 py-12 text-white">
+      <main className="admin-light-shell min-h-screen px-6 py-12 text-slate-900">
         <div className="mx-auto max-w-7xl">
           <p className="text-white/60">
             Loading coach directory...
