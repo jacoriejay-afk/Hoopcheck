@@ -385,7 +385,17 @@ drop policy if exists "roster post owners and admins can update" on public.team_
 create policy "roster post owners and admins can update"
   on public.team_roster_spots for update to authenticated
   using (created_by=(select auth.uid()) or public.is_current_user_admin_or_moderator())
-  with check (created_by=(select auth.uid()) or public.is_current_user_admin_or_moderator());
+  with check (
+    public.is_current_user_admin_or_moderator()
+    or (
+      created_by=(select auth.uid())
+      and exists (
+        select 1 from public.profile_claim_requests c
+        where c.entity_type='team' and c.entity_id=team_roster_spots.team_id
+          and c.requester_id=(select auth.uid()) and c.status='approved'
+      )
+    )
+  );
 
 -- One pay-warning event per team/season after three approved late-pay reports.
 create table if not exists public.team_pay_warning_events (
