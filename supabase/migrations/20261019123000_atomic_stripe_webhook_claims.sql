@@ -104,7 +104,13 @@ begin
       claim_token = null,
       last_error = null,
       updated_at = now()
-  where stripe_event_id = p_stripe_event_id;
+  where stripe_event_id = p_stripe_event_id
+    and status = 'processing'
+    and claim_token = p_claim_token;
+
+  if not found then
+    raise exception 'Stripe webhook claim ownership changed before completion';
+  end if;
 end;
 $function$;
 
@@ -122,6 +128,7 @@ begin
   update public.stripe_webhook_event_claims
   set status = 'failed',
       lease_expires_at = null,
+      claim_token = null,
       last_error = left(coalesce(p_error, 'Webhook processing failed'), 1000),
       updated_at = now()
   where stripe_event_id = p_stripe_event_id
