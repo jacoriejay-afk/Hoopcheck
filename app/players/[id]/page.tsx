@@ -18,6 +18,7 @@ type Player = {
   player_position: string | null;
   years_pro: number | null;
   current_country: string | null;
+  current_country_public?: boolean;
   current_team: string | null;
   player_verified: boolean;
   player_verified_at: string | null;
@@ -29,6 +30,7 @@ export default function PlayerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [reportMessage, setReportMessage] = useState("");
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [countryPublic, setCountryPublic] = useState(false);
   const [viewerType, setViewerType] = useState("");
   const [connectionAccepted, setConnectionAccepted] = useState(false);
 
@@ -42,16 +44,19 @@ export default function PlayerProfilePage() {
 
       if (!error && data?.[0]) {
         setPlayer(data[0]);
+        const { data: countryVisibility } = await supabase.rpc("is_player_country_public", { p_user_id: params.id });
+        setCountryPublic(countryVisibility === true);
         setLoading(false);
       } else if (user?.id === params.id) {
         // Owners can always open their own player profile, even if they keep it private.
         const { data: own } = await supabase
           .from("profiles")
-          .select("id,display_name,avatar_url,country,bio,position,years_pro,current_country,current_team,player_verified,player_verified_at,account_type")
+          .select("id,display_name,avatar_url,country,bio,position,years_pro,current_country,current_country_public,current_team,player_verified,player_verified_at,account_type")
           .eq("id", params.id)
           .eq("account_type", "player")
           .maybeSingle();
         if (own) {
+          setCountryPublic(Boolean(own.current_country_public));
           setPlayer({
             id: own.id,
             display_name: own.display_name,
@@ -61,6 +66,7 @@ export default function PlayerProfilePage() {
             player_position: own.position,
             years_pro: own.years_pro,
             current_country: own.current_country,
+            current_country_public: own.current_country_public,
             current_team: own.current_team,
             player_verified: Boolean(own.player_verified),
             player_verified_at: own.player_verified_at,
@@ -155,7 +161,7 @@ export default function PlayerProfilePage() {
               {player.player_position && <p><strong>Position:</strong> {player.player_position}</p>}
               {player.years_pro !== null && <p><strong>Years pro:</strong> {player.years_pro}</p>}
               {player.country && <p><strong>Home country:</strong> {player.country}</p>}
-              {player.current_country && <p><strong>Current country:</strong> {player.current_country}</p>}
+              {player.current_country && (isOwnProfile || countryPublic) && <p><strong>Current country:</strong> {player.current_country}</p>}
               {player.current_team && <p><strong>Current team:</strong> {player.current_team}</p>}
             </div>
           </div>
