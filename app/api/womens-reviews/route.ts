@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+function getAdminSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceRoleKey) throw new Error("Missing server-side Supabase configuration.");
+  return createClient(url, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
+}
+
 export async function POST(req: Request) {
   const contentLength = Number(req.headers.get("content-length") ?? "0");
   if (Number.isFinite(contentLength) && contentLength > 16 * 1024) {
@@ -133,8 +140,16 @@ export async function POST(req: Request) {
     .single();
 
   if (error) {
-    const { error: releaseError } = await supabase.rpc("release_review_submission_slot", { p_slot_id: reviewSlotId });
-    if (releaseError) console.error("Unable to release failed women's review slot:", releaseError);
+    try {
+      const admin = getAdminSupabase();
+      const { error: releaseError } = await admin.rpc("release_review_submission_slot", {
+        p_slot_id: reviewSlotId,
+        p_user_id: user.id,
+      });
+      if (releaseError) console.error("Unable to release failed women's review slot:", releaseError);
+    } catch (releaseError) {
+      console.error("Unable to release failed women's review slot:", releaseError);
+    }
     console.error("Women's review insert failed:", error);
     return NextResponse.json({ error: error.code === "42501" ? "You are not authorized to submit this review." : "Unable to submit your review." }, { status: error.code === "42501" ? 403 : 400 });
   }
