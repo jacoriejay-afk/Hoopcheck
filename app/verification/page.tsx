@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
+import { VerifiedBadge } from "../../components/HoopCheckUI";
 import { supabase } from "../../lib/supabase";
 
 export default function VerificationPage() {
@@ -83,11 +84,11 @@ export default function VerificationPage() {
     <header className="topbar verification-topbar"><Link href="/" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/account">Account</Link></nav></header>
     <section className="hero-card"><p className="eyebrow">{accountType==="coach" ? "COACH VERIFICATION" : "PLAYER VERIFICATION"}</p><h1>{accountType==="coach" ? "Get your verified coach badge." : "Get your player badge."}</h1><p className="muted">Verification helps HoopCheck confirm professional basketball identities. Secure identity verification uses a government ID or passport plus a live selfie check.</p></section>
     <section className="dashboard-card" style={{marginTop:24}}>
-      {status==="approved" ? <><h2>✓ Verified {accountType==="coach" ? "Coach" : "Player"}</h2><p className="muted">Your professional identity is verified. {accountType==="coach" ? "You can now request placement with teams from your dashboard." : "Your player verification is active."}</p></> :
+      {status==="approved" ? <><h2><VerifiedBadge label="Verified" /> Verified {accountType==="coach" ? "Coach" : "Player"}</h2><p className="muted">Your professional identity is verified. {accountType==="coach" ? "You can now request placement with teams from your dashboard." : "Your player verification is active."}</p></> :
        status==="pending" ? <><h2>Request under review</h2><p className="muted">We have your request. You do not need to submit another one.</p></> :
        <><div className="card" style={{marginBottom:16,border:"1px solid var(--orange)"}}>
         <p className="eyebrow">IDENTITY CHECK</p>
-        <h2>{identityStatus==="verified" ? "✓ Identity verified" : "Verify with ID + face scan"}</h2>
+        <h2>{identityStatus==="verified" ? <><VerifiedBadge label="Identity verified" /> Identity verified</> : "Verify with ID + face scan"}</h2>
         <p className="muted">HoopCheck uses Stripe Identity to verify your government ID or passport and compare it with a live selfie. HoopCheck does not store your face scan in the HoopCheck database.</p>
         {identityStatus!=="verified" && (accountType!=="coach" || coachMembershipEligible) && <button type="button" className="btn" onClick={startIdentityVerification} disabled={identityLoading}>{identityLoading?"Opening secure verification...":"Verify ID + face scan"}</button>}{accountType==="coach" && !coachMembershipEligible && <Link href="/membership" className="btn dark">Upgrade to Pro or Premium</Link>}
         {identityStatus==="processing" && <p className="muted">Your identity check is processing. Return here after Stripe finishes the check.</p>}
