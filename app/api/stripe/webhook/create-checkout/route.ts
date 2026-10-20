@@ -47,11 +47,18 @@ export async function POST(
   const expectedKeyPrefix =
     deploymentMode === "live" ? "sk_live_" : "sk_test_";
 
-  if (
-    process.env.STRIPE_CHECKOUT_ENABLED !== "true" ||
-    configuredMode !== deploymentMode ||
-    !stripeSecretKey?.startsWith(expectedKeyPrefix)
-  ) {
+  const checkoutEnabled = process.env.STRIPE_CHECKOUT_ENABLED === "true";
+  const keyPrefixValid = Boolean(stripeSecretKey?.startsWith(expectedKeyPrefix));
+
+  if (!checkoutEnabled || configuredMode !== deploymentMode || !keyPrefixValid) {
+    // Log only non-secret configuration booleans/modes; never log key material.
+    console.warn("Stripe checkout configuration guard failed", {
+      checkoutEnabled,
+      configuredMode: configuredMode ?? null,
+      deploymentMode,
+      hasSecretKey: Boolean(stripeSecretKey),
+      keyPrefixValid,
+    });
     return NextResponse.json(
       { error: "Checkout is temporarily unavailable while payment configuration is verified." },
       { status: 503 }
