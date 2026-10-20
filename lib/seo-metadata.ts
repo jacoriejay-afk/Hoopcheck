@@ -37,7 +37,7 @@ export async function getProfileSeo(type: EntityType, id: string): Promise<SeoPr
   const client = db();
   if (!client || !id) return null;
   const cfg = config[type];
-  const { data, error } = await client.from(cfg.table).select("*").eq(type === "player" ? "username" : "id", id).maybeSingle();
+  const { data, error } = await client.from(cfg.table).select("*").eq("id", id).maybeSingle();
   if (error || !data) return null;
   const row = data as EntityRow;
   const name = String(row.name || row.display_name || row.full_name || row.username || id);
@@ -61,7 +61,7 @@ export async function getProfileSeo(type: EntityType, id: string): Promise<SeoPr
   }
 
   const pathname = type === "womens_team" ? "/womens" : type === "team" ? "/teams" : type === "player" ? "/players" : `/${type === "agent" ? "agents" : type + "s"}`;
-  const canonical = new URL(`${pathname}/${encodeURIComponent(type === "player" ? String(row.username || id) : String(row.id || id))}`, siteUrl).toString();
+  const canonical = new URL(`${pathname}/${encodeURIComponent(type === "player" ? String(row.id || id) : String(row.id || id))}`, siteUrl).toString();
   const facts = [
     rating !== null ? `Average rating: ${rating.toFixed(1)}/5` : null,
     `${reviewCount} ${reviewCount === 1 ? "review" : "reviews"}`,
