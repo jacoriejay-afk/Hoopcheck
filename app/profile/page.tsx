@@ -21,15 +21,15 @@ export default function ProfilePage() {
       }
 
       setEmail(user.email || "");
-      const result = await Promise.race([
-        supabase
-          .from("profiles")
-          .select("id,display_name,username,first_name,last_name,account_type,bio,position,years_pro,current_country,current_team,player_verified,coach_verified,avatar_url,basketball_type,free_agent,hometown,nationality,interests,favorite_leagues,profile_visibility")
-          .eq("id", user.id)
-          .maybeSingle(),
-        new Promise<any>((resolve) => setTimeout(() => resolve({ data: null }), 2500)),
-      ]);
-      setP(result.data);
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id,display_name,username,first_name,last_name,account_type,bio,position,years_pro,current_country,current_team,player_verified,coach_verified,avatar_url,basketball_type,free_agent,hometown,nationality,interests,favorite_leagues,profile_visibility")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (error) {
+        console.error("Unable to load account profile:", error);
+      }
+      setP(data ?? null);
       setLoading(false);
     })();
   }, []);
@@ -81,9 +81,15 @@ export default function ProfilePage() {
           <div className="hc-member-profile-actions">
             <Link href="/account" className="btn">Edit Profile</Link>
             {p.account_type === "player" && (
-              <Link href={"/players/" + p.id} className="btn dark">
+              {p.profile_visibility === "public" ? (
+              <Link href={"/players/" + encodeURIComponent(p.id)} className="btn dark">
                 View Public Profile <HoopIcon name="arrow-up-right" size={16} />
               </Link>
+            ) : (
+              <Link href="/account#edit-profile" className="btn dark">
+                Profile Is Private — Edit Visibility
+              </Link>
+            )}
             )}
           </div>
         </section>
