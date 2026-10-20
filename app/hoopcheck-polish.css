@@ -5118,3 +5118,51 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 @media (prefers-reduced-motion: reduce) {
   .page-shell :where(a,button) { scroll-behavior: auto; }
 }
+
+
+/* Account page: consistent responsive sections and clearer subscription actions. */
+.hc-account-page .grid {
+  align-items: start;
+  gap: clamp(16px, 2.2vw, 24px);
+}
+.hc-account-page .grid > .dashboard-card {
+  min-width: 0;
+  height: 100%;
+}
+.hc-account-page .hc-account-public-profile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.hc-account-page .hc-account-section-copy {
+  min-width: 0;
+  flex: 1 1 320px;
+}
+.hc-account-page .hc-account-public-actions {
+  flex: 0 1 auto;
+  align-items: center;
+}
+.hc-account-page .hc-account-membership-actions > a,
+.hc-account-page .hc-account-membership-actions > button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 720px) {
+  .hc-account-page .hc-account-public-profile {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .hc-account-page .hc-account-public-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+  .hc-account-page .hc-account-public-actions > a,
+  .hc-account-page .hc-account-membership-actions > a,
+  .hc-account-page .hc-account-membership-actions > button {
+    width: 100%;
+  }
+}
