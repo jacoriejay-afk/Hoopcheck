@@ -1,19 +1,64 @@
 import type { MetadataRoute } from "next";
+import { createClient } from "@supabase/supabase-js";
 
-const siteUrl = "https://hoopcheck.online";
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://hoopcheck.online").replace(/\/$/, "");
+export const revalidate = 3600;
 
-export default function sitemap(): MetadataRoute.Sitemap {
+type Row = { id?: string | null; username?: string | null; slug?: string | null };
+
+function publicSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
+function entry(path: string, priority = 0.7): MetadataRoute.Sitemap[number] {
+  return { url: new URL(path, siteUrl).toString(), changeFrequency: "weekly", priority };
+}
+
+async function getRows(table: string, columns: string): Promise<Row[]> {
+  const client = publicSupabase();
+  if (!client) return [];
+  try {
+    const { data, error } = await client.from(table).select(columns);
+    if (error) {
+      console.error(`Sitemap: unable to read ${table}`, error.message);
+      return [];
+    }
+    return (data || []) as Row[];
+  } catch {
+    return [];
+  }
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastModified = new Date();
-
-  return [
-    { url: siteUrl, lastModified, changeFrequency: "weekly", priority: 1 },
-    { url: `${siteUrl}/teams`, lastModified, changeFrequency: "weekly", priority: 0.9 },
-    { url: `${siteUrl}/leagues`, lastModified, changeFrequency: "weekly", priority: 0.9 },
-    { url: `${siteUrl}/coaches`, lastModified, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${siteUrl}/search`, lastModified, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${siteUrl}/membership`, lastModified, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${siteUrl}/terms`, lastModified, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${siteUrl}/privacy`, lastModified, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${siteUrl}/community-guidelines`, lastModified, changeFrequency: "monthly", priority: 0.4 },
+  const staticPaths = [
+    entry("/", 1), entry("/directory", 0.9), entry("/teams", 0.9),
+    entry("/womens", 0.8), entry("/coaches", 0.8), entry("/leagues", 0.8),
+    entry("/players", 0.8), entry("/agents", 0.7), entry("/search", 0.7),
+    entry("/reviews", 0.7), entry("/membership", 0.6),
+    entry("/terms", 0.3), entry("/privacy", 0.3), entry("/community-guidelines", 0.3),
   ];
+
+  const [teams, womensTeams, coaches, leagues, players, agents] = await Promise.all([
+    getRows("teams", "id"),
+    getRows("womens_teams", "id"),
+    getRows("coaches", "id"),
+    getRows("leagues", "id"),
+    getRows("profiles", "username"),
+    getRows("agents", "id"),
+  ]);
+
+  const profileEntries: MetadataRoute.Sitemap = [
+    ...teams.filter(row => row.id).map(row => entry(`/teams/${encodeURIComponent(row.id!)}`, 0.6)),
+    ...womensTeams.filter(row => row.id).map(row => entry(`/womens/${encodeURIComponent(row.id!)}`, 0.6)),
+    ...coaches.filter(row => row.id).map(row => entry(`/coaches/${encodeURIComponent(row.id!)}`, 0.6)),
+    ...leagues.filter(row => row.id).map(row => entry(`/leagues/${encodeURIComponent(row.id!)}`, 0.6)),
+    ...players.filter(row => row.username).map(row => entry(`/players/${encodeURIComponent(row.username!)}`, 0.5)),
+    ...agents.filter(row => row.id).map(row => entry(`/agents/${encodeURIComponent(row.id!)}`, 0.5)),
+  ];
+
+  return [...staticPaths, ...profileEntries].map(item => ({ ...item, lastModified }));
 }
