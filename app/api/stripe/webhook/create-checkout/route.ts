@@ -44,11 +44,18 @@ export async function POST(
   const deploymentMode =
     process.env.VERCEL_ENV === "production" ? "live" : "test";
   const configuredMode = process.env.STRIPE_CHECKOUT_MODE;
-  const expectedKeyPrefix =
-    deploymentMode === "live" ? "sk_live_" : "sk_test_";
+  // Stripe restricted API keys (rk_live_/rk_test_) are valid server-side
+  // credentials too. Accept either key type, but never mix live and test modes.
+  const allowedKeyPrefixes =
+    deploymentMode === "live"
+      ? ["sk_live_", "rk_live_"]
+      : ["sk_test_", "rk_test_"];
 
   const checkoutEnabled = process.env.STRIPE_CHECKOUT_ENABLED === "true";
-  const keyPrefixValid = Boolean(stripeSecretKey?.startsWith(expectedKeyPrefix));
+  const keyPrefixValid = Boolean(
+    stripeSecretKey &&
+      allowedKeyPrefixes.some((prefix) => stripeSecretKey.startsWith(prefix))
+  );
 
   if (!checkoutEnabled || configuredMode !== deploymentMode || !keyPrefixValid) {
     // Log only non-secret configuration booleans/modes; never log key material.
