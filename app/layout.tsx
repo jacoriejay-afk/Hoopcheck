@@ -29,7 +29,6 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: { default: defaultTitle, template: "%s | HoopCheck" },
   description: defaultDescription,
-  alternates: { canonical: "/" },
   applicationName: "HoopCheck",
   keywords: [
     "HoopCheck", "overseas basketball", "professional basketball teams",
