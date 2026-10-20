@@ -3450,3 +3450,18 @@ body { background-color: var(--hc-ink); }
 .hc-roster-post-form input,.hc-roster-post-form textarea { width:100%; min-width:0; padding:10px; border:1px solid #deded8; border-radius:8px; background:#fff; color:#171717; font:inherit; font-size:12px; }
 .hc-roster-post-form p { margin:0; color:#a83a13; font-size:11px; }
 @media(max-width:540px) { .hc-roster-spots__list { grid-template-columns:1fr; } .hc-roster-spots__heading { align-items:flex-start; } }
+
+
+/* HoopFeed layout refinement: keep the composer compact and posts readable on mobile. */
+.hc-feed-page .page-container { width: min(100% - 32px, 900px); margin-inline: auto; }
+.hc-feed-page .hc-feed-composer { padding: clamp(14px, 2.5vw, 22px) !important; border-radius: 16px !important; }
+.hc-feed-page .hc-feed-composer textarea { display: block; width: 100%; min-height: 108px; max-height: 220px; resize: vertical; box-sizing: border-box; padding: 13px 14px; border-radius: 11px; line-height: 1.5; }
+.hc-feed-page .hc-feed-ticket { padding: clamp(14px, 2.4vw, 22px) !important; }
+.hc-feed-page .hc-feed-ticket p { overflow-wrap: anywhere; }
+.hc-feed-page .hc-feed-ticket img { max-width: 100%; }
+@media (max-width: 600px) {
+  .hc-feed-page .page-container { width: calc(100% - 24px); }
+  .hc-feed-page .hc-feed-composer { margin-top: 12px !important; }
+  .hc-feed-page .hc-feed-composer textarea { min-height: 92px; }
+  .hc-feed-page .hc-feed-ticket { border-radius: 12px !important; }
+}

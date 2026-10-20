@@ -20,44 +20,37 @@ import CourtLines from "../components/CourtLines";
 
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
 const sansFont = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
-
-const siteUrl = "https://hoopcheck.online";
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://hoopcheck.online").replace(/\/$/, "");
+const defaultTitle = "HoopCheck — Know Who You're Signing With";
+const defaultDescription = "Real reviews of basketball teams, coaches, leagues and agents, written by players. Check the team before you sign.";
+const socialImage = "/hoopcheck-logo.svg";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: {
-    default: "HoopCheck | Overseas Basketball Team & Coach Reviews",
-    template: "%s | HoopCheck",
-  },
-  description: "Research professional basketball teams, coaches, and leagues worldwide. Learn from player experiences before signing an overseas basketball contract.",
+  title: { default: defaultTitle, template: "%s | HoopCheck" },
+  description: defaultDescription,
   applicationName: "HoopCheck",
   keywords: [
-    "HoopCheck",
-    "overseas basketball",
-    "professional basketball teams",
-    "basketball coach reviews",
-    "basketball league reviews",
-    "international basketball",
-    "basketball player experiences",
+    "HoopCheck", "overseas basketball", "professional basketball teams",
+    "basketball coach reviews", "basketball league reviews", "basketball agents",
+    "international basketball", "basketball player experiences",
   ],
   openGraph: {
     type: "website",
     siteName: "HoopCheck",
-    title: "HoopCheck | Overseas Basketball Team & Coach Reviews",
-    description: "Research professional basketball teams, coaches, and leagues worldwide before you sign.",
-    images: [{ url: "/hoopcheck-logo.svg", alt: "HoopCheck" }],
+    title: defaultTitle,
+    description: defaultDescription,
+    url: siteUrl,
+    images: [{ url: socialImage, alt: "HoopCheck — Know Who You're Signing With" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "HoopCheck | Overseas Basketball Team & Coach Reviews",
-    description: "Research professional basketball teams, coaches, and leagues worldwide before you sign.",
+    title: defaultTitle,
+    description: defaultDescription,
+    images: [socialImage],
   },
   manifest: "/manifest.webmanifest",
-  appleWebApp: {
-    capable: true,
-    title: "HoopCheck",
-    statusBarStyle: "black-translucent",
-  },
+  appleWebApp: { capable: true, title: "HoopCheck", statusBarStyle: "black-translucent" },
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml", sizes: "any" }],
     apple: [{ url: "/hoopcheck-app-icon.svg" }],
@@ -71,27 +64,40 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "HoopCheck",
+    url: siteUrl,
+    logo: new URL(socialImage, siteUrl).toString(),
+  };
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "HoopCheck",
+    url: siteUrl,
+    description: defaultDescription,
+  };
+
   return (
     <html lang="en" className={`${displayFont.variable} ${sansFont.variable}`}>
-      <body className={sansFont.className}><ProtectionLayer />
+      <body className={sansFont.className}>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c") }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c") }} />
+        <ProtectionLayer />
         <ThemeProvider>
           <AuthProvider>
-          <LanguageProvider>
-            <AnalyticsTracker />
-            <SiteHeader />
-            <MobileAuth />
-            <BottomNav />
-            <GlobalBackButton />
-            {children}
-          </LanguageProvider>
+            <LanguageProvider>
+              <AnalyticsTracker />
+              <SiteHeader />
+              <MobileAuth />
+              <BottomNav />
+              <GlobalBackButton />
+              {children}
+            </LanguageProvider>
           </AuthProvider>
         </ThemeProvider>
-
         <footer className="site-footer">
           <CourtLines variant="full-court" className="hc-court-footer-art" />
           <div className="footer-inner">
@@ -124,8 +130,8 @@ export default function RootLayout({
             <span>© {new Date().getFullYear()} HoopCheck. All rights reserved.</span>
             <span>Built for basketball players.</span>
           </div>
-      </footer>
-    </body>
-  </html>
-);
+        </footer>
+      </body>
+    </html>
+  );
 }
