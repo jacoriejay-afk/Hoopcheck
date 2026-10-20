@@ -257,7 +257,7 @@ function MembershipContent() {
           </div>
         )}
         {isActive && subscription?.stripe_subscription_id ? (
-          <div className="active-card">
+          <div className="active-card" id="manage-subscription">
             <div className="eyebrow">CURRENT MEMBERSHIP</div>
             <h2>
               HoopCheck {subscription.plan === "premium" ? "Premium" : "Pro"}
@@ -278,8 +278,13 @@ function MembershipContent() {
             )}
             <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
               <button className="btn" onClick={openCustomerPortal} disabled={portalLoading || cancelLoading}>
-                {portalLoading ? "Opening..." : "Manage Membership"}
+                {portalLoading ? "Opening..." : "Manage Billing"}
               </button>
+              {!subscription.cancel_at_period_end && (
+                <button className="btn dark" onClick={openCustomerPortal} disabled={portalLoading || cancelLoading}>
+                  {portalLoading ? "Opening..." : "Upgrade Subscription"}
+                </button>
+              )}
               {subscription.cancel_at_period_end ? (
                 <button className="btn dark" onClick={resumeMembership} disabled={cancelLoading}>
                   {cancelLoading ? "Updating..." : "Keep Membership"}
