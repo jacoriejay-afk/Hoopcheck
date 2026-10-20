@@ -47,7 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     getRows("womens_teams", "id"),
     getRows("coaches", "id"),
     getRows("leagues", "id"),
-    getRows("profiles", "username"),
+    getRows("profiles", "id"),
   ]);
 
   const profileEntries: MetadataRoute.Sitemap = [
@@ -55,7 +55,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...womensTeams.filter(row => row.id).map(row => entry(`/womens/${encodeURIComponent(row.id!)}`, 0.6)),
     ...coaches.filter(row => row.id).map(row => entry(`/coaches/${encodeURIComponent(row.id!)}`, 0.6)),
     ...leagues.filter(row => row.id).map(row => entry(`/leagues/${encodeURIComponent(row.id!)}`, 0.6)),
-    ...players.filter(row => row.username).map(row => entry(`/players/${encodeURIComponent(row.username!)}`, 0.5)),
+    ...players.filter(row => row.id).map(row => entry(`/players/${encodeURIComponent(row.id!)}`, 0.5)),
   ];
 
   return [...staticPaths, ...profileEntries].map(item => ({ ...item, lastModified }));
