@@ -37,18 +37,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPaths = [
     entry("/", 1), entry("/directory", 0.9), entry("/teams", 0.9),
     entry("/womens", 0.8), entry("/coaches", 0.8), entry("/leagues", 0.8),
-    entry("/players", 0.8), entry("/agents", 0.7), entry("/search", 0.7),
+    entry("/players", 0.8), entry("/search", 0.7),
     entry("/reviews", 0.7), entry("/membership", 0.6),
     entry("/terms", 0.3), entry("/privacy", 0.3), entry("/community-guidelines", 0.3),
   ];
 
-  const [teams, womensTeams, coaches, leagues, players, agents] = await Promise.all([
+  const [teams, womensTeams, coaches, leagues, players] = await Promise.all([
     getRows("teams", "id"),
     getRows("womens_teams", "id"),
     getRows("coaches", "id"),
     getRows("leagues", "id"),
     getRows("profiles", "username"),
-    getRows("agents", "id"),
   ]);
 
   const profileEntries: MetadataRoute.Sitemap = [
@@ -57,7 +56,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...coaches.filter(row => row.id).map(row => entry(`/coaches/${encodeURIComponent(row.id!)}`, 0.6)),
     ...leagues.filter(row => row.id).map(row => entry(`/leagues/${encodeURIComponent(row.id!)}`, 0.6)),
     ...players.filter(row => row.username).map(row => entry(`/players/${encodeURIComponent(row.username!)}`, 0.5)),
-    ...agents.filter(row => row.id).map(row => entry(`/agents/${encodeURIComponent(row.id!)}`, 0.5)),
   ];
 
   return [...staticPaths, ...profileEntries].map(item => ({ ...item, lastModified }));
