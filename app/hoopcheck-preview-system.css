@@ -4632,3 +4632,18 @@ body:has(main.admin-directory-shell) .global-back-button { display:none!importan
   .hc-dashboard-shell { padding-top: 32px !important; }
 }
 \n/* No fixed background overlay or floating auth chip on the dashboard. */\n.hc-dashboard-shell::before, .hc-dashboard-shell::after { display:none !important; content:none !important; }\n
+/* Dashboard-specific mobile readability and container edge reset. */
+.hc-dashboard-shell > .page-container {
+  width: 100% !important;
+  padding: 0 !important;
+}
+.hc-dashboard-shell :where(small, .eyebrow, .card-kicker, .hc-dashboard-profile-label,
+  .hc-dashboard-membership-badge, .hc-mobile-eyebrow, .hc-mobile-section-count,
+  .hc-mobile-view-all, .hc-mobile-chevron, .hc-mobile-row-arrow, .hc-mobile-result-count) {
+  font-size: 12px !important;
+}
+.hc-dashboard-shell .hc-dashboard-profile-label { line-height: 1.35; }
+.hc-dashboard-shell .hc-dashboard-membership-badge { line-height: 1.3; }
+.hc-dashboard-shell .hc-mobile-view-all { min-height: 44px; display: inline-flex; align-items: center; }
+.hc-dashboard-shell .hc-mobile-quick-card,
+.hc-dashboard-shell .hc-mobile-category-row { overflow-wrap: anywhere; }
