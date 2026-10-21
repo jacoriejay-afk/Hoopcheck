@@ -275,7 +275,7 @@ export default function TeamsPage() {
 
       <nav className="hc-directory-switcher" aria-label="Browse HoopCheck directories">
         <span className="hc-directory-switcher-label">{t("directory")}</span>
-        <Link href="/teams" aria-current={undefined}>{t("teams")}</Link>
+        <Link href="/teams" aria-current={undefined}>{t("womensTeams")}</Link>
         <Link href="/womens">{t("teams")}</Link>
         <Link href="/coaches">{t("coaches")}</Link>
         <Link href="/leagues">{t("leagues")}</Link>
