@@ -9,7 +9,7 @@ type Theme = "light" | "dark" | "dynamic";
 type Language = "en" | "es" | "fr" | "de" | "tr" | "pt" | "it" | "el" | "ar";
 
 export default function SettingsPage() {
-  const { t } = useLanguage();
+  const { t, setLanguage: applyLanguage } = useLanguage();
   const [theme, setTheme] = useState<Theme>("dynamic");
   const [notifications, setNotifications] = useState(true);
   const [language, setLanguage] = useState<Language>("en");
@@ -35,13 +35,14 @@ export default function SettingsPage() {
     document.documentElement.dataset.theme = nextTheme;
     localStorage.setItem("hoopcheck-theme", nextTheme);
     localStorage.setItem("hoopcheck-language", nextLanguage);
-    window.dispatchEvent(new CustomEvent("hoopcheck-language-change", { detail: nextLanguage }));
-    document.documentElement.lang = nextLanguage;
+    applyLanguage(nextLanguage);
     const { data: sessionData } = await supabase.auth.getSession();
     const user = sessionData.session?.user;
     if (user) {
       const { error } = await supabase.from("user_preferences").upsert({ user_id: user.id, theme: nextTheme, notifications_enabled: nextNotifications, language: nextLanguage, updated_at: new Date().toISOString() });
       if (error) console.error("Settings save error:", error);
+      const { error: profileLanguageError } = await supabase.from("profiles").update({ preferred_language: nextLanguage }).eq("id", user.id);
+      if (profileLanguageError) console.error("Profile language save error:", profileLanguageError);
     }
     setSaving(false);
   }
