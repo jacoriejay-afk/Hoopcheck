@@ -16,6 +16,7 @@ type WomensTeam = {
   city: string | null;
   league_id: string | null;
   league_name: string | null;
+  logo_url?: string | null;
 };
 
 export default function Womens() {
