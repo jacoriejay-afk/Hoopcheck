@@ -1615,6 +1615,7 @@ export type Database = {
           country: string | null
           created_at: string
           current_country: string | null
+          current_country_public: boolean
           current_team: string | null
           display_name: string | null
           display_name_changed_at: string | null
@@ -1673,6 +1674,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           current_country?: string | null
+          current_country_public?: boolean
           current_team?: string | null
           display_name?: string | null
           display_name_changed_at?: string | null
@@ -1731,6 +1733,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           current_country?: string | null
+          current_country_public?: boolean
           current_team?: string | null
           display_name?: string | null
           display_name_changed_at?: string | null
