@@ -192,6 +192,9 @@ export async function POST(request: Request) {
       status:"approved", expires_at:new Date(Date.now()+86400000).toISOString()
     });
     if (error) return NextResponse.json({ allowed:false,message:"We couldn't publish your post. Please try again." },{status:400});
+    const activityDate = new Date().toISOString().slice(0, 10);
+    const { error: activityError } = await db.from("feed_posting_activity").upsert({ user_id: user.id, activity_date: activityDate }, { onConflict: "user_id,activity_date", ignoreDuplicates: true });
+    if (activityError) console.error("HoopFeed posting streak activity could not be recorded:", activityError.message);
     return NextResponse.json({ allowed:true });
   } catch (error: any) {
     console.error("HoopFeed moderation request failed:", error);
