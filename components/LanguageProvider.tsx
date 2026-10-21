@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 export type Language = "en" | "es" | "fr" | "de" | "tr" | "pt" | "it" | "el" | "ar";
@@ -43,7 +43,7 @@ export function useLanguage() { return useContext(LanguageContext); }
 
 export default function LanguageProvider({ children, initialLanguage = "en" }: { children: React.ReactNode; initialLanguage?: Language }) {
   const [language, setLanguageState] = useState<Language>(validLanguage(initialLanguage) ? initialLanguage : "en");
-  const setLanguage = (next: Language) => {
+  const setLanguage = useCallback((next: Language) => {
     if (!validLanguage(next)) return;
     setLanguageState(next);
     if (typeof document !== "undefined") {
@@ -55,7 +55,7 @@ export default function LanguageProvider({ children, initialLanguage = "en" }: {
       document.cookie = "hoopcheck-language=" + encodeURIComponent(next) + "; Path=/; Max-Age=31536000; SameSite=Lax";
       window.dispatchEvent(new CustomEvent("hoopcheck-language-change", { detail: next }));
     }
-  };
+  }, []);
   useEffect(() => {
     let mounted = true;
     const apply = (value: unknown, persist = true) => {
@@ -101,6 +101,6 @@ export default function LanguageProvider({ children, initialLanguage = "en" }: {
         return new Intl.RelativeTimeFormat(locale,{numeric:"auto"}).format(Math.round(deltaSeconds / size),unit);
       },
     };
-  }, [language]);
+  }, [language, setLanguage]);
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
