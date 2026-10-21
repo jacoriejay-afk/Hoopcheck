@@ -3465,3 +3465,252 @@ body { background-color: var(--hc-ink); }
   .hc-feed-page .hc-feed-composer textarea { min-height: 92px; }
   .hc-feed-page .hc-feed-ticket { border-radius: 12px !important; }
 }
+
+
+/* HoopFeed: compact editorial stream, stable controls, and mobile-first spacing. */
+.hc-feed-page .page-container { width:min(100% - 32px, 880px); margin-inline:auto; }
+.hc-feed-page .hc-feed-hero { display:flex; align-items:flex-end; justify-content:space-between; gap:22px; }
+.hc-feed-page .hc-feed-hero h1 { margin:7px 0 10px; font-size:clamp(38px,6vw,62px); }
+.hc-feed-plan-tag { display:inline-flex; margin-left:8px; padding:5px 7px; border:1px solid rgba(255,90,31,.35); border-radius:5px; color:#ff7848; font-size:10px; letter-spacing:.08em; vertical-align:middle; }
+.hc-feed-expiry-note { flex:0 0 190px; margin:0; color:#ff7848; font-size:10px; font-weight:900; letter-spacing:.1em; }
+.hc-feed-expiry-note span { display:block; margin-top:6px; color:#aaa; font-size:11px; font-weight:500; letter-spacing:0; line-height:1.5; }
+.hc-feed-page .hc-feed-composer { display:grid; gap:13px; }
+.hc-feed-page .hc-feed-composer textarea { margin:0; min-height:112px; }
+.hc-feed-composer__actions { display:grid; gap:7px; min-width:0; }
+.hc-feed-composer__buttons { display:flex; flex-wrap:wrap; align-items:center; gap:9px; }
+.hc-feed-composer__buttons .btn { min-height:42px; }
+.hc-feed-composer__buttons label.btn { display:inline-flex; align-items:center; justify-content:center; margin:0; }
+.hc-feed-message { margin:0; color:#b94b20; font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
+.hc-feed-stream { display:grid; gap:13px; margin-top:18px; min-width:0; }
+.hc-feed-page .hc-feed-ticket { min-width:0; padding:clamp(14px,2.5vw,22px)!important; }
+.hc-feed-page .hc-feed-ticket strong { overflow-wrap:anywhere; }
+.hc-feed-page .hc-feed-ticket p { line-height:1.65; overflow-wrap:anywhere; }
+.hc-feed-page .hc-feed-ticket input:not([type="checkbox"]) { min-width:0; width:100%; margin:0; background:#fff; color:#171717; border:1px solid #deded8; }
+.hc-feed-empty { text-align:left; padding:clamp(20px,4vw,34px)!important; }
+.hc-feed-empty h2 { margin:8px 0; }
+@media(max-width:640px) {
+  .hc-feed-page .page-container { width:calc(100% - 24px); }
+  .hc-feed-page .hc-feed-hero { display:grid; align-items:start; gap:12px; }
+  .hc-feed-expiry-note { flex:auto; }
+  .hc-feed-page .hc-feed-composer { padding:14px!important; }
+  .hc-feed-page .hc-feed-composer textarea { min-height:94px; font-size:14px; }
+  .hc-feed-composer__buttons { display:grid; grid-template-columns:1fr; }
+  .hc-feed-composer__buttons .btn, .hc-feed-composer__buttons label.btn { width:100%; }
+  .hc-feed-page .hc-feed-ticket>div:first-child { align-items:flex-start!important; }
+  .hc-feed-page .hc-feed-ticket>div:first-child>div:first-child { min-width:0; }
+  .hc-feed-page .hc-feed-ticket>div:first-child>div:first-child>div { min-width:0; overflow-wrap:anywhere; }
+  .hc-feed-page .hc-feed-ticket .hc-feed-expiry { max-width:100%; }
+}
+
+/* Membership: plan choices and totals stay legible on desktop and mobile. */
+.hc-membership-page { width:100%; overflow:hidden; }
+.hc-membership-page .membership-hero { padding-top:clamp(38px,6vw,76px); padding-bottom:clamp(28px,4vw,50px); }
+.hc-membership-page .membership-hero h1 { font-size:clamp(40px,7vw,76px); }
+.hc-membership-page .membership-section { width:min(100% - 32px,1080px); margin:0 auto; }
+.hc-membership-page .section-heading { max-width:720px; margin:0 auto 24px; text-align:center; }
+.hc-membership-page .section-heading h2 { margin:10px 0; font-size:clamp(28px,4vw,42px); }
+.hc-billing-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:0 auto 18px; max-width:760px; }
+.hc-billing-option { display:flex; min-height:68px; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:10px 12px; white-space:normal; }
+.hc-billing-option span { font-size:14px; font-weight:950; }
+.hc-billing-option small { font-size:11px; font-weight:750; opacity:.86; text-transform:none; }
+.hc-billing-option.is-selected { box-shadow:0 0 0 2px rgba(255,90,31,.2); }
+.hc-membership-value { display:flex; align-items:flex-start; gap:12px; max-width:760px; margin:0 auto 18px; padding:14px 16px; border:1px solid #e5e5e2; border-left:3px solid #ff5a1f; border-radius:10px; background:#fff; }
+.hc-membership-value__mark { color:#ff5a1f; font-size:20px; line-height:1; }
+.hc-membership-value strong { color:#171717; font-size:14px; }
+.hc-membership-value p { margin:5px 0 0; color:#62625c; font-size:12px; line-height:1.5; }
+.hc-membership-page .plans { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; gap:18px; }
+.hc-membership-page .plan-card { display:flex; min-width:0; flex-direction:column; padding:clamp(18px,3vw,28px); border:1px solid #e1e1dc; border-radius:16px; background:#fff; color:#171717; }
+.hc-membership-page .plan-card.featured { border:1.5px solid #ff5a1f; box-shadow:0 12px 36px rgba(255,90,31,.09); }
+.hc-membership-page .plan-card h3 { margin:7px 0; font-size:30px; color:#171717; }
+.hc-membership-page .plan-card .eyebrow { color:#a83a13; }
+.hc-membership-page .plan-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.hc-membership-page .price { min-width:0; text-align:right; }
+.hc-membership-page .price strong { display:block; color:#171717; font-size:clamp(24px,3vw,34px); line-height:1.1; white-space:nowrap; }
+.hc-membership-page .price span { display:block; margin-top:5px; color:#686861; font-size:11px; line-height:1.4; }
+.hc-membership-page .plan-description { min-height:44px; color:#565650; font-size:13px; line-height:1.55; }
+.hc-membership-page .plan-card ul { display:grid; gap:9px; margin:10px 0 24px; padding-left:18px; color:#383833; font-size:13px; line-height:1.45; }
+.hc-membership-page .plan-card li::marker { color:#ff5a1f; }
+.hc-membership-page .plan-button { width:100%; margin-top:auto; }
+.hc-membership-page .featured-badge { align-self:flex-start; margin-bottom:8px; padding:5px 8px; border-radius:4px; background:#fff0e9; color:#a83a13; font-size:10px; font-weight:950; letter-spacing:.08em; }
+.hc-promo-hint { width:min(100%,760px); margin:18px auto 10px; color:#5e5e57; text-align:center; font-size:12px; line-height:1.5; }
+.hc-membership-page .subscription-legal { max-width:760px; margin:16px auto 0; color:#686861; font-size:12px; line-height:1.65; }
+.hc-membership-page .active-card { max-width:760px; margin:0 auto 26px; padding:clamp(20px,4vw,32px); border:1px solid #deded8; border-top:3px solid #ff5a1f; border-radius:14px; background:#fff; color:#171717; }
+.hc-membership-page .active-card h2 { margin:10px 0; color:#171717; font-size:clamp(28px,4vw,40px); }
+.hc-membership-page .active-card p { color:#55554f; line-height:1.55; }
+.hc-membership-page .active-card .eyebrow { color:#a83a13; }
+.hc-membership-page .active-card .legal-note { margin-top:16px; color:#686861; font-size:12px; line-height:1.6; }
+@media(max-width:700px) {
+  .hc-membership-page .membership-section { width:calc(100% - 24px); }
+  .hc-billing-options { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+  .hc-billing-option { min-height:64px; padding:8px 5px; }
+  .hc-billing-option span { font-size:12px; }
+  .hc-billing-option small { font-size:10px; }
+  .hc-membership-page .plans { grid-template-columns:1fr; gap:12px; }
+  .hc-membership-page .plan-card { padding:18px; }
+  .hc-membership-page .plan-description { min-height:0; }
+  .hc-membership-page .price strong { font-size:27px; }
+  .hc-membership-page .membership-hero { padding-left:18px; padding-right:18px; }
+}
+
+
+/* HoopFeed composer and post cards: responsive production polish. */
+.hc-feed-page .page-container { width: min(100% - 32px, 680px); margin-inline: auto; }
+.hc-feed-page .hc-feed-hero { margin-bottom: 16px; }
+.hc-feed-page .hc-feed-composer {
+  position: sticky; top: 10px; z-index: 20; display: grid; gap: 14px;
+  padding: 16px !important; border: 1px solid #e4e4df; border-radius: 18px !important;
+  background: rgba(255,255,255,.97); box-shadow: 0 8px 28px rgba(20,20,20,.07);
+  backdrop-filter: blur(14px);
+}
+.hc-feed-composer__editor { display:flex; align-items:flex-start; gap:12px; min-width:0; }
+.hc-feed-composer__avatar { display:grid; flex:0 0 44px; width:44px; height:44px; place-items:center; overflow:hidden; border-radius:50%; background:#171717; color:#ff6a2a; font-size:12px; font-weight:950; }
+.hc-feed-composer__avatar img { width:100%; height:100%; object-fit:cover; }
+.hc-feed-page .hc-feed-composer textarea {
+  flex:1 1 auto; min-width:0; width:100%; min-height:70px; max-height:220px; resize:none;
+  padding:8px 0; border:0; outline:none; box-shadow:none; background:transparent; color:#171717;
+  font:inherit; font-size:15px; line-height:1.55; overflow-y:auto;
+}
+.hc-feed-page .hc-feed-composer textarea:focus { outline:none; box-shadow:none; }
+.hc-feed-page .hc-feed-composer textarea::placeholder { color:#85857e; opacity:1; }
+.hc-feed-composer__footer { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-top:12px; border-top:1px solid #ededE8; min-width:0; }
+.hc-feed-photo-button { display:inline-flex; flex:0 0 auto; align-items:center; justify-content:center; gap:7px; min-height:36px; padding:8px 11px; border:1px solid #e5e5df; border-radius:999px; background:#fff; color:#33332e; font-size:12px; font-weight:850; cursor:pointer; }
+.hc-feed-country-optin { display:flex!important; flex:1 1 230px; align-items:center; gap:9px!important; min-width:0; margin:0; padding:0; cursor:pointer; }
+.hc-feed-country-optin input { position:absolute; width:1px; height:1px; opacity:0; flex-shrink:0; }
+.hc-feed-switch { position:relative; display:block; flex:0 0 36px; width:36px; height:21px; border-radius:999px; background:#d3d3cd; transition:background .18s ease; }
+.hc-feed-switch::after { content:""; position:absolute; top:3px; left:3px; width:15px; height:15px; border-radius:50%; background:white; box-shadow:0 1px 3px #0002; transition:transform .18s ease; }
+.hc-feed-country-optin input:checked + .hc-feed-switch { background:#ff5a1f; }
+.hc-feed-country-optin input:checked + .hc-feed-switch::after { transform:translateX(15px); }
+.hc-feed-country-optin input:focus-visible + .hc-feed-switch { outline:3px solid #ffb18f; outline-offset:2px; }
+.hc-feed-country-copy { display:block; flex:1 1 auto; min-width:0; overflow-wrap:normal; }
+.hc-feed-country-copy strong { display:block; color:#252520; font-size:11px; line-height:1.35; }
+.hc-feed-country-copy small { display:block; margin-top:2px; color:#74746d; font-size:10px; font-weight:500; line-height:1.35; }
+.hc-feed-counter { flex:0 0 auto; color:#777770; font-size:11px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.hc-feed-post-button { flex:0 0 auto; min-height:38px; min-width:76px; padding:9px 17px; border:0; border-radius:999px; background:#ff5a1f; color:#fff; font-size:11px; font-weight:950; letter-spacing:.07em; }
+.hc-feed-post-button:disabled { cursor:not-allowed; opacity:.45; }
+.hc-feed-composer__actions { min-width:0; }
+.hc-feed-composer__actions:empty { display:none; }
+.hc-feed-page .hc-feed-composer .hc-feed-message { margin:0; }
+.hc-feed-page .hc-feed-composer__court { display:none; }
+.hc-feed-stream { gap:16px; margin-top:16px; }
+.hc-feed-page .hc-feed-ticket { display:block; min-width:0; padding:16px!important; border:1px solid #e7e7e2; border-radius:16px!important; background:#fff; }
+.hc-feed-post-header { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; min-width:0; }
+.hc-feed-post-author { display:flex; align-items:center; gap:11px; min-width:0; flex:1 1 auto; }
+.hc-feed-page .hc-feed-post-avatar { display:block; flex:0 0 44px; width:44px; height:44px; min-width:44px; border-radius:50%; object-fit:cover; }
+.hc-feed-post-author__meta { min-width:0; display:grid; gap:3px; }
+.hc-feed-post-author__line { display:flex; align-items:center; gap:5px; min-width:0; white-space:nowrap; }
+.hc-feed-post-author__line strong { min-width:0; max-width:min(46vw,250px); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
+.hc-feed-post-author__line small { flex:0 0 auto; margin-left:3px; color:#777770; font-size:10px; white-space:nowrap; }
+.hc-feed-verified { display:inline-grid; flex:0 0 15px; width:15px; height:15px; place-items:center; border-radius:50%; background:#ff5a1f; color:#fff; font-size:10px; font-weight:950; }
+.hc-feed-post-author__meta .hc-feed-jersey-tag { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hc-feed-post-author__meta .hc-feed-location { display:inline-flex; align-items:center; gap:4px; font-size:10px; }
+.hc-feed-delete { flex:0 0 auto; padding:6px 9px!important; font-size:10px!important; }
+.hc-feed-expiry-track { height:3px; margin:12px 0 14px; overflow:hidden; border-radius:999px; background:#efefeb; }
+.hc-feed-expiry-track > div { height:100%; border-radius:inherit; background:#ff5a1f; transition:width .25s linear; }
+.hc-feed-page .hc-feed-ticket > p { margin:0 0 12px!important; color:#262621; font-size:14px; line-height:1.65; overflow-wrap:anywhere; }
+.hc-feed-page .hc-feed-ticket .hc-feed-post-image { display:block; width:calc(100% + 32px); max-width:none; height:auto; max-height:520px; margin:12px -16px 0; object-fit:cover; border-radius:12px; }
+.hc-feed-post-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
+.hc-feed-action-pill { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-width:0; min-height:38px; padding:9px 12px; border:1px solid #e2e2dc; border-radius:999px; background:#fff; color:#30302b; font-size:10px; font-weight:950; letter-spacing:.045em; white-space:nowrap; }
+.hc-feed-action-pill.is-active { border-color:#ffc0a6; background:#fff0e9; color:#a83a13; }
+.hc-feed-expires { grid-column:1 / -1; color:#777770; font-size:10px; line-height:1.4; text-align:right; }
+.hc-feed-empty { display:grid; gap:8px; padding:24px!important; border:1px dashed #deded8!important; border-radius:16px!important; background:#fff!important; }
+.hc-feed-empty h2 { max-width:500px; font-size:20px; line-height:1.3; }
+.hc-feed-empty .btn { justify-self:start; margin-top:5px; }
+.hc-feed-skeletons { display:grid; gap:16px; margin-top:16px; }
+.hc-feed-skeleton { display:grid; gap:14px; padding:16px!important; border-radius:16px!important; }
+.hc-feed-skeleton__head { display:flex; align-items:center; gap:11px; }
+.hc-feed-skeleton__head > span { width:44px; height:44px; flex:0 0 44px; border-radius:50%; background:#ecece7; }
+.hc-feed-skeleton__head > div { display:grid; gap:7px; width:55%; }
+.hc-feed-skeleton__head i,.hc-feed-skeleton__line,.hc-feed-skeleton__photo { display:block; border-radius:8px; background:linear-gradient(90deg,#eeeeea 25%,#f8f8f5 50%,#eeeeea 75%); background-size:200% 100%; animation:hc-feed-shimmer 1.35s ease-in-out infinite; }
+.hc-feed-skeleton__head i { width:100%; height:9px; }
+.hc-feed-skeleton__head i:last-child { width:60%; }
+.hc-feed-skeleton__line { height:10px; width:100%; }
+.hc-feed-skeleton__line.short { width:66%; }
+.hc-feed-skeleton__photo { height:160px; }
+@keyframes hc-feed-shimmer { to { background-position:-200% 0; } }
+@media(max-width:600px) {
+ .hc-feed-page .page-container { width:calc(100% - 32px); }
+ .hc-feed-page .hc-feed-hero { gap:12px; }
+ .hc-feed-page .hc-feed-composer { top:6px; padding:13px!important; border-radius:15px!important; }
+ .hc-feed-composer__footer { gap:8px; }
+ .hc-feed-country-optin { order:3; flex:1 1 100%; gap:9px!important; }
+ .hc-feed-country-copy strong { font-size:11px; }
+ .hc-feed-country-copy small { max-width:100%; font-size:10px; }
+ .hc-feed-counter { margin-left:auto; }
+ .hc-feed-post-button { min-width:66px; padding-inline:14px; }
+ .hc-feed-page .hc-feed-ticket { padding:14px!important; }
+ .hc-feed-page .hc-feed-ticket .hc-feed-post-image { width:calc(100% + 28px); margin-right:-14px; margin-left:-14px; border-radius:10px; }
+ .hc-feed-post-author__line strong { max-width:min(40vw,175px); }
+ .hc-feed-post-actions { gap:7px; }
+ .hc-feed-action-pill { padding-inline:7px; font-size:9px; }
+}
+@media(prefers-reduced-motion:reduce) { .hc-feed-skeleton__head i,.hc-feed-skeleton__line,.hc-feed-skeleton__photo { animation:none; } }
+
+
+/* HoopFeed topic tags and client-side topic filtering */
+.hc-feed-topic-picker{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin:0 0 14px;padding:12px 0 2px;border-top:1px solid var(--border)}
+.hc-feed-topic-label{font-size:10px;font-weight:900;letter-spacing:.14em;color:var(--gray-500);padding-top:8px}
+.hc-feed-topic-chips,.hc-feed-filter-scroll{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hc-feed-topic-chip,.hc-feed-filter-chip{appearance:none;border:1px solid #dededb;background:#fff;color:#252525;border-radius:999px;padding:7px 12px;font-family:inherit;font-size:12px;line-height:1.2;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .16s ease,color .16s ease,border-color .16s ease,transform .16s ease}
+.hc-feed-topic-chip:hover,.hc-feed-filter-chip:hover{border-color:var(--brand-orange);transform:translateY(-1px)}
+.hc-feed-topic-chip.is-selected,.hc-feed-filter-chip.is-active{background:var(--ink);border-color:var(--ink);color:#fff}
+.hc-feed-filter-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 14px;min-width:0}
+.hc-feed-filter-scroll{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;padding:3px 2px 8px;scrollbar-width:thin;min-width:0}
+.hc-feed-result-count{flex:none;color:var(--gray-500);font-size:10px;font-weight:900;letter-spacing:.1em}
+.hc-feed-post-topic{display:inline-flex;align-items:center;width:max-content;max-width:100%;border:1px solid transparent;border-radius:6px;padding:5px 9px;margin-top:12px;font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.hc-feed-topic--practice{background:#fff0e8;color:#a63a0b;border-color:#ffd5c2}
+.hc-feed-topic--game-day{background:#fff0e8;color:#a63a0b;border-color:#ffb38f}
+.hc-feed-topic--travel{background:#eaf4ff;color:#164e8a;border-color:#c6e0ff}
+.hc-feed-topic--teammates{background:#f0eaff;color:#5932a0;border-color:#d8c9ff}
+.hc-feed-topic--culture{background:#e6f8f2;color:#12684c;border-color:#b8ead9}
+.hc-feed-topic--win{background:#fff5cf;color:#785700;border-color:#f4df83}
+.hc-feed-topic--challenge{background:#ffe8ef;color:#9a2449;border-color:#ffc5d6}
+.hc-feed-filter-chip.hc-feed-topic--practice,.hc-feed-filter-chip.hc-feed-topic--game-day,.hc-feed-filter-chip.hc-feed-topic--travel,.hc-feed-filter-chip.hc-feed-topic--teammates,.hc-feed-filter-chip.hc-feed-topic--culture,.hc-feed-filter-chip.hc-feed-topic--win,.hc-feed-filter-chip.hc-feed-topic--challenge{background:#fff}
+.hc-feed-filter-chip.is-active.hc-feed-topic--practice,.hc-feed-filter-chip.is-active.hc-feed-topic--game-day,.hc-feed-filter-chip.is-active.hc-feed-topic--travel,.hc-feed-filter-chip.is-active.hc-feed-topic--teammates,.hc-feed-filter-chip.is-active.hc-feed-topic--culture,.hc-feed-filter-chip.is-active.hc-feed-topic--win,.hc-feed-filter-chip.is-active.hc-feed-topic--challenge{background:var(--ink);color:#fff;border-color:var(--ink)}
+@media(max-width:640px){.hc-feed-filter-bar{display:block}.hc-feed-filter-scroll{margin-right:-4px}.hc-feed-result-count{display:block;text-align:right;margin-top:2px}.hc-feed-topic-picker{gap:8px}.hc-feed-topic-chips{gap:6px}.hc-feed-topic-chip{padding:7px 10px;font-size:11px}}
+
+
+/* HoopFeed expiry urgency */
+.hc-feed-sort-toggle{display:flex;align-items:center;gap:3px;padding:3px;border:1px solid var(--border);border-radius:999px;background:#f1f1ef;flex:none}
+.hc-feed-sort-toggle button{appearance:none;border:0;background:transparent;color:#555;border-radius:999px;padding:7px 10px;font-family:inherit;font-size:11px;line-height:1.2;font-weight:800;white-space:nowrap;cursor:pointer}
+.hc-feed-sort-toggle button.is-active{background:#fff;color:var(--ink);box-shadow:0 1px 3px #00000012}
+.hc-feed-expiring-soon{display:inline-flex;align-items:center;width:max-content;margin-top:10px;border:1px solid #ffb184;background:#fff0e7;color:#a33b08;border-radius:5px;padding:5px 8px;font-size:10px;font-weight:950;letter-spacing:.1em}
+@media(max-width:640px){.hc-feed-filter-bar{display:flex;flex-direction:column;align-items:stretch;gap:8px}.hc-feed-sort-toggle{align-self:flex-start}.hc-feed-result-count{margin-top:0}}
+
+
+/* HoopFeed Game Day matchup and score bug */
+.hc-feed-game-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 16px;padding:14px;border:1px solid #e8e8e5;border-radius:12px;background:#fafaf8}
+.hc-feed-game-fields>label{display:grid;gap:6px;color:#555;font-size:11px;font-weight:800}
+.hc-feed-game-fields input{width:100%;min-width:0;border:1px solid #d8d8d4;border-radius:8px;background:#fff;padding:10px 11px;color:#111;font-family:inherit;font-size:14px;font-weight:600}
+.hc-feed-score-fields{grid-column:1/-1;display:grid;gap:8px}
+.hc-feed-score-fields>span{font-size:11px;color:#6b6b66;font-weight:800}
+.hc-feed-score-fields>div{display:flex;align-items:center;gap:10px;max-width:260px}
+.hc-feed-score-fields input{width:76px;text-align:center;font-size:18px;font-weight:900}
+.hc-feed-score-fields b{font-size:18px;color:var(--brand-orange)}
+.hc-feed-game-score{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0 4px;padding:14px 16px;border-radius:10px;background:#111;color:#fff;border-left:4px solid var(--brand-orange)}
+.hc-feed-game-score>span{flex:1;min-width:0;font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;overflow-wrap:anywhere}
+.hc-feed-game-score>span:last-child{text-align:right}
+.hc-feed-game-score>strong{flex:none;font-size:22px;font-weight:950;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hc-feed-game-score>strong i{color:var(--brand-orange);font-style:normal;padding:0 3px}
+.hc-feed-game-score>strong.hc-feed-game-vs{font-size:15px;color:var(--brand-orange)}
+@media(max-width:480px){.hc-feed-game-fields{grid-template-columns:minmax(0,1fr)}.hc-feed-score-fields{grid-column:auto}.hc-feed-game-score{gap:8px;padding:12px}.hc-feed-game-score>span{font-size:9px}.hc-feed-game-score>strong{font-size:18px}}
+
+
+/* HoopFeed Check confirmation animation */
+.hc-feed-action-pill{position:relative;overflow:visible}
+.hc-feed-check-mark{display:inline-block}
+.hc-feed-check-burst .hc-feed-check-mark{animation:hc-feed-check-pop .42s cubic-bezier(.2,.8,.2,1)}
+.hc-feed-check-pop{position:absolute;left:18px;top:-18px;color:var(--brand-orange);font-size:22px;font-weight:950;pointer-events:none;animation:hc-feed-check-float .72s ease-out forwards;text-shadow:0 1px #fff}
+.hc-feed-photo-check-burst{animation:hc-feed-photo-flash .48s ease-out}
+@keyframes hc-feed-check-pop{0%{transform:scale(.6) rotate(-15deg)}55%{transform:scale(1.45) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes hc-feed-check-float{0%{opacity:0;transform:translateY(8px) scale(.6)}25%{opacity:1;transform:translateY(0) scale(1.15)}100%{opacity:0;transform:translateY(-22px) scale(1)}}
+@keyframes hc-feed-photo-flash{0%{filter:brightness(1)}30%{filter:brightness(1.14);outline:3px solid var(--brand-orange);outline-offset:-3px}100%{filter:brightness(1);outline-color:transparent}}
+.hc-feed-comments-backdrop{display:none}
+.hc-feed-comments-sheet-head{display:none}
+@media(max-width:640px){.hc-feed-comments-backdrop{display:block;position:fixed;inset:0;z-index:90;border:0;background:#0009;padding:0;width:100%;height:100%;cursor:pointer}.hc-feed-comments-panel{position:fixed;z-index:91;left:0;right:0;bottom:0;max-height:min(78dvh,680px);overflow-y:auto;margin:0!important;padding:18px 18px calc(18px + env(safe-area-inset-bottom))!important;border:1px solid #dededb!important;border-radius:22px 22px 0 0;background:#fff;box-shadow:0 -18px 55px #0002;animation:hc-feed-sheet-up .24s ease-out}.hc-feed-comments-sheet-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid var(--border);font-size:12px;letter-spacing:.1em}.hc-feed-comments-sheet-head button{border:1px solid var(--border);border-radius:999px;background:#f7f7f5;padding:7px 11px;font:inherit;font-size:12px;font-weight:800}@keyframes hc-feed-sheet-up{from{transform:translateY(18px);opacity:.6}to{transform:translateY(0);opacity:1}}}
+@media(prefers-reduced-motion:reduce){.hc-feed-check-burst .hc-feed-check-mark,.hc-feed-check-pop,.hc-feed-photo-check-burst,.hc-feed-comments-panel{animation:none!important}}
+
+
+/* Subtle HoopFeed posting streak indicator */
+.hc-feed-streak{display:inline-flex;align-items:center;gap:5px;width:max-content;margin-top:7px;padding:5px 9px;border:1px solid #f3d3bf;border-radius:999px;background:#fff6ef;color:#8b390f;font-size:11px;font-weight:850;letter-spacing:.01em}
+.hc-feed-streak>span{font-size:12px;line-height:1}
+.hc-feed-composer>.hc-feed-streak{margin:8px 0 0}

@@ -6,10 +6,25 @@ import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 
+function calculatePostingStreak(rows: { activity_date: string }[]) {
+  const dates = new Set(rows.map(row => String(row.activity_date).slice(0, 10)));
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  let cursor = dates.has(today) ? today : dates.has(yesterday) ? yesterday : "";
+  if (!cursor) return 0;
+  let count = 0;
+  while (dates.has(cursor)) {
+    count += 1;
+    cursor = new Date(Date.parse(cursor + "T00:00:00.000Z") - 86400000).toISOString().slice(0, 10);
+  }
+  return count;
+}
+
 export default function ProfilePage() {
   const [p, setP] = useState<any>(null);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
+  const [postingStreak, setPostingStreak] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -30,6 +45,10 @@ export default function ProfilePage() {
         new Promise<any>((resolve) => setTimeout(() => resolve({ data: null }), 2500)),
       ]);
       setP(result.data);
+      if (result.data?.account_type === "player") {
+        const { data: activity } = await supabase.from("feed_posting_activity").select("activity_date").eq("user_id", user.id).order("activity_date", { ascending: false }).limit(370);
+        setPostingStreak(calculatePostingStreak(activity || []));
+      }
       setLoading(false);
     })();
   }, []);
@@ -75,6 +94,7 @@ export default function ProfilePage() {
                 {(p.player_verified || p.coach_verified) && <VerifiedBadge label={p.player_verified ? "Verified player" : "Verified coach"} />}
               </h1>
               <p className="muted hc-profile-email">{email}</p>
+              {p.account_type === "player" && <span className="hc-feed-streak" aria-label={postingStreak + " day HoopFeed posting streak"}><span aria-hidden="true">🔥</span> {postingStreak}-day streak</span>}
             </div>
           </div>
 
