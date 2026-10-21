@@ -110,6 +110,7 @@ export default function Feed(){
       form.append("text",body.trim());
       form.append("share_country", showCountry ? "true" : "false");
       if(profile?.account_type==="player" && topicTag)form.append("topic_tag",topicTag);
+      if(profile?.account_type==="player" && topicTag==="Game Day"){form.append("game_day_team",gameTeam.trim());form.append("game_day_opponent",gameOpponent.trim());if(scoreFor!==""&&scoreAgainst!==""){form.append("game_day_score_for",scoreFor);form.append("game_day_score_against",scoreAgainst);}}
       if(photo)form.append("image",photo);
       const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
       const result=await moderation.json().catch(()=>({}));
