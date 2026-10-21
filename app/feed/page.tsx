@@ -11,7 +11,7 @@ type MiniProfile = { display_name: string | null; avatar_url: string | null; cur
 type Post = { id:string; body:string; image_url:string|null; location_country:string|null; show_country?:boolean; topic_tag?:TopicTag|null; created_at:string; expires_at:string; author_id:string; ageLabel?:string; expiresLabel?:string; profiles?:MiniProfile|null };
 type TopicTag = "Practice" | "Game Day" | "Travel" | "Teammates" | "Culture" | "Win" | "Challenge";
 const TOPIC_TAGS: TopicTag[] = ["Practice","Game Day","Travel","Teammates","Culture","Win","Challenge"];
-const topicClass = (tag: TopicTag) => tag.toLowerCase().replace(/\\s+/g, "-");
+const topicClass = (tag: TopicTag) => tag.toLowerCase().replace(/\s+/g, "-");
 type Comment = { id:string; post_id:string; body:string; created_at:string; author_id:string; profiles?:MiniProfile|null };
 type Profile = { account_type:string; current_country:string|null };
 type Subscription = { plan:string|null; status:string|null; access_status:string|null };
