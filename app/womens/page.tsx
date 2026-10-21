@@ -2,7 +2,6 @@
 
 import { supabase } from "../../lib/supabase";
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import DirectoryLayout from "../../components/DirectoryLayout";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import HoopLoading from "../../components/HoopLoading";
