@@ -99,7 +99,7 @@ export default function PlayersPage() {
   return (
     <main className="page-shell hc-player-directory-page">
       <div className="page-container">
-        <DirectoryLayout kicker="PLAYER DIRECTORY" title="Find Players" description="Research professional players, follow talent, and discover basketball experience across the global game." current="players" />
+        <DirectoryLayout current="players" />
 
         <section className="dashboard-card" style={{ marginTop: 18 }}>
           <div className="research-search">
