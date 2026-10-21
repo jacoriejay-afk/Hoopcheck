@@ -78,7 +78,7 @@ export default function CoachesPage() {
 
   return (
     <main className="hc-coaches-directory-page">
-<DirectoryLayout kicker="HoopCheck Coaches" title="Know the coach before you sign." description="Research coaches through real player experiences from professional basketball around the world." current="coaches" />
+<DirectoryLayout current="coaches" />
 
       <section className="hc-coach-directory-tools" aria-label="Search coaches">
         <label htmlFor="coach-directory-search">Find a coach</label>
