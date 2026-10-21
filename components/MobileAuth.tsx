@@ -9,7 +9,7 @@ export default function MobileAuth() {
   const { signedIn } = useAuthState();
   const pathname = usePathname();
 
-  if (!signedIn || pathname.startsWith("/admin")) return null;
+  if (!signedIn || pathname === "/dashboard" || pathname.startsWith("/admin")) return null;
 
   return (
     <Link href="/dashboard" className="mobile-auth-global">
