@@ -30,11 +30,7 @@ type LanguageContextValue = {
   setLanguage: (language: Language) => void;
 };
 const validLanguage = (value: unknown): value is Language => typeof value === "string" && Object.prototype.hasOwnProperty.call(labels, value);
-const initialLanguage = (): Language => {
-  if (typeof window === "undefined") return "en";
-  const stored = window.localStorage.getItem("hoopcheck-language");
-  return validLanguage(stored) ? stored : "en";
-};
+
 const fallbackContext: LanguageContextValue = {
   language:"en", t:(key)=>labels.en[key] || key,
   formatNumber:(value, options)=>new Intl.NumberFormat("en-US", options).format(value),
@@ -45,8 +41,8 @@ const fallbackContext: LanguageContextValue = {
 const LanguageContext = createContext<LanguageContextValue>(fallbackContext);
 export function useLanguage() { return useContext(LanguageContext); }
 
-export default function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(initialLanguage);
+export default function LanguageProvider({ children, initialLanguage = "en" }: { children: React.ReactNode; initialLanguage?: Language }) {
+  const [language, setLanguageState] = useState<Language>(validLanguage(initialLanguage) ? initialLanguage : "en");
   const setLanguage = (next: Language) => {
     if (!validLanguage(next)) return;
     setLanguageState(next);
@@ -56,6 +52,7 @@ export default function LanguageProvider({ children }: { children: React.ReactNo
     }
     if (typeof window !== "undefined") {
       localStorage.setItem("hoopcheck-language", next);
+      document.cookie = "hoopcheck-language=" + encodeURIComponent(next) + "; Path=/; Max-Age=31536000; SameSite=Lax";
       window.dispatchEvent(new CustomEvent("hoopcheck-language-change", { detail: next }));
     }
   };
@@ -66,7 +63,10 @@ export default function LanguageProvider({ children }: { children: React.ReactNo
       setLanguageState(value);
       document.documentElement.lang = value;
       document.documentElement.dir = value === "ar" ? "rtl" : "ltr";
-      if (persist) localStorage.setItem("hoopcheck-language", value);
+      if (persist) {
+        localStorage.setItem("hoopcheck-language", value);
+        document.cookie = "hoopcheck-language=" + encodeURIComponent(value) + "; Path=/; Max-Age=31536000; SameSite=Lax";
+      }
     };
     const onLanguageChange = (event: Event) => apply((event as CustomEvent<Language>).detail);
     window.addEventListener("hoopcheck-language-change", onLanguageChange);
