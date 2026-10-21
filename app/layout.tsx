@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Graduate, Inter } from "next/font/google";
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 import "./globals.css";
 import "./hoopcheck-rebrand.css";
 import "./hoopcheck-polish.css";
@@ -69,8 +70,38 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const cookieStore = await cookies();
   const savedTheme = cookieStore.get("hoopcheck-theme")?.value;
   const savedLanguage = cookieStore.get("hoopcheck-language")?.value;
-  const initialTheme: ThemePreference = savedTheme === "light" || savedTheme === "dark" || savedTheme === "system" ? savedTheme : "system";
-  const initialLanguage: Language = ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"].includes(savedLanguage || "") ? savedLanguage as Language : "en";
+  let serverPreferences: { theme_preference?: string; preferred_language?: string } | null = null;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (supabaseUrl && supabaseKey) {
+    const serverSupabase = createServerClient(supabaseUrl, supabaseKey, {
+      cookies: {
+        getAll() { return cookieStore.getAll(); },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+          } catch {
+            // Root layouts may render in a read-only Server Component context.
+          }
+        },
+      },
+    });
+    const { data: { user } } = await serverSupabase.auth.getUser();
+    if (user) {
+      const { data } = await serverSupabase.from("profiles").select("theme_preference,preferred_language").eq("id", user.id).maybeSingle();
+      serverPreferences = data;
+    }
+  }
+  const profileTheme = serverPreferences?.theme_preference;
+  const profileLanguage = serverPreferences?.preferred_language;
+  const cookieThemeValid = savedTheme === "light" || savedTheme === "dark" || savedTheme === "system";
+  const cookieLanguageValid = ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"].includes(savedLanguage || "");
+  const initialTheme: ThemePreference = profileTheme === "dark" || profileTheme === "light"
+    ? profileTheme
+    : cookieThemeValid ? savedTheme as ThemePreference : profileTheme === "system" ? "system" : "system";
+  const initialLanguage: Language = profileLanguage && ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"].includes(profileLanguage)
+    ? (profileLanguage === "en" && cookieLanguageValid && savedLanguage !== "en" ? savedLanguage as Language : profileLanguage as Language)
+    : cookieLanguageValid ? savedLanguage as Language : "en";
   const organizationJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
