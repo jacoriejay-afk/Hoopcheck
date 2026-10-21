@@ -255,8 +255,8 @@ function SearchContent() {
     <main className="search-page hc-global-search-page">
       <nav className="hc-directory-switcher" aria-label="Browse HoopCheck directories">
         <span className="hc-directory-switcher-label">{t("directory")}</span>
-        <Link href="/teams">{t("teams")}</Link>
-        <Link href="/womens">{t("teams")}</Link>
+        <Link href="/teams">{t("mensTeams")}</Link>
+        <Link href="/womens">{t("womensTeams")}</Link>
         <Link href="/coaches">{t("coaches")}</Link>
         <Link href="/leagues">{t("leagues")}</Link>
         <Link href="/players">{t("findPlayers")}</Link>
@@ -306,7 +306,7 @@ function SearchContent() {
                   onClick={() => setTypeFilter(type)}
                   aria-pressed={typeFilter === type}
                 >
-                  {type === "all" ? t("all") : type === "mens-teams" || type === "womens-teams" ? t("teams") : type === "players" ? t("account") : type === "coaches" ? t("coaches") : type === "leagues" ? t("leagues") : type}
+                  {type === "all" ? t("all") : type === "mens-teams" ? t("mensTeams") : type === "womens-teams" ? t("womensTeams") : type === "players" ? t("account") : type === "coaches" ? t("coaches") : type === "leagues" ? t("leagues") : type}
                 </button>
               ))}
               <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} aria-label="Filter by country" style={{ padding: "10px 14px", borderRadius: 8 }}>
