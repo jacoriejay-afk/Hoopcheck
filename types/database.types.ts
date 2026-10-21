@@ -896,12 +896,34 @@ export type Database = {
           },
         ]
       }
+      feed_posting_activity: {
+        Row: {
+          activity_date: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_date: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_date?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       feed_posts: {
         Row: {
           author_id: string
           body: string
           created_at: string
           expires_at: string | null
+          game_day_opponent: string | null
+          game_day_score_against: number | null
+          game_day_score_for: number | null
+          game_day_team: string | null
           id: string
           image_url: string | null
           location_country: string | null
@@ -913,6 +935,10 @@ export type Database = {
           body: string
           created_at?: string
           expires_at?: string | null
+          game_day_opponent?: string | null
+          game_day_score_against?: number | null
+          game_day_score_for?: number | null
+          game_day_team?: string | null
           id?: string
           image_url?: string | null
           location_country?: string | null
@@ -924,6 +950,10 @@ export type Database = {
           body?: string
           created_at?: string
           expires_at?: string | null
+          game_day_opponent?: string | null
+          game_day_score_against?: number | null
+          game_day_score_for?: number | null
+          game_day_team?: string | null
           id?: string
           image_url?: string | null
           location_country?: string | null
