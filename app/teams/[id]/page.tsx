@@ -153,7 +153,6 @@ export default function TeamDetailPage() {
   const [league, setLeague] =
     useState<League | null>(null);
 
-  const [followerCount, setFollowerCount] = useState(0);
 
   const [coaches, setCoaches] =
     useState<Coach[]>([]);
@@ -224,8 +223,6 @@ export default function TeamDetailPage() {
 
       setTeam(teamData);
       setLoading(false);
-      const {data:followCount}=await supabase.rpc("get_follow_count",{p_target_type:"team",p_target_id:id});
-      setFollowerCount(Number(followCount || 0));
 
       const { data: membershipData } = await supabase.from("team_league_memberships").select("id,league_id,season,start_date,end_date,active").eq("team_id", id).eq("active", true).order("season", { ascending: false });
       if (membershipData) {
@@ -612,7 +609,7 @@ export default function TeamDetailPage() {
         </div>
 
         <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} /></div>
-        <TeamRosterSpots teamId={team.id} teamName={team.name} /><p className="muted" style={{fontSize:13}}>{formatNumber(followerCount)} follower{followerCount===1?"":"s"}</p>
+        <TeamRosterSpots teamId={team.id} teamName={team.name} />
 
   </div>
       </section>
