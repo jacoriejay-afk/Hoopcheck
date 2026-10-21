@@ -47,3 +47,6 @@ export default function LanguageProvider({children}:{children:React.ReactNode}){
       listener.subscription.unsubscribe();
     };
   },[]);
+
+  return <LanguageContext.Provider value={{language,t:(key)=>labels[language][key]||labels.en[key]||key}}>{children}</LanguageContext.Provider>;
+}
