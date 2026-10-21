@@ -126,6 +126,7 @@ export async function POST(request: Request) {
     }
 
     const { data: profile } = await db.from("profiles").select("account_type,current_country").eq("id", user.id).maybeSingle();
+    if (kind === "comment" && profile?.account_type !== "player") return NextResponse.json({ allowed: false, message: "Only players can comment on HoopFeed posts." }, { status: 403 });
     const submittedTopicTag = String(form.get("topic_tag") || "").trim();
     const gameDayTeam = String(form.get("game_day_team") || "").trim().slice(0, 80);
     const gameDayOpponent = String(form.get("game_day_opponent") || "").trim().slice(0, 80);
