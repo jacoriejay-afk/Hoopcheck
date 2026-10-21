@@ -54,7 +54,7 @@ loadLeagues();
 
 return (
 <main className="hc-leagues-directory-page">
-<DirectoryLayout kicker="HoopCheck Leagues" title="Know the league before you commit." description="Explore professional basketball leagues and learn from players who have already experienced them." current="leagues" />
+<DirectoryLayout current="leagues" />
 
   <section className="hc-league-filter" aria-label="Filter leagues">
     <label htmlFor="league-search">Find a league</label>
