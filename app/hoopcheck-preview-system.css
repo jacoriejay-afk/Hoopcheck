@@ -4319,7 +4319,9 @@ body:has(main.admin-light-shell) .global-back-button,
 body:has(main.admin-directory-shell) .global-back-button { display:none!important; }
 .admin-directory-shell [style*="headerActions"] { gap:10px!important; }
 .admin-directory-shell .admin-stats-grid > * { min-height:112px; }
-\n\n/* Dashboard mobile pixel pass — scoped to this screen only. */
+
+
+/* Dashboard mobile pixel pass — scoped to this screen only. */
 .hc-dashboard-shell {
   box-sizing: border-box;
   padding-top: calc(24px + env(safe-area-inset-top, 0px)) !important;
@@ -4631,7 +4633,10 @@ body:has(main.admin-directory-shell) .global-back-button { display:none!importan
 @media (min-width: 641px) {
   .hc-dashboard-shell { padding-top: 32px !important; }
 }
-\n/* No fixed background overlay or floating auth chip on the dashboard. */\n.hc-dashboard-shell::before, .hc-dashboard-shell::after { display:none !important; content:none !important; }\n
+
+/* No fixed background overlay or floating auth chip on the dashboard. */
+.hc-dashboard-shell::before, .hc-dashboard-shell::after { display:none !important; content:none !important; }
+
 /* Dashboard-specific mobile readability and container edge reset. */
 .hc-dashboard-shell > .page-container {
   width: 100% !important;
