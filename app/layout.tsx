@@ -70,7 +70,8 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const cookieStore = await cookies();
   const savedLanguage = cookieStore.get("hoopcheck-language")?.value;
-  const initialLanguage = ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"].includes(savedLanguage || "") ? savedLanguage! : "en";
+  const supportedLanguages = ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"] as const;
+  const initialLanguage = supportedLanguages.includes(savedLanguage as (typeof supportedLanguages)[number]) ? savedLanguage as (typeof supportedLanguages)[number] : "en";
   const organizationJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
