@@ -209,7 +209,7 @@ export default function DashboardPage() {
     <main className="page-shell hc-dashboard-shell">
       <div className="page-container">
         {(profile?.moderation_status === "warned" || profile?.moderation_status === "flagged") && <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{profile.moderation_status === "warned" ? "Account warning" : "Profile flagged for review"}</strong><p className="muted">{profile.moderation_note || "Please review the Community Guidelines and contact Support if you need clarification."}</p><Link href="/support" className="btn dark">Contact Support</Link></section>}        <section className="hc-dashboard-welcome" aria-labelledby="hc-dashboard-welcome-title">
-          <div className="hc-dashboard-page-label">DASHBOARD</div>
+          <p className="eyebrow hc-dashboard-page-label">DASHBOARD</p>
           <p className="eyebrow hc-dashboard-kicker">THE OVERSEAS BASKETBALL INTELLIGENCE HUB</p>
           <h1 id="hc-dashboard-welcome-title">KNOW WHO YOU’RE SIGNING WITH<span>.</span></h1>
           <p className="hc-dashboard-hero-description">Real player experiences. Team and coach reputations. Make your next move with confidence.</p>
@@ -248,7 +248,7 @@ export default function DashboardPage() {
         </section>
 
         <section className="hc-mobile-dashboard" aria-label="HoopCheck discovery">
-          <SearchBar className="hc-mobile-search" name="q" placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search teams, coaches, and leagues" />
+          <SearchBar className="hc-mobile-search" name="q" placeholder="Search players, coaches, teams…" ariaLabel="Search players, coaches, teams" />
 
           <section className="hc-mobile-section" aria-labelledby="hc-quick-access-heading">
             <div className="hc-mobile-section-heading">
