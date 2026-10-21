@@ -3,93 +3,92 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
-import { useLanguage } from "../../components/LanguageProvider";
-
-type Theme = "light" | "dark" | "dynamic";
-type Language = "en" | "es" | "fr" | "de" | "tr" | "pt" | "it" | "el" | "ar";
+import { usePreferences, type Language } from "../../components/PreferencesProvider";
 
 export default function SettingsPage() {
-  const { t } = useLanguage();
-  const [theme, setTheme] = useState<Theme>("dynamic");
+  const { t, theme, language, setTheme, setLanguage } = usePreferences();
   const [notifications, setNotifications] = useState(true);
-  const [language, setLanguage] = useState<Language>("en");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const local = localStorage.getItem("hoopcheck-theme") as Theme | null;
-    if (local) setTheme(local);
-    const localLanguage = localStorage.getItem("hoopcheck-language") as Language | null;
-    if (localLanguage) setLanguage(localLanguage);
+    let active = true;
     supabase.auth.getSession().then(async ({ data }) => {
       const user = data.session?.user;
       if (!user) return;
-      const { data: prefs } = await supabase.from("user_preferences").select("theme,notifications_enabled,language").eq("user_id", user.id).maybeSingle();
-      if (prefs?.theme) setTheme(prefs.theme as Theme);
-      if (typeof prefs?.notifications_enabled === "boolean") setNotifications(prefs.notifications_enabled);
-      if (prefs?.language) setLanguage(prefs.language as Language);
+      const { data: prefs } = await supabase.from("user_preferences").select("notifications_enabled").eq("user_id", user.id).maybeSingle();
+      if (active && typeof prefs?.notifications_enabled === "boolean") setNotifications(prefs.notifications_enabled);
     });
+    return () => { active = false; };
   }, []);
 
-  async function save(nextTheme = theme, nextNotifications = notifications, nextLanguage = language) {
+  async function saveNotifications(next: boolean) {
+    setNotifications(next);
     setSaving(true);
-    document.documentElement.dataset.theme = nextTheme;
-    localStorage.setItem("hoopcheck-theme", nextTheme);
-    localStorage.setItem("hoopcheck-language", nextLanguage);
-    window.dispatchEvent(new CustomEvent("hoopcheck-language-change", { detail: nextLanguage }));
-    document.documentElement.lang = nextLanguage;
-    const { data: sessionData } = await supabase.auth.getSession();
-    const user = sessionData.session?.user;
+    const { data } = await supabase.auth.getSession();
+    const user = data.session?.user;
     if (user) {
-      const { error } = await supabase.from("user_preferences").upsert({ user_id: user.id, theme: nextTheme, notifications_enabled: nextNotifications, language: nextLanguage, updated_at: new Date().toISOString() });
-      if (error) console.error("Settings save error:", error);
+      const { error } = await supabase.from("user_preferences").upsert({
+        user_id: user.id,
+        theme,
+        language,
+        notifications_enabled: next,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" });
+      if (error) console.error("Settings notification save error:", error);
     }
     setSaving(false);
   }
 
+  const languages: { value: Language; label: string }[] = [
+    { value: "en", label: "English" }, { value: "es", label: "Español" }, { value: "fr", label: "Français" },
+    { value: "de", label: "Deutsch" }, { value: "tr", label: "Türkçe" }, { value: "pt", label: "Português" },
+    { value: "it", label: "Italiano" }, { value: "el", label: "Ελληνικά" }, { value: "ar", label: "العربية" }
+  ];
+
   return (
     <main className="settings-page hc-settings-page">
       <section className="settings-shell">
-        <div className="eyebrow">CONTROL CENTER</div>
+        <div className="eyebrow">{t("controlCenter")}</div>
         <h1>{t("settings")}</h1>
-        <p className="muted">Tune the HoopCheck experience to match how you research the basketball world.</p>
+        <p className="muted">{t("languageDescription")}</p>
         <div className="settings-grid">
           <section className="settings-card">
-            <span className="card-kicker">LANGUAGE</span>
-            <h2>{language === "en" ? "Choose your language" : "Language"}</h2>
-            <p className="muted">Choose the interface language you want HoopCheck to use. Your preference is saved to your account and this device.</p>
-            <select className="language-select" value={language} onChange={(e) => { const next = e.target.value as Language; setLanguage(next); save(theme, notifications, next); }}>
-              <option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option>
+            <span className="card-kicker">{t("language")}</span>
+            <h2>{t("chooseLanguage")}</h2>
+            <p className="muted">{t("languageDescription")}</p>
+            <select className="language-select" value={language} aria-label={t("language")} onChange={(event) => setLanguage(event.target.value as Language)}>
+              {languages.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
             </select>
           </section>
           <section className="settings-card">
-            <span className="card-kicker">VISUAL MODE</span>
-            <h2>Choose your atmosphere</h2>
+            <span className="card-kicker">{t("visualMode")}</span>
+            <h2>{t("chooseTheme")}</h2>
             <div className="theme-options">
-              {(["dynamic","dark","light"] as Theme[]).map((option) => (
-                <button key={option} className={"theme-option " + (theme === option ? "active" : "")} onClick={() => { setTheme(option); save(option, notifications); }} type="button">
-                  <strong>{option === "dynamic" ? "Dynamic" : option === "dark" ? "Dark Mode" : "Light Mode"}</strong>
-                  <small>{option === "dynamic" ? "Adaptive charcoal + orange" : option === "dark" ? "Asphalt black" : "Clean hardwood"}</small>
+              {(["dark", "light", "system"] as const).map((option) => (
+                <button key={option} className={"theme-option " + (theme === option ? "active" : "")} onClick={() => setTheme(option)} type="button">
+                  <strong>{option === "dark" ? t("darkMode") : option === "light" ? t("lightMode") : t("systemMode")}</strong>
+                  <small>{option === "dark" ? "Asphalt black" : option === "light" ? "Clean hardwood" : "Match your device"}</small>
                 </button>
               ))}
             </div>
           </section>
           <section className="settings-card">
-            <span className="card-kicker">NOTIFICATIONS</span>
-            <h2>Basketball alerts</h2>
+            <span className="card-kicker">{t("notifications")}</span>
+            <h2>{t("basketballAlerts")}</h2>
             <p className="muted">Follow specific teams, coaches, or leagues to keep their alerts one tap away.</p>
-            <button type="button" className={"toggle " + (notifications ? "on" : "")} onClick={() => { const next = !notifications; setNotifications(next); save(theme, next); }}>
+            <button type="button" className={"toggle " + (notifications ? "on" : "")} onClick={() => void saveNotifications(!notifications)}>
               <span />{notifications ? "Notifications enabled" : "Notifications disabled"}
             </button>
-            <Link href="/search" className="btn dark">Find something to follow</Link>
+            <Link href="/search" className="btn dark">{t("findToFollow")}</Link>
           </section>
           <section className="settings-card">
-            <span className="card-kicker">MOTION</span>
-            <h2>Mobile-smooth interactions</h2>
-            <p className="muted">Animations are short, touch-friendly, and respect your device&apos;s reduced-motion preference.</p>
+            <span className="card-kicker">{t("motion")}</span>
+            <h2>{t("mobileInteractions")}</h2>
+            <p className="muted">Animations are short, touch-friendly, and respect your device's reduced-motion preference.</p>
             <div className="motion-demo"><span /><span /><span /></div>
           </section>
         </div>
-        <p className="settings-save">{saving ? "Saving..." : "Settings saved automatically."}</p>
+        <p className="settings-save">{saving ? t("saving") : t("settingsSaved")}</p>
       </section>
     </main>
   );
