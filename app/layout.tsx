@@ -120,12 +120,12 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang={initialLanguage} dir={initialLanguage === "ar" ? "rtl" : "ltr"} data-theme={initialTheme === "dark" ? "dynamic" : "light"} className={`${displayFont.variable} ${sansFont.variable}`}>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem("hoopcheck-theme")||document.cookie.split("; ").find(function(c){return c.indexOf("hoopcheck-theme=")===0})?.split("=")[1]||"system";var d=t==="dark"||t==="dynamic"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dynamic":"light";document.documentElement.style.colorScheme=d?"dark":"light";var l=localStorage.getItem("hoopcheck-language")||decodeURIComponent(document.cookie.split("; ").find(function(c){return c.indexOf("hoopcheck-language=")===0})?.split("=").slice(1).join("=")||"en");document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";}catch(e){document.documentElement.dataset.theme="light";}})();` }} />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=document.cookie.split("; ").find(function(c){return c.indexOf("hoopcheck-theme=")===0})?.split("=")[1]||localStorage.getItem("hoopcheck-theme")||"system";var d=t==="dark"||t==="dynamic"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dynamic":"light";document.documentElement.style.colorScheme=d?"dark":"light";var l=decodeURIComponent(document.cookie.split("; ").find(function(c){return c.indexOf("hoopcheck-language=")===0})?.split("=").slice(1).join("=")||"")||localStorage.getItem("hoopcheck-language")||"en";document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";}catch(e){document.documentElement.dataset.theme="light";}})();` }} />
       </head>
       <body className={sansFont.className}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c") }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c") }} />
-        <PreferencesProvider initialTheme={initialTheme} initialLanguage={initialLanguage}>
+        <PreferencesProvider initialTheme={initialTheme} initialLanguage={initialLanguage} trustInitialPreferences={Boolean(serverPreferences) || cookieThemeValid || cookieLanguageValid}>
           <ProtectionLayer />
           <AuthProvider>
               <AnalyticsTracker />
