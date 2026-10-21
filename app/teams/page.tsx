@@ -241,7 +241,7 @@ export default function TeamsPage() {
 
   return (
     <main className="hc-team-directory-page">
-      <DirectoryLayout kicker="HoopCheck Teams" title="Know the organization before you sign." description="Explore professional basketball organizations and learn from players who have already experienced them." current="teams" />
+      <DirectoryLayout current="teams" />
 
       <section className="hero">
         <div className="research-search">
