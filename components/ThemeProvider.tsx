@@ -31,16 +31,18 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     window.addEventListener("hoopcheck-theme-change", onThemeChange);
     media.addEventListener?.("change", onSystemChange);
 
-    const loadUserPreference = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!active || !user) return;
-      const { data } = await supabase.from("profiles").select("theme_preference").eq("id", user.id).maybeSingle();
+    const loadUserPreference = async (userId: string) => {
+      const { data } = await supabase.from("profiles").select("theme_preference").eq("id", userId).maybeSingle();
       if (!active || !data) return;
       preference = normalize(data.theme_preference);
       apply();
     };
-    void loadUserPreference();
-    const { data: authListener } = supabase.auth.onAuthStateChange(() => { void loadUserPreference(); });
+    void supabase.auth.getUser().then(({ data }) => { if (data.user) void loadUserPreference(data.user.id); });
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === "SIGNED_IN" || event === "USER_UPDATED") && session?.user) {
+        void loadUserPreference(session.user.id);
+      }
+    });
 
     return () => {
       active = false;
