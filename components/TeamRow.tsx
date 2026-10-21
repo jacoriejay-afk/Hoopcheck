@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 export interface TeamRowProps {
   name: string;
@@ -18,8 +18,7 @@ export default function TeamRow({ name, league, flag, crest, href, className = "
     <span className="hc-team-row__league">{league}</span>
     <span className="hc-team-row__chevron" aria-hidden="true">›</span>
   </>;
-  const style = { "--hc-row-hover": "#FFF5F0" } as CSSProperties;
   return href
-    ? <Link className={`hc-team-row ${className}`.trim()} style={style} href={href}>{content}</Link>
-    : <div className={`hc-team-row ${className}`.trim()} style={style}>{content}</div>;
+    ? <Link className={`hc-team-row ${className}`.trim()} href={href}>{content}</Link>
+    : <div className={`hc-team-row ${className}`.trim()}>{content}</div>;
 }
