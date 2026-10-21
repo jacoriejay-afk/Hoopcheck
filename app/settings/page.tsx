@@ -55,12 +55,13 @@ export default function SettingsPage() {
         <p className="muted">Tune the HoopCheck experience to match how you research the basketball world.</p>
         <div className="settings-grid">
           <section className="settings-card">
-            <span className="card-kicker">LANGUAGE</span>
-            <h2>{language === "en" ? "Choose your language" : "Language"}</h2>
+            <span className="card-kicker">{t("language").toUpperCase()}</span>
+            <h2>{t("chooseLanguage")}</h2>
             <p className="muted">Choose the interface language you want HoopCheck to use. Your preference is saved to your account and this device.</p>
-            <select className="language-select" value={language} onChange={(e) => { const next = e.target.value as Language; setLanguage(next); save(theme, notifications, next); }}>
+            <select className="language-select" value={language} onChange={(e) => setLanguage(e.target.value as Language)}>
               <option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option>
             </select>
+            <button type="button" className="btn" onClick={() => save(theme, notifications, language)} disabled={saving} style={{ marginTop: 12 }}>{saving ? t("saving") : t("save")}</button>
           </section>
           <section className="settings-card">
             <span className="card-kicker">VISUAL MODE</span>
@@ -90,7 +91,7 @@ export default function SettingsPage() {
             <div className="motion-demo"><span /><span /><span /></div>
           </section>
         </div>
-        <p className="settings-save">{saving ? "Saving..." : "Settings saved automatically."}</p>
+        <p className="settings-save">{saving ? t("saving") : t("saved") + " Other preferences save automatically."}</p>
       </section>
     </main>
   );
