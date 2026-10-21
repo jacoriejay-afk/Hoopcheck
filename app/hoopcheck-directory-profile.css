@@ -54,20 +54,20 @@
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
-.hc-team-profile-page .entity-actions,
+.hc-team-entity-profile .entity-actions,
 .hc-womens-profile-page .entity-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.hc-team-profile-page .card h2,
-.hc-team-profile-page .card h3,
-.hc-team-profile-page .hero h2,
-.hc-team-profile-page .hero h3,
+.hc-team-entity-profile .card h2,
+.hc-team-entity-profile .card h3,
+.hc-team-entity-profile .hero h2,
+.hc-team-entity-profile .hero h3,
 .hc-womens-profile-page .card h2,
 .hc-womens-profile-page .card h3 {
   color: var(--text, var(--foreground, #151515));
 }
-.hc-team-profile-page .team-roster-spots h2,
-.hc-team-profile-page .team-roster-spots h3,
-.hc-team-profile-page [class*="roster"] h2,
-.hc-team-profile-page [class*="roster"] h3 {
+.hc-team-entity-profile .team-roster-spots h2,
+.hc-team-entity-profile .team-roster-spots h3,
+.hc-team-entity-profile [class*="roster"] h2,
+.hc-team-entity-profile [class*="roster"] h3 {
   color: var(--text, #151515) !important;
 }
 @media (max-width: 420px) {
