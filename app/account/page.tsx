@@ -25,7 +25,7 @@ type Profile = {
   current_country: string | null;
   current_country_public: boolean;
   current_team: string | null;
-  profile_visibility: "public" | "private";
+  profile_visibility: "public" | "private" | "players_only";
   player_verified: boolean; coach_verified?: boolean; coach_profile_id?: string | null; experience_summary?: string | null;
   profile_claimed: boolean;
   avatar_url: string | null;
@@ -41,6 +41,22 @@ const emptyProfile: Profile = {
   profile_visibility: "public", player_verified: false, profile_claimed: true,
   avatar_url: null, avatar_moderation_status: "approved"
 };
+
+function SettingsGlyph({name}:{name:string}) {
+  const paths:Record<string,string>={user:"M20 21a8 8 0 0 0-16 0 M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10",mail:"M4 5h16v14H4z M4 7l8 6 8-6",lock:"M5 10h14v11H5z M8 10V7a4 4 0 0 1 8 0v3",crown:"M2 7l5 4 5-8 5 8 5-4-2 13H4z",moon:"M20 15A8 8 0 0 1 9 4a8 8 0 1 0 11 11z",globe:"M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M2 12h20 M12 2a15 15 0 0 1 0 20 M12 2a15 15 0 0 0 0 20",message:"M21 11.5a8.5 8.5 0 0 1-12.8 7.3L3 20l1.2-4.2A8.5 8.5 0 1 1 21 11.5z", "user-plus":"M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M19 8v6 M16 11h6",star:"m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z",activity:"M3 12h4l3-8 4 16 3-8h4", "map-pin":"M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0z M12 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4",eye:"M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6",help:"M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2-3 4 M12 17h.01 M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0",headphones:"M3 14v-3a9 9 0 0 1 18 0v3 M3 14h4v7H5a2 2 0 0 1-2-2z M21 14h-4v7h2a2 2 0 0 0 2-2z",file:"M14 2H6v20h12V8z M14 2v6h6 M9 13h6 M9 17h6",shield:"M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z M9 12l2 2 4-4",logout:"M10 17l5-5-5-5 M15 12H3 M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7",trash:"M3 6h18 M8 6V4h8v2 M19 6l-1 15H6L5 6 M10 11v6 M14 11v6"};
+  return <span className="hc-setting-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={paths[name]||paths.user}/></svg></span>;
+}
+function SettingsGroup({title,children,danger=false}:{title:string;children:React.ReactNode;danger?:boolean}) {
+ return <section className={"hc-settings-group"+(danger?" is-danger":"")}><h3>{title}</h3><div className="hc-settings-list">{children}</div></section>;
+}
+function SettingsRow({icon,label,value,href,onClick,danger=false}:{icon:string;label:string;value:string;href?:string;onClick?:()=>void;danger?:boolean}) {
+ const content=<><SettingsGlyph name={icon}/><span className="hc-setting-copy"><strong>{label}</strong></span><span className="hc-setting-value">{value}</span><span className="hc-setting-chevron" aria-hidden="true">›</span></>;
+ if(href)return <Link className={"hc-setting-row"+(danger?" is-danger":"")} href={href}>{content}</Link>;
+ return <button type="button" className={"hc-setting-row"+(danger?" is-danger":"")} onClick={onClick}>{content}</button>;
+}
+function SettingsToggle({icon,label,checked,onChange}:{icon:string;label:string;checked:boolean;onChange:(value:boolean)=>void}) {
+ return <div className="hc-setting-row"><SettingsGlyph name={icon}/><span className="hc-setting-copy"><strong>{label}</strong></span><button type="button" role="switch" aria-checked={checked} className={"hc-switch"+(checked?" is-on":"")} onClick={()=>onChange(!checked)}><span/></button></div>;
+}
 
 export default function AccountPage() {
   const [email, setEmail] = useState("");
@@ -73,6 +89,16 @@ export default function AccountPage() {
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [cropPreview, setCropPreview] = useState("");
   const [cropZoom, setCropZoom] = useState(1);
+  const [themePreference, setThemePreference] = useState<"system"|"light"|"dark">("system");
+  const [preferredLanguage, setPreferredLanguage] = useState("en");
+  const [notificationPreferences, setNotificationPreferences] = useState({game_chat_alerts:true,new_follower:true,team_reviews:true,hoopfeed_activity:true});
+  const [settingsVisibility, setSettingsVisibility] = useState<"public"|"players_only">("public");
+  const [settingsMessage, setSettingsMessage] = useState("");
+  const [passwordModal, setPasswordModal] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -219,11 +245,7 @@ export default function AccountPage() {
     window.location.replace("/login");
   }
 
-  async function deleteAccount() {
-    const first = window.confirm("Delete your HoopCheck account permanently? Your profile, reviews, ratings, messages, and account data will be removed where applicable. Active subscriptions will be canceled before deletion.");
-    if (!first) return;
-    const confirmation = window.prompt('Type DELETE to permanently delete your account.');
-    if (confirmation !== "DELETE") { setProfileMessage("Account deletion canceled. Type DELETE exactly to confirm."); return; }
+  async function deleteAccountConfirmed() {
     setDeletingAccount(true); setProfileMessage("");
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -243,11 +265,130 @@ export default function AccountPage() {
     }
   }
 
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    (async () => {
+      const { data } = await supabase.from("profiles").select("theme_preference,preferred_language,notification_preferences,profile_visibility,current_country_public").eq("id", userId).maybeSingle();
+      if (!alive || !data) return;
+      const theme = ["system","light","dark"].includes(data.theme_preference) ? data.theme_preference as "system"|"light"|"dark" : "system";
+      setThemePreference(theme);
+      localStorage.setItem("hoopcheck-theme", theme);
+      const language = ["en","es","fr","de","tr","pt","it","el","ar"].includes(data.preferred_language) ? data.preferred_language : "en";
+      setPreferredLanguage(language);
+      localStorage.setItem("hoopcheck-language", language);
+      document.dispatchEvent(new CustomEvent("hoopcheck-language-change", { detail: language }));
+      const notifications = data.notification_preferences && typeof data.notification_preferences === "object" ? data.notification_preferences as Record<string, unknown> : {};
+      setNotificationPreferences({
+        game_chat_alerts: notifications.game_chat_alerts !== false,
+        new_follower: notifications.new_follower !== false,
+        team_reviews: notifications.team_reviews !== false,
+        hoopfeed_activity: notifications.hoopfeed_activity !== false
+      });
+      setSettingsVisibility(data.profile_visibility === "players_only" ? "players_only" : "public");
+      setCountryPublic(Boolean(data.current_country_public));
+    })();
+    return () => { alive = false; };
+  }, [userId]);
+
+  async function saveSetting(values: Record<string, unknown>, success: string) {
+    setSettingsMessage("");
+    const { error } = await supabase.from("profiles").update(values).eq("id", userId);
+    if (error) { setSettingsMessage("Could not save this setting: " + error.message); return false; }
+    setSettingsMessage(success);
+    return true;
+  }
+
+  async function changeTheme(next: "system"|"light"|"dark") {
+    setThemePreference(next);
+    localStorage.setItem("hoopcheck-theme", next);
+    window.dispatchEvent(new CustomEvent("hoopcheck-theme-change", { detail: next }));
+    await saveSetting({ theme_preference: next }, "Appearance saved.");
+  }
+
+  async function changeLanguage(next: string) {
+    setPreferredLanguage(next);
+    localStorage.setItem("hoopcheck-language", next);
+    document.documentElement.lang = next;
+    document.documentElement.dir = next === "ar" ? "rtl" : "ltr";
+    window.dispatchEvent(new CustomEvent("hoopcheck-language-change", { detail: next }));
+    await saveSetting({ preferred_language: next }, "Language saved.");
+  }
+
+  async function changeNotification(key: keyof typeof notificationPreferences, checked: boolean) {
+    const next = { ...notificationPreferences, [key]: checked };
+    setNotificationPreferences(next);
+    await saveSetting({ notification_preferences: next }, "Notification preferences saved.");
+  }
+
+  async function changeEmail() {
+    const next = window.prompt("Enter your new email address:", email)?.trim();
+    if (!next || next === email) return;
+    const { error } = await supabase.auth.updateUser({ email: next });
+    if (error) setSettingsMessage("Could not update email: " + error.message);
+    else setSettingsMessage("Check your new email address to confirm the change.");
+  }
+
+  async function submitPasswordChange() {
+    setPasswordMessage("");
+    if (newPassword.length < 8) { setPasswordMessage("Use at least 8 characters."); return; }
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) { setPasswordMessage(error.message); return; }
+    setNewPassword(""); setPasswordModal(false); setSettingsMessage("Password updated successfully.");
+  }
+
+  async function changeVisibility(next: "public"|"players_only") {
+    setSettingsVisibility(next);
+    const ok = await saveSetting({ profile_visibility: next }, "Profile visibility saved.");
+    if (!ok) setSettingsVisibility(next === "public" ? "players_only" : "public");
+  }
+
+  async function changeCountryVisibility(checked: boolean) {
+    setCountryPublic(checked);
+    const ok = await saveSetting({ current_country_public: checked }, "HoopFeed country preference saved.");
+    if (!ok) setCountryPublic(!checked);
+  }
+
   if (loading) return <main className="page-shell hc-account-page"><div className="page-container"><HoopLoading label="Loading your account..." /></div></main>;
 
   return (
     <main className="page-shell hc-account-page"><div className="page-container">
       <section className="hero-card"><div><p className="eyebrow">MY ACCOUNT</p><h1>{email}</h1><p className="muted">Manage your HoopCheck activity and submitted reviews.</p></div></section>
+      <section className="hc-settings" aria-label="Account settings">
+        <div className="hc-settings-heading"><p className="eyebrow">SETTINGS</p><h2>Account preferences</h2><p className="muted">Manage your account, experience, privacy and notifications.</p></div>
+        <SettingsGroup title="ACCOUNT">
+          <SettingsRow icon="user" label="Edit Profile" value="Edit details" href="#edit-profile" />
+          <SettingsRow icon="mail" label="Email" value={email || "Not set"} onClick={changeEmail} />
+          <SettingsRow icon="lock" label="Change Password" value="Update password" onClick={() => { setPasswordMessage(""); setPasswordModal(true); }} />
+          <SettingsRow icon="crown" label="Membership" value={subscription?.plan === "premium" ? "Premium" : subscription?.plan === "pro" ? "Pro" : "Free"} href="/membership" />
+        </SettingsGroup>
+        <SettingsGroup title="PREFERENCES">
+          <div className="hc-setting-row"><SettingsGlyph name="moon"/><div className="hc-setting-copy"><strong>Dark Mode</strong><small>{themePreference === "system" ? "Follows your device" : themePreference === "dark" ? "On" : "Off"}</small></div><button type="button" role="switch" aria-checked={themePreference === "dark" || (themePreference === "system" && window.matchMedia?.("(prefers-color-scheme: dark)").matches)} className={"hc-switch "+((themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)) ? "is-on" : "")} onClick={() => changeTheme((themePreference === "system" ? (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) : themePreference === "dark") ? "light" : "dark")}><span/></button></div>
+          {themePreference !== "system" && <div className="hc-setting-subrow"><button type="button" className="hc-text-button" onClick={() => changeTheme("system")}>Use device setting</button></div>}
+          <div className="hc-setting-row"><SettingsGlyph name="globe"/><div className="hc-setting-copy"><strong>Language</strong><small>Choose your app language</small></div><select aria-label="Language" className="hc-setting-select" value={preferredLanguage} onChange={e=>changeLanguage(e.target.value)}><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option></select></div>
+          <SettingsToggle icon="message" label="Game chat alerts" checked={notificationPreferences.game_chat_alerts} onChange={v=>changeNotification("game_chat_alerts",v)} />
+          <SettingsToggle icon="user-plus" label="New follower" checked={notificationPreferences.new_follower} onChange={v=>changeNotification("new_follower",v)} />
+          <SettingsToggle icon="star" label="Review on a team I follow" checked={notificationPreferences.team_reviews} onChange={v=>changeNotification("team_reviews",v)} />
+          <SettingsToggle icon="activity" label="HoopFeed activity" checked={notificationPreferences.hoopfeed_activity} onChange={v=>changeNotification("hoopfeed_activity",v)} />
+        </SettingsGroup>
+        <SettingsGroup title="PRIVACY">
+          <SettingsToggle icon="map-pin" label="Show my country on HoopFeed posts" checked={countryPublic} onChange={changeCountryVisibility} />
+          <div className="hc-setting-row"><SettingsGlyph name="eye"/><div className="hc-setting-copy"><strong>Who can see my profile</strong><small>{settingsVisibility === "public" ? "Public" : "Players only"}</small></div><select aria-label="Who can see my profile" className="hc-setting-select" value={settingsVisibility} onChange={e=>changeVisibility(e.target.value as "public"|"players_only")}><option value="public">Public</option><option value="players_only">Players only</option></select></div>
+        </SettingsGroup>
+        <SettingsGroup title="SUPPORT">
+          <SettingsRow icon="help" label="Help & FAQ" value="Get answers" href="/support" />
+          <SettingsRow icon="headphones" label="Contact Support" value="Get in touch" href="/support" />
+          <SettingsRow icon="file" label="Terms" value="Read terms" href="/terms" />
+          <SettingsRow icon="shield" label="Privacy Policy" value="Read policy" href="/privacy" />
+        </SettingsGroup>
+        <SettingsGroup title="DANGER ZONE" danger>
+          <SettingsRow icon="logout" label="Sign Out" value="End this session" onClick={signOut} danger />
+          <SettingsRow icon="trash" label="Delete Account" value={deletingAccount ? "Deleting…" : "Permanent action"} onClick={() => { setDeleteConfirmation(""); setDeleteModal(true); }} danger />
+        </SettingsGroup>
+        {settingsMessage && <p className="hc-settings-message" role="status">{settingsMessage}</p>}
+      </section>
+      {passwordModal && <div className="hc-modal-backdrop" role="presentation" onClick={e=>{if(e.target===e.currentTarget)setPasswordModal(false)}}><section className="hc-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="hc-password-title"><button type="button" className="hc-modal-close" aria-label="Close" onClick={()=>setPasswordModal(false)}>×</button><p className="eyebrow">SECURITY</p><h2 id="hc-password-title">Change password</h2><label htmlFor="hc-new-password">New password</label><input id="hc-new-password" type="password" autoComplete="new-password" minLength={8} value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="At least 8 characters"/>{passwordMessage && <p role="alert">{passwordMessage}</p>}<button type="button" className="btn" onClick={submitPasswordChange}>Update password</button></section></div>}
+      {deleteModal && <div className="hc-modal-backdrop" role="presentation" onClick={e=>{if(e.target===e.currentTarget)setDeleteModal(false)}}><section className="hc-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="hc-delete-title"><button type="button" className="hc-modal-close" aria-label="Close" onClick={()=>setDeleteModal(false)}>×</button><p className="eyebrow" style={{color:"#ef4444"}}>DANGER ZONE</p><h2 id="hc-delete-title">Delete account?</h2><p>This permanently deletes your account and associated data where applicable. This action cannot be undone.</p><label htmlFor="hc-delete-confirm">Type DELETE to confirm</label><input id="hc-delete-confirm" value={deleteConfirmation} onChange={e=>setDeleteConfirmation(e.target.value)} autoComplete="off" placeholder="DELETE"/><button type="button" className="hc-danger-button" disabled={deleteConfirmation !== "DELETE" || deletingAccount} onClick={async()=>{setDeleteModal(false);await deleteAccountConfirmed();}}>{deletingAccount ? "Deleting…" : "Permanently delete account"}</button></section></div>}
       <section className="grid" style={{marginTop:32}}>
         <div className="dashboard-card">
           <p className="eyebrow">PROFILE</p>
