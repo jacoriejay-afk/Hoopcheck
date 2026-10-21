@@ -3557,7 +3557,7 @@ body { background-color: var(--hc-ink); }
 .hc-feed-page .page-container { width: min(100% - 32px, 680px); margin-inline: auto; }
 .hc-feed-page .hc-feed-hero { margin-bottom: 16px; }
 .hc-feed-page .hc-feed-composer {
-  position: sticky; top: 10px; z-index: 20; display: grid; gap: 14px;
+  position: relative; z-index: 1; display: grid; gap: 14px;
   padding: 16px !important; border: 1px solid #e4e4df; border-radius: 18px !important;
   background: rgba(255,255,255,.97); box-shadow: 0 8px 28px rgba(20,20,20,.07);
   backdrop-filter: blur(14px);
