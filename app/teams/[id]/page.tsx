@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLanguage } from "../../../components/LanguageProvider";
 
 type ReviewVerification = {
   review_id: string;
@@ -137,6 +138,7 @@ function RatingBar({
 }
 
 export default function TeamDetailPage() {
+  const { formatDate, formatNumber } = useLanguage();
   const params = useParams();
 
   const id = Array.isArray(params.id)
@@ -610,7 +612,7 @@ export default function TeamDetailPage() {
         </div>
 
         <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} /></div>
-        <TeamRosterSpots teamId={team.id} teamName={team.name} /><p className="muted" style={{fontSize:13}}>{followerCount.toLocaleString()} follower{followerCount===1?"":"s"}</p>
+        <TeamRosterSpots teamId={team.id} teamName={team.name} /><p className="muted" style={{fontSize:13}}>{formatNumber(followerCount)} follower{followerCount===1?"":"s"}</p>
 
         <div className="actions">
           <Link
@@ -966,9 +968,7 @@ export default function TeamDetailPage() {
                             margin: 0,
                           }}
                         >
-                          {new Date(
-                            review.created_at
-                          ).toLocaleDateString()}
+                          {formatDate(review.created_at)}
                         </p>
 
                         <button
