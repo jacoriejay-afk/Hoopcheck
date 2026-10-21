@@ -14,7 +14,6 @@ import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import { submitReviewReport } from "../../../lib/review-reports";
 import HoopLoading from "../../../components/HoopLoading";
-import GeoBadge from "../../../components/GeoBadge";
 import FollowButton from "../../../components/FollowButton";
 import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
