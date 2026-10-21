@@ -5492,9 +5492,9 @@ body { min-height: 100vh; }
   color: var(--hc-text-primary);
 }
 :where(.profile-card, .profile-info-card, .directory-card, .directory-tile, .directory-row, .team-card, .coach-card, .league-card, .player-card, .review-card, .result-card, .settings-card, .dashboard-card, .fan-feature-card, .hc-template-panel, .hc-template-category, .hc-mobile-category-list, .hc-mobile-quick-card, .hc-feed-ticket, .hc-feed-composer, .hc-feed-empty, .hc-feed-comments-panel, .hc-confirm-modal, .hc-settings-list, .hc-review-state, .state-card) {
-  background-color: var(--hc-card-bg);
-  color: var(--hc-text-primary);
-  border-color: var(--hc-card-border);
+  background-color: var(--hc-card-bg) !important;
+  color: var(--hc-text-primary) !important;
+  border-color: var(--hc-card-border) !important;
 }
 :where(.profile-card, .profile-info-card, .directory-card, .directory-tile, .directory-row, .team-card, .coach-card, .league-card, .player-card, .review-card, .result-card, .settings-card, .dashboard-card, .fan-feature-card, .hc-template-panel, .hc-template-category, .hc-mobile-category-list, .hc-mobile-quick-card, .hc-feed-ticket, .hc-feed-composer, .hc-feed-empty, .hc-feed-comments-panel, .hc-confirm-modal, .hc-settings-list, .hc-review-state, .state-card) :where(h1,h2,h3,h4,strong,label,p,a,small,span,li) {
   color: inherit;
