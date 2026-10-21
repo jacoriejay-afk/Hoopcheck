@@ -1,0 +1,262 @@
+/*
+ * HoopCheck complete theme contract.
+ * Loaded after every legacy stylesheet so route-local legacy colours cannot win.
+ * Use semantic tokens for surfaces/content; orange and category/status hues remain accents.
+ */
+:root,
+html[data-theme="light"] {
+  color-scheme: light;
+  --hc-bg: #f4f4f1;
+  --hc-surface: #ffffff;
+  --hc-surface-raised: #fafaf8;
+  --hc-surface-muted: #eeeee9;
+  --hc-text-primary: #171715;
+  --hc-text-secondary: #555650;
+  --hc-text-muted: #6b6b65;
+  --hc-border: #deded7;
+  --hc-border-strong: #c9c9c1;
+  --hc-overlay: rgb(18 18 16 / 56%);
+  --hc-input-bg: #ffffff;
+  --hc-input-text: #171715;
+  --hc-skeleton: #e5e5df;
+  --hc-skeleton-highlight: #f5f5f1;
+  --hc-hover: #fff0e7;
+  --hc-orange: #ff5a1f;
+  --hc-orange-contrast: #11110f;
+  --hc-success-bg: #e5f7ec;
+  --hc-success-text: #17683b;
+  --hc-error-bg: #fff0ef;
+  --hc-error-text: #a12820;
+  --hc-warning-bg: #fff5d6;
+  --hc-warning-text: #745300;
+  --hc-fixed-tile: #ffffff;
+  --hc-shadow: 0 8px 24px rgb(20 20 16 / 6%);
+  --ink: var(--hc-text-primary);
+  --paper: var(--hc-bg);
+  --brand-orange: var(--hc-orange);
+  --orange: var(--hc-orange);
+  --black: var(--hc-text-primary);
+  --white: var(--hc-surface);
+  --border: var(--hc-border);
+  --gray-100: var(--hc-surface-muted);
+  --gray-300: var(--hc-border-strong);
+  --gray-500: var(--hc-text-muted);
+  --gray-700: var(--hc-text-secondary);
+  --hc-paper: var(--hc-bg);
+  --hc-paper-strong: var(--hc-surface);
+  --hc-text: var(--hc-text-primary);
+  --hc-muted: var(--hc-text-muted);
+  --hc-line: var(--hc-border);
+}
+html[data-theme="dynamic"],
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --hc-bg: #0b0b0b;
+  --hc-surface: #151515;
+  --hc-surface-raised: #1c1c1c;
+  --hc-surface-muted: #222222;
+  --hc-text-primary: #f5f5f2;
+  --hc-text-secondary: #d0d0ca;
+  --hc-text-muted: #aaa9a2;
+  --hc-border: #343431;
+  --hc-border-strong: #4a4a45;
+  --hc-overlay: rgb(0 0 0 / 76%);
+  --hc-input-bg: #171717;
+  --hc-input-text: #f5f5f2;
+  --hc-skeleton: #292929;
+  --hc-skeleton-highlight: #3a3a3a;
+  --hc-hover: #2a1b14;
+  --hc-orange: #ff6a00;
+  --hc-orange-contrast: #11110f;
+  --hc-success-bg: #102d1d;
+  --hc-success-text: #91e3b0;
+  --hc-error-bg: #351817;
+  --hc-error-text: #ffaaa5;
+  --hc-warning-bg: #352b12;
+  --hc-warning-text: #ffdf83;
+  --hc-fixed-tile: #ffffff;
+  --hc-shadow: 0 8px 26px rgb(0 0 0 / 24%);
+  --ink: var(--hc-text-primary);
+  --paper: var(--hc-bg);
+  --brand-orange: var(--hc-orange);
+  --orange: var(--hc-orange);
+  --black: var(--hc-text-primary);
+  --white: var(--hc-surface);
+  --border: var(--hc-border);
+  --gray-100: var(--hc-surface-muted);
+  --gray-300: var(--hc-border-strong);
+  --gray-500: var(--hc-text-muted);
+  --gray-700: var(--hc-text-secondary);
+  --hc-paper: var(--hc-bg);
+  --hc-paper-strong: var(--hc-surface);
+  --hc-text: var(--hc-text-primary);
+  --hc-muted: var(--hc-text-muted);
+  --hc-line: var(--hc-border);
+}
+html, body {
+  background: var(--hc-bg) !important;
+  color: var(--hc-text-primary);
+}
+body, body :where(p, li, label, small, dt, dd, figcaption, blockquote, .muted, .description, .text-muted) {
+  color: inherit;
+}
+body :where(main, section, article, aside, nav, header, footer, form, fieldset) {
+  border-color: var(--hc-border);
+}
+body :where(h1,h2,h3,h4,h5,h6,[class*="text-"]) {
+  overflow-wrap: anywhere;
+}
+body :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select) {
+  color: var(--hc-input-text) !important;
+  background-color: var(--hc-input-bg) !important;
+  border-color: var(--hc-border-strong) !important;
+}
+body :where(input, textarea, select)::placeholder { color: var(--hc-text-muted) !important; opacity: 1; }
+body :where(option, optgroup) { color: var(--hc-input-text); background: var(--hc-input-bg); }
+body :where(hr, .divider, .separator) { border-color: var(--hc-border); }
+
+/* Generic app content: cards, tables, feed items, result rows, forms and panels. */
+body :where(.card, .panel, .result-card, .review-card, .team-card, .coach-card, .league-card,
+.player-card, .dashboard-card, .settings-card, .profile-card, .quick-card, .feed-post,
+.feed-card, .post-card, .comment-card, .game-chat, .chat-panel, .chat-message,
+.list-row, .directory-row, .team-row, .admin-panel, .admin-stat-card, .admin-review-card,
+.admin-report-card, .moderation-card, .modal-panel, .dialog-panel, .dropdown-menu,
+.popover-content, .search-result, .search-result-card, .empty-state, .skeleton-card,
+[class*="dashboard-command-tile"], [class*="fan-feature-card"]) {
+  background-color: var(--hc-surface) !important;
+  color: var(--hc-text-primary);
+  border-color: var(--hc-border) !important;
+  box-shadow: var(--hc-shadow);
+}
+body :where(.card, .panel, .result-card, .review-card, .team-card, .coach-card, .league-card,
+.player-card, .dashboard-card, .settings-card, .profile-card, .quick-card, .feed-post,
+.feed-card, .post-card, .comment-card, .game-chat, .chat-panel, .chat-message,
+.list-row, .directory-row, .team-row, .admin-panel, .admin-stat-card, .admin-review-card,
+.admin-report-card, .moderation-card) :where(p, li, label, span, strong, em, small, h1,h2,h3,h4,h5,h6) {
+  color: inherit;
+}
+body :where(.muted, .text-muted, .description, .subtle, .meta, .timestamp, .helper-text) {
+  color: var(--hc-text-muted) !important;
+}
+body :where(.empty-state, .error-state, .loading-state, .skeleton, [aria-busy="true"] .skeleton) {
+  background-color: var(--hc-surface-muted);
+  color: var(--hc-text-secondary);
+}
+body :where(.skeleton, .skeleton-line, .skeleton-card, [class*="skeleton"]) {
+  background-color: var(--hc-skeleton) !important;
+  border-color: var(--hc-border) !important;
+}
+body :where(.skeleton, .skeleton-line, [class*="skeleton"])::after {
+  background: linear-gradient(90deg, transparent, var(--hc-skeleton-highlight), transparent);
+}
+
+/* Legacy Tailwind utilities are mapped semantically so individual routes cannot pin light surfaces. */
+html[data-theme="dynamic"] body :where([class~="bg-white"], [class~="bg-gray-50"], [class~="bg-gray-100"],
+[class~="bg-slate-50"], [class~="bg-slate-100"], [class~="bg-zinc-50"], [class~="bg-zinc-100"],
+[class~="bg-neutral-50"], [class~="bg-neutral-100"], [class~="bg-stone-50"], [class~="bg-stone-100"],
+[class~="bg-[#fff"], [class~="bg-[#ffffff"]) {
+  background-color: var(--hc-surface) !important;
+  color: var(--hc-text-primary) !important;
+}
+html[data-theme="dynamic"] body :where([class~="text-black"], [class~="text-gray-900"], [class~="text-gray-800"],
+[class~="text-gray-700"], [class~="text-slate-900"], [class~="text-slate-800"], [class~="text-zinc-900"],
+[class~="text-neutral-900"], [class~="text-stone-900"]) {
+  color: var(--hc-text-primary) !important;
+}
+html[data-theme="dynamic"] body :where([class~="border-gray-100"], [class~="border-gray-200"], [class~="border-slate-100"],
+[class~="border-slate-200"], [class~="border-zinc-100"], [class~="border-neutral-200"], [class~="border-stone-200"]) {
+  border-color: var(--hc-border) !important;
+}
+html[data-theme="light"] body :where([class~="bg-black"], [class~="bg-gray-950"], [class~="bg-gray-900"],
+[class~="bg-slate-950"], [class~="bg-slate-900"], [class~="bg-zinc-950"], [class~="bg-neutral-950"],
+[class~="bg-stone-950"]) {
+  background-color: var(--hc-surface) !important;
+  color: var(--hc-text-primary) !important;
+}
+html[data-theme="light"] body :where([class~="text-white"], [class~="text-gray-100"], [class~="text-gray-200"],
+[class~="text-slate-100"], [class~="text-slate-200"], [class~="text-zinc-100"], [class~="text-neutral-100"]) {
+  color: var(--hc-text-primary) !important;
+}
+html[data-theme="light"] body :where([class~="border-gray-700"], [class~="border-gray-800"], [class~="border-slate-700"],
+[class~="border-slate-800"], [class~="border-zinc-700"], [class~="border-neutral-800"]) {
+  border-color: var(--hc-border) !important;
+}
+
+/* High-contrast themed banners still adapt to the selected theme. */
+body :where(.hero, .profile-hero, .search-hero, .auth-hero, .hc-auth-hero, .hc-directory-hero,
+.dashboard-hero, .profile-banner, .hc-dossier-identity, .hc-template-hero) {
+  background-color: var(--hc-surface-raised);
+  color: var(--hc-text-primary);
+  border-color: var(--hc-border);
+}
+body :where(.hero, .profile-hero, .search-hero, .auth-hero, .hc-auth-hero, .hc-directory-hero,
+.dashboard-hero, .profile-banner, .hc-dossier-identity, .hc-template-hero) :where(h1,h2,h3,h4,p,span,small,label) {
+  color: inherit;
+}
+body :where(.hero, .profile-hero, .search-hero, .auth-hero, .hc-auth-hero, .hc-directory-hero,
+.dashboard-hero, .profile-banner, .hc-dossier-identity, .hc-template-hero) :where(.muted, .description, .subtitle) {
+  color: var(--hc-text-secondary) !important;
+}
+body :where(.site-header-global, .bottom-nav, .site-footer, .nav) {
+  background: var(--hc-surface) !important;
+  color: var(--hc-text-primary) !important;
+  border-color: var(--hc-border) !important;
+}
+body :where(.site-header-global, .bottom-nav, .site-footer, .nav) :where(a,button,span,p,strong,small) {
+  color: inherit;
+}
+body :where(.site-header-global, .bottom-nav, .site-footer, .nav) :where(a:hover, a.active, a.is-active) {
+  color: var(--hc-orange) !important;
+}
+body :where(.site-header-global .hc-wordmark, .footer-logo, .site-header-global .logo) { color: var(--hc-text-primary) !important; }
+body :where(.site-header-global .hc-wordmark span, .footer-logo span) { color: var(--hc-orange) !important; }
+
+/* Modal overlays, dropdowns, notifications and feedback must be readable in both themes. */
+body :where(.modal-backdrop, .dialog-backdrop, .overlay) { background: var(--hc-overlay) !important; }
+body :where(.modal-panel, .dialog-panel, .dropdown-menu, .popover-content, [role="dialog"], [role="listbox"]) {
+  background-color: var(--hc-surface) !important;
+  color: var(--hc-text-primary) !important;
+  border-color: var(--hc-border) !important;
+}
+body :where(.alert-error, .error-message, .toast-error, [data-sonner-toast][data-type="error"]) {
+  background: var(--hc-error-bg) !important; color: var(--hc-error-text) !important; border-color: var(--hc-border) !important;
+}
+body :where(.alert-success, .success-message, .toast-success, [data-sonner-toast][data-type="success"]) {
+  background: var(--hc-success-bg) !important; color: var(--hc-success-text) !important; border-color: var(--hc-border) !important;
+}
+body :where(.alert-warning, .warning-message, .toast-warning) {
+  background: var(--hc-warning-bg) !important; color: var(--hc-warning-text) !important; border-color: var(--hc-border) !important;
+}
+
+/* Crest/brand artwork always gets a clean white tile regardless of page theme. */
+body :where(.team-logo, .club-logo, .team-crest, .club-crest, .league-logo, .league-crest,
+.coach-logo, .hc-logo-tile, .logo-tile, [data-logo-tile], .team-logo-wrap, .crest-wrap,
+.team-avatar-logo, .directory-logo, .profile-crest) {
+  background: var(--hc-fixed-tile) !important;
+  color: #171715 !important;
+  border-color: #e6e6e6 !important;
+}
+body :where(.team-logo, .club-logo, .team-crest, .club-crest, .league-logo, .league-crest,
+.hc-logo-tile, .logo-tile, [data-logo-tile], .team-logo-wrap, .crest-wrap, .directory-logo, .profile-crest) img {
+  background: #ffffff !important;
+  object-fit: contain;
+}
+body img[alt*="crest" i], body img[alt*="logo" i], body img[alt*="team" i], body img[alt*="club" i] {
+  object-fit: contain;
+}
+body :where(button, .btn, [role="button"], input[type="submit"]) {
+  border-color: var(--hc-border);
+}
+body :where(.btn-primary, .button-primary, button[type="submit"], .hc-template-cta) {
+  background-color: var(--hc-orange) !important;
+  color: var(--hc-orange-contrast) !important;
+  border-color: var(--hc-orange) !important;
+}
+body :where(a, button, input, select, textarea, summary):focus-visible {
+  outline-color: var(--hc-orange) !important;
+}
+@media (max-width: 480px) {
+  body { overflow-wrap: anywhere; }
+  body :where(.modal-panel, .dialog-panel, [role="dialog"]) { max-width: calc(100vw - 24px); max-height: 86dvh; overflow: auto; }
+  body :where(.card, .panel, .review-card, .feed-post, .admin-panel, .modal-panel) { min-width: 0; }
+}
