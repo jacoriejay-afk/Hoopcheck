@@ -67,7 +67,7 @@ export default function SettingsPage() {
               {(["dark", "light", "system"] as const).map((option) => (
                 <button key={option} className={"theme-option " + (theme === option ? "active" : "")} onClick={() => setTheme(option)} type="button">
                   <strong>{option === "dark" ? t("darkMode") : option === "light" ? t("lightMode") : t("systemMode")}</strong>
-                  <small>{option === "dark" ? "Asphalt black" : option === "light" ? "Clean hardwood" : "Match your device"}</small>
+                  <small>{option === "dark" ? t("themeDarkDescription") : option === "light" ? t("themeLightDescription") : t("themeSystemDescription")}</small>
                 </button>
               ))}
             </div>
@@ -75,16 +75,16 @@ export default function SettingsPage() {
           <section className="settings-card">
             <span className="card-kicker">{t("notifications")}</span>
             <h2>{t("basketballAlerts")}</h2>
-            <p className="muted">Follow specific teams, coaches, or leagues to keep their alerts one tap away.</p>
+            <p className="muted">{t("notificationsDescription")}</p>
             <button type="button" className={"toggle " + (notifications ? "on" : "")} onClick={() => void saveNotifications(!notifications)}>
-              <span />{notifications ? "Notifications enabled" : "Notifications disabled"}
+              <span />{notifications ? t("notificationsEnabled") : t("notificationsDisabled")}
             </button>
             <Link href="/search" className="btn dark">{t("findToFollow")}</Link>
           </section>
           <section className="settings-card">
             <span className="card-kicker">{t("motion")}</span>
             <h2>{t("mobileInteractions")}</h2>
-            <p className="muted">Animations are short, touch-friendly, and respect your device's reduced-motion preference.</p>
+            <p className="muted">{t("motionDescription")}</p>
             <div className="motion-demo"><span /><span /><span /></div>
           </section>
         </div>
