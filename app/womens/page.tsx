@@ -3,6 +3,7 @@
 import { supabase } from "../../lib/supabase";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import DirectoryLayout from "../../components/DirectoryLayout";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
@@ -66,22 +67,7 @@ export default function Womens() {
   return (
     <main className="page-shell hc-womens-directory-page">
       <div className="page-container">
-        <header className="hc-womens-directory-header">
-          <div>
-            <p className="eyebrow">WOMEN’S BASKETBALL</p>
-            <h1>Find a team</h1>
-            <p className="muted">Search professional women’s teams by club, league, city, or country.</p>
-          </div>
-          <Link href="/teams" className="hc-womens-switch-link">Men’s teams <span aria-hidden="true">→</span></Link>
-        </header>
-
-        <nav className="hc-directory-switcher hc-womens-compact-switcher" aria-label="Browse HoopCheck directories">
-          <Link href="/teams">Men’s Teams</Link>
-          <Link href="/womens" aria-current="page" className="is-active">Women’s Teams</Link>
-          <Link href="/coaches">Coaches</Link>
-          <Link href="/leagues">Leagues</Link>
-          <Link href="/players">Find Players</Link>
-        </nav>
+        <DirectoryLayout kicker="WOMEN’S BASKETBALL" title="Find a team" description="Search professional women’s teams by club, league, city, or country." current="womens" />
 
         <section className="hc-womens-search-panel" aria-label="Search women’s teams">
           <SearchBar inputId="womens-team-search" value={query} onChange={setQuery} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search women’s teams" onSubmit={(value) => setQuery(value)} />
