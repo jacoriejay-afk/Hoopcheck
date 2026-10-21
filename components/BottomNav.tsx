@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthState } from "./AuthProvider";
+import { useLanguage } from "./LanguageProvider";
 
 const items = [
   ["/", "Home"],
@@ -35,6 +36,7 @@ function NavIcon({ label }: { label: (typeof items)[number][1] }) {
 export default function BottomNav() {
   const pathname = usePathname();
   const { signedIn } = useAuthState();
+  const { t } = useLanguage();
 
   if (!signedIn || pathname.startsWith("/admin")) return null;
 
@@ -44,10 +46,11 @@ export default function BottomNav() {
         const active = href === "/"
           ? pathname === "/" || pathname === "/dashboard"
           : pathname === href || pathname.startsWith(href + "/");
+        const translationKey = ({ Home: "home", HoopFeed: "feed", Search: "search", Alerts: "alerts", Account: "account" } as const)[label];
         return (
           <Link key={href} href={href} className={active ? "active" : ""} aria-current={active ? "page" : undefined}>
             <span className="bottom-nav-icon"><NavIcon label={label} /></span>
-            <span className="bottom-nav-label">{label}</span>
+            <span className="bottom-nav-label">{t(translationKey)}</span>
           </Link>
         );
       })}
