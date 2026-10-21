@@ -50,7 +50,7 @@ export function useLanguage() {
   return { language, t, setLanguage };
 }
 
-export default function PreferencesProvider({ children, initialTheme = "system", initialLanguage = "en", trustInitialPreferences = false }: { children: React.ReactNode; initialTheme?: ThemePreference; initialLanguage?: Language; trustInitialPreferences?: boolean }) {
+export default function PreferencesProvider({ children, initialTheme = "system", initialLanguage = "en", trustInitialTheme = false, trustInitialLanguage = false }: { children: React.ReactNode; initialTheme?: ThemePreference; initialLanguage?: Language; trustInitialTheme?: boolean; trustInitialLanguage?: boolean }) {
   const [theme, setThemeState] = useState<ThemePreference>(initialTheme);
   const [language, setLanguageState] = useState<Language>(initialLanguage);
 
@@ -88,9 +88,9 @@ export default function PreferencesProvider({ children, initialTheme = "system",
     let active = true;
     const storedTheme = normalizeTheme(localStorage.getItem("hoopcheck-theme"));
     const storedLanguage = localStorage.getItem("hoopcheck-language");
-    if (!trustInitialPreferences && storedTheme) { setThemeState(storedTheme); applyTheme(storedTheme); }
+    if (!trustInitialTheme && storedTheme) { setThemeState(storedTheme); applyTheme(storedTheme); }
     else { setThemeState(initialTheme); applyTheme(initialTheme); }
-    if (!trustInitialPreferences && validLanguage(storedLanguage)) { setLanguageState(storedLanguage); applyLanguage(storedLanguage); }
+    if (!trustInitialLanguage && validLanguage(storedLanguage)) { setLanguageState(storedLanguage); applyLanguage(storedLanguage); }
     else { setLanguageState(initialLanguage); applyLanguage(initialLanguage); }
 
     const onThemeEvent = (event: Event) => {
@@ -142,7 +142,7 @@ export default function PreferencesProvider({ children, initialTheme = "system",
       media.removeEventListener?.("change", onSystemTheme);
       authListener.subscription.unsubscribe();
     };
-  }, [initialTheme, initialLanguage, trustInitialPreferences]);
+  }, [initialTheme, initialLanguage, trustInitialTheme, trustInitialLanguage]);
 
   const value = useMemo(() => ({ theme, language, setTheme, setLanguage, t: (key: string) => translations[language][key] || translations.en[key] || key }), [theme, language, setTheme, setLanguage]);
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
