@@ -94,8 +94,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body className={sansFont.className}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c") }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c") }} />
-        <ProtectionLayer />
         <PreferencesProvider initialTheme={initialTheme} initialLanguage={initialLanguage}>
+          <ProtectionLayer />
           <AuthProvider>
               <AnalyticsTracker />
               <SiteHeader />
@@ -104,7 +104,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <GlobalBackButton />
               {children}
           </AuthProvider>
-        </PreferencesProvider>
         <footer className="site-footer">
           <CourtLines variant="full-court" className="hc-court-footer-art" />
           <div className="footer-inner">
@@ -138,6 +137,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <span>Built for basketball players.</span>
           </div>
         </footer>
+        </PreferencesProvider>
       </body>
     </html>
   );
