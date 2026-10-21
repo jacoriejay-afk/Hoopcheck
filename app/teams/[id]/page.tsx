@@ -14,13 +14,11 @@ import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import { submitReviewReport } from "../../../lib/review-reports";
 import HoopLoading from "../../../components/HoopLoading";
-import WatchButton from "../../../components/WatchButton";
 import GeoBadge from "../../../components/GeoBadge";
 import FollowButton from "../../../components/FollowButton";
 import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
 import TrustScoreDial from "../../../components/TrustScoreDial";
-import ClaimProfileButton from "../../../components/ClaimProfileButton";
 import TeamRosterSpots from "../../../components/TeamRosterSpots";
 import OfficialReviewResponse from "../../../components/OfficialReviewResponse";
 
@@ -31,6 +29,7 @@ type Team = {
   league_name: string | null;
   league_id: string | null;
   city: string | null;
+  logo_url?: string | null;
 };
 
 type Coach = {
@@ -208,7 +207,7 @@ export default function TeamDetailPage() {
       } = await supabase
         .from("teams")
         .select(
-          "id, name, country, league_name, league_id, city"
+          "id, name, country, league_name, league_id, city, logo_url"
         )
         .eq("id", id)
         .maybeSingle();
@@ -601,9 +600,7 @@ export default function TeamDetailPage() {
           Team Research
         </div>
 
-        <h1>
-          {team.name}
-        </h1>
+        <div className="hc-team-profile-heading"><span className="hc-team-profile-logo" aria-hidden="true">{team.logo_url ? <img src={team.logo_url} alt="" width={64} height={64} /> : team.name.split(/\\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span><div><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || "Country not listed"}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
         <div className="hc-entity-trust-score">
           <TrustScoreDial
             score={trustScoreData?.score ?? null}
@@ -613,32 +610,8 @@ export default function TeamDetailPage() {
           />
         </div>
 
-        <div className="entity-actions"><GeoBadge country={team.country} /><FollowButton targetType="team" targetId={team.id} /><WatchButton targetType="team" targetId={team.id} targetName={team.name} /></div>
-        <ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} />
+        <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} /></div>
         <TeamRosterSpots teamId={team.id} teamName={team.name} /><p className="muted" style={{fontSize:13}}>{followerCount.toLocaleString()} follower{followerCount===1?"":"s"}</p>
-
-        <p>
-          {team.city &&
-          team.country
-            ? `${team.city}, ${team.country}`
-            : team.country ||
-              team.city ||
-              "Location not listed"}
-        </p>
-
-        {team.league_name && (
-          <p
-            style={{
-              color: "var(--orange)",
-              fontWeight: 800,
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
-              fontSize: "13px",
-            }}
-          >
-            {team.league_name}
-          </p>
-        )}
 
         <div className="actions">
           <Link
