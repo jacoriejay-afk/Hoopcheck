@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Graduate, Inter } from "next/font/google";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import "./globals.css";
 import "./hoopcheck-rebrand.css";
 import "./hoopcheck-polish.css";
@@ -64,7 +65,12 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const cookieStore = await cookies();
+  const savedTheme = cookieStore.get("hoopcheck-theme")?.value;
+  const savedLanguage = cookieStore.get("hoopcheck-language")?.value;
+  const initialTheme = savedTheme === "light" || savedTheme === "dark" || savedTheme === "system" ? savedTheme : "system";
+  const initialLanguage = ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"].includes(savedLanguage || "") ? savedLanguage! : "en";
   const organizationJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -81,15 +87,15 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   };
 
   return (
-    <html lang="en" className={`${displayFont.variable} ${sansFont.variable}`}>
+    <html lang={initialLanguage} dir={initialLanguage === "ar" ? "rtl" : "ltr"} data-theme={initialTheme === "dark" ? "dynamic" : "light"} className={`${displayFont.variable} ${sansFont.variable}`}>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem("hoopcheck-theme")||"system";var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dynamic":"light";document.documentElement.style.colorScheme=d?"dark":"light";var l=localStorage.getItem("hoopcheck-language")||"en";document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";}catch(e){document.documentElement.dataset.theme="light";}})();` }} />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem("hoopcheck-theme")||document.cookie.split("; ").find(function(c){return c.indexOf("hoopcheck-theme=")===0})?.split("=")[1]||"system";var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dynamic":"light";document.documentElement.style.colorScheme=d?"dark":"light";var l=localStorage.getItem("hoopcheck-language")||decodeURIComponent(document.cookie.split("; ").find(function(c){return c.indexOf("hoopcheck-language=")===0})?.split("=").slice(1).join("=")||"en");document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";}catch(e){document.documentElement.dataset.theme="light";}})();` }} />
       </head>
       <body className={sansFont.className}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c") }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c") }} />
         <ProtectionLayer />
-        <PreferencesProvider>
+        <PreferencesProvider initialTheme={initialTheme} initialLanguage={initialLanguage}>
           <AuthProvider>
               <AnalyticsTracker />
               <SiteHeader />
