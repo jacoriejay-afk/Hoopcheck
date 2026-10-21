@@ -154,7 +154,7 @@ body :where(.skeleton, .skeleton-line, [class*="skeleton"])::after {
 html[data-theme="dynamic"] body :where([class~="bg-white"], [class~="bg-gray-50"], [class~="bg-gray-100"],
 [class~="bg-slate-50"], [class~="bg-slate-100"], [class~="bg-zinc-50"], [class~="bg-zinc-100"],
 [class~="bg-neutral-50"], [class~="bg-neutral-100"], [class~="bg-stone-50"], [class~="bg-stone-100"],
-[class~="bg-[#fff"], [class~="bg-[#ffffff"]) {
+[class~="bg-[#fff]"], [class~="bg-[#ffffff]) {
   background-color: var(--hc-surface) !important;
   color: var(--hc-text-primary) !important;
 }
@@ -301,4 +301,40 @@ body img[alt*="crest" i], body img[alt*="team" i], body img[alt*="club" i], body
   background: #fff !important;
   padding: 4px;
   border-radius: 4px;
+}
+
+
+/* Route-specific legacy surfaces also consume the shared tokens. */
+body :where(.hc-template-home, .hc-template-explore, .hc-auth-page, .hc-auth-card, .signup-card,
+.research-search, .search-form, .hc-directory-switcher a, .hc-team-directory-list > .card,
+.hc-coaches-directory-page .card, .hc-leagues-directory-page .card, .hc-player-directory-page .card,
+.hc-global-search-page .result-card, .hc-dashboard-shell .dashboard-command-tile,
+.hc-dashboard-shell .fan-feature-card, .hc-dossier-identity, .hc-dossier-overview,
+.review-moderation-center .admin-stat-card, .review-moderation-center .admin-panel,
+.review-moderation-center .moderation-card) {
+  background-color: var(--hc-surface) !important;
+  color: var(--hc-text-primary) !important;
+  border-color: var(--hc-border) !important;
+}
+body :where(.hc-template-home, .hc-template-explore) :where(h1,h2,h3,h4,p,span,small,label) {
+  color: var(--hc-text-primary) !important;
+}
+body :where(.hc-template-home, .hc-template-explore) :where(.hc-template-hero, .hc-template-panel, .hc-template-ball) {
+  background-color: var(--hc-surface-raised) !important;
+}
+body :where(.hc-template-home, .hc-template-explore) :where(.hc-template-hero h1 em, .hc-home-kicker,
+.hc-template-eyebrow, .hc-template-cta, .hc-template-outline-link) {
+  color: var(--hc-orange-contrast) !important;
+}
+body :where(.hc-auth-page, .auth-page-shell, .hc-auth-card, .signup-card, .research-search, .search-form)
+:where(h1,h2,h3,h4,p,span,small,label) {
+  color: var(--hc-text-primary) !important;
+}
+body :where(.hc-auth-page, .auth-page-shell, .hc-auth-card, .signup-card, .research-search, .search-form)
+:where(.muted, .description, .subtitle, .helper-text) {
+  color: var(--hc-text-muted) !important;
+}
+body :where(.hc-directory-switcher a, .hc-team-directory-list > .card, .hc-global-search-page .result-card,
+.hc-dashboard-shell .dashboard-command-tile, .hc-dashboard-shell .fan-feature-card) {
+  box-shadow: var(--hc-shadow) !important;
 }
