@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import Link from "next/link";
+import DirectoryLayout from "../../components/DirectoryLayout";
 
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
@@ -77,68 +78,7 @@ export default function CoachesPage() {
 
   return (
     <main className="hc-coaches-directory-page">
-<section className="hero hc-directory-hero">
-        <div className="eyebrow">
-          HoopCheck Coaches
-        </div>
-
-        <h1>
-          Know the coach
-          <br />
-          before you sign.
-        </h1>
-
-        <p>
-          Research coaches through real
-          player experiences from professional
-          basketball around the world.
-        </p>
-
-        <div className="research-search">
-          <div className="search-label">
-            GLOBAL RESEARCH
-          </div>
-
-          <Link
-            href="/search"
-            className="search-button"
-          >
-            <span>
-              Search coaches, teams, or leagues...
-            </span>
-
-            <strong>
-              Search →
-            </strong>
-          </Link>
-        </div>
-
-        <div className="actions">
-          <Link
-            href="/teams"
-            className="btn dark"
-          >
-            Research Teams
-          </Link>
-
-          <Link
-            href="/leagues"
-            className="btn dark"
-          >
-            Research Leagues
-          </Link>
-        </div>
-      </section>
-
-      <nav className="hc-directory-switcher" aria-label="Browse HoopCheck directories">
-        <span className="hc-directory-switcher-label">BROWSE DIRECTORIES</span>
-        <Link href="/teams" aria-current={undefined}>Men&apos;s Teams</Link>
-        <Link href="/womens">Women&apos;s Teams</Link>
-        <Link href="/coaches">Coaches</Link>
-        <Link href="/leagues">Leagues</Link>
-        <Link href="/players">Find Players</Link>
-        <Link href="/search">Reviews</Link>
-      </nav>
+<DirectoryLayout kicker="HoopCheck Coaches" title="Know the coach before you sign." description="Research coaches through real player experiences from professional basketball around the world." current="coaches" />
 
       <section className="hc-coach-directory-tools" aria-label="Search coaches">
         <label htmlFor="coach-directory-search">Find a coach</label>
