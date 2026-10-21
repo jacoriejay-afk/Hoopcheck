@@ -94,14 +94,17 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   }
   const profileTheme = serverPreferences?.theme_preference;
   const profileLanguage = serverPreferences?.preferred_language;
+  const supportedLanguages: readonly Language[] = ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"];
+  const isLanguage = (value: string | undefined): value is Language =>
+    value !== undefined && supportedLanguages.includes(value as Language);
   const cookieThemeValid = savedTheme === "light" || savedTheme === "dark" || savedTheme === "system";
-  const cookieLanguageValid = ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"].includes(savedLanguage || "");
+  const cookieLanguageValid = isLanguage(savedLanguage);
   const initialTheme: ThemePreference = profileTheme === "dark" || profileTheme === "light"
     ? profileTheme
     : cookieThemeValid ? savedTheme as ThemePreference : profileTheme === "system" ? "system" : "system";
-  const initialLanguage: Language = profileLanguage && ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"].includes(profileLanguage)
-    ? (profileLanguage === "en" && cookieLanguageValid && savedLanguage !== "en" ? savedLanguage as Language : profileLanguage as Language)
-    : cookieLanguageValid ? savedLanguage as Language : "en";
+  const initialLanguage: Language = isLanguage(profileLanguage)
+    ? (profileLanguage === "en" && cookieLanguageValid && savedLanguage !== "en" ? savedLanguage : profileLanguage)
+    : cookieLanguageValid ? savedLanguage : "en";
   const organizationJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
