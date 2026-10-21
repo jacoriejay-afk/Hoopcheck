@@ -17,11 +17,12 @@ type TeamDirectoryRowProps = {
   trustVerifiedReviewCount?: number;
   trustExplanation?: string;
   averageRating?: number | null;
+  logoUrl?: string | null;
 };
 
 export default function TeamDirectoryRow({
   id, name, city, country, leagueName, href, kind = "mens", showFollow = true,
-  trustScore, trustReviewCount = 0, trustVerifiedReviewCount = 0, trustExplanation = "Trust Score unavailable", averageRating = null,
+  trustScore, trustReviewCount = 0, trustVerifiedReviewCount = 0, trustExplanation = "Trust Score unavailable", averageRating = null, logoUrl = null,
 }: TeamDirectoryRowProps) {
   const monogram = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   const metadata = [city, [country, leagueName].filter(Boolean).join(" · ")].filter(Boolean).join(", ") || "International";
@@ -33,7 +34,7 @@ export default function TeamDirectoryRow({
       </div>
       <Link href={href} className="hc-team-directory-row__main" aria-label={`Open ${name} team profile`}>
         <span className="hc-scout-card__identity">
-          <span className="hc-scout-card__jersey" aria-hidden="true">{monogram}</span>
+          <span className="hc-scout-card__jersey hc-team-logo-tile" aria-hidden="true">{logoUrl ? <img src={logoUrl} alt="" width={48} height={48} loading="lazy" /> : monogram}</span>
           <span className="hc-scout-card__identity-copy">
             <h2>{name}</h2>
             <p>{metadata}</p>
