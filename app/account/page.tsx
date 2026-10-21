@@ -227,7 +227,7 @@ export default function AccountPage() {
       interests: interests.trim().slice(0,500) || null,
       favorite_leagues: favoriteLeagues.trim().slice(0,500) || null,
       experience_summary: profile.account_type === "coach" ? coachingExperience.trim().slice(0,1000) || null : null,
-      profile_visibility: ["scout","agent","fan"].includes(profile.account_type) ? "private" : visibility,
+      profile_visibility: ["scout","agent","fan"].includes(profile.account_type) ? settingsVisibility : (visibility === "private" ? "players_only" : "public"),
       free_agent: profile.account_type === "player" ? freeAgent : false,
     };
     const { error } = await supabase.from("profiles").update(updates).eq("id", (await supabase.auth.getUser()).data.user?.id ?? "");
@@ -285,7 +285,7 @@ export default function AccountPage() {
         team_reviews: notifications.team_reviews !== false,
         hoopfeed_activity: notifications.hoopfeed_activity !== false
       });
-      setSettingsVisibility(data.profile_visibility === "players_only" ? "players_only" : "public");
+      setSettingsVisibility(data.profile_visibility === "public" ? "public" : "players_only");
       setCountryPublic(Boolean(data.current_country_public));
     })();
     return () => { alive = false; };
