@@ -27,6 +27,7 @@ type Player = {
 };
 
 function PlayerUsernameConnect() {
+  const { t } = useLanguage();
   const [username, setUsername] = useState("");
   const [player, setPlayer] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -38,7 +39,7 @@ function PlayerUsernameConnect() {
     setMessage("");
     setPlayer(null);
     if (!value) {
-      setMessage("Enter the player username first.");
+      setMessage(t("enterUsername"));
       return;
     }
 
@@ -55,11 +56,11 @@ function PlayerUsernameConnect() {
     setLoading(false);
 
     if (error) {
-      setMessage("We couldn’t find that username. Try again.");
+      setMessage(t("tryAgain"));
       return;
     }
     if (!data) {
-      setMessage("No player found with that username.");
+      setMessage(t("noPlayer"));
       return;
     }
     setPlayer(data);
@@ -68,18 +69,18 @@ function PlayerUsernameConnect() {
   return (
     <div>
       <form onSubmit={findPlayer} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <label htmlFor="player-username" className="sr-only">Player username</label>
+        <label htmlFor="player-username" className="sr-only">{t("playerUsername")}</label>
         <input
           id="player-username"
           value={username}
           onChange={(event) => setUsername(event.target.value)}
-          placeholder="@playerusername"
+          placeholder={"@" + t("playerUsername").toLowerCase().replace(/\s+/g, "")}
           autoComplete="off"
           required
           style={{ flex: "1 1 220px" }}
         />
         <button type="submit" className="btn" disabled={loading}>
-          {loading ? "Finding..." : "Find Player"}
+          {loading ? t("finding") : t("findPlayer")}
         </button>
       </form>
       {message && <p className="muted" style={{ margin: "8px 0 0" }}>{message}</p>}
@@ -289,7 +290,7 @@ function SearchContent() {
         <section className="results-section">
           <div className="results-header">
             <div>
-              <div className="eyebrow">Search Results</div>
+              <div className="eyebrow">{t("search")}</div>
               <h2>Results for &quot;{query}&quot;</h2>
             </div>
             {!loading && <div className="result-count">{totalResults} result{totalResults === 1 ? "" : "s"}</div>}
@@ -309,7 +310,7 @@ function SearchContent() {
                 </button>
               ))}
               <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} aria-label="Filter by country" style={{ padding: "10px 14px", borderRadius: 8 }}>
-                <option value="">All countries</option>
+                <option value="">{t("all")} countries</option>
                 {countries.map((country) => <option key={country} value={country}>{country}</option>)}
               </select>
               <button type="button" className="btn dark" onClick={() => setVerifiedOnly((value) => !value)} aria-pressed={verifiedOnly}>
@@ -425,8 +426,9 @@ function SearchContent() {
 }
 
 export default function SearchPage() {
+  const { t } = useLanguage();
   return (
-    <Suspense fallback={<main className="search-page hc-global-search-page"><section className="search-hero"><p className="eyebrow">GLOBAL RESEARCH</p><h1>Loading search…</h1><p>Preparing teams, coaches, and league results.</p></section></main>}>
+    <Suspense fallback={<main className="search-page hc-global-search-page"><section className="search-hero"><p className="eyebrow">{t("globalResearch")}</p><h1>{t("finding")}</h1><p>Preparing teams, coaches, and league results.</p></section></main>}>
       <SearchContent />
     </Suspense>
   );
