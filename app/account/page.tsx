@@ -127,7 +127,7 @@ export default function AccountPage() {
       setInterests((nextProfile as any).interests ?? "");
       setFavoriteLeagues((nextProfile as any).favorite_leagues ?? "");
       setCoachingExperience((nextProfile as any).experience_summary ?? "");
-      setVisibility(nextProfile.profile_visibility ?? "public");
+      setVisibility(nextProfile.profile_visibility === "private" ? "private" : "public");
       setAvatarUrl(nextProfile.avatar_url ?? "");
       setAvatarStatus(nextProfile.avatar_moderation_status ?? "approved");
       setSubscription(subscriptionData ?? null);
