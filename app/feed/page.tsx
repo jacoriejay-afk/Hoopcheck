@@ -12,6 +12,16 @@ type Post = { id:string; body:string; image_url:string|null; location_country:st
 type TopicTag = "Practice" | "Game Day" | "Travel" | "Teammates" | "Culture" | "Win" | "Challenge";
 const TOPIC_TAGS: TopicTag[] = ["Practice","Game Day","Travel","Teammates","Culture","Win","Challenge"];
 const topicClass = (tag: TopicTag) => tag.toLowerCase().replace(/\s+/g, "-");
+function calculatePostingStreak(rows: { activity_date: string }[]) {
+  const dates = new Set(rows.map(row => String(row.activity_date).slice(0, 10)));
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  let cursor = dates.has(today) ? today : dates.has(yesterday) ? yesterday : "";
+  if (!cursor) return 0;
+  let count = 0;
+  while (dates.has(cursor)) { count += 1; cursor = new Date(Date.parse(cursor + "T00:00:00.000Z") - 86400000).toISOString().slice(0, 10); }
+  return count;
+}
 type Comment = { id:string; post_id:string; body:string; created_at:string; author_id:string; profiles?:MiniProfile|null };
 type Profile = { account_type:string; current_country:string|null };
 type Subscription = { plan:string|null; status:string|null; access_status:string|null };
@@ -31,7 +41,7 @@ export default function Feed(){
   const [open,setOpen]=useState<Record<string,boolean>>({});
   const [body,setBody]=useState(""); const [topicTag,setTopicTag]=useState<TopicTag|null>(null); const [gameTeam,setGameTeam]=useState(""); const [gameOpponent,setGameOpponent]=useState(""); const [scoreFor,setScoreFor]=useState(""); const [scoreAgainst,setScoreAgainst]=useState(""); const [topicFilter,setTopicFilter]=useState<"All"|TopicTag>("All"); const [feedSort,setFeedSort]=useState<"Latest"|"Expiring soon">("Latest"); const [photo,setPhoto]=useState<File|null>(null); const [preview,setPreview]=useState(""); const [showCountry,setShowCountry]=useState(false); 
   const [user,setUser]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [subscription,setSubscription]=useState<Subscription|null>(null);
-  const [msg,setMsg]=useState(""); const [loading,setLoading]=useState(true); const [posting,setPosting]=useState(false); const [now,setNow]=useState(0); const textareaRef = useRef<HTMLTextAreaElement|null>(null);
+  const [msg,setMsg]=useState(""); const [postingStreak,setPostingStreak]=useState(0); const [loading,setLoading]=useState(true); const [posting,setPosting]=useState(false); const [now,setNow]=useState(0); const textareaRef = useRef<HTMLTextAreaElement|null>(null);
   const visiblePosts = (topicFilter==="All" ? posts : posts.filter(p=>p.topic_tag===topicFilter)).slice().sort((a,b)=>feedSort==="Latest" ? new Date(b.created_at).getTime()-new Date(a.created_at).getTime() : new Date(a.expires_at).getTime()-new Date(b.expires_at).getTime());
 
   const access=["player","fan","scout","agent"].includes(profile?.account_type||"") &&
@@ -80,6 +90,7 @@ export default function Feed(){
       supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",u.id).maybeSingle()
     ]);
     setProfile(p);setSubscription(s);
+    if(p?.account_type==="player"){const {data:activity}=await supabase.from("feed_posting_activity").select("activity_date").eq("user_id",u.id).order("activity_date",{ascending:false}).limit(370);setPostingStreak(calculatePostingStreak(activity||[]));}
     const memberActive=(s?.plan==="pro"||s?.plan==="premium")&&(s?.status==="active"||s?.status==="trialing")&&(s?.access_status==null||["active","trialing","pro","premium"].includes(s.access_status));
     setLoading(false);
     if(p&&memberActive)void load(u,p);
@@ -150,7 +161,7 @@ export default function Feed(){
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/players">Players</Link><Link href="/profile">Profile</Link></nav></header>
     <section className="hero-card hc-feed-hero"><div><p className="eyebrow">HOOPFEED <span className="hc-feed-plan-tag">{subscription?.plan==="premium"?"PREMIUM":"PRO"} MEMBER</span></p><h1>HoopFeed</h1><p className="muted">{profile?.account_type==="fan"?"Followed-fan activity, updated throughout the day.":"Share your current-season basketball life."}</p></div><p className="hc-feed-expiry-note">24-HOUR POSTS <span>Posts, photos, checks and comments expire with the post.</span></p></section>
 
-    {(profile?.account_type==="player" || profile?.account_type==="fan") && <section className="dashboard-card hc-feed-composer" style={{marginTop:18}}><CourtLines variant="arc" className="hc-feed-composer__court" /><span className="card-kicker">SHARE TO HOOPFEED</span>
+    {(profile?.account_type==="player" || profile?.account_type==="fan") && <section className="dashboard-card hc-feed-composer" style={{marginTop:18}}><CourtLines variant="arc" className="hc-feed-composer__court" /><span className="card-kicker">SHARE TO HOOPFEED</span>{profile?.account_type==="player"&&<span className="hc-feed-streak" aria-label={postingStreak+" day HoopFeed posting streak"}><span aria-hidden="true">🔥</span> {postingStreak}-day streak</span>}
       <div className="hc-feed-composer__editor"><div className="hc-feed-composer__avatar" aria-hidden="true">{user?.user_metadata?.avatar_url?<img src={user.user_metadata.avatar_url} alt="" />:"HC"}</div><textarea ref={textareaRef} value={body} onChange={e=>{setBody(e.target.value);e.currentTarget.style.height="auto";e.currentTarget.style.height=Math.min(e.currentTarget.scrollHeight,220)+"px";}} rows={2} maxLength={500} placeholder={profile?.account_type==="fan"?"What are you watching, following, or talking about?":"What happened today? Practice, game day, travel, teammates, culture, wins, challenges…"} /></div>
       {profile?.account_type==="player"&&<div className="hc-feed-topic-picker" aria-label="Choose a topic"><span className="hc-feed-topic-label">TOPIC</span><div className="hc-feed-topic-chips">{TOPIC_TAGS.map(tag=><button type="button" key={tag} className={"hc-feed-topic-chip hc-feed-topic--"+topicClass(tag)+(topicTag===tag?" is-selected":"")} aria-pressed={topicTag===tag} onClick={()=>setTopicTag(current=>current===tag?null:tag)}>{tag}</button>)}</div></div>}{profile?.account_type==="player"&&topicTag==="Game Day"&&<div className="hc-feed-game-fields"><label>Your team<input value={gameTeam} onChange={e=>setGameTeam(e.target.value)} maxLength={80} placeholder="Your team" required /></label><label>Opponent<input value={gameOpponent} onChange={e=>setGameOpponent(e.target.value)} maxLength={80} placeholder="Opponent" required /></label><div className="hc-feed-score-fields"><span>Final score (optional until after the game)</span><div><input inputMode="numeric" type="number" min="0" max="300" aria-label="Your team final score" value={scoreFor} onChange={e=>setScoreFor(e.target.value)} placeholder="0" /><b>—</b><input inputMode="numeric" type="number" min="0" max="300" aria-label="Opponent final score" value={scoreAgainst} onChange={e=>setScoreAgainst(e.target.value)} placeholder="0" /></div></div></div>}
       <div className="hc-feed-composer__footer"><label className="hc-feed-photo-button" htmlFor="hoopfeed-photo"><HoopIcon name="image" size={16}/> Photo</label><input id="hoopfeed-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f)choosePhoto(f)}} className="visually-hidden" /><label className="hc-feed-country-optin"><input type="checkbox" checked={showCountry} onChange={event=>setShowCountry(event.target.checked)} /><span className="hc-feed-switch" aria-hidden="true"/><span className="hc-feed-country-copy"><strong>Show my country on this post</strong><small>— only your country is shown, never your city or precise location.</small></span></label><span className="hc-feed-counter">{body.length}/500</span><button className="btn hc-feed-post-button" onClick={post} disabled={posting||(!body.trim()&&!photo)||(profile?.account_type==="player"&&topicTag==="Game Day"&&(!gameTeam.trim()||!gameOpponent.trim()||(scoreFor==="")!==(scoreAgainst==="")))}>{posting?"Posting…":"POST"}</button></div>
