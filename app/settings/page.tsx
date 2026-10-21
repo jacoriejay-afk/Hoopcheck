@@ -30,7 +30,6 @@ export default function SettingsPage() {
       const { error } = await supabase.from("user_preferences").upsert({
         user_id: user.id,
         theme,
-        language,
         notifications_enabled: next,
         updated_at: new Date().toISOString()
       }, { onConflict: "user_id" });
