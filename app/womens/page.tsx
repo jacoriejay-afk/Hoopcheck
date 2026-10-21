@@ -67,7 +67,7 @@ export default function Womens() {
   return (
     <main className="page-shell hc-womens-directory-page">
       <div className="page-container">
-        <DirectoryLayout kicker="WOMEN’S BASKETBALL" title="Find a team" description="Search professional women’s teams by club, league, city, or country." current="womens" />
+        <DirectoryLayout current="womens" />
 
         <section className="hc-womens-search-panel" aria-label="Search women’s teams">
           <SearchBar inputId="womens-team-search" value={query} onChange={setQuery} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search women’s teams" onSubmit={(value) => setQuery(value)} />
