@@ -277,7 +277,7 @@ export default function AccountPage() {
       const language = ["en","es","fr","de","tr","pt","it","el","ar"].includes(data.preferred_language) ? data.preferred_language : "en";
       setPreferredLanguage(language);
       localStorage.setItem("hoopcheck-language", language);
-      document.dispatchEvent(new CustomEvent("hoopcheck-language-change", { detail: language }));
+      window.dispatchEvent(new CustomEvent("hoopcheck-language-change", { detail: language }));
       const notifications = data.notification_preferences && typeof data.notification_preferences === "object" ? data.notification_preferences as Record<string, unknown> : {};
       setNotificationPreferences({
         game_chat_alerts: notifications.game_chat_alerts !== false,
@@ -357,13 +357,13 @@ export default function AccountPage() {
       <section className="hc-settings" aria-label="Account settings">
         <div className="hc-settings-heading"><p className="eyebrow">SETTINGS</p><h2>Account preferences</h2><p className="muted">Manage your account, experience, privacy and notifications.</p></div>
         <SettingsGroup title="ACCOUNT">
-          <SettingsRow icon="user" label="Edit Profile" value="Edit details" href="#edit-profile" />
+          <SettingsRow icon="user" label="Edit Profile" value="Edit details" href="#profile-editor" />
           <SettingsRow icon="mail" label="Email" value={email || "Not set"} onClick={changeEmail} />
           <SettingsRow icon="lock" label="Change Password" value="Update password" onClick={() => { setPasswordMessage(""); setPasswordModal(true); }} />
           <SettingsRow icon="crown" label="Membership" value={subscription?.plan === "premium" ? "Premium" : subscription?.plan === "pro" ? "Pro" : "Free"} href="/membership" />
         </SettingsGroup>
         <SettingsGroup title="PREFERENCES">
-          <div className="hc-setting-row"><SettingsGlyph name="moon"/><div className="hc-setting-copy"><strong>Dark Mode</strong><small>{themePreference === "system" ? "Follows your device" : themePreference === "dark" ? "On" : "Off"}</small></div><button type="button" role="switch" aria-checked={themePreference === "dark" || (themePreference === "system" && window.matchMedia?.("(prefers-color-scheme: dark)").matches)} className={"hc-switch "+((themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)) ? "is-on" : "")} onClick={() => changeTheme((themePreference === "system" ? (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) : themePreference === "dark") ? "light" : "dark")}><span/></button></div>
+          <div className="hc-setting-row"><SettingsGlyph name="moon"/><div className="hc-setting-copy"><strong>Dark Mode</strong><small>{themePreference === "system" ? "Follows your device" : themePreference === "dark" ? "On" : "Off"}</small></div><button type="button" role="switch" aria-checked={themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)} className={"hc-switch "+((themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)) ? "is-on" : "")} onClick={() => changeTheme((themePreference === "system" ? (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) : themePreference === "dark") ? "light" : "dark")}><span/></button></div>
           {themePreference !== "system" && <div className="hc-setting-subrow"><button type="button" className="hc-text-button" onClick={() => changeTheme("system")}>Use device setting</button></div>}
           <div className="hc-setting-row"><SettingsGlyph name="globe"/><div className="hc-setting-copy"><strong>Language</strong><small>Choose your app language</small></div><select aria-label="Language" className="hc-setting-select" value={preferredLanguage} onChange={e=>changeLanguage(e.target.value)}><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option></select></div>
           <SettingsToggle icon="message" label="Game chat alerts" checked={notificationPreferences.game_chat_alerts} onChange={v=>changeNotification("game_chat_alerts",v)} />
@@ -411,7 +411,7 @@ export default function AccountPage() {
             </div>}
           </>}
           <h2>{profile.account_type === "player" ? "Player information" : profile.account_type === "coach" ? "Coach information" : "Profile information"} {((profile.account_type === "player" && profile.player_verified) || (profile.account_type === "coach" && profile.coach_verified)) && <VerifiedBadge label="Verified professional" />}</h2>
-          <form onSubmit={saveProfile} className="account-profile-form" style={{display:"grid",gap:12,marginTop:16}}>
+          <form id="profile-editor" onSubmit={saveProfile} className="account-profile-form" style={{display:"grid",gap:12,marginTop:16}}>
             <label className="muted">First name</label><input value={profile.first_name ?? ""} readOnly />
             <label className="muted">Last name</label><input value={profile.last_name ?? ""} readOnly />
             <p className="muted" style={{fontSize:12}}>First and last name are locked and cannot be changed.</p>
