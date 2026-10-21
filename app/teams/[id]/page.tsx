@@ -598,7 +598,7 @@ export default function TeamDetailPage() {
           Team Research
         </div>
 
-        <div className="hc-team-profile-heading"><span className="hc-team-profile-logo" aria-hidden="true">{team.logo_url ? <img src={team.logo_url} alt="" width={64} height={64} /> : team.name.split(/\\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span><div><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || "Country not listed"}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
+        <div className="hc-team-profile-heading"><span className="hc-team-profile-logo" aria-hidden="true">{team.logo_url ? <img src={team.logo_url} alt="" width={64} height={64} /> : team.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span><div><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || "Country not listed"}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
         <div className="hc-entity-trust-score">
           <TrustScoreDial
             score={trustScoreData?.score ?? null}
