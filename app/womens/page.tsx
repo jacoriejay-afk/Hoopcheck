@@ -32,7 +32,7 @@ export default function Womens() {
     async function load() {
       const [teamResult, leagueResult] = await Promise.all([
         supabase.from("womens_teams")
-          .select("id,name,country,city,league_id,league_name")
+          .select("id,name,country,city,league_id,league_name,logo_url")
           .eq("active", true).order("name"),
         supabase.from("womens_leagues")
           .select("id,name,country,level")
@@ -118,7 +118,7 @@ export default function Womens() {
         ) : filtered.length ? (
           <section className="hc-womens-team-list" aria-label="Women’s team results">
             {filtered.map(team => (
-              <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" />
+              <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" logoUrl={team.logo_url} />
             ))}
           </section>
         ) : (
