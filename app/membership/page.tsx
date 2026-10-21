@@ -278,7 +278,7 @@ function MembershipContent() {
             )}
             <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
               <button className="btn" onClick={openCustomerPortal} disabled={portalLoading || cancelLoading}>
-                {portalLoading ? "Opening..." : "Manage Membership"}
+                {portalLoading ? "Opening billing..." : "Manage / Upgrade Plan"}
               </button>
               {subscription.cancel_at_period_end ? (
                 <button className="btn dark" onClick={resumeMembership} disabled={cancelLoading}>
@@ -307,12 +307,12 @@ function MembershipContent() {
               <p>Start with the level of research access that fits you.</p>
             </div>
 
-            <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",marginBottom:24}}>
-              <button className={billingInterval==="month" ? "btn" : "btn dark"} onClick={()=>setBillingInterval("month")}>Monthly</button>
-              <button className={billingInterval==="6_month" ? "btn" : "btn dark"} onClick={()=>setBillingInterval("6_month")}>6 Months · 15% OFF</button>
-              <button className={billingInterval==="year" ? "btn" : "btn dark"} onClick={()=>setBillingInterval("year")}>1 Year · 10% OFF</button>
+            <div className="hc-billing-options" role="group" aria-label="Choose billing term">
+              <button type="button" aria-pressed={billingInterval==="month"} className={billingInterval==="month" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("month")}><span>Monthly</span><small>Flexible billing</small></button>
+              <button type="button" aria-pressed={billingInterval==="6_month"} className={billingInterval==="6_month" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("6_month")}><span>6 months</span><small>Save 15%</small></button>
+              <button type="button" aria-pressed={billingInterval==="year"} className={billingInterval==="year" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 10%</small></button>
             </div>
-            <div className="dashboard-card" style={{marginBottom:16}}><strong>Recommended: 6 months</strong><span className="muted"> Save 15% versus six monthly payments. Annual is also recommended for the best long-term value at 10% off.</span></div><div className="plans">
+            <div className="hc-membership-value"><span className="hc-membership-value__mark">★</span><div><strong>Best flexibility, better value.</strong><p>Choose monthly, 6-month, or annual billing. The total shown is the amount charged for the selected term.</p></div></div><div className="plans">
               <div className="plan-card">
                 <div className="plan-top">
                   <div>
@@ -321,7 +321,7 @@ function MembershipContent() {
                   </div>
                   <div className="price">
                     <strong>{billingInterval==="month" ? "\$4.99" : billingInterval==="6_month" ? "\$25.45" : "\$53.89"}</strong>
-                    <span>{billingInterval==="month" ? "/ month" : billingInterval==="6_month" ? "/ 6 months" : "/ year"}</span>
+                    <span>{billingInterval==="month" ? "billed monthly" : billingInterval==="6_month" ? "billed every 6 months" : "billed annually"}</span>
                   </div>
                 </div>
                 <p className="plan-description">
@@ -378,7 +378,7 @@ function MembershipContent() {
               </div>
             </div>
 
-            <div className="subscription-legal">
+            <p className="hc-promo-hint">Have a promo code? Enter it on the secure Stripe Checkout page before you pay.</p>\n            <div className="subscription-legal">
               <p>
                 By purchasing a HoopCheck membership, you agree to our{" "}
                 <Link href="/terms">Terms of Service</Link> and acknowledge our{" "}
