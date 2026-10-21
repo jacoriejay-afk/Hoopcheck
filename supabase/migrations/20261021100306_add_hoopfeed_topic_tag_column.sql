@@ -1,4 +1,5 @@
--- HoopFeed topic tags. Existing posts remain untagged and continue rendering.
+-- Sync the production-applied HoopFeed topic-tag schema change into source control.
+-- NULL is a valid value and means the post is intentionally untagged.
 alter table public.feed_posts
   add column if not exists topic_tag text;
 
