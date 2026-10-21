@@ -8,7 +8,6 @@
  */
 import { createClient } from "@supabase/supabase-js";
 import fs from "node:fs/promises";
-import path from "node:path";
 
 const APPLY = process.argv.includes("--apply");
 const APPROVED_SAMPLE = process.argv.includes("--approved-sample");
