@@ -125,7 +125,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: false, message: "Photos can only be added to posts." }, { status: 400 });
     }
 
-    const { data: profile } = await db.from("profiles").select("account_type,current_country").eq("id", user.id).maybeSingle();
+    const { data: profile } = await db.from("profiles").select("account_type,current_country,current_country_public").eq("id", user.id).maybeSingle();
     if (kind === "post" && profile?.account_type !== "player") return NextResponse.json({ allowed: false, message: "Only player accounts can publish to HoopFeed. Fans can follow players to view their posts." }, { status: 403 });
     if (kind === "comment" && profile?.account_type !== "player") return NextResponse.json({ allowed: false, message: "Only players can comment on HoopFeed posts." }, { status: 403 });
     const submittedTopicTag = String(form.get("topic_tag") || "").trim();
@@ -189,7 +189,7 @@ export async function POST(request: Request) {
       game_day_opponent: profile?.account_type === "player" && submittedTopicTag === "Game Day" ? gameDayOpponent : null,
       game_day_score_for: profile?.account_type === "player" && submittedTopicTag === "Game Day" ? scoreFor : null,
       game_day_score_against: profile?.account_type === "player" && submittedTopicTag === "Game Day" ? scoreAgainst : null,
-      location_country:shareCountry ? (submittedCountry || profile?.current_country || null) : null,
+      location_country:shareCountry && profile?.current_country_public !== false ? (submittedCountry || profile?.current_country || null) : null,
       status:"approved", expires_at:new Date(Date.now()+86400000).toISOString()
     });
     if (error) return NextResponse.json({ allowed:false,message:"We couldn't publish your post. Please try again." },{status:400});
