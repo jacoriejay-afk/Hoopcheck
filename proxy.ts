@@ -41,8 +41,10 @@ export async function proxy(request: NextRequest) {
     const language = profile?.preferred_language || preferences?.language;
     const supported = ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"];
     if (typeof language === "string" && supported.includes(language) && request.cookies.get("hoopcheck-language")?.value !== language) {
+      const responseCookies = supabaseResponse.cookies.getAll();
       request.cookies.set("hoopcheck-language", language);
       supabaseResponse = NextResponse.next({ request });
+      responseCookies.forEach(({ name, value, ...options }) => supabaseResponse.cookies.set(name, value, options));
       supabaseResponse.cookies.set("hoopcheck-language", language, {
         path: "/",
         maxAge: 60 * 60 * 24 * 365,
