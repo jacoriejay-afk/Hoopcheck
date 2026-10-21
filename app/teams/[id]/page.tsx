@@ -138,7 +138,7 @@ function RatingBar({
 }
 
 export default function TeamDetailPage() {
-  const { formatDate, formatNumber } = useLanguage();
+  const { formatDate } = useLanguage();
   const params = useParams();
 
   const id = Array.isArray(params.id)
