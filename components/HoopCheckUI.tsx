@@ -25,7 +25,8 @@ export type HoopIconName =
   | "lock"
   | "menu"
   | "x"
-  | "external-link";
+  | "external-link"
+  | "image";
 
 type HoopIconProps = SVGProps<SVGSVGElement> & {
   name: HoopIconName;
@@ -56,6 +57,7 @@ const iconPaths: Record<HoopIconName, ReactNode> = {
   menu: <><path d="M4 6h16M4 12h16M4 18h16" /></>,
   x: <><path d="m6 6 12 12M18 6 6 18" /></>,
   "external-link": <><path d="M13 5h6v6M19 5l-9 9" /><path d="M18 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></>,
+  image: <><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="8.5" cy="9" r="1.5" /><path d="m21 15-5-5L5 20" /></>,
 };
 
 export function HoopIcon({ name, size = 20, strokeWidth = 1.8, ...props }: HoopIconProps) {
