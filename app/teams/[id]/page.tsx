@@ -120,7 +120,7 @@ function RatingBar({
       <div
         style={{
           height: "8px",
-          background: "#252525",
+          background: "var(--hc-border)",
           borderRadius: "999px",
           overflow: "hidden",
         }}
@@ -843,7 +843,7 @@ export default function TeamDetailPage() {
                 </>) : (
                 <div style={{ padding: "24px 0" }}>
                   <div style={{ filter: "blur(7px)", opacity: 0.35, pointerEvents: "none" }}>
-                    <div style={{ height: 16, width: "75%", background: "#555", borderRadius: 8, marginBottom: 14 }} />
+                    <div style={{ height: 16, width: "75%", background: "var(--hc-border)", borderRadius: 8, marginBottom: 14 }} />
                     <div style={{ height: 16, width: "60%", background: "#555", borderRadius: 8, marginBottom: 14 }} />
                     <div style={{ height: 16, width: "68%", background: "#555", borderRadius: 8 }} />
                   </div>
