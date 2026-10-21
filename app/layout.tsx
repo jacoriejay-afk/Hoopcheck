@@ -7,12 +7,11 @@ import "./hoopcheck-polish.css";
 import "./hoopcheck-final-overrides.css";
 import "./hoopcheck-preview-system.css";
 import "./hoopcheck-player-profile.css";
-import ThemeProvider from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
 import MobileAuth from "../components/MobileAuth";
 import GlobalBackButton from "../components/GlobalBackButton";
-import LanguageProvider from "../components/LanguageProvider";
 import BottomNav from "../components/BottomNav";
+import PreferencesProvider from "../components/PreferencesProvider";
 import ProtectionLayer from "../components/ProtectionLayer";
 import AnalyticsTracker from "../components/AnalyticsTracker";
 import SiteHeader from "../components/SiteHeader";
@@ -83,22 +82,23 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 
   return (
     <html lang="en" className={`${displayFont.variable} ${sansFont.variable}`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem("hoopcheck-theme")||"system";var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dynamic":"light";document.documentElement.style.colorScheme=d?"dark":"light";var l=localStorage.getItem("hoopcheck-language")||"en";document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";}catch(e){document.documentElement.dataset.theme="light";}})();` }} />
+      </head>
       <body className={sansFont.className}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c") }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c") }} />
         <ProtectionLayer />
-        <ThemeProvider>
+        <PreferencesProvider>
           <AuthProvider>
-            <LanguageProvider>
               <AnalyticsTracker />
               <SiteHeader />
               <MobileAuth />
               <BottomNav />
               <GlobalBackButton />
               {children}
-            </LanguageProvider>
           </AuthProvider>
-        </ThemeProvider>
+        </PreferencesProvider>
         <footer className="site-footer">
           <CourtLines variant="full-court" className="hc-court-footer-art" />
           <div className="footer-inner">
