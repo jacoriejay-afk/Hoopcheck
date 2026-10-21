@@ -96,7 +96,7 @@ export default function ProfilePage() {
               {p.avatar_url && p.avatar_moderation_status === "pending" && <span className="hc-profile-photo-state">Photo review</span>}
             </div>
             <div className="hc-member-profile-copy">
-              <p className="eyebrow">MY PROFILE</p>
+              <p className="eyebrow">{t("profile")}</p>
               <h1 id="hc-member-profile-title">
                 <span>{name}</span>
                 {(p.player_verified || p.coach_verified) && <VerifiedBadge label={p.player_verified ? "Verified player" : "Verified coach"} />}
@@ -106,7 +106,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="hc-member-profile-actions">
-            <Link href="/account#profile-editor" className="btn hc-profile-edit-button">Edit Profile</Link>
+            <Link href="/account#profile-editor" className="btn hc-profile-edit-button">{t("editProfile")}</Link>
             {p.account_type === "player" && (p.profile_visibility === "public" ? (
               <Link href={"/players/" + encodeURIComponent(p.id)} className="btn dark hc-profile-public-button">
                 <span className="hc-profile-public-full">View Public Profile</span><span className="hc-profile-public-short">Public Profile</span><HoopIcon name="arrow-up-right" size={16} />
@@ -128,7 +128,7 @@ export default function ProfilePage() {
           </div>}
           <div className="grid compact-grid">
             <article className="card hc-profile-info-card">
-              <span className="card-kicker">BASKETBALL</span>
+              <span className="card-kicker">{t("teams")}</span>
               <h2>{p.basketball_type === "womens" ? "Women’s Basketball" : "Men’s Basketball"}</h2>
               <p className="muted">{p.account_type}</p>
             </article>
@@ -148,7 +148,7 @@ export default function ProfilePage() {
         </section>
 
         <section className="dashboard-card compact-section">
-          <p className="eyebrow">ABOUT</p>
+          <p className="eyebrow">{t("profileDetails")}</p>
           <h2>{t("profileDetails")}</h2>
           <p className="muted">{p.bio || "Add a bio from Edit Profile."}</p>
           {p.interests && <p><strong>Interests:</strong> {p.interests}</p>}
@@ -156,14 +156,14 @@ export default function ProfilePage() {
         </section>
 
         <section className="dashboard-card compact-section">
-          <p className="eyebrow">ACCOUNT</p>
+          <p className="eyebrow">{t("account")}</p>
           <h2>{t("accountControls")}</h2>
           <p className="muted">Sign out, hide your profile, or permanently delete your HoopCheck account.</p>
           <div className="actions">
             <button type="button" className="btn dark" onClick={async () => {
               await supabase.auth.signOut();
               window.location.replace("/login");
-            }}>Sign Out</button>
+            }}>{t("signOut")}</button>
             <button type="button" className="btn" onClick={async () => {
               if (!window.confirm("Deactivate your account profile? This will hide your profile from public HoopCheck listings and sign you out.")) return;
               const res = await fetch("/api/account/deactivate", { method: "POST" });
