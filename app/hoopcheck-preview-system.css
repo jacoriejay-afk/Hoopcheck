@@ -5376,3 +5376,50 @@ html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-search-field {
 html[data-theme="dynamic"] .hc-setting-row { color: var(--hc-foreground); }
 html[data-theme="dynamic"] .hc-setting-row .hc-setting-value,
 html[data-theme="dynamic"] .hc-setting-row small { color: var(--hc-foreground-muted); }
+
+
+/* Finish token migration for legacy global aliases and entity/profile surfaces. */
+html[data-theme="dynamic"] {
+  --ink: #f5f5f2;
+  --paper: #0d0d0d;
+  --hc-paper: #0d0d0d;
+  --hc-paper-strong: #171717;
+  --hc-text: #f5f5f2;
+  --hc-muted: #b8b8b2;
+  --hc-line: #343434;
+  --border: #343434;
+  --gray-100: #202020;
+  --gray-300: #b8b8b2;
+  --gray-500: #a0a09a;
+  --gray-700: #deded7;
+}
+html[data-theme="dynamic"] :where(.hc-entity-profile-page .card, .hc-entity-profile-page .hero, .hc-entity-profile-page .hc-profile-review-list > *, .hc-entity-profile-page .report-modal, .hc-entity-profile-page .report-select, .hc-entity-profile-page .report-label) {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html[data-theme="dynamic"] .hc-entity-profile-page .hero h1,
+html[data-theme="dynamic"] .hc-entity-profile-page .hero h2,
+html[data-theme="dynamic"] .hc-entity-profile-page .hero h3,
+html[data-theme="dynamic"] .hc-entity-profile-page .card h1,
+html[data-theme="dynamic"] .hc-entity-profile-page .card h2,
+html[data-theme="dynamic"] .hc-entity-profile-page .card h3,
+html[data-theme="dynamic"] .hc-entity-profile-page .card p,
+html[data-theme="dynamic"] .hc-entity-profile-page .card strong,
+html[data-theme="dynamic"] .hc-entity-profile-page .card label,
+html[data-theme="dynamic"] .hc-entity-profile-page .card .muted {
+  color: var(--hc-foreground) !important;
+}
+html[data-theme="dynamic"] .hc-entity-profile-page .hc-team-profile-hero,
+html[data-theme="dynamic"] .hc-entity-profile-page .hc-team-profile-hero h1,
+html[data-theme="dynamic"] .hc-entity-profile-page .hc-team-profile-hero p {
+  background-color: var(--hc-surface-raised);
+  color: var(--hc-foreground);
+}
+html[data-theme="dynamic"] .hc-entity-profile-page input,
+html[data-theme="dynamic"] .hc-entity-profile-page select,
+html[data-theme="dynamic"] .hc-entity-profile-page textarea {
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+}
