@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useLanguage } from "./LanguageProvider";
 
 type DirectoryKey = "teams" | "womens" | "coaches" | "leagues" | "players";
-type Props = { kicker: string; title: string; description: string; current: DirectoryKey };
+type Props = { current: DirectoryKey };
 
 const destinations: Array<{ key: DirectoryKey; href: string; labelKey: string }> = [
   { key: "teams", href: "/teams", labelKey: "mensTeams" },
@@ -14,13 +14,20 @@ const destinations: Array<{ key: DirectoryKey; href: string; labelKey: string }>
   { key: "players", href: "/players", labelKey: "players" },
 ];
 
-export default function DirectoryLayout({ kicker, title, description, current }: Props) {
+export default function DirectoryLayout({ current }: Props) {
+  const headerKeys: Record<DirectoryKey, { title: string; description: string }> = {
+    teams: { title: "teamsDirectoryTitle", description: "teamsDirectoryDescription" },
+    womens: { title: "womensDirectoryTitle", description: "womensDirectoryDescription" },
+    coaches: { title: "coachesDirectoryTitle", description: "coachesDirectoryDescription" },
+    leagues: { title: "leaguesDirectoryTitle", description: "leaguesDirectoryDescription" },
+    players: { title: "playersDirectoryTitle", description: "playersDirectoryDescription" },
+  };
   const { t } = useLanguage();
   return <>
     <section className="hc-shared-directory-hero">
-      <p className="eyebrow">{kicker}</p>
-      <h1>{title}</h1>
-      <p className="hc-shared-directory-description">{description}</p>
+      <p className="eyebrow">{t("directoryKicker")}</p>
+      <h1>{t(headerKeys[current].title)}</h1>
+      <p className="hc-shared-directory-description">{t(headerKeys[current].description)}</p>
     </section>
     <nav className="hc-shared-directory-tiles" aria-label={t("browseDirectories")}>
       <span className="hc-shared-directory-tiles-label">{t("browseDirectories")}</span>
