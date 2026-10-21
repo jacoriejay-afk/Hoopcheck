@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { HoopIcon } from "./HoopCheckUI";
+import { useLanguage } from "./LanguageProvider";
 
 type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string };
 
 export default function FollowButton({ targetType, targetId }: Props) {
+  const { formatNumber } = useLanguage();
   const [following, setFollowing] = useState(false);
   const [notify, setNotify] = useState(true);
   const [count, setCount] = useState(0);
@@ -102,7 +104,7 @@ export default function FollowButton({ targetType, targetId }: Props) {
       >
         {following ? <HoopIcon name="check" size={15} /> : <HoopIcon name="user" size={15} />} {following ? "Following" : "Follow"}
       </button>
-      <span className="follow-count muted">{count} followers</span>
+      <span className="follow-count muted">{formatNumber(count)} followers</span>
       <button
           type="button"
           aria-label="Toggle notifications"
