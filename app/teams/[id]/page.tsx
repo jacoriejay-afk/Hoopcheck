@@ -584,20 +584,8 @@ export default function TeamDetailPage() {
 
   return (
     <main className="hc-entity-profile-page hc-team-entity-profile">
-      <nav className="hc-directory-switcher hc-profile-directory-switcher" aria-label="Browse HoopCheck directories">
-        <span className="hc-directory-switcher-label">EXPLORE HOOPCHECK</span>
-        <Link href="/teams">Men’s Teams</Link>
-        <Link href="/womens">Women’s Teams</Link>
-        <Link href="/coaches">Coaches</Link>
-        <Link href="/leagues">Leagues</Link>
-        <Link href="/players">Players</Link>
-        <Link href="/search">Global Search</Link>
-      </nav>
-<section className="hero">
-        <div className="eyebrow">
-          Team Research
-        </div>
 
+<section className="hero">
         <div className="hc-team-profile-heading"><span className="hc-team-profile-logo" aria-hidden="true">{team.logo_url ? <img src={team.logo_url} alt="" width={64} height={64} /> : team.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span><div><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || "Country not listed"}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
         <div className="hc-entity-trust-score">
           <TrustScoreDial
