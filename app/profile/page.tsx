@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
+import { useLanguage } from "../../components/LanguageProvider";
 
 function calculatePostingStreak(rows: { activity_date: string }[]) {
   const dates = new Set(rows.map(row => String(row.activity_date).slice(0, 10)));
@@ -21,6 +22,7 @@ function calculatePostingStreak(rows: { activity_date: string }[]) {
 }
 
 export default function ProfilePage() {
+  const { t } = useLanguage();
   const [p, setP] = useState<any>(null);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
@@ -68,7 +70,7 @@ export default function ProfilePage() {
       <main className="page-shell hc-member-profile-page">
         <div className="page-container">
           <section className="hero-card">
-            <h1>Profile unavailable</h1>
+            <h1>{t("profileUnavailable")}</h1>
             <Link href="/account" className="btn">Edit Account</Link>
           </section>
         </div>
@@ -147,7 +149,7 @@ export default function ProfilePage() {
 
         <section className="dashboard-card compact-section">
           <p className="eyebrow">ABOUT</p>
-          <h2>Profile details</h2>
+          <h2>{t("profileDetails")}</h2>
           <p className="muted">{p.bio || "Add a bio from Edit Profile."}</p>
           {p.interests && <p><strong>Interests:</strong> {p.interests}</p>}
           {p.favorite_leagues && <p><strong>Favorite leagues:</strong> {p.favorite_leagues}</p>}
@@ -155,7 +157,7 @@ export default function ProfilePage() {
 
         <section className="dashboard-card compact-section">
           <p className="eyebrow">ACCOUNT</p>
-          <h2>Account controls</h2>
+          <h2>{t("accountControls")}</h2>
           <p className="muted">Sign out, hide your profile, or permanently delete your HoopCheck account.</p>
           <div className="actions">
             <button type="button" className="btn dark" onClick={async () => {
