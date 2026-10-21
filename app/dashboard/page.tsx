@@ -248,35 +248,35 @@ export default function DashboardPage() {
         </section>
 
         <section className="hc-mobile-dashboard" aria-label="HoopCheck discovery">
-          <SearchBar className="hc-mobile-search" name="q" placeholder="Search players, coaches, teams…" ariaLabel="Search players, coaches, teams" />
+          <SearchBar className="hc-mobile-search" name="q" placeholder={t("searchPlaceholder")} ariaLabel={t("searchPlaceholder")} />
 
           <section className="hc-mobile-section" aria-labelledby="hc-quick-access-heading">
             <div className="hc-mobile-section-heading">
               <div>
-                <p className="hc-mobile-eyebrow">YOUR SHORTCUTS</p>
-                <h2 id="hc-quick-access-heading">Quick Access</h2>
+                <p className="hc-mobile-eyebrow">{t("dashboard")}</p>
+                <h2 id="hc-quick-access-heading">{t("directory")}</h2>
               </div>
               <span className="hc-mobile-section-count" aria-hidden="true">04</span>
             </div>
             <div className="hc-mobile-quick-grid">
               <Link href="/teams" className="hc-mobile-quick-card">
                 <span className="hc-mobile-icon hc-icon-orange" aria-hidden="true"><CategoryIconTile category="teams" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Men’s Teams</strong><small>Explore team reviews</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("mensTeams")}</strong><small>Explore team reviews</small></span>
                 <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
               </Link>
               <Link href="/womens" className="hc-mobile-quick-card">
                 <span className="hc-mobile-icon hc-icon-pink" aria-hidden="true"><CategoryIconTile category="womens" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Women’s Teams</strong><small>Find your next team</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("womensTeams")}</strong><small>Find your next team</small></span>
                 <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
               </Link>
               <Link href="/coaches" className="hc-mobile-quick-card">
                 <span className="hc-mobile-icon hc-icon-blue" aria-hidden="true"><CategoryIconTile category="coaches" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Coaches</strong><small>Check reputations</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("coaches")}</strong><small>Check reputations</small></span>
                 <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
               </Link>
               <Link href="/search" className="hc-mobile-quick-card">
                 <span className="hc-mobile-icon hc-icon-green" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Player Reviews</strong><small>Real player experiences</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("reviews")}</strong><small>Real player experiences</small></span>
                 <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
               </Link>
             </div>
@@ -285,20 +285,20 @@ export default function DashboardPage() {
           <section className="hc-mobile-section hc-mobile-browse" aria-labelledby="hc-browse-categories-heading">
             <div className="hc-mobile-section-heading">
               <div>
-                <p className="hc-mobile-eyebrow">EXPLORE HOOPCHECK</p>
-                <h2 id="hc-browse-categories-heading">Browse Categories</h2>
+                <p className="hc-mobile-eyebrow">{t("directory")}</p>
+                <h2 id="hc-browse-categories-heading">{t("directory")}</h2>
               </div>
-              <Link href="/directory" className="hc-mobile-view-all">VIEW ALL</Link>
+              <Link href="/directory" className="hc-mobile-view-all">{t("all")}</Link>
             </div>
             <div className="hc-mobile-category-list">
               <Link href="/teams" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-orange" aria-hidden="true"><CategoryIconTile category="teams" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Professional Teams</strong><small>Research clubs before you sign</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("teams")}</strong><small>Research clubs before you sign</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/womens" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-pink" aria-hidden="true"><CategoryIconTile category="womens" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Women’s Basketball</strong><small>Discover women’s teams worldwide</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("womensTeams")}</strong><small>Discover women’s teams worldwide</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/coaches" className="hc-mobile-category-row">
@@ -308,17 +308,17 @@ export default function DashboardPage() {
               </Link>
               <Link href="/leagues" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-green" aria-hidden="true"><CategoryIconTile category="leagues" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Leagues &amp; Competitions</strong><small>Explore leagues by country</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("leagues")}</strong><small>Explore leagues by country</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/players" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-purple" aria-hidden="true"><CategoryIconTile category="players" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Find Players</strong><small>Connect with basketball players</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("findPlayers")}</strong><small>Connect with basketball players</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/search" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-yellow" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Reviews &amp; Experiences</strong><small>Make informed career decisions</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("reviews")}</strong><small>Make informed career decisions</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
             </div>
