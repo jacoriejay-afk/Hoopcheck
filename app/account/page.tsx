@@ -445,7 +445,7 @@ export default function AccountPage() {
               </optgroup>
             </select>
                         {profile.account_type === "player" && <>
-              <label htmlFor="current-country" className="muted">Current country</label><select id="current-country" value={currentCountry} disabled><option value={currentCountry}>{currentCountry || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Current country is managed through verified team changes.</p><label className="hc-country-public-toggle"><input type="checkbox" checked={countryPublic} onChange={event=>setCountryPublic(event.target.checked)} disabled={!currentCountry} /><span><strong>Show my current country publicly</strong><small>Optional. Only the country is displayed — never your city or precise location. Off by default.</small></span></label>
+              <label htmlFor="current-country" className="muted">Current country</label><select id="current-country" value={currentCountry} disabled><option value={currentCountry}>{currentCountry || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Current country is managed through verified team changes.</p>
               <label htmlFor="current-team" className="muted">Current team</label><select id="current-team" value={currentTeam} disabled><option value={currentTeam}>{currentTeam || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Current team is managed through player verification.</p>
             </>}
             <label htmlFor="bio" className="muted">Player bio</label><textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder="Tell other players a little about your experience." />
