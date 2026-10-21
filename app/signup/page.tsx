@@ -82,7 +82,14 @@ export default function SignupPage() {
       }}
     });
     if(error) throw error;
-    router.push(`/signup/complete?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!data.session) {
+      // Supabase may require email confirmation before creating an authenticated session.
+      // Send users to a clear confirmation screen instead of implying they are already logged in.
+      router.push(`/signup/complete?email=${encodeURIComponent(normalizedEmail)}&confirmation=required`);
+      return;
+    }
+    router.push(`/signup/complete?email=${encodeURIComponent(normalizedEmail)}`);
     } catch (signupError) {
       console.error("Signup failed:",signupError);
       setError(signupError instanceof Error ? signupError.message : "We couldn't create your account right now. Please try again.");
