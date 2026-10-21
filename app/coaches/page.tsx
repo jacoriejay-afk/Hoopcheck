@@ -84,7 +84,8 @@ export default function CoachesPage() {
         <label htmlFor="coach-directory-search">Find a coach</label>
         <SearchBar inputId="coach-directory-search" value={query} onChange={setQuery} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search coaches" onSubmit={setQuery} />
         <div className="hc-coach-directory-summary" aria-live="polite">
-          {loading ? "Searching coaching profiles…" : `${filteredCoaches.length} of ${coaches.length} coach${coaches.length === 1 ? "" : "es"} shown`}
+          {loading ? "Searching coaching profiles…" : `${filteredCoaches.length.toLocaleString()} coach${filteredCoaches.length === 1 ? "" : "es"}`}
+          {query && <button type="button" className="hc-directory-reset" onClick={() => setQuery("")}>Clear filters</button>}
         </div>
       </section>
 
