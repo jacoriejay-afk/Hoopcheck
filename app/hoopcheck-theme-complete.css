@@ -260,3 +260,45 @@ body :where(a, button, input, select, textarea, summary):focus-visible {
   body :where(.modal-panel, .dialog-panel, [role="dialog"]) { max-width: calc(100vw - 24px); max-height: 86dvh; overflow: auto; }
   body :where(.card, .panel, .review-card, .feed-post, .admin-panel, .modal-panel) { min-width: 0; }
 }
+
+
+/* Contrast hardening: legacy component selectors and utility classes may be more specific. */
+html[data-theme="dynamic"] body :where([class~="text-black"], [class~="text-gray-950"], [class~="text-gray-900"],
+[class~="text-gray-800"], [class~="text-gray-700"], [class~="text-slate-950"], [class~="text-slate-900"],
+[class~="text-slate-800"], [class~="text-zinc-950"], [class~="text-zinc-900"], [class~="text-neutral-900"],
+[class~="text-stone-900"]) { color: var(--hc-text-primary) !important; }
+html[data-theme="light"] body :where([class~="text-white"], [class~="text-gray-50"], [class~="text-gray-100"],
+[class~="text-gray-200"], [class~="text-slate-50"], [class~="text-slate-100"], [class~="text-slate-200"],
+[class~="text-zinc-50"], [class~="text-zinc-100"], [class~="text-neutral-100"], [class~="text-stone-100"]) {
+  color: var(--hc-text-primary) !important;
+}
+html[data-theme="dynamic"] body :where([class~="bg-white"], [class~="bg-gray-50"], [class~="bg-gray-100"],
+[class~="bg-slate-50"], [class~="bg-slate-100"], [class~="bg-zinc-50"], [class~="bg-zinc-100"],
+[class~="bg-neutral-50"], [class~="bg-neutral-100"], [class~="bg-stone-50"], [class~="bg-stone-100"]) {
+  background: var(--hc-surface) !important; color: var(--hc-text-primary) !important;
+}
+html[data-theme="light"] body :where([class~="bg-black"], [class~="bg-gray-950"], [class~="bg-gray-900"],
+[class~="bg-gray-800"], [class~="bg-slate-950"], [class~="bg-slate-900"], [class~="bg-zinc-950"],
+[class~="bg-zinc-900"], [class~="bg-neutral-950"], [class~="bg-neutral-900"], [class~="bg-stone-950"]) {
+  background: var(--hc-surface) !important; color: var(--hc-text-primary) !important;
+}
+body :where(.card, .panel, .result-card, .review-card, .team-card, .coach-card, .league-card,
+.player-card, .dashboard-card, .settings-card, .profile-card, .quick-card, .feed-post,
+.feed-card, .post-card, .comment-card, .game-chat, .chat-panel, .chat-message,
+.list-row, .directory-row, .team-row, .admin-panel, .admin-stat-card, .admin-review-card,
+.admin-report-card, .moderation-card) :where(p, li, label, strong, em, small, h1,h2,h3,h4,h5,h6) {
+  color: var(--hc-text-primary) !important;
+}
+body :where(.hero, .profile-hero, .search-hero, .auth-hero, .hc-auth-hero, .hc-directory-hero,
+.dashboard-hero, .profile-banner, .hc-dossier-identity, .hc-template-hero) :where(h1,h2,h3,h4,p,span,small,label) {
+  color: var(--hc-text-primary) !important;
+}
+body :where(.hero, .profile-hero, .search-hero, .auth-hero, .hc-auth-hero, .hc-directory-hero,
+.dashboard-hero, .profile-banner, .hc-dossier-identity, .hc-template-hero) :where(.muted, .description, .subtitle) {
+  color: var(--hc-text-secondary) !important;
+}
+body img[alt*="crest" i], body img[alt*="team" i], body img[alt*="club" i], body img[alt*="league logo" i] {
+  background: #fff !important;
+  padding: 4px;
+  border-radius: 4px;
+}
