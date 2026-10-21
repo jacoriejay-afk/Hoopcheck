@@ -338,3 +338,44 @@ body :where(.hc-directory-switcher a, .hc-team-directory-list > .card, .hc-globa
 .hc-dashboard-shell .dashboard-command-tile, .hc-dashboard-shell .fan-feature-card) {
   box-shadow: var(--hc-shadow) !important;
 }
+
+
+/* Actual directory row components use these BEM classes. */
+body .hc-team-row {
+  --hc-row-hover: var(--hc-hover);
+  background: var(--hc-surface) !important;
+  color: var(--hc-text-primary) !important;
+  border-color: var(--hc-border) !important;
+}
+body .hc-team-row:hover { background: var(--hc-row-hover) !important; }
+body .hc-team-row :where(.hc-team-row__name, .hc-team-row__league, .hc-team-row__chevron) {
+  color: var(--hc-text-primary) !important;
+}
+body .hc-team-row .hc-team-row__crest,
+body .hc-scout-card__jersey,
+body .hc-scout-card__identity,
+body .hc-scout-card__stat,
+body .hc-scout-card__ticket {
+  border-color: var(--hc-border) !important;
+}
+body .hc-team-row .hc-team-row__crest,
+body .hc-scout-card__jersey {
+  display: inline-grid;
+  place-items: center;
+  background: #ffffff !important;
+  color: #171715 !important;
+  border: 1px solid #e6e6e6 !important;
+}
+body .hc-scout-card {
+  background: var(--hc-surface) !important;
+  color: var(--hc-text-primary) !important;
+  border-color: var(--hc-border) !important;
+  box-shadow: var(--hc-shadow) !important;
+}
+body .hc-scout-card :where(h1,h2,h3,h4,p,span,small,strong,label) {
+  color: var(--hc-text-primary) !important;
+}
+body .hc-scout-card :where(.hc-scout-card__report, .hc-scout-card__stat small,
+.hc-scout-card__stat span, .hc-scout-card__identity-copy p) {
+  color: var(--hc-text-muted) !important;
+}
