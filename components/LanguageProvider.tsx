@@ -1,52 +1,5 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
-
-export type Language = "en"|"es"|"fr"|"de"|"tr"|"pt"|"it"|"el"|"ar";
-
-const labels: Record<Language, Record<string,string>> = {
-  en:{dashboard:"Dashboard",search:"Search",membership:"Membership",account:"Account",settings:"Settings",signOut:"Sign Out",playerDashboard:"PLAYER DASHBOARD",reviews:"Reviews",editProfile:"Edit Profile"},
-  es:{dashboard:"Panel",search:"Buscar",membership:"Membresía",account:"Cuenta",settings:"Configuración",signOut:"Cerrar sesión",playerDashboard:"PANEL DEL JUGADOR",reviews:"Reseñas",editProfile:"Editar perfil"},
-  fr:{dashboard:"Tableau de bord",search:"Rechercher",membership:"Abonnement",account:"Compte",settings:"Paramètres",signOut:"Déconnexion",playerDashboard:"TABLEAU DE BORD DU JOUEUR",reviews:"Avis",editProfile:"Modifier le profil"},
-  de:{dashboard:"Dashboard",search:"Suche",membership:"Mitgliedschaft",account:"Konto",settings:"Einstellungen",signOut:"Abmelden",playerDashboard:"SPIELER-DASHBOARD",reviews:"Bewertungen",editProfile:"Profil bearbeiten"},
-  tr:{dashboard:"Panel",search:"Ara",membership:"Üyelik",account:"Hesap",settings:"Ayarlar",signOut:"Çıkış yap",playerDashboard:"OYUNCU PANELİ",reviews:"Yorumlar",editProfile:"Profili düzenle"},
-  pt:{dashboard:"Painel",search:"Pesquisar",membership:"Assinatura",account:"Conta",settings:"Configurações",signOut:"Sair",playerDashboard:"PAINEL DO JOGADOR",reviews:"Avaliações",editProfile:"Editar perfil"},
-  it:{dashboard:"Dashboard",search:"Cerca",membership:"Abbonamento",account:"Account",settings:"Impostazioni",signOut:"Esci",playerDashboard:"DASHBOARD DEL GIOCATORE",reviews:"Recensioni",editProfile:"Modifica profilo"},
-  el:{dashboard:"Πίνακας",search:"Αναζήτηση",membership:"Συνδρομή",account:"Λογαριασμός",settings:"Ρυθμίσεις",signOut:"Αποσύνδεση",playerDashboard:"ΠΙΝΑΚΑΣ ΠΑΙΚΤΗ",reviews:"Κριτικές",editProfile:"Επεξεργασία προφίλ"},
-  ar:{dashboard:"لوحة التحكم",search:"بحث",membership:"العضوية",account:"الحساب",settings:"الإعدادات",signOut:"تسجيل الخروج",playerDashboard:"لوحة اللاعب",reviews:"التقييمات",editProfile:"تعديل الملف الشخصي"}
-};
-
-const LanguageContext=createContext<{language:Language; t:(key:string)=>string}>({language:"en",t:(k)=>k});
-
-export function useLanguage(){ return useContext(LanguageContext); }
-
-export default function LanguageProvider({children}:{children:React.ReactNode}){
-  const [language,setLanguage]=useState<Language>("en");
-  useEffect(()=>{
-    let mounted=true;
-    const isLanguage=(v:string):v is Language=>(Object.keys(labels) as string[]).includes(v);
-    const apply=(v:string,persist=true)=>{
-      if(!isLanguage(v)||!mounted)return;
-      setLanguage(v);document.documentElement.lang=v;document.documentElement.dir=v==="ar"?"rtl":"ltr";
-      if(persist)localStorage.setItem("hoopcheck-language",v);
-    };
-    apply(localStorage.getItem("hoopcheck-language")||"en");
-    const onLanguageChange=(event:Event)=>apply((event as CustomEvent<string>).detail);
-    window.addEventListener("hoopcheck-language-change",onLanguageChange);
-    const loadProfileLanguage=async(userId:string)=>{
-      const {data}=await supabase.from("profiles").select("preferred_language").eq("id",userId).maybeSingle();
-      if(mounted&&data?.preferred_language&&isLanguage(data.preferred_language))apply(data.preferred_language);
-    };
-    void supabase.auth.getUser().then(({data})=>{if(data.user)void loadProfileLanguage(data.user.id)});
-    const {data:listener}=supabase.auth.onAuthStateChange((event,session)=>{
-      if((event==="SIGNED_IN"||event==="USER_UPDATED")&&session?.user)void loadProfileLanguage(session.user.id);
-    });
-    return()=>{
-      mounted=false;window.removeEventListener("hoopcheck-language-change",onLanguageChange);
-      listener.subscription.unsubscribe();
-    };
-  },[]);
-
-  return <LanguageContext.Provider value={{language,t:(key)=>labels[language][key]||labels.en[key]||key}}>{children}</LanguageContext.Provider>;
-}
+// Compatibility entry point: PreferencesProvider owns shared live language/theme state.
+export { useLanguage } from "./PreferencesProvider";
+export { default } from "./PreferencesProvider";
