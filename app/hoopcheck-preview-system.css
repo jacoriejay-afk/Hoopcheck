@@ -5321,7 +5321,7 @@ body { transition: background-color .12s ease, color .12s ease; }
 :where(main, section, article, .page-container, .hc-dashboard-shell, .hc-settings-group, .hc-settings-list, .hc-setting-row, .hc-mobile-category-list, .hc-mobile-quick-card, .dashboard-card, .fan-feature-card, .result-card, .review-card, .team-card, .coach-card, .league-card, .player-card, .profile-card, .settings-card, .hc-template-panel, .hc-template-category, .hc-template-directory-links > a, .hc-global-search-page .state-card, .hc-review-state) {
   border-color: var(--hc-border);
 }
-html[data-theme="dynamic"] :where(main, section, article, .page-container, .hc-dashboard-shell, .hc-settings-group, .hc-settings-list, .hc-setting-row, .hc-mobile-category-list, .hc-mobile-quick-card, .dashboard-card, .fan-feature-card, .result-card, .review-card, .team-card, .coach-card, .league-card, .player-card, .profile-card, .settings-card, .hc-template-panel, .hc-template-category, .hc-template-directory-links > a, .hc-global-search-page .state-card, .hc-review-state) {
+html[data-theme="dynamic"] :where(main, .page-container, .hc-dashboard-shell, .hc-settings-group, .hc-settings-list, .hc-setting-row, .hc-mobile-category-list, .hc-mobile-quick-card, .dashboard-card, .fan-feature-card, .result-card, .review-card, .team-card, .coach-card, .league-card, .player-card, .profile-card, .settings-card, .hc-template-panel, .hc-template-category, .hc-template-directory-links > a, .hc-global-search-page .state-card, .hc-review-state) {
   background-color: var(--hc-surface-raised);
   color: var(--hc-foreground);
 }
