@@ -24,6 +24,7 @@ export default function ProfilePage() {
   const [p, setP] = useState<any>(null);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
+  const [postingStreak, setPostingStreak] = useState(0);
 
   useEffect(() => {
     (async () => {
