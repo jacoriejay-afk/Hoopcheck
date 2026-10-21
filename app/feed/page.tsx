@@ -48,7 +48,7 @@ export default function Feed(){
       : Promise.resolve({data:[]});
     const [connectionsResult,followsResult,feedResult]=await Promise.all([
       connectionPromise,followPromise,
-      supabase.from("feed_posts").select("id,body,image_url,location_country,show_country,topic_tag,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country,current_team)")
+      supabase.from("feed_posts").select("id,body,image_url,location_country,show_country,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country,current_team)")
         .eq("status","approved").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(30)
     ]);
     const connectedPlayerIds=(connectionsResult.data||[]).flatMap((x:any)=>x.requester_id===currentUser.id?[x.player_id]:[x.requester_id]).filter(Boolean);
