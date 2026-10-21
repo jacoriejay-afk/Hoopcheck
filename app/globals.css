@@ -3675,3 +3675,21 @@ body { background-color: var(--hc-ink); }
 .hc-feed-sort-toggle button.is-active{background:#fff;color:var(--ink);box-shadow:0 1px 3px #00000012}
 .hc-feed-expiring-soon{display:inline-flex;align-items:center;width:max-content;margin-top:10px;border:1px solid #ffb184;background:#fff0e7;color:#a33b08;border-radius:5px;padding:5px 8px;font-size:10px;font-weight:950;letter-spacing:.1em}
 @media(max-width:640px){.hc-feed-filter-bar{display:flex;flex-direction:column;align-items:stretch;gap:8px}.hc-feed-sort-toggle{align-self:flex-start}.hc-feed-result-count{margin-top:0}}
+
+
+/* HoopFeed Game Day matchup and score bug */
+.hc-feed-game-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 16px;padding:14px;border:1px solid #e8e8e5;border-radius:12px;background:#fafaf8}
+.hc-feed-game-fields>label{display:grid;gap:6px;color:#555;font-size:11px;font-weight:800}
+.hc-feed-game-fields input{width:100%;min-width:0;border:1px solid #d8d8d4;border-radius:8px;background:#fff;padding:10px 11px;color:#111;font:600 14px inherit}
+.hc-feed-score-fields{grid-column:1/-1;display:grid;gap:8px}
+.hc-feed-score-fields>span{font-size:11px;color:#6b6b66;font-weight:800}
+.hc-feed-score-fields>div{display:flex;align-items:center;gap:10px;max-width:260px}
+.hc-feed-score-fields input{width:76px;text-align:center;font-size:18px;font-weight:900}
+.hc-feed-score-fields b{font-size:18px;color:var(--brand-orange)}
+.hc-feed-game-score{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0 4px;padding:14px 16px;border-radius:10px;background:#111;color:#fff;border-left:4px solid var(--brand-orange)}
+.hc-feed-game-score>span{flex:1;min-width:0;font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;overflow-wrap:anywhere}
+.hc-feed-game-score>span:last-child{text-align:right}
+.hc-feed-game-score>strong{flex:none;font-size:22px;font-weight:950;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hc-feed-game-score>strong i{color:var(--brand-orange);font-style:normal;padding:0 3px}
+.hc-feed-game-score>strong.hc-feed-game-vs{font-size:15px;color:var(--brand-orange)}
+@media(max-width:480px){.hc-feed-game-fields{grid-template-columns:minmax(0,1fr)}.hc-feed-score-fields{grid-column:auto}.hc-feed-game-score{gap:8px;padding:12px}.hc-feed-game-score>span{font-size:9px}.hc-feed-game-score>strong{font-size:18px}}
