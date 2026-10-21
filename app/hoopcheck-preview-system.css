@@ -4790,7 +4790,7 @@ body:has(.hc-dashboard-shell)::before { display:none !important; content:none !i
 .hc-profile-completion-copy a { margin-left:auto; color:#d94b17; font-size:11px; font-weight:800; text-decoration:none; white-space:nowrap; }
 .hc-profile-completion-track { height:4px; margin-top:9px; overflow:hidden; border-radius:99px; background:#e9e7e2; }
 .hc-profile-completion-track span { display:block; height:100%; border-radius:99px; background:var(--hc-orange,#ff5a1f); transition:width .2s ease; }
-.hc-member-profile-page .compact-grid { display:grid; grid-template-columns:1fr; gap:10px; }
+.hc-member-profile-page .compact-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
 .hc-member-profile-page .hc-profile-info-card { display:flex; flex-direction:column; justify-content:center; align-items:flex-start; min-height:0; gap:4px; margin:0; padding:16px; }
 .hc-member-profile-page .hc-profile-info-card .card-kicker { color:#777771; font-size:10px; line-height:1.3; font-weight:850; letter-spacing:.13em; }
 .hc-member-profile-page .hc-profile-info-card h2 { margin:0; font-size:17px; line-height:1.2; font-weight:850; overflow-wrap:anywhere; }
@@ -4853,6 +4853,10 @@ html[data-theme="dynamic"] .hc-account-page .hc-setting-select { background:#171
 html[data-theme="dynamic"] .hc-member-profile-page .hc-profile-completion-track { background:#303030; }
 html[data-theme="dynamic"] .hc-member-profile-page .hc-profile-streak-row .hc-feed-streak { background:#191919; border-color:#343434; color:#c5c5be; }
 html[data-theme="dynamic"] .hc-member-profile-page .hc-profile-info-card .hc-profile-empty-value { color:#aaa9a3; }
+@media (max-width: 680px) {
+  .hc-member-profile-page .compact-grid { grid-template-columns:1fr; }
+}
+
 @media (max-width: 420px) {
   .hc-member-profile-page .page-container,
   .hc-account-page .page-container { padding-left:14px; padding-right:14px; }
