@@ -13,6 +13,7 @@ import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import SearchBar from "../../components/SearchBar";
 import CourtLines from "../../components/CourtLines";
 import TeamMap from "../../components/TeamMap";
+import { useLanguage } from "../../components/LanguageProvider";
 
 type Team = {
   id: string;
@@ -29,6 +30,7 @@ type Team = {
 type TrustSummary = { score: number | null; reviewCount: number; verifiedReviewCount: number; explanation: string; averageRating: number | null };
 
 export default function TeamsPage() {
+  const { t } = useLanguage();
   const [teams, setTeams] =
     useState<Team[]>([]);
   const [trustScores, setTrustScores] = useState<Record<string, TrustSummary>>({});
@@ -241,7 +243,7 @@ export default function TeamsPage() {
     <main className="hc-team-directory-page">
       <section className="hero">
         <div className="eyebrow">
-          HoopCheck Teams
+          HoopCheck {t("teams")}
         </div>
 
         <h1>
@@ -258,7 +260,7 @@ export default function TeamsPage() {
 
         <div className="research-search">
           <div className="search-label">
-            GLOBAL RESEARCH
+            {t("globalResearch")}
           </div>
 
           <Link
@@ -278,19 +280,19 @@ export default function TeamsPage() {
    </section>
 
       <nav className="hc-directory-switcher" aria-label="Browse HoopCheck directories">
-        <span className="hc-directory-switcher-label">BROWSE DIRECTORIES</span>
-        <Link href="/teams" aria-current={undefined}>Men&apos;s Teams</Link>
-        <Link href="/womens">Women&apos;s Teams</Link>
-        <Link href="/coaches">Coaches</Link>
-        <Link href="/leagues">Leagues</Link>
-        <Link href="/players">Find Players</Link>
-        <Link href="/search">Reviews</Link>
+        <span className="hc-directory-switcher-label">{t("directory")}</span>
+        <Link href="/teams" aria-current={undefined}>{t("teams")}</Link>
+        <Link href="/womens">{t("teams")}</Link>
+        <Link href="/coaches">{t("coaches")}</Link>
+        <Link href="/leagues">{t("leagues")}</Link>
+        <Link href="/players">{t("findPlayers")}</Link>
+        <Link href="/search">{t("reviews")}</Link>
       </nav>
 
       <section className="hero">
         <div className="research-search">
           <div className="search-label">TEAM DIRECTORY</div>
-          <SearchBar value={query} onChange={(value) => { setQuery(value); setPage(0); }} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search teams" onSubmit={(value) => { setQuery(value); setPage(0); }} />
+          <SearchBar value={query} onChange={(value) => { setQuery(value); setPage(0); }} placeholder={t("searchPlaceholder")} ariaLabel={t("teams")} onSubmit={(value) => { setQuery(value); setPage(0); }} />
           <div className="team-filter-row">
             <select value={continent} onChange={(e) => { setContinent(e.target.value); setCountry(""); setPage(0); }} aria-label="Filter teams by continent">
               <option value="">All continents</option>
