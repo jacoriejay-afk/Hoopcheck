@@ -105,11 +105,15 @@ export default function ProfilePage() {
 
           <div className="hc-member-profile-actions">
             <Link href="/account#profile-editor" className="btn hc-profile-edit-button">Edit Profile</Link>
-            {p.account_type === "player" && (
-              <Link href={"/players/" + p.id} className="btn dark hc-profile-public-button">
+            {p.account_type === "player" && (p.profile_visibility === "public" ? (
+              <Link href={"/players/" + encodeURIComponent(p.id)} className="btn dark hc-profile-public-button">
                 <span className="hc-profile-public-full">View Public Profile</span><span className="hc-profile-public-short">Public Profile</span><HoopIcon name="arrow-up-right" size={16} />
               </Link>
-            )}
+            ) : (
+              <Link href="/account#profile-editor" className="btn dark hc-profile-public-button">
+                <span>Profile Is Not Public</span><HoopIcon name="arrow-up-right" size={16} />
+              </Link>
+            ))}
           </div>
           {p.account_type === "player" && postingStreak > 0 && <div className="hc-profile-streak-row"><span className="hc-feed-streak" aria-label={postingStreak + " day HoopFeed posting streak"}><span aria-hidden="true">🔥</span> {postingStreak}-day streak</span></div>}
 

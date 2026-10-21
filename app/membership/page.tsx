@@ -257,7 +257,7 @@ function MembershipContent() {
           </div>
         )}
         {isActive && subscription?.stripe_subscription_id ? (
-          <div className="active-card">
+          <div className="active-card" id="manage-subscription">
             <div className="eyebrow">CURRENT MEMBERSHIP</div>
             <h2>
               HoopCheck {subscription.plan === "premium" ? "Premium" : "Pro"}
