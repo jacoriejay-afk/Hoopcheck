@@ -22,6 +22,7 @@ type Team = {
   league_id: string | null;
   division?: string | null;
   city: string | null;
+  logo_url?: string | null;
   latitude?: number | null;
   longitude?: number | null;
 };
