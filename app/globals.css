@@ -3465,3 +3465,89 @@ body { background-color: var(--hc-ink); }
   .hc-feed-page .hc-feed-composer textarea { min-height: 92px; }
   .hc-feed-page .hc-feed-ticket { border-radius: 12px !important; }
 }
+
+
+/* HoopFeed: compact editorial stream, stable controls, and mobile-first spacing. */
+.hc-feed-page .page-container { width:min(100% - 32px, 880px); margin-inline:auto; }
+.hc-feed-page .hc-feed-hero { display:flex; align-items:flex-end; justify-content:space-between; gap:22px; }
+.hc-feed-page .hc-feed-hero h1 { margin:7px 0 10px; font-size:clamp(38px,6vw,62px); }
+.hc-feed-plan-tag { display:inline-flex; margin-left:8px; padding:5px 7px; border:1px solid rgba(255,90,31,.35); border-radius:5px; color:#ff7848; font-size:10px; letter-spacing:.08em; vertical-align:middle; }
+.hc-feed-expiry-note { flex:0 0 190px; margin:0; color:#ff7848; font-size:10px; font-weight:900; letter-spacing:.1em; }
+.hc-feed-expiry-note span { display:block; margin-top:6px; color:#aaa; font-size:11px; font-weight:500; letter-spacing:0; line-height:1.5; }
+.hc-feed-page .hc-feed-composer { display:grid; gap:13px; }
+.hc-feed-page .hc-feed-composer textarea { margin:0; min-height:112px; }
+.hc-feed-composer__actions { display:grid; gap:7px; min-width:0; }
+.hc-feed-composer__buttons { display:flex; flex-wrap:wrap; align-items:center; gap:9px; }
+.hc-feed-composer__buttons .btn { min-height:42px; }
+.hc-feed-composer__buttons label.btn { display:inline-flex; align-items:center; justify-content:center; margin:0; }
+.hc-feed-message { margin:0; color:#b94b20; font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
+.hc-feed-stream { display:grid; gap:13px; margin-top:18px; min-width:0; }
+.hc-feed-page .hc-feed-ticket { min-width:0; padding:clamp(14px,2.5vw,22px)!important; }
+.hc-feed-page .hc-feed-ticket strong { overflow-wrap:anywhere; }
+.hc-feed-page .hc-feed-ticket p { line-height:1.65; overflow-wrap:anywhere; }
+.hc-feed-page .hc-feed-ticket input:not([type="checkbox"]) { min-width:0; width:100%; margin:0; background:#fff; color:#171717; border:1px solid #deded8; }
+.hc-feed-empty { text-align:left; padding:clamp(20px,4vw,34px)!important; }
+.hc-feed-empty h2 { margin:8px 0; }
+@media(max-width:640px) {
+  .hc-feed-page .page-container { width:calc(100% - 24px); }
+  .hc-feed-page .hc-feed-hero { display:grid; align-items:start; gap:12px; }
+  .hc-feed-expiry-note { flex:auto; }
+  .hc-feed-page .hc-feed-composer { padding:14px!important; }
+  .hc-feed-page .hc-feed-composer textarea { min-height:94px; font-size:14px; }
+  .hc-feed-composer__buttons { display:grid; grid-template-columns:1fr; }
+  .hc-feed-composer__buttons .btn, .hc-feed-composer__buttons label.btn { width:100%; }
+  .hc-feed-page .hc-feed-ticket>div:first-child { align-items:flex-start!important; }
+  .hc-feed-page .hc-feed-ticket>div:first-child>div:first-child { min-width:0; }
+  .hc-feed-page .hc-feed-ticket>div:first-child>div:first-child>div { min-width:0; overflow-wrap:anywhere; }
+  .hc-feed-page .hc-feed-ticket .hc-feed-expiry { max-width:100%; }
+}
+
+/* Membership: plan choices and totals stay legible on desktop and mobile. */
+.hc-membership-page { width:100%; overflow:hidden; }
+.hc-membership-page .membership-hero { padding-top:clamp(38px,6vw,76px); padding-bottom:clamp(28px,4vw,50px); }
+.hc-membership-page .membership-hero h1 { font-size:clamp(40px,7vw,76px); }
+.hc-membership-page .membership-section { width:min(100% - 32px,1080px); margin:0 auto; }
+.hc-membership-page .section-heading { max-width:720px; margin:0 auto 24px; text-align:center; }
+.hc-membership-page .section-heading h2 { margin:10px 0; font-size:clamp(28px,4vw,42px); }
+.hc-billing-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:0 auto 18px; max-width:760px; }
+.hc-billing-option { display:flex; min-height:68px; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:10px 12px; white-space:normal; }
+.hc-billing-option span { font-size:14px; font-weight:950; }
+.hc-billing-option small { font-size:11px; font-weight:750; opacity:.86; text-transform:none; }
+.hc-billing-option.is-selected { box-shadow:0 0 0 2px rgba(255,90,31,.2); }
+.hc-membership-value { display:flex; align-items:flex-start; gap:12px; max-width:760px; margin:0 auto 18px; padding:14px 16px; border:1px solid #e5e5e2; border-left:3px solid #ff5a1f; border-radius:10px; background:#fff; }
+.hc-membership-value__mark { color:#ff5a1f; font-size:20px; line-height:1; }
+.hc-membership-value strong { color:#171717; font-size:14px; }
+.hc-membership-value p { margin:5px 0 0; color:#62625c; font-size:12px; line-height:1.5; }
+.hc-membership-page .plans { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; gap:18px; }
+.hc-membership-page .plan-card { display:flex; min-width:0; flex-direction:column; padding:clamp(18px,3vw,28px); border:1px solid #e1e1dc; border-radius:16px; background:#fff; color:#171717; }
+.hc-membership-page .plan-card.featured { border:1.5px solid #ff5a1f; box-shadow:0 12px 36px rgba(255,90,31,.09); }
+.hc-membership-page .plan-card h3 { margin:7px 0; font-size:30px; color:#171717; }
+.hc-membership-page .plan-card .eyebrow { color:#a83a13; }
+.hc-membership-page .plan-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.hc-membership-page .price { min-width:0; text-align:right; }
+.hc-membership-page .price strong { display:block; color:#171717; font-size:clamp(24px,3vw,34px); line-height:1.1; white-space:nowrap; }
+.hc-membership-page .price span { display:block; margin-top:5px; color:#686861; font-size:11px; line-height:1.4; }
+.hc-membership-page .plan-description { min-height:44px; color:#565650; font-size:13px; line-height:1.55; }
+.hc-membership-page .plan-card ul { display:grid; gap:9px; margin:10px 0 24px; padding-left:18px; color:#383833; font-size:13px; line-height:1.45; }
+.hc-membership-page .plan-card li::marker { color:#ff5a1f; }
+.hc-membership-page .plan-button { width:100%; margin-top:auto; }
+.hc-membership-page .featured-badge { align-self:flex-start; margin-bottom:8px; padding:5px 8px; border-radius:4px; background:#fff0e9; color:#a83a13; font-size:10px; font-weight:950; letter-spacing:.08em; }
+.hc-promo-hint { width:min(100%,760px); margin:18px auto 10px; color:#5e5e57; text-align:center; font-size:12px; line-height:1.5; }
+.hc-membership-page .subscription-legal { max-width:760px; margin:16px auto 0; color:#686861; font-size:12px; line-height:1.65; }
+.hc-membership-page .active-card { max-width:760px; margin:0 auto 26px; padding:clamp(20px,4vw,32px); border:1px solid #deded8; border-top:3px solid #ff5a1f; border-radius:14px; background:#fff; color:#171717; }
+.hc-membership-page .active-card h2 { margin:10px 0; color:#171717; font-size:clamp(28px,4vw,40px); }
+.hc-membership-page .active-card p { color:#55554f; line-height:1.55; }
+.hc-membership-page .active-card .eyebrow { color:#a83a13; }
+.hc-membership-page .active-card .legal-note { margin-top:16px; color:#686861; font-size:12px; line-height:1.6; }
+@media(max-width:700px) {
+  .hc-membership-page .membership-section { width:calc(100% - 24px); }
+  .hc-billing-options { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+  .hc-billing-option { min-height:64px; padding:8px 5px; }
+  .hc-billing-option span { font-size:12px; }
+  .hc-billing-option small { font-size:10px; }
+  .hc-membership-page .plans { grid-template-columns:1fr; gap:12px; }
+  .hc-membership-page .plan-card { padding:18px; }
+  .hc-membership-page .plan-description { min-height:0; }
+  .hc-membership-page .price strong { font-size:27px; }
+  .hc-membership-page .membership-hero { padding-left:18px; padding-right:18px; }
+}
