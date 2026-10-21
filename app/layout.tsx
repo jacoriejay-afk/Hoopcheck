@@ -12,7 +12,7 @@ import AuthProvider from "../components/AuthProvider";
 import MobileAuth from "../components/MobileAuth";
 import GlobalBackButton from "../components/GlobalBackButton";
 import BottomNav from "../components/BottomNav";
-import PreferencesProvider from "../components/PreferencesProvider";
+import PreferencesProvider, { type Language, type ThemePreference } from "../components/PreferencesProvider";
 import ProtectionLayer from "../components/ProtectionLayer";
 import AnalyticsTracker from "../components/AnalyticsTracker";
 import SiteHeader from "../components/SiteHeader";
@@ -69,8 +69,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const cookieStore = await cookies();
   const savedTheme = cookieStore.get("hoopcheck-theme")?.value;
   const savedLanguage = cookieStore.get("hoopcheck-language")?.value;
-  const initialTheme = savedTheme === "light" || savedTheme === "dark" || savedTheme === "system" ? savedTheme : "system";
-  const initialLanguage = ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"].includes(savedLanguage || "") ? savedLanguage! : "en";
+  const initialTheme: ThemePreference = savedTheme === "light" || savedTheme === "dark" || savedTheme === "system" ? savedTheme : "system";
+  const initialLanguage: Language = ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"].includes(savedLanguage || "") ? savedLanguage as Language : "en";
   const organizationJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
