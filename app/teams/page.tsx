@@ -247,15 +247,11 @@ export default function TeamsPage() {
         </div>
 
         <h1>
-          Know the organization
-          <br />
-          before you sign.
+          {t("teamHeroHeadline")}
         </h1>
 
         <p>
-          Explore professional basketball
-          organizations and learn from players
-          who have already experienced them.
+          {t("teamHeroDescription")}
         </p>
 
         <div className="research-search">
@@ -268,12 +264,10 @@ export default function TeamsPage() {
             className="search-button"
           >
             <span>
-              Search coaches, teams, or leagues...
+              {t("searchPlaceholder")}
             </span>
 
-            <strong>
-              Search →
-            </strong>
+            <strong>{t("search")} →</strong>
           </Link>
         </div>
 
@@ -291,7 +285,7 @@ export default function TeamsPage() {
 
       <section className="hero">
         <div className="research-search">
-          <div className="search-label">TEAM DIRECTORY</div>
+          <div className="search-label">{t("teamDirectoryLabel")}</div>
           <SearchBar value={query} onChange={(value) => { setQuery(value); setPage(0); }} placeholder={t("searchPlaceholder")} ariaLabel={t("teams")} onSubmit={(value) => { setQuery(value); setPage(0); }} />
           <div className="team-filter-row">
             <select value={continent} onChange={(e) => { setContinent(e.target.value); setCountry(""); setPage(0); }} aria-label="Filter teams by continent">
