@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import FollowButton from "../../../components/FollowButton";
 import PlayerContactButton from "../../../components/PlayerContactButton";
+import PlayerProfilePanel from "../../../components/PlayerProfilePanel";
 
 type Player = {
   id: string;
@@ -146,25 +147,25 @@ export default function PlayerProfilePage() {
           <div style={{ marginTop: 14, display:"flex", gap:10, flexWrap:"wrap" }}><FollowButton targetType="player" targetId={player.id} /><PlayerContactButton playerId={player.id} /></div>
         </section>
 
-        {viewerType==="player" && !isOwnProfile && !connectionAccepted ? (<section className="dashboard-card" style={{marginTop:14}}><span className="card-kicker">PLAYER ACCESS</span><h2>Player connection required</h2><p className="muted">Pro and Premium players can request access to another player profile and HoopFeed connection. The player must accept before private player-to-player access opens.</p></section>) : (<section className="player-profile-grid">
-          <div className="player-profile-card">
-            <span className="card-kicker">PLAYER</span>
-            <h2>Basketball Background</h2>
-            <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
-              {player.player_position && <p><strong>Position:</strong> {player.player_position}</p>}
-              {player.years_pro !== null && <p><strong>Years pro:</strong> {player.years_pro}</p>}
-              {player.country && <p><strong>Home country:</strong> {player.country}</p>}
-              {player.current_country && <p><strong>Current country:</strong> {player.current_country}</p>}
-              {player.current_team && <p><strong>Current team:</strong> {player.current_team}</p>}
-            </div>
-          </div>
-
-          <div className="dashboard-card">
-            <span className="card-kicker">ABOUT</span>
-            <h2>Player Bio</h2>
-            <p>{player.bio || "This player has not added a public bio yet."}</p>
-          </div>
-        </section>)}
+        {viewerType==="player" && !isOwnProfile && !connectionAccepted ? (
+          <section className="dashboard-card" style={{marginTop:14}}>
+            <span className="card-kicker">PLAYER ACCESS</span>
+            <h2>Player connection required</h2>
+            <p className="muted">Pro and Premium players can request access to another player profile and HoopFeed connection. The player must accept before private player-to-player access opens.</p>
+          </section>
+        ) : (
+          <PlayerProfilePanel
+            playerName={player.display_name || "HoopCheck Player"}
+            username={null}
+            position={player.player_position}
+            nationality={player.country}
+            currentTeam={player.current_team}
+            currentCountry={player.current_country}
+            seasonsPro={player.years_pro}
+            verifiedPlayer={player.player_verified}
+            bio={player.bio}
+          />
+        )}
 
         <section className="dashboard-card" style={{ marginTop: 24 }}>
           <span className="card-kicker">HOOPCHECK</span>
