@@ -4655,3 +4655,90 @@ body:has(main.admin-directory-shell) .global-back-button { display:none!importan
 
 /* The site-wide court watermark is fixed to the viewport; disable it on the dashboard. */
 body:has(.hc-dashboard-shell)::before { display:none !important; content:none !important; }
+
+
+/* Final theme contract: shared surfaces and text remain readable on every route. */
+[data-theme="dynamic"] {
+  --ink: #F5F5F0;
+  --paper: #0A0A0A;
+  --page-bg: #0A0A0A;
+  --page-text: #F5F5F0;
+  --page-muted: #B8B8B3;
+  --surface: #111111;
+  --surface-2: #171717;
+  --surface-3: #222222;
+  --border: #333333;
+  --brand-orange: #FF5A1F;
+  --orange: #FF5A1F;
+}
+[data-theme="dynamic"] body,
+[data-theme="dynamic"] .page-shell,
+[data-theme="dynamic"] .page-container,
+[data-theme="dynamic"] main,
+[data-theme="dynamic"] .hc-account-page {
+  color: #F5F5F0;
+  background-color: #0A0A0A;
+}
+[data-theme="dynamic"] .dashboard-card,
+[data-theme="dynamic"] .card,
+[data-theme="dynamic"] .hero-card,
+[data-theme="dynamic"] .result-card,
+[data-theme="dynamic"] .quick-card,
+[data-theme="dynamic"] .settings-card,
+[data-theme="dynamic"] .hc-settings-list,
+[data-theme="dynamic"] .hc-confirm-modal {
+  color: #F5F5F0;
+  background-color: #111111;
+  border-color: #333333;
+}
+[data-theme="dynamic"] .page-shell h1,
+[data-theme="dynamic"] .page-shell h2,
+[data-theme="dynamic"] .page-shell h3,
+[data-theme="dynamic"] .page-shell h4,
+[data-theme="dynamic"] .page-shell p,
+[data-theme="dynamic"] .page-shell label,
+[data-theme="dynamic"] .page-shell li,
+[data-theme="dynamic"] .page-shell .card-title,
+[data-theme="dynamic"] .page-shell .result-title {
+  color: #F5F5F0;
+}
+[data-theme="dynamic"] .page-shell .muted,
+[data-theme="dynamic"] .page-shell .subtle,
+[data-theme="dynamic"] .page-shell .description,
+[data-theme="dynamic"] .page-shell small {
+  color: #B8B8B3;
+}
+[data-theme="dynamic"] input,
+[data-theme="dynamic"] textarea,
+[data-theme="dynamic"] select {
+  color: #F5F5F0;
+  background-color: #171717;
+  border-color: #444444;
+}
+[data-theme="dynamic"] input::placeholder,
+[data-theme="dynamic"] textarea::placeholder {
+  color: #A3A3A3;
+  opacity: 1;
+}
+[data-theme="dynamic"] .hc-setting-row,
+[data-theme="dynamic"] .hc-setting-row .hc-setting-copy strong,
+[data-theme="dynamic"] .hc-confirm-modal h2 {
+  color: #F5F5F0;
+}
+[data-theme="dynamic"] .hc-setting-row .hc-setting-copy small,
+[data-theme="dynamic"] .hc-setting-value,
+[data-theme="dynamic"] .hc-setting-chevron,
+[data-theme="dynamic"] .hc-confirm-modal p,
+[data-theme="dynamic"] .hc-confirm-modal label {
+  color: #B8B8B3;
+}
+[data-theme="dynamic"] .hc-setting-row:hover { background: #1B1B1B; }
+[data-theme="dynamic"] .hc-setting-icon { color: #FF5A1F; }
+[data-theme="dynamic"] .hc-settings-group.is-danger .hc-setting-copy strong,
+[data-theme="dynamic"] .hc-settings-group.is-danger .hc-setting-icon { color: #FF777F; }
+[data-theme="light"] .page-shell,
+[data-theme="light"] main { color: #151515; }
+@media (max-width: 480px) {
+  .hc-settings-heading h2 { font-size: clamp(24px, 7vw, 32px); }
+  .hc-settings-group > h3 { font-size: 10px; }
+}
