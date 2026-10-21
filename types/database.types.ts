@@ -1637,9 +1637,11 @@ export type Database = {
           moderation_updated_at: string | null
           moderation_updated_by: string | null
           nationality: string | null
+          notification_preferences: Json
           player_verified: boolean
           player_verified_at: string | null
           position: string | null
+          preferred_language: string
           professional_experience: boolean
           profile_claimed: boolean
           profile_visibility: string
@@ -1650,6 +1652,7 @@ export type Database = {
           stripe_identity_verification_session_id: string | null
           terms_accepted_at: string | null
           terms_version: string | null
+          theme_preference: string
           updated_at: string
           username: string | null
           years_pro: number | null
@@ -1692,9 +1695,11 @@ export type Database = {
           moderation_updated_at?: string | null
           moderation_updated_by?: string | null
           nationality?: string | null
+          notification_preferences?: Json
           player_verified?: boolean
           player_verified_at?: string | null
           position?: string | null
+          preferred_language?: string
           professional_experience?: boolean
           profile_claimed?: boolean
           profile_visibility?: string
@@ -1705,6 +1710,7 @@ export type Database = {
           stripe_identity_verification_session_id?: string | null
           terms_accepted_at?: string | null
           terms_version?: string | null
+          theme_preference?: string
           updated_at?: string
           username?: string | null
           years_pro?: number | null
@@ -1747,9 +1753,11 @@ export type Database = {
           moderation_updated_at?: string | null
           moderation_updated_by?: string | null
           nationality?: string | null
+          notification_preferences?: Json
           player_verified?: boolean
           player_verified_at?: string | null
           position?: string | null
+          preferred_language?: string
           professional_experience?: boolean
           profile_claimed?: boolean
           profile_visibility?: string
@@ -1760,6 +1768,7 @@ export type Database = {
           stripe_identity_verification_session_id?: string | null
           terms_accepted_at?: string | null
           terms_version?: string | null
+          theme_preference?: string
           updated_at?: string
           username?: string | null
           years_pro?: number | null
