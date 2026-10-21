@@ -29,6 +29,7 @@ async function readLimitedBody(request: Request, maxBytes: number): Promise<Uint
   return body;
 }
 const MAX_TEXT_LENGTH = 2000;
+const ALLOWED_TOPIC_TAGS = new Set(["Practice","Game Day","Travel","Teammates","Culture","Win","Challenge"]);
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const IMAGE_EXTENSIONS: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -125,6 +126,10 @@ export async function POST(request: Request) {
     }
 
     const { data: profile } = await db.from("profiles").select("account_type,current_country").eq("id", user.id).maybeSingle();
+    const submittedTopicTag = String(form.get("topic_tag") || "").trim();
+    if (kind === "post" && submittedTopicTag && (profile?.account_type !== "player" || !ALLOWED_TOPIC_TAGS.has(submittedTopicTag))) {
+      return NextResponse.json({ allowed: false, message: "Choose a valid HoopFeed topic as a player." }, { status: 400 });
+    }
     const { data: sub } = await db.from("subscriptions").select("plan,status,access_status").eq("user_id", user.id).maybeSingle();
     const activeAccess = ["player","fan"].includes(profile?.account_type || "") &&
       ["pro","premium"].includes(sub?.plan || "") &&
@@ -167,6 +172,7 @@ export async function POST(request: Request) {
     const submittedCountry = String(form.get("post_country") || "").trim().slice(0, 100);
     const { error } = await db.from("feed_posts").insert({
       author_id:user.id, body:text || " ", image_url,
+      topic_tag: profile?.account_type === "player" && submittedTopicTag ? submittedTopicTag : null,
       location_country:shareCountry ? (submittedCountry || profile?.current_country || null) : null,
       show_country:shareCountry,
       status:"approved", expires_at:new Date(Date.now()+86400000).toISOString()
