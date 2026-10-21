@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 export type Language = "en"|"es"|"fr"|"de"|"tr"|"pt"|"it"|"el"|"ar";
 
@@ -24,12 +25,25 @@ export default function LanguageProvider({children}:{children:React.ReactNode}){
   const [language,setLanguage]=useState<Language>("en");
   useEffect(()=>{
     let mounted=true;
-    const apply=(v:string)=>{if((Object.keys(labels) as string[]).includes(v)&&mounted){setLanguage(v as Language);document.documentElement.lang=v;document.documentElement.dir=v==="ar"?"rtl":"ltr";}};
+    const isLanguage=(v:string):v is Language=>(Object.keys(labels) as string[]).includes(v);
+    const apply=(v:string,persist=true)=>{
+      if(!isLanguage(v)||!mounted)return;
+      setLanguage(v);document.documentElement.lang=v;document.documentElement.dir=v==="ar"?"rtl":"ltr";
+      if(persist)localStorage.setItem("hoopcheck-language",v);
+    };
     apply(localStorage.getItem("hoopcheck-language")||"en");
     const onLanguageChange=(event:Event)=>apply((event as CustomEvent<string>).detail);
     window.addEventListener("hoopcheck-language-change",onLanguageChange);
-
-    return()=>{mounted=false;window.removeEventListener("hoopcheck-language-change",onLanguageChange)};
+    const loadProfileLanguage=async(userId:string)=>{
+      const {data}=await supabase.from("profiles").select("preferred_language").eq("id",userId).maybeSingle();
+      if(mounted&&data?.preferred_language&&isLanguage(data.preferred_language))apply(data.preferred_language);
+    };
+    void supabase.auth.getUser().then(({data})=>{if(data.user)void loadProfileLanguage(data.user.id)});
+    const {data:listener}=supabase.auth.onAuthStateChange((event,session)=>{
+      if((event==="SIGNED_IN"||event==="USER_UPDATED")&&session?.user)void loadProfileLanguage(session.user.id);
+    });
+    return()=>{
+      mounted=false;window.removeEventListener("hoopcheck-language-change",onLanguageChange);
+      listener.subscription.unsubscribe();
+    };
   },[]);
-  return <LanguageContext.Provider value={{language,t:(key)=>labels[language][key]||labels.en[key]||key}}>{children}</LanguageContext.Provider>;
-}
