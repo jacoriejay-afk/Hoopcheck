@@ -3693,3 +3693,18 @@ body { background-color: var(--hc-ink); }
 .hc-feed-game-score>strong i{color:var(--brand-orange);font-style:normal;padding:0 3px}
 .hc-feed-game-score>strong.hc-feed-game-vs{font-size:15px;color:var(--brand-orange)}
 @media(max-width:480px){.hc-feed-game-fields{grid-template-columns:minmax(0,1fr)}.hc-feed-score-fields{grid-column:auto}.hc-feed-game-score{gap:8px;padding:12px}.hc-feed-game-score>span{font-size:9px}.hc-feed-game-score>strong{font-size:18px}}
+
+
+/* HoopFeed Check confirmation animation */
+.hc-feed-action-pill{position:relative;overflow:visible}
+.hc-feed-check-mark{display:inline-block}
+.hc-feed-check-burst .hc-feed-check-mark{animation:hc-feed-check-pop .42s cubic-bezier(.2,.8,.2,1)}
+.hc-feed-check-pop{position:absolute;left:18px;top:-18px;color:var(--brand-orange);font-size:22px;font-weight:950;pointer-events:none;animation:hc-feed-check-float .72s ease-out forwards;text-shadow:0 1px #fff}
+.hc-feed-photo-check-burst{animation:hc-feed-photo-flash .48s ease-out}
+@keyframes hc-feed-check-pop{0%{transform:scale(.6) rotate(-15deg)}55%{transform:scale(1.45) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes hc-feed-check-float{0%{opacity:0;transform:translateY(8px) scale(.6)}25%{opacity:1;transform:translateY(0) scale(1.15)}100%{opacity:0;transform:translateY(-22px) scale(1)}}
+@keyframes hc-feed-photo-flash{0%{filter:brightness(1)}30%{filter:brightness(1.14);outline:3px solid var(--brand-orange);outline-offset:-3px}100%{filter:brightness(1);outline-color:transparent}}
+.hc-feed-comments-backdrop{display:none}
+.hc-feed-comments-sheet-head{display:none}
+@media(max-width:640px){.hc-feed-comments-backdrop{display:block;position:fixed;inset:0;z-index:90;border:0;background:#0009;padding:0;width:100%;height:100%;cursor:pointer}.hc-feed-comments-panel{position:fixed;z-index:91;left:0;right:0;bottom:0;max-height:min(78dvh,680px);overflow-y:auto;margin:0!important;padding:18px 18px calc(18px + env(safe-area-inset-bottom))!important;border:1px solid #dededb!important;border-radius:22px 22px 0 0;background:#fff;box-shadow:0 -18px 55px #0002;animation:hc-feed-sheet-up .24s ease-out}.hc-feed-comments-sheet-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid var(--border);font-size:12px;letter-spacing:.1em}.hc-feed-comments-sheet-head button{border:1px solid var(--border);border-radius:999px;background:#f7f7f5;padding:7px 11px;font:inherit;font-size:12px;font-weight:800}@keyframes hc-feed-sheet-up{from{transform:translateY(18px);opacity:.6}to{transform:translateY(0);opacity:1}}}
+@media(prefers-reduced-motion:reduce){.hc-feed-check-burst .hc-feed-check-mark,.hc-feed-check-pop,.hc-feed-photo-check-burst,.hc-feed-comments-panel{animation:none!important}}
