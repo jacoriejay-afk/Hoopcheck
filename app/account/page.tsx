@@ -5,6 +5,7 @@ import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
 import { supabase } from "../../lib/supabase";
+import { usePreferences } from "../../components/PreferencesProvider";
 
 type Subscription = {
   plan: "pro" | "premium" | null;
@@ -59,6 +60,7 @@ function SettingsToggle({icon,label,checked,onChange}:{icon:string;label:string;
 }
 
 export default function AccountPage() {
+  const { setTheme: setGlobalTheme, setLanguage: setGlobalLanguage } = usePreferences();
   const [email, setEmail] = useState("");
   const [userId, setUserId] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -300,19 +302,17 @@ export default function AccountPage() {
   }
 
   async function changeTheme(next: "system"|"light"|"dark") {
+    // Apply globally before awaiting persistence so the switch never waits on the network.
     setThemePreference(next);
-    localStorage.setItem("hoopcheck-theme", next);
-    window.dispatchEvent(new CustomEvent("hoopcheck-theme-change", { detail: next }));
-    await saveSetting({ theme_preference: next }, "Appearance saved.");
+    setGlobalTheme(next);
+    void saveSetting({ theme_preference: next }, "Appearance saved.");
   }
 
   async function changeLanguage(next: string) {
+    // Update React consumers and <html lang> synchronously, then persist in the background.
     setPreferredLanguage(next);
-    localStorage.setItem("hoopcheck-language", next);
-    document.documentElement.lang = next;
-    document.documentElement.dir = next === "ar" ? "rtl" : "ltr";
-    window.dispatchEvent(new CustomEvent("hoopcheck-language-change", { detail: next }));
-    await saveSetting({ preferred_language: next }, "Language saved.");
+    setGlobalLanguage(next as import("../../components/PreferencesProvider").Language);
+    void saveSetting({ preferred_language: next }, "Language saved.");
   }
 
   async function changeNotification(key: keyof typeof notificationPreferences, checked: boolean) {
