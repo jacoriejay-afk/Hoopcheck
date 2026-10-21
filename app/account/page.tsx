@@ -37,7 +37,7 @@ type Target = { id: string; name: string };
 const emptyProfile: Profile = {
   account_type: "player",
   display_name: null, first_name: null, last_name: null, professional_experience: false,
-  bio: null, position: null, years_pro: null, current_country: null, current_country_public: false, current_team: null,
+  bio: null, position: null, years_pro: null, current_country: null, current_country_public: true, current_team: null,
   profile_visibility: "public", player_verified: false, profile_claimed: true,
   avatar_url: null, avatar_moderation_status: "approved"
 };
