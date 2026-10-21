@@ -14,7 +14,6 @@ try {
   console.error("Theme-token guard could not inspect the previous commit. Ensure CI checks out at least 2 commits.");
   process.exit(1);
 }
-const allowColorFile = "app/hoopcheck-preview-system.css";
 let currentFile = "";
 const errors = [];
 for (const line of diff.split("\n")) {
@@ -23,7 +22,7 @@ for (const line of diff.split("\n")) {
   if (!line.startsWith("+") || line.startsWith("+++")) continue;
   const added = line.slice(1);
   if (/\bbg-white\b|\btext-black\b/.test(added)) errors.push(`${currentFile}: added bg-white/text-black utility; use theme tokens.`);
-  if (currentFile !== allowColorFile && /(?:background(?:-color)?|color|border(?:-color)?|outline-color)\s*:\s*["']?\s*#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})\b/i.test(added)) {
+  if (!/^\s*--[\w-]+\s*:\s*#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})\b/i.test(added) && /(?:background(?:-color)?|color|border(?:-color)?|outline-color)\s*:\s*["']?\s*#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})\b/i.test(added)) {
     errors.push(`${currentFile}: added raw hex color outside the token stylesheet; use a CSS variable.`);
   }
   if (/style=\{\{[^}]*\b(?:background|backgroundColor|color|borderColor)\s*:\s*["']#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})/i.test(added)) {
