@@ -8,6 +8,7 @@ import PlayerContactButton from "../../components/PlayerContactButton";
 import { VerifiedBadge } from "../../components/HoopCheckUI";
 import SearchBar from "../../components/SearchBar";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
+import { useLanguage } from "../../components/LanguageProvider";
 
 type Coach = { id: string; name: string; country: string | null; city: string | null };
 type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null };
@@ -102,6 +103,7 @@ function PlayerUsernameConnect() {
 }
 
 function SearchContent() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const query = searchParams.get("q")?.trim() || "";
   const initialType = searchParams.get("type");
@@ -251,17 +253,17 @@ function SearchContent() {
   return (
     <main className="search-page hc-global-search-page">
       <nav className="hc-directory-switcher" aria-label="Browse HoopCheck directories">
-        <span className="hc-directory-switcher-label">BROWSE DIRECTORIES</span>
-        <Link href="/teams">Men’s Teams</Link>
-        <Link href="/womens">Women’s Teams</Link>
-        <Link href="/coaches">Coaches</Link>
-        <Link href="/leagues">Leagues</Link>
-        <Link href="/players">Find Players</Link>
-        <Link href="/search">Global Search</Link>
+        <span className="hc-directory-switcher-label">{t("directory")}</span>
+        <Link href="/teams">{t("teams")}</Link>
+        <Link href="/womens">{t("teams")}</Link>
+        <Link href="/coaches">{t("coaches")}</Link>
+        <Link href="/leagues">{t("leagues")}</Link>
+        <Link href="/players">{t("findPlayers")}</Link>
+        <Link href="/search">{t("search")}</Link>
         </nav>
       <section className="dashboard-card" style={{ margin: "0 0 18px", padding: "16px" }}>
         <div className="eyebrow">PLAYER CONNECT</div>
-        <h2 style={{ margin: "4px 0 6px" }}>Add a Player</h2>
+        <h2 style={{ margin: "4px 0 6px" }}>{t("findPlayer")}</h2>
         <p className="muted" style={{ margin: "0 0 12px" }}>
           Enter the player&apos;s <strong>HoopCheck username</strong> to send them a connection request.
         </p>
@@ -269,8 +271,8 @@ function SearchContent() {
       </section>
 
       <section className="search-hero">
-        <div className="eyebrow">Global Research</div>
-        <h1>Search the<br />basketball world.</h1>
+        <div className="eyebrow">{t("globalResearch")}</div>
+        <h1>{t("searchHeadline")}</h1>
         <p>Find players, coaches, professional teams, and leagues from around the world.</p>
 
         <SearchBar
@@ -278,8 +280,8 @@ function SearchContent() {
           name="q"
           value={searchInput}
           onChange={setSearchInput}
-          placeholder="Search players, coaches, teams, or leagues"
-          ariaLabel="Search players, coaches, teams, or leagues"
+          placeholder={t("searchPlaceholder")}
+          ariaLabel={t("searchPlaceholder")}
         />
       </section>
 
@@ -303,7 +305,7 @@ function SearchContent() {
                   onClick={() => setTypeFilter(type)}
                   aria-pressed={typeFilter === type}
                 >
-                  {type === "all" ? "All" : type === "mens-teams" ? "Men’s Teams" : type === "womens-teams" ? "Women’s Teams" : type[0].toUpperCase() + type.slice(1)}
+                  {type === "all" ? t("all") : type === "mens-teams" || type === "womens-teams" ? t("teams") : type === "players" ? t("account") : type === "coaches" ? t("coaches") : type === "leagues" ? t("leagues") : type}
                 </button>
               ))}
               <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} aria-label="Filter by country" style={{ padding: "10px 14px", borderRadius: 8 }}>
