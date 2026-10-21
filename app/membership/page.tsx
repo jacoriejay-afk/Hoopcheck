@@ -353,7 +353,7 @@ function MembershipContent() {
                   </div>
                   <div className="price">
                     <strong>{billingInterval==="month" ? "\$9.99" : billingInterval==="6_month" ? "\$50.95" : "\$107.89"}</strong>
-                    <span>{billingInterval==="month" ? "/ month" : billingInterval==="6_month" ? "/ 6 months" : "/ year"}</span>
+                    <span>{billingInterval==="month" ? "billed monthly" : billingInterval==="6_month" ? "billed every 6 months" : "billed annually"}</span>
                   </div>
                 </div>
                 <p className="plan-description">
