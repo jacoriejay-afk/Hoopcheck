@@ -4631,3 +4631,4 @@ body:has(main.admin-directory-shell) .global-back-button { display:none!importan
 @media (min-width: 641px) {
   .hc-dashboard-shell { padding-top: 32px !important; }
 }
+\n/* No fixed background overlay or floating auth chip on the dashboard. */\n.hc-dashboard-shell::before, .hc-dashboard-shell::after { display:none !important; content:none !important; }\n
