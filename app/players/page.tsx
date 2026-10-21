@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import DirectoryLayout from "../../components/DirectoryLayout";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import FollowButton from "../../components/FollowButton";
@@ -98,23 +99,7 @@ export default function PlayersPage() {
   return (
     <main className="page-shell hc-player-directory-page">
       <div className="page-container">
-        <section className="hero-card hc-directory-hero">
-          <p className="eyebrow">PLAYER DIRECTORY</p>
-          <h1>Find Players</h1>
-          <p className="muted">
-            Research professional players, follow talent, and discover basketball experience across the global game.
-          </p>
-        </section>
-
-        <nav className="hc-directory-switcher" aria-label="Browse HoopCheck directories">
-          <span className="hc-directory-switcher-label">BROWSE DIRECTORIES</span>
-          <Link href="/teams">Men’s Teams</Link>
-          <Link href="/womens">Women’s Teams</Link>
-          <Link href="/coaches">Coaches</Link>
-          <Link href="/leagues">Leagues</Link>
-          <Link href="/players">Find Players</Link>
-          <Link href="/search">Global Search</Link>
-        </nav>
+        <DirectoryLayout kicker="PLAYER DIRECTORY" title="Find Players" description="Research professional players, follow talent, and discover basketball experience across the global game." current="players" />
 
         <section className="dashboard-card" style={{ marginTop: 18 }}>
           <div className="research-search">
