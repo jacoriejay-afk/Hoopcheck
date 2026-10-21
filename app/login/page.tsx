@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [messageIsSuccess, setMessageIsSuccess] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -17,6 +18,7 @@ export default function LoginPage() {
     if (loading) return;
     setLoading(true);
     setMessage("");
+    setMessageIsSuccess(false);
 
     try {
       const normalizedEmail = email.trim().toLowerCase();
@@ -49,7 +51,11 @@ export default function LoginPage() {
         !profile?.display_name ||
         (!profile?.position && profile?.years_pro == null);
 
-      window.location.replace(needsOnboarding ? "/onboarding" : "/dashboard");
+      setMessage("Login successful! Your account is working. Opening your HoopCheck workspace…");
+      setMessageIsSuccess(true);
+      window.setTimeout(() => {
+        window.location.replace(needsOnboarding ? "/onboarding" : "/dashboard");
+      }, 900);
     } catch (error) {
       console.error("Login failed:", error);
       setMessage(error instanceof Error ? error.message : "Unable to sign in right now. Please try again.");
@@ -124,8 +130,8 @@ export default function LoginPage() {
           </form>
 
           {message && (
-            <div style={{ marginTop: 18, padding: 14, border: "1px solid #e5aaa6", borderRadius: 8, background: "#fff1f0" }}>
-              <p role="alert" aria-live="polite" style={{ margin: 0, color: "#8c1d18", lineHeight: 1.5 }}>
+            <div style={{ marginTop: 18, padding: 14, border: messageIsSuccess ? "1px solid #86c7a2" : "1px solid #e5aaa6", borderRadius: 8, background: messageIsSuccess ? "#edf9f1" : "#fff1f0" }}>
+              <p role={messageIsSuccess ? "status" : "alert"} aria-live="polite" style={{ margin: 0, color: messageIsSuccess ? "#17633a" : "#8c1d18", lineHeight: 1.5 }}>
                 {message}
               </p>
             </div>

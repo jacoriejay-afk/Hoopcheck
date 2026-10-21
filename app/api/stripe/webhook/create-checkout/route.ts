@@ -135,7 +135,7 @@ export async function POST(
       return NextResponse.json({ error: "Request body is too large." }, { status: 413 });
     }
 
-    let body: { plan?: string; interval?: string } = {};
+    let body: { plan?: string; interval?: string; promoCode?: string } = {};
     try {
       const rawBody = await request.text();
       if (new TextEncoder().encode(rawBody).byteLength > 8_192) {
@@ -165,6 +165,70 @@ export async function POST(
         },
         { status: 400 }
       );
+    }
+
+    const submittedPromoCode =
+      typeof body.promoCode === "string" ? body.promoCode.trim() : "";
+    if (submittedPromoCode && (submittedPromoCode.length > 64 || !/^[a-zA-Z0-9_-]+$/.test(submittedPromoCode))) {
+      return NextResponse.json({ error: "Enter a valid promo code." }, { status: 400 });
+    }
+
+    let promoCodeId: string | undefined;
+    if (submittedPromoCode) {
+      // First-month-free codes are intentionally limited to Player accounts
+      // and the monthly Pro plan. Stripe remains the source of truth for
+      // redemption limits and first-time-customer restrictions.
+      if (plan !== "pro" || interval !== "month") {
+        return NextResponse.json({ error: "This offer is only available for monthly Pro." }, { status: 400 });
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("account_type")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profileError || profile?.account_type !== "player") {
+        return NextResponse.json({ error: "This promo offer is only available to Player accounts." }, { status: 403 });
+      }
+
+      const matchingCodes = await stripe.promotionCodes.list({
+        code: submittedPromoCode,
+        active: true,
+        limit: 2,
+      });
+      const matchingCode = matchingCodes.data.find(
+        (candidate) => candidate.active && candidate.code.toLowerCase() === submittedPromoCode.toLowerCase()
+      );
+
+      if (!matchingCode) {
+        return NextResponse.json({ error: "That promo code is invalid, expired, or fully redeemed." }, { status: 400 });
+      }
+
+      const promotion = matchingCode as unknown as {
+        id: string;
+        restrictions?: { first_time_transaction?: boolean };
+        promotion?: { type?: string; coupon?: string | { id: string; duration?: string; percent_off?: number | null; amount_off?: number | null } };
+      };
+      const couponRef = promotion.promotion?.coupon;
+      const coupon = typeof couponRef === "string"
+        ? await stripe.coupons.retrieve(couponRef)
+        : couponRef;
+
+      if (
+        !coupon ||
+        coupon.duration !== "once" ||
+        coupon.percent_off !== 100 ||
+        coupon.amount_off != null
+      ) {
+        return NextResponse.json({ error: "This code is not configured for a one-month-free offer." }, { status: 400 });
+      }
+
+      if (!promotion.restrictions?.first_time_transaction) {
+        return NextResponse.json({ error: "This offer must be configured for first-time customers." }, { status: 400 });
+      }
+
+      promoCodeId = matchingCode.id;
     }
 
     const {
@@ -235,7 +299,7 @@ export async function POST(
           mode: "subscription",
 
           // Show Stripe’s built-in promotion-code entry on hosted Checkout.
-          allow_promotion_codes: true,
+          allow_promotion_codes: !promoCodeId,
 
           line_items: [
             {
@@ -243,6 +307,8 @@ export async function POST(
               quantity: 1,
             },
           ],
+
+          ...(promoCodeId ? { discounts: [{ promotion_code: promoCodeId }] } : {}),
 
           success_url:
             `${siteUrl}/membership?success=true&session_id={CHECKOUT_SESSION_ID}`,
