@@ -127,8 +127,18 @@ export async function POST(request: Request) {
 
     const { data: profile } = await db.from("profiles").select("account_type,current_country").eq("id", user.id).maybeSingle();
     const submittedTopicTag = String(form.get("topic_tag") || "").trim();
+    const gameDayTeam = String(form.get("game_day_team") || "").trim().slice(0, 80);
+    const gameDayOpponent = String(form.get("game_day_opponent") || "").trim().slice(0, 80);
+    const scoreForRaw = String(form.get("game_day_score_for") || "").trim();
+    const scoreAgainstRaw = String(form.get("game_day_score_against") || "").trim();
+    const scoreFor = scoreForRaw === "" ? null : Number(scoreForRaw);
+    const scoreAgainst = scoreAgainstRaw === "" ? null : Number(scoreAgainstRaw);
     if (kind === "post" && submittedTopicTag && (profile?.account_type !== "player" || !ALLOWED_TOPIC_TAGS.has(submittedTopicTag))) {
       return NextResponse.json({ allowed: false, message: "Choose a valid HoopFeed topic as a player." }, { status: 400 });
+    }
+    if (kind === "post" && submittedTopicTag === "Game Day") {
+      const scoresValid = (scoreFor === null && scoreAgainst === null) || (Number.isInteger(scoreFor) && Number.isInteger(scoreAgainst) && scoreFor! >= 0 && scoreFor! <= 300 && scoreAgainst! >= 0 && scoreAgainst! <= 300);
+      if (!gameDayTeam || !gameDayOpponent || !scoresValid) return NextResponse.json({ allowed: false, message: "Add both teams and enter both final scores, or leave both scores blank until after the game." }, { status: 400 });
     }
     const { data: sub } = await db.from("subscriptions").select("plan,status,access_status").eq("user_id", user.id).maybeSingle();
     const activeAccess = ["player","fan"].includes(profile?.account_type || "") &&
@@ -173,6 +183,10 @@ export async function POST(request: Request) {
     const { error } = await db.from("feed_posts").insert({
       author_id:user.id, body:text || " ", image_url,
       topic_tag: profile?.account_type === "player" && submittedTopicTag ? submittedTopicTag : null,
+      game_day_team: profile?.account_type === "player" && submittedTopicTag === "Game Day" ? gameDayTeam : null,
+      game_day_opponent: profile?.account_type === "player" && submittedTopicTag === "Game Day" ? gameDayOpponent : null,
+      game_day_score_for: profile?.account_type === "player" && submittedTopicTag === "Game Day" ? scoreFor : null,
+      game_day_score_against: profile?.account_type === "player" && submittedTopicTag === "Game Day" ? scoreAgainst : null,
       location_country:shareCountry ? (submittedCountry || profile?.current_country || null) : null,
       show_country:shareCountry,
       status:"approved", expires_at:new Date(Date.now()+86400000).toISOString()
