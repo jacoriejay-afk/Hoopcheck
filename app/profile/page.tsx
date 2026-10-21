@@ -39,7 +39,7 @@ export default function ProfilePage() {
       const result = await Promise.race([
         supabase
           .from("profiles")
-          .select("id,display_name,username,first_name,last_name,account_type,bio,position,years_pro,current_country,current_team,player_verified,coach_verified,avatar_url,basketball_type,free_agent,hometown,nationality,interests,favorite_leagues,profile_visibility")
+          .select("id,display_name,username,first_name,last_name,account_type,bio,position,years_pro,current_country,current_team,player_verified,coach_verified,avatar_url,avatar_moderation_status,basketball_type,free_agent,hometown,nationality,interests,favorite_leagues,profile_visibility")
           .eq("id", user.id)
           .maybeSingle(),
         new Promise<any>((resolve) => setTimeout(() => resolve({ data: null }), 2500)),
@@ -78,58 +78,67 @@ export default function ProfilePage() {
 
   const name = p.display_name || p.username || "HoopCheck Member";
   const initials = name.trim().split(/\s+/).slice(0, 2).map((part: string) => part[0]).join("").toUpperCase() || "HC";
+  const profileFields = [p.display_name || p.username, p.bio, p.position, p.years_pro != null ? String(p.years_pro) : "", p.current_country, p.current_team, p.avatar_url, p.hometown || p.nationality];
+  const profileCompletion = Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100);
+  const firstMissingField = !p.position ? "position" : !p.current_country ? "location" : !p.bio ? "bio" : "profile details";
 
   return (
     <main className="page-shell hc-member-profile-page">
       <div className="page-container">
         <section className="hero-card compact-hero" aria-labelledby="hc-member-profile-title">
           <div className="hc-member-profile-identity">
-            <div className="hc-member-profile-avatar">
-              {p.avatar_url ? <img src={p.avatar_url} alt="" /> : <span>{initials}</span>}
+            <div className="hc-member-profile-avatar-wrap">
+              <div className="hc-member-profile-avatar">
+                {p.avatar_url ? <img src={p.avatar_url} alt={name + " profile photo"} /> : <span>{initials}</span>}
+              </div>
+              {p.avatar_url && p.avatar_moderation_status === "pending" && <span className="hc-profile-photo-state">Photo review</span>}
             </div>
             <div className="hc-member-profile-copy">
               <p className="eyebrow">MY PROFILE</p>
               <h1 id="hc-member-profile-title">
-                {name}
+                <span>{name}</span>
                 {(p.player_verified || p.coach_verified) && <VerifiedBadge label={p.player_verified ? "Verified player" : "Verified coach"} />}
               </h1>
-              <p className="muted hc-profile-email">{email}</p>
-              {p.account_type === "player" && <span className="hc-feed-streak" aria-label={postingStreak + " day HoopFeed posting streak"}><span aria-hidden="true">🔥</span> {postingStreak}-day streak</span>}
+              <p className="muted hc-profile-email">{p.username ? "@" + p.username + (email ? " · " + email : "") : email}</p>
             </div>
           </div>
 
           <div className="hc-member-profile-actions">
-            <Link href="/account" className="btn">Edit Profile</Link>
+            <Link href="/account#profile-editor" className="btn hc-profile-edit-button">Edit Profile</Link>
             {p.account_type === "player" && (
-              <Link href={"/players/" + p.id} className="btn dark">
-                View Public Profile <HoopIcon name="arrow-up-right" size={16} />
+              <Link href={"/players/" + p.id} className="btn dark hc-profile-public-button">
+                <span className="hc-profile-public-full">View Public Profile</span><span className="hc-profile-public-short">Public Profile</span><HoopIcon name="arrow-up-right" size={16} />
               </Link>
             )}
           </div>
+          {p.account_type === "player" && postingStreak > 0 && <div className="hc-profile-streak-row"><span className="hc-feed-streak" aria-label={postingStreak + " day HoopFeed posting streak"}><span aria-hidden="true">🔥</span> {postingStreak}-day streak</span></div>}
+
         </section>
 
-        <section className="grid compact-grid" aria-label="Profile overview">
-          <article className="card">
-            <span className="card-kicker">BASKETBALL</span>
-            <h2>{p.basketball_type === "womens" ? "Women’s Basketball" : "Men’s Basketball"}</h2>
-            <p className="muted">{p.account_type}</p>
-          </article>
-          {p.account_type === "player" && (
-            <article className="card">
-              <span className="card-kicker">CAREER</span>
-              <h2>{p.position || "Position not listed"}</h2>
-              <p className="muted">
-                {p.years_pro == null ? "Years pro not listed" : p.years_pro + " years pro"}
-                {" · "}
-                {p.free_agent ? "Free Agent" : p.current_team || "Team not listed"}
-              </p>
+        <section className="hc-profile-overview" aria-label="Profile overview">
+          {profileCompletion < 100 && <div className="hc-profile-completion">
+            <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href="/account#profile-editor">Complete profile <span aria-hidden="true">→</span></Link></div>
+            <div className="hc-profile-completion-track" role="progressbar" aria-label="Profile completeness" aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}><span style={{width: profileCompletion + "%"}} /></div>
+          </div>}
+          <div className="grid compact-grid">
+            <article className="card hc-profile-info-card">
+              <span className="card-kicker">BASKETBALL</span>
+              <h2>{p.basketball_type === "womens" ? "Women’s Basketball" : "Men’s Basketball"}</h2>
+              <p className="muted">{p.account_type}</p>
             </article>
-          )}
-          <article className="card">
-            <span className="card-kicker">LOCATION</span>
-            <h2>{p.current_country || "Not listed"}</h2>
-            <p className="muted">{p.hometown || p.nationality || "Location details not listed"}</p>
-          </article>
+            {p.account_type === "player" && (
+              <article className="card hc-profile-info-card">
+                <span className="card-kicker">CAREER</span>
+                {p.position ? <h2>{p.position}</h2> : <p className="hc-profile-empty-value">Position not listed <Link href="/account#profile-editor">Add <span aria-hidden="true">→</span></Link></p>}
+                <p className="muted">{p.years_pro == null ? "Years pro not listed" : p.years_pro + " years pro"}{" · "}{p.free_agent ? "Free Agent" : p.current_team || "Team not listed"}</p>
+              </article>
+            )}
+            <article className="card hc-profile-info-card">
+              <span className="card-kicker">LOCATION</span>
+              {p.current_country ? <h2>{p.current_country}</h2> : <p className="hc-profile-empty-value">Not listed <Link href="/account#profile-editor">Add <span aria-hidden="true">→</span></Link></p>}
+              <p className="muted">{p.hometown || p.nationality || "Location details not listed"}</p>
+            </article>
+          </div>
         </section>
 
         <section className="dashboard-card compact-section">
