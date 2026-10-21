@@ -97,7 +97,7 @@ export default function TeamsPage() {
         try {
           let request = supabase
             .from("teams")
-            .select("id, name, country, league_name, league_id, city")
+            .select("id, name, country, league_name, league_id, city, logo_url")
             .eq("active", true)
             .order("name");
 
@@ -190,7 +190,7 @@ export default function TeamsPage() {
       const all: Team[] = [];
       for (let offset = 0; offset < 5000; offset += 500) {
         let request = supabase.from("teams")
-          .select("id,name,country,league_name,league_id,city")
+          .select("id,name,country,league_name,league_id,city,logo_url")
           .eq("active", true).order("name");
         const term = query.trim();
         if (term) {
@@ -364,7 +364,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           teams.map((team) => (
-            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount} trustExplanation={trustScores[team.id]?.explanation} averageRating={trustScores[team.id]?.averageRating} />
+            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount} trustExplanation={trustScores[team.id]?.explanation} averageRating={trustScores[team.id]?.averageRating} logoUrl={team.logo_url} />
           ))
         )}
       </section>
