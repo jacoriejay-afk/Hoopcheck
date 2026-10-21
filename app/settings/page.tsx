@@ -9,7 +9,7 @@ type Theme = "light" | "dark" | "dynamic";
 type Language = "en" | "es" | "fr" | "de" | "tr" | "pt" | "it" | "el" | "ar";
 
 export default function SettingsPage() {
-  const { t } = useLanguage();
+  const { t, setLanguage: applyLanguage } = useLanguage();
   const [theme, setTheme] = useState<Theme>("dynamic");
   const [notifications, setNotifications] = useState(true);
   const [language, setLanguage] = useState<Language>("en");
@@ -35,13 +35,14 @@ export default function SettingsPage() {
     document.documentElement.dataset.theme = nextTheme;
     localStorage.setItem("hoopcheck-theme", nextTheme);
     localStorage.setItem("hoopcheck-language", nextLanguage);
-    window.dispatchEvent(new CustomEvent("hoopcheck-language-change", { detail: nextLanguage }));
-    document.documentElement.lang = nextLanguage;
+    applyLanguage(nextLanguage);
     const { data: sessionData } = await supabase.auth.getSession();
     const user = sessionData.session?.user;
     if (user) {
       const { error } = await supabase.from("user_preferences").upsert({ user_id: user.id, theme: nextTheme, notifications_enabled: nextNotifications, language: nextLanguage, updated_at: new Date().toISOString() });
       if (error) console.error("Settings save error:", error);
+      const { error: profileLanguageError } = await supabase.from("profiles").update({ preferred_language: nextLanguage }).eq("id", user.id);
+      if (profileLanguageError) console.error("Profile language save error:", profileLanguageError);
     }
     setSaving(false);
   }
@@ -54,12 +55,13 @@ export default function SettingsPage() {
         <p className="muted">Tune the HoopCheck experience to match how you research the basketball world.</p>
         <div className="settings-grid">
           <section className="settings-card">
-            <span className="card-kicker">LANGUAGE</span>
-            <h2>{language === "en" ? "Choose your language" : "Language"}</h2>
+            <span className="card-kicker">{t("language").toUpperCase()}</span>
+            <h2>{t("chooseLanguage")}</h2>
             <p className="muted">Choose the interface language you want HoopCheck to use. Your preference is saved to your account and this device.</p>
-            <select className="language-select" value={language} onChange={(e) => { const next = e.target.value as Language; setLanguage(next); save(theme, notifications, next); }}>
+            <select className="language-select" value={language} onChange={(e) => setLanguage(e.target.value as Language)}>
               <option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option>
             </select>
+            <button type="button" className="btn" onClick={() => save(theme, notifications, language)} disabled={saving} style={{ marginTop: 12 }}>{saving ? t("saving") : t("save")}</button>
           </section>
           <section className="settings-card">
             <span className="card-kicker">VISUAL MODE</span>
@@ -89,7 +91,7 @@ export default function SettingsPage() {
             <div className="motion-demo"><span /><span /><span /></div>
           </section>
         </div>
-        <p className="settings-save">{saving ? "Saving..." : "Settings saved automatically."}</p>
+        <p className="settings-save">{saving ? t("saving") : t("saved") + " Other preferences save automatically."}</p>
       </section>
     </main>
   );

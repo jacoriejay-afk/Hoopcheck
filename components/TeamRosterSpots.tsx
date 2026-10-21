@@ -2,10 +2,12 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "../lib/supabase";
+import { useLanguage } from "./LanguageProvider";
 
 type Spot={id:string;team_id:string;created_by:string;title:string;description:string|null;season:string|null;status:"open"|"closed";expires_at:string|null;created_at:string};
 
 export default function TeamRosterSpots({teamId,teamName}:{teamId:string;teamName:string}) {
+  const { formatDate } = useLanguage();
   const [spots,setSpots]=useState<Spot[]>([]);
   const [canPost,setCanPost]=useState(false);
   const [open,setOpen]=useState(false);
@@ -49,7 +51,7 @@ export default function TeamRosterSpots({teamId,teamName}:{teamId:string;teamNam
 
   return <section className="hc-roster-spots">
     <div className="hc-roster-spots__heading"><div><p className="eyebrow">ROSTER BOARD</p><h2>Open roster spots<span>.</span></h2></div>{canPost&&<button type="button" className="hc-roster-post-toggle" onClick={()=>setOpen(value=>!value)}>{open?"Cancel":"+ Post a spot"}</button>}</div>
-    {spots.length?<div className="hc-roster-spots__list">{spots.map(spot=><article key={spot.id} className="hc-roster-spot"><span className="hc-roster-spot__badge">OPEN</span><h3>{spot.title}</h3>{spot.season&&<small>Season · {spot.season}</small>}{spot.description&&<p>{spot.description}</p>}<small>Posted {new Date(spot.created_at).toLocaleDateString()}</small></article>)}</div>
+    {spots.length?<div className="hc-roster-spots__list">{spots.map(spot=><article key={spot.id} className="hc-roster-spot"><span className="hc-roster-spot__badge">OPEN</span><h3>{spot.title}</h3>{spot.season&&<small>Season · {spot.season}</small>}{spot.description&&<p>{spot.description}</p>}<small>Posted {formatDate(spot.created_at)}</small></article>)}</div>
       :<p className="hc-roster-spots__empty">No open roster spots have been posted for {teamName}.</p>}
     {open&&canPost&&<form className="hc-roster-post-form" onSubmit={submit}><label>Position / opportunity title<input value={title} onChange={event=>setTitle(event.target.value)} required maxLength={160} placeholder="Import guard · 2026–27 season"/></label><label>Season<input value={season} onChange={event=>setSeason(event.target.value)} maxLength={80} placeholder="2026–27"/></label><label>Details<textarea value={description} onChange={event=>setDescription(event.target.value)} maxLength={2000} rows={3} placeholder="Role, requirements, contact instructions…"/></label>{message&&<p role="status">{message}</p>}<button type="submit" className="btn" disabled={busy}>{busy?"Posting…":"Publish Roster Spot"}</button></form>}
     {!open&&message&&<p role="status" className="muted">{message}</p>}

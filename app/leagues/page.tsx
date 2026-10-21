@@ -5,6 +5,7 @@ useEffect,
 useState,
 } from "react";
 import Link from "next/link";
+import DirectoryLayout from "../../components/DirectoryLayout";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
@@ -53,40 +54,7 @@ loadLeagues();
 
 return (
 <main className="hc-leagues-directory-page">
-<section className="hero hc-directory-hero">
-    <div className="eyebrow">
-      HoopCheck Leagues
-    </div>
-    <h1>
-      Know the league
-      <br />
-      before you commit.
-    </h1>
-    <p>
-      Explore professional basketball leagues and learn
-      from players who have already experienced them.
-    </p>
-    <div className="actions">
-      <Link href="/search" className="btn">
-        Global Research Search
-      </Link>
-      <Link href="/coaches" className="btn dark">
-        Research Coaches
-      </Link>
-      <Link href="/teams" className="btn dark">
-        Research Teams
-      </Link>
-    </div>
-  </section>
-      <nav className="hc-directory-switcher" aria-label="Browse HoopCheck directories">
-        <span className="hc-directory-switcher-label">BROWSE DIRECTORIES</span>
-        <Link href="/teams" aria-current={undefined}>Men&apos;s Teams</Link>
-        <Link href="/womens">Women&apos;s Teams</Link>
-        <Link href="/coaches">Coaches</Link>
-        <Link href="/leagues">Leagues</Link>
-        <Link href="/players">Find Players</Link>
-        <Link href="/search">Reviews</Link>
-      </nav>
+<DirectoryLayout current="leagues" />
 
   <section className="hc-league-filter" aria-label="Filter leagues">
     <label htmlFor="league-search">Find a league</label>
@@ -96,7 +64,8 @@ return (
       <option value="">All countries</option>
       {Array.from(new Set(leagues.map((league) => league.country).filter(Boolean) as string[])).sort().map((item) => <option key={item} value={item}>{item}</option>)}
     </select>
-    <p>{loading ? "Loading leagues…" : `${filteredLeagues.length} ${filteredLeagues.length === 1 ? "league" : "leagues"} found`}</p>
+    <p aria-live="polite">{loading ? "Loading leagues…" : `${filteredLeagues.length.toLocaleString()} ${filteredLeagues.length === 1 ? "league" : "leagues"}`}</p>
+    {(query || country) && <button type="button" className="hc-directory-reset" onClick={() => { setQuery(""); setCountry(""); }}>Clear filters</button>}
   </section>
   <section className="grid hc-team-directory-list">
     {loading ? (<div className="card"><HoopLoading label="Scanning professional leagues..." /></div>) : leagues.length === 0 ? (

@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import Link from "next/link";
+import DirectoryLayout from "../../components/DirectoryLayout";
 
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
@@ -22,6 +23,7 @@ type Team = {
   league_id: string | null;
   division?: string | null;
   city: string | null;
+  logo_url?: string | null;
   latitude?: number | null;
   longitude?: number | null;
 };
@@ -97,7 +99,7 @@ export default function TeamsPage() {
         try {
           let request = supabase
             .from("teams")
-            .select("id, name, country, league_name, league_id, city")
+            .select("id, name, country, league_name, league_id, city, logo_url", { count: "exact" })
             .eq("active", true)
             .order("name");
 
@@ -118,7 +120,7 @@ export default function TeamsPage() {
           const continentCountries = continent ? CONTINENT_COUNTRIES[continent] || [] : [];
           if (continentCountries.length) request = request.in("country", continentCountries);
 
-          const { data, error } = await withTimeout<any>(request.range(
+          const { data, error, count } = await withTimeout<any>(request.range(
             page * pageSize,
             page * pageSize + pageSize - 1
           ), 2500, { data: [], error: new Error("timeout") });
@@ -130,7 +132,7 @@ export default function TeamsPage() {
             setTotalCount(0);
           } else {
             setTeams(data || []);
-            setTotalCount((page * pageSize) + (data?.length ?? 0));
+            setTotalCount(count ?? ((page * pageSize) + (data?.length ?? 0)));
             setHasMore((data?.length ?? 0) === pageSize);
           }
         } catch (error) {
@@ -190,7 +192,7 @@ export default function TeamsPage() {
       const all: Team[] = [];
       for (let offset = 0; offset < 5000; offset += 500) {
         let request = supabase.from("teams")
-          .select("id,name,country,league_name,league_id,city")
+          .select("id,name,country,league_name,league_id,city,logo_url")
           .eq("active", true).order("name");
         const term = query.trim();
         if (term) {
@@ -239,53 +241,7 @@ export default function TeamsPage() {
 
   return (
     <main className="hc-team-directory-page">
-      <section className="hero">
-        <div className="eyebrow">
-          HoopCheck Teams
-        </div>
-
-        <h1>
-          Know the organization
-          <br />
-          before you sign.
-        </h1>
-
-        <p>
-          Explore professional basketball
-          organizations and learn from players
-          who have already experienced them.
-        </p>
-
-        <div className="research-search">
-          <div className="search-label">
-            GLOBAL RESEARCH
-          </div>
-
-          <Link
-            href="/search"
-            className="search-button"
-          >
-            <span>
-              Search coaches, teams, or leagues...
-            </span>
-
-            <strong>
-              Search →
-            </strong>
-          </Link>
-        </div>
-
-   </section>
-
-      <nav className="hc-directory-switcher" aria-label="Browse HoopCheck directories">
-        <span className="hc-directory-switcher-label">BROWSE DIRECTORIES</span>
-        <Link href="/teams" aria-current={undefined}>Men&apos;s Teams</Link>
-        <Link href="/womens">Women&apos;s Teams</Link>
-        <Link href="/coaches">Coaches</Link>
-        <Link href="/leagues">Leagues</Link>
-        <Link href="/players">Find Players</Link>
-        <Link href="/search">Reviews</Link>
-      </nav>
+      <DirectoryLayout current="teams" />
 
       <section className="hero">
         <div className="research-search">
@@ -315,7 +271,7 @@ export default function TeamsPage() {
       <section className="hero" style={{paddingTop:0}}><div className="dashboard-card" style={{border:"1px solid var(--orange)"}}><div className="eyebrow">DIRECTORY REQUEST</div><h2>Don’t see your team?</h2><p className="muted">Request a professional team to be added to HoopCheck. Our admin team will review the submission.</p><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10}}><input value={requestName} onChange={e=>setRequestName(e.target.value)} placeholder="Team name" /><input value={requestCountry} onChange={e=>setRequestCountry(e.target.value)} placeholder="Country" /><input value={requestCity} onChange={e=>setRequestCity(e.target.value)} placeholder="City (optional)" /><input value={requestLeague} onChange={e=>setRequestLeague(e.target.value)} placeholder="League (optional)" /></div><button className="btn" style={{marginTop:12}} disabled={requestSubmitting} onClick={async()=>{setRequestMessage("");if(!requestName.trim()||!requestCountry.trim()){setRequestMessage("Team name and country are required.");return;}const {data:{user}}=await supabase.auth.getUser();if(!user){window.location.href="/login";return;}setRequestSubmitting(true);const {error}=await supabase.from("directory_team_requests").insert({requester_id:user.id,team_name:requestName.trim().slice(0,160),country:requestCountry.trim().slice(0,80),city:requestCity.trim().slice(0,100)||null,league_name:requestLeague.trim().slice(0,160)||null});if(error)setRequestMessage(error.message);else{setRequestMessage("Request submitted for admin review.");setRequestName("");setRequestCity("");setRequestLeague("");}setRequestSubmitting(false);}}>{requestSubmitting?"Submitting...":"Request Team Addition"}</button>{requestMessage&&<p className="muted" role="status">{requestMessage}</p>}</div></section>
 
       <div className="hc-directory-summary" aria-live="polite">
-        <span>{loading ? "Searching teams…" : `${teams.length} team${teams.length === 1 ? "" : "s"} on this page`}</span>
+        <span>{loading ? "Searching teams…" : `${totalCount.toLocaleString()} team${totalCount === 1 ? "" : "s"}`}</span>
         {(query.trim() || country || continent || league || division) && (
           <button type="button" className="hc-directory-reset" onClick={() => { setQuery(""); setCountry(""); setContinent(""); setLeague(""); setDivision(""); setPage(0); }}>
             Clear filters
@@ -364,7 +320,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           teams.map((team) => (
-            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount} trustExplanation={trustScores[team.id]?.explanation} averageRating={trustScores[team.id]?.averageRating} />
+            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount} trustExplanation={trustScores[team.id]?.explanation} averageRating={trustScores[team.id]?.averageRating} logoUrl={team.logo_url} />
           ))
         )}
       </section>
