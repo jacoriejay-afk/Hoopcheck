@@ -86,7 +86,7 @@ export default function Womens() {
                 {leagues.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
               </select>
             </label>
-            {(country || league) && <button type="button" className="hc-womens-reset" onClick={() => { setCountry(""); setLeague(""); }}>Clear filters</button>}
+            {(query || country || league) && <button type="button" className="hc-womens-reset" onClick={() => { setQuery(""); setCountry(""); setLeague(""); }}>Clear filters</button>}
           </div>
         </section>
 
