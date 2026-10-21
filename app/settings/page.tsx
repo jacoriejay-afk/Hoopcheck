@@ -29,7 +29,7 @@ export default function SettingsPage() {
     if (user) {
       const { error } = await supabase.from("user_preferences").upsert({
         user_id: user.id,
-        theme,
+        theme: theme === "dark" ? "dynamic" : theme === "light" ? "light" : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dynamic" : "light"),
         notifications_enabled: next,
         updated_at: new Date().toISOString()
       }, { onConflict: "user_id" });
