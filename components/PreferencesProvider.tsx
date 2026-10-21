@@ -50,7 +50,7 @@ export function useLanguage() {
   return { language, t, setLanguage };
 }
 
-export default function PreferencesProvider({ children, initialTheme = "system", initialLanguage = "en" }: { children: React.ReactNode; initialTheme?: ThemePreference; initialLanguage?: Language }) {
+export default function PreferencesProvider({ children, initialTheme = "system", initialLanguage = "en", trustInitialPreferences = false }: { children: React.ReactNode; initialTheme?: ThemePreference; initialLanguage?: Language; trustInitialPreferences?: boolean }) {
   const [theme, setThemeState] = useState<ThemePreference>(initialTheme);
   const [language, setLanguageState] = useState<Language>(initialLanguage);
 
@@ -88,10 +88,10 @@ export default function PreferencesProvider({ children, initialTheme = "system",
     let active = true;
     const storedTheme = normalizeTheme(localStorage.getItem("hoopcheck-theme"));
     const storedLanguage = localStorage.getItem("hoopcheck-language");
-    if (storedTheme) { setThemeState(storedTheme); applyTheme(storedTheme); }
-    else applyTheme(initialTheme);
-    if (validLanguage(storedLanguage)) { setLanguageState(storedLanguage); applyLanguage(storedLanguage); }
-    else applyLanguage(initialLanguage);
+    if (!trustInitialPreferences && storedTheme) { setThemeState(storedTheme); applyTheme(storedTheme); }
+    else { setThemeState(initialTheme); applyTheme(initialTheme); }
+    if (!trustInitialPreferences && validLanguage(storedLanguage)) { setLanguageState(storedLanguage); applyLanguage(storedLanguage); }
+    else { setLanguageState(initialLanguage); applyLanguage(initialLanguage); }
 
     const onThemeEvent = (event: Event) => {
       const value = (event as CustomEvent<string>).detail;
@@ -120,8 +120,10 @@ export default function PreferencesProvider({ children, initialTheme = "system",
       const profileLanguage = validLanguage(profile?.preferred_language) ? profile?.preferred_language : null;
       const localTheme = normalizeTheme(localStorage.getItem("hoopcheck-theme"));
       const localLanguage = localStorage.getItem("hoopcheck-language");
-      const savedTheme = profileTheme === "system" && localTheme && localTheme !== "system" ? localTheme : profileTheme || prefsTheme || localTheme;
-      const savedLanguage = profileLanguage === "en" && validLanguage(localLanguage) && localLanguage !== "en" ? localLanguage : profileLanguage || (validLanguage(localLanguage) ? localLanguage : null);
+      const cookieTheme = document.cookie.split("; ").find(part => part.startsWith("hoopcheck-theme="))?.split("=").slice(1).join("=");
+      const cookieLanguage = decodeURIComponent(document.cookie.split("; ").find(part => part.startsWith("hoopcheck-language="))?.split("=").slice(1).join("=") || "");
+      const savedTheme = profileTheme === "system" && normalizeTheme(cookieTheme) && normalizeTheme(cookieTheme) !== "system" ? normalizeTheme(cookieTheme) : profileTheme || prefsTheme || localTheme;
+      const savedLanguage = profileLanguage === "en" && validLanguage(cookieLanguage) && cookieLanguage !== "en" ? cookieLanguage : profileLanguage || (validLanguage(cookieLanguage) ? cookieLanguage : (validLanguage(localLanguage) ? localLanguage : null));
       if (savedTheme) {
         setThemeState(savedTheme); localStorage.setItem("hoopcheck-theme", savedTheme); setPreferenceCookie("hoopcheck-theme", savedTheme); applyTheme(savedTheme);
       }
@@ -140,7 +142,7 @@ export default function PreferencesProvider({ children, initialTheme = "system",
       media.removeEventListener?.("change", onSystemTheme);
       authListener.subscription.unsubscribe();
     };
-  }, [initialTheme, initialLanguage]);
+  }, [initialTheme, initialLanguage, trustInitialPreferences]);
 
   const value = useMemo(() => ({ theme, language, setTheme, setLanguage, t: (key: string) => translations[language][key] || translations.en[key] || key }), [theme, language, setTheme, setLanguage]);
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
