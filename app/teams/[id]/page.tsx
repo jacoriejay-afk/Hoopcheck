@@ -611,9 +611,8 @@ export default function TeamDetailPage() {
         <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} /></div>
         <TeamRosterSpots teamId={team.id} teamName={team.name} />
 
-  </div>
       </section>
-            {!hasAccess ? (
+      {!hasAccess ? (
         <section className="hero">
           <div className="card">
             <div className="eyebrow">
