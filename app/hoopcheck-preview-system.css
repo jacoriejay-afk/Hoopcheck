@@ -4647,3 +4647,4 @@ body:has(main.admin-directory-shell) .global-back-button { display:none!importan
 .hc-dashboard-shell .hc-mobile-view-all { min-height: 44px; display: inline-flex; align-items: center; }
 .hc-dashboard-shell .hc-mobile-quick-card,
 .hc-dashboard-shell .hc-mobile-category-row { overflow-wrap: anywhere; }
+\n/* The site-wide court watermark is fixed to the viewport; disable it on the dashboard. */\nbody:has(.hc-dashboard-shell)::before { display:none !important; content:none !important; }\n
