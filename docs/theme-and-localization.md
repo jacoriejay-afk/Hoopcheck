@@ -1,0 +1,7 @@
+# Theme and localization guardrails
+
+- Global theme tokens live in `app/hoopcheck-preview-system.css` under the **Canonical surface tokens** section. Surface components must use `--hc-page-bg`, `--hc-card-bg`, `--hc-card-border`, `--hc-text-primary`, `--hc-text-secondary`, `--hc-input-bg`, `--hc-input-text`, and `--hc-divider`.
+- Do not introduce `bg-white`, `text-black`, inline hex colors, or new hardcoded surface-color declarations in components. `npm run lint` runs `scripts/check-theme-tokens.mjs` to reject newly added violations in the commit diff.
+- The root `PreferencesProvider` is the only owner of live theme/language state. Settings must call `setTheme` and `setLanguage`; do not write localStorage or dispatch custom events directly from individual pages.
+- Language catalogs currently cover the shared navigation and common settings/search labels in English, Spanish, French, German, Turkish, Portuguese, Italian, Greek, and Arabic. **TODO — human review required:** machine-generated translations in the newly added non-English keys above should be reviewed by fluent speakers before launch. Screen-specific copy not yet routed through `t()` remains a translation-audit task; do not claim full app-wide translation coverage until it is migrated.
+- Responsive verification must be run at 390 CSS pixels in both light and dark mode for Dashboard, Search, Teams directory, Team detail, HoopFeed, Profile, and Settings. Save screenshots/recordings as test evidence; a build alone is not visual proof.
