@@ -5423,3 +5423,37 @@ html[data-theme="dynamic"] .hc-entity-profile-page textarea {
   color: var(--hc-input-fg) !important;
   border-color: var(--hc-border) !important;
 }
+
+
+/* HoopFeed uses its own legacy class names, so map those surfaces explicitly too. */
+html[data-theme="dynamic"] .hc-feed-page {
+  background: var(--hc-surface) !important;
+  color: var(--hc-foreground) !important;
+}
+html[data-theme="dynamic"] .hc-feed-page .dashboard-card,
+html[data-theme="dynamic"] .hc-feed-page .hero-card,
+html[data-theme="dynamic"] .hc-feed-page .hc-feed-ticket,
+html[data-theme="dynamic"] .hc-feed-page .hc-feed-composer,
+html[data-theme="dynamic"] .hc-feed-page .hc-feed-empty,
+html[data-theme="dynamic"] .hc-feed-page .hc-feed-comments-panel {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html[data-theme="dynamic"] .hc-feed-page :where(h1, h2, h3, strong, p, label, .muted, .topnav a, .hc-feed-post-author__meta, .hc-feed-expiry-note) {
+  color: var(--hc-foreground) !important;
+}
+html[data-theme="dynamic"] .hc-feed-page :where(small, .muted, .hc-feed-counter, .hc-feed-expires, .hc-feed-location) {
+  color: var(--hc-foreground-muted) !important;
+}
+html[data-theme="dynamic"] .hc-feed-page :where(input, textarea, select, .hc-feed-topic-chip, .hc-feed-filter-chip, .hc-feed-sort-toggle button, .hc-feed-action-pill, .hc-feed-comments-panel button:not(.btn)) {
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+}
+html[data-theme="dynamic"] .hc-feed-page .hc-feed-post-header,
+html[data-theme="dynamic"] .hc-feed-page .hc-feed-post-actions,
+html[data-theme="dynamic"] .hc-feed-page .hc-feed-composer__footer,
+html[data-theme="dynamic"] .hc-feed-page .hc-feed-filter-bar {
+  border-color: var(--hc-border) !important;
+}
