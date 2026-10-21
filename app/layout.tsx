@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
 import { Graduate, Inter } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
@@ -66,7 +67,10 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const cookieStore = await cookies();
+  const savedLanguage = cookieStore.get("hoopcheck-language")?.value;
+  const initialLanguage = ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"].includes(savedLanguage || "") ? savedLanguage! : "en";
   const organizationJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -83,14 +87,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   };
 
   return (
-    <html lang="en" className={`${displayFont.variable} ${sansFont.variable}`}>
+    <html lang={initialLanguage} dir={initialLanguage === "ar" ? "rtl" : "ltr"} className={`${displayFont.variable} ${sansFont.variable}`}>
       <body className={sansFont.className}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c") }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c") }} />
         <ProtectionLayer />
         <ThemeProvider>
           <AuthProvider>
-            <LanguageProvider>
+            <LanguageProvider initialLanguage={initialLanguage}>
               <AnalyticsTracker />
               <SiteHeader />
               <MobileAuth />
