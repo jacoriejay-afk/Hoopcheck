@@ -65,7 +65,7 @@ return (
       {Array.from(new Set(leagues.map((league) => league.country).filter(Boolean) as string[])).sort().map((item) => <option key={item} value={item}>{item}</option>)}
     </select>
     <p aria-live="polite">{loading ? "Loading leagues…" : `${filteredLeagues.length.toLocaleString()} ${filteredLeagues.length === 1 ? "league" : "leagues"}`}</p>
-    {(query || country) && <button type="button" className="hc-directory-reset" onClick={() => { setQuery(""); setCountry(""); }}>Clear filters</button>
+    {(query || country) && <button type="button" className="hc-directory-reset" onClick={() => { setQuery(""); setCountry(""); }}>Clear filters</button>}
   </section>
   <section className="grid hc-team-directory-list">
     {loading ? (<div className="card"><HoopLoading label="Scanning professional leagues..." /></div>) : leagues.length === 0 ? (
