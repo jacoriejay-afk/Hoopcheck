@@ -3644,3 +3644,26 @@ body { background-color: var(--hc-ink); }
  .hc-feed-action-pill { padding-inline:7px; font-size:9px; }
 }
 @media(prefers-reduced-motion:reduce) { .hc-feed-skeleton__head i,.hc-feed-skeleton__line,.hc-feed-skeleton__photo { animation:none; } }
+
+
+/* HoopFeed topic tags and client-side topic filtering */
+.hc-feed-topic-picker{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin:0 0 14px;padding:12px 0 2px;border-top:1px solid var(--border)}
+.hc-feed-topic-label{font-size:10px;font-weight:900;letter-spacing:.14em;color:var(--gray-500);padding-top:8px}
+.hc-feed-topic-chips,.hc-feed-filter-scroll{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hc-feed-topic-chip,.hc-feed-filter-chip{appearance:none;border:1px solid #dededb;background:#fff;color:#252525;border-radius:999px;padding:7px 12px;font:700 12px/1.2 inherit;cursor:pointer;white-space:nowrap;transition:background .16s ease,color .16s ease,border-color .16s ease,transform .16s ease}
+.hc-feed-topic-chip:hover,.hc-feed-filter-chip:hover{border-color:var(--brand-orange);transform:translateY(-1px)}
+.hc-feed-topic-chip.is-selected,.hc-feed-filter-chip.is-active{background:var(--ink);border-color:var(--ink);color:#fff}
+.hc-feed-filter-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 14px;min-width:0}
+.hc-feed-filter-scroll{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;padding:3px 2px 8px;scrollbar-width:thin;min-width:0}
+.hc-feed-result-count{flex:none;color:var(--gray-500);font-size:10px;font-weight:900;letter-spacing:.1em}
+.hc-feed-post-topic{display:inline-flex;align-items:center;width:max-content;max-width:100%;border:1px solid transparent;border-radius:6px;padding:5px 9px;margin-top:12px;font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.hc-feed-topic--practice{background:#fff0e8;color:#a63a0b;border-color:#ffd5c2}
+.hc-feed-topic--game-day{background:#fff0e8;color:#a63a0b;border-color:#ffb38f}
+.hc-feed-topic--travel{background:#eaf4ff;color:#164e8a;border-color:#c6e0ff}
+.hc-feed-topic--teammates{background:#f0eaff;color:#5932a0;border-color:#d8c9ff}
+.hc-feed-topic--culture{background:#e6f8f2;color:#12684c;border-color:#b8ead9}
+.hc-feed-topic--win{background:#fff5cf;color:#785700;border-color:#f4df83}
+.hc-feed-topic--challenge{background:#ffe8ef;color:#9a2449;border-color:#ffc5d6}
+.hc-feed-filter-chip.hc-feed-topic--practice,.hc-feed-filter-chip.hc-feed-topic--game-day,.hc-feed-filter-chip.hc-feed-topic--travel,.hc-feed-filter-chip.hc-feed-topic--teammates,.hc-feed-filter-chip.hc-feed-topic--culture,.hc-feed-filter-chip.hc-feed-topic--win,.hc-feed-filter-chip.hc-feed-topic--challenge{background:#fff}
+.hc-feed-filter-chip.is-active.hc-feed-topic--practice,.hc-feed-filter-chip.is-active.hc-feed-topic--game-day,.hc-feed-filter-chip.is-active.hc-feed-topic--travel,.hc-feed-filter-chip.is-active.hc-feed-topic--teammates,.hc-feed-filter-chip.is-active.hc-feed-topic--culture,.hc-feed-filter-chip.is-active.hc-feed-topic--win,.hc-feed-filter-chip.is-active.hc-feed-topic--challenge{background:var(--ink);color:#fff;border-color:var(--ink)}
+@media(max-width:640px){.hc-feed-filter-bar{display:block}.hc-feed-filter-scroll{margin-right:-4px}.hc-feed-result-count{display:block;text-align:right;margin-top:2px}.hc-feed-topic-picker{gap:8px}.hc-feed-topic-chips{gap:6px}.hc-feed-topic-chip{padding:7px 10px;font-size:11px}}
