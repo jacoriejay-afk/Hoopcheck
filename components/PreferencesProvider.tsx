@@ -86,9 +86,9 @@ export default function PreferencesProvider({ children, initialTheme = "system",
 
   useEffect(() => {
     let active = true;
-    const storedTheme = localStorage.getItem("hoopcheck-theme");
+    const storedTheme = normalizeTheme(localStorage.getItem("hoopcheck-theme"));
     const storedLanguage = localStorage.getItem("hoopcheck-language");
-    if (validTheme(storedTheme)) { setThemeState(storedTheme); applyTheme(storedTheme); }
+    if (storedTheme) { setThemeState(storedTheme); applyTheme(storedTheme); }
     else applyTheme(initialTheme);
     if (validLanguage(storedLanguage)) { setLanguageState(storedLanguage); applyLanguage(storedLanguage); }
     else applyLanguage(initialLanguage);
@@ -118,11 +118,10 @@ export default function PreferencesProvider({ children, initialTheme = "system",
       const profileTheme = validTheme(profile?.theme_preference) ? profile?.theme_preference : null;
       const prefsTheme = normalizeTheme(prefs?.theme);
       const profileLanguage = validLanguage(profile?.preferred_language) ? profile?.preferred_language : null;
-      const prefsLanguage = null;
       const localTheme = normalizeTheme(localStorage.getItem("hoopcheck-theme"));
       const localLanguage = localStorage.getItem("hoopcheck-language");
       const savedTheme = profileTheme === "system" && localTheme && localTheme !== "system" ? localTheme : profileTheme || prefsTheme || localTheme;
-      const savedLanguage = profileLanguage === "en" && validLanguage(localLanguage) && localLanguage !== "en" ? localLanguage : profileLanguage || prefsLanguage || (validLanguage(localLanguage) ? localLanguage : null);
+      const savedLanguage = profileLanguage === "en" && validLanguage(localLanguage) && localLanguage !== "en" ? localLanguage : profileLanguage || (validLanguage(localLanguage) ? localLanguage : null);
       if (savedTheme) {
         setThemeState(savedTheme); localStorage.setItem("hoopcheck-theme", savedTheme); setPreferenceCookie("hoopcheck-theme", savedTheme); applyTheme(savedTheme);
       }
