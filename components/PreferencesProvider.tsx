@@ -29,6 +29,7 @@ const PreferencesContext = createContext<PreferencesContextValue>({
   theme: "system", language: "en", setTheme: () => {}, setLanguage: () => {}, t: key => key
 });
 const validTheme = (value: unknown): value is ThemePreference => value === "system" || value === "light" || value === "dark";
+const normalizeTheme = (value: unknown): ThemePreference | null => value === "dynamic" ? "dark" : validTheme(value) ? value : null;
 const validLanguage = (value: unknown): value is Language => typeof value === "string" && Object.prototype.hasOwnProperty.call(translations, value);
 
 function setPreferenceCookie(name: string, value: string) {
@@ -109,17 +110,19 @@ export default function PreferencesProvider({ children, initialTheme = "system",
     const loadProfile = async (userId: string) => {
       const [profileResult, preferencesResult] = await Promise.all([
         supabase.from("profiles").select("theme_preference,preferred_language").eq("id", userId).maybeSingle(),
-        supabase.from("user_preferences").select("theme,language").eq("user_id", userId).maybeSingle()
+        supabase.from("user_preferences").select("theme").eq("user_id", userId).maybeSingle()
       ]);
       if (!active) return;
       const profile = profileResult.data;
       const prefs = preferencesResult.data;
       const profileTheme = validTheme(profile?.theme_preference) ? profile?.theme_preference : null;
-      const prefsTheme = validTheme(prefs?.theme) ? prefs?.theme : null;
+      const prefsTheme = normalizeTheme(prefs?.theme);
       const profileLanguage = validLanguage(profile?.preferred_language) ? profile?.preferred_language : null;
-      const prefsLanguage = validLanguage(prefs?.language) ? prefs?.language : null;
-      const savedTheme = profileTheme || prefsTheme;
-      const savedLanguage = profileLanguage || prefsLanguage;
+      const prefsLanguage = null;
+      const localTheme = normalizeTheme(localStorage.getItem("hoopcheck-theme"));
+      const localLanguage = localStorage.getItem("hoopcheck-language");
+      const savedTheme = profileTheme === "system" && localTheme && localTheme !== "system" ? localTheme : profileTheme || prefsTheme || localTheme;
+      const savedLanguage = profileLanguage === "en" && validLanguage(localLanguage) && localLanguage !== "en" ? localLanguage : profileLanguage || prefsLanguage || (validLanguage(localLanguage) ? localLanguage : null);
       if (savedTheme) {
         setThemeState(savedTheme); localStorage.setItem("hoopcheck-theme", savedTheme); setPreferenceCookie("hoopcheck-theme", savedTheme); applyTheme(savedTheme);
       }
