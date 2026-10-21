@@ -353,9 +353,20 @@ export default function AccountPage() {
 
   return (
     <main className="page-shell hc-account-page"><div className="page-container">
-      <section className="hero-card"><div><p className="eyebrow">MY ACCOUNT</p><h1>{email}</h1><p className="muted">Manage your HoopCheck activity and submitted reviews.</p></div></section>
+      <header className="hc-account-settings-header">
+        <p className="hc-account-settings-kicker">SETTINGS</p>
+        <h1>Account Preferences</h1>
+        <div className="hc-account-settings-identity">
+          <span className="hc-account-settings-avatar" aria-hidden="true">
+            {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{(displayName || email || "H").trim().charAt(0).toUpperCase()}</span>}
+          </span>
+          <div className="hc-account-settings-identity-copy">
+            <strong>{displayName || "Your account"}</strong>
+            <p>{email || "Email not set"}</p>
+          </div>
+        </div>
+      </header>
       <section className="hc-settings" aria-label="Account settings">
-        <div className="hc-settings-heading"><p className="eyebrow">SETTINGS</p><h2>Account preferences</h2><p className="muted">Manage your account, experience, privacy and notifications.</p></div>
         <SettingsGroup title="ACCOUNT">
           <SettingsRow icon="user" label="Edit Profile" value="Edit details" href="#profile-editor" />
           <SettingsRow icon="mail" label="Email" value={email || "Not set"} onClick={changeEmail} />
