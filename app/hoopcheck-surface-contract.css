@@ -31,7 +31,7 @@ html.theme-dark main :where(.hc-feed-topic-chip,.hc-feed-filter-chip) { backgrou
   color:inherit!important;
 }
 html.theme-dark .hc-feed-composer { background-color:#171717!important; }
-html.theme-light .hc-feed-composer { background-color:#fff!important; }
+html.theme-light .hc-feed-composer { background-color:var(--hc-surface-raised)!important; }
 
 
 /* Theme-native controls and form surfaces: one token set for the whole control tree. */
@@ -133,7 +133,7 @@ html.theme-dark .hc-feed-composer[data-hc-surface="true"],
 html.theme-dark .hc-feed-composer { background-color:#171717!important; }
 html.theme-light main .hc-feed-composer.hc-surface,
 html.theme-light .hc-feed-composer[data-hc-surface="true"],
-html.theme-light .hc-feed-composer { background-color:#fff!important; }
+html.theme-light .hc-feed-composer { background-color:var(--hc-surface-raised)!important; }
 
 
 /* Explicitly outrank the legacy .hc-feed-composer { background:#111!important } rule. */
@@ -143,10 +143,10 @@ html.theme-dark body .hc-feed-composer {
 }
 html.theme-light body main .hc-feed-composer,
 html.theme-light body .hc-feed-composer {
-  background-color:#fff!important;
+  background-color:var(--hc-surface-raised)!important;
 }
 
 
 /* Highest-specificity composer theme contract: the legacy composer also has dashboard-card styles. */
 html.theme-dark body main section.dashboard-card.hc-feed-composer { background:#171717!important; background-color:#171717!important; }
-html.theme-light body main section.dashboard-card.hc-feed-composer { background:#fff!important; background-color:#fff!important; }
+html.theme-light body main section.dashboard-card.hc-feed-composer { background:var(--hc-surface-raised)!important; background-color:var(--hc-surface-raised)!important; }
