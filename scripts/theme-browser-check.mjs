@@ -151,7 +151,7 @@ try {
           pageWrapper: color(wrapperSelector),
           composer: routeName === "feed" ? color(".hc-feed-composer") : null,
           topicChip: routeName === "feed" ? color(".hc-feed-topic-chip") : null,
-          filterChip: routeName === "feed" ? color(".hc-feed-filter-chip") : null,
+          filterChip: routeName === "feed" ? color(".hc-feed-filter-chip:not(.is-active)") : null,
         };
       }, { wrapperSelector, routeName });
 
