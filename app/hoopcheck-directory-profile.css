@@ -10,8 +10,8 @@
   overflow: hidden;
   box-sizing: border-box;
   padding: 4px;
-  color: #171717 !important;
-  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  background: var(--hc-surface-soft) !important;
   border: 1px solid rgba(15, 15, 15, .12);
   border-radius: 12px;
 }
@@ -39,8 +39,8 @@
   overflow: hidden;
   box-sizing: border-box;
   padding: 5px;
-  color: #171717;
-  background: var(--hc-surface-raised);
+  color: var(--hc-foreground);
+  background: var(--hc-surface-soft);
   border: 1px solid rgba(15, 15, 15, .12);
   border-radius: 14px;
   font-weight: 900;
