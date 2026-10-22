@@ -264,7 +264,7 @@ try {
           mainClass: main?.className || null,
           headline: (() => { const e=main?.querySelector("h1"); if(!e) return null; const s=getComputedStyle(e); return {text:(e.innerText||"").trim().slice(0,90),color:s.color,background:getComputedStyle(e.closest(".hc-shared-directory-hero,.hero,.card,.panel")||e.parentElement).backgroundColor}; })(),
           readableText: (() => { const e=main?.querySelector("p:not(:empty),li:not(:empty),.hc-scout-card__identity-copy h2"); if(!e) return null; const s=getComputedStyle(e); return {text:(e.innerText||"").trim().slice(0,60),color:s.color,background:getComputedStyle(e.closest(".hc-team-directory-row,.hc-shared-directory-hero,.card,.panel")||e.parentElement).backgroundColor}; })(),
-          cards: Array.from(main?.querySelectorAll(".hc-team-directory-row,.hc-shared-directory-hero,.card,.panel,.hc-team-facts-card,.team-roster-spots")||[]).filter(e=>{const r=e.getBoundingClientRect();return r.width>40&&r.height>30&&getComputedStyle(e).display!=="none"}).slice(0,20).map(e=>({className:typeof e.className==="string"?e.className:"",background:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color})),
+          cards: Array.from(main?.querySelectorAll(".hc-team-directory-row,.hc-shared-directory-hero,.card,.panel,.hc-team-facts-card,.team-roster-spots")||[]).filter(e=>{const r=e.getBoundingClientRect();return r.width>40&&r.height>30&&getComputedStyle(e).display!=="none"}).slice(0,20).map(e=>({className:typeof e.className==="string"?e.className:"",background:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color,textColor:getComputedStyle(e.querySelector("h1,h2,h3,p,span,a,small,strong")||e).color})),
           navigationError,
         };
       }, { requestedPath, navigationError });
@@ -281,7 +281,7 @@ try {
       if (result.headline && rgb(result.headline.color) && rgb(result.headline.background) && contrast(result.headline.color,result.headline.background)<4.5) errors.push("headline contrast below 4.5:1");
       if (result.readableText && rgb(result.readableText.color) && rgb(result.readableText.background) && contrast(result.readableText.color,result.readableText.background)<4.5) errors.push("body text contrast below 4.5:1");
       for (const card of result.cards||[]) {
-        if (rgb(card.color) && rgb(card.background) && contrast(card.color,card.background)<4.5) errors.push("card text contrast below 4.5:1: "+card.className);
+        if (rgb(card.textColor) && rgb(card.background) && contrast(card.textColor,card.background)<4.5) errors.push("card text contrast below 4.5:1: "+card.className);
       }
       if (["/teams","/teams/11111111-1111-4111-8111-111111111111"].includes(requestedPath)) {
         const name = requestedPath === "/teams" ? "teams-directory" : "team-detail";
