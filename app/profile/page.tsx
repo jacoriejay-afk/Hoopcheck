@@ -129,37 +129,37 @@ export default function ProfilePage() {
           </div>}
           <div className="grid compact-grid">
             <Surface className="card hc-profile-info-card">
-              <span className="card-kicker">BASKETBALL</span>
-              <h2>{p.basketball_type === "womens" ? "Women’s Basketball" : "Men’s Basketball"}</h2>
+              <span className="card-kicker">{t("basketball")}</span>
+              <h2>{p.basketball_type === "womens" ? t("womensBasketball") : t("mensBasketball")}</h2>
               <p className="muted">{p.account_type}</p>
             </Surface>
             {p.account_type === "player" && (
               <Surface className="card hc-profile-info-card">
-                <span className="card-kicker">CAREER</span>
-                {p.position ? <h2>{p.position}</h2> : <p className="hc-profile-empty-value">Position not listed <Link href="/account#profile-editor">Add <span aria-hidden="true">→</span></Link></p>}
-                <p className="muted">{p.years_pro == null ? "Years pro not listed" : p.years_pro + " years pro"}{" · "}{p.free_agent ? "Free Agent" : p.current_team || "Team not listed"}</p>
+                <span className="card-kicker">{t("career")}</span>
+                {p.position ? <h2>{p.position}</h2> : <p className="hc-profile-empty-value">{t("positionNotListed")} <Link href="/account#profile-editor">{t("add")} <span aria-hidden="true">→</span></Link></p>}
+                <p className="muted">{p.years_pro == null ? t("yearsProNotListed") : p.years_pro + " " + t("yearsPro")}{" · "}{p.free_agent ? t("freeAgent") : p.current_team || "Team not listed"}</p>
               </Surface>
             )}
             <Surface className="card hc-profile-info-card">
-              <span className="card-kicker">LOCATION</span>
-              {p.current_country ? <h2>{p.current_country}</h2> : <p className="hc-profile-empty-value">Not listed <Link href="/account#profile-editor">Add <span aria-hidden="true">→</span></Link></p>}
-              <p className="muted">{p.hometown || p.nationality || "Location details not listed"}</p>
+              <span className="card-kicker">{t("location")}</span>
+              {p.current_country ? <h2>{p.current_country}</h2> : <p className="hc-profile-empty-value">{t("notListed")} <Link href="/account#profile-editor">{t("add")} <span aria-hidden="true">→</span></Link></p>}
+              <p className="muted">{p.hometown || p.nationality || t("locationDetailsNotListed")}</p>
             </Surface>
           </div>
         </section>
 
         <section className="dashboard-card compact-section">
-          <p className="eyebrow">ABOUT</p>
-          <h2>Profile details</h2>
-          <p className="muted">{p.bio || "Add a bio from Edit Profile."}</p>
+          <p className="eyebrow">{t("about")}</p>
+          <h2>{t("profileDetails")}</h2>
+          <p className="muted">{p.bio || t("addBioFromEditProfile")}</p>
           {p.interests && <p><strong>Interests:</strong> {p.interests}</p>}
           {p.favorite_leagues && <p><strong>Favorite leagues:</strong> {p.favorite_leagues}</p>}
         </section>
 
         <section className="dashboard-card compact-section">
           <p className="eyebrow">ACCOUNT</p>
-          <h2>Account controls</h2>
-          <p className="muted">Sign out, hide your profile, or permanently delete your HoopCheck account.</p>
+          <h2>{t("accountControls")}</h2>
+          <p className="muted">{t("hideProfileOrDelete")}</p>
           <div className="actions">
             <button type="button" className="btn dark" onClick={async () => {
               await supabase.auth.signOut();
@@ -192,7 +192,7 @@ export default function ProfilePage() {
 
         <div className="bottom-back">
           <button type="button" className="btn dark" onClick={() => window.history.back()}>
-            <HoopIcon name="arrow-right" size={16} style={{ transform: "rotate(180deg)" }} /> Back
+            <HoopIcon name="arrow-right" size={16} style={{ transform: "rotate(180deg)" }} /> {t("back")}
           </button>
         </div>
       </div>
