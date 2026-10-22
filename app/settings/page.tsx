@@ -135,7 +135,7 @@ export default function SettingsPage() {
             <h2>{t("chooseLanguage")}</h2>
             <p className="muted">Choose the interface language you want HoopCheck to use. Your preference is saved to your account and this device.</p>
             <select aria-label={t("chooseLanguage")} className="language-select" value={language} onChange={(e) => setLanguage(e.target.value as Language)}>
-              <option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option>
+              <option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="it">Italiano</option><option value="pt">Português</option><option value="tr">Türkçe</option><option value="ru">Русский</option><option value="el">Ελληνικά</option><option value="sr">Српски</option><option value="pl">Polski</option><option value="lt">Lietuvių</option><option value="uk">Українська</option>
             </select>
             <button type="button" className="btn" onClick={() => void save(theme, notifications, language)} disabled={saving} style={{ marginTop: 12 }}>{saving ? t("saving") : t("save")}</button>
           </section>
