@@ -13,7 +13,7 @@ const items = [
   ["/profile", "account", "Account"],
 ] as const;
 
-function NavIcon({ label }: { label: (typeof items)[number][1] }) {
+function NavIcon({ label }: { label: (typeof items)[number][2] }) {
   const common = {
     fill: "none",
     stroke: "currentColor",
