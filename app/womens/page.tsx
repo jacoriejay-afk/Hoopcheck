@@ -93,10 +93,10 @@ export default function Womens() {
 
         <div className="hc-womens-results-heading">
           <h2>{t("teams")}</h2>
-          <span>{loading ? "Loading…" : `${filtered.length} ${filtered.length === 1 ? t("teamCountSingular") : t("teamCountPlural")}`}</span>
+          <span>{loading ? t("loading") : `${filtered.length} ${filtered.length === 1 ? t("teamCountSingular") : t("teamCountPlural")}`}</span>
         </div>
 
-        <div className="hc-directory-view-toggle hc-womens-view-toggle" role="group" aria-label="Women’s team directory view">
+        <div className="hc-directory-view-toggle hc-womens-view-toggle" role="group" aria-label={t("womensTeamDirectoryView")}>
           <span>{t("directoryView")}</span>
           <button type="button" className={viewMode === "list" ? "is-active" : ""} onClick={() => setViewMode("list")}>☷ {t("list")}</button>
           <button type="button" className={viewMode === "map" ? "is-active" : ""} onClick={() => setViewMode("map")}>◎ {t("map")}</button>
@@ -104,7 +104,7 @@ export default function Womens() {
         {loading ? <div className="hc-womens-loading"><HoopLoading label={t("loadingWomensTeams")} /></div> : viewMode === "map" ? (
           <TeamMap profileBasePath="womens" teams={filtered.map(team => ({...team, latitude:null, longitude:null}))} />
         ) : filtered.length ? (
-          <section className="hc-womens-team-list" aria-label="Women’s team results">
+          <section className="hc-womens-team-list" aria-label={t("womensTeamResults")}>
             {filtered.map(team => (
               <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" logoUrl={team.logo_url} />
             ))}
