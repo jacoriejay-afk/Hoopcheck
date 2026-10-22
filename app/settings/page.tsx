@@ -7,6 +7,8 @@ import { useLanguage, type Language } from "../../components/LanguageProvider";
 import { useTheme } from "../../components/ThemeProvider";
 
 type Theme = "system" | "dark" | "light";
+type TeamOption = { id: string; name: string; country: string | null; league_name: string | null };
+type TeamAffiliation = { id: string; team_id: string; relationship: "current" | "former"; verified: boolean; team?: TeamOption };
 const normalizeTheme = (value: unknown): Theme =>
   value === "dark" || value === "light" || value === "system" ? value : value === "dynamic" ? "dark" : "system";
 
@@ -17,6 +19,12 @@ export default function SettingsPage() {
   const [language, setLanguage] = useState<Language>("en");
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
+  const [teams, setTeams] = useState<TeamOption[]>([]);
+  const [teamAffiliations, setTeamAffiliations] = useState<TeamAffiliation[]>([]);
+  const [selectedPreviousTeam, setSelectedPreviousTeam] = useState("");
+  const [teamSaving, setTeamSaving] = useState(false);
+  const [teamMessage, setTeamMessage] = useState("");
+  const [isPlayer, setIsPlayer] = useState(false);
 
   useEffect(() => {
     setLanguage(activeLanguage);
@@ -49,7 +57,7 @@ export default function SettingsPage() {
     return () => { active = false; };
   }, [setTheme]);
 
-  async function save(nextTheme = theme, nextNotifications = notifications, nextLanguage = language) {
+  async function addPreviousTeam() {\n    if (!selectedPreviousTeam) { setTeamMessage("Choose a team first."); return; }\n    if (teamAffiliations.some((a) => a.team_id === selectedPreviousTeam)) { setTeamMessage("That team is already in your team history."); return; }\n    setTeamSaving(true); setTeamMessage("");\n    try {\n      const { data: { user } } = await supabase.auth.getUser();\n      if (!user) { setTeamMessage("Please sign in again to update your team history."); return; }\n      const { data, error } = await supabase.from("player_team_affiliations").insert({ user_id: user.id, team_id: selectedPreviousTeam, relationship: "former", verified: false }).select("id,team_id,relationship,verified").single();\n      if (error) throw error;\n      const team = teams.find((item) => item.id === selectedPreviousTeam);\n      if (data) setTeamAffiliations((current) => [...current, { ...data, team }]);\n      setSelectedPreviousTeam("");\n      setTeamMessage("Previous team added. It may need verification before you can submit a team review.");\n    } catch (error) {\n      console.error("Could not add previous team:", error);\n      setTeamMessage(error instanceof Error ? error.message : "Could not add that team. Please try again.");\n    } finally { setTeamSaving(false); }\n  }\n\n  async function save(nextTheme = theme, nextNotifications = notifications, nextLanguage = language) {
     setTheme(nextTheme);
     setLanguage(nextLanguage);
     setNotifications(nextNotifications);
