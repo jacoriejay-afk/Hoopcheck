@@ -591,7 +591,7 @@ export default function TeamDetailPage() {
         <Surface as="div" className="hc-entity-trust-score">
           <TrustScoreDial
             score={trustScoreData?.score ?? null}
-            explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? "Trust Score is temporarily unavailable." : t("noApprovedPlayerReviewsYet"))}
+            explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))}
             reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count}
             verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0}
           />
@@ -715,7 +715,7 @@ export default function TeamDetailPage() {
                             {review.title || t("playerExperience")}
                           </h3>
                           {review.player_verified && (
-                            <div className="hc-review-verified"><VerifiedBadge label="Verified player" /><span>{t("verifiedPlayer")}</span></div>
+                            <div className="hc-review-verified"><VerifiedBadge label={t("verifiedPlayer")} /><span>{t("verifiedPlayer")}</span></div>
                           )}
                         </div>
 
