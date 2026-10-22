@@ -138,7 +138,7 @@ export async function POST(request: Request) {
     });
     const form = await formRequest.formData();
     const kind = String(form.get("kind") || "post");
-    if (kind !== "post" && kind !== "comment") {
+    if (kind !== "post" && kind !== "comment" && kind !== "share") {
       return NextResponse.json({ allowed: false, message: "Unsupported content type." }, { status: 400 });
     }
     const text = String(form.get("text") || "").trim();
@@ -155,7 +155,7 @@ export async function POST(request: Request) {
     }
 
     const { data: profile } = await db.from("profiles").select("account_type,current_country,current_country_public").eq("id", user.id).maybeSingle();
-    if (kind === "post" && profile?.account_type !== "player") return NextResponse.json({ allowed: false, message: "Only player accounts can publish to HoopFeed. Fans can follow players to view their posts." }, { status: 403 });
+    if ((kind === "post" || kind === "share") && profile?.account_type !== "player") return NextResponse.json({ allowed: false, message: "Only player accounts can publish or share to HoopFeed." }, { status: 403 });
     if (kind === "comment" && profile?.account_type !== "player") return NextResponse.json({ allowed: false, message: "Only players can comment on HoopFeed posts." }, { status: 403 });
     const submittedTopicTag = String(form.get("topic_tag") || "").trim();
     const gameDayTeam = String(form.get("game_day_team") || "").trim().slice(0, 80);
@@ -177,6 +177,49 @@ export async function POST(request: Request) {
       ["active","trialing"].includes(sub?.status || "") &&
       ["active","trialing","pro","premium"].includes(sub?.access_status ?? "active");
     if (!activeAccess) return NextResponse.json({ allowed: false, message: "Active Pro or Premium player access is required." }, { status: 403 });
+
+    // Re-share only live, approved posts the player is permitted to view.
+    // The source has already passed moderation; new user-authored content still uses moderate().
+    if (kind === "share") {
+      const sourceId = String(form.get("post_id") || "").trim();
+      if (!sourceId) return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 400 });
+      const { data: source, error: sourceError } = await db.from("feed_posts")
+        .select("id,author_id,body,image_url,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,status,expires_at")
+        .eq("id", sourceId).maybeSingle();
+      if (sourceError) {
+        console.error("HoopFeed share source lookup failed", { sourceId, code: sourceError.code });
+        return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 500 });
+      }
+      if (!source || source.status !== "approved" || !source.expires_at || new Date(source.expires_at).getTime() <= Date.now()) {
+        return NextResponse.json({ allowed: false, message: "This post has expired and can't be shared." }, { status: 404 });
+      }
+      if (source.author_id !== user.id) {
+        const [{ data: sourceAuthor }, { data: follow }] = await Promise.all([
+          db.from("profiles").select("account_type,current_country").eq("id", source.author_id).maybeSingle(),
+          db.from("follow_relationships").select("follower_id").eq("follower_id", user.id).eq("target_type", "player").eq("target_id", source.author_id).maybeSingle()
+        ]);
+        const sameCountry = !!profile?.current_country && !!sourceAuthor?.current_country &&
+          profile.current_country.toLowerCase() === sourceAuthor.current_country.toLowerCase();
+        if (!follow || sourceAuthor?.account_type !== "player" || !sameCountry) {
+          return NextResponse.json({ allowed: false, message: "You can only share posts you're allowed to view." }, { status: 403 });
+        }
+      }
+      const sharedAt = new Date();
+      const expiresAt = new Date(sharedAt.getTime() + 24 * 60 * 60 * 1000);
+      const { data: shared, error: shareError } = await db.from("feed_posts").insert({
+        author_id: user.id, body: source.body, image_url: source.image_url,
+        topic_tag: source.topic_tag, game_day_team: source.game_day_team,
+        game_day_opponent: source.game_day_opponent, game_day_score_for: source.game_day_score_for,
+        game_day_score_against: source.game_day_score_against, location_country: null,
+        shared_post_id: source.id, status: "approved",
+        created_at: sharedAt.toISOString(), expires_at: expiresAt.toISOString()
+      }).select("id").single();
+      if (shareError) {
+        console.error("HoopFeed share insert failed", { userId: user.id, sourceId, code: shareError.code });
+        return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 500 });
+      }
+      return NextResponse.json({ allowed: true, post_id: shared.id, shared_at: sharedAt.toISOString(), expires_at: expiresAt.toISOString() });
+    }
 
     const result = await moderate(text, image);
     if (!result.allowed) return NextResponse.json({ allowed: false, message: result.message }, { status: result.status });
