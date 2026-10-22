@@ -27,8 +27,6 @@ export default function FanFeedPage() {
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [liked, setLiked] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [hasAccess, setHasAccess] = useState(false);
-  const [hasAccess, setHasAccess] = useState(false);
   const [membershipActive, setMembershipActive] = useState(false);
   const [posting, setPosting] = useState(false);
   const [message, setMessage] = useState("");
@@ -78,9 +76,7 @@ export default function FanFeedPage() {
       const active = ["pro", "premium"].includes(s?.plan || "") && ["active", "trialing"].includes(s?.status || "") && ["active", "trialing", "pro", "premium"].includes(s?.access_status ?? "active");
       if (p?.account_type !== "fan") { setLoading(false); return; }
       setMembershipActive(active);
-      setHasAccess(active);
-      if (!active) { setHasAccess(false); setLoading(false); return; }
-      setHasAccess(true);
+      if (!active) { setLoading(false); return; }
       await load(u.id); if (alive) setLoading(false);
     })();
     return () => { alive = false; };
@@ -136,8 +132,7 @@ export default function FanFeedPage() {
   if (loading) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><HoopLoading label={t("fanFeed.loading")} /></div></main>;
   if (!user) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{t("fanFeed.title")}</h1><p>{t("fanFeed.signIn")}</p><Link className="btn" href="/login">{t("signIn")}</Link></section></div></main>;
   if (profile?.account_type !== "fan") return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{t("fanFeed.fansOnly")}</h1><p>{t("fanFeed.separateSurface")}</p><Link className="btn" href="/feed">{t("fanFeed.playerFeed")}</Link></section></div></main>;
-  if (!hasAccess) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{t("fanFeed.membershipRequired")}</h1><p>{t("fanFeed.membershipDescription")}</p><Link className="btn" href="/membership">{t("membership")}</Link></section></div></main>;
-  if (!membershipActive) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">FAN HQ</p><h1>{t("fanFeed.title")}</h1><p className="muted">{t("membershipRequired")}</p><Link className="btn" href="/membership">{t("membership")}</Link></section></div></main>;
+  if (!membershipActive) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{t("fanFeed.membershipRequired")}</h1><p>{t("fanFeed.membershipDescription")}</p><Link className="btn" href="/membership">{t("membership")}</Link></section></div></main>;
   return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/fans">{t("fanFeed.discoverFans")}</Link><Link href="/teams">{t("fanFeed.teams")}</Link></nav></header>
     <section className="hero-card hc-feed-hero"><div><p className="eyebrow">{t("fanFeed.kicker")}</p><h1>{t("fanFeed.title")}</h1><p className="muted">{t("fanFeed.subtitle")}</p></div><p className="hc-feed-expiry-note">{t("fanFeed.teamFirst")}<span>{t("fanFeed.fanOnlyNote")}</span></p></section>
