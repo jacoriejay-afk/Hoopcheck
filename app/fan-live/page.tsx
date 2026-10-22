@@ -17,7 +17,8 @@ const initials = (name:string) => name.trim().split(/\s+/).filter(Boolean).slice
 const roomOpen = (game:Game, now=new Date()) => {
   if (finalStatus(game.status)) return false;
   const tip = Date.parse(game.scheduled_at || game.started_at || "");
-  if (Number.isFinite(tip) && now.getTime() < tip - 30*60_000) return false;
+  if (!Number.isFinite(tip)) return ["live","in_progress"].includes(game.status.toLowerCase());
+  if (now.getTime() < tip - 30*60_000) return false;
   const end = Date.parse(game.ends_at || "");
   if (Number.isFinite(end)) return now.getTime() < end;
   return !Number.isFinite(tip) || now.getTime() < tip + 4*60*60_000;
