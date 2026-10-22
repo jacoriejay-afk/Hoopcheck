@@ -165,7 +165,7 @@ html.theme-light body {
 }
 html.theme-dark main,
 html.theme-light main {
-  background-color: var(--hc-page-bg) !important;
+  background: var(--hc-page-bg) !important;
   color: var(--hc-foreground) !important;
 }
 html.theme-dark .hc-template-home,
