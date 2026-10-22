@@ -128,3 +128,11 @@ html.theme-light .signup-language-select option {
 
 /* Keep the HoopFeed composer aligned with the dark-mode card contract. */
 html.theme-dark .hc-feed-composer.hc-surface { background-color:#171717!important; }
+
+/* Theme-specific override must outrank the generic surface token declaration. */
+html.theme-dark main .hc-feed-composer.hc-surface,
+html.theme-dark .hc-feed-composer[data-hc-surface="true"],
+html.theme-dark .hc-feed-composer { background-color:#171717!important; }
+html.theme-light main .hc-feed-composer.hc-surface,
+html.theme-light .hc-feed-composer[data-hc-surface="true"],
+html.theme-light .hc-feed-composer { background-color:#fff!important; }
