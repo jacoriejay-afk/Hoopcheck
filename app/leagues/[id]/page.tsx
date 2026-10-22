@@ -571,7 +571,7 @@ export default function LeagueDetailPage() {
             }
             className="btn"
           >
-            {accountType === "player" ? (hasAccess ? t("writeAReview") : t("becomeMemberToReview")) : "{t("backToLeagues")}"}
+            {accountType === "player" ? (hasAccess ? t("writeAReview") : t("becomeMemberToReview")) : t("backToLeagues")}
           </Link>
 
           <Link
