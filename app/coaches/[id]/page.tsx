@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
+import { useLanguage } from "../../../components/LanguageProvider";
 import { submitReviewReport } from "../../../lib/review-reports";
 import HoopLoading from "../../../components/HoopLoading";
 import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
@@ -123,6 +124,7 @@ function RatingBar({
 }
 
 export default function CoachDetailPage() {
+  const { t } = useLanguage();
   const params = useParams();
 
   const id = Array.isArray(params.id)
@@ -468,7 +470,7 @@ export default function CoachDetailPage() {
               href="/coaches"
               className="btn"
             >
-              Back To Coaches
+              {t("backToCoaches")}
             </Link>
           </div>
         </section>
@@ -577,7 +579,7 @@ export default function CoachDetailPage() {
         <div className="hc-entity-trust-score">
           <TrustScoreDial
             score={trustScoreData?.score ?? null}
-            explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? "Trust Score is temporarily unavailable." : "No approved player reviews yet.")}
+            explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedReviews"))}
             reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count}
             verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0}
           />
@@ -592,7 +594,7 @@ export default function CoachDetailPage() {
             ? `${coach.city}, ${coach.country}`
             : coach.country ||
               coach.city ||
-              "Location not listed"}
+              t("locationNotListed")}
         </p>
 
         <div className="actions">
@@ -601,7 +603,7 @@ export default function CoachDetailPage() {
               href={`/coaches/${coach.id}/review`}
               className="btn"
             >
-              Write A Review
+              {t("writeAReview")}
             </Link>
           ) : accountType === "player" ? (
             <Link href="/membership" className="btn">Become A Member To Review</Link>
@@ -611,7 +613,7 @@ export default function CoachDetailPage() {
             href="/coaches"
             className="btn dark"
           >
-            Back To Coaches
+            {t("backToCoaches")}
           </Link>
         </div>
       </section>
@@ -619,7 +621,7 @@ export default function CoachDetailPage() {
       <section className="hero">
         <div className="eyebrow">Team History</div>
         <h2>Coach assignments</h2>
-        {history.length ? <div className="grid" style={{ marginTop: "25px" }}>{history.map((item) => <div className="card" key={item.id}><div className="eyebrow">{item.season || "Season not listed"}</div><h3>{item.team?.name || "Team not listed"}</h3><p>{item.role || "Coaching role not listed"}</p>{item.start_date || item.end_date ? <p>{item.start_date || "—"} → {item.end_date || "Present"}</p> : null}</div>)}</div> : <div className="card"><p>No historical team assignments have been added yet.</p></div>}
+        {history.length ? <div className="grid" style={{ marginTop: "25px" }}>{history.map((item) => <div className="card" key={item.id}><div className="eyebrow">{item.season || t("seasonNotListed")}</div><h3>{item.team?.name || t("teamNotListed")}</h3><p>{item.role || t("coachingRoleNotListed")}</p>{item.start_date || item.end_date ? <p>{item.start_date || "—"} → {item.end_date || t("present")}</p> : null}</div>)}</div> : <div className="card"><p>{t("noHistoricalAssignments")}</p></div>}
       </section>
 
       <section className="grid">
@@ -631,7 +633,7 @@ export default function CoachDetailPage() {
               <p>
                 {team.city && team.country
                   ? team.city + ", " + team.country
-                  : team.country || team.city || "Location not listed"}
+                  : team.country || team.city || t("locationNotListed")}
               </p>
               {league && (
                 <p style={{ color: "var(--orange)", fontWeight: 800 }}>
@@ -659,7 +661,7 @@ export default function CoachDetailPage() {
             <>
               <h2>{league.name}</h2>
               <p>
-                {league.country || "Country not listed"}
+                {league.country || t("countryNotListed")}
                 {league.level ? " • " + league.level : ""}
               </p>
               <Link href={"/leagues/" + league.id} className="btn">
@@ -676,7 +678,7 @@ export default function CoachDetailPage() {
             </>
           ) : (
             <>
-              <h2>League not listed</h2>
+              <h2>{t("leagueNotListed")}</h2>
               <p>HoopCheck has not linked this coach to a league yet.</p>
             </>
           )}
@@ -760,7 +762,7 @@ export default function CoachDetailPage() {
 
             <div className="card" style={{ position: "relative", overflow: "hidden" }}>
               <div className="eyebrow">Coach Breakdown</div>
-              {hasAccess ? (reviews.length === 0 ? <p>No approved reviews yet.</p> : <>
+              {hasAccess ? (reviews.length === 0 ? <p>{t("noApprovedReviewsYet")}</p> : <>
                   <RatingBar label="Communication" value={communication} />
                   <RatingBar label="Professionalism" value={professionalism} />
                   <RatingBar label="Development" value={development} />
@@ -835,7 +837,7 @@ export default function CoachDetailPage() {
               0 ? (
               <div className="card">
                 <h3>
-                  No approved reviews yet.
+                  {t("noApprovedReviewsYet")}
                 </h3>
 
                 <p>
@@ -848,7 +850,7 @@ export default function CoachDetailPage() {
                   href={`/coaches/${coach.id}/review`}
                   className="btn"
                 >
-                  Write A Review
+                  {t("writeAReview")}
                 </Link>
               </div>
             ) : (
