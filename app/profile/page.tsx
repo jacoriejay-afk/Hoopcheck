@@ -110,11 +110,11 @@ export default function ProfilePage() {
             <Link href="/account#profile-editor" className="btn hc-profile-edit-button">{t("editProfile")}</Link>
             {p.account_type === "player" && (p.profile_visibility === "public" ? (
               <Link href={"/players/" + encodeURIComponent(p.id)} className="btn dark hc-profile-public-button">
-                <span className="hc-profile-public-full">View Public Profile</span><span className="hc-profile-public-short">Public Profile</span><HoopIcon name="arrow-up-right" size={16} />
+                <span className="hc-profile-public-full">{t("profilePublic")}</span><span className="hc-profile-public-short">{t("profilePublic")}</span><HoopIcon name="arrow-up-right" size={16} />
               </Link>
             ) : (
               <Link href="/account#profile-editor" className="btn dark hc-profile-public-button">
-                <span>Profile Is Not Public</span><HoopIcon name="arrow-up-right" size={16} />
+                <span>{t("profilePrivate")}</span><HoopIcon name="arrow-up-right" size={16} />
               </Link>
             ))}
           </div>
@@ -131,7 +131,7 @@ export default function ProfilePage() {
             <Surface className="card hc-profile-info-card">
               <span className="card-kicker">{t("basketball")}</span>
               <h2>{p.basketball_type === "womens" ? t("womensBasketball") : t("mensBasketball")}</h2>
-              <p className="muted">{p.account_type}</p>
+              <p className="muted">{t(p.account_type)}</p>
             </Surface>
             {p.account_type === "player" && (
               <Surface className="card hc-profile-info-card">
