@@ -50,10 +50,10 @@ jobs:
       - name: Production build
         run: npm run build
 
-      - name: Install Chromium for theme regression test
+      - name: Install Playwright and verify hosted Chrome
         run: |
           npm install --no-save --package-lock=false playwright
-          npx playwright install chromium
+          google-chrome --version
 
       - name: Start production server
         run: |
