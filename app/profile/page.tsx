@@ -71,8 +71,8 @@ export default function ProfilePage() {
       <main className="page-shell hc-member-profile-page">
         <div className="page-container">
           <section className="hero-card">
-            <h1>Profile unavailable</h1>
-            <Link href="/account" className="btn">Edit Account</Link>
+            <h1>{t("profileUnavailable")}</h1>
+            <Link href="/account" className="btn">{t("editAccount")}</Link>
           </section>
         </div>
       </main>
@@ -94,7 +94,7 @@ export default function ProfilePage() {
               <div className="hc-member-profile-avatar">
                 {p.avatar_url ? <img src={p.avatar_url} alt={name + " profile photo"} /> : <span>{initials}</span>}
               </div>
-              {p.avatar_url && p.avatar_moderation_status === "pending" && <span className="hc-profile-photo-state">Photo review</span>}
+              {p.avatar_url && p.avatar_moderation_status === "pending" && <span className="hc-profile-photo-state">{t("photoReview")}</span>}
             </div>
             <div className="hc-member-profile-copy">
               <p className="eyebrow">{t("account").toUpperCase()}</p>
@@ -122,10 +122,10 @@ export default function ProfilePage() {
 
         </section>
 
-        <section className="hc-profile-overview" aria-label="Profile overview">
+        <section className="hc-profile-overview" aria-label={t("profileOverview")}>
           {profileCompletion < 100 && <div className="hc-profile-completion">
             <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href="/account#profile-editor">Complete profile <span aria-hidden="true">→</span></Link></div>
-            <div className="hc-profile-completion-track" role="progressbar" aria-label="Profile completeness" aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}><span style={{width: profileCompletion + "%"}} /></div>
+            <div className="hc-profile-completion-track" role="progressbar" aria-label={t("profileCompleteness")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}><span style={{width: profileCompletion + "%"}} /></div>
           </div>}
           <div className="grid compact-grid">
             <Surface className="card hc-profile-info-card">
@@ -152,12 +152,12 @@ export default function ProfilePage() {
           <p className="eyebrow">{t("about")}</p>
           <h2>{t("profileDetails")}</h2>
           <p className="muted">{p.bio || t("addBioFromEditProfile")}</p>
-          {p.interests && <p><strong>Interests:</strong> {p.interests}</p>}
-          {p.favorite_leagues && <p><strong>Favorite leagues:</strong> {p.favorite_leagues}</p>}
+          {p.interests && <p><strong>{t("interests")}</strong> {p.interests}</p>}
+          {p.favorite_leagues && <p><strong>{t("favoriteLeagues")}</strong> {p.favorite_leagues}</p>}
         </section>
 
         <section className="dashboard-card compact-section">
-          <p className="eyebrow">ACCOUNT</p>
+          <p className="eyebrow">{t("account")}</p>
           <h2>{t("accountControls")}</h2>
           <p className="muted">{t("hideProfileOrDelete")}</p>
           <div className="actions">
@@ -175,7 +175,7 @@ export default function ProfilePage() {
               }
               await supabase.auth.signOut();
               window.location.replace("/login");
-            }}>Deactivate Account</button>
+            }}>{t("deactivateAccount")}</button>
             <button type="button" className="btn hc-danger-button" onClick={async () => {
               if (!window.confirm("Delete your HoopCheck account permanently? This cannot be undone.")) return;
               const res = await fetch("/api/account/delete", { method: "POST" });
@@ -186,7 +186,7 @@ export default function ProfilePage() {
               }
               await supabase.auth.signOut();
               window.location.replace("/");
-            }}>Delete Account</button>
+            }}>{t("deleteAccount")}</button>
           </div>
         </section>
 
