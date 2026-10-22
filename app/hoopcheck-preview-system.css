@@ -5768,7 +5768,7 @@ html.theme-light main:not(.hc-template-home) :where(input,select,textarea) {
   --gray-500: var(--hc-foreground-muted);
   --border: var(--hc-border);
   --white: var(--hc-surface-raised);
-  --black: var(--hc-page-bg);
+  --black: var(--hc-foreground);
   --hc-mobile-row-bg: var(--hc-surface-raised);
   --hc-mobile-row-border: var(--hc-border);
   --hc-hover-wash: var(--hc-surface-soft);
