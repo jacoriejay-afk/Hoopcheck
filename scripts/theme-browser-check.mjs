@@ -276,6 +276,21 @@ try {
       else if (url.pathname.includes("/rest/v1/rpc/get_current_user_admin_role")) data = "member";
       await route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(data) });
     });
+
+    // Exercise the real Settings language control before capturing every route.
+    await page.goto(baseURL + "/settings", { waitUntil: "domcontentloaded", timeout: 20000 });
+    const languageSelect = page.locator("select.language-select");
+    await languageSelect.waitFor({ state: "visible", timeout: 10000 });
+    if (testLanguage === "en") {
+      await languageSelect.selectOption("es");
+      await page.waitForFunction(() => document.documentElement.lang === "es", null, { timeout: 10000 });
+      await page.locator("select.language-select").selectOption("en");
+    } else {
+      await languageSelect.selectOption("es");
+    }
+    await page.waitForFunction((expected) => document.documentElement.lang === expected, testLanguage, { timeout: 10000 });
+    await page.waitForTimeout(150);
+
     for (const requestedPath of mainRoutes) {
       let navigationError = null;
       try {
