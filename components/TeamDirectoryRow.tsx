@@ -2,6 +2,7 @@ import Link from "next/link";
 import FollowButton from "./FollowButton";
 import { HoopIcon } from "./HoopCheckUI";
 import Surface from "./Surface";
+import { useLanguage } from "./LanguageProvider";
 
 type TeamDirectoryRowProps = {
   id: string;
@@ -24,6 +25,7 @@ export default function TeamDirectoryRow({
   id, name, city, country, leagueName, href, kind = "mens", showFollow = true,
   trustReviewCount = 0, averageRating = null, logoUrl = null,
 }: TeamDirectoryRowProps) {
+  const { t } = useLanguage();
   const monogram = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   const metadata = [city, country, leagueName].filter(Boolean).join(", ") || "International";
   const hasReviews = trustReviewCount > 0;
@@ -44,7 +46,7 @@ export default function TeamDirectoryRow({
       </Link>
       <div className={"hc-scout-card__stats" + (!hasRating && !hasReviews ? " is-empty" : "")} aria-label="Team review statistics">
         {!hasRating && !hasReviews ? (
-          <p className="hc-scout-card__empty">No reviews yet — be the first</p>
+          <p className="hc-scout-card__empty">{t("teamDirectoryEmptyReviews")}</p>
         ) : (
           <>
             <div className="hc-scout-card__stat"><strong>{hasRating ? <><span className="hc-scout-card__star" aria-hidden="true">★</span> {averageRating.toFixed(1)}</> : "—"}</strong><small>Rating</small></div>
