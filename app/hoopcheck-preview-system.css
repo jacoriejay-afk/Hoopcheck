@@ -5892,3 +5892,20 @@ html.theme-dark .hc-template-home :where(.eyebrow,.card-kicker,.hc-template-cate
 html.theme-light .hc-template-home :where(.eyebrow,.card-kicker,.hc-template-category-icon,.hc-template-section-kicker) {
   color: var(--hc-orange, #ff5a1f) !important;
 }
+
+
+/* Remaining Dashboard-specific controls and statistic cells also inherit tokens. */
+html.theme-dark .hc-dashboard-shell :where(.hc-mobile-search-field,.hc-player-stats > *) ,
+html.theme-light .hc-dashboard-shell :where(.hc-mobile-search-field,.hc-player-stats > *) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark .hc-dashboard-shell .hc-player-stats > * :where(span,small) ,
+html.theme-light .hc-dashboard-shell .hc-player-stats > * :where(span,small) {
+  color: var(--hc-foreground-muted) !important;
+}
+html.theme-dark .hc-dashboard-shell .hc-player-stats > * strong ,
+html.theme-light .hc-dashboard-shell .hc-player-stats > * strong {
+  color: var(--hc-foreground) !important;
+}
