@@ -81,12 +81,15 @@ try {
         hasTouch: true,
       });
       const page = await context.newPage();
-      await page.addInitScript(({ themePreference, authSession }) => {
+      const encodedSession = "base64-" + btoa(unescape(encodeURIComponent(JSON.stringify(session))))
+        .replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+      await context.addCookies([
+        { name: "hoopcheck-theme", value: theme, url: baseURL },
+        { name: "sb-ci-auth-token", value: encodedSession, url: baseURL },
+      ]);
+      await page.addInitScript((themePreference) => {
         localStorage.setItem("hoopcheck-theme", themePreference);
-        document.cookie = "hoopcheck-theme=" + themePreference + "; Path=/; SameSite=Lax";
-        const encoded = "base64-" + btoa(unescape(encodeURIComponent(JSON.stringify(authSession))));
-        document.cookie = "sb-ci-auth-token=" + encodeURIComponent(encoded) + "; Path=/; SameSite=Lax";
-      }, { themePreference: theme, authSession: session });
+      }, theme);
 
       await page.route("https://ci.invalid/**", async (route) => {
         const request = route.request();
@@ -126,6 +129,7 @@ try {
 
       const path = routeName === "dashboard" ? "/dashboard" : "/feed";
       await page.goto(baseURL + path, { waitUntil: "networkidle", timeout: 60000 });
+      console.log("THEME_BROWSER_PAGE", JSON.stringify({ routeName, theme, url: page.url(), title: await page.title(), body: (await page.locator("body").innerText().catch(() => "")).slice(0, 240) }));
       const wrapperSelector = routeName === "dashboard" ? "main.hc-dashboard-shell" : "main.hc-feed-page";
       await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
       if (routeName === "feed") {
