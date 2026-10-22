@@ -137,7 +137,7 @@ export default function AdminDirectoryPage() {
               href="/dashboard"
               style={styles.secondaryButton}
             >
-              Dashboard
+              {t("dashboard")}
             </Link>
           </div>
         </header>
