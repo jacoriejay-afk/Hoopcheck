@@ -327,167 +327,167 @@ export default function AccountPage() {
   async function changeNotification(key: keyof typeof notificationPreferences, checked: boolean) {
     const next = { ...notificationPreferences, [key]: checked };
     setNotificationPreferences(next);
-    await saveSetting({ notification_preferences: next }, "Notification preferences saved.");
+    await saveSetting({ notification_preferences: next }, t("notificationPreferencesSaved"));
   }
 
   async function changeEmail() {
-    const next = window.prompt("Enter your new email address:", email)?.trim();
+    const next = window.prompt(t("enterNewEmail"), email)?.trim();
     if (!next || next === email) return;
     const { error } = await supabase.auth.updateUser({ email: next });
-    if (error) setSettingsMessage("Could not update email: " + error.message);
-    else setSettingsMessage("Check your new email address to confirm the change.");
+    if (error) setSettingsMessage(t("couldNotUpdateEmail") + error.message);
+    else setSettingsMessage(t("confirmEmailChange"));
   }
 
   async function submitPasswordChange() {
     setPasswordMessage("");
-    if (newPassword.length < 8) { setPasswordMessage("Use at least 8 characters."); return; }
+    if (newPassword.length < 8) { setPasswordMessage(t("useAtLeast8Characters")); return; }
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) { setPasswordMessage(error.message); return; }
-    setNewPassword(""); setPasswordModal(false); setSettingsMessage("Password updated successfully.");
+    setNewPassword(""); setPasswordModal(false); setSettingsMessage(t("passwordUpdated"));
   }
 
   async function changeVisibility(next: "public"|"players_only") {
     setSettingsVisibility(next);
-    const ok = await saveSetting({ profile_visibility: next }, "Profile visibility saved.");
+    const ok = await saveSetting({ profile_visibility: next }, t("profileVisibilitySaved"));
     if (!ok) setSettingsVisibility(next === "public" ? "players_only" : "public");
   }
 
   async function changeCountryVisibility(checked: boolean) {
     setCountryPublic(checked);
-    const ok = await saveSetting({ current_country_public: checked }, "HoopFeed country preference saved.");
+    const ok = await saveSetting({ current_country_public: checked }, t("hoopFeedCountrySaved"));
     if (!ok) setCountryPublic(!checked);
   }
 
-  if (loading) return <main className="page-shell hc-account-page"><div className="page-container"><HoopLoading label="Loading your account..." /></div></main>;
+  if (loading) return <main className="page-shell hc-account-page"><div className="page-container"><HoopLoading label={t("loadingAccount")} /></div></main>;
 
   return (
     <main className="page-shell hc-account-page"><div className="page-container">
       <header className="hc-account-settings-header">
-        <p className="hc-account-settings-kicker">SETTINGS</p>
-        <h1>Account Preferences</h1>
+        <p className="hc-account-settings-kicker">{t("settings")}</p>
+        <h1>{t("accountPreferences")}</h1>
         <div className="hc-account-settings-identity">
           <span className="hc-account-settings-avatar" aria-hidden="true">
             {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{(displayName || email || "H").trim().charAt(0).toUpperCase()}</span>}
           </span>
           <div className="hc-account-settings-identity-copy">
-            <strong>{displayName || "Your account"}</strong>
-            <p>{email || "Email not set"}</p>
+            <strong>{displayName || t("yourAccount")}</strong>
+            <p>{email || t("emailNotSet")}</p>
           </div>
         </div>
       </header>
-      <section className="hc-settings" aria-label="Account settings">
-        <SettingsGroup title="ACCOUNT">
-          <SettingsRow icon="user" label="Edit Profile" value="Edit details" href="#profile-editor" />
-          <SettingsRow icon="mail" label="Email" value={email || "Not set"} onClick={changeEmail} />
-          <SettingsRow icon="lock" label="Change Password" value="Update password" onClick={() => { setPasswordMessage(""); setPasswordModal(true); }} />
+      <section className="hc-settings" aria-label={t("accountSettings")}>
+        <SettingsGroup title={t("accountSection")}>
+          <SettingsRow icon="user" label={t("editProfile")} value={t("editDetails")} href="#profile-editor" />
+          <SettingsRow icon="mail" label={t("email")} value={email || t("notSelected")} onClick={changeEmail} />
+          <SettingsRow icon="lock" label={t("changePassword")} value={t("updatePassword")} onClick={() => { setPasswordMessage(""); setPasswordModal(true); }} />
           <SettingsRow icon="crown" label="Membership" value={subscription?.plan === "premium" ? "Premium" : subscription?.plan === "pro" ? "Pro" : "Free"} href="/membership" />
         </SettingsGroup>
-        <SettingsGroup title="PREFERENCES">
-          <div className="hc-setting-row"><SettingsGlyph name="moon"/><div className="hc-setting-copy"><strong>Dark Mode</strong><small>{themePreference === "system" ? "Follows your device" : themePreference === "dark" ? "On" : "Off"}</small></div><button type="button" role="switch" aria-checked={themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)} className={"hc-switch "+((themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)) ? "is-on" : "")} onClick={() => changeTheme((themePreference === "system" ? (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) : themePreference === "dark") ? "light" : "dark")}><span/></button></div>
-          {themePreference !== "system" && <div className="hc-setting-subrow"><button type="button" className="hc-text-button" onClick={() => changeTheme("system")}>Use device setting</button></div>}
-          <div className="hc-setting-row"><SettingsGlyph name="globe"/><div className="hc-setting-copy"><strong>Language</strong><small>Choose your app language</small></div><select aria-label="Language" className="hc-setting-select" value={preferredLanguage} onChange={e=>changeLanguage(e.target.value)}><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option><option value="ru">Русский</option><option value="az">Azərbaycanca</option><option value="pl">Polski</option><option value="zh">中文</option><option value="ja">日本語</option><option value="sr">Српски</option><option value="fi">Suomi</option><option value="he">עברית</option><option value="lt">Lietuvių</option><option value="uk">Українська</option></select></div>
-          <SettingsToggle icon="message" label="Game chat alerts" checked={notificationPreferences.game_chat_alerts} onChange={v=>changeNotification("game_chat_alerts",v)} />
-          <SettingsToggle icon="user-plus" label="New follower" checked={notificationPreferences.new_follower} onChange={v=>changeNotification("new_follower",v)} />
-          <SettingsToggle icon="star" label="Review on a team I follow" checked={notificationPreferences.team_reviews} onChange={v=>changeNotification("team_reviews",v)} />
-          <SettingsToggle icon="activity" label="HoopFeed activity" checked={notificationPreferences.hoopfeed_activity} onChange={v=>changeNotification("hoopfeed_activity",v)} />
+        <SettingsGroup title={t("preferences")}>
+          <div className="hc-setting-row"><SettingsGlyph name="moon"/><div className="hc-setting-copy"><strong>{t("darkMode")}</strong><small>{themePreference === "system" ? t("followsDevice") : themePreference === "dark" ? t("on") : t("off")}</small></div><button type="button" role="switch" aria-checked={themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)} className={"hc-switch "+((themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)) ? "is-on" : "")} onClick={() => changeTheme((themePreference === "system" ? (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) : themePreference === "dark") ? "light" : "dark")}><span/></button></div>
+          {themePreference !== "system" && <div className="hc-setting-subrow"><button type="button" className="hc-text-button" onClick={() => changeTheme("system")}>{t("useDeviceSetting")}</button></div>}
+          <div className="hc-setting-row"><SettingsGlyph name="globe"/><div className="hc-setting-copy"><strong>{t("language")}</strong><small>{t("chooseAppLanguage")}</small></div><select aria-label={t("language")} className="hc-setting-select" value={preferredLanguage} onChange={e=>changeLanguage(e.target.value)}><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option><option value="ru">Русский</option><option value="az">Azərbaycanca</option><option value="pl">Polski</option><option value="zh">中文</option><option value="ja">日本語</option><option value="sr">Српски</option><option value="fi">Suomi</option><option value="he">עברית</option><option value="lt">Lietuvių</option><option value="uk">Українська</option></select></div>
+          <SettingsToggle icon="message" label={t("gameChatAlerts")} checked={notificationPreferences.game_chat_alerts} onChange={v=>changeNotification("game_chat_alerts",v)} />
+          <SettingsToggle icon="user-plus" label={t("newFollower")} checked={notificationPreferences.new_follower} onChange={v=>changeNotification("new_follower",v)} />
+          <SettingsToggle icon="star" label={t("teamFollowReview")} checked={notificationPreferences.team_reviews} onChange={v=>changeNotification("team_reviews",v)} />
+          <SettingsToggle icon="activity" label={t("hoopFeedActivity")} checked={notificationPreferences.hoopfeed_activity} onChange={v=>changeNotification("hoopfeed_activity",v)} />
         </SettingsGroup>
-        <SettingsGroup title="PRIVACY">
-          <SettingsToggle icon="map-pin" label="Show my country on HoopFeed posts" checked={countryPublic} onChange={changeCountryVisibility} />
-          <div className="hc-setting-row"><SettingsGlyph name="eye"/><div className="hc-setting-copy"><strong>Who can see my profile</strong><small>{settingsVisibility === "public" ? "Public" : "Players only"}</small></div><select aria-label="Who can see my profile" className="hc-setting-select" value={settingsVisibility} onChange={e=>changeVisibility(e.target.value as "public"|"players_only")}><option value="public">Public</option><option value="players_only">Players only</option></select></div>
+        <SettingsGroup title={t("privacySection")}>
+          <SettingsToggle icon="map-pin" label={t("showCountryOnFeed")} checked={countryPublic} onChange={changeCountryVisibility} />
+          <div className="hc-setting-row"><SettingsGlyph name="eye"/><div className="hc-setting-copy"><strong>{t("whoCanSeeProfile")}</strong><small>{settingsVisibility === "public" ? t("public") : t("playersOnly")}</small></div><select aria-label={t("whoCanSeeProfile")} className="hc-setting-select" value={settingsVisibility} onChange={e=>changeVisibility(e.target.value as "public"|"players_only")}><option value="public">{t("public")}</option><option value="players_only">{t("playersOnly")}</option></select></div>
         </SettingsGroup>
-        <SettingsGroup title="SUPPORT">
-          <SettingsRow icon="help" label="Help & FAQ" value="Get answers" href="/support" />
-          <SettingsRow icon="headphones" label="Contact Support" value="Get in touch" href="/support" />
-          <SettingsRow icon="file" label="Terms" value="Read terms" href="/terms" />
-          <SettingsRow icon="shield" label="Privacy Policy" value="Read policy" href="/privacy" />
+        <SettingsGroup title={t("supportSection")}>
+          <SettingsRow icon="help" label={t("helpFaq")} value={t("getAnswers")} href="/support" />
+          <SettingsRow icon="headphones" label={t("contactSupport")} value={t("getInTouch")} href="/support" />
+          <SettingsRow icon="file" label={t("terms")} value={t("readTerms")} href="/terms" />
+          <SettingsRow icon="shield" label={t("privacyPolicy")} value={t("readPolicy")} href="/privacy" />
         </SettingsGroup>
-        <SettingsGroup title="DANGER ZONE" danger>
-          <SettingsRow icon="logout" label="Sign Out" value="End this session" onClick={signOut} danger />
-          <SettingsRow icon="trash" label="Delete Account" value={deletingAccount ? "Deleting…" : "Permanent action"} onClick={() => { setDeleteConfirmation(""); setDeleteModal(true); }} danger />
+        <SettingsGroup title={t("dangerZone")} danger>
+          <SettingsRow icon="logout" label={t("signOut")} value={t("endSession")} onClick={signOut} danger />
+          <SettingsRow icon="trash" label={t("deleteAccount")} value={deletingAccount ? t("deleting") : t("permanentAction")} onClick={() => { setDeleteConfirmation(""); setDeleteModal(true); }} danger />
         </SettingsGroup>
         {settingsMessage && <ThemeToast className="hc-settings-message">{settingsMessage}</ThemeToast>}
       </section>
-      {passwordModal && <div className="hc-modal-backdrop" role="presentation" onClick={e=>{if(e.target===e.currentTarget)setPasswordModal(false)}}><section className="hc-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="hc-password-title"><button type="button" className="hc-modal-close" aria-label="Close" onClick={()=>setPasswordModal(false)}>×</button><p className="eyebrow">SECURITY</p><h2 id="hc-password-title">Change password</h2><label htmlFor="hc-new-password">New password</label><input id="hc-new-password" type="password" autoComplete="new-password" minLength={8} value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="At least 8 characters"/>{passwordMessage && <p role="alert">{passwordMessage}</p>}<button type="button" className="btn" onClick={submitPasswordChange}>Update password</button></section></div>}
-      {deleteModal && <div className="hc-modal-backdrop" role="presentation" onClick={e=>{if(e.target===e.currentTarget)setDeleteModal(false)}}><section className="hc-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="hc-delete-title"><button type="button" className="hc-modal-close" aria-label="Close" onClick={()=>setDeleteModal(false)}>×</button><p className="eyebrow" style={{color:"#ef4444"}}>DANGER ZONE</p><h2 id="hc-delete-title">Delete account?</h2><p>This permanently deletes your account and associated data where applicable. This action cannot be undone.</p><label htmlFor="hc-delete-confirm">Type DELETE to confirm</label><input id="hc-delete-confirm" value={deleteConfirmation} onChange={e=>setDeleteConfirmation(e.target.value)} autoComplete="off" placeholder="DELETE"/><button type="button" className="hc-danger-button" disabled={deleteConfirmation !== "DELETE" || deletingAccount} onClick={async()=>{setDeleteModal(false);await deleteAccountConfirmed();}}>{deletingAccount ? "Deleting…" : "Permanently delete account"}</button></section></div>}
+      {passwordModal && <div className="hc-modal-backdrop" role="presentation" onClick={e=>{if(e.target===e.currentTarget)setPasswordModal(false)}}><section className="hc-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="hc-password-title"><button type="button" className="hc-modal-close" aria-label={t("close")} onClick={()=>setPasswordModal(false)}>×</button><p className="eyebrow">{t("security")}</p><h2 id="hc-password-title">{t("changePassword")}</h2><label htmlFor="hc-new-password">{t("newPassword")}</label><input id="hc-new-password" type="password" autoComplete="new-password" minLength={8} value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder={t("atLeast8CharactersPlaceholder")}/>{passwordMessage && <p role="alert">{passwordMessage}</p>}<button type="button" className="btn" onClick={submitPasswordChange}>{t("updatePassword")}</button></section></div>}
+      {deleteModal && <div className="hc-modal-backdrop" role="presentation" onClick={e=>{if(e.target===e.currentTarget)setDeleteModal(false)}}><section className="hc-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="hc-delete-title"><button type="button" className="hc-modal-close" aria-label={t("close")} onClick={()=>setDeleteModal(false)}>×</button><p className="eyebrow" style={{color:"#ef4444"}}>{t("dangerZone")}</p><h2 id="hc-delete-title">{t("deleteAccountQuestion")}</h2><p>{t("deleteAccountWarning")}</p><label htmlFor="hc-delete-confirm">{t("typeDeleteConfirm")}</label><input id="hc-delete-confirm" value={deleteConfirmation} onChange={e=>setDeleteConfirmation(e.target.value)} autoComplete="off" placeholder="DELETE"/><button type="button" className="hc-danger-button" disabled={deleteConfirmation !== "DELETE" || deletingAccount} onClick={async()=>{setDeleteModal(false);await deleteAccountConfirmed();}}>{deletingAccount ? t("deleting") : t("permanentlyDeleteAccount")}</button></section></div>}
       <section className="grid" style={{marginTop:32}}>
         <div className="dashboard-card">
-          <p className="eyebrow">PROFILE</p>
+          <p className="eyebrow">{t("profileSection")}</p>
           {profile.account_type === "player" && <>
-            {avatarUrl && <img src={avatarUrl} alt="Profile" style={{width:112,height:112,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--orange)",display:"block"}} />}
-            <label htmlFor="avatar-upload" className="muted">Player profile picture</label>
+            {avatarUrl && <img src={avatarUrl} alt={t("profileSection")} style={{width:112,height:112,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--orange)",display:"block"}} />}
+            <label htmlFor="avatar-upload" className="muted">{t("playerProfilePicture")}</label>
             <input id="avatar-upload" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f) chooseAvatar(f)}} />
-            <p className="muted" style={{fontSize:12}}>{avatarStatus==="pending" ? "Pending moderation. It will appear publicly after approval." : avatarStatus==="rejected" ? "Photo rejected. Upload another image." : "Approved and eligible to appear on your public profile."}</p>
+            <p className="muted" style={{fontSize:12}}>{avatarStatus==="pending" ? t("pendingModeration") : avatarStatus==="rejected" ? t("photoRejected") : t("approvedEligiblePublic")}</p>
             {cropPreview && <div className="dashboard-card" style={{marginTop:12}}>
-              <span className="card-kicker">CROP PHOTO</span>
+              <span className="card-kicker">{t("cropPhoto")}</span>
               <div style={{width:"min(100%,280px)",aspectRatio:"1",overflow:"hidden",borderRadius:"50%",margin:"12px auto",border:"3px solid var(--orange)",background:"#111"}}>
-                <img src={cropPreview} alt="Crop preview" style={{width:"100%",height:"100%",objectFit:"cover",transform:"scale("+cropZoom+")"}} />
+                <img src={cropPreview} alt={t("cropPhoto")} style={{width:"100%",height:"100%",objectFit:"cover",transform:"scale("+cropZoom+")"}} />
               </div>
-              <label className="muted" htmlFor="avatar-zoom">Zoom</label>
+              <label className="muted" htmlFor="avatar-zoom">{t("zoom")}</label>
               <input id="avatar-zoom" type="range" min="1" max="3" step="0.05" value={cropZoom} onChange={e=>setCropZoom(Number(e.target.value))} style={{width:"100%"}} />
               <div className="actions">
-                <button type="button" className="btn" onClick={()=>void cropAndUploadAvatar()}>Use Cropped Photo</button>
-                <button type="button" className="btn dark" onClick={()=>{setCropFile(null);setCropPreview("")}}>Cancel</button>
+                <button type="button" className="btn" onClick={()=>void cropAndUploadAvatar()}>{t("useCroppedPhoto")}</button>
+                <button type="button" className="btn dark" onClick={()=>{setCropFile(null);setCropPreview("")}}>{t("cancel")}</button>
               </div>
             </div>}
           </>}
-          <h2>{profile.account_type === "player" ? "Player information" : profile.account_type === "coach" ? "Coach information" : "Profile information"} {((profile.account_type === "player" && profile.player_verified) || (profile.account_type === "coach" && profile.coach_verified)) && <VerifiedBadge label="Verified professional" />}</h2>
+          <h2>{profile.account_type === "player" ? t("playerInformation") : profile.account_type === "coach" ? t("coachInformation") : t("profileInformation")} {((profile.account_type === "player" && profile.player_verified) || (profile.account_type === "coach" && profile.coach_verified)) && <VerifiedBadge label={t("verifiedProfessional")} />}</h2>
           <Surface as="form" id="profile-editor" onSubmit={saveProfile} className="account-profile-form" style={{display:"grid",gap:12,marginTop:16}}>
-            <label className="muted">First name</label><input value={profile.first_name ?? ""} readOnly />
-            <label className="muted">Last name</label><input value={profile.last_name ?? ""} readOnly />
-            <p className="muted" style={{fontSize:12}}>First and last name are locked and cannot be changed.</p>
-            <label htmlFor="display-name" className="muted">Display name</label><input id="display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder="How players should see you" />
+            <label className="muted">{t("firstName")}</label><input value={profile.first_name ?? ""} readOnly />
+            <label className="muted">{t("lastName")}</label><input value={profile.last_name ?? ""} readOnly />
+            <p className="muted" style={{fontSize:12}}>{t("nameLocked")}</p>
+            <label htmlFor="display-name" className="muted">{t("displayName")}</label><input id="display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder={t("displayNamePlaceholder")} />
             {profile.account_type === "player" && <label htmlFor="position" className="muted">Position</label>}
             {profile.account_type === "player" && <input id="position" value={position} readOnly disabled />}
-            {profile.account_type === "player" && <label htmlFor="years-pro" className="muted">Years as a pro</label>}
+            {profile.account_type === "player" && <label htmlFor="years-pro" className="muted">{t("yearsAsPro")}</label>}
             {profile.account_type === "player" && <input id="years-pro" type="number" value={yearsPro} readOnly disabled />}
-            {profile.account_type === "coach" && <><label htmlFor="coaching-experience" className="muted">Coaching experience</label><textarea id="coaching-experience" value={coachingExperience} onChange={e=>setCoachingExperience(e.target.value)} maxLength={1000} rows={4} placeholder="Years coaching, levels, roles, specialties, and professional experience." /><label htmlFor="coach-specialties" className="muted">Coaching specialties / basketball interests</label><textarea id="coach-specialties" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder="Player development, defense, scouting, strength & conditioning, etc." /></>}
-            <label htmlFor="hometown">Hometown</label><input id="hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder="City, State / Region" />
-            <label htmlFor="nationality">Nationality</label>
+            {profile.account_type === "coach" && <><label htmlFor="coaching-experience" className="muted">{t("coachingExperience")}</label><textarea id="coaching-experience" value={coachingExperience} onChange={e=>setCoachingExperience(e.target.value)} maxLength={1000} rows={4} placeholder={t("coachingExperiencePlaceholder")} /><label htmlFor="coach-specialties" className="muted">{t("coachingSpecialties")}</label><textarea id="coach-specialties" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("coachingSpecialtiesPlaceholder")} /></>}
+            <label htmlFor="hometown">{t("hometown")}</label><input id="hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder="City, State / Region" />
+            <label htmlFor="nationality">{t("nationality")}</label>
             <select id="nationality" value={nationality} onChange={e=>setNationality(e.target.value)} disabled={savingProfile}>
-              <option value="">Select nationality</option>
-              <optgroup label="Africa">
+              <option value="">{t("selectNationality")}</option>
+              <optgroup label={t("africa")}>
                 {["Algeria","Angola","Benin","Botswana","Burkina Faso","Burundi","Cameroon","Cape Verde","Central African Republic","Chad","Comoros","Côte d’Ivoire","Democratic Republic of the Congo","Djibouti","Egypt","Equatorial Guinea","Eritrea","Eswatini","Ethiopia","Gabon","Gambia","Ghana","Guinea","Guinea-Bissau","Kenya","Lesotho","Liberia","Libya","Madagascar","Malawi","Mali","Mauritania","Mauritius","Morocco","Mozambique","Namibia","Niger","Nigeria","Republic of the Congo","Rwanda","São Tomé and Príncipe","Senegal","Seychelles","Sierra Leone","Somalia","South Africa","South Sudan","Sudan","Tanzania","Togo","Tunisia","Uganda","Zambia","Zimbabwe"].map(x=><option key={x} value={x}>{x}</option>)}
               </optgroup>
-              <optgroup label="Asia">
+              <optgroup label={t("asia")}>
                 {["Afghanistan","Armenia","Azerbaijan","Bahrain","Bangladesh","Bhutan","Brunei","Cambodia","China","Chinese Taipei","Cyprus","Georgia","Hong Kong","India","Indonesia","Iran","Iraq","Israel","Japan","Jordan","Kazakhstan","Kuwait","Kyrgyzstan","Laos","Lebanon","Malaysia","Maldives","Mongolia","Myanmar","Nepal","North Korea","Oman","Pakistan","Palestine","Philippines","Qatar","Saudi Arabia","Singapore","South Korea","Sri Lanka","Syria","Tajikistan","Thailand","Timor-Leste","Turkmenistan","United Arab Emirates","Uzbekistan","Vietnam","Yemen"].map(x=><option key={x} value={x}>{x}</option>)}
               </optgroup>
-              <optgroup label="Europe">
+              <optgroup label={t("europe")}>
                 {["Albania","Andorra","Austria","Belarus","Belgium","Bosnia and Herzegovina","Bulgaria","Croatia","Czechia","Denmark","Estonia","Finland","France","Germany","Greece","Hungary","Iceland","Ireland","Italy","Kosovo","Latvia","Liechtenstein","Lithuania","Luxembourg","Malta","Moldova","Monaco","Montenegro","Netherlands","North Macedonia","Norway","Poland","Portugal","Romania","Russia","San Marino","Serbia","Slovakia","Slovenia","Spain","Sweden","Switzerland","Türkiye","Ukraine","United Kingdom","Vatican City"].map(x=><option key={x} value={x}>{x}</option>)}
               </optgroup>
-              <optgroup label="North America">
+              <optgroup label={t("northAmerica")}>
                 {["Antigua and Barbuda","Bahamas","Barbados","Belize","Canada","Costa Rica","Cuba","Dominica","Dominican Republic","El Salvador","Grenada","Guatemala","Haiti","Honduras","Jamaica","Mexico","Nicaragua","Panama","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Trinidad and Tobago","United States"].map(x=><option key={x} value={x}>{x}</option>)}
               </optgroup>
-              <optgroup label="South America">
+              <optgroup label={t("southAmerica")}>
                 {["Argentina","Bolivia","Brazil","Chile","Colombia","Ecuador","Guyana","Paraguay","Peru","Suriname","Uruguay","Venezuela"].map(x=><option key={x} value={x}>{x}</option>)}
               </optgroup>
-              <optgroup label="Oceania">
+              <optgroup label={t("oceania")}>
                 {["Australia","Fiji","Kiribati","Marshall Islands","Micronesia","Nauru","New Zealand","Palau","Papua New Guinea","Samoa","Solomon Islands","Tonga","Tuvalu","Vanuatu"].map(x=><option key={x} value={x}>{x}</option>)}
               </optgroup>
             </select>
                         {profile.account_type === "player" && <>
-              <label htmlFor="current-country" className="muted">Current country</label><select id="current-country" value={currentCountry} disabled><option value={currentCountry}>{currentCountry || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Current country is managed through verified team changes.</p>
-              <label htmlFor="current-team" className="muted">Current team</label><select id="current-team" value={currentTeam} disabled><option value={currentTeam}>{currentTeam || "Not selected"}</option></select><p className="muted" style={{fontSize:12}}>Current team is managed through player verification.</p>
+              <label htmlFor="current-country" className="muted">{t("currentCountry")}</label><select id="current-country" value={currentCountry} disabled><option value={currentCountry}>{currentCountry || t("notSelected")}</option></select><p className="muted" style={{fontSize:12}}>{t("currentCountryManaged")}</p>
+              <label htmlFor="current-team" className="muted">{t("currentTeam")}</label><select id="current-team" value={currentTeam} disabled><option value={currentTeam}>{currentTeam || t("notSelected")}</option></select><p className="muted" style={{fontSize:12}}>{t("currentTeamManaged")}</p>
             </>}
-            <label htmlFor="bio" className="muted">Player bio</label><textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder="Tell other players a little about your experience." />
-                        {profile.account_type === "player" && <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>Show me as a free agent</span></label>}
+            <label htmlFor="bio" className="muted">{t("playerBio")}</label><textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder={t("playerBioPlaceholder")} />
+                        {profile.account_type === "player" && <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>{t("showFreeAgent")}</span></label>}
             {["scout","agent"].includes(profile.account_type) && <>
-              <label htmlFor="interests" className="muted">Basketball interests</label><textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder="Roles, regions, positions, or player types you follow." />
-              <label htmlFor="favorite-leagues" className="muted">Leagues of interest</label><textarea id="favorite-leagues" value={favoriteLeagues} onChange={e=>setFavoriteLeagues(e.target.value)} maxLength={500} rows={3} placeholder="Leagues and markets you follow." />
+              <label htmlFor="interests" className="muted">{t("basketballInterests")}</label><textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("scoutAgentInterestsPlaceholder")} />
+              <label htmlFor="favorite-leagues" className="muted">{t("leaguesOfInterest")}</label><textarea id="favorite-leagues" value={favoriteLeagues} onChange={e=>setFavoriteLeagues(e.target.value)} maxLength={500} rows={3} placeholder={t("leaguesMarketsPlaceholder")} />
             </>}
-            {profile.account_type === "fan" && <label htmlFor="interests" className="muted">Basketball interests</label>}
-            {profile.account_type === "fan" && <textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder="Teams, players, leagues, or basketball topics you follow." />}
-            {["scout","agent","fan"].includes(profile.account_type) ? <div className="card"><strong><HoopIcon name="lock" size={16} /> Private profile</strong><p className="muted">Your scout, agent, or fan profile is private. Other users cannot open your profile as a public profile.</p></div> : <><label htmlFor="visibility" className="muted">Profile visibility</label><select id="visibility" value={visibility} onChange={e => setVisibility(e.target.value as "public" | "private")}><option value="public">Public</option><option value="private">Private</option></select></>}
+            {profile.account_type === "fan" && <label htmlFor="interests" className="muted">{t("basketballInterests")}</label>}
+            {profile.account_type === "fan" && <textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("fanInterestsPlaceholder")} />}
+            {["scout","agent","fan"].includes(profile.account_type) ? <div className="card"><strong><HoopIcon name="lock" size={16} /> {t("privateProfile")}</strong><p className="muted">{t("privateProfileDescription")}</p></div> : <><label htmlFor="visibility" className="muted">{t("profileVisibility")}</label><select id="visibility" value={visibility} onChange={e => setVisibility(e.target.value as "public" | "private")}><option value="public">{t("public")}</option><option value="private">{t("private")}</option></select></>}
             <p className="muted">Email: {email}</p>
-            <div className="card" style={{marginTop:4}}><strong>{profile.profile_claimed ? <><VerifiedBadge label="Profile claimed" /> Profile claimed</> : "Claim your player profile"}</strong><p className="muted">{profile.profile_claimed ? "This HoopCheck profile is connected to your account and ready for you to manage." : "Claim this profile to manage your basketball information."}</p></div>
-            {profile.account_type === "player" && <div className="card" style={{marginTop:8}}><strong>{profile.player_verified ? <><VerifiedBadge label="Verified player" /> Verified Player</> : "Player verification"}</strong><p className="muted">{profile.player_verified ? "Your professional-player account has been verified by HoopCheck." : "Apply for a verification badge to strengthen trust around your reviews."}</p>{!profile.player_verified && <Link href="/verification" className="btn dark">Request Verification</Link>}</div>}
-            {profile.account_type === "coach" && <div className="card" style={{marginTop:8,border:"1px solid var(--orange)"}}><strong>{profile.coach_verified ? <><VerifiedBadge label="Verified coach" /> Verified Coach</> : "Coach verification"}</strong><p className="muted">{profile.coach_verified ? "Your professional coach identity is verified. Pro and Premium coaches can request team placement." : "Pro and Premium coaches can verify their identity with a government ID/passport and live selfie, then request to be added to a team coaching staff."}</p>{!profile.coach_verified && <Link href="/verification" className="btn dark">Verify Coach</Link>}{profile.coach_verified && <Link href="/dashboard" className="btn dark">Request Team Placement</Link>}</div>}
-            <button className="btn" type="submit" disabled={savingProfile}>{savingProfile ? "Saving..." : "Save Profile"}</button>
+            <div className="card" style={{marginTop:4}}><strong>{profile.profile_claimed ? <><VerifiedBadge label={t("profileClaimed")} /> Profile claimed</> : t("claimPlayerProfile")}</strong><p className="muted">{profile.profile_claimed ? t("profileConnected") : t("claimProfileDescription")}</p></div>
+            {profile.account_type === "player" && <div className="card" style={{marginTop:8}}><strong>{profile.player_verified ? <><VerifiedBadge label="Verified player" /> Verified Player</> : t("playerVerification")}</strong><p className="muted">{profile.player_verified ? t("playerBadgeActive") : t("applyVerificationBadge")}</p>{!profile.player_verified && <Link href="/verification" className="btn dark">{t("requestVerification")}</Link>}</div>}
+            {profile.account_type === "coach" && <div className="card" style={{marginTop:8,border:"1px solid var(--orange)"}}><strong>{profile.coach_verified ? <><VerifiedBadge label={t("verifiedProfessional")} /> Verified Coach</> : t("coachVerification")}</strong><p className="muted">{profile.coach_verified ? t("coachIdentityVerified") : t("coachVerifyInstructions")}</p>{!profile.coach_verified && <Link href="/verification" className="btn dark">{t("verifyCoach")}</Link>}{profile.coach_verified && <Link href="/dashboard" className="btn dark">{t("requestTeamPlacement")}</Link>}</div>}
+            <button className="btn" type="submit" disabled={savingProfile}>{savingProfile ? t("saving") : t("saveProfile")}</button>
             {profileMessage && <p className="muted">{profileMessage}</p>}
           </Surface>
         </div>
         <div className="dashboard-card">
-          <p className="eyebrow">MEMBERSHIP</p><h2>{subscription?.plan === "premium" ? "HoopCheck Premium" : subscription?.plan === "pro" ? "HoopCheck Pro" : "Free Membership"}</h2><p className="muted">Status: {subscription?.status ?? "inactive"}</p>
-          {subscription?.current_period_end && <p className="muted">Current period ends: {new Date(subscription.current_period_end).toLocaleDateString()}</p>}
+          <p className="eyebrow">{t("membership")}</p><h2>{subscription?.plan === "premium" ? "HoopCheck " + t("premium") : subscription?.plan === "pro" ? "HoopCheck " + t("pro") : t("free") + " " + t("membership")}</h2><p className="muted">{t("status")}: {t(subscription?.status ?? "inactive")}</p>
+          {subscription?.current_period_end && <p className="muted">{t("currentPeriodEnds")} {new Date(subscription.current_period_end).toLocaleDateString()}</p>}
           {subscription?.cancel_at_period_end && <p className="muted">Cancellation is scheduled at the end of the current period.</p>}
           {subscription?.plan === "premium" && <div className="card" style={{marginTop:16,border:"1px solid var(--orange)"}}><p className="eyebrow">PREMIUM PLAYER FEATURE</p><h3 style={{marginBottom:8}}><HoopIcon name="basketball" size={20} /> Get Recruited — Coming Soon</h3><p className="muted">Premium players will soon be able to connect directly with scouts and agents, reach selected teams, and get discovered for opportunities.</p><p className="muted" style={{fontSize:12,marginBottom:0}}>We’re building a recruiting network designed to connect professional players with the right basketball opportunities.</p></div>}
           <div className="account-actions hc-account-membership-actions" style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:12}}><Link href="/membership#manage-subscription" className="btn">Manage Subscription</Link>{subscription?.plan && subscription.status === "active" && !subscription.cancel_at_period_end && <Link href="/membership#manage-subscription" className="btn dark">Upgrade Subscription</Link>}</div>
