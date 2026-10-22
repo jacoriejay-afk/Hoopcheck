@@ -310,6 +310,43 @@ try {
               className: typeof element.className === "string" ? element.className : "",
               text: (element.textContent || "").trim().slice(0, 50),
             })),
+          lowContrastText: Array.from(document.querySelectorAll("main *"))
+            .filter((element) => {
+              if (element.children.length || !(element.textContent || "").trim()) return false;
+              const cls = typeof element.className === "string" ? element.className : "";
+              if (/(logo|avatar|photo|portrait|image)/i.test(cls) || element.closest("[aria-hidden='true']")) return false;
+              const style = getComputedStyle(element);
+              if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) < 0.6) return false;
+              const rgb = (value) => {
+                const m = value.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/);
+                return m ? [Number(m[1]), Number(m[2]), Number(m[3]), m[4] == null ? 1 : Number(m[4])] : null;
+              };
+              const luminance = (c) => c.slice(0, 3).map(v => { const x=v/255; return x<=0.04045?x/12.92:((x+0.055)/1.055)**2.4; }).reduce((a,v,i)=>a+v*[0.2126,0.7152,0.0722][i],0);
+              const foreground = rgb(style.color);
+              if (!foreground) return false;
+              let node = element;
+              let background = null;
+              while (node && node !== document.documentElement) {
+                const candidate = rgb(getComputedStyle(node).backgroundColor);
+                if (candidate && candidate[3] >= 0.95) { background = candidate; break; }
+                node = node.parentElement;
+              }
+              if (!background) background = rgb(getComputedStyle(document.body).backgroundColor);
+              if (!background) return false;
+              const l1=luminance(foreground), l2=luminance(background);
+              const ratio=(Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05);
+              const fontSize=parseFloat(style.fontSize)||14;
+              const large=fontSize>=24 || (fontSize>=18 && Number(style.fontWeight)>=700);
+              return ratio < (large ? 3 : 4.5);
+            })
+            .slice(0, 20)
+            .map((element) => ({
+              tag: element.tagName.toLowerCase(),
+              className: typeof element.className === "string" ? element.className : "",
+              text: (element.textContent || "").trim().slice(0, 60),
+              color: getComputedStyle(element).color,
+              background: (() => { let n=element; while(n && n!==document.documentElement){const c=getComputedStyle(n).backgroundColor;if(c!=="rgba(0, 0, 0, 0)")return c;n=n.parentElement;} return getComputedStyle(document.body).backgroundColor; })(),
+            })),
           navigationError,
         };
       }, { requestedPath, navigationError });
@@ -320,6 +357,7 @@ try {
       if (result.pageWrapper && result.pageWrapper !== expectedPage) errors.push("main background mismatch");
       if (result.navigationError) errors.push("navigation error");
       if (theme === "dark" && result.whiteSurfaceOffenders.length) errors.push("white surface offenders: " + JSON.stringify(result.whiteSurfaceOffenders));
+      if (result.lowContrastText.length) errors.push("low contrast text: " + JSON.stringify(result.lowContrastText));
       if (["/dashboard", "/search", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2"].includes(requestedPath)) {
         const visibleText = await page.locator("body").innerText();
         const expectedText = testLanguage === "es"
