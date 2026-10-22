@@ -99,17 +99,21 @@ export default function LiveGamesPage() {
       setTeams(Object.fromEntries((teamRows || []).map((team: Team) => [team.id, team])));
     } else setTeams({});
 
-    const freshAfter = new Date(Date.now() - 90_000).toISOString();
+    const freshAfter = new Date(Date.now() - 75_000).toISOString();
     const { data: presenceRows } = await supabase.from("fan_live_chat_presence")
-      .select("game_id,last_seen_at").gt("last_seen_at", freshAfter);
+      .select("game_id,user_id,last_seen_at").gt("last_seen_at", freshAfter);
     const counts: Record<string, number> = {};
     for (const row of presenceRows || []) counts[row.game_id] = (counts[row.game_id] || 0) + 1;
     setPresenceCounts(counts);
+    setJoinedGameIds(new Set((presenceRows || []).filter((row: any) => row.user_id === user.id).map((row: any) => row.game_id)));
     setLoading(false);
   }, []);
 
   useEffect(() => { void load(true); }, [load]);
   useEffect(() => {
+    const presenceChannel = supabase.channel("live-games-presence-counts")
+      .on("postgres_changes", { event: "*", schema: "public", table: "fan_live_chat_presence" }, () => { void load(); })
+      .subscribe();
     const refresh = window.setInterval(() => {
       setClock(new Date());
       void load();
