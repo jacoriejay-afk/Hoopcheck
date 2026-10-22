@@ -468,7 +468,7 @@ export default function TeamDetailPage() {
             HoopCheck
           </div>
 
-          <HoopLoading label="Loading team intelligence..." />
+          <HoopLoading label={t("loadingTeamIntelligence")} />
         </section>
       </main>
     );
@@ -825,31 +825,31 @@ export default function TeamDetailPage() {
               className="report-select"
             >
               <option value="">
-                Select a reason
+                {t("selectReportReason")}
               </option>
 
               <option value="Spam or advertising">
-                Spam or advertising
+                {t("spamAdvertising")}
               </option>
 
               <option value="Harassment or abusive content">
-                Harassment or abusive content
+                {t("harassmentAbusive")}
               </option>
 
               <option value="False or misleading information">
-                False or misleading information
+                {t("falseMisleading")}
               </option>
 
               <option value="Personal information">
-                Personal information
+                {t("personalInformation")}
               </option>
 
               <option value="Threats or dangerous content">
-                Threats or dangerous content
+                {t("threatsDangerous")}
               </option>
 
               <option value="Other">
-                Other
+                {t("other")}
               </option>
             </select>
 
@@ -867,8 +867,8 @@ export default function TeamDetailPage() {
                 disabled={reportLoading}
               >
                 {reportLoading
-                  ? "Submitting..."
-                  : "Submit Report"}
+                  ? t("submittingReport")
+                  : t("submitReport")}
               </button>
 
               <button
@@ -877,7 +877,7 @@ export default function TeamDetailPage() {
                 onClick={closeReportModal}
                 disabled={reportLoading}
               >
-                Cancel
+                {t("cancel")}
               </button>
             </div>
           </div>
