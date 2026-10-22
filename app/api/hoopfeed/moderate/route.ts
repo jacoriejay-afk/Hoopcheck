@@ -200,11 +200,11 @@ export async function POST(request: Request) {
           db.from("player_contact_requests").select("id,requester_id,player_id")
             .eq("status", "accepted")
             .or(`and(requester_id.eq.${user.id},player_id.eq.${source.author_id}),and(requester_id.eq.${source.author_id},player_id.eq.${user.id})`)
-            .maybeSingle()
+            .limit(1).maybeSingle()
         ]);
         // Match the same visibility rules used by the feed loader: players may see posts
         // from players they follow or have an accepted contact connection with.
-        if (!follow && !connection || sourceAuthor?.account_type !== "player") {
+        if ((!follow && !connection) || sourceAuthor?.account_type !== "player") {
           return NextResponse.json({ allowed: false, message: "You can only share posts you're allowed to view." }, { status: 403 });
         }
       }
