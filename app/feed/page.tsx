@@ -92,6 +92,7 @@ export default function Feed(){
       supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",u.id).maybeSingle()
     ]);
     setProfile(p);setSubscription(s);setShowCountry(Boolean(p?.current_country_public));
+    if(p?.account_type==="fan"){window.location.replace("/fan-feed");return;}
     if(p?.account_type==="fan"){setLoading(false);router.replace("/fan-feed");return;}
     if(p?.account_type==="player"){const {data:activity}=await supabase.from("feed_posting_activity").select("activity_date").eq("user_id",u.id).order("activity_date",{ascending:false}).limit(370);setPostingStreak(calculatePostingStreak(activity||[]));}
     const memberActive=(s?.plan==="pro"||s?.plan==="premium")&&(s?.status==="active"||s?.status==="trialing")&&(s?.access_status==null||["active","trialing","pro","premium"].includes(s.access_status));
