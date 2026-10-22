@@ -19,6 +19,7 @@
   --hc-surface-fg: var(--hc-foreground);
   --hc-surface-muted: var(--hc-foreground-muted);
   --hc-surface-border: var(--hc-border);
+  --hc-control-knob: #FFFFFF;
   color-scheme: light;
 }
 html.theme-light {
