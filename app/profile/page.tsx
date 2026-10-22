@@ -137,7 +137,7 @@ export default function ProfilePage() {
               <Surface className="card hc-profile-info-card">
                 <span className="card-kicker">{t("career")}</span>
                 {p.position ? <h2>{p.position}</h2> : <p className="hc-profile-empty-value">{t("positionNotListed")} <Link href="/account#profile-editor">{t("add")} <span aria-hidden="true">→</span></Link></p>}
-                <p className="muted">{p.years_pro == null ? t("yearsProNotListed") : p.years_pro + " " + t("yearsPro")}{" · "}{p.free_agent ? t("freeAgent") : p.current_team || "Team not listed"}</p>
+                <p className="muted">{p.years_pro == null ? t("yearsProNotListed") : p.years_pro + " " + t("yearsPro")}{" · "}{p.free_agent ? t("freeAgent") : p.current_team || t("teamNotListed")}</p>
               </Surface>
             )}
             <Surface className="card hc-profile-info-card">
