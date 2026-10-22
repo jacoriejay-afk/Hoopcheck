@@ -59,6 +59,16 @@ const subscription = {
   cancel_at_period_end: false,
 };
 
+let serverReady = false;
+for (let attempt = 0; attempt < 60; attempt += 1) {
+  try {
+    const response = await fetch(baseURL);
+    if (response.ok) { serverReady = true; break; }
+  } catch {}
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+}
+assert.ok(serverReady, "Next production server did not become ready within 60 seconds.");
+
 const browser = await chromium.launch({ headless: true });
 const results = [];
 try {
