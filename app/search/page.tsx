@@ -92,7 +92,7 @@ function PlayerUsernameConnect() {
             <div className="player-avatar-fallback">HC</div>
           )}
           <div style={{ minWidth: 150, flex: "1 1 180px" }}>
-            <strong>{player.display_name || "HoopCheck Player"} {player.player_verified && <VerifiedBadge label="Verified player" />}</strong>
+            <strong>{player.display_name || t("hoopCheckPlayer")} {player.player_verified && <VerifiedBadge label={t("verifiedPlayer")} />}</strong>
             <div className="muted">@{player.username}</div>
             <div className="muted">{[player.current_team, player.current_country].filter(Boolean).join(" · ")}</div>
           </div>
@@ -314,7 +314,7 @@ function SearchContent() {
                 {countries.map((country) => <option key={country} value={country}>{country}</option>)}
               </select>
               <button type="button" className="btn dark" onClick={() => setVerifiedOnly((value) => !value)} aria-pressed={verifiedOnly}>
-                {verifiedOnly ? <><VerifiedBadge label="Verified filter active" /> {t("verifiedOnly")}</> : t("verifiedOnly")}
+                {verifiedOnly ? <><VerifiedBadge label={t("verifiedFilterActive")} /> {t("verifiedOnly")}</> : t("verifiedOnly")}
               </button>
             </div>
           )}
@@ -337,7 +337,7 @@ function SearchContent() {
                 {visiblePlayers.map((player) => (
                   <Link href={`/players/${player.id}`} key={player.id} className="result-card">
                     <div className="result-type">{t("players").toUpperCase()}</div>
-                    <h4>{player.display_name || "HoopCheck Player"} {player.player_verified && <VerifiedBadge label="Verified player" />}</h4>
+                    <h4>{player.display_name || t("hoopCheckPlayer")} {player.player_verified && <VerifiedBadge label={t("verifiedPlayer")} />}</h4>
                     <p>
                       {[
                         player.player_position,
