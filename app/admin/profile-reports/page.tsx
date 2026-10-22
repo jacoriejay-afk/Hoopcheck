@@ -1,5 +1,6 @@
 "use client";
 import {useEffect,useState} from "react"; import Link from "next/link"; import {supabase} from "../../../lib/supabase";
+import {useLanguage} from "../../../components/LanguageProvider";
 import Logo from "../../../components/Logo";
 type Report={id:string;profile_id:string;reporter_id:string;reason:string;status:string;created_at:string};
 type Profile={id:string;display_name:string|null;username:string|null;account_type:string;moderation_status:string};
