@@ -1,0 +1,48 @@
+/* Final directory-card overrides: one outer card border, with logo tile and Follow control exempt. */
+.hc-scout-card {
+  border: 1px solid var(--hc-border, #333) !important;
+}
+.hc-scout-card :where(
+  .hc-scout-card__identity-copy,
+  .hc-scout-card__empty,
+  .hc-scout-card__ticket,
+  .hc-scout-card__report,
+  .hc-scout-card__report-link,
+  .hc-team-directory-row__trust,
+  .hc-scout-card__stats
+) {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+.hc-scout-card .hc-scout-card__identity-copy,
+.hc-scout-card .hc-scout-card__empty,
+.hc-scout-card .hc-scout-card__ticket,
+.hc-scout-card .hc-scout-card__report-link {
+  border-radius: 0 !important;
+}
+html.theme-dark .hc-scout-card .hc-team-logo-tile,
+html.theme-light .hc-scout-card .hc-team-logo-tile {
+  background: #fff !important;
+  color: #0a0a0a !important;
+}
+html.theme-dark .hc-scout-card .hc-team-logo-tile > span,
+html.theme-light .hc-scout-card .hc-team-logo-tile > span {
+  display: grid !important;
+  place-items: center !important;
+  color: #0a0a0a !important;
+  -webkit-text-fill-color: #0a0a0a !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  text-shadow: none !important;
+}
+.hc-scout-card .hc-team-directory-row__follow,
+.hc-scout-card .hc-team-directory-row__follow button,
+.hc-scout-card .hc-team-directory-row__follow .btn {
+  border: revert !important;
+  background: revert !important;
+  box-shadow: revert !important;
+}
