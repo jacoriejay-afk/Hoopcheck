@@ -28,6 +28,7 @@ type Player = {
 };
 
 function PlayerUsernameConnect() {
+  const { t } = useLanguage();
   const [username, setUsername] = useState("");
   const [player, setPlayer] = useState<any>(null);
   const [loading, setLoading] = useState(false);
