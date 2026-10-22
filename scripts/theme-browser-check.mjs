@@ -69,7 +69,7 @@ for (let attempt = 0; attempt < 60; attempt += 1) {
 }
 assert.ok(serverReady, "Next production server did not become ready within 60 seconds.");
 
-const browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
+const browser = await chromium.launch({ channel: "chrome", headless: true, args: ["--no-sandbox"] });
 const results = [];
 try {
   for (const theme of ["dark", "light"]) {
