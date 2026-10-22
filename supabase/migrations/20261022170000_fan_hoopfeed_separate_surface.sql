@@ -29,6 +29,11 @@ create table if not exists public.fan_feed_comments (
 );
 create index if not exists fan_feed_comments_post_created_idx on public.fan_feed_comments(post_id,created_at);
 
+-- Follow relationships previously supported only players, teams, and leagues.
+-- Add fan-to-fan follows without changing existing relationship semantics.
+alter table public.follow_relationships drop constraint if exists follow_relationships_target_type_check;
+alter table public.follow_relationships add constraint follow_relationships_target_type_check check (target_type = any (array['team'::text, 'player'::text, 'league'::text, 'fan'::text]));
+
 alter table public.fan_feed_posts enable row level security;
 alter table public.fan_feed_likes enable row level security;
 alter table public.fan_feed_comments enable row level security;
