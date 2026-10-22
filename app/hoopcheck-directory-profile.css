@@ -408,3 +408,18 @@ html.theme-dark main :where(.btn,button,[role="button"]) :where(*),
 html.theme-light main :where(.btn,button,[role="button"]) :where(*) {
   color: inherit !important;
 }
+
+
+/* Shared SearchBar has its own surface class; it must follow the same tokens too. */
+html.theme-dark main .hc-searchbar,
+html.theme-light main .hc-searchbar {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark main .hc-searchbar__clear,
+html.theme-light main .hc-searchbar__clear {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
