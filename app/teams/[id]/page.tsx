@@ -23,6 +23,7 @@ import TrustScoreDial from "../../../components/TrustScoreDial";
 import Surface from "../../../components/Surface";
 import TeamRosterSpots from "../../../components/TeamRosterSpots";
 import OfficialReviewResponse from "../../../components/OfficialReviewResponse";
+import FanTeamPosts from "./FanTeamPosts";
 
 type Team = {
   id: string;
@@ -775,6 +776,8 @@ export default function TeamDetailPage() {
       )}
 
       {team && <FanTeamPosts teamId={team.id} />}
+
+      <FanTeamPosts teamId={team.id} />
 
       <section className="hero hc-team-write-review">
         <div className="eyebrow">{t("shareYourExperience")}</div>
