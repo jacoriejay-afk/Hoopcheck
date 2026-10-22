@@ -1,5 +1,7 @@
 "use client";
 
+import { useLanguage } from "./LanguageProvider";
+
 type TrustScoreDialProps = {
   score: number | null;
   explanation: string;
@@ -15,6 +17,7 @@ export default function TrustScoreDial({
   verifiedReviewCount,
   size = "full",
 }: TrustScoreDialProps) {
+  const { t } = useLanguage();
   const mini = size === "mini";
   const dimension = mini ? 58 : 92;
   const stroke = mini ? 5 : 7;
@@ -41,12 +44,12 @@ export default function TrustScoreDial({
             transform={`rotate(-90 ${dimension / 2} ${dimension / 2})`}
           />}
         </svg>
-        <strong aria-label={score === null ? "Trust Score unavailable" : `Trust Score ${score} out of 100`}>{score === null ? "—" : score}</strong>
+        <strong aria-label={score === null ? t("trustScoreUnavailable") : t("scoreOutOf100").replace("{score}",String(score))}>{score === null ? "—" : score}</strong>
       </div>
       <div className="hc-trust-score__copy">
-        <span>HoopCheck Trust Score</span>
+        <span>HoopCheck {t("trustScore")}</span>
         {!mini && <small>{explanation}</small>}
-        {mini && <small>{score === null ? "Member insight" : `${verifiedReviewCount} verified · ${reviewCount} reviews`}</small>}
+        {mini && <small>{score === null ? t("memberInsight") : `${verifiedReviewCount} ${t("verified")} · ${reviewCount} ${t("reviews")}`}</small>}
       </div>
     </div>
   );
