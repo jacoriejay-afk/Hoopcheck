@@ -435,3 +435,24 @@ html.theme-dark .global-back-button:hover,
 html.theme-light .global-back-button:hover {
   border-color: var(--hc-orange) !important;
 }
+
+
+/* Last dark-surface audit findings from the real browser: mobile dashboard canvas,
+   player-connection request card, and HoopFeed Photo control. */
+html.theme-dark .hc-dashboard-shell .hc-mobile-dashboard,
+html.theme-light .hc-dashboard-shell .hc-mobile-dashboard {
+  background: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark .hc-dashboard-shell .contact-box.hc-contact-request-card,
+html.theme-light .hc-dashboard-shell .contact-box.hc-contact-request-card {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark .hc-feed-page .hc-feed-photo-button,
+html.theme-light .hc-feed-page .hc-feed-photo-button {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
