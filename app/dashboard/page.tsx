@@ -369,7 +369,7 @@ export default function DashboardPage() {
 
         <section className="grid" style={{ marginTop: 24 }}>
           <div className="dashboard-card">
-            <span className="card-kicker">MEMBERSHIP</span>
+            <span className="card-kicker">{t("membership")}</span>
             <h2>{planLabel}</h2>
             <p className="muted">
               {activeMembership
@@ -559,12 +559,12 @@ export default function DashboardPage() {
             </div>
             <div className="grid">
               <Link href="/admin/directory" className="dashboard-card">
-                <span className="card-kicker">ADMIN</span>
+                <span className="card-kicker">{t("admin")}</span>
                 <h2>{t("openAdminPanel")}</h2>
                 <p>{t("manageDirectoryOperations")}</p>
               </Link>
               <Link href="/admin/reviews" className="dashboard-card">
-                <span className="card-kicker">MODERATION</span>
+                <span className="card-kicker">{t("moderation")}</span>
                 <h2>{t("manageReviews")}</h2>
                 <p>{t("moderateSubmissions")}</p>
               </Link>
