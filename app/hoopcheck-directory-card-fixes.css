@@ -39,10 +39,28 @@ html.theme-light .hc-scout-card .hc-team-logo-tile > span {
   line-height: 1 !important;
   text-shadow: none !important;
 }
-.hc-scout-card .hc-team-directory-row__follow,
-.hc-scout-card .hc-team-directory-row__follow button,
-.hc-scout-card .hc-team-directory-row__follow .btn {
-  border: revert !important;
-  background: revert !important;
-  box-shadow: revert !important;
+
+/* Theme-qualified selectors beat legacy per-page rules that used !important. */
+html.theme-dark .hc-scout-card :where(
+  .hc-scout-card__identity-copy,
+  .hc-scout-card__empty,
+  .hc-scout-card__ticket,
+  .hc-scout-card__report,
+  .hc-scout-card__report-link,
+  .hc-team-directory-row__trust,
+  .hc-scout-card__stats
+),
+html.theme-light .hc-scout-card :where(
+  .hc-scout-card__identity-copy,
+  .hc-scout-card__empty,
+  .hc-scout-card__ticket,
+  .hc-scout-card__report,
+  .hc-scout-card__report-link,
+  .hc-team-directory-row__trust,
+  .hc-scout-card__stats
+) {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
