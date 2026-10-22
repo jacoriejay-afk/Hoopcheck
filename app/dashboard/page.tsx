@@ -231,12 +231,12 @@ export default function DashboardPage() {
 
         <section className="hc-dashboard-stat-grid" aria-label={t("accountControls")}>
           <article className="hc-dashboard-stat-card">
-            <span className="hc-dashboard-stat-label">MEMBERSHIP</span>
+            <span className="hc-dashboard-stat-label">{t("membership")}</span>
             <strong className="hc-dashboard-stat-value">{planLabel.replace("HoopCheck ","")}</strong>
             <small className="hc-dashboard-stat-note">{statusLabel}</small>
           </article>
           <article className="hc-dashboard-stat-card">
-            <span className="hc-dashboard-stat-label">REVIEWS</span>
+            <span className="hc-dashboard-stat-label">{t("reviews")}</span>
             <strong className="hc-dashboard-stat-value">{reviews.length}</strong>
             <small className="hc-dashboard-stat-note">{reviewCounts.approved || 0} {t("published")}</small>
           </article>
@@ -326,10 +326,10 @@ export default function DashboardPage() {
         </section>
 
         {profile?.account_type === "fan" && <section className="grid fan-dashboard-grid" style={{ marginTop: 18 }}>
-          <div className="dashboard-card fan-feature-card"><span className="card-kicker">FAN HQ</span><h2><HoopIcon name="basketball" size={20} /> Your Team Hub</h2><p className="muted">Keep up with the teams you follow, ratings, reviews, and new activity.</p><Link href="/teams" className="btn">Explore Teams</Link></div>
-          <div className="dashboard-card fan-feature-card"><span className="card-kicker">PRO FAN</span><h2><HoopIcon name="shield-check" size={20} /> Team Alerts</h2><p className="muted">Follow teams to keep notifications on for ratings, reviews, and team updates.</p><Link href="/teams" className="btn dark">Find Teams to Follow</Link>{subscription?.plan === "premium" && activeMembership && <><Link href="/live-games" className="btn dark">Live Games Hub</Link><Link href="/fan-live" className="btn dark">Open Chat Room</Link></>}</div>
-          {subscription?.plan === "premium" && activeMembership ? <div className="dashboard-card fan-feature-card premium-fan-card"><span className="card-kicker">PREMIUM FAN</span><h2><HoopIcon name="users" size={20} /> Fan Base Insights</h2><p className="muted">See follower momentum, community size, review activity, and team sentiment as your fan intelligence hub grows.</p><strong>{followedTeams.length} followed team{followedTeams.length===1?"":"s"}</strong></div> : <div className="dashboard-card fan-feature-card"><span className="card-kicker">PREMIUM FAN</span><h2>Unlock Fan Intelligence</h2><p className="muted">Premium fans get deeper team and fan-base insights, including community activity and team pulse features.</p><Link href="/membership" className="btn">Explore Premium</Link></div>}
-          <div className="dashboard-card fan-feature-card"><span className="card-kicker">FAN NETWORK</span><h2>Connect with Fans</h2><p className="muted">Pro and Premium Fans can follow and send connection requests to other fans.</p><Link href="/fans" className="btn">Find Fans</Link></div>{followedTeams.length > 0 && <div className="dashboard-card fan-feature-card"><span className="card-kicker">FOLLOWING</span><h2>My Teams</h2><div className="fan-followed-list">{followedTeams.slice(0,6).map(t=><Link key={t.id} href={"/teams/"+t.id} className="fan-team-row"><span><strong>{t.name}</strong><small>{t.country || "Global"}{t.league_name ? " · "+t.league_name : ""}</small></span><span><HoopIcon name="chevron-right" size={16} /></span></Link>)}</div></div>}
+          <div className="dashboard-card fan-feature-card"><span className="card-kicker">{t("fanHQ")}</span><h2><HoopIcon name="basketball" size={20} /> {t("yourTeamHub")}</h2><p className="muted">{t("keepUpWithTeams")}</p><Link href="/teams" className="btn">{t("exploreTeams")}</Link></div>
+          <div className="dashboard-card fan-feature-card"><span className="card-kicker">{t("proFan")}</span><h2><HoopIcon name="shield-check" size={20} /> {t("teamAlerts")}</h2><p className="muted">{t("teamAlertDescription")}</p><Link href="/teams" className="btn dark">{t("findTeamsToFollow")}</Link>{subscription?.plan === "premium" && activeMembership && <><Link href="/live-games" className="btn dark">{t("liveGamesHub")}</Link><Link href="/fan-live" className="btn dark">{t("openChatRoom")}</Link></>}</div>
+          {subscription?.plan === "premium" && activeMembership ? <div className="dashboard-card fan-feature-card premium-fan-card"><span className="card-kicker">{t("premiumFan")}</span><h2><HoopIcon name="users" size={20} /> {t("fanBaseInsights")}</h2><p className="muted">{t("premiumFanInsights")}</p><strong>{followedTeams.length} {followedTeams.length===1?t("followedTeamCount"):t("followedTeamCountPlural")}</strong></div> : <div className="dashboard-card fan-feature-card"><span className="card-kicker">{t("premiumFan")}</span><h2>{t("unlockFanIntelligence")}</h2><p className="muted">{t("premiumFanInsights")}</p><Link href="/membership" className="btn">{t("explorePremium")}</Link></div>}
+          <div className="dashboard-card fan-feature-card"><span className="card-kicker">{t("fanNetwork")}</span><h2>{t("connectWithFans")}</h2><p className="muted">{t("fanConnectionsDescription")}</p><Link href="/fans" className="btn">{t("findFans")}</Link></div>{followedTeams.length > 0 && <div className="dashboard-card fan-feature-card"><span className="card-kicker">{t("following")}</span><h2>{t("myTeams")}</h2><div className="fan-followed-list">{followedTeams.slice(0,6).map(t=><Link key={t.id} href={"/teams/"+t.id} className="fan-team-row"><span><strong>{t.name}</strong><small>{t.country || t("global")}{t.league_name ? " · "+t.league_name : ""}</small></span><span><HoopIcon name="chevron-right" size={16} /></span></Link>)}</div></div>}
         </section>}
 
         {["player","fan","scout","agent"].includes(profile?.account_type || "") && (
@@ -539,7 +539,7 @@ export default function DashboardPage() {
 
           {reviews.length > 5 && (
             <div style={{ marginTop: 16 }}>
-              <Link href="/account" className="btn">View All Reviews in Account</Link>
+              <Link href="/account" className="btn">{t("viewAllReviewsInAccount")}</Link>
             </div>
           )}
         </section>
@@ -551,7 +551,7 @@ export default function DashboardPage() {
                 <p className="eyebrow">
                   {adminRole === "moderator" ? "MODERATOR" : "ADMINISTRATOR"}
                 </p>
-                <h2>Admin Control Center</h2>
+                <h2>{t("adminControlCenter")}</h2>
                 <p className="muted">
                   Manage directory data, rights, reviews, and moderation.
                 </p>
@@ -560,18 +560,18 @@ export default function DashboardPage() {
             <div className="grid">
               <Link href="/admin/directory" className="dashboard-card">
                 <span className="card-kicker">ADMIN</span>
-                <h2>Open Admin Panel</h2>
-                <p>Manage HoopCheck directory operations.</p>
+                <h2>{t("openAdminPanel")}</h2>
+                <p>{t("manageDirectoryOperations")}</p>
               </Link>
               <Link href="/admin/reviews" className="dashboard-card">
                 <span className="card-kicker">MODERATION</span>
-                <h2>Manage Reviews</h2>
-                <p>Review, approve, reject, and moderate submissions.</p>
+                <h2>{t("manageReviews")}</h2>
+                <p>{t("moderateSubmissions")}</p>
               </Link>
               <Link href="/admin/rights" className="dashboard-card">
                 <span className="card-kicker">{t("legal")}</span>
-                <h2>Rights & Coverage</h2>
-                <p>Track data rights and production approval by market.</p>
+                <h2>{t("rightsCoverage")}</h2>
+                <p>{t("trackDataRights")}</p>
               </Link>
             </div>
           </section>
