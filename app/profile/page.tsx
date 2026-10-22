@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
+import Surface from "../../components/Surface";
 
 function calculatePostingStreak(rows: { activity_date: string }[]) {
   const dates = new Set(rows.map(row => String(row.activity_date).slice(0, 10)));
@@ -125,11 +126,11 @@ export default function ProfilePage() {
             <div className="hc-profile-completion-track" role="progressbar" aria-label="Profile completeness" aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}><span style={{width: profileCompletion + "%"}} /></div>
           </div>}
           <div className="grid compact-grid">
-            <article className="card hc-profile-info-card">
+            <Surface className="card hc-profile-info-card">
               <span className="card-kicker">BASKETBALL</span>
               <h2>{p.basketball_type === "womens" ? "Women’s Basketball" : "Men’s Basketball"}</h2>
               <p className="muted">{p.account_type}</p>
-            </article>
+            </Surface>
             {p.account_type === "player" && (
               <article className="card hc-profile-info-card">
                 <span className="card-kicker">CAREER</span>
