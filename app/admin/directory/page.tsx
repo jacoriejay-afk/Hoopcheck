@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import Logo from "../../../components/Logo";
+import { useLanguage } from "../../../components/LanguageProvider";
 
 type DirectoryCounts = {
   coaches: number;
@@ -13,6 +14,7 @@ type DirectoryCounts = {
 };
 
 export default function AdminDirectoryPage() {
+  const { t } = useLanguage();
   const router = useRouter();
 
   const [hasAdminAccess, setHasAdminAccess] = useState(false);
@@ -104,7 +106,7 @@ export default function AdminDirectoryPage() {
     return (
       <main className="admin-directory-shell" style={styles.page}>
         <div style={styles.loader}>
-          Loading directory controls...
+          {t("loadingDirectoryControls")}
         </div>
       </main>
     );
@@ -118,24 +120,24 @@ export default function AdminDirectoryPage() {
             <div className="admin-brand"><Logo variant="icon" size={34} /><p style={styles.eyebrow}>HOOPCHECK ADMIN</p></div>
 
             <h1 style={styles.title}>
-              Directory Control Center
+              {t("adminControlCenter")}
             </h1>
 
             <p style={styles.subtitle}>
-              Manage the worldwide basketball directory.
+              {t("manageWorldwideDirectory")}
             </p>
           </div>
 
           <div style={styles.headerActions}>
-            <Link href="/admin/reviews" className="admin-primary-action" style={styles.secondaryButton}>Review Queue</Link>
-            <Link href="/admin/claims" style={styles.secondaryButton}>Profile Claims</Link>
-            <Link href="/admin/support" style={styles.secondaryButton}>Community Inbox</Link>
+            <Link href="/admin/reviews" className="admin-primary-action" style={styles.secondaryButton}>{t("reviewQueue")}</Link>
+            <Link href="/admin/claims" style={styles.secondaryButton}>{t("profileClaims")}</Link>
+            <Link href="/admin/support" style={styles.secondaryButton}>{t("communityInbox")}</Link>
 
             <Link
               href="/dashboard"
               style={styles.secondaryButton}
             >
-              Dashboard
+              {t("dashboard")}
             </Link>
           </div>
         </header>
@@ -148,19 +150,19 @@ export default function AdminDirectoryPage() {
 
         <section className="admin-stats-grid" style={styles.statsGrid}>
           <StatCard
-            label="Active Coaches"
+            label={t("activeCoaches")}
             value={counts.coaches}
             accent="#ff8a1f"
           />
 
           <StatCard
-            label="Active Teams"
+            label={t("activeTeams")}
             value={counts.teams}
             accent="#f5b36a"
           />
 
           <StatCard
-            label="Active Leagues"
+            label={t("activeLeagues")}
             value={counts.leagues}
             accent="#ff6a00"
           />
@@ -170,7 +172,7 @@ export default function AdminDirectoryPage() {
           <div style={styles.panelHeader}>
             <div>
               <p style={styles.sectionEyebrow}>
-                DIRECTORY MANAGEMENT
+                {t("directoryManagement")}
               </p>
 
               <h2 style={styles.panelTitle}>

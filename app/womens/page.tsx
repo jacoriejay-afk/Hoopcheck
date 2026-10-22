@@ -7,6 +7,7 @@ import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
 import TeamMap from "../../components/TeamMap";
+import { useLanguage } from "../../components/LanguageProvider";
 
 
 type WomensTeam = {
@@ -20,6 +21,7 @@ type WomensTeam = {
 };
 
 export default function Womens() {
+  const { t } = useLanguage();
   const [teams, setTeams] = useState<WomensTeam[]>([]);
   const [leagues, setLeagues] = useState<{id:string;name:string;country:string|null;level:string|null}[]>([]);
   const [query, setQuery] = useState("");
@@ -68,50 +70,50 @@ export default function Womens() {
       <div className="page-container">
         <DirectoryLayout current="womens" />
 
-        <section className="hc-womens-search-panel" aria-label="Search women’s teams">
-          <SearchBar inputId="womens-team-search" value={query} onChange={setQuery} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search women’s teams" onSubmit={(value) => setQuery(value)} />
+        <section className="hc-womens-search-panel" aria-label={t("womensTeamDirectoryView")}>
+          <SearchBar inputId="womens-team-search" value={query} onChange={setQuery} placeholder={t("womensSearchPlaceholder")} ariaLabel={t("womensTeamDirectoryView")} onSubmit={(value) => setQuery(value)} />
           <div className="hc-womens-filters">
             <label>
-              <span>COUNTRY</span>
+              <span>{t("countryLabel")}</span>
               <select value={country} onChange={event => setCountry(event.target.value)}>
-                <option value="">All countries</option>
+                <option value="">{t("allCountries")}</option>
                 {countries.map(item => <option key={item} value={item}>{item}</option>)}
               </select>
             </label>
             <label>
-              <span>LEAGUE</span>
+              <span>{t("leagueLabel")}</span>
               <select value={league} onChange={event => setLeague(event.target.value)}>
-                <option value="">All leagues</option>
+                <option value="">{t("allLeagues")}</option>
                 {leagues.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
               </select>
             </label>
-            {(query || country || league) && <button type="button" className="hc-womens-reset" onClick={() => { setQuery(""); setCountry(""); setLeague(""); }}>Clear filters</button>}
+            {(query || country || league) && <button type="button" className="hc-womens-reset" onClick={() => { setQuery(""); setCountry(""); setLeague(""); }}>{t("clearFilters")}</button>}
           </div>
         </section>
 
         <div className="hc-womens-results-heading">
-          <h2>Teams</h2>
-          <span>{loading ? "Loading…" : `${filtered.length} ${filtered.length === 1 ? "team" : "teams"}`}</span>
+          <h2>{t("teams")}</h2>
+          <span>{loading ? t("loading") : `${filtered.length} ${filtered.length === 1 ? t("teamCountSingular") : t("teamCountPlural")}`}</span>
         </div>
 
-        <div className="hc-directory-view-toggle hc-womens-view-toggle" role="group" aria-label="Women’s team directory view">
-          <span>DIRECTORY VIEW</span>
-          <button type="button" className={viewMode === "list" ? "is-active" : ""} onClick={() => setViewMode("list")}>☷ List</button>
-          <button type="button" className={viewMode === "map" ? "is-active" : ""} onClick={() => setViewMode("map")}>◎ Map</button>
+        <div className="hc-directory-view-toggle hc-womens-view-toggle" role="group" aria-label={t("womensTeamDirectoryView")}>
+          <span>{t("directoryView")}</span>
+          <button type="button" className={viewMode === "list" ? "is-active" : ""} onClick={() => setViewMode("list")}>☷ {t("list")}</button>
+          <button type="button" className={viewMode === "map" ? "is-active" : ""} onClick={() => setViewMode("map")}>◎ {t("map")}</button>
         </div>
-        {loading ? <div className="hc-womens-loading"><HoopLoading label="Loading women’s teams…" /></div> : viewMode === "map" ? (
+        {loading ? <div className="hc-womens-loading"><HoopLoading label={t("loadingWomensTeams")} /></div> : viewMode === "map" ? (
           <TeamMap profileBasePath="womens" teams={filtered.map(team => ({...team, latitude:null, longitude:null}))} />
         ) : filtered.length ? (
-          <section className="hc-womens-team-list" aria-label="Women’s team results">
+          <section className="hc-womens-team-list" aria-label={t("womensTeamResults")}>
             {filtered.map(team => (
               <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" logoUrl={team.logo_url} />
             ))}
           </section>
         ) : (
           <section className="hc-womens-empty-state">
-            <h2>No teams match that search</h2>
-            <p>Try another team name or clear your filters.</p>
-            <button type="button" onClick={() => { setQuery(""); setCountry(""); setLeague(""); }}>Reset search</button>
+            <h2>{t("noTeamsMatchSearch")}</h2>
+            <p>{t("tryAnotherTeamOrClearFilters")}</p>
+            <button type="button" onClick={() => { setQuery(""); setCountry(""); setLeague(""); }}>{t("resetSearch")}</button>
           </section>
         )}
       </div>
