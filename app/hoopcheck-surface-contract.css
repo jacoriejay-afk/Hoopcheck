@@ -17,8 +17,8 @@ html.theme-dark main :where(input,textarea,select),html.theme-light main :where(
 html[dir="rtl"] .signup-language-select { direction:rtl; }
 @media(max-width:520px) { .signup-nav-actions { gap:8px; } .signup-language-select { max-width:132px; min-height:36px; font-size:11px; } }
 
-html.theme-light main :where(.hc-feed-topic-chip,.hc-feed-filter-chip) { background-color:#f8f8f6!important;color:var(--hc-foreground)!important;border-color:var(--hc-border)!important; }
-html.theme-dark main :where(.hc-feed-topic-chip,.hc-feed-filter-chip) { background-color:#1b1b1b!important;color:var(--hc-foreground)!important;border-color:var(--hc-border)!important; }
+html.theme-light main :where(.hc-feed-topic-chip,.hc-feed-filter-chip) { background-color:var(--hc-surface-soft)!important;color:var(--hc-foreground)!important;border-color:var(--hc-border)!important; }
+html.theme-dark main :where(.hc-feed-topic-chip,.hc-feed-filter-chip) { background-color:var(--hc-surface-soft)!important;color:var(--hc-foreground)!important;border-color:var(--hc-border)!important; }
 
 
 /* Feed composer is rendered outside the themed main wrapper on some layouts. */
