@@ -42,11 +42,18 @@ export default function SettingsPage() {
     void supabase.auth.getSession().then(async ({ data }) => {
       const user = data.session?.user;
       if (!user) return;
-      const [{ data: profile }, { data: prefs }] = await Promise.all([
-        supabase.from("profiles").select("theme_preference,preferred_language").eq("id", user.id).maybeSingle(),
+      const [{ data: profile }, { data: prefs }, { data: teamsData }, { data: affiliationsData }] = await Promise.all([
+        supabase.from("profiles").select("theme_preference,preferred_language,account_type").eq("id", user.id).maybeSingle(),
         supabase.from("user_preferences").select("notifications_enabled").eq("user_id", user.id).maybeSingle(),
+        supabase.from("teams").select("id,name,country,league_name").eq("active", true).order("name").limit(1000),
+        supabase.from("player_team_affiliations").select("id,team_id,relationship,verified").eq("user_id", user.id),
       ]);
       if (!active) return;
+      const availableTeams = (teamsData ?? []) as TeamOption[];
+      const affiliations = (affiliationsData ?? []) as TeamAffiliation[];
+      setTeams(availableTeams);
+      setTeamAffiliations(affiliations.map((a) => ({ ...a, team: availableTeams.find((team) => team.id === a.team_id) })));
+      setIsPlayer(profile?.account_type === "player");
       const cookieHasTheme = document.cookie.split(";").some((item) => item.trim().startsWith("hoopcheck-theme="));
       if (profile?.theme_preference && !localTheme && !cookieHasTheme) setTheme(normalizeTheme(profile.theme_preference));
       if (profile?.preferred_language && ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"].includes(profile.preferred_language)) {
@@ -57,7 +64,26 @@ export default function SettingsPage() {
     return () => { active = false; };
   }, [setTheme]);
 
-  async function addPreviousTeam() {\n    if (!selectedPreviousTeam) { setTeamMessage("Choose a team first."); return; }\n    if (teamAffiliations.some((a) => a.team_id === selectedPreviousTeam)) { setTeamMessage("That team is already in your team history."); return; }\n    setTeamSaving(true); setTeamMessage("");\n    try {\n      const { data: { user } } = await supabase.auth.getUser();\n      if (!user) { setTeamMessage("Please sign in again to update your team history."); return; }\n      const { data, error } = await supabase.from("player_team_affiliations").insert({ user_id: user.id, team_id: selectedPreviousTeam, relationship: "former", verified: false }).select("id,team_id,relationship,verified").single();\n      if (error) throw error;\n      const team = teams.find((item) => item.id === selectedPreviousTeam);\n      if (data) setTeamAffiliations((current) => [...current, { ...data, team }]);\n      setSelectedPreviousTeam("");\n      setTeamMessage("Previous team added. It may need verification before you can submit a team review.");\n    } catch (error) {\n      console.error("Could not add previous team:", error);\n      setTeamMessage(error instanceof Error ? error.message : "Could not add that team. Please try again.");\n    } finally { setTeamSaving(false); }\n  }\n\n  async function save(nextTheme = theme, nextNotifications = notifications, nextLanguage = language) {
+  async function addPreviousTeam() {
+    if (!selectedPreviousTeam) { setTeamMessage("Choose a team first."); return; }
+    if (teamAffiliations.some((a) => a.team_id === selectedPreviousTeam)) { setTeamMessage("That team is already in your team history."); return; }
+    setTeamSaving(true); setTeamMessage("");
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setTeamMessage("Please sign in again to update your team history."); return; }
+      const { data, error } = await supabase.from("player_team_affiliations").insert({ user_id: user.id, team_id: selectedPreviousTeam, relationship: "former", verified: false }).select("id,team_id,relationship,verified").single();
+      if (error) throw error;
+      const team = teams.find((item) => item.id === selectedPreviousTeam);
+      if (data) setTeamAffiliations((current) => [...current, { ...data, team }]);
+      setSelectedPreviousTeam("");
+      setTeamMessage("Previous team added. It may need verification before you can submit a team review.");
+    } catch (error) {
+      console.error("Could not add previous team:", error);
+      setTeamMessage(error instanceof Error ? error.message : "Could not add that team. Please try again.");
+    } finally { setTeamSaving(false); }
+  }
+
+  async function save(nextTheme = theme, nextNotifications = notifications, nextLanguage = language) {
     setTheme(nextTheme);
     setLanguage(nextLanguage);
     setNotifications(nextNotifications);
