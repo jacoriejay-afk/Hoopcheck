@@ -132,17 +132,17 @@ export default function ProfilePage() {
               <p className="muted">{p.account_type}</p>
             </Surface>
             {p.account_type === "player" && (
-              <article className="card hc-profile-info-card">
+              <Surface className="card hc-profile-info-card">
                 <span className="card-kicker">CAREER</span>
                 {p.position ? <h2>{p.position}</h2> : <p className="hc-profile-empty-value">Position not listed <Link href="/account#profile-editor">Add <span aria-hidden="true">→</span></Link></p>}
                 <p className="muted">{p.years_pro == null ? "Years pro not listed" : p.years_pro + " years pro"}{" · "}{p.free_agent ? "Free Agent" : p.current_team || "Team not listed"}</p>
-              </article>
+              </Surface>
             )}
-            <article className="card hc-profile-info-card">
+            <Surface className="card hc-profile-info-card">
               <span className="card-kicker">LOCATION</span>
               {p.current_country ? <h2>{p.current_country}</h2> : <p className="hc-profile-empty-value">Not listed <Link href="/account#profile-editor">Add <span aria-hidden="true">→</span></Link></p>}
               <p className="muted">{p.hometown || p.nationality || "Location details not listed"}</p>
-            </article>
+            </Surface>
           </div>
         </section>
 
