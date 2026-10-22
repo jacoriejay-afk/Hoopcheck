@@ -5804,3 +5804,42 @@ html.theme-dark {
   --hc-mobile-row-border: var(--hc-border);
   --hc-hover-wash: var(--hc-surface-soft);
 }
+
+
+/* Route sweep: include legacy administrative, legal, authentication, profile and review surfaces. */
+html.theme-dark main:not(.hc-template-home) :where(.admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,.auth-card,.hc-auth-card,.legal-card,.hc-team-profile-hero,.hc-coach-profile-hero,.hc-league-profile-hero,.hc-womens-profile-hero,.hc-profile-review-list > *,.hc-directory-result,.hc-review-state,.hc-coach-empty,.hc-team-row,.hc-command-tile,.hc-profile-info-card) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(.admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,.auth-card,.hc-auth-card,.legal-card,.hc-team-profile-hero,.hc-coach-profile-hero,.hc-league-profile-hero,.hc-womens-profile-hero,.hc-profile-review-list > *,.hc-directory-result,.hc-review-state,.hc-coach-empty,.hc-team-row,.hc-command-tile,.hc-profile-info-card) :where(h1,h2,h3,h4,p,span,label,small,strong,li,a) {
+  color: inherit !important;
+}
+html.theme-light main:not(.hc-template-home) :where(.admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,.auth-card,.hc-auth-card,.legal-card,.hc-team-profile-hero,.hc-coach-profile-hero,.hc-league-profile-hero,.hc-womens-profile-hero,.hc-profile-review-list > *,.hc-directory-result,.hc-review-state,.hc-coach-empty,.hc-team-row,.hc-command-tile,.hc-profile-info-card) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light main:not(.hc-template-home) :where(.admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,.auth-card,.hc-auth-card,.legal-card,.hc-team-profile-hero,.hc-coach-profile-hero,.hc-league-profile-hero,.hc-womens-profile-hero,.hc-profile-review-list > *,.hc-directory-result,.hc-review-state,.hc-coach-empty,.hc-team-row,.hc-command-tile,.hc-profile-info-card) :where(h1,h2,h3,h4,p,span,label,small,strong,li,a) {
+  color: inherit !important;
+}
+/* The homepage is included in the same theme contract instead of being a fixed light-only island. */
+html.theme-dark .hc-template-home,
+html.theme-light .hc-template-home {
+  background: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark .hc-template-home :where(.hc-template-hero,.hc-template-explore,.hc-template-directory,.hc-template-category,.hc-template-panel,.hc-template-directory-links > a) ,
+html.theme-light .hc-template-home :where(.hc-template-hero,.hc-template-explore,.hc-template-directory,.hc-template-category,.hc-template-panel,.hc-template-directory-links > a) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark .hc-template-home :where(h1,h2,h3,h4,p,span,label,small,strong,li,a) ,
+html.theme-light .hc-template-home :where(h1,h2,h3,h4,p,span,label,small,strong,li,a) {
+  color: inherit;
+}
+html.theme-dark .hc-template-home :where(.eyebrow,.card-kicker,.hc-template-category-icon,.hc-template-section-kicker) ,
+html.theme-light .hc-template-home :where(.eyebrow,.card-kicker,.hc-template-category-icon,.hc-template-section-kicker) {
+  color: var(--hc-orange, #ff5a1f) !important;
+}
