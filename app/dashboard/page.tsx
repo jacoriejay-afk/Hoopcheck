@@ -334,35 +334,35 @@ export default function DashboardPage() {
 
         {["player","fan","scout","agent"].includes(profile?.account_type || "") && (
           <section className="dashboard-card" style={{ marginTop: 24 }}>
-            <span className="card-kicker">HOOPFEED</span>
-            <h2>{activeMembership && (subscription?.plan === "pro" || subscription?.plan === "premium") ? "HoopFeed" : "Unlock HoopFeed"}</h2>
-            <p className="muted">Share and discover current basketball experiences. HoopFeed posts disappear after 24 hours.</p>
-            <Link href="/feed" className="btn">{activeMembership && (subscription?.plan === "pro" || subscription?.plan === "premium") ? "Open HoopFeed" : "View HoopFeed"}</Link>
+            <span className="card-kicker">{t("hoopFeed").toUpperCase()}</span>
+            <h2>{activeMembership && (subscription?.plan === "pro" || subscription?.plan === "premium") ? t("hoopFeed") : t("unlockHoopFeed")}</h2>
+            <p className="muted">{t("hoopFeedDescription")}</p>
+            <Link href="/feed" className="btn">{activeMembership && (subscription?.plan === "pro" || subscription?.plan === "premium") ? t("openHoopFeed") : t("viewHoopFeed")}</Link>
           </section>
         )}
 
         {(profile?.account_type === "player" || profile?.account_type === "scout" || profile?.account_type === "agent") && (
           <section className="dashboard-card contact-dashboard-card" style={{ marginTop: 24 }}>
-            <span className="card-kicker">PLAYER CONNECTIONS</span>
-            <h2>{profile.account_type === "player" ? "Recruiting requests" : "Player outreach"}</h2>
-            <p className="muted">{profile.account_type === "player" ? "Premium scouts and agents can request contact. You decide who can reach you." : "Premium scouts and agents can request contact with players. A player must accept before messaging opens."}</p>
-            {profile.account_type === "player" ? <PlayerContactButton playerId={userId} /> : ["pro","premium"].includes(subscription?.plan || "") && activeMembership ? <Link href="/players" className="btn">Browse Players</Link> : <Link href="/membership" className="btn">Upgrade to Pro or Premium</Link>}
+            <span className="card-kicker">{t("playerConnections")}</span>
+            <h2>{profile.account_type === "player" ? t("recruitingRequests") : t("playerOutreach")}</h2>
+            <p className="muted">{profile.account_type === "player" ? t("playerContactDescription") : t("scoutContactDescription")}</p>
+            {profile.account_type === "player" ? <PlayerContactButton playerId={userId} /> : ["pro","premium"].includes(subscription?.plan || "") && activeMembership ? <Link href="/players" className="btn">{t("browsePlayers")}</Link> : <Link href="/membership" className="btn">{t("upgradeProPremium")}</Link>}
           </section>
         )}
 
         {profile?.account_type === "coach" && (
           <section className="dashboard-card" style={{ marginTop: 24 }}>
-            <span className="card-kicker">COACH TEAM PLACEMENT</span>
-            <h2>{profile.coach_verified ? "Request a coaching assignment" : "Verify your coach identity first"}</h2>{profile?.coach_verified && coachRequests.some(r=>r.status==="approved") && <div className="card" style={{margin:"12px 0"}}><strong>Team assignment</strong><p className="muted">{coachTeams.find(t=>t.id===coachRequests.find(r=>r.status==="approved")?.team_id)?.name || "Assigned team"}</p></div>}
-            <p className="muted">{profile.coach_verified ? "Pro and Premium coaches can request to be added to a professional team's coaching staff. Once approved, the team appears on your dashboard and public coach profile." : "Complete secure ID + live-selfie verification before requesting a coaching assignment."}</p>
-            {!profile.coach_verified ? <Link href="/verification" className="btn">Verify Coach</Link> : !activeMembership || !["pro","premium"].includes(subscription?.plan || "") ? <Link href="/membership" className="btn">Upgrade to Pro or Premium</Link> :
+            <span className="card-kicker">{t("coachTeamPlacement")}</span>
+            <h2>{profile.coach_verified ? t("requestCoachingAssignment") : t("verifyCoachIdentityFirst")}</h2>{profile?.coach_verified && coachRequests.some(r=>r.status==="approved") && <div className="card" style={{margin:"12px 0"}}><strong>{t("teamAssignment")}</strong><p className="muted">{coachTeams.find(t=>t.id===coachRequests.find(r=>r.status==="approved")?.team_id)?.name || t("assignedTeam")}</p></div>}
+            <p className="muted">{profile.coach_verified ? t("coachPlacementDescription") : t("coachVerifyDescription")}</p>
+            {!profile.coach_verified ? <Link href="/verification" className="btn">{t("verifyCoach")}</Link> : !activeMembership || !["pro","premium"].includes(subscription?.plan || "") ? <Link href="/membership" className="btn">{t("upgradeProPremium")}</Link> :
               <div style={{display:"grid",gap:10,marginTop:12}}>
-                <select value={coachRequestTeam} onChange={e=>setCoachRequestTeam(e.target.value)}><option value="">Select team</option>{coachTeams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country ? " — "+t.country : ""}{t.league_name ? " · "+t.league_name : ""}</option>)}</select>
-                <select value={coachRequestRole} onChange={e=>setCoachRequestRole(e.target.value)}><option>Head Coach</option><option>Assistant Coach</option><option>Associate Head Coach</option><option>Player Development Coach</option><option>Strength & Conditioning Coach</option><option>Other</option></select>
-                <textarea value={coachRequestNote} onChange={e=>setCoachRequestNote(e.target.value)} rows={3} maxLength={1000} placeholder="Optional note for the HoopCheck admin team." />
-                <button className="btn" type="button" onClick={async()=>{setCoachRequestMessage(""); if(!coachRequestTeam){setCoachRequestMessage("Select a team.");return;} const {error}=await supabase.from("coach_team_requests").insert({user_id:userId,team_id:coachRequestTeam,requested_role:coachRequestRole,note:coachRequestNote.trim()||null}); if(error){setCoachRequestMessage(error.message);return;} setCoachRequestMessage("Request submitted. An admin will review it."); setCoachRequestNote(""); const {data}=await supabase.from("coach_team_requests").select("id,team_id,status,requested_role,reviewer_note").eq("user_id",userId).order("created_at",{ascending:false}).limit(20); setCoachRequests((data||[]) as any);}}>Request Team Placement</button>
+                <select value={coachRequestTeam} onChange={e=>setCoachRequestTeam(e.target.value)}><option value="">{t("selectTeam")}</option>{coachTeams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country ? " — "+t.country : ""}{t.league_name ? " · "+t.league_name : ""}</option>)}</select>
+                <select value={coachRequestRole} onChange={e=>setCoachRequestRole(e.target.value)}><option>{t("headCoach")}</option><option>{t("assistantCoach")}</option><option>{t("associateHeadCoach")}</option><option>{t("playerDevelopmentCoach")}</option><option>{t("strengthConditioningCoach")}</option><option>{t("other")}</option></select>
+                <textarea value={coachRequestNote} onChange={e=>setCoachRequestNote(e.target.value)} rows={3} maxLength={1000} placeholder={t("optionalAdminNote")} />
+                <button className="btn" type="button" onClick={async()=>{setCoachRequestMessage(""); if(!coachRequestTeam){setCoachRequestMessage("Select a team.");return;} const {error}=await supabase.from("coach_team_requests").insert({user_id:userId,team_id:coachRequestTeam,requested_role:coachRequestRole,note:coachRequestNote.trim()||null}); if(error){setCoachRequestMessage(error.message);return;} setCoachRequestMessage("Request submitted. An admin will review it."); setCoachRequestNote(""); const {data}=await supabase.from("coach_team_requests").select("id,team_id,status,requested_role,reviewer_note").eq("user_id",userId).order("created_at",{ascending:false}).limit(20); setCoachRequests((data||[]) as any);}}>{t("requestTeamPlacement")}</button>
                 {coachRequestMessage && <p className="muted">{coachRequestMessage}</p>}
-                {coachRequests.length > 0 && <div className="card"><strong>Your requests</strong>{coachRequests.map(r=><p key={r.id} className="muted" style={{margin:"8px 0"}}>{coachTeams.find(t=>t.id===r.team_id)?.name || "Team"} · {r.requested_role || "Coach"} · <strong>{r.status}</strong>{r.reviewer_note ? " · "+r.reviewer_note : ""}</p>)}</div>}
+                {coachRequests.length > 0 && <div className="card"><strong>{t("yourRequests")}</strong>{coachRequests.map(r=><p key={r.id} className="muted" style={{margin:"8px 0"}}>{coachTeams.find(t=>t.id===r.team_id)?.name || t("team")} · {r.requested_role || t("coach")} · <strong>{r.status}</strong>{r.reviewer_note ? " · "+r.reviewer_note : ""}</p>)}</div>}
               </div>}
           </section>
         )}
@@ -373,20 +373,20 @@ export default function DashboardPage() {
             <h2>{planLabel}</h2>
             <p className="muted">
               {activeMembership
-                ? "Your full HoopCheck research access is active."
-                : "Unlock full ratings and player reviews with a membership."}
+                ? t("activeResearchAccess")
+                : t("unlockRatingsReviews")}
             </p>
             {subscription?.current_period_end && (
               <p className="muted">
-                Current period ends:{" "}
+                {t("currentPeriodEnds")}{" "}
                 {new Date(subscription.current_period_end).toLocaleDateString()}
               </p>
             )}
             {subscription?.cancel_at_period_end && (
-              <p className="muted">Cancellation is scheduled at the end of this period.</p>
+              <p className="muted">{t("cancellationScheduled")}</p>
             )}
             <Link href="/membership" className="btn">
-              {activeMembership ? "Manage Membership" : "View Membership"}
+              {activeMembership ? t("manageMembership") : t("viewMembership")}
             </Link>
           </div>
 
