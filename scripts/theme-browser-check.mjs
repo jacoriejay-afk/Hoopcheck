@@ -199,7 +199,7 @@ try {
 
   const mainRoutes = [
     "/", "/dashboard", "/feed", "/account", "/settings", "/profile", "/search",
-    "/teams", "/coaches", "/leagues", "/players", "/womens", "/directory",
+    "/teams", "/teams/11111111-1111-4111-8111-111111111111", "/coaches", "/leagues", "/players", "/womens", "/directory",
     "/reviews", "/membership", "/notifications", "/support", "/verification",
     "/privacy-center", "/privacy", "/terms", "/community-guidelines", "/login",
     "/signup", "/onboarding", "/fan-live", "/live-games", "/partners", "/copyright",
