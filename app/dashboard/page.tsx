@@ -196,13 +196,13 @@ export default function DashboardPage() {
 
   function reviewTarget(review: Review) {
     const id = review.coach_id ?? review.team_id ?? review.league_id ?? "";
-    const type = review.coach_id ? "Coach" : review.team_id ? "Team" : "League";
+    const type = review.coach_id ? t("coach") : review.team_id ? t("team") : t("leagues");
     const href = review.coach_id
       ? `/coaches/${id}`
       : review.team_id
         ? `/teams/${id}`
         : `/leagues/${id}`;
-    return { id, type, href, name: targets[id]?.name ?? "Directory entry" };
+    return { id, type, href, name: targets[id]?.name ?? t("directoryEntry") };
   }
 
   return (
@@ -391,82 +391,82 @@ export default function DashboardPage() {
           </div>
 
           {profile?.account_type === "player" && <div className="dashboard-card">
-            <span className="card-kicker">PLAYER PROFILE</span>
+            <span className="card-kicker">{t("playerProfile")}</span>
             <h2>
-              {profile?.player_verified ? <><VerifiedBadge label="Verified player" /> Verified Player</> : "Build your player profile"}
+              {profile?.player_verified ? <><VerifiedBadge label={t("verifiedPlayer")} /> {t("verifiedPlayer")}</> : t("buildPlayerProfile")}
             </h2>
             <p className="muted">
               {profile?.player_verified
-                ? "Your professional-player badge is active."
-                : "Add your basketball background and request verification."}
+                ? t("playerBadgeActive")
+                : t("addBasketballBackground")}
             </p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <Link href="/account" className="btn dark">Open Account</Link>
-              {userId && <Link href={`/players/${userId}`} className="btn dark">View Public Profile</Link>}
+              <Link href="/account" className="btn dark">{t("openAccount")}</Link>
+              {userId && <Link href={`/players/${userId}`} className="btn dark">{t("profilePublic")}</Link>}
             </div>
           </div>}
 
           <Link href="/coaches" className="dashboard-card">
-            <span className="card-kicker">COACHES</span>
-            <h2>Research Coaches</h2>
-            <p>Explore coach ratings and player experiences.</p>
+            <span className="card-kicker">{t("coaches").toUpperCase()}</span>
+            <h2>{t("researchCoaches")}</h2>
+            <p>{t("coachRatingsExperiences")}</p>
           </Link>
 
           <Link href="/teams" className="dashboard-card">
-            <span className="card-kicker">TEAMS</span>
-            <h2>Research Teams</h2>
-            <p>Research professional teams before your next move.</p>
+            <span className="card-kicker">{t("teams").toUpperCase()}</span>
+            <h2>{t("researchTeams")}</h2>
+            <p>{t("teamsBeforeMove")}</p>
           </Link>
 
           <Link href="/leagues" className="dashboard-card">
-            <span className="card-kicker">LEAGUES</span>
-            <h2>Research Leagues</h2>
-            <p>Compare league experiences from players who have been there.</p>
+            <span className="card-kicker">{t("leagues").toUpperCase()}</span>
+            <h2>{t("researchLeagues")}</h2>
+            <p>{t("compareLeagueExperiences")}</p>
           </Link>
 
           <Link href="/search" className="dashboard-card">
-            <span className="card-kicker">DISCOVER</span>
-            <h2>Search HoopCheck</h2>
-            <p>Find a coach, team, or league by name.</p>
+            <span className="card-kicker">{t("discover")}</span>
+            <h2>{t("searchHoopCheck")}</h2>
+            <p>{t("findByName")}</p>
           </Link>
         </section>
 
         <section aria-labelledby="help-privacy-heading" style={{ marginTop: 24 }}>
           <div style={{ marginBottom: 12 }}>
-            <p className="eyebrow">HELP & PRIVACY</p>
-            <h2 id="help-privacy-heading">Support and account policies</h2>
-            <p className="muted">Get help, review HoopCheck policies, or manage your personal data.</p>
+            <p className="eyebrow">{t("helpPrivacy")}</p>
+            <h2 id="help-privacy-heading">{t("supportPoliciesHeading")}</h2>
+            <p className="muted">{t("helpPoliciesDescription")}</p>
           </div>
           <div className="grid" style={{ gap: 12 }}>
             <Link href="/support" className="dashboard-card">
-              <span className="card-kicker">SUPPORT</span>
-              <h3>Contact Support</h3>
-              <p className="muted">Submit a ticket and track your requests.</p>
+              <span className="card-kicker">{t("support")}</span>
+              <h3>{t("contactSupport")}</h3>
+              <p className="muted">{t("submitTicketTrack")}</p>
             </Link>
             <Link href="/terms" className="dashboard-card">
-              <span className="card-kicker">LEGAL</span>
-              <h3>Terms of Service</h3>
-              <p className="muted">Read the terms for using HoopCheck.</p>
+              <span className="card-kicker">{t("legal")}</span>
+              <h3>{t("termsOfService")}</h3>
+              <p className="muted">{t("readTerms")}</p>
             </Link>
             <Link href="/privacy" className="dashboard-card">
-              <span className="card-kicker">PRIVACY</span>
-              <h3>Privacy Policy</h3>
-              <p className="muted">Learn how personal information is handled.</p>
+              <span className="card-kicker">{t("privacy")}</span>
+              <h3>{t("privacyPolicy")}</h3>
+              <p className="muted">{t("personalInfoHandled")}</p>
             </Link>
             <Link href="/community-guidelines" className="dashboard-card">
-              <span className="card-kicker">COMMUNITY</span>
-              <h3>Community Guidelines</h3>
-              <p className="muted">Review standards for safe, fair participation.</p>
+              <span className="card-kicker">{t("community")}</span>
+              <h3>{t("communityGuidelines")}</h3>
+              <p className="muted">{t("safeFairParticipation")}</p>
             </Link>
             <Link href="/privacy-center" className="dashboard-card">
-              <span className="card-kicker">YOUR DATA</span>
-              <h3>Privacy Request Center</h3>
-              <p className="muted">Request access, correction, deletion, or an export of your data.</p>
+              <span className="card-kicker">{t("yourData")}</span>
+              <h3>{t("privacyRequestCenter")}</h3>
+              <p className="muted">{t("requestDataActions")}</p>
             </Link>
             <Link href="/account" className="dashboard-card">
-              <span className="card-kicker">ACCOUNT</span>
-              <h3>Account Settings</h3>
-              <p className="muted">Manage your profile and find your privacy controls.</p>
+              <span className="card-kicker">{t("account").toUpperCase()}</span>
+              <h3>{t("accountSettings")}</h3>
+              <p className="muted">{t("manageProfilePrivacy")}</p>
             </Link>
           </div>
         </section>
@@ -474,43 +474,43 @@ export default function DashboardPage() {
         <section style={{ marginTop: 32 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: 18 }}>
             <div>
-              <p className="eyebrow">YOUR ACTIVITY</p>
-              <h2>Review History</h2>
+              <p className="eyebrow">{t("yourActivity")}</p>
+              <h2>{t("reviewHistory")}</h2>
             </div>
-            {profile?.account_type === "player" && <Link href="/search" className="btn">Write a Review</Link>}
+            {profile?.account_type === "player" && <Link href="/search" className="btn">{t("writeReview")}</Link>}
           </div>
 
           <div className="grid">
             <div className="dashboard-card">
-              <span className="card-kicker">TOTAL</span>
+              <span className="card-kicker">{t("total")}</span>
               <h2>{reviews.length}</h2>
-              <p className="muted">Reviews submitted</p>
+              <p className="muted">{t("reviewsSubmitted")}</p>
             </div>
             <div className="dashboard-card">
-              <span className="card-kicker">PUBLISHED</span>
+              <span className="card-kicker">{t("published")}</span>
               <h2>{reviewCounts.approved || 0}</h2>
-              <p className="muted">Approved reviews</p>
+              <p className="muted">{t("approvedReviews")}</p>
             </div>
             <div className="dashboard-card">
-              <span className="card-kicker">PENDING</span>
+              <span className="card-kicker">{t("pending")}</span>
               <h2>{reviewCounts.pending || 0}</h2>
-              <p className="muted">Awaiting moderation</p>
+              <p className="muted">{t("awaitingModeration")}</p>
             </div>
             <div className="dashboard-card">
-              <span className="card-kicker">OTHER</span>
+              <span className="card-kicker">{t("other")}</span>
               <h2>{(reviewCounts.rejected || 0) + (reviewCounts.flagged || 0) + (reviewCounts.removed || 0)}</h2>
-              <p className="muted">Rejected, flagged, or removed</p>
+              <p className="muted">{t("rejectedFlaggedRemoved")}</p>
             </div>
           </div>
 
           <div style={{ display: "grid", gap: 16, marginTop: 16 }}>
             {!reviews.length ? (
               <div className="dashboard-card">
-                <h2>No reviews yet.</h2>
+                <h2>{t("noReviewsYet")}</h2>
                 <p>
-                  Your first-hand experience can help another overseas player make a smarter decision.
+                  {t("firstHandExperienceHelp")}
                 </p>
-                <Link href="/search" className="btn dark">Find a Coach, Team, or League</Link>
+                <Link href="/search" className="btn dark">{t("findCoachTeamLeague")}</Link>
               </div>
             ) : (
               reviews.slice(0, 5).map((review) => {
@@ -527,10 +527,10 @@ export default function DashboardPage() {
                     {review.title && <h3>{review.title}</h3>}
                     <p>{review.body}</p>
                     <p className="muted">
-                      Overall: {review.overall_rating}/5 ·{" "}
+                      {t("overall")}: {review.overall_rating}/5 ·{" "}
                       {new Date(review.created_at).toLocaleDateString()}
                     </p>
-                    <Link href={target.href} className="btn dark">View Profile</Link>
+                    <Link href={target.href} className="btn dark">{t("viewProfile")}</Link>
                   </article>
                 );
               })
@@ -569,7 +569,7 @@ export default function DashboardPage() {
                 <p>Review, approve, reject, and moderate submissions.</p>
               </Link>
               <Link href="/admin/rights" className="dashboard-card">
-                <span className="card-kicker">LEGAL</span>
+                <span className="card-kicker">{t("legal")}</span>
                 <h2>Rights & Coverage</h2>
                 <p>Track data rights and production approval by market.</p>
               </Link>
