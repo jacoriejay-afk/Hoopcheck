@@ -171,7 +171,7 @@ export default function DashboardPage() {
     return (
       <main className="page-shell dashboard-page">
         <div className="page-container">
-          <HoopLoading label="Loading your player dashboard..." />
+          <HoopLoading label={t("loadingDashboard")} />
         </div>
       </main>
     );
@@ -208,28 +208,28 @@ export default function DashboardPage() {
   return (
     <main className="page-shell hc-dashboard-shell">
       <div className="page-container">
-        {(profile?.moderation_status === "warned" || profile?.moderation_status === "flagged") && <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{profile.moderation_status === "warned" ? "Account warning" : "Profile flagged for review"}</strong><p className="muted">{profile.moderation_note || "Please review the Community Guidelines and contact Support if you need clarification."}</p><Link href="/support" className="btn dark">Contact Support</Link></section>}        <section className="hc-dashboard-welcome" aria-labelledby="hc-dashboard-welcome-title">
-          <p className="eyebrow hc-dashboard-page-label">DASHBOARD</p>
-          <p className="eyebrow hc-dashboard-kicker">THE OVERSEAS BASKETBALL INTELLIGENCE HUB</p>
+        {(profile?.moderation_status === "warned" || profile?.moderation_status === "flagged") && <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{profile.moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{profile.moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section>}        <section className="hc-dashboard-welcome" aria-labelledby="hc-dashboard-welcome-title">
+          <p className="eyebrow hc-dashboard-page-label">{t("dashboardLabel")}</p>
+          <p className="eyebrow hc-dashboard-kicker">{t("overseasHub")}</p>
           <h1 id="hc-dashboard-welcome-title">KNOW WHO YOU’RE SIGNING WITH<span>.</span></h1>
-          <p className="hc-dashboard-hero-description">Real player experiences. Team and coach reputations. Make your next move with confidence.</p>
+          <p className="hc-dashboard-hero-description">{t("dashboardHeroDescription")}</p>
         </section>
 
-        <section className="hc-dashboard-profile-block" aria-label="Your profile">
+        <section className="hc-dashboard-profile-block" aria-label={t("yourProfile")}>
           <div className="hc-dashboard-profile-identity">
             <div className="hc-dashboard-avatar" aria-hidden="true">
               {(profile?.display_name?.trim()?.charAt(0) || email.split("@")[0]?.charAt(0) || "H").toUpperCase()}
             </div>
             <div className="hc-dashboard-profile-copy">
-              <span className="hc-dashboard-profile-label">SIGNED IN AS</span>
-              <strong className="hc-dashboard-username">{profile?.display_name || (email ? email.split("@")[0] : profile?.account_type === "fan" ? "Fan" : profile?.account_type ? profile.account_type.charAt(0).toUpperCase()+profile.account_type.slice(1) : "Player")}</strong>
+              <span className="hc-dashboard-profile-label">{t("signedInAs")}</span>
+              <strong className="hc-dashboard-username">{profile?.display_name || (email ? email.split("@")[0] : profile?.account_type === "fan" ? t("fan") : profile?.account_type ? t(profile.account_type) : t("player"))}</strong>
               <span className="hc-dashboard-membership-badge">{planLabel.replace("HoopCheck ","")}{activeMembership ? " · ACTIVE" : " · "+statusLabel.toUpperCase()}</span>
             </div>
           </div>
           <Link href="/profile" className="hc-dashboard-edit-profile">{t("editProfile")} <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4.5 10h10.75M10.5 5.25 15.25 10l-4.75 4.75" /></svg></Link>
         </section>
 
-        <section className="hc-dashboard-stat-grid" aria-label="Account overview">
+        <section className="hc-dashboard-stat-grid" aria-label={t("accountControls")}>
           <article className="hc-dashboard-stat-card">
             <span className="hc-dashboard-stat-label">MEMBERSHIP</span>
             <strong className="hc-dashboard-stat-value">{planLabel.replace("HoopCheck ","")}</strong>
@@ -238,45 +238,45 @@ export default function DashboardPage() {
           <article className="hc-dashboard-stat-card">
             <span className="hc-dashboard-stat-label">REVIEWS</span>
             <strong className="hc-dashboard-stat-value">{reviews.length}</strong>
-            <small className="hc-dashboard-stat-note">{reviewCounts.approved || 0} published</small>
+            <small className="hc-dashboard-stat-note">{reviewCounts.approved || 0} {t("published")}</small>
           </article>
           <article className="hc-dashboard-stat-card">
-            <span className="hc-dashboard-stat-label">{profile?.account_type === "player" ? "PLAYER STATUS" : "ACCOUNT"}</span>
-            <strong className="hc-dashboard-stat-value">{profile?.account_type === "player" ? (profile.player_verified ? "VERIFIED" : "UNVERIFIED") : profile?.account_type?.toUpperCase()}</strong>
-            <small className="hc-dashboard-stat-note">{profile?.account_type === "player" ? (profile.player_verified ? "Professional profile" : "Verification available") : "Research profile"}</small>
+            <span className="hc-dashboard-stat-label">{profile?.account_type === "player" ? t("playerStatus") : t("account").toUpperCase()}</span>
+            <strong className="hc-dashboard-stat-value">{profile?.account_type === "player" ? (profile.player_verified ? t("verified") : t("unverified")) : profile?.account_type?.toUpperCase()}</strong>
+            <small className="hc-dashboard-stat-note">{profile?.account_type === "player" ? (profile.player_verified ? t("professionalProfile") : t("verificationAvailable")) : t("researchProfile")}</small>
           </article>
         </section>
 
-        <section className="hc-mobile-dashboard" aria-label="HoopCheck discovery">
-          <SearchBar className="hc-mobile-search" name="q" placeholder="Search players, coaches, teams…" ariaLabel="Search players, coaches, teams" />
+        <section className="hc-mobile-dashboard" aria-label={t("exploreHoopCheck")}>
+          <SearchBar className="hc-mobile-search" name="q" placeholder={t("searchPeoplePlaceholder")} ariaLabel={t("searchPeoplePlaceholder")} />
 
           <section className="hc-mobile-section" aria-labelledby="hc-quick-access-heading">
             <div className="hc-mobile-section-heading">
               <div>
-                <p className="hc-mobile-eyebrow">YOUR SHORTCUTS</p>
-                <h2 id="hc-quick-access-heading">Quick Access</h2>
+                <p className="hc-mobile-eyebrow">{t("yourShortcuts")}</p>
+                <h2 id="hc-quick-access-heading">{t("quickAccess")}</h2>
               </div>
               <span className="hc-mobile-section-count" aria-hidden="true">04</span>
             </div>
             <div className="hc-mobile-quick-grid">
               <Link href="/teams" className="hc-mobile-quick-card">
                 <span className="hc-mobile-icon hc-icon-orange" aria-hidden="true"><CategoryIconTile category="teams" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Men’s Teams</strong><small>Explore team reviews</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("mensTeams")}</strong><small>{t("exploreTeamReviews")}</small></span>
                 <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
               </Link>
               <Link href="/womens" className="hc-mobile-quick-card">
                 <span className="hc-mobile-icon hc-icon-pink" aria-hidden="true"><CategoryIconTile category="womens" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Women’s Teams</strong><small>Find your next team</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("womensTeams")}</strong><small>{t("findNextTeam")}</small></span>
                 <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
               </Link>
               <Link href="/coaches" className="hc-mobile-quick-card">
                 <span className="hc-mobile-icon hc-icon-blue" aria-hidden="true"><CategoryIconTile category="coaches" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Coaches</strong><small>Check reputations</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("coaches")}</strong><small>{t("checkReputations")}</small></span>
                 <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
               </Link>
               <Link href="/search" className="hc-mobile-quick-card">
                 <span className="hc-mobile-icon hc-icon-green" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Player Reviews</strong><small>Real player experiences</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("playerReviews")}</strong><small>{t("realPlayerExperiences")}</small></span>
                 <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
               </Link>
             </div>
@@ -285,40 +285,40 @@ export default function DashboardPage() {
           <section className="hc-mobile-section hc-mobile-browse" aria-labelledby="hc-browse-categories-heading">
             <div className="hc-mobile-section-heading">
               <div>
-                <p className="hc-mobile-eyebrow">EXPLORE HOOPCHECK</p>
-                <h2 id="hc-browse-categories-heading">Browse Categories</h2>
+                <p className="hc-mobile-eyebrow">{t("exploreHoopCheck")}</p>
+                <h2 id="hc-browse-categories-heading">{t("browseDirectories")}</h2>
               </div>
-              <Link href="/directory" className="hc-mobile-view-all">VIEW ALL</Link>
+              <Link href="/directory" className="hc-mobile-view-all">{t("viewAll")}</Link>
             </div>
             <div className="hc-mobile-category-list">
               <Link href="/teams" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-orange" aria-hidden="true"><CategoryIconTile category="teams" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Professional Teams</strong><small>Research clubs before you sign</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("professionalTeams")}</strong><small>{t("researchClubsBeforeSign")}</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/womens" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-pink" aria-hidden="true"><CategoryIconTile category="womens" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Women’s Basketball</strong><small>Discover women’s teams worldwide</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("womensBasketball")}</strong><small>{t("discoverWomenWorldwide")}</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/coaches" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-blue" aria-hidden="true"><CategoryIconTile category="coaches" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Coaches</strong><small>Learn from player feedback</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("coaches")}</strong><small>{t("learnFromPlayerFeedback")}</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/leagues" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-green" aria-hidden="true"><CategoryIconTile category="leagues" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Leagues &amp; Competitions</strong><small>Explore leagues by country</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("leaguesCompetitions")}</strong><small>{t("exploreLeaguesByCountry")}</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/players" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-purple" aria-hidden="true"><CategoryIconTile category="players" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Find Players</strong><small>Connect with basketball players</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("findPlayers")}</strong><small>{t("connectBasketballPlayers")}</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/search" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-yellow" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>Reviews &amp; Experiences</strong><small>Make informed career decisions</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("reviewsExperiences")}</strong><small>{t("makeCareerDecisions")}</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
             </div>
