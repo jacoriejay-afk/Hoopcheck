@@ -70,8 +70,8 @@ export default function Womens() {
       <div className="page-container">
         <DirectoryLayout current="womens" />
 
-        <section className="hc-womens-search-panel" aria-label={t("womensTeams")}>
-          <SearchBar inputId="womens-team-search" value={query} onChange={setQuery} placeholder={t("womensSearchPlaceholder")} ariaLabel={t("womensTeams")} onSubmit={(value) => setQuery(value)} />
+        <section className="hc-womens-search-panel" aria-label={t("womensTeamDirectoryView")}>
+          <SearchBar inputId="womens-team-search" value={query} onChange={setQuery} placeholder={t("womensSearchPlaceholder")} ariaLabel={t("womensTeamDirectoryView")} onSubmit={(value) => setQuery(value)} />
           <div className="hc-womens-filters">
             <label>
               <span>{t("countryLabel")}</span>
