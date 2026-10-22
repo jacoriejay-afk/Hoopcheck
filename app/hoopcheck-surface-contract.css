@@ -1,0 +1,14 @@
+/* Shared semantic surface contract. Imported after legacy page styles. */
+:root { --hc-page-bg:#f4f4f1; --hc-surface-bg:#fff; --hc-surface-fg:#151515; --hc-surface-muted:#666661; --hc-surface-border:#e4e4e0; }
+html.theme-light { --hc-page-bg:#f4f4f1; --hc-surface-bg:#fff; --hc-surface-fg:#151515; --hc-surface-muted:#666661; --hc-surface-border:#e4e4e0; }
+html.theme-dark { --hc-page-bg:#0a0a0a; --hc-surface-bg:#171717; --hc-surface-fg:#f5f5f0; --hc-surface-muted:#b8b8b3; --hc-surface-border:#333; }
+html,body { background-color:var(--hc-page-bg)!important; }
+.hc-surface,[data-hc-surface="true"],
+main :where(.card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.state-card,.form-card,.auth-card,.hc-auth-card,.legal-card,.admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.hc-review-card,.hc-profile-info-card,.hc-team-row,.hc-directory-result,.hc-player-result,.hc-team-facts-card,.hc-command-center,.hc-command-tile,.hc-feed-composer,.hc-feed-topic-chip,.hc-feed-filter-chip) {
+ background-color:var(--hc-surface-bg)!important;color:var(--hc-surface-fg)!important;border-color:var(--hc-surface-border)!important;
+}
+.hc-surface :where(h1,h2,h3,h4,h5,h6,p,span,strong,small,label,li,dt,dd,a:not(.btn)),
+[data-hc-surface="true"] :where(h1,h2,h3,h4,h5,h6,p,span,strong,small,label,li,dt,dd,a:not(.btn)),
+main :where(.card,.dashboard-card,.compact-card,.panel,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.state-card,.form-card,.auth-card,.admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,.modal-panel,.modal-content,.hc-review-card,.hc-profile-info-card,.hc-team-row,.hc-directory-result,.hc-player-result,.hc-team-facts-card,.hc-command-center,.hc-command-tile,.hc-feed-composer) :where(h1,h2,h3,h4,h5,h6,p,span,strong,small,label,li,dt,dd,a:not(.btn)) { color:inherit!important; }
+.hc-surface .muted,[data-hc-surface="true"] .muted { color:var(--hc-surface-muted)!important; }
+html.theme-dark main :where(input,textarea,select),html.theme-light main :where(input,textarea,select) { background-color:var(--hc-surface-bg);color:var(--hc-surface-fg);border-color:var(--hc-surface-border); }
