@@ -125,3 +125,6 @@ html.theme-light .signup-language-select option {
   border-color:var(--hc-control-border)!important;
   color-scheme:light;
 }
+
+/* Keep the HoopFeed composer aligned with the dark-mode card contract. */
+html.theme-dark .hc-feed-composer.hc-surface { background-color:#171717!important; }
