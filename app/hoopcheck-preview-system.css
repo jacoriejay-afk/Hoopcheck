@@ -5282,3 +5282,279 @@ html[data-theme="dynamic"] .hc-account-page .hc-setting-row.is-danger { color: #
   .hc-account-page .hc-switch > span { transition: none; }
 }
 
+
+
+/* Global design tokens: PreferencesProvider switches these on the document root. */
+:root, html[data-theme="light"] {
+  color-scheme: light;
+  --hc-surface: #f4f4f1;
+  --hc-surface-raised: #ffffff;
+  --hc-surface-soft: #f8f8f6;
+  --hc-foreground: #171715;
+  --hc-foreground-muted: #686862;
+  --hc-border: #deded7;
+  --hc-input-bg: #ffffff;
+  --hc-input-fg: #171715;
+  --hc-nav-bg: #090909;
+  --hc-nav-fg: #f4f4f1;
+}
+html[data-theme="dynamic"] {
+  color-scheme: dark;
+  --hc-surface: #0d0d0d;
+  --hc-surface-raised: #171717;
+  --hc-surface-soft: #202020;
+  --hc-foreground: #f5f5f2;
+  --hc-foreground-muted: #b8b8b2;
+  --hc-border: #343434;
+  --hc-input-bg: #171717;
+  --hc-input-fg: #f5f5f2;
+  --hc-nav-bg: #080808;
+  --hc-nav-fg: #f4f4f1;
+}
+html, body { background: var(--hc-surface); color: var(--hc-foreground); }
+body { transition: background-color .12s ease, color .12s ease; }
+.site-header-global, .hc-template-header { background: var(--hc-nav-bg); color: var(--hc-nav-fg); }
+.bottom-nav, .hc-bottom-tab-bar { background: var(--hc-nav-bg) !important; border-color: var(--hc-border) !important; }
+.bottom-nav a { color: var(--hc-foreground-muted) !important; }
+.bottom-nav a.active { color: var(--hc-orange) !important; }
+.site-footer { background: var(--hc-nav-bg); color: var(--hc-nav-fg); border-color: var(--hc-border); }
+:where(main, section, article, .page-container, .hc-dashboard-shell, .hc-settings-group, .hc-settings-list, .hc-setting-row, .hc-mobile-category-list, .hc-mobile-quick-card, .dashboard-card, .fan-feature-card, .result-card, .review-card, .team-card, .coach-card, .league-card, .player-card, .profile-card, .settings-card, .hc-template-panel, .hc-template-category, .hc-template-directory-links > a, .hc-global-search-page .state-card, .hc-review-state) {
+  border-color: var(--hc-border);
+}
+html[data-theme="dynamic"] :where(main, .page-container, .hc-dashboard-shell, .hc-settings-group, .hc-settings-list, .hc-setting-row, .hc-mobile-category-list, .hc-mobile-quick-card, .dashboard-card, .fan-feature-card, .result-card, .review-card, .team-card, .coach-card, .league-card, .player-card, .profile-card, .settings-card, .hc-template-panel, .hc-template-category, .hc-template-directory-links > a, .hc-global-search-page .state-card, .hc-review-state) {
+  background-color: var(--hc-surface-raised);
+  color: var(--hc-foreground);
+}
+html[data-theme="dynamic"] :where(main, .hc-dashboard-shell, .hc-account-page, .hc-global-search-page, .hc-team-profile-page, .hc-team-directory-page, .hc-coach-profile-page, .hc-league-profile-page, .hc-womens-directory-page, .hc-womens-profile-page) {
+  background-color: var(--hc-surface);
+  color: var(--hc-foreground);
+}
+html[data-theme="dynamic"] :where(main h1, main h2, main h3, main h4, main strong, .hc-template-category strong, .hc-directory-copy strong, .hc-mobile-card-copy strong) {
+  color: var(--hc-foreground);
+}
+html[data-theme="dynamic"] :where(main p, main small, main .muted, main .description, .hc-mobile-card-copy small, .hc-template-panel > p, .hc-template-directory-links small) {
+  color: var(--hc-foreground-muted);
+}
+html[data-theme="dynamic"] :where(main input, main select, main textarea, .hc-mobile-search-field, .hc-mobile-search-field input, .hc-setting-select) {
+  background-color: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+}
+html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-quick-card,
+html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-category-list,
+html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-category-row,
+html[data-theme="dynamic"] .hc-dashboard-shell .dashboard-card,
+html[data-theme="dynamic"] .hc-dashboard-shell .fan-feature-card,
+html[data-theme="dynamic"] .hc-template-home .hc-template-explore,
+html[data-theme="dynamic"] .hc-template-home .hc-template-directory,
+html[data-theme="dynamic"] .hc-template-home .hc-template-category,
+html[data-theme="dynamic"] .hc-template-home .hc-template-panel,
+html[data-theme="dynamic"] .hc-global-search-page .result-card,
+html[data-theme="dynamic"] .hc-global-search-page .state-card {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-section-heading h2,
+html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-card-copy strong,
+html[data-theme="dynamic"] .hc-dashboard-shell .hc-template-category strong,
+html[data-theme="dynamic"] .hc-dashboard-shell .dashboard-card h2,
+html[data-theme="dynamic"] .hc-dashboard-shell .dashboard-card h3,
+html[data-theme="dynamic"] .hc-template-home .hc-template-section-title h2,
+html[data-theme="dynamic"] .hc-template-home .hc-template-category strong,
+html[data-theme="dynamic"] .hc-template-home .hc-template-panel h2,
+html[data-theme="dynamic"] .hc-template-home .hc-template-directory-links > a,
+html[data-theme="dynamic"] .hc-global-search-page .result-card,
+html[data-theme="dynamic"] .hc-global-search-page .result-card p {
+  color: var(--hc-foreground) !important;
+}
+html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-category-row,
+html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-category-list,
+html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-search-field {
+  border-color: var(--hc-border) !important;
+}
+html[data-theme="dynamic"] .hc-setting-row { color: var(--hc-foreground); }
+html[data-theme="dynamic"] .hc-setting-row .hc-setting-value,
+html[data-theme="dynamic"] .hc-setting-row small { color: var(--hc-foreground-muted); }
+
+
+/* Finish token migration for legacy global aliases and entity/profile surfaces. */
+html[data-theme="dynamic"] {
+  --ink: #f5f5f2;
+  --paper: #0d0d0d;
+  --hc-paper: #0d0d0d;
+  --hc-paper-strong: #171717;
+  --hc-text: #f5f5f2;
+  --hc-muted: #b8b8b2;
+  --hc-line: #343434;
+  --border: #343434;
+  --gray-100: #202020;
+  --gray-300: #b8b8b2;
+  --gray-500: #a0a09a;
+  --gray-700: #deded7;
+}
+html[data-theme="dynamic"] :where(.hc-entity-profile-page .card, .hc-entity-profile-page .hero, .hc-entity-profile-page .hc-profile-review-list > *, .hc-entity-profile-page .report-modal, .hc-entity-profile-page .report-select, .hc-entity-profile-page .report-label) {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html[data-theme="dynamic"] .hc-entity-profile-page .hero h1,
+html[data-theme="dynamic"] .hc-entity-profile-page .hero h2,
+html[data-theme="dynamic"] .hc-entity-profile-page .hero h3,
+html[data-theme="dynamic"] .hc-entity-profile-page .card h1,
+html[data-theme="dynamic"] .hc-entity-profile-page .card h2,
+html[data-theme="dynamic"] .hc-entity-profile-page .card h3,
+html[data-theme="dynamic"] .hc-entity-profile-page .card p,
+html[data-theme="dynamic"] .hc-entity-profile-page .card strong,
+html[data-theme="dynamic"] .hc-entity-profile-page .card label,
+html[data-theme="dynamic"] .hc-entity-profile-page .card .muted {
+  color: var(--hc-foreground) !important;
+}
+html[data-theme="dynamic"] .hc-entity-profile-page .hc-team-profile-hero,
+html[data-theme="dynamic"] .hc-entity-profile-page .hc-team-profile-hero h1,
+html[data-theme="dynamic"] .hc-entity-profile-page .hc-team-profile-hero p {
+  background-color: var(--hc-surface-raised);
+  color: var(--hc-foreground);
+}
+html[data-theme="dynamic"] .hc-entity-profile-page input,
+html[data-theme="dynamic"] .hc-entity-profile-page select,
+html[data-theme="dynamic"] .hc-entity-profile-page textarea {
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+}
+
+
+/* HoopFeed uses its own legacy class names, so map those surfaces explicitly too. */
+html[data-theme="dynamic"] .hc-feed-page {
+  background: var(--hc-surface) !important;
+  color: var(--hc-foreground) !important;
+}
+html[data-theme="dynamic"] .hc-feed-page .dashboard-card,
+html[data-theme="dynamic"] .hc-feed-page .hero-card,
+html[data-theme="dynamic"] .hc-feed-page .hc-feed-ticket,
+html[data-theme="dynamic"] .hc-feed-page .hc-feed-composer,
+html[data-theme="dynamic"] .hc-feed-page .hc-feed-empty,
+html[data-theme="dynamic"] .hc-feed-page .hc-feed-comments-panel {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html[data-theme="dynamic"] .hc-feed-page :where(h1, h2, h3, strong, p, label, .muted, .topnav a, .hc-feed-post-author__meta, .hc-feed-expiry-note) {
+  color: var(--hc-foreground) !important;
+}
+html[data-theme="dynamic"] .hc-feed-page :where(small, .muted, .hc-feed-counter, .hc-feed-expires, .hc-feed-location) {
+  color: var(--hc-foreground-muted) !important;
+}
+html[data-theme="dynamic"] .hc-feed-page :where(input, textarea, select, .hc-feed-topic-chip, .hc-feed-filter-chip, .hc-feed-sort-toggle button, .hc-feed-action-pill, .hc-feed-comments-panel button:not(.btn)) {
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+}
+html[data-theme="dynamic"] .hc-feed-page .hc-feed-post-header,
+html[data-theme="dynamic"] .hc-feed-page .hc-feed-post-actions,
+html[data-theme="dynamic"] .hc-feed-page .hc-feed-composer__footer,
+html[data-theme="dynamic"] .hc-feed-page .hc-feed-filter-bar {
+  border-color: var(--hc-border) !important;
+}
+
+
+/* Canonical surface tokens. Keep literal surface colors in this token block only. */
+:root, html[data-theme="light"] {
+  --hc-page-bg: #f8f9fa;
+  --hc-card-bg: #ffffff;
+  --hc-card-raised: #ffffff;
+  --hc-card-border: #e8e8e8;
+  --hc-text-primary: #111111;
+  --hc-text-secondary: #626262;
+  --hc-input-bg: #ffffff;
+  --hc-input-text: #111111;
+  --hc-divider: #e8e8e8;
+  --hc-overlay: rgb(0 0 0 / 68%);
+}
+html[data-theme="dynamic"] {
+  color-scheme: dark;
+  --hc-page-bg: #0a0a0a;
+  --hc-card-bg: #111111;
+  --hc-card-raised: #171717;
+  --hc-card-border: #343434;
+  --hc-text-primary: #f5f5f2;
+  --hc-text-secondary: #b8b8b2;
+  --hc-input-bg: #171717;
+  --hc-input-text: #f5f5f2;
+  --hc-divider: #303030;
+  --hc-overlay: rgb(0 0 0 / 78%);
+}
+html, body { background-color: var(--hc-page-bg); color: var(--hc-text-primary); }
+body { min-height: 100vh; }
+:where(main, .page-container, .settings-shell, .hc-dashboard-shell, .hc-global-search-page, .hc-team-directory-page, .hc-coach-directory-page, .hc-league-directory-page, .hc-womens-directory-page, .hc-entity-profile-page, .hc-team-profile-page, .hc-coach-profile-page, .hc-league-profile-page, .hc-womens-profile-page, .hc-account-page, .hc-profile-page, .hc-feed-page) {
+  background-color: var(--hc-page-bg);
+  color: var(--hc-text-primary);
+}
+:where(.profile-card, .profile-info-card, .directory-card, .directory-tile, .directory-row, .team-card, .coach-card, .league-card, .player-card, .review-card, .result-card, .settings-card, .dashboard-card, .fan-feature-card, .hc-template-panel, .hc-template-category, .hc-mobile-category-list, .hc-mobile-quick-card, .hc-feed-ticket, .hc-feed-composer, .hc-feed-empty, .hc-feed-comments-panel, .hc-confirm-modal, .hc-settings-list, .hc-review-state, .state-card) {
+  background-color: var(--hc-card-bg) !important;
+  color: var(--hc-text-primary) !important;
+  border-color: var(--hc-card-border) !important;
+}
+:where(.profile-card, .profile-info-card, .directory-card, .directory-tile, .directory-row, .team-card, .coach-card, .league-card, .player-card, .review-card, .result-card, .settings-card, .dashboard-card, .fan-feature-card, .hc-template-panel, .hc-template-category, .hc-mobile-category-list, .hc-mobile-quick-card, .hc-feed-ticket, .hc-feed-composer, .hc-feed-empty, .hc-feed-comments-panel, .hc-confirm-modal, .hc-settings-list, .hc-review-state, .state-card) :where(h1,h2,h3,h4,strong,label,p,a,small,span,li) {
+  color: inherit;
+}
+:where(.muted, .description, .secondary-text, .hc-setting-copy small, .hc-feed-expires, .hc-feed-counter, .hc-feed-post-author__line small) { color: var(--hc-text-secondary); }
+:where(input, select, textarea, .language-select, .search-input, .hc-mobile-search-field) {
+  background-color: var(--hc-input-bg);
+  color: var(--hc-input-text);
+  border-color: var(--hc-card-border);
+}
+:where(hr, .divider, .hc-feed-post-header, .hc-feed-post-actions, .hc-feed-composer__footer) { border-color: var(--hc-divider); }
+
+/* Dark-mode override for legacy surface classes that still declared white in older stylesheets. */
+html[data-theme="dynamic"] :where(.hc-feed-page .hc-feed-ticket, .hc-feed-page .hc-feed-empty, .hc-feed-page .hc-feed-composer, .hc-feed-page .hc-feed-comments-panel, .hc-feed-page .hc-feed-game-fields, .hc-entity-profile-page .card, .hc-entity-profile-page .hero, .hc-entity-profile-page .hc-profile-review-list > *, .hc-account-page .settings-card, .hc-global-search-page .result-card, .hc-global-search-page .state-card, .hc-dashboard-shell .dashboard-card, .hc-dashboard-shell .fan-feature-card, .hc-dashboard-shell .hc-mobile-quick-card, .hc-dashboard-shell .hc-mobile-category-list, .hc-dashboard-shell .hc-mobile-category-row, .hc-template-home .hc-template-panel, .hc-template-home .hc-template-category, .hc-template-directory-links > a, .hc-settings-page .settings-card, .hc-settings-list, .profile-card, .profile-info-card, .directory-card, .directory-tile, .directory-row, .team-card, .coach-card, .league-card, .player-card, .review-card) {
+  background: var(--hc-card-bg) !important;
+  color: var(--hc-text-primary) !important;
+  border-color: var(--hc-card-border) !important;
+}
+html[data-theme="dynamic"] :where(.hc-feed-page, .hc-entity-profile-page, .hc-account-page, .hc-global-search-page, .hc-dashboard-shell, .hc-settings-page) :where(h1,h2,h3,h4,p,small,strong,label,span,a,li,.muted) { color: var(--hc-text-primary); }
+html[data-theme="dynamic"] :where(.hc-feed-page, .hc-entity-profile-page, .hc-account-page, .hc-global-search-page, .hc-dashboard-shell, .hc-settings-page) :where(.muted,small,.description,.hc-feed-counter,.hc-feed-expires) { color: var(--hc-text-secondary); }
+html[data-theme="dynamic"] :where(.hc-feed-page, .hc-entity-profile-page, .hc-account-page, .hc-global-search-page, .hc-dashboard-shell, .hc-settings-page) :where(input,select,textarea,button:not(.btn):not(.hc-post-button),.hc-feed-topic-chip,.hc-feed-filter-chip,.hc-feed-action-pill) {
+  background-color: var(--hc-input-bg);
+  color: var(--hc-input-text);
+  border-color: var(--hc-card-border);
+}
+html[data-theme="light"] :where(.hc-feed-page .hc-feed-ticket, .hc-feed-page .hc-feed-empty, .hc-feed-page .hc-feed-composer, .hc-feed-page .hc-feed-comments-panel, .hc-feed-page .hc-feed-game-fields, .hc-entity-profile-page .card, .hc-entity-profile-page .hc-profile-review-list > *, .hc-global-search-page .result-card, .hc-global-search-page .state-card, .hc-dashboard-shell .dashboard-card, .hc-dashboard-shell .fan-feature-card, .hc-settings-page .settings-card) {
+  background-color: var(--hc-card-bg);
+  color: var(--hc-text-primary);
+  border-color: var(--hc-card-border);
+}
+
+
+/* Last-mile token coverage for legacy directory rows and member-profile cards. */
+html[data-theme="dynamic"] :where(.hc-team-directory-page, .hc-coach-directory-page, .hc-league-directory-page, .hc-womens-directory-page, .hc-directory-page, .hc-member-profile-page, .hc-profile-page, .hc-team-profile-page, .hc-coach-profile-page, .hc-league-profile-page, .hc-womens-profile-page) {
+  background-color: var(--hc-page-bg) !important;
+  color: var(--hc-text-primary) !important;
+}
+html[data-theme="dynamic"] :where(.hc-team-directory-page, .hc-coach-directory-page, .hc-league-directory-page, .hc-womens-directory-page, .hc-directory-page) :where(.team-row, .hc-team-row, .team-directory-row, .hc-directory-row, .hc-team-directory-row, .directory-row, .directory-card, .directory-tile, .team-card, .coach-row, .league-row, .hc-team-card, .hc-directory-result, .team-result, .result-card, .state-card, .dashboard-card, .card) {
+  background: var(--hc-card-bg) !important;
+  color: var(--hc-text-primary) !important;
+  border-color: var(--hc-card-border) !important;
+}
+html[data-theme="dynamic"] :where(.hc-team-directory-page, .hc-coach-directory-page, .hc-league-directory-page, .hc-womens-directory-page, .hc-directory-page, .hc-member-profile-page, .hc-profile-page) :where(h1,h2,h3,h4,p,small,strong,label,span,a,li) {
+  color: var(--hc-text-primary);
+}
+html[data-theme="dynamic"] :where(.hc-team-directory-page, .hc-coach-directory-page, .hc-league-directory-page, .hc-womens-directory-page, .hc-directory-page, .hc-member-profile-page, .hc-profile-page) :where(.muted, small, .description, .hc-profile-empty-value) {
+  color: var(--hc-text-secondary);
+}
+html[data-theme="dynamic"] .hc-member-profile-page :where(.card, .dashboard-card, .hc-profile-info-card, .hc-profile-completion, .hc-profile-overview, .hc-profile-empty-value) {
+  background: var(--hc-card-bg) !important;
+  color: var(--hc-text-primary) !important;
+  border-color: var(--hc-card-border) !important;
+}
+html[data-theme="light"] :where(.hc-team-directory-page, .hc-coach-directory-page, .hc-league-directory-page, .hc-womens-directory-page, .hc-directory-page) :where(.team-row, .hc-team-row, .team-directory-row, .hc-directory-row, .hc-team-directory-row, .directory-row, .directory-card, .directory-tile, .team-card, .coach-row, .league-row, .hc-team-card, .hc-directory-result, .team-result, .result-card, .state-card, .dashboard-card, .card) {
+  background: var(--hc-card-bg) !important;
+  color: var(--hc-text-primary) !important;
+  border-color: var(--hc-card-border) !important;
+}
+html[data-theme="light"] .hc-member-profile-page :where(.card, .dashboard-card, .hc-profile-info-card, .hc-profile-completion, .hc-profile-overview, .hc-profile-empty-value) {
+  background: var(--hc-card-bg) !important;
+  color: var(--hc-text-primary) !important;
+  border-color: var(--hc-card-border) !important;
+}

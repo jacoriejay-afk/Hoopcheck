@@ -71,11 +71,12 @@ export default function LanguageProvider({ children, initialLanguage = "en" }: {
     const onLanguageChange = (event: Event) => apply((event as CustomEvent<Language>).detail);
     window.addEventListener("hoopcheck-language-change", onLanguageChange);
     const loadProfileLanguage = async (userId: string) => {
-      const [{ data: profile }, { data: preferences }] = await Promise.all([
-        supabase.from("profiles").select("preferred_language").eq("id", userId).maybeSingle(),
-        supabase.from("user_preferences").select("language").eq("user_id", userId).maybeSingle(),
-      ]);
-      if (mounted) apply(profile?.preferred_language || preferences?.language || localStorage.getItem("hoopcheck-language") || "en");
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("preferred_language")
+        .eq("id", userId)
+        .maybeSingle();
+      if (mounted) apply(profile?.preferred_language || localStorage.getItem("hoopcheck-language") || "en");
     };
     void supabase.auth.getUser().then(({ data }) => { if (data.user) void loadProfileLanguage(data.user.id); });
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {

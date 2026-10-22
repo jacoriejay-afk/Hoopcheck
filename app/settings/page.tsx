@@ -3,48 +3,89 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
-import { useLanguage } from "../../components/LanguageProvider";
+import { useLanguage, type Language } from "../../components/LanguageProvider";
 
-type Theme = "light" | "dark" | "dynamic";
-type Language = "en" | "es" | "fr" | "de" | "tr" | "pt" | "it" | "el" | "ar";
+type Theme = "system" | "dark" | "light";
+const normalizeTheme = (value: unknown): Theme =>
+  value === "dark" || value === "light" || value === "system" ? value : value === "dynamic" ? "dark" : "system";
 
 export default function SettingsPage() {
-  const { t, setLanguage: applyLanguage } = useLanguage();
-  const [theme, setTheme] = useState<Theme>("dynamic");
+  const { t, language: activeLanguage, setLanguage: applyLanguage } = useLanguage();
+  const [theme, setTheme] = useState<Theme>("system");
   const [notifications, setNotifications] = useState(true);
   const [language, setLanguage] = useState<Language>("en");
   const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
 
   useEffect(() => {
-    const local = localStorage.getItem("hoopcheck-theme") as Theme | null;
-    if (local) setTheme(local);
-    const localLanguage = localStorage.getItem("hoopcheck-language") as Language | null;
-    if (localLanguage) setLanguage(localLanguage);
-    supabase.auth.getSession().then(async ({ data }) => {
+    setLanguage(activeLanguage);
+  }, [activeLanguage]);
+
+  useEffect(() => {
+    const localTheme = localStorage.getItem("hoopcheck-theme");
+    const localLanguage = localStorage.getItem("hoopcheck-language");
+    if (localTheme) setTheme(normalizeTheme(localTheme));
+    if (localLanguage && ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"].includes(localLanguage)) {
+      setLanguage(localLanguage as Language);
+    }
+
+    let active = true;
+    void supabase.auth.getSession().then(async ({ data }) => {
       const user = data.session?.user;
       if (!user) return;
-      const { data: prefs } = await supabase.from("user_preferences").select("theme,notifications_enabled,language").eq("user_id", user.id).maybeSingle();
-      if (prefs?.theme) setTheme(prefs.theme as Theme);
+      const [{ data: profile }, { data: prefs }] = await Promise.all([
+        supabase.from("profiles").select("theme_preference,preferred_language").eq("id", user.id).maybeSingle(),
+        supabase.from("user_preferences").select("notifications_enabled").eq("user_id", user.id).maybeSingle(),
+      ]);
+      if (!active) return;
+      if (profile?.theme_preference) setTheme(normalizeTheme(profile.theme_preference));
+      if (profile?.preferred_language && ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"].includes(profile.preferred_language)) {
+        setLanguage(profile.preferred_language as Language);
+      }
       if (typeof prefs?.notifications_enabled === "boolean") setNotifications(prefs.notifications_enabled);
-      if (prefs?.language) setLanguage(prefs.language as Language);
     });
+    return () => { active = false; };
   }, []);
 
   async function save(nextTheme = theme, nextNotifications = notifications, nextLanguage = language) {
+    setTheme(nextTheme);
+    setLanguage(nextLanguage);
+    setNotifications(nextNotifications);
     setSaving(true);
-    document.documentElement.dataset.theme = nextTheme;
+    setSaveMessage("");
+
+    // Apply changes immediately across the mounted app, before waiting for the database.
     localStorage.setItem("hoopcheck-theme", nextTheme);
-    localStorage.setItem("hoopcheck-language", nextLanguage);
+    window.dispatchEvent(new CustomEvent("hoopcheck-theme-change", { detail: nextTheme }));
     applyLanguage(nextLanguage);
-    const { data: sessionData } = await supabase.auth.getSession();
-    const user = sessionData.session?.user;
-    if (user) {
-      const { error } = await supabase.from("user_preferences").upsert({ user_id: user.id, theme: nextTheme, notifications_enabled: nextNotifications, language: nextLanguage, updated_at: new Date().toISOString() });
-      if (error) console.error("Settings save error:", error);
-      const { error: profileLanguageError } = await supabase.from("profiles").update({ preferred_language: nextLanguage }).eq("id", user.id);
-      if (profileLanguageError) console.error("Profile language save error:", profileLanguageError);
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData.session?.user;
+      if (user) {
+        const [{ error: profileError }, { error: preferencesError }] = await Promise.all([
+          supabase.from("profiles").update({
+            theme_preference: nextTheme,
+            preferred_language: nextLanguage,
+          }).eq("id", user.id),
+          // user_preferences has theme + notifications_enabled; language belongs to profiles.
+          supabase.from("user_preferences").upsert({
+            user_id: user.id,
+            theme: nextTheme === "light" ? "light" : "dynamic",
+            notifications_enabled: nextNotifications,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "user_id" }),
+        ]);
+        if (profileError) throw profileError;
+        if (preferencesError) throw preferencesError;
+      }
+      setSaveMessage(t("saved"));
+    } catch (error) {
+      console.error("HoopCheck settings save failed:", error);
+      setSaveMessage("Your changes are active on this device, but account sync failed. Please try again.");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }
 
   return (
@@ -58,19 +99,19 @@ export default function SettingsPage() {
             <span className="card-kicker">{t("language").toUpperCase()}</span>
             <h2>{t("chooseLanguage")}</h2>
             <p className="muted">Choose the interface language you want HoopCheck to use. Your preference is saved to your account and this device.</p>
-            <select className="language-select" value={language} onChange={(e) => setLanguage(e.target.value as Language)}>
+            <select aria-label={t("chooseLanguage")} className="language-select" value={language} onChange={(e) => setLanguage(e.target.value as Language)}>
               <option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option>
             </select>
-            <button type="button" className="btn" onClick={() => save(theme, notifications, language)} disabled={saving} style={{ marginTop: 12 }}>{saving ? t("saving") : t("save")}</button>
+            <button type="button" className="btn" onClick={() => void save(theme, notifications, language)} disabled={saving} style={{ marginTop: 12 }}>{saving ? t("saving") : t("save")}</button>
           </section>
           <section className="settings-card">
             <span className="card-kicker">VISUAL MODE</span>
             <h2>Choose your atmosphere</h2>
             <div className="theme-options">
-              {(["dynamic","dark","light"] as Theme[]).map((option) => (
-                <button key={option} className={"theme-option " + (theme === option ? "active" : "")} onClick={() => { setTheme(option); save(option, notifications); }} type="button">
-                  <strong>{option === "dynamic" ? "Dynamic" : option === "dark" ? "Dark Mode" : "Light Mode"}</strong>
-                  <small>{option === "dynamic" ? "Adaptive charcoal + orange" : option === "dark" ? "Asphalt black" : "Clean hardwood"}</small>
+              {(["system", "dark", "light"] as Theme[]).map((option) => (
+                <button key={option} className={"theme-option " + (theme === option ? "active" : "")} onClick={() => void save(option, notifications, language)} type="button" aria-pressed={theme === option}>
+                  <strong>{option === "system" ? "Use device setting" : option === "dark" ? "Dark Mode" : "Light Mode"}</strong>
+                  <small>{option === "system" ? "Follow your device appearance" : option === "dark" ? "Asphalt black" : "Clean hardwood"}</small>
                 </button>
               ))}
             </div>
@@ -79,7 +120,7 @@ export default function SettingsPage() {
             <span className="card-kicker">NOTIFICATIONS</span>
             <h2>Basketball alerts</h2>
             <p className="muted">Follow specific teams, coaches, or leagues to keep their alerts one tap away.</p>
-            <button type="button" className={"toggle " + (notifications ? "on" : "")} onClick={() => { const next = !notifications; setNotifications(next); save(theme, next); }}>
+            <button type="button" className={"toggle " + (notifications ? "on" : "")} onClick={() => void save(theme, !notifications, language)} aria-pressed={notifications}>
               <span />{notifications ? "Notifications enabled" : "Notifications disabled"}
             </button>
             <Link href="/search" className="btn dark">Find something to follow</Link>
@@ -91,7 +132,7 @@ export default function SettingsPage() {
             <div className="motion-demo"><span /><span /><span /></div>
           </section>
         </div>
-        <p className="settings-save">{saving ? t("saving") : t("saved") + " Other preferences save automatically."}</p>
+        <p className="settings-save" role="status" aria-live="polite">{saving ? t("saving") : saveMessage || t("saved") + " Other preferences save automatically."}</p>
       </section>
     </main>
   );
