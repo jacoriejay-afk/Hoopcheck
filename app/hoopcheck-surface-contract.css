@@ -21,3 +21,16 @@ html[dir="rtl"] .signup-language-select { direction:rtl; }
 
 html.theme-light main :where(.hc-feed-topic-chip,.hc-feed-filter-chip) { background-color:#f8f8f6!important;color:var(--hc-surface-fg)!important;border-color:var(--hc-surface-border)!important; }
 html.theme-dark main :where(.hc-feed-topic-chip,.hc-feed-filter-chip) { background-color:#1b1b1b!important;color:var(--hc-surface-fg)!important;border-color:var(--hc-surface-border)!important; }
+
+
+/* Feed composer is rendered outside the themed main wrapper on some layouts. */
+.hc-feed-composer,[data-hc-surface="true"],.hc-surface {
+  background-color:var(--hc-surface-bg)!important;
+  color:var(--hc-surface-fg)!important;
+  border-color:var(--hc-surface-border)!important;
+}
+.hc-feed-composer :where(h1,h2,h3,h4,h5,h6,p,span,strong,small,label,li,dt,dd,a:not(.btn)) {
+  color:inherit!important;
+}
+html.theme-dark .hc-feed-composer { background-color:#171717!important; }
+html.theme-light .hc-feed-composer { background-color:#fff!important; }
