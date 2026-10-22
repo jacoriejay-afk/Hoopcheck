@@ -152,6 +152,19 @@ try {
           composer: routeName === "feed" ? color(".hc-feed-composer") : null,
           topicChip: routeName === "feed" ? color(".hc-feed-topic-chip") : null,
           filterChip: routeName === "feed" ? color(".hc-feed-filter-chip:not(.is-active)") : null,
+          whiteSurfaceOffenders: Array.from(document.querySelectorAll("main *, .global-back-button"))
+            .filter((element) => {
+              const style = getComputedStyle(element);
+              const rect = element.getBoundingClientRect();
+              return style.backgroundColor === "rgb(255, 255, 255)" && rect.width > 16 && rect.height > 12 &&
+                style.display !== "none" && style.visibility !== "hidden";
+            })
+            .slice(0, 30)
+            .map((element) => ({
+              tag: element.tagName.toLowerCase(),
+              className: typeof element.className === "string" ? element.className : "",
+              text: (element.textContent || "").trim().slice(0, 40),
+            })),
         };
       }, { wrapperSelector, routeName });
 
