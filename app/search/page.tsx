@@ -426,6 +426,7 @@ function SearchContent() {
 }
 
 export default function SearchPage() {
+  const { t } = useLanguage();
   return (
     <Suspense fallback={<main className="search-page hc-global-search-page"><section className="search-hero"><p className="eyebrow">{t("globalResearch")}</p><h1>{t("loading")}</h1><p>{t("preparingSearchResults")}</p></section></main>}>
       <SearchContent />
