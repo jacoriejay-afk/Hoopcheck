@@ -6,6 +6,7 @@ import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
 import { supabase } from "../../lib/supabase";
 import ThemeToast from "../../components/ThemeToast";
+import Surface from "../../components/Surface";
 import { useTheme } from "../../components/ThemeProvider";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
 
@@ -430,7 +431,7 @@ export default function AccountPage() {
             </div>}
           </>}
           <h2>{profile.account_type === "player" ? "Player information" : profile.account_type === "coach" ? "Coach information" : "Profile information"} {((profile.account_type === "player" && profile.player_verified) || (profile.account_type === "coach" && profile.coach_verified)) && <VerifiedBadge label="Verified professional" />}</h2>
-          <form id="profile-editor" onSubmit={saveProfile} className="account-profile-form" style={{display:"grid",gap:12,marginTop:16}}>
+          <Surface as="form" id="profile-editor" onSubmit={saveProfile} className="account-profile-form" style={{display:"grid",gap:12,marginTop:16}}>
             <label className="muted">First name</label><input value={profile.first_name ?? ""} readOnly />
             <label className="muted">Last name</label><input value={profile.last_name ?? ""} readOnly />
             <p className="muted" style={{fontSize:12}}>First and last name are locked and cannot be changed.</p>
@@ -482,7 +483,7 @@ export default function AccountPage() {
             {profile.account_type === "coach" && <div className="card" style={{marginTop:8,border:"1px solid var(--orange)"}}><strong>{profile.coach_verified ? <><VerifiedBadge label="Verified coach" /> Verified Coach</> : "Coach verification"}</strong><p className="muted">{profile.coach_verified ? "Your professional coach identity is verified. Pro and Premium coaches can request team placement." : "Pro and Premium coaches can verify their identity with a government ID/passport and live selfie, then request to be added to a team coaching staff."}</p>{!profile.coach_verified && <Link href="/verification" className="btn dark">Verify Coach</Link>}{profile.coach_verified && <Link href="/dashboard" className="btn dark">Request Team Placement</Link>}</div>}
             <button className="btn" type="submit" disabled={savingProfile}>{savingProfile ? "Saving..." : "Save Profile"}</button>
             {profileMessage && <p className="muted">{profileMessage}</p>}
-          </form>
+          </Surface>
         </div>
         <div className="dashboard-card">
           <p className="eyebrow">MEMBERSHIP</p><h2>{subscription?.plan === "premium" ? "HoopCheck Premium" : subscription?.plan === "pro" ? "HoopCheck Pro" : "Free Membership"}</h2><p className="muted">Status: {subscription?.status ?? "inactive"}</p>
