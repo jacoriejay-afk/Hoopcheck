@@ -21,6 +21,7 @@ jobs:
       STRIPE_PRO_PRICE_ID: price_ci_pro
       STRIPE_PREMIUM_PRICE_ID: price_ci_premium
       NEXT_PUBLIC_SITE_URL: https://ci.invalid
+      HOOPCHECK_THEME_TEST_MODE: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,3 +49,24 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      - name: Install Playwright and verify hosted Chrome
+        run: |
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --no-save --package-lock=false playwright
+          google-chrome --version
+
+      - name: Start production server
+        run: |
+          npm run start -- --hostname 127.0.0.1 > /tmp/hoopcheck-next.log 2>&1 &
+          echo $! > /tmp/hoopcheck-next.pid
+
+      - name: Verify computed theme styles and capture screenshots
+        run: node scripts/theme-browser-check.mjs
+
+      - name: Upload theme screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hoopcheck-theme-screenshots
+          path: artifacts/theme-check/*.png
+          if-no-files-found: warn

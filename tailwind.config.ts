@@ -1,4 +1,6 @@
 const config = {
+  // Keep Tailwind's dark: utilities aligned with the same root theme class.
+  darkMode: ["class", '[class~="theme-dark"]'],
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -7,10 +9,10 @@ const config = {
   theme: {
     extend: {
       colors: {
-        ink: "#0A0A0A",
-        paper: "#F7F7F5",
+        ink: "var(--hc-foreground)",
+        paper: "var(--hc-page-bg)",
         brand: {
-          orange: "#FF5A1F",
+          orange: "var(--hc-orange)",
         },
         category: {
           teams: "#FF5A1F",

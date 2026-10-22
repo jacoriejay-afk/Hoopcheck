@@ -5,6 +5,7 @@ import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
 import { supabase } from "../../lib/supabase";
+import { useTheme } from "../../components/ThemeProvider";
 
 type Subscription = {
   plan: "pro" | "premium" | null;
@@ -59,6 +60,7 @@ function SettingsToggle({icon,label,checked,onChange}:{icon:string;label:string;
 }
 
 export default function AccountPage() {
+  const { setTheme: setGlobalTheme } = useTheme();
   const [email, setEmail] = useState("");
   const [userId, setUserId] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -272,8 +274,10 @@ export default function AccountPage() {
       const { data } = await supabase.from("profiles").select("theme_preference,preferred_language,notification_preferences,profile_visibility,current_country_public").eq("id", userId).maybeSingle();
       if (!alive || !data) return;
       const theme = ["system","light","dark"].includes(data.theme_preference) ? data.theme_preference as "system"|"light"|"dark" : "system";
-      setThemePreference(theme);
-      localStorage.setItem("hoopcheck-theme", theme);
+      const localTheme = localStorage.getItem("hoopcheck-theme");
+      const cookieHasTheme = document.cookie.split(";").some((item) => item.trim().startsWith("hoopcheck-theme="));
+      setThemePreference(localTheme && ["system","light","dark"].includes(localTheme) ? localTheme as "system"|"light"|"dark" : theme);
+      if (!localTheme && !cookieHasTheme) setGlobalTheme(theme);
       const language = ["en","es","fr","de","tr","pt","it","el","ar"].includes(data.preferred_language) ? data.preferred_language : "en";
       setPreferredLanguage(language);
       localStorage.setItem("hoopcheck-language", language);
@@ -289,7 +293,7 @@ export default function AccountPage() {
       setCountryPublic(Boolean(data.current_country_public));
     })();
     return () => { alive = false; };
-  }, [userId]);
+  }, [userId, setGlobalTheme]);
 
   async function saveSetting(values: Record<string, unknown>, success: string) {
     setSettingsMessage("");
@@ -302,7 +306,7 @@ export default function AccountPage() {
   async function changeTheme(next: "system"|"light"|"dark") {
     setThemePreference(next);
     localStorage.setItem("hoopcheck-theme", next);
-    window.dispatchEvent(new CustomEvent("hoopcheck-theme-change", { detail: next }));
+    setGlobalTheme(next);
     await saveSetting({ theme_preference: next }, "Appearance saved.");
   }
 

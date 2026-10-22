@@ -1479,7 +1479,7 @@ main, .page-shell, .page-container, .page-content, .content-wrapper,
 }
 :where(.card, .panel, .dashboard-card, .player-dashboard-card, .settings-card,
        .profile-card, .review-card, .team-card, .coach-card, .league-card,
-       .result-card, .admin-card, .modal-content, .form-card, .auth-card):not(.is-dark):not([data-theme="dark"]) {
+       .result-card, .admin-card, .modal-content, .form-card, .auth-card):not(.is-dark) {
   color: #171717;
   background-color: var(--hc-paper-strong);
 }
@@ -1908,12 +1908,12 @@ main:not(.hc-rebrand):not(.hc-template-home) :where(
 }
 /* Explicitly dark components must carry a contrasting light foreground. */
 main:not(.hc-rebrand):not(.hc-template-home) :where(
-  .is-dark,[data-theme="dark"],.dark-panel,.dark-card,.hc-dark-panel
+  .is-dark,.dark-panel,.dark-card,.hc-dark-panel
 ) {
   color: #fff !important;
 }
 main:not(.hc-rebrand):not(.hc-template-home) :where(
-  .is-dark,[data-theme="dark"],.dark-panel,.dark-card,.hc-dark-panel
+  .is-dark,.dark-panel,.dark-card,.hc-dark-panel
 ) :where(h1,h2,h3,h4,p,span,strong,small,label,li,a) {
   color: #fff !important;
 }
@@ -4658,7 +4658,7 @@ body:has(.hc-dashboard-shell)::before { display:none !important; content:none !i
 
 
 /* Final theme contract: shared surfaces and text remain readable on every route. */
-[data-theme="dynamic"] {
+html.theme-dark {
   --ink: #F5F5F0;
   --paper: #0A0A0A;
   --page-bg: #0A0A0A;
@@ -4671,73 +4671,73 @@ body:has(.hc-dashboard-shell)::before { display:none !important; content:none !i
   --brand-orange: #FF5A1F;
   --orange: #FF5A1F;
 }
-[data-theme="dynamic"] body,
-[data-theme="dynamic"] .page-shell,
-[data-theme="dynamic"] .page-container,
-[data-theme="dynamic"] main,
-[data-theme="dynamic"] .hc-account-page {
+html.theme-dark body,
+html.theme-dark .page-shell,
+html.theme-dark .page-container,
+html.theme-dark main,
+html.theme-dark .hc-account-page {
   color: #F5F5F0;
   background-color: #0A0A0A;
 }
-[data-theme="dynamic"] .dashboard-card,
-[data-theme="dynamic"] .card,
-[data-theme="dynamic"] .hero-card,
-[data-theme="dynamic"] .result-card,
-[data-theme="dynamic"] .quick-card,
-[data-theme="dynamic"] .settings-card,
-[data-theme="dynamic"] .hc-settings-list,
-[data-theme="dynamic"] .hc-confirm-modal {
+html.theme-dark .dashboard-card,
+html.theme-dark .card,
+html.theme-dark .hero-card,
+html.theme-dark .result-card,
+html.theme-dark .quick-card,
+html.theme-dark .settings-card,
+html.theme-dark .hc-settings-list,
+html.theme-dark .hc-confirm-modal {
   color: #F5F5F0;
   background-color: #111111;
   border-color: #333333;
 }
-[data-theme="dynamic"] .page-shell h1,
-[data-theme="dynamic"] .page-shell h2,
-[data-theme="dynamic"] .page-shell h3,
-[data-theme="dynamic"] .page-shell h4,
-[data-theme="dynamic"] .page-shell p,
-[data-theme="dynamic"] .page-shell label,
-[data-theme="dynamic"] .page-shell li,
-[data-theme="dynamic"] .page-shell .card-title,
-[data-theme="dynamic"] .page-shell .result-title {
+html.theme-dark .page-shell h1,
+html.theme-dark .page-shell h2,
+html.theme-dark .page-shell h3,
+html.theme-dark .page-shell h4,
+html.theme-dark .page-shell p,
+html.theme-dark .page-shell label,
+html.theme-dark .page-shell li,
+html.theme-dark .page-shell .card-title,
+html.theme-dark .page-shell .result-title {
   color: #F5F5F0;
 }
-[data-theme="dynamic"] .page-shell .muted,
-[data-theme="dynamic"] .page-shell .subtle,
-[data-theme="dynamic"] .page-shell .description,
-[data-theme="dynamic"] .page-shell small {
+html.theme-dark .page-shell .muted,
+html.theme-dark .page-shell .subtle,
+html.theme-dark .page-shell .description,
+html.theme-dark .page-shell small {
   color: #B8B8B3;
 }
-[data-theme="dynamic"] input,
-[data-theme="dynamic"] textarea,
-[data-theme="dynamic"] select {
+html.theme-dark input,
+html.theme-dark textarea,
+html.theme-dark select {
   color: #F5F5F0;
   background-color: #171717;
   border-color: #444444;
 }
-[data-theme="dynamic"] input::placeholder,
-[data-theme="dynamic"] textarea::placeholder {
+html.theme-dark input::placeholder,
+html.theme-dark textarea::placeholder {
   color: #A3A3A3;
   opacity: 1;
 }
-[data-theme="dynamic"] .hc-setting-row,
-[data-theme="dynamic"] .hc-setting-row .hc-setting-copy strong,
-[data-theme="dynamic"] .hc-confirm-modal h2 {
+html.theme-dark .hc-setting-row,
+html.theme-dark .hc-setting-row .hc-setting-copy strong,
+html.theme-dark .hc-confirm-modal h2 {
   color: #F5F5F0;
 }
-[data-theme="dynamic"] .hc-setting-row .hc-setting-copy small,
-[data-theme="dynamic"] .hc-setting-value,
-[data-theme="dynamic"] .hc-setting-chevron,
-[data-theme="dynamic"] .hc-confirm-modal p,
-[data-theme="dynamic"] .hc-confirm-modal label {
+html.theme-dark .hc-setting-row .hc-setting-copy small,
+html.theme-dark .hc-setting-value,
+html.theme-dark .hc-setting-chevron,
+html.theme-dark .hc-confirm-modal p,
+html.theme-dark .hc-confirm-modal label {
   color: #B8B8B3;
 }
-[data-theme="dynamic"] .hc-setting-row:hover { background: #1B1B1B; }
-[data-theme="dynamic"] .hc-setting-icon { color: #FF5A1F; }
-[data-theme="dynamic"] .hc-settings-group.is-danger .hc-setting-copy strong,
-[data-theme="dynamic"] .hc-settings-group.is-danger .hc-setting-icon { color: #FF777F; }
-[data-theme="light"] .page-shell,
-[data-theme="light"] main { color: #151515; }
+html.theme-dark .hc-setting-row:hover { background: #1B1B1B; }
+html.theme-dark .hc-setting-icon { color: #FF5A1F; }
+html.theme-dark .hc-settings-group.is-danger .hc-setting-copy strong,
+html.theme-dark .hc-settings-group.is-danger .hc-setting-icon { color: #FF777F; }
+html.theme-light .page-shell,
+html.theme-light main { color: #151515; }
 @media (max-width: 480px) {
   .hc-settings-heading h2 { font-size: clamp(24px, 7vw, 32px); }
   .hc-settings-group > h3 { font-size: 10px; }
@@ -4833,26 +4833,26 @@ body:has(.hc-dashboard-shell)::before { display:none !important; content:none !i
 .hc-account-page .dashboard-card { margin-top:16px; padding:18px; }
 .hc-account-page .dashboard-card h2 { font-size:20px; }
 .hc-account-page .dashboard-card .muted { font-size:13px; }
-html[data-theme="dynamic"] .hc-member-profile-page .hc-profile-completion,
-html[data-theme="dynamic"] .hc-member-profile-page .hc-profile-info-card,
-html[data-theme="dynamic"] .hc-account-page .hc-settings-group,
-html[data-theme="dynamic"] .hc-account-page .dashboard-card,
-html[data-theme="dynamic"] .hc-account-page .hero-card {
+html.theme-dark .hc-member-profile-page .hc-profile-completion,
+html.theme-dark .hc-member-profile-page .hc-profile-info-card,
+html.theme-dark .hc-account-page .hc-settings-group,
+html.theme-dark .hc-account-page .dashboard-card,
+html.theme-dark .hc-account-page .hero-card {
   background:#101010; color:#f4f4f1; border-color:#303030;
 }
-html[data-theme="dynamic"] .hc-member-profile-page .hc-profile-completion-copy,
-html[data-theme="dynamic"] .hc-member-profile-page .hc-profile-info-card h2,
-html[data-theme="dynamic"] .hc-account-page .hc-setting-row,
-html[data-theme="dynamic"] .hc-account-page .hc-setting-copy strong { color:#f4f4f1; }
-html[data-theme="dynamic"] .hc-member-profile-page .hc-profile-completion-copy > span,
-html[data-theme="dynamic"] .hc-member-profile-page .hc-profile-info-card .muted,
-html[data-theme="dynamic"] .hc-account-page .hc-setting-value,
-html[data-theme="dynamic"] .hc-account-page .hc-setting-copy small { color:#b7b7b1; }
-html[data-theme="dynamic"] .hc-account-page .hc-setting-icon { background:#222; color:#e9e9e4; }
-html[data-theme="dynamic"] .hc-account-page .hc-setting-select { background:#171717; color:#f4f4f1; border-color:#3a3a3a; }
-html[data-theme="dynamic"] .hc-member-profile-page .hc-profile-completion-track { background:#303030; }
-html[data-theme="dynamic"] .hc-member-profile-page .hc-profile-streak-row .hc-feed-streak { background:#191919; border-color:#343434; color:#c5c5be; }
-html[data-theme="dynamic"] .hc-member-profile-page .hc-profile-info-card .hc-profile-empty-value { color:#aaa9a3; }
+html.theme-dark .hc-member-profile-page .hc-profile-completion-copy,
+html.theme-dark .hc-member-profile-page .hc-profile-info-card h2,
+html.theme-dark .hc-account-page .hc-setting-row,
+html.theme-dark .hc-account-page .hc-setting-copy strong { color:#f4f4f1; }
+html.theme-dark .hc-member-profile-page .hc-profile-completion-copy > span,
+html.theme-dark .hc-member-profile-page .hc-profile-info-card .muted,
+html.theme-dark .hc-account-page .hc-setting-value,
+html.theme-dark .hc-account-page .hc-setting-copy small { color:#b7b7b1; }
+html.theme-dark .hc-account-page .hc-setting-icon { background:#222; color:#e9e9e4; }
+html.theme-dark .hc-account-page .hc-setting-select { background:#171717; color:#f4f4f1; border-color:#3a3a3a; }
+html.theme-dark .hc-member-profile-page .hc-profile-completion-track { background:#303030; }
+html.theme-dark .hc-member-profile-page .hc-profile-streak-row .hc-feed-streak { background:#191919; border-color:#343434; color:#c5c5be; }
+html.theme-dark .hc-member-profile-page .hc-profile-info-card .hc-profile-empty-value { color:#aaa9a3; }
 @media (max-width: 680px) {
   .hc-member-profile-page .compact-grid { grid-template-columns:1fr; }
 }
@@ -5239,37 +5239,37 @@ html[data-theme="dynamic"] .hc-member-profile-page .hc-profile-info-card .hc-pro
 .hc-account-page .hc-settings-group.is-danger > h3 { color: #b42318; }
 .hc-account-page .hc-setting-row.is-danger { color: #b42318; }
 .hc-account-page .hc-setting-row.is-danger .hc-setting-icon { background: #fff0ef; color: #b42318; }
-html[data-theme="dynamic"] .hc-account-page .hc-account-settings-header,
-html[data-theme="dynamic"] .hc-account-page .hc-account-settings-header h1,
-html[data-theme="dynamic"] .hc-account-page .hc-account-settings-identity-copy strong { color: #f4f4f1; }
-html[data-theme="dynamic"] .hc-account-page .hc-account-settings-identity-copy p { color: #b7b7b1; }
-html[data-theme="dynamic"] .hc-account-page .hc-account-settings-avatar {
+html.theme-dark .hc-account-page .hc-account-settings-header,
+html.theme-dark .hc-account-page .hc-account-settings-header h1,
+html.theme-dark .hc-account-page .hc-account-settings-identity-copy strong { color: #f4f4f1; }
+html.theme-dark .hc-account-page .hc-account-settings-identity-copy p { color: #b7b7b1; }
+html.theme-dark .hc-account-page .hc-account-settings-avatar {
   background: #171717;
   border-color: #383838;
   color: #f4f4f1;
 }
-html[data-theme="dynamic"] .hc-account-page .hc-settings-group {
+html.theme-dark .hc-account-page .hc-settings-group {
   background: #101010;
   border-color: #303030;
 }
-html[data-theme="dynamic"] .hc-account-page .hc-settings-list,
-html[data-theme="dynamic"] .hc-account-page .hc-setting-row { border-color: #303030; }
-html[data-theme="dynamic"] .hc-account-page .hc-setting-row { color: #f4f4f1; }
-html[data-theme="dynamic"] .hc-account-page .hc-setting-row:hover { background: #1b1b1b; }
-html[data-theme="dynamic"] .hc-account-page .hc-setting-icon { background: #222; color: #f0f0eb; }
-html[data-theme="dynamic"] .hc-account-page .hc-setting-copy strong { color: #f4f4f1; }
-html[data-theme="dynamic"] .hc-account-page .hc-setting-copy small,
-html[data-theme="dynamic"] .hc-account-page .hc-setting-value,
-html[data-theme="dynamic"] .hc-account-page .hc-setting-chevron { color: #b7b7b1; }
-html[data-theme="dynamic"] .hc-account-page .hc-setting-select {
+html.theme-dark .hc-account-page .hc-settings-list,
+html.theme-dark .hc-account-page .hc-setting-row { border-color: #303030; }
+html.theme-dark .hc-account-page .hc-setting-row { color: #f4f4f1; }
+html.theme-dark .hc-account-page .hc-setting-row:hover { background: #1b1b1b; }
+html.theme-dark .hc-account-page .hc-setting-icon { background: #222; color: #f0f0eb; }
+html.theme-dark .hc-account-page .hc-setting-copy strong { color: #f4f4f1; }
+html.theme-dark .hc-account-page .hc-setting-copy small,
+html.theme-dark .hc-account-page .hc-setting-value,
+html.theme-dark .hc-account-page .hc-setting-chevron { color: #b7b7b1; }
+html.theme-dark .hc-account-page .hc-setting-select {
   background-color: #171717;
   color: #f4f4f1;
   border-color: #383838;
   color-scheme: dark;
 }
-html[data-theme="dynamic"] .hc-account-page .hc-switch { background: #686862; }
-html[data-theme="dynamic"] .hc-account-page .hc-switch.is-on { background: var(--hc-orange, #ff5a1f); }
-html[data-theme="dynamic"] .hc-account-page .hc-setting-row.is-danger { color: #ff8c8c; }
+html.theme-dark .hc-account-page .hc-switch { background: #686862; }
+html.theme-dark .hc-account-page .hc-switch.is-on { background: var(--hc-orange, #ff5a1f); }
+html.theme-dark .hc-account-page .hc-setting-row.is-danger { color: #ff8c8c; }
 @media (max-width: 420px) {
   .hc-account-page .page-container { padding-left: 16px; padding-right: 16px; }
   .hc-account-page .hc-account-settings-header { margin-bottom: 18px; }
@@ -5285,7 +5285,7 @@ html[data-theme="dynamic"] .hc-account-page .hc-setting-row.is-danger { color: #
 
 
 /* Global design tokens: PreferencesProvider switches these on the document root. */
-:root, html[data-theme="light"] {
+:root, html.theme-light {
   color-scheme: light;
   --hc-surface: #f4f4f1;
   --hc-surface-raised: #ffffff;
@@ -5298,7 +5298,7 @@ html[data-theme="dynamic"] .hc-account-page .hc-setting-row.is-danger { color: #
   --hc-nav-bg: #090909;
   --hc-nav-fg: #f4f4f1;
 }
-html[data-theme="dynamic"] {
+html.theme-dark {
   color-scheme: dark;
   --hc-surface: #0d0d0d;
   --hc-surface-raised: #171717;
@@ -5321,65 +5321,65 @@ body { transition: background-color .12s ease, color .12s ease; }
 :where(main, section, article, .page-container, .hc-dashboard-shell, .hc-settings-group, .hc-settings-list, .hc-setting-row, .hc-mobile-category-list, .hc-mobile-quick-card, .dashboard-card, .fan-feature-card, .result-card, .review-card, .team-card, .coach-card, .league-card, .player-card, .profile-card, .settings-card, .hc-template-panel, .hc-template-category, .hc-template-directory-links > a, .hc-global-search-page .state-card, .hc-review-state) {
   border-color: var(--hc-border);
 }
-html[data-theme="dynamic"] :where(main, .page-container, .hc-dashboard-shell, .hc-settings-group, .hc-settings-list, .hc-setting-row, .hc-mobile-category-list, .hc-mobile-quick-card, .dashboard-card, .fan-feature-card, .result-card, .review-card, .team-card, .coach-card, .league-card, .player-card, .profile-card, .settings-card, .hc-template-panel, .hc-template-category, .hc-template-directory-links > a, .hc-global-search-page .state-card, .hc-review-state) {
+html.theme-dark :where(main, .page-container, .hc-dashboard-shell, .hc-settings-group, .hc-settings-list, .hc-setting-row, .hc-mobile-category-list, .hc-mobile-quick-card, .dashboard-card, .fan-feature-card, .result-card, .review-card, .team-card, .coach-card, .league-card, .player-card, .profile-card, .settings-card, .hc-template-panel, .hc-template-category, .hc-template-directory-links > a, .hc-global-search-page .state-card, .hc-review-state) {
   background-color: var(--hc-surface-raised);
   color: var(--hc-foreground);
 }
-html[data-theme="dynamic"] :where(main, .hc-dashboard-shell, .hc-account-page, .hc-global-search-page, .hc-team-profile-page, .hc-team-directory-page, .hc-coach-profile-page, .hc-league-profile-page, .hc-womens-directory-page, .hc-womens-profile-page) {
+html.theme-dark :where(main, .hc-dashboard-shell, .hc-account-page, .hc-global-search-page, .hc-team-profile-page, .hc-team-directory-page, .hc-coach-profile-page, .hc-league-profile-page, .hc-womens-directory-page, .hc-womens-profile-page) {
   background-color: var(--hc-surface);
   color: var(--hc-foreground);
 }
-html[data-theme="dynamic"] :where(main h1, main h2, main h3, main h4, main strong, .hc-template-category strong, .hc-directory-copy strong, .hc-mobile-card-copy strong) {
+html.theme-dark :where(main h1, main h2, main h3, main h4, main strong, .hc-template-category strong, .hc-directory-copy strong, .hc-mobile-card-copy strong) {
   color: var(--hc-foreground);
 }
-html[data-theme="dynamic"] :where(main p, main small, main .muted, main .description, .hc-mobile-card-copy small, .hc-template-panel > p, .hc-template-directory-links small) {
+html.theme-dark :where(main p, main small, main .muted, main .description, .hc-mobile-card-copy small, .hc-template-panel > p, .hc-template-directory-links small) {
   color: var(--hc-foreground-muted);
 }
-html[data-theme="dynamic"] :where(main input, main select, main textarea, .hc-mobile-search-field, .hc-mobile-search-field input, .hc-setting-select) {
+html.theme-dark :where(main input, main select, main textarea, .hc-mobile-search-field, .hc-mobile-search-field input, .hc-setting-select) {
   background-color: var(--hc-input-bg) !important;
   color: var(--hc-input-fg) !important;
   border-color: var(--hc-border) !important;
 }
-html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-quick-card,
-html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-category-list,
-html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-category-row,
-html[data-theme="dynamic"] .hc-dashboard-shell .dashboard-card,
-html[data-theme="dynamic"] .hc-dashboard-shell .fan-feature-card,
-html[data-theme="dynamic"] .hc-template-home .hc-template-explore,
-html[data-theme="dynamic"] .hc-template-home .hc-template-directory,
-html[data-theme="dynamic"] .hc-template-home .hc-template-category,
-html[data-theme="dynamic"] .hc-template-home .hc-template-panel,
-html[data-theme="dynamic"] .hc-global-search-page .result-card,
-html[data-theme="dynamic"] .hc-global-search-page .state-card {
+html.theme-dark .hc-dashboard-shell .hc-mobile-quick-card,
+html.theme-dark .hc-dashboard-shell .hc-mobile-category-list,
+html.theme-dark .hc-dashboard-shell .hc-mobile-category-row,
+html.theme-dark .hc-dashboard-shell .dashboard-card,
+html.theme-dark .hc-dashboard-shell .fan-feature-card,
+html.theme-dark .hc-template-home .hc-template-explore,
+html.theme-dark .hc-template-home .hc-template-directory,
+html.theme-dark .hc-template-home .hc-template-category,
+html.theme-dark .hc-template-home .hc-template-panel,
+html.theme-dark .hc-global-search-page .result-card,
+html.theme-dark .hc-global-search-page .state-card {
   background: var(--hc-surface-raised) !important;
   color: var(--hc-foreground) !important;
   border-color: var(--hc-border) !important;
 }
-html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-section-heading h2,
-html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-card-copy strong,
-html[data-theme="dynamic"] .hc-dashboard-shell .hc-template-category strong,
-html[data-theme="dynamic"] .hc-dashboard-shell .dashboard-card h2,
-html[data-theme="dynamic"] .hc-dashboard-shell .dashboard-card h3,
-html[data-theme="dynamic"] .hc-template-home .hc-template-section-title h2,
-html[data-theme="dynamic"] .hc-template-home .hc-template-category strong,
-html[data-theme="dynamic"] .hc-template-home .hc-template-panel h2,
-html[data-theme="dynamic"] .hc-template-home .hc-template-directory-links > a,
-html[data-theme="dynamic"] .hc-global-search-page .result-card,
-html[data-theme="dynamic"] .hc-global-search-page .result-card p {
+html.theme-dark .hc-dashboard-shell .hc-mobile-section-heading h2,
+html.theme-dark .hc-dashboard-shell .hc-mobile-card-copy strong,
+html.theme-dark .hc-dashboard-shell .hc-template-category strong,
+html.theme-dark .hc-dashboard-shell .dashboard-card h2,
+html.theme-dark .hc-dashboard-shell .dashboard-card h3,
+html.theme-dark .hc-template-home .hc-template-section-title h2,
+html.theme-dark .hc-template-home .hc-template-category strong,
+html.theme-dark .hc-template-home .hc-template-panel h2,
+html.theme-dark .hc-template-home .hc-template-directory-links > a,
+html.theme-dark .hc-global-search-page .result-card,
+html.theme-dark .hc-global-search-page .result-card p {
   color: var(--hc-foreground) !important;
 }
-html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-category-row,
-html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-category-list,
-html[data-theme="dynamic"] .hc-dashboard-shell .hc-mobile-search-field {
+html.theme-dark .hc-dashboard-shell .hc-mobile-category-row,
+html.theme-dark .hc-dashboard-shell .hc-mobile-category-list,
+html.theme-dark .hc-dashboard-shell .hc-mobile-search-field {
   border-color: var(--hc-border) !important;
 }
-html[data-theme="dynamic"] .hc-setting-row { color: var(--hc-foreground); }
-html[data-theme="dynamic"] .hc-setting-row .hc-setting-value,
-html[data-theme="dynamic"] .hc-setting-row small { color: var(--hc-foreground-muted); }
+html.theme-dark .hc-setting-row { color: var(--hc-foreground); }
+html.theme-dark .hc-setting-row .hc-setting-value,
+html.theme-dark .hc-setting-row small { color: var(--hc-foreground-muted); }
 
 
 /* Finish token migration for legacy global aliases and entity/profile surfaces. */
-html[data-theme="dynamic"] {
+html.theme-dark {
   --ink: #f5f5f2;
   --paper: #0d0d0d;
   --hc-paper: #0d0d0d;
@@ -5393,32 +5393,32 @@ html[data-theme="dynamic"] {
   --gray-500: #a0a09a;
   --gray-700: #deded7;
 }
-html[data-theme="dynamic"] :where(.hc-entity-profile-page .card, .hc-entity-profile-page .hero, .hc-entity-profile-page .hc-profile-review-list > *, .hc-entity-profile-page .report-modal, .hc-entity-profile-page .report-select, .hc-entity-profile-page .report-label) {
+html.theme-dark :where(.hc-entity-profile-page .card, .hc-entity-profile-page .hero, .hc-entity-profile-page .hc-profile-review-list > *, .hc-entity-profile-page .report-modal, .hc-entity-profile-page .report-select, .hc-entity-profile-page .report-label) {
   background-color: var(--hc-surface-raised) !important;
   color: var(--hc-foreground) !important;
   border-color: var(--hc-border) !important;
 }
-html[data-theme="dynamic"] .hc-entity-profile-page .hero h1,
-html[data-theme="dynamic"] .hc-entity-profile-page .hero h2,
-html[data-theme="dynamic"] .hc-entity-profile-page .hero h3,
-html[data-theme="dynamic"] .hc-entity-profile-page .card h1,
-html[data-theme="dynamic"] .hc-entity-profile-page .card h2,
-html[data-theme="dynamic"] .hc-entity-profile-page .card h3,
-html[data-theme="dynamic"] .hc-entity-profile-page .card p,
-html[data-theme="dynamic"] .hc-entity-profile-page .card strong,
-html[data-theme="dynamic"] .hc-entity-profile-page .card label,
-html[data-theme="dynamic"] .hc-entity-profile-page .card .muted {
+html.theme-dark .hc-entity-profile-page .hero h1,
+html.theme-dark .hc-entity-profile-page .hero h2,
+html.theme-dark .hc-entity-profile-page .hero h3,
+html.theme-dark .hc-entity-profile-page .card h1,
+html.theme-dark .hc-entity-profile-page .card h2,
+html.theme-dark .hc-entity-profile-page .card h3,
+html.theme-dark .hc-entity-profile-page .card p,
+html.theme-dark .hc-entity-profile-page .card strong,
+html.theme-dark .hc-entity-profile-page .card label,
+html.theme-dark .hc-entity-profile-page .card .muted {
   color: var(--hc-foreground) !important;
 }
-html[data-theme="dynamic"] .hc-entity-profile-page .hc-team-profile-hero,
-html[data-theme="dynamic"] .hc-entity-profile-page .hc-team-profile-hero h1,
-html[data-theme="dynamic"] .hc-entity-profile-page .hc-team-profile-hero p {
+html.theme-dark .hc-entity-profile-page .hc-team-profile-hero,
+html.theme-dark .hc-entity-profile-page .hc-team-profile-hero h1,
+html.theme-dark .hc-entity-profile-page .hc-team-profile-hero p {
   background-color: var(--hc-surface-raised);
   color: var(--hc-foreground);
 }
-html[data-theme="dynamic"] .hc-entity-profile-page input,
-html[data-theme="dynamic"] .hc-entity-profile-page select,
-html[data-theme="dynamic"] .hc-entity-profile-page textarea {
+html.theme-dark .hc-entity-profile-page input,
+html.theme-dark .hc-entity-profile-page select,
+html.theme-dark .hc-entity-profile-page textarea {
   background: var(--hc-input-bg) !important;
   color: var(--hc-input-fg) !important;
   border-color: var(--hc-border) !important;
@@ -5426,41 +5426,41 @@ html[data-theme="dynamic"] .hc-entity-profile-page textarea {
 
 
 /* HoopFeed uses its own legacy class names, so map those surfaces explicitly too. */
-html[data-theme="dynamic"] .hc-feed-page {
+html.theme-dark .hc-feed-page {
   background: var(--hc-surface) !important;
   color: var(--hc-foreground) !important;
 }
-html[data-theme="dynamic"] .hc-feed-page .dashboard-card,
-html[data-theme="dynamic"] .hc-feed-page .hero-card,
-html[data-theme="dynamic"] .hc-feed-page .hc-feed-ticket,
-html[data-theme="dynamic"] .hc-feed-page .hc-feed-composer,
-html[data-theme="dynamic"] .hc-feed-page .hc-feed-empty,
-html[data-theme="dynamic"] .hc-feed-page .hc-feed-comments-panel {
+html.theme-dark .hc-feed-page .dashboard-card,
+html.theme-dark .hc-feed-page .hero-card,
+html.theme-dark .hc-feed-page .hc-feed-ticket,
+html.theme-dark .hc-feed-page .hc-feed-composer,
+html.theme-dark .hc-feed-page .hc-feed-empty,
+html.theme-dark .hc-feed-page .hc-feed-comments-panel {
   background: var(--hc-surface-raised) !important;
   color: var(--hc-foreground) !important;
   border-color: var(--hc-border) !important;
 }
-html[data-theme="dynamic"] .hc-feed-page :where(h1, h2, h3, strong, p, label, .muted, .topnav a, .hc-feed-post-author__meta, .hc-feed-expiry-note) {
+html.theme-dark .hc-feed-page :where(h1, h2, h3, strong, p, label, .muted, .topnav a, .hc-feed-post-author__meta, .hc-feed-expiry-note) {
   color: var(--hc-foreground) !important;
 }
-html[data-theme="dynamic"] .hc-feed-page :where(small, .muted, .hc-feed-counter, .hc-feed-expires, .hc-feed-location) {
+html.theme-dark .hc-feed-page :where(small, .muted, .hc-feed-counter, .hc-feed-expires, .hc-feed-location) {
   color: var(--hc-foreground-muted) !important;
 }
-html[data-theme="dynamic"] .hc-feed-page :where(input, textarea, select, .hc-feed-topic-chip, .hc-feed-filter-chip, .hc-feed-sort-toggle button, .hc-feed-action-pill, .hc-feed-comments-panel button:not(.btn)) {
+html.theme-dark .hc-feed-page :where(input, textarea, select, .hc-feed-topic-chip, .hc-feed-filter-chip, .hc-feed-sort-toggle button, .hc-feed-action-pill, .hc-feed-comments-panel button:not(.btn)) {
   background: var(--hc-input-bg) !important;
   color: var(--hc-input-fg) !important;
   border-color: var(--hc-border) !important;
 }
-html[data-theme="dynamic"] .hc-feed-page .hc-feed-post-header,
-html[data-theme="dynamic"] .hc-feed-page .hc-feed-post-actions,
-html[data-theme="dynamic"] .hc-feed-page .hc-feed-composer__footer,
-html[data-theme="dynamic"] .hc-feed-page .hc-feed-filter-bar {
+html.theme-dark .hc-feed-page .hc-feed-post-header,
+html.theme-dark .hc-feed-page .hc-feed-post-actions,
+html.theme-dark .hc-feed-page .hc-feed-composer__footer,
+html.theme-dark .hc-feed-page .hc-feed-filter-bar {
   border-color: var(--hc-border) !important;
 }
 
 
 /* Canonical surface tokens. Keep literal surface colors in this token block only. */
-:root, html[data-theme="light"] {
+:root, html.theme-light {
   --hc-page-bg: #f8f9fa;
   --hc-card-bg: #ffffff;
   --hc-card-raised: #ffffff;
@@ -5472,7 +5472,7 @@ html[data-theme="dynamic"] .hc-feed-page .hc-feed-filter-bar {
   --hc-divider: #e8e8e8;
   --hc-overlay: rgb(0 0 0 / 68%);
 }
-html[data-theme="dynamic"] {
+html.theme-dark {
   color-scheme: dark;
   --hc-page-bg: #0a0a0a;
   --hc-card-bg: #111111;
@@ -5508,19 +5508,19 @@ body { min-height: 100vh; }
 :where(hr, .divider, .hc-feed-post-header, .hc-feed-post-actions, .hc-feed-composer__footer) { border-color: var(--hc-divider); }
 
 /* Dark-mode override for legacy surface classes that still declared white in older stylesheets. */
-html[data-theme="dynamic"] :where(.hc-feed-page .hc-feed-ticket, .hc-feed-page .hc-feed-empty, .hc-feed-page .hc-feed-composer, .hc-feed-page .hc-feed-comments-panel, .hc-feed-page .hc-feed-game-fields, .hc-entity-profile-page .card, .hc-entity-profile-page .hero, .hc-entity-profile-page .hc-profile-review-list > *, .hc-account-page .settings-card, .hc-global-search-page .result-card, .hc-global-search-page .state-card, .hc-dashboard-shell .dashboard-card, .hc-dashboard-shell .fan-feature-card, .hc-dashboard-shell .hc-mobile-quick-card, .hc-dashboard-shell .hc-mobile-category-list, .hc-dashboard-shell .hc-mobile-category-row, .hc-template-home .hc-template-panel, .hc-template-home .hc-template-category, .hc-template-directory-links > a, .hc-settings-page .settings-card, .hc-settings-list, .profile-card, .profile-info-card, .directory-card, .directory-tile, .directory-row, .team-card, .coach-card, .league-card, .player-card, .review-card) {
+html.theme-dark :where(.hc-feed-page .hc-feed-ticket, .hc-feed-page .hc-feed-empty, .hc-feed-page .hc-feed-composer, .hc-feed-page .hc-feed-comments-panel, .hc-feed-page .hc-feed-game-fields, .hc-entity-profile-page .card, .hc-entity-profile-page .hero, .hc-entity-profile-page .hc-profile-review-list > *, .hc-account-page .settings-card, .hc-global-search-page .result-card, .hc-global-search-page .state-card, .hc-dashboard-shell .dashboard-card, .hc-dashboard-shell .fan-feature-card, .hc-dashboard-shell .hc-mobile-quick-card, .hc-dashboard-shell .hc-mobile-category-list, .hc-dashboard-shell .hc-mobile-category-row, .hc-template-home .hc-template-panel, .hc-template-home .hc-template-category, .hc-template-directory-links > a, .hc-settings-page .settings-card, .hc-settings-list, .profile-card, .profile-info-card, .directory-card, .directory-tile, .directory-row, .team-card, .coach-card, .league-card, .player-card, .review-card) {
   background: var(--hc-card-bg) !important;
   color: var(--hc-text-primary) !important;
   border-color: var(--hc-card-border) !important;
 }
-html[data-theme="dynamic"] :where(.hc-feed-page, .hc-entity-profile-page, .hc-account-page, .hc-global-search-page, .hc-dashboard-shell, .hc-settings-page) :where(h1,h2,h3,h4,p,small,strong,label,span,a,li,.muted) { color: var(--hc-text-primary); }
-html[data-theme="dynamic"] :where(.hc-feed-page, .hc-entity-profile-page, .hc-account-page, .hc-global-search-page, .hc-dashboard-shell, .hc-settings-page) :where(.muted,small,.description,.hc-feed-counter,.hc-feed-expires) { color: var(--hc-text-secondary); }
-html[data-theme="dynamic"] :where(.hc-feed-page, .hc-entity-profile-page, .hc-account-page, .hc-global-search-page, .hc-dashboard-shell, .hc-settings-page) :where(input,select,textarea,button:not(.btn):not(.hc-post-button),.hc-feed-topic-chip,.hc-feed-filter-chip,.hc-feed-action-pill) {
+html.theme-dark :where(.hc-feed-page, .hc-entity-profile-page, .hc-account-page, .hc-global-search-page, .hc-dashboard-shell, .hc-settings-page) :where(h1,h2,h3,h4,p,small,strong,label,span,a,li,.muted) { color: var(--hc-text-primary); }
+html.theme-dark :where(.hc-feed-page, .hc-entity-profile-page, .hc-account-page, .hc-global-search-page, .hc-dashboard-shell, .hc-settings-page) :where(.muted,small,.description,.hc-feed-counter,.hc-feed-expires) { color: var(--hc-text-secondary); }
+html.theme-dark :where(.hc-feed-page, .hc-entity-profile-page, .hc-account-page, .hc-global-search-page, .hc-dashboard-shell, .hc-settings-page) :where(input,select,textarea,button:not(.btn):not(.hc-post-button),.hc-feed-topic-chip,.hc-feed-filter-chip,.hc-feed-action-pill) {
   background-color: var(--hc-input-bg);
   color: var(--hc-input-text);
   border-color: var(--hc-card-border);
 }
-html[data-theme="light"] :where(.hc-feed-page .hc-feed-ticket, .hc-feed-page .hc-feed-empty, .hc-feed-page .hc-feed-composer, .hc-feed-page .hc-feed-comments-panel, .hc-feed-page .hc-feed-game-fields, .hc-entity-profile-page .card, .hc-entity-profile-page .hc-profile-review-list > *, .hc-global-search-page .result-card, .hc-global-search-page .state-card, .hc-dashboard-shell .dashboard-card, .hc-dashboard-shell .fan-feature-card, .hc-settings-page .settings-card) {
+html.theme-light :where(.hc-feed-page .hc-feed-ticket, .hc-feed-page .hc-feed-empty, .hc-feed-page .hc-feed-composer, .hc-feed-page .hc-feed-comments-panel, .hc-feed-page .hc-feed-game-fields, .hc-entity-profile-page .card, .hc-entity-profile-page .hc-profile-review-list > *, .hc-global-search-page .result-card, .hc-global-search-page .state-card, .hc-dashboard-shell .dashboard-card, .hc-dashboard-shell .fan-feature-card, .hc-settings-page .settings-card) {
   background-color: var(--hc-card-bg);
   color: var(--hc-text-primary);
   border-color: var(--hc-card-border);
@@ -5528,33 +5528,384 @@ html[data-theme="light"] :where(.hc-feed-page .hc-feed-ticket, .hc-feed-page .hc
 
 
 /* Last-mile token coverage for legacy directory rows and member-profile cards. */
-html[data-theme="dynamic"] :where(.hc-team-directory-page, .hc-coach-directory-page, .hc-league-directory-page, .hc-womens-directory-page, .hc-directory-page, .hc-member-profile-page, .hc-profile-page, .hc-team-profile-page, .hc-coach-profile-page, .hc-league-profile-page, .hc-womens-profile-page) {
+html.theme-dark :where(.hc-team-directory-page, .hc-coach-directory-page, .hc-league-directory-page, .hc-womens-directory-page, .hc-directory-page, .hc-member-profile-page, .hc-profile-page, .hc-team-profile-page, .hc-coach-profile-page, .hc-league-profile-page, .hc-womens-profile-page) {
   background-color: var(--hc-page-bg) !important;
   color: var(--hc-text-primary) !important;
 }
-html[data-theme="dynamic"] :where(.hc-team-directory-page, .hc-coach-directory-page, .hc-league-directory-page, .hc-womens-directory-page, .hc-directory-page) :where(.team-row, .hc-team-row, .team-directory-row, .hc-directory-row, .hc-team-directory-row, .directory-row, .directory-card, .directory-tile, .team-card, .coach-row, .league-row, .hc-team-card, .hc-directory-result, .team-result, .result-card, .state-card, .dashboard-card, .card) {
+html.theme-dark :where(.hc-team-directory-page, .hc-coach-directory-page, .hc-league-directory-page, .hc-womens-directory-page, .hc-directory-page) :where(.team-row, .hc-team-row, .team-directory-row, .hc-directory-row, .hc-team-directory-row, .directory-row, .directory-card, .directory-tile, .team-card, .coach-row, .league-row, .hc-team-card, .hc-directory-result, .team-result, .result-card, .state-card, .dashboard-card, .card) {
   background: var(--hc-card-bg) !important;
   color: var(--hc-text-primary) !important;
   border-color: var(--hc-card-border) !important;
 }
-html[data-theme="dynamic"] :where(.hc-team-directory-page, .hc-coach-directory-page, .hc-league-directory-page, .hc-womens-directory-page, .hc-directory-page, .hc-member-profile-page, .hc-profile-page) :where(h1,h2,h3,h4,p,small,strong,label,span,a,li) {
+html.theme-dark :where(.hc-team-directory-page, .hc-coach-directory-page, .hc-league-directory-page, .hc-womens-directory-page, .hc-directory-page, .hc-member-profile-page, .hc-profile-page) :where(h1,h2,h3,h4,p,small,strong,label,span,a,li) {
   color: var(--hc-text-primary);
 }
-html[data-theme="dynamic"] :where(.hc-team-directory-page, .hc-coach-directory-page, .hc-league-directory-page, .hc-womens-directory-page, .hc-directory-page, .hc-member-profile-page, .hc-profile-page) :where(.muted, small, .description, .hc-profile-empty-value) {
+html.theme-dark :where(.hc-team-directory-page, .hc-coach-directory-page, .hc-league-directory-page, .hc-womens-directory-page, .hc-directory-page, .hc-member-profile-page, .hc-profile-page) :where(.muted, small, .description, .hc-profile-empty-value) {
   color: var(--hc-text-secondary);
 }
-html[data-theme="dynamic"] .hc-member-profile-page :where(.card, .dashboard-card, .hc-profile-info-card, .hc-profile-completion, .hc-profile-overview, .hc-profile-empty-value) {
+html.theme-dark .hc-member-profile-page :where(.card, .dashboard-card, .hc-profile-info-card, .hc-profile-completion, .hc-profile-overview, .hc-profile-empty-value) {
   background: var(--hc-card-bg) !important;
   color: var(--hc-text-primary) !important;
   border-color: var(--hc-card-border) !important;
 }
-html[data-theme="light"] :where(.hc-team-directory-page, .hc-coach-directory-page, .hc-league-directory-page, .hc-womens-directory-page, .hc-directory-page) :where(.team-row, .hc-team-row, .team-directory-row, .hc-directory-row, .hc-team-directory-row, .directory-row, .directory-card, .directory-tile, .team-card, .coach-row, .league-row, .hc-team-card, .hc-directory-result, .team-result, .result-card, .state-card, .dashboard-card, .card) {
+html.theme-light :where(.hc-team-directory-page, .hc-coach-directory-page, .hc-league-directory-page, .hc-womens-directory-page, .hc-directory-page) :where(.team-row, .hc-team-row, .team-directory-row, .hc-directory-row, .hc-team-directory-row, .directory-row, .directory-card, .directory-tile, .team-card, .coach-row, .league-row, .hc-team-card, .hc-directory-result, .team-result, .result-card, .state-card, .dashboard-card, .card) {
   background: var(--hc-card-bg) !important;
   color: var(--hc-text-primary) !important;
   border-color: var(--hc-card-border) !important;
 }
-html[data-theme="light"] .hc-member-profile-page :where(.card, .dashboard-card, .hc-profile-info-card, .hc-profile-completion, .hc-profile-overview, .hc-profile-empty-value) {
+html.theme-light .hc-member-profile-page :where(.card, .dashboard-card, .hc-profile-info-card, .hc-profile-completion, .hc-profile-overview, .hc-profile-empty-value) {
   background: var(--hc-card-bg) !important;
   color: var(--hc-text-primary) !important;
   border-color: var(--hc-card-border) !important;
+}
+
+
+/* Unified theme contract: the html theme class is the only global theme switch.
+   Components inherit these design tokens instead of hard-coded light surfaces. */
+:root, html.theme-light {
+  color-scheme: light;
+  --hc-page-bg: #f4f4f1;
+  --hc-surface: #f4f4f1;
+  --hc-surface-raised: #ffffff;
+  --hc-surface-soft: #f8f8f6;
+  --hc-foreground: #171715;
+  --hc-foreground-muted: #686862;
+  --hc-border: #deded7;
+  --hc-input-bg: #ffffff;
+  --hc-input-fg: #171715;
+  --hc-nav-bg: #090909;
+  --hc-nav-fg: #f4f4f1;
+}
+html.theme-dark {
+  color-scheme: dark;
+  --hc-page-bg: #0a0a0a;
+  --hc-surface: #0a0a0a;
+  --hc-surface-raised: #111111;
+  --hc-surface-soft: #1b1b1b;
+  --hc-foreground: #f5f5f2;
+  --hc-foreground-muted: #b8b8b2;
+  --hc-border: #343434;
+  --hc-input-bg: #171717;
+  --hc-input-fg: #f5f5f2;
+  --hc-nav-bg: #080808;
+  --hc-nav-fg: #f4f4f1;
+}
+html, body {
+  background-color: var(--hc-page-bg) !important;
+  color: var(--hc-foreground);
+}
+body { color-scheme: inherit; }
+html.theme-dark body,
+html.theme-light body {
+  background: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark :where(main.page-shell, main.hc-dashboard-shell, main.hc-feed-page, main.settings-page, main.hc-settings-page, main.hc-account-page, main.hc-global-search-page, main.hc-team-directory-page, main.hc-coaches-directory-page, main.hc-leagues-directory-page, main.hc-player-directory-page, main.hc-womens-directory-page, main.hc-entity-profile-page, .page-shell, .hc-dashboard-shell, .hc-feed-page) {
+  background: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html.theme-light :where(main.page-shell, main.hc-dashboard-shell, main.hc-feed-page, main.settings-page, main.hc-settings-page, main.hc-account-page, main.hc-global-search-page, main.hc-team-directory-page, main.hc-coaches-directory-page, main.hc-leagues-directory-page, main.hc-player-directory-page, main.hc-womens-directory-page, main.hc-entity-profile-page, .page-shell, .hc-dashboard-shell, .hc-feed-page) {
+  background: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+/* Dashboard cards and all of its mobile/desktop sections consume shared surface tokens. */
+html.theme-dark .hc-dashboard-shell :where(.dashboard-card, .card, .hero-card, .quick-card, .settings-card, .hc-command-center, .hc-command-tile, .hc-mobile-quick-card, .hc-mobile-category-list, .hc-mobile-category-row, .hc-template-category, .hc-template-panel, .fan-feature-card, .hc-player-stats > *, .hc-dashboard-section, .hc-dashboard-panel) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+  box-shadow: none;
+}
+html.theme-dark .hc-dashboard-shell :where(h1,h2,h3,h4,p,span,label,small,strong,li,a,div) { color: inherit; }
+html.theme-dark .hc-dashboard-shell :where(.eyebrow,.card-kicker,.hc-dashboard-kicker,.hc-dashboard-page-label,.hc-category-label,.category-accent) { color: var(--hc-orange, #ff5a1f) !important; }
+/* HoopFeed composer, controls, topic/filter chips and post cards share the same tokens. */
+html.theme-dark .hc-feed-page :where(.hc-feed-composer,.hc-feed-ticket,.hc-feed-empty,.hc-feed-comments-panel,.hc-feed-game-fields,.hc-feed-filter-bar,.hc-feed-topic-picker,.hc-feed-post-card,.hc-feed-skeleton) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark .hc-feed-page :where(.hc-feed-topic-chip,.hc-feed-filter-chip,.hc-feed-sort-toggle button,.hc-feed-action-pill,.hc-feed-comments-panel button:not(.btn)) {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark .hc-feed-page :where(.hc-feed-topic-chip.is-selected,.hc-feed-filter-chip.is-active,.hc-feed-sort-toggle button.is-active) {
+  background: var(--hc-orange, #ff5a1f) !important;
+  color: #0a0a0a !important;
+  border-color: var(--hc-orange, #ff5a1f) !important;
+}
+html.theme-dark .hc-feed-page :where(textarea,input,select) {
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+  -webkit-text-fill-color: var(--hc-input-fg) !important;
+}
+html.theme-dark .hc-feed-page :where(h1,h2,h3,h4,p,span,label,small,strong,li,.muted,.hc-feed-post-author__meta,.hc-feed-expiry-note,.hc-feed-counter,.hc-feed-expires,.hc-feed-location) {
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark .hc-feed-page :where(.eyebrow,.card-kicker,.hc-feed-topic-label,.hc-feed-streak) { color: var(--hc-orange, #ff5a1f) !important; }
+html.theme-light .hc-feed-page :where(.hc-feed-composer,.hc-feed-ticket,.hc-feed-empty,.hc-feed-comments-panel,.hc-feed-game-fields,.hc-feed-filter-bar,.hc-feed-topic-picker,.hc-feed-post-card,.hc-feed-skeleton) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light .hc-feed-page :where(.hc-feed-topic-chip,.hc-feed-filter-chip,.hc-feed-sort-toggle button,.hc-feed-action-pill,.hc-feed-comments-panel button:not(.btn)) {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light .hc-feed-page :where(textarea,input,select) {
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+  -webkit-text-fill-color: var(--hc-input-fg) !important;
+}
+/* Shared legacy card selectors: last-resort compatibility is still token based. */
+html.theme-dark main:not(.hc-template-home) :where(.card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,.hc-mobile-quick-card,.hc-mobile-category-row,.hc-template-panel,.hc-template-category,.hc-template-directory-links > a) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(.card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,.hc-mobile-quick-card,.hc-mobile-category-row,.hc-template-panel,.hc-template-category,.hc-template-directory-links > a) :where(h1,h2,h3,h4,p,span,label,small,strong,li) {
+  color: inherit !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(input,select,textarea) {
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+  -webkit-text-fill-color: var(--hc-input-fg) !important;
+}
+
+
+/* Light-mode counterpart: the same token contract applies in both directions. */
+html.theme-light .hc-dashboard-shell :where(.dashboard-card, .card, .hero-card, .quick-card, .settings-card, .hc-command-center, .hc-command-tile, .hc-mobile-quick-card, .hc-mobile-category-list, .hc-mobile-category-row, .hc-template-category, .hc-template-panel, .fan-feature-card, .hc-player-stats > *, .hc-dashboard-section, .hc-dashboard-panel) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light .hc-dashboard-shell :where(h1,h2,h3,h4,p,span,label,small,strong,li,a,div) { color: inherit; }
+html.theme-light main:not(.hc-template-home) :where(.card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,.hc-mobile-quick-card,.hc-mobile-category-row,.hc-template-panel,.hc-template-category,.hc-template-directory-links > a) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light main:not(.hc-template-home) :where(.card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,.hc-mobile-quick-card,.hc-mobile-category-row,.hc-template-panel,.hc-template-category,.hc-template-directory-links > a) :where(h1,h2,h3,h4,p,span,label,small,strong,li) {
+  color: inherit !important;
+}
+html.theme-light main:not(.hc-template-home) :where(input,select,textarea) {
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+  -webkit-text-fill-color: var(--hc-input-fg) !important;
+}
+
+
+/* Theme token sweep for legacy route components that still declare fixed light colors. */
+html.theme-dark main:not(.hc-template-home) {
+  background-color: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html.theme-light main:not(.hc-template-home) {
+  background-color: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(h1,h2,h3,h4,p,span,label,small,strong,li,a,div):not(.btn):not(.eyebrow):not(.card-kicker):not(.hc-feed-streak):not(.hc-feed-plan-tag):not([class*="badge"]):not([class*="category"]):not([class*="icon"]) {
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(.muted,.text-muted,.description,.subtle,.hc-feed-counter,.hc-feed-expires,.hc-feed-location,.hc-feed-post-author__meta) {
+  color: var(--hc-foreground-muted) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(.eyebrow,.card-kicker,.hc-feed-topic-label,.hc-feed-streak,.hc-feed-plan-tag,.hc-dashboard-kicker,.hc-dashboard-page-label) {
+  color: var(--hc-orange, #ff5a1f) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(.card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,.hc-feed-composer,.hc-feed-ticket,.hc-feed-empty,.hc-feed-comments-panel,.hc-feed-game-fields,.hc-feed-filter-bar,.hc-feed-topic-picker,.hc-feed-post-card,.hc-feed-skeleton,.hc-command-center,.hc-command-tile,.hc-mobile-quick-card,.hc-mobile-category-list,.hc-mobile-category-row,.hc-template-panel,.hc-template-category,.hc-template-directory-links > a,.hc-player-result,.hc-review-card,.hc-profile-info-card) {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(input,select,textarea) {
+  background-color: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+  -webkit-text-fill-color: var(--hc-input-fg) !important;
+}
+html.theme-light main:not(.hc-template-home) :where(.card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,.hc-feed-composer,.hc-feed-ticket,.hc-feed-empty,.hc-feed-comments-panel,.hc-feed-game-fields,.hc-feed-filter-bar,.hc-feed-topic-picker,.hc-feed-post-card,.hc-feed-skeleton,.hc-command-center,.hc-command-tile,.hc-mobile-quick-card,.hc-mobile-category-list,.hc-mobile-category-row,.hc-template-panel,.hc-template-category,.hc-template-directory-links > a,.hc-player-result,.hc-review-card,.hc-profile-info-card) {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light main:not(.hc-template-home) :where(input,select,textarea) {
+  background-color: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+  -webkit-text-fill-color: var(--hc-input-fg) !important;
+}
+
+
+/* Backward-compatible variable names are aliases, not separate theme systems. */
+:root, html.theme-light {
+  --hc-ink: var(--hc-foreground);
+  --hc-ink-raised: var(--hc-surface-raised);
+  --hc-card-bg: var(--hc-surface-raised);
+  --hc-canvas: var(--hc-page-bg);
+  --hc-copy: var(--hc-foreground);
+  --hc-dashboard-ink: var(--hc-foreground);
+  --hc-dashboard-paper: var(--hc-surface-raised);
+  --hc-dashboard-muted: var(--hc-foreground-muted);
+  --hc-mobile-ink: var(--hc-foreground);
+  --hc-mobile-row-bg: var(--hc-surface-raised);
+  --hc-mobile-row-border: var(--hc-border);
+  --hc-mobile-line: var(--hc-border);
+  --hc-dashboard-line: var(--hc-border);
+  --hc-dashboard-border: var(--hc-border);
+  --hc-panel-border: var(--hc-border);
+  --hc-border-strong: var(--hc-border);
+  --hc-row-hover: var(--hc-surface-soft);
+  --hc-muted-on-dark: var(--hc-foreground-muted);
+  --hc-subtle-on-dark: var(--hc-foreground-muted);
+  --surface-1: var(--hc-surface-raised);
+  --muted: var(--hc-foreground-muted);
+  --text: var(--hc-foreground);
+}
+html.theme-dark {
+  --hc-ink: var(--hc-foreground);
+  --hc-ink-raised: var(--hc-surface-raised);
+  --hc-card-bg: var(--hc-surface-raised);
+  --hc-canvas: var(--hc-page-bg);
+  --hc-copy: var(--hc-foreground);
+  --hc-dashboard-ink: var(--hc-foreground);
+  --hc-dashboard-paper: var(--hc-surface-raised);
+  --hc-dashboard-muted: var(--hc-foreground-muted);
+  --hc-mobile-ink: var(--hc-foreground);
+  --hc-mobile-row-bg: var(--hc-surface-raised);
+  --hc-mobile-row-border: var(--hc-border);
+  --hc-mobile-line: var(--hc-border);
+  --hc-dashboard-line: var(--hc-border);
+  --hc-dashboard-border: var(--hc-border);
+  --hc-panel-border: var(--hc-border);
+  --hc-border-strong: var(--hc-border);
+  --hc-row-hover: var(--hc-surface-soft);
+  --hc-muted-on-dark: var(--hc-foreground-muted);
+  --hc-subtle-on-dark: var(--hc-foreground-muted);
+  --surface-1: var(--hc-surface-raised);
+  --muted: var(--hc-foreground-muted);
+  --text: var(--hc-foreground);
+}
+
+:root, html.theme-light {
+  --ink: var(--hc-foreground);
+  --paper: var(--hc-page-bg);
+  --page-bg: var(--hc-page-bg);
+  --page-text: var(--hc-foreground);
+  --page-muted: var(--hc-foreground-muted);
+  --surface: var(--hc-surface);
+  --surface-2: var(--hc-surface-raised);
+  --surface-3: var(--hc-surface-soft);
+  --hc-paper: var(--hc-page-bg);
+  --hc-paper-strong: var(--hc-surface-raised);
+  --hc-text: var(--hc-foreground);
+  --hc-text-primary: var(--hc-foreground);
+  --hc-text-muted: var(--hc-foreground-muted);
+  --hc-text-secondary: var(--hc-foreground-muted);
+  --hc-muted: var(--hc-foreground-muted);
+  --hc-line: var(--hc-border);
+  --hc-card-border: var(--hc-border);
+  --hc-input-text: var(--hc-input-fg);
+  --hc-surface-muted: var(--hc-surface-soft);
+  --hc-divider: var(--hc-border);
+  --gray-100: var(--hc-surface-soft);
+  --gray-300: var(--hc-foreground-muted);
+  --gray-500: var(--hc-foreground-muted);
+  --border: var(--hc-border);
+  --white: var(--hc-surface-raised);
+  --black: var(--hc-foreground);
+  --hc-mobile-row-bg: var(--hc-surface-raised);
+  --hc-mobile-row-border: var(--hc-border);
+  --hc-hover-wash: var(--hc-surface-soft);
+}
+html.theme-dark {
+  --ink: var(--hc-foreground);
+  --paper: var(--hc-page-bg);
+  --page-bg: var(--hc-page-bg);
+  --page-text: var(--hc-foreground);
+  --page-muted: var(--hc-foreground-muted);
+  --surface: var(--hc-surface);
+  --surface-2: var(--hc-surface-raised);
+  --surface-3: var(--hc-surface-soft);
+  --hc-paper: var(--hc-page-bg);
+  --hc-paper-strong: var(--hc-surface-raised);
+  --hc-text: var(--hc-foreground);
+  --hc-text-primary: var(--hc-foreground);
+  --hc-text-muted: var(--hc-foreground-muted);
+  --hc-text-secondary: var(--hc-foreground-muted);
+  --hc-muted: var(--hc-foreground-muted);
+  --hc-line: var(--hc-border);
+  --hc-card-border: var(--hc-border);
+  --hc-input-text: var(--hc-input-fg);
+  --hc-surface-muted: var(--hc-surface-soft);
+  --hc-divider: var(--hc-border);
+  --gray-100: var(--hc-surface-soft);
+  --gray-300: var(--hc-foreground-muted);
+  --gray-500: var(--hc-foreground-muted);
+  --border: var(--hc-border);
+  --white: var(--hc-foreground);
+  --black: var(--hc-page-bg);
+  --hc-mobile-row-bg: var(--hc-surface-raised);
+  --hc-mobile-row-border: var(--hc-border);
+  --hc-hover-wash: var(--hc-surface-soft);
+}
+
+
+/* Route sweep: include legacy administrative, legal, authentication, profile and review surfaces. */
+html.theme-dark main:not(.hc-template-home) :where(.admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,.auth-card,.hc-auth-card,.legal-card,.hc-team-profile-hero,.hc-coach-profile-hero,.hc-league-profile-hero,.hc-womens-profile-hero,.hc-profile-review-list > *,.hc-directory-result,.hc-review-state,.hc-coach-empty,.hc-team-row,.hc-command-tile,.hc-profile-info-card) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(.admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,.auth-card,.hc-auth-card,.legal-card,.hc-team-profile-hero,.hc-coach-profile-hero,.hc-league-profile-hero,.hc-womens-profile-hero,.hc-profile-review-list > *,.hc-directory-result,.hc-review-state,.hc-coach-empty,.hc-team-row,.hc-command-tile,.hc-profile-info-card) :where(h1,h2,h3,h4,p,span,label,small,strong,li,a) {
+  color: inherit !important;
+}
+html.theme-light main:not(.hc-template-home) :where(.admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,.auth-card,.hc-auth-card,.legal-card,.hc-team-profile-hero,.hc-coach-profile-hero,.hc-league-profile-hero,.hc-womens-profile-hero,.hc-profile-review-list > *,.hc-directory-result,.hc-review-state,.hc-coach-empty,.hc-team-row,.hc-command-tile,.hc-profile-info-card) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light main:not(.hc-template-home) :where(.admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,.auth-card,.hc-auth-card,.legal-card,.hc-team-profile-hero,.hc-coach-profile-hero,.hc-league-profile-hero,.hc-womens-profile-hero,.hc-profile-review-list > *,.hc-directory-result,.hc-review-state,.hc-coach-empty,.hc-team-row,.hc-command-tile,.hc-profile-info-card) :where(h1,h2,h3,h4,p,span,label,small,strong,li,a) {
+  color: inherit !important;
+}
+/* The homepage is included in the same theme contract instead of being a fixed light-only island. */
+html.theme-dark .hc-template-home,
+html.theme-light .hc-template-home {
+  background: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark .hc-template-home :where(.hc-template-hero,.hc-template-explore,.hc-template-directory,.hc-template-category,.hc-template-panel,.hc-template-directory-links > a) ,
+html.theme-light .hc-template-home :where(.hc-template-hero,.hc-template-explore,.hc-template-directory,.hc-template-category,.hc-template-panel,.hc-template-directory-links > a) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark .hc-template-home :where(h1,h2,h3,h4,p,span,label,small,strong,li,a) ,
+html.theme-light .hc-template-home :where(h1,h2,h3,h4,p,span,label,small,strong,li,a) {
+  color: inherit !important;
+}
+html.theme-dark .hc-template-home :where(.eyebrow,.card-kicker,.hc-template-category-icon,.hc-template-section-kicker) ,
+html.theme-light .hc-template-home :where(.eyebrow,.card-kicker,.hc-template-category-icon,.hc-template-section-kicker) {
+  color: var(--hc-orange, #ff5a1f) !important;
+}
+
+
+/* Remaining Dashboard-specific controls and statistic cells also inherit tokens. */
+html.theme-dark .hc-dashboard-shell :where(.hc-mobile-search-field,.hc-player-stats > *) ,
+html.theme-light .hc-dashboard-shell :where(.hc-mobile-search-field,.hc-player-stats > *) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark .hc-dashboard-shell .hc-player-stats > * :where(span,small) ,
+html.theme-light .hc-dashboard-shell .hc-player-stats > * :where(span,small) {
+  color: var(--hc-foreground-muted) !important;
+}
+html.theme-dark .hc-dashboard-shell .hc-player-stats > * strong ,
+html.theme-light .hc-dashboard-shell .hc-player-stats > * strong {
+  color: var(--hc-foreground) !important;
 }

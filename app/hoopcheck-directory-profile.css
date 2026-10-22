@@ -147,6 +147,341 @@
   .hc-player-directory-page .team-filter-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (prefers-color-scheme: dark) {
-  html[data-theme="dark"] .hc-shared-directory-hero,
-  html[data-theme="dynamic"] .hc-shared-directory-hero { background: var(--card, #1a1a1a); color: var(--text, #f5f5f5); }
+  html.theme-dark .hc-shared-directory-hero,
+  html.theme-dark .hc-shared-directory-hero { background: var(--card, #1a1a1a); color: var(--text, #f5f5f5); }
+}
+
+
+/* Final theme-token pass. This file is imported last by app/layout.tsx so
+   legacy fixed-color rules from earlier stylesheets cannot undo the theme. */
+html.theme-dark,
+html.theme-light {
+  color-scheme: inherit;
+}
+html.theme-dark body,
+html.theme-light body {
+  background: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark main,
+html.theme-light main {
+  background: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark .hc-template-home,
+html.theme-light .hc-template-home {
+  background: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+
+/* Dashboard: welcome, identity, metrics, shortcuts, category rows and cards. */
+html.theme-dark .hc-dashboard-shell > .page-container,
+html.theme-light .hc-dashboard-shell > .page-container {
+  background: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark .hc-dashboard-shell :where(
+  .hc-dashboard-welcome,
+  .hc-dashboard-profile-block,
+  .hc-dashboard-stat-card,
+  .hc-mobile-search-field,
+  .hc-mobile-quick-card,
+  .hc-mobile-category-row,
+  .dashboard-card,
+  .fan-feature-card,
+  .hc-command-center,
+  .hc-command-tile,
+  .hc-mobile-category-list,
+  .hc-template-panel,
+  .hc-template-category
+),
+html.theme-light .hc-dashboard-shell :where(
+  .hc-dashboard-welcome,
+  .hc-dashboard-profile-block,
+  .hc-dashboard-stat-card,
+  .hc-mobile-search-field,
+  .hc-mobile-quick-card,
+  .hc-mobile-category-row,
+  .dashboard-card,
+  .fan-feature-card,
+  .hc-command-center,
+  .hc-command-tile,
+  .hc-mobile-category-list,
+  .hc-template-panel,
+  .hc-template-category
+) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+  box-shadow: none;
+}
+html.theme-dark .hc-dashboard-shell :where(
+  .hc-dashboard-welcome h1,
+  .hc-dashboard-profile-copy strong,
+  .hc-dashboard-username,
+  .hc-dashboard-stat-value,
+  .hc-mobile-section-heading h2,
+  .hc-mobile-card-copy strong,
+  .dashboard-card h2,
+  .dashboard-card h3,
+  .fan-feature-card h2
+),
+html.theme-light .hc-dashboard-shell :where(
+  .hc-dashboard-welcome h1,
+  .hc-dashboard-profile-copy strong,
+  .hc-dashboard-username,
+  .hc-dashboard-stat-value,
+  .hc-mobile-section-heading h2,
+  .hc-mobile-card-copy strong,
+  .dashboard-card h2,
+  .dashboard-card h3,
+  .fan-feature-card h2
+) {
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark .hc-dashboard-shell :where(
+  .hc-dashboard-hero-description,
+  .hc-dashboard-profile-label,
+  .hc-dashboard-membership-badge,
+  .hc-dashboard-stat-label,
+  .hc-dashboard-stat-note,
+  .hc-mobile-card-copy small,
+  .hc-mobile-section-count,
+  .dashboard-card .muted,
+  .fan-feature-card .muted
+),
+html.theme-light .hc-dashboard-shell :where(
+  .hc-dashboard-hero-description,
+  .hc-dashboard-profile-label,
+  .hc-dashboard-membership-badge,
+  .hc-dashboard-stat-label,
+  .hc-dashboard-stat-note,
+  .hc-mobile-card-copy small,
+  .hc-mobile-section-count,
+  .dashboard-card .muted,
+  .fan-feature-card .muted
+) {
+  color: var(--hc-foreground-muted) !important;
+}
+html.theme-dark .hc-dashboard-shell :where(
+  .eyebrow,
+  .hc-dashboard-page-label,
+  .hc-dashboard-kicker,
+  .hc-mobile-eyebrow,
+  .card-kicker
+),
+html.theme-light .hc-dashboard-shell :where(
+  .eyebrow,
+  .hc-dashboard-page-label,
+  .hc-dashboard-kicker,
+  .hc-mobile-eyebrow,
+  .card-kicker
+) {
+  color: var(--hc-orange) !important;
+}
+html.theme-dark .hc-dashboard-shell .hc-dashboard-welcome h1 span,
+html.theme-light .hc-dashboard-shell .hc-dashboard-welcome h1 span {
+  color: var(--hc-orange) !important;
+}
+html.theme-dark .hc-dashboard-shell .hc-mobile-search :where(input,textarea),
+html.theme-light .hc-dashboard-shell .hc-mobile-search :where(input,textarea) {
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+  -webkit-text-fill-color: var(--hc-input-fg) !important;
+}
+
+/* HoopFeed: composer, topic/filter controls, post cards and form controls. */
+html.theme-dark .hc-feed-page :where(
+  .hc-feed-composer,
+  .hc-feed-ticket,
+  .hc-feed-empty,
+  .hc-feed-comments-panel,
+  .hc-feed-game-fields,
+  .hc-feed-filter-bar,
+  .hc-feed-topic-picker,
+  .hc-feed-post-card,
+  .hc-feed-skeleton
+),
+html.theme-light .hc-feed-page :where(
+  .hc-feed-composer,
+  .hc-feed-ticket,
+  .hc-feed-empty,
+  .hc-feed-comments-panel,
+  .hc-feed-game-fields,
+  .hc-feed-filter-bar,
+  .hc-feed-topic-picker,
+  .hc-feed-post-card,
+  .hc-feed-skeleton
+) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark .hc-feed-page :where(.hc-feed-topic-chip,.hc-feed-filter-chip,.hc-feed-sort-toggle button,.hc-feed-action-pill),
+html.theme-light .hc-feed-page :where(.hc-feed-topic-chip,.hc-feed-filter-chip,.hc-feed-sort-toggle button,.hc-feed-action-pill) {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark .hc-feed-page :where(.hc-feed-topic-chip.is-selected,.hc-feed-filter-chip.is-active,.hc-feed-sort-toggle button.is-active),
+html.theme-light .hc-feed-page :where(.hc-feed-topic-chip.is-selected,.hc-feed-filter-chip.is-active,.hc-feed-sort-toggle button.is-active) {
+  background: var(--hc-orange) !important;
+  color: #0a0a0a !important;
+  border-color: var(--hc-orange) !important;
+}
+html.theme-dark .hc-feed-page :where(textarea,input,select),
+html.theme-light .hc-feed-page :where(textarea,input,select) {
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+  -webkit-text-fill-color: var(--hc-input-fg) !important;
+}
+html.theme-dark .hc-feed-page :where(h1,h2,h3,h4,p,span,label,small,strong,li),
+html.theme-light .hc-feed-page :where(h1,h2,h3,h4,p,span,label,small,strong,li) {
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark .hc-feed-page :where(.eyebrow,.card-kicker,.hc-feed-topic-label),
+html.theme-light .hc-feed-page :where(.eyebrow,.card-kicker,.hc-feed-topic-label) {
+  color: var(--hc-orange) !important;
+}
+
+/* Shared surfaces across profile, directory, review, account, legal and admin routes. */
+html.theme-dark main :where(
+  .card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,
+  .settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,
+  .hc-team-row,.hc-profile-info-card,.hc-profile-review-list > *, .hc-review-card,
+  .hc-player-result,.hc-directory-result,.hc-review-state,.hc-coach-empty,
+  .admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,
+  .moderation-card,.modal-panel,.modal-content,.form-card,.auth-card,.hc-auth-card,.legal-card,
+  .hc-shared-directory-hero,.hc-shared-directory-tiles,.hc-shared-directory-tiles a,
+  .research-search,.hc-league-filter,.hc-team-profile-logo,.hc-team-logo-tile,
+  .hc-dashboard-stat-card,.hc-dashboard-profile-block
+),
+html.theme-light main :where(
+  .card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,
+  .settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,
+  .hc-team-row,.hc-profile-info-card,.hc-profile-review-list > *, .hc-review-card,
+  .hc-player-result,.hc-directory-result,.hc-review-state,.hc-coach-empty,
+  .admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,
+  .moderation-card,.modal-panel,.modal-content,.form-card,.auth-card,.hc-auth-card,.legal-card,
+  .hc-shared-directory-hero,.hc-shared-directory-tiles,.hc-shared-directory-tiles a,
+  .research-search,.hc-league-filter,.hc-team-profile-logo,.hc-team-logo-tile,
+  .hc-dashboard-stat-card,.hc-dashboard-profile-block
+) {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark main :where(
+  .card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,
+  .settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,
+  .hc-team-row,.hc-profile-info-card,.hc-profile-review-list > *, .hc-review-card,
+  .hc-player-result,.hc-directory-result,.hc-review-state,.hc-coach-empty,
+  .admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,
+  .moderation-card,.modal-panel,.modal-content,.form-card,.auth-card,.hc-auth-card,.legal-card,
+  .hc-shared-directory-hero,.hc-shared-directory-tiles,.hc-shared-directory-tiles a,
+  .research-search,.hc-league-filter,.hc-team-profile-logo,.hc-team-logo-tile,
+  .hc-dashboard-stat-card,.hc-dashboard-profile-block
+) :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn)),
+html.theme-light main :where(
+  .card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,
+  .settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,
+  .hc-team-row,.hc-profile-info-card,.hc-profile-review-list > *, .hc-review-card,
+  .hc-player-result,.hc-directory-result,.hc-review-state,.hc-coach-empty,
+  .admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,
+  .moderation-card,.modal-panel,.modal-content,.form-card,.auth-card,.hc-auth-card,.legal-card,
+  .hc-shared-directory-hero,.hc-shared-directory-tiles,.hc-shared-directory-tiles a,
+  .research-search,.hc-league-filter,.hc-team-profile-logo,.hc-team-logo-tile,
+  .hc-dashboard-stat-card,.hc-dashboard-profile-block
+) :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn)) {
+  color: inherit !important;
+}
+html.theme-dark main :where(input,select,textarea,.research-search,.hc-league-filter),
+html.theme-light main :where(input,select,textarea,.research-search,.hc-league-filter) {
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+  -webkit-text-fill-color: var(--hc-input-fg) !important;
+}
+html.theme-dark main :where(.btn,button,[role="button"]) :where(*),
+html.theme-light main :where(.btn,button,[role="button"]) :where(*) {
+  color: inherit !important;
+}
+
+
+/* Shared SearchBar has its own surface class; it must follow the same tokens too. */
+html.theme-dark main .hc-searchbar,
+html.theme-light main .hc-searchbar {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark main .hc-searchbar__clear,
+html.theme-light main .hc-searchbar__clear {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+
+
+html.theme-dark .global-back-button,
+html.theme-light .global-back-button {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark .global-back-button:hover,
+html.theme-light .global-back-button:hover {
+  border-color: var(--hc-orange) !important;
+}
+
+
+/* Last dark-surface audit findings from the real browser: mobile dashboard canvas,
+   player-connection request card, and HoopFeed Photo control. */
+html.theme-dark .hc-dashboard-shell .hc-mobile-dashboard,
+html.theme-light .hc-dashboard-shell .hc-mobile-dashboard {
+  background: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark .hc-dashboard-shell .contact-box.hc-contact-request-card,
+html.theme-light .hc-dashboard-shell .contact-box.hc-contact-request-card {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark .hc-feed-page .hc-feed-photo-button,
+html.theme-light .hc-feed-page .hc-feed-photo-button {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+
+
+/* Dark-mode compatibility for older admin/forms that still declare light inline styles. */
+html.theme-dark main [style*="background: rgb(255, 255, 255)"],
+html.theme-dark main [style*="background-color: rgb(255, 255, 255)"],
+html.theme-dark main [style*="background: #FFFFFF"],
+html.theme-dark main [style*="background: #ffffff"],
+html.theme-dark main [style*="background-color: #FFFFFF"],
+html.theme-dark main [style*="background-color: #ffffff"],
+html.theme-dark main [style*="background: rgb(247, 247, 245)"],
+html.theme-dark main [style*="background-color: rgb(247, 247, 245)"],
+html.theme-dark main [style*="background: #F7F7F5"],
+html.theme-dark main [style*="background: #f7f7f5"] {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark main [style*="background: rgb(255, 255, 255)"] :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn),div),
+html.theme-dark main [style*="background-color: rgb(255, 255, 255)"] :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn),div),
+html.theme-dark main [style*="background: #FFFFFF"] :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn),div),
+html.theme-dark main [style*="background: #ffffff"] :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn),div),
+html.theme-dark main [style*="background: rgb(247, 247, 245)"] :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn),div),
+html.theme-dark main [style*="background: #F7F7F5"] :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn),div),
+html.theme-dark main [style*="background: #f7f7f5"] :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn),div) {
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark main :where(.btn,button,[role="button"]) :where(*) {
+  color: inherit !important;
 }
