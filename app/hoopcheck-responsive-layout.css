@@ -1,0 +1,145 @@
+/* Responsive desktop layout foundation — aligned with the desktop navigation. */
+:root { --hc-content-max: 1200px; --hc-page-gutter: 16px; }
+html, body { width: 100%; min-width: 0; }
+body { overflow-x: clip; }
+.nav { box-sizing: border-box; width: 100%; padding-inline: max(16px, calc((100% - var(--hc-content-max)) / 2)); }
+.site-footer .footer-inner, .site-footer .footer-bottom { width: min(100% - 32px, var(--hc-content-max)); box-sizing: border-box; }
+main.hc-team-directory-page, main.hc-coaches-directory-page, main.hc-leagues-directory-page,
+main.hc-player-directory-page, main.hc-womens-directory-page, main.hc-entity-profile-page {
+  box-sizing: border-box; width: 100%; max-width: var(--hc-content-max); min-width: 0;
+  margin-inline: auto; padding: 24px 16px 64px;
+}
+main.hc-team-directory-page > *, main.hc-coaches-directory-page > *, main.hc-leagues-directory-page > *,
+main.hc-player-directory-page > *, main.hc-womens-directory-page > *, main.hc-entity-profile-page > * {
+  min-width: 0; max-width: 100%; box-sizing: border-box;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page,.hc-womens-directory-page,.hc-entity-profile-page) > .hero {
+  width: 100%; max-width: none; margin-inline: 0; padding-inline: clamp(16px, 2.4vw, 30px);
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page,.hc-womens-directory-page) .grid {
+  box-sizing: border-box; width: 100%; max-width: none; margin-inline: 0; padding: 20px 0 48px;
+  display: grid; grid-template-columns: minmax(0,1fr); align-items: stretch; gap: 16px;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page,.hc-womens-directory-page) .grid > * {
+  width: 100%; min-width: 0; max-width: none; box-sizing: border-box;
+}
+/* Scouting report cards become full, readable tiles rather than stretched horizontal strips. */
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-team-directory-row {
+  display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start;
+  min-width: 0; min-height: 100%; height: 100%; padding: 0; overflow: hidden;
+  border: 1px solid var(--hc-border,#deded8); border-radius: 14px;
+  background: var(--hc-surface-raised,#fff); color: var(--hc-foreground,#111);
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-scout-card__report {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px;
+  min-height: 34px; padding: 8px 14px; border: 0; border-bottom: 1px solid var(--hc-border,#deded8);
+  background: var(--hc-surface-soft,#f7f7f4); color: var(--hc-foreground-muted,#666);
+  font-size: 10px; line-height: 1.3;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-team-directory-row__main {
+  display: block; flex: 0 0 auto; min-width: 0; padding: 18px 16px 12px;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-scout-card__identity {
+  display: grid; grid-template-columns: 52px minmax(0,1fr) 18px; align-items: center; gap: 12px; min-width: 0;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-scout-card__identity-copy { min-width: 0; }
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-scout-card__identity-copy h2,
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-scout-card__identity-copy h3 {
+  margin: 0 0 6px; font-size: clamp(16px,1.2vw,20px); line-height: 1.15; overflow-wrap: anywhere;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-scout-card__identity-copy p {
+  margin: 0; font-size: 12px; line-height: 1.45; overflow-wrap: anywhere;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-team-directory-row__trust {
+  display: flex; align-items: center; min-height: 56px; padding: 0 16px 12px;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-scout-card__stats {
+  display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; padding: 12px 14px;
+  border-top: 1px solid var(--hc-border,#deded8); border-bottom: 1px solid var(--hc-border,#deded8);
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-scout-card__stat { min-width: 0; }
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-scout-card__stat span,
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-scout-card__stat small {
+  display: block; font-size: 10px; line-height: 1.35; overflow-wrap: anywhere;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-scout-card__stat strong {
+  display: block; margin: 4px 0; font-size: 19px; line-height: 1;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-scout-card__ticket {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  margin-top: auto; padding: 14px 16px;
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-scout-card__ticket a {
+  font-size: 11px; line-height: 1.4;
+}
+.hc-shared-directory-tile-grid { grid-template-columns: repeat(5,minmax(0,1fr)); }
+.hc-shared-directory-hero h1,
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page,.hc-womens-directory-page) > .hero h1 {
+  font-size: clamp(2.25rem,4.5vw,4rem); max-width: 100%; overflow-wrap: anywhere;
+}
+/* Team detail: retain mobile DOM order, then promote roster to a desktop sidebar. */
+.hc-team-entity-profile > .hero:first-of-type { display: grid; grid-template-columns: minmax(0,1fr); gap: 18px; }
+.hc-team-entity-profile .hc-team-profile-heading,.hc-team-entity-profile .hc-entity-trust-score,
+.hc-team-entity-profile .entity-actions,.hc-team-entity-profile .team-roster-spots { min-width: 0; }
+.hc-team-entity-profile .team-roster-spots { width: 100%; }
+.hc-team-entity-profile > .hero:not(:first-of-type) { width: 100%; }
+.hc-team-entity-profile .hc-profile-review-list,.hc-team-entity-profile > .hero > .card { min-width: 0; overflow-wrap: anywhere; }
+@media (min-width:768px) {
+  :where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page,.hc-womens-directory-page) .grid {
+    grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px;
+  }
+  .hc-shared-directory-hero { padding: 32px; }
+  .hc-shared-directory-tiles { padding: 18px; }
+}
+@media (min-width:1024px) {
+  .hc-team-entity-profile { display: grid; grid-template-columns: minmax(0,1fr) 320px; align-items: start; column-gap: 28px; row-gap: 20px; }
+  .hc-team-entity-profile > .hero:first-of-type { grid-column: 1 / -1; grid-template-columns: minmax(0,1fr) 320px; align-items: start; gap: 18px 28px; }
+  .hc-team-entity-profile > .hero:first-of-type > .hc-team-profile-heading,
+  .hc-team-entity-profile > .hero:first-of-type > .hc-entity-trust-score,
+  .hc-team-entity-profile > .hero:first-of-type > .entity-actions { grid-column: 1; }
+  .hc-team-entity-profile > .hero:first-of-type > .team-roster-spots { grid-column: 2; grid-row: 1 / span 4; align-self: start; }
+  .hc-team-entity-profile > .hero:not(:first-of-type) { grid-column: 1; }
+  .hc-team-entity-profile > .hero.hc-team-write-review { grid-column: 2; grid-row: 3; align-self: start; }
+}
+@media (min-width:1200px) {
+  :where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page,.hc-womens-directory-page) .grid {
+    grid-template-columns: repeat(3,minmax(0,1fr)); gap: 20px;
+  }
+  .hc-team-directory-page > .hero h1,.hc-coaches-directory-page > .hero h1,.hc-leagues-directory-page > .hero h1,
+  .hc-player-directory-page > .hero h1,.hc-womens-directory-page > .hero h1 { font-size: clamp(3rem,4.2vw,4rem); }
+}
+@media (max-width:767px) {
+  main.hc-team-directory-page,main.hc-coaches-directory-page,main.hc-leagues-directory-page,
+  main.hc-player-directory-page,main.hc-womens-directory-page,main.hc-entity-profile-page { padding: 16px 16px 48px; }
+  .hc-shared-directory-tile-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .hc-shared-directory-tile-grid a:last-child { grid-column: auto; }
+  :where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page,.hc-womens-directory-page) .team-filter-row {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+  .hc-team-entity-profile > .hero:first-of-type { display: flex; flex-direction: column; }
+}
+@media (max-width:420px) {
+  :where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page,.hc-womens-directory-page) .grid { gap: 12px; }
+  .hc-team-directory-page .hc-scout-card__stats,.hc-coaches-directory-page .hc-scout-card__stats,
+  .hc-leagues-directory-page .hc-scout-card__stats,.hc-womens-directory-page .hc-scout-card__stats { gap: 5px; padding-inline: 10px; }
+  .hc-team-directory-page .hc-scout-card__stat span,.hc-team-directory-page .hc-scout-card__stat small,
+  .hc-coaches-directory-page .hc-scout-card__stat span,.hc-coaches-directory-page .hc-scout-card__stat small,
+  .hc-leagues-directory-page .hc-scout-card__stat span,.hc-leagues-directory-page .hc-scout-card__stat small,
+  .hc-womens-directory-page .hc-scout-card__stat span,.hc-womens-directory-page .hc-scout-card__stat small { font-size: 9px; }
+}
+
+.hc-team-facts-card {
+  min-width: 0; padding: 18px; border: 1px solid var(--hc-border,#deded8);
+  border-radius: 14px; background: var(--hc-surface-raised,#fff); color: var(--hc-foreground,#111);
+}
+.hc-team-facts-card .eyebrow { margin: 0 0 12px; }
+.hc-team-facts-card dl { display: grid; gap: 0; margin: 0; }
+.hc-team-facts-card dl > div { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 10px 0; border-top: 1px solid var(--hc-border,#deded8); }
+.hc-team-facts-card dt { color: var(--hc-foreground-muted,#686868); font-size: 12px; font-weight: 700; }
+.hc-team-facts-card dd { margin: 0; max-width: 65%; text-align: right; font-size: 12px; font-weight: 800; overflow-wrap: anywhere; }
+@media (min-width:1024px) {
+  .hc-team-entity-profile > .hero:first-of-type > .hc-team-facts-card { grid-column: 2; grid-row: 5; }
+}
+@media (max-width:1023px) {
+  .hc-team-facts-card { width: 100%; }
+}
