@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 
 const baseURL = process.env.THEME_TEST_BASE_URL || "http://127.0.0.1:3000";
+const testLanguage = process.env.THEME_TEST_LANGUAGE || "en";
 const artifactsDir = "artifacts/theme-check";
 await mkdir(artifactsDir, { recursive: true });
 await mkdir(`${artifactsDir}/routes`, { recursive: true });
@@ -40,7 +41,7 @@ const profile = {
   current_team: "Theme Test Club",
   avatar_url: null,
   theme_preference: "system",
-  preferred_language: "en",
+  preferred_language: testLanguage,
   profile_visibility: "public",
   professional_experience: true,
   bio: null,
@@ -88,10 +89,11 @@ try {
         { name: "hoopcheck-theme", value: theme, url: baseURL },
         { name: "sb-ci-auth-token", value: encodedSession, url: baseURL },
       ]);
-      await page.addInitScript(({ themePreference, authSession }) => {
+      await page.addInitScript(({ themePreference, authSession, language }) => {
         localStorage.setItem("hoopcheck-theme", themePreference);
+        localStorage.setItem("hoopcheck-language", language);
         localStorage.setItem("sb-ci-auth-token", JSON.stringify(authSession));
-      }, { themePreference: theme, authSession: session });
+      }, { themePreference: theme, authSession: session, language: testLanguage });
 
       await page.route("https://ci.invalid/**", async (route) => {
         const request = route.request();
@@ -190,7 +192,7 @@ try {
 
       results.push({ route: path, theme, computed });
       await page.screenshot({
-        path: `${artifactsDir}/${routeName}-${theme}-mobile.png`,
+        path: `${artifactsDir}/${routeName}-${theme}-${testLanguage}-mobile.png`,
         fullPage: true,
         animations: "disabled",
       });
@@ -215,10 +217,11 @@ try {
       { name: "sb-ci-auth-token", value: encodedSession, url: baseURL },
     ]);
     const page = await context.newPage();
-    await page.addInitScript(({ themePreference, authSession }) => {
+    await page.addInitScript(({ themePreference, authSession, language }) => {
       localStorage.setItem("hoopcheck-theme", themePreference);
+      localStorage.setItem("hoopcheck-language", language);
       localStorage.setItem("sb-ci-auth-token", JSON.stringify(authSession));
-    }, { themePreference: theme, authSession: session });
+    }, { themePreference: theme, authSession: session, language: testLanguage });
     await page.route("https://ci.invalid/**", async (route) => {
       const request = route.request();
       const url = new URL(request.url());
@@ -284,7 +287,7 @@ try {
       if (result.navigationError) errors.push("navigation error");
       if (theme === "dark" && result.whiteSurfaceOffenders.length) errors.push("white surface offenders: " + JSON.stringify(result.whiteSurfaceOffenders));
       await page.screenshot({
-        path: `${artifactsDir}/routes/${requestedPath.replace(/[^a-z0-9-]+/gi, "_")}-${theme}-mobile.png`,
+        path: `${artifactsDir}/routes/${requestedPath.replace(/[^a-z0-9-]+/gi, "_")}-${theme}-${testLanguage}-mobile.png`,
         fullPage: true,
         animations: "disabled",
       });
