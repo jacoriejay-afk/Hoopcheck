@@ -8,6 +8,7 @@ import PlayerContactButton from "../../components/PlayerContactButton";
 import { VerifiedBadge } from "../../components/HoopCheckUI";
 import SearchBar from "../../components/SearchBar";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
+import Surface from "../../components/Surface";
 
 type Coach = { id: string; name: string; country: string | null; city: string | null };
 type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null };
@@ -259,14 +260,14 @@ function SearchContent() {
         <Link href="/players">Find Players</Link>
         <Link href="/search">Global Search</Link>
         </nav>
-      <section className="dashboard-card" style={{ margin: "0 0 18px", padding: "16px" }}>
+      <Surface as="section" className="dashboard-card hc-player-connect-surface" style={{ margin: "0 0 18px", padding: "16px" }}>
         <div className="eyebrow">PLAYER CONNECT</div>
         <h2 style={{ margin: "4px 0 6px" }}>Add a Player</h2>
         <p className="muted" style={{ margin: "0 0 12px" }}>
           Enter the player&apos;s <strong>HoopCheck username</strong> to send them a connection request.
         </p>
         <PlayerUsernameConnect />
-      </section>
+      </Surface>
 
       <section className="search-hero">
         <div className="eyebrow">Global Research</div>
