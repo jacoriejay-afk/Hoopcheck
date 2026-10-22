@@ -12,7 +12,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     let preference: ThemePreference = "system";
 
     const normalize = (value: string | null): ThemePreference =>
-      value === "dark" || value === "light" || value === "system" ? value : "system";
+      value === "dark" || value === "light" || value === "system" ? value : value === "dynamic" ? "dark" : "system";
 
     const apply = (next?: string) => {
       if (next) preference = normalize(next);
