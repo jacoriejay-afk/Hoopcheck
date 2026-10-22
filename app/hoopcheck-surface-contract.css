@@ -136,3 +136,14 @@ html.theme-dark .hc-feed-composer { background-color:#171717!important; }
 html.theme-light main .hc-feed-composer.hc-surface,
 html.theme-light .hc-feed-composer[data-hc-surface="true"],
 html.theme-light .hc-feed-composer { background-color:#fff!important; }
+
+
+/* Explicitly outrank the legacy .hc-feed-composer { background:#111!important } rule. */
+html.theme-dark body main .hc-feed-composer,
+html.theme-dark body .hc-feed-composer {
+  background-color:#171717!important;
+}
+html.theme-light body main .hc-feed-composer,
+html.theme-light body .hc-feed-composer {
+  background-color:#fff!important;
+}
