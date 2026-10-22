@@ -2,6 +2,7 @@ import Link from "next/link";
 import FollowButton from "./FollowButton";
 import { HoopIcon } from "./HoopCheckUI";
 import TrustScoreDial from "./TrustScoreDial";
+import Surface from "./Surface";
 
 type TeamDirectoryRowProps = {
   id: string;
@@ -27,7 +28,7 @@ export default function TeamDirectoryRow({
   const monogram = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   const metadata = [city, [country, leagueName].filter(Boolean).join(" · ")].filter(Boolean).join(", ") || "International";
   return (
-    <article className={`hc-team-directory-row hc-scout-card hc-team-directory-row--${kind}`}>
+    <Surface className={`hc-team-directory-row hc-scout-card hc-team-directory-row--${kind}`}>
       <div className="hc-scout-card__report">
         <span>HoopCheck Scouting Report</span>
         <span>Directory profile</span>
@@ -54,6 +55,6 @@ export default function TeamDirectoryRow({
         <Link href={href}>Open scouting report <span aria-hidden="true">→</span></Link>
         {showFollow && <div className="hc-team-directory-row__follow"><FollowButton targetType="team" targetId={id} /></div>}
       </div>
-    </article>
+    </Surface>
   );
 }
