@@ -14,6 +14,8 @@ import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import SearchBar from "../../components/SearchBar";
 import CourtLines from "../../components/CourtLines";
 import TeamMap from "../../components/TeamMap";
+import Surface from "../../components/Surface";
+import { useLanguage } from "../../components/LanguageProvider";
 
 type Team = {
   id: string;
@@ -31,6 +33,7 @@ type Team = {
 type TrustSummary = { score: number | null; reviewCount: number; verifiedReviewCount: number; explanation: string; averageRating: number | null };
 
 export default function TeamsPage() {
+  const { t } = useLanguage();
   const [teams, setTeams] =
     useState<Team[]>([]);
   const [trustScores, setTrustScores] = useState<Record<string, TrustSummary>>({});
@@ -244,45 +247,45 @@ export default function TeamsPage() {
       <DirectoryLayout current="teams" />
 
       <section className="hero">
-        <div className="research-search">
-          <div className="search-label">TEAM DIRECTORY</div>
-          <SearchBar value={query} onChange={(value) => { setQuery(value); setPage(0); }} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search teams" onSubmit={(value) => { setQuery(value); setPage(0); }} />
+        <Surface as="div" className="research-search">
+          <div className="search-label">{t("directoryTitle")}</div>
+          <SearchBar value={query} onChange={(value) => { setQuery(value); setPage(0); }} placeholder={t("searchPeoplePlaceholder")} ariaLabel={t("directoryTitle")} onSubmit={(value) => { setQuery(value); setPage(0); }} />
           <div className="team-filter-row">
-            <select value={continent} onChange={(e) => { setContinent(e.target.value); setCountry(""); setPage(0); }} aria-label="Filter teams by continent">
-              <option value="">All continents</option>
+            <select value={continent} onChange={(e) => { setContinent(e.target.value); setCountry(""); setPage(0); }} aria-label={t("filterTeamsByContinent")}>
+              <option value="">{t("allContinents")}</option>
               {Object.keys(CONTINENT_COUNTRIES).map((item) => <option key={item} value={item}>{item.replace("_", " ")}</option>)}
             </select>
-            <select value={country} onChange={(e) => { setCountry(e.target.value); setPage(0); }} aria-label="Filter teams by country">
-              <option value="">All countries</option>
+            <select value={country} onChange={(e) => { setCountry(e.target.value); setPage(0); }} aria-label={t("filterTeamsByCountry")}>
+              <option value="">{t("allCountriesFilter")}</option>
               {countries.filter((item) => countryInContinent(item, continent)).map((item) => <option key={item} value={item}>{item}</option>)}
             </select>
-            <select value={league} onChange={(e) => { setLeague(e.target.value); setPage(0); }} aria-label="Filter teams by league">
-              <option value="">All leagues</option>
+            <select value={league} onChange={(e) => { setLeague(e.target.value); setPage(0); }} aria-label={t("filterTeamsByLeague")}>
+              <option value="">{t("allLeagues")}</option>
               {leagueOptions.filter(item => !country || item.country === country).map(item => <option key={item.id} value={item.id}>{item.name}{item.level ? ` — ${item.level}` : ""}</option>)}
             </select>
-            <select value={division} onChange={(e) => { setDivision(e.target.value); setPage(0); }} aria-label="Filter teams by division">
-              <option value="">All divisions</option>
+            <select value={division} onChange={(e) => { setDivision(e.target.value); setPage(0); }} aria-label={t("filterTeamsByDivision")}>
+              <option value="">{t("allDivisions")}</option>
               {divisions.map(item => <option key={item} value={item}>{item}</option>)}
             </select>
           </div>
-        </div>
+        </Surface>
       </section>
 
-      <section className="hero" style={{paddingTop:0}}><div className="dashboard-card" style={{border:"1px solid var(--orange)"}}><div className="eyebrow">DIRECTORY REQUEST</div><h2>Don’t see your team?</h2><p className="muted">Request a professional team to be added to HoopCheck. Our admin team will review the submission.</p><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10}}><input value={requestName} onChange={e=>setRequestName(e.target.value)} placeholder="Team name" /><input value={requestCountry} onChange={e=>setRequestCountry(e.target.value)} placeholder="Country" /><input value={requestCity} onChange={e=>setRequestCity(e.target.value)} placeholder="City (optional)" /><input value={requestLeague} onChange={e=>setRequestLeague(e.target.value)} placeholder="League (optional)" /></div><button className="btn" style={{marginTop:12}} disabled={requestSubmitting} onClick={async()=>{setRequestMessage("");if(!requestName.trim()||!requestCountry.trim()){setRequestMessage("Team name and country are required.");return;}const {data:{user}}=await supabase.auth.getUser();if(!user){window.location.href="/login";return;}setRequestSubmitting(true);const {error}=await supabase.from("directory_team_requests").insert({requester_id:user.id,team_name:requestName.trim().slice(0,160),country:requestCountry.trim().slice(0,80),city:requestCity.trim().slice(0,100)||null,league_name:requestLeague.trim().slice(0,160)||null});if(error)setRequestMessage(error.message);else{setRequestMessage("Request submitted for admin review.");setRequestName("");setRequestCity("");setRequestLeague("");}setRequestSubmitting(false);}}>{requestSubmitting?"Submitting...":"Request Team Addition"}</button>{requestMessage&&<p className="muted" role="status">{requestMessage}</p>}</div></section>
+      <section className="hero" style={{paddingTop:0}}><div className="dashboard-card" style={{border:"1px solid var(--orange)"}}><div className="eyebrow">{t("directoryRequest")}</div><h2>{t("dontSeeYourTeam")}</h2><p className="muted">{t("requestTeamDescription")}</p><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10}}><input value={requestName} onChange={e=>setRequestName(e.target.value)} placeholder={t("teamName")} /><input value={requestCountry} onChange={e=>setRequestCountry(e.target.value)} placeholder={t("country")} /><input value={requestCity} onChange={e=>setRequestCity(e.target.value)} placeholder={t("cityOptional")} /><input value={requestLeague} onChange={e=>setRequestLeague(e.target.value)} placeholder={t("leagueOptional")} /></div><button className="btn" style={{marginTop:12}} disabled={requestSubmitting} onClick={async()=>{setRequestMessage("");if(!requestName.trim()||!requestCountry.trim()){setRequestMessage(t("teamNameCountryRequired"));return;}const {data:{user}}=await supabase.auth.getUser();if(!user){window.location.href="/login";return;}setRequestSubmitting(true);const {error}=await supabase.from("directory_team_requests").insert({requester_id:user.id,team_name:requestName.trim().slice(0,160),country:requestCountry.trim().slice(0,80),city:requestCity.trim().slice(0,100)||null,league_name:requestLeague.trim().slice(0,160)||null});if(error)setRequestMessage(error.message);else{setRequestMessage(t("requestSubmitted"));setRequestName("");setRequestCity("");setRequestLeague("");}setRequestSubmitting(false);}}>{requestSubmitting?t("submitting"):t("requestTeamAddition")}</button>{requestMessage&&<p className="muted" role="status">{requestMessage}</p>}</div></section>
 
       <div className="hc-directory-summary" aria-live="polite">
-        <span>{loading ? "Searching teams…" : `${totalCount.toLocaleString()} team${totalCount === 1 ? "" : "s"}`}</span>
+        <span>{loading ? t("searchingTeams") : `${totalCount.toLocaleString()} ${totalCount === 1 ? t("teamCountSingular") : t("teamCountPlural")}`}</span>
         {(query.trim() || country || continent || league || division) && (
           <button type="button" className="hc-directory-reset" onClick={() => { setQuery(""); setCountry(""); setContinent(""); setLeague(""); setDivision(""); setPage(0); }}>
-            Clear filters
+            {t("clearFilters")}
           </button>
         )}
       </div>
 
       <div className="hc-directory-view-toggle" role="group" aria-label="Team directory view">
-        <span>DIRECTORY VIEW</span>
-        <button type="button" className={viewMode === "list" ? "is-active" : ""} onClick={() => setViewMode("list")}>☷ List</button>
-        <button type="button" className={viewMode === "map" ? "is-active" : ""} onClick={() => setViewMode("map")}>◎ Map</button>
+        <span>{t("directoryView")}</span>
+        <button type="button" className={viewMode === "list" ? "is-active" : ""} onClick={() => setViewMode("list")}>{`☷ ${t("list")}`}</button>
+        <button type="button" className={viewMode === "map" ? "is-active" : ""} onClick={() => setViewMode("map")}>{`◎ ${t("map")}`}</button>
       </div>
 
       {viewMode === "map" && (
@@ -300,21 +303,21 @@ export default function TeamsPage() {
           <div className="card hc-team-empty">
             <CourtLines variant="arc" className="hc-court-empty-art" />
             <div className="eyebrow hc-court-section-kicker">
-              {query.trim() || country || continent || league || division ? "No matching results" : "Coming Soon"}
+              {query.trim() || country || continent || league || division ? t("noMatchingResults") : t("comingSoon")}
             </div>
 
             <h2>
-              {query.trim() || country || continent || league || division ? "Try adjusting your filters" : "No teams yet"}
+              {query.trim() || country || continent || league || division ? t("tryAdjustingFilters") : t("noTeamsYet")}
             </h2>
 
             <p>
               {query.trim() || country || continent || league || division
-                ? "No teams match the current search and filters. Clear the filters to browse the full directory."
-                : "Teams will appear here as HoopCheck’s global basketball database grows."}
+                ? t("noTeamsMatch")
+                : t("teamsWillAppear")}
             </p>
             {(query.trim() || country || continent || league || division) && (
               <button type="button" className="btn dark" onClick={() => { setQuery(""); setCountry(""); setContinent(""); setLeague(""); setDivision(""); setPage(0); }}>
-                Clear filters
+                {t("clearFilters")}
               </button>
             )}
           </div>
