@@ -5697,3 +5697,45 @@ html.theme-light main:not(.hc-template-home) :where(input,select,textarea) {
   border-color: var(--hc-border) !important;
   -webkit-text-fill-color: var(--hc-input-fg) !important;
 }
+
+
+/* Theme token sweep for legacy route components that still declare fixed light colors. */
+html.theme-dark main:not(.hc-template-home) {
+  background-color: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html.theme-light main:not(.hc-template-home) {
+  background-color: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(h1,h2,h3,h4,p,span,label,small,strong,li,a,div):not(.btn):not(.eyebrow):not(.card-kicker):not(.hc-feed-streak):not(.hc-feed-plan-tag):not([class*="badge"]):not([class*="category"]):not([class*="icon"]) {
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(.muted,.text-muted,.description,.subtle,.hc-feed-counter,.hc-feed-expires,.hc-feed-location,.hc-feed-post-author__meta) {
+  color: var(--hc-foreground-muted) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(.eyebrow,.card-kicker,.hc-feed-topic-label,.hc-feed-streak,.hc-feed-plan-tag,.hc-dashboard-kicker,.hc-dashboard-page-label) {
+  color: var(--hc-orange, #ff5a1f) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(.card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,.hc-feed-composer,.hc-feed-ticket,.hc-feed-empty,.hc-feed-comments-panel,.hc-feed-game-fields,.hc-feed-filter-bar,.hc-feed-topic-picker,.hc-feed-post-card,.hc-feed-skeleton,.hc-command-center,.hc-command-tile,.hc-mobile-quick-card,.hc-mobile-category-list,.hc-mobile-category-row,.hc-template-panel,.hc-template-category,.hc-template-directory-links > a,.hc-player-result,.hc-review-card,.hc-profile-info-card) {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(input,select,textarea) {
+  background-color: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+  -webkit-text-fill-color: var(--hc-input-fg) !important;
+}
+html.theme-light main:not(.hc-template-home) :where(.card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,.hc-feed-composer,.hc-feed-ticket,.hc-feed-empty,.hc-feed-comments-panel,.hc-feed-game-fields,.hc-feed-filter-bar,.hc-feed-topic-picker,.hc-feed-post-card,.hc-feed-skeleton,.hc-command-center,.hc-command-tile,.hc-mobile-quick-card,.hc-mobile-category-list,.hc-mobile-category-row,.hc-template-panel,.hc-template-category,.hc-template-directory-links > a,.hc-player-result,.hc-review-card,.hc-profile-info-card) {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light main:not(.hc-template-home) :where(input,select,textarea) {
+  background-color: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+  -webkit-text-fill-color: var(--hc-input-fg) !important;
+}
