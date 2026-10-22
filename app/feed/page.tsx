@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon } from "../../components/HoopCheckUI";
@@ -33,6 +34,7 @@ const ago = (v:string, now:number) => {
 };
 
 export default function Feed(){
+  const router = useRouter();
   const [posts,setPosts]=useState<Post[]>([]);
   const [comments,setComments]=useState<Record<string,Comment[]>>({});
   const [checks,setChecks]=useState<Record<string,number>>({}); const [checkBursts,setCheckBursts]=useState<Record<string,boolean>>({});
@@ -90,6 +92,7 @@ export default function Feed(){
       supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",u.id).maybeSingle()
     ]);
     setProfile(p);setSubscription(s);setShowCountry(Boolean(p?.current_country_public));
+    if(p?.account_type==="fan"){setLoading(false);router.replace("/fan-feed");return;}
     if(p?.account_type==="player"){const {data:activity}=await supabase.from("feed_posting_activity").select("activity_date").eq("user_id",u.id).order("activity_date",{ascending:false}).limit(370);setPostingStreak(calculatePostingStreak(activity||[]));}
     const memberActive=(s?.plan==="pro"||s?.plan==="premium")&&(s?.status==="active"||s?.status==="trialing")&&(s?.access_status==null||["active","trialing","pro","premium"].includes(s.access_status));
     setLoading(false);
