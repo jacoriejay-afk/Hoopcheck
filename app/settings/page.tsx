@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
+import { useTheme } from "../../components/ThemeProvider";
 
 type Theme = "system" | "dark" | "light";
 const normalizeTheme = (value: unknown): Theme =>
@@ -11,7 +12,7 @@ const normalizeTheme = (value: unknown): Theme =>
 
 export default function SettingsPage() {
   const { t, language: activeLanguage, setLanguage: applyLanguage } = useLanguage();
-  const [theme, setTheme] = useState<Theme>("system");
+  const { theme, setTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
   const [language, setLanguage] = useState<Language>("en");
   const [saving, setSaving] = useState(false);
@@ -38,14 +39,15 @@ export default function SettingsPage() {
         supabase.from("user_preferences").select("notifications_enabled").eq("user_id", user.id).maybeSingle(),
       ]);
       if (!active) return;
-      if (profile?.theme_preference) setTheme(normalizeTheme(profile.theme_preference));
+      const cookieHasTheme = document.cookie.split(";").some((item) => item.trim().startsWith("hoopcheck-theme="));
+      if (profile?.theme_preference && !localTheme && !cookieHasTheme) setTheme(normalizeTheme(profile.theme_preference));
       if (profile?.preferred_language && ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"].includes(profile.preferred_language)) {
         setLanguage(profile.preferred_language as Language);
       }
       if (typeof prefs?.notifications_enabled === "boolean") setNotifications(prefs.notifications_enabled);
     });
     return () => { active = false; };
-  }, []);
+  }, [setTheme]);
 
   async function save(nextTheme = theme, nextNotifications = notifications, nextLanguage = language) {
     setTheme(nextTheme);
@@ -54,9 +56,7 @@ export default function SettingsPage() {
     setSaving(true);
     setSaveMessage("");
 
-    // Apply changes immediately across the mounted app, before waiting for the database.
-    localStorage.setItem("hoopcheck-theme", nextTheme);
-    window.dispatchEvent(new CustomEvent("hoopcheck-theme-change", { detail: nextTheme }));
+    // The root ThemeProvider applies the class, cookie, and local preference immediately.
     applyLanguage(nextLanguage);
 
     try {
@@ -71,7 +71,7 @@ export default function SettingsPage() {
           // user_preferences has theme + notifications_enabled; language belongs to profiles.
           supabase.from("user_preferences").upsert({
             user_id: user.id,
-            theme: nextTheme === "light" ? "light" : "dynamic",
+            theme: nextTheme,
             notifications_enabled: nextNotifications,
             updated_at: new Date().toISOString(),
           }, { onConflict: "user_id" }),
