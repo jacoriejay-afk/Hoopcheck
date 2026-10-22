@@ -179,15 +179,15 @@ export default function DashboardPage() {
 
   const planLabel =
     subscription?.plan === "premium"
-      ? "HoopCheck Premium"
+      ? "HoopCheck " + t("premium")
       : subscription?.plan === "pro"
-        ? "HoopCheck Pro"
-        : "Free";
+        ? "HoopCheck " + t("pro")
+        : t("free");
 
   const activeMembership =
     subscription?.status === "active" || subscription?.status === "trialing";
 
-  const statusLabel = subscription?.status || "inactive";
+  const statusLabel = t(subscription?.status || "inactive");
 
   const reviewCounts = reviews.reduce<Record<string, number>>((counts, review) => {
     counts[review.status] = (counts[review.status] || 0) + 1;
@@ -522,7 +522,7 @@ export default function DashboardPage() {
                         <span className="card-kicker">{target.type.toUpperCase()}</span>
                         <h2>{target.name}</h2>
                       </div>
-                      <strong>{review.status.toUpperCase()}</strong>
+                      <strong>{t(review.status).toUpperCase()}</strong>
                     </div>
                     {review.title && <h3>{review.title}</h3>}
                     <p>{review.body}</p>
