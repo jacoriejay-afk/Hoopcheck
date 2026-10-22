@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
 import { useTheme } from "../../components/ThemeProvider";
+import ThemeToast from "../../components/ThemeToast";
 
 type Theme = "system" | "dark" | "light";
 type TeamOption = { id: string; name: string; country: string | null; league_name: string | null };
@@ -166,7 +167,7 @@ export default function SettingsPage() {
             <div className="motion-demo"><span /><span /><span /></div>
           </section>
         </div>
-        <p className="settings-save" role="status" aria-live="polite">{saving ? t("saving") : saveMessage || t("saved") + " Other preferences save automatically."}</p>
+        <ThemeToast className="settings-save" tone={saving ? "info" : "success"}>{saving ? t("saving") : saveMessage || t("saved") + " Other preferences save automatically."}</ThemeToast>
       </section>
     </main>
   );
