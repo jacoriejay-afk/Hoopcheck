@@ -19,6 +19,7 @@ import FollowButton from "../../../components/FollowButton";
 import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
 import TrustScoreDial from "../../../components/TrustScoreDial";
+import Surface from "../../../components/Surface";
 import TeamRosterSpots from "../../../components/TeamRosterSpots";
 import OfficialReviewResponse from "../../../components/OfficialReviewResponse";
 
@@ -138,7 +139,7 @@ function RatingBar({
 }
 
 export default function TeamDetailPage() {
-  const { formatDate } = useLanguage();
+  const { formatDate, t } = useLanguage();
   const params = useParams();
 
   const id = Array.isArray(params.id)
@@ -587,14 +588,14 @@ export default function TeamDetailPage() {
 
 <section className="hero">
         <div className="hc-team-profile-heading"><span className="hc-team-profile-logo" aria-hidden="true">{team.logo_url ? <img src={team.logo_url} alt="" width={64} height={64} /> : team.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span><div><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || "Country not listed"}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
-        <div className="hc-entity-trust-score">
+        <Surface as="div" className="hc-entity-trust-score">
           <TrustScoreDial
             score={trustScoreData?.score ?? null}
             explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? "Trust Score is temporarily unavailable." : "No approved player reviews yet.")}
             reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count}
             verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0}
           />
-        </div>
+        </Surface>
 
         <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} /></div>
         <TeamRosterSpots teamId={team.id} teamName={team.name} />
@@ -602,18 +603,17 @@ export default function TeamDetailPage() {
       </section>
       {!hasAccess ? (
         <section className="hero">
-          <div className="card">
+          <Surface className="card hc-team-membership-surface">
             <div className="eyebrow">
-              Members Only
+              {t("membersOnly")}
             </div>
 
             <h2>
-              Know the organization
-              before you sign.
+              {t("knowOrganizationBeforeSign")}
             </h2>
 
             <p>
-              See the player experience behind the organization before you commit. Membership starts at $4.99/month and can be managed through Stripe anytime.
+              {t("membershipStartsMessage")}
             </p>
 
             <div className="actions">
@@ -621,17 +621,17 @@ export default function TeamDetailPage() {
                 href="/membership"
                 className="btn"
               >
-                View Membership
+                {t("viewMembership")}
               </Link>
 
               <Link
                 href="/login"
                 className="btn dark"
               >
-                Log In
+                {t("logIn")}
               </Link>
             </div>
-          </div>
+          </Surface>
         </section>
       ) : (
         <>
@@ -663,20 +663,18 @@ export default function TeamDetailPage() {
               0 ? (
               <div className="card">
                 <h3>
-                  No approved reviews yet.
+                  {t("noApprovedReviewsYet")}
                 </h3>
 
                 <p>
-                  Be one of the first players
-                  to share an experience with
-                  this organization.
+                  {t("firstPlayersShare")}
                 </p>
 
                 {accountType === "player" && <Link
                   href={`/teams/${team.id}/review`}
                   className="btn"
                 >
-                  Write A Review
+                  {t("writeAReview")}
                 </Link>}
               </div>
             ) : (
