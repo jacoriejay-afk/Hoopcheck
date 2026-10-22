@@ -127,3 +127,19 @@ main.hc-player-directory-page > *, main.hc-womens-directory-page > *, main.hc-en
   .hc-leagues-directory-page .hc-scout-card__stat span,.hc-leagues-directory-page .hc-scout-card__stat small,
   .hc-womens-directory-page .hc-scout-card__stat span,.hc-womens-directory-page .hc-scout-card__stat small { font-size: 9px; }
 }
+
+.hc-team-facts-card {
+  min-width: 0; padding: 18px; border: 1px solid var(--hc-border,#deded8);
+  border-radius: 14px; background: var(--hc-surface-raised,#fff); color: var(--hc-foreground,#111);
+}
+.hc-team-facts-card .eyebrow { margin: 0 0 12px; }
+.hc-team-facts-card dl { display: grid; gap: 0; margin: 0; }
+.hc-team-facts-card dl > div { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 10px 0; border-top: 1px solid var(--hc-border,#deded8); }
+.hc-team-facts-card dt { color: var(--hc-foreground-muted,#686868); font-size: 12px; font-weight: 700; }
+.hc-team-facts-card dd { margin: 0; max-width: 65%; text-align: right; font-size: 12px; font-weight: 800; overflow-wrap: anywhere; }
+@media (min-width:1024px) {
+  .hc-team-entity-profile > .hero:first-of-type > .hc-team-facts-card { grid-column: 2; grid-row: 5; }
+}
+@media (max-width:1023px) {
+  .hc-team-facts-card { width: 100%; }
+}
