@@ -55,20 +55,20 @@ using (author_id=(select auth.uid()) and exists(select 1 from public.profiles p 
 
 drop policy if exists "fan feed likes visible with post" on public.fan_feed_likes;
 create policy "fan feed likes visible with post" on public.fan_feed_likes for select to authenticated
-using (exists (select 1 from public.fan_feed_posts fp where fp.id=fan_feed_likes.post_id and fp.status='approved' and fp.expires_at>now()));
+using (exists (select 1 from public.fan_feed_posts fp where fp.id=fan_feed_likes.post_id));
 drop policy if exists "fans like fan posts" on public.fan_feed_likes;
 create policy "fans like fan posts" on public.fan_feed_likes for insert to authenticated
-with check (user_id=(select auth.uid()) and exists(select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='fan') and exists (select 1 from public.fan_feed_posts fp where fp.id=fan_feed_likes.post_id and fp.status='approved' and fp.expires_at>now()));
+with check (user_id=(select auth.uid()) and exists(select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='fan') and exists (select 1 from public.fan_feed_posts fp where fp.id=fan_feed_likes.post_id));
 drop policy if exists "fans remove own likes" on public.fan_feed_likes;
 create policy "fans remove own likes" on public.fan_feed_likes for delete to authenticated
 using (user_id=(select auth.uid()) and exists(select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='fan'));
 
 drop policy if exists "fan feed comments visible with post" on public.fan_feed_comments;
 create policy "fan feed comments visible with post" on public.fan_feed_comments for select to authenticated
-using (exists (select 1 from public.fan_feed_posts fp where fp.id=fan_feed_likes.post_id and fp.status='approved' and fp.expires_at>now()));
+using (exists (select 1 from public.fan_feed_posts fp where fp.id=fan_feed_comments.post_id));
 drop policy if exists "fans comment on fan posts" on public.fan_feed_comments;
 create policy "fans comment on fan posts" on public.fan_feed_comments for insert to authenticated
-with check (author_id=(select auth.uid()) and exists(select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='fan') and exists (select 1 from public.fan_feed_posts fp where fp.id=fan_feed_likes.post_id and fp.status='approved' and fp.expires_at>now()));
+with check (author_id=(select auth.uid()) and exists(select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='fan') and exists (select 1 from public.fan_feed_posts fp where fp.id=fan_feed_comments.post_id));
 drop policy if exists "fans delete own fan comments" on public.fan_feed_comments;
 create policy "fans delete own fan comments" on public.fan_feed_comments for delete to authenticated
 using (author_id=(select auth.uid()) and exists(select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='fan'));
