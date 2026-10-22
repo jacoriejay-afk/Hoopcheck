@@ -516,7 +516,7 @@ html.theme-light main .hc-scout-card {
   clip-path:none!important;
 }
 .hc-scout-card .hc-team-logo-tile img { display:block; width:100%; height:100%; object-fit:contain; }
-.hc-scout-card .hc-team-logo-tile > span { display:grid; width:100%; height:100%; place-items:center; color:#171717!important; font-size:14px; font-weight:900; line-height:1; }
+.hc-scout-card .hc-team-logo-tile > span { display:grid; width:100%; height:100%; place-items:center; color:var(--hc-foreground)!important; font-size:14px; font-weight:900; line-height:1; }
 .hc-scout-card .hc-scout-card__identity-copy { display:block!important; flex:1 1 auto!important; min-width:0!important; }
 .hc-scout-card .hc-scout-card__identity-copy h2,
 .hc-scout-card .hc-scout-card__identity-copy h3 {
