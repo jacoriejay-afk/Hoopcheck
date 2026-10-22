@@ -126,27 +126,27 @@ export default function SettingsPage() {
   return (
     <main className="settings-page hc-settings-page">
       <section className="settings-shell">
-        <div className="eyebrow">CONTROL CENTER</div>
+        <div className="eyebrow">{t("controlCenter")}</div>
         <h1>{t("settings")}</h1>
-        <p className="muted">Tune the HoopCheck experience to match how you research the basketball world.</p>
+        <p className="muted">{t("settingsIntro")}</p>
         <div className="settings-grid">
           <section className="settings-card">
             <span className="card-kicker">{t("language").toUpperCase()}</span>
             <h2>{t("chooseLanguage")}</h2>
-            <p className="muted">Choose the interface language you want HoopCheck to use. Your preference is saved to your account and this device.</p>
+            <p className="muted">{t("languageHelp")}</p>
             <select aria-label={t("chooseLanguage")} className="language-select" value={language} onChange={(e) => { const next = e.target.value as Language; setLanguage(next); void save(theme, notifications, next); }}>
               <option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="it">Italiano</option><option value="pt">Português</option><option value="tr">Türkçe</option><option value="ru">Русский</option><option value="el">Ελληνικά</option><option value="sr">Српски</option><option value="pl">Polski</option><option value="lt">Lietuvių</option><option value="uk">Українська</option>
             </select>
             <button type="button" className="btn" onClick={() => void save(theme, notifications, language)} disabled={saving} style={{ marginTop: 12 }}>{saving ? t("saving") : t("save")}</button>
           </section>
           <section className="settings-card">
-            <span className="card-kicker">VISUAL MODE</span>
-            <h2>Choose your atmosphere</h2>
+            <span className="card-kicker">{t("visualMode")}</span>
+            <h2>{t("chooseAtmosphere")}</h2>
             <div className="theme-options">
               {(["system", "dark", "light"] as Theme[]).map((option) => (
                 <button key={option} className={"theme-option " + (theme === option ? "active" : "")} onClick={() => void save(option, notifications, language)} type="button" aria-pressed={theme === option}>
-                  <strong>{option === "system" ? "Use device setting" : option === "dark" ? "Dark Mode" : "Light Mode"}</strong>
-                  <small>{option === "system" ? "Follow your device appearance" : option === "dark" ? "Asphalt black" : "Clean hardwood"}</small>
+                  <strong>{option === "system" ? t("useDeviceSetting") : option === "dark" ? t("darkMode") : t("lightMode")}</strong>
+                  <small>{option === "system" ? t("followDeviceAppearance") : option === "dark" ? t("asphaltBlack") : t("cleanHardwood")}</small>
                 </button>
               ))}
             </div>
