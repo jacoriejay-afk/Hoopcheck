@@ -2407,12 +2407,12 @@ h2, h3 { line-height: 1.08; }
   --hc-line: #303030;
   --hc-display: Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Black", sans-serif;
 }
-body { background-color: var(--hc-ink); }
+body { background-color: var(--hc-page-bg); }
 .page-shell {
   background:
     radial-gradient(ellipse at 50% 0%, rgba(255,106,0,.075), transparent 42%),
     linear-gradient(135deg, transparent 0 48%, rgba(255,106,0,.025) 48.1% 48.4%, transparent 48.5%),
-    var(--hc-ink);
+    var(--hc-page-bg);
 }
 .page-container { width: min(100% - 32px, 1240px); }
 .topbar {
@@ -2540,7 +2540,7 @@ body { background-color: var(--hc-ink); }
 .hoopcheck-landing {
   background:
     radial-gradient(ellipse at 50% 0%, rgba(255,106,0,.12), transparent 46%),
-    var(--hc-ink);
+    var(--hc-page-bg);
 }
 .hoopcheck-landing h1,
 .hoopcheck-landing h2,
