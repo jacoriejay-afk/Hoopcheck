@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 import { useAuthState } from "./AuthProvider";
 import { useLanguage } from "./LanguageProvider";
 
@@ -37,8 +39,17 @@ function NavIcon({ label }: { label: (typeof items)[number][2] }) {
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const { signedIn } = useAuthState();
+  const { signedIn, userId } = useAuthState();
   const { t } = useLanguage();
+  const [accountType, setAccountType] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    if (!userId) { setAccountType(null); return; }
+    void supabase.from("profiles").select("account_type").eq("id", userId).maybeSingle().then(({ data }) => {
+      if (active) setAccountType(data?.account_type || null);
+    });
+    return () => { active = false; };
+  }, [userId]);
   const [fanAccount, setFanAccount] = useState(false);
   useEffect(() => { let alive = true; if (!signedIn) { setFanAccount(false); return; } void supabase.auth.getUser().then(async ({ data }) => { if (!data.user) return; const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", data.user.id).maybeSingle(); if (alive) setFanAccount(profile?.account_type === "fan"); }); return () => { alive = false; }; }, [signedIn]);
 
