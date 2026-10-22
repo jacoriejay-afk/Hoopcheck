@@ -63,6 +63,9 @@ jobs:
       - name: Verify computed theme styles and capture screenshots
         run: node scripts/theme-browser-check.mjs
 
+      - name: Verify responsive desktop layouts and capture comparison screenshots
+        run: node scripts/responsive-layout-check.mjs
+
       - name: Upload theme screenshots
         if: always()
         uses: actions/upload-artifact@v4
