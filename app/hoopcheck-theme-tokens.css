@@ -1,0 +1,159 @@
+/* Single source of truth for HoopCheck's light/dark semantic theme tokens.
+   Imported last so legacy page and desktop-breakpoint styles cannot override them. */
+:root {
+  --hc-page-bg: #F4F4F1;
+  --hc-surface: #FFFFFF;
+  --hc-surface-raised: #FFFFFF;
+  --hc-surface-soft: #F8F8F6;
+  --hc-foreground: #151515;
+  --hc-foreground-muted: #666661;
+  --hc-border: #E4E4E0;
+  --hc-input-bg: #FFFFFF;
+  --hc-input-fg: #151515;
+  --hc-nav-bg: rgba(10,10,10,.96);
+  --hc-nav-fg: #FFFFFF;
+  --hc-orange: #FF5A1F;
+  --hc-focus-ring: #FF5A1F;
+  color-scheme: light;
+}
+html.theme-light {
+  color-scheme: light;
+  --hc-page-bg: #F4F4F1;
+  --hc-surface: #FFFFFF;
+  --hc-surface-raised: #FFFFFF;
+  --hc-surface-soft: #F8F8F6;
+  --hc-foreground: #151515;
+  --hc-foreground-muted: #666661;
+  --hc-border: #E4E4E0;
+  --hc-input-bg: #FFFFFF;
+  --hc-input-fg: #151515;
+  --hc-nav-bg: rgba(10,10,10,.96);
+  --hc-nav-fg: #FFFFFF;
+  --hc-orange: #FF5A1F;
+}
+html.theme-dark {
+  color-scheme: dark;
+  --hc-page-bg: #0A0A0A;
+  --hc-surface: #111111;
+  --hc-surface-raised: #171717;
+  --hc-surface-soft: #1B1B1B;
+  --hc-foreground: #F5F5F0;
+  --hc-foreground-muted: #B8B8B3;
+  --hc-border: #333333;
+  --hc-input-bg: #171717;
+  --hc-input-fg: #F5F5F0;
+  --hc-nav-bg: rgba(10,10,10,.98);
+  --hc-nav-fg: #F5F5F0;
+  --hc-orange: #FF6A36;
+}
+/* Root surfaces and typography must inherit from the active semantic tokens. */
+html, body { min-width: 0; background: var(--hc-page-bg) !important; color: var(--hc-foreground) !important; }
+html body { color-scheme: inherit; }
+html.theme-light main, html.theme-dark main { color: var(--hc-foreground); }
+html.theme-light main :where(h1,h2,h3,h4,h5,h6,p,li,dt,dd,label,small,strong,span),
+html.theme-dark main :where(h1,h2,h3,h4,h5,h6,p,li,dt,dd,label,small,strong,span) {
+  color: inherit;
+}
+html.theme-light main :where(h1,h2,h3,h4,h5,h6),
+html.theme-dark main :where(h1,h2,h3,h4,h5,h6) { color: var(--hc-foreground) !important; }
+html.theme-light main :where(.eyebrow,.muted,.meta,.subtle),
+html.theme-dark main :where(.eyebrow,.muted,.meta,.subtle) { color: var(--hc-foreground-muted) !important; }
+/* Semantic surfaces cover cards, filters, desktop grids, profile sidebars, and legacy panels. */
+html.theme-light main :where(
+  .card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,
+  .profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,
+  .hc-profile-info-card,.hc-profile-review-list > *,.hc-review-card,.hc-player-result,.hc-directory-result,
+  .hc-review-state,.hc-coach-empty,.admin-panel,.admin-card,.admin-section,.admin-stat-card,
+  .admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,
+  .auth-card,.hc-auth-card,.legal-card,.hc-shared-directory-hero,.hc-shared-directory-tiles,
+  .hc-shared-directory-tiles a,.research-search,.hc-league-filter,.hc-team-facts-card,
+  .hc-dashboard-stat-card,.hc-dashboard-profile-block,.hc-team-directory-row,.hc-scout-card__report,
+  .hc-team-logo-tile,.hc-team-profile-logo,.hc-team-directory-row__trust,.hc-scout-card__stats
+),
+html.theme-dark main :where(
+  .card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,
+  .profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,
+  .hc-profile-info-card,.hc-profile-review-list > *,.hc-review-card,.hc-player-result,.hc-directory-result,
+  .hc-review-state,.hc-coach-empty,.admin-panel,.admin-card,.admin-section,.admin-stat-card,
+  .admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,
+  .auth-card,.hc-auth-card,.legal-card,.hc-shared-directory-hero,.hc-shared-directory-tiles,
+  .hc-shared-directory-tiles a,.research-search,.hc-league-filter,.hc-team-facts-card,
+  .hc-dashboard-stat-card,.hc-dashboard-profile-block,.hc-team-directory-row,.hc-scout-card__report,
+  .hc-team-logo-tile,.hc-team-profile-logo,.hc-team-directory-row__trust,.hc-scout-card__stats
+) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+/* Make all descendants readable on semantic cards, including titles with legacy white/black rules. */
+html.theme-light main :where(
+  .card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,
+  .profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,
+  .hc-profile-info-card,.hc-profile-review-list > *,.hc-review-card,.hc-player-result,.hc-directory-result,
+  .hc-review-state,.hc-coach-empty,.admin-panel,.admin-card,.admin-section,.admin-stat-card,
+  .admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,
+  .auth-card,.hc-auth-card,.legal-card,.hc-shared-directory-hero,.hc-shared-directory-tiles,
+  .hc-team-facts-card,.hc-team-directory-row
+) :where(h1,h2,h3,h4,p,li,dt,dd,label,small,strong,span,a:not(.btn),div) { color: var(--hc-foreground); }
+html.theme-dark main :where(
+  .card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,
+  .profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,
+  .hc-profile-info-card,.hc-profile-review-list > *,.hc-review-card,.hc-player-result,.hc-directory-result,
+  .hc-review-state,.hc-coach-empty,.admin-panel,.admin-card,.admin-section,.admin-stat-card,
+  .admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,
+  .auth-card,.hc-auth-card,.legal-card,.hc-shared-directory-hero,.hc-shared-directory-tiles,
+  .hc-team-facts-card,.hc-team-directory-row
+) :where(h1,h2,h3,h4,p,li,dt,dd,label,small,strong,span,a:not(.btn),div) { color: var(--hc-foreground) !important; }
+html.theme-light main :where(input,textarea,select,.research-search,.hc-league-filter),
+html.theme-dark main :where(input,textarea,select,.research-search,.hc-league-filter) {
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+  -webkit-text-fill-color: var(--hc-input-fg);
+}
+html.theme-dark main :where(.hc-scout-card__report,.hc-scout-card__stats,.hc-team-directory-row__trust) {
+  background: var(--hc-surface-soft) !important; color: var(--hc-foreground-muted) !important;
+}
+html.theme-light main :where(.hc-scout-card__report,.hc-scout-card__stats,.hc-team-directory-row__trust) {
+  background: var(--hc-surface-soft) !important; color: var(--hc-foreground-muted) !important;
+}
+html.theme-dark .nav, html.theme-light .nav,
+html.theme-dark .topnav, html.theme-light .topnav,
+html.theme-dark .site-header-global, html.theme-light .site-header-global {
+  background: var(--hc-nav-bg) !important; color: var(--hc-nav-fg) !important; border-color: var(--hc-border);
+}
+html.theme-dark :where(.nav,.topnav,.site-header-global) :where(a,button,span,svg),
+html.theme-light :where(.nav,.topnav,.site-header-global) :where(a,button,span,svg) { color: var(--hc-nav-fg); }
+html.theme-dark .hc-team-logo-tile, html.theme-dark .hc-team-profile-logo {
+  background: var(--hc-surface-soft) !important; color: var(--hc-foreground) !important; border-color: var(--hc-border) !important;
+}
+html.theme-dark main [style*="background: rgb(255, 255, 255)"],
+html.theme-dark main [style*="background-color: rgb(255, 255, 255)"],
+html.theme-dark main [style*="background: #FFFFFF"],
+html.theme-dark main [style*="background: #ffffff"],
+html.theme-dark main [style*="background-color: #FFFFFF"],
+html.theme-dark main [style*="background-color: #ffffff"],
+html.theme-dark main [style*="background: rgb(247, 247, 245)"],
+html.theme-dark main [style*="background-color: rgb(247, 247, 245)"],
+html.theme-dark main [style*="background: #F7F7F5"],
+html.theme-dark main [style*="background: #f7f7f5"] {
+  background: var(--hc-surface-raised) !important; color: var(--hc-foreground) !important; border-color: var(--hc-border) !important;
+}
+@media (min-width:768px) {
+  html.theme-dark main :where(.grid,.hc-shared-directory-tile-grid,.hc-team-entity-profile,.team-roster-spots),
+  html.theme-light main :where(.grid,.hc-shared-directory-tile-grid,.hc-team-entity-profile,.team-roster-spots) {
+    color: var(--hc-foreground);
+  }
+}
+@media (min-width:1024px) {
+  html.theme-dark main :where(.hc-team-entity-profile,.hc-team-entity-profile > .hero,.hc-team-facts-card,.team-roster-spots),
+  html.theme-light main :where(.hc-team-entity-profile,.hc-team-entity-profile > .hero,.hc-team-facts-card,.team-roster-spots) {
+    color: var(--hc-foreground);
+  }
+}
+@media (min-width:1200px) {
+  html.theme-dark main :where(.hc-team-directory-row,.hc-shared-directory-hero,.hc-shared-directory-tiles),
+  html.theme-light main :where(.hc-team-directory-row,.hc-shared-directory-hero,.hc-shared-directory-tiles) {
+    border-color: var(--hc-border);
+  }
+}
