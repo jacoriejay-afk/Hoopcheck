@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import { useLanguage } from "../../components/LanguageProvider";
+import "./fan-feed.css";
 
 type Team = { id: string; name: string; logo_url?: string | null };
 type Profile = { id: string; display_name: string | null; avatar_url: string | null; account_type: string };
@@ -128,7 +129,7 @@ export default function FanFeedPage() {
     else { setFollowing(prev => new Set(prev).add(targetId)); setMessage(t("fanFeed.following")); }
   }
 
-  if (loading) return <main className="page-shell hc-feed-page"><div className="page-container"><HoopLoading label={t("fanFeed.loading")} /></div></main>;
+  if (loading) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><HoopLoading label={t("fanFeed.loading")} /></div></main>;
   if (!user) return <main className="page-shell hc-feed-page"><div className="page-container"><section className="hero-card"><h1>{t("fanFeed.title")}</h1><p>{t("fanFeed.signIn")}</p><Link className="btn" href="/login">{t("signIn")}</Link></section></div></main>;
   if (profile?.account_type !== "fan") return <main className="page-shell hc-feed-page"><div className="page-container"><section className="hero-card"><h1>{t("fanFeed.fansOnly")}</h1><p>{t("fanFeed.separateSurface")}</p><Link className="btn" href="/feed">{t("fanFeed.playerFeed")}</Link></section></div></main>;
   if (!membershipActive) return <main className="page-shell hc-feed-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">FAN HQ</p><h1>{t("fanFeed.title")}</h1><p className="muted">{t("membershipRequired")}</p><Link className="btn" href="/membership">{t("membership")}</Link></section></div></main>;
