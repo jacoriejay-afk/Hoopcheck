@@ -5739,3 +5739,69 @@ html.theme-light main:not(.hc-template-home) :where(input,select,textarea) {
   border-color: var(--hc-border) !important;
   -webkit-text-fill-color: var(--hc-input-fg) !important;
 }
+
+
+/* Backward-compatible variable names are aliases, not separate theme systems. */
+:root, html.theme-light {
+  --ink: var(--hc-foreground);
+  --paper: var(--hc-page-bg);
+  --page-bg: var(--hc-page-bg);
+  --page-text: var(--hc-foreground);
+  --page-muted: var(--hc-foreground-muted);
+  --surface: var(--hc-surface);
+  --surface-2: var(--hc-surface-raised);
+  --surface-3: var(--hc-surface-soft);
+  --hc-paper: var(--hc-page-bg);
+  --hc-paper-strong: var(--hc-surface-raised);
+  --hc-text: var(--hc-foreground);
+  --hc-text-primary: var(--hc-foreground);
+  --hc-text-muted: var(--hc-foreground-muted);
+  --hc-text-secondary: var(--hc-foreground-muted);
+  --hc-muted: var(--hc-foreground-muted);
+  --hc-line: var(--hc-border);
+  --hc-card-border: var(--hc-border);
+  --hc-input-text: var(--hc-input-fg);
+  --hc-input-bg: var(--hc-input-bg);
+  --hc-surface-muted: var(--hc-surface-soft);
+  --hc-divider: var(--hc-border);
+  --gray-100: var(--hc-surface-soft);
+  --gray-300: var(--hc-foreground-muted);
+  --gray-500: var(--hc-foreground-muted);
+  --border: var(--hc-border);
+  --white: var(--hc-surface-raised);
+  --black: var(--hc-page-bg);
+  --hc-mobile-row-bg: var(--hc-surface-raised);
+  --hc-mobile-row-border: var(--hc-border);
+  --hc-hover-wash: var(--hc-surface-soft);
+}
+html.theme-dark {
+  --ink: var(--hc-foreground);
+  --paper: var(--hc-page-bg);
+  --page-bg: var(--hc-page-bg);
+  --page-text: var(--hc-foreground);
+  --page-muted: var(--hc-foreground-muted);
+  --surface: var(--hc-surface);
+  --surface-2: var(--hc-surface-raised);
+  --surface-3: var(--hc-surface-soft);
+  --hc-paper: var(--hc-page-bg);
+  --hc-paper-strong: var(--hc-surface-raised);
+  --hc-text: var(--hc-foreground);
+  --hc-text-primary: var(--hc-foreground);
+  --hc-text-muted: var(--hc-foreground-muted);
+  --hc-text-secondary: var(--hc-foreground-muted);
+  --hc-muted: var(--hc-foreground-muted);
+  --hc-line: var(--hc-border);
+  --hc-card-border: var(--hc-border);
+  --hc-input-text: var(--hc-input-fg);
+  --hc-surface-muted: var(--hc-surface-soft);
+  --hc-divider: var(--hc-border);
+  --gray-100: var(--hc-surface-soft);
+  --gray-300: var(--hc-foreground-muted);
+  --gray-500: var(--hc-foreground-muted);
+  --border: var(--hc-border);
+  --white: var(--hc-foreground);
+  --black: var(--hc-page-bg);
+  --hc-mobile-row-bg: var(--hc-surface-raised);
+  --hc-mobile-row-border: var(--hc-border);
+  --hc-hover-wash: var(--hc-surface-soft);
+}
