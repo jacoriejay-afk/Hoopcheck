@@ -14,6 +14,8 @@ type Profile = { display_name:string|null; avatar_url:string|null };
 
 const finalStatus = (status:string) => ["final","finished","cancelled","canceled","postponed","abandoned"].includes(status.toLowerCase());
 const initials = (name:string) => name.trim().split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join("").toUpperCase() || "HC";
+const TeamLogo = ({team}:{team:Team|null|undefined}) => <span className="hc-live-team-logo">{team?.logo_url?<img src={team.logo_url} alt="" onError={e=>{e.currentTarget.style.display="none";}}/>:null}<span className="hc-live-team-monogram">{initials(team?.name||"Team")}</span></span>;
+
 const roomOpen = (game:Game, now=new Date()) => {
   if (finalStatus(game.status)) return false;
   const tip = Date.parse(game.scheduled_at || game.started_at || "");
@@ -44,7 +46,6 @@ export default function FanLivePage() {
   const [reportDetails,setReportDetails]=useState("");
   const [clock,setClock]=useState(()=>new Date());
   const bottomRef=useRef<HTMLDivElement|null>(null);
-  const lastSentRef=useRef(0);
 
   const load = useCallback(async (showLoader=false) => {
     if(showLoader) setLoading(true);
@@ -156,9 +157,6 @@ export default function FanLivePage() {
     const text=(textOverride??body).trim();
     if(!text||!selected||!userId||sending)return;
     if(!roomOpen(selected,new Date())){setMessage("Chat closed — final score.");return;}
-    const remaining=2000-(Date.now()-lastSentRef.current);
-    if(lastSentRef.current&&remaining>0){setMessage("Slow mode: wait two seconds between messages.");return;}
-    lastSentRef.current=Date.now();
     const localId="pending-"+crypto.randomUUID();
     const optimistic:ChatMessage={id:localId,body:text,created_at:new Date().toISOString(),user_id:userId,pending:true};
     setMessages(current=>[...current,optimistic].slice(-200));setBody("");setSending(true);setMessage("");
@@ -174,7 +172,6 @@ export default function FanLivePage() {
   }
 
   async function retry(item:ChatMessage){
-    lastSentRef.current=0;
     setMessages(current=>current.filter(m=>m.id!==item.id));
     await send(item.body);
   }
@@ -206,15 +203,13 @@ export default function FanLivePage() {
   if(!userId)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">FAN HQ</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in as a Pro or Premium Fan to join live game conversations.</p><Link className="btn" href="/login">Sign in</Link></section></div></main>;
   if(!allowed)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM FAN</p><h1>LIVE GAME CHAT</h1><p className="muted">An active Pro or Premium Fan membership is required to join game rooms.</p><Link className="btn" href="/membership">View Membership</Link></section></div></main>;
 
-  const Logo=({team}:{team:Team|null|undefined})=><span className="hc-live-team-logo">{team?.logo_url?<img src={team.logo_url} alt="" onError={e=>{e.currentTarget.style.display="none";e.currentTarget.parentElement?.classList.add("has-fallback");}}/>:null}<span className="hc-live-team-monogram">{initials(team?.name||"Team")}</span></span>;
-
   return <main className="page-shell hc-live-room"><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/live-games">All Games</Link><Link href="/teams">Teams</Link></nav></header>
     <section className="hero-card hc-live-room-hero"><div><p className="eyebrow">HOOPCHECK · FAN HQ</p><h1>LIVE GAME CHAT<span>.</span></h1><p className="muted">Real-time conversation with fans watching the same game.</p></div><div className="hc-live-presence-chip"><span className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"fan":"fans"} in room</div></section>
     {!games.length?<section className="dashboard-card"><h2>No games available</h2><p className="muted">Check back when the game schedule is updated.</p><Link href="/live-games" className="btn">Browse Games</Link></section>:<section className="hc-live-room-grid">
-      <aside className="dashboard-card hc-live-room-list"><div className="hc-live-room-list-heading"><span className="card-kicker">FAN HQ · GAME ROOMS</span><span>{games.length}</span></div>{games.map(game=>{const a=teams[game.team_id],b=teams[game.opponent_team_id||""]||{id:"",name:game.opponent_name};return <button key={game.id} type="button" className={"hc-live-room-game"+(selected?.id===game.id?" is-selected":"")} onClick={()=>setSelected(game)}><div className="hc-live-room-game-teams"><Logo team={a}/><div><strong>{a?.name||"Team"} vs {b.name}</strong><span>{game.home_score??"—"} : {game.away_score??"—"} · {game.period_label||game.status}</span></div></div><span className={"hc-live-room-game-status"+(game.status==="live"?" is-live":"")}>{game.status==="live"?"● LIVE":finalStatus(game.status)?"FINAL":roomOpen(game)?"CHAT OPEN":"UPCOMING"}</span></button>})}</aside>
+      <aside className="dashboard-card hc-live-room-list"><div className="hc-live-room-list-heading"><span className="card-kicker">FAN HQ · GAME ROOMS</span><span>{games.length}</span></div>{games.map(game=>{const a=teams[game.team_id],b=teams[game.opponent_team_id||""]||{id:"",name:game.opponent_name};return <button key={game.id} type="button" className={"hc-live-room-game"+(selected?.id===game.id?" is-selected":"")} onClick={()=>setSelected(game)}><div className="hc-live-room-game-teams"><TeamLogo team={a}/><div><strong>{a?.name||"Team"} vs {b.name}</strong><span>{game.home_score??"—"} : {game.away_score??"—"} · {game.period_label||game.status}</span></div></div><span className={"hc-live-room-game-status"+(game.status==="live"?" is-live":"")}>{game.status==="live"?"● LIVE":finalStatus(game.status)?"FINAL":roomOpen(game)?"CHAT OPEN":"UPCOMING"}</span></button>})}</aside>
       {selected&&<section className="dashboard-card hc-live-room-panel">
-        <header className="hc-live-room-scoreboard"><div className="hc-live-room-team"><Logo team={home}/><strong>{home?.name||"Team"}</strong></div><div className="hc-live-room-score"><span className={"hc-live-badge"+(selected.status==="live"?" is-live":"")}>{selected.status==="live"?<><i/> LIVE</>:finalStatus(selected.status)?"FINAL":availability?.state||"UPCOMING"}</span><strong>{selected.home_score??"—"} <span>:</span> {selected.away_score??"—"}</strong><small>{selected.period_label||selected.league_name||"Score updates automatically"}</small></div><div className="hc-live-room-team"><Logo team={away}/><strong>{away?.name||selected.opponent_name}</strong></div></header>
+        <header className="hc-live-room-scoreboard"><div className="hc-live-room-team"><TeamLogo team={home}/><strong>{home?.name||"Team"}</strong></div><div className="hc-live-room-score"><span className={"hc-live-badge"+(selected.status==="live"?" is-live":"")}>{selected.status==="live"?<><i/> LIVE</>:finalStatus(selected.status)?"FINAL":availability?.state||"UPCOMING"}</span><strong>{selected.home_score??"—"} <span>:</span> {selected.away_score??"—"}</strong><small>{selected.period_label||selected.league_name||"Score updates automatically"}</small></div><div className="hc-live-room-team"><TeamLogo team={away}/><strong>{away?.name||selected.opponent_name}</strong></div></header>
         {isClosed?<div className="hc-live-closed-state"><span className="hc-live-closed-icon">✓</span><h2>Chat closed — final score</h2><p>{home?.name||"Home"} {selected.home_score??"—"} – {selected.away_score??"—"} {away?.name||selected.opponent_name}</p><small>This room is read-only after full-time.</small></div>:!roomOpen(selected,clock)?<div className="hc-live-empty-state"><h2>Chat opens 30 minutes before tip-off</h2><p>{selected.scheduled_at?new Date(selected.scheduled_at).toLocaleString():"Tip-off time is not confirmed yet."}</p></div>:<div className="hc-live-chat-shell">
           <div className="hc-live-chat-toolbar"><span><i className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"fan":"fans"} chatting</span><span>1 message / 2 seconds</span></div>
           <div className="hc-live-chat-messages" aria-live="polite" aria-label="Live chat messages">
