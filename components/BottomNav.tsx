@@ -4,8 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
 import { useAuthState } from "./AuthProvider";
 import { useLanguage } from "./LanguageProvider";
 
