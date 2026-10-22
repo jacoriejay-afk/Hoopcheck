@@ -6,7 +6,7 @@ import { useAuthState } from "./AuthProvider";
 import { useLanguage } from "./LanguageProvider";
 
 const items = [
-  ["/", "dashboard", "Home"],
+  ["/", "home", "Home"],
   ["/feed", "hoopFeed", "HoopFeed"],
   ["/search", "search", "Search"],
   ["/notifications", "alerts", "Alerts"],
