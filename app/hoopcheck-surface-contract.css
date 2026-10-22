@@ -148,5 +148,5 @@ html.theme-light body .hc-feed-composer {
 
 
 /* Highest-specificity composer theme contract: the legacy composer also has dashboard-card styles. */
-html.theme-dark body main section.dashboard-card.hc-feed-composer { background:#171717!important; background-color:var(--hc-surface-raised)!important; }
+html.theme-dark body main section.dashboard-card.hc-feed-composer { background:var(--hc-surface-raised)!important; background-color:var(--hc-surface-raised)!important; }
 html.theme-light body main section.dashboard-card.hc-feed-composer { background:var(--hc-surface-raised)!important; background-color:var(--hc-surface-raised)!important; }
