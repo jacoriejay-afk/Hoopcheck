@@ -34,3 +34,53 @@ html.theme-dark main :where(.hc-feed-topic-chip,.hc-feed-filter-chip) { backgrou
 }
 html.theme-dark .hc-feed-composer { background-color:#171717!important; }
 html.theme-light .hc-feed-composer { background-color:#fff!important; }
+
+
+/* Theme-native controls and form surfaces: one token set for the whole control tree. */
+html.theme-dark { color-scheme:dark; }
+html.theme-light { color-scheme:light; }
+html { color-scheme:light; }
+html.theme-dark, html.theme-light {
+  --hc-control-bg:var(--hc-surface-bg);
+  --hc-control-fg:var(--hc-surface-fg);
+  --hc-control-muted:var(--hc-surface-muted);
+  --hc-control-border:var(--hc-surface-border);
+}
+main :where(form,.form-panel,.form-card,.account-profile-form,.settings-card,.settings-group,.hc-settings-group,.hc-profile-editor,.profile-editor,.hc-confirm-modal,.modal-panel,[role="dialog"],dialog) {
+  background-color:var(--hc-surface-bg)!important;
+  color:var(--hc-surface-fg)!important;
+  border-color:var(--hc-surface-border)!important;
+}
+main :where(form,.form-panel,.form-card,.account-profile-form,.settings-card,.settings-group,.hc-settings-group,.hc-profile-editor,.profile-editor,.hc-confirm-modal,.modal-panel,[role="dialog"],dialog) :where(label,legend,.muted,.helper-text,.form-help,.field-help,.error-text,.field-error,[role="alert"]) {
+  color:var(--hc-control-muted)!important;
+}
+main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),textarea,select) {
+  background-color:var(--hc-control-bg)!important;
+  color:var(--hc-control-fg)!important;
+  border-color:var(--hc-control-border)!important;
+  color-scheme:inherit;
+}
+main :where(input[type="file"],input[type="checkbox"],input[type="radio"],input[type="date"],input[type="datetime-local"],input[type="time"],input[type="month"],input[type="week"]) {
+  color:var(--hc-control-fg)!important;
+  accent-color:#ff5500;
+  color-scheme:inherit;
+}
+main :where(input[type="file"])::file-selector-button {
+  background-color:var(--hc-control-bg)!important;
+  color:var(--hc-control-fg)!important;
+  border:1px solid var(--hc-control-border)!important;
+}
+main :where(input,textarea,select)::placeholder { color:var(--hc-control-muted)!important; opacity:1; }
+main :where(form, .form-panel, .form-card, .account-profile-form, .settings-card, .settings-group, .hc-settings-group, .hc-profile-editor, .profile-editor) :where(.error,.error-message,.field-error,[role="alert"]) { color:#ff6b6b!important; }
+
+/* Shared themed feedback surfaces, including legacy status/toast class names. */
+:where(.hc-toast,.toast,.toast-message,.toast-notification,.snackbar,.notification-toast,.hc-settings-message,.settings-save,[role="status"].toast,[data-sonner-toast],[data-radix-toast-root]) {
+  background:var(--hc-surface-bg)!important;
+  color:var(--hc-surface-fg)!important;
+  border:1px solid var(--hc-surface-border)!important;
+  color-scheme:inherit;
+}
+:where(.hc-toast,.toast,.toast-message,.toast-notification,.snackbar,.notification-toast,.hc-settings-message,.settings-save,[role="status"].toast,[data-sonner-toast],[data-radix-toast-root]) :where(svg,[data-icon],p,span,strong,small) {
+  color:inherit!important;
+  fill:currentColor;
+}
