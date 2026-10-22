@@ -28,7 +28,7 @@ try {
       if(req.method()==="OPTIONS"){await route.fulfill({status:204,headers:cors,body:""});return;}
       let data=[];
       if(path.includes("/rest/v1/teams")) {
-        if(url.searchParams.has("id")) data=teams.find(t=>url.searchParams.get("id")?.includes(t.id)) || teams[0];
+        if(url.searchParams.get("id")?.startsWith("eq.")) data=teams.find(t=>url.searchParams.get("id")?.includes(t.id)) || teams[0];
         else data=teams;
       } else if(path.includes("/rest/v1/leagues")) data=[{id:"33333333-3333-4333-8333-333333333333",name:"National League",country:"Azerbaijan",level:"First Division"}];
       else if(path.includes("/rest/v1/team_league_memberships")) data=[];
