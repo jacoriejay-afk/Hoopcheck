@@ -52,7 +52,7 @@ jobs:
 
       - name: Install Playwright and verify hosted Chrome
         run: |
-          npm install --no-save --package-lock=false playwright
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --no-save --package-lock=false playwright
           google-chrome --version
 
       - name: Start production server
