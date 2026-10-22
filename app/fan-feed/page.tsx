@@ -42,7 +42,7 @@ export default function FanFeedPage() {
     const teamQuery = await supabase.from("teams").select("id,name,logo_url").in("id", teamIds.length ? teamIds : ["00000000-0000-0000-0000-000000000000"]);
     const followedTeams = (teamQuery.data || []) as Team[];
     setTeams(followedTeams);
-    if (!teamId && followedTeams.length) setTeamId(followedTeams[0].id);
+    setTeamId(current => current || followedTeams[0]?.id || "");
     if (!fanIds.length && !teamIds.length) { setPosts([]); return; }
     const query = supabase.from("fan_feed_posts")
       .select("id,author_id,team_id,body,image_url,created_at,expires_at,profiles!fan_feed_posts_author_id_fkey(id,display_name,avatar_url,account_type),teams(id,name,logo_url),fan_feed_likes(user_id),fan_feed_comments(id)")
@@ -60,7 +60,7 @@ export default function FanFeedPage() {
       (commentRows || []).forEach((c: any) => { (grouped[c.post_id] ||= []).push({ ...c, profiles: Array.isArray(c.profiles) ? c.profiles[0] : c.profiles }); });
       setComments(grouped);
     } else setComments({});
-  }, [teamId]);
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -147,7 +147,7 @@ export default function FanFeedPage() {
       {!teams.length && <p className="muted">{t("fanFeed.followTeamFirst")} <Link href="/teams">{t("fanFeed.teams")}</Link></p>}
     </section>
     <section className="hc-feed-stream" aria-label={t("fanFeed.recentPosts")}>{posts.length ? posts.map(post => <article key={post.id} className="dashboard-card hc-feed-ticket">
-      <header className="hc-feed-post-header"><div className="hc-feed-post-author"><Link href={"/fans/" + post.author_id} aria-label={t("fanFeed.fan")}><Link href={"/fans/" + post.author_id} aria-label={t("fanFeed.viewFanProfile")}>{post.profiles?.avatar_url ? <img src={post.profiles.avatar_url} alt="" className="hc-feed-post-avatar" /> : <div className="player-avatar-fallback hc-feed-post-avatar">HC</div>}</Link></Link><div className="hc-feed-post-author__meta"><Link href={"/fans/" + post.author_id}><strong>{post.profiles?.display_name || t("fanFeed.fan")}</strong></Link><small>{formatDate(post.created_at, { dateStyle: "medium", timeStyle: "short" })}</small></div></div>{post.teams && <Link className="hc-feed-post-topic" href={"/teams/" + post.team_id}>{post.teams.name}</Link>}</header>
+      <header className="hc-feed-post-header"><div className="hc-feed-post-author"><Link href={"/fans/" + post.author_id} aria-label={t("fanFeed.viewFanProfile")}>{post.profiles?.avatar_url ? <img src={post.profiles.avatar_url} alt="" className="hc-feed-post-avatar" /> : <div className="player-avatar-fallback hc-feed-post-avatar">HC</div>}</Link><div className="hc-feed-post-author__meta"><Link href={"/fans/" + post.author_id}><strong>{post.profiles?.display_name || t("fanFeed.fan")}</strong></Link><small>{formatDate(post.created_at, { dateStyle: "medium", timeStyle: "short" })}</small></div></div>{post.teams && <Link className="hc-feed-post-topic" href={"/teams/" + post.team_id}>{post.teams.name}</Link>}</header>
       {post.body.trim() && <p style={{ whiteSpace: "pre-wrap" }}>{post.body}</p>}{post.image_url && <img src={post.image_url} alt={t("fanFeed.postPhoto")} className="hc-feed-post-image" />}
       <div className="hc-feed-post-actions"><button type="button" className={"hc-feed-action-pill" + (liked.has(post.id) ? " is-active" : "")} onClick={() => void toggleLike(post)}>{liked.has(post.id) ? "♥" : "♡"} {t("fanFeed.like")} · {(post.fan_feed_likes || []).length + (liked.has(post.id) ? 1 : 0) - ((post.fan_feed_likes || []).some((l: any) => l.user_id === user.id) && !liked.has(post.id) ? 1 : 0)}</button><button type="button" className="hc-feed-action-pill" onClick={() => setOpenComments(prev => ({ ...prev, [post.id]: !prev[post.id] }))}>{t("fanFeed.comment")} · {(comments[post.id] || []).length}</button><span className="hc-feed-expires">{t("fanFeed.expires")} {new Date(post.expires_at).toLocaleTimeString()}</span></div>
       {openComments[post.id] && <div className="hc-feed-comments-panel"><strong>{t("fanFeed.comments")}</strong>{(comments[post.id] || []).map(c => <div key={c.id}><strong>{c.profiles?.display_name || t("fanFeed.fan")}</strong><p>{c.body}</p></div>)}<div className="hc-feed-composer__footer"><input value={drafts[post.id] || ""} maxLength={500} onChange={e => setDrafts(prev => ({ ...prev, [post.id]: e.target.value }))} placeholder={t("fanFeed.commentPlaceholder")} /><button className="btn" onClick={() => void addComment(post.id)}>{t("fanFeed.send")}</button></div></div>}
