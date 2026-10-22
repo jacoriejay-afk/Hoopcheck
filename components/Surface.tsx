@@ -8,5 +8,7 @@ type SurfaceProps = Omit<HTMLAttributes<HTMLElement>, "onSubmit"> & {
 
 /** Shared semantic surface: theme controls background, border and text as one contract. */
 export default function Surface({ as: Tag = "article", className = "", children, ...props }: SurfaceProps) {
-  return <Tag {...props} data-hc-surface="true" className={`hc-surface ${className}`.trim()}>{children}</Tag>;
+  const shared = { ...props, "data-hc-surface": "true" as const, className: `hc-surface ${className}`.trim() };
+  if (Tag === "form") return <form {...(shared as HTMLAttributes<HTMLFormElement>)}>{children}</form>;
+  return <Tag {...(shared as HTMLAttributes<HTMLElement>)}>{children}</Tag>;
 }
