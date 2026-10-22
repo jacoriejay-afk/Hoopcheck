@@ -43,9 +43,7 @@ export default function FanLivePage() {
   const [reportReason,setReportReason]=useState("harassment");
   const [reportDetails,setReportDetails]=useState("");
   const [clock,setClock]=useState(()=>new Date());
-  const [joined,setJoined]=useState(false);
   const bottomRef=useRef<HTMLDivElement|null>(null);
-  const sentRef=useRef(new Map<string,string>());
   const lastSentRef=useRef(0);
 
   const load = useCallback(async (showLoader=false) => {
@@ -118,10 +116,10 @@ export default function FanLivePage() {
     const gameId=selected.id;
     const heartbeat=async()=>{
       if(stopped)return;
-      if(!roomOpen(selected,new Date())){setJoined(false);return;}
+      if(!roomOpen(selected,new Date())){return;}
       const now=new Date().toISOString();
       const {error}=await supabase.from("fan_live_chat_presence").upsert({game_id:gameId,user_id:userId,last_seen_at:now},{onConflict:"game_id,user_id"});
-      if(!error&&!stopped)setJoined(true);
+      
       await refreshPresence(gameId);
     };
     void heartbeat();
@@ -172,7 +170,6 @@ export default function FanLivePage() {
       return;
     }
     const saved=data as ChatMessage;
-    sentRef.current.set(localId,saved.id);
     setMessages(current=>current.map(m=>m.id===localId?saved:m.some(x=>x.id===saved.id)?x:m));
   }
 
