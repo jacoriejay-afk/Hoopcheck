@@ -168,7 +168,7 @@ export default function FanLivePage() {
       return;
     }
     const saved=data as ChatMessage;
-    setMessages(current=>current.map(m=>m.id===localId?saved:m.some(x=>x.id===saved.id)?x:m));
+    setMessages(current=>current.some(m=>m.id===saved.id)?current.filter(m=>m.id!==localId):current.map(m=>m.id===localId?saved:m));
   }
 
   async function retry(item:ChatMessage){
