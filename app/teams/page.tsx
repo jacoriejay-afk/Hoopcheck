@@ -253,7 +253,7 @@ export default function TeamsPage() {
           <div className="team-filter-row">
             <select value={continent} onChange={(e) => { setContinent(e.target.value); setCountry(""); setPage(0); }} aria-label={t("filterTeamsByContinent")}>
               <option value="">{t("allContinents")}</option>
-              {Object.keys(CONTINENT_COUNTRIES).map((item) => <option key={item} value={item}>{item.replace("_", " ")}</option>)}
+              {Object.keys(CONTINENT_COUNTRIES).map((item) => <option key={item} value={item}>{({ Europe: t("europe"), Asia: t("asia"), Africa: t("africa"), North_America: t("northAmerica"), South_America: t("southAmerica"), Oceania: t("oceania") } as Record<string, string>)[item] || item.replace("_", " ")}</option>)}
             </select>
             <select value={country} onChange={(e) => { setCountry(e.target.value); setPage(0); }} aria-label={t("filterTeamsByCountry")}>
               <option value="">{t("allCountriesFilter")}</option>
