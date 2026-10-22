@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuthState } from "./AuthProvider";
+import { useLanguage } from "./LanguageProvider";
 import Logo from "./Logo";
 
 function SearchIcon() {
@@ -16,6 +17,7 @@ function UserIcon() {
 export default function SiteHeader() {
   const pathname = usePathname();
   const { signedIn } = useAuthState();
+  const { t } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
 
   if (pathname.startsWith("/admin") || pathname === "/dashboard") return null;
@@ -33,13 +35,13 @@ export default function SiteHeader() {
 
       <nav className={menuOpen ? "hc-header-nav is-open" : "hc-header-nav"} aria-label="Primary navigation">
         <div className="hc-header-links">
-          <Link href="/" className={active("/") ? "is-active" : ""} onClick={closeMenu}>Home</Link>
-          <Link href="/directory" className={active("/directory") ? "is-active" : ""} onClick={closeMenu}>Directory</Link>
-          <Link href="/reviews" className={active("/reviews") ? "is-active" : ""} onClick={closeMenu}>Reviews</Link>
-          <Link href="/notifications" className={active("/notifications") ? "is-active" : ""} onClick={closeMenu}>Alerts</Link>
+          <Link href="/" className={active("/") ? "is-active" : ""} onClick={closeMenu}>{t("home")}</Link>
+          <Link href="/directory" className={active("/directory") ? "is-active" : ""} onClick={closeMenu}>{t("browseDirectories")}</Link>
+          <Link href="/reviews" className={active("/reviews") ? "is-active" : ""} onClick={closeMenu}>{t("reviews")}</Link>
+          <Link href="/notifications" className={active("/notifications") ? "is-active" : ""} onClick={closeMenu}>{t("alerts")}</Link>
         </div>
         <div className="hc-header-actions">
-          <Link href="/search" className="hc-header-icon" aria-label="Search" onClick={closeMenu}><SearchIcon /></Link>
+          <Link href="/search" className="hc-header-icon" aria-label={t("search")} onClick={closeMenu}><SearchIcon /></Link>
           {!signedIn && <Link href="/login" className="hc-signin-button" onClick={closeMenu}>SIGN IN <span aria-hidden="true">↗</span></Link>}
           <Link href={signedIn ? "/profile" : "/login"} className="hc-header-icon" aria-label={signedIn ? "Profile" : "Sign in"} onClick={closeMenu}><UserIcon /></Link>
         </div>
