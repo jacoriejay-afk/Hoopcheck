@@ -32,7 +32,7 @@ export default function TeamDirectoryRow({
   const hasRating = averageRating !== null && averageRating !== undefined;
   return (
     <Surface className={"hc-team-directory-row hc-scout-card hc-team-directory-row--" + kind}>
-      <Link href={href} className="hc-team-directory-row__main" aria-label={"Open " + name + " team profile"}>
+      <Link href={href} className="hc-team-directory-row__main" aria-label={t("openTeamProfile") + ": " + name}>
         <span className="hc-scout-card__identity">
           <span className="hc-team-logo-tile" aria-hidden="true">
             {logoUrl ? <img src={logoUrl} alt="" width={48} height={48} loading="lazy" /> : <span>{monogram}</span>}
@@ -56,7 +56,7 @@ export default function TeamDirectoryRow({
         )}
       </div>
       <footer className="hc-scout-card__ticket">
-        <Link href={href} className="hc-scout-card__report-link">Open Scouting Report <span aria-hidden="true">→</span></Link>
+        <Link href={href} className="hc-scout-card__report-link">{t("openScoutingReport")} <span aria-hidden="true">→</span></Link>
         {showFollow && <div className="hc-team-directory-row__follow"><FollowButton targetType="team" targetId={id} /></div>}
       </footer>
     </Surface>
