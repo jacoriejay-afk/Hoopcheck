@@ -206,7 +206,8 @@ try {
   ];
   const routeSweepResults = [];
   for (const theme of ["dark", "light"]) {
-    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+   for (const width of [390, 1440]) {
+    const context = await browser.newContext({ viewport: { width, height: 1000 }, isMobile: width === 390, hasTouch: width === 390 });
     const encodedSession = "base64-" + btoa(unescape(encodeURIComponent(JSON.stringify(session))))
       .replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
     await context.addCookies([
@@ -214,6 +215,10 @@ try {
       { name: "sb-ci-auth-token", value: encodedSession, url: baseURL },
     ]);
     const page = await context.newPage();
+    await page.addInitScript(({ themePreference, authSession }) => {
+      localStorage.setItem("hoopcheck-theme", themePreference);
+      localStorage.setItem("sb-ci-auth-token", JSON.stringify(authSession));
+    }, { themePreference: theme, authSession: session });
     await page.addInitScript(({ themePreference, authSession }) => {
       localStorage.setItem("hoopcheck-theme", themePreference);
       localStorage.setItem("sb-ci-auth-token", JSON.stringify(authSession));
@@ -257,6 +262,9 @@ try {
           body: color(document.body),
           pageWrapper: color(main),
           mainClass: main?.className || null,
+          headline: (() => { const e=main?.querySelector("h1"); if(!e) return null; const s=getComputedStyle(e); return {text:(e.innerText||"").trim().slice(0,90),color:s.color,background:getComputedStyle(e.closest(".hc-shared-directory-hero,.hero,.card,.panel")||e.parentElement).backgroundColor}; })(),
+          readableText: (() => { const e=main?.querySelector("p:not(:empty),li:not(:empty),.hc-scout-card__identity-copy h2"); if(!e) return null; const s=getComputedStyle(e); return {text:(e.innerText||"").trim().slice(0,60),color:s.color,background:getComputedStyle(e.closest(".hc-team-directory-row,.hc-shared-directory-hero,.card,.panel")||e.parentElement).backgroundColor}; })(),
+          cards: Array.from(main?.querySelectorAll(".hc-team-directory-row,.hc-shared-directory-hero,.card,.panel,.hc-team-facts-card,.team-roster-spots")||[]).filter(e=>{const r=e.getBoundingClientRect();return r.width>40&&r.height>30&&getComputedStyle(e).display!=="none"}).slice(0,20).map(e=>({className:typeof e.className==="string"?e.className:"",background:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color})),
           navigationError,
         };
       }, { requestedPath, navigationError });
@@ -266,9 +274,23 @@ try {
       if (result.body !== expectedPage) errors.push("body background mismatch");
       if (result.pageWrapper && result.pageWrapper !== expectedPage) errors.push("main background mismatch");
       if (result.navigationError) errors.push("navigation error");
-      routeSweepResults.push({ theme, ...result, status: errors.length ? "FAIL" : result.pageWrapper ? "PASS" : "NO_MAIN", reason: errors.join("; ") || (result.pageWrapper ? "" : "route rendered no main element") });
+      const foreground = theme === "dark" ? [245,245,240] : [21,21,21];
+      const luminance = (rgb) => { const v=rgb.match(/[\\d.]+/g)?.slice(0,3).map(Number)||[0,0,0]; const channels=v.map(n=>{n/=255;return n<=0.04045?n/12.92:((n+0.055)/1.055)**2.4;}); return .2126*channels[0]+.7152*channels[1]+.0722*channels[2]; };
+      const contrast = (a,b) => { const x=luminance(a),y=luminance(b); return (Math.max(x,y)+.05)/(Math.min(x,y)+.05); };
+      const rgb = (s) => s?.match(/[\\d.]+/g)?.slice(0,3).map(Number) || null;
+      if (result.headline && rgb(result.headline.color) && rgb(result.headline.background) && contrast(result.headline.color,result.headline.background)<4.5) errors.push("headline contrast below 4.5:1");
+      if (result.readableText && rgb(result.readableText.color) && rgb(result.readableText.background) && contrast(result.readableText.color,result.readableText.background)<4.5) errors.push("body text contrast below 4.5:1");
+      for (const card of result.cards||[]) {
+        if (rgb(card.color) && rgb(card.background) && contrast(card.color,card.background)<4.5) errors.push("card text contrast below 4.5:1: "+card.className);
+      }
+      if (["/teams","/teams/11111111-1111-4111-8111-111111111111"].includes(requestedPath)) {
+        const name = requestedPath === "/teams" ? "teams-directory" : "team-detail";
+        await page.screenshot({path:`artifacts/theme-check/${name}-${theme}-${width}.png`,fullPage:true,animations:"disabled"});
+      }
+      routeSweepResults.push({ theme, width, ...result, status: errors.length ? "FAIL" : result.pageWrapper ? "PASS" : "NO_MAIN", reason: errors.join("; ") || (result.pageWrapper ? "" : "route rendered no main element") });
     }
     await context.close();
+   }
   }
   console.log("THEME_ROUTE_SWEEP=" + JSON.stringify(routeSweepResults, null, 2));
 
