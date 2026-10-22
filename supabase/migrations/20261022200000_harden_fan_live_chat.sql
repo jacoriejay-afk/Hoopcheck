@@ -127,7 +127,16 @@ with check (
 );
 drop policy if exists "eligible fans update own game presence" on public.fan_live_chat_presence;
 create policy "eligible fans update own game presence" on public.fan_live_chat_presence for update to authenticated
-using (user_id=(select auth.uid())) with check (user_id=(select auth.uid()));
+using (user_id=(select auth.uid())) with check (
+ user_id=(select auth.uid()) and public.fan_live_chat_room_open(game_id)
+ and exists(select 1 from public.profiles p join public.subscriptions s on s.user_id=p.id
+  where p.id=(select auth.uid()) and p.account_type='fan' and s.plan in ('pro','premium')
+   and s.status in ('active','trialing') and coalesce(s.access_status,'active') in ('active','trialing','pro','premium')
+   and (s.current_period_end is null or s.current_period_end>now()))
+);
+drop policy if exists "fans leave game presence" on public.fan_live_chat_presence;
+create policy "fans leave game presence" on public.fan_live_chat_presence for delete to authenticated
+using (user_id=(select auth.uid()));
 
 
 -- Live-game cards need the actual room occupancy for all eligible Fan HQ members.
