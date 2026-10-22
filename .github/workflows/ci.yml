@@ -21,6 +21,7 @@ jobs:
       STRIPE_PRO_PRICE_ID: price_ci_pro
       STRIPE_PREMIUM_PRICE_ID: price_ci_premium
       NEXT_PUBLIC_SITE_URL: https://ci.invalid
+      HOOPCHECK_THEME_TEST_MODE: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
