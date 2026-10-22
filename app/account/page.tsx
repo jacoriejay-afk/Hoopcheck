@@ -293,7 +293,7 @@ export default function AccountPage() {
       setCountryPublic(Boolean(data.current_country_public));
     })();
     return () => { alive = false; };
-  }, [userId]);
+  }, [userId, setGlobalTheme]);
 
   async function saveSetting(values: Record<string, unknown>, success: string) {
     setSettingsMessage("");
