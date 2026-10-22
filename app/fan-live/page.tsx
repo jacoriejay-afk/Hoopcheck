@@ -76,7 +76,7 @@ export default function FanLivePage() {
     const {data:teamRows}=ids.length?await supabase.from("teams").select("id,name,logo_url").in("id",ids):{data:[] as Team[]};
     setTeams(Object.fromEntries((teamRows||[]).map((t:Team)=>[t.id,t])));
     const requested=typeof window!=="undefined"?new URLSearchParams(window.location.search).get("gameId"):null;
-    setSelected(current=>next.find(g=>g.id===requested)||next.find(g=>g.id===current?.id)||next.find(g=>g.status==="live")||next[0]||null);
+    setSelected(current=>(current&&next.find(g=>g.id===current.id))||next.find(g=>g.id===requested)||next.find(g=>g.status==="live")||next[0]||null);
     setClock(new Date()); setLoading(false);
   },[]);
 
