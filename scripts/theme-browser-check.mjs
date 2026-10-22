@@ -4,6 +4,29 @@ import { chromium } from "playwright";
 
 const baseURL = process.env.THEME_TEST_BASE_URL || "http://127.0.0.1:3000";
 const testLanguage = process.env.THEME_TEST_LANGUAGE || "en";
+const teamFixture = {
+  id: "b79a5635-4531-4cc9-981d-103f9b61b9c2",
+  name: "A.B.B Ego Spor",
+  country: "Türkiye",
+  league_name: "Turkish Basketball League",
+  league_id: "c8d92f50-20d6-4b13-a6c8-9a7b3c1b2001",
+  city: "Istanbul",
+  logo_url: null,
+};
+const leagueFixture = {
+  id: "c8d92f50-20d6-4b13-a6c8-9a7b3c1b2001",
+  name: "Turkish Basketball League",
+  country: "Türkiye",
+  level: "Top division",
+};
+const coachFixture = {
+  id: "11111111-1111-4111-8111-111111111111",
+  name: "Coach QA Fixture",
+  country: "Azerbaijan",
+  city: "Baku",
+  current_team_id: teamFixture.id,
+  active: true,
+};
 const artifactsDir = "artifacts/theme-check";
 await mkdir(artifactsDir, { recursive: true });
 await mkdir(`${artifactsDir}/routes`, { recursive: true });
@@ -202,7 +225,7 @@ try {
 
   const mainRoutes = [
     "/", "/dashboard", "/feed", "/account", "/settings", "/profile", "/search",
-    "/teams", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2", "/coaches", "/coaches/theme-audit", "/leagues", "/players", "/womens", "/directory",
+    "/teams", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2", "/coaches", "/coaches/11111111-1111-4111-8111-111111111111", "/leagues", "/players", "/womens", "/directory",
     "/reviews", "/membership", "/notifications", "/support", "/verification",
     "/privacy-center", "/privacy", "/terms", "/community-guidelines", "/login",
     "/signup", "/onboarding", "/fan-live", "/live-games", "/partners", "/copyright",
@@ -236,9 +259,20 @@ try {
         return;
       }
       let data = [];
+      const single = request.headers()["accept"]?.includes("vnd.pgrst.object");
       if (url.pathname === "/auth/v1/user") data = user;
-      else if (url.pathname.includes("/rest/v1/profiles")) data = request.headers()["accept"]?.includes("vnd.pgrst.object") ? profile : [];
-      else if (url.pathname.includes("/rest/v1/subscriptions")) data = request.headers()["accept"]?.includes("vnd.pgrst.object") ? subscription : [];
+      else if (url.pathname.includes("/rest/v1/profiles")) data = single ? profile : [];
+      else if (url.pathname.includes("/rest/v1/subscriptions")) data = single ? subscription : [];
+      else if (url.pathname.includes("/rest/v1/teams")) data = single ? teamFixture : [teamFixture];
+      else if (url.pathname.includes("/rest/v1/leagues")) data = single ? leagueFixture : [leagueFixture];
+      else if (url.pathname.includes("/rest/v1/coaches")) data = single ? coachFixture : [coachFixture];
+      else if (url.pathname.includes("/rest/v1/team_league_memberships")) data = [];
+      else if (url.pathname.includes("/rest/v1/reviews")) data = [];
+      else if (url.pathname.includes("/rest/v1/team_roster_spots")) data = [];
+      else if (url.pathname.includes("/rest/v1/follow_relationships")) data = single ? null : [];
+      else if (url.pathname.includes("/rest/v1/rpc/get_follow_count")) data = 0;
+      else if (url.pathname.includes("/rest/v1/rpc/get_review_verification")) data = [];
+      else if (url.pathname.includes("/rest/v1/rpc/is_current_user_admin_or_moderator")) data = false;
       else if (url.pathname.includes("/rest/v1/rpc/get_current_user_admin_role")) data = "member";
       await route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(data) });
     });
@@ -286,6 +320,18 @@ try {
       if (result.pageWrapper && result.pageWrapper !== expectedPage) errors.push("main background mismatch");
       if (result.navigationError) errors.push("navigation error");
       if (theme === "dark" && result.whiteSurfaceOffenders.length) errors.push("white surface offenders: " + JSON.stringify(result.whiteSurfaceOffenders));
+      if (["/dashboard", "/search", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2"].includes(requestedPath)) {
+        const visibleText = await page.locator("body").innerText();
+        const expectedText = testLanguage === "es"
+          ? requestedPath === "/dashboard" ? ["TUS ACCESOS DIRECTOS", "ACCESO RÁPIDO"]
+            : requestedPath === "/search" ? ["CONEXIÓN ENTRE JUGADORES", "EMPIEZA A INVESTIGAR"]
+            : ["TABLERO DE PLANTILLA", "AÚN NO HAY RESEÑAS APROBADAS"]
+          : requestedPath === "/dashboard" ? ["YOUR SHORTCUTS", "Quick Access"]
+            : requestedPath === "/search" ? ["PLAYER CONNECT", "Start Researching"]
+            : ["ROSTER BOARD", "No approved reviews yet"];
+        const missingText = expectedText.filter((expected) => !visibleText.toLocaleUpperCase().includes(expected.toLocaleUpperCase()));
+        if (missingText.length) errors.push("language assertions missing: " + missingText.join(", "));
+      }
       await page.screenshot({
         path: `${artifactsDir}/routes/${requestedPath.replace(/[^a-z0-9-]+/gi, "_")}-${theme}-${testLanguage}-mobile.png`,
         fullPage: true,
