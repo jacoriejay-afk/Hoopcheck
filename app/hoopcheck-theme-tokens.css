@@ -212,3 +212,13 @@ html.theme-dark main.admin-directory-shell :where(.message.error,.error,.error-b
   color: #FFD7D7 !important;
   border-color: #7F3434 !important;
 }
+
+/* Inline legacy admin styles sometimes color generic wrappers; force their text
+   to inherit the active dark-mode foreground without flattening nested surfaces. */
+html.theme-dark main.admin-directory-shell :where(div,section,article,aside,header,nav) {
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark main.admin-directory-shell :where(div,section,article,aside)[style*="background"] {
+  background-color: var(--hc-surface-raised) !important;
+  border-color: var(--hc-border) !important;
+}
