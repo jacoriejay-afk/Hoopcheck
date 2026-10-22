@@ -51,10 +51,17 @@ function adminClient() {
 }
 
 async function moderate(text: string, image: File | null) {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) return { allowed: false, status: 503, message: "HoopFeed safety moderation is not configured yet. The content was not published." };
+  // Apply deterministic checks even when the external moderation provider is unavailable.
+  // This never allows content through without the required AI moderation result.
+  if (blockedByLocalRules(text)) {
+    return { allowed: false, status: 400, message: "Please remove profanity or abusive language before posting." };
+  }
 
-  if (blockedByLocalRules(text)) return { allowed: false, status: 400, message: "Please remove profanity or abusive language before posting." };
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) {
+    console.error("HoopFeed moderation is unavailable: OPENAI_API_KEY is not configured for this deployment.");
+    return { allowed: false, status: 503, message: "HoopFeed safety moderation is temporarily unavailable. Your content was not published. Please try again shortly." };
+  }
 
   const input: any[] = [];
   if (text) input.push({ type: "text", text });
@@ -66,15 +73,37 @@ async function moderate(text: string, image: File | null) {
   }
   if (!input.length) return { allowed: false, status: 400, message: "Add text or a photo before posting." };
 
-  const response = await fetch("https://api.openai.com/v1/moderations", {
-    method: "POST",
-    headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "omni-moderation-latest", input })
-  });
-  if (!response.ok) return { allowed: false, status: 502, message: "Safety moderation is temporarily unavailable. Your content was not published." };
-  const data = await response.json();
+  let response: Response;
+  try {
+    response = await fetch("https://api.openai.com/v1/moderations", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "omni-moderation-latest", input }),
+      signal: AbortSignal.timeout(12_000),
+      cache: "no-store",
+    });
+  } catch (error) {
+    console.error("HoopFeed moderation provider request failed:", error);
+    return { allowed: false, status: 502, message: "Safety moderation is temporarily unavailable. Your content was not published." };
+  }
+  if (!response.ok) {
+    // Avoid logging provider response bodies or credentials; only log the status.
+    console.error("HoopFeed moderation provider returned HTTP", response.status);
+    return { allowed: false, status: 502, message: "Safety moderation is temporarily unavailable. Your content was not published." };
+  }
+
+  let data: any;
+  try {
+    data = await response.json();
+  } catch {
+    return { allowed: false, status: 502, message: "Safety moderation returned an invalid response. Your content was not published." };
+  }
   const result = data?.results?.[0];
-  if (!result) return { allowed: false, status: 502, message: "Safety moderation returned no result. Your content was not published." };
+  // Fail closed if the provider response does not explicitly include a boolean decision.
+  if (!result || typeof result.flagged !== "boolean") {
+    console.error("HoopFeed moderation provider response did not contain a valid decision.");
+    return { allowed: false, status: 502, message: "Safety moderation returned no valid result. Your content was not published." };
+  }
   if (result.flagged) return { allowed: false, status: 400, message: "This content was blocked by HoopFeed safety moderation. Remove sexual/nude, violent, hateful, abusive, or otherwise prohibited content and try again." };
   return { allowed: true, status: 200, message: "ok" };
 }
