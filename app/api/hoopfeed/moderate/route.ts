@@ -194,13 +194,17 @@ export async function POST(request: Request) {
         return NextResponse.json({ allowed: false, message: "This post has expired and can't be shared." }, { status: 404 });
       }
       if (source.author_id !== user.id) {
-        const [{ data: sourceAuthor }, { data: follow }] = await Promise.all([
-          db.from("profiles").select("account_type,current_country").eq("id", source.author_id).maybeSingle(),
-          db.from("follow_relationships").select("follower_id").eq("follower_id", user.id).eq("target_type", "player").eq("target_id", source.author_id).maybeSingle()
+        const [{ data: sourceAuthor }, { data: follow }, { data: connection }] = await Promise.all([
+          db.from("profiles").select("account_type").eq("id", source.author_id).maybeSingle(),
+          db.from("follow_relationships").select("follower_id").eq("follower_id", user.id).eq("target_type", "player").eq("target_id", source.author_id).maybeSingle(),
+          db.from("player_contact_requests").select("id,requester_id,player_id")
+            .eq("status", "accepted")
+            .or(`and(requester_id.eq.${user.id},player_id.eq.${source.author_id}),and(requester_id.eq.${source.author_id},player_id.eq.${user.id})`)
+            .maybeSingle()
         ]);
-        const sameCountry = !!profile?.current_country && !!sourceAuthor?.current_country &&
-          profile.current_country.toLowerCase() === sourceAuthor.current_country.toLowerCase();
-        if (!follow || sourceAuthor?.account_type !== "player" || !sameCountry) {
+        // Match the same visibility rules used by the feed loader: players may see posts
+        // from players they follow or have an accepted contact connection with.
+        if (!follow && !connection || sourceAuthor?.account_type !== "player") {
           return NextResponse.json({ allowed: false, message: "You can only share posts you're allowed to view." }, { status: 403 });
         }
       }
