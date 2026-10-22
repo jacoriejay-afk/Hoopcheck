@@ -1,0 +1,154 @@
+/* Shared semantic surface contract. Imported after legacy page styles. */
+:root { --hc-page-bg:#f4f4f1; --hc-surface-bg:#fff; --hc-surface-fg:#151515; --hc-surface-muted:#666661; --hc-surface-border:#e4e4e0; }
+html.theme-light { --hc-page-bg:#f4f4f1; --hc-surface-bg:#fff; --hc-surface-fg:#151515; --hc-surface-muted:#666661; --hc-surface-border:#e4e4e0; }
+html.theme-dark { --hc-page-bg:#0a0a0a; --hc-surface-bg:#171717; --hc-surface-fg:#f5f5f0; --hc-surface-muted:#b8b8b3; --hc-surface-border:#333; }
+html,body { background-color:var(--hc-page-bg)!important; }
+.hc-surface,[data-hc-surface="true"],
+main :where(.card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.state-card,.form-card,.auth-card,.hc-auth-card,.legal-card,.admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.hc-review-card,.hc-profile-info-card,.hc-team-row,.hc-directory-result,.hc-player-result,.hc-team-facts-card,.hc-command-center,.hc-command-tile,.hc-feed-composer) {
+ background-color:var(--hc-surface-bg)!important;color:var(--hc-surface-fg)!important;border-color:var(--hc-surface-border)!important;
+}
+.hc-surface :where(h1,h2,h3,h4,h5,h6,p,span,strong,small,label,li,dt,dd,a:not(.btn)),
+[data-hc-surface="true"] :where(h1,h2,h3,h4,h5,h6,p,span,strong,small,label,li,dt,dd,a:not(.btn)),
+main :where(.card,.dashboard-card,.compact-card,.panel,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.state-card,.form-card,.auth-card,.admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,.modal-panel,.modal-content,.hc-review-card,.hc-profile-info-card,.hc-team-row,.hc-directory-result,.hc-player-result,.hc-team-facts-card,.hc-command-center,.hc-command-tile,.hc-feed-composer) :where(h1,h2,h3,h4,h5,h6,p,span,strong,small,label,li,dt,dd,a:not(.btn)) { color:inherit!important; }
+.hc-surface .muted,[data-hc-surface="true"] .muted { color:var(--hc-surface-muted)!important; }
+html.theme-dark main :where(input,textarea,select),html.theme-light main :where(input,textarea,select) { background-color:var(--hc-surface-bg);color:var(--hc-surface-fg);border-color:var(--hc-surface-border); }
+
+.signup-nav-actions { display:flex; align-items:center; gap:12px; }
+.signup-language-select { min-height:38px; max-width:180px; padding:7px 28px 7px 10px; border:1px solid var(--hc-surface-border); border-radius:4px; background:#111; color:#fff; font:inherit; font-size:12px; }
+.signup-language-select option { background:#111; color:#fff; }
+html[dir="rtl"] .signup-language-select { direction:rtl; }
+@media(max-width:520px) { .signup-nav-actions { gap:8px; } .signup-language-select { max-width:132px; min-height:36px; font-size:11px; } }
+
+html.theme-light main :where(.hc-feed-topic-chip,.hc-feed-filter-chip) { background-color:#f8f8f6!important;color:var(--hc-surface-fg)!important;border-color:var(--hc-surface-border)!important; }
+html.theme-dark main :where(.hc-feed-topic-chip,.hc-feed-filter-chip) { background-color:#1b1b1b!important;color:var(--hc-surface-fg)!important;border-color:var(--hc-surface-border)!important; }
+
+
+/* Feed composer is rendered outside the themed main wrapper on some layouts. */
+.hc-feed-composer,[data-hc-surface="true"],.hc-surface {
+  background-color:var(--hc-surface-bg)!important;
+  color:var(--hc-surface-fg)!important;
+  border-color:var(--hc-surface-border)!important;
+}
+.hc-feed-composer :where(h1,h2,h3,h4,h5,h6,p,span,strong,small,label,li,dt,dd,a:not(.btn)) {
+  color:inherit!important;
+}
+html.theme-dark .hc-feed-composer { background-color:#171717!important; }
+html.theme-light .hc-feed-composer { background-color:#fff!important; }
+
+
+/* Theme-native controls and form surfaces: one token set for the whole control tree. */
+html.theme-dark { color-scheme:dark; }
+html.theme-light { color-scheme:light; }
+html { color-scheme:light; }
+html.theme-dark, html.theme-light {
+  --hc-control-bg:var(--hc-surface-bg);
+  --hc-control-fg:var(--hc-surface-fg);
+  --hc-control-muted:var(--hc-surface-muted);
+  --hc-control-border:var(--hc-surface-border);
+}
+main :where(form,.form-panel,.form-card,.account-profile-form,.settings-card,.settings-group,.hc-settings-group,.hc-profile-editor,.profile-editor,.hc-confirm-modal,.modal-panel,[role="dialog"],dialog) {
+  background-color:var(--hc-surface-bg)!important;
+  color:var(--hc-surface-fg)!important;
+  border-color:var(--hc-surface-border)!important;
+}
+main :where(form,.form-panel,.form-card,.account-profile-form,.settings-card,.settings-group,.hc-settings-group,.hc-profile-editor,.profile-editor,.hc-confirm-modal,.modal-panel,[role="dialog"],dialog) :where(label,legend,.muted,.helper-text,.form-help,.field-help,.error-text,.field-error,[role="alert"]) {
+  color:var(--hc-control-muted)!important;
+}
+main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),textarea,select) {
+  background-color:var(--hc-control-bg)!important;
+  color:var(--hc-control-fg)!important;
+  border-color:var(--hc-control-border)!important;
+  color-scheme:inherit;
+}
+main :where(input[type="file"],input[type="checkbox"],input[type="radio"],input[type="date"],input[type="datetime-local"],input[type="time"],input[type="month"],input[type="week"]) {
+  color:var(--hc-control-fg)!important;
+  accent-color:#ff5500;
+  color-scheme:inherit;
+}
+main :where(input[type="file"])::file-selector-button {
+  background-color:var(--hc-control-bg)!important;
+  color:var(--hc-control-fg)!important;
+  border:1px solid var(--hc-control-border)!important;
+}
+main :where(input,textarea,select)::placeholder { color:var(--hc-control-muted)!important; opacity:1; }
+main :where(form, .form-panel, .form-card, .account-profile-form, .settings-card, .settings-group, .hc-settings-group, .hc-profile-editor, .profile-editor) :where(.error,.error-message,.field-error,[role="alert"]) { color:#ff6b6b!important; }
+
+/* Shared themed feedback surfaces, including legacy status/toast class names. */
+:where(.hc-toast,.toast,.toast-message,.toast-notification,.snackbar,.notification-toast,.hc-settings-message,.settings-save,[role="status"].toast,[data-sonner-toast],[data-radix-toast-root]) {
+  background:var(--hc-surface-bg)!important;
+  color:var(--hc-surface-fg)!important;
+  border:1px solid var(--hc-surface-border)!important;
+  color-scheme:inherit;
+}
+:where(.hc-toast,.toast,.toast-message,.toast-notification,.snackbar,.notification-toast,.hc-settings-message,.settings-save,[role="status"].toast,[data-sonner-toast],[data-radix-toast-root]) :where(svg,[data-icon],p,span,strong,small) {
+  color:inherit!important;
+  fill:currentColor;
+}
+
+
+.hc-toast {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:fit-content;
+  max-width:min(100%,560px);
+  padding:12px 16px;
+  border-radius:12px;
+  background:var(--hc-surface-bg)!important;
+  color:var(--hc-surface-fg)!important;
+  border:1px solid var(--hc-surface-border)!important;
+  box-shadow:0 8px 28px rgb(0 0 0 / 18%);
+}
+.hc-toast__icon {
+  display:inline-grid;
+  place-items:center;
+  flex:0 0 24px;
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  background:#ff5500!important;
+  color:#fff!important;
+  font-weight:900;
+}
+.hc-toast__message { color:var(--hc-surface-fg)!important; }
+html.theme-dark .signup-language-select,
+html.theme-dark .signup-language-select option {
+  background:var(--hc-control-bg)!important;
+  color:var(--hc-control-fg)!important;
+  border-color:var(--hc-control-border)!important;
+  color-scheme:dark;
+}
+html.theme-light .signup-language-select,
+html.theme-light .signup-language-select option {
+  background:var(--hc-control-bg)!important;
+  color:var(--hc-control-fg)!important;
+  border-color:var(--hc-control-border)!important;
+  color-scheme:light;
+}
+
+/* Keep the HoopFeed composer aligned with the dark-mode card contract. */
+html.theme-dark .hc-feed-composer.hc-surface { background-color:#171717!important; }
+
+/* Theme-specific override must outrank the generic surface token declaration. */
+html.theme-dark main .hc-feed-composer.hc-surface,
+html.theme-dark .hc-feed-composer[data-hc-surface="true"],
+html.theme-dark .hc-feed-composer { background-color:#171717!important; }
+html.theme-light main .hc-feed-composer.hc-surface,
+html.theme-light .hc-feed-composer[data-hc-surface="true"],
+html.theme-light .hc-feed-composer { background-color:#fff!important; }
+
+
+/* Explicitly outrank the legacy .hc-feed-composer { background:#111!important } rule. */
+html.theme-dark body main .hc-feed-composer,
+html.theme-dark body .hc-feed-composer {
+  background-color:#171717!important;
+}
+html.theme-light body main .hc-feed-composer,
+html.theme-light body .hc-feed-composer {
+  background-color:#fff!important;
+}
+
+
+/* Highest-specificity composer theme contract: the legacy composer also has dashboard-card styles. */
+html.theme-dark body main section.dashboard-card.hc-feed-composer { background:#171717!important; background-color:#171717!important; }
+html.theme-light body main section.dashboard-card.hc-feed-composer { background:#fff!important; background-color:#fff!important; }

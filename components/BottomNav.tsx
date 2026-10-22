@@ -3,16 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthState } from "./AuthProvider";
+import { useLanguage } from "./LanguageProvider";
 
 const items = [
-  ["/", "Home"],
-  ["/feed", "HoopFeed"],
-  ["/search", "Search"],
-  ["/notifications", "Alerts"],
-  ["/profile", "Account"],
+  ["/", "home", "Home"],
+  ["/feed", "hoopFeed", "HoopFeed"],
+  ["/search", "search", "Search"],
+  ["/notifications", "alerts", "Alerts"],
+  ["/profile", "account", "Account"],
 ] as const;
 
-function NavIcon({ label }: { label: (typeof items)[number][1] }) {
+function NavIcon({ label }: { label: (typeof items)[number][2] }) {
   const common = {
     fill: "none",
     stroke: "currentColor",
@@ -35,19 +36,20 @@ function NavIcon({ label }: { label: (typeof items)[number][1] }) {
 export default function BottomNav() {
   const pathname = usePathname();
   const { signedIn } = useAuthState();
+  const { t } = useLanguage();
 
   if (!signedIn || pathname.startsWith("/admin")) return null;
 
   return (
     <nav className="bottom-nav hc-bottom-tab-bar" aria-label="Mobile navigation">
-      {items.map(([href, label]) => {
+      {items.map(([href, translationKey, label]) => {
         const active = href === "/"
           ? pathname === "/" || pathname === "/dashboard"
           : pathname === href || pathname.startsWith(href + "/");
         return (
           <Link key={href} href={href} className={active ? "active" : ""} aria-current={active ? "page" : undefined}>
             <span className="bottom-nav-icon"><NavIcon label={label} /></span>
-            <span className="bottom-nav-label">{label}</span>
+            <span className="bottom-nav-label">{translationKey === "hoopFeed" ? "HoopFeed" : t(translationKey)}</span>
           </Link>
         );
       })}

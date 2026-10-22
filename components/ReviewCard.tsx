@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
+import Surface from "./Surface";
 
 export interface ReviewCardProps {
   username: string;
@@ -15,7 +16,7 @@ export interface ReviewCardProps {
 export default function ReviewCard({ username, date, rating, text, avatarUrl, avatarFallback, className = "", children }: ReviewCardProps) {
   const score = Math.min(5, Math.max(0, Number.isFinite(rating) ? rating : 0));
   const initials = avatarFallback ?? username.trim().split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
-  return <article className={`hc-review-card ${className}`.trim()}>
+  return <Surface className={`hc-review-card ${className}`.trim()}>
     <header className="hc-review-card__header">
       <span className="hc-review-card__avatar">
         {avatarUrl ? <Image src={avatarUrl} alt="" width={42} height={42} unoptimized /> : <span aria-hidden="true">{initials}</span>}
@@ -25,5 +26,5 @@ export default function ReviewCard({ username, date, rating, text, avatarUrl, av
     </header>
     <p className="hc-review-card__text">{text}</p>
     {children}
-  </article>;
+  </Surface>;
 }

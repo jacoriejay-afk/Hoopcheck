@@ -5,6 +5,7 @@ import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
 import { supabase } from "../../lib/supabase";
+import ThemeToast from "../../components/ThemeToast";
 import { useTheme } from "../../components/ThemeProvider";
 
 type Subscription = {
@@ -400,7 +401,7 @@ export default function AccountPage() {
           <SettingsRow icon="logout" label="Sign Out" value="End this session" onClick={signOut} danger />
           <SettingsRow icon="trash" label="Delete Account" value={deletingAccount ? "Deleting…" : "Permanent action"} onClick={() => { setDeleteConfirmation(""); setDeleteModal(true); }} danger />
         </SettingsGroup>
-        {settingsMessage && <p className="hc-settings-message" role="status">{settingsMessage}</p>}
+        {settingsMessage && <ThemeToast className="hc-settings-message">{settingsMessage}</ThemeToast>}
       </section>
       {passwordModal && <div className="hc-modal-backdrop" role="presentation" onClick={e=>{if(e.target===e.currentTarget)setPasswordModal(false)}}><section className="hc-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="hc-password-title"><button type="button" className="hc-modal-close" aria-label="Close" onClick={()=>setPasswordModal(false)}>×</button><p className="eyebrow">SECURITY</p><h2 id="hc-password-title">Change password</h2><label htmlFor="hc-new-password">New password</label><input id="hc-new-password" type="password" autoComplete="new-password" minLength={8} value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="At least 8 characters"/>{passwordMessage && <p role="alert">{passwordMessage}</p>}<button type="button" className="btn" onClick={submitPasswordChange}>Update password</button></section></div>}
       {deleteModal && <div className="hc-modal-backdrop" role="presentation" onClick={e=>{if(e.target===e.currentTarget)setDeleteModal(false)}}><section className="hc-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="hc-delete-title"><button type="button" className="hc-modal-close" aria-label="Close" onClick={()=>setDeleteModal(false)}>×</button><p className="eyebrow" style={{color:"#ef4444"}}>DANGER ZONE</p><h2 id="hc-delete-title">Delete account?</h2><p>This permanently deletes your account and associated data where applicable. This action cannot be undone.</p><label htmlFor="hc-delete-confirm">Type DELETE to confirm</label><input id="hc-delete-confirm" value={deleteConfirmation} onChange={e=>setDeleteConfirmation(e.target.value)} autoComplete="off" placeholder="DELETE"/><button type="button" className="hc-danger-button" disabled={deleteConfirmation !== "DELETE" || deletingAccount} onClick={async()=>{setDeleteModal(false);await deleteAccountConfirmed();}}>{deletingAccount ? "Deleting…" : "Permanently delete account"}</button></section></div>}
