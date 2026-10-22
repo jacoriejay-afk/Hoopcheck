@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
 
 type SurfaceProps = HTMLAttributes<HTMLElement> & {
-  as?: "article" | "section" | "div" | "aside";
+  as?: "article" | "section" | "div" | "aside" | "form";
   children: ReactNode;
 };
 
