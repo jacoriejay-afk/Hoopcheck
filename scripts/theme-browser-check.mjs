@@ -5,6 +5,7 @@ import { chromium } from "playwright";
 const baseURL = process.env.THEME_TEST_BASE_URL || "http://127.0.0.1:3000";
 const artifactsDir = "artifacts/theme-check";
 await mkdir(artifactsDir, { recursive: true });
+await mkdir(`${artifactsDir}/routes`, { recursive: true });
 
 const userId = "11111111-1111-4111-8111-111111111111";
 const user = {
@@ -199,7 +200,7 @@ try {
 
   const mainRoutes = [
     "/", "/dashboard", "/feed", "/account", "/settings", "/profile", "/search",
-    "/teams", "/coaches", "/leagues", "/players", "/womens", "/directory",
+    "/teams", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2", "/coaches", "/coaches/theme-audit", "/leagues", "/players", "/womens", "/directory",
     "/reviews", "/membership", "/notifications", "/support", "/verification",
     "/privacy-center", "/privacy", "/terms", "/community-guidelines", "/login",
     "/signup", "/onboarding", "/fan-live", "/live-games", "/partners", "/copyright",
@@ -257,6 +258,21 @@ try {
           body: color(document.body),
           pageWrapper: color(main),
           mainClass: main?.className || null,
+          whiteSurfaceOffenders: Array.from(document.querySelectorAll("main *"))
+            .filter((element) => {
+              const style = getComputedStyle(element);
+              const rect = element.getBoundingClientRect();
+              const cls = typeof element.className === "string" ? element.className : "";
+              if (/(logo|avatar|photo|portrait|image)/i.test(cls)) return false;
+              return style.backgroundColor === "rgb(255, 255, 255)" && rect.width > 16 && rect.height > 12 &&
+                style.display !== "none" && style.visibility !== "hidden";
+            })
+            .slice(0, 20)
+            .map((element) => ({
+              tag: element.tagName.toLowerCase(),
+              className: typeof element.className === "string" ? element.className : "",
+              text: (element.textContent || "").trim().slice(0, 50),
+            })),
           navigationError,
         };
       }, { requestedPath, navigationError });
@@ -266,6 +282,12 @@ try {
       if (result.body !== expectedPage) errors.push("body background mismatch");
       if (result.pageWrapper && result.pageWrapper !== expectedPage) errors.push("main background mismatch");
       if (result.navigationError) errors.push("navigation error");
+      if (theme === "dark" && result.whiteSurfaceOffenders.length) errors.push("white surface offenders: " + JSON.stringify(result.whiteSurfaceOffenders));
+      await page.screenshot({
+        path: `${artifactsDir}/routes/${requestedPath.replace(/[^a-z0-9-]+/gi, "_")}-${theme}-mobile.png`,
+        fullPage: true,
+        animations: "disabled",
+      });
       routeSweepResults.push({ theme, ...result, status: errors.length ? "FAIL" : result.pageWrapper ? "PASS" : "NO_MAIN", reason: errors.join("; ") || (result.pageWrapper ? "" : "route rendered no main element") });
     }
     await context.close();
