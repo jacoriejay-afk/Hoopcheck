@@ -69,7 +69,7 @@ function PlayerUsernameConnect() {
   return (
     <div>
       <form onSubmit={findPlayer} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <label htmlFor="player-username" className="sr-only">Player username</label>
+        <label htmlFor="player-username" className="sr-only">{t("playerUsername")}</label>
         <input
           id="player-username"
           value={username}
