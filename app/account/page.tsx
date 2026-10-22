@@ -64,7 +64,7 @@ function SettingsToggle({icon,label,checked,onChange}:{icon:string;label:string;
 
 export default function AccountPage() {
   const { setTheme: setGlobalTheme } = useTheme();
-  const { setLanguage: applyLanguage } = useLanguage();
+  const { t, setLanguage: applyLanguage } = useLanguage();
   const [email, setEmail] = useState("");
   const [userId, setUserId] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
