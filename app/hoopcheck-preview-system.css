@@ -5761,7 +5761,6 @@ html.theme-light main:not(.hc-template-home) :where(input,select,textarea) {
   --hc-line: var(--hc-border);
   --hc-card-border: var(--hc-border);
   --hc-input-text: var(--hc-input-fg);
-  --hc-input-bg: var(--hc-input-bg);
   --hc-surface-muted: var(--hc-surface-soft);
   --hc-divider: var(--hc-border);
   --gray-100: var(--hc-surface-soft);
