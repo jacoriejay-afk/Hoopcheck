@@ -53,7 +53,7 @@ jobs:
       - name: Install Chromium for theme regression test
         run: |
           npm install --no-save --package-lock=false playwright
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
 
       - name: Start production server
         run: |
