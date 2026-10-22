@@ -206,7 +206,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="page-shell hc-dashboard-shell">
+    <main className="page-shell hc-dashboard-shell" style={{ paddingTop: "max(24px, env(safe-area-inset-top))" }}>
       <div className="page-container">
         {(profile?.moderation_status === "warned" || profile?.moderation_status === "flagged") && <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{profile.moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{profile.moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section>}        <section className="hc-dashboard-welcome" aria-labelledby="hc-dashboard-welcome-title">
           <p className="eyebrow hc-dashboard-page-label">{t("dashboardLabel")}</p>
@@ -256,29 +256,51 @@ export default function DashboardPage() {
                 <p className="hc-mobile-eyebrow">{t("yourShortcuts")}</p>
                 <h2 id="hc-quick-access-heading">{t("quickAccess")}</h2>
               </div>
-              <span className="hc-mobile-section-count" aria-hidden="true">04</span>
+              <span className="hc-mobile-section-count" aria-hidden="true">{profile?.account_type === "fan" ? "03" : "04"}</span>
             </div>
             <div className="hc-mobile-quick-grid">
-              <Link href="/teams" className="hc-mobile-quick-card">
-                <span className="hc-mobile-icon hc-icon-orange" aria-hidden="true"><CategoryIconTile category="teams" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>{t("mensTeams")}</strong><small>{t("exploreTeamReviews")}</small></span>
-                <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
-              </Link>
-              <Link href="/womens" className="hc-mobile-quick-card">
-                <span className="hc-mobile-icon hc-icon-pink" aria-hidden="true"><CategoryIconTile category="womens" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>{t("womensTeams")}</strong><small>{t("findNextTeam")}</small></span>
-                <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
-              </Link>
-              <Link href="/coaches" className="hc-mobile-quick-card">
-                <span className="hc-mobile-icon hc-icon-blue" aria-hidden="true"><CategoryIconTile category="coaches" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>{t("coaches")}</strong><small>{t("checkReputations")}</small></span>
-                <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
-              </Link>
-              <Link href="/search" className="hc-mobile-quick-card">
-                <span className="hc-mobile-icon hc-icon-green" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>{t("playerReviews")}</strong><small>{t("realPlayerExperiences")}</small></span>
-                <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
-              </Link>
+              {profile?.account_type === "fan" ? (
+                <>
+                  <Link href="/teams" className="hc-mobile-quick-card">
+                    <span className="hc-mobile-icon hc-icon-orange" aria-hidden="true"><CategoryIconTile category="teams" size="sm" /></span>
+                    <span className="hc-mobile-card-copy"><strong>TEAM HUB</strong><small>Your teams, all in one place</small></span>
+                    <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
+                  </Link>
+                  <Link href="/fans" className="hc-mobile-quick-card">
+                    <span className="hc-mobile-icon hc-icon-purple" aria-hidden="true"><CategoryIconTile category="players" size="sm" /></span>
+                    <span className="hc-mobile-card-copy"><strong>FIND FAN</strong><small>Connect with fans like you</small></span>
+                    <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
+                  </Link>
+                  <Link href="/fan-live" className="hc-mobile-quick-card hc-mobile-quick-card-fan-wide" style={profile?.account_type === "fan" ? { gridColumn: "1 / -1" } : undefined}>
+                    <span className="hc-mobile-icon hc-icon-green" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
+                    <span className="hc-mobile-card-copy"><strong>LIVE GAME CHATS</strong><small>Chat during real games</small></span>
+                    <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/teams" className="hc-mobile-quick-card">
+                    <span className="hc-mobile-icon hc-icon-orange" aria-hidden="true"><CategoryIconTile category="teams" size="sm" /></span>
+                    <span className="hc-mobile-card-copy"><strong>{t("mensTeams")}</strong><small>{t("exploreTeamReviews")}</small></span>
+                    <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
+                  </Link>
+                  <Link href="/womens" className="hc-mobile-quick-card">
+                    <span className="hc-mobile-icon hc-icon-pink" aria-hidden="true"><CategoryIconTile category="womens" size="sm" /></span>
+                    <span className="hc-mobile-card-copy"><strong>{t("womensTeams")}</strong><small>{t("findNextTeam")}</small></span>
+                    <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
+                  </Link>
+                  <Link href="/coaches" className="hc-mobile-quick-card">
+                    <span className="hc-mobile-icon hc-icon-blue" aria-hidden="true"><CategoryIconTile category="coaches" size="sm" /></span>
+                    <span className="hc-mobile-card-copy"><strong>{t("coaches")}</strong><small>{t("checkReputations")}</small></span>
+                    <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
+                  </Link>
+                  <Link href="/search" className="hc-mobile-quick-card">
+                    <span className="hc-mobile-icon hc-icon-green" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
+                    <span className="hc-mobile-card-copy"><strong>{t("playerReviews")}</strong><small>{t("realPlayerExperiences")}</small></span>
+                    <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
+                  </Link>
+                </>
+              )}
             </div>
           </section>
 
@@ -293,17 +315,17 @@ export default function DashboardPage() {
             <div className="hc-mobile-category-list">
               <Link href="/teams" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-orange" aria-hidden="true"><CategoryIconTile category="teams" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>{t("professionalTeams")}</strong><small>{t("researchClubsBeforeSign")}</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("professionalTeams")}</strong><small>{profile?.account_type === "fan" ? "Follow your team" : t("researchClubsBeforeSign")}</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/womens" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-pink" aria-hidden="true"><CategoryIconTile category="womens" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>{t("womensBasketball")}</strong><small>{t("discoverWomenWorldwide")}</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("womensBasketball")}</strong><small>{profile?.account_type === "fan" ? "Follow your team and see what the players say" : t("discoverWomenWorldwide")}</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/coaches" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-blue" aria-hidden="true"><CategoryIconTile category="coaches" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>{t("coaches")}</strong><small>{t("learnFromPlayerFeedback")}</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("coaches")}</strong><small>{profile?.account_type === "fan" ? "See what the players say" : t("learnFromPlayerFeedback")}</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/leagues" className="hc-mobile-category-row">
@@ -318,7 +340,7 @@ export default function DashboardPage() {
               </Link>
               <Link href="/search" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-yellow" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>{t("reviewsExperiences")}</strong><small>{t("makeCareerDecisions")}</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("reviewsExperiences")}</strong><small>{profile?.account_type === "fan" ? "See what the players say" : t("makeCareerDecisions")}</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
             </div>

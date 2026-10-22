@@ -5,12 +5,12 @@ import { useMemo, useState } from "react";
 import SearchBar from "../../components/SearchBar";
 
 const categories = [
-  { title: "Professional Teams", description: "Research clubs, contracts, and player experiences before you sign.", href: "/teams", icon: "T", color: "#ff5500", group: "Teams" },
-  { title: "Women's Basketball", description: "Discover women's professional teams and competitions worldwide.", href: "/womens", icon: "W", color: "#db2777", group: "Teams" },
-  { title: "Coaches", description: "Explore coaching reputations and player feedback.", href: "/coaches", icon: "C", color: "#2563eb", group: "People" },
+  { title: "Professional Teams", description: "Follow your team and see what the players say.", href: "/teams", icon: "T", color: "#ff5500", group: "Teams" },
+  { title: "Women's Basketball", description: "Follow women's teams and see what the players say.", href: "/womens", icon: "W", color: "#db2777", group: "Teams" },
+  { title: "Coaches", description: "See what players say about coaches.", href: "/coaches", icon: "C", color: "#2563eb", group: "People" },
   { title: "Find Players", description: "Search for players by username and discover public profiles.", href: "/players", icon: "P", color: "#7c3aed", group: "People" },
   { title: "Leagues & Competitions", description: "Browse national and international leagues.", href: "/leagues", icon: "L", color: "#059669", group: "Competitions" },
-  { title: "Reviews & Analytics", description: "Read published experiences and review rating trends.", href: "/reviews", icon: "★", color: "#d97706", group: "Feedback" },
+  { title: "Reviews & Analytics", description: "Read published player experiences and team feedback.", href: "/reviews", icon: "★", color: "#d97706", group: "Feedback" },
   { title: "Alerts & Notifications", description: "Keep up with account and basketball updates.", href: "/notifications", icon: "!", color: "#0891b2", group: "Tools" },
 ];
 
