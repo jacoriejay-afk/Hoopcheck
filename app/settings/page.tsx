@@ -114,7 +114,7 @@ export default function SettingsPage() {
         if (profileError) throw profileError;
         if (preferencesError) throw preferencesError;
       }
-      setSaveMessage(t("saved"));
+      setSaveMessage("");
     } catch (error) {
       console.error("HoopCheck settings save failed:", error);
       setSaveMessage("Your changes are active on this device, but account sync failed. Please try again.");
