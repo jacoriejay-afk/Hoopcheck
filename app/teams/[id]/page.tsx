@@ -643,7 +643,7 @@ export default function TeamDetailPage() {
                 <p>{publicSummary.review_count || 0} {t("approvedPlayerReviewCount")} {t("availableForProfile")}</p>
                 <div className="actions">
                   <Link href="/signup" className="btn">{t("createFreeAccount")}</Link>
-                  <Link href="/login" className="btn dark">Log In</Link>
+                  <Link href="/login" className="btn dark">{t("logIn")}</Link>
                 </div>
               </div>
             )}
