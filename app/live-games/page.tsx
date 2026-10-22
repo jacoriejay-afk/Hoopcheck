@@ -149,6 +149,7 @@ export default function LiveGamesPage() {
 
   const nowMs = clock.getTime();
   const live = filtered.filter(({game,availability}) =>
+    !["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()) &&
     availability.state === "LIVE" && availability.phase !== "post-game" &&
     (game.status === "live" || availability.phase === "schedule-unknown"));
   const upcoming = filtered.filter(({availability,game}) => {
@@ -164,11 +165,10 @@ export default function LiveGamesPage() {
     const status = game.status.toLowerCase();
     const timestamp = Date.parse(game.ends_at || game.started_at || game.scheduled_at || "");
     return ["final","finished","cancelled","canceled"].includes(status) &&
-      Number.isFinite(timestamp) && timestamp >= nowMs - 48 * 3_600_000 &&
-      availability.state === "CLOSED";
+      Number.isFinite(timestamp) && timestamp >= nowMs - 48 * 3_600_000;
   }).sort((a,b) => Date.parse(b.game.ends_at || b.game.started_at || b.game.scheduled_at || "") - Date.parse(a.game.ends_at || a.game.started_at || a.game.scheduled_at || ""));
 
-  const postGameOpen = filtered.filter(({availability}) => availability.phase === "post-game" && availability.chatOpen);
+  const postGameOpen = filtered.filter(({availability,game}) => availability.phase === "post-game" && availability.chatOpen && !["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()));
   const nextUpcoming = upcoming[0] || null;
 
   async function toggleReminder(gameId: string) {
@@ -190,7 +190,7 @@ export default function LiveGamesPage() {
     const isLive = variant === "live";
     const isUpcoming = variant === "upcoming";
     const isRecent = variant === "recent";
-    const canJoin = availability.chatOpen && !isRecent && (!isUpcoming || Boolean(game.scheduled_at && Date.parse(game.scheduled_at) <= nowMs));
+    const canJoin = availability.chatOpen && !isRecent && !["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()) && (!isUpcoming || Boolean(game.scheduled_at && Date.parse(game.scheduled_at) <= nowMs));
     const score = scoreText(game);
     const tip = game.scheduled_at || game.started_at;
     return (
