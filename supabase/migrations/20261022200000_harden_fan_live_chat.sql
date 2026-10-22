@@ -103,6 +103,7 @@ create or replace function public.enforce_fan_live_chat_slow_mode()
 returns trigger language plpgsql security definer set search_path=public as $$
 declare prior timestamptz;
 begin
+ perform pg_advisory_xact_lock(hashtextextended(new.game_id::text || ':' || new.user_id::text, 0));
  if not public.fan_live_chat_room_open(new.game_id) then raise exception 'CHAT_CLOSED: Chat is closed for this game.'; end if;
  select max(created_at) into prior from public.fan_live_chat_messages where game_id=new.game_id and user_id=new.user_id;
  if prior is not null and prior > now() - interval '2 seconds' then raise exception 'SLOW_MODE: Wait two seconds between messages.'; end if;
@@ -126,3 +127,22 @@ with check (
 drop policy if exists "eligible fans update own game presence" on public.fan_live_chat_presence;
 create policy "eligible fans update own game presence" on public.fan_live_chat_presence for update to authenticated
 using (user_id=(select auth.uid())) with check (user_id=(select auth.uid()));
+
+
+-- Live-game cards need the actual room occupancy for all eligible Fan HQ members.
+drop policy if exists "eligible fans read game presence" on public.fan_live_chat_presence;
+create policy "eligible fans read game presence" on public.fan_live_chat_presence for select to authenticated
+using (
+ public.is_current_user_admin_or_moderator()
+ or exists(select 1 from public.profiles p join public.subscriptions s on s.user_id=p.id
+  where p.id=(select auth.uid()) and p.account_type='fan' and s.plan in ('pro','premium')
+   and s.status in ('active','trialing') and coalesce(s.access_status,'active') in ('active','trialing','pro','premium')
+   and (s.current_period_end is null or s.current_period_end>now()))
+);
+
+-- Realtime listeners receive join/leave heartbeats without polling the entire list.
+do $$ begin
+ if not exists(select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='fan_live_chat_presence') then
+  alter publication supabase_realtime add table public.fan_live_chat_presence;
+ end if;
+end $$;
