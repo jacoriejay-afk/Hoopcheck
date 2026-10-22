@@ -798,3 +798,251 @@ html.theme-light main .hc-scout-card {
 .hc-coaches-directory-page .hc-team-directory-row__trust { display:none!important; }
 .hc-coaches-directory-page .hc-scout-card__ticket { border-top:1px solid var(--hc-border)!important; margin-top:14px!important; }
 .hc-coaches-directory-page .hc-scout-card__ticket::before { display:none!important; }
+
+
+/* Directory card cleanup — one outer surface, with no nested framed content. */
+html.theme-dark .hc-team-directory-page .hc-scout-card,
+html.theme-light .hc-team-directory-page .hc-scout-card,
+html.theme-dark .hc-womens-directory-page .hc-scout-card,
+html.theme-light .hc-womens-directory-page .hc-scout-card,
+html.theme-dark .hc-leagues-directory-page .hc-scout-card,
+html.theme-light .hc-leagues-directory-page .hc-scout-card,
+html.theme-dark .hc-coaches-directory-page .hc-scout-card,
+html.theme-light .hc-coaches-directory-page .hc-scout-card {
+  background:var(--hc-surface-raised)!important;
+  color:var(--hc-foreground)!important;
+  border:1px solid var(--hc-border)!important;
+  border-radius:16px!important;
+  box-shadow:none!important;
+  padding:16px!important;
+  overflow:hidden;
+}
+html.theme-dark .hc-team-directory-page .hc-scout-card__main,
+html.theme-light .hc-team-directory-page .hc-scout-card__main,
+html.theme-dark .hc-womens-directory-page .hc-scout-card__main,
+html.theme-light .hc-womens-directory-page .hc-scout-card__main,
+html.theme-dark .hc-leagues-directory-page .hc-scout-card__main,
+html.theme-light .hc-leagues-directory-page .hc-scout-card__main,
+html.theme-dark .hc-coaches-directory-page .hc-scout-card__main,
+html.theme-light .hc-coaches-directory-page .hc-scout-card__main,
+html.theme-dark .hc-team-directory-page .hc-scout-card__identity,
+html.theme-light .hc-team-directory-page .hc-scout-card__identity,
+html.theme-dark .hc-womens-directory-page .hc-scout-card__identity,
+html.theme-light .hc-womens-directory-page .hc-scout-card__identity,
+html.theme-dark .hc-leagues-directory-page .hc-scout-card__identity,
+html.theme-light .hc-leagues-directory-page .hc-scout-card__identity,
+html.theme-dark .hc-coaches-directory-page .hc-scout-card__identity,
+html.theme-light .hc-coaches-directory-page .hc-scout-card__identity,
+html.theme-dark .hc-team-directory-page .hc-scout-card__identity-copy,
+html.theme-light .hc-team-directory-page .hc-scout-card__identity-copy,
+html.theme-dark .hc-womens-directory-page .hc-scout-card__identity-copy,
+html.theme-light .hc-womens-directory-page .hc-scout-card__identity-copy,
+html.theme-dark .hc-leagues-directory-page .hc-scout-card__identity-copy,
+html.theme-light .hc-leagues-directory-page .hc-scout-card__identity-copy,
+html.theme-dark .hc-coaches-directory-page .hc-scout-card__identity-copy,
+html.theme-light .hc-coaches-directory-page .hc-scout-card__identity-copy,
+html.theme-dark .hc-team-directory-page .hc-scout-card__empty,
+html.theme-light .hc-team-directory-page .hc-scout-card__empty,
+html.theme-dark .hc-womens-directory-page .hc-scout-card__empty,
+html.theme-light .hc-womens-directory-page .hc-scout-card__empty,
+html.theme-dark .hc-team-directory-page .hc-scout-card__report-link,
+html.theme-light .hc-team-directory-page .hc-scout-card__report-link,
+html.theme-dark .hc-womens-directory-page .hc-scout-card__report-link,
+html.theme-light .hc-womens-directory-page .hc-scout-card__report-link,
+html.theme-dark .hc-leagues-directory-page .hc-scout-card__report-link,
+html.theme-light .hc-leagues-directory-page .hc-scout-card__report-link,
+html.theme-dark .hc-coaches-directory-page .hc-scout-card__coach-link,
+html.theme-light .hc-coaches-directory-page .hc-scout-card__coach-link {
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+}
+html.theme-dark .hc-team-directory-page .hc-scout-card__ticket,
+html.theme-light .hc-team-directory-page .hc-scout-card__ticket,
+html.theme-dark .hc-womens-directory-page .hc-scout-card__ticket,
+html.theme-light .hc-womens-directory-page .hc-scout-card__ticket,
+html.theme-dark .hc-leagues-directory-page .hc-scout-card__ticket,
+html.theme-light .hc-leagues-directory-page .hc-scout-card__ticket,
+html.theme-dark .hc-coaches-directory-page .hc-scout-card__ticket,
+html.theme-light .hc-coaches-directory-page .hc-scout-card__ticket {
+  border:0!important;
+  border-top:1px solid var(--hc-border)!important;
+  border-radius:0!important;
+  padding:12px 0 0!important;
+  margin:12px 0 0!important;
+  background:transparent!important;
+}
+html.theme-dark .hc-team-directory-page .hc-scout-card__stats,
+html.theme-light .hc-team-directory-page .hc-scout-card__stats,
+html.theme-dark .hc-womens-directory-page .hc-scout-card__stats,
+html.theme-light .hc-womens-directory-page .hc-scout-card__stats,
+html.theme-dark .hc-leagues-directory-page .hc-scout-card__stats,
+html.theme-light .hc-leagues-directory-page .hc-scout-card__stats,
+html.theme-dark .hc-coaches-directory-page .hc-scout-card__stats,
+html.theme-light .hc-coaches-directory-page .hc-scout-card__stats {
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  padding:12px 0 0!important;
+  margin:12px 0 0!important;
+}
+html.theme-dark .hc-team-directory-page .hc-scout-card__empty,
+html.theme-light .hc-team-directory-page .hc-scout-card__empty,
+html.theme-dark .hc-womens-directory-page .hc-scout-card__empty,
+html.theme-light .hc-womens-directory-page .hc-scout-card__empty {
+  padding:0!important;
+  margin:0!important;
+  color:var(--hc-foreground-muted)!important;
+  background:transparent!important;
+}
+html.theme-dark .hc-team-directory-page .hc-scout-card__identity-copy h2,
+html.theme-light .hc-team-directory-page .hc-scout-card__identity-copy h2,
+html.theme-dark .hc-womens-directory-page .hc-scout-card__identity-copy h2,
+html.theme-light .hc-womens-directory-page .hc-scout-card__identity-copy h2,
+html.theme-dark .hc-leagues-directory-page .hc-scout-card__identity-copy h2,
+html.theme-light .hc-leagues-directory-page .hc-scout-card__identity-copy h2,
+html.theme-dark .hc-coaches-directory-page .hc-scout-card__identity-copy h2,
+html.theme-light .hc-coaches-directory-page .hc-scout-card__identity-copy h2,
+html.theme-dark .hc-team-directory-page .hc-scout-card__identity-copy p,
+html.theme-light .hc-team-directory-page .hc-scout-card__identity-copy p,
+html.theme-dark .hc-womens-directory-page .hc-scout-card__identity-copy p,
+html.theme-light .hc-womens-directory-page .hc-scout-card__identity-copy p,
+html.theme-dark .hc-leagues-directory-page .hc-scout-card__identity-copy p,
+html.theme-light .hc-leagues-directory-page .hc-scout-card__identity-copy p,
+html.theme-dark .hc-coaches-directory-page .hc-scout-card__identity-copy p,
+html.theme-light .hc-coaches-directory-page .hc-scout-card__identity-copy p {
+  border:0!important;
+  background:transparent!important;
+  color:var(--hc-foreground)!important;
+}
+html.theme-dark .hc-team-directory-page .hc-scout-card__identity-copy p,
+html.theme-light .hc-team-directory-page .hc-scout-card__identity-copy p,
+html.theme-dark .hc-womens-directory-page .hc-scout-card__identity-copy p,
+html.theme-light .hc-womens-directory-page .hc-scout-card__identity-copy p,
+html.theme-dark .hc-leagues-directory-page .hc-scout-card__identity-copy p,
+html.theme-light .hc-leagues-directory-page .hc-scout-card__identity-copy p,
+html.theme-dark .hc-coaches-directory-page .hc-scout-card__identity-copy p,
+html.theme-light .hc-coaches-directory-page .hc-scout-card__identity-copy p { color:var(--hc-foreground-muted)!important; }
+
+/* The white logo tile intentionally remains white; initials are always ink-dark. */
+html.theme-dark .hc-team-logo-tile,
+html.theme-light .hc-team-logo-tile,
+html.theme-dark .hc-coaches-directory-page .hc-scout-card__jersey,
+html.theme-light .hc-coaches-directory-page .hc-scout-card__jersey {
+  background:#fff!important;
+  color:#0A0A0A!important;
+  -webkit-text-fill-color:#0A0A0A!important;
+  font-weight:900!important;
+}
+html.theme-dark .hc-team-logo-tile > span,
+html.theme-light .hc-team-logo-tile > span,
+html.theme-dark .hc-coaches-directory-page .hc-scout-card__jersey,
+html.theme-light .hc-coaches-directory-page .hc-scout-card__jersey {
+  color:#0A0A0A!important;
+  -webkit-text-fill-color:#0A0A0A!important;
+}
+
+/* Shared directory list wrappers should not add a second white frame. */
+html.theme-dark .hc-team-directory-page .hc-team-directory-list,
+html.theme-light .hc-team-directory-page .hc-team-directory-list,
+html.theme-dark .hc-womens-directory-page .hc-womens-team-list,
+html.theme-light .hc-womens-directory-page .hc-womens-team-list,
+html.theme-dark .hc-leagues-directory-page .hc-team-directory-list,
+html.theme-light .hc-leagues-directory-page .hc-team-directory-list,
+html.theme-dark .hc-coaches-directory-page .hc-team-directory-list,
+html.theme-light .hc-coaches-directory-page .hc-team-directory-list {
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+  padding:0!important;
+}
+
+/* Hero, search and filter controls follow the active theme as a matched set. */
+html.theme-dark .hc-team-directory-page > .hero,
+html.theme-light .hc-team-directory-page > .hero,
+html.theme-dark .hc-leagues-directory-page > .hero,
+html.theme-light .hc-leagues-directory-page > .hero,
+html.theme-dark .hc-coaches-directory-page > .hero,
+html.theme-light .hc-coaches-directory-page > .hero,
+html.theme-dark .hc-womens-directory-page .hc-shared-directory-hero,
+html.theme-light .hc-womens-directory-page .hc-shared-directory-hero {
+  background:var(--hc-surface-raised)!important;
+  color:var(--hc-foreground)!important;
+  border:1px solid var(--hc-border)!important;
+  box-shadow:none!important;
+}
+html.theme-dark .hc-team-directory-page > .hero h1,
+html.theme-light .hc-team-directory-page > .hero h1,
+html.theme-dark .hc-team-directory-page > .hero h2,
+html.theme-light .hc-team-directory-page > .hero h2,
+html.theme-dark .hc-leagues-directory-page > .hero h1,
+html.theme-light .hc-leagues-directory-page > .hero h1,
+html.theme-dark .hc-leagues-directory-page > .hero h2,
+html.theme-light .hc-leagues-directory-page > .hero h2,
+html.theme-dark .hc-coaches-directory-page > .hero h1,
+html.theme-light .hc-coaches-directory-page > .hero h1,
+html.theme-dark .hc-coaches-directory-page > .hero h2,
+html.theme-light .hc-coaches-directory-page > .hero h2,
+html.theme-dark .hc-womens-directory-page .hc-shared-directory-hero h1,
+html.theme-light .hc-womens-directory-page .hc-shared-directory-hero h1 {
+  color:var(--hc-foreground)!important;
+}
+html.theme-dark .hc-team-directory-page .research-search,
+html.theme-light .hc-team-directory-page .research-search,
+html.theme-dark .hc-womens-directory-page .hc-womens-search-panel,
+html.theme-light .hc-womens-directory-page .hc-womens-search-panel,
+html.theme-dark .hc-coaches-directory-page .hc-coach-directory-tools,
+html.theme-light .hc-coaches-directory-page .hc-coach-directory-tools,
+html.theme-dark .hc-leagues-directory-page .hc-league-filter,
+html.theme-light .hc-leagues-directory-page .hc-league-filter {
+  background:var(--hc-surface-raised)!important;
+  color:var(--hc-foreground)!important;
+  border:1px solid var(--hc-border)!important;
+  box-shadow:none!important;
+}
+html.theme-dark .hc-team-directory-page :where(input,select),
+html.theme-light .hc-team-directory-page :where(input,select),
+html.theme-dark .hc-womens-directory-page :where(input,select),
+html.theme-light .hc-womens-directory-page :where(input,select),
+html.theme-dark .hc-coaches-directory-page :where(input,select),
+html.theme-light .hc-coaches-directory-page :where(input,select),
+html.theme-dark .hc-leagues-directory-page :where(input,select),
+html.theme-light .hc-leagues-directory-page :where(input,select) {
+  background:var(--hc-input-bg)!important;
+  color:var(--hc-input-fg)!important;
+  border-color:var(--hc-border)!important;
+  -webkit-text-fill-color:var(--hc-input-fg)!important;
+}
+html.theme-dark .hc-team-directory-page input::placeholder,
+html.theme-light .hc-team-directory-page input::placeholder,
+html.theme-dark .hc-womens-directory-page input::placeholder,
+html.theme-light .hc-womens-directory-page input::placeholder,
+html.theme-dark .hc-coaches-directory-page input::placeholder,
+html.theme-light .hc-coaches-directory-page input::placeholder,
+html.theme-dark .hc-leagues-directory-page input::placeholder,
+html.theme-light .hc-leagues-directory-page input::placeholder {
+  color:var(--hc-foreground-muted)!important;
+  -webkit-text-fill-color:var(--hc-foreground-muted)!important;
+  opacity:1!important;
+}
+
+/* Floating global/back controls must never obscure directory results. */
+html.theme-dark .hc-team-directory-page .global-back-button,
+html.theme-light .hc-team-directory-page .global-back-button,
+html.theme-dark .hc-womens-directory-page .global-back-button,
+html.theme-light .hc-womens-directory-page .global-back-button,
+html.theme-dark .hc-leagues-directory-page .global-back-button,
+html.theme-light .hc-leagues-directory-page .global-back-button,
+html.theme-dark .hc-coaches-directory-page .global-back-button,
+html.theme-light .hc-coaches-directory-page .global-back-button,
+html.theme-dark .hc-team-directory-page .hc-floating-action,
+html.theme-light .hc-team-directory-page .hc-floating-action,
+html.theme-dark .hc-womens-directory-page .hc-floating-action,
+html.theme-light .hc-womens-directory-page .hc-floating-action,
+html.theme-dark .hc-leagues-directory-page .hc-floating-action,
+html.theme-light .hc-leagues-directory-page .hc-floating-action,
+html.theme-dark .hc-coaches-directory-page .hc-floating-action,
+html.theme-light .hc-coaches-directory-page .hc-floating-action {
+  display:none!important;
+}
