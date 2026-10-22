@@ -179,6 +179,13 @@ try {
         assert.equal(computed.topicChip, expectedChip, `feed/${theme}: topic chip background mismatch`);
         assert.equal(computed.filterChip, expectedChip, `feed/${theme}: filter chip background mismatch`);
       }
+      if (theme === "dark") {
+        assert.equal(
+          computed.whiteSurfaceOffenders.length,
+          0,
+          `${routeName}/dark: remaining fixed white surfaces: ${JSON.stringify(computed.whiteSurfaceOffenders)}`,
+        );
+      }
 
       results.push({ route: path, theme, computed });
       await page.screenshot({
