@@ -1,6 +1,7 @@
-import type { HTMLAttributes, ReactNode } from "react";
+import type { FormEventHandler, HTMLAttributes, ReactNode } from "react";
 
-type SurfaceProps = HTMLAttributes<HTMLElement> & {
+type SurfaceProps = Omit<HTMLAttributes<HTMLElement>, "onSubmit"> & {
+  onSubmit?: FormEventHandler<HTMLFormElement>;
   as?: "article" | "section" | "div" | "aside" | "form";
   children: ReactNode;
 };
