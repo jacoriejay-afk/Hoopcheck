@@ -61,7 +61,7 @@ export default function TeamsScreen() {
         <Text style={styles.title}>Find a team</Text>
         <Text style={styles.subtitle}>Explore men’s professional basketball teams before you sign.</Text>
         <View style={styles.searchRow}>
-          <TextInput value={term} onChangeText={setTerm} onSubmitEditing={search} returnKeyType="search" placeholder="Team, country, city or league" placeholderTextColor="#7B8797" style={styles.input} />
+          <TextInput value={term} onChangeText={setTerm} onSubmitEditing={search} returnKeyType="search" placeholder="Team, country, city or league" placeholderTextColor="#858585" style={styles.input} />
           <Pressable onPress={search} style={styles.searchButton}><Text style={styles.searchButtonText}>Search</Text></Pressable>
         </View>
         <Text style={styles.count}>{loading ? "Loading teams…" : `${items.length}${hasMore ? "+" : ""} results shown`}</Text>
@@ -95,31 +95,31 @@ export default function TeamsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F4F6F9" },
-  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, backgroundColor: "#101827" },
-  back: { color: "#F5B82E", fontSize: 15, fontWeight: "700", marginBottom: 18 },
-  kicker: { color: "#F5B82E", fontSize: 11, fontWeight: "900", letterSpacing: 1.5 },
+  safe: { flex: 1, backgroundColor: "#050505" },
+  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, backgroundColor: "#050505" },
+  back: { color: "#FF6A00", fontSize: 15, fontWeight: "700", marginBottom: 18 },
+  kicker: { color: "#FF6A00", fontSize: 11, fontWeight: "900", letterSpacing: 1.5 },
   title: { color: "#FFFFFF", fontSize: 29, fontWeight: "900", marginTop: 5 },
   subtitle: { color: "#C7D0DE", fontSize: 14, lineHeight: 20, marginTop: 7 },
   searchRow: { flexDirection: "row", gap: 8, marginTop: 18 },
-  input: { flex: 1, minWidth: 0, height: 48, backgroundColor: "#FFFFFF", borderRadius: 10, paddingHorizontal: 12, color: "#101827", fontSize: 14 },
-  searchButton: { backgroundColor: "#F5B82E", borderRadius: 10, alignItems: "center", justifyContent: "center", paddingHorizontal: 15 },
-  searchButtonText: { color: "#101827", fontWeight: "900" },
+  input: { flex: 1, minWidth: 0, height: 48, backgroundColor: "#111111", borderRadius: 10, paddingHorizontal: 12, color: "#FFFFFF", fontSize: 14 },
+  searchButton: { backgroundColor: "#FF6A00", borderRadius: 10, alignItems: "center", justifyContent: "center", paddingHorizontal: 15 },
+  searchButtonText: { color: "#FFFFFF", fontWeight: "900" },
   count: { color: "#AAB5C5", fontSize: 12, marginTop: 12 },
   list: { padding: 16, paddingBottom: 30, gap: 10 },
-  card: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#E3E8EF", gap: 12 },
-  logo: { width: 44, height: 44, borderRadius: 12, backgroundColor: "#FFF3CD", alignItems: "center", justifyContent: "center" },
-  logoText: { color: "#101827", fontSize: 19, fontWeight: "900" },
+  card: { flexDirection: "row", alignItems: "center", backgroundColor: "#111111", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "#303030", gap: 12 },
+  logo: { width: 44, height: 44, borderRadius: 12, backgroundColor: "#1B120A", alignItems: "center", justifyContent: "center" },
+  logoText: { color: "#FFFFFF", fontSize: 19, fontWeight: "900" },
   cardBody: { flex: 1 },
-  teamName: { color: "#101827", fontSize: 15, fontWeight: "800" },
+  teamName: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
   meta: { color: "#59677A", fontSize: 12, marginTop: 4 },
   league: { color: "#A16E00", fontSize: 12, fontWeight: "700", marginTop: 5 },
-  openProfile: { color: "#946600", fontSize: 12, fontWeight: "900", marginTop: 8 },
+  openProfile: { color: "#FF6A00", fontSize: 12, fontWeight: "900", marginTop: 8 },
   loader: { marginTop: 45 },
   errorBox: { margin: 16, padding: 14, backgroundColor: "#FDECEC", borderRadius: 10 },
   error: { color: "#8C2525" }, retry: { color: "#8C2525", fontWeight: "800", marginTop: 8 },
-  empty: { padding: 30, alignItems: "center" }, emptyTitle: { color: "#101827", fontWeight: "900", fontSize: 17 }, emptyText: { color: "#657287", textAlign: "center", marginTop: 7 },
+  empty: { padding: 30, alignItems: "center" }, emptyTitle: { color: "#FFFFFF", fontWeight: "900", fontSize: 17 }, emptyText: { color: "#969696", textAlign: "center", marginTop: 7 },
   more: { minHeight: 46, alignItems: "center", justifyContent: "center", backgroundColor: "#E8EDF3", borderRadius: 10, marginTop: 4 },
-  moreText: { color: "#101827", fontWeight: "800" },
+  moreText: { color: "#FFFFFF", fontWeight: "800" },
   footer: { color: "#6B7788", fontSize: 12, lineHeight: 18, paddingHorizontal: 8, paddingTop: 14, textAlign: "center" },
 });
