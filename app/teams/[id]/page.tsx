@@ -19,6 +19,7 @@ import FollowButton from "../../../components/FollowButton";
 import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
 import TrustScoreDial from "../../../components/TrustScoreDial";
+import Surface from "../../../components/Surface";
 import TeamRosterSpots from "../../../components/TeamRosterSpots";
 import OfficialReviewResponse from "../../../components/OfficialReviewResponse";
 
@@ -138,7 +139,7 @@ function RatingBar({
 }
 
 export default function TeamDetailPage() {
-  const { formatDate } = useLanguage();
+  const { formatDate, t } = useLanguage();
   const params = useParams();
 
   const id = Array.isArray(params.id)
@@ -467,7 +468,7 @@ export default function TeamDetailPage() {
             HoopCheck
           </div>
 
-          <HoopLoading label="Loading team intelligence..." />
+          <HoopLoading label={t("loadingTeamIntelligence")} />
         </section>
       </main>
     );
@@ -586,15 +587,15 @@ export default function TeamDetailPage() {
     <main className="hc-entity-profile-page hc-team-entity-profile">
 
 <section className="hero">
-        <div className="hc-team-profile-heading"><span className="hc-team-profile-logo" aria-hidden="true">{team.logo_url ? <img src={team.logo_url} alt="" width={64} height={64} /> : team.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span><div><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || "Country not listed"}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
-        <div className="hc-entity-trust-score">
+        <div className="hc-team-profile-heading"><span className="hc-team-profile-logo" aria-hidden="true">{team.logo_url ? <img src={team.logo_url} alt="" width={64} height={64} /> : team.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span><div><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || t("countryNotListed")}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
+        <Surface as="div" className="hc-entity-trust-score">
           <TrustScoreDial
             score={trustScoreData?.score ?? null}
-            explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? "Trust Score is temporarily unavailable." : "No approved player reviews yet.")}
+            explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))}
             reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count}
             verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0}
           />
-        </div>
+        </Surface>
 
         <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} /></div>
         <TeamRosterSpots teamId={team.id} teamName={team.name} />
@@ -602,18 +603,17 @@ export default function TeamDetailPage() {
       </section>
       {!hasAccess ? (
         <section className="hero">
-          <div className="card">
+          <Surface className="card hc-team-membership-surface">
             <div className="eyebrow">
-              Members Only
+              {t("membersOnly")}
             </div>
 
             <h2>
-              Know the organization
-              before you sign.
+              {t("knowOrganizationBeforeSign")}
             </h2>
 
             <p>
-              See the player experience behind the organization before you commit. Membership starts at $4.99/month and can be managed through Stripe anytime.
+              {t("membershipStartsMessage")}
             </p>
 
             <div className="actions">
@@ -621,62 +621,60 @@ export default function TeamDetailPage() {
                 href="/membership"
                 className="btn"
               >
-                View Membership
+                {t("viewMembership")}
               </Link>
 
               <Link
                 href="/login"
                 className="btn dark"
               >
-                Log In
+                {t("logIn")}
               </Link>
             </div>
-          </div>
+          </Surface>
         </section>
       ) : (
         <>
           <section className="hero">
             {!hasAccess && (
               <div className="card" style={{ marginBottom: 24, borderColor: "rgba(255,106,0,.45)" }}>
-                <div className="eyebrow">Members Only</div>
-                <h3>Player reviews are locked</h3>
-                <p>{publicSummary.review_count || 0} approved player review{publicSummary.review_count === 1 ? "" : "s"} are available for this profile. Create a free account to see the locked review section and membership options.</p>
+                <div className="eyebrow">{t("membersOnlyTitle")}</div>
+                <h3>{t("playerReviewsLocked")}</h3>
+                <p>{publicSummary.review_count || 0} {t("approvedPlayerReviewCount")} {t("availableForProfile")}</p>
                 <div className="actions">
-                  <Link href="/signup" className="btn">Create Free Account</Link>
-                  <Link href="/login" className="btn dark">Log In</Link>
+                  <Link href="/signup" className="btn">{t("createFreeAccount")}</Link>
+                  <Link href="/login" className="btn dark">{t("logIn")}</Link>
                 </div>
               </div>
             )}
             <div className="eyebrow">
-              {membershipPlan === "premium" && accountType === "fan" ? "PLAYER RATINGS" : "Approved Reviews"}
+              {membershipPlan === "premium" && accountType === "fan" ? t("playerRatings") : t("approvedReviewsHeading")}
             </div>
 
             <h2>
-              {membershipPlan === "premium" && accountType === "fan" ? "Team ratings at a glance." : <>What players<br/>are saying.</>}
+              {membershipPlan === "premium" && accountType === "fan" ? t("teamRatingsAtGlance") : t("whatPlayersAreSaying")}
             </h2>
 
-            {membershipPlan === "premium" && accountType === "fan" ? <div className="card"><h3>Premium Fan View</h3><p className="muted">You can see this team’s ratings, but player reviews are reserved for player accounts.</p></div> : reviewLoading ? (
+            {membershipPlan === "premium" && accountType === "fan" ? <div className="card"><h3>{t("premiumFanView")}</h3><p className="muted">{t("fanTeamRatingsAccess")}</p></div> : reviewLoading ? (
               <p>
-                Loading reviews...
+                {t("loadingReviews")}
               </p>
             ) : reviews.length ===
               0 ? (
               <div className="card">
                 <h3>
-                  No approved reviews yet.
+                  {t("noApprovedReviewsYet")}
                 </h3>
 
                 <p>
-                  Be one of the first players
-                  to share an experience with
-                  this organization.
+                  {t("firstPlayersShare")}
                 </p>
 
                 {accountType === "player" && <Link
                   href={`/teams/${team.id}/review`}
                   className="btn"
                 >
-                  Write A Review
+                  {t("writeAReview")}
                 </Link>}
               </div>
             ) : (
@@ -707,17 +705,17 @@ export default function TeamDetailPage() {
                       >
                         <div>
                           <div className="eyebrow">
-                            {review.is_anonymous ? "Anonymous Player Review" : "Player Review"}
+                            {review.is_anonymous ? t("anonymousPlayerReview") : t("playerReview")}
                           </div>
                           <div style={{ marginTop: "6px", fontSize: "12px", fontWeight: 800, color: "var(--orange)" }}>
-                            Season played: {review.player_season || "Season not recorded"}
+                            {t("seasonPlayed")} {review.player_season || t("seasonNotRecorded")}
                           </div>
 
                           <h3>
-                            {review.title || "Player experience"}
+                            {review.title || t("playerExperience")}
                           </h3>
                           {review.player_verified && (
-                            <div className="hc-review-verified"><VerifiedBadge label="Verified player" /><span>Verified Player</span></div>
+                            <div className="hc-review-verified"><VerifiedBadge label={t("verifiedPlayer")} /><span>{t("verifiedPlayer")}</span></div>
                           )}
                         </div>
 
@@ -763,7 +761,7 @@ export default function TeamDetailPage() {
                             setReportMessage("");
                           }}
                         >
-                          🚩 Report Review
+                          {t("reportReview")}
                         </button>
                       </div>
                     </article>
@@ -776,11 +774,11 @@ export default function TeamDetailPage() {
       )}
 
       <section className="hero hc-team-write-review">
-        <div className="eyebrow">Share your experience</div>
-        <h2>Write a Review</h2>
-        <p className="muted">Help the next player make a more informed decision.</p>
+        <div className="eyebrow">{t("shareYourExperience")}</div>
+        <h2>{t("writeAReviewTitle")}</h2>
+        <p className="muted">{t("helpNextPlayer")}</p>
         <Link href={hasAccess ? `/teams/${team.id}/review` : "/membership"} className="btn">
-          {hasAccess ? "Write a Review" : "Unlock Reviews"}
+          {hasAccess ? t("writeAReview") : t("unlockReviews")}
         </Link>
       </section>
 
@@ -827,31 +825,31 @@ export default function TeamDetailPage() {
               className="report-select"
             >
               <option value="">
-                Select a reason
+                {t("selectReportReason")}
               </option>
 
               <option value="Spam or advertising">
-                Spam or advertising
+                {t("spamAdvertising")}
               </option>
 
               <option value="Harassment or abusive content">
-                Harassment or abusive content
+                {t("harassmentAbusive")}
               </option>
 
               <option value="False or misleading information">
-                False or misleading information
+                {t("falseMisleading")}
               </option>
 
               <option value="Personal information">
-                Personal information
+                {t("personalInformation")}
               </option>
 
               <option value="Threats or dangerous content">
-                Threats or dangerous content
+                {t("threatsDangerous")}
               </option>
 
               <option value="Other">
-                Other
+                {t("other")}
               </option>
             </select>
 
@@ -869,8 +867,8 @@ export default function TeamDetailPage() {
                 disabled={reportLoading}
               >
                 {reportLoading
-                  ? "Submitting..."
-                  : "Submit Report"}
+                  ? t("submittingReport")
+                  : t("submitReport")}
               </button>
 
               <button
@@ -879,7 +877,7 @@ export default function TeamDetailPage() {
                 onClick={closeReportModal}
                 disabled={reportLoading}
               >
-                Cancel
+                {t("cancel")}
               </button>
             </div>
           </div>

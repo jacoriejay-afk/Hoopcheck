@@ -66,18 +66,18 @@ export default function SettingsPage() {
   }, [setTheme]);
 
   async function addPreviousTeam() {
-    if (!selectedPreviousTeam) { setTeamMessage("Choose a team first."); return; }
-    if (teamAffiliations.some((a) => a.team_id === selectedPreviousTeam)) { setTeamMessage("That team is already in your team history."); return; }
+    if (!selectedPreviousTeam) { setTeamMessage(t("chooseTeamFirst")); return; }
+    if (teamAffiliations.some((a) => a.team_id === selectedPreviousTeam)) { setTeamMessage(t("teamAlreadyInHistory")); return; }
     setTeamSaving(true); setTeamMessage("");
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setTeamMessage("Please sign in again to update your team history."); return; }
+      if (!user) { setTeamMessage(t("signInToUpdateTeamHistory")); return; }
       const { data, error } = await supabase.from("player_team_affiliations").insert({ user_id: user.id, team_id: selectedPreviousTeam, relationship: "former", verified: false }).select("id,team_id,relationship,verified").single();
       if (error) throw error;
       const team = teams.find((item) => item.id === selectedPreviousTeam);
       if (data) setTeamAffiliations((current) => [...current, { ...data, team }]);
       setSelectedPreviousTeam("");
-      setTeamMessage("Previous team added. It may need verification before you can submit a team review.");
+      setTeamMessage(t("previousTeamAdded"));
     } catch (error) {
       console.error("Could not add previous team:", error);
       setTeamMessage(error instanceof Error ? error.message : "Could not add that team. Please try again.");
@@ -117,7 +117,7 @@ export default function SettingsPage() {
       setSaveMessage("");
     } catch (error) {
       console.error("HoopCheck settings save failed:", error);
-      setSaveMessage("Your changes are active on this device, but account sync failed. Please try again.");
+      setSaveMessage(t("accountSyncFailed"));
     } finally {
       setSaving(false);
     }
@@ -152,22 +152,22 @@ export default function SettingsPage() {
             </div>
           </section>
           <section className="settings-card">
-            <span className="card-kicker">NOTIFICATIONS</span>
-            <h2>Basketball alerts</h2>
-            <p className="muted">Follow specific teams, coaches, or leagues to keep their alerts one tap away.</p>
+            <span className="card-kicker">{t("notifications")}</span>
+            <h2>{t("basketballAlerts")}</h2>
+            <p className="muted">{t("followTeamsForAlerts")}</p>
             <button type="button" className={"toggle " + (notifications ? "on" : "")} onClick={() => void save(theme, !notifications, language)} aria-pressed={notifications}>
               <span />{notifications ? "Notifications enabled" : "Notifications disabled"}
             </button>
-            <Link href="/search" className="btn dark">Find something to follow</Link>
+            <Link href="/search" className="btn dark">{t("findSomethingToFollow")}</Link>
           </section>
           <section className="settings-card">
-            <span className="card-kicker">MOTION</span>
-            <h2>Mobile-smooth interactions</h2>
-            <p className="muted">Animations are short, touch-friendly, and respect your device&apos;s reduced-motion preference.</p>
+            <span className="card-kicker">{t("motion")}</span>
+            <h2>{t("mobileSmoothInteractions")}</h2>
+            <p className="muted">{t("reducedMotionDescription")}</p>
             <div className="motion-demo"><span /><span /><span /></div>
           </section>
         </div>
-        <ThemeToast className="settings-save" tone={saving ? "info" : "success"}>{saving ? t("saving") : saveMessage || t("saved") + " Other preferences save automatically."}</ThemeToast>
+        <ThemeToast className="settings-save" tone={saving ? "info" : "success"}>{saving ? t("saving") : saveMessage || t("saved") + " " + t("otherPreferencesAutoSave")}</ThemeToast>
       </section>
     </main>
   );

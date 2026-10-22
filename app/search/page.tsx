@@ -9,6 +9,7 @@ import { VerifiedBadge } from "../../components/HoopCheckUI";
 import SearchBar from "../../components/SearchBar";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import Surface from "../../components/Surface";
+import { useLanguage } from "../../components/LanguageProvider";
 
 type Coach = { id: string; name: string; country: string | null; city: string | null };
 type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null };
@@ -68,7 +69,7 @@ function PlayerUsernameConnect() {
   return (
     <div>
       <form onSubmit={findPlayer} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <label htmlFor="player-username" className="sr-only">Player username</label>
+        <label htmlFor="player-username" className="sr-only">{t("playerUsername")}</label>
         <input
           id="player-username"
           value={username}
@@ -91,7 +92,7 @@ function PlayerUsernameConnect() {
             <div className="player-avatar-fallback">HC</div>
           )}
           <div style={{ minWidth: 150, flex: "1 1 180px" }}>
-            <strong>{player.display_name || "HoopCheck Player"} {player.player_verified && <VerifiedBadge label="Verified player" />}</strong>
+            <strong>{player.display_name || t("hoopCheckPlayer")} {player.player_verified && <VerifiedBadge label={t("verifiedPlayer")} />}</strong>
             <div className="muted">@{player.username}</div>
             <div className="muted">{[player.current_team, player.current_country].filter(Boolean).join(" · ")}</div>
           </div>
@@ -103,6 +104,7 @@ function PlayerUsernameConnect() {
 }
 
 function SearchContent() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const query = searchParams.get("q")?.trim() || "";
   const initialType = searchParams.get("type");
@@ -251,36 +253,36 @@ function SearchContent() {
 
   return (
     <main className="search-page hc-global-search-page">
-      <nav className="hc-directory-switcher" aria-label="Browse HoopCheck directories">
-        <span className="hc-directory-switcher-label">BROWSE DIRECTORIES</span>
-        <Link href="/teams">Men’s Teams</Link>
-        <Link href="/womens">Women’s Teams</Link>
-        <Link href="/coaches">Coaches</Link>
-        <Link href="/leagues">Leagues</Link>
-        <Link href="/players">Find Players</Link>
-        <Link href="/search">Global Search</Link>
+      <nav className="hc-directory-switcher" aria-label={t("browseDirectoriesLabel")}>
+        <span className="hc-directory-switcher-label">{t("browseDirectoriesLabel")}</span>
+        <Link href="/teams">{t("mensTeams")}</Link>
+        <Link href="/womens">{t("womensTeams")}</Link>
+        <Link href="/coaches">{t("coaches")}</Link>
+        <Link href="/leagues">{t("leagues")}</Link>
+        <Link href="/players">{t("players")}</Link>
+        <Link href="/search">{t("globalSearch")}</Link>
         </nav>
       <Surface as="section" className="dashboard-card hc-player-connect-surface" style={{ margin: "0 0 18px", padding: "16px" }}>
-        <div className="eyebrow">PLAYER CONNECT</div>
-        <h2 style={{ margin: "4px 0 6px" }}>Add a Player</h2>
+        <div className="eyebrow">{t("playerConnect")}</div>
+        <h2 style={{ margin: "4px 0 6px" }}>{t("addAPlayer")}</h2>
         <p className="muted" style={{ margin: "0 0 12px" }}>
-          Enter the player&apos;s <strong>HoopCheck username</strong> to send them a connection request.
+          {t("enterPlayerUsername")}
         </p>
         <PlayerUsernameConnect />
       </Surface>
 
       <section className="search-hero">
-        <div className="eyebrow">Global Research</div>
-        <h1>Search the<br />basketball world.</h1>
-        <p>Find players, coaches, professional teams, and leagues from around the world.</p>
+        <div className="eyebrow">{t("globalResearch")}</div>
+        <h1>{t("searchBasketballWorld")}</h1>
+        <p>{t("findBasketballPeople")}</p>
 
         <SearchBar
           className="search-form"
           name="q"
           value={searchInput}
           onChange={setSearchInput}
-          placeholder="Search players, coaches, teams, or leagues"
-          ariaLabel="Search players, coaches, teams, or leagues"
+          placeholder={t("searchPeoplePlaceholder")}
+          ariaLabel={t("searchPeoplePlaceholder")}
         />
       </section>
 
@@ -288,10 +290,10 @@ function SearchContent() {
         <section className="results-section">
           <div className="results-header">
             <div>
-              <div className="eyebrow">Search Results</div>
-              <h2>Results for &quot;{query}&quot;</h2>
+              <div className="eyebrow">{t("searchResults")}</div>
+              <h2>{t("resultsFor")} &quot;{query}&quot;</h2>
             </div>
-            {!loading && <div className="result-count">{totalResults} result{totalResults === 1 ? "" : "s"}</div>}
+            {!loading && <div className="result-count">{totalResults} {t("resultCount")}</div>}
           </div>
 
           {!loading && !error && (
@@ -304,47 +306,47 @@ function SearchContent() {
                   onClick={() => setTypeFilter(type)}
                   aria-pressed={typeFilter === type}
                 >
-                  {type === "all" ? "All" : type === "mens-teams" ? "Men’s Teams" : type === "womens-teams" ? "Women’s Teams" : type[0].toUpperCase() + type.slice(1)}
+                  {type === "all" ? t("all") : type === "mens-teams" ? t("mensTeams") : type === "womens-teams" ? t("womensTeams") : type === "players" ? t("players") : type === "coaches" ? t("coaches") : t("leagues")}
                 </button>
               ))}
-              <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} aria-label="Filter by country" style={{ padding: "10px 14px", borderRadius: 8 }}>
-                <option value="">All countries</option>
+              <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} aria-label={t("country")} style={{ padding: "10px 14px", borderRadius: 8 }}>
+                <option value="">{t("allCountries")}</option>
                 {countries.map((country) => <option key={country} value={country}>{country}</option>)}
               </select>
               <button type="button" className="btn dark" onClick={() => setVerifiedOnly((value) => !value)} aria-pressed={verifiedOnly}>
-                {verifiedOnly ? <><VerifiedBadge label="Verified filter active" /> Verified only</> : "Verified only"}
+                {verifiedOnly ? <><VerifiedBadge label={t("verifiedFilterActive")} /> {t("verifiedOnly")}</> : t("verifiedOnly")}
               </button>
             </div>
           )}
 
-          {loading && <div className="state-card"><p>Searching HoopCheck...</p></div>}
+          {loading && <div className="state-card"><p>{t("searchingHoopCheck")}</p></div>}
           {error && <div className="state-card error"><p>{error}</p></div>}
 
           {!loading && !error && totalResults === 0 && (
             <div className="state-card">
-              <div className="eyebrow">No Matches</div>
-              <h3>Nothing found.</h3>
-              <p>Try a different player, coach, team, league, country, or city.</p>
+              <div className="eyebrow">{t("noMatches")}</div>
+              <h3>{t("nothingFound")}</h3>
+              <p>{t("tryDifferentSearch")}</p>
             </div>
           )}
 
           {!loading && !error && visiblePlayers.length > 0 && (
             <section className="result-group">
-              <div className="group-heading"><span>01</span><h3>Players</h3></div>
+              <div className="group-heading"><span>01</span><h3>{t("players")}</h3></div>
               <div className="result-grid">
                 {visiblePlayers.map((player) => (
                   <Link href={`/players/${player.id}`} key={player.id} className="result-card">
-                    <div className="result-type">PLAYER</div>
-                    <h4>{player.display_name || "HoopCheck Player"} {player.player_verified && <VerifiedBadge label="Verified player" />}</h4>
+                    <div className="result-type">{t("players").toUpperCase()}</div>
+                    <h4>{player.display_name || t("hoopCheckPlayer")} {player.player_verified && <VerifiedBadge label={t("verifiedPlayer")} />}</h4>
                     <p>
                       {[
                         player.player_position,
                         player.years_pro ? `${player.years_pro} years pro` : null,
                         player.current_team,
                         player.current_country || player.country,
-                      ].filter(Boolean).join(" · ") || "Professional player profile"}
+                      ].filter(Boolean).join(" · ") || t("professionalProfile")}
                     </p>
-                    <span className="result-link">View Player Profile →</span>
+                    <span className="result-link">{t("viewPlayerProfile")}</span>
                   </Link>
                 ))}
               </div>
@@ -353,14 +355,14 @@ function SearchContent() {
 
           {!loading && !error && visibleCoaches.length > 0 && (
             <section className="result-group">
-              <div className="group-heading"><span>02</span><h3>Coaches</h3></div>
+              <div className="group-heading"><span>02</span><h3>{t("coaches")}</h3></div>
               <div className="result-grid">
                 {visibleCoaches.map((coach) => (
                   <Link href={`/coaches/${coach.id}`} key={coach.id} className="result-card">
-                    <div className="result-type">COACH</div>
+                    <div className="result-type">{t("coaches").toUpperCase()}</div>
                     <h4>{coach.name}</h4>
-                    <p>{coach.city && coach.country ? `${coach.city}, ${coach.country}` : coach.country || coach.city || "Location unavailable"}</p>
-                    <span className="result-link">Research Coach →</span>
+                    <p>{coach.city && coach.country ? `${coach.city}, ${coach.country}` : coach.country || coach.city || t("locationUnavailable")}</p>
+                    <span className="result-link">{t("researchCoach")}</span>
                   </Link>
                 ))}
               </div>
@@ -369,7 +371,7 @@ function SearchContent() {
 
           {!loading && !error && visibleTeams.length > 0 && (
             <section className="result-group">
-              <div className="group-heading"><span>03</span><h3>Men’s Teams</h3></div>
+              <div className="group-heading"><span>03</span><h3>{t("mensTeams")}</h3></div>
               <div className="result-grid">
                 {visibleTeams.map((team) => (
                   <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" />
@@ -380,7 +382,7 @@ function SearchContent() {
 
           {!loading && !error && visibleWomensTeams.length > 0 && (
             <section className="result-group">
-              <div className="group-heading"><span>04</span><h3>Women’s Teams</h3></div>
+              <div className="group-heading"><span>04</span><h3>{t("womensTeams")}</h3></div>
               <div className="result-grid">
                 {visibleWomensTeams.map((team) => (
                   <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" />
@@ -391,15 +393,15 @@ function SearchContent() {
 
           {!loading && !error && visibleLeagues.length > 0 && (
             <section className="result-group">
-              <div className="group-heading"><span>05</span><h3>Leagues</h3></div>
+              <div className="group-heading"><span>05</span><h3>{t("leagues")}</h3></div>
               <div className="result-grid">
                 {visibleLeagues.map((league) => (
                   <Link href={`/leagues/${league.id}`} key={league.id} className="result-card">
-                    <div className="result-type">LEAGUE</div>
+                    <div className="result-type">{t("leagues").toUpperCase()}</div>
                     <h4>{league.name}</h4>
-                    <p>{league.country || "Country unavailable"}</p>
-                    {league.level && <div className="result-meta">Level: {league.level}</div>}
-                    <span className="result-link">Research League →</span>
+                    <p>{league.country || t("countryUnavailable")}</p>
+                    {league.level && <div className="result-meta">{t("level")}: {league.level}</div>}
+                    <span className="result-link">{t("researchLeague")}</span>
                   </Link>
                 ))}
               </div>
@@ -409,23 +411,24 @@ function SearchContent() {
       )}
 
       {!query && (
-        <section className="empty-section">
-          <div className="eyebrow">Start Researching</div>
-          <h2>Search before<br />you sign.</h2>
+        <Surface as="section" className="empty-section">
+          <div className="eyebrow">{t("startResearching")}</div>
+          <h2>{t("searchBeforeSign")}</h2>
           <div className="quick-links">
-            <Link href="/coaches" className="quick-card"><span>01</span><strong>Browse Coaches</strong><small>Research player experiences.</small></Link>
-            <Link href="/teams" className="quick-card"><span>02</span><strong>Browse Teams</strong><small>Explore professional organizations.</small></Link>
-            <Link href="/leagues" className="quick-card"><span>03</span><strong>Browse Leagues</strong><small>Explore leagues worldwide.</small></Link>
+            <Link href="/coaches" className="quick-card"><span>01</span><strong>{t("browseCoaches")}</strong><small>{t("researchPlayerExperiences")}</small></Link>
+            <Link href="/teams" className="quick-card"><span>02</span><strong>{t("browseTeams")}</strong><small>{t("exploreProfessionalOrganizations")}</small></Link>
+            <Link href="/leagues" className="quick-card"><span>03</span><strong>{t("browseLeagues")}</strong><small>{t("exploreLeaguesWorldwide")}</small></Link>
           </div>
-        </section>
+        </Surface>
       )}
     </main>
   );
 }
 
 export default function SearchPage() {
+  const { t } = useLanguage();
   return (
-    <Suspense fallback={<main className="search-page hc-global-search-page"><section className="search-hero"><p className="eyebrow">GLOBAL RESEARCH</p><h1>Loading search…</h1><p>Preparing teams, coaches, and league results.</p></section></main>}>
+    <Suspense fallback={<main className="search-page hc-global-search-page"><section className="search-hero"><p className="eyebrow">{t("globalResearch")}</p><h1>{t("loading")}</h1><p>{t("preparingSearchResults")}</p></section></main>}>
       <SearchContent />
     </Suspense>
   );

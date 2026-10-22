@@ -335,9 +335,9 @@ export default function AdminCoachDirectoryPage() {
 
   if (loading) {
     return (
-      <main className="admin-light-shell min-h-screen px-6 py-12 text-slate-900">
+      <main className="admin-light-shell min-h-screen px-6 py-12 text-[var(--hc-foreground)]">
         <div className="mx-auto max-w-7xl">
-          <p className="text-slate-900/60">
+          <p className="text-[var(--hc-foreground)]/60">
             Loading coach directory...
           </p>
         </div>
@@ -350,7 +350,7 @@ export default function AdminCoachDirectoryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[var(--hc-surface-raised)] px-4 py-8 text-[var(--hc-foreground)] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8">
           <Link
@@ -370,7 +370,7 @@ export default function AdminCoachDirectoryPage() {
                 Coach Directory
               </h1>
 
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-900/60">
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--hc-foreground)]/60">
                 Manage coaches imported into the worldwide
                 HoopCheck directory.
               </p>
@@ -380,7 +380,7 @@ export default function AdminCoachDirectoryPage() {
               <p className="text-xs uppercase tracking-wider text-orange-300">
                 Access
               </p>
-              <p className="mt-1 font-semibold capitalize text-slate-900">
+              <p className="mt-1 font-semibold capitalize text-[var(--hc-foreground)]">
                 Admin / Moderator
               </p>
             </div>
@@ -388,8 +388,8 @@ export default function AdminCoachDirectoryPage() {
         </div>
 
         <section className="mb-6 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <p className="text-sm text-slate-900/50">
+          <div className="rounded-2xl border border-[var(--hc-border)] bg-[var(--hc-surface-raised)] p-5">
+            <p className="text-sm text-[var(--hc-foreground)]/50">
               Total coaches
             </p>
             <p className="mt-2 text-3xl font-bold">
@@ -406,8 +406,8 @@ export default function AdminCoachDirectoryPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <p className="text-sm text-slate-900/50">
+          <div className="rounded-2xl border border-[var(--hc-border)] bg-[var(--hc-surface-raised)] p-5">
+            <p className="text-sm text-[var(--hc-foreground)]/50">
               Inactive
             </p>
             <p className="mt-2 text-3xl font-bold">
@@ -416,12 +416,12 @@ export default function AdminCoachDirectoryPage() {
           </div>
         </section>
 
-        <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+        <section className="mb-6 rounded-2xl border border-[var(--hc-border)] bg-[var(--hc-surface-raised)] p-4 sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
             <div className="flex-1">
               <label
                 htmlFor="coach-search"
-                className="mb-2 block text-sm font-medium text-slate-600"
+                className="mb-2 block text-sm font-medium text-[var(--hc-foreground-muted)]"
               >
                 Search coaches
               </label>
@@ -429,7 +429,7 @@ export default function AdminCoachDirectoryPage() {
               <SearchBar inputId="coach-search" value={search} onChange={setSearch} onSubmit={setSearch} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search coach directory" />
             </div>
 
-            <label className="flex cursor-pointer items-center gap-3 text-sm text-slate-600">
+            <label className="flex cursor-pointer items-center gap-3 text-sm text-[var(--hc-foreground-muted)]">
               <input
                 type="checkbox"
                 checked={showInactive}
@@ -448,7 +448,7 @@ export default function AdminCoachDirectoryPage() {
             <h2 className="text-xl font-semibold">
               Coaches
             </h2>
-            <p className="mt-1 text-sm text-slate-900/50">
+            <p className="mt-1 text-sm text-[var(--hc-foreground)]/50">
               Showing {filteredCoaches.length} coach
               {filteredCoaches.length === 1 ? "" : "es"}.
             </p>
@@ -456,12 +456,12 @@ export default function AdminCoachDirectoryPage() {
         </section>
 
         {filteredCoaches.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white/[0.03] p-10 text-center">
+          <div className="rounded-2xl border border-dashed border-[var(--hc-border)] bg-[var(--hc-surface-raised)]/[0.03] p-10 text-center">
             <h3 className="text-lg font-semibold">
               No coaches found
             </h3>
 
-            <p className="mt-2 text-sm text-slate-900/50">
+            <p className="mt-2 text-sm text-[var(--hc-foreground)]/50">
               Try a different search or enable inactive
               coaches.
             </p>
@@ -487,9 +487,9 @@ export default function AdminCoachDirectoryPage() {
               return (
                 <article
                   key={coach.id}
-                  className={`overflow-hidden rounded-2xl border bg-white ${
+                  className={`overflow-hidden rounded-2xl border bg-[var(--hc-surface-raised)] ${
                     coach.active
-                      ? "border-slate-200"
+                      ? "border-[var(--hc-border)]"
                       : "border-red-500/20 opacity-80"
                   }`}
                 >
@@ -515,7 +515,7 @@ export default function AdminCoachDirectoryPage() {
                             {coach.name}
                           </h3>
 
-                          <p className="mt-1 text-sm text-slate-900/50">
+                          <p className="mt-1 text-sm text-[var(--hc-foreground)]/50">
                             {coach.city ||
                             coach.country
                               ? [
@@ -543,8 +543,8 @@ export default function AdminCoachDirectoryPage() {
                     </div>
 
                     <div className="mt-5 space-y-3">
-                      <div className="rounded-xl border border-white/5 bg-white/30 p-3">
-                        <p className="text-xs uppercase tracking-wider text-slate-500">
+                      <div className="rounded-xl border border-white/5 bg-[var(--hc-surface-raised)]/30 p-3">
+                        <p className="text-xs uppercase tracking-wider text-[var(--hc-foreground-muted)]">
                           Team
                         </p>
 
@@ -554,8 +554,8 @@ export default function AdminCoachDirectoryPage() {
                         </p>
                       </div>
 
-                      <div className="rounded-xl border border-white/5 bg-white/30 p-3">
-                        <p className="text-xs uppercase tracking-wider text-slate-500">
+                      <div className="rounded-xl border border-white/5 bg-[var(--hc-surface-raised)]/30 p-3">
+                        <p className="text-xs uppercase tracking-wider text-[var(--hc-foreground-muted)]">
                           League
                         </p>
 
@@ -567,8 +567,8 @@ export default function AdminCoachDirectoryPage() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-xl border border-white/5 bg-white/30 p-3">
-                          <p className="text-xs uppercase tracking-wider text-slate-500">
+                        <div className="rounded-xl border border-white/5 bg-[var(--hc-surface-raised)]/30 p-3">
+                          <p className="text-xs uppercase tracking-wider text-[var(--hc-foreground-muted)]">
                             Source
                           </p>
 
@@ -577,8 +577,8 @@ export default function AdminCoachDirectoryPage() {
                           </p>
                         </div>
 
-                        <div className="rounded-xl border border-white/5 bg-white/30 p-3">
-                          <p className="text-xs uppercase tracking-wider text-slate-500">
+                        <div className="rounded-xl border border-white/5 bg-[var(--hc-surface-raised)]/30 p-3">
+                          <p className="text-xs uppercase tracking-wider text-[var(--hc-foreground-muted)]">
                             External ID
                           </p>
 
@@ -591,7 +591,7 @@ export default function AdminCoachDirectoryPage() {
 
                       {coach.source &&
                         sourceById.size > 0 && (
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-[var(--hc-foreground-muted)]">
                             Directory source:
                             {" "}
                             {sourceById.get(
@@ -602,7 +602,7 @@ export default function AdminCoachDirectoryPage() {
                         )}
 
                       {coach.last_synced_at && (
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-[var(--hc-foreground-muted)]">
                           Last synced:{" "}
                           {new Date(
                             coach.last_synced_at
@@ -624,7 +624,7 @@ export default function AdminCoachDirectoryPage() {
                           href={coach.website}
                           target="_blank"
                           rel="noreferrer"
-                          className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-white/5"
+                          className="rounded-xl border border-[var(--hc-border)] px-4 py-2 text-sm font-semibold text-[var(--hc-foreground)] transition hover:bg-[var(--hc-surface-raised)]/5"
                         >
                           Website
                         </a>

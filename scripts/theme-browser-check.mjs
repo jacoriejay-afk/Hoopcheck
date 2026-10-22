@@ -3,8 +3,33 @@ import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 
 const baseURL = process.env.THEME_TEST_BASE_URL || "http://127.0.0.1:3000";
+const testLanguage = process.env.THEME_TEST_LANGUAGE || "en";
+const teamFixture = {
+  id: "b79a5635-4531-4cc9-981d-103f9b61b9c2",
+  name: "A.B.B Ego Spor",
+  country: "Türkiye",
+  league_name: "Turkish Basketball League",
+  league_id: "c8d92f50-20d6-4b13-a6c8-9a7b3c1b2001",
+  city: "Istanbul",
+  logo_url: null,
+};
+const leagueFixture = {
+  id: "c8d92f50-20d6-4b13-a6c8-9a7b3c1b2001",
+  name: "Turkish Basketball League",
+  country: "Türkiye",
+  level: "Top division",
+};
+const coachFixture = {
+  id: "11111111-1111-4111-8111-111111111111",
+  name: "Coach QA Fixture",
+  country: "Azerbaijan",
+  city: "Baku",
+  current_team_id: teamFixture.id,
+  active: true,
+};
 const artifactsDir = "artifacts/theme-check";
 await mkdir(artifactsDir, { recursive: true });
+await mkdir(`${artifactsDir}/routes`, { recursive: true });
 
 const userId = "11111111-1111-4111-8111-111111111111";
 const user = {
@@ -39,7 +64,7 @@ const profile = {
   current_team: "Theme Test Club",
   avatar_url: null,
   theme_preference: "system",
-  preferred_language: "en",
+  preferred_language: testLanguage,
   profile_visibility: "public",
   professional_experience: true,
   bio: null,
@@ -87,10 +112,11 @@ try {
         { name: "hoopcheck-theme", value: theme, url: baseURL },
         { name: "sb-ci-auth-token", value: encodedSession, url: baseURL },
       ]);
-      await page.addInitScript(({ themePreference, authSession }) => {
+      await page.addInitScript(({ themePreference, authSession, language }) => {
         localStorage.setItem("hoopcheck-theme", themePreference);
+        localStorage.setItem("hoopcheck-language", language);
         localStorage.setItem("sb-ci-auth-token", JSON.stringify(authSession));
-      }, { themePreference: theme, authSession: session });
+      }, { themePreference: theme, authSession: session, language: testLanguage });
 
       await page.route("https://ci.invalid/**", async (route) => {
         const request = route.request();
@@ -189,7 +215,7 @@ try {
 
       results.push({ route: path, theme, computed });
       await page.screenshot({
-        path: `${artifactsDir}/${routeName}-${theme}-mobile.png`,
+        path: `${artifactsDir}/${routeName}-${theme}-${testLanguage}-mobile.png`,
         fullPage: true,
         animations: "disabled",
       });
@@ -199,7 +225,7 @@ try {
 
   const mainRoutes = [
     "/", "/dashboard", "/feed", "/account", "/settings", "/profile", "/search",
-    "/teams", "/coaches", "/leagues", "/players", "/womens", "/directory",
+    "/teams", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2", "/coaches", "/coaches/11111111-1111-4111-8111-111111111111", "/leagues", "/players", "/womens", "/directory",
     "/reviews", "/membership", "/notifications", "/support", "/verification",
     "/privacy-center", "/privacy", "/terms", "/community-guidelines", "/login",
     "/signup", "/onboarding", "/fan-live", "/live-games", "/partners", "/copyright",
@@ -214,10 +240,11 @@ try {
       { name: "sb-ci-auth-token", value: encodedSession, url: baseURL },
     ]);
     const page = await context.newPage();
-    await page.addInitScript(({ themePreference, authSession }) => {
+    await page.addInitScript(({ themePreference, authSession, language }) => {
       localStorage.setItem("hoopcheck-theme", themePreference);
+      localStorage.setItem("hoopcheck-language", language);
       localStorage.setItem("sb-ci-auth-token", JSON.stringify(authSession));
-    }, { themePreference: theme, authSession: session });
+    }, { themePreference: theme, authSession: session, language: testLanguage });
     await page.route("https://ci.invalid/**", async (route) => {
       const request = route.request();
       const url = new URL(request.url());
@@ -232,12 +259,38 @@ try {
         return;
       }
       let data = [];
+      const single = request.headers()["accept"]?.includes("vnd.pgrst.object");
       if (url.pathname === "/auth/v1/user") data = user;
-      else if (url.pathname.includes("/rest/v1/profiles")) data = request.headers()["accept"]?.includes("vnd.pgrst.object") ? profile : [];
-      else if (url.pathname.includes("/rest/v1/subscriptions")) data = request.headers()["accept"]?.includes("vnd.pgrst.object") ? subscription : [];
+      else if (url.pathname.includes("/rest/v1/profiles")) data = single ? profile : [];
+      else if (url.pathname.includes("/rest/v1/subscriptions")) data = single ? subscription : [];
+      else if (url.pathname.includes("/rest/v1/teams")) data = single ? teamFixture : [teamFixture];
+      else if (url.pathname.includes("/rest/v1/leagues")) data = single ? leagueFixture : [leagueFixture];
+      else if (url.pathname.includes("/rest/v1/coaches")) data = single ? coachFixture : [coachFixture];
+      else if (url.pathname.includes("/rest/v1/team_league_memberships")) data = [];
+      else if (url.pathname.includes("/rest/v1/reviews")) data = [];
+      else if (url.pathname.includes("/rest/v1/team_roster_spots")) data = [];
+      else if (url.pathname.includes("/rest/v1/follow_relationships")) data = single ? null : [];
+      else if (url.pathname.includes("/rest/v1/rpc/get_follow_count")) data = 0;
+      else if (url.pathname.includes("/rest/v1/rpc/get_review_verification")) data = [];
+      else if (url.pathname.includes("/rest/v1/rpc/is_current_user_admin_or_moderator")) data = false;
       else if (url.pathname.includes("/rest/v1/rpc/get_current_user_admin_role")) data = "member";
       await route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(data) });
     });
+
+    // Exercise the real Settings language control before capturing every route.
+    await page.goto(baseURL + "/settings", { waitUntil: "domcontentloaded", timeout: 20000 });
+    const languageSelect = page.locator("select.language-select");
+    await languageSelect.waitFor({ state: "visible", timeout: 10000 });
+    if (testLanguage === "en") {
+      await languageSelect.selectOption("es");
+      await page.waitForFunction(() => document.documentElement.lang === "es", null, { timeout: 10000 });
+      await page.locator("select.language-select").selectOption("en");
+    } else {
+      await languageSelect.selectOption("es");
+    }
+    await page.waitForFunction((expected) => document.documentElement.lang === expected, testLanguage, { timeout: 10000 });
+    await page.waitForTimeout(150);
+
     for (const requestedPath of mainRoutes) {
       let navigationError = null;
       try {
@@ -257,6 +310,58 @@ try {
           body: color(document.body),
           pageWrapper: color(main),
           mainClass: main?.className || null,
+          whiteSurfaceOffenders: Array.from(document.querySelectorAll("main *"))
+            .filter((element) => {
+              const style = getComputedStyle(element);
+              const rect = element.getBoundingClientRect();
+              const cls = typeof element.className === "string" ? element.className : "";
+              if (/(logo|avatar|photo|portrait|image)/i.test(cls)) return false;
+              return style.backgroundColor === "rgb(255, 255, 255)" && rect.width > 16 && rect.height > 12 &&
+                style.display !== "none" && style.visibility !== "hidden";
+            })
+            .slice(0, 20)
+            .map((element) => ({
+              tag: element.tagName.toLowerCase(),
+              className: typeof element.className === "string" ? element.className : "",
+              text: (element.textContent || "").trim().slice(0, 50),
+            })),
+          lowContrastText: Array.from(document.querySelectorAll("main *"))
+            .filter((element) => {
+              if (element.children.length || !(element.textContent || "").trim()) return false;
+              const cls = typeof element.className === "string" ? element.className : "";
+              if (/(logo|avatar|photo|portrait|image)/i.test(cls) || element.closest("[aria-hidden='true']")) return false;
+              const style = getComputedStyle(element);
+              if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) < 0.6) return false;
+              const rgb = (value) => {
+                const m = value.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/);
+                return m ? [Number(m[1]), Number(m[2]), Number(m[3]), m[4] == null ? 1 : Number(m[4])] : null;
+              };
+              const luminance = (c) => c.slice(0, 3).map(v => { const x=v/255; return x<=0.04045?x/12.92:((x+0.055)/1.055)**2.4; }).reduce((a,v,i)=>a+v*[0.2126,0.7152,0.0722][i],0);
+              const foreground = rgb(style.color);
+              if (!foreground) return false;
+              let node = element;
+              let background = null;
+              while (node && node !== document.documentElement) {
+                const candidate = rgb(getComputedStyle(node).backgroundColor);
+                if (candidate && candidate[3] >= 0.95) { background = candidate; break; }
+                node = node.parentElement;
+              }
+              if (!background) background = rgb(getComputedStyle(document.body).backgroundColor);
+              if (!background) return false;
+              const l1=luminance(foreground), l2=luminance(background);
+              const ratio=(Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05);
+              const fontSize=parseFloat(style.fontSize)||14;
+              const large=fontSize>=24 || (fontSize>=18 && Number(style.fontWeight)>=700);
+              return ratio < (large ? 3 : 4.5);
+            })
+            .slice(0, 20)
+            .map((element) => ({
+              tag: element.tagName.toLowerCase(),
+              className: typeof element.className === "string" ? element.className : "",
+              text: (element.textContent || "").trim().slice(0, 60),
+              color: getComputedStyle(element).color,
+              background: (() => { let n=element; while(n && n!==document.documentElement){const c=getComputedStyle(n).backgroundColor;if(c!=="rgba(0, 0, 0, 0)")return c;n=n.parentElement;} return getComputedStyle(document.body).backgroundColor; })(),
+            })),
           navigationError,
         };
       }, { requestedPath, navigationError });
@@ -266,6 +371,25 @@ try {
       if (result.body !== expectedPage) errors.push("body background mismatch");
       if (result.pageWrapper && result.pageWrapper !== expectedPage) errors.push("main background mismatch");
       if (result.navigationError) errors.push("navigation error");
+      if (theme === "dark" && result.whiteSurfaceOffenders.length) errors.push("white surface offenders: " + JSON.stringify(result.whiteSurfaceOffenders));
+      if (result.lowContrastText.length) errors.push("low contrast text: " + JSON.stringify(result.lowContrastText));
+      if (["/dashboard", "/search", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2"].includes(requestedPath)) {
+        const visibleText = await page.locator("body").innerText();
+        const expectedText = testLanguage === "es"
+          ? requestedPath === "/dashboard" ? ["TUS ACCESOS DIRECTOS", "ACCESO RÁPIDO"]
+            : requestedPath === "/search" ? ["CONEXIÓN ENTRE JUGADORES", "EMPIEZA A INVESTIGAR"]
+            : ["TABLERO DE PLANTILLA", "AÚN NO HAY RESEÑAS APROBADAS"]
+          : requestedPath === "/dashboard" ? ["YOUR SHORTCUTS", "Quick Access"]
+            : requestedPath === "/search" ? ["PLAYER CONNECT", "Start Researching"]
+            : ["ROSTER BOARD", "No approved reviews yet"];
+        const missingText = expectedText.filter((expected) => !visibleText.toLocaleUpperCase().includes(expected.toLocaleUpperCase()));
+        if (missingText.length) errors.push("language assertions missing: " + missingText.join(", "));
+      }
+      await page.screenshot({
+        path: `${artifactsDir}/routes/${requestedPath.replace(/[^a-z0-9-]+/gi, "_")}-${theme}-${testLanguage}-mobile.png`,
+        fullPage: true,
+        animations: "disabled",
+      });
       routeSweepResults.push({ theme, ...result, status: errors.length ? "FAIL" : result.pageWrapper ? "PASS" : "NO_MAIN", reason: errors.join("; ") || (result.pageWrapper ? "" : "route rendered no main element") });
     }
     await context.close();

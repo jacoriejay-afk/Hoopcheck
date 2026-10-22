@@ -155,7 +155,7 @@
 .hc-dashboard-shell .hc-command-center {
   margin-top: 24px;
   padding: clamp(18px, 2.8vw, 32px);
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-radius: 2px;
 }
@@ -302,7 +302,7 @@
 .hc-team-directory-page > .hero:nth-child(2) .research-search {
   max-width: none;
   padding: 18px;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange);
 }
@@ -333,7 +333,7 @@
   min-height: 44px;
   padding: 10px;
   color: #222;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #d5d5d2;
   border-radius: 2px;
 }
@@ -342,7 +342,7 @@
 }
 .hc-team-directory-page .hc-team-directory-list > .card:not(.hc-team-row) {
   padding: 24px;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange);
   color: #111;
@@ -381,7 +381,7 @@
   gap: 10px;
   min-width: 0;
   padding: clamp(16px, 2.5vw, 26px);
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange);
   border-radius: 2px;
@@ -418,7 +418,7 @@
 .hc-leagues-directory-page select {
   min-height: 46px;
   padding: 10px 12px;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #d5d5d2;
   border-radius: 2px;
 }
@@ -490,7 +490,7 @@
   min-width: 0;
   min-height: 48px;
   color: #111;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #d5d5d2;
   border-radius: 2px;
 }
@@ -498,7 +498,7 @@
 .hc-global-search-page .empty-section {
   margin-top: 18px;
   padding: clamp(16px, 3vw, 30px);
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange);
 }
@@ -534,7 +534,7 @@
   text-decoration: none;
   overflow-wrap: anywhere;
 }
-.hc-global-search-page .result-card:hover { border-color: var(--hc-orange); background: #fff; }
+.hc-global-search-page .result-card:hover { border-color: var(--hc-orange); background: var(--hc-surface-raised); }
 .hc-global-search-page .result-card h4 {
   margin: 8px 0;
   color: #111;
@@ -696,7 +696,7 @@
   min-height: 48px;
   border: 1px solid #d4d4d0;
   border-radius: 2px;
-  background: #fff;
+  background: var(--hc-surface-raised);
   color: #111;
   padding: 12px 14px;
 }
@@ -715,7 +715,7 @@
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange, #ff6a00);
   border-radius: 2px;
-  background: #fff;
+  background: var(--hc-surface-raised);
 }
 .hc-player-directory-page .hc-player-results h2 {
   overflow-wrap: anywhere;
@@ -800,7 +800,7 @@
 .hc-coaches-directory-page .hc-team-directory-list > .card:not(.hc-team-row),
 .hc-leagues-directory-page .hc-team-directory-list > .card:not(.hc-team-row) {
   padding: 24px;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange);
   color: #111;
@@ -900,7 +900,7 @@
   min-height: 48px;
   padding: 12px 14px;
   color: #111;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #d4d4d0;
   border-radius: 2px;
 }
@@ -924,7 +924,7 @@
   padding: 14px;
   text-align: left;
   color: #111;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-top: 3px solid #252525;
   border-radius: 2px;
@@ -957,7 +957,7 @@
 .hc-womens-directory-page .hc-team-row {
   min-width: 0;
   padding: 20px;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange);
 }
@@ -1025,7 +1025,7 @@
 .hc-womens-profile-page .compact-grid > .card,
 .hc-womens-profile-page .compact-section {
   min-width: 0;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-radius: 2px;
   box-shadow: none;
@@ -1104,7 +1104,7 @@
 .hc-member-profile-page .compact-section,
 .hc-account-page .dashboard-card {
   min-width: 0;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-radius: 2px;
   box-shadow: none;
@@ -1126,7 +1126,7 @@
   min-height: 44px;
   padding: 11px 12px;
   color: #111;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #d4d4d0;
   border-radius: 2px;
 }
@@ -1199,7 +1199,7 @@
 }
 .hc-entity-profile-page > .hero:not(:first-child) {
   padding: clamp(18px, 3vw, 28px);
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-radius: 2px;
   box-shadow: none;
@@ -1296,7 +1296,7 @@
   position: relative;
   min-width: 0;
   padding: clamp(18px, 2.8vw, 30px);
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #d9d9d6;
   border-top: 4px solid #171717;
   border-radius: 2px;
@@ -1500,7 +1500,7 @@
 .hc-auth-page .hc-auth-form-section { padding-top: clamp(24px, 4vw, 42px) !important; }
 .hc-auth-page .hc-auth-card {
   padding: clamp(20px, 3vw, 32px);
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-top: 4px solid var(--hc-orange);
   border-radius: 2px;
@@ -1532,7 +1532,7 @@
 .hc-auth-page .hc-auth-card form .btn { min-height:48px; justify-content:center; }
 .hc-auth-page .hc-auth-card > button:not(.btn) { min-height:40px; }
 .hc-auth-page .hc-auth-promo .card {
-  background:#fff;
+  background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-left:4px solid var(--hc-orange);
   border-radius:2px;
@@ -1612,7 +1612,7 @@
 .auth-page-shell .signup-page .signup-card {
   min-width:0;
   padding:clamp(18px,2.6vw,30px);
-  background:#fff;
+  background:var(--hc-surface-raised);
   border:1px solid #dcdcd8;
   border-top:4px solid var(--hc-orange);
   border-radius:2px;
@@ -1740,7 +1740,7 @@
   min-width:0;
   padding:17px 19px;
   color:#111;
-  background:#fff;
+  background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-left:3px solid #c8c8c4;
   border-radius:2px;
@@ -1768,14 +1768,14 @@
 }
 .hc-notifications-page .notification-item:hover {
   border-color:var(--hc-orange);
-  background:#fff;
+  background:var(--hc-surface-raised);
 }
 .hc-notifications-page .notification-item:focus-visible {
   outline:2px solid var(--hc-orange);
   outline-offset:3px;
 }
 .hc-notifications-page .card {
-  background:#fff;
+  background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-top:3px solid var(--hc-orange);
   border-radius:2px;
@@ -1820,7 +1820,7 @@
 .hc-settings-page .settings-card {
   min-width:0;
   padding:clamp(17px,2.5vw,25px);
-  background:#fff;
+  background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-top:3px solid #171717;
   border-radius:2px;
@@ -1897,7 +1897,7 @@
   left:3px;
   width:12px;
   height:12px;
-  background:#fff;
+  background:var(--hc-surface-raised);
   border-radius:50%;
   transition:transform .15s ease;
 }
@@ -2003,7 +2003,7 @@
 .hc-dashboard-shell .hc-command-center {
   margin-top:18px;
   padding:clamp(20px,3.5vw,36px);
-  background:#fff;
+  background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-radius:2px;
 }
@@ -2075,13 +2075,13 @@
 }
 .hc-dashboard-shell .dashboard-command-tile:hover {
   transform:translateY(-2px);
-  background:#fff;
+  background:var(--hc-surface-raised);
   border-color:var(--hc-orange);
 }
 .hc-dashboard-shell .dashboard-card {
   min-width:0;
   padding:clamp(17px,2.5vw,24px);
-  background:#fff;
+  background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-radius:2px;
   box-shadow:none;
@@ -2162,7 +2162,7 @@
 .hc-support-page .hero-card a { color:#ffad73; font-weight:850; text-underline-offset:3px; }
 .hc-support-page > .page-container > .dashboard-card {
   padding:clamp(18px,3vw,30px);
-  background:#fff;
+  background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-top:3px solid var(--hc-orange);
   border-radius:2px;
@@ -2257,7 +2257,7 @@
   min-height:48px;
   padding:12px 14px;
   color:#111;
-  background:#fff;
+  background:var(--hc-surface-raised);
   border:1px solid #d4d4d0;
   border-radius:2px;
 }
@@ -2265,7 +2265,7 @@
 .hc-fans-directory-page .dashboard-card {
   min-width:0;
   padding:20px;
-  background:#fff;
+  background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-top:3px solid #191919;
   border-radius:2px;
@@ -2305,7 +2305,7 @@
 }
 .hc-fan-profile-page > .page-container > .dashboard-card {
   padding:clamp(18px,3vw,28px);
-  background:#fff;
+  background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-radius:2px;
   box-shadow:none;
@@ -2358,7 +2358,7 @@
 .hc-partners-page .hero-card .muted { max-width:65ch; color:#d0d0d0; line-height:1.65; }
 .hc-partners-page > .page-container > .dashboard-card {
   padding:clamp(18px,3vw,30px);
-  background:#fff;
+  background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-top:3px solid var(--hc-orange);
   border-radius:2px;
@@ -2425,7 +2425,7 @@
 }
 .hc-legal-page .legal-card {
   padding:clamp(20px,4vw,44px);
-  background:#fff;
+  background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-top:3px solid var(--hc-orange);
   border-radius:2px;
@@ -2497,7 +2497,7 @@
 .hc-copyright-page .hero-card .muted { color:#d0d0d0; line-height:1.65; }
 .hc-copyright-page > .page-container > .dashboard-card {
   padding:clamp(20px,4vw,36px);
-  background:#fff;
+  background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-top:3px solid var(--hc-orange);
   border-radius:2px;
@@ -2618,7 +2618,7 @@
   border:1px solid #dededb;
   border-top:3px solid var(--hc-orange);
   border-radius:2px;
-  background:#fff;
+  background:var(--hc-surface-raised);
   box-shadow:none;
   transition:transform .16s ease,border-color .16s ease;
 }
@@ -2727,7 +2727,7 @@
   min-height: 46px;
   padding: 10px 12px;
   color: #111;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #d5d5d2;
   border-radius: 2px;
 }
@@ -2741,7 +2741,7 @@
 .hc-leagues-directory-page .hc-directory-empty {
   grid-column: 1 / -1;
   padding: clamp(22px, 4vw, 40px);
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange);
 }
@@ -2781,7 +2781,7 @@
   min-height: 38px;
   padding: 8px 12px;
   color: #111;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #c9c9c5;
   border-left: 3px solid var(--hc-orange);
   border-radius: 2px;
@@ -2791,7 +2791,7 @@
 .hc-team-directory-page .hc-team-empty {
   grid-column: 1 / -1;
   padding: clamp(22px, 4vw, 40px);
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange);
 }
@@ -2825,7 +2825,7 @@
 .hc-coaches-directory-page .hc-coach-empty {
   grid-column: 1 / -1;
   padding: clamp(22px, 4vw, 40px);
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange);
 }
@@ -3068,7 +3068,7 @@ main:has(.hc-review-form) .hc-review-form {
 main:has(.hc-review-form) .hc-rating-field {
   min-width: 0;
   padding: clamp(14px, 2vw, 20px) !important;
-  background: #fff !important;
+  background: var(--hc-surface-raised) !important;
   border: 1px solid #dededb !important;
   border-top: 3px solid var(--hc-orange) !important;
   border-radius: 2px !important;
@@ -3094,7 +3094,7 @@ main:has(.hc-review-form) .hc-rating-field button:hover {
 main:has(.hc-review-form) .hc-review-form .card,
 main:has(.hc-review-form) .dashboard-card {
   padding: clamp(15px, 2.5vw, 22px);
-  background: #fff;
+  background: var(--hc-surface-raised);
   color: #111;
   border: 1px solid #dededb;
   border-radius: 2px;
@@ -3212,7 +3212,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   width: min(100% - 32px, 1280px);
   margin: 22px auto 12px;
   padding: 16px;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange);
 }
@@ -3255,7 +3255,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   align-items: flex-start;
   min-width: 0;
   padding: 20px;
-  background: #fff;
+  background: var(--hc-surface-raised);
   color: #111;
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange);
@@ -3290,7 +3290,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   grid-column: 1 / -1;
   width: 100%;
   padding: clamp(20px, 4vw, 34px);
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-left: 4px solid var(--hc-orange);
 }
@@ -3341,7 +3341,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   min-height: 46px;
   padding: 10px 12px;
   color: #111;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #d5d5d2;
   border-radius: 2px;
 }
@@ -3426,7 +3426,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 }
 .hc-entity-profile-page .card {
   border: 1px solid #e0e0dc;
-  background: #fff;
+  background: var(--hc-surface-raised);
 }
 .hc-entity-profile-page .card h2,
 .hc-entity-profile-page .card h3 {
@@ -3567,7 +3567,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 }
 .hc-global-search-page .results-header .result-count {
   border: 1px solid #dededb;
-  background: #fff;
+  background: var(--hc-surface-raised);
   padding: 8px 11px;
   color: #222;
   font-size: 12px;
@@ -3596,7 +3596,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   min-height: 40px;
   max-width: 100%;
   border: 1px solid #c9c9c5;
-  background: #fff;
+  background: var(--hc-surface-raised);
   color: #171717;
   font: inherit;
 }
@@ -3702,7 +3702,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   min-height: 46px;
   border: 1px solid #c9c9c4;
   border-radius: 2px;
-  background: #fff;
+  background: var(--hc-surface-raised);
   color: #171717;
   font: inherit;
 }
@@ -3727,7 +3727,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   border: 1px solid #dededb !important;
   border-top: 3px solid var(--hc-orange) !important;
   border-radius: 2px;
-  background: #fff;
+  background: var(--hc-surface-raised);
 }
 .hc-team-directory-page .hero:has(.dashboard-card) .dashboard-card h2 {
   margin-block: 6px;
@@ -3741,7 +3741,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   padding: 10px 12px;
   border: 1px solid #d0d0cb;
   border-radius: 2px;
-  background: #fff;
+  background: var(--hc-surface-raised);
   color: #171717;
 }
 .hc-team-directory-page .hc-team-directory-list {
@@ -3818,7 +3818,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   padding: 11px 13px;
   border: 1px solid #c9c9c4;
   border-radius: 2px;
-  background: #fff;
+  background: var(--hc-surface-raised);
   color: #171717;
   font: inherit;
 }
@@ -4138,7 +4138,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .hc-entity-profile-page .review-item {
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange, #ff6a00);
-  background: #fff;
+  background: var(--hc-surface-raised);
   box-shadow: 0 4px 14px rgba(0,0,0,.035);
 }
 .hc-entity-profile-page .rating-locked-card {
@@ -4187,7 +4187,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .player-profile-page .player-profile-card {
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange, #ff6a00);
-  background: #fff;
+  background: var(--hc-surface-raised);
 }
 .player-profile-page .player-profile-card h2,
 .hc-account-page .dashboard-card h2 {
@@ -4212,7 +4212,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   margin-top: 6px;
   border: 1px solid #c9c9c4;
   border-radius: 2px;
-  background: #fff;
+  background: var(--hc-surface-raised);
   color: #171717;
   font: inherit;
 }
@@ -4286,7 +4286,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .hc-dashboard-shell .dashboard-command-tile:hover {
   transform: translateY(-2px);
   border-color: var(--hc-orange);
-  background: #fff;
+  background: var(--hc-surface-raised);
 }
 .hc-dashboard-shell .dashboard-card {
   min-width: 0;
@@ -4530,7 +4530,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   overflow-wrap: anywhere;
   border: 1px solid #dededb;
   border-radius: 3px;
-  background: #fff;
+  background: var(--hc-surface-raised);
   box-shadow: 0 4px 16px rgba(0,0,0,.035);
 }
 .hc-feed-page .dashboard-card .card-kicker {
@@ -4550,7 +4550,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   padding: 11px 12px;
   border: 1px solid #cecec8;
   border-radius: 2px;
-  background: #fff;
+  background: var(--hc-surface-raised);
   color: #151515;
   font: inherit;
 }
@@ -4894,7 +4894,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .hc-entity-profile-page .hc-profile-review-list { gap: 14px; }
 .hc-entity-profile-page .hc-profile-review-list > * {
   padding: clamp(15px, 2.4vw, 24px);
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #deded9;
   border-left: 3px solid var(--hc-orange, #ff6a00);
   box-shadow: 0 4px 16px rgba(0,0,0,.04);
@@ -4921,7 +4921,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .hc-settings-page .settings-card {
   min-width: 0;
   padding: clamp(17px, 3vw, 25px);
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #deded9;
   border-top: 3px solid var(--hc-orange, #ff6a00);
   border-radius: 3px;
@@ -4947,7 +4947,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   gap: 7px;
   padding: 17px 18px;
   margin-top: 9px;
-  background: #fff;
+  background: var(--hc-surface-raised);
   border: 1px solid #deded9;
   border-left: 3px solid #d2d2cc;
   color: #171717;
@@ -5004,7 +5004,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .hc-fans-directory-page .hero-card .muted { color: #d0d0d0; }
 .hc-fans-directory-page .hero-card input { box-sizing: border-box; width: 100%; max-width: 540px; min-height: 46px; margin-top: 12px; }
 .hc-fans-directory-page .grid { gap: 13px; }
-.hc-fans-directory-page .dashboard-card { min-width: 0; padding: clamp(16px, 3vw, 24px); background: #fff; border: 1px solid #deded9; border-top: 3px solid var(--hc-orange, #ff6a00); border-radius: 3px; overflow-wrap: anywhere; }
+.hc-fans-directory-page .dashboard-card { min-width: 0; padding: clamp(16px, 3vw, 24px); background: var(--hc-surface-raised); border: 1px solid #deded9; border-top: 3px solid var(--hc-orange, #ff6a00); border-radius: 3px; overflow-wrap: anywhere; }
 .hc-onboarding-page { min-height: 75vh; padding-bottom: 80px; background: var(--hc-paper, #f3f3f1); }
 .hc-onboarding-page > .page-container { width: min(100% - 32px, 920px); padding-top: 18px; }
 .hc-onboarding-page .hero-card {
@@ -5031,7 +5031,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .hc-legal-page > .hero :where(h1,h2) { color: #fff; font-weight: 950; letter-spacing: -.04em; text-transform: uppercase; }
 .hc-legal-page > .hero p:not(.eyebrow) { max-width: 66ch; color: #d0d0d0; line-height: 1.7; }
 .hc-legal-page .legal-content { width: min(100% - 32px, 920px); margin: 24px auto; }
-.hc-legal-page .legal-card { padding: clamp(20px, 4vw, 40px); background: #fff; border: 1px solid #deded9; border-radius: 3px; box-shadow: 0 5px 18px rgba(0,0,0,.035); }
+.hc-legal-page .legal-card { padding: clamp(20px, 4vw, 40px); background: var(--hc-surface-raised); border: 1px solid #deded9; border-radius: 3px; box-shadow: 0 5px 18px rgba(0,0,0,.035); }
 .hc-legal-page .legal-card :where(h2,h3) { margin-top: 28px; font-weight: 900; letter-spacing: -.02em; }
 .hc-legal-page .legal-card p { line-height: 1.75; }
 .hc-legal-page .legal-footer { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 20px; border-top: 1px solid #deded9; }

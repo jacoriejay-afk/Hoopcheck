@@ -44,6 +44,9 @@ jobs:
             echo "::warning::Full audit reports unresolved advisories. Review the audit output; the production-only audit above remains blocking."
           fi
 
+      - name: Audit hardcoded white surfaces (blocking)
+        run: npm run audit:surfaces
+
       - name: Lint
         run: npm run lint
 
@@ -60,7 +63,14 @@ jobs:
           npm run start -- --hostname 127.0.0.1 > /tmp/hoopcheck-next.log 2>&1 &
           echo $! > /tmp/hoopcheck-next.pid
 
-      - name: Verify computed theme styles and capture screenshots
+      - name: Verify computed theme styles and capture English screenshots
+        env:
+          THEME_TEST_LANGUAGE: en
+        run: node scripts/theme-browser-check.mjs
+
+      - name: Verify computed theme styles and capture Spanish screenshots
+        env:
+          THEME_TEST_LANGUAGE: es
         run: node scripts/theme-browser-check.mjs
 
       - name: Upload theme screenshots
@@ -68,5 +78,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: hoopcheck-theme-screenshots
-          path: artifacts/theme-check/*.png
+          path: artifacts/theme-check/**/*.png
           if-no-files-found: warn

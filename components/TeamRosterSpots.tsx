@@ -3,11 +3,12 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "../lib/supabase";
 import { useLanguage } from "./LanguageProvider";
+import Surface from "./Surface";
 
 type Spot={id:string;team_id:string;created_by:string;title:string;description:string|null;season:string|null;status:"open"|"closed";expires_at:string|null;created_at:string};
 
 export default function TeamRosterSpots({teamId,teamName}:{teamId:string;teamName:string}) {
-  const { formatDate } = useLanguage();
+  const { formatDate, t } = useLanguage();
   const [spots,setSpots]=useState<Spot[]>([]);
   const [canPost,setCanPost]=useState(false);
   const [open,setOpen]=useState(false);
@@ -39,21 +40,21 @@ export default function TeamRosterSpots({teamId,teamName}:{teamId:string;teamNam
 
   async function submit(event:FormEvent<HTMLFormElement>) {
     event.preventDefault();if(!canPost||busy)return;
-    if(title.trim().length<3){setMessage("Add a clear roster opportunity title.");return;}
+    if(title.trim().length<3){setMessage(t("rosterTitleRequired"));return;}
     setBusy(true);setMessage("");
     const {data:{user}}=await supabase.auth.getUser();
-    if(!user){setMessage("Sign in with the approved team account.");setBusy(false);return;}
+    if(!user){setMessage(t("signInApprovedTeam"));setBusy(false);return;}
     const {error}=await supabase.from("team_roster_spots").insert({team_id:teamId,created_by:user.id,title:title.trim(),season:season.trim()||null,description:description.trim()||null,status:"open"});
-    if(error)setMessage("Could not post this roster spot. Please try again.");
-    else {setTitle("");setSeason("");setDescription("");setOpen(false);setMessage("Roster opportunity posted. Team watchers may receive an alert.");await load();}
+    if(error)setMessage(t("rosterPostFailed"));
+    else {setTitle("");setSeason("");setDescription("");setOpen(false);setMessage(t("rosterPosted"));await load();}
     setBusy(false);
   }
 
-  return <section className="hc-roster-spots">
-    <div className="hc-roster-spots__heading"><div><p className="eyebrow">ROSTER BOARD</p><h2>Open roster spots<span>.</span></h2></div>{canPost&&<button type="button" className="hc-roster-post-toggle" onClick={()=>setOpen(value=>!value)}>{open?"Cancel":"+ Post a spot"}</button>}</div>
-    {spots.length?<div className="hc-roster-spots__list">{spots.map(spot=><article key={spot.id} className="hc-roster-spot"><span className="hc-roster-spot__badge">OPEN</span><h3>{spot.title}</h3>{spot.season&&<small>Season · {spot.season}</small>}{spot.description&&<p>{spot.description}</p>}<small>Posted {formatDate(spot.created_at)}</small></article>)}</div>
-      :<p className="hc-roster-spots__empty">No open roster spots have been posted for {teamName}.</p>}
-    {open&&canPost&&<form className="hc-roster-post-form" onSubmit={submit}><label>Position / opportunity title<input value={title} onChange={event=>setTitle(event.target.value)} required maxLength={160} placeholder="Import guard · 2026–27 season"/></label><label>Season<input value={season} onChange={event=>setSeason(event.target.value)} maxLength={80} placeholder="2026–27"/></label><label>Details<textarea value={description} onChange={event=>setDescription(event.target.value)} maxLength={2000} rows={3} placeholder="Role, requirements, contact instructions…"/></label>{message&&<p role="status">{message}</p>}<button type="submit" className="btn" disabled={busy}>{busy?"Posting…":"Publish Roster Spot"}</button></form>}
+  return <Surface as="section" className="hc-roster-spots">
+    <div className="hc-roster-spots__heading"><div><p className="eyebrow">{t("rosterBoard")}</p><h2>{t("openRosterSpotsTitle")}<span>.</span></h2></div>{canPost&&<button type="button" className="hc-roster-post-toggle" onClick={()=>setOpen(value=>!value)}>{open?t("cancel"):t("postASpot")}</button>}</div>
+    {spots.length?<div className="hc-roster-spots__list">{spots.map(spot=><Surface as="article" key={spot.id} className="hc-roster-spot"><span className="hc-roster-spot__badge">{t("open")}</span><h3>{spot.title}</h3>{spot.season&&<small>{t("season")} · {spot.season}</small>}{spot.description&&<p>{spot.description}</p>}<small>{t("posted")} {formatDate(spot.created_at)}</small></Surface>)}</div>
+      :<p className="hc-roster-spots__empty">{t("noOpenRosterSpots").replace("{team}",teamName)}</p>}
+    {open&&canPost&&<Surface as="form" className="hc-roster-post-form" onSubmit={submit}><label>{t("positionOpportunityTitle")}<input value={title} onChange={event=>setTitle(event.target.value)} required maxLength={160} placeholder={t("rosterTitlePlaceholder")}/></label><label>{t("season")}<input value={season} onChange={event=>setSeason(event.target.value)} maxLength={80} placeholder={t("seasonPlaceholder")}/></label><label>{t("details")}<textarea value={description} onChange={event=>setDescription(event.target.value)} maxLength={2000} rows={3} placeholder={t("rosterDetailsPlaceholder")}/></label>{message&&<p role="status">{message}</p>}<button type="submit" className="btn" disabled={busy}>{busy?t("posting"):t("publishRosterSpot")}</button></Surface>}
     {!open&&message&&<p role="status" className="muted">{message}</p>}
-  </section>;
+  </Surface>;
 }

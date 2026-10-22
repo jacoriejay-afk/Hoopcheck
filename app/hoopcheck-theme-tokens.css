@@ -14,6 +14,12 @@
   --hc-nav-fg: #FFFFFF;
   --hc-orange: #FF5A1F;
   --hc-focus-ring: #FF5A1F;
+  /* Backward-compatible aliases; canonical values live in this file. */
+  --hc-surface-bg: var(--hc-surface-raised);
+  --hc-surface-fg: var(--hc-foreground);
+  --hc-surface-muted: var(--hc-foreground-muted);
+  --hc-surface-border: var(--hc-border);
+  --hc-control-knob: #FFFFFF;
   color-scheme: light;
 }
 html.theme-light {
@@ -126,18 +132,6 @@ html.theme-dark :where(.nav,.topnav,.site-header-global) :where(a,button,span,sv
 html.theme-light :where(.nav,.topnav,.site-header-global) :where(a,button,span,svg) { color: var(--hc-nav-fg); }
 html.theme-dark .hc-team-logo-tile, html.theme-dark .hc-team-profile-logo {
   background: var(--hc-surface-soft) !important; color: var(--hc-foreground) !important; border-color: var(--hc-border) !important;
-}
-html.theme-dark main [style*="background: rgb(255, 255, 255)"],
-html.theme-dark main [style*="background-color: rgb(255, 255, 255)"],
-html.theme-dark main [style*="background: #FFFFFF"],
-html.theme-dark main [style*="background: #ffffff"],
-html.theme-dark main [style*="background-color: #FFFFFF"],
-html.theme-dark main [style*="background-color: #ffffff"],
-html.theme-dark main [style*="background: rgb(247, 247, 245)"],
-html.theme-dark main [style*="background-color: rgb(247, 247, 245)"],
-html.theme-dark main [style*="background: #F7F7F5"],
-html.theme-dark main [style*="background: #f7f7f5"] {
-  background: var(--hc-surface-raised) !important; color: var(--hc-foreground) !important; border-color: var(--hc-border) !important;
 }
 @media (min-width:768px) {
   html.theme-dark main :where(.grid,.hc-shared-directory-tile-grid,.hc-team-entity-profile,.team-roster-spots),

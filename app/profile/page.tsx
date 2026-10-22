@@ -71,8 +71,8 @@ export default function ProfilePage() {
       <main className="page-shell hc-member-profile-page">
         <div className="page-container">
           <section className="hero-card">
-            <h1>Profile unavailable</h1>
-            <Link href="/account" className="btn">Edit Account</Link>
+            <h1>{t("profileUnavailable")}</h1>
+            <Link href="/account" className="btn">{t("editAccount")}</Link>
           </section>
         </div>
       </main>
@@ -94,7 +94,7 @@ export default function ProfilePage() {
               <div className="hc-member-profile-avatar">
                 {p.avatar_url ? <img src={p.avatar_url} alt={name + " profile photo"} /> : <span>{initials}</span>}
               </div>
-              {p.avatar_url && p.avatar_moderation_status === "pending" && <span className="hc-profile-photo-state">Photo review</span>}
+              {p.avatar_url && p.avatar_moderation_status === "pending" && <span className="hc-profile-photo-state">{t("photoReview")}</span>}
             </div>
             <div className="hc-member-profile-copy">
               <p className="eyebrow">{t("account").toUpperCase()}</p>
@@ -110,11 +110,11 @@ export default function ProfilePage() {
             <Link href="/account#profile-editor" className="btn hc-profile-edit-button">{t("editProfile")}</Link>
             {p.account_type === "player" && (p.profile_visibility === "public" ? (
               <Link href={"/players/" + encodeURIComponent(p.id)} className="btn dark hc-profile-public-button">
-                <span className="hc-profile-public-full">View Public Profile</span><span className="hc-profile-public-short">Public Profile</span><HoopIcon name="arrow-up-right" size={16} />
+                <span className="hc-profile-public-full">{t("profilePublic")}</span><span className="hc-profile-public-short">{t("profilePublic")}</span><HoopIcon name="arrow-up-right" size={16} />
               </Link>
             ) : (
               <Link href="/account#profile-editor" className="btn dark hc-profile-public-button">
-                <span>Profile Is Not Public</span><HoopIcon name="arrow-up-right" size={16} />
+                <span>{t("profilePrivate")}</span><HoopIcon name="arrow-up-right" size={16} />
               </Link>
             ))}
           </div>
@@ -122,44 +122,44 @@ export default function ProfilePage() {
 
         </section>
 
-        <section className="hc-profile-overview" aria-label="Profile overview">
+        <section className="hc-profile-overview" aria-label={t("profileOverview")}>
           {profileCompletion < 100 && <div className="hc-profile-completion">
             <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href="/account#profile-editor">Complete profile <span aria-hidden="true">→</span></Link></div>
-            <div className="hc-profile-completion-track" role="progressbar" aria-label="Profile completeness" aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}><span style={{width: profileCompletion + "%"}} /></div>
+            <div className="hc-profile-completion-track" role="progressbar" aria-label={t("profileCompleteness")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}><span style={{width: profileCompletion + "%"}} /></div>
           </div>}
           <div className="grid compact-grid">
             <Surface className="card hc-profile-info-card">
-              <span className="card-kicker">BASKETBALL</span>
-              <h2>{p.basketball_type === "womens" ? "Women’s Basketball" : "Men’s Basketball"}</h2>
-              <p className="muted">{p.account_type}</p>
+              <span className="card-kicker">{t("basketball")}</span>
+              <h2>{p.basketball_type === "womens" ? t("womensBasketball") : t("mensBasketball")}</h2>
+              <p className="muted">{t(p.account_type)}</p>
             </Surface>
             {p.account_type === "player" && (
               <Surface className="card hc-profile-info-card">
-                <span className="card-kicker">CAREER</span>
-                {p.position ? <h2>{p.position}</h2> : <p className="hc-profile-empty-value">Position not listed <Link href="/account#profile-editor">Add <span aria-hidden="true">→</span></Link></p>}
-                <p className="muted">{p.years_pro == null ? "Years pro not listed" : p.years_pro + " years pro"}{" · "}{p.free_agent ? "Free Agent" : p.current_team || "Team not listed"}</p>
+                <span className="card-kicker">{t("career")}</span>
+                {p.position ? <h2>{p.position}</h2> : <p className="hc-profile-empty-value">{t("positionNotListed")} <Link href="/account#profile-editor">{t("add")} <span aria-hidden="true">→</span></Link></p>}
+                <p className="muted">{p.years_pro == null ? t("yearsProNotListed") : p.years_pro + " " + t("yearsPro")}{" · "}{p.free_agent ? t("freeAgent") : p.current_team || t("teamNotListed")}</p>
               </Surface>
             )}
             <Surface className="card hc-profile-info-card">
-              <span className="card-kicker">LOCATION</span>
-              {p.current_country ? <h2>{p.current_country}</h2> : <p className="hc-profile-empty-value">Not listed <Link href="/account#profile-editor">Add <span aria-hidden="true">→</span></Link></p>}
-              <p className="muted">{p.hometown || p.nationality || "Location details not listed"}</p>
+              <span className="card-kicker">{t("location")}</span>
+              {p.current_country ? <h2>{p.current_country}</h2> : <p className="hc-profile-empty-value">{t("notListed")} <Link href="/account#profile-editor">{t("add")} <span aria-hidden="true">→</span></Link></p>}
+              <p className="muted">{p.hometown || p.nationality || t("locationDetailsNotListed")}</p>
             </Surface>
           </div>
         </section>
 
         <section className="dashboard-card compact-section">
-          <p className="eyebrow">ABOUT</p>
-          <h2>Profile details</h2>
-          <p className="muted">{p.bio || "Add a bio from Edit Profile."}</p>
-          {p.interests && <p><strong>Interests:</strong> {p.interests}</p>}
-          {p.favorite_leagues && <p><strong>Favorite leagues:</strong> {p.favorite_leagues}</p>}
+          <p className="eyebrow">{t("about")}</p>
+          <h2>{t("profileDetails")}</h2>
+          <p className="muted">{p.bio || t("addBioFromEditProfile")}</p>
+          {p.interests && <p><strong>{t("interests")}</strong> {p.interests}</p>}
+          {p.favorite_leagues && <p><strong>{t("favoriteLeagues")}</strong> {p.favorite_leagues}</p>}
         </section>
 
         <section className="dashboard-card compact-section">
-          <p className="eyebrow">ACCOUNT</p>
-          <h2>Account controls</h2>
-          <p className="muted">Sign out, hide your profile, or permanently delete your HoopCheck account.</p>
+          <p className="eyebrow">{t("account")}</p>
+          <h2>{t("accountControls")}</h2>
+          <p className="muted">{t("hideProfileOrDelete")}</p>
           <div className="actions">
             <button type="button" className="btn dark" onClick={async () => {
               await supabase.auth.signOut();
@@ -175,7 +175,7 @@ export default function ProfilePage() {
               }
               await supabase.auth.signOut();
               window.location.replace("/login");
-            }}>Deactivate Account</button>
+            }}>{t("deactivateAccount")}</button>
             <button type="button" className="btn hc-danger-button" onClick={async () => {
               if (!window.confirm("Delete your HoopCheck account permanently? This cannot be undone.")) return;
               const res = await fetch("/api/account/delete", { method: "POST" });
@@ -186,13 +186,13 @@ export default function ProfilePage() {
               }
               await supabase.auth.signOut();
               window.location.replace("/");
-            }}>Delete Account</button>
+            }}>{t("deleteAccount")}</button>
           </div>
         </section>
 
         <div className="bottom-back">
           <button type="button" className="btn dark" onClick={() => window.history.back()}>
-            <HoopIcon name="arrow-right" size={16} style={{ transform: "rotate(180deg)" }} /> Back
+            <HoopIcon name="arrow-right" size={16} style={{ transform: "rotate(180deg)" }} /> {t("back")}
           </button>
         </div>
       </div>
