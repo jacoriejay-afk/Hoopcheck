@@ -113,7 +113,7 @@ export default function LanguageProvider({ children, initialLanguage = "en" }: {
   const value = useMemo<LanguageContextValue>(() => {
     const locale = locales[language];
     return {
-      language, setLanguage, t: (key) => extraLabels[language]?.[key] ?? labels[language]?.[key] ?? (language === "en" ? key : `[${language}:${key}]`),
+      language, setLanguage, t: (key) => extraLabels[language]?.[key] ?? labels[language]?.[key] ?? extraLabels.en?.[key] ?? labels.en?.[key] ?? key,
       formatNumber: (number, options) => new Intl.NumberFormat(locale, options).format(number),
       formatDate: (date, options) => new Intl.DateTimeFormat(locale, options).format(new Date(date)),
       formatRelativeTime: (date) => {
