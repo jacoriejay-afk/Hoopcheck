@@ -13,11 +13,8 @@ export default function FanTeamPosts({ teamId }: { teamId:string }) {
   useEffect(() => {
     let active=true;
     void (async () => {
-      const { data } = await supabase.from("fan_feed_posts")
-        .select("id,author_id,body,image_url,created_at,expires_at,profiles(display_name,avatar_url)")
-        .eq("team_id",teamId).eq("status","approved").gt("expires_at",new Date().toISOString())
-        .order("created_at",{ascending:false}).limit(20);
-      if(active) setPosts((data||[]).map((p:any)=>({...p,profiles:Array.isArray(p.profiles)?p.profiles[0]:p.profiles})) as TeamFanPost[]);
+      const { data } = await supabase.rpc("get_fan_team_hub_posts", { p_team_id: teamId });
+      if(active) setPosts((data||[]).map((p:any)=>({...p,profiles:{display_name:p.display_name,avatar_url:p.avatar_url}})) as TeamFanPost[]);
     })();
     return () => { active=false; };
   },[teamId]);
