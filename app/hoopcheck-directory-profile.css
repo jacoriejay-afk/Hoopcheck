@@ -777,3 +777,24 @@ html.theme-light main .hc-scout-card {
   .hc-leagues-directory-page .hc-team-directory-list { grid-template-columns:repeat(3,minmax(0,1fr))!important; }
   .hc-player-directory-page .hc-player-results { grid-template-columns:repeat(3,minmax(0,1fr))!important; }
 }
+
+
+/* Coach initials use the same clean logo-tile geometry; never a jersey silhouette. */
+.hc-coaches-directory-page .hc-scout-card__jersey {
+  display:grid!important;
+  flex:0 0 48px!important;
+  width:48px!important;
+  height:48px!important;
+  place-items:center!important;
+  clip-path:none!important;
+  padding:4px!important;
+  border:1px solid rgba(15,15,15,.12)!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  color:#171717!important;
+  font-size:14px!important;
+  line-height:1!important;
+}
+.hc-coaches-directory-page .hc-team-directory-row__trust { display:none!important; }
+.hc-coaches-directory-page .hc-scout-card__ticket { border-top:1px solid var(--hc-border)!important; margin-top:14px!important; }
+.hc-coaches-directory-page .hc-scout-card__ticket::before { display:none!important; }
