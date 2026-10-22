@@ -6,6 +6,7 @@ import Logo from "../../components/Logo";
 import { useRouter } from "next/navigation";
 import { HoopIcon, type HoopIconName } from "../../components/HoopCheckUI";
 import { getCachedSession, supabase } from "../../lib/supabase";
+import { useLanguage, type Language } from "../../components/LanguageProvider";
 
 const TERMS_VERSION = "2026-10-01";
 type AccountType = "player" | "coach" | "scout" | "agent" | "fan";
@@ -21,6 +22,7 @@ const ACCOUNT_TYPES: {value:AccountType; title:string; description:string; icon:
 
 export default function SignupPage() {
   const router = useRouter();
+  const { language, setLanguage } = useLanguage();
   const [accountType, setAccountType] = useState<AccountType | null>(null);
   const [firstName,setFirstName]=useState(""); const [lastName,setLastName]=useState("");
   const [username,setUsername]=useState(""); const [position,setPosition]=useState("PG");
@@ -100,7 +102,18 @@ export default function SignupPage() {
   return <main className="auth-page-shell">
     <nav className="nav signup-nav">
       <Link href="/" className="logo signup-logo" aria-label="HoopCheck home"><Logo variant="full" size={38} /></Link>
-      <Link href="/login">Log In</Link>
+      <div className="signup-nav-actions">
+        <label htmlFor="signup-language" className="sr-only">Choose language</label>
+        <select id="signup-language" aria-label="Choose language" value={language} onChange={(event) => setLanguage(event.target.value as Language)} className="signup-language-select">
+          <option value="en">English</option><option value="es">Español</option><option value="fr">Français</option>
+          <option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option>
+          <option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option>
+          <option value="ru">Русский</option><option value="az">Azərbaycanca</option><option value="pl">Polski</option>
+          <option value="zh">简体中文</option><option value="ja">日本語</option><option value="sr">Српски</option>
+          <option value="fi">Suomi</option><option value="he">עברית</option>
+        </select>
+        <Link href="/login">Log In</Link>
+      </div>
     </nav>
     <section className="auth-page signup-page">
       <div className="auth-hero">
