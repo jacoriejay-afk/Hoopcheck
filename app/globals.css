@@ -3203,7 +3203,7 @@ body { background-color: var(--hc-page-bg); }
 .hc-team-directory-row .hc-trust-score--mini { padding:0 12px 12px; }
 .hc-team-directory-row .hc-trust-score__dial strong { font-size:17px; }
 .hc-entity-trust-score { display:flex; justify-content:flex-start; margin:16px 0; padding:14px 16px; border:1px solid var(--hc-border); border-radius:13px; }
-.hc-entity-trust-score .hc-trust-score__copy>span { color:#a43b15; }
+.hc-entity-trust-score .hc-trust-score__copy>span { color:var(--hc-orange); }
 @media(max-width:480px) {
  .hc-entity-trust-score { padding:12px; }
  .hc-trust-score--full { gap:10px; }
