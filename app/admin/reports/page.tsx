@@ -45,8 +45,8 @@ export default function Reports() {
         <header className="topbar">
           <Link href="/admin/directory" className="brand" aria-label="HoopCheck Admin"><Logo variant="full" size={30} /></Link>
           <nav className="topnav">
-            <Link href="/admin/users">Users</Link>
-            <Link href="/admin/reviews">Reviews</Link>
+            <Link href="/admin/users">{t("users")}</Link>
+            <Link href="/admin/reviews">{t("reviews")}</Link>
           </nav>
         </header>
         <section className="hero-card">
