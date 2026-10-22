@@ -895,22 +895,22 @@ html.theme-light .hc-leagues-directory-page .hc-scout-card__identity-copy p,
 html.theme-dark .hc-coaches-directory-page .hc-scout-card__identity-copy p,
 html.theme-light .hc-coaches-directory-page .hc-scout-card__identity-copy p { color:var(--hc-foreground-muted)!important; }
 
-/* The white logo tile intentionally remains white; initials are always ink-dark. */
+/* Logo tiles use theme surfaces; fallback initials always use readable foreground tokens. */
 html.theme-dark .hc-team-logo-tile,
 html.theme-light .hc-team-logo-tile,
 html.theme-dark .hc-coaches-directory-page .hc-scout-card__jersey,
 html.theme-light .hc-coaches-directory-page .hc-scout-card__jersey {
-  background:var(--hc-surface-raised)!important;
-  color:#0A0A0A!important;
-  -webkit-text-fill-color:#0A0A0A!important;
+  background:var(--hc-surface-soft)!important;
+  color:var(--hc-foreground)!important;
+  -webkit-text-fill-color:var(--hc-foreground)!important;
   font-weight:900!important;
 }
 html.theme-dark .hc-team-logo-tile > span,
 html.theme-light .hc-team-logo-tile > span,
 html.theme-dark .hc-coaches-directory-page .hc-scout-card__jersey,
 html.theme-light .hc-coaches-directory-page .hc-scout-card__jersey {
-  color:#0A0A0A!important;
-  -webkit-text-fill-color:#0A0A0A!important;
+  color:var(--hc-foreground)!important;
+  -webkit-text-fill-color:var(--hc-foreground)!important;
 }
 
 /* Shared directory list wrappers should not add a second white frame. */
