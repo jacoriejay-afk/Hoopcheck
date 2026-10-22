@@ -170,7 +170,7 @@ try {
 
       assert.equal(computed.themeClass, theme, `${routeName}: expected html theme class ${theme}, got ${computed.themeClass}`);
       const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
-      const expectedCard = theme === "dark" ? "rgb(17, 17, 17)" : "rgb(255, 255, 255)";
+      const expectedCard = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
       const expectedChip = theme === "dark" ? "rgb(27, 27, 27)" : "rgb(248, 248, 246)";
       assert.equal(computed.body, expectedPage, `${routeName}/${theme}: body background mismatch`);
       assert.equal(computed.pageWrapper, expectedPage, `${routeName}/${theme}: page wrapper background mismatch`);
