@@ -7,6 +7,7 @@ import HoopLoading from "../../components/HoopLoading";
 import { supabase } from "../../lib/supabase";
 import ThemeToast from "../../components/ThemeToast";
 import { useTheme } from "../../components/ThemeProvider";
+import { useLanguage, type Language } from "../../components/LanguageProvider";
 
 type Subscription = {
   plan: "pro" | "premium" | null;
@@ -62,6 +63,7 @@ function SettingsToggle({icon,label,checked,onChange}:{icon:string;label:string;
 
 export default function AccountPage() {
   const { setTheme: setGlobalTheme } = useTheme();
+  const { setLanguage: applyLanguage } = useLanguage();
   const [email, setEmail] = useState("");
   const [userId, setUserId] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -279,10 +281,11 @@ export default function AccountPage() {
       const cookieHasTheme = document.cookie.split(";").some((item) => item.trim().startsWith("hoopcheck-theme="));
       setThemePreference(localTheme && ["system","light","dark"].includes(localTheme) ? localTheme as "system"|"light"|"dark" : theme);
       if (!localTheme && !cookieHasTheme) setGlobalTheme(theme);
-      const language = ["en","es","fr","de","tr","pt","it","el","ar"].includes(data.preferred_language) ? data.preferred_language : "en";
+      const supportedLanguages: Language[] = ["en","es","fr","de","tr","pt","it","el","ar","ru","az","pl","zh","ja","sr","fi","he","lt","uk"];
+      const language = supportedLanguages.includes(data.preferred_language as Language) ? data.preferred_language as Language : "en";
       setPreferredLanguage(language);
       localStorage.setItem("hoopcheck-language", language);
-      window.dispatchEvent(new CustomEvent("hoopcheck-language-change", { detail: language }));
+      applyLanguage(language);
       const notifications = data.notification_preferences && typeof data.notification_preferences === "object" ? data.notification_preferences as Record<string, unknown> : {};
       setNotificationPreferences({
         game_chat_alerts: notifications.game_chat_alerts !== false,
@@ -312,12 +315,12 @@ export default function AccountPage() {
   }
 
   async function changeLanguage(next: string) {
-    setPreferredLanguage(next);
-    localStorage.setItem("hoopcheck-language", next);
-    document.documentElement.lang = next;
-    document.documentElement.dir = next === "ar" ? "rtl" : "ltr";
-    window.dispatchEvent(new CustomEvent("hoopcheck-language-change", { detail: next }));
-    await saveSetting({ preferred_language: next }, "Language saved.");
+    const supportedLanguages: Language[] = ["en","es","fr","de","tr","pt","it","el","ar","ru","az","pl","zh","ja","sr","fi","he","lt","uk"];
+    if (!supportedLanguages.includes(next as Language)) return;
+    const language = next as Language;
+    setPreferredLanguage(language);
+    applyLanguage(language); // Update the root provider immediately so mounted screens re-render.
+    await saveSetting({ preferred_language: language }, "Language saved.");
   }
 
   async function changeNotification(key: keyof typeof notificationPreferences, checked: boolean) {
@@ -381,7 +384,7 @@ export default function AccountPage() {
         <SettingsGroup title="PREFERENCES">
           <div className="hc-setting-row"><SettingsGlyph name="moon"/><div className="hc-setting-copy"><strong>Dark Mode</strong><small>{themePreference === "system" ? "Follows your device" : themePreference === "dark" ? "On" : "Off"}</small></div><button type="button" role="switch" aria-checked={themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)} className={"hc-switch "+((themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)) ? "is-on" : "")} onClick={() => changeTheme((themePreference === "system" ? (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) : themePreference === "dark") ? "light" : "dark")}><span/></button></div>
           {themePreference !== "system" && <div className="hc-setting-subrow"><button type="button" className="hc-text-button" onClick={() => changeTheme("system")}>Use device setting</button></div>}
-          <div className="hc-setting-row"><SettingsGlyph name="globe"/><div className="hc-setting-copy"><strong>Language</strong><small>Choose your app language</small></div><select aria-label="Language" className="hc-setting-select" value={preferredLanguage} onChange={e=>changeLanguage(e.target.value)}><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option></select></div>
+          <div className="hc-setting-row"><SettingsGlyph name="globe"/><div className="hc-setting-copy"><strong>Language</strong><small>Choose your app language</small></div><select aria-label="Language" className="hc-setting-select" value={preferredLanguage} onChange={e=>changeLanguage(e.target.value)}><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option><option value="ru">Русский</option><option value="az">Azərbaycanca</option><option value="pl">Polski</option><option value="zh">中文</option><option value="ja">日本語</option><option value="sr">Српски</option><option value="fi">Suomi</option><option value="he">עברית</option><option value="lt">Lietuvių</option><option value="uk">Українська</option></select></div>
           <SettingsToggle icon="message" label="Game chat alerts" checked={notificationPreferences.game_chat_alerts} onChange={v=>changeNotification("game_chat_alerts",v)} />
           <SettingsToggle icon="user-plus" label="New follower" checked={notificationPreferences.new_follower} onChange={v=>changeNotification("new_follower",v)} />
           <SettingsToggle icon="star" label="Review on a team I follow" checked={notificationPreferences.team_reviews} onChange={v=>changeNotification("team_reviews",v)} />
