@@ -271,7 +271,7 @@ export default function DashboardPage() {
                     <span className="hc-mobile-card-copy"><strong>FIND FAN</strong><small>Connect with fans like you</small></span>
                     <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
                   </Link>
-                  <Link href="/live-games" className="hc-mobile-quick-card hc-mobile-quick-card-fan-wide">
+                  <Link href="/live-games" className="hc-mobile-quick-card hc-mobile-quick-card-fan-wide" style={profile?.account_type === "fan" ? { gridColumn: "1 / -1" } : undefined}>
                     <span className="hc-mobile-icon hc-icon-green" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
                     <span className="hc-mobile-card-copy"><strong>LIVE GAME CHATS</strong><small>Chat during real games</small></span>
                     <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
@@ -315,17 +315,17 @@ export default function DashboardPage() {
             <div className="hc-mobile-category-list">
               <Link href="/teams" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-orange" aria-hidden="true"><CategoryIconTile category="teams" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>{t("professionalTeams")}</strong><small>{t("researchClubsBeforeSign")}</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("professionalTeams")}</strong><small>{profile?.account_type === "fan" ? "Follow your team" : t("researchClubsBeforeSign")}</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/womens" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-pink" aria-hidden="true"><CategoryIconTile category="womens" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>{t("womensBasketball")}</strong><small>{t("discoverWomenWorldwide")}</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("womensBasketball")}</strong><small>{profile?.account_type === "fan" ? "Follow your team and see what the players say" : t("discoverWomenWorldwide")}</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/coaches" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-blue" aria-hidden="true"><CategoryIconTile category="coaches" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>{t("coaches")}</strong><small>{t("learnFromPlayerFeedback")}</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("coaches")}</strong><small>{profile?.account_type === "fan" ? "See what the players say" : t("learnFromPlayerFeedback")}</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
               <Link href="/leagues" className="hc-mobile-category-row">
@@ -340,7 +340,7 @@ export default function DashboardPage() {
               </Link>
               <Link href="/search" className="hc-mobile-category-row">
                 <span className="hc-mobile-category-icon hc-icon-yellow" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
-                <span className="hc-mobile-card-copy"><strong>{t("reviewsExperiences")}</strong><small>{t("makeCareerDecisions")}</small></span>
+                <span className="hc-mobile-card-copy"><strong>{t("reviewsExperiences")}</strong><small>{profile?.account_type === "fan" ? "See what the players say" : t("makeCareerDecisions")}</small></span>
                 <span className="hc-mobile-row-arrow" aria-hidden="true"><HoopIcon name="arrow-right" size={17} /></span>
               </Link>
             </div>
