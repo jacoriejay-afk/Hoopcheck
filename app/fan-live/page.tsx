@@ -19,7 +19,8 @@ const roomOpen = (game:Game, now=new Date()) => {
   const tip = Date.parse(game.scheduled_at || game.started_at || "");
   if (Number.isFinite(tip) && now.getTime() < tip - 30*60_000) return false;
   const end = Date.parse(game.ends_at || "");
-  return !Number.isFinite(end) || now.getTime() < end;
+  if (Number.isFinite(end)) return now.getTime() < end;
+  return !Number.isFinite(tip) || now.getTime() < tip + 4*60*60_000;
 };
 
 export default function FanLivePage() {
@@ -175,6 +176,7 @@ export default function FanLivePage() {
   }
 
   async function retry(item:ChatMessage){
+    lastSentRef.current=0;
     setMessages(current=>current.filter(m=>m.id!==item.id));
     await send(item.body);
   }
