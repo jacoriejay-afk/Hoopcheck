@@ -50,7 +50,7 @@ export default function FanFeedPage() {
     const { data, error } = await query;
     if (error) { setMessage(error.message); return; }
     const rows = (data || []).filter((p: any) => fanIds.includes(p.author_id) || teamIds.includes(p.team_id))
-      .map((p: any) => ({ ...p, profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles, teams: Array.isArray(p.teams) ? p.teams[0] : p.teams }));
+      .map((p: any) => ({ ...p, likes: p.fan_feed_likes || [], profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles, teams: Array.isArray(p.teams) ? p.teams[0] : p.teams }));
     setPosts(rows as FanPost[]);
     setLiked(new Set(rows.filter((p: any) => (p.fan_feed_likes || []).some((l: any) => l.user_id === uid)).map((p: any) => p.id)));
     const ids = rows.map((p: any) => p.id);
