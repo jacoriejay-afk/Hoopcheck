@@ -23,7 +23,7 @@
 .hc-dossier-overview-stats strong { color:#fff; font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif; font-size:29px; line-height:1; }
 .hc-dossier-overview-stats small { color:#aaa; font-size:10px; }
 .hc-dossier-accent { position:absolute; inset:0 auto 0 0; width:4px; background:var(--athletic-orange); }
-.hc-profile-panel { overflow:hidden; border:1px solid #e1e4e8; background:#fff; }
+.hc-profile-panel { overflow:hidden; border:1px solid #e1e4e8; background:var(--hc-surface-raised); }
 .hc-profile-panel-heading { display:flex; flex-wrap:wrap; align-items:end; justify-content:space-between; gap:12px; padding:18px 20px; border-bottom:1px solid #e1e4e8; }
 .hc-profile-panel-heading h2 { margin:0; color:#111; font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif; font-size:clamp(21px,3vw,27px); font-weight:950; letter-spacing:-.01em; line-height:1.05; text-transform:uppercase; }
 .hc-profile-record-count { flex:0 0 auto; border:1px solid #e1e4e8; border-radius:8px; padding:7px 9px; color:#555; font-size:9px; font-weight:900; letter-spacing:.09em; }
