@@ -5837,7 +5837,7 @@ html.theme-light .hc-template-home :where(.hc-template-hero,.hc-template-explore
 }
 html.theme-dark .hc-template-home :where(h1,h2,h3,h4,p,span,label,small,strong,li,a) ,
 html.theme-light .hc-template-home :where(h1,h2,h3,h4,p,span,label,small,strong,li,a) {
-  color: inherit;
+  color: inherit !important;
 }
 html.theme-dark .hc-template-home :where(.eyebrow,.card-kicker,.hc-template-category-icon,.hc-template-section-kicker) ,
 html.theme-light .hc-template-home :where(.eyebrow,.card-kicker,.hc-template-category-icon,.hc-template-section-kicker) {
