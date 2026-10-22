@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
+import { useLanguage } from "../../../components/LanguageProvider";
 import { submitReviewReport } from "../../../lib/review-reports";
 import HoopLoading from "../../../components/HoopLoading";
 import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
@@ -114,6 +115,7 @@ function RatingBar({
 }
 
 export default function LeagueDetailPage() {
+  const { t } = useLanguage();
   const params = useParams();
 
   const id = Array.isArray(params.id)
@@ -432,7 +434,7 @@ export default function LeagueDetailPage() {
               href="/leagues"
               className="btn"
             >
-              Back To Leagues
+              {t("backToLeagues")}
             </Link>
           </div>
         </section>
@@ -543,7 +545,7 @@ export default function LeagueDetailPage() {
 
         <p>
           {league.country ||
-            "Country not listed"}
+            t("countryNotListed")}
         </p>
 
         {league.level && (
@@ -569,14 +571,14 @@ export default function LeagueDetailPage() {
             }
             className="btn"
           >
-            {accountType === "player" ? (hasAccess ? "Write A Review" : "Become A Member To Review") : "Back To Leagues"}
+            {accountType === "player" ? (hasAccess ? t("writeAReview") : t("becomeMemberToReview")) : "{t("backToLeagues")}"}
           </Link>
 
           <Link
             href="/leagues"
             className="btn dark"
           >
-            Back To Leagues
+            {t("backToLeagues")}
           </Link>
         </div>
       </section>
@@ -584,7 +586,7 @@ export default function LeagueDetailPage() {
       <section className="hero">
         <div className="eyebrow">Team Membership History</div>
         <h2>Teams by season</h2>
-        {teamHistory.length ? <div className="grid" style={{ marginTop: "25px" }}>{teamHistory.map((item) => <div className="card" key={item.id}><div className="eyebrow">{item.season || "Season not listed"}</div><h3>{item.team?.name || "Team not listed"}</h3><p>{item.start_date || "Start not listed"} → {item.end_date || "Present"}</p></div>)}</div> : <div className="card"><p>No historical team memberships have been added yet.</p></div>}
+        {teamHistory.length ? <div className="grid" style={{ marginTop: "25px" }}>{teamHistory.map((item) => <div className="card" key={item.id}><div className="eyebrow">{item.season || t("seasonNotListed")}</div><h3>{item.team?.name || t("teamNotListed")}</h3><p>{item.start_date || t("startNotListed")} → {item.end_date || t("present")}</p></div>)}</div> : <div className="card"><p>{t("noHistoricalMemberships")}</p></div>}
       </section>
 
       <section className="hero">
@@ -610,7 +612,7 @@ export default function LeagueDetailPage() {
                 <p>
                   {team.city && team.country
                     ? team.city + ", " + team.country
-                    : team.country || team.city || "Location not listed"}
+                    : team.country || team.city || t("locationNotListed")}
                 </p>
                 <span className="btn">View Team</span>
               </Link>
@@ -697,7 +699,7 @@ export default function LeagueDetailPage() {
             <div className="card" style={{ position: "relative", overflow: "hidden" }}>
               <div className="eyebrow">League Breakdown</div>
               {hasAccess ? (
-                reviews.length === 0 ? <p>No approved reviews yet.</p> : <>
+                reviews.length === 0 ? <p>{t("noApprovedReviewsYet")}</p> : <>
                   <RatingBar label="Communication" value={communication} />
                   <RatingBar label="Professionalism" value={professionalism} />
                   <RatingBar label="Development" value={development} />
@@ -773,7 +775,7 @@ export default function LeagueDetailPage() {
               0 ? (
               <div className="card">
                 <h3>
-                  No approved reviews yet.
+                  {t("noApprovedReviewsYet")}
                 </h3>
 
                 <p>
@@ -786,7 +788,7 @@ export default function LeagueDetailPage() {
                   href={`/leagues/${league.id}/review`}
                   className="btn"
                 >
-                  Write A Review
+                  {t("writeAReview")}
                 </Link>
               </div>
             ) : (
