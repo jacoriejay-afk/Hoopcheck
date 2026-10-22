@@ -43,7 +43,7 @@ export default function FanFeedPage() {
     setTeams(followedTeams);
     if (!teamId && followedTeams.length) setTeamId(followedTeams[0].id);
     if (!fanIds.length && !teamIds.length) { setPosts([]); return; }
-    let query = supabase.from("fan_feed_posts")
+    const query = supabase.from("fan_feed_posts")
       .select("id,author_id,team_id,body,image_url,created_at,expires_at,profiles!fan_feed_posts_author_id_fkey(id,display_name,avatar_url,account_type),teams(id,name,logo_url),fan_feed_likes(user_id),fan_feed_comments(id)")
       .gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(100);
     const { data, error } = await query;
