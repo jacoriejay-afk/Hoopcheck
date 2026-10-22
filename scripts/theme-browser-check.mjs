@@ -128,7 +128,7 @@ try {
       });
 
       const path = routeName === "dashboard" ? "/dashboard" : "/feed";
-      await page.goto(baseURL + path, { waitUntil: "networkidle", timeout: 60000 });
+      await page.goto(baseURL + path, { waitUntil: "domcontentloaded", timeout: 30000 });
       console.log("THEME_BROWSER_PAGE", JSON.stringify({ routeName, theme, url: page.url(), title: await page.title(), body: (await page.locator("body").innerText().catch(() => "")).slice(0, 240) }));
       const wrapperSelector = routeName === "dashboard" ? "main.hc-dashboard-shell" : "main.hc-feed-page";
       await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
@@ -175,6 +175,79 @@ try {
       await context.close();
     }
   }
+
+  const mainRoutes = [
+    "/", "/dashboard", "/feed", "/account", "/settings", "/profile", "/search",
+    "/teams", "/coaches", "/leagues", "/players", "/womens", "/directory",
+    "/reviews", "/membership", "/notifications", "/support", "/verification",
+    "/privacy-center", "/privacy", "/terms", "/community-guidelines", "/login",
+    "/signup", "/onboarding", "/fan-live", "/live-games", "/partners", "/copyright",
+  ];
+  const routeSweepResults = [];
+  for (const theme of ["dark", "light"]) {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const encodedSession = "base64-" + btoa(unescape(encodeURIComponent(JSON.stringify(session))))
+      .replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+    await context.addCookies([
+      { name: "hoopcheck-theme", value: theme, url: baseURL },
+      { name: "sb-ci-auth-token", value: encodedSession, url: baseURL },
+    ]);
+    const page = await context.newPage();
+    await page.addInitScript((themePreference) => { localStorage.setItem("hoopcheck-theme", themePreference); }, theme);
+    await page.route("https://ci.invalid/**", async (route) => {
+      const request = route.request();
+      const url = new URL(request.url());
+      const cors = {
+        "access-control-allow-origin": baseURL,
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS",
+        "access-control-allow-headers": "authorization,apikey,content-type,prefer,accept,range,x-client-info",
+      };
+      if (request.method() === "OPTIONS") {
+        await route.fulfill({ status: 204, headers: cors, body: "" });
+        return;
+      }
+      let data = [];
+      if (url.pathname === "/auth/v1/user") data = user;
+      else if (url.pathname.includes("/rest/v1/profiles")) data = request.headers()["accept"]?.includes("vnd.pgrst.object") ? profile : [];
+      else if (url.pathname.includes("/rest/v1/subscriptions")) data = request.headers()["accept"]?.includes("vnd.pgrst.object") ? subscription : [];
+      else if (url.pathname.includes("/rest/v1/rpc/get_current_user_admin_role")) data = "member";
+      await route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(data) });
+    });
+    for (const requestedPath of mainRoutes) {
+      let navigationError = null;
+      try {
+        await page.goto(baseURL + requestedPath, { waitUntil: "domcontentloaded", timeout: 20000 });
+        await page.waitForTimeout(300);
+      } catch (error) {
+        navigationError = error instanceof Error ? error.message : String(error);
+      }
+      const result = await page.evaluate(({ requestedPath, navigationError }) => {
+        const main = document.querySelector("main");
+        const color = (element) => element ? getComputedStyle(element).backgroundColor : null;
+        return {
+          requestedPath,
+          resolvedPath: location.pathname,
+          themeClass: document.documentElement.classList.contains("theme-dark") ? "dark" :
+            document.documentElement.classList.contains("theme-light") ? "light" : "missing",
+          body: color(document.body),
+          pageWrapper: color(main),
+          mainClass: main?.className || null,
+          navigationError,
+        };
+      }, { requestedPath, navigationError });
+      const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
+      const errors = [];
+      if (result.themeClass !== theme) errors.push("html theme class mismatch");
+      if (result.body !== expectedPage) errors.push("body background mismatch");
+      if (result.pageWrapper && result.pageWrapper !== expectedPage) errors.push("main background mismatch");
+      if (result.navigationError) errors.push("navigation error");
+      routeSweepResults.push({ theme, ...result, status: errors.length ? "FAIL" : result.pageWrapper ? "PASS" : "NO_MAIN", reason: errors.join("; ") || (result.pageWrapper ? "" : "route rendered no main element") });
+    }
+    await context.close();
+  }
+  console.log("THEME_ROUTE_SWEEP=" + JSON.stringify(routeSweepResults, null, 2));
+
 } finally {
   await browser.close();
 }
