@@ -167,7 +167,7 @@ export default function SettingsPage() {
             <div className="motion-demo"><span /><span /><span /></div>
           </section>
         </div>
-        <ThemeToast className="settings-save" tone={saving ? "info" : "success"}>{saving ? t("saving") : saveMessage || t("saved") + " Other preferences save automatically."}</ThemeToast>
+        <ThemeToast className="settings-save" tone={saving ? "info" : "success"}>{saving ? t("saving") : saveMessage || t("saved") + " " + t("otherPreferencesAutoSave")}</ThemeToast>
       </section>
     </main>
   );
