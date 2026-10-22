@@ -98,7 +98,7 @@ const browser = await chromium.launch({ channel: "chrome", headless: true, args:
 const results = [];
 try {
   for (const theme of ["dark", "light"]) {
-    for (const routeName of ["dashboard", "feed"]) {
+    for (const routeName of ["dashboard", "feed", "admin"]) {
       const context = await browser.newContext({
         viewport: { width: 390, height: 844 },
         deviceScaleFactor: 1,
@@ -135,7 +135,8 @@ try {
         if (url.pathname === "/auth/v1/user") data = user;
         else if (url.pathname.includes("/rest/v1/profiles")) data = profile;
         else if (url.pathname.includes("/rest/v1/subscriptions")) data = subscription;
-        else if (url.pathname.includes("/rest/v1/rpc/get_current_user_admin_role")) data = "member";
+        else if (url.pathname.includes("/rest/v1/rpc/is_current_user_admin_or_moderator")) data = true;
+        else if (url.pathname.includes("/rest/v1/rpc/get_current_user_admin_role")) data = "admin";
         else if (url.pathname.includes("/rest/v1/feed_posting_activity")) data = [];
         else if (url.pathname.includes("/rest/v1/player_contact_requests")) data = [];
         else if (url.pathname.includes("/rest/v1/follow_relationships")) data = [];
@@ -154,10 +155,10 @@ try {
         });
       });
 
-      const path = routeName === "dashboard" ? "/dashboard" : "/feed";
+      const path = routeName === "dashboard" ? "/dashboard" : routeName === "feed" ? "/feed" : "/admin/directory";
       await page.goto(baseURL + path, { waitUntil: "domcontentloaded", timeout: 30000 });
       console.log("THEME_BROWSER_PAGE", JSON.stringify({ routeName, theme, url: page.url(), title: await page.title(), body: (await page.locator("body").innerText().catch(() => "")).slice(0, 240) }));
-      const wrapperSelector = routeName === "dashboard" ? "main.hc-dashboard-shell" : "main.hc-feed-page";
+      const wrapperSelector = routeName === "dashboard" ? "main.hc-dashboard-shell" : routeName === "feed" ? "main.hc-feed-page" : "main.admin-directory-shell";
       await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
       if (routeName === "feed") {
         await page.locator(".hc-feed-composer").waitFor({ state: "visible", timeout: 30000 });
