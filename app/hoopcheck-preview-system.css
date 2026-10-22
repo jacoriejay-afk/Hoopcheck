@@ -5674,3 +5674,26 @@ html.theme-dark main:not(.hc-template-home) :where(input,select,textarea) {
   border-color: var(--hc-border) !important;
   -webkit-text-fill-color: var(--hc-input-fg) !important;
 }
+
+
+/* Light-mode counterpart: the same token contract applies in both directions. */
+html.theme-light .hc-dashboard-shell :where(.dashboard-card, .card, .hero-card, .quick-card, .settings-card, .hc-command-center, .hc-command-tile, .hc-mobile-quick-card, .hc-mobile-category-list, .hc-mobile-category-row, .hc-template-category, .hc-template-panel, .fan-feature-card, .hc-player-stats > *, .hc-dashboard-section, .hc-dashboard-panel) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light .hc-dashboard-shell :where(h1,h2,h3,h4,p,span,label,small,strong,li,a,div) { color: inherit; }
+html.theme-light main:not(.hc-template-home) :where(.card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,.hc-mobile-quick-card,.hc-mobile-category-row,.hc-template-panel,.hc-template-category,.hc-template-directory-links > a) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light main:not(.hc-template-home) :where(.card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,.hc-mobile-quick-card,.hc-mobile-category-row,.hc-template-panel,.hc-template-category,.hc-template-directory-links > a) :where(h1,h2,h3,h4,p,span,label,small,strong,li) {
+  color: inherit !important;
+}
+html.theme-light main:not(.hc-template-home) :where(input,select,textarea) {
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+  -webkit-text-fill-color: var(--hc-input-fg) !important;
+}
