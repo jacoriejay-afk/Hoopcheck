@@ -37,13 +37,13 @@ export default function ForgotPasswordScreen() {
   );
 }
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F5F7FA" }, flex: { flex: 1 },
+  safe: { flex: 1, backgroundColor: "#050505" }, flex: { flex: 1 },
   container: { flex: 1, justifyContent: "center", padding: 24 },
-  title: { fontSize: 29, fontWeight: "800", color: "#101827" },
-  subtitle: { color: "#586579", fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 20 },
+  title: { fontSize: 29, fontWeight: "800", color: "#FFFFFF" },
+  subtitle: { color: "#BDBDBD", fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 20 },
   label: { color: "#253247", fontWeight: "700", marginBottom: 8 },
-  input: { minHeight: 50, borderColor: "#D5DCE5", borderWidth: 1, borderRadius: 10, backgroundColor: "#FFFFFF", paddingHorizontal: 14, color: "#101827", fontSize: 16 },
-  button: { minHeight: 52, borderRadius: 10, backgroundColor: "#101827", alignItems: "center", justifyContent: "center", marginTop: 24 },
+  input: { minHeight: 50, borderColor: "#D5DCE5", borderWidth: 1, borderRadius: 10, backgroundColor: "#111111", paddingHorizontal: 14, color: "#FFFFFF", fontSize: 16 },
+  button: { minHeight: 52, borderRadius: 10, backgroundColor: "#050505", alignItems: "center", justifyContent: "center", marginTop: 24 },
   dim: { opacity: 0.65 }, buttonText: { color: "#FFFFFF", fontWeight: "800" },
   link: { color: "#263B59", fontWeight: "700", textAlign: "center", marginTop: 24 },
 });
