@@ -35,7 +35,7 @@ export default function SettingsPage() {
     const localTheme = localStorage.getItem("hoopcheck-theme");
     const localLanguage = localStorage.getItem("hoopcheck-language");
     if (localTheme) setTheme(normalizeTheme(localTheme));
-    if (localLanguage && ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"].includes(localLanguage)) {
+    if (localLanguage && ["en", "es", "fr", "de", "it", "pt", "tr", "ru", "el", "sr", "pl", "lt", "uk"].includes(localLanguage)) {
       setLanguage(localLanguage as Language);
     }
 
@@ -57,7 +57,7 @@ export default function SettingsPage() {
       setIsPlayer(profile?.account_type === "player");
       const cookieHasTheme = document.cookie.split(";").some((item) => item.trim().startsWith("hoopcheck-theme="));
       if (profile?.theme_preference && !localTheme && !cookieHasTheme) setTheme(normalizeTheme(profile.theme_preference));
-      if (profile?.preferred_language && ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"].includes(profile.preferred_language)) {
+      if (profile?.preferred_language && ["en", "es", "fr", "de", "it", "pt", "tr", "ru", "el", "sr", "pl", "lt", "uk"].includes(profile.preferred_language)) {
         setLanguage(profile.preferred_language as Language);
       }
       if (typeof prefs?.notifications_enabled === "boolean") setNotifications(prefs.notifications_enabled);
@@ -134,7 +134,7 @@ export default function SettingsPage() {
             <span className="card-kicker">{t("language").toUpperCase()}</span>
             <h2>{t("chooseLanguage")}</h2>
             <p className="muted">Choose the interface language you want HoopCheck to use. Your preference is saved to your account and this device.</p>
-            <select aria-label={t("chooseLanguage")} className="language-select" value={language} onChange={(e) => setLanguage(e.target.value as Language)}>
+            <select aria-label={t("chooseLanguage")} className="language-select" value={language} onChange={(e) => { const next = e.target.value as Language; setLanguage(next); void save(theme, notifications, next); }}>
               <option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="it">Italiano</option><option value="pt">Português</option><option value="tr">Türkçe</option><option value="ru">Русский</option><option value="el">Ελληνικά</option><option value="sr">Српски</option><option value="pl">Polski</option><option value="lt">Lietuvių</option><option value="uk">Українська</option>
             </select>
             <button type="button" className="btn" onClick={() => void save(theme, notifications, language)} disabled={saving} style={{ marginTop: 12 }}>{saving ? t("saving") : t("save")}</button>
