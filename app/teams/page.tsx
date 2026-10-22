@@ -282,7 +282,7 @@ export default function TeamsPage() {
         )}
       </div>
 
-      <div className="hc-directory-view-toggle" role="group" aria-label="Team directory view">
+      <div className="hc-directory-view-toggle" role="group" aria-label={t("teamDirectoryView")}>
         <span>{t("directoryView")}</span>
         <button type="button" className={viewMode === "list" ? "is-active" : ""} onClick={() => setViewMode("list")}>{`☷ ${t("list")}`}</button>
         <button type="button" className={viewMode === "map" ? "is-active" : ""} onClick={() => setViewMode("map")}>{`◎ ${t("map")}`}</button>
