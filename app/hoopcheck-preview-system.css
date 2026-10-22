@@ -5743,6 +5743,55 @@ html.theme-light main:not(.hc-template-home) :where(input,select,textarea) {
 
 /* Backward-compatible variable names are aliases, not separate theme systems. */
 :root, html.theme-light {
+  --hc-ink: var(--hc-foreground);
+  --hc-ink-raised: var(--hc-surface-raised);
+  --hc-card-bg: var(--hc-surface-raised);
+  --hc-canvas: var(--hc-page-bg);
+  --hc-copy: var(--hc-foreground);
+  --hc-dashboard-ink: var(--hc-foreground);
+  --hc-dashboard-paper: var(--hc-surface-raised);
+  --hc-dashboard-muted: var(--hc-foreground-muted);
+  --hc-mobile-ink: var(--hc-foreground);
+  --hc-mobile-row-bg: var(--hc-surface-raised);
+  --hc-mobile-row-border: var(--hc-border);
+  --hc-mobile-line: var(--hc-border);
+  --hc-dashboard-line: var(--hc-border);
+  --hc-dashboard-border: var(--hc-border);
+  --hc-panel-border: var(--hc-border);
+  --hc-border-strong: var(--hc-border);
+  --hc-row-hover: var(--hc-surface-soft);
+  --hc-muted-on-dark: var(--hc-foreground-muted);
+  --hc-subtle-on-dark: var(--hc-foreground-muted);
+  --surface-1: var(--hc-surface-raised);
+  --muted: var(--hc-foreground-muted);
+  --text: var(--hc-foreground);
+}
+html.theme-dark {
+  --hc-ink: var(--hc-foreground);
+  --hc-ink-raised: var(--hc-surface-raised);
+  --hc-card-bg: var(--hc-surface-raised);
+  --hc-canvas: var(--hc-page-bg);
+  --hc-copy: var(--hc-foreground);
+  --hc-dashboard-ink: var(--hc-foreground);
+  --hc-dashboard-paper: var(--hc-surface-raised);
+  --hc-dashboard-muted: var(--hc-foreground-muted);
+  --hc-mobile-ink: var(--hc-foreground);
+  --hc-mobile-row-bg: var(--hc-surface-raised);
+  --hc-mobile-row-border: var(--hc-border);
+  --hc-mobile-line: var(--hc-border);
+  --hc-dashboard-line: var(--hc-border);
+  --hc-dashboard-border: var(--hc-border);
+  --hc-panel-border: var(--hc-border);
+  --hc-border-strong: var(--hc-border);
+  --hc-row-hover: var(--hc-surface-soft);
+  --hc-muted-on-dark: var(--hc-foreground-muted);
+  --hc-subtle-on-dark: var(--hc-foreground-muted);
+  --surface-1: var(--hc-surface-raised);
+  --muted: var(--hc-foreground-muted);
+  --text: var(--hc-foreground);
+}
+
+:root, html.theme-light {
   --ink: var(--hc-foreground);
   --paper: var(--hc-page-bg);
   --page-bg: var(--hc-page-bg);
