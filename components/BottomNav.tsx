@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthState } from "./AuthProvider";
 import { useLanguage } from "./LanguageProvider";
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 const items = [
   ["/", "home", "Home"],
@@ -37,12 +39,15 @@ export default function BottomNav() {
   const pathname = usePathname();
   const { signedIn } = useAuthState();
   const { t } = useLanguage();
+  const [accountType, setAccountType] = useState<string>("");
+  useEffect(() => { let alive = true; void (async () => { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const { data } = await supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(); if (alive) setAccountType(data?.account_type || ""); })(); return () => { alive = false; }; }, []);
+  const navItems = items.map(item => item[1] === "hoopFeed" ? ([accountType === "fan" ? "/fan-feed" : "/feed", "hoopFeed", "HoopFeed"] as const) : item);
 
   if (!signedIn || pathname.startsWith("/admin")) return null;
 
   return (
     <nav className="bottom-nav hc-bottom-tab-bar" aria-label="Mobile navigation">
-      {items.map(([href, translationKey, label]) => {
+      {navItems.map(([href, translationKey, label]) => {
         const active = href === "/"
           ? pathname === "/" || pathname === "/dashboard"
           : pathname === href || pathname.startsWith(href + "/");
