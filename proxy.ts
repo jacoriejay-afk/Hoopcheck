@@ -23,6 +23,12 @@ export async function proxy(request: NextRequest) {
     }
   );
 
+  // CI-only visual regression uses a synthetic session and mocked Supabase endpoints.
+  // The invalid CI URL guard ensures this can never disable auth for a real project.
+  if (process.env.HOOPCHECK_THEME_TEST_MODE === "true" && process.env.NEXT_PUBLIC_SUPABASE_URL === "https://ci.invalid") {
+    return supabaseResponse;
+  }
+
   const { data } = await supabase.auth.getClaims();
 
   if (!data?.claims) {
