@@ -74,7 +74,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const savedLanguage = cookieStore.get("hoopcheck-language")?.value;
   const rawSavedTheme = cookieStore.get("hoopcheck-theme")?.value;
   const initialTheme = rawSavedTheme === "dynamic" ? "dark" : rawSavedTheme === "dark" || rawSavedTheme === "light" || rawSavedTheme === "system" ? rawSavedTheme : "system";
-  const supportedLanguages = ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"] as const;
+  const supportedLanguages = ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar", "ru", "az", "pl", "zh", "ja", "sr", "fi", "he"] as const;
   const initialLanguage = supportedLanguages.includes(savedLanguage as (typeof supportedLanguages)[number]) ? savedLanguage as (typeof supportedLanguages)[number] : "en";
   const organizationJsonLd = {
     "@context": "https://schema.org",
