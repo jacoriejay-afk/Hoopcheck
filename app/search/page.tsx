@@ -255,12 +255,12 @@ function SearchContent() {
     <main className="search-page hc-global-search-page">
       <nav className="hc-directory-switcher" aria-label={t("browseDirectoriesLabel")}>
         <span className="hc-directory-switcher-label">{t("browseDirectoriesLabel")}</span>
-        <Link href="/teams">Men’s Teams</Link>
-        <Link href="/womens">Women’s Teams</Link>
-        <Link href="/coaches">Coaches</Link>
-        <Link href="/leagues">Leagues</Link>
-        <Link href="/players">Find Players</Link>
-        <Link href="/search">Global Search</Link>
+        <Link href="/teams">{t("mensTeams")}</Link>
+        <Link href="/womens">{t("womensTeams")}</Link>
+        <Link href="/coaches">{t("coaches")}</Link>
+        <Link href="/leagues">{t("leagues")}</Link>
+        <Link href="/players">{t("players")}</Link>
+        <Link href="/search">{t("globalSearch")}</Link>
         </nav>
       <Surface as="section" className="dashboard-card hc-player-connect-surface" style={{ margin: "0 0 18px", padding: "16px" }}>
         <div className="eyebrow">{t("playerConnect")}</div>
@@ -291,9 +291,9 @@ function SearchContent() {
           <div className="results-header">
             <div>
               <div className="eyebrow">{t("searchResults")}</div>
-              <h2>Results for &quot;{query}&quot;</h2>
+              <h2>{t("resultsFor")} &quot;{query}&quot;</h2>
             </div>
-            {!loading && <div className="result-count">{totalResults} result{totalResults === 1 ? "" : "s"}</div>}
+            {!loading && <div className="result-count">{totalResults} {t("resultCount")}</div>}
           </div>
 
           {!loading && !error && (
@@ -332,11 +332,11 @@ function SearchContent() {
 
           {!loading && !error && visiblePlayers.length > 0 && (
             <section className="result-group">
-              <div className="group-heading"><span>01</span><h3>Players</h3></div>
+              <div className="group-heading"><span>01</span><h3>{t("players")}</h3></div>
               <div className="result-grid">
                 {visiblePlayers.map((player) => (
                   <Link href={`/players/${player.id}`} key={player.id} className="result-card">
-                    <div className="result-type">PLAYER</div>
+                    <div className="result-type">{t("players").toUpperCase()}</div>
                     <h4>{player.display_name || "HoopCheck Player"} {player.player_verified && <VerifiedBadge label="Verified player" />}</h4>
                     <p>
                       {[
@@ -344,7 +344,7 @@ function SearchContent() {
                         player.years_pro ? `${player.years_pro} years pro` : null,
                         player.current_team,
                         player.current_country || player.country,
-                      ].filter(Boolean).join(" · ") || "Professional player profile"}
+                      ].filter(Boolean).join(" · ") || t("professionalProfile")}
                     </p>
                     <span className="result-link">{t("viewPlayerProfile")}</span>
                   </Link>
@@ -355,13 +355,13 @@ function SearchContent() {
 
           {!loading && !error && visibleCoaches.length > 0 && (
             <section className="result-group">
-              <div className="group-heading"><span>02</span><h3>Coaches</h3></div>
+              <div className="group-heading"><span>02</span><h3>{t("coaches")}</h3></div>
               <div className="result-grid">
                 {visibleCoaches.map((coach) => (
                   <Link href={`/coaches/${coach.id}`} key={coach.id} className="result-card">
-                    <div className="result-type">COACH</div>
+                    <div className="result-type">{t("coaches").toUpperCase()}</div>
                     <h4>{coach.name}</h4>
-                    <p>{coach.city && coach.country ? `${coach.city}, ${coach.country}` : coach.country || coach.city || "Location unavailable"}</p>
+                    <p>{coach.city && coach.country ? `${coach.city}, ${coach.country}` : coach.country || coach.city || t("locationUnavailable")}</p>
                     <span className="result-link">{t("researchCoach")}</span>
                   </Link>
                 ))}
@@ -371,7 +371,7 @@ function SearchContent() {
 
           {!loading && !error && visibleTeams.length > 0 && (
             <section className="result-group">
-              <div className="group-heading"><span>03</span><h3>Men’s Teams</h3></div>
+              <div className="group-heading"><span>03</span><h3>{t("mensTeams")}</h3></div>
               <div className="result-grid">
                 {visibleTeams.map((team) => (
                   <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" />
@@ -382,7 +382,7 @@ function SearchContent() {
 
           {!loading && !error && visibleWomensTeams.length > 0 && (
             <section className="result-group">
-              <div className="group-heading"><span>04</span><h3>Women’s Teams</h3></div>
+              <div className="group-heading"><span>04</span><h3>{t("womensTeams")}</h3></div>
               <div className="result-grid">
                 {visibleWomensTeams.map((team) => (
                   <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" />
@@ -393,14 +393,14 @@ function SearchContent() {
 
           {!loading && !error && visibleLeagues.length > 0 && (
             <section className="result-group">
-              <div className="group-heading"><span>05</span><h3>Leagues</h3></div>
+              <div className="group-heading"><span>05</span><h3>{t("leagues")}</h3></div>
               <div className="result-grid">
                 {visibleLeagues.map((league) => (
                   <Link href={`/leagues/${league.id}`} key={league.id} className="result-card">
-                    <div className="result-type">LEAGUE</div>
+                    <div className="result-type">{t("leagues").toUpperCase()}</div>
                     <h4>{league.name}</h4>
-                    <p>{league.country || "Country unavailable"}</p>
-                    {league.level && <div className="result-meta">Level: {league.level}</div>}
+                    <p>{league.country || t("countryUnavailable")}</p>
+                    {league.level && <div className="result-meta">{t("level")}: {league.level}</div>}
                     <span className="result-link">{t("researchLeague")}</span>
                   </Link>
                 ))}
@@ -427,7 +427,7 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<main className="search-page hc-global-search-page"><section className="search-hero"><p className="eyebrow">GLOBAL RESEARCH</p><h1>Loading search…</h1><p>Preparing teams, coaches, and league results.</p></section></main>}>
+    <Suspense fallback={<main className="search-page hc-global-search-page"><section className="search-hero"><p className="eyebrow">{t("globalResearch")}</p><h1>{t("loading")}</h1><p>{t("preparingSearchResults")}</p></section></main>}>
       <SearchContent />
     </Suspense>
   );
