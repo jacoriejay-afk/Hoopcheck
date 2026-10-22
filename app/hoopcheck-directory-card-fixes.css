@@ -3,13 +3,15 @@
   border: 1px solid var(--hc-border, #333) !important;
 }
 .hc-scout-card :where(
+  .hc-team-directory-row__main,
+  .hc-scout-card__identity,
   .hc-scout-card__identity-copy,
   .hc-scout-card__empty,
   .hc-scout-card__ticket,
   .hc-scout-card__report,
   .hc-scout-card__report-link,
-  .hc-team-directory-row__trust,
-  .hc-scout-card__stats
+  .hc-scout-card__stats,
+  .hc-team-directory-row__trust
 ) {
   border: 0 !important;
   outline: 0 !important;
@@ -42,22 +44,26 @@ html.theme-light .hc-scout-card .hc-team-logo-tile > span {
 
 /* Theme-qualified selectors beat legacy per-page rules that used !important. */
 html.theme-dark .hc-scout-card :where(
+  .hc-team-directory-row__main,
+  .hc-scout-card__identity,
   .hc-scout-card__identity-copy,
   .hc-scout-card__empty,
   .hc-scout-card__ticket,
   .hc-scout-card__report,
   .hc-scout-card__report-link,
-  .hc-team-directory-row__trust,
-  .hc-scout-card__stats
+  .hc-scout-card__stats,
+  .hc-team-directory-row__trust
 ),
 html.theme-light .hc-scout-card :where(
+  .hc-team-directory-row__main,
+  .hc-scout-card__identity,
   .hc-scout-card__identity-copy,
   .hc-scout-card__empty,
   .hc-scout-card__ticket,
   .hc-scout-card__report,
   .hc-scout-card__report-link,
-  .hc-team-directory-row__trust,
-  .hc-scout-card__stats
+  .hc-scout-card__stats,
+  .hc-team-directory-row__trust
 ) {
   border: 0 !important;
   outline: 0 !important;
