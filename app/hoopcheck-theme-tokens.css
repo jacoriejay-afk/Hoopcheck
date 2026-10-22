@@ -151,3 +151,64 @@ html.theme-dark .hc-team-logo-tile, html.theme-dark .hc-team-profile-logo {
     border-color: var(--hc-border);
   }
 }
+
+
+/* Admin pages must follow the user's selected theme, including legacy inline-styled controls. */
+html.theme-dark main.admin-light-shell,
+html.theme-dark main.admin-directory-shell {
+  background: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark main.admin-light-shell :where(
+  .hero-card,.dashboard-card,.admin-panel,.admin-card,.admin-section,.admin-stat-card,
+  .admin-review-card,.admin-report-card,.admin-user-row,.admin-user-editor,.admin-directory-panel,
+  .admin-directory-section,.admin-directory-card,.admin-directory-list,.admin-metric-card,
+  .admin-table-wrap,.admin-empty-state,.admin-inbox-card,.admin-claim-card,.admin-report-row,
+  section,article,aside,details
+) {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark main.admin-directory-shell :where(.admin-directory-panel,.admin-stat-card,.admin-directory-section) {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark main.admin-light-shell :where(
+  h1,h2,h3,h4,p,li,dt,dd,label,small,strong,span,summary,th,td,legend
+),
+html.theme-dark main.admin-directory-shell :where(
+  h1,h2,h3,h4,p,li,dt,dd,label,small,strong,span,summary,th,td,legend
+) { color: var(--hc-foreground) !important; }
+html.theme-dark main.admin-light-shell :where(.muted,.eyebrow,.meta,.subtle),
+html.theme-dark main.admin-directory-shell :where(.muted,.eyebrow,.meta,.subtle) {
+  color: var(--hc-foreground-muted) !important;
+}
+html.theme-dark main.admin-light-shell :where(input,textarea,select),
+html.theme-dark main.admin-directory-shell :where(input,textarea,select) {
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  border-color: var(--hc-border) !important;
+  -webkit-text-fill-color: var(--hc-input-fg);
+}
+html.theme-dark main.admin-light-shell :where(table,thead,tbody,tr,th,td),
+html.theme-dark main.admin-directory-shell :where(table,thead,tbody,tr,th,td) {
+  background-color: transparent !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark main.admin-light-shell :where(a:not(.btn):not(.admin-primary-action)),
+html.theme-dark main.admin-directory-shell :where(a:not(.btn):not(.admin-primary-action)) {
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark main.admin-light-shell :where(.btn,.admin-primary-action),
+html.theme-dark main.admin-directory-shell :where(.btn,.admin-primary-action) {
+  color: #FFFFFF !important;
+}
+html.theme-dark main.admin-light-shell :where(.message.error,.error,.error-box),
+html.theme-dark main.admin-directory-shell :where(.message.error,.error,.error-box) {
+  background: #351616 !important;
+  color: #FFD7D7 !important;
+  border-color: #7F3434 !important;
+}
