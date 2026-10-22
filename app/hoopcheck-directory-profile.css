@@ -739,3 +739,41 @@ html.theme-light main .hc-scout-card {
   .hc-scout-card .hc-team-directory-row__follow .btn,
   .hc-scout-card .hc-team-directory-row__follow button { padding:0 9px!important; }
 }
+
+
+/* Extend the same flat-card contract to the non-team directory result templates. */
+.hc-womens-directory-page .hc-womens-team-list { display:grid!important; grid-template-columns:minmax(0,1fr)!important; gap:12px!important; }
+.hc-coaches-directory-page .hc-team-directory-list,
+.hc-leagues-directory-page .hc-team-directory-list { display:grid!important; grid-template-columns:minmax(0,1fr)!important; gap:12px!important; }
+.hc-coaches-directory-page .hc-team-row,
+.hc-leagues-directory-page .hc-team-row,
+.hc-player-directory-page .hc-player-results > .dashboard-card {
+  min-width:0!important;
+  padding:16px!important;
+  border:1px solid var(--hc-border)!important;
+  border-radius:16px!important;
+  background:var(--hc-surface-raised)!important;
+  color:var(--hc-foreground)!important;
+  box-shadow:none!important;
+}
+.hc-leagues-directory-page .hc-team-row > .eyebrow { display:none!important; }
+.hc-leagues-directory-page .hc-team-row h2,
+.hc-player-directory-page .hc-player-results > .dashboard-card h2,
+.hc-coaches-directory-page .hc-team-row h2 { color:var(--hc-foreground)!important; overflow:hidden; text-overflow:ellipsis; overflow-wrap:normal; }
+.hc-leagues-directory-page .hc-team-row p,
+.hc-player-directory-page .hc-player-results > .dashboard-card p,
+.hc-coaches-directory-page .hc-team-row p { color:var(--hc-foreground-muted)!important; }
+.hc-leagues-directory-page .hc-team-row .btn { min-height:32px!important; padding:0 12px!important; border-radius:999px!important; }
+.hc-player-directory-page .hc-player-results > .dashboard-card .card-kicker { color:var(--hc-orange)!important; }
+@media(min-width:768px) {
+  .hc-womens-directory-page .hc-womens-team-list,
+  .hc-coaches-directory-page .hc-team-directory-list,
+  .hc-leagues-directory-page .hc-team-directory-list { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
+  .hc-player-directory-page .hc-player-results { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
+}
+@media(min-width:1200px) {
+  .hc-womens-directory-page .hc-womens-team-list,
+  .hc-coaches-directory-page .hc-team-directory-list,
+  .hc-leagues-directory-page .hc-team-directory-list { grid-template-columns:repeat(3,minmax(0,1fr))!important; }
+  .hc-player-directory-page .hc-player-results { grid-template-columns:repeat(3,minmax(0,1fr))!important; }
+}
