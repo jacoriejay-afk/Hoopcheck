@@ -161,8 +161,8 @@ export default function AccountPage() {
   }, []);
 
   function chooseAvatar(file: File) {
-    if (!file.type.startsWith("image/")) { setProfileMessage("Please choose an image file."); return; }
-    if (file.size > 10 * 1024 * 1024) { setProfileMessage("Profile photos must be 10MB or smaller."); return; }
+    if (!file.type.startsWith("image/")) { setProfileMessage(t("chooseImageFile")); return; }
+    if (file.size > 10 * 1024 * 1024) { setProfileMessage(t("photoMaxSize")); return; }
     setCropFile(file);
     setCropPreview(URL.createObjectURL(file));
     setCropZoom(1);
@@ -183,7 +183,7 @@ export default function AccountPage() {
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext("2d");
-    if (!ctx) { setProfileMessage("Your browser could not prepare the photo."); return; }
+    if (!ctx) { setProfileMessage(t("photoPrepareFailed")); return; }
 
     const sourceSize = Math.min(image.naturalWidth, image.naturalHeight) / cropZoom;
     const sx = Math.max(0, (image.naturalWidth - sourceSize) / 2);
@@ -191,7 +191,7 @@ export default function AccountPage() {
     ctx.drawImage(image, sx, sy, sourceSize, sourceSize, 0, 0, size, size);
 
     const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.9));
-    if (!blob) { setProfileMessage("Unable to prepare the cropped photo."); return; }
+    if (!blob) { setProfileMessage(t("cropPrepareFailed")); return; }
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -208,7 +208,7 @@ export default function AccountPage() {
     setAvatarStatus("approved");
     setCropFile(null);
     setCropPreview("");
-    setProfileMessage("Photo uploaded. Your cropped profile picture is now available on your public player profile.");
+    setProfileMessage(t("photoUploaded"));
   }
 
   async function saveProfile(event: React.FormEvent) {
@@ -218,7 +218,7 @@ export default function AccountPage() {
     const name = displayName.trim().slice(0, 80);
     const years = yearsPro.trim() ? Number(yearsPro) : null;
     if (years !== null && (!Number.isInteger(years) || years < 0 || years > 50)) {
-      setProfileMessage("Years pro must be a whole number from 0 to 50.");
+      setProfileMessage(t("yearsProRangeError"));
       setSavingProfile(false);
       return;
     }
@@ -240,14 +240,14 @@ export default function AccountPage() {
     if (error) setProfileMessage(error.message);
     else {
       setProfile((current) => ({ ...current, ...updates }));
-      setDisplayName(name); setProfileMessage("Profile updated.");
+      setDisplayName(name); setProfileMessage(t("profileUpdated"));
     }
     setSavingProfile(false);
   }
 
   async function signOut() {
     const { error } = await supabase.auth.signOut({ scope: "local" });
-    if (error) { setProfileMessage("Unable to sign out. Please try again."); return; }
+    if (error) { setProfileMessage(t("signOutFailed")); return; }
     window.location.replace("/login");
   }
 
@@ -262,11 +262,11 @@ export default function AccountPage() {
         body: JSON.stringify({ confirmation: "DELETE" }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data?.error || "Unable to delete your account.");
+      if (!response.ok) throw new Error(data?.error || t("deleteAccountFailed"));
       await supabase.auth.signOut({ scope: "local" });
       window.location.replace("/?account_deleted=true");
     } catch (error) {
-      setProfileMessage(error instanceof Error ? error.message : "Unable to delete your account.");
+      setProfileMessage(error instanceof Error ? error.message : t("deleteAccountFailed"));
       setDeletingAccount(false);
     }
   }
@@ -303,7 +303,7 @@ export default function AccountPage() {
   async function saveSetting(values: Record<string, unknown>, success: string) {
     setSettingsMessage("");
     const { error } = await supabase.from("profiles").update(values).eq("id", userId);
-    if (error) { setSettingsMessage("Could not save this setting: " + error.message); return false; }
+    if (error) { setSettingsMessage(t("saveSettingFailed") + error.message); return false; }
     setSettingsMessage(success);
     return true;
   }
@@ -436,12 +436,12 @@ export default function AccountPage() {
             <label className="muted">{t("lastName")}</label><input value={profile.last_name ?? ""} readOnly />
             <p className="muted" style={{fontSize:12}}>{t("nameLocked")}</p>
             <label htmlFor="display-name" className="muted">{t("displayName")}</label><input id="display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder={t("displayNamePlaceholder")} />
-            {profile.account_type === "player" && <label htmlFor="position" className="muted">Position</label>}
+            {profile.account_type === "player" && <label htmlFor="position" className="muted">{t("position")}</label>}
             {profile.account_type === "player" && <input id="position" value={position} readOnly disabled />}
             {profile.account_type === "player" && <label htmlFor="years-pro" className="muted">{t("yearsAsPro")}</label>}
             {profile.account_type === "player" && <input id="years-pro" type="number" value={yearsPro} readOnly disabled />}
             {profile.account_type === "coach" && <><label htmlFor="coaching-experience" className="muted">{t("coachingExperience")}</label><textarea id="coaching-experience" value={coachingExperience} onChange={e=>setCoachingExperience(e.target.value)} maxLength={1000} rows={4} placeholder={t("coachingExperiencePlaceholder")} /><label htmlFor="coach-specialties" className="muted">{t("coachingSpecialties")}</label><textarea id="coach-specialties" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("coachingSpecialtiesPlaceholder")} /></>}
-            <label htmlFor="hometown">{t("hometown")}</label><input id="hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder="City, State / Region" />
+            <label htmlFor="hometown">{t("hometown")}</label><input id="hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder={t("cityStateRegion")} />
             <label htmlFor="nationality">{t("nationality")}</label>
             <select id="nationality" value={nationality} onChange={e=>setNationality(e.target.value)} disabled={savingProfile}>
               <option value="">{t("selectNationality")}</option>
@@ -477,9 +477,9 @@ export default function AccountPage() {
             {profile.account_type === "fan" && <label htmlFor="interests" className="muted">{t("basketballInterests")}</label>}
             {profile.account_type === "fan" && <textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("fanInterestsPlaceholder")} />}
             {["scout","agent","fan"].includes(profile.account_type) ? <div className="card"><strong><HoopIcon name="lock" size={16} /> {t("privateProfile")}</strong><p className="muted">{t("privateProfileDescription")}</p></div> : <><label htmlFor="visibility" className="muted">{t("profileVisibility")}</label><select id="visibility" value={visibility} onChange={e => setVisibility(e.target.value as "public" | "private")}><option value="public">{t("public")}</option><option value="private">{t("private")}</option></select></>}
-            <p className="muted">Email: {email}</p>
+            <p className="muted">{t("emailLabel")} {email}</p>
             <div className="card" style={{marginTop:4}}><strong>{profile.profile_claimed ? <><VerifiedBadge label={t("profileClaimed")} /> Profile claimed</> : t("claimPlayerProfile")}</strong><p className="muted">{profile.profile_claimed ? t("profileConnected") : t("claimProfileDescription")}</p></div>
-            {profile.account_type === "player" && <div className="card" style={{marginTop:8}}><strong>{profile.player_verified ? <><VerifiedBadge label="Verified player" /> Verified Player</> : t("playerVerification")}</strong><p className="muted">{profile.player_verified ? t("playerBadgeActive") : t("applyVerificationBadge")}</p>{!profile.player_verified && <Link href="/verification" className="btn dark">{t("requestVerification")}</Link>}</div>}
+            {profile.account_type === "player" && <div className="card" style={{marginTop:8}}><strong>{profile.player_verified ? <><VerifiedBadge label={t("verifiedPlayer")} /> {t("verifiedPlayer")}</> : t("playerVerification")}</strong><p className="muted">{profile.player_verified ? t("playerBadgeActive") : t("applyVerificationBadge")}</p>{!profile.player_verified && <Link href="/verification" className="btn dark">{t("requestVerification")}</Link>}</div>}
             {profile.account_type === "coach" && <div className="card" style={{marginTop:8,border:"1px solid var(--orange)"}}><strong>{profile.coach_verified ? <><VerifiedBadge label={t("verifiedProfessional")} /> Verified Coach</> : t("coachVerification")}</strong><p className="muted">{profile.coach_verified ? t("coachIdentityVerified") : t("coachVerifyInstructions")}</p>{!profile.coach_verified && <Link href="/verification" className="btn dark">{t("verifyCoach")}</Link>}{profile.coach_verified && <Link href="/dashboard" className="btn dark">{t("requestTeamPlacement")}</Link>}</div>}
             <button className="btn" type="submit" disabled={savingProfile}>{savingProfile ? t("saving") : t("saveProfile")}</button>
             {profileMessage && <p className="muted">{profileMessage}</p>}
@@ -489,15 +489,15 @@ export default function AccountPage() {
           <p className="eyebrow">{t("membership")}</p><h2>{subscription?.plan === "premium" ? "HoopCheck " + t("premium") : subscription?.plan === "pro" ? "HoopCheck " + t("pro") : t("free") + " " + t("membership")}</h2><p className="muted">{t("status")}: {t(subscription?.status ?? "inactive")}</p>
           {subscription?.current_period_end && <p className="muted">{t("currentPeriodEnds")} {new Date(subscription.current_period_end).toLocaleDateString()}</p>}
           {subscription?.cancel_at_period_end && <p className="muted">Cancellation is scheduled at the end of the current period.</p>}
-          {subscription?.plan === "premium" && <div className="card" style={{marginTop:16,border:"1px solid var(--orange)"}}><p className="eyebrow">PREMIUM PLAYER FEATURE</p><h3 style={{marginBottom:8}}><HoopIcon name="basketball" size={20} /> Get Recruited — Coming Soon</h3><p className="muted">Premium players will soon be able to connect directly with scouts and agents, reach selected teams, and get discovered for opportunities.</p><p className="muted" style={{fontSize:12,marginBottom:0}}>We’re building a recruiting network designed to connect professional players with the right basketball opportunities.</p></div>}
-          <div className="account-actions hc-account-membership-actions" style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:12}}><Link href="/membership#manage-subscription" className="btn">Manage Subscription</Link>{subscription?.plan && subscription.status === "active" && !subscription.cancel_at_period_end && <Link href="/membership#manage-subscription" className="btn dark">Upgrade Subscription</Link>}</div>
+          {subscription?.plan === "premium" && <div className="card" style={{marginTop:16,border:"1px solid var(--orange)"}}><p className="eyebrow">{t("premiumPlayerFeature")}</p><h3 style={{marginBottom:8}}><HoopIcon name="basketball" size={20} /> {t("getRecruitedComingSoon")}</h3><p className="muted">{t("recruitingFeatureDescription")}</p><p className="muted" style={{fontSize:12,marginBottom:0}}>{t("recruitingNetworkDescription")}</p></div>}
+          <div className="account-actions hc-account-membership-actions" style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:12}}><Link href="/membership#manage-subscription" className="btn">{t("manageSubscription")}</Link>{subscription?.plan && subscription.status === "active" && !subscription.cancel_at_period_end && <Link href="/membership#manage-subscription" className="btn dark">{t("upgradeSubscription")}</Link>}</div>
         </div>
       </section>
-      <section className="dashboard-card" style={{marginTop:24}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,flexWrap:"wrap"}}><div><p className="eyebrow">PRIVACY</p><h2>Manage your personal data</h2><p className="muted">Request access, correction, deletion, or an export of your personal information.</p></div><Link href="/privacy-center" className="btn">Privacy Request Center</Link></div></section>
+      <section className="dashboard-card" style={{marginTop:24}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,flexWrap:"wrap"}}><div><p className="eyebrow">{t("privacy")}</p><h2>{t("managePersonalData")}</h2><p className="muted">{t("privacyRequestDescription")}</p></div><Link href="/privacy-center" className="btn">{t("privacyRequestCenter")}</Link></div></section>
 
       <section className="dashboard-card hc-account-public-profile" style={{marginTop:24}}><div className="hc-account-section-copy"><p className="eyebrow">{t("publicProfile")}</p><h2>{t("seeHowPlayersSeeYou")}</h2><p className="muted">{settingsVisibility === "public" ? t("previewPublicProfile") : t("profileNotPublicDescription")}</p></div><div className="actions hc-account-public-actions">{profile.account_type === "player" && (settingsVisibility === "public" ? <Link href={userId ? `/players/${encodeURIComponent(userId)}` : "/profile"} className="btn">{t("profilePublic")} <HoopIcon name="arrow-up-right" size={16} /></Link> : <a href="#profile-editor" className="btn">{t("editVisibility")}</a>)}<a href="#profile-editor" className="btn dark">{t("editProfile")}</a></div></section>\n\n      <section id="edit-profile" style={{marginTop:32}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,marginBottom:18}}><div><p className="eyebrow">{t("reviewHistory")}</p><h2>{t("myReviews")}</h2></div><Link href="/search" className="btn">{t("findAnother")}</Link></div>
-      {!reviews.length ? <div className="dashboard-card"><h2>No reviews yet.</h2><p>Share your experience to help the next player make a better decision.</p></div> :
-        <div style={{display:"grid",gap:16}}>{reviews.map(review => { const targetId=review.coach_id??review.team_id??review.league_id??""; const target=targets[targetId]; const href=review.coach_id?"/coaches/"+targetId:review.team_id?"/teams/"+targetId:"/leagues/"+targetId; return <article key={review.id} className="dashboard-card"><div style={{display:"flex",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}><div><span className="card-kicker">{review.coach_id?"COACH":review.team_id?"TEAM":"LEAGUE"}</span><h2>{target?.name??"Directory entry"}</h2></div><strong>{review.status.toUpperCase()}</strong></div>{review.title&&<h3>{review.title}</h3>}<p>{review.body}</p><p className="muted">Overall: {review.overall_rating}/5 · {new Date(review.created_at).toLocaleDateString()}</p><Link href={href} className="btn dark">View Profile</Link></article>; })}</div>}
+      {!reviews.length ? <div className="dashboard-card"><h2>{t("noReviewsYet")}</h2><p>{t("shareExperience")}</p></div> :
+        <div style={{display:"grid",gap:16}}>{reviews.map(review => { const targetId=review.coach_id??review.team_id??review.league_id??""; const target=targets[targetId]; const href=review.coach_id?"/coaches/"+targetId:review.team_id?"/teams/"+targetId:"/leagues/"+targetId; return <article key={review.id} className="dashboard-card"><div style={{display:"flex",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}><div><span className="card-kicker">{review.coach_id?t("coach").toUpperCase():review.team_id?t("team").toUpperCase():t("leagues").toUpperCase()}</span><h2>{target?.name??t("directoryEntry")}</h2></div><strong>{t(review.status).toUpperCase()}</strong></div>{review.title&&<h3>{review.title}</h3>}<p>{review.body}</p><p className="muted">{t("overall")}: {review.overall_rating}/5 · {new Date(review.created_at).toLocaleDateString()}</p><Link href={href} className="btn dark">{t("viewProfile")}</Link></article>; })}</div>}
       </section>
     </div></main>
   );
