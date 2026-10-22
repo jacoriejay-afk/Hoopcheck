@@ -87,9 +87,10 @@ try {
         { name: "hoopcheck-theme", value: theme, url: baseURL },
         { name: "sb-ci-auth-token", value: encodedSession, url: baseURL },
       ]);
-      await page.addInitScript((themePreference) => {
+      await page.addInitScript(({ themePreference, authSession }) => {
         localStorage.setItem("hoopcheck-theme", themePreference);
-      }, theme);
+        localStorage.setItem("sb-ci-auth-token", JSON.stringify(authSession));
+      }, { themePreference: theme, authSession: session });
 
       await page.route("https://ci.invalid/**", async (route) => {
         const request = route.request();
@@ -193,7 +194,10 @@ try {
       { name: "sb-ci-auth-token", value: encodedSession, url: baseURL },
     ]);
     const page = await context.newPage();
-    await page.addInitScript((themePreference) => { localStorage.setItem("hoopcheck-theme", themePreference); }, theme);
+    await page.addInitScript(({ themePreference, authSession }) => {
+      localStorage.setItem("hoopcheck-theme", themePreference);
+      localStorage.setItem("sb-ci-auth-token", JSON.stringify(authSession));
+    }, { themePreference: theme, authSession: session });
     await page.route("https://ci.invalid/**", async (route) => {
       const request = route.request();
       const url = new URL(request.url());
