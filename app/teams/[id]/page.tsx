@@ -598,6 +598,15 @@ export default function TeamDetailPage() {
 
         <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} /></div>
         <TeamRosterSpots teamId={team.id} teamName={team.name} />
+        <section className="hc-team-facts-card" aria-label="Team facts">
+          <p className="eyebrow">TEAM FACTS</p>
+          <dl>
+            <div><dt>Country</dt><dd>{team.country || "Not listed"}</dd></div>
+            <div><dt>City</dt><dd>{team.city || "Not listed"}</dd></div>
+            <div><dt>League</dt><dd>{league?.name || team.league_name || "Not listed"}</dd></div>
+            <div><dt>Division</dt><dd>{league?.level || "Not listed"}</dd></div>
+          </dl>
+        </section>
 
       </section>
       {!hasAccess ? (
