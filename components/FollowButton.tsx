@@ -8,7 +8,7 @@ import { useLanguage } from "./LanguageProvider";
 type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string };
 
 export default function FollowButton({ targetType, targetId }: Props) {
-  const { formatNumber } = useLanguage();
+  const { formatNumber, t } = useLanguage();
   const [following, setFollowing] = useState(false);
   const [notify, setNotify] = useState(true);
   const [count, setCount] = useState(0);
@@ -100,22 +100,22 @@ export default function FollowButton({ targetType, targetId }: Props) {
         className="btn dark"
         onClick={toggle}
         disabled={busy}
-        title={following ? "You are following this profile" : "Follow this profile"}
+        title={following ? t("followingProfileTitle") : t("followProfileTitle")}
       >
-        {following ? <HoopIcon name="check" size={15} /> : <HoopIcon name="user" size={15} />} {following ? "Following" : "Follow"}
+        {following ? <HoopIcon name="check" size={15} /> : <HoopIcon name="user" size={15} />} {following ? t("following") : t("follow")}
       </button>
-      <span className="follow-count muted">{formatNumber(count)} followers</span>
+      <span className="follow-count muted">{t("followerCount").replace("{count}", formatNumber(count))}</span>
       <button
           type="button"
-          aria-label="Toggle notifications"
-          title={following ? "Toggle team alerts" : "Follow this profile to enable alerts"}
+          aria-label={t("toggleNotifications")}
+          title={following ? t("teamAlerts") : t("followToEnableAlerts")}
           onClick={toggleNotify}
           disabled={!following || busy}
           style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px", background: "transparent", color: "inherit", cursor: following ? "pointer" : "not-allowed", opacity: following ? 1 : 0.55 }}
         >
-          <><HoopIcon name="bell" size={15} /> {notify ? "On" : "Off"}</>
+          <><HoopIcon name="bell" size={15} /> {notify ? t("on") : t("off")}</>
         </button>
-      {!signedIn && <span className="muted" style={{ fontSize: 12 }}>Sign in to follow</span>}
+      {!signedIn && <span className="muted" style={{ fontSize: 12 }}>{t("signInToFollow")}</span>}
     </div>
   );
 }
