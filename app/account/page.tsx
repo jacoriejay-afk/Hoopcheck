@@ -320,7 +320,7 @@ export default function AccountPage() {
     const language = next as Language;
     setPreferredLanguage(language);
     applyLanguage(language); // Update the root provider immediately so mounted screens re-render.
-    await saveSetting({ preferred_language: language }, "Language saved.");
+    await saveSetting({ preferred_language: language }, t("languageSaved"));
   }
 
   async function changeNotification(key: keyof typeof notificationPreferences, checked: boolean) {
