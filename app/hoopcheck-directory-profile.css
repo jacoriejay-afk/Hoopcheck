@@ -456,3 +456,32 @@ html.theme-light .hc-feed-page .hc-feed-photo-button {
   color: var(--hc-foreground) !important;
   border-color: var(--hc-border) !important;
 }
+
+
+/* Dark-mode compatibility for older admin/forms that still declare light inline styles. */
+html.theme-dark main [style*="background: rgb(255, 255, 255)"],
+html.theme-dark main [style*="background-color: rgb(255, 255, 255)"],
+html.theme-dark main [style*="background: #FFFFFF"],
+html.theme-dark main [style*="background: #ffffff"],
+html.theme-dark main [style*="background-color: #FFFFFF"],
+html.theme-dark main [style*="background-color: #ffffff"],
+html.theme-dark main [style*="background: rgb(247, 247, 245)"],
+html.theme-dark main [style*="background-color: rgb(247, 247, 245)"],
+html.theme-dark main [style*="background: #F7F7F5"],
+html.theme-dark main [style*="background: #f7f7f5"] {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark main [style*="background: rgb(255, 255, 255)"] :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn),div),
+html.theme-dark main [style*="background-color: rgb(255, 255, 255)"] :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn),div),
+html.theme-dark main [style*="background: #FFFFFF"] :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn),div),
+html.theme-dark main [style*="background: #ffffff"] :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn),div),
+html.theme-dark main [style*="background: rgb(247, 247, 245)"] :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn),div),
+html.theme-dark main [style*="background: #F7F7F5"] :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn),div),
+html.theme-dark main [style*="background: #f7f7f5"] :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn),div) {
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark main :where(.btn,button,[role="button"]) :where(*) {
+  color: inherit !important;
+}
