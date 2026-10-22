@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 import { usePathname } from "next/navigation";
 import { useAuthState } from "./AuthProvider";
 import { useLanguage } from "./LanguageProvider";
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
 
 const items = [
   ["/", "home", "Home"],
@@ -39,20 +39,20 @@ export default function BottomNav() {
   const pathname = usePathname();
   const { signedIn } = useAuthState();
   const { t } = useLanguage();
-  const [accountType, setAccountType] = useState<string>("");
-  useEffect(() => { let alive = true; void (async () => { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const { data } = await supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(); if (alive) setAccountType(data?.account_type || ""); })(); return () => { alive = false; }; }, []);
-  const navItems = items.map(item => item[1] === "hoopFeed" ? ([accountType === "fan" ? "/fan-feed" : "/feed", "hoopFeed", "HoopFeed"] as const) : item);
+  const [fanAccount, setFanAccount] = useState(false);
+  useEffect(() => { let alive = true; if (!signedIn) { setFanAccount(false); return; } void supabase.auth.getUser().then(async ({ data }) => { if (!data.user) return; const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", data.user.id).maybeSingle(); if (alive) setFanAccount(profile?.account_type === "fan"); }); return () => { alive = false; }; }, [signedIn]);
 
   if (!signedIn || pathname.startsWith("/admin")) return null;
 
   return (
     <nav className="bottom-nav hc-bottom-tab-bar" aria-label="Mobile navigation">
-      {navItems.map(([href, translationKey, label]) => {
-        const active = href === "/"
+      {items.map(([href, translationKey, label]) => {
+        const destination = href === "/feed" && fanAccount ? "/fan-feed" : href;
+        const active = destination === "/"
           ? pathname === "/" || pathname === "/dashboard"
-          : pathname === href || pathname.startsWith(href + "/");
+          : pathname === destination || pathname.startsWith(destination + "/");
         return (
-          <Link key={href} href={href} className={active ? "active" : ""} aria-current={active ? "page" : undefined}>
+          <Link key={href} href={destination} className={active ? "active" : ""} aria-current={active ? "page" : undefined}>
             <span className="bottom-nav-icon"><NavIcon label={label} /></span>
             <span className="bottom-nav-label">{translationKey === "hoopFeed" ? "HoopFeed" : t(translationKey)}</span>
           </Link>
