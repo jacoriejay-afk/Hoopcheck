@@ -423,3 +423,15 @@ html.theme-light main .hc-searchbar__clear {
   color: var(--hc-foreground) !important;
   border-color: var(--hc-border) !important;
 }
+
+
+html.theme-dark .global-back-button,
+html.theme-light .global-back-button {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark .global-back-button:hover,
+html.theme-light .global-back-button:hover {
+  border-color: var(--hc-orange) !important;
+}
