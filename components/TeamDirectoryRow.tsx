@@ -1,7 +1,6 @@
 import Link from "next/link";
 import FollowButton from "./FollowButton";
 import { HoopIcon } from "./HoopCheckUI";
-import TrustScoreDial from "./TrustScoreDial";
 import Surface from "./Surface";
 
 type TeamDirectoryRowProps = {
