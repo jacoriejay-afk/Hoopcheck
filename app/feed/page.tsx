@@ -93,8 +93,6 @@ export default function Feed(){
     ]);
     setProfile(p);setSubscription(s);setShowCountry(Boolean(p?.current_country_public));
     // Keep the player HoopFeed surface strictly player-only; fans have their own feed.
-    if(p?.account_type==="fan"){window.location.replace("/fan-feed");return;}
-    if(p?.account_type==="fan"){window.location.replace("/fan-feed");return;}
     if(p?.account_type==="fan"){setLoading(false);router.replace("/fan-feed");return;}
     if(p?.account_type==="player"){const {data:activity}=await supabase.from("feed_posting_activity").select("activity_date").eq("user_id",u.id).order("activity_date",{ascending:false}).limit(370);setPostingStreak(calculatePostingStreak(activity||[]));}
     const memberActive=(s?.plan==="pro"||s?.plan==="premium")&&(s?.status==="active"||s?.status==="trialing")&&(s?.access_status==null||["active","trialing","pro","premium"].includes(s.access_status));
