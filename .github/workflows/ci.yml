@@ -44,6 +44,9 @@ jobs:
             echo "::warning::Full audit reports unresolved advisories. Review the audit output; the production-only audit above remains blocking."
           fi
 
+      - name: Audit hardcoded white surfaces (blocking)
+        run: npm run audit:surfaces
+
       - name: Lint
         run: npm run lint
 
