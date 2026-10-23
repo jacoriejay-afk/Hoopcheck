@@ -1,6 +1,7 @@
 "use client";
 
 import {
+import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
   useEffect,
   useState,
 } from "react";
@@ -248,6 +249,7 @@ export default function TeamsPage() {
 
   return (
     <main className="hc-team-directory-page">
+      <FanBasketballSideSwitch lockedHint />
       <DirectoryLayout current="teams" />
 
       <section className="hero">
