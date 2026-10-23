@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
+import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCachedSession, supabase } from "../../lib/supabase";
@@ -43,6 +44,7 @@ export default function DashboardPage() {
   const [targets, setTargets] = useState<Record<string, Target>>({});
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminRole, setAdminRole] = useState<"admin" | "moderator" | null>(null);
+  const basketballSide = useFanBasketballSide();
   const [email, setEmail] = useState("");
   const [userId, setUserId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -112,9 +114,10 @@ export default function DashboardPage() {
       }
 
       if (profileResult.data?.account_type === "fan") {
-        const { data: follows } = await supabase.from("follow_relationships").select("target_id").eq("follower_id", user.id).eq("target_type", "team").order("created_at", { ascending: false }).limit(20);
+        const { data: follows } = await supabase.from("follow_relationships").select("target_id").eq("follower_id", user.id).eq("target_type", "team").order("created_at", { ascending: false }).limit(100);
         const ids = (follows || []).map((x:any)=>x.target_id).filter(Boolean);
-        if (ids.length) { const { data: teamRows } = await supabase.from("teams").select("id,name,country,league_name").in("id", ids); setFollowedTeams((teamRows || []) as any); }
+        if (ids.length) { const { data: teamRows } = await supabase.from("teams").select("id,name,country,league_name").in("id", ids).eq("basketball_type", basketballSide === "womens" ? "womens" : "mens"); setFollowedTeams((teamRows || []) as any); }
+        else setFollowedTeams([]);
       }
 
       const rows: Review[] = reviewsResult.error ? [] : ((reviewsResult.data ?? []) as Review[]);
@@ -166,7 +169,7 @@ export default function DashboardPage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [basketballSide]);
 
   if (loading) {
     return (
