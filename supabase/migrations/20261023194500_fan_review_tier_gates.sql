@@ -78,7 +78,7 @@ BEGIN
       INTO v_plan, v_active
       FROM public.subscriptions s WHERE s.user_id = (SELECT auth.uid());
 
-      IF NOT COALESCE(v_active, false) OR v_plan NOT IN ('pro', 'premium') THEN
+      IF NOT COALESCE(v_active, false) OR COALESCE(v_plan, '') NOT IN ('pro', 'premium') THEN
         RETURN QUERY SELECT 0::bigint, NULL::numeric, NULL::numeric, NULL::numeric, NULL::numeric, NULL::numeric;
         RETURN;
       ELSIF v_plan = 'pro' THEN
@@ -116,7 +116,7 @@ BEGIN
       INTO v_plan, v_active
       FROM public.subscriptions s WHERE s.user_id = (SELECT auth.uid());
 
-      IF NOT COALESCE(v_active, false) OR v_plan NOT IN ('pro', 'premium') THEN
+      IF NOT COALESCE(v_active, false) OR COALESCE(v_plan, '') NOT IN ('pro', 'premium') THEN
         RETURN QUERY SELECT 0::bigint, NULL::numeric;
         RETURN;
       ELSIF v_plan = 'pro' THEN
