@@ -19,11 +19,12 @@ type TeamDirectoryRowProps = {
   trustExplanation?: string;
   averageRating?: number | null;
   logoUrl?: string | null;
+  trustTier?: "free" | "pro" | "premium" | "player" | "member";
 };
 
 export default function TeamDirectoryRow({
   id, name, city, country, leagueName, href, kind = "mens", showFollow = true,
-  trustReviewCount = 0, averageRating = null, logoUrl = null,
+  trustReviewCount = 0, averageRating = null, logoUrl = null, trustTier = "free",
 }: TeamDirectoryRowProps) {
   const { t } = useLanguage();
   const monogram = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
@@ -44,16 +45,11 @@ export default function TeamDirectoryRow({
           <span className="hc-team-directory-row__arrow" aria-hidden="true"><HoopIcon name="chevron-right" size={18} /></span>
         </span>
       </Link>
-      <div className={"hc-scout-card__stats" + (!hasRating && !hasReviews ? " is-empty" : "")} aria-label={t("teamReviewStatistics")}>
-        {!hasRating && !hasReviews ? (
-          <p className="hc-scout-card__empty">{t("teamDirectoryEmptyReviews")}</p>
-        ) : (
-          <>
-            <div className="hc-scout-card__stat"><strong>{hasRating ? <><span className="hc-scout-card__star" aria-hidden="true">★</span> {averageRating.toFixed(1)}</> : "—"}</strong><small>{t("ratingLabel")}</small></div>
-            <div className="hc-scout-card__stat"><strong>{trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div>
-            <div className="hc-scout-card__stat"><strong>—</strong><small>{t("seasonsLabel")}</small></div>
-          </>
-        )}
+      <div className="hc-scout-card__stats" aria-label={t("teamReviewStatistics")}>
+        {trustTier === "free" ? <div className="hc-directory-locked"><strong>🔒 Player reviews are a Premium fan feature</strong><Link href="/membership" className="btn">Upgrade</Link></div>
+        : trustTier === "pro" ? <div className="hc-directory-locked"><strong>Trust Score</strong><small>Fan Premium feature</small><Link href="/membership" className="btn">Upgrade</Link></div>
+        : (!hasRating && !hasReviews) ? <p className="hc-scout-card__empty">{t("teamDirectoryEmptyReviews")}</p>
+        : <><div className="hc-scout-card__stat"><strong>{hasRating ? <><span className="hc-scout-card__star" aria-hidden="true">★</span> {averageRating.toFixed(1)}</> : "—"}</strong><small>{t("ratingLabel")}</small></div><div className="hc-scout-card__stat"><strong>{trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div><div className="hc-scout-card__stat"><strong>—</strong><small>{t("seasonsLabel")}</small></div></>}
       </div>
       <footer className="hc-scout-card__ticket">
         <Link href={href} className="hc-scout-card__report-link">{t("openScoutingReport")} <span aria-hidden="true">→</span></Link>
