@@ -177,6 +177,7 @@ export default function TeamDetailPage() {
     useState(false);
   const [accountType, setAccountType] = useState<string>("");
   const [membershipPlan, setMembershipPlan] = useState<string>("");
+  const [reviewTier, setReviewTier] = useState<"free" | "pro" | "premium" | "player" | "member">("free");
 
   const [loading, setLoading] =
     useState(true);
@@ -330,81 +331,40 @@ export default function TeamDetailPage() {
 
       setHasAccess(access);
 
-      const { data: summaryData, error: summaryError } = access
-        ? await supabase.rpc("get_public_review_summary", {
-            p_entity_type: "team",
-            p_entity_id: id,
-          })
-        : { data: null, error: null };
-
-      if (access && !summaryError && summaryData?.[0]) {
+      const response = await fetch(`/api/review-access?entityType=team&entityId=${encodeURIComponent(id)}`, {
+        headers: { Authorization: `Bearer ${session?.access_token || ""}` },
+        cache: "no-store",
+      });
+      const reviewPayload = response.ok ? await response.json() : null;
+      const tier = (reviewPayload?.tier || "free") as typeof reviewTier;
+      setReviewTier(tier);
+      const fullRead = ["premium", "player", "member"].includes(tier);
+      const canReadAnything = tier !== "free";
+      setHasAccess(canReadAnything);
+      setReviewLoading(fullRead);
+      const summary = reviewPayload?.summary;
+      if (summary) {
         setPublicSummary({
-          review_count: Number(summaryData[0].review_count || 0),
-          overall_rating: summaryData[0].overall_rating == null ? null : Number(summaryData[0].overall_rating),
-          communication_rating: summaryData[0].communication_rating == null ? null : Number(summaryData[0].communication_rating),
-          professionalism_rating: summaryData[0].professionalism_rating == null ? null : Number(summaryData[0].professionalism_rating),
-          development_rating: summaryData[0].development_rating == null ? null : Number(summaryData[0].development_rating),
-          payment_rating: summaryData[0].payment_rating == null ? null : Number(summaryData[0].payment_rating),
+          review_count: Number(summary.review_count || 0),
+          overall_rating: summary.overall_rating == null ? null : Number(summary.overall_rating),
+          communication_rating: summary.communication_rating == null ? null : Number(summary.communication_rating),
+          professionalism_rating: summary.professionalism_rating == null ? null : Number(summary.professionalism_rating),
+          development_rating: summary.development_rating == null ? null : Number(summary.development_rating),
+          payment_rating: summary.payment_rating == null ? null : Number(summary.payment_rating),
         });
-      } else if (summaryError) {
-        console.error("Public review summary error:", summaryError);
       }
-
-      const premiumFan = profileResult.data?.account_type === "fan" && subscription?.plan === "premium" && subscriptionIsActive;
-      const canViewReviews = access && !premiumFan;
-      if (canViewReviews) {
-        setReviewLoading(true);
-
-        const {
-          data: reviewData,
-          error: reviewError,
-        } = await supabase
-          .from("reviews")
-          .select(
-            `
-              id,
-              player_season,
-              overall_rating,
-              communication_rating,
-              professionalism_rating,
-              development_rating,
-              payment_rating,
-              pay_on_time_rating,
-              housing_rating,
-              medical_support_rating,
-              coaching_quality_rating,
-              facilities_rating,
-              playing_time_honesty_rating,
-              title,
-              body,
-              created_at,
-              is_anonymous
-            `
-          )
-          .eq(
-            "team_id",
-            id
-          )
-          .eq(
-            "status",
-            "approved"
-          )
-          .order(
-            "created_at",
-            {
-              ascending: false,
-            }
-          );
-
-        if (!reviewError && reviewData) {
-          const reviewIds = reviewData.map((review) => review.id);
-          const { data: verificationData } = await supabase.rpc("get_review_verification", { p_review_ids: reviewIds });
-          const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map((item) => [item.review_id, Boolean(item.player_verified)]));
-          setReviews(reviewData.map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
-        }
-
-        setReviewLoading(false);
+      if (fullRead && Array.isArray(reviewPayload?.reviews)) {
+        const reviewData = reviewPayload.reviews as Review[];
+        const reviewIds = reviewData.map((review) => review.id);
+        const { data: verificationData } = reviewIds.length
+          ? await supabase.rpc("get_review_verification", { p_review_ids: reviewIds })
+          : { data: [] };
+        const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map((item) => [item.review_id, Boolean(item.player_verified)]));
+        setReviews(reviewData.map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
+      } else {
+        setReviews([]);
       }
+      setReviewLoading(false);
 
       setLoading(false);
     }
