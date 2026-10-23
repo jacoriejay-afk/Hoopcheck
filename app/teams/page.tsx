@@ -1,10 +1,10 @@
 "use client";
 
 import {
-import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
   useEffect,
   useState,
 } from "react";
+import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 
 import Link from "next/link";
 import DirectoryLayout from "../../components/DirectoryLayout";
