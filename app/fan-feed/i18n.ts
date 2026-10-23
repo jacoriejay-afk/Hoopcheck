@@ -1,0 +1,51 @@
+"use client";
+import type { Language } from "../../components/LanguageProvider";
+const en = {
+  "title": "Fan HoopFeed",
+  "signIn": "Sign in to connect with fans.",
+  "fansOnly": "Fan accounts only",
+  "separateSurface": "Fan HoopFeed is separate from player HoopFeed.",
+  "playerFeed": "Player HoopFeed",
+  "discoverFans": "Discover fans",
+  "teams": "Teams",
+  "subtitle": "Connect with fans and post for the teams you support.",
+  "teamFirst": "Your team. Your people.",
+  "fanOnlyNote": "A separate fan-only feed · posts expire after 24 hours",
+  "postForTeam": "POST FOR YOUR TEAM",
+  "composerPlaceholder": "What’s happening with your team? (500 characters max)",
+  "chooseTeam": "Choose one of your followed teams",
+  "selectTeam": "Select a followed team",
+  "addPhoto": "Add photo",
+  "photoLimit": "Choose a JPG, PNG, or WebP photo up to 8 MB.",
+  "photoPreview": "Photo preview",
+  "removePhoto": "Remove photo",
+  "posting": "Publishing…",
+  "post": "Post to Fan HoopFeed",
+  "moderating": "Checking your post for safety…",
+  "published": "Your post is live.",
+  "publishFailed": "Your post could not be published.",
+  "commentFailed": "Your comment could not be published.",
+  "following": "Following",
+  "followFan": "Follow fan",
+  "like": "Like",
+  "comment": "Comment",
+  "comments": "Comments",
+  "commentPlaceholder": "Add a comment…",
+  "send": "Send",
+  "expires": "Expires",
+  "postPhoto": "Fan post photo",
+  "fan": "Fan",
+  "loading": "Loading Fan HoopFeed…",
+  "followTeamFirst": "Follow a team before posting.",
+  "recentPosts": "Recent fan posts",
+  "emptyKicker": "FAN COMMUNITY",
+  "emptyTitle": "Your fan feed starts here.",
+  "emptyBody": "Follow teams and fans to see team-tagged posts and conversations."
+} as const;
+const localized: Partial<Record<Language, Partial<Record<keyof typeof en,string>>>> = {
+ es:{title:"HoopFeed de fans",signIn:"Inicia sesión para conectar con otros fans.",subtitle:"Conecta con fans y publica para tus equipos favoritos.",discoverFans:"Descubrir fans",teams:"Equipos",post:"Publicar",like:"Me gusta",comment:"Comentar",comments:"Comentarios",followFan:"Seguir fan",following:"Siguiendo",send:"Enviar",addPhoto:"Añadir foto",chooseTeam:"Elige uno de tus equipos seguidos",selectTeam:"Selecciona un equipo seguido",emptyTitle:"Tu feed de fans empieza aquí.",emptyBody:"Sigue equipos y fans para ver publicaciones y conversaciones.",fanOnlyNote:"Feed exclusivo para fans · las publicaciones caducan en 24 horas"},
+ fr:{title:"HoopFeed des fans",signIn:"Connectez-vous pour échanger avec des fans.",subtitle:"Échangez avec les fans et publiez pour vos équipes préférées.",discoverFans:"Découvrir des fans",teams:"Équipes",post:"Publier",like:"J’aime",comment:"Commenter",comments:"Commentaires",followFan:"Suivre ce fan",following:"Abonné",send:"Envoyer",addPhoto:"Ajouter une photo",chooseTeam:"Choisissez une équipe suivie",selectTeam:"Choisir une équipe suivie",emptyTitle:"Votre fil de fans commence ici.",emptyBody:"Suivez des équipes et des fans pour voir leurs publications.",fanOnlyNote:"Fil réservé aux fans · expiration après 24 heures"},
+ de:{title:"Fan-HoopFeed",signIn:"Melde dich an, um dich mit Fans zu verbinden.",subtitle:"Vernetze dich mit Fans und poste für deine Lieblingsteams.",discoverFans:"Fans entdecken",teams:"Teams",post:"Veröffentlichen",like:"Gefällt mir",comment:"Kommentieren",comments:"Kommentare",followFan:"Fan folgen",following:"Du folgst",send:"Senden",addPhoto:"Foto hinzufügen",chooseTeam:"Wähle ein Team, dem du folgst",selectTeam:"Gefolgtes Team auswählen",emptyTitle:"Dein Fan-Feed beginnt hier.",emptyBody:"Folge Teams und Fans, um Team-Beiträge zu sehen.",fanOnlyNote:"Nur für Fans · Beiträge laufen nach 24 Stunden ab"},
+ az:{title:"Fan HoopFeed",signIn:"Fanlarla əlaqə üçün daxil olun.",subtitle:"Fanlarla əlaqə qurun və sevdiyiniz komandalar üçün paylaşım edin.",discoverFans:"Fanları kəşf et",teams:"Komandalar",post:"Paylaş",like:"Bəyən",comment:"Şərh yaz",comments:"Şərhlər",followFan:"Fanı izlə",following:"İzlənilir",send:"Göndər",addPhoto:"Şəkil əlavə et",chooseTeam:"İzlədiyiniz komandadan birini seçin",selectTeam:"İzlənilən komandanı seçin",emptyTitle:"Fan lentiniz burada başlayır.",emptyBody:"Komanda paylaşımlarını görmək üçün komandaları və fanları izləyin.",fanOnlyNote:"Yalnız fanlar üçün · paylaşımlar 24 saatdan sonra silinir"}
+};
+export function fanFeedI18n(key: keyof typeof en, language: Language): string { return localized[language]?.[key] ?? en[key]; }
