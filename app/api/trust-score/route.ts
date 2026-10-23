@@ -90,7 +90,7 @@ export async function GET(request: Request) {
         reviewerVerified: Boolean(verifiedByAuthor[row.author_id]),
       }));
       const calculated = calculateTrustScore({ averageRating, reviews: scoreReviews });
-      scores[id] = { ...calculated, averageRating };
+      scores[id] = { ...calculated, averageRating, tier };
 
       // Record at most one snapshot per entity per day. The shared TS utility
       // remains the only place where the score formula is calculated.
