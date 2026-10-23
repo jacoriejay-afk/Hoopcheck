@@ -105,6 +105,7 @@ export default function TeamsPage() {
             .from("teams")
             .select("id, name, country, league_name, league_id, city, logo_url", { count: "exact" })
             .eq("active", true)
+            .eq("basketball_type", "mens")
             .order("name");
 
           const term = query.trim();
