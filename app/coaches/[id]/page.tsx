@@ -255,7 +255,7 @@ export default function CoachDetailPage() {
       } = await supabase
         .from("subscriptions")
         .select(
-          "status, current_period_end"
+          "plan, status, current_period_end"
         )
         .eq(
           "user_id",
@@ -297,8 +297,11 @@ export default function CoachDetailPage() {
             new Date()
         );
 
+      const fanHasPaidPlan =
+        profile?.account_type !== "fan" ||
+        ["pro", "premium"].includes(subscription?.plan || "");
       const access =
-        subscriptionIsActive ||
+        (subscriptionIsActive && fanHasPaidPlan) ||
         Boolean(adminResult);
 
       setHasAccess(access);
