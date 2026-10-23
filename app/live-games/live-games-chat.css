@@ -1,0 +1,14 @@
+/* Live Game cards: clear shared logo tile and legible status tokens. */
+.hc-live-hub-page .hc-live-card__crest.hc-live-team-logo{position:relative;display:grid;place-items:center;flex:0 0 48px;width:48px;height:48px;min-width:48px;min-height:48px;border:1px solid #e5e5e5;border-radius:10px;background:#fff;color:#181818;overflow:hidden;font-weight:950;font-size:13px}
+.hc-live-hub-page .hc-live-team-logo img{position:absolute;inset:0;z-index:2;width:100%;height:100%;padding:4px;object-fit:contain;background:#fff}
+.hc-live-hub-page .hc-live-team-logo>span{display:grid;place-items:center;width:100%;height:100%;color:#181818;background:#fff}
+.hc-live-hub-page .hc-live-team-logo:has(img:not([style*="display: none"]))>span{visibility:hidden}
+.hc-live-hub-page .hc-live-badge--visible{display:inline-flex!important;align-items:center;gap:6px;background:#ed3028!important;color:#fff!important;border:1px solid #ed3028}
+.hc-live-hub-page .hc-live-badge--visible span{color:#fff!important;animation:hc-live-badge-pulse 1.7s infinite}
+@keyframes hc-live-badge-pulse{0%{opacity:1;text-shadow:0 0 0 rgba(255,255,255,0)}50%{opacity:.55;text-shadow:0 0 7px rgba(255,255,255,.7)}100%{opacity:1;text-shadow:0 0 0 rgba(255,255,255,0)}}
+.hc-live-hub-page .hc-live-card__score{color:var(--ink);text-align:center}
+.hc-live-hub-page .hc-live-card__meta{color:var(--gray-500)}
+.hc-live-hub-page .hc-live-join{background:var(--orange)!important;border-color:var(--orange)!important;color:#fff!important;min-height:44px}
+html.theme-dark .hc-live-hub-page .hc-live-card__score{color:#fff}
+html.theme-dark .hc-live-hub-page .hc-live-badge--visible{color:#fff!important;background:#ed3028!important}
+@media(max-width:480px){.hc-live-hub-page .hc-live-card__crest.hc-live-team-logo{flex-basis:44px;width:44px;height:44px;min-width:44px;min-height:44px}}
