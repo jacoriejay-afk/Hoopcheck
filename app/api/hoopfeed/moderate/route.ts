@@ -31,6 +31,7 @@ async function readLimitedBody(request: Request, maxBytes: number): Promise<Uint
 const MAX_TEXT_LENGTH = 2000;
 const ALLOWED_TOPIC_TAGS = new Set(["Practice","Game Day","Travel","Teammates","Culture","Win","Challenge"]);
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const ALLOWED_VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
 const IMAGE_EXTENSIONS: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -147,11 +148,15 @@ export async function POST(request: Request) {
     }
     const imageValue = form.get("image");
     const image = imageValue instanceof File && imageValue.size > 0 ? imageValue : null;
+    const videoPath = String(form.get("video_path") || "");
+    const videoType = String(form.get("video_type") || "");
     if (image && !ALLOWED_IMAGE_TYPES.has(image.type)) {
       return NextResponse.json({ allowed: false, message: "Use a JPEG, PNG, or WebP image." }, { status: 400 });
     }
-    if (kind === "comment" && image) {
-      return NextResponse.json({ allowed: false, message: "Photos can only be added to posts." }, { status: 400 });
+    if (videoPath && (!ALLOWED_VIDEO_TYPES.has(videoType) || !videoPath.startsWith(user.id + "/") || videoPath.includes("..") || videoPath.length > 240)) return NextResponse.json({ allowed:false, message:"Invalid video upload. Choose a supported video and try again." }, { status:400 });
+    if (videoPath && !text) return NextResponse.json({ allowed:false, message:"Add a caption so HoopCheck can run text safety checks before publishing a video." }, { status:400 });
+    if (kind === "comment" && (image || videoPath)) {
+      return NextResponse.json({ allowed: false, message: "Photos and videos can only be added to posts." }, { status: 400 });
     }
 
     const { data: profile } = await db.from("profiles").select("account_type,current_country,current_country_public").eq("id", user.id).maybeSingle();
@@ -184,7 +189,7 @@ export async function POST(request: Request) {
       const sourceId = String(form.get("post_id") || "").trim();
       if (!sourceId) return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 400 });
       const { data: source, error: sourceError } = await db.from("feed_posts")
-        .select("id,author_id,body,image_url,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,status,expires_at")
+        .select("id,author_id,body,image_url,video_url,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,status,expires_at")
         .eq("id", sourceId).maybeSingle();
       if (sourceError) {
         console.error("HoopFeed share source lookup failed", { sourceId, code: sourceError.code });
@@ -211,7 +216,7 @@ export async function POST(request: Request) {
       const sharedAt = new Date();
       const expiresAt = new Date(sharedAt.getTime() + 24 * 60 * 60 * 1000);
       const { data: shared, error: shareError } = await db.from("feed_posts").insert({
-        author_id: user.id, body: source.body, image_url: source.image_url,
+        author_id: user.id, body: source.body, image_url: source.image_url, video_url: source.video_url,
         topic_tag: source.topic_tag, game_day_team: source.game_day_team,
         game_day_opponent: source.game_day_opponent, game_day_score_for: source.game_day_score_for,
         game_day_score_against: source.game_day_score_against, location_country: null,
@@ -249,6 +254,7 @@ export async function POST(request: Request) {
     }
 
     let image_url: string | null = null;
+    let video_url: string | null = null;
     if (image) {
       const path = user.id + "/" + crypto.randomUUID() + "." + IMAGE_EXTENSIONS[image.type];
       const bytes = Buffer.from(await image.arrayBuffer());
@@ -256,10 +262,11 @@ export async function POST(request: Request) {
       if (error) return NextResponse.json({ allowed:false,message:"Photo upload failed. Your post was not published." },{status:400});
       image_url = db.storage.from("feed-images").getPublicUrl(path).data.publicUrl;
     }
+    if (videoPath) video_url = db.storage.from("feed-videos").getPublicUrl(videoPath).data.publicUrl;
     const shareCountry = String(form.get("share_country") || "false") === "true";
     const submittedCountry = String(form.get("post_country") || "").trim().slice(0, 100);
     const { error } = await db.from("feed_posts").insert({
-      author_id:user.id, body:text || " ", image_url,
+      author_id:user.id, body:text || " ", image_url, video_url,
       topic_tag: profile?.account_type === "player" && submittedTopicTag ? submittedTopicTag : null,
       game_day_team: profile?.account_type === "player" && submittedTopicTag === "Game Day" ? gameDayTeam : null,
       game_day_opponent: profile?.account_type === "player" && submittedTopicTag === "Game Day" ? gameDayOpponent : null,

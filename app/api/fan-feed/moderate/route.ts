@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
 const IMAGE_EXT: Record<string,string> = { "image/jpeg":"jpg", "image/png":"png", "image/webp":"webp" };
 
 function adminClient() {
@@ -48,13 +49,14 @@ export async function POST(request:Request) {
       return NextResponse.json({allowed:false,message:"Active Pro or Premium membership is required."},{status:403});
 
     const isJson=request.headers.get("content-type")?.includes("application/json");
-    let kind="post", postId="", text="", teamId="", image:File|null=null;
+    let kind="post", postId="", text="", teamId="", image:File|null=null, videoPath="", videoType="";
     if(isJson) {
       const payload=await request.json();
       kind=String(payload.kind||"comment"); postId=String(payload.post_id||""); text=String(payload.text||"").trim();
     } else {
       const form=await request.formData(); teamId=String(form.get("team_id")||""); text=String(form.get("text")||"").trim();
       const v=form.get("image"); image=v instanceof File&&v.size?v:null;
+      videoPath=String(form.get("video_path")||""); videoType=String(form.get("video_type")||"");
     }
     if(text.length>500) return NextResponse.json({allowed:false,message:"Text must be 500 characters or fewer."},{status:413});
     if(kind==="comment") {
@@ -71,19 +73,23 @@ export async function POST(request:Request) {
       if(error) return NextResponse.json({allowed:false,message:"Your comment could not be published."},{status:400});
       return NextResponse.json({allowed:true});
     }
-    if(!teamId||(!text&&!image)) return NextResponse.json({allowed:false,message:"Choose a followed team and add text or a photo."},{status:400});
+    if(!teamId||(!text&&!image&&!videoPath)) return NextResponse.json({allowed:false,message:"Choose a followed team and add text or a photo."},{status:400});
     const {data:teamFollow}=await db.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").eq("target_id",teamId).maybeSingle();
     if(!teamFollow) return NextResponse.json({allowed:false,message:"You can only post for teams you follow."},{status:403});
     if(image&&(!IMAGE_TYPES.has(image.type)||image.size>8*1024*1024)) return NextResponse.json({allowed:false,message:"Use a JPG, PNG, or WebP photo no larger than 8 MB."},{status:400});
+    if(videoPath&&(!VIDEO_TYPES.has(videoType)||!videoPath.startsWith(user.id+"/")||videoPath.includes("..")||videoPath.length>240)) return NextResponse.json({allowed:false,message:"Invalid video upload. Choose a supported video and try again."},{status:400});
+    if(videoPath&&!text) return NextResponse.json({allowed:false,message:"Add a caption so HoopCheck can run text safety checks before publishing a video."},{status:400});
     const mod=await moderate(text,image); if(!mod.allowed) return NextResponse.json({allowed:false,message:mod.message},{status:mod.status});
     let image_url:string|null=null;
+    let video_url:string|null=null;
     if(image) {
       const path=user.id+"/"+crypto.randomUUID()+"."+IMAGE_EXT[image.type];
       const {error}=await db.storage.from("feed-images").upload(path,Buffer.from(await image.arrayBuffer()),{contentType:image.type,cacheControl:"31536000",upsert:false});
       if(error) return NextResponse.json({allowed:false,message:"Photo upload failed. Your post was not published."},{status:400});
       image_url=db.storage.from("feed-images").getPublicUrl(path).data.publicUrl;
     }
-    const {error}=await db.from("fan_feed_posts").insert({author_id:user.id,team_id:teamId,body:text,image_url,status:"approved",expires_at:new Date(Date.now()+86400000).toISOString()});
+    if(videoPath) video_url=db.storage.from("feed-videos").getPublicUrl(videoPath).data.publicUrl;
+    const {error}=await db.from("fan_feed_posts").insert({author_id:user.id,team_id:teamId,body:text,image_url,video_url,status:"approved",expires_at:new Date(Date.now()+86400000).toISOString()});
     if(error) return NextResponse.json({allowed:false,message:"Your post could not be published."},{status:400});
     return NextResponse.json({allowed:true});
   } catch(error) {

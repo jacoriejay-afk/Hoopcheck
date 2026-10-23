@@ -8,6 +8,7 @@ import SearchBar from "../../components/SearchBar";
 import CourtLines from "../../components/CourtLines";
 import { getGameAvailability, formatViewerLocalTime } from "../../lib/game-availability";
 import { HoopIcon } from "../../components/HoopCheckUI";
+import "./live-games-chat.css";
 
 type Game = {
   id: string;
@@ -25,7 +26,7 @@ type Game = {
   country: string | null;
   period_label: string | null;
 };
-type Team = { id: string; name: string; country?: string | null; league_name?: string | null };
+type Team = { id: string; name: string; logo_url?: string | null; country?: string | null; league_name?: string | null };
 type Filter = "all" | "live" | "my-teams";
 
 const activeSubscription = (subscription: {plan?: string|null;status?: string|null;current_period_end?: string|null} | null) =>
@@ -50,6 +51,7 @@ export default function LiveGamesPage() {
   const [followedIds, setFollowedIds] = useState<string[]>([]);
   const [reminders, setReminders] = useState<string[]>([]);
   const [presenceCounts, setPresenceCounts] = useState<Record<string, number>>({});
+  const [joinedGameIds, setJoinedGameIds] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<Filter>("all");
   const [leagueFilter, setLeagueFilter] = useState("");
   const [query, setQuery] = useState("");
@@ -93,28 +95,32 @@ export default function LiveGamesPage() {
 
     const ids = Array.from(new Set(nextGames.flatMap(game => [game.team_id, game.opponent_team_id].filter((id): id is string => Boolean(id)))));
     if (ids.length) {
-      const { data: teamRows } = await supabase.from("teams").select("id,name,country,league_name").in("id", ids);
+      const { data: teamRows } = await supabase.from("teams").select("id,name,logo_url,country,league_name").in("id", ids);
       setTeams(Object.fromEntries((teamRows || []).map((team: Team) => [team.id, team])));
     } else setTeams({});
 
-    const freshAfter = new Date(Date.now() - 90_000).toISOString();
+    const freshAfter = new Date(Date.now() - 75_000).toISOString();
     const { data: presenceRows } = await supabase.from("fan_live_chat_presence")
-      .select("game_id,last_seen_at").gt("last_seen_at", freshAfter);
+      .select("game_id,user_id,last_seen_at").gt("last_seen_at", freshAfter);
     const counts: Record<string, number> = {};
     for (const row of presenceRows || []) counts[row.game_id] = (counts[row.game_id] || 0) + 1;
     setPresenceCounts(counts);
+    setJoinedGameIds(new Set((presenceRows || []).filter((row: any) => row.user_id === user.id).map((row: any) => row.game_id)));
     setLoading(false);
   }, []);
 
   useEffect(() => { void load(true); }, [load]);
   useEffect(() => {
+    const presenceChannel = supabase.channel("live-games-presence-counts")
+      .on("postgres_changes", { event: "*", schema: "public", table: "fan_live_chat_presence" }, () => { void load(); })
+      .subscribe();
     const refresh = window.setInterval(() => {
       setClock(new Date());
       void load();
     }, 60_000);
     const onVisible = () => { if (document.visibilityState === "visible") { setClock(new Date()); void load(); } };
     document.addEventListener("visibilitychange", onVisible);
-    return () => { window.clearInterval(refresh); document.removeEventListener("visibilitychange", onVisible); };
+    return () => { window.clearInterval(refresh); document.removeEventListener("visibilitychange", onVisible); void supabase.removeChannel(presenceChannel); };
   }, [load]);
 
   const prepared = useMemo(() => games.map(game => ({
@@ -143,6 +149,7 @@ export default function LiveGamesPage() {
 
   const nowMs = clock.getTime();
   const live = filtered.filter(({game,availability}) =>
+    !["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()) &&
     availability.state === "LIVE" && availability.phase !== "post-game" &&
     (game.status === "live" || availability.phase === "schedule-unknown"));
   const upcoming = filtered.filter(({availability,game}) => {
@@ -158,11 +165,10 @@ export default function LiveGamesPage() {
     const status = game.status.toLowerCase();
     const timestamp = Date.parse(game.ends_at || game.started_at || game.scheduled_at || "");
     return ["final","finished","cancelled","canceled"].includes(status) &&
-      Number.isFinite(timestamp) && timestamp >= nowMs - 48 * 3_600_000 &&
-      availability.state === "CLOSED";
+      Number.isFinite(timestamp) && timestamp >= nowMs - 48 * 3_600_000;
   }).sort((a,b) => Date.parse(b.game.ends_at || b.game.started_at || b.game.scheduled_at || "") - Date.parse(a.game.ends_at || a.game.started_at || a.game.scheduled_at || ""));
 
-  const postGameOpen = filtered.filter(({availability}) => availability.phase === "post-game" && availability.chatOpen);
+  const postGameOpen = filtered.filter(({availability,game}) => availability.phase === "post-game" && availability.chatOpen && !["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()));
   const nextUpcoming = upcoming[0] || null;
 
   async function toggleReminder(gameId: string) {
@@ -184,13 +190,13 @@ export default function LiveGamesPage() {
     const isLive = variant === "live";
     const isUpcoming = variant === "upcoming";
     const isRecent = variant === "recent";
-    const canJoin = availability.chatOpen && !isRecent && (!isUpcoming || Boolean(game.scheduled_at && Date.parse(game.scheduled_at) <= nowMs));
+    const canJoin = availability.chatOpen && !isRecent && !["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()) && (!isUpcoming || Boolean(game.scheduled_at && Date.parse(game.scheduled_at) <= nowMs));
     const score = scoreText(game);
     const tip = game.scheduled_at || game.started_at;
     return (
       <article className={`hc-live-hub-card ${isLive ? "is-live" : ""} ${isRecent ? "is-recent" : ""}`}>
         <div className="hc-live-hub-card__top">
-          {isLive ? <span className="hc-live-badge"><span aria-hidden="true">●</span> LIVE</span>
+          {isLive ? <span className="hc-live-badge hc-live-badge--visible"><span aria-hidden="true">●</span> LIVE</span>
             : variant === "postgame" ? <span className="hc-live-state hc-live-state--post">POST-GAME CHAT</span>
             : isRecent ? <span className="hc-live-state">FINAL</span>
             : availability.state === "OPENS SOON" ? <span className="hc-live-state hc-live-state--soon">OPENS SOON</span>
@@ -199,7 +205,7 @@ export default function LiveGamesPage() {
         </div>
         <div className="hc-live-card__teams">
           <div className="hc-live-card__side">
-            <span className="hc-live-card__crest" aria-hidden="true">{initials(home?.name || "Team")}</span>
+            <span className="hc-live-card__crest hc-live-team-logo" aria-hidden="true">{home?.logo_url ? <img src={home.logo_url} alt="" onError={e => { e.currentTarget.style.display = "none"; }} /> : null}<span>{initials(home?.name || "Team")}</span></span>
             <strong>{home?.name || "Team"}</strong>
           </div>
           <div className="hc-live-card__middle">
@@ -207,7 +213,7 @@ export default function LiveGamesPage() {
             {game.period_label && <small>{game.period_label}</small>}
           </div>
           <div className="hc-live-card__side hc-live-card__side--away">
-            <span className="hc-live-card__crest" aria-hidden="true">{initials(away?.name || game.opponent_name)}</span>
+            <span className="hc-live-card__crest hc-live-team-logo" aria-hidden="true">{away?.logo_url ? <img src={away.logo_url} alt="" onError={e => { e.currentTarget.style.display = "none"; }} /> : null}<span>{initials(away?.name || game.opponent_name)}</span></span>
             <strong>{away?.name || game.opponent_name}</strong>
           </div>
         </div>
@@ -219,7 +225,7 @@ export default function LiveGamesPage() {
         </div>
         {isUpcoming && availability.opensAt && <p className="hc-live-card__muted">Chat opens {formatViewerLocalTime(availability.opensAt.toISOString(), { weekday: undefined })} · Remind Me sends an in-app reminder.</p>}
         <div className="hc-live-card__actions">
-          {canJoin && <Link href={`/fan-live?gameId=${encodeURIComponent(game.id)}`} className="btn hc-live-join">{isUpcoming ? "JOIN CHAT" : "JOIN CHAT"} <span aria-hidden="true">→</span></Link>}
+          {canJoin && <Link href={`/fan-live?gameId=${encodeURIComponent(game.id)}`} className="btn hc-live-join">{joinedGameIds.has(game.id) ? "IN CHAT ✓" : "JOIN CHAT"} <span aria-hidden="true">→</span></Link>}
           {isUpcoming && <button type="button" className={`hc-remind-button ${reminders.includes(game.id) ? "is-set" : ""}`} disabled={reminding === game.id} onClick={() => void toggleReminder(game.id)}>
             <HoopIcon name="bell" size={16} /> {reminding === game.id ? "Saving…" : reminders.includes(game.id) ? "REMINDER SET" : "REMIND ME"}
           </button>}
