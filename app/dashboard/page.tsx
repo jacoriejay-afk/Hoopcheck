@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCachedSession, supabase } from "../../lib/supabase";
@@ -170,6 +171,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <main className="page-shell dashboard-page">
+      <FanBasketballSideSwitch />
         <div className="page-container">
           <HoopLoading label={t("loadingDashboard")} />
         </div>
