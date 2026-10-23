@@ -53,3 +53,16 @@ html.theme-light main:not(.hc-template-home) :where(input,textarea,select)::plac
 html.theme-dark main:not(.hc-template-home) :where(input,textarea,select)::placeholder { color: var(--hc-control-muted) !important; opacity: 1; }
 :where(.hc-toast,.toast,.toast-message,.toast-notification,.snackbar,.notification-toast,.hc-settings-message,.settings-save,[data-sonner-toast],[data-radix-toast-root]) { background: var(--hc-surface-raised) !important; color: var(--hc-foreground) !important; border-color: var(--hc-border) !important; }
 :where(.hc-toast,.toast,.toast-message,.toast-notification,.snackbar,.notification-toast,.hc-settings-message,.settings-save,[data-sonner-toast],[data-radix-toast-root]) :where(p,span,strong,small) { color: inherit !important; }
+
+/* Live Game Chat surfaces have their own legacy class family. */
+main:not(.hc-template-home) :where(.hc-live-room-hero,.hc-live-room-panel,.hc-live-room-scoreboard,.hc-live-chat-shell,.hc-live-chat-toolbar,.hc-live-chat-messages,.hc-live-chat-message,.hc-live-chat-compose,.hc-live-chat-rules,.hc-live-empty-state,.hc-live-closed-state,.hc-live-room-notice,.hc-live-report-panel) {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light main:not(.hc-template-home) :where(.hc-live-room-game-status,.hc-live-chat-message-meta,.hc-live-room-footnote,.hc-live-room-notice p) {
+  color: var(--hc-foreground-muted) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(.hc-live-room-game-status,.hc-live-chat-message-meta,.hc-live-room-footnote,.hc-live-room-notice p) {
+  color: var(--hc-foreground-muted) !important;
+}
