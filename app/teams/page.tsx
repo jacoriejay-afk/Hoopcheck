@@ -4,6 +4,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 
 import Link from "next/link";
 import DirectoryLayout from "../../components/DirectoryLayout";
@@ -30,7 +31,7 @@ type Team = {
   longitude?: number | null;
 };
 
-type TrustSummary = { score: number | null; reviewCount: number; verifiedReviewCount: number; explanation: string; averageRating: number | null };
+type TrustSummary = { score: number | null; reviewCount: number | null; verifiedReviewCount: number | null; explanation: string | null; averageRating: number | null; tier?: "free" | "pro" | "premium" | "player" | "member"; locked?: boolean };
 
 export default function TeamsPage() {
   const { t } = useLanguage();
@@ -104,6 +105,7 @@ export default function TeamsPage() {
             .from("teams")
             .select("id, name, country, league_name, league_id, city, logo_url", { count: "exact" })
             .eq("active", true)
+            .eq("basketball_type", "mens")
             .order("name");
 
           const term = query.trim();
@@ -163,10 +165,14 @@ export default function TeamsPage() {
     if (!teams.length) { setTrustScores({}); return; }
     let active = true;
     const ids = teams.map(team => team.id).filter(Boolean);
-    void fetch(`/api/trust-score?entityType=team&entityIds=${ids.map(encodeURIComponent).join(",")}`)
-      .then(response => response.ok ? response.json() : null)
-      .then(payload => { if (active && payload?.scores) setTrustScores(payload.scores as Record<string, TrustSummary>); })
-      .catch(() => { if (active) setTrustScores({}); });
+    void (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`/api/trust-score?entityType=team&entityIds=${ids.map(encodeURIComponent).join(",")}`, {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}, cache: "no-store",
+      });
+      const payload = response.ok ? await response.json() : null;
+      if (active && payload?.scores) setTrustScores(payload.scores as Record<string, TrustSummary>);
+    })().catch(() => { if (active) setTrustScores({}); });
     return () => { active = false; };
   }, [teams]);
 
@@ -244,6 +250,7 @@ export default function TeamsPage() {
 
   return (
     <main className="hc-team-directory-page">
+      <FanBasketballSideSwitch lockedHint />
       <DirectoryLayout current="teams" />
 
       <section className="hero">
@@ -323,7 +330,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           teams.map((team) => (
-            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount} trustExplanation={trustScores[team.id]?.explanation} averageRating={trustScores[team.id]?.averageRating} logoUrl={team.logo_url} />
+            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={trustScores[team.id]?.tier} logoUrl={team.logo_url} />
           ))
         )}
       </section>
