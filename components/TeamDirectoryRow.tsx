@@ -19,12 +19,12 @@ type TeamDirectoryRowProps = {
   trustExplanation?: string;
   averageRating?: number | null;
   logoUrl?: string | null;
-  trustTier?: "free" | "pro" | "premium" | "player" | "member";
+  trustTier?: "free" | "pro" | "premium" | "player" | "member" | "unknown";
 };
 
 export default function TeamDirectoryRow({
   id, name, city, country, leagueName, href, kind = "mens", showFollow = true,
-  trustReviewCount = 0, averageRating = null, logoUrl = null, trustTier = "free",
+  trustReviewCount = 0, averageRating = null, logoUrl = null, trustTier = "unknown",
 }: TeamDirectoryRowProps) {
   const { t } = useLanguage();
   const monogram = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
