@@ -303,13 +303,14 @@ export default function CoachDetailPage() {
 
       setHasAccess(access);
 
-      const { data: summaryData, error: summaryError } =
-        await supabase.rpc("get_public_review_summary", {
-          p_entity_type: "coach",
-          p_entity_id: id,
-        });
+      const { data: summaryData, error: summaryError } = access
+        ? await supabase.rpc("get_public_review_summary", {
+            p_entity_type: "coach",
+            p_entity_id: id,
+          })
+        : { data: null, error: null };
 
-      if (!summaryError && summaryData?.[0]) {
+      if (access && !summaryError && summaryData?.[0]) {
         setPublicSummary({
           review_count: Number(summaryData[0].review_count || 0),
           overall_rating: summaryData[0].overall_rating == null ? null : Number(summaryData[0].overall_rating),
@@ -384,12 +385,13 @@ export default function CoachDetailPage() {
   useEffect(() => {
     if (!id) return;
     let active = true;
+    if (!hasAccess) { setTrustScoreData(null); return () => { active = false; }; }
     void fetch(`/api/trust-score?entityType=coach&entityId=${encodeURIComponent(id)}`)
       .then(response => response.ok ? response.json() : null)
       .then(payload => { if (active && payload) setTrustScoreData(payload); })
       .catch(() => { if (active) setTrustScoreData(null); });
     return () => { active = false; };
-  }, [id]);
+  }, [id, hasAccess]);
 
   async function submitReport() {
     if (!reportReviewId) {
@@ -576,14 +578,22 @@ export default function CoachDetailPage() {
         <h1>
           {coach.name}
         </h1>
-        <div className="hc-entity-trust-score">
-          <TrustScoreDial
-            score={trustScoreData?.score ?? null}
-            explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedReviews"))}
-            reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count}
-            verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0}
-          />
-        </div>
+        {hasAccess ? (
+          <div className="hc-entity-trust-score">
+            <TrustScoreDial
+              score={trustScoreData?.score ?? null}
+              explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedReviews"))}
+              reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count}
+              verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0}
+            />
+          </div>
+        ) : (
+          <div className="hc-entity-trust-score hc-membership-locked-score">
+            <span className="eyebrow">Members Only</span>
+            <h2>Unlock ratings and reviews</h2>
+            <Link href="/membership" className="btn">View Membership</Link>
+          </div>
+        )}
 
         <div className="entity-actions"><WatchButton targetType="coach" targetId={coach.id} targetName={coach.name} /></div>
         <ClaimProfileButton entityType="coach" entityId={coach.id} entityName={coach.name} />
@@ -690,7 +700,7 @@ export default function CoachDetailPage() {
           <div className="card rating-locked-card">
             <div className="eyebrow">Community Rating</div>
             <h2>Overall rating locked</h2>
-            <p>{publicSummary.review_count} approved {publicSummary.review_count === 1 ? "review" : "reviews"} are available, but ratings are reserved for members.</p>
+            <p>Sign in and choose a membership to unlock ratings and reviews.</p>
             <div className="actions"><Link href="/signup" className="btn">Create Free Account</Link><Link href="/membership" className="btn dark">Unlock Ratings</Link></div>
           </div>
         </section>
@@ -812,7 +822,7 @@ export default function CoachDetailPage() {
               <div className="card" style={{ marginBottom: 24, borderColor: "rgba(255,106,0,.45)" }}>
                 <div className="eyebrow">Members Only</div>
                 <h3>Player reviews are locked</h3>
-                <p>{publicSummary.review_count || 0} approved player review{publicSummary.review_count === 1 ? "" : "s"} are available for this profile. Create a free account to see the locked review section and membership options.</p>
+                <p>Sign in and choose a membership to unlock player reviews.</p>
                 <div className="actions">
                   <Link href="/signup" className="btn">Create Free Account</Link>
                   <Link href="/login" className="btn dark">Log In</Link>
