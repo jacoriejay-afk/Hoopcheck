@@ -14,7 +14,10 @@ type FanPost = { id: string; author_id: string; team_id: string; body: string; i
 
 export default function FanFeedPage() {
   const { t, language, formatDate } = useLanguage();
-  const ft = (key: Parameters<typeof fanFeedI18n>[0]) => fanFeedI18n(key, language);
+  const ft = (key: Parameters<typeof fanFeedI18n>[0]) => {
+    const sharedTranslation = t(key);
+    return fanFeedI18n(key, language, sharedTranslation === key ? undefined : sharedTranslation);
+  };
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -135,23 +138,23 @@ export default function FanFeedPage() {
     if (error) { setMessage(error.message); return; }
     setArchived(prev => new Set(prev).add(post.id));
     setPosts(prev => prev.filter(p => p.id !== post.id));
-    setMessage("Post archived. Only you can see your archive action.");
+    setMessage(ft("archiveSuccess"));
   }
 
   async function deletePost(post: FanPost) {
-    if (!user || post.author_id !== user.id || !window.confirm("Delete this post permanently?")) return;
+    if (!user || post.author_id !== user.id || !window.confirm(ft("deleteConfirm"))) return;
     const { error } = await supabase.from("fan_feed_posts").delete().eq("id", post.id).eq("author_id", user.id);
     if (error) { setMessage(error.message); return; }
     setPosts(prev => prev.filter(p => p.id !== post.id));
-    setMessage("Post deleted.");
+    setMessage(ft("deleteSuccess"));
   }
 
   async function sharePost(post: FanPost) {
     const url = `${window.location.origin}/fan-feed?post=${encodeURIComponent(post.id)}`;
     try {
       if (navigator.share) await navigator.share({ title: "HoopCheck Fan HoopFeed", text: post.body.slice(0, 160), url });
-      else { await navigator.clipboard.writeText(url); setMessage("Post link copied."); }
-    } catch (error: any) { if (error?.name !== "AbortError") setMessage("Could not share this post. Copy the page link and try again."); }
+      else { await navigator.clipboard.writeText(url); setMessage(ft("linkCopied")); }
+    } catch (error: any) { if (error?.name !== "AbortError") setMessage(ft("shareFailed")); }
   }
 
   async function addComment(postId: string) {
@@ -184,8 +187,9 @@ export default function FanFeedPage() {
       <div className="hc-feed-composer__editor"><div className="hc-feed-composer__avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : "HC"}</div><textarea value={body} maxLength={500} rows={3} onChange={e => setBody(e.target.value)} placeholder={ft("composerPlaceholder")} /></div>
       <label className="hc-feed-topic-label" htmlFor="fan-team-select">{ft("chooseTeam")}</label>
       <select id="fan-team-select" value={teamId} onChange={e => setTeamId(e.target.value)} className="hc-feed-team-select" required><option value="">{ft("selectTeam")}</option>{teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}</select>
-      <div className="hc-feed-composer__footer"><label className="hc-feed-photo-button" htmlFor="fan-feed-photo">{ft("addPhoto")}</label><input id="fan-feed-photo" className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={e => { const f = e.target.files?.[0]; if (!f) return; if (f.size > 8 * 1024 * 1024 || !f.type.startsWith("image/")) { setMessage(ft("photoLimit")); return; } setPhoto(f); setPhotoPreview(URL.createObjectURL(f)); setVideo(null); setVideoPreview(""); }} /><label className="hc-feed-photo-button" htmlFor="fan-feed-video">{ft("addVideo")}</label><input id="fan-feed-video" className="visually-hidden" type="file" accept="video/mp4,video/webm,video/quicktime" onChange={e => { const f=e.target.files?.[0]; if(!f)return; if(f.size>50*1024*1024 || !["video/mp4","video/webm","video/quicktime"].includes(f.type)){setMessage("Use MP4, WebM, or MOV up to 50 MB.");return;} setVideo(f);setVideoPreview(URL.createObjectURL(f));setPhoto(null);setPhotoPreview(""); }} /><span className="hc-feed-counter">{body.length}/500</span><button className="btn hc-feed-post-button" disabled={posting || !teamId || (!body.trim() && !photo && !video)} onClick={() => void publish()}>{posting ? ft("posting") : ft("post")}</button></div>
+      <div className="hc-feed-composer__footer"><label className="hc-feed-photo-button" htmlFor="fan-feed-photo">{ft("addPhoto")}</label><input id="fan-feed-photo" className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={e => { const f = e.target.files?.[0]; if (!f) return; if (f.size > 8 * 1024 * 1024 || !f.type.startsWith("image/")) { setMessage(ft("photoLimit")); return; } setPhoto(f); setPhotoPreview(URL.createObjectURL(f)); setVideo(null); setVideoPreview(""); }} /><label className="hc-feed-photo-button" htmlFor="fan-feed-video">{ft("addVideo")}</label><input id="fan-feed-video" className="visually-hidden" type="file" accept="video/mp4,video/webm,video/quicktime" onChange={e => { const f=e.target.files?.[0]; if(!f)return; if(f.size>50*1024*1024 || !["video/mp4","video/webm","video/quicktime"].includes(f.type)){setMessage(ft("videoLimit"));return;} setVideo(f);setVideoPreview(URL.createObjectURL(f));setPhoto(null);setPhotoPreview(""); }} /><span className="hc-feed-counter">{body.length}/500</span><button className="btn hc-feed-post-button" disabled={posting || !teamId || (!body.trim() && !photo && !video)} onClick={() => void publish()}>{posting ? ft("posting") : ft("post")}</button></div>
       {photoPreview && <div style={{ marginTop: 12 }}><img src={photoPreview} alt={ft("photoPreview")} style={{ width: "100%", maxHeight: 360, objectFit: "cover", borderRadius: 16 }} /><button type="button" className="btn dark" onClick={() => { setPhoto(null); setPhotoPreview(""); }}>{ft("removePhoto")}</button></div>}
+      {videoPreview && <div style={{ marginTop: 12 }}><video src={videoPreview} controls playsInline preload="metadata" style={{ width: "100%", maxHeight: 360, borderRadius: 16 }} aria-label={ft("addVideo")} /><button type="button" className="btn dark" onClick={() => { setVideo(null); setVideoPreview(""); }}>{ft("removePhoto")}</button></div>}
       {message && <p className="hc-feed-message" role="status">{message}</p>}
       {!teams.length && <p className="muted">{ft("followTeamFirst")} <Link href="/teams">{ft("teams")}</Link></p>}
     </section>
