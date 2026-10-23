@@ -33,7 +33,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const bearer = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "") || "";
     let tier = "free";
     if (bearer && anonKey) {
