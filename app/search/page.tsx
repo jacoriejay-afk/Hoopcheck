@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
+import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -254,6 +255,7 @@ function SearchContent() {
 
   return (
     <main className="search-page hc-global-search-page">
+      <FanBasketballSideSwitch />
       <nav className="hc-directory-switcher" aria-label={t("browseDirectoriesLabel")}>
         <span className="hc-directory-switcher-label">{t("browseDirectoriesLabel")}</span>
         <Link href="/teams">{t("mensTeams")}</Link>
