@@ -236,12 +236,12 @@ export default function LiveGamesPage() {
     );
   }
 
-  if (loading) return <main className="page-shell hc-live-hub-page">
-      <FanBasketballSideSwitch /><div className="page-container"><HoopLoading label="Loading Live Games..." /></div></main>;
+  if (loading) return <main className="page-shell hc-live-hub-page"><div className="page-container"><HoopLoading label="Loading Live Games..." /></div></main>;
   if (!userId) return <main className="page-shell hc-live-hub-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">FAN COMMUNITY</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in as a Pro or Premium Fan to discover games and join live conversations.</p><Link href="/login" className="btn">Sign in</Link></section></div></main>;
   if (!allowed) return <main className="page-shell hc-live-hub-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM FANS</p><h1>LIVE GAME CHAT</h1><p className="muted">Watch together. Chat live with fans during real games.</p><p className="muted">An active Pro or Premium Fan membership is required to join live game chat.</p><Link href="/membership" className="btn">Explore Membership</Link></section></div></main>;
 
-  return <main className="page-shell hc-live-hub-page"><div className="page-container">
+  return <main className="page-shell hc-live-hub-page">
+      <FanBasketballSideSwitch /><div className="page-container">
     <header className="hc-live-hub-hero">
       <div><p className="eyebrow">HOOPCHECK · FAN HQ</p><h1>LIVE GAME CHAT<span>.</span></h1><p>Watch together. Chat live with fans during real games.</p></div>
       <div className="hc-live-hero-orbit" aria-hidden="true"><span /><span /><span /></div>
