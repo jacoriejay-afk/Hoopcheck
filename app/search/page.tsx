@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
+import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -110,6 +111,9 @@ function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q")?.trim() || "";
   const initialType = searchParams.get("type");
+  const basketballSide = useFanBasketballSide();
+  const [isFanAccount, setIsFanAccount] = useState(false);
+  useEffect(() => { void (async () => { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const { data } = await supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(); setIsFanAccount(data?.account_type === "fan"); })(); }, []);
 
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -223,8 +227,10 @@ function SearchContent() {
   useEffect(() => {
     if (initialType === "players" || initialType === "coaches" || initialType === "mens-teams" || initialType === "womens-teams" || initialType === "leagues") {
       setTypeFilter(initialType);
+    } else if (isFanAccount) {
+      setTypeFilter(basketballSide === "womens" ? "womens-teams" : "mens-teams");
     }
-  }, [initialType]);
+  }, [initialType, isFanAccount, basketballSide]);
 
   const countries = useMemo(() => Array.from(new Set([
     ...players.map((x) => x.country),
