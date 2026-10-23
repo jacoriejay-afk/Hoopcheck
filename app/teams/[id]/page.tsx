@@ -554,21 +554,14 @@ export default function TeamDetailPage() {
 
 <section className="hero">
         <div className="hc-team-profile-heading"><span className="hc-team-profile-logo" aria-hidden="true">{team.logo_url ? <img src={team.logo_url} alt="" width={64} height={64} /> : team.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span><div><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || t("countryNotListed")}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
-        {hasAccess ? (
-          <Surface as="div" className="hc-entity-trust-score">
-            <TrustScoreDial
-              score={trustScoreData?.score ?? null}
-              explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))}
-              reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count}
-              verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0}
-            />
-          </Surface>
-        ) : (
+        {reviewTier === "pro" ? (
           <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score">
-            <span className="eyebrow">{t("membersOnlyTitle")}</span>
-            <h2>{t("unlockReviews")}</h2>
-            <Link href="/membership" className="btn">{t("viewMembership")}</Link>
+            <span className="eyebrow">Trust Score</span><h2>Premium</h2><Link href="/membership" className="btn">Upgrade</Link>
           </Surface>
+        ) : ["premium", "player", "member"].includes(reviewTier) ? (
+          <Surface as="div" className="hc-entity-trust-score"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /></Surface>
+        ) : (
+          <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow"><span aria-hidden="true">🔒</span> Player reviews are a Premium fan feature</span><Link href="/membership" className="btn">Upgrade</Link></Surface>
         )}
 
         <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} /></div>
@@ -629,7 +622,15 @@ export default function TeamDetailPage() {
               {membershipPlan === "premium" && accountType === "fan" ? t("teamRatingsAtGlance") : t("whatPlayersAreSaying")}
             </h2>
 
-            {membershipPlan === "premium" && accountType === "fan" ? <div className="card"><h3>{t("premiumFanView")}</h3><p className="muted">{t("fanTeamRatingsAccess")}</p></div> : reviewLoading ? (
+            {reviewTier === "pro" ? (
+              <div className="card hc-fan-review-teaser">
+                <div className="hc-fan-upgrade-banner"><strong>You're seeing the outline — Fan Premium unlocks every review and rating</strong><Link href="/membership" className="btn">Upgrade</Link></div>
+                <h3>Overall player rating</h3>
+                <div aria-label={publicSummary.overall_rating == null ? "Overall rating unavailable" : `Overall rating ${publicSummary.overall_rating.toFixed(1)} out of 5`} className="hc-review-star-row"><span aria-hidden="true">★★★★★</span>{publicSummary.overall_rating == null ? <span>—</span> : <strong>{publicSummary.overall_rating.toFixed(1)}/5</strong>}</div>
+                <h3>Category breakdown</h3>
+                <div className="hc-review-category-teaser">{["Communication","Professionalism","Development","Payment","Pay on time","Housing","Medical support","Coaching quality","Facilities","Playing time honesty"].map(label => <div key={label} className="hc-review-category-row"><span>{label}</span><span className="hc-review-score-blur" aria-label="Score available with Fan Premium">★★★★★</span></div>)}</div>
+              </div>
+            ) : reviewLoading ? (
               <p>
                 {t("loadingReviews")}
               </p>
@@ -749,14 +750,9 @@ export default function TeamDetailPage() {
 
       {team && <FanTeamPosts teamId={team.id} />}
 
-      <section className="hero hc-team-write-review">
-        <div className="eyebrow">{t("shareYourExperience")}</div>
-        <h2>{t("writeAReviewTitle")}</h2>
-        <p className="muted">{t("helpNextPlayer")}</p>
-        <Link href={hasAccess ? `/teams/${team.id}/review` : "/membership"} className="btn">
-          {hasAccess ? t("writeAReview") : t("unlockReviews")}
-        </Link>
-      </section>
+      {accountType === "player" && (
+        <section className="hero hc-team-write-review"><div className="eyebrow">{t("shareYourExperience")}</div><h2>{t("writeAReviewTitle")}</h2><p className="muted">{t("helpNextPlayer")}</p><Link href={hasAccess ? `/teams/${team.id}/review` : "/membership"} className="btn">{hasAccess ? t("writeAReview") : t("unlockReviews")}</Link></section>
+      )}
 
       {reportReviewId && (
         <div
