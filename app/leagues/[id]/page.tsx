@@ -232,9 +232,15 @@ export default function LeagueDetailPage() {
       }
 
       const [
+        profileResult,
         subscriptionResult,
         adminResult,
       ] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("account_type")
+          .eq("id", user.id)
+          .maybeSingle(),
         supabase
           .from("subscriptions")
           .select(
