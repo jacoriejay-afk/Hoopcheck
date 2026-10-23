@@ -1,0 +1,53 @@
+.hc-fan-feed-page{min-height:100vh;padding:calc(env(safe-area-inset-top,0px) + 20px) 0 88px;background:var(--paper);color:var(--ink)}
+.hc-fan-feed-page .page-container{width:min(100% - 32px,920px);margin:0 auto}
+.hc-fan-feed-page .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0 22px}
+.hc-fan-feed-page .brand{font-weight:1000;letter-spacing:-.06em;font-size:22px}
+.hc-fan-feed-page .brand:after{content:".";color:var(--orange)}
+.hc-fan-feed-page .topnav{display:flex;align-items:center;gap:16px;color:var(--gray-700);font-weight:800;font-size:12px;text-transform:uppercase}
+.hc-fan-feed-page .topnav a:hover{color:var(--orange)}
+.hc-fan-feed-page .hc-feed-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:clamp(22px,4vw,38px);background:#0a0a0a;color:#fff;border-radius:18px;overflow:hidden;position:relative}
+.hc-fan-feed-page .hc-feed-hero:after{content:"";position:absolute;right:-48px;top:-60px;width:220px;height:220px;border:22px solid rgba(255,90,31,.3);border-radius:50%;pointer-events:none}
+.hc-fan-feed-page .hc-feed-hero h1{color:#fff;font-size:clamp(32px,6vw,48px);margin:8px 0 12px}
+.hc-fan-feed-page .hc-feed-hero .muted{color:#c7c7c7;max-width:520px;line-height:1.5}
+.hc-fan-feed-page .hc-feed-hero .eyebrow{color:var(--orange);font-weight:900;letter-spacing:.14em;font-size:11px}
+.hc-fan-feed-page .hc-feed-expiry-note{color:#fff;font-size:12px;font-weight:900;text-transform:uppercase;min-width:130px;position:relative;z-index:1}
+.hc-fan-feed-page .hc-feed-expiry-note span{display:block;color:#aaa;font-size:10px;font-weight:600;text-transform:none;margin-top:8px;line-height:1.5}
+.hc-fan-feed-page .hc-feed-composer{padding:20px;border-radius:16px;border:1px solid var(--border);background:var(--white)}
+.hc-fan-feed-page .card-kicker{display:block;color:var(--orange-dark);font-size:11px;font-weight:950;letter-spacing:.12em;margin-bottom:14px}
+.hc-fan-feed-page .hc-feed-composer__editor{display:flex;align-items:flex-start;gap:12px}
+.hc-fan-feed-page .hc-feed-composer__avatar{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:50%;overflow:hidden;background:#111;color:var(--orange);font-weight:950}
+.hc-fan-feed-page .hc-feed-composer__avatar img{width:100%;height:100%;object-fit:cover}
+.hc-fan-feed-page .hc-feed-composer textarea{width:100%;resize:vertical;min-height:94px;border:0;outline:none;background:transparent;color:var(--ink);padding:10px 0;line-height:1.5}
+.hc-fan-feed-page .hc-feed-topic-label{display:block;margin:14px 0 8px;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.hc-fan-feed-page .hc-feed-team-select{width:100%;min-height:46px;border:1px solid var(--border);border-radius:10px;background:var(--paper);color:var(--ink);padding:0 12px}
+.hc-fan-feed-page .hc-feed-composer__footer{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+.hc-fan-feed-page .hc-feed-photo-button,.hc-fan-feed-page .hc-feed-counter{font-size:12px;font-weight:850;color:var(--gray-700)}
+.hc-fan-feed-page .hc-feed-photo-button{cursor:pointer;border:1px solid var(--border);border-radius:999px;padding:10px 14px}
+.hc-fan-feed-page .hc-feed-counter{margin-left:auto}
+.hc-fan-feed-page .hc-feed-post-button{min-height:40px;padding:10px 18px}
+.hc-fan-feed-page .hc-feed-message{font-size:13px;font-weight:700;margin:12px 0 0;overflow-wrap:anywhere}
+.hc-fan-feed-page .hc-feed-stream{display:grid;gap:14px;margin-top:18px}
+.hc-fan-feed-page .hc-feed-ticket{padding:20px;border:1px solid var(--border);border-radius:16px;background:var(--white);min-width:0}
+.hc-fan-feed-page .hc-feed-post-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.hc-fan-feed-page .hc-feed-post-author{display:flex;align-items:center;gap:10px;min-width:0}
+.hc-fan-feed-page .hc-feed-post-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;flex:0 0 42px}
+.hc-fan-feed-page .hc-feed-post-author__meta{display:grid;gap:4px;min-width:0}
+.hc-fan-feed-page .hc-feed-post-author__meta strong{font-size:14px}
+.hc-fan-feed-page .hc-feed-post-author__meta small{font-size:11px;color:var(--gray-500)}
+.hc-fan-feed-page .hc-feed-post-topic{font-size:11px;font-weight:950;letter-spacing:.02em;color:#111;background:#ffe3d8;border:1px solid #ffb79c;border-radius:999px;padding:8px 12px;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hc-fan-feed-page .hc-feed-ticket>p{line-height:1.6;overflow-wrap:anywhere}
+.hc-fan-feed-page .hc-feed-post-image{display:block;width:100%;max-height:520px;object-fit:cover;border-radius:12px;margin-top:12px}
+.hc-fan-feed-page .hc-feed-post-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:14px;margin-top:16px}
+.hc-fan-feed-page .hc-feed-action-pill{background:transparent;border:1px solid var(--border);color:var(--ink);border-radius:999px;padding:8px 12px;font-size:11px;font-weight:900;cursor:pointer}
+.hc-fan-feed-page .hc-feed-action-pill.is-active{border-color:var(--orange);color:var(--orange-dark);background:rgba(255,90,31,.08)}
+.hc-fan-feed-page .hc-feed-action-pill:disabled{opacity:.5;cursor:default}
+.hc-fan-feed-page .hc-feed-expires{font-size:10px;color:var(--gray-500);margin-left:auto}
+.hc-fan-feed-page .hc-feed-comments-panel{margin-top:14px;padding:14px;background:var(--paper);border-radius:12px}
+.hc-fan-feed-page .hc-feed-comments-panel>div{padding:10px 0;border-bottom:1px solid var(--border)}
+.hc-fan-feed-page .hc-feed-comments-panel p{margin:4px 0 0;overflow-wrap:anywhere}
+.hc-fan-feed-page .hc-feed-comments-panel input{flex:1;min-width:140px;border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--white);color:var(--ink)}
+.hc-fan-feed-page .hc-feed-empty{padding:32px 24px;text-align:center;border-radius:16px;background:var(--white);border:1px solid var(--border)}
+.hc-fan-feed-page .hc-feed-empty .eyebrow{color:var(--orange-dark);font-size:11px;font-weight:950;letter-spacing:.14em}
+.hc-fan-feed-page .hc-feed-empty h2{font-size:clamp(24px,4vw,32px)}
+@media(max-width:600px){.hc-fan-feed-page .page-container{width:calc(100% - 24px)}.hc-fan-feed-page .topbar{align-items:flex-start}.hc-fan-feed-page .topnav{gap:10px;font-size:10px}.hc-fan-feed-page .hc-feed-hero{display:block;padding:22px}.hc-fan-feed-page .hc-feed-expiry-note{margin-top:20px}.hc-fan-feed-page .hc-feed-composer,.hc-fan-feed-page .hc-feed-ticket{padding:15px}.hc-fan-feed-page .hc-feed-counter{margin-left:auto}.hc-fan-feed-page .hc-feed-post-topic{max-width:42%;font-size:10px;padding:7px 9px}}
+@media(prefers-color-scheme:dark){html[data-theme="dark"] .hc-fan-feed-page, [data-theme="dark"] .hc-fan-feed-page{background:var(--paper);color:var(--ink)}}

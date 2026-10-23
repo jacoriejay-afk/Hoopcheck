@@ -9,6 +9,7 @@ type ReviewVerification = {
 };
 
 import Link from "next/link";
+import FanTeamPosts from "../../../components/FanTeamPosts";
 
 import { useParams } from "next/navigation";
 
@@ -772,6 +773,8 @@ export default function TeamDetailPage() {
           </section>
         </>
       )}
+
+      {team && <FanTeamPosts teamId={team.id} />}
 
       <section className="hero hc-team-write-review">
         <div className="eyebrow">{t("shareYourExperience")}</div>

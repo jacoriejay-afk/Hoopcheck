@@ -1,0 +1,40 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { supabase } from "../lib/supabase";
+import { useLanguage } from "./LanguageProvider";
+import { fanFeedI18n } from "../app/fan-feed/i18n";
+
+type TeamFanPost = { id:string; author_id:string; body:string; image_url:string|null; created_at:string; expires_at:string; profiles?:{display_name:string|null;avatar_url:string|null}|null };
+
+export default function FanTeamPosts({ teamId }: { teamId:string }) {
+  const { t, language, formatDate } = useLanguage();
+  const ft = (key: Parameters<typeof fanFeedI18n>[0]) => fanFeedI18n(key, language);
+  const [posts,setPosts] = useState<TeamFanPost[]>([]);
+  useEffect(() => {
+    let active=true;
+    void (async () => {
+      const { data } = await supabase.rpc("get_fan_team_hub_posts", { p_team_id: teamId });
+      if(active) setPosts((data||[]).map((p:any)=>({...p,profiles:{display_name:p.display_name,avatar_url:p.avatar_url}})) as TeamFanPost[]);
+    })();
+    return () => { active=false; };
+  },[teamId]);
+  if(!posts.length) return null;
+  return <section className="dashboard-card" style={{marginTop:20}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+      <div><p className="eyebrow">{ft("kicker")}</p><h2>{ft("teamPosts")}</h2></div>
+      <Link href="/fan-feed" className="btn dark">{ft("openFeed")}</Link>
+    </div>
+    <div style={{display:"grid",gap:14,marginTop:14}}>
+      {posts.map(post=><article key={post.id} style={{padding:"14px 0",borderTop:"1px solid var(--border)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {post.profiles?.avatar_url?<img src={post.profiles.avatar_url} alt="" style={{width:36,height:36,borderRadius:"50%",objectFit:"cover"}}/>:<div className="player-avatar-fallback">F</div>}
+          <div><Link href={"/fans/"+post.author_id}><strong>{post.profiles?.display_name||ft("fan")}</strong></Link><p className="muted" style={{margin:0,fontSize:12}}>{formatDate(post.created_at,{dateStyle:"medium",timeStyle:"short"})}</p></div>
+        </div>
+        {post.body&&<p style={{whiteSpace:"pre-wrap"}}>{post.body}</p>}
+        {post.image_url&&<img src={post.image_url} alt={ft("postPhoto")} style={{width:"100%",maxHeight:380,objectFit:"cover",borderRadius:14}}/>}
+      </article>)}
+    </div>
+  </section>;
+}

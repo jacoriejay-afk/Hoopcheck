@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import CourtLines from "../../components/CourtLines";
+import { useLanguage } from "../../components/LanguageProvider";
 
 type MiniProfile = { display_name: string | null; avatar_url: string | null; current_country?: string | null; current_country_public?: boolean; current_team?: string | null };
 type Post = { id:string; shared_post_id?:string|null; shared_post?:{author_id:string;profiles?:{display_name:string|null}|null}|null; body:string; image_url:string|null; location_country:string|null; topic_tag?:TopicTag|null; game_day_team?:string|null; game_day_opponent?:string|null; game_day_score_for?:number|null; game_day_score_against?:number|null; created_at:string; expires_at:string; author_id:string; ageLabel?:string; expiresLabel?:string; profiles?:MiniProfile|null };
@@ -33,6 +35,8 @@ const ago = (v:string, now:number) => {
 };
 
 export default function Feed(){
+  const router = useRouter();
+  const { t } = useLanguage();
   const [posts,setPosts]=useState<Post[]>([]);
   const [comments,setComments]=useState<Record<string,Comment[]>>({});
   const [checks,setChecks]=useState<Record<string,number>>({}); const [checkBursts,setCheckBursts]=useState<Record<string,boolean>>({});
@@ -89,7 +93,10 @@ export default function Feed(){
       supabase.from("profiles").select("account_type,current_country,current_country_public").eq("id",u.id).maybeSingle(),
       supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",u.id).maybeSingle()
     ]);
+    if(p?.account_type==="fan"){window.location.replace("/fan-feed");return;}
     setProfile(p);setSubscription(s);setShowCountry(Boolean(p?.current_country_public));
+    // Keep the player HoopFeed surface strictly player-only; fans have their own feed.
+    if(p?.account_type==="fan"){setLoading(false);router.replace("/fan-feed");return;}
     if(p?.account_type==="player"){const {data:activity}=await supabase.from("feed_posting_activity").select("activity_date").eq("user_id",u.id).order("activity_date",{ascending:false}).limit(370);setPostingStreak(calculatePostingStreak(activity||[]));}
     const memberActive=(s?.plan==="pro"||s?.plan==="premium")&&(s?.status==="active"||s?.status==="trialing")&&(s?.access_status==null||["active","trialing","pro","premium"].includes(s.access_status));
     setLoading(false);
@@ -173,6 +180,7 @@ export default function Feed(){
 
   if(loading)return <main className="page-shell hc-feed-page"><div className="page-container"><HoopLoading label="Loading HoopFeed..." /><section className="hc-feed-skeletons" aria-label="Loading posts">{[0,1,2].map(n=><article className="dashboard-card hc-feed-skeleton" key={n}><div className="hc-feed-skeleton__head"><span/><div><i/><i/></div></div><i className="hc-feed-skeleton__line"/><i className="hc-feed-skeleton__line short"/><i className="hc-feed-skeleton__photo"/></article>)}</section></div></main>;
   if(!user)return <main className="page-shell hc-feed-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">HOOPFEED</p><h1>Sign in to continue</h1><p className="muted">HoopFeed is for active Pro and Premium members.</p><Link href="/login" className="btn">Sign In</Link></section></div></main>;
+  if(profile?.account_type==="fan")return <main className="page-shell hc-feed-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">HOOPFEED</p><h1>{t("fanFeed.title")}</h1><p className="muted">{t("fanFeed.separateSurface")}</p><Link href="/fan-feed" className="btn">{t("fanFeed.title")}</Link></section></div></main>;
   if(!access)return <main className="page-shell hc-feed-page"><div className="page-container"><header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link></header><section className="hero-card"><p className="eyebrow">HOOPFEED</p><h1>Daily Player Experiences</h1><p className="muted">Pro and Premium members can access HoopFeed. Players share basketball experiences; fans see posts from fans they follow.</p><div className="actions"><Link href="/membership" className="btn">Upgrade Membership</Link><Link href="/dashboard" className="btn dark">Back to Dashboard</Link></div></section></div></main>;
 
   return <main className="page-shell hc-feed-page"><div className="page-container">
