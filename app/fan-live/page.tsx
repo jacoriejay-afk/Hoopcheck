@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
+import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
@@ -46,6 +47,7 @@ export default function FanLivePage() {
   const [reportReason,setReportReason]=useState("harassment");
   const [reportDetails,setReportDetails]=useState("");
   const [clock,setClock]=useState(()=>new Date());
+  const basketballSide = useFanBasketballSide();
   const bottomRef=useRef<HTMLDivElement|null>(null);
 
   const load = useCallback(async (showLoader=false) => {
@@ -69,7 +71,11 @@ export default function FanLivePage() {
       supabase.from("fan_live_chat_user_controls").select("target_user_id,is_blocked,is_muted").eq("user_id",user.id)
     ]);
     if(gameError) setMessage("Game updates are temporarily unavailable. Reconnecting…");
-    const next=(gameRows||[]) as Game[];
+    const rawGames=(gameRows||[]) as Game[];
+    const candidateIds=Array.from(new Set(rawGames.flatMap(g=>[g.team_id,g.opponent_team_id].filter((x):x is string=>Boolean(x)))));
+    const {data:sideRows}=candidateIds.length?await supabase.from("teams").select("id").in("id",candidateIds).eq("basketball_type",basketballSide==="womens"?"womens":"mens"):{data:[] as {id:string}[]};
+    const sideIds=new Set((sideRows||[]).map((row:any)=>row.id));
+    const next=rawGames.filter(g=>sideIds.has(g.team_id));
     setGames(next);
     setMutedUsers(new Set((controls||[]).filter((x:any)=>x.is_muted).map((x:any)=>x.target_user_id)));
     setBlockedUsers(new Set((controls||[]).filter((x:any)=>x.is_blocked).map((x:any)=>x.target_user_id)));
@@ -79,7 +85,7 @@ export default function FanLivePage() {
     const requested=typeof window!=="undefined"?new URLSearchParams(window.location.search).get("gameId"):null;
     setSelected(current=>(current&&next.find(g=>g.id===current.id))||next.find(g=>g.id===requested)||next.find(g=>g.status==="live")||next[0]||null);
     setClock(new Date()); setLoading(false);
-  },[]);
+  },[basketballSide]);
 
   const loadMessages=useCallback(async(gameId:string)=>{
     const {data,error}=await supabase.from("fan_live_chat_messages").select("id,body,created_at,user_id").eq("game_id",gameId).order("created_at",{ascending:true}).limit(200);
