@@ -66,3 +66,19 @@ html.theme-light main:not(.hc-template-home) :where(.hc-live-room-game-status,.h
 html.theme-dark main:not(.hc-template-home) :where(.hc-live-room-game-status,.hc-live-chat-message-meta,.hc-live-room-footnote,.hc-live-room-notice p) {
   color: var(--hc-foreground-muted) !important;
 }
+
+/* Final ink pass: legacy explicit text colors must not survive a theme flip. */
+html.theme-light main:not(.hc-template-home) :where(h1,h2,h3,h4,h5,h6,p,span,small,label,li,dt,dd,strong,legend,summary,a:not(.btn)) {
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(h1,h2,h3,h4,h5,h6,p,span,small,label,li,dt,dd,strong,legend,summary,a:not(.btn)) {
+  color: var(--hc-foreground) !important;
+}
+html.theme-light main:not(.hc-template-home) :where(.muted,.meta,.subtle,.eyebrow,.hc-team-profile-meta,.hc-directory-hero p,.hc-player-profile-hero p,.hc-coach-profile-hero p,.hc-league-profile-hero p,.hc-live-room-game-status,.hc-live-chat-message-meta,.hc-live-room-footnote) {
+  color: var(--hc-foreground-muted) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(.muted,.meta,.subtle,.eyebrow,.hc-team-profile-meta,.hc-directory-hero p,.hc-player-profile-hero p,.hc-coach-profile-hero p,.hc-league-profile-hero p,.hc-live-room-game-status,.hc-live-chat-message-meta,.hc-live-room-footnote) {
+  color: var(--hc-foreground-muted) !important;
+}
+html.theme-light main:not(.hc-template-home) :where(.hc-live-badge--visible,.hc-live-badge--visible span) { color: #FFFFFF !important; }
+html.theme-light main:not(.hc-template-home) :where(.hc-team-profile-meta span) { color: var(--hc-foreground-muted) !important; }
