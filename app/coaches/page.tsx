@@ -21,7 +21,7 @@ type Coach = {
   city: string | null;
 };
 
-type TrustSummary = { score: number | null; reviewCount: number; verifiedReviewCount: number; explanation: string; averageRating: number | null };
+type TrustSummary = { score: number | null; reviewCount: number | null; verifiedReviewCount: number | null; explanation: string | null; averageRating: number | null; tier?: "free" | "pro" | "premium" | "player" | "member"; locked?: boolean };
 
 export default function CoachesPage() {
   const [coaches, setCoaches] =
@@ -69,10 +69,14 @@ export default function CoachesPage() {
     if (!coaches.length) { setTrustScores({}); return; }
     let active = true;
     const ids = coaches.map(coach => coach.id);
-    void fetch(`/api/trust-score?entityType=coach&entityIds=${ids.map(encodeURIComponent).join(",")}`)
-      .then(response => response.ok ? response.json() : null)
-      .then(payload => { if (active && payload?.scores) setTrustScores(payload.scores as Record<string, TrustSummary>); })
-      .catch(() => { if (active) setTrustScores({}); });
+    void (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`/api/trust-score?entityType=coach&entityIds=${ids.map(encodeURIComponent).join(",")}`, {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}, cache: "no-store",
+      });
+      const payload = response.ok ? await response.json() : null;
+      if (active && payload?.scores) setTrustScores(payload.scores as Record<string, TrustSummary>);
+    })().catch(() => { if (active) setTrustScores({}); });
     return () => { active = false; };
   }, [coaches]);
 
@@ -120,12 +124,7 @@ export default function CoachesPage() {
                   <p>{coach.city && coach.country ? `${coach.city}, ${coach.country}` : coach.country || coach.city || "Location not listed"}</p>
                 </div>
               </div>
-              {trustScores[coach.id] && <div className="hc-team-directory-row__trust"><TrustScoreDial score={trustScores[coach.id].score} explanation={trustScores[coach.id].explanation} reviewCount={trustScores[coach.id].reviewCount} verifiedReviewCount={trustScores[coach.id].verifiedReviewCount} size="mini" /></div>}
-              <div className="hc-scout-card__stats" aria-label="Coach review statistics">
-                <div className="hc-scout-card__stat"><span>Overall rating</span><strong>{trustScores[coach.id]?.averageRating == null ? "—" : trustScores[coach.id].averageRating!.toFixed(1)}</strong><small>{trustScores[coach.id]?.averageRating == null ? "Not available" : "Out of 5"}</small></div>
-                <div className="hc-scout-card__stat"><span>Reviews</span><strong>{trustScores[coach.id]?.reviewCount ?? "—"}</strong><small>Approved reviews</small></div>
-                <div className="hc-scout-card__stat"><span>Seasons tracked</span><strong>—</strong><small>Not listed</small></div>
-              </div>
+              {["premium","player","member"].includes(trustScores[coach.id]?.tier || "free") ? <><div className="hc-team-directory-row__trust"><TrustScoreDial score={trustScores[coach.id]?.score ?? null} explanation={trustScores[coach.id]?.explanation || ""} reviewCount={trustScores[coach.id]?.reviewCount ?? 0} verifiedReviewCount={trustScores[coach.id]?.verifiedReviewCount ?? 0} size="mini" /></div><div className="hc-scout-card__stats" aria-label="Coach review statistics"><div className="hc-scout-card__stat"><span>Overall rating</span><strong>{trustScores[coach.id]?.averageRating == null ? "—" : trustScores[coach.id].averageRating!.toFixed(1)}</strong><small>{trustScores[coach.id]?.averageRating == null ? "Not available" : "Out of 5"}</small></div><div className="hc-scout-card__stat"><span>Reviews</span><strong>{trustScores[coach.id]?.reviewCount ?? "—"}</strong><small>Approved reviews</small></div><div className="hc-scout-card__stat"><span>Seasons tracked</span><strong>—</strong><small>Not listed</small></div></div></> : <div className="hc-directory-locked">{trustScores[coach.id]?.tier === "pro" ? <><strong>Trust Score</strong><small>Fan Premium feature</small></> : <strong>🔒 Player reviews are a Premium fan feature</strong>}<Link href="/membership" className="btn">Upgrade</Link></div>}
               <div className="hc-scout-card__ticket">
                 <Link href={`/coaches/${coach.id}`} className="hc-scout-card__coach-link">View coach report <span aria-hidden="true">→</span></Link>
               </div>
