@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
+import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
@@ -62,6 +63,7 @@ export default function LiveGamesPage() {
   const [message, setMessage] = useState("");
   const [reminding, setReminding] = useState<string | null>(null);
   const [clock, setClock] = useState(() => new Date());
+  const basketballSide = useFanBasketballSide();
 
   const load = useCallback(async (showLoader = false) => {
     if (showLoader) setLoading(true);
@@ -88,7 +90,11 @@ export default function LiveGamesPage() {
       supabase.from("fan_live_game_reminders").select("game_id").eq("user_id", user.id),
     ]);
     if (gamesResult.error) setMessage("Game schedules are temporarily unavailable. Please refresh in a moment.");
-    const nextGames = (gamesResult.data || []) as Game[];
+    const rawGames = (gamesResult.data || []) as Game[];
+    const candidateIds = Array.from(new Set(rawGames.flatMap(game => [game.team_id, game.opponent_team_id].filter((id): id is string => Boolean(id)))));
+    const { data: sideRows } = candidateIds.length ? await supabase.from("teams").select("id").in("id", candidateIds).eq("basketball_type", basketballSide === "womens" ? "womens" : "mens") : { data: [] as {id:string}[] };
+    const sideIds = new Set((sideRows || []).map((row:any) => row.id));
+    const nextGames = rawGames.filter(game => sideIds.has(game.team_id));
     const follows = (followsResult.data || []).map((row: {target_id:string}) => row.target_id);
     setFollowedIds(follows);
     setGames(nextGames);
@@ -108,7 +114,7 @@ export default function LiveGamesPage() {
     setPresenceCounts(counts);
     setJoinedGameIds(new Set((presenceRows || []).filter((row: any) => row.user_id === user.id).map((row: any) => row.game_id)));
     setLoading(false);
-  }, []);
+  }, [basketballSide]);
 
   useEffect(() => { void load(true); }, [load]);
   useEffect(() => {
