@@ -176,12 +176,12 @@ export default function FanFeedPage() {
     else { setFollowing(prev => new Set(prev).add(targetId)); setMessage(ft("following")); }
   }
 
-  if (loading) return <main className="page-shell hc-feed-page hc-fan-feed-page">
-      <FanBasketballSideSwitch /><div className="page-container"><HoopLoading label={ft("loading")} /></div></main>;
+  if (loading) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><HoopLoading label={ft("loading")} /></div></main>;
   if (!user) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("title")}</h1><p>{ft("signIn")}</p><Link className="btn" href="/login">{t("signIn")}</Link></section></div></main>;
   if (profile?.account_type !== "fan") return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("fansOnly")}</h1><p>{ft("separateSurface")}</p><Link className="btn" href="/login">{ft("playerFeed")}</Link></section></div></main>;
   if (!membershipActive) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("membershipRequired")}</h1><p>{ft("membershipDescription")}</p><Link className="btn" href="/membership">{t("membership")}</Link></section></div></main>;
-  return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container">
+  return <main className="page-shell hc-feed-page hc-fan-feed-page">
+      <FanBasketballSideSwitch /><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/fans">{ft("discoverFans")}</Link><Link href="/team-hub">{ft("teamHub")}</Link><Link href="/teams">{ft("teams")}</Link></nav></header>
     <section className="hero-card hc-feed-hero"><div><p className="eyebrow">{ft("kicker")}</p><h1>{ft("title")}</h1><p className="muted">{ft("subtitle")}</p></div><p className="hc-feed-expiry-note">{ft("teamFirst")}<span>{ft("fanOnlyNote")}</span></p></section>
     <section className="dashboard-card hc-feed-composer" style={{ marginTop: 18 }}>
