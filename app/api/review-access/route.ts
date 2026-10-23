@@ -77,7 +77,7 @@ export async function GET(request: Request) {
       .eq(targetColumn, entityId).eq("status", "approved")
       .order("created_at", { ascending: false });
     if (rowsError) throw rowsError;
-    const rows = rawRows || [];
+    const rows = (rawRows || []) as unknown as Array<Record<string, unknown>>;
     const avg = (key: string) => {
       const values = rows.map((row: Record<string, unknown>) => Number(row[key]))
         .filter((value: number) => Number.isFinite(value) && value >= 1 && value <= 5);
