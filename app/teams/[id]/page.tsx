@@ -321,8 +321,11 @@ export default function TeamDetailPage() {
       const isAdmin =
         adminResult.data === true;
 
+      const fanHasPaidPlan =
+        profileResult.data?.account_type !== "fan" ||
+        ["pro", "premium"].includes(subscription?.plan || "");
       const access =
-        subscriptionIsActive ||
+        (subscriptionIsActive && fanHasPaidPlan) ||
         isAdmin;
 
       setHasAccess(access);
