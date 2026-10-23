@@ -200,12 +200,12 @@ export default function FanLivePage() {
   const availability=selected?getGameAvailability({status:selected.status,scheduledAt:selected.scheduled_at,startedAt:selected.started_at,endsAt:selected.ends_at,now:clock}):null;
   const shownMessages=useMemo(()=>messages.filter(m=>!blockedUsers.has(m.user_id)&&!mutedUsers.has(m.user_id)),[messages,blockedUsers,mutedUsers]);
 
-  if(loading)return <main className="page-shell hc-live-room">
-      <FanBasketballSideSwitch /><div className="page-container"><HoopLoading label="Loading Fan HQ…" /></div></main>;
+  if(loading)return <main className="page-shell hc-live-room"><div className="page-container"><HoopLoading label="Loading Fan HQ…" /></div></main>;
   if(!userId)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">FAN HQ</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in as a Pro or Premium Fan to join live game conversations.</p><Link className="btn" href="/login">Sign in</Link></section></div></main>;
   if(!allowed)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM FAN</p><h1>LIVE GAME CHAT</h1><p className="muted">An active Pro or Premium Fan membership is required to join game rooms.</p><Link className="btn" href="/membership">View Membership</Link></section></div></main>;
 
-  return <main className="page-shell hc-live-room"><div className="page-container">
+  return <main className="page-shell hc-live-room">
+      <FanBasketballSideSwitch /><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/live-games">All Games</Link><Link href="/teams">Teams</Link></nav></header>
     <section className="hero-card hc-live-room-hero"><div><p className="eyebrow">HOOPCHECK · FAN HQ</p><h1>LIVE GAME CHAT<span>.</span></h1><p className="muted">Real-time conversation with fans watching the same game.</p></div><div className="hc-live-presence-chip"><span className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"fan":"fans"} in room</div></section>
     {!games.length?<section className="dashboard-card"><h2>No games available</h2><p className="muted">Check back when the game schedule is updated.</p><Link href="/live-games" className="btn">Browse Games</Link></section>:<section className="hc-live-room-grid">
