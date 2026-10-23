@@ -72,34 +72,26 @@ export async function GET(request: Request) {
       return NextResponse.json(response, { headers: { "Cache-Control": "private, no-store" } });
     }
 
-    if (entityType === "womens-team") {
-      const { data: summary, error: summaryError } = await db.rpc("get_womens_review_rating_summary", { p_team_id: entityId });
-      if (summaryError) throw summaryError;
-      const row = Array.isArray(summary) ? summary[0] : null;
-      response.summary = row ? { overall_rating: row.overall_rating == null ? null : Number(row.overall_rating), review_count: fullRead ? Number(row.review_count || 0) : undefined } : null;
-      if (fullRead) {
-        const { data, error } = await db.from(table).select("id,title,body,overall_rating,created_at,is_anonymous").eq(targetColumn, entityId).eq("status", "approved").order("created_at", { ascending: false });
-        if (error) throw error;
-        response.reviews = data || [];
-      }
-    } else {
-      const { data: summary, error: summaryError } = await db.rpc("get_public_review_summary", { p_entity_type: entityType, p_entity_id: entityId });
-      if (summaryError) throw summaryError;
-      const row = Array.isArray(summary) ? summary[0] : null;
-      response.summary = row ? {
-        overall_rating: row.overall_rating == null ? null : Number(row.overall_rating),
-        review_count: fullRead ? Number(row.review_count || 0) : undefined,
-        communication_rating: fullRead ? row.communication_rating : undefined,
-        professionalism_rating: fullRead ? row.professionalism_rating : undefined,
-        development_rating: fullRead ? row.development_rating : undefined,
-        payment_rating: fullRead ? row.payment_rating : undefined,
-      } : null;
-      if (fullRead) {
-        const { data, error } = await db.from("reviews").select(reviewColumns).eq(targetColumn, entityId).eq("status", "approved").order("created_at", { ascending: false });
-        if (error) throw error;
-        response.reviews = data || [];
-      }
-    }
+    const { data: rawRows, error: rowsError } = await db.from(table)
+      .select(fullRead ? (entityType === "womens-team" ? "id,title,body,overall_rating,created_at,is_anonymous" : reviewColumns) : "overall_rating")
+      .eq(targetColumn, entityId).eq("status", "approved")
+      .order("created_at", { ascending: false });
+    if (rowsError) throw rowsError;
+    const rows = rawRows || [];
+    const avg = (key: string) => {
+      const values = rows.map((row: Record<string, unknown>) => Number(row[key]))
+        .filter((value: number) => Number.isFinite(value) && value >= 1 && value <= 5);
+      return values.length ? Math.round(values.reduce((sum: number, value: number) => sum + value, 0) / values.length * 100) / 100 : null;
+    };
+    response.summary = {
+      overall_rating: avg("overall_rating"),
+      review_count: fullRead ? rows.length : undefined,
+      communication_rating: fullRead && entityType !== "womens-team" ? avg("communication_rating") : undefined,
+      professionalism_rating: fullRead && entityType !== "womens-team" ? avg("professionalism_rating") : undefined,
+      development_rating: fullRead && entityType !== "womens-team" ? avg("development_rating") : undefined,
+      payment_rating: fullRead && entityType !== "womens-team" ? avg("payment_rating") : undefined,
+    };
+    if (fullRead) response.reviews = rows;
 
     return NextResponse.json(response, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
