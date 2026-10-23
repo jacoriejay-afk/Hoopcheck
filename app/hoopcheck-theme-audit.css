@@ -95,7 +95,7 @@ html.theme-light main:not(.hc-template-home) :where(.hc-team-profile-meta span) 
 .hc-membership-locked-state { display: grid; gap: 10px; }
 
 /* Persistent fan basketball-side control */
-.hc-fan-side-switch-wrap { display:flex; justify-content:flex-start; width:100%; margin:0 0 18px; }
+.hc-fan-side-switch-wrap { display:flex; justify-content:flex-start; width:100%; max-width:1180px; margin:0 auto 18px; padding:0 24px; box-sizing:border-box; }
 .hc-fan-side-switch { display:inline-flex; align-items:center; gap:4px; padding:4px; border:1px solid var(--athletic-border, var(--border, #333)); border-radius:999px; background:var(--athletic-card, var(--card, #171717)); }
 .hc-fan-side-switch button { border:0; border-radius:999px; padding:10px 16px; min-height:40px; background:transparent; color:var(--athletic-textDark, var(--foreground, #aaa)); font-weight:900; font-size:12px; letter-spacing:.08em; cursor:pointer; transition:background .16s ease,color .16s ease; }
 .hc-fan-side-switch button.is-active.is-mens { background:var(--athletic-orange, #ff5500); color:#fff; }
