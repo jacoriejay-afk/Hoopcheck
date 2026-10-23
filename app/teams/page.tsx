@@ -30,7 +30,7 @@ type Team = {
   longitude?: number | null;
 };
 
-type TrustSummary = { score: number | null; reviewCount: number; verifiedReviewCount: number; explanation: string; averageRating: number | null };
+type TrustSummary = { score: number | null; reviewCount: number | null; verifiedReviewCount: number | null; explanation: string | null; averageRating: number | null; tier?: "free" | "pro" | "premium" | "player" | "member"; locked?: boolean };
 
 export default function TeamsPage() {
   const { t } = useLanguage();
@@ -327,7 +327,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           teams.map((team) => (
-            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount} trustExplanation={trustScores[team.id]?.explanation} averageRating={trustScores[team.id]?.averageRating} logoUrl={team.logo_url} />
+            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={trustScores[team.id]?.tier} logoUrl={team.logo_url} />
           ))
         )}
       </section>
