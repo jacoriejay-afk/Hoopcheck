@@ -81,3 +81,42 @@ using (author_id=(select auth.uid()) and exists(select 1 from public.profiles p 
 grant select, delete on public.fan_feed_posts to authenticated;
 grant select, insert, delete on public.fan_feed_likes to authenticated;
 grant select, insert, delete on public.fan_feed_comments to authenticated;
+
+
+-- Team hubs expose current fan posts for that team only to eligible fans who follow it.
+create or replace function public.get_fan_team_hub_posts(p_team_id uuid)
+returns table (
+  id uuid,
+  author_id uuid,
+  body text,
+  image_url text,
+  created_at timestamptz,
+  expires_at timestamptz,
+  display_name text,
+  avatar_url text
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select fp.id, fp.author_id, fp.body, fp.image_url, fp.created_at, fp.expires_at,
+         p.display_name, p.avatar_url
+  from public.fan_feed_posts fp
+  join public.profiles p on p.id=fp.author_id and p.account_type='fan'
+  join public.profiles viewer on viewer.id=(select auth.uid()) and viewer.account_type='fan'
+  join public.subscriptions s on s.user_id=viewer.id
+  where fp.team_id=p_team_id
+    and fp.status='approved'
+    and fp.expires_at>now()
+    and s.plan in ('pro','premium')
+    and s.status in ('active','trialing')
+    and coalesce(s.access_status,'active') in ('active','trialing','pro','premium')
+    and exists (
+      select 1 from public.follow_relationships fr
+      where fr.follower_id=viewer.id and fr.target_type='team' and fr.target_id=p_team_id
+    )
+  order by fp.created_at desc
+  limit 50;
+$$;
+grant execute on function public.get_fan_team_hub_posts(uuid) to authenticated;
