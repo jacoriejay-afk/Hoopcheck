@@ -676,8 +676,6 @@ export default function CoachDetailPage() {
         </section>
       ) : (
         <>
-          <section className="grid">      ) : (
-        <>
           <section className="grid">
             <div className="card">
               <div className="eyebrow">
