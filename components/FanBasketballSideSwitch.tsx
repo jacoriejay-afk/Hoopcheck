@@ -80,6 +80,8 @@ export default function FanBasketballSideSwitch({ lockedHint = false }: { locked
     setSide(next);
     window.localStorage.setItem(STORAGE_KEY, next);
     window.dispatchEvent(new Event(SIDE_EVENT));
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) await supabase.from("profiles").update({ preferred_basketball_side: next }).eq("id", user.id);
     if (pathname === "/teams" && next === "womens") router.push("/womens");
     else if (pathname === "/womens" && next === "mens") router.push("/teams");
     else if (pathname === "/search") {
@@ -87,8 +89,6 @@ export default function FanBasketballSideSwitch({ lockedHint = false }: { locked
       params.set("type", next === "womens" ? "womens-teams" : "mens-teams");
       router.replace(`/search?${params.toString()}`);
     }
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) await supabase.from("profiles").update({ preferred_basketball_side: next }).eq("id", user.id);
   }, [canSwitch, pathname, router]);
 
   if (!ready || !isFan) return null;
