@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
@@ -199,7 +200,8 @@ export default function FanLivePage() {
   const availability=selected?getGameAvailability({status:selected.status,scheduledAt:selected.scheduled_at,startedAt:selected.started_at,endsAt:selected.ends_at,now:clock}):null;
   const shownMessages=useMemo(()=>messages.filter(m=>!blockedUsers.has(m.user_id)&&!mutedUsers.has(m.user_id)),[messages,blockedUsers,mutedUsers]);
 
-  if(loading)return <main className="page-shell hc-live-room"><div className="page-container"><HoopLoading label="Loading Fan HQ…" /></div></main>;
+  if(loading)return <main className="page-shell hc-live-room">
+      <FanBasketballSideSwitch /><div className="page-container"><HoopLoading label="Loading Fan HQ…" /></div></main>;
   if(!userId)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">FAN HQ</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in as a Pro or Premium Fan to join live game conversations.</p><Link className="btn" href="/login">Sign in</Link></section></div></main>;
   if(!allowed)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM FAN</p><h1>LIVE GAME CHAT</h1><p className="muted">An active Pro or Premium Fan membership is required to join game rooms.</p><Link className="btn" href="/membership">View Membership</Link></section></div></main>;
 
