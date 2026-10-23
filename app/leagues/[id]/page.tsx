@@ -232,13 +232,19 @@ export default function LeagueDetailPage() {
       }
 
       const [
+        profileResult,
         subscriptionResult,
         adminResult,
       ] = await Promise.all([
         supabase
+          .from("profiles")
+          .select("account_type")
+          .eq("id", user.id)
+          .maybeSingle(),
+        supabase
           .from("subscriptions")
           .select(
-            "status, current_period_end"
+            "plan, status, current_period_end"
           )
           .eq(
             "user_id",
@@ -277,19 +283,23 @@ export default function LeagueDetailPage() {
       const isAdmin =
         adminResult.data === true;
 
+      const fanHasPaidPlan =
+        profileResult.data?.account_type !== "fan" ||
+        ["pro", "premium"].includes(subscription?.plan || "");
       const access =
-        subscriptionIsActive ||
+        (subscriptionIsActive && fanHasPaidPlan) ||
         isAdmin;
 
       setHasAccess(access);
 
-      const { data: summaryData, error: summaryError } =
-        await supabase.rpc("get_public_review_summary", {
-          p_entity_type: "league",
-          p_entity_id: id,
-        });
+      const { data: summaryData, error: summaryError } = access
+        ? await supabase.rpc("get_public_review_summary", {
+            p_entity_type: "league",
+            p_entity_id: id,
+          })
+        : { data: null, error: null };
 
-      if (!summaryError && summaryData?.[0]) {
+      if (access && !summaryError && summaryData?.[0]) {
         setPublicSummary({
           review_count: Number(summaryData[0].review_count || 0),
           overall_rating: summaryData[0].overall_rating == null ? null : Number(summaryData[0].overall_rating),
@@ -626,7 +636,7 @@ export default function LeagueDetailPage() {
           <div className="card rating-locked-card">
             <div className="eyebrow">Community Rating</div>
             <h2>Overall rating locked</h2>
-            <p>{publicSummary.review_count} approved {publicSummary.review_count === 1 ? "review" : "reviews"} are available, but ratings are reserved for members.</p>
+            <p>Sign in and choose a membership to unlock ratings and reviews.</p>
             <div className="actions"><Link href="/signup" className="btn">Create Free Account</Link><Link href="/membership" className="btn dark">Unlock Ratings</Link></div>
           </div>
         </section>
@@ -750,7 +760,7 @@ export default function LeagueDetailPage() {
               <div className="card" style={{ marginBottom: 24, borderColor: "rgba(255,106,0,.45)" }}>
                 <div className="eyebrow">Members Only</div>
                 <h3>Player reviews are locked</h3>
-                <p>{publicSummary.review_count || 0} approved player review{publicSummary.review_count === 1 ? "" : "s"} are available for this profile. Create a free account to see the locked review section and membership options.</p>
+                <p>Sign in and choose a membership to unlock player reviews.</p>
                 <div className="actions">
                   <Link href="/signup" className="btn">Create Free Account</Link>
                   <Link href="/login" className="btn dark">Log In</Link>

@@ -1,0 +1,84 @@
+/* Final cross-route theme contract. Keep this file last in app/layout.tsx.
+   All non-marketing surfaces inherit semantic theme tokens; only the authored
+   landing-page brand hero retains its intentional dark treatment. */
+:root {
+  --hc-page-bg: #F4F4F1; --hc-surface: #FFFFFF; --hc-surface-raised: #FFFFFF;
+  --hc-surface-soft: #F8F8F6; --hc-foreground: #151515; --hc-foreground-muted: #626262;
+  --hc-border: #E1E1DC; --hc-input-bg: #FFFFFF; --hc-input-fg: #151515;
+  --hc-nav-bg: #FFFFFF; --hc-nav-fg: #151515; --hc-control-bg: #FFFFFF;
+  --hc-control-fg: #151515; --hc-control-muted: #626262; --hc-control-border: #767676;
+}
+html.theme-light {
+  color-scheme: light; --hc-page-bg: #F4F4F1; --hc-surface: #FFFFFF;
+  --hc-surface-raised: #FFFFFF; --hc-surface-soft: #F8F8F6; --hc-foreground: #151515;
+  --hc-foreground-muted: #626262; --hc-border: #E1E1DC; --hc-input-bg: #FFFFFF;
+  --hc-input-fg: #151515; --hc-nav-bg: #FFFFFF; --hc-nav-fg: #151515;
+  --hc-control-bg: #FFFFFF; --hc-control-fg: #151515; --hc-control-muted: #626262;
+  --hc-control-border: #767676;
+}
+html.theme-dark {
+  color-scheme: dark; --hc-page-bg: #0A0A0A; --hc-surface: #111111;
+  --hc-surface-raised: #171717; --hc-surface-soft: #1B1B1B; --hc-foreground: #F5F5F0;
+  --hc-foreground-muted: #B8B8B3; --hc-border: #383838; --hc-input-bg: #171717;
+  --hc-input-fg: #F5F5F0; --hc-nav-bg: #111111; --hc-nav-fg: #F5F5F0;
+  --hc-control-bg: #171717; --hc-control-fg: #F5F5F0; --hc-control-muted: #B8B8B3;
+  --hc-control-border: #777777;
+}
+html, body, body > div { background-color: var(--hc-page-bg) !important; color: var(--hc-foreground); }
+main:not(.hc-template-home) { background-color: var(--hc-page-bg) !important; color: var(--hc-foreground) !important; }
+main:not(.hc-template-home) :where(.page-shell,.page-header,.page-heading,.directory-hero,.hc-directory-hero,.hc-shared-directory-hero,.hc-feed-composer,.hc-feed-ticket,.hc-feed-empty,.hc-feed-comments-panel,.hc-feed-game-fields,.live-game-chat-card,.live-chat-card,.chat-panel,.hero-card,.card,.dashboard-card,.compact-card,.panel,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.state-card,.form-card,.auth-card,.hc-auth-card,.legal-card,.admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.hc-review-card,.hc-profile-info-card,.hc-team-row,.hc-directory-result,.hc-player-result,.hc-team-facts-card,.hc-command-center,.hc-command-tile,.hc-shared-directory-tiles,.hc-shared-directory-tiles > a,.team-roster-spots,.hc-entity-trust-score,.hc-team-directory-row,.hc-scout-card__report,.hc-scout-card__stats) {
+  background-color: var(--hc-surface-raised) !important; color: var(--hc-foreground) !important; border-color: var(--hc-border);
+}
+html.theme-light main:not(.hc-template-home) :where(.hero,.hc-directory-hero,.hc-shared-directory-hero,.hc-team-profile-hero,.hc-player-profile-hero,.hc-coach-profile-hero,.hc-league-profile-hero) {
+  background: var(--hc-surface-raised) !important; color: var(--hc-foreground) !important; border-color: var(--hc-border) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(.hero,.hc-directory-hero,.hc-shared-directory-hero,.hc-team-profile-hero,.hc-player-profile-hero,.hc-coach-profile-hero,.hc-league-profile-hero) {
+  background: var(--hc-surface-raised) !important; color: var(--hc-foreground) !important; border-color: var(--hc-border) !important;
+}
+html.theme-light main:not(.hc-template-home) :where(h1,h2,h3,h4,h5,h6) { color: var(--hc-foreground) !important; }
+html.theme-dark main:not(.hc-template-home) :where(h1,h2,h3,h4,h5,h6) { color: var(--hc-foreground) !important; }
+html.theme-light main:not(.hc-template-home) :where(.muted,.meta,.subtle,.eyebrow,.hc-team-profile-meta,.hc-directory-hero p,.hc-team-profile-hero p,.hc-player-profile-hero p,.hc-coach-profile-hero p,.hc-league-profile-hero p) { color: var(--hc-foreground-muted) !important; }
+html.theme-dark main:not(.hc-template-home) :where(.muted,.meta,.subtle,.eyebrow,.hc-team-profile-meta,.hc-directory-hero p,.hc-team-profile-hero p,.hc-player-profile-hero p,.hc-coach-profile-hero p,.hc-league-profile-hero p) { color: var(--hc-foreground-muted) !important; }
+html.theme-light main.hc-entity-profile-page .hc-entity-trust-score, html.theme-light main.hc-entity-profile-page .team-roster-spots, html.theme-light main.hc-entity-profile-page .hc-team-facts-card,
+html.theme-dark main.hc-entity-profile-page .hc-entity-trust-score, html.theme-dark main.hc-entity-profile-page .team-roster-spots, html.theme-dark main.hc-entity-profile-page .hc-team-facts-card {
+  background: var(--hc-surface-raised) !important; color: var(--hc-foreground) !important; border-color: var(--hc-border) !important;
+}
+html.theme-light :where(.nav,.topnav,.site-header-global,.hc-template-header,.hc-header-nav,.bottom-nav,.hc-bottom-tab-bar,.bottom-tab-bar,.mobile-bottom-nav,[data-bottom-nav="true"]) { background: var(--hc-nav-bg) !important; color: var(--hc-nav-fg) !important; border-color: var(--hc-border) !important; }
+html.theme-light :where(.nav,.topnav,.site-header-global,.hc-template-header,.hc-header-nav,.bottom-nav,.hc-bottom-tab-bar,.bottom-tab-bar,.mobile-bottom-nav,[data-bottom-nav="true"]) :where(a,button,span,svg) { color: var(--hc-nav-fg); }
+html.theme-dark :where(.nav,.topnav,.site-header-global,.hc-template-header,.hc-header-nav,.bottom-nav,.hc-bottom-tab-bar,.bottom-tab-bar,.mobile-bottom-nav,[data-bottom-nav="true"]) { background: var(--hc-nav-bg) !important; color: var(--hc-nav-fg) !important; border-color: var(--hc-border) !important; }
+html.theme-dark :where(.nav,.topnav,.site-header-global,.hc-template-header,.hc-header-nav,.bottom-nav,.hc-bottom-tab-bar,.bottom-tab-bar,.mobile-bottom-nav,[data-bottom-nav="true"]) :where(a,button,span,svg) { color: var(--hc-nav-fg); }
+html.theme-light main:not(.hc-template-home) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),textarea,select) { background: var(--hc-input-bg) !important; color: var(--hc-input-fg) !important; border-color: var(--hc-control-border) !important; }
+html.theme-dark main:not(.hc-template-home) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),textarea,select) { background: var(--hc-input-bg) !important; color: var(--hc-input-fg) !important; border-color: var(--hc-control-border) !important; }
+html.theme-light main:not(.hc-template-home) :where(input,textarea,select)::placeholder { color: var(--hc-control-muted) !important; opacity: 1; }
+html.theme-dark main:not(.hc-template-home) :where(input,textarea,select)::placeholder { color: var(--hc-control-muted) !important; opacity: 1; }
+:where(.hc-toast,.toast,.toast-message,.toast-notification,.snackbar,.notification-toast,.hc-settings-message,.settings-save,[data-sonner-toast],[data-radix-toast-root]) { background: var(--hc-surface-raised) !important; color: var(--hc-foreground) !important; border-color: var(--hc-border) !important; }
+:where(.hc-toast,.toast,.toast-message,.toast-notification,.snackbar,.notification-toast,.hc-settings-message,.settings-save,[data-sonner-toast],[data-radix-toast-root]) :where(p,span,strong,small) { color: inherit !important; }
+
+/* Live Game Chat surfaces have their own legacy class family. */
+main:not(.hc-template-home) :where(.hc-live-room-hero,.hc-live-room-panel,.hc-live-room-scoreboard,.hc-live-chat-shell,.hc-live-chat-toolbar,.hc-live-chat-messages,.hc-live-chat-message,.hc-live-chat-compose,.hc-live-chat-rules,.hc-live-empty-state,.hc-live-closed-state,.hc-live-room-notice,.hc-live-report-panel) {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light main:not(.hc-template-home) :where(.hc-live-room-game-status,.hc-live-chat-message-meta,.hc-live-room-footnote,.hc-live-room-notice p) {
+  color: var(--hc-foreground-muted) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(.hc-live-room-game-status,.hc-live-chat-message-meta,.hc-live-room-footnote,.hc-live-room-notice p) {
+  color: var(--hc-foreground-muted) !important;
+}
+
+/* Final ink pass: legacy explicit text colors must not survive a theme flip. */
+html.theme-light main:not(.hc-template-home) :where(h1,h2,h3,h4,h5,h6,p,span,small,label,li,dt,dd,strong,legend,summary,a:not(.btn)) {
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(h1,h2,h3,h4,h5,h6,p,span,small,label,li,dt,dd,strong,legend,summary,a:not(.btn)) {
+  color: var(--hc-foreground) !important;
+}
+html.theme-light main:not(.hc-template-home) :where(.muted,.meta,.subtle,.eyebrow,.hc-team-profile-meta,.hc-directory-hero p,.hc-player-profile-hero p,.hc-coach-profile-hero p,.hc-league-profile-hero p,.hc-live-room-game-status,.hc-live-chat-message-meta,.hc-live-room-footnote) {
+  color: var(--hc-foreground-muted) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(.muted,.meta,.subtle,.eyebrow,.hc-team-profile-meta,.hc-directory-hero p,.hc-player-profile-hero p,.hc-coach-profile-hero p,.hc-league-profile-hero p,.hc-live-room-game-status,.hc-live-chat-message-meta,.hc-live-room-footnote) {
+  color: var(--hc-foreground-muted) !important;
+}
+html.theme-light main:not(.hc-template-home) :where(.hc-live-badge--visible,.hc-live-badge--visible span) { color: #FFFFFF !important; }
+html.theme-light main:not(.hc-template-home) :where(.hc-team-profile-meta span) { color: var(--hc-foreground-muted) !important; }

@@ -321,19 +321,23 @@ export default function TeamDetailPage() {
       const isAdmin =
         adminResult.data === true;
 
+      const fanHasPaidPlan =
+        profileResult.data?.account_type !== "fan" ||
+        ["pro", "premium"].includes(subscription?.plan || "");
       const access =
-        subscriptionIsActive ||
+        (subscriptionIsActive && fanHasPaidPlan) ||
         isAdmin;
 
       setHasAccess(access);
 
-      const { data: summaryData, error: summaryError } =
-        await supabase.rpc("get_public_review_summary", {
-          p_entity_type: "team",
-          p_entity_id: id,
-        });
+      const { data: summaryData, error: summaryError } = access
+        ? await supabase.rpc("get_public_review_summary", {
+            p_entity_type: "team",
+            p_entity_id: id,
+          })
+        : { data: null, error: null };
 
-      if (!summaryError && summaryData?.[0]) {
+      if (access && !summaryError && summaryData?.[0]) {
         setPublicSummary({
           review_count: Number(summaryData[0].review_count || 0),
           overall_rating: summaryData[0].overall_rating == null ? null : Number(summaryData[0].overall_rating),
@@ -411,12 +415,13 @@ export default function TeamDetailPage() {
   useEffect(() => {
     if (!id) return;
     let active = true;
+    if (!hasAccess) { setTrustScoreData(null); return () => { active = false; }; }
     void fetch(`/api/trust-score?entityType=team&entityId=${encodeURIComponent(id)}`)
       .then(response => response.ok ? response.json() : null)
       .then(payload => { if (active && payload) setTrustScoreData(payload); })
       .catch(() => { if (active) setTrustScoreData(null); });
     return () => { active = false; };
-  }, [id]);
+  }, [id, hasAccess]);
 
   async function submitReport() {
     if (!reportReviewId) {
@@ -589,14 +594,22 @@ export default function TeamDetailPage() {
 
 <section className="hero">
         <div className="hc-team-profile-heading"><span className="hc-team-profile-logo" aria-hidden="true">{team.logo_url ? <img src={team.logo_url} alt="" width={64} height={64} /> : team.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span><div><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || t("countryNotListed")}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
-        <Surface as="div" className="hc-entity-trust-score">
-          <TrustScoreDial
-            score={trustScoreData?.score ?? null}
-            explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))}
-            reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count}
-            verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0}
-          />
-        </Surface>
+        {hasAccess ? (
+          <Surface as="div" className="hc-entity-trust-score">
+            <TrustScoreDial
+              score={trustScoreData?.score ?? null}
+              explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))}
+              reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count}
+              verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0}
+            />
+          </Surface>
+        ) : (
+          <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score">
+            <span className="eyebrow">{t("membersOnlyTitle")}</span>
+            <h2>{t("unlockReviews")}</h2>
+            <Link href="/membership" className="btn">{t("viewMembership")}</Link>
+          </Surface>
+        )}
 
         <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} /></div>
         <TeamRosterSpots teamId={team.id} teamName={team.name} />
@@ -641,7 +654,7 @@ export default function TeamDetailPage() {
               <div className="card" style={{ marginBottom: 24, borderColor: "rgba(255,106,0,.45)" }}>
                 <div className="eyebrow">{t("membersOnlyTitle")}</div>
                 <h3>{t("playerReviewsLocked")}</h3>
-                <p>{publicSummary.review_count || 0} {t("approvedPlayerReviewCount")} {t("availableForProfile")}</p>
+                <p>{t("membershipStartsMessage")}</p>
                 <div className="actions">
                   <Link href="/signup" className="btn">{t("createFreeAccount")}</Link>
                   <Link href="/login" className="btn dark">{t("logIn")}</Link>
