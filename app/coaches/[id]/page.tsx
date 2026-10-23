@@ -660,8 +660,8 @@ export default function CoachDetailPage() {
         <section className="grid">
           <div className="card rating-locked-card">
             <div className="eyebrow">Community Rating</div>
-            <h2>Overall rating locked</h2>
-            <p>Sign in and choose a membership to unlock ratings and reviews.</p>
+            <h2>🔒 Player reviews are a Premium fan feature</h2>
+            <p>Upgrade to Fan Premium to unlock every review and rating.</p>
             <div className="actions"><Link href="/signup" className="btn">Create Free Account</Link><Link href="/membership" className="btn dark">Unlock Ratings</Link></div>
           </div>
         </section>
