@@ -352,10 +352,14 @@ export default function CoachDetailPage() {
     if (!id) return;
     let active = true;
     if (!hasAccess) { setTrustScoreData(null); return () => { active = false; }; }
-    void fetch(`/api/trust-score?entityType=coach&entityId=${encodeURIComponent(id)}`)
-      .then(response => response.ok ? response.json() : null)
-      .then(payload => { if (active && payload) setTrustScoreData(payload); })
-      .catch(() => { if (active) setTrustScoreData(null); });
+    void (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`/api/trust-score?entityType=coach&entityId=${encodeURIComponent(id)}`, {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}, cache: "no-store",
+      });
+      const payload = response.ok ? await response.json() : null;
+      if (active && payload) setTrustScoreData(payload);
+    })().catch(() => { if (active) setTrustScoreData(null); });
     return () => { active = false; };
   }, [id, hasAccess]);
 
