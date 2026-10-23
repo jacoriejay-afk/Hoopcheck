@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
 export type BasketballSide = "mens" | "womens";
@@ -27,6 +28,9 @@ export function useFanBasketballSide() {
 
 export default function FanBasketballSideSwitch({ lockedHint = false }: { lockedHint?: boolean }) {
   const [side, setSide] = useState<BasketballSide>("mens");
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isFan, setIsFan] = useState(false);
   const [canSwitch, setCanSwitch] = useState(false);
   const [ready, setReady] = useState(false);
@@ -77,9 +81,16 @@ export default function FanBasketballSideSwitch({ lockedHint = false }: { locked
     setSide(next);
     window.localStorage.setItem(STORAGE_KEY, next);
     window.dispatchEvent(new Event(SIDE_EVENT));
+    if (pathname === "/teams" && next === "womens") router.push("/womens");
+    else if (pathname === "/womens" && next === "mens") router.push("/teams");
+    else if (pathname === "/search") {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("type", next === "womens" ? "womens-teams" : "mens-teams");
+      router.replace(`/search?${params.toString()}`);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (user) await supabase.from("profiles").update({ preferred_basketball_side: next }).eq("id", user.id);
-  }, [canSwitch]);
+  }, [canSwitch, pathname, router, searchParams]);
 
   if (!ready || !isFan) return null;
   if (!canSwitch) return lockedHint ? <div className="hc-fan-side-locked" role="note">🔒 Available on Fan Pro · <a href="/membership">Upgrade</a></div> : null;
