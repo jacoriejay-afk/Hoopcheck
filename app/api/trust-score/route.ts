@@ -51,6 +51,12 @@ export async function GET(request: Request) {
         else if (profile?.account_type === "fan" && active && subscription?.plan === "premium") tier = "premium";
         else if (profile?.account_type === "fan" && active && subscription?.plan === "pro") tier = "pro";
         else if (profile?.account_type && profile.account_type !== "fan" && active) tier = "member";
+        const scoped = createClient(supabaseUrl, anonKey, {
+          global: { headers: { Authorization: "Bearer " + bearer } },
+          auth: { autoRefreshToken: false, persistSession: false },
+        });
+        const { data: admin } = await scoped.rpc("is_current_user_admin_or_moderator");
+        if (admin === true) tier = "premium";
       }
     }
     if (tier === "free" || tier === "pro") {
