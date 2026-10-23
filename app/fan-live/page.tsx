@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
+import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
@@ -45,6 +47,7 @@ export default function FanLivePage() {
   const [reportReason,setReportReason]=useState("harassment");
   const [reportDetails,setReportDetails]=useState("");
   const [clock,setClock]=useState(()=>new Date());
+  const basketballSide = useFanBasketballSide();
   const bottomRef=useRef<HTMLDivElement|null>(null);
 
   const load = useCallback(async (showLoader=false) => {
@@ -68,7 +71,11 @@ export default function FanLivePage() {
       supabase.from("fan_live_chat_user_controls").select("target_user_id,is_blocked,is_muted").eq("user_id",user.id)
     ]);
     if(gameError) setMessage("Game updates are temporarily unavailable. Reconnecting…");
-    const next=(gameRows||[]) as Game[];
+    const rawGames=(gameRows||[]) as Game[];
+    const candidateIds=Array.from(new Set(rawGames.flatMap(g=>[g.team_id,g.opponent_team_id].filter((x):x is string=>Boolean(x)))));
+    const {data:sideRows}=candidateIds.length?await supabase.from("teams").select("id").in("id",candidateIds).eq("basketball_type",basketballSide==="womens"?"womens":"mens"):{data:[] as {id:string}[]};
+    const sideIds=new Set((sideRows||[]).map((row:any)=>row.id));
+    const next=rawGames.filter(g=>sideIds.has(g.team_id));
     setGames(next);
     setMutedUsers(new Set((controls||[]).filter((x:any)=>x.is_muted).map((x:any)=>x.target_user_id)));
     setBlockedUsers(new Set((controls||[]).filter((x:any)=>x.is_blocked).map((x:any)=>x.target_user_id)));
@@ -78,7 +85,7 @@ export default function FanLivePage() {
     const requested=typeof window!=="undefined"?new URLSearchParams(window.location.search).get("gameId"):null;
     setSelected(current=>(current&&next.find(g=>g.id===current.id))||next.find(g=>g.id===requested)||next.find(g=>g.status==="live")||next[0]||null);
     setClock(new Date()); setLoading(false);
-  },[]);
+  },[basketballSide]);
 
   const loadMessages=useCallback(async(gameId:string)=>{
     const {data,error}=await supabase.from("fan_live_chat_messages").select("id,body,created_at,user_id").eq("game_id",gameId).order("created_at",{ascending:true}).limit(200);
@@ -203,7 +210,8 @@ export default function FanLivePage() {
   if(!userId)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">FAN HQ</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in as a Pro or Premium Fan to join live game conversations.</p><Link className="btn" href="/login">Sign in</Link></section></div></main>;
   if(!allowed)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM FAN</p><h1>LIVE GAME CHAT</h1><p className="muted">An active Pro or Premium Fan membership is required to join game rooms.</p><Link className="btn" href="/membership">View Membership</Link></section></div></main>;
 
-  return <main className="page-shell hc-live-room"><div className="page-container">
+  return <main className="page-shell hc-live-room">
+      <FanBasketballSideSwitch /><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/live-games">All Games</Link><Link href="/teams">Teams</Link></nav></header>
     <section className="hero-card hc-live-room-hero"><div><p className="eyebrow">HOOPCHECK · FAN HQ</p><h1>LIVE GAME CHAT<span>.</span></h1><p className="muted">Real-time conversation with fans watching the same game.</p></div><div className="hc-live-presence-chip"><span className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"fan":"fans"} in room</div></section>
     {!games.length?<section className="dashboard-card"><h2>No games available</h2><p className="muted">Check back when the game schedule is updated.</p><Link href="/live-games" className="btn">Browse Games</Link></section>:<section className="hc-live-room-grid">
