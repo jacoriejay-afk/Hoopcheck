@@ -82,3 +82,23 @@ html.theme-dark main:not(.hc-template-home) :where(.muted,.meta,.subtle,.eyebrow
 }
 html.theme-light main:not(.hc-template-home) :where(.hc-live-badge--visible,.hc-live-badge--visible span) { color: #FFFFFF !important; }
 html.theme-light main:not(.hc-template-home) :where(.hc-team-profile-meta span) { color: var(--hc-foreground-muted) !important; }
+
+/* Fan review tier teaser and lock surfaces */
+.hc-fan-review-teaser { display: grid; gap: 14px; }
+.hc-fan-upgrade-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 16px; border: 1px solid #FF5500; border-radius: 12px; background: color-mix(in srgb, #FF5500 10%, var(--hc-surface-raised)); color: var(--hc-foreground); }
+.hc-review-star-row { display: flex; align-items: center; gap: 10px; color: #FF8A00 !important; font-size: 1.15rem; font-weight: 900; }
+.hc-review-category-teaser { display: grid; gap: 8px; }
+.hc-review-category-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--hc-border); color: var(--hc-foreground); }
+.hc-review-score-blur { filter: blur(5px); opacity: .55; user-select: none; pointer-events: none; }
+.hc-directory-locked { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; color: var(--hc-foreground); }
+.hc-directory-locked small { color: var(--hc-foreground-muted); }
+.hc-membership-locked-state { display: grid; gap: 10px; }
+
+/* Persistent fan basketball-side control */
+.hc-fan-side-switch-wrap { display:flex; justify-content:flex-start; width:100%; max-width:1180px; margin:0 auto 18px; padding:0 24px; box-sizing:border-box; }
+.hc-fan-side-switch { display:inline-flex; align-items:center; gap:4px; padding:4px; border:1px solid var(--athletic-border, var(--border, #333)); border-radius:999px; background:var(--athletic-card, var(--card, #171717)); }
+.hc-fan-side-switch button { border:0; border-radius:999px; padding:10px 16px; min-height:40px; background:transparent; color:var(--athletic-textDark, var(--foreground, #aaa)); font-weight:900; font-size:12px; letter-spacing:.08em; cursor:pointer; transition:background .16s ease,color .16s ease; }
+.hc-fan-side-switch button.is-active.is-mens { background:var(--athletic-orange, #ff5500); color:#fff; }
+.hc-fan-side-switch button.is-active.is-womens { background:#E84393; color:#fff; }
+.hc-fan-side-locked { margin:0 0 16px; padding:10px 14px; border:1px solid var(--athletic-border, #333); border-radius:12px; font-size:13px; font-weight:700; }
+.hc-fan-side-locked a { color:var(--athletic-orange, #ff5500); font-weight:900; text-decoration:underline; }

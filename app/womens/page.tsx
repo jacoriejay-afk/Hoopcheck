@@ -1,6 +1,7 @@
 "use client";
 
 import { supabase } from "../../lib/supabase";
+import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import { useEffect, useMemo, useState } from "react";
 import DirectoryLayout from "../../components/DirectoryLayout";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
@@ -67,6 +68,7 @@ export default function Womens() {
 
   return (
     <main className="page-shell hc-womens-directory-page">
+      <FanBasketballSideSwitch lockedHint />
       <div className="page-container">
         <DirectoryLayout current="womens" />
 

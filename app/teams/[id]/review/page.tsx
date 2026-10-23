@@ -194,15 +194,18 @@ export default function TeamReviewPage() {
       // players always see the rule explaining that they can only review
       // teams they currently or previously played for.
       const { data: eligibility, error: eligibilityError } = await supabase.rpc("can_user_review_team", { p_user_id: user.id, p_team_id: id });
-      if (isAdmin) {
+      if (profile?.account_type !== "player" || profile.player_verified !== true) {
+        setEligible(false);
+        setMessage("Only verified player accounts can write reviews.");
+        setLoading(false);
+        return;
+      } else if (isAdmin || (!eligibilityError && eligibility === true)) {
         setEligible(true);
-      } else if (profile?.account_type !== "player" || profile.player_verified !== true || eligibilityError || eligibility !== true) {
+      } else {
         setEligible(false);
         setMessage("You can only make ratings and reviews for teams you currently or previously played for. Your player account must also be verified.");
         setLoading(false);
         return;
-      } else {
-        setEligible(true);
       }
 
       const { data: subscription } = await supabase

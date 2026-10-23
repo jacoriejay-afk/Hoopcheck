@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
+import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
@@ -38,6 +40,7 @@ export default function FanFeedPage() {
   const [membershipActive, setMembershipActive] = useState(false);
   const [posting, setPosting] = useState(false);
   const [message, setMessage] = useState("");
+  const basketballSide = useFanBasketballSide();
 
   const load = useCallback(async (uid: string) => {
     const [{ data: follows }, { data: teamFollows }] = await Promise.all([
@@ -46,12 +49,15 @@ export default function FanFeedPage() {
     ]);
     const fanIds = (follows || []).map((x: any) => x.target_id);
     const teamIds = (teamFollows || []).map((x: any) => x.target_id);
+    const { data: sideTeams } = await supabase.from("teams").select("id").eq("basketball_type", basketballSide === "womens" ? "womens" : "mens");
+    const sideTeamIds = new Set((sideTeams || []).map((x: any) => x.id));
+    const scopedTeamIds = teamIds.filter((id: string) => sideTeamIds.has(id));
     setFollowing(new Set(fanIds));
-    const teamQuery = await supabase.from("teams").select("id,name,logo_url").in("id", teamIds.length ? teamIds : ["00000000-0000-0000-0000-000000000000"]);
+    const teamQuery = await supabase.from("teams").select("id,name,logo_url").in("id", scopedTeamIds.length ? scopedTeamIds : ["00000000-0000-0000-0000-000000000000"]);
     const followedTeams = (teamQuery.data || []) as Team[];
     setTeams(followedTeams);
-    setTeamId(current => current || followedTeams[0]?.id || "");
-    if (!fanIds.length && !teamIds.length) { setPosts([]); return; }
+    setTeamId(current => followedTeams.some(team => team.id === current) ? current : followedTeams[0]?.id || "");
+    if (!fanIds.length && !sideTeamIds.size) { setPosts([]); return; }
     const query = supabase.from("fan_feed_posts")
       .select("id,author_id,team_id,body,image_url,video_url,created_at,expires_at,profiles!fan_feed_posts_author_id_fkey(id,display_name,avatar_url,account_type),teams(id,name,logo_url),fan_feed_checks(user_id),fan_feed_comments(id)")
       .gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(100);
@@ -60,7 +66,7 @@ export default function FanFeedPage() {
     const { data: archiveRows } = await supabase.from("fan_feed_archives").select("post_id").eq("user_id", uid);
     const archivedIds = new Set((archiveRows || []).map((r: any) => r.post_id));
     setArchived(archivedIds);
-    const rows = (data || []).filter((p: any) => !archivedIds.has(p.id) && (fanIds.includes(p.author_id) || teamIds.includes(p.team_id)))
+    const rows = (data || []).filter((p: any) => !archivedIds.has(p.id) && sideTeamIds.has(p.team_id) && (fanIds.includes(p.author_id) || scopedTeamIds.includes(p.team_id)))
       .map((p: any) => ({ ...p, checks: p.fan_feed_checks || [], profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles, teams: Array.isArray(p.teams) ? p.teams[0] : p.teams }));
     setPosts(rows.map((p: any) => ({ ...p, checks: p.fan_feed_checks || [] })) as FanPost[]);
     setLiked(new Set(rows.filter((p: any) => (p.fan_feed_checks || []).some((l: any) => l.user_id === uid)).map((p: any) => p.id)));
@@ -71,7 +77,7 @@ export default function FanFeedPage() {
       (commentRows || []).forEach((c: any) => { (grouped[c.post_id] ||= []).push({ ...c, profiles: Array.isArray(c.profiles) ? c.profiles[0] : c.profiles }); });
       setComments(grouped);
     } else setComments({});
-  }, []);
+  }, [basketballSide]);
 
   useEffect(() => {
     let alive = true;
@@ -179,7 +185,8 @@ export default function FanFeedPage() {
   if (!user) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("title")}</h1><p>{ft("signIn")}</p><Link className="btn" href="/login">{t("signIn")}</Link></section></div></main>;
   if (profile?.account_type !== "fan") return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("fansOnly")}</h1><p>{ft("separateSurface")}</p><Link className="btn" href="/login">{ft("playerFeed")}</Link></section></div></main>;
   if (!membershipActive) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("membershipRequired")}</h1><p>{ft("membershipDescription")}</p><Link className="btn" href="/membership">{t("membership")}</Link></section></div></main>;
-  return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container">
+  return <main className="page-shell hc-feed-page hc-fan-feed-page">
+      <FanBasketballSideSwitch /><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/fans">{ft("discoverFans")}</Link><Link href="/team-hub">{ft("teamHub")}</Link><Link href="/teams">{ft("teams")}</Link></nav></header>
     <section className="hero-card hc-feed-hero"><div><p className="eyebrow">{ft("kicker")}</p><h1>{ft("title")}</h1><p className="muted">{ft("subtitle")}</p></div><p className="hc-feed-expiry-note">{ft("teamFirst")}<span>{ft("fanOnlyNote")}</span></p></section>
     <section className="dashboard-card hc-feed-composer" style={{ marginTop: 18 }}>

@@ -180,6 +180,14 @@ export default function CoachReviewPage() {
         return;
       }
 
+      const { data: authorProfile } = await supabase.from("profiles")
+        .select("account_type, player_verified").eq("id", user.id).maybeSingle();
+      if (authorProfile?.account_type !== "player" || authorProfile.player_verified !== true) {
+        setMessage("Only verified player accounts can write reviews.");
+        setLoading(false);
+        return;
+      }
+
       const [
         subscriptionResult,
         adminResult,
@@ -437,6 +445,10 @@ export default function CoachReviewPage() {
         </section>
       </main>
     );
+  }
+
+  if (message.startsWith("Only verified player accounts")) {
+    return <main><section className="hero"><h1>Player reviews only</h1><p>Writing reviews is available to verified player accounts. Fan accounts can read reviews according to their membership tier.</p><div className="actions"><Link href={`/coaches/${coach?.id || id}`} className="btn">Back to Coach</Link><Link href="/membership" className="btn dark">View Membership</Link></div></section></main>;
   }
 
   if (alreadyReviewed) {

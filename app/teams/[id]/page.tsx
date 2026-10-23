@@ -177,6 +177,7 @@ export default function TeamDetailPage() {
     useState(false);
   const [accountType, setAccountType] = useState<string>("");
   const [membershipPlan, setMembershipPlan] = useState<string>("");
+  const [reviewTier, setReviewTier] = useState<"free" | "pro" | "premium" | "player" | "member">("free");
 
   const [loading, setLoading] =
     useState(true);
@@ -330,81 +331,40 @@ export default function TeamDetailPage() {
 
       setHasAccess(access);
 
-      const { data: summaryData, error: summaryError } = access
-        ? await supabase.rpc("get_public_review_summary", {
-            p_entity_type: "team",
-            p_entity_id: id,
-          })
-        : { data: null, error: null };
-
-      if (access && !summaryError && summaryData?.[0]) {
+      const response = await fetch(`/api/review-access?entityType=team&entityId=${encodeURIComponent(id)}`, {
+        headers: { Authorization: `Bearer ${session?.access_token || ""}` },
+        cache: "no-store",
+      });
+      const reviewPayload = response.ok ? await response.json() : null;
+      const tier = (reviewPayload?.tier || "free") as typeof reviewTier;
+      setReviewTier(tier);
+      const fullRead = ["premium", "player", "member"].includes(tier);
+      const canReadAnything = tier !== "free";
+      setHasAccess(canReadAnything);
+      setReviewLoading(fullRead);
+      const summary = reviewPayload?.summary;
+      if (summary) {
         setPublicSummary({
-          review_count: Number(summaryData[0].review_count || 0),
-          overall_rating: summaryData[0].overall_rating == null ? null : Number(summaryData[0].overall_rating),
-          communication_rating: summaryData[0].communication_rating == null ? null : Number(summaryData[0].communication_rating),
-          professionalism_rating: summaryData[0].professionalism_rating == null ? null : Number(summaryData[0].professionalism_rating),
-          development_rating: summaryData[0].development_rating == null ? null : Number(summaryData[0].development_rating),
-          payment_rating: summaryData[0].payment_rating == null ? null : Number(summaryData[0].payment_rating),
+          review_count: Number(summary.review_count || 0),
+          overall_rating: summary.overall_rating == null ? null : Number(summary.overall_rating),
+          communication_rating: summary.communication_rating == null ? null : Number(summary.communication_rating),
+          professionalism_rating: summary.professionalism_rating == null ? null : Number(summary.professionalism_rating),
+          development_rating: summary.development_rating == null ? null : Number(summary.development_rating),
+          payment_rating: summary.payment_rating == null ? null : Number(summary.payment_rating),
         });
-      } else if (summaryError) {
-        console.error("Public review summary error:", summaryError);
       }
-
-      const premiumFan = profileResult.data?.account_type === "fan" && subscription?.plan === "premium" && subscriptionIsActive;
-      const canViewReviews = access && !premiumFan;
-      if (canViewReviews) {
-        setReviewLoading(true);
-
-        const {
-          data: reviewData,
-          error: reviewError,
-        } = await supabase
-          .from("reviews")
-          .select(
-            `
-              id,
-              player_season,
-              overall_rating,
-              communication_rating,
-              professionalism_rating,
-              development_rating,
-              payment_rating,
-              pay_on_time_rating,
-              housing_rating,
-              medical_support_rating,
-              coaching_quality_rating,
-              facilities_rating,
-              playing_time_honesty_rating,
-              title,
-              body,
-              created_at,
-              is_anonymous
-            `
-          )
-          .eq(
-            "team_id",
-            id
-          )
-          .eq(
-            "status",
-            "approved"
-          )
-          .order(
-            "created_at",
-            {
-              ascending: false,
-            }
-          );
-
-        if (!reviewError && reviewData) {
-          const reviewIds = reviewData.map((review) => review.id);
-          const { data: verificationData } = await supabase.rpc("get_review_verification", { p_review_ids: reviewIds });
-          const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map((item) => [item.review_id, Boolean(item.player_verified)]));
-          setReviews(reviewData.map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
-        }
-
-        setReviewLoading(false);
+      if (fullRead && Array.isArray(reviewPayload?.reviews)) {
+        const reviewData = reviewPayload.reviews as Review[];
+        const reviewIds = reviewData.map((review) => review.id);
+        const { data: verificationData } = reviewIds.length
+          ? await supabase.rpc("get_review_verification", { p_review_ids: reviewIds })
+          : { data: [] };
+        const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map((item) => [item.review_id, Boolean(item.player_verified)]));
+        setReviews(reviewData.map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
+      } else {
+        setReviews([]);
       }
+      setReviewLoading(false);
 
       setLoading(false);
     }
@@ -416,10 +376,14 @@ export default function TeamDetailPage() {
     if (!id) return;
     let active = true;
     if (!hasAccess) { setTrustScoreData(null); return () => { active = false; }; }
-    void fetch(`/api/trust-score?entityType=team&entityId=${encodeURIComponent(id)}`)
-      .then(response => response.ok ? response.json() : null)
-      .then(payload => { if (active && payload) setTrustScoreData(payload); })
-      .catch(() => { if (active) setTrustScoreData(null); });
+    void (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`/api/trust-score?entityType=team&entityId=${encodeURIComponent(id)}`, {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}, cache: "no-store",
+      });
+      const payload = response.ok ? await response.json() : null;
+      if (active && payload) setTrustScoreData(payload);
+    })().catch(() => { if (active) setTrustScoreData(null); });
     return () => { active = false; };
   }, [id, hasAccess]);
 
@@ -594,21 +558,14 @@ export default function TeamDetailPage() {
 
 <section className="hero">
         <div className="hc-team-profile-heading"><span className="hc-team-profile-logo" aria-hidden="true">{team.logo_url ? <img src={team.logo_url} alt="" width={64} height={64} /> : team.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span><div><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || t("countryNotListed")}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
-        {hasAccess ? (
-          <Surface as="div" className="hc-entity-trust-score">
-            <TrustScoreDial
-              score={trustScoreData?.score ?? null}
-              explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))}
-              reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count}
-              verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0}
-            />
-          </Surface>
-        ) : (
+        {reviewTier === "pro" ? (
           <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score">
-            <span className="eyebrow">{t("membersOnlyTitle")}</span>
-            <h2>{t("unlockReviews")}</h2>
-            <Link href="/membership" className="btn">{t("viewMembership")}</Link>
+            <span className="eyebrow">Trust Score</span><h2>Premium</h2><Link href="/membership" className="btn">Upgrade</Link>
           </Surface>
+        ) : ["premium", "player", "member"].includes(reviewTier) ? (
+          <Surface as="div" className="hc-entity-trust-score"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /></Surface>
+        ) : (
+          <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow"><span aria-hidden="true">🔒</span> Player reviews are a Premium fan feature</span><Link href="/membership" className="btn">Upgrade</Link></Surface>
         )}
 
         <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} /></div>
@@ -618,33 +575,10 @@ export default function TeamDetailPage() {
       {!hasAccess ? (
         <section className="hero">
           <Surface className="card hc-team-membership-surface">
-            <div className="eyebrow">
-              {t("membersOnly")}
-            </div>
-
-            <h2>
-              {t("knowOrganizationBeforeSign")}
-            </h2>
-
-            <p>
-              {t("membershipStartsMessage")}
-            </p>
-
-            <div className="actions">
-              <Link
-                href="/membership"
-                className="btn"
-              >
-                {t("viewMembership")}
-              </Link>
-
-              <Link
-                href="/login"
-                className="btn dark"
-              >
-                {t("logIn")}
-              </Link>
-            </div>
+            <div className="eyebrow">{t("membersOnly")}</div>
+            <h2>🔒 Player reviews are a Premium fan feature</h2>
+            <p>Upgrade to Fan Premium to unlock every review, rating, category score, and Trust Score detail.</p>
+            <div className="actions"><Link href="/membership" className="btn">Upgrade</Link><Link href="/login" className="btn dark">{t("logIn")}</Link></div>
           </Surface>
         </section>
       ) : (
@@ -669,7 +603,15 @@ export default function TeamDetailPage() {
               {membershipPlan === "premium" && accountType === "fan" ? t("teamRatingsAtGlance") : t("whatPlayersAreSaying")}
             </h2>
 
-            {membershipPlan === "premium" && accountType === "fan" ? <div className="card"><h3>{t("premiumFanView")}</h3><p className="muted">{t("fanTeamRatingsAccess")}</p></div> : reviewLoading ? (
+            {reviewTier === "pro" ? (
+              <div className="card hc-fan-review-teaser">
+                <div className="hc-fan-upgrade-banner"><strong>You're seeing the outline — Fan Premium unlocks every review and rating</strong><Link href="/membership" className="btn">Upgrade</Link></div>
+                <h3>Overall player rating</h3>
+                <div aria-label={publicSummary.overall_rating == null ? "Overall rating unavailable" : `Overall rating ${publicSummary.overall_rating.toFixed(1)} out of 5`} className="hc-review-star-row"><span aria-hidden="true">★★★★★</span>{publicSummary.overall_rating == null ? <span>—</span> : <strong>{publicSummary.overall_rating.toFixed(1)}/5</strong>}</div>
+                <h3>Category breakdown</h3>
+                <div className="hc-review-category-teaser">{["Communication","Professionalism","Development","Payment","Pay on time","Housing","Medical support","Coaching quality","Facilities","Playing time honesty"].map(label => <div key={label} className="hc-review-category-row"><span>{label}</span><span className="hc-review-score-blur" aria-label="Score available with Fan Premium">★★★★★</span></div>)}</div>
+              </div>
+            ) : reviewLoading ? (
               <p>
                 {t("loadingReviews")}
               </p>
@@ -789,14 +731,9 @@ export default function TeamDetailPage() {
 
       {team && <FanTeamPosts teamId={team.id} />}
 
-      <section className="hero hc-team-write-review">
-        <div className="eyebrow">{t("shareYourExperience")}</div>
-        <h2>{t("writeAReviewTitle")}</h2>
-        <p className="muted">{t("helpNextPlayer")}</p>
-        <Link href={hasAccess ? `/teams/${team.id}/review` : "/membership"} className="btn">
-          {hasAccess ? t("writeAReview") : t("unlockReviews")}
-        </Link>
-      </section>
+      {accountType === "player" && (
+        <section className="hero hc-team-write-review"><div className="eyebrow">{t("shareYourExperience")}</div><h2>{t("writeAReviewTitle")}</h2><p className="muted">{t("helpNextPlayer")}</p><Link href={hasAccess ? `/teams/${team.id}/review` : "/membership"} className="btn">{hasAccess ? t("writeAReview") : t("unlockReviews")}</Link></section>
+      )}
 
       {reportReviewId && (
         <div

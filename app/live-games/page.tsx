@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
+import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
@@ -61,6 +63,7 @@ export default function LiveGamesPage() {
   const [message, setMessage] = useState("");
   const [reminding, setReminding] = useState<string | null>(null);
   const [clock, setClock] = useState(() => new Date());
+  const basketballSide = useFanBasketballSide();
 
   const load = useCallback(async (showLoader = false) => {
     if (showLoader) setLoading(true);
@@ -87,7 +90,11 @@ export default function LiveGamesPage() {
       supabase.from("fan_live_game_reminders").select("game_id").eq("user_id", user.id),
     ]);
     if (gamesResult.error) setMessage("Game schedules are temporarily unavailable. Please refresh in a moment.");
-    const nextGames = (gamesResult.data || []) as Game[];
+    const rawGames = (gamesResult.data || []) as Game[];
+    const candidateIds = Array.from(new Set(rawGames.flatMap(game => [game.team_id, game.opponent_team_id].filter((id): id is string => Boolean(id)))));
+    const { data: sideRows } = candidateIds.length ? await supabase.from("teams").select("id").in("id", candidateIds).eq("basketball_type", basketballSide === "womens" ? "womens" : "mens") : { data: [] as {id:string}[] };
+    const sideIds = new Set((sideRows || []).map((row:any) => row.id));
+    const nextGames = rawGames.filter(game => sideIds.has(game.team_id));
     const follows = (followsResult.data || []).map((row: {target_id:string}) => row.target_id);
     setFollowedIds(follows);
     setGames(nextGames);
@@ -107,7 +114,7 @@ export default function LiveGamesPage() {
     setPresenceCounts(counts);
     setJoinedGameIds(new Set((presenceRows || []).filter((row: any) => row.user_id === user.id).map((row: any) => row.game_id)));
     setLoading(false);
-  }, []);
+  }, [basketballSide]);
 
   useEffect(() => { void load(true); }, [load]);
   useEffect(() => {
@@ -239,7 +246,8 @@ export default function LiveGamesPage() {
   if (!userId) return <main className="page-shell hc-live-hub-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">FAN COMMUNITY</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in as a Pro or Premium Fan to discover games and join live conversations.</p><Link href="/login" className="btn">Sign in</Link></section></div></main>;
   if (!allowed) return <main className="page-shell hc-live-hub-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM FANS</p><h1>LIVE GAME CHAT</h1><p className="muted">Watch together. Chat live with fans during real games.</p><p className="muted">An active Pro or Premium Fan membership is required to join live game chat.</p><Link href="/membership" className="btn">Explore Membership</Link></section></div></main>;
 
-  return <main className="page-shell hc-live-hub-page"><div className="page-container">
+  return <main className="page-shell hc-live-hub-page">
+      <FanBasketballSideSwitch /><div className="page-container">
     <header className="hc-live-hub-hero">
       <div><p className="eyebrow">HOOPCHECK · FAN HQ</p><h1>LIVE GAME CHAT<span>.</span></h1><p>Watch together. Chat live with fans during real games.</p></div>
       <div className="hc-live-hero-orbit" aria-hidden="true"><span /><span /><span /></div>
