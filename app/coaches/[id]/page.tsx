@@ -544,21 +544,12 @@ export default function CoachDetailPage() {
         <h1>
           {coach.name}
         </h1>
-        {hasAccess ? (
-          <div className="hc-entity-trust-score">
-            <TrustScoreDial
-              score={trustScoreData?.score ?? null}
-              explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedReviews"))}
-              reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count}
-              verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0}
-            />
-          </div>
+        {reviewTier === "pro" ? (
+          <div className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow">Trust Score</span><h2>Premium</h2><Link href="/membership" className="btn">Upgrade</Link></div>
+        ) : ["premium", "player", "member"].includes(reviewTier) ? (
+          <div className="hc-entity-trust-score"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedReviews"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /></div>
         ) : (
-          <div className="hc-entity-trust-score hc-membership-locked-score">
-            <span className="eyebrow">Members Only</span>
-            <h2>Unlock ratings and reviews</h2>
-            <Link href="/membership" className="btn">View Membership</Link>
-          </div>
+          <div className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow"><span aria-hidden="true">🔒</span> Player reviews are a Premium fan feature</span><Link href="/membership" className="btn">Upgrade</Link></div>
         )}
 
         <div className="entity-actions"><WatchButton targetType="coach" targetId={coach.id} targetName={coach.name} /></div>
@@ -673,39 +664,19 @@ export default function CoachDetailPage() {
       )}
 
       {!hasAccess ? (
-        <section className="hero">
-          <div className="card">
-            <div className="eyebrow">
-              Members Only
-            </div>
-
-            <h2>
-              Unlock the full player
-              experience.
-            </h2>
-
-            <p>
-              Get the full picture before you trust the next coaching relationship. Membership starts at $7.99/month and can be managed through Stripe anytime.
-            </p>
-
-            <div className="actions">
-              <Link
-                href="/membership"
-                className="btn"
-              >
-                View Membership
-              </Link>
-
-              <Link
-                href="/login"
-                className="btn dark"
-              >
-                Log In
-              </Link>
-            </div>
-          </div>
+        <section className="hero"><div className="card hc-membership-locked-state"><h2>🔒 Player reviews are a Premium fan feature</h2><Link href="/membership" className="btn">Upgrade</Link></div></section>
+      ) : reviewTier === "pro" ? (
+        <section className="hero hc-fan-review-teaser">
+          <h2>Player ratings and reviews</h2>
+          <h3>Overall rating</h3>
+          <div className="hc-review-star-row"><span aria-hidden="true">★★★★★</span><strong>{publicSummary.overall_rating == null ? "—" : publicSummary.overall_rating.toFixed(1)+"/5"}</strong></div>
+          <h3>Coach breakdown</h3>
+          <div className="hc-review-category-teaser">{["Communication","Professionalism","Development","Payment"].map(label=><div className="hc-review-category-row" key={label}><span>{label}</span><span className="hc-review-score-blur" aria-label="Score available with Fan Premium">★★★★★</span></div>)}</div>
+          <p>Fan Pro shows the outline. Upgrade to Fan Premium for every review and rating.</p><Link href="/membership" className="btn">Upgrade</Link>
         </section>
       ) : (
+        <>
+          <section className="grid">      ) : (
         <>
           <section className="grid">
             <div className="card">
@@ -774,12 +745,7 @@ export default function CoachDetailPage() {
                 coach.
               </p>
 
-              <Link
-                href={`/coaches/${coach.id}/review`}
-                className="btn"
-              >
-                Add Your Experience
-              </Link>
+              {accountType === "player" && <Link href={`/coaches/${coach.id}/review`} className="btn">Add Your Experience</Link>}
             </div>
           </section>
 
@@ -822,12 +788,7 @@ export default function CoachDetailPage() {
                   this coach.
                 </p>
 
-                <Link
-                  href={`/coaches/${coach.id}/review`}
-                  className="btn"
-                >
-                  {t("writeAReview")}
-                </Link>
+                {accountType === "player" && <Link href={`/coaches/${coach.id}/review`} className="btn">{t("writeAReview")}</Link>}
               </div>
             ) : (
               <div
