@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
@@ -235,7 +236,8 @@ export default function LiveGamesPage() {
     );
   }
 
-  if (loading) return <main className="page-shell hc-live-hub-page"><div className="page-container"><HoopLoading label="Loading Live Games..." /></div></main>;
+  if (loading) return <main className="page-shell hc-live-hub-page">
+      <FanBasketballSideSwitch /><div className="page-container"><HoopLoading label="Loading Live Games..." /></div></main>;
   if (!userId) return <main className="page-shell hc-live-hub-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">FAN COMMUNITY</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in as a Pro or Premium Fan to discover games and join live conversations.</p><Link href="/login" className="btn">Sign in</Link></section></div></main>;
   if (!allowed) return <main className="page-shell hc-live-hub-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM FANS</p><h1>LIVE GAME CHAT</h1><p className="muted">Watch together. Chat live with fans during real games.</p><p className="muted">An active Pro or Premium Fan membership is required to join live game chat.</p><Link href="/membership" className="btn">Explore Membership</Link></section></div></main>;
 
