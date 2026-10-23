@@ -56,8 +56,8 @@ export default function FanFeedPage() {
     const teamQuery = await supabase.from("teams").select("id,name,logo_url").in("id", scopedTeamIds.length ? scopedTeamIds : ["00000000-0000-0000-0000-000000000000"]);
     const followedTeams = (teamQuery.data || []) as Team[];
     setTeams(followedTeams);
-    setTeamId(current => current || followedTeams[0]?.id || "");
-    if (!fanIds.length && !scopedTeamIds.length) { setPosts([]); return; }
+    setTeamId(current => followedTeams.some(team => team.id === current) ? current : followedTeams[0]?.id || "");
+    if (!fanIds.length && !sideTeamIds.size) { setPosts([]); return; }
     const query = supabase.from("fan_feed_posts")
       .select("id,author_id,team_id,body,image_url,video_url,created_at,expires_at,profiles!fan_feed_posts_author_id_fkey(id,display_name,avatar_url,account_type),teams(id,name,logo_url),fan_feed_checks(user_id),fan_feed_comments(id)")
       .gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(100);
@@ -66,7 +66,7 @@ export default function FanFeedPage() {
     const { data: archiveRows } = await supabase.from("fan_feed_archives").select("post_id").eq("user_id", uid);
     const archivedIds = new Set((archiveRows || []).map((r: any) => r.post_id));
     setArchived(archivedIds);
-    const rows = (data || []).filter((p: any) => !archivedIds.has(p.id) && scopedTeamIds.includes(p.team_id) && (fanIds.includes(p.author_id) || scopedTeamIds.includes(p.team_id)))
+    const rows = (data || []).filter((p: any) => !archivedIds.has(p.id) && sideTeamIds.has(p.team_id) && (fanIds.includes(p.author_id) || scopedTeamIds.includes(p.team_id)))
       .map((p: any) => ({ ...p, checks: p.fan_feed_checks || [], profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles, teams: Array.isArray(p.teams) ? p.teams[0] : p.teams }));
     setPosts(rows.map((p: any) => ({ ...p, checks: p.fan_feed_checks || [] })) as FanPost[]);
     setLiked(new Set(rows.filter((p: any) => (p.fan_feed_checks || []).some((l: any) => l.user_id === uid)).map((p: any) => p.id)));
