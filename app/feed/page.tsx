@@ -93,6 +93,7 @@ export default function Feed(){
       supabase.from("profiles").select("account_type,current_country,current_country_public").eq("id",u.id).maybeSingle(),
       supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",u.id).maybeSingle()
     ]);
+    if(p?.account_type==="fan"){window.location.replace("/fan-feed");return;}
     setProfile(p);setSubscription(s);setShowCountry(Boolean(p?.current_country_public));
     // Keep the player HoopFeed surface strictly player-only; fans have their own feed.
     if(p?.account_type==="fan"){setLoading(false);router.replace("/fan-feed");return;}
