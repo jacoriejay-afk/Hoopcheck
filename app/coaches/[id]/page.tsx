@@ -159,6 +159,7 @@ export default function CoachDetailPage() {
   const [hasAccess, setHasAccess] =
     useState(false);
   const [accountType, setAccountType] = useState<string>("");
+  const [reviewTier, setReviewTier] = useState<"free" | "pro" | "premium" | "player" | "member">("free");
 
   const [loading, setLoading] =
     useState(true);
@@ -306,9 +307,9 @@ export default function CoachDetailPage() {
 
       setHasAccess(access);
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
       const response = await fetch(`/api/review-access?entityType=coach&entityId=${encodeURIComponent(id)}`, {
-        headers: { Authorization: `Bearer ${session?.access_token || ""}` },
+        headers: { Authorization: `Bearer ${currentSession?.access_token || ""}` },
         cache: "no-store",
       });
       const reviewPayload = response.ok ? await response.json() : null;
