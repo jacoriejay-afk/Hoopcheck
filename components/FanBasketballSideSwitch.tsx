@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
 export type BasketballSide = "mens" | "womens";
@@ -30,7 +30,6 @@ export default function FanBasketballSideSwitch({ lockedHint = false }: { locked
   const [side, setSide] = useState<BasketballSide>("mens");
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [isFan, setIsFan] = useState(false);
   const [canSwitch, setCanSwitch] = useState(false);
   const [ready, setReady] = useState(false);
@@ -65,7 +64,7 @@ export default function FanBasketballSideSwitch({ lockedHint = false }: { locked
         await supabase.from("profiles").update({ preferred_basketball_side: preferred }).eq("id", user.id);
       }
       const local = window.localStorage.getItem(STORAGE_KEY);
-      const restored = local === "mens" || local === "womens" ? local : preferred;
+      const restored = preferred === "mens" || preferred === "womens" ? preferred : local === "mens" || local === "womens" ? local : "mens";
       setSide(restored);
       window.localStorage.setItem(STORAGE_KEY, restored);
       window.dispatchEvent(new Event(SIDE_EVENT));
@@ -84,13 +83,13 @@ export default function FanBasketballSideSwitch({ lockedHint = false }: { locked
     if (pathname === "/teams" && next === "womens") router.push("/womens");
     else if (pathname === "/womens" && next === "mens") router.push("/teams");
     else if (pathname === "/search") {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = new URLSearchParams(window.location.search);
       params.set("type", next === "womens" ? "womens-teams" : "mens-teams");
       router.replace(`/search?${params.toString()}`);
     }
     const { data: { user } } = await supabase.auth.getUser();
     if (user) await supabase.from("profiles").update({ preferred_basketball_side: next }).eq("id", user.id);
-  }, [canSwitch, pathname, router, searchParams]);
+  }, [canSwitch, pathname, router]);
 
   if (!ready || !isFan) return null;
   if (!canSwitch) return lockedHint ? <div className="hc-fan-side-locked" role="note">🔒 Available on Fan Pro · <a href="/membership">Upgrade</a></div> : null;
