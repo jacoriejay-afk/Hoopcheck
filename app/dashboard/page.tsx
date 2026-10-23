@@ -359,7 +359,7 @@ export default function DashboardPage() {
             <span className="card-kicker">{t("hoopFeed").toUpperCase()}</span>
             <h2>{activeMembership && (subscription?.plan === "pro" || subscription?.plan === "premium") ? t("hoopFeed") : t("unlockHoopFeed")}</h2>
             <p className="muted">{t("hoopFeedDescription")}</p>
-            <Link href="/feed" className="btn">{activeMembership && (subscription?.plan === "pro" || subscription?.plan === "premium") ? t("openHoopFeed") : t("viewHoopFeed")}</Link>
+            <Link href={profile?.account_type === "fan" ? "/fan-feed" : "/feed"} className="btn">{activeMembership && (subscription?.plan === "pro" || subscription?.plan === "premium") ? t("openHoopFeed") : t("viewHoopFeed")}</Link>
           </section>
         )}
 
