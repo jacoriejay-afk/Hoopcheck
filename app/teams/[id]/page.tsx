@@ -575,33 +575,10 @@ export default function TeamDetailPage() {
       {!hasAccess ? (
         <section className="hero">
           <Surface className="card hc-team-membership-surface">
-            <div className="eyebrow">
-              {t("membersOnly")}
-            </div>
-
-            <h2>
-              {t("knowOrganizationBeforeSign")}
-            </h2>
-
-            <p>
-              {t("membershipStartsMessage")}
-            </p>
-
-            <div className="actions">
-              <Link
-                href="/membership"
-                className="btn"
-              >
-                {t("viewMembership")}
-              </Link>
-
-              <Link
-                href="/login"
-                className="btn dark"
-              >
-                {t("logIn")}
-              </Link>
-            </div>
+            <div className="eyebrow">{t("membersOnly")}</div>
+            <h2>🔒 Player reviews are a Premium fan feature</h2>
+            <p>Upgrade to Fan Premium to unlock every review, rating, category score, and Trust Score detail.</p>
+            <div className="actions"><Link href="/membership" className="btn">Upgrade</Link><Link href="/login" className="btn dark">{t("logIn")}</Link></div>
           </Surface>
         </section>
       ) : (
