@@ -171,7 +171,6 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <main className="page-shell dashboard-page">
-      <FanBasketballSideSwitch />
         <div className="page-container">
           <HoopLoading label={t("loadingDashboard")} />
         </div>
@@ -209,6 +208,7 @@ export default function DashboardPage() {
 
   return (
     <main className="page-shell hc-dashboard-shell" style={{ paddingTop: "max(24px, env(safe-area-inset-top))" }}>
+      <FanBasketballSideSwitch />
       <div className="page-container">
         {(profile?.moderation_status === "warned" || profile?.moderation_status === "flagged") && <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{profile.moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{profile.moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section>}        <section className="hc-dashboard-welcome" aria-labelledby="hc-dashboard-welcome-title">
           <p className="eyebrow hc-dashboard-page-label">{t("dashboardLabel")}</p>
