@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
@@ -175,7 +176,8 @@ export default function FanFeedPage() {
     else { setFollowing(prev => new Set(prev).add(targetId)); setMessage(ft("following")); }
   }
 
-  if (loading) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><HoopLoading label={ft("loading")} /></div></main>;
+  if (loading) return <main className="page-shell hc-feed-page hc-fan-feed-page">
+      <FanBasketballSideSwitch /><div className="page-container"><HoopLoading label={ft("loading")} /></div></main>;
   if (!user) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("title")}</h1><p>{ft("signIn")}</p><Link className="btn" href="/login">{t("signIn")}</Link></section></div></main>;
   if (profile?.account_type !== "fan") return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("fansOnly")}</h1><p>{ft("separateSurface")}</p><Link className="btn" href="/login">{ft("playerFeed")}</Link></section></div></main>;
   if (!membershipActive) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("membershipRequired")}</h1><p>{ft("membershipDescription")}</p><Link className="btn" href="/membership">{t("membership")}</Link></section></div></main>;
