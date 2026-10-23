@@ -163,10 +163,14 @@ export default function TeamsPage() {
     if (!teams.length) { setTrustScores({}); return; }
     let active = true;
     const ids = teams.map(team => team.id).filter(Boolean);
-    void fetch(`/api/trust-score?entityType=team&entityIds=${ids.map(encodeURIComponent).join(",")}`)
-      .then(response => response.ok ? response.json() : null)
-      .then(payload => { if (active && payload?.scores) setTrustScores(payload.scores as Record<string, TrustSummary>); })
-      .catch(() => { if (active) setTrustScores({}); });
+    void (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`/api/trust-score?entityType=team&entityIds=${ids.map(encodeURIComponent).join(",")}`, {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}, cache: "no-store",
+      });
+      const payload = response.ok ? await response.json() : null;
+      if (active && payload?.scores) setTrustScores(payload.scores as Record<string, TrustSummary>);
+    })().catch(() => { if (active) setTrustScores({}); });
     return () => { active = false; };
   }, [teams]);
 
