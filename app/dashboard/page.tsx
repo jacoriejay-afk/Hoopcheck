@@ -116,7 +116,8 @@ export default function DashboardPage() {
       if (profileResult.data?.account_type === "fan") {
         const { data: follows } = await supabase.from("follow_relationships").select("target_id").eq("follower_id", user.id).eq("target_type", "team").order("created_at", { ascending: false }).limit(100);
         const ids = (follows || []).map((x:any)=>x.target_id).filter(Boolean);
-        if (ids.length) { const { data: teamRows } = await supabase.from("teams").select("id,name,country,league_name").in("id", ids).eq("basketball_type", basketballSide === "womens" ? "womens" : "mens"); setFollowedTeams((teamRows || []) as any); }
+        if (ids.length && basketballSide === "womens") { const { data: teamRows } = await supabase.from("womens_teams").select("id,name,country,league_name").in("id", ids); setFollowedTeams((teamRows || []) as any); }
+        else if (ids.length) { const { data: teamRows } = await supabase.from("teams").select("id,name,country,league_name").in("id", ids).eq("basketball_type", "mens"); setFollowedTeams((teamRows || []) as any); }
         else setFollowedTeams([]);
       }
 
