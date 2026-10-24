@@ -67,3 +67,61 @@ main.hc-global-search-page {
     scroll-padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
   }
 }
+
+
+/* LM-2C: bind every persistent dark shared control to its inverse foreground.
+   These selectors intentionally outrank legacy component rules that hard-code ink. */
+html .hc-dashboard-shell .hc-dashboard-edit-profile,
+html .hc-dashboard-shell .hc-dashboard-edit-profile:visited,
+html .hc-dashboard-shell .hc-dashboard-edit-profile svg,
+html .hc-dashboard-shell .hc-dashboard-edit-profile svg path,
+html .hc-dashboard-shell .hc-dashboard-edit-profile :where(span, strong, b) {
+  background-color: var(--hc-surface-inverse) !important;
+  color: var(--hc-on-inverse) !important;
+  border-color: var(--hc-surface-inverse-border) !important;
+}
+html .hc-dashboard-shell .hc-dashboard-edit-profile svg path {
+  stroke: currentColor !important;
+}
+html .hc-dashboard-shell .hc-dashboard-avatar {
+  background-color: var(--hc-surface-inverse) !important;
+  color: var(--hc-on-inverse) !important;
+  border-color: var(--hc-surface-inverse-border) !important;
+}
+html .hc-dashboard-shell .hc-mobile-section-count {
+  background-color: var(--hc-surface-inverse) !important;
+  color: var(--hc-on-inverse) !important;
+  border-color: var(--hc-surface-inverse-border) !important;
+}
+html .hc-template-header .hc-mobile-menu-toggle {
+  background-color: var(--hc-surface-inverse) !important;
+  color: var(--hc-on-inverse) !important;
+  border-color: var(--hc-surface-inverse-border) !important;
+}
+html .hc-template-header .hc-mobile-menu-toggle span {
+  background-color: var(--hc-on-inverse) !important;
+}
+
+/* LM-2C: reserve the iOS status-bar inset on the shared sticky/global header. */
+html .site-header-global {
+  padding-block-start: max(10px, env(safe-area-inset-top, 0px)) !important;
+}
+
+/* LM-2C: search hero follows semantic theme surfaces, with no text backing boxes. */
+html main.hc-global-search-page .search-hero {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border, var(--hc-surface-inverse-border));
+}
+html main.hc-global-search-page .search-hero :where(h1, h2, h3, p) {
+  background: transparent !important;
+  color: var(--hc-foreground) !important;
+  box-shadow: none !important;
+}
+html main.hc-global-search-page .search-hero :where(p, .search-hero-subtext, .hero-subtext) {
+  color: var(--hc-foreground-muted, var(--hc-muted)) !important;
+}
+html main.hc-global-search-page .search-hero .eyebrow {
+  color: var(--hc-orange, #ff6a00) !important;
+  background: transparent !important;
+}
