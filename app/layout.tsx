@@ -15,6 +15,7 @@ import "./hoopcheck-responsive-layout.css";
 import "./hoopcheck-theme-tokens.css";
 import "./hoopcheck-directory-card-fixes.css";
 import "./hoopcheck-theme-audit.css";
+import "./hoopcheck-lm2-contract.css";
 import ThemeProvider from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
 import MobileAuth from "../components/MobileAuth";
