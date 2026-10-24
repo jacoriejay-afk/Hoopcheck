@@ -1,0 +1,69 @@
+/* LM-2 shared contrast and iPhone safe-area contract.
+   Keep paired surface/foreground values together; fixed dark surfaces never use theme ink. */
+:root {
+  --hc-surface-inverse: #0A0A0A;
+  --hc-on-inverse: #FFFFFF;
+  --hc-on-inverse-muted: #D1D1CB;
+  --hc-surface-inverse-border: #333333;
+}
+html.theme-light {
+  --hc-surface-inverse: #0A0A0A;
+  --hc-on-inverse: #FFFFFF;
+  --hc-on-inverse-muted: #D1D1CB;
+  --hc-surface-inverse-border: #333333;
+}
+html.theme-dark {
+  --hc-surface-inverse: #0A0A0A;
+  --hc-on-inverse: #FFFFFF;
+  --hc-on-inverse-muted: #D1D1CB;
+  --hc-surface-inverse-border: #333333;
+}
+
+/* Intentional dark controls: background and foreground are a paired contract. */
+html :where(.btn.dark, .hc-mobile-menu-toggle, .player-avatar-fallback,
+  .quick-access-count, .quick-card-count, .count-badge, .hc-count-badge) {
+  background-color: var(--hc-surface-inverse);
+  color: var(--hc-on-inverse);
+  border-color: var(--hc-surface-inverse-border);
+}
+html :where(.btn.dark, .hc-mobile-menu-toggle, .player-avatar-fallback,
+  .quick-access-count, .quick-card-count, .count-badge, .hc-count-badge) :where(svg, span, strong, b, i) {
+  color: var(--hc-on-inverse);
+  stroke: currentColor;
+}
+
+/* Search hero is theme-responsive: it is a semantic surface, not a fixed dark panel. */
+html.theme-light main.hc-global-search-page .search-hero,
+html.theme-light main.hc-global-search-page .search-hero :where(h1,h2,h3,p) {
+  background-color: var(--hc-surface-raised);
+  color: var(--hc-foreground);
+}
+html.theme-dark main.hc-global-search-page .search-hero,
+html.theme-dark main.hc-global-search-page .search-hero :where(h1,h2,h3,p) {
+  background-color: var(--hc-surface-raised);
+  color: var(--hc-foreground);
+}
+html main.hc-global-search-page .search-hero .eyebrow { color: var(--hc-orange); }
+
+/* Shared shell reservation: safe-area env is active because viewportFit=cover is set in layout.tsx.
+   The header gets the top inset once; scrollable page content gets space above the fixed tab bar. */
+html body > div { min-width: 0; }
+.site-header-global.hc-template-header {
+  padding-top: max(10px, env(safe-area-inset-top, 0px));
+}
+main.page-shell,
+main.page-shell.hc-dashboard-shell,
+main.hc-global-search-page {
+  padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px) + 24px) !important;
+}
+.bottom-nav.hc-bottom-tab-bar {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  min-height: calc(60px + env(safe-area-inset-bottom, 0px));
+}
+@media (max-width: 700px) {
+  main.page-shell,
+  main.page-shell.hc-dashboard-shell,
+  main.hc-global-search-page {
+    scroll-padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+}
