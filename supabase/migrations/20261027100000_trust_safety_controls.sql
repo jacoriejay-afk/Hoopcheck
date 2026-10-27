@@ -3,7 +3,7 @@ create table if not exists public.content_reports (
   id uuid primary key default gen_random_uuid(),
   content_type text not null check (content_type in ('review','hoopfeed_post','chat_message')),
   content_id uuid not null,
-  reporter_id uuid not null references auth.users(id) on delete set null,
+  reporter_id uuid references auth.users(id) on delete set null,
   content_owner_id uuid references auth.users(id) on delete set null,
   content_snapshot text not null default '',
   reason text not null check (char_length(reason) between 3 and 500),
