@@ -323,6 +323,7 @@ export default function LeagueDetailPage() {
           .select(
             `
               id,
+              author_id,
               overall_rating,
               communication_rating,
               professionalism_rating,
