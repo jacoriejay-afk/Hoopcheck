@@ -75,12 +75,12 @@ export default function ReviewsAnalyticsPage() {
       setLoading(true);
       setErrorMessage("");
 
-      const { data, error } = await supabase
+      const [{ data, error }, { data: blockedRows }] = await Promise.all([supabase
         .from("reviews")
         .select("id,status,title,body,overall_rating,created_at,author_id,coach_id,team_id,league_id")
         .eq("status", "approved")
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(100), supabase.from("user_blocks").select("blocked_id").eq("blocker_id", (await supabase.auth.getUser()).data.user?.id || "00000000-0000-0000-0000-000000000000")]);
 
       if (!active) return;
       if (error) {
