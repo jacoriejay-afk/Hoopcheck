@@ -28,7 +28,8 @@ export async function POST(request: Request) {
     snapshot = typeof data[contentColumn] === "string" ? (data[contentColumn] as string).slice(0, 6000) : snapshot;
   }
   if (ownerId === auth.user.id) return NextResponse.json({ error: "You cannot report your own content." }, { status: 400 });
-  const { error } = await auth.supabase.from("content_reports").insert({ content_type: type, content_id: id, reporter_id: auth.user.id, content_owner_id: ownerId, content_snapshot: snapshot, reason, status: "open" });
+  const { error } = await db.from("content_reports").insert({ content_type: type, content_id: id, reporter_id: auth.user.id, content_owner_id: ownerId, content_snapshot: snapshot, reason, status: "open" });
+  if (error?.code === "23505") return NextResponse.json({ error: "You have already reported this content." }, { status: 409 });
   if (error) { console.error("Content report insert failed:", error); return NextResponse.json({ error: "We couldn't submit the report." }, { status: 500 }); }
   return NextResponse.json({ ok: true }, { status: 201 });
 }
