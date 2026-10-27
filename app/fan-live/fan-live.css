@@ -30,8 +30,8 @@
 .hc-live-room-score>strong{display:block;font-size:clamp(27px,4vw,42px);font-weight:950;letter-spacing:-.06em;color:var(--ink);white-space:nowrap;margin:8px 0}
 .hc-live-room-score>strong span{color:var(--gray-500);padding:0 4px}
 .hc-live-room-score small{display:block;color:var(--gray-500);font-size:11px;line-height:1.4}
-.hc-live-badge{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:6px 10px;border-radius:999px;background:#ed3028;color:#fff!important;font-size:10px;font-weight:950;letter-spacing:.08em;white-space:nowrap}
-.hc-live-badge i{width:6px;height:6px;border-radius:50%;background:#fff;animation:hc-live-pulse 1.7s infinite}
+.hc-live-badge{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--hc-status-live-bg);color:var(--hc-status-live-fg)!important;font-size:10px;font-weight:950;letter-spacing:.08em;white-space:nowrap}
+.hc-live-badge i{width:6px;height:6px;border-radius:50%;background:currentColor;animation:hc-live-pulse 1.7s infinite}
 .hc-live-badge:not(.is-live){background:var(--gray-100);color:var(--ink)!important}
 .hc-live-chat-shell{display:flex;flex-direction:column;min-height:400px}
 .hc-live-chat-toolbar{display:flex;justify-content:space-between;gap:10px;padding:12px 2px;color:var(--gray-500);font-size:11px;font-weight:800}
