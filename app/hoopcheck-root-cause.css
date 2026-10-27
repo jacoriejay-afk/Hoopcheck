@@ -1,0 +1,61 @@
+/* Root-cause theme and iPhone safe-area contract.
+   Imported last so legacy screen styles cannot reintroduce hard-coded foregrounds. */
+:root {
+  --hc-safe-area-top: env(safe-area-inset-top, 0px);
+  --hc-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
+html, body { min-width: 0; }
+body {
+  padding-block-start: var(--hc-safe-area-top) !important;
+  background: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html .site-header-global,
+html .site-header-global.hc-template-header {
+  padding-block-start: 10px !important;
+  background: var(--hc-nav-bg) !important;
+  color: var(--hc-nav-fg) !important;
+}
+html .site-header-global :where(a, button, span, svg) { color: var(--hc-nav-fg); }
+html :where(.hc-dashboard-shell .hc-dashboard-edit-profile, .hc-dashboard-shell .hc-dashboard-edit-profile:visited) {
+  background: var(--hc-control-bg, var(--hc-surface-raised)) !important;
+  color: var(--hc-control-fg, var(--hc-foreground)) !important;
+  border-color: var(--hc-control-border, var(--hc-border)) !important;
+}
+html .hc-dashboard-shell .hc-dashboard-edit-profile :where(svg, path, span, strong, b, i) {
+  color: var(--hc-control-fg, var(--hc-foreground)) !important;
+  stroke: currentColor !important;
+}
+html :where(.hc-dashboard-avatar, .player-avatar-fallback) {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html :where(.hc-dashboard-avatar, .player-avatar-fallback) :where(span, strong, b, i) { color: var(--hc-foreground) !important; }
+html :where(.quick-access-count, .quick-card-count, .count-badge, .hc-count-badge, .hc-mobile-section-count) {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html :where(.quick-access-count, .quick-card-count, .count-badge, .hc-count-badge, .hc-mobile-section-count) :where(span, strong, b, i, svg) {
+  color: var(--hc-foreground) !important;
+  stroke: currentColor !important;
+}
+html .hc-template-header .hc-mobile-menu-toggle {
+  background: var(--hc-nav-bg) !important;
+  color: var(--hc-nav-fg) !important;
+  border-color: var(--hc-border) !important;
+}
+html .hc-template-header .hc-mobile-menu-toggle span { background: currentColor !important; }
+@media (max-width: 700px) {
+  html body main:not(.hc-template-home) {
+    padding-bottom: calc(84px + var(--hc-safe-area-bottom)) !important;
+    scroll-padding-bottom: calc(84px + var(--hc-safe-area-bottom));
+  }
+  html .bottom-nav.hc-bottom-tab-bar {
+    bottom: 0 !important;
+    padding-bottom: var(--hc-safe-area-bottom) !important;
+    min-height: calc(60px + var(--hc-safe-area-bottom)) !important;
+    box-sizing: border-box;
+  }
+}

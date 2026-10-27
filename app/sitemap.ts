@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
+import { SITE_URL } from "../lib/site-url";
 
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://hoopcheck.online").replace(/\/$/, "");
+const siteUrl = SITE_URL;
 export const revalidate = 3600;
 
 type Row = { id?: string | null; profile_visibility?: string | null; moderation_status?: string | null };

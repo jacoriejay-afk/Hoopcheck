@@ -123,7 +123,12 @@ export default function LanguageProvider({ children, initialLanguage = "en" }: {
         .select("preferred_language")
         .eq("id", userId)
         .maybeSingle();
-      if (mounted) apply(profile?.preferred_language || localStorage.getItem("hoopcheck-language") || "en");
+      if (mounted) {
+        // A device selection is written synchronously by setLanguage. Prefer it over a stale
+        // profile response so an older server value cannot undo a live locale switch.
+        const deviceLanguage = localStorage.getItem("hoopcheck-language");
+        apply(deviceLanguage || profile?.preferred_language || "en");
+      }
     };
     void supabase.auth.getUser().then(({ data }) => { if (data.user) void loadProfileLanguage(data.user.id); });
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
