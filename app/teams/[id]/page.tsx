@@ -363,7 +363,7 @@ export default function TeamDetailPage() {
         const { data: { user: viewer } } = await supabase.auth.getUser();
           const { data: blockedRows } = viewer ? await supabase.from("user_blocks").select("blocked_id").eq("blocker_id", viewer.id) : { data: [] as { blocked_id: string }[] };
           const blockedIds = new Set((blockedRows || []).map((row: any) => row.blocked_id));
-          setReviews(reviewData.filter((review) => !blockedIds.has(review.author_id)).map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
+          setReviews(reviewData.map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
       } else {
         setReviews([]);
       }
