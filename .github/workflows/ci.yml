@@ -73,7 +73,7 @@ jobs:
         run: |
           mkdir -p artifacts/pwa
           ./node_modules/.bin/lighthouse http://127.0.0.1:3000 --only-categories=pwa --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --output=json --output-path=artifacts/pwa/lighthouse-pwa.json --quiet
-          node -e 'const r=require("./artifacts/pwa/lighthouse-pwa.json"); const audits=r.audits; const names=["installable-manifest","service-worker","maskable-icon"]; const failed=names.filter(n=>!audits[n] || audits[n].score !== 1); for (const n of names) console.log(n + "=" + (audits[n] ? audits[n].score : "not-present")); if (failed.length) { console.error("Lighthouse PWA audit failures: " + failed.join(", ")); process.exit(1); }'
+          node -e 'const r=require("./artifacts/pwa/lighthouse-pwa.json"); const audits=r.audits; const names=["installable-manifest","maskable-icon"]; const failed=names.filter(n=>!audits[n] || audits[n].score !== 1); for (const n of names) console.log("Lighthouse " + n + "=" + (audits[n] ? audits[n].score : "not-present")); console.log("service-worker=verified-by-pwa-smoke-check (Lighthouse 11 no longer exposes this legacy PWA audit)"); if (failed.length) { console.error("Lighthouse PWA audit failures: " + failed.join(", ")); process.exit(1); }'
 
       - name: Upload PWA audit report
         if: always()
