@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   const reason = typeof body.reason === "string" ? body.reason : "";
   if (!TYPES.includes(type as typeof TYPES[number]) || !UUID.test(id)) return NextResponse.json({ error: "Choose valid content to report." }, { status: 400 });
   if (!REASONS.includes(reason as typeof REASONS[number])) return NextResponse.json({ error: "Choose a report reason." }, { status: 400 });
-  const table = type === "review" ? "reviews" : type === "hoopfeed_post" ? "feed_posts" : type === "chat_message" ? "fan_live_chat_messages" : "";
+  const table = type === "review" ? "reviews" : type === "hoopfeed_post" ? "feed_posts" : type === "fan_feed_post" ? "fan_feed_posts" : type === "chat_message" ? "fan_live_chat_messages" : "";
   const ownerColumn = type === "chat_message" ? "user_id" : table ? "author_id" : "";
   const contentColumn = table ? "body" : "";
   let ownerId: string | null = null;
