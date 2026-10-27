@@ -12,6 +12,7 @@ body {
 }
 html .site-header-global,
 html .site-header-global.hc-template-header {
+  top: var(--hc-safe-area-top) !important;
   padding-block-start: 10px !important;
   background: var(--hc-nav-bg) !important;
   color: var(--hc-nav-fg) !important;
