@@ -49,3 +49,14 @@ A push payload must carry a canonical HTTPS URL on `hoopcheck.online` (for examp
 - Shared entitlement logic must be adopted by all relevant API routes and SQL RLS/policies before Apple purchases can unlock gated features. Until then, do not surface a purchase action that could charge a user without granting consistent access.
 - Keep Pro at $4.99/month and Premium at $9.99/month. Product IDs in the migration remain proposals until confirmed in App Store Connect.
 - Sandbox proof must include initial purchase, entitlement unlock, cancellation with access through paid-through date, resubscription, and restore on a fresh install. Record the build number, sandbox account, transaction environment, and observed result for each test.
+
+
+## Push token storage groundwork — 2026-10-27
+
+- [x] Added a branch-only additive migration for `public.native_device_tokens` with platform/provider validation, token uniqueness, active status, and last-seen timestamps.
+- [x] Enabled row-level security with no end-user policies; the intended access path is through authenticated server-side registration and delivery handlers.
+- [ ] Review and test the migration in non-production Supabase, including UUID generation and service-role access.
+- [ ] Implement registration from the verified Supabase session, token rotation, logout deactivation, provider delivery, retries, and invalid-token handling.
+- [ ] Connect review creation and the existing live-game reminder event to notification jobs, then test push deep links on physical devices.
+
+The migration has not been applied and does not send notifications by itself.
