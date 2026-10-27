@@ -7,6 +7,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import { getGameAvailability } from "../../lib/game-availability";
+import ReportContentAction from "../../components/ReportContentAction";
 import "./fan-live.css";
 
 type Game = { id:string; team_id:string; opponent_team_id:string|null; opponent_name:string; status:string; home_score:number|null; away_score:number|null; started_at:string|null; ends_at:string|null; scheduled_at:string|null; league_name:string|null; country:string|null; period_label:string|null };
@@ -66,9 +67,10 @@ export default function FanLivePage() {
       (!subscription?.current_period_end || new Date(subscription.current_period_end)>new Date());
     setAllowed(Boolean(active));
     if(!active){setGames([]);setSelected(null);setLoading(false);return;}
-    const [{data:gameRows,error:gameError},{data:controls}] = await Promise.all([
+    const [{data:gameRows,error:gameError},{data:controls},{data:globalBlocks}] = await Promise.all([
       supabase.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_name,country,period_label").in("status",["scheduled","live","final","cancelled","postponed","abandoned"]).order("scheduled_at",{ascending:true,nullsFirst:false}).limit(500),
-      supabase.from("fan_live_chat_user_controls").select("target_user_id,is_blocked,is_muted").eq("user_id",user.id)
+      supabase.from("fan_live_chat_user_controls").select("target_user_id,is_blocked,is_muted").eq("user_id",user.id),
+      supabase.from("user_blocks").select("blocked_id").eq("blocker_id",user.id)
     ]);
     if(gameError) setMessage("Game updates are temporarily unavailable. Reconnecting…");
     const rawGames=(gameRows||[]) as Game[];
@@ -78,7 +80,7 @@ export default function FanLivePage() {
     const next=rawGames.filter(g=>sideIds.has(g.team_id));
     setGames(next);
     setMutedUsers(new Set((controls||[]).filter((x:any)=>x.is_muted).map((x:any)=>x.target_user_id)));
-    setBlockedUsers(new Set((controls||[]).filter((x:any)=>x.is_blocked).map((x:any)=>x.target_user_id)));
+    setBlockedUsers(new Set([...(controls||[]).filter((x:any)=>x.is_blocked).map((x:any)=>x.target_user_id), ...(globalBlocks||[]).map((x:any)=>x.blocked_id)]));
     const ids=Array.from(new Set(next.flatMap(g=>[g.team_id,g.opponent_team_id].filter((x):x is string=>Boolean(x)))));
     const {data:teamRows}=ids.length?await supabase.from("teams").select("id,name,logo_url").in("id",ids):{data:[] as Team[]};
     setTeams(Object.fromEntries((teamRows||[]).map((t:Team)=>[t.id,t])));
@@ -222,7 +224,7 @@ export default function FanLivePage() {
           <div className="hc-live-chat-toolbar"><span><i className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"fan":"fans"} chatting</span><span>1 message / 2 seconds</span></div>
           <div className="hc-live-chat-messages" aria-live="polite" aria-label="Live chat messages">
             {!shownMessages.length?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div><h2>You're the first fan in — say something</h2><p>Kick off the conversation while you watch.</p></div>:shownMessages.map(item=><article key={item.id} className={"hc-live-chat-message"+(item.user_id===userId?" is-own":"")+(item.failed?" is-failed":"")}>
-              <div className="hc-live-chat-avatar">{profiles[item.user_id]?.avatar_url?<img src={profiles[item.user_id].avatar_url!} alt=""/>:initials(profiles[item.user_id]?.display_name||"Fan")}</div><div className="hc-live-chat-message-body"><div className="hc-live-chat-message-meta"><strong>{item.user_id===userId?"You":profiles[item.user_id]?.display_name||"Fan"}</strong><time>{new Date(item.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</time>{item.pending&&<span>Sending…</span>}{item.failed&&<button type="button" onClick={()=>void retry(item)}>Retry</button>}</div><p>{item.body}</p>{item.user_id!==userId&&!item.pending&&<details className="hc-live-message-menu"><summary>•••</summary><div><button type="button" onClick={()=>void controlUser(item.user_id,"is_muted")}>{mutedUsers.has(item.user_id)?"Unmute fan":"Mute fan"}</button><button type="button" onClick={()=>void controlUser(item.user_id,"is_blocked")}>{blockedUsers.has(item.user_id)?"Unblock fan":"Block fan"}</button><button type="button" onClick={()=>setReporting(item.id)}>Report message</button></div></details>}</div>
+              <div className="hc-live-chat-avatar">{profiles[item.user_id]?.avatar_url?<img src={profiles[item.user_id].avatar_url!} alt=""/>:initials(profiles[item.user_id]?.display_name||"Fan")}</div><div className="hc-live-chat-message-body"><div className="hc-live-chat-message-meta"><strong>{item.user_id===userId?"You":profiles[item.user_id]?.display_name||"Fan"}</strong><time>{new Date(item.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</time>{item.pending&&<span>Sending…</span>}{item.failed&&<button type="button" onClick={()=>void retry(item)}>Retry</button>}</div><p>{item.body}</p>{item.user_id!==userId&&!item.pending&&<details className="hc-live-message-menu"><summary>•••</summary><div><button type="button" onClick={()=>void controlUser(item.user_id,"is_muted")}>{mutedUsers.has(item.user_id)?"Unmute fan":"Mute fan"}</button><button type="button" onClick={()=>void controlUser(item.user_id,"is_blocked")}>{blockedUsers.has(item.user_id)?"Unblock fan":"Block fan"}</button><ReportContentAction contentType="chat_message" contentId={item.id} contentSnapshot={item.body} /></div></details>}</div>
             </article>)}
             <div ref={bottomRef}/>
           </div>

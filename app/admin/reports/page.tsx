@@ -47,6 +47,7 @@ export default function Reports() {
           <nav className="topnav">
             <Link href="/admin/users">{t("users")}</Link>
             <Link href="/admin/reviews">{t("reviews")}</Link>
+            <Link href="/admin/content-reports">Content reports</Link>
           </nav>
         </header>
         <section className="hero-card">

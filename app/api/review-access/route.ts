@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
-const reviewColumns = "id,team_id,coach_id,player_season,overall_rating,communication_rating,professionalism_rating,development_rating,payment_rating,pay_on_time_rating,housing_rating,medical_support_rating,coaching_quality_rating,facilities_rating,playing_time_honesty_rating,title,body,created_at,is_anonymous";
+const reviewColumns = "id,author_id,team_id,coach_id,player_season,overall_rating,communication_rating,professionalism_rating,development_rating,payment_rating,pay_on_time_rating,housing_rating,medical_support_rating,coaching_quality_rating,facilities_rating,playing_time_honesty_rating,title,body,created_at,is_anonymous";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -73,11 +73,16 @@ export async function GET(request: Request) {
     }
 
     const { data: rawRows, error: rowsError } = await db.from(table)
-      .select(fullRead ? (entityType === "womens-team" ? "id,title,body,overall_rating,created_at,is_anonymous" : reviewColumns) : "overall_rating")
+      .select(fullRead ? (entityType === "womens-team" ? "id,author_id,title,body,overall_rating,created_at,is_anonymous" : reviewColumns) : "overall_rating")
       .eq(targetColumn, entityId).eq("status", "approved")
       .order("created_at", { ascending: false });
     if (rowsError) throw rowsError;
-    const rows = (rawRows || []) as unknown as Array<Record<string, unknown>>;
+    let rows = (rawRows || []) as unknown as Array<Record<string, unknown>>;
+    if (user) {
+      const { data: blockRows } = await db.from("user_blocks").select("blocked_id").eq("blocker_id", user.id);
+      const blockedIds = new Set((blockRows || []).map((row: { blocked_id: string }) => row.blocked_id));
+      rows = rows.filter((row) => !blockedIds.has(String(row.author_id || "")));
+    }
     const avg = (key: string) => {
       const values = rows.map((row: Record<string, unknown>) => Number(row[key]))
         .filter((value: number) => Number.isFinite(value) && value >= 1 && value <= 5);

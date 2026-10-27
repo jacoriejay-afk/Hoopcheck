@@ -75,14 +75,14 @@ export default function PlayersPage() {
         const escapedCountry = country.trim().replace(/[\\%_]/g, "\\$&");
         if (escapedCountry) request = request.ilike("current_country", `%${escapedCountry}%`);
 
-        const { data, error } = await withTimeout<any>(
-          request.range(page * size, page * size + size - 1),
-          5000,
-          { data: [], error: new Error("Search timed out") },
-        );
-
+        const [{ data, error }, { data: { user: viewer } }] = await Promise.all([
+          withTimeout<any>(request.range(page * size, page * size + size - 1), 5000, { data: [], error: new Error("Search timed out") }),
+          supabase.auth.getUser(),
+        ]);
+        const { data: blockedRows } = viewer ? await supabase.from("user_blocks").select("blocked_id").eq("blocker_id", viewer.id) : { data: [] as { blocked_id: string }[] };
+        const blockedIds = new Set((blockedRows || []).map((row: any) => row.blocked_id));
         if (mounted) {
-          setPlayers(error ? [] : ((data || []) as Player[]));
+          setPlayers(error ? [] : ((data || []) as Player[]).filter(player => !blockedIds.has(player.id)));
           setSearchError(error ? "Search could not be completed. Please try again." : "");
           setHasMore(!error && (data?.length || 0) === size);
           setLoading(false);

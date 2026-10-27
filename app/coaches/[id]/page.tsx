@@ -336,7 +336,7 @@ export default function CoachDetailPage() {
           ? await supabase.rpc("get_review_verification", { p_review_ids: reviewIds })
           : { data: [] };
         const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map((item) => [item.review_id, Boolean(item.player_verified)]));
-        setReviews(reviewData.map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
+          setReviews(reviewData.map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
       } else {
         setReviews([]);
       }

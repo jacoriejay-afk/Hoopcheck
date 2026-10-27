@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import ReportContentAction from "../../components/ReportContentAction";
 
 type ReviewRow = {
   id: string;
@@ -74,12 +75,12 @@ export default function ReviewsAnalyticsPage() {
       setLoading(true);
       setErrorMessage("");
 
-      const { data, error } = await supabase
+      const [{ data, error }, { data: blockedRows }] = await Promise.all([supabase
         .from("reviews")
         .select("id,status,title,body,overall_rating,created_at,author_id,coach_id,team_id,league_id")
         .eq("status", "approved")
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(100), supabase.from("user_blocks").select("blocked_id").eq("blocker_id", (await supabase.auth.getUser()).data.user?.id || "00000000-0000-0000-0000-000000000000")]);
 
       if (!active) return;
       if (error) {
@@ -89,7 +90,8 @@ export default function ReviewsAnalyticsPage() {
         return;
       }
 
-      const rows = (data || []) as ReviewRow[];
+      const blockedIds = new Set((blockedRows || []).map((row: any) => row.blocked_id));
+      const rows = ((data || []) as ReviewRow[]).filter((row) => !blockedIds.has(row.author_id));
       const authorIds = Array.from(new Set(rows.map((row) => row.author_id).filter(Boolean)));
       const coachIds = Array.from(new Set(rows.map((row) => row.coach_id).filter(Boolean))) as string[];
       const teamIds = Array.from(new Set(rows.map((row) => row.team_id).filter(Boolean))) as string[];
@@ -288,6 +290,7 @@ export default function ReviewsAnalyticsPage() {
                       </Link>
                     ) : item.targetName}
                   </p>
+                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}><ReportContentAction contentType="review" contentId={item.id} contentSnapshot={[item.title, item.body].filter(Boolean).join("\n")} /></div>
                 </article>
               );
             })}

@@ -72,7 +72,7 @@ export async function POST(req: Request) {
 
   const { data: review, error: reviewError } = await supabase
     .from("reviews")
-    .select("id")
+    .select("id,author_id,title,body")
     .eq("id", reviewId)
     .eq("status", "approved")
     .maybeSingle();
@@ -83,6 +83,18 @@ export async function POST(req: Request) {
   }
   if (!review) {
     return NextResponse.json({ error: "Review not found." }, { status: 404 });
+  }
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) return NextResponse.json({ error: "Moderation is not configured." }, { status: 503 });
+  const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
+  const { error: queueError } = await admin.from("content_reports").insert({
+    content_type: "review", content_id: reviewId, reporter_id: user.id,
+    content_owner_id: review.author_id, content_snapshot: [review.title, review.body].filter(Boolean).join("\\n").slice(0, 6000),
+    reason, status: "open"
+  });
+  if (queueError && queueError.code !== "23505") {
+    console.error("Unified moderation queue insert failed:", queueError);
+    return NextResponse.json({ error: "We couldn't submit your report. Please try again." }, { status: 500 });
   }
 
   const { data, error } = await supabase
