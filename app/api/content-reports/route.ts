@@ -6,6 +6,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 export async function POST(request: Request) {
   const auth = await authenticateModerationRequest(request);
   if (!auth.ok) return auth.response;
+  const db = auth.supabase as any;
   let body: Record<string, unknown>;
   try { const raw = await request.text(); if (new TextEncoder().encode(raw).byteLength > 12_000) return NextResponse.json({ error: "Report is too large." }, { status: 413 }); body = JSON.parse(raw); }
   catch { return NextResponse.json({ error: "Invalid report request." }, { status: 400 }); }
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
   let ownerId: string | null = null;
   let snapshot = typeof body.contentSnapshot === "string" ? body.contentSnapshot.slice(0, 6000) : "";
   if (table) {
-    const { data, error } = await auth.supabase.from(table).select(`id,${ownerColumn},${contentColumn}`).eq("id", id).maybeSingle();
+    const { data, error } = await db.from(table).select(`id,${ownerColumn},${contentColumn}`).eq("id", id).maybeSingle();
     if (error) { console.error("Report target lookup failed:", error); return NextResponse.json({ error: "Could not verify that content." }, { status: 500 }); }
     if (!data) return NextResponse.json({ error: "Content not found." }, { status: 404 });
     ownerId = typeof data[ownerColumn] === "string" ? data[ownerColumn] as string : null;
