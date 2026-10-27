@@ -85,7 +85,7 @@ export default function Feed(){
       supabase.from("feed_post_checks").select("post_id,user_id").in("post_id",ids)
     ]).then(([commentsResult,checksResult])=>{
       const cg:Record<string,Comment[]>={};const cc:Record<string,number>={};const cm:Record<string,boolean>={};
-      (commentsResult.data||[]).forEach((r:any)=>{(cg[r.post_id]??=[]).push({...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)});});
+      (commentsResult.data||[]).filter((r:any)=>!blockedIds.has(r.author_id)).forEach((r:any)=>{(cg[r.post_id]??=[]).push({...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)});});
       (checksResult.data||[]).forEach((r:any)=>{cc[r.post_id]=(cc[r.post_id]||0)+1;if(r.user_id===currentUser.id)cm[r.post_id]=true;});
       setComments(cg);setChecks(cc);setMine(cm);
     });
