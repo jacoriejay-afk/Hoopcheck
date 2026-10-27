@@ -41,3 +41,60 @@ Added explicit acceptance contracts to [the native test matrix](./native-test-ma
 - requiring server-side Apple transaction verification, trusted account binding, and a shared entitlement resolver before any Apple purchase can unlock access.
 
 These are implementation gates, not completed features. No Capacitor dependency install, native platform project, Apple product, Firebase project, signed build, or real-device test has been completed by this continuation. The app config still points to the live hosted site and is not certified as store-ready. Do not apply the Apple migration or enable purchase UI based on these docs alone.
+
+
+## Native architecture work — 2026-10-28
+
+### 1. Server-dependent route / capability inventory
+
+Repository inspection confirms the web application is not a static-only frontend:
+
+| Surface | Evidence in repository | Native implication |
+|---|---|---|
+| Auth/session | `proxy.ts` uses `@supabase/ssr`, request cookies and `supabase.auth.getClaims()`; protected routes redirect to `/login` | A local static export cannot replace the server/session behavior. Test Supabase cookie and token behavior in WKWebView/Android WebView. |
+| Subscription checkout | `app/api/stripe/webhook/create-checkout/route.ts` creates Stripe Checkout sessions and validates bearer access tokens and deployment payment-mode flags | Hosted Next.js API must remain reachable for web billing flows. Native purchase UI still needs a separate StoreKit server-verification path; do not route Apple purchases through Stripe. |
+| Billing portal | `app/api/stripe/create-portal/route.ts` validates Stripe mode and authenticated access before creating a portal session | Test external browser / app return behavior; do not alter production Stripe settings for this prototype. |
+| User-generated content | `app/api/hoopfeed/moderate/route.ts`, `app/api/fan-feed/moderate/route.ts`, and feed pages use multipart `FormData`, bearer tokens and Supabase Storage uploads | Validate camera/photo picker, large uploads, multipart requests, cancellation, and moderation errors on real devices. |
+| Reviews | Mobile README documents team review submission through existing `/api/reviews` and server-side eligibility checks | The API origin must be explicit and active; test authenticated review submission without bypassing server checks. |
+| Deep links / recovery | Existing Expo app documents `hoopcheck://reset-password`; the Capacitor scaffold does not yet register an actual native URL-open listener | Validate password recovery, OAuth callbacks and universal/app links separately for the chosen shell. |
+| Server-rendered pages and route handlers | App Router pages plus many `app/api/**/route.ts` handlers are present | `output: "export"` is not approved; do not change `next.config.ts` to force static export. |
+
+This is a capability inventory, not an exhaustive route-by-route source audit. A final route list must be generated from the current tree and tested by user journey before release.
+
+### 2. Staging shell smoke test — status: blocked, not passed
+
+No staging deployment URL or verified staging credentials were found in the reviewed native setup documentation. GitHub's latest combined status reports Vercel build-rate-limit failures for the app checks. Therefore no honest end-to-end staging session can be reported yet.
+
+Once an isolated staging deployment is available, run these cases before pointing any native shell at production:
+- Sign in, refresh a protected page, background/foreground the app, and confirm the session persists without redirect loops.
+- Sign out and confirm protected content cannot be revisited with browser back.
+- Exercise Supabase password reset and any enabled OAuth callback, including cold-start link opening.
+- Open a team/player link from an external app and confirm the exact allowlisted path/query opens; reject external hosts and unsupported routes.
+- Open and cancel Stripe Checkout in test mode only, verify return/cancel routing, and ensure no live charge or production setting is touched.
+- Upload a photo and video to each feed in test data; verify multipart form data, progress/cancellation, moderation denial and successful publication.
+- Test browser back, keyboard, safe areas, external links, downloads, offline/error states and session expiration on both iOS and Android.
+- Record device/OS, build SHA, result and evidence for every case.
+
+### 3. Native prototype architecture
+
+**Selected for the next prototype only: hosted Next.js UI inside Capacitor, pointed at a dedicated staging origin.** This is the only current path that reuses the existing Next.js UI directly while preserving the server-rendered routes and API handlers. It is not a production or App Store approval decision.
+
+Constraints for the prototype:
+- Require a dedicated staging hostname and isolated/test data; do not test checkout, auth edge cases, or uploads against production.
+- Restrict navigation to the exact staging host plus explicitly approved authentication/payment hosts. Do not use a wildcard subdomain allowlist for arbitrary external content.
+- Implement a native URL-open listener that runs every inbound URL through the existing strict canonical-origin/path validator before navigating.
+- Keep a visible, recoverable offline/network-error state and test the hosted app when the origin is unavailable.
+- Add native value beyond the website (verified deep links, native share, push notifications and native purchase handling) and obtain an App Store policy review before deciding whether this delivery model is acceptable.
+- Do not add `output: "export"` or create a second UI implementation to make a build appear successful.
+
+**Important distinction:** the repository also contains `apps/mobile/`, an isolated Expo/React Native app with its own native UI and EAS profiles. Its README confirms it is separate from the Next.js website and its app identifiers are still `com.example.hoopcheck` placeholders. This is not the same UI/codebase and must not be silently treated as the Capacitor prototype or store-ready. Preserve it untouched during the current Capacitor investigation unless the product owner explicitly changes direction.
+
+### 4. Delivery architecture choice and gate
+
+| Option | Assessment |
+|---|---|
+| Hosted Next.js UI in Capacitor | Chosen for a staging-only proof of concept because it preserves current UI and server routes. Requires staging tests and app-specific native functionality; remote-only delivery carries App Store review risk. |
+| Locally bundled static UI | Not selected. The current SSR/API architecture means compatibility is unproven; a static export could break protected pages and server behavior. |
+| Separate React Native / Expo UI | Not selected for this work because the requirement is to reuse the same Next.js UI/codebase. Existing `apps/mobile/` remains isolated and unchanged. |
+
+**Exit criteria before implementation can be called complete:** staging origin and credentials exist; the smoke matrix above passes on both platforms; native URL listener and share are implemented and device-tested; push and StoreKit/server verification are implemented; final identifiers and signing are confirmed; and App Store policy risk is reviewed. Current status is **architecture selected for staging prototype; implementation and device validation incomplete**.
