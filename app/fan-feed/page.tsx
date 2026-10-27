@@ -69,7 +69,7 @@ export default function FanFeedPage() {
     const { data: archiveRows } = await supabase.from("fan_feed_archives").select("post_id").eq("user_id", uid);
     const archivedIds = new Set((archiveRows || []).map((r: any) => r.post_id));
     setArchived(archivedIds);
-    const rows = (data || []).filter((p: any) => !archivedIds.has(p.id) && sideTeamIds.has(p.team_id) && (fanIds.includes(p.author_id) || scopedTeamIds.includes(p.team_id)))
+    const rows = (data || []).filter((p: any) => !archivedIds.has(p.id) && !blockedIds.has(p.author_id) && sideTeamIds.has(p.team_id) && (fanIds.includes(p.author_id) || scopedTeamIds.includes(p.team_id)))
       .map((p: any) => ({ ...p, checks: p.fan_feed_checks || [], profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles, teams: Array.isArray(p.teams) ? p.teams[0] : p.teams }));
     setPosts(rows.map((p: any) => ({ ...p, checks: p.fan_feed_checks || [] })) as FanPost[]);
     setLiked(new Set(rows.filter((p: any) => (p.fan_feed_checks || []).some((l: any) => l.user_id === uid)).map((p: any) => p.id)));
