@@ -77,7 +77,7 @@ export default function FanFeedPage() {
     if (ids.length) {
       const { data: commentRows } = await supabase.from("fan_feed_comments").select("id,post_id,author_id,body,created_at,profiles(display_name,avatar_url)").in("post_id", ids).order("created_at", { ascending: true });
       const grouped: Record<string, any[]> = {};
-      (commentRows || []).forEach((c: any) => { (grouped[c.post_id] ||= []).push({ ...c, profiles: Array.isArray(c.profiles) ? c.profiles[0] : c.profiles }); });
+      (commentRows || []).filter((c: any) => !blockedIds.has(c.author_id)).forEach((c: any) => { (grouped[c.post_id] ||= []).push({ ...c, profiles: Array.isArray(c.profiles) ? c.profiles[0] : c.profiles }); });
       setComments(grouped);
     } else setComments({});
   }, [basketballSide]);
