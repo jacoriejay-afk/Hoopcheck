@@ -33,6 +33,7 @@ export default function TermsPage() {
           <h2>5. Prohibited Content and Conduct</h2>
           <p>You may not use HoopCheck for threats, extortion, harassment, stalking, hate or discriminatory abuse, doxxing, publication of private information, spam, impersonation, fraud, unlawful activity, malicious manipulation, or attempts to compromise the platform.</p>
           <p>Do not publish private phone numbers, home addresses, passwords, government identification numbers, financial account information, medical information, or other sensitive information about another person.</p>
+          <p><strong>Zero tolerance:</strong> HoopCheck does not tolerate objectionable content, including child sexual abuse material, sexual exploitation, credible threats, targeted harassment, hate or discriminatory abuse, non-consensual intimate imagery, glorification or promotion of violence, or content that exposes another person to danger. Such content may be removed immediately and may result in account suspension or termination and referral to appropriate authorities where required by law.</p>
 
           <h2>6. Reporting, Moderation, and Appeals</h2>
           <p>Users may report content that they reasonably believe violates the rules. Reports must be made in good faith and must not be used simply to silence an unfavorable opinion.</p>
