@@ -1,30 +1,25 @@
-# Native rollout status — 2026-10-27
+# Native rollout status — 2026-10-27 (continued audit)
 
-## Confirmed decisions
-- Apple Developer Program: enrolled (owner confirmation).
-- Build route: cloud builds preferred.
-- Firebase: no project exists yet; Android push is blocked until a Firebase project and FCM credentials are configured.
-- Existing web/Stripe entitlement must remain valid for signed-in users in the native app.
-- Prices are locked: Pro $4.99/month; Premium $9.99/month.
-- Keep current plan features unchanged. Apple subscriptions are monthly auto-renewables in one subscription group.
+## Entitlement audit findings from repository code
+- `app/membership/page.tsx` reads one row per user from `public.subscriptions`, including `plan`, `status`, `current_period_end`, `cancel_at_period_end`, and `stripe_subscription_id`.
+- The Stripe webhook writes/upserts the same row on `user_id` conflict and populates Stripe identifiers, `plan`, `status`, `current_period_end`, `cancel_at_period_end`, and `access_status`. This is a single-provider-shaped record today.
+- `app/api/review-access/route.ts` currently derives access from the subscription row's `status`, `plan`, and `current_period_end`. It recognizes active/trialing subscriptions and applies role-specific access logic.
+- Existing fan tier SQL policy checks `subscriptions.plan` and `subscriptions.status` directly. Other client routes (including dashboard/account/feed) also read subscription data.
+- Because the current schema and consumers directly couple entitlements to the Stripe-shaped row, Apple IAP must not simply upsert Apple purchases into `subscriptions` using Stripe columns or overwrite the Stripe subscription row. That could break Stripe portal/cancellation behavior and could grant/revoke the wrong tier.
 
-## Repository facts verified
-- Current Next.js app uses Next.js 16.4.2, React 19.2.0, Supabase JS 2.76.1, and Stripe 22.6.0.
-- No Capacitor packages are present in package.json yet.
-- The current membership UI reads `public.subscriptions` fields including `plan`, `status`, `current_period_end`, `cancel_at_period_end`, and `stripe_subscription_id`.
-- Existing Stripe checkout starts at `/api/stripe/webhook/create-checkout`; cancellation and customer portal have separate API routes.
-- The membership page offers monthly, 6-month, and annual web billing. Native Apple IAP must add only the requested monthly products and must not rewrite existing Stripe billing.
-- Next.js config does not enable static export. The current Capacitor config points at the production website and sets `webDir: out`; the static output has not been verified and the remote production URL configuration is not yet approved for store submission.
+## Safe implementation decision
+Implement a server-verified provider entitlement layer (for example, a separate Apple transaction/subscription table plus a server-only entitlement resolver) and adapt consumers deliberately. Keep existing Stripe fields and webhook behavior intact. Database policies that currently read the Stripe-shaped row need an explicit, reviewed plan for recognizing Apple entitlements without trusting client input. No production migration should run before reviewing current live schema and RLS.
 
-## Must happen before implementation can be called complete
-1. Inspect the actual Supabase schema and all entitlement consumers. Design one trusted entitlement resolver that can represent verified Stripe and Apple subscriptions without downgrading an active Stripe customer.
-2. Add Capacitor dependencies and generate native projects in a cloud macOS/Android build environment. Keep the Next.js UI as the single UI source.
-3. Decide the final bundle/package IDs and register them with Apple/Google. Do not publish association files until the final IDs and signing fingerprints are known.
-4. Create the Apple subscription group and monthly products in App Store Connect after confirming the product IDs are unused. Product IDs proposed in the rollout plan are proposals only until verified.
-5. Configure Apple server verification and App Store Server Notifications V2. Store only verified transaction state; do not trust client-supplied tier or purchase flags.
-6. Create a Firebase project for Android push; configure APNs credentials for iOS and an authenticated device-token registration/delivery path.
-7. Add native share, URL handling, push deep links, and generated icon/splash assets from the actual brand logo.
-8. Run the full sandbox lifecycle and Stripe regression tests on signed builds. Record results only after observing them.
+## Current blockers / no false claims
+- No Apple product configuration or product-ID availability check has been completed.
+- No Firebase project exists, so FCM setup is blocked.
+- No cloud build provider or CI credentials are configured by this task yet.
+- No final bundle ID / Android application ID, App Store Connect app record, APNs key, or signing fingerprint has been verified.
+- The repo's existing app configuration has not been built. There is no TestFlight build or Android internal build to test.
+- No purchase, cancellation, resubscription, restore, push, or deep-link tests have been run.
 
-## Current test status
-Nothing in this checklist is marked passed. No native project, TestFlight build, Android internal build, Apple products, push credentials, or purchase lifecycle test has been verified as of this update.
+## Decisions preserved
+- Pro remains $4.99/month and Premium remains $9.99/month for the requested Apple monthly products.
+- Existing web Stripe prices and terms are not modified.
+- Existing plan feature contents are not modified.
+- Do not merge to production without explicit approval.
