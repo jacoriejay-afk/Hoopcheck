@@ -319,6 +319,18 @@ try {
           mainTop: main ? main.getBoundingClientRect().top : null,
           safeAreaBottom: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hc-safe-area-bottom")) || 0,
           tabBarBottomPadding: document.querySelector(".bottom-nav") ? parseFloat(getComputedStyle(document.querySelector(".bottom-nav")).paddingBottom) || 0 : null,
+          criticalControlContrast: Array.from(document.querySelectorAll(".hc-dashboard-edit-profile,.hc-dashboard-avatar,.player-avatar-fallback,.hc-mobile-menu-toggle,.quick-access-count,.quick-card-count,.count-badge,.hc-count-badge,.hc-mobile-section-count"))
+            .filter((element) => element.getClientRects().length)
+            .map((element) => {
+              const style = getComputedStyle(element);
+              const rgb = (value) => { const m=value.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/); return m ? [Number(m[1]),Number(m[2]),Number(m[3])] : null; };
+              const lum = (c) => c.slice(0,3).map(v=>{const x=v/255;return x<=0.04045?x/12.92:((x+0.055)/1.055)**2.4;}).reduce((a,v,i)=>a+v*[0.2126,0.7152,0.0722][i],0);
+              const fg=rgb(style.color); let node=element; let bg=null;
+              while(node && node!==document.documentElement){const candidate=rgb(getComputedStyle(node).backgroundColor);if(candidate && getComputedStyle(node).backgroundColor!=="rgba(0, 0, 0, 0)"){bg=candidate;break;}node=node.parentElement;}
+              if(!fg || !bg)return {selector:typeof element.className==="string"?element.className:element.tagName,ratio:0,color:style.color,background:bg};
+              const a=lum(fg),b=lum(bg);return {selector:typeof element.className==="string"?element.className:element.tagName,ratio:(Math.max(a,b)+0.05)/(Math.min(a,b)+0.05),color:style.color,background:bg};
+            })
+            .filter((item) => item.ratio < 4.5),
           whiteSurfaceOffenders: Array.from(document.querySelectorAll("main *"))
             .filter((element) => {
               const style = getComputedStyle(element);
@@ -384,6 +396,7 @@ try {
       if (result.headerTop !== null && result.headerTop < result.safeAreaTop - 1) errors.push("header overlaps the status-bar safe area");
       if (result.mainTop !== null && result.mainTop < result.safeAreaTop - 1) errors.push("main content overlaps the status-bar safe area");
       if (result.tabBarBottomPadding !== null && result.tabBarBottomPadding < result.safeAreaBottom - 1) errors.push("bottom tab bar overlaps the home-indicator safe area");
+      if (result.criticalControlContrast.length) errors.push("low contrast critical controls: " + JSON.stringify(result.criticalControlContrast));
       if (theme === "dark" && result.whiteSurfaceOffenders.length) errors.push("white surface offenders: " + JSON.stringify(result.whiteSurfaceOffenders));
       if (result.lowContrastText.length) errors.push("low contrast text: " + JSON.stringify(result.lowContrastText));
       if (["/dashboard", "/search", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2"].includes(requestedPath)) {
