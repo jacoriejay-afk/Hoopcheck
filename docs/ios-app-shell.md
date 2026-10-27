@@ -7,13 +7,14 @@ Capacitor bootstrap is being developed on `feat/capacitor-ios-shell`. This is no
 - Capacitor configuration with HoopCheck branding and native plugin defaults.
 - Capacitor core, App, Share, Push Notifications, Status Bar, Splash Screen, and CLI dependencies in `package.json`.
 - `NativeAppBridge` listens for Capacitor `appUrlOpen` events and routes first-party universal links or the app URL scheme through Next.js navigation.
-- `NativeShareButton` provides a reusable native share-sheet primitive, with Web Share API / clipboard fallbacks.
+- A floating native share-sheet action is shown on public team, women's team, coach, league, agent, and player profile pages. It uses the page's current public URL and sits above the bottom navigation/safe-area inset.
+- `NativeShareButton` provides a reusable native share-sheet primitive, with Web Share/clipboard fallbacks.
 - The deep-link bridge is mounted at the app root.
 
 ## Native capabilities and remaining work
 
 ### Sharing
-Use `NativeShareButton` on public team, coach, league, agent, and player profiles. Verify share URLs are canonical public HTTPS URLs and test cancellation and clipboard fallback.
+The shared action is wired to the public profile routes listed above. Verify the generated share URL, cancellation behavior, and fallback on a real iPhone before release. Confirm the intended route for player profiles and agent profiles matches production routing.
 
 ### Deep links
 The bridge routes links only when the native Capacitor runtime emits `appUrlOpen`. A release still requires Xcode Associated Domains entitlement (for `applinks:hoopcheck.online` and any confirmed www host), Apple App Site Association hosted on the web domain, an agreed custom URL scheme if used, and physical-device tests for cold and warm app launches. Confirm route paths against the real app before enabling links in public UI.
