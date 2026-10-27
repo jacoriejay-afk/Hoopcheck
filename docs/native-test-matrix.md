@@ -4,8 +4,8 @@ Status: planned. No signed native build or real-device test has been produced ye
 
 | Area | Required proof | Status |
 | --- | --- | --- |
-| Branch CI | Locked install, URL regression tests, ESLint and TypeScript check on PR | **Passed** in GitHub Actions run 8 for commit `2784858`: install, URL tests, ESLint and TypeScript check all succeeded |
-| Canonical URL tests | Trusted origin, allowed entity routes, rejected hosts/schemes/paths, query and fragment behavior | **Passed** in GitHub Actions run 8 |
+| Branch CI | Locked install, URL regression tests, ESLint and TypeScript check on PR | **Passed** in GitHub Actions native run 14 for commit `b324c67`: install, URL tests, ESLint and TypeScript check all succeeded |
+| Canonical URL tests | Trusted origin, allowed entity routes, rejected hosts/schemes/paths, query and fragment behavior | **Passed** in GitHub Actions native run 14 for commit `b324c67` |
 | Capacitor build | iOS and Android builds install on devices | Blocked: platform projects, toolchain and signing not configured |
 | Icon/splash | Existing approved HoopCheck logo exported to platform sizes | Pending source asset/export confirmation |
 | Universal Links | https://hoopcheck.online/teams/... opens same team route | Blocked: Apple Team ID and final app association |
@@ -77,5 +77,5 @@ The migration has not been applied and does not send notifications by itself.
 ## Continuous integration added — 2026-10-27
 
 - Added `.github/workflows/native-branch-check.yml` on this branch. Pull requests to `main` that change app code or core package/type-check configuration run `npm ci`, `npm run test:native-links`, `npm run lint`, and `npx tsc --noEmit`.
-- **Latest observed native workflow:** run 8 completed successfully; all four checks passed.
+- **Latest observed native workflow:** run 14 completed successfully for commit `b324c67`; locked install, URL tests, ESLint and TypeScript checks passed. The full HoopCheck CI run 2171 and Launch Test run 1514 also completed successfully for this commit. These workflows do not prove a signed iOS/Android build or device behavior.
 - Native signing, native platform builds, Supabase migration tests, App Store sandbox purchases, and device push/share tests remain outside this CI job.
