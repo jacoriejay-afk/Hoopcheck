@@ -90,7 +90,8 @@ export default function ReviewsAnalyticsPage() {
         return;
       }
 
-      const rows = (data || []) as ReviewRow[];
+      const blockedIds = new Set((blockedRows || []).map((row: any) => row.blocked_id));
+      const rows = ((data || []) as ReviewRow[]).filter((row) => !blockedIds.has(row.author_id));
       const authorIds = Array.from(new Set(rows.map((row) => row.author_id).filter(Boolean)));
       const coachIds = Array.from(new Set(rows.map((row) => row.coach_id).filter(Boolean))) as string[];
       const teamIds = Array.from(new Set(rows.map((row) => row.team_id).filter(Boolean))) as string[];
