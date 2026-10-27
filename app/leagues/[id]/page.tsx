@@ -353,7 +353,10 @@ export default function LeagueDetailPage() {
           const reviewIds = reviewData.map((review) => review.id);
           const { data: verificationData } = await supabase.rpc("get_review_verification", { p_review_ids: reviewIds });
           const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map((item) => [item.review_id, Boolean(item.player_verified)]));
-          setReviews(reviewData.map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
+          const { data: { user: viewer } } = await supabase.auth.getUser();
+          const { data: blockedRows } = viewer ? await supabase.from("user_blocks").select("blocked_id").eq("blocker_id", viewer.id) : { data: [] as { blocked_id: string }[] };
+          const blockedIds = new Set((blockedRows || []).map((row: any) => row.blocked_id));
+          setReviews(reviewData.filter((review) => !blockedIds.has(review.author_id)).map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
         }
 
         setReviewLoading(false);
