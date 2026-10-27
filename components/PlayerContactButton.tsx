@@ -3,6 +3,7 @@
 import Link from "next/link"; // Used by compact sign-in and upgrade actions.
 import { useEffect, useState } from "react";
 import { getCachedSession, supabase } from "../lib/supabase";
+import ReportContentAction from "./ReportContentAction";
 
 type RequestRow = { id:string; requester_id:string; player_id:string; message:string|null; status:string; created_at:string; };
 type MessageRow = { id:string; request_id:string; sender_id:string; body:string; created_at:string; };
@@ -17,24 +18,27 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
   const [busy,setBusy]=useState(false);
   const [info,setInfo]=useState("");
   const [messages,setMessages]=useState<MessageRow[]>([]);
+  const [blockedIds,setBlockedIds]=useState<Set<string>>(new Set());
 
   async function load(){
     const {data:{session}}=await getCachedSession();
     const user=session?.user;
     if(!user){return;}
     setUserId(user.id);
-    const [profileResult,subscriptionResult,requestResult]=await Promise.all([
+    const [{data:profileResult},{data:subscriptionResult},{data:requestResult},{data:blockedRows}]=await Promise.all([
       supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle(),
       supabase.from("subscriptions").select("plan,status").eq("user_id",user.id).maybeSingle(),
-      supabase.from("player_contact_requests").select("id,requester_id,player_id,message,status,created_at").or(`requester_id.eq.${user.id},player_id.eq.${user.id}`).eq("player_id",playerId).maybeSingle()
+      supabase.from("player_contact_requests").select("id,requester_id,player_id,message,status,created_at").or(`requester_id.eq.${user.id},player_id.eq.${user.id}`).eq("player_id",playerId).maybeSingle(),
+      supabase.from("user_blocks").select("blocked_id").eq("blocker_id",user.id)
     ]);
+    const blocked = new Set((blockedRows||[]).map((row:any)=>row.blocked_id)); setBlockedIds(blocked);
     setAccountType(profileResult.data?.account_type||"");
     setPremium(["pro","premium"].includes(subscriptionResult.data?.plan||"") && (subscriptionResult.data?.status==="active" || subscriptionResult.data?.status==="trialing"));
     const r=requestResult.data as RequestRow|null;
     setRequest(r);
     if(r?.status==="accepted"){
       const {data:m}=await supabase.from("player_contact_messages").select("id,request_id,sender_id,body,created_at").eq("request_id",r.id).order("created_at",{ascending:true});
-      setMessages((m||[]) as MessageRow[]);
+      setMessages(((m||[]) as MessageRow[]).filter(item=>!blocked.has(item.sender_id)));
     }
   }
   useEffect(()=>{void load()},[playerId]);
@@ -44,11 +48,12 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
     const channel=supabase.channel("hoopchat-"+request.id)
       .on("postgres_changes",{event:"INSERT",schema:"public",table:"player_contact_messages",filter:"request_id=eq."+request.id},payload=>{
         const next=payload.new as MessageRow;
+        if(blockedIds.has(next.sender_id)) return;
         setMessages(current=>current.some(m=>m.id===next.id)?current:[...current,next]);
       })
       .subscribe();
     return()=>{void supabase.removeChannel(channel);};
-  },[request?.id,request?.status]);
+  },[request?.id,request?.status,blockedIds]);
 
   async function sendRequest(){
     if(!userId){location.href="/login";return;}
@@ -108,7 +113,7 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
     return <div className="contact-gate hc-contact-request-gate"><strong>Player request pending</strong><p className="muted">The player must accept before HoopChat messaging opens.</p></div>;
   }
   if(accountType==="player" && request?.status==="accepted"){
-    return <div className="contact-box hc-contact-request-card"><span className="card-kicker">HOOPCHAT</span><h3>Connected player</h3><div className="contact-messages">{messages.map(m=><div key={m.id} className={m.sender_id===userId?"contact-message mine":"contact-message"}>{m.body}<small>{new Date(m.created_at).toLocaleString()}</small></div>)}</div><textarea value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Write a message..." rows={3}/><button className="btn" onClick={()=>void sendMessage()} disabled={busy||!draft.trim()}>{busy?"Sending...":"Send Message"}</button></div>;
+    return <div className="contact-box hc-contact-request-card"><span className="card-kicker">HOOPCHAT</span><h3>Connected player</h3><div className="contact-messages">{messages.map(m=><div key={m.id} className={m.sender_id===userId?"contact-message mine":"contact-message"}>{m.body}<small>{new Date(m.created_at).toLocaleString()}</small>{m.sender_id!==userId&&<ReportContentAction contentType="player_chat_message" contentId={m.id} contentSnapshot={m.body}/>}</div>)}</div><textarea value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Write a message..." rows={3}/><button className="btn" onClick={()=>void sendMessage()} disabled={busy||!draft.trim()}>{busy?"Sending...":"Send Message"}</button></div>;
   }
   if(accountType==="player" && !request){
     if(!premium)return <div className="contact-gate hc-contact-request-gate"><strong>Pro/Premium Player feature</strong><p className="muted">Upgrade to Pro or Premium to send a player request.</p></div>;
