@@ -1,41 +1,42 @@
 # HoopCheck iOS app shell
 
 ## Status
+Capacitor bootstrap is being developed on `feat/capacitor-ios-shell`. This is not yet an App Store-ready build. The current Next.js app uses server features and API routes, so do not switch to static export until every route, auth flow, and backend dependency has been audited.
 
-This is the native-shell bootstrap plan for the existing Next.js product. It is not yet an App Store-ready build. The app currently uses Next.js server features and Supabase, so do not switch to static export until every route, auth flow, API dependency, and server-rendered page has been audited.
+## Added in this branch
+- Capacitor configuration with HoopCheck branding and native plugin defaults.
+- Capacitor core, App, Share, Push Notifications, Status Bar, Splash Screen, and CLI dependencies in `package.json`.
+- `NativeAppBridge` listens for Capacitor `appUrlOpen` events and routes first-party universal links or the app URL scheme through Next.js navigation.
+- `NativeShareButton` provides a reusable native share-sheet primitive, with Web Share API / clipboard fallbacks.
+- The deep-link bridge is mounted at the app root.
 
-## Intended native value
+## Native capabilities and remaining work
 
-- Native push notifications for account, review, follow, and relevant activity events.
-- Native share sheet for public team, coach, league, agent, and player profile URLs.
-- Universal links / custom URL handling to open the matching HoopCheck route.
-- Correct iOS safe-area, status bar, back navigation, and app-resume behavior.
-- Native permission prompts with clear user-facing explanations and preferences.
+### Sharing
+Use `NativeShareButton` on public team, coach, league, agent, and player profiles. Verify share URLs are canonical public HTTPS URLs and test cancellation and clipboard fallback.
 
-## Bootstrap
+### Deep links
+The bridge routes links only when the native Capacitor runtime emits `appUrlOpen`. A release still requires Xcode Associated Domains entitlement (for `applinks:hoopcheck.online` and any confirmed www host), Apple App Site Association hosted on the web domain, an agreed custom URL scheme if used, and physical-device tests for cold and warm app launches. Confirm route paths against the real app before enabling links in public UI.
 
-1. Install Capacitor packages in a development environment:
-   `npm install @capacitor/core @capacitor/ios @capacitor/share @capacitor/app @capacitor/push-notifications @capacitor/status-bar @capacitor/splash-screen`
-2. Install the CLI as a dev dependency:
-   `npm install -D @capacitor/cli`
-3. Verify the project can run the intended web target. The current Next.js app is dynamic; do not assume `next export` or `output: "export"` will work.
-4. Run `npx cap add ios` on a Mac with Xcode installed, then `npx cap sync ios`.
-5. Configure the real iOS bundle identifier, signing team, app icons, launch screen, URL scheme, Associated Domains entitlement, and push-notification capability in Xcode.
-6. Implement and test native share, deep links, push token registration, notification routing, and permission-denied states.
-7. Keep secrets server-side. Push delivery needs a backend sender and APNs credentials; never put APNs private keys or service-role keys in the app.
-8. Test on physical iPhones and through TestFlight before submitting.
+### Push notifications
+Push is not yet enabled. Before prompting users, implement a user-initiated opt-in flow, native permission/token registration, secure token storage linked to the authenticated account, a backend sender using APNs credentials stored only server-side, token rotation/removal, notification preferences, and deep-link routing from notification taps. Never request notification permission automatically on first launch.
+
+### iOS project and build
+1. On a Mac with a supported Xcode version, install dependencies and run the project checks.
+2. Run `npx cap add ios` once, then `npm run cap:sync` and `npm run cap:ios`.
+3. Confirm app ID `online.hoopcheck.app` is available and appropriate before publishing; configure signing, app icons, splash assets, Associated Domains, and push capability in Xcode.
+4. Test login/signup, OAuth redirects if present, cookies/session persistence, uploads, account deletion, support/reporting/moderation, billing, network loss, keyboard/safe areas, and back navigation on physical devices.
+5. Do not create a production archive until the build strategy and hosted web origin are validated.
 
 ## Important architecture note
-
-The existing app depends on Next.js server functionality. A production shell that loads the live site can be used for an initial technical proof, but a remote-only web wrapper is at high risk under App Review Guideline 4.2. Before submission, implement meaningful native workflows and document the value they provide. If the app needs a bundled local web layer, first determine which routes can be safely bundled and which server-backed flows need an API/web origin. Do not enable static export blindly.
+The existing app depends on Next.js server functionality. The current Capacitor config uses the live site as a feasibility/bootstrap target; a remote-only web wrapper may still fail App Review Guideline 4.2 and is not a release recommendation. Do not enable static export blindly. Evaluate a dedicated staging origin or a hybrid/native screen approach and document the meaningful app-specific value before submission.
 
 ## App Review checklist
-
-- App provides useful native functionality beyond displaying the website.
-- Login, signup, password recovery, and account deletion work in the app.
+- The app provides useful native functionality beyond displaying the website.
+- Authentication, password recovery, and account deletion work in-app.
 - Privacy policy and App Privacy answers match actual SDK/data behavior.
-- Push notifications are opt-in, relevant, and route to the correct content.
-- Shared links and universal links open the correct app screen and fall back to the website.
-- Purchases and memberships comply with Apple's applicable payment rules; do not assume existing Stripe web checkout can be used unchanged inside the iOS app.
+- Push is opt-in, relevant, and routes to the correct content.
+- Shared links and universal links open the correct screen and fall back to the website.
+- Membership/payment behavior complies with the current Apple rules; do not assume Stripe web checkout can be used unchanged for digital subscriptions inside the iOS app.
 - No placeholder screens, broken links, browser-only dead ends, or unexplained permission prompts.
-- Verify review credentials and provide reviewer notes for any account-gated features.
+- Verify review credentials and reviewer notes for account-gated features.
