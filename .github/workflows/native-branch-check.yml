@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   validate:
-    name: Install, lint, and type-check
+    name: Install, test, lint, and type-check
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -40,6 +40,9 @@ jobs:
 
       - name: Install locked dependencies
         run: npm ci
+
+      - name: Test canonical native URLs
+        run: npm run test:native-links
 
       - name: Run ESLint
         run: npm run lint
