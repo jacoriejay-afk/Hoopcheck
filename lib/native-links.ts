@@ -20,6 +20,10 @@ export function canonicalHoopCheckUrl(input: string | URL): URL | null {
     const url = input instanceof URL ? new URL(input.href) : new URL(input, HOOPCHECK_ORIGIN);
     if (url.protocol !== "https:" || url.origin !== HOOPCHECK_ORIGIN) return null;
 
+    // URL.origin does not include credentials. Reject them explicitly so
+    // deceptive links like https://trusted@hoopcheck.online/... are not shared.
+    if (url.username || url.password) return null;
+
     // Encoded slashes/backslashes can be decoded by downstream routers and turn
     // a single allowlisted segment into a different path.
     if (/%(?:2f|5c)/i.test(url.pathname)) return null;
