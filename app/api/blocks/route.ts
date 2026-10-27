@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const { error } = await db.from("user_blocks").delete().eq("blocker_id", auth.user.id).eq("blocked_id", target);
     if (error) return NextResponse.json({ error: "Could not unblock this user." }, { status: 500 });
   } else {
-    const { error } = await auth.supabase.from("user_blocks").upsert({ blocker_id: auth.user.id, blocked_id: target }, { onConflict: "blocker_id,blocked_id", ignoreDuplicates: true });
+    const { error } = await db.from("user_blocks").upsert({ blocker_id: auth.user.id, blocked_id: target }, { onConflict: "blocker_id,blocked_id", ignoreDuplicates: true });
     if (error) return NextResponse.json({ error: "Could not block this user." }, { status: 500 });
   }
   return NextResponse.json({ ok: true, action });
