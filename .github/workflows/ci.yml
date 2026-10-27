@@ -55,7 +55,7 @@ jobs:
 
       - name: Install Playwright and verify hosted Chrome
         run: |
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --no-save --package-lock=false playwright
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --no-save --package-lock=false playwright lighthouse@11.7.1
           google-chrome --version
 
       - name: Start production server
@@ -65,6 +65,23 @@ jobs:
 
       - name: Verify canonical sitemap and robots host
         run: node scripts/domain-url-check.mjs
+
+      - name: Verify PWA manifest, icons, service worker, and review cache policy
+        run: node scripts/pwa-smoke-check.mjs
+
+      - name: Run Lighthouse PWA audits
+        run: |
+          mkdir -p artifacts/pwa
+          lighthouse http://127.0.0.1:3000 --only-categories=pwa --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --output=json --output-path=artifacts/pwa/lighthouse-pwa.json --quiet
+          node -e 'const r=require("./artifacts/pwa/lighthouse-pwa.json"); const audits=r.audits; const names=["installable-manifest","service-worker","maskable-icon"]; const failed=names.filter(n=>audits[n] && audits[n].score !== 1); for (const n of names) console.log(n + "=" + (audits[n] ? audits[n].score : "not-present")); if (failed.length) { console.error("Lighthouse PWA audit failures: " + failed.join(", ")); process.exit(1); }'
+
+      - name: Upload PWA audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hoopcheck-pwa-lighthouse
+          path: artifacts/pwa/
+          if-no-files-found: warn
 
       - name: Search repository for legacy domain references
         shell: bash
