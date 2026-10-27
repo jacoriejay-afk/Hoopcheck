@@ -27,3 +27,25 @@ Status: planned. No signed native build or real-device test has been produced ye
 - [ ] Run SQL migration in a non-production environment and test RLS using two accounts plus service-role writes before any production rollout.
 
 Important: this is schema groundwork only. It does not validate purchases, unlock tiers, or alter live database behavior until reviewed and applied.
+
+## Next implementation gate — production shell delivery
+
+A remote URL inside the WebView is not sufficient proof of a shippable Capacitor app. Before generating signed platform projects, choose and validate one delivery architecture that keeps a single Next.js UI codebase:
+
+1. **Hosted Next.js UI in the native WebView** with API/SSR preserved. This is the least disruptive technically, but requires an App Review readiness check because a thin website wrapper may fail minimum-functionality review. It also depends on network access for the main UI.
+2. **Bundled web UI with hosted APIs** only if the Next.js app can be built for a supported client-rendered/static route set without breaking server components, auth callbacks, dynamic routes, or API usage. The current app has not been shown to support static export; do not switch `output: "export"` on speculatively.
+
+No architecture has been validated in a device build yet. Do not claim the existing `server.url` scaffold is a production build configuration. Keep production web hosting and Stripe behavior unchanged while this gate is open.
+
+## Native push acceptance contract
+
+A push payload must carry a canonical HTTPS URL on `hoopcheck.online` (for example `https://hoopcheck.online/teams/<team-id>`) rather than an arbitrary URL. The native URL handler must reject other hosts/schemes, preserve valid path and query, and route through the same web UI. Associate device tokens only with the authenticated HoopCheck user, handle token rotation/logout, and avoid including private review text in push payloads. A test counts as passed only after an actual APNs/FCM delivery is tapped from foreground, background, and terminated states on a device and the expected team route is visible.
+
+## Apple entitlement acceptance contract
+
+- Apple transaction data must be cryptographically verified on the server and reconciled with App Store Server API state before any access change.
+- A transaction's account ownership must be bound to the signed-in HoopCheck account; do not accept a client-supplied user ID as proof of ownership.
+- Apple subscription records must remain separate from the existing Stripe-shaped `public.subscriptions` row.
+- Shared entitlement logic must be adopted by all relevant API routes and SQL RLS/policies before Apple purchases can unlock gated features. Until then, do not surface a purchase action that could charge a user without granting consistent access.
+- Keep Pro at $4.99/month and Premium at $9.99/month. Product IDs in the migration remain proposals until confirmed in App Store Connect.
+- Sandbox proof must include initial purchase, entitlement unlock, cancellation with access through paid-through date, resubscription, and restore on a fresh install. Record the build number, sandbox account, transaction environment, and observed result for each test.
