@@ -73,6 +73,7 @@ async function deleteUserContent(admin: { from: (table: string) => any }, userId
     ["reviews", "author_id", userId],
     ["fan_live_chat_messages", "user_id", userId],
     ["player_contact_messages", "sender_id", userId],
+    ["feed_post_checks", "user_id", userId],
     ["fan_feed_checks", "user_id", userId],
     ["fan_feed_archives", "user_id", userId],
   ];
@@ -81,6 +82,13 @@ async function deleteUserContent(admin: { from: (table: string) => any }, userId
     if (error) {
       throw new Error(`Unable to remove account content from ${table}: ${error.message}`);
     }
+  }
+  const { error: requestError } = await admin
+    .from("player_contact_requests")
+    .delete()
+    .or(`requester_id.eq.${userId},player_id.eq.${userId}`);
+  if (requestError) {
+    throw new Error(`Unable to remove account contact requests: ${requestError.message}`);
   }
 }
 
