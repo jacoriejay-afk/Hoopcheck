@@ -64,6 +64,10 @@ export default function PrivacyPage() {
           <h2>12. Data Retention</h2>
           <p>We retain information for as long as reasonably necessary for the purpose for which it was collected, including operating the service, maintaining legitimate business and payment records, preventing fraud and abuse, resolving disputes, enforcing agreements, maintaining security records, and complying with legal obligations. We aim to avoid retaining personal information longer than reasonably necessary for these purposes.</p>
 
+          <h2>13. Blocking and Safety Reports</h2>
+          <p>Users can report reviews, HoopFeed posts, chat messages, and profiles for moderation and can block other users. Reports may include the reported content snapshot, the reason selected, reporter identity, and timestamps so moderators can investigate. We use this information for safety, enforcement, abuse prevention, and dispute handling, and restrict access to authorized moderation personnel.</p>
+          <p>Blocking is intended to reduce exposure to another user. Some records may remain in moderation or legal records where needed for safety, security, fraud prevention, or legal compliance.</p>
+
           <h2>13. Account Deletion</h2>
           <p>You can request or initiate account deletion through the available HoopCheck account controls. When deletion is completed, user-owned account data and user-uploaded files are removed or de-identified according to the platform's deletion process.</p>
           <p>Some limited information may remain where retention is reasonably necessary for legal compliance, payment/accounting records, security, fraud prevention, dispute resolution, moderation integrity, or other lawful purposes. Retained records are not kept for ordinary product use after account deletion.</p>
