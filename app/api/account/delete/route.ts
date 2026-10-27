@@ -68,7 +68,6 @@ async function deleteUserContent(admin: { from: (table: string) => any }, userId
   const operations: Array<[string, string, string]> = [
     ["feed_post_comments", "author_id", userId],
     ["fan_feed_comments", "author_id", userId],
-    ["feed_post_comments", "author_id", userId],
     ["feed_posts", "author_id", userId],
     ["fan_feed_posts", "author_id", userId],
     ["reviews", "author_id", userId],
