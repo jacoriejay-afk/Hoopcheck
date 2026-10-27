@@ -8,7 +8,7 @@ Status: planned. No signed native build or real-device test has been produced ye
 | Icon/splash | Existing approved HoopCheck logo exported to platform sizes | Pending source asset/export confirmation |
 | Universal Links | https://hoopcheck.online/teams/... opens same team route | Blocked: Apple Team ID and final app association |
 | Android App Links | Canonical URL opens app | Blocked: signing certificate SHA-256 |
-| Native share | Share team/player URL to another app | Not tested |
+| Entity share UI | Team/player profiles expose a share action using Web Share API with clipboard fallback; canonical URL validation added | Implemented on feature branch; build/device test pending |
 | Push token | APNs/FCM registration and authenticated token association | Blocked: provider credentials/backend endpoint |
 | Push deep link | Real push tapped from foreground/background/terminated state opens exact team | Not tested |
 | Apple IAP products | One group, Pro $4.99/month and Premium $9.99/month | Blocked: App Store Connect setup/access |
@@ -60,3 +60,11 @@ A push payload must carry a canonical HTTPS URL on `hoopcheck.online` (for examp
 - [ ] Connect review creation and the existing live-game reminder event to notification jobs, then test push deep links on physical devices.
 
 The migration has not been applied and does not send notifications by itself.
+
+
+## Share helper added — 2026-10-27
+
+- Added `lib/native-links.ts` to validate canonical team/player/coach/league/women's-team HTTPS URLs on `hoopcheck.online` and reject other origins or unsupported paths.
+- Added `components/ShareEntityButton.tsx` and wired it into team and player profile actions. It uses Web Share where available and clipboard fallback otherwise.
+- This is a web-compatible share implementation, not proof that Capacitor's native Share plugin is installed or that a native share sheet works in a signed app. Device testing remains required.
+- URL validation is a navigation safety guard only; it does not grant access or authenticate a user.
