@@ -26,7 +26,7 @@ assert(manifest.icons.some((icon) => icon.sizes === "512x512" && icon.purpose?.i
 for (const path of ["/icons/hoopcheck-192.svg", "/icons/hoopcheck-512.svg", "/apple-icon"]) {
   const { response, text } = await fetchText(path);
   assert(response.headers.get("content-type")?.includes(path === "/apple-icon" ? "image/png" : "image/svg+xml"), `${path} must have the expected image MIME type`);
-  assert(text.includes("#0A0A0A") && text.includes("#FF5A1F"), `${path} must use the existing HoopCheck logo palette`);
+  if (path !== "/apple-icon") assert(text.includes("#0A0A0A") && text.includes("#FF5A1F"), `${path} must use the existing HoopCheck logo palette`);
 }
 assert(manifestResponse.headers.get("content-type")?.includes("json"), "Manifest must be served as JSON");
 assert(swResponse.headers.get("service-worker-allowed") === null || swResponse.headers.get("service-worker-allowed") === "/", "Unexpected service worker scope");
