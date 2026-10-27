@@ -144,9 +144,9 @@ try {
         else if (url.pathname.includes("/rest/v1/feed_post_comments")) data = [];
         else if (url.pathname.includes("/rest/v1/feed_post_checks")) data = [];
         else if (url.pathname.includes("/rest/v1/reviews")) data = [];
-        else if (url.pathname.includes("/rest/v1/teams")) data = [];
-        else if (url.pathname.includes("/rest/v1/coaches")) data = [];
-        else if (url.pathname.includes("/rest/v1/leagues")) data = [];
+        else if (url.pathname.includes("/rest/v1/teams")) data = [teamFixture];
+        else if (url.pathname.includes("/rest/v1/coaches")) data = [coachFixture];
+        else if (url.pathname.includes("/rest/v1/leagues")) data = [leagueFixture];
         await route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -301,6 +301,14 @@ try {
         await page.waitForTimeout(300);
       } catch (error) {
         navigationError = error instanceof Error ? error.message : String(error);
+      }
+      if (requestedPath === "/account") {
+        const expectedAccountHeading = testLanguage === "es" ? "PREFERENCIAS DE LA CUENTA" : "ACCOUNT PREFERENCES";
+        await page.waitForFunction((expected) => document.body.innerText.toLocaleUpperCase().includes(expected), expectedAccountHeading, { timeout: 15000 });
+      }
+      if (requestedPath === "/search") {
+        const expectedSearchHeading = testLanguage === "es" ? "CONEXIÓN ENTRE JUGADORES" : "PLAYER CONNECT";
+        await page.waitForFunction((expected) => document.body.innerText.toLocaleUpperCase().includes(expected), expectedSearchHeading, { timeout: 15000 });
       }
       const result = await page.evaluate(({ requestedPath, navigationError }) => {
         const main = document.querySelector("main");
