@@ -42,3 +42,25 @@ Do not mark complete until: (1) signed TestFlight and Android internal-testing b
 
 ## Shell differences to test
 Supabase OAuth/password-reset callbacks, Stripe checkout/return-to-app, cookies and session persistence, external links, downloads/uploads, browser back, keyboard and safe areas, status bar/splash, push permission prompts, offline behavior, and third-party authentication can behave differently in WKWebView/Android WebView.
+
+## Architecture decision record — native delivery gate (2026-10-28)
+
+### Decision status: provisional; no store release architecture approved
+
+**Do not generate or sign platform projects yet.** The current config's `server.url` points at the live website and `webDir: "out"` suggests a local export, but the repository does not currently prove that a static export can run the whole app. The app uses Next.js server routes and authenticated Supabase/Stripe flows. A remote URL keeps those server capabilities, but leaves the native app dependent on network access and increases Apple's minimum-functionality/repackaged-website review risk.
+
+### Required architecture investigation
+
+1. Inventory every server-dependent page and API route used by sign-in, reviews, feeds, membership, checkout returns, alerts and account settings.
+2. Confirm which routes can remain hosted on the existing Next.js deployment and which, if any, need a native plugin or local client implementation.
+3. Prototype a Capacitor shell against a non-production/staging URL first; verify cookies/session persistence, OAuth redirects, back navigation, file upload, external links and Stripe return behavior.
+4. Choose explicitly between (A) a hosted Next.js UI with native features and robust offline/error states, or (B) a locally bundled UI that calls the hosted Next.js backend. Option B is acceptable only after proving that the existing UI can be bundled without breaking server-rendered functionality; do not assume `output: "export"` is compatible.
+5. Document the app-specific native utility that goes beyond a thin website wrapper before submitting for review. Push, verified deep links, native sharing and StoreKit are intended capabilities, not yet implemented proof.
+
+### Guardrails
+
+- Keep the Next.js app and UI as the single source of truth; no Expo migration or parallel UI rewrite.
+- Do not change production `next.config.ts`, Stripe checkout, production database schema, or live deployment as part of this investigation.
+- Keep any native proof-of-concept isolated to `feat/capacitor-native-shell` or a separate feature branch.
+- Before signing, pin and verify the bundle/application IDs, Apple Team ID, App Store Connect record, Android signing fingerprints, associated-domain files, APNs/FCM credentials and build-provider secrets.
+- Treat the current `capacitor.config.ts` as a scaffold only. Passing web CI does not establish that iOS/Android projects compile or that the app meets App Store/Play review requirements.
