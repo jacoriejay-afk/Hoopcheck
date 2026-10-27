@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import ReportContentAction from "../../components/ReportContentAction";
 
 type ReviewRow = {
   id: string;
@@ -288,6 +289,7 @@ export default function ReviewsAnalyticsPage() {
                       </Link>
                     ) : item.targetName}
                   </p>
+                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}><ReportContentAction contentType="review" contentId={item.id} contentSnapshot={[item.title, item.body].filter(Boolean).join("\n")} /></div>
                 </article>
               );
             })}
