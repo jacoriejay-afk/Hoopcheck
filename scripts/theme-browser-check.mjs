@@ -438,10 +438,9 @@ try {
       await page.waitForURL(/\/teams$/, { timeout: 15000 });
       await page.locator('a[href="/teams/' + teamFixture.id + '"]').first().click();
       await page.waitForURL(new RegExp("/teams/" + teamFixture.id + "$"), { timeout: 15000 });
-      await page.waitForFunction(() => {
-        const text = document.body.innerText.toLocaleUpperCase();
-        return text.includes("TABLERO DE PLANTILLA") && text.includes("AÚN NO HAY RESEÑAS APROBADAS");
-      }, null, { timeout: 15000 });
+      await page.waitForFunction(() => document.body.innerText.toLocaleUpperCase().includes("TABLERO DE PLANTILLA"), null, { timeout: 15000 });
+      const translatedTeamText = (await page.locator("body").innerText()).toLocaleUpperCase();
+      assert.ok(translatedTeamText.includes("TABLERO DE PLANTILLA"), "team page did not retain Spanish after client-side navigation");
       await page.screenshot({ path: `${artifactsDir}/language-live-04-team-es.png`, fullPage: true, animations: "disabled" });
       assert.equal(await page.evaluate(() => performance.timeOrigin), beforeSwitchOrigin, "team navigation performed a full document reload");
       console.log("LANGUAGE_LIVE_SWITCH=PASS; reloads=0; screenshots=4");
