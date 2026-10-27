@@ -28,6 +28,11 @@ test("rejects non-HTTPS and untrusted origins", () => {
   assert.equal(canonicalHoopCheckUrl("javascript:alert(1)"), null);
 });
 
+test("rejects credentials embedded in an otherwise trusted URL", () => {
+  assert.equal(canonicalHoopCheckUrl("https://user@hoopcheck.online/teams/1"), null);
+  assert.equal(canonicalHoopCheckUrl("https://user:password@hoopcheck.online/teams/1"), null);
+});
+
 test("rejects paths outside the entity allowlist", () => {
   assert.equal(canonicalHoopCheckUrl("/account"), null);
   assert.equal(canonicalHoopCheckUrl("/teams"), null);
