@@ -50,6 +50,43 @@ html .hc-template-header .hc-mobile-menu-toggle {
   border-color: var(--hc-border) !important;
 }
 html .hc-template-header .hc-mobile-menu-toggle span { background: currentColor !important; }
+
+/* Theme-specific selectors deliberately outrank legacy inverse-control rules. */
+html.theme-light .hc-dashboard-shell .hc-dashboard-edit-profile,
+html.theme-dark .hc-dashboard-shell .hc-dashboard-edit-profile,
+html.theme-light .hc-dashboard-shell .hc-dashboard-edit-profile:visited,
+html.theme-dark .hc-dashboard-shell .hc-dashboard-edit-profile:visited {
+  background: var(--hc-control-bg, var(--hc-surface-raised)) !important;
+  color: var(--hc-control-fg, var(--hc-foreground)) !important;
+  border-color: var(--hc-control-border, var(--hc-border)) !important;
+}
+html.theme-light .hc-dashboard-shell .hc-dashboard-edit-profile :where(svg, path, span, strong, b, i),
+html.theme-dark .hc-dashboard-shell .hc-dashboard-edit-profile :where(svg, path, span, strong, b, i) {
+  color: var(--hc-control-fg, var(--hc-foreground)) !important;
+  stroke: currentColor !important;
+}
+html.theme-light .hc-dashboard-shell .hc-dashboard-avatar,
+html.theme-dark .hc-dashboard-shell .hc-dashboard-avatar,
+html.theme-light .hc-dashboard-shell .player-avatar-fallback,
+html.theme-dark .hc-dashboard-shell .player-avatar-fallback {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light .hc-dashboard-shell .hc-mobile-section-count,
+html.theme-dark .hc-dashboard-shell .hc-mobile-section-count,
+html.theme-light .hc-dashboard-shell :is(.quick-access-count, .quick-card-count, .count-badge, .hc-count-badge),
+html.theme-dark .hc-dashboard-shell :is(.quick-access-count, .quick-card-count, .count-badge, .hc-count-badge) {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light .hc-dashboard-shell :is(.quick-access-count, .quick-card-count, .count-badge, .hc-count-badge, .hc-mobile-section-count) :where(span, strong, b, i, svg),
+html.theme-dark .hc-dashboard-shell :is(.quick-access-count, .quick-card-count, .count-badge, .hc-count-badge, .hc-mobile-section-count) :where(span, strong, b, i, svg) {
+  color: var(--hc-foreground) !important;
+  stroke: currentColor !important;
+}
+
 @media (max-width: 700px) {
   html body main:not(.hc-template-home) {
     padding-bottom: calc(84px + var(--hc-safe-area-bottom)) !important;
