@@ -59,9 +59,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: review, error: reviewError } = await auth.supabase
+  const db = auth.supabase as any;
+  const { data: review, error: reviewError } = await db
     .from("reviews")
-    .select("id")
+    .select("id,author_id,title,body")
     .eq("id", body.reviewId)
     .eq("status", "approved")
     .maybeSingle();
@@ -80,6 +81,20 @@ export async function POST(request: Request) {
       { status: 404 }
     );
   }
+  const { error: queueError } = await db.from("content_reports").insert({
+    content_type: "review",
+    content_id: body.reviewId,
+    reporter_id: auth.user.id,
+    content_owner_id: review.author_id,
+    content_snapshot: [review.title, review.body].filter(Boolean).join("\\n").slice(0, 6000),
+    reason: body.reason,
+    status: "open",
+  });
+  if (queueError && queueError.code !== "23505") {
+    console.error("Unified review report insert failed:", queueError);
+    return NextResponse.json({ error: "Unable to submit your report." }, { status: 500 });
+  }
+
 
   const { error } = await auth.supabase
     .from("review_reports")
