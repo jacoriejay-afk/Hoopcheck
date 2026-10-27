@@ -425,7 +425,7 @@ try {
       await page.screenshot({ path: `${artifactsDir}/language-live-01-settings-en.png`, fullPage: true, animations: "disabled" });
       await page.locator(".language-select").selectOption("es");
       await page.waitForFunction(() => document.documentElement.lang === "es", null, { timeout: 10000 });
-      await page.getByRole("heading", { name: "Configuración" }).waitFor({ state: "visible", timeout: 10000 });
+      await page.getByRole("heading", { name: "AJUSTES" }).waitFor({ state: "visible", timeout: 10000 });
       await page.screenshot({ path: `${artifactsDir}/language-live-02-settings-es.png`, fullPage: true, animations: "disabled" });
       assert.equal(await page.evaluate(() => performance.timeOrigin), beforeSwitchOrigin, "language selection reloaded the document");
       await page.locator("a.site-header-brand").click();
