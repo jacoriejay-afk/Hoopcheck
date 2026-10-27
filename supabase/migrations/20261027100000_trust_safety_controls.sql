@@ -14,6 +14,7 @@ create table if not exists public.content_reports (
 );
 create index if not exists content_reports_queue_idx on public.content_reports(status, created_at desc);
 create index if not exists content_reports_content_idx on public.content_reports(content_type, content_id);
+create unique index if not exists content_reports_reporter_content_unique on public.content_reports(reporter_id, content_type, content_id) where reporter_id is not null;
 alter table public.content_reports enable row level security;
 drop policy if exists content_reports_admin_select on public.content_reports;
 create policy content_reports_admin_select on public.content_reports for select to authenticated using (public.is_current_user_admin_or_moderator());
