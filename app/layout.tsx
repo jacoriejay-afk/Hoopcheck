@@ -27,6 +27,7 @@ import AnalyticsTracker from "../components/AnalyticsTracker";
 import SiteHeader from "../components/SiteHeader";
 import Logo from "../components/Logo";
 import CourtLines from "../components/CourtLines";
+import NativeAppBridge from "../components/NativeAppBridge";
 
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
 const sansFont = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
@@ -107,6 +108,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <AuthProvider>
             <LanguageProvider initialLanguage={initialLanguage}>
               <AnalyticsTracker />
+              <NativeAppBridge />
               <SiteHeader />
               <MobileAuth />
               <BottomNav />
