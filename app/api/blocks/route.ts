@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const { data: targetProfile, error: profileError } = await db.from("profiles").select("id").eq("id", target).maybeSingle();
   if (profileError || !targetProfile) return NextResponse.json({ error: "User not found." }, { status: 404 });
   if (action === "unblock") {
-    const { error } = await auth.supabase.from("user_blocks").delete().eq("blocker_id", auth.user.id).eq("blocked_id", target);
+    const { error } = await db.from("user_blocks").delete().eq("blocker_id", auth.user.id).eq("blocked_id", target);
     if (error) return NextResponse.json({ error: "Could not unblock this user." }, { status: 500 });
   } else {
     const { error } = await auth.supabase.from("user_blocks").upsert({ blocker_id: auth.user.id, blocked_id: target }, { onConflict: "blocker_id,blocked_id", ignoreDuplicates: true });
