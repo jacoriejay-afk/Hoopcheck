@@ -215,7 +215,10 @@ function SearchContent() {
         if (leagueResult.error) throw leagueResult.error;
 
 
-        setPlayers((playerResult.data || []) as Player[]);
+        const { data: { user: viewer } } = await supabase.auth.getUser();
+        const { data: blockedRows } = viewer ? await supabase.from("user_blocks").select("blocked_id").eq("blocker_id", viewer.id) : { data: [] as { blocked_id: string }[] };
+        const blockedIds = new Set((blockedRows || []).map((row: any) => row.blocked_id));
+        setPlayers(((playerResult.data || []) as Player[]).filter(player => !blockedIds.has(player.id)));
         setCoaches(coachResult.data || []);
         setTeams(teamResult.data || []);
         setWomensTeams(womensTeamResult.data || []);
