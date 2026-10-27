@@ -4,7 +4,8 @@ Status: planned. No signed native build or real-device test has been produced ye
 
 | Area | Required proof | Status |
 | --- | --- | --- |
-| Branch CI | Locked install, ESLint and TypeScript check on PR | Workflow added; first GitHub Actions run pending |
+| Branch CI | Locked install, URL regression tests, ESLint and TypeScript check on PR | Workflow updated; first GitHub Actions run pending |
+| Canonical URL tests | Trusted origin, allowed entity routes, rejected hosts/schemes/paths, query and fragment behavior | Test cases added; execution pending |
 | Capacitor build | iOS and Android builds install on devices | Blocked: platform projects, toolchain and signing not configured |
 | Icon/splash | Existing approved HoopCheck logo exported to platform sizes | Pending source asset/export confirmation |
 | Universal Links | https://hoopcheck.online/teams/... opens same team route | Blocked: Apple Team ID and final app association |
@@ -65,11 +66,14 @@ The migration has not been applied and does not send notifications by itself.
 
 - Added `lib/native-links.ts` to validate canonical team/player/coach/league/women's-team HTTPS URLs on `hoopcheck.online` and reject other origins or unsupported paths.
 - Added `components/ShareEntityButton.tsx` and wired it into team and player profile actions. It uses Web Share where available and clipboard fallback otherwise.
+- Added `lib/native-links.test.ts` with regression cases for allowed routes, untrusted hosts/schemes, unsupported paths, query preservation, fragment removal, and unexpected ports.
+- Added `npm run test:native-links` using Node's built-in test runner and TypeScript type stripping; CI now runs this before lint/type-check.
+- These test cases have been authored but have not yet been executed in this environment. This is not proof that the suite or application build passes.
 - This is a web-compatible share implementation, not proof that Capacitor's native Share plugin is installed or that a native share sheet works in a signed app. Device testing remains required.
 - URL validation is a navigation safety guard only; it does not grant access or authenticate a user.
 
 ## Continuous integration added — 2026-10-27
 
-- Added `.github/workflows/native-branch-check.yml` on this branch. Pull requests to `main` that change app code or core package/type-check configuration run `npm ci`, `npm run lint`, and `npx tsc --noEmit`.
+- Added `.github/workflows/native-branch-check.yml` on this branch. Pull requests to `main` that change app code or core package/type-check configuration run `npm ci`, `npm run test:native-links`, `npm run lint`, and `npx tsc --noEmit`.
 - The workflow's first run has not yet been observed. This records a validation mechanism, not a passing result.
 - Native signing, native platform builds, Supabase migration tests, App Store sandbox purchases, and device push/share tests remain outside this CI job.
