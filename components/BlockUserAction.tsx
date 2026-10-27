@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 export default function BlockUserAction({ userId, label = "Block user" }: { userId: string; label?: string }) {
-  const [blocked, setBlocked] = useState(false); const [busy, setBusy] = useState(false); const [message, setMessage] = useState("");
-  useEffect(() => { let active = true; void supabase.from("user_blocks").select("id").eq("blocked_id", userId).maybeSingle().then(({ data }) => { if (active) setBlocked(!!data); }); return () => { active = false; }; }, [userId]);
+  const [blocked, setBlocked] = useState(false); const [isSelf, setIsSelf] = useState(false); const [busy, setBusy] = useState(false); const [message, setMessage] = useState("");
+  useEffect(() => { let active = true; void (async () => { const { data: { user } } = await supabase.auth.getUser(); if (active && user?.id === userId) { setIsSelf(true); return; } const { data } = await supabase.from("user_blocks").select("id").eq("blocked_id", userId).maybeSingle(); if (active) setBlocked(!!data); })(); return () => { active = false; }; }, [userId]);
   async function toggle() {
     setBusy(true); setMessage("");
     try {
@@ -15,5 +15,6 @@ export default function BlockUserAction({ userId, label = "Block user" }: { user
     } catch (error) { setMessage(error instanceof Error ? error.message : "Could not update block."); }
     finally { setBusy(false); }
   }
+  if (isSelf) return null;
   return <span className="hc-trust-action"><button type="button" className="btn dark" disabled={busy} onClick={() => { if (blocked || window.confirm("Block this user? Their content will be hidden where block filters are applied.")) void toggle(); }}>{busy ? "Saving…" : blocked ? "Unblock" : label}</button>{message && <small role="status">{message}</small>}</span>;
 }
