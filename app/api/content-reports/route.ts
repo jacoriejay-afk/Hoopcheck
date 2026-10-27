@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { authenticateModerationRequest } from "../../../lib/server/review-moderation";
-const TYPES = ["review", "hoopfeed_post", "fan_feed_post", "chat_message"] as const;
+const TYPES = ["review", "hoopfeed_post", "fan_feed_post", "chat_message", "player_chat_message"] as const;
 const REASONS = ["Spam or advertising", "Harassment or abusive content", "Hate or discrimination", "Sexual or violent content", "Threats or dangerous content", "Personal information", "False or misleading information", "Other"] as const;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export async function POST(request: Request) {
@@ -15,8 +15,8 @@ export async function POST(request: Request) {
   const reason = typeof body.reason === "string" ? body.reason : "";
   if (!TYPES.includes(type as typeof TYPES[number]) || !UUID.test(id)) return NextResponse.json({ error: "Choose valid content to report." }, { status: 400 });
   if (!REASONS.includes(reason as typeof REASONS[number])) return NextResponse.json({ error: "Choose a report reason." }, { status: 400 });
-  const table = type === "review" ? "reviews" : type === "hoopfeed_post" ? "feed_posts" : type === "fan_feed_post" ? "fan_feed_posts" : type === "chat_message" ? "fan_live_chat_messages" : "";
-  const ownerColumn = type === "chat_message" ? "user_id" : table ? "author_id" : "";
+  const table = type === "review" ? "reviews" : type === "hoopfeed_post" ? "feed_posts" : type === "fan_feed_post" ? "fan_feed_posts" : type === "chat_message" ? "fan_live_chat_messages" : type === "player_chat_message" ? "player_contact_messages" : "";
+  const ownerColumn = type === "chat_message" ? "user_id" : type === "player_chat_message" ? "sender_id" : table ? "author_id" : "";
   const contentColumn = table ? "body" : "";
   let ownerId: string | null = null;
   let snapshot = typeof body.contentSnapshot === "string" ? body.contentSnapshot.slice(0, 6000) : "";
