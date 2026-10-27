@@ -35,6 +35,12 @@ test("rejects paths outside the entity allowlist", () => {
   assert.equal(canonicalHoopCheckUrl("/api/admin"), null);
 });
 
+test("rejects encoded separators inside entity IDs", () => {
+  assert.equal(canonicalHoopCheckUrl("/teams/team%2Fadmin"), null);
+  assert.equal(canonicalHoopCheckUrl("/players/player%5Cprivate"), null);
+  assert.equal(canonicalHoopCheckUrl("/teams/team%2fadmin"), null);
+});
+
 test("normalizes relative links, preserves query, and removes fragments", () => {
   const result = getShareableEntityUrl("/teams/team-123?source=share#details");
   assert.equal(
