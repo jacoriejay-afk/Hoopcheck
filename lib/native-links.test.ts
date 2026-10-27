@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   canonicalHoopCheckUrl,
   getShareableEntityUrl,
+  getHoopCheckDeepLinkRoute,
   HOOPCHECK_ORIGIN,
 } from "./native-links.ts";
 
@@ -56,4 +57,16 @@ test("normalizes relative links, preserves query, and removes fragments", () => 
 
 test("does not accept a trusted hostname with a different port", () => {
   assert.equal(canonicalHoopCheckUrl("https://hoopcheck.online:444/teams/1"), null);
+});
+
+test("maps validated deep links to internal routes without trusting raw URLs", () => {
+  assert.equal(
+    getHoopCheckDeepLinkRoute("https://hoopcheck.online/teams/team-123?tab=reviews#top"),
+    "/teams/team-123?tab=reviews",
+  );
+  assert.equal(
+    getHoopCheckDeepLinkRoute("https://evil.example/teams/team-123"),
+    null,
+  );
+  assert.equal(getHoopCheckDeepLinkRoute("https://hoopcheck.online/account"), null);
 });
