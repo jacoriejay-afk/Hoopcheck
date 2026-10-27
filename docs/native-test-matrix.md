@@ -4,8 +4,8 @@ Status: planned. No signed native build or real-device test has been produced ye
 
 | Area | Required proof | Status |
 | --- | --- | --- |
-| Branch CI | Locked install, URL regression tests, ESLint and TypeScript check on PR | **Passed** in GitHub Actions native run 14 for commit `b324c67`: install, URL tests, ESLint and TypeScript check all succeeded |
-| Canonical URL tests | Trusted origin, allowed entity routes, rejected hosts/schemes/paths, query and fragment behavior | **Passed** in GitHub Actions native run 14 for commit `b324c67` |
+| Branch CI | Locked install, URL regression tests, ESLint and TypeScript check on PR | **Passed** on commit `933d215e37892d11ec3d03301dba6f56a8150059`: native shell branch checks, full HoopCheck CI, and Launch Test all succeeded |
+| Canonical URL tests | Trusted origin, allowed entity routes, deceptive-host rejection, credentials, encoded separators, nonstandard ports, query and fragment behavior | **Passed** on commit `933d215e37892d11ec3d03301dba6f56a8150059` |
 | Capacitor build | iOS and Android builds install on devices | Blocked: platform projects, toolchain and signing not configured |
 | Icon/splash | Existing approved HoopCheck logo exported to platform sizes | Pending source asset/export confirmation |
 | Universal Links | https://hoopcheck.online/teams/... opens same team route | Blocked: Apple Team ID and final app association |
