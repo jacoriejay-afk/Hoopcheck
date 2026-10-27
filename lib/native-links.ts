@@ -43,6 +43,19 @@ export function getShareableEntityUrl(path: string): string | null {
   return url?.href ?? null;
 }
 
+/**
+ * Return an internal route only after validating a public entity deep link.
+ * Native URL-open listeners should use this instead of routing raw input.
+ * Query parameters are preserved; fragments are discarded by canonicalization.
+ */
+export function getHoopCheckDeepLinkRoute(
+  input: string | URL,
+): string | null {
+  const url = canonicalHoopCheckUrl(input);
+  if (!url) return null;
+  return `${url.pathname}${url.search}`;
+}
+
 export type ShareResult = "shared" | "copied" | "unsupported" | "failed";
 
 /**
