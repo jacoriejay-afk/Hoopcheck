@@ -19,7 +19,12 @@ export function canonicalHoopCheckUrl(input: string | URL): URL | null {
   try {
     const url = input instanceof URL ? new URL(input.href) : new URL(input, HOOPCHECK_ORIGIN);
     if (url.protocol !== "https:" || url.origin !== HOOPCHECK_ORIGIN) return null;
+
+    // Encoded slashes/backslashes can be decoded by downstream routers and turn
+    // a single allowlisted segment into a different path.
+    if (/%(?:2f|5c)/i.test(url.pathname)) return null;
     if (!ALLOWED_PATHS.some((path) => path.test(url.pathname))) return null;
+
     // Fragments are not needed for entity links and may be used to confuse
     // route comparisons between native and web entry points.
     url.hash = "";
