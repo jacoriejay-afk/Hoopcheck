@@ -11,7 +11,7 @@ const SHELL_URLS = [
   "/manifest.webmanifest",
   "/icons/hoopcheck-192.svg",
   "/icons/hoopcheck-512.svg",
-  "/icons/apple-touch-icon.svg"
+  "/apple-icon"
 ];
 
 self.addEventListener("install", (event) => {
