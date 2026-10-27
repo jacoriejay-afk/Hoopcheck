@@ -37,6 +37,19 @@ export default function PlayerProfilePage() {
   const [canManageJourney, setCanManageJourney] = useState(false);
   const [viewerType, setViewerType] = useState("");
   const [connectionAccepted, setConnectionAccepted] = useState(false);
+  const [blockedByViewer, setBlockedByViewer] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      if (!player?.id) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.id === player.id) { if (active) setBlockedByViewer(false); return; }
+      const { data } = await supabase.from("user_blocks").select("id").eq("blocker_id", user.id).eq("blocked_id", player.id).maybeSingle();
+      if (active) setBlockedByViewer(!!data);
+    })();
+    return () => { active = false; };
+  }, [player?.id]);
 
   useEffect(() => {
     async function load() {
@@ -134,6 +147,10 @@ export default function PlayerProfilePage() {
         </div>
       </main>
     );
+  }
+
+  if (blockedByViewer && player) {
+    return <main className="page-shell"><div className="page-container"><section className="hero-card"><p className="eyebrow">BLOCKED PROFILE</p><h1>You've blocked this player</h1><p className="muted">This profile and its content are hidden while the block is active.</p><BlockUserAction userId={player.id} onChange={setBlockedByViewer} /></section></div></main>;
   }
 
   return (
