@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
@@ -14,6 +15,7 @@ const normalizeTheme = (value: unknown): Theme =>
   value === "dark" || value === "light" || value === "system" ? value : value === "dynamic" ? "dark" : "system";
 
 export default function SettingsPage() {
+  const router = useRouter();
   const { t, language: activeLanguage, setLanguage: applyLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
@@ -26,6 +28,10 @@ export default function SettingsPage() {
   const [teamSaving, setTeamSaving] = useState(false);
   const [teamMessage, setTeamMessage] = useState("");
   const [isPlayer, setIsPlayer] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteMessage, setDeleteMessage] = useState("");
 
   useEffect(() => {
     setLanguage(activeLanguage);
@@ -167,6 +173,41 @@ export default function SettingsPage() {
             <div className="motion-demo"><span /><span /><span /></div>
           </section>
         </div>
+        <section className="settings-card" aria-labelledby="hc-legal-heading" style={{ marginTop: 16 }}>
+          <span className="card-kicker">TRUST &amp; SAFETY</span>
+          <h2 id="hc-legal-heading">Legal and community safety</h2>
+          <p className="muted">Review the rules for posting, reporting, blocking, and how account data is handled.</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            <Link className="btn dark" href="/terms">Terms of Service</Link>
+            <Link className="btn dark" href="/privacy">Privacy Policy</Link>
+            <Link className="btn dark" href="/community-guidelines">Community Guidelines</Link>
+          </div>
+        </section>
+        <section className="settings-card" aria-labelledby="hc-delete-account-heading" style={{ marginTop: 16 }}>
+          <span className="card-kicker">ACCOUNT CONTROL</span>
+          <h2 id="hc-delete-account-heading">Delete Account</h2>
+          <p className="muted">Permanently delete your HoopCheck account and associated profile, reviews, posts, and messages. This cannot be undone. Any active subscription is handled before deletion.</p>
+          {!deleteOpen ? <button type="button" className="btn dark" onClick={() => { setDeleteOpen(true); setDeleteMessage(""); }}>Delete Account</button> : <div style={{ display: "grid", gap: 10, maxWidth: 520 }}>
+            <p role="alert">This action is permanent. Type <strong>DELETE</strong> to confirm.</p>
+            <label htmlFor="hc-delete-confirmation">Confirmation</label>
+            <input id="hc-delete-confirmation" autoComplete="off" value={deleteConfirmation} onChange={event => setDeleteConfirmation(event.target.value)} placeholder="Type DELETE" />
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <button type="button" className="btn" disabled={deleteBusy || deleteConfirmation !== "DELETE"} onClick={async () => {
+                setDeleteBusy(true); setDeleteMessage("");
+                try {
+                  const response = await fetch("/api/account/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirmation: "DELETE" }) });
+                  const payload = await response.json();
+                  if (!response.ok) throw new Error(payload.error || "Account deletion failed. Your account has not been deleted.");
+                  await supabase.auth.signOut();
+                  router.push("/");
+                } catch (error) { setDeleteMessage(error instanceof Error ? error.message : "Account deletion failed."); }
+                finally { setDeleteBusy(false); }
+              }}>{deleteBusy ? "Deleting…" : "Permanently Delete Account"}</button>
+              <button type="button" className="btn dark" disabled={deleteBusy} onClick={() => { setDeleteOpen(false); setDeleteConfirmation(""); setDeleteMessage(""); }}>Cancel</button>
+            </div>
+            {deleteMessage && <p role="alert" className="message error">{deleteMessage}</p>}
+          </div>}
+        </section>
         <ThemeToast className="settings-save" tone={saving ? "info" : "success"}>{saving ? t("saving") : saveMessage || t("saved") + " " + t("otherPreferencesAutoSave")}</ThemeToast>
       </section>
     </main>
