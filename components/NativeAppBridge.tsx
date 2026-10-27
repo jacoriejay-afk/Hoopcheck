@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import NativeShareButton from "./NativeShareButton";
 
 /**
  * Routes inbound universal/custom links into the existing Next.js router.
@@ -11,6 +12,10 @@ import { useRouter } from "next/navigation";
  */
 export default function NativeAppBridge() {
   const router = useRouter();
+  const pathname = usePathname();
+  const isPublicProfile = /^\/(teams|womens|coaches|leagues|agents|players)\/[^/]+\/?$/.test(
+    pathname || "",
+  );
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -46,5 +51,15 @@ export default function NativeAppBridge() {
     };
   }, [router]);
 
-  return null;
+  if (!Capacitor.isNativePlatform() || !isPublicProfile) return null;
+
+  return (
+    <NativeShareButton
+      title={typeof document !== "undefined" ? document.title : "HoopCheck"}
+      text="Check out this basketball profile on HoopCheck."
+      className="native-profile-share"
+    >
+      Share
+    </NativeShareButton>
+  );
 }
