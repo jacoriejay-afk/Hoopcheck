@@ -23,10 +23,17 @@ test("accepts canonical entity routes on the production origin", () => {
 });
 
 test("rejects non-HTTPS and untrusted origins", () => {
-  assert.equal(canonicalHoopCheckUrl("http://hoopcheck.online/teams/1"), null);
-  assert.equal(canonicalHoopCheckUrl("https://evil.example/teams/1"), null);
-  assert.equal(canonicalHoopCheckUrl("//evil.example/teams/1"), null);
-  assert.equal(canonicalHoopCheckUrl("javascript:alert(1)"), null);
+  for (const url of [
+    "http://hoopcheck.online/teams/1",
+    "https://evil.example/teams/1",
+    "//evil.example/teams/1",
+    "javascript:alert(1)",
+    "https://hoopcheck.online.evil.example/teams/1",
+    "https://evil-hoopcheck.online/teams/1",
+    "https://hoopcheck.online@evil.example/teams/1",
+  ]) {
+    assert.equal(canonicalHoopCheckUrl(url), null, `unexpectedly accepted: ${url}`);
+  }
 });
 
 test("rejects credentials embedded in an otherwise trusted URL", () => {
@@ -35,10 +42,15 @@ test("rejects credentials embedded in an otherwise trusted URL", () => {
 });
 
 test("rejects paths outside the entity allowlist", () => {
-  assert.equal(canonicalHoopCheckUrl("/account"), null);
-  assert.equal(canonicalHoopCheckUrl("/teams"), null);
-  assert.equal(canonicalHoopCheckUrl("/teams/1/extra"), null);
-  assert.equal(canonicalHoopCheckUrl("/api/admin"), null);
+  for (const path of [
+    "/account",
+    "/teams",
+    "/teams/1/extra",
+    "/api/admin",
+    "/teams/",
+  ]) {
+    assert.equal(canonicalHoopCheckUrl(path), null, `unexpectedly accepted: ${path}`);
+  }
 });
 
 test("rejects encoded separators inside entity IDs", () => {
@@ -49,10 +61,7 @@ test("rejects encoded separators inside entity IDs", () => {
 
 test("normalizes relative links, preserves query, and removes fragments", () => {
   const result = getShareableEntityUrl("/teams/team-123?source=share#details");
-  assert.equal(
-    result,
-    "https://hoopcheck.online/teams/team-123?source=share",
-  );
+  assert.equal(result, "https://hoopcheck.online/teams/team-123?source=share");
 });
 
 test("does not accept a trusted hostname with a different port", () => {
@@ -69,4 +78,8 @@ test("maps validated deep links to internal routes without trusting raw URLs", (
     null,
   );
   assert.equal(getHoopCheckDeepLinkRoute("https://hoopcheck.online/account"), null);
+  assert.equal(
+    getHoopCheckDeepLinkRoute("https://hoopcheck.online:444/teams/team-123"),
+    null,
+  );
 });
