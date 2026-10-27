@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 const REASONS = ["Spam or advertising", "Harassment or abusive content", "Hate or discrimination", "Sexual or violent content", "Threats or dangerous content", "Personal information", "False or misleading information", "Other"];
-export default function ReportContentAction({ contentType, contentId, contentSnapshot = "" }: { contentType: "review" | "hoopfeed_post" | "fan_feed_post" | "chat_message"; contentId: string; contentSnapshot?: string }) {
+export default function ReportContentAction({ contentType, contentId, contentSnapshot = "" }: { contentType: "review" | "hoopfeed_post" | "fan_feed_post" | "chat_message" | "player_chat_message"; contentId: string; contentSnapshot?: string }) {
   const [open, setOpen] = useState(false); const [reason, setReason] = useState(REASONS[0]); const [busy, setBusy] = useState(false); const [message, setMessage] = useState("");
   async function submit() {
     setBusy(true); setMessage("");
