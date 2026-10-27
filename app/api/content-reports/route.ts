@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { authenticateModerationRequest } from "../../../lib/server/review-moderation";
-const TYPES = ["review", "hoopfeed_post", "chat_message"] as const;
+const TYPES = ["review", "hoopfeed_post", "fan_feed_post", "chat_message"] as const;
 const REASONS = ["Spam or advertising", "Harassment or abusive content", "Hate or discrimination", "Sexual or violent content", "Threats or dangerous content", "Personal information", "False or misleading information", "Other"] as const;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export async function POST(request: Request) {
