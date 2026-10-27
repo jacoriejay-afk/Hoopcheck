@@ -1,8 +1,9 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import type { Metadata } from "next";
+import { SITE_URL } from "./site-url";
 
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://hoopcheck.online").replace(/\/$/, "");
+const siteUrl = SITE_URL;
 const defaultDescription = "Real reviews of basketball teams, coaches, leagues and agents, written by players. Check the team before you sign.";
 
 type EntityType = "team" | "coach" | "league" | "player" | "agent" | "womens_team";

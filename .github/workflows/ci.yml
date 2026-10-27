@@ -20,7 +20,7 @@ jobs:
       STRIPE_WEBHOOK_SECRET: ci-placeholder
       STRIPE_PRO_PRICE_ID: price_ci_pro
       STRIPE_PREMIUM_PRICE_ID: price_ci_premium
-      NEXT_PUBLIC_SITE_URL: https://ci.invalid
+      NEXT_PUBLIC_SITE_URL: https://hoopcheck.online
       HOOPCHECK_THEME_TEST_MODE: "true"
     steps:
       - name: Checkout
@@ -62,6 +62,21 @@ jobs:
         run: |
           npm run start -- --hostname 127.0.0.1 > /tmp/hoopcheck-next.log 2>&1 &
           echo $! > /tmp/hoopcheck-next.pid
+
+      - name: Verify canonical sitemap and robots host
+        run: node scripts/domain-url-check.mjs
+
+      - name: Search repository for legacy domain references
+        shell: bash
+        run: |
+          OLD_HOST="$(printf 'hoopcheck.%s' 'com')"
+          if grep -RIn --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=coverage "$OLD_HOST" .; then
+            echo "DOMAIN_REFERENCE_SEARCH=FAIL"
+            exit 1
+          else
+            echo "DOMAIN_REFERENCE_SEARCH=PASS"
+            echo "DOMAIN_REFERENCE_MATCHES=0"
+          fi
 
       - name: Verify computed theme styles and capture English screenshots
         env:

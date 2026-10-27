@@ -144,9 +144,9 @@ try {
         else if (url.pathname.includes("/rest/v1/feed_post_comments")) data = [];
         else if (url.pathname.includes("/rest/v1/feed_post_checks")) data = [];
         else if (url.pathname.includes("/rest/v1/reviews")) data = [];
-        else if (url.pathname.includes("/rest/v1/teams")) data = [];
-        else if (url.pathname.includes("/rest/v1/coaches")) data = [];
-        else if (url.pathname.includes("/rest/v1/leagues")) data = [];
+        else if (url.pathname.includes("/rest/v1/teams")) data = [teamFixture];
+        else if (url.pathname.includes("/rest/v1/coaches")) data = [coachFixture];
+        else if (url.pathname.includes("/rest/v1/leagues")) data = [leagueFixture];
         await route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -244,6 +244,8 @@ try {
     await page.addInitScript(({ themePreference, authSession, language }) => {
       localStorage.setItem("hoopcheck-theme", themePreference);
       localStorage.setItem("hoopcheck-language", language);
+      document.documentElement.style.setProperty("--hc-safe-area-top", "47px");
+      document.documentElement.style.setProperty("--hc-safe-area-bottom", "34px");
       localStorage.setItem("sb-ci-auth-token", JSON.stringify(authSession));
     }, { themePreference: theme, authSession: session, language: testLanguage });
     await page.route("https://ci.invalid/**", async (route) => {
@@ -300,6 +302,14 @@ try {
       } catch (error) {
         navigationError = error instanceof Error ? error.message : String(error);
       }
+      if (requestedPath === "/account") {
+        const expectedAccountHeading = testLanguage === "es" ? "PREFERENCIAS DE LA CUENTA" : "ACCOUNT PREFERENCES";
+        await page.waitForFunction((expected) => document.body.innerText.toLocaleUpperCase().includes(expected), expectedAccountHeading, { timeout: 15000 });
+      }
+      if (requestedPath === "/search") {
+        const expectedSearchHeading = testLanguage === "es" ? "CONEXIÓN ENTRE JUGADORES" : "PLAYER CONNECT";
+        await page.waitForFunction((expected) => document.body.innerText.toLocaleUpperCase().includes(expected), expectedSearchHeading, { timeout: 15000 });
+      }
       const result = await page.evaluate(({ requestedPath, navigationError }) => {
         const main = document.querySelector("main");
         const color = (element) => element ? getComputedStyle(element).backgroundColor : null;
@@ -311,6 +321,24 @@ try {
           body: color(document.body),
           pageWrapper: color(main),
           mainClass: main?.className || null,
+          safeAreaTop: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hc-safe-area-top")) || 0,
+          bodyTopPadding: parseFloat(getComputedStyle(document.body).paddingTop) || 0,
+          headerTop: document.querySelector(".site-header-global") ? document.querySelector(".site-header-global").getBoundingClientRect().top : null,
+          mainTop: main ? main.getBoundingClientRect().top : null,
+          safeAreaBottom: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hc-safe-area-bottom")) || 0,
+          tabBarBottomPadding: document.querySelector(".bottom-nav") ? parseFloat(getComputedStyle(document.querySelector(".bottom-nav")).paddingBottom) || 0 : null,
+          criticalControlContrast: Array.from(document.querySelectorAll(".hc-dashboard-edit-profile,.hc-dashboard-avatar,.player-avatar-fallback,.hc-mobile-menu-toggle,.quick-access-count,.quick-card-count,.count-badge,.hc-count-badge,.hc-mobile-section-count"))
+            .filter((element) => element.getClientRects().length)
+            .map((element) => {
+              const style = getComputedStyle(element);
+              const rgb = (value) => { const m=value.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/); return m ? [Number(m[1]),Number(m[2]),Number(m[3])] : null; };
+              const lum = (c) => c.slice(0,3).map(v=>{const x=v/255;return x<=0.04045?x/12.92:((x+0.055)/1.055)**2.4;}).reduce((a,v,i)=>a+v*[0.2126,0.7152,0.0722][i],0);
+              const fg=rgb(style.color); let node=element; let bg=null;
+              while(node && node!==document.documentElement){const candidate=rgb(getComputedStyle(node).backgroundColor);if(candidate && getComputedStyle(node).backgroundColor!=="rgba(0, 0, 0, 0)"){bg=candidate;break;}node=node.parentElement;}
+              if(!fg || !bg)return {selector:typeof element.className==="string"?element.className:element.tagName,ratio:0,color:style.color,background:bg};
+              const a=lum(fg),b=lum(bg);return {selector:typeof element.className==="string"?element.className:element.tagName,ratio:(Math.max(a,b)+0.05)/(Math.min(a,b)+0.05),color:style.color,background:bg};
+            })
+            .filter((item) => item.ratio < 4.5),
           whiteSurfaceOffenders: Array.from(document.querySelectorAll("main *"))
             .filter((element) => {
               const style = getComputedStyle(element);
@@ -372,6 +400,11 @@ try {
       if (result.body !== expectedPage) errors.push("body background mismatch");
       if (result.pageWrapper && result.pageWrapper !== expectedPage) errors.push("main background mismatch");
       if (result.navigationError) errors.push("navigation error");
+      if (result.bodyTopPadding < result.safeAreaTop - 1) errors.push("top safe-area padding missing");
+      if (result.headerTop !== null && result.headerTop < result.safeAreaTop - 1) errors.push("header overlaps the status-bar safe area");
+      if (result.mainTop !== null && result.mainTop < result.safeAreaTop - 1) errors.push("main content overlaps the status-bar safe area");
+      if (result.tabBarBottomPadding !== null && result.tabBarBottomPadding < result.safeAreaBottom - 1) errors.push("bottom tab bar overlaps the home-indicator safe area");
+      if (result.criticalControlContrast.length) errors.push("low contrast critical controls: " + JSON.stringify(result.criticalControlContrast));
       if (theme === "dark" && result.whiteSurfaceOffenders.length) errors.push("white surface offenders: " + JSON.stringify(result.whiteSurfaceOffenders));
       if (result.lowContrastText.length) errors.push("low contrast text: " + JSON.stringify(result.lowContrastText));
       if (["/dashboard", "/search", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2"].includes(requestedPath)) {
@@ -392,6 +425,33 @@ try {
         animations: "disabled",
       });
       routeSweepResults.push({ theme, ...result, status: errors.length ? "FAIL" : result.pageWrapper ? "PASS" : "NO_MAIN", reason: errors.join("; ") || (result.pageWrapper ? "" : "route rendered no main element") });
+    }
+    if (testLanguage === "en") {
+      await page.goto(baseURL + "/settings", { waitUntil: "domcontentloaded" });
+      await page.locator(".language-select").waitFor({ state: "visible", timeout: 30000 });
+      const beforeSwitchOrigin = await page.evaluate(() => performance.timeOrigin);
+      await page.screenshot({ path: `${artifactsDir}/language-live-01-settings-en.png`, fullPage: true, animations: "disabled" });
+      await page.locator(".language-select").selectOption("es");
+      await page.waitForFunction(() => document.documentElement.lang === "es", null, { timeout: 10000 });
+      await page.getByRole("heading", { name: "AJUSTES" }).waitFor({ state: "visible", timeout: 10000 });
+      await page.screenshot({ path: `${artifactsDir}/language-live-02-settings-es.png`, fullPage: true, animations: "disabled" });
+      assert.equal(await page.evaluate(() => performance.timeOrigin), beforeSwitchOrigin, "language selection reloaded the document");
+      await page.locator("a.site-header-brand").click();
+      await page.waitForURL(/\/dashboard$/, { timeout: 15000 });
+      await page.getByText("TUS ACCESOS DIRECTOS", { exact: false }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByText("ACCESO RÁPIDO", { exact: false }).waitFor({ state: "visible", timeout: 15000 });
+      await page.screenshot({ path: `${artifactsDir}/language-live-03-dashboard-es.png`, fullPage: true, animations: "disabled" });
+      assert.equal(await page.evaluate(() => performance.timeOrigin), beforeSwitchOrigin, "dashboard navigation performed a full document reload");
+      await page.locator('a[href="/teams"]').first().click();
+      await page.waitForURL(/\/teams$/, { timeout: 15000 });
+      await page.locator('a[href="/teams/' + teamFixture.id + '"]').first().click();
+      await page.waitForURL(new RegExp("/teams/" + teamFixture.id + "$"), { timeout: 15000 });
+      await page.waitForFunction(() => document.body.innerText.toLocaleUpperCase().includes("TABLERO DE PLANTILLA"), null, { timeout: 15000 });
+      const translatedTeamText = (await page.locator("body").innerText()).toLocaleUpperCase();
+      assert.ok(translatedTeamText.includes("TABLERO DE PLANTILLA"), "team page did not retain Spanish after client-side navigation");
+      await page.screenshot({ path: `${artifactsDir}/language-live-04-team-es.png`, fullPage: true, animations: "disabled" });
+      assert.equal(await page.evaluate(() => performance.timeOrigin), beforeSwitchOrigin, "team navigation performed a full document reload");
+      console.log("LANGUAGE_LIVE_SWITCH=PASS; reloads=0; screenshots=4");
     }
     await context.close();
   }
