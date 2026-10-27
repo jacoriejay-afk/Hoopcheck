@@ -10,18 +10,24 @@ export default function ShareEntityButton({ path, title, text }: Props) {
   const [busy, setBusy] = useState(false);
 
   async function share() {
+    if (busy) return;
     setBusy(true);
     setMessage("");
-    const result = await shareHoopCheckEntity({
-      url: path,
-      title,
-      text: text || `View ${title} on HoopCheck`,
-    });
-    if (result === "shared") setMessage("Share sheet opened.");
-    else if (result === "copied") setMessage("Link copied.");
-    else if (result === "unsupported") setMessage("Sharing is not available on this device.");
-    else setMessage("Sharing was cancelled or unavailable.");
-    setBusy(false);
+    try {
+      const result = await shareHoopCheckEntity({
+        url: path,
+        title,
+        text: text || `View ${title} on HoopCheck`,
+      });
+      if (result === "shared") setMessage("Share sheet opened.");
+      else if (result === "copied") setMessage("Link copied.");
+      else if (result === "unsupported") setMessage("Sharing is not available on this device.");
+      else setMessage("Sharing was cancelled or unavailable.");
+    } catch {
+      setMessage("Unable to share this link right now.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
