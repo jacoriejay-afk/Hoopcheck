@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     content_id: body.reviewId,
     reporter_id: auth.user.id,
     content_owner_id: review.author_id,
-    content_snapshot: [review.title, review.body].filter(Boolean).join("\\n").slice(0, 6000),
+    content_snapshot: [review.title, review.body].filter(Boolean).join("\n").slice(0, 6000),
     reason: body.reason,
     status: "open",
   });
