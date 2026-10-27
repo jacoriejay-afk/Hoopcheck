@@ -3,6 +3,8 @@
 :root {
   --hc-safe-area-top: env(safe-area-inset-top, 0px);
   --hc-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --hc-status-live-bg: #ED3028;
+  --hc-status-live-fg: #FFFFFF;
 }
 html, body { min-width: 0; }
 body {
