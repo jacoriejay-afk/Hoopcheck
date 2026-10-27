@@ -30,3 +30,14 @@ Implement a server-verified provider entitlement layer (for example, a separate 
 - Decision gate before creating native projects: establish a production architecture that preserves the existing Next.js server/API functionality while providing the same UI codebase in the native container. A plain static export is not assumed to work because the current app uses server/API routes. Do not switch to Expo or fork the UI.
 - Apple IAP should be presented in the iOS app for new digital subscription purchases. Existing paid web/Stripe subscribers must retain access, but the app must not use in-app UI to improperly direct users to external purchasing; confirm the applicable storefront-specific rules before enabling web billing links.
 - The Apple guidelines were checked on 2026-10-27; Apple announced a guideline revision on 2026-10-16. [Apple's update notice](https://developer-rno.apple.com/news/?id=92th7e5i)
+
+
+## Latest continuation — 2026-10-27
+
+Added explicit acceptance contracts to [the native test matrix](./native-test-matrix.md) for:
+- choosing and validating a production delivery architecture without assuming static export works;
+- accepting only canonical `https://hoopcheck.online` deep links;
+- associating push tokens to authenticated users and testing actual push taps across app lifecycle states;
+- requiring server-side Apple transaction verification, trusted account binding, and a shared entitlement resolver before any Apple purchase can unlock access.
+
+These are implementation gates, not completed features. No Capacitor dependency install, native platform project, Apple product, Firebase project, signed build, or real-device test has been completed by this continuation. The app config still points to the live hosted site and is not certified as store-ready. Do not apply the Apple migration or enable purchase UI based on these docs alone.
