@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { usePathname, useRouter } from "next/navigation";
@@ -13,12 +13,15 @@ import NativeShareButton from "./NativeShareButton";
 export default function NativeAppBridge() {
   const router = useRouter();
   const pathname = usePathname();
+  const [isNative, setIsNative] = useState(false);
   const isPublicProfile = /^\/(teams|womens|coaches|leagues|agents|players)\/[^/]+\/?$/.test(
     pathname || "",
   );
 
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
+    const nativeRuntime = Capacitor.isNativePlatform();
+    setIsNative(nativeRuntime);
+    if (!nativeRuntime) return;
 
     let disposed = false;
     let handle: { remove: () => Promise<void> } | undefined;
@@ -51,7 +54,7 @@ export default function NativeAppBridge() {
     };
   }, [router]);
 
-  if (!Capacitor.isNativePlatform() || !isPublicProfile) return null;
+  if (!isNative || !isPublicProfile) return null;
 
   return (
     <NativeShareButton
