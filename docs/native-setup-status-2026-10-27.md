@@ -23,3 +23,10 @@ Implement a server-verified provider entitlement layer (for example, a separate 
 - Existing web Stripe prices and terms are not modified.
 - Existing plan feature contents are not modified.
 - Do not merge to production without explicit approval.
+
+## App Store policy gate added during continued work
+- Apple's currently published App Review Guidelines say apps should go beyond a repackaged website under 4.2, and require in-app purchase for digital features/subscriptions under 3.1.1. The current Capacitor config points the WebView at the live remote site; this is a technical scaffold, not an App Store-ready packaging strategy. A remote-only shell has meaningful rejection risk unless native functionality and app-specific utility are substantial. [Apple App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
+- Do not treat `server.url` as the production app delivery architecture without review. Capacitor's environment guidance describes macOS/Xcode as the standard iOS build environment and notes cloud builds as an alternative; Capacitor 8 requires Xcode 26+. [Capacitor environment setup](https://capacitorjs.com/docs/getting-started/environment-setup)
+- Decision gate before creating native projects: establish a production architecture that preserves the existing Next.js server/API functionality while providing the same UI codebase in the native container. A plain static export is not assumed to work because the current app uses server/API routes. Do not switch to Expo or fork the UI.
+- Apple IAP should be presented in the iOS app for new digital subscription purchases. Existing paid web/Stripe subscribers must retain access, but the app must not use in-app UI to improperly direct users to external purchasing; confirm the applicable storefront-specific rules before enabling web billing links.
+- The Apple guidelines were checked on 2026-10-27; Apple announced a guideline revision on 2026-10-16. [Apple's update notice](https://developer-rno.apple.com/news/?id=92th7e5i)
