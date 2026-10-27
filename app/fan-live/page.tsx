@@ -67,9 +67,10 @@ export default function FanLivePage() {
       (!subscription?.current_period_end || new Date(subscription.current_period_end)>new Date());
     setAllowed(Boolean(active));
     if(!active){setGames([]);setSelected(null);setLoading(false);return;}
-    const [{data:gameRows,error:gameError},{data:controls}] = await Promise.all([
+    const [{data:gameRows,error:gameError},{data:controls},{data:globalBlocks}] = await Promise.all([
       supabase.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_name,country,period_label").in("status",["scheduled","live","final","cancelled","postponed","abandoned"]).order("scheduled_at",{ascending:true,nullsFirst:false}).limit(500),
-      supabase.from("fan_live_chat_user_controls").select("target_user_id,is_blocked,is_muted").eq("user_id",user.id)
+      supabase.from("fan_live_chat_user_controls").select("target_user_id,is_blocked,is_muted").eq("user_id",user.id),
+      supabase.from("user_blocks").select("blocked_id").eq("blocker_id",user.id)
     ]);
     if(gameError) setMessage("Game updates are temporarily unavailable. Reconnecting…");
     const rawGames=(gameRows||[]) as Game[];
@@ -79,7 +80,7 @@ export default function FanLivePage() {
     const next=rawGames.filter(g=>sideIds.has(g.team_id));
     setGames(next);
     setMutedUsers(new Set((controls||[]).filter((x:any)=>x.is_muted).map((x:any)=>x.target_user_id)));
-    setBlockedUsers(new Set((controls||[]).filter((x:any)=>x.is_blocked).map((x:any)=>x.target_user_id)));
+    setBlockedUsers(new Set([...(controls||[]).filter((x:any)=>x.is_blocked).map((x:any)=>x.target_user_id), ...(globalBlocks||[]).map((x:any)=>x.blocked_id)]));
     const ids=Array.from(new Set(next.flatMap(g=>[g.team_id,g.opponent_team_id].filter((x):x is string=>Boolean(x)))));
     const {data:teamRows}=ids.length?await supabase.from("teams").select("id,name,logo_url").in("id",ids):{data:[] as Team[]};
     setTeams(Object.fromEntries((teamRows||[]).map((t:Team)=>[t.id,t])));
