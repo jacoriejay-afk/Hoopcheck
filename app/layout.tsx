@@ -65,7 +65,7 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "HoopCheck", statusBarStyle: "black-translucent" },
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml", sizes: "any" }],
-    apple: [{ url: "/icons/apple-touch-icon.svg", sizes: "180x180", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
   },
 };
 
