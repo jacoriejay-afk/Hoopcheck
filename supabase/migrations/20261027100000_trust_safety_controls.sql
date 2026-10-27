@@ -1,7 +1,7 @@
 -- Trust and safety: unified content reports and user blocks.
 create table if not exists public.content_reports (
   id uuid primary key default gen_random_uuid(),
-  content_type text not null check (content_type in ('review','hoopfeed_post','fan_feed_post','chat_message')),
+  content_type text not null check (content_type in ('review','hoopfeed_post','fan_feed_post','chat_message','player_chat_message')),
   content_id uuid not null,
   reporter_id uuid references auth.users(id) on delete set null,
   content_owner_id uuid references auth.users(id) on delete set null,
