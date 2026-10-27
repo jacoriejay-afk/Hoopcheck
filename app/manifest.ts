@@ -5,19 +5,37 @@ export default function manifest(): MetadataRoute.Manifest {
     id: "/",
     name: "HoopCheck",
     short_name: "HoopCheck",
-    description: "Research coaches, professional basketball teams, and leagues worldwide.",
+    description: "Real reviews of basketball teams, coaches, leagues and agents, written by players. Check the team before you sign.",
     start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#F7F7F5",
-    theme_color: "#FF5A1F",
+    background_color: "#0A0A0A",
+    theme_color: "#0A0A0A",
     orientation: "portrait-primary",
     icons: [
       {
-        src: "/favicon.svg",
-        sizes: "any",
+        src: "/icons/hoopcheck-192.svg",
+        sizes: "192x192",
         type: "image/svg+xml",
         purpose: "any"
+      },
+      {
+        src: "/icons/hoopcheck-192.svg",
+        sizes: "192x192",
+        type: "image/svg+xml",
+        purpose: "maskable"
+      },
+      {
+        src: "/icons/hoopcheck-512.svg",
+        sizes: "512x512",
+        type: "image/svg+xml",
+        purpose: "any"
+      },
+      {
+        src: "/icons/hoopcheck-512.svg",
+        sizes: "512x512",
+        type: "image/svg+xml",
+        purpose: "maskable"
       }
     ]
   };
