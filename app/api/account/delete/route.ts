@@ -61,6 +61,30 @@ async function getUser() {
   return { user, error };
 }
 
+async function deleteUserContent(admin: { from: (table: string) => any }, userId: string) {
+  // Remove authored child records first so no content survives if the schema
+  // does not cascade a particular relationship. Safety reports are deliberately
+  // retained as moderation records; their user foreign keys become null.
+  const operations: Array<[string, string, string]> = [
+    ["feed_post_comments", "author_id", userId],
+    ["fan_feed_comments", "author_id", userId],
+    ["feed_post_comments", "author_id", userId],
+    ["feed_posts", "author_id", userId],
+    ["fan_feed_posts", "author_id", userId],
+    ["reviews", "author_id", userId],
+    ["fan_live_chat_messages", "user_id", userId],
+    ["player_contact_messages", "sender_id", userId],
+    ["fan_feed_checks", "user_id", userId],
+    ["fan_feed_archives", "user_id", userId],
+  ];
+  for (const [table, column, value] of operations) {
+    const { error } = await admin.from(table).delete().eq(column, value);
+    if (error) {
+      throw new Error(`Unable to remove account content from ${table}: ${error.message}`);
+    }
+  }
+}
+
 async function removeUserStorage(
   admin: { storage: any },
   userId: string
@@ -232,6 +256,19 @@ export async function POST(request: Request) {
       {
         error:
           "We could not finish removing your account files safely. Your account was not deleted. Please contact support.",
+      },
+      { status: 502 }
+    );
+  }
+
+  try {
+    await deleteUserContent(admin, user.id);
+  } catch (contentError) {
+    console.error("Content cleanup during account deletion failed:", contentError);
+    return NextResponse.json(
+      {
+        error:
+          "We could not finish removing your content safely. Your account was not deleted. Please contact support.",
       },
       { status: 502 }
     );
