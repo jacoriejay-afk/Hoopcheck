@@ -66,6 +66,14 @@ function PlayerUsernameConnect() {
       setMessage("No player found with that username.");
       return;
     }
+    const { data: { user: viewer } } = await supabase.auth.getUser();
+    if (viewer) {
+      const { data: blockedRows } = await supabase.from("user_blocks").select("blocked_id").eq("blocker_id", viewer.id);
+      if ((blockedRows || []).some((row: any) => row.blocked_id === data.id)) {
+        setMessage("No player found with that username.");
+        return;
+      }
+    }
     setPlayer(data);
   }
 
