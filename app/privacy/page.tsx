@@ -67,6 +67,7 @@ export default function PrivacyPage() {
           <h2>13. Blocking and Safety Reports</h2>
           <p>Users can report reviews, HoopFeed posts, chat messages, and profiles for moderation and can block other users. Reports may include the reported content snapshot, the reason selected, reporter identity, and timestamps so moderators can investigate. We use this information for safety, enforcement, abuse prevention, and dispute handling, and restrict access to authorized moderation personnel.</p>
           <p>Blocking is intended to reduce exposure to another user. Some records may remain in moderation or legal records where needed for safety, security, fraud prevention, or legal compliance.</p>
+          <p>HoopCheck has zero tolerance for objectionable content such as exploitation, credible threats, targeted harassment, hate or discriminatory abuse, non-consensual intimate imagery, or content that puts people at risk. Reports are reviewed under the Terms and Community Guidelines, and violating content may be removed and accounts restricted or terminated.</p>
 
           <h2>13. Account Deletion</h2>
           <p>You can request or initiate account deletion through the available HoopCheck account controls. When deletion is completed, user-owned account data and user-uploaded files are removed or de-identified according to the platform's deletion process.</p>
