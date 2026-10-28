@@ -44,7 +44,7 @@ export function getApplePlanForProductId(
  */
 export function classifyAppleNotification(
   notificationType: string | null | undefined,
-  subtype?: string | null,
+  _subtype?: string | null,
 ): AppleNotificationDecision {
   switch (notificationType) {
     case "SUBSCRIBED":
@@ -52,7 +52,6 @@ export function classifyAppleNotification(
     case "DID_RECOVER":
     case "OFFER_REDEEMED":
     case "PRICE_INCREASE":
-    case "GRACE_PERIOD_EXPIRED":
     case "DID_CHANGE_RENEWAL_STATUS":
     case "DID_CHANGE_RENEWAL_PREF":
     case "RENEWAL_EXTENDED":
@@ -68,7 +67,7 @@ export function classifyAppleNotification(
     case "DID_FAIL_TO_RENEW":
       // During billing retry / grace period, entitlement depends on the verified
       // renewal state and current policy; always refresh from verified status.
-      return subtype === "GRACE_PERIOD" ? "refresh_entitlement" : "refresh_entitlement";
+      return "refresh_entitlement";
 
     default:
       return "record_only";
