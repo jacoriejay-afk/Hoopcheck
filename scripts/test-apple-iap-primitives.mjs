@@ -426,4 +426,48 @@ const retry = await notificationHandler.handleAppleServerNotification({
 assert.deepEqual(retry, { outcome: "duplicate", notificationUUID: "notification-123" });
 assert.equal(ledgerProcessed, true, "retry must complete an unprocessed notification");
 
+
+
+// Mobile account-token client contract tests (fetch is mocked; no network calls).
+const mobileAccountToken = await loadTypeScriptModule("../apps/mobile/src/billing/apple-account-token.ts");
+const expectedAppAccountToken = "550e8400-e29b-41d4-a716-446655440000";
+let tokenRequestUrl = "";
+let tokenRequestHeaders = {};
+const mobileToken = await mobileAccountToken.getAppleAppAccountToken(
+  "https://hoopcheck.example/",
+  "supabase-access-token",
+  async (input, init) => {
+    tokenRequestUrl = String(input);
+    tokenRequestHeaders = init.headers;
+    return new Response(JSON.stringify({ appAccountToken: expectedAppAccountToken }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  },
+);
+assert.equal(mobileToken, expectedAppAccountToken);
+assert.equal(tokenRequestUrl, "https://hoopcheck.example/api/apple-iap/account-token");
+assert.equal(tokenRequestHeaders.Authorization, "Bearer supabase-access-token");
+await assert.rejects(
+  mobileAccountToken.getAppleAppAccountToken("https://hoopcheck.example", "", async () => {
+    throw new Error("fetch must not run without a token");
+  }),
+  mobileAccountToken.AppleAccountTokenError,
+);
+await assert.rejects(
+  mobileAccountToken.getAppleAppAccountToken("http://untrusted.example", "access-token", async () => {
+    throw new Error("fetch must not run for an insecure origin");
+  }),
+  mobileAccountToken.AppleAccountTokenError,
+);
+await assert.rejects(
+  mobileAccountToken.getAppleAppAccountToken("https://hoopcheck.example", "access-token", async () =>
+    new Response(JSON.stringify({ appAccountToken: "not-a-uuid" }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    }),
+  ),
+  mobileAccountToken.AppleAccountTokenError,
+);
+
 console.log("Apple IAP primitive tests passed (local pure-logic checks only).");
