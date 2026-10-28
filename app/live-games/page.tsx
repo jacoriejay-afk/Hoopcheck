@@ -68,7 +68,7 @@ function countryFlag(country: string) {
   return COUNTRY_FLAGS[country.trim().toLocaleLowerCase()] || "🌍";
 }
 function countryAnchor(country: string) {
-  return `country-${country.toLocaleLowerCase().normalize("NFKD").replace(/[\\u0300-\\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unknown"}`;
+  return `country-${country.toLocaleLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unknown"}`;
 }
 
 export default function LiveGamesPage() {
