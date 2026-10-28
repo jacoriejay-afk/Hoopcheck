@@ -71,12 +71,13 @@ export default function FanLivePage() {
     setChatEnabled(Boolean(active));
     setAllowed(Boolean(active||playerCanPredict));
     if(!active&&!playerCanPredict){setGames([]);setSelected(null);setLoading(false);return;}
-    const [{data:gameRows,error:gameError},{data:controls}] = await Promise.all([
-      supabase.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_name,country,period_label").in("status",["scheduled","live","final","cancelled","postponed","abandoned"]).order("scheduled_at",{ascending:true,nullsFirst:false}).limit(500),
-      supabase.from("fan_live_chat_user_controls").select("target_user_id,is_blocked,is_muted").eq("user_id",user.id)
-    ]);
-    if(gameError) setMessage("Game updates are temporarily unavailable. Reconnecting…");
-    const rawGames=(gameRows||[]) as Game[];
+    const gameResult = profile?.account_type === "player"
+      ? await fetch("/api/game-predictions?mode=games", { headers: { Authorization: "Bearer " + (session?.access_token || "") }, cache: "no-store" })
+          .then(async response => { const json = await response.json(); return { data: json.games || [], error: response.ok ? null : new Error("player-game-list-unavailable") }; })
+      : await supabase.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_name,country,period_label").in("status",["scheduled","live","final","cancelled","postponed","abandoned"]).order("scheduled_at",{ascending:true,nullsFirst:false}).limit(500);
+    const {data:controls}=await supabase.from("fan_live_chat_user_controls").select("target_user_id,is_blocked,is_muted").eq("user_id",user.id);
+    if(gameResult.error) setMessage("Game updates are temporarily unavailable. Reconnecting…");
+    const rawGames=(gameResult.data||[]) as Game[];
     const candidateIds=Array.from(new Set(rawGames.flatMap(g=>[g.team_id,g.opponent_team_id].filter((x):x is string=>Boolean(x)))));
     const {data:sideRows}=candidateIds.length?await supabase.from("teams").select("id").in("id",candidateIds).eq("basketball_type",basketballSide==="womens"?"womens":"mens"):{data:[] as {id:string}[]};
     const sideIds=new Set((sideRows||[]).map((row:any)=>row.id));
