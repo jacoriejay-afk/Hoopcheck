@@ -506,4 +506,70 @@ await assert.rejects(
   mobileAccountToken.AppleAccountTokenError,
 );
 
+
+const appleCandidate = await loadTypeScriptModule("../lib/billing/apple-iap-entitlement-candidate.ts");
+const originalProductEnv = {
+  APPLE_IAP_PRO_PRODUCT_ID: process.env.APPLE_IAP_PRO_PRODUCT_ID,
+  APPLE_IAP_PREMIUM_PRODUCT_ID: process.env.APPLE_IAP_PREMIUM_PRODUCT_ID,
+};
+process.env.APPLE_IAP_PRO_PRODUCT_ID = "online.hoopcheck.pro.monthly";
+process.env.APPLE_IAP_PREMIUM_PRODUCT_ID = "online.hoopcheck.premium.monthly";
+const candidateNow = new Date("2026-10-28T12:00:00.000Z");
+const verifiedProductionTransaction = {
+  transactionId: "tx-123",
+  originalTransactionId: "orig-123",
+  productId: "online.hoopcheck.pro.monthly",
+  environment: "Production",
+  appAccountToken: trustedAccountToken,
+  expiresDate: Date.parse("2026-11-28T12:00:00.000Z"),
+  revocationDate: null,
+};
+const candidateInput = {
+  authenticatedUserId: "user-123",
+  transactionVerified: true,
+  transaction: verifiedProductionTransaction,
+  expectedStoredToken: trustedAccountToken,
+  now: candidateNow,
+};
+const acceptedCandidate = appleCandidate.buildAppleEntitlementCandidate(candidateInput);
+assert.equal(acceptedCandidate.accepted, true, "owned verified production transaction should produce candidate");
+assert.deepEqual(acceptedCandidate.candidate, {
+  plan: "pro",
+  status: "active",
+  environment: "Production",
+  currentPeriodEnd: "2026-11-28T12:00:00.000Z",
+  lastVerifiedAt: "2026-10-28T12:00:00.000Z",
+  revokedAt: null,
+});
+assert.equal(appleCandidate.buildAppleEntitlementCandidate({
+  ...candidateInput,
+  transaction: { ...verifiedProductionTransaction, environment: "Sandbox" },
+}).reason, "non_production_environment");
+assert.equal(appleCandidate.buildAppleEntitlementCandidate({
+  ...candidateInput,
+  transaction: { ...verifiedProductionTransaction, revocationDate: Date.parse("2026-10-27T12:00:00.000Z") },
+}).reason, "revoked");
+assert.equal(appleCandidate.buildAppleEntitlementCandidate({
+  ...candidateInput,
+  transaction: { ...verifiedProductionTransaction, expiresDate: Date.parse("2026-10-27T12:00:00.000Z") },
+}).reason, "expired");
+assert.equal(appleCandidate.buildAppleEntitlementCandidate({
+  ...candidateInput,
+  transaction: { ...verifiedProductionTransaction, productId: "unregistered.product" },
+}).reason, "unknown_product");
+assert.equal(appleCandidate.buildAppleEntitlementCandidate({
+  ...candidateInput,
+  transaction: { ...verifiedProductionTransaction, appAccountToken: "550e8400-e29b-41d4-a716-446655440001" },
+}).reason, "token_mismatch");
+const graceCandidate = appleCandidate.buildAppleEntitlementCandidate({
+  ...candidateInput,
+  transaction: { ...verifiedProductionTransaction, expiresDate: Date.parse("2026-10-27T12:00:00.000Z") },
+  renewalInfo: { gracePeriodExpiresDate: Date.parse("2026-10-30T12:00:00.000Z") },
+});
+assert.equal(graceCandidate.accepted, true, "unexpired verified grace period should be eligible");
+assert.equal(graceCandidate.candidate.status, "grace_period");
+assert.equal(graceCandidate.candidate.currentPeriodEnd, "2026-10-30T12:00:00.000Z");
+process.env.APPLE_IAP_PRO_PRODUCT_ID = originalProductEnv.APPLE_IAP_PRO_PRODUCT_ID;
+process.env.APPLE_IAP_PREMIUM_PRODUCT_ID = originalProductEnv.APPLE_IAP_PREMIUM_PRODUCT_ID;
+
 console.log("Apple IAP primitive tests passed (local pure-logic checks only).");
