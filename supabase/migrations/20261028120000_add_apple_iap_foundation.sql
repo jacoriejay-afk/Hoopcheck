@@ -59,7 +59,7 @@ create index if not exists apple_iap_transactions_original_idx
 -- The UUID makes duplicate App Store Server Notifications V2 deliveries idempotent.
 -- Store only processing metadata here, not unverified payloads or private credentials.
 create table if not exists public.apple_iap_notification_events (
-  notification_uuid text primary key,
+  notification_uuid uuid primary key,
   environment text not null check (environment in ('Sandbox', 'Production', 'Xcode')),
   notification_type text not null,
   subtype text,
