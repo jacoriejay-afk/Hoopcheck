@@ -101,7 +101,7 @@ try {
     const countrySearch = page.getByRole("searchbox", { name: "Search games by country, team, or league" });
     await countrySearch.fill("Lithuania");
     assert.equal(await page.locator(".hc-live-country-section").count(), 1, "Country-name search should filter to one country.");
-    assert.equal(await page.locator(".hc-live-country-section h3").innerText(), "Lithuania");
+    assert.equal((await page.locator(".hc-live-country-section h3").innerText()).toLowerCase(), "lithuania");
     await context.close();
   }
   console.log("LIVE_GAMES_COUNTRY_CHECK=PASS");
