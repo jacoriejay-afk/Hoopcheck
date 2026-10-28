@@ -39,14 +39,14 @@ export default function TeamPayTimeline({ teamId }: { teamId: string }) {
       }
     })();
   }, [teamId, refresh]);
-  async function submit() {
+  async function submit(chosenStatus: "on_time" | "late" | "missing" = status) {
     setBusy(true); setMessage("");
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setMessage("Sign in to submit a check-in."); setBusy(false); return; }
     const response = await fetch("/api/team-pay-checkins", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token },
-      body: JSON.stringify({ teamId, month: selectedMonth, status }),
+      body: JSON.stringify({ teamId, month: selectedMonth, status: chosenStatus }),
     });
     const result = await response.json().catch(() => ({}));
     setMessage(response.ok ? "Check-in recorded anonymously." : (result.error || "Unable to submit check-in."));
@@ -72,8 +72,8 @@ export default function TeamPayTimeline({ teamId }: { teamId: string }) {
       <p className="muted">One check-in per team per month. Your individual answer is private and never displayed.</p>
       <label htmlFor={"pay-month-" + teamId}>Month</label>
       <input id={"pay-month-" + teamId} type="month" value={selectedMonth.slice(0, 7)} onChange={e => setSelectedMonth(e.target.value + "-01")} />
-      <div className="hc-pay-status-options" style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "12px 0" }}>{options.map(option => <button key={option.value} type="button" aria-pressed={status === option.value} className={status === option.value ? "btn" : "btn dark"} onClick={() => setStatus(option.value)}>{option.label}</button>)}</div>
-      <button type="button" className="btn" onClick={submit} disabled={busy || !selectedMonth}>{busy ? "Submitting…" : "Submit one-tap check-in"}</button>
+      <div className="hc-pay-status-options" style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "12px 0" }}>{options.map(option => <button key={option.value} type="button" aria-pressed={status === option.value} className={status === option.value ? "btn" : "btn dark"} disabled={busy || !selectedMonth} onClick={() => { setStatus(option.value); void submit(option.value); }}>{option.label}</button>)}</div>
+      <p className="muted">Tap a status to submit your check-in immediately.</p>{busy && <p role="status">Submitting…</p>}
       {message && <p role="status" aria-live="polite">{message}</p>}
     </div>}
   </section>;
