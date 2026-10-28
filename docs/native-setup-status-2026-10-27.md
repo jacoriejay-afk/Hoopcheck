@@ -98,3 +98,17 @@ Constraints for the prototype:
 | Separate React Native / Expo UI | Not selected for this work because the requirement is to reuse the same Next.js UI/codebase. Existing `apps/mobile/` remains isolated and unchanged. |
 
 **Exit criteria before implementation can be called complete:** staging origin and credentials exist; the smoke matrix above passes on both platforms; native URL listener and share are implemented and device-tested; push and StoreKit/server verification are implemented; final identifiers and signing are confirmed; and App Store policy risk is reviewed. Current status is **architecture selected for staging prototype; implementation and device validation incomplete**.
+
+
+### 5. Vercel preview environment audit — 2026-10-28
+
+Read-only inspection of the current preview deployment and Vercel environment-variable metadata found:
+- Candidate preview `hoopcheck-cs2e746tl-hoopcheck.vercel.app` is `READY`, sourced from branch `feat/capacitor-native-shell` at commit `a13532281cb1cd9184886a3eb43c93b86676b97d`, and the homepage returned HTTP 200.
+- This confirms the preview responds, **not** that it is an isolated staging environment.
+- Supabase environment-variable entries include shared Preview targets as well as Production/Development targets for public Supabase configuration. This audit did not decrypt or retrieve secret values, and did not establish which Supabase project the deployed preview actually uses.
+- Stripe live-mode flags and secret/price variables are targeted to Production. The visible Stripe test-mode Preview entries are branch-specific to `fix/stripe-webhook-environment-guard`, not the native-shell branch. Therefore the current preview's effective checkout configuration has not been proven safe for checkout testing.
+- No Vercel custom environment is configured for the project.
+
+**Decision:** do not use this preview for auth mutations, account creation, uploads, or checkout tests until its effective Supabase project and payment-mode behavior are verified. Do not assume that a successful HTTP 200 or Production-only Stripe variable targets proves complete isolation. Do not retrieve/decrypt secrets as part of this audit.
+
+Next safe step: create or designate an isolated staging Supabase project and staging deployment configuration, including explicit non-production Stripe test settings, then verify the deployed runtime behavior with read-only smoke checks before testing user journeys. Keep production data, environment settings, payment configuration, and deployment untouched.
