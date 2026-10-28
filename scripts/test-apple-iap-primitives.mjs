@@ -153,7 +153,7 @@ const mockVerifier = {
   },
   async verifyAndDecodeRenewalInfo(payload) {
     assert.equal(payload, "signed-renewal");
-    return { originalTransactionId: "original-123", autoRenewStatus: 1 };
+    return { originalTransactionId: "original-123", productId: "online.hoopcheck.pro.monthly", autoRenewStatus: 1 };
   },
 };
 const mockPersistence = {
