@@ -244,6 +244,34 @@ assert.equal(
   "verified transactions missing product identity must fail before persistence",
 );
 
+let mismatchedRenewalWrites = 0;
+await assert.rejects(
+  notificationHandler.handleAppleServerNotification({
+    ...notificationInput,
+    verifier: {
+      ...mockVerifier,
+      async verifyAndDecodeRenewalInfo() {
+        return { originalTransactionId: "original-123", productId: "online.hoopcheck.premium.monthly" };
+      },
+    },
+    persistence: {
+      ...mockPersistence,
+      async recordVerifiedNotification() {
+        mismatchedRenewalWrites++;
+        return { inserted: true, processed: false };
+      },
+      async reconcileVerifiedNotification() { mismatchedRenewalWrites++; },
+      async markNotificationProcessed() { mismatchedRenewalWrites++; },
+    },
+  }),
+  notificationHandler.AppleNotificationRejectedError,
+);
+assert.equal(
+  mismatchedRenewalWrites,
+  0,
+  "renewal metadata for a different product must fail before persistence",
+);
+
 ledgerInserted = false;
 ledgerProcessed = false;
 shouldFailReconcile = true;
