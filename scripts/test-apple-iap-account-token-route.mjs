@@ -14,6 +14,7 @@ assert.match(source, /function jsonNoStore\(/);
 assert.match(source, /return NextResponse\.json\(body,/);
 assert.equal((source.match(/return NextResponse\.json\(/g) ?? []).length, 1, "only the no-store helper may call NextResponse.json directly");
 assert.match(source, /auth\.getUser\(accessToken\)/, "the bearer token must be verified with Supabase Auth");
+assert.match(source, /Apple IAP authentication lookup failed/, "auth network failures must fail closed with a controlled response");
 assert.match(source, /\.insert\(\{ user_id: userId \}\)/, "the server derives user_id from the verified session");
 assert.doesNotMatch(source, /request\.json\(|request\.formData\(/, "clients must not submit a user ID or appAccountToken");
 assert.match(source, /SUPABASE_SERVICE_ROLE_KEY/, "server-side privileged key must be configured");
