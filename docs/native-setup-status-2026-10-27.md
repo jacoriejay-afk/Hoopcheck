@@ -112,3 +112,15 @@ Read-only inspection of the current preview deployment and Vercel environment-va
 **Decision:** do not use this preview for auth mutations, account creation, uploads, or checkout tests until its effective Supabase project and payment-mode behavior are verified. Do not assume that a successful HTTP 200 or Production-only Stripe variable targets proves complete isolation. Do not retrieve/decrypt secrets as part of this audit.
 
 Next safe step: create or designate an isolated staging Supabase project and staging deployment configuration, including explicit non-production Stripe test settings, then verify the deployed runtime behavior with read-only smoke checks before testing user journeys. Keep production data, environment settings, payment configuration, and deployment untouched.
+
+### 6. Fail-closed Capacitor staging origin — 2026-10-28
+
+Updated `capacitor.config.ts` in commit `b6b8f4e9d30679b7a29316f542ad802aa83ca73d`:
+- The config now requires `CAPACITOR_SERVER_URL`; there is no live-production URL fallback.
+- The value must be a valid HTTPS origin only, without credentials, path, query, or fragment.
+- The live `hoopcheck.online` host and all its subdomains are rejected.
+- Capacitor navigation is restricted to the exact configured staging hostname; the previous wildcard subdomain allowlist is removed.
+- This is intentionally fail-closed until a dedicated staging hostname is selected. Do not point it at production just to make the config load.
+- External auth/payment callbacks still require a separately reviewed native-link implementation. This change does not claim deep links, auth, checkout, or device behavior are tested.
+
+**Verification limitation:** this was a source change through the GitHub contents API. No local Capacitor CLI execution, native build, staging runtime, or device test was performed in this step. The staging Supabase project and explicit test-mode Stripe configuration remain unresolved. No environment variables, Supabase resources, production settings, or deployments were changed.
