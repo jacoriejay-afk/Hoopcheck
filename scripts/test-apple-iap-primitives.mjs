@@ -22,6 +22,18 @@ const productEnv = {
   APPLE_IAP_PRO_PRODUCT_ID: "online.hoopcheck.pro.monthly",
   APPLE_IAP_PREMIUM_PRODUCT_ID: "online.hoopcheck.premium.monthly",
 };
+assert.deepEqual(
+  classification.getAllowedAppleProductIds(productEnv),
+  ["online.hoopcheck.pro.monthly", "online.hoopcheck.premium.monthly"],
+);
+assert.deepEqual(classification.getAllowedAppleProductIds({}), []);
+assert.deepEqual(
+  classification.getAllowedAppleProductIds({
+    APPLE_IAP_PRO_PRODUCT_ID: "same",
+    APPLE_IAP_PREMIUM_PRODUCT_ID: "same",
+  }),
+  [],
+);
 assert.equal(classification.getApplePlanForProductId("online.hoopcheck.pro.monthly", productEnv), "pro");
 assert.equal(classification.getApplePlanForProductId("online.hoopcheck.premium.monthly", productEnv), "premium");
 assert.equal(classification.getApplePlanForProductId("unknown", productEnv), null);
