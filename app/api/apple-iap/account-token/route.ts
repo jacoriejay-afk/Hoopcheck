@@ -4,6 +4,14 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Account-correlation tokens must never be cached by browsers or intermediaries.
+function jsonNoStore(body: unknown, init?: { status?: number }) {
+  return NextResponse.json(body, {
+    ...init,
+    headers: { "Cache-Control": "private, no-store, max-age=0" },
+  });
+}
+
 function getSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -34,14 +42,14 @@ function getBearerToken(request: Request): string | null {
 export async function POST(request: Request) {
   const accessToken = getBearerToken(request);
   if (!accessToken) {
-    return NextResponse.json({ error: "Sign in to prepare Apple purchases." }, { status: 401 });
+    return jsonNoStore({ error: "Sign in to prepare Apple purchases." }, { status: 401 });
   }
 
   let config: ReturnType<typeof getSupabaseConfig>;
   try {
     config = getSupabaseConfig();
   } catch {
-    return NextResponse.json({ error: "Apple purchases are not configured." }, { status: 503 });
+    return jsonNoStore({ error: "Apple purchases are not configured." }, { status: 503 });
   }
 
   const authClient = createClient(config.url, config.anonKey, {
@@ -49,7 +57,7 @@ export async function POST(request: Request) {
   });
   const { data: authData, error: authError } = await authClient.auth.getUser(accessToken);
   if (authError || !authData.user) {
-    return NextResponse.json({ error: "Your sign-in session is invalid or expired." }, { status: 401 });
+    return jsonNoStore({ error: "Your sign-in session is invalid or expired." }, { status: 401 });
   }
 
   const admin = createClient(config.url, config.serviceRoleKey, {
@@ -66,11 +74,11 @@ export async function POST(request: Request) {
 
     if (existing.error) {
       console.error("Apple IAP account-token lookup failed:", existing.error.message);
-      return NextResponse.json({ error: "Apple purchases are temporarily unavailable." }, { status: 503 });
+      return jsonNoStore({ error: "Apple purchases are temporarily unavailable." }, { status: 503 });
     }
 
     if (existing.data?.app_account_token) {
-      return NextResponse.json({ appAccountToken: existing.data.app_account_token });
+      return jsonNoStore({ appAccountToken: existing.data.app_account_token });
     }
 
     // Let PostgreSQL generate the UUID. Never accept a client-provided token.
@@ -81,7 +89,7 @@ export async function POST(request: Request) {
       .single();
 
     if (!inserted.error && inserted.data?.app_account_token) {
-      return NextResponse.json({ appAccountToken: inserted.data.app_account_token });
+      return jsonNoStore({ appAccountToken: inserted.data.app_account_token });
     }
 
     // Concurrent first requests can race on the user_id primary key. In that
@@ -93,13 +101,13 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (!raced.error && raced.data?.app_account_token) {
-      return NextResponse.json({ appAccountToken: raced.data.app_account_token });
+      return jsonNoStore({ appAccountToken: raced.data.app_account_token });
     }
 
     console.error("Apple IAP account-token creation failed:", inserted.error?.message ?? raced.error?.message);
-    return NextResponse.json({ error: "Apple purchases are temporarily unavailable." }, { status: 503 });
+    return jsonNoStore({ error: "Apple purchases are temporarily unavailable." }, { status: 503 });
   } catch (error) {
     console.error("Apple IAP account-token request failed:", error);
-    return NextResponse.json({ error: "Apple purchases are temporarily unavailable." }, { status: 503 });
+    return jsonNoStore({ error: "Apple purchases are temporarily unavailable." }, { status: 503 });
   }
 }
