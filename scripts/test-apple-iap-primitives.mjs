@@ -433,12 +433,14 @@ const mobileAccountToken = await loadTypeScriptModule("../apps/mobile/src/billin
 const expectedAppAccountToken = "550e8400-e29b-41d4-a716-446655440000";
 let tokenRequestUrl = "";
 let tokenRequestHeaders = {};
+let tokenRequestMethod = "";
 const mobileToken = await mobileAccountToken.getAppleAppAccountToken(
   "https://hoopcheck.example/",
   "supabase-access-token",
   async (input, init) => {
     tokenRequestUrl = String(input);
     tokenRequestHeaders = init.headers;
+    tokenRequestMethod = init.method;
     return new Response(JSON.stringify({ appAccountToken: expectedAppAccountToken }), {
       status: 200,
       headers: { "content-type": "application/json" },
@@ -447,6 +449,7 @@ const mobileToken = await mobileAccountToken.getAppleAppAccountToken(
 );
 assert.equal(mobileToken, expectedAppAccountToken);
 assert.equal(tokenRequestUrl, "https://hoopcheck.example/api/apple-iap/account-token");
+assert.equal(tokenRequestMethod, "POST", "token provisioning must use POST");
 assert.equal(tokenRequestHeaders.Authorization, "Bearer supabase-access-token");
 assert.equal(tokenRequestHeaders.Accept, "application/json");
 await assert.rejects(
