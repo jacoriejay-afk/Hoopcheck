@@ -51,6 +51,19 @@ function planRank(plan: PaidPlan) {
 }
 
 /**
+ * A verification timestamp must be a parseable timestamp no later than the
+ * resolver's clock. This rejects malformed/future-dated records without
+ * imposing an arbitrary freshness window that could unexpectedly lock out a
+ * paid subscriber. The server reconciliation job remains responsible for
+ * refreshing provider status and honoring revocations.
+ */
+function verificationTimestampIsValid(value: string | null | undefined, nowMs: number) {
+  if (!value) return false;
+  const verifiedMs = Date.parse(value);
+  return Number.isFinite(verifiedMs) && verifiedMs <= nowMs;
+}
+
+/**
  * Resolve a best-effort display/access candidate from already trusted provider
  * records. This function does not verify transactions or persist any state.
  * Apple sandbox/Xcode rows never grant production access.
@@ -83,7 +96,7 @@ export function resolveEffectiveEntitlement(input: {
       apple.environment !== "Production" ||
       (apple.status !== "active" && apple.status !== "grace_period") ||
       apple.revokedAt ||
-      !apple.lastVerifiedAt ||
+      !verificationTimestampIsValid(apple.lastVerifiedAt, nowMs) ||
       !periodIsValid(apple.currentPeriodEnd, nowMs, false)
     ) {
       continue;
