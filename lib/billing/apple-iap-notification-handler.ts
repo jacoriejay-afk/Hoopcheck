@@ -180,7 +180,7 @@ export async function handleAppleServerNotification(input: {
   // Verify every nested signed object before the first database write.
   if (isNonEmptyString(signedTransactionInfo)) {
     transaction = await input.verifier.verifyAndDecodeTransaction(
-      notification.data.signedTransactionInfo,
+      signedTransactionInfo,
     );
     if (
       transaction.bundleId !== input.expectedBundleId ||
