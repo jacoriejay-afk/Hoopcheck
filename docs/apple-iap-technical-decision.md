@@ -20,6 +20,13 @@ Status: proposed implementation direction; not production-ready.
 - `lib/billing/apple-iap-classification.ts` adds pure product-ID mapping (from `APPLE_IAP_PRO_PRODUCT_ID` / `APPLE_IAP_PREMIUM_PRODUCT_ID`) and notification-type classification. It does not verify signatures, persist events, or grant access; unknown or unconfigured products fail closed.
 - `lib/billing/apple-iap-verifier-config.ts` validates server-only verifier configuration and fails closed on the placeholder bundle ID, missing root certificates, malformed certificate base64, or missing production Apple app ID. It constructs no verifier and processes no payloads by itself.
 
+## Regression checks
+
+- Run `npm run test:apple-iap` to exercise pure product mapping, notification classification, entitlement precedence/expiry, and verifier-configuration rejection cases.
+- `.github/workflows/apple-iap-primitives.yml` runs this script with Node 22 and `npm ci` for relevant pull-request and feature-branch changes.
+- The workflow and test script are committed, but no successful workflow run has been observed yet. Do not describe the checks as passing until GitHub Actions reports a successful run.
+- The local execution attempt in the implementation session could not clone the repository because the runtime could not resolve GitHub; no local test result is available.
+
 ## Not yet decided / required before release
 
 - Permanent bundle identifier: current iOS identifier is still `com.example.hoopcheck`.
