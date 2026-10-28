@@ -1,0 +1,36 @@
+# Apple IAP technical decision record
+
+Status: proposed implementation direction; not production-ready.
+
+## Client library and build route
+
+- Prefer `expo-iap` for the existing Expo / React Native application, rather than adding a bare React Native-only StoreKit package.
+- The current app pins Expo SDK 54 and React Native 0.81.5. The library's current setup guide lists Expo SDK 53+ but identifies SDK 57 / React Native 0.86 as its validated baseline. Therefore, do not assume compatibility: validate with a cloud EAS development build before treating the dependency as accepted.
+- In-app purchases require native code and a custom development build; Expo Go is not a sufficient test environment.
+- No Firebase project is needed for the Apple StoreKit transaction-verification path described here.
+
+## Server verification direction
+
+- Use Apple's official `@apple/app-store-server-library` in a server-side runtime compatible with the repository's deployed Node runtime.
+- Verify signed transaction information and App Store Server Notifications V2 using Apple's verification APIs; do not trust client-decoded JWS payloads.
+- Keep App Store Connect key material and root certificates in server-only secret configuration. Never expose them as `EXPO_PUBLIC_*` variables.
+- Process notifications idempotently and reconcile status against the App Store Server API where needed.
+
+## Not yet decided / required before release
+
+- Permanent bundle identifier: current iOS identifier is still `com.example.hoopcheck`.
+- Whether the two subscription products already exist in App Store Connect; suggested product IDs remain unregistered assumptions.
+- The active production API alias and target server runtime for the Apple endpoints.
+- A non-production Supabase environment or isolated integration-test fixtures for the entitlement data model.
+- EAS signing setup and a physical iOS device for sandbox testing.
+
+## Safe sequencing
+
+1. Confirm the permanent app identifiers and existing App Store Connect products.
+2. Build the isolated Apple-provider persistence and effective-entitlement contract without modifying Stripe-owned fields.
+3. Implement signed-transaction verification and Notifications V2 handling on the server.
+4. Integrate purchase, restore, status display, and Apple subscription management in the Expo app.
+5. Validate duplicate/out-of-order events, expiry, refund/revocation, account switching, and coexistence with Stripe.
+6. Run typecheck, unit/integration tests, cloud native build, and physical-device sandbox checks separately and report their actual outcomes.
+
+No runtime dependencies, app identifiers, database schemas, production configuration, or billing records were changed by this decision record.
