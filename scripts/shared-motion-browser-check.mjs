@@ -30,6 +30,8 @@ try {
     await page.waitForTimeout(150);
     assert.equal(await page.locator(".hc-motion-swoosh").count(), 1, "Swoosh should render when motion is allowed.");
     await page.waitForTimeout(370);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(80);
     await page.evaluate(() => {
       const target = document.querySelector(".hc-motion-preview-pull");
       if (!target) throw new Error("Pull-to-refresh preview surface missing");
