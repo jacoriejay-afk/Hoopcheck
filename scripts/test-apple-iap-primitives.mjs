@@ -73,7 +73,7 @@ assert.deepEqual(
     apple: [validApple],
     now,
   }),
-  { plan: "premium", sources: ["stripe", "apple"] },
+  { plan: "premium", sources: ["apple"] },
 );
 assert.equal(
   entitlement.resolveEffectiveEntitlement({
