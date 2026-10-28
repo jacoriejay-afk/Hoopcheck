@@ -2,6 +2,18 @@
 -- Additive schema: intentionally does not alter public.subscriptions or Stripe-owned columns.
 -- Runtime handlers must verify Apple's signed data before writing any rows.
 
+-- Server-only mapping between an authenticated HoopCheck user and Apple's
+-- appAccountToken. Generate once per user with a cryptographically random UUID;
+-- never accept a token supplied by an unauthenticated client as ownership proof.
+create table if not exists public.apple_iap_account_tokens (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  app_account_token uuid not null unique default gen_random_uuid(),
+  created_at timestamptz not null default now()
+);
+
+alter table public.apple_iap_account_tokens enable row level security;
+-- No authenticated-client policies or grants: only trusted server code may read/write tokens.
+
 create table if not exists public.apple_iap_subscriptions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
