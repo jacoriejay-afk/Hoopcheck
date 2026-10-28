@@ -16,7 +16,7 @@ function clients() {
   };
 }
 async function currentUser(request: Request, auth: ReturnType<typeof createClient>) {
-  const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "") || "";
+  const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
   if (!token) return null;
   const { data } = await auth.auth.getUser(token);
   return data.user || null;
