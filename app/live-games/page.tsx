@@ -251,7 +251,7 @@ export default function LiveGamesPage() {
     const isLive = variant === "live";
     const isUpcoming = variant === "upcoming";
     const isRecent = variant === "recent";
-    const canJoin = availability.chatOpen && !isRecent && !["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()) && (!isUpcoming || Boolean(game.scheduled_at && Date.parse(game.scheduled_at) <= nowMs));
+    const canJoin = availability.chatOpen && !isRecent && !["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase());
     const score = scoreText(game);
     const tip = game.scheduled_at || game.started_at;
     return (
@@ -282,7 +282,7 @@ export default function LiveGamesPage() {
           {isLive && <span><HoopIcon name="users" size={15} /> {presenceCounts[game.id] || 0} {presenceCounts[game.id] === 1 ? "fan chatting" : "fans chatting"}</span>}
           {isUpcoming && <span><HoopIcon name="calendar" size={15} /> {formatViewerLocalTime(tip)}</span>}
           {isRecent && <span><HoopIcon name="check" size={15} /> Chat closed</span>}
-          {variant === "postgame" && <span><HoopIcon name="message-square" size={15} /> Post-game chat remains open</span>}
+          {variant === "postgame" && <span><HoopIcon name="message-square" size={15} /> Chat is read-only at full-time</span>}
         </div>
         {isUpcoming && availability.opensAt && <p className="hc-live-card__muted">Chat opens {formatViewerLocalTime(availability.opensAt.toISOString(), { weekday: undefined })} · Remind Me sends an in-app reminder.</p>}
         <div className="hc-live-card__actions">
@@ -314,7 +314,7 @@ export default function LiveGamesPage() {
         )}
       </div>
       <div className="hc-live-hub-filter-tools">
-        <SearchBar value={query} onChange={setQuery} onSubmit={() => {}} placeholder="Search teams or leagues…" ariaLabel="Search games by team or league" buttonLabel="Search" className="hc-live-hub-search" />
+        <SearchBar value={query} onChange={setQuery} onSubmit={() => {}} placeholder="Search country, team, or league…" ariaLabel="Search games by country, team, or league" buttonLabel="Search" className="hc-live-hub-search" />
         <label className="hc-live-league-select"><span>League</span><select value={leagueFilter} onChange={event => setLeagueFilter(event.target.value)}><option value="">All leagues</option>{leagues.map(league => <option key={league} value={league}>{league}</option>)}</select></label>
       </div>
     </section>
