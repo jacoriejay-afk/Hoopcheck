@@ -10,7 +10,6 @@ export type ApplePlan = "pro" | "premium";
 
 export type AppleNotificationDecision =
   | "refresh_entitlement"
-  | "revoke_entitlement"
   | "record_only";
 
 const PRODUCT_PLAN_ENV: Record<ApplePlan, string> = {
@@ -40,7 +39,9 @@ export function getApplePlanForProductId(
 /**
  * Classifies V2 notification names only after the signed notification and any
  * nested signed transaction/renewal payloads have been cryptographically
- * verified. This is a processing hint, not an entitlement decision by itself.
+ * verified. Even expiry/refund/revocation events trigger reconciliation rather
+ * than a blind state mutation, so delayed/out-of-order notifications cannot
+ * independently grant or remove access.
  */
 export function classifyAppleNotification(
   notificationType: string | null | undefined,
@@ -56,13 +57,11 @@ export function classifyAppleNotification(
     case "DID_CHANGE_RENEWAL_PREF":
     case "RENEWAL_EXTENDED":
     case "REFUND_REVERSED":
-      return "refresh_entitlement";
-
     case "EXPIRED":
     case "GRACE_PERIOD_EXPIRED":
     case "REVOKE":
     case "REFUND":
-      return "revoke_entitlement";
+      return "refresh_entitlement";
 
     case "DID_FAIL_TO_RENEW":
       // During billing retry / grace period, entitlement depends on the verified
