@@ -1,0 +1,116 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import ts from "typescript";
+
+async function loadTypeScriptModule(path) {
+  const source = await readFile(new URL(path, import.meta.url), "utf8");
+  const compiled = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2022,
+    },
+  }).outputText;
+  return import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+}
+
+const classification = await loadTypeScriptModule("../lib/billing/apple-iap-classification.ts");
+const entitlement = await loadTypeScriptModule("../lib/billing/effective-entitlement.ts");
+const verifierConfig = await loadTypeScriptModule("../lib/billing/apple-iap-verifier-config.ts");
+
+const productEnv = {
+  APPLE_IAP_PRO_PRODUCT_ID: "online.hoopcheck.pro.monthly",
+  APPLE_IAP_PREMIUM_PRODUCT_ID: "online.hoopcheck.premium.monthly",
+};
+assert.equal(classification.getApplePlanForProductId("online.hoopcheck.pro.monthly", productEnv), "pro");
+assert.equal(classification.getApplePlanForProductId("online.hoopcheck.premium.monthly", productEnv), "premium");
+assert.equal(classification.getApplePlanForProductId("unknown", productEnv), null);
+assert.equal(classification.getApplePlanForProductId("online.hoopcheck.pro.monthly", {}), null);
+assert.equal(classification.getApplePlanForProductId("same", {
+  APPLE_IAP_PRO_PRODUCT_ID: "same",
+  APPLE_IAP_PREMIUM_PRODUCT_ID: "same",
+}), null);
+assert.equal(classification.classifyAppleNotification("DID_RENEW"), "refresh_entitlement");
+assert.equal(classification.classifyAppleNotification("REFUND"), "refresh_entitlement");
+assert.equal(classification.classifyAppleNotification("UNRECOGNIZED_EVENT"), "record_only");
+
+const now = new Date("2026-10-28T12:00:00.000Z");
+const validApple = {
+  plan: "premium",
+  status: "active",
+  environment: "Production",
+  currentPeriodEnd: "2026-11-28T12:00:00.000Z",
+  lastVerifiedAt: "2026-10-28T11:59:00.000Z",
+};
+assert.deepEqual(
+  entitlement.resolveEffectiveEntitlement({ apple: [validApple], now }),
+  { plan: "premium", sources: ["apple"] },
+);
+assert.equal(
+  entitlement.resolveEffectiveEntitlement({
+    apple: [{ ...validApple, environment: "Sandbox" }],
+    now,
+  }).plan,
+  "free",
+);
+assert.equal(
+  entitlement.resolveEffectiveEntitlement({
+    apple: [{ ...validApple, lastVerifiedAt: null }],
+    now,
+  }).plan,
+  "free",
+);
+assert.equal(
+  entitlement.resolveEffectiveEntitlement({
+    apple: [{ ...validApple, currentPeriodEnd: "2026-10-28T11:00:00.000Z" }],
+    now,
+  }).plan,
+  "free",
+);
+assert.deepEqual(
+  entitlement.resolveEffectiveEntitlement({
+    stripe: { plan: "pro", status: "active", currentPeriodEnd: null },
+    apple: [validApple],
+    now,
+  }),
+  { plan: "premium", sources: ["stripe", "apple"] },
+);
+assert.equal(
+  entitlement.resolveEffectiveEntitlement({
+    stripe: { plan: "premium", status: "canceled", currentPeriodEnd: null },
+    now,
+  }).plan,
+  "free",
+);
+
+const validEnv = {
+  APPLE_IAP_BUNDLE_ID: "online.hoopcheck.app",
+  APPLE_ROOT_CA_CERTIFICATES_BASE64: Buffer.from("fixture-root").toString("base64"),
+  APPLE_IAP_APPLE_ID: "1234567890",
+};
+const productionConfig = verifierConfig.getAppleVerifierConfiguration("Production", validEnv);
+assert.equal(productionConfig.bundleId, "online.hoopcheck.app");
+assert.equal(productionConfig.appAppleId, 1234567890);
+assert.equal(productionConfig.rootCertificates.length, 1);
+assert.throws(
+  () => verifierConfig.getAppleVerifierConfiguration("Production", {
+    ...validEnv,
+    APPLE_IAP_BUNDLE_ID: "com.example.hoopcheck",
+  }),
+  verifierConfig.AppleIapConfigurationError,
+);
+assert.throws(
+  () => verifierConfig.getAppleVerifierConfiguration("Sandbox", {
+    ...validEnv,
+    APPLE_ROOT_CA_CERTIFICATES_BASE64: "not base64!",
+  }),
+  verifierConfig.AppleIapConfigurationError,
+);
+assert.throws(
+  () => verifierConfig.getAppleVerifierConfiguration("Production", {
+    ...validEnv,
+    APPLE_IAP_APPLE_ID: "",
+  }),
+  verifierConfig.AppleIapConfigurationError,
+);
+
+console.log("Apple IAP primitive tests passed (local pure-logic checks only).");
