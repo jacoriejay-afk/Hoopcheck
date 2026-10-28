@@ -16,6 +16,7 @@ async function loadTypeScriptModule(path) {
 const classification = await loadTypeScriptModule("../lib/billing/apple-iap-classification.ts");
 const entitlement = await loadTypeScriptModule("../lib/billing/effective-entitlement.ts");
 const verifierConfig = await loadTypeScriptModule("../lib/billing/apple-iap-verifier-config.ts");
+const notificationHandler = await loadTypeScriptModule("../lib/billing/apple-iap-notification-handler.ts");
 
 const productEnv = {
   APPLE_IAP_PRO_PRODUCT_ID: "online.hoopcheck.pro.monthly",
@@ -112,5 +113,137 @@ assert.throws(
   }),
   verifierConfig.AppleIapConfigurationError,
 );
+
+
+let verifyNotificationCalls = 0;
+let verifyTransactionCalls = 0;
+let reconcileCalls = 0;
+let markProcessedCalls = 0;
+let ledgerInserted = false;
+let ledgerProcessed = false;
+let shouldFailReconcile = false;
+const verifiedNotification = {
+  notificationUUID: "notification-123",
+  notificationType: "DID_RENEW",
+  data: {
+    bundleId: "online.hoopcheck.app",
+    environment: "Sandbox",
+    signedTransactionInfo: "signed-transaction",
+    signedRenewalInfo: "signed-renewal",
+  },
+};
+const mockVerifier = {
+  async verifyAndDecodeNotification(payload) {
+    verifyNotificationCalls++;
+    assert.equal(payload, "signed-notification");
+    return verifiedNotification;
+  },
+  async verifyAndDecodeTransaction(payload) {
+    verifyTransactionCalls++;
+    assert.equal(payload, "signed-transaction");
+    return {
+      transactionId: "transaction-123",
+      originalTransactionId: "original-123",
+      bundleId: "online.hoopcheck.app",
+      productId: "online.hoopcheck.pro.monthly",
+      environment: "Sandbox",
+      appAccountToken: "account-token",
+      expiresDate: Date.parse("2026-11-28T12:00:00.000Z"),
+    };
+  },
+  async verifyAndDecodeRenewalInfo(payload) {
+    assert.equal(payload, "signed-renewal");
+    return { originalTransactionId: "original-123", autoRenewStatus: 1 };
+  },
+};
+const mockPersistence = {
+  async recordVerifiedNotification() {
+    const inserted = !ledgerInserted;
+    ledgerInserted = true;
+    return { inserted, processed: ledgerProcessed };
+  },
+  async reconcileVerifiedNotification() {
+    reconcileCalls++;
+    if (shouldFailReconcile) throw new Error("simulated transient DB failure");
+  },
+  async markNotificationProcessed() {
+    markProcessedCalls++;
+    ledgerProcessed = true;
+  },
+};
+const notificationInput = {
+  signedPayload: "signed-notification",
+  expectedBundleId: "online.hoopcheck.app",
+  verifier: mockVerifier,
+  persistence: mockPersistence,
+  allowedEnvironments: ["Sandbox"],
+};
+const handled = await notificationHandler.handleAppleServerNotification(notificationInput);
+assert.deepEqual(handled, { outcome: "recorded", notificationUUID: "notification-123" });
+assert.equal(verifyNotificationCalls, 1);
+assert.equal(verifyTransactionCalls, 1);
+assert.equal(reconcileCalls, 1);
+assert.equal(markProcessedCalls, 1);
+const duplicate = await notificationHandler.handleAppleServerNotification(notificationInput);
+assert.deepEqual(duplicate, { outcome: "duplicate", notificationUUID: "notification-123" });
+assert.equal(reconcileCalls, 1, "processed duplicates must not reconcile twice");
+
+const invalidBundleVerifier = {
+  ...mockVerifier,
+  async verifyAndDecodeNotification() {
+    return { ...verifiedNotification, data: { ...verifiedNotification.data, bundleId: "wrong.bundle" } };
+  },
+};
+let invalidBundleWrites = 0;
+await assert.rejects(
+  notificationHandler.handleAppleServerNotification({
+    ...notificationInput,
+    verifier: invalidBundleVerifier,
+    persistence: {
+      ...mockPersistence,
+      async recordVerifiedNotification() { invalidBundleWrites++; return { inserted: true, processed: false }; },
+      async reconcileVerifiedNotification() { invalidBundleWrites++; },
+      async markNotificationProcessed() { invalidBundleWrites++; },
+    },
+  }),
+  notificationHandler.AppleNotificationRejectedError,
+);
+assert.equal(invalidBundleWrites, 0, "wrong bundle must fail before persistence");
+
+ledgerInserted = false;
+ledgerProcessed = false;
+shouldFailReconcile = true;
+await assert.rejects(
+  notificationHandler.handleAppleServerNotification({
+    ...notificationInput,
+    persistence: {
+      ...mockPersistence,
+      async recordVerifiedNotification() {
+        const inserted = !ledgerInserted;
+        ledgerInserted = true;
+        return { inserted, processed: ledgerProcessed };
+      },
+      async reconcileVerifiedNotification() { throw new Error("simulated transient DB failure"); },
+      async markNotificationProcessed() { ledgerProcessed = true; },
+    },
+  }),
+  /simulated transient DB failure/,
+);
+shouldFailReconcile = false;
+const retry = await notificationHandler.handleAppleServerNotification({
+  ...notificationInput,
+  persistence: {
+    ...mockPersistence,
+    async recordVerifiedNotification() {
+      const inserted = !ledgerInserted;
+      ledgerInserted = true;
+      return { inserted, processed: ledgerProcessed };
+    },
+    async reconcileVerifiedNotification() { reconcileCalls++; },
+    async markNotificationProcessed() { ledgerProcessed = true; },
+  },
+});
+assert.deepEqual(retry, { outcome: "duplicate", notificationUUID: "notification-123" });
+assert.equal(ledgerProcessed, true, "retry must complete an unprocessed notification");
 
 console.log("Apple IAP primitive tests passed (local pure-logic checks only).");
