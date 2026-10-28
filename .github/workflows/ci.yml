@@ -50,6 +50,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Shared motion regression checks
+        run: npm run test:shared-motion
+
       - name: Production build
         run: npm run build
 
