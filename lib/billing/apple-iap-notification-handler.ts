@@ -140,6 +140,15 @@ export async function handleAppleServerNotification(input: {
         "Verified transaction bundle ID or environment does not match the notification.",
       );
     }
+    if (
+      !isNonEmptyString(transaction.transactionId) ||
+      !isNonEmptyString(transaction.originalTransactionId) ||
+      !isNonEmptyString(transaction.productId)
+    ) {
+      throw new AppleNotificationRejectedError(
+        "Verified transaction lacks its transaction chain or product identifier.",
+      );
+    }
   }
 
   if (notification.data?.signedRenewalInfo) {
