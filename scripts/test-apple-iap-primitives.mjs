@@ -569,7 +569,15 @@ const graceCandidate = appleCandidate.buildAppleEntitlementCandidate({
 assert.equal(graceCandidate.accepted, true, "unexpired verified grace period should be eligible");
 assert.equal(graceCandidate.candidate.status, "grace_period");
 assert.equal(graceCandidate.candidate.currentPeriodEnd, "2026-10-30T12:00:00.000Z");
-process.env.APPLE_IAP_PRO_PRODUCT_ID = originalProductEnv.APPLE_IAP_PRO_PRODUCT_ID;
-process.env.APPLE_IAP_PREMIUM_PRODUCT_ID = originalProductEnv.APPLE_IAP_PREMIUM_PRODUCT_ID;
+if (originalProductEnv.APPLE_IAP_PRO_PRODUCT_ID === undefined) {
+  delete process.env.APPLE_IAP_PRO_PRODUCT_ID;
+} else {
+  process.env.APPLE_IAP_PRO_PRODUCT_ID = originalProductEnv.APPLE_IAP_PRO_PRODUCT_ID;
+}
+if (originalProductEnv.APPLE_IAP_PREMIUM_PRODUCT_ID === undefined) {
+  delete process.env.APPLE_IAP_PREMIUM_PRODUCT_ID;
+} else {
+  process.env.APPLE_IAP_PREMIUM_PRODUCT_ID = originalProductEnv.APPLE_IAP_PREMIUM_PRODUCT_ID;
+}
 
 console.log("Apple IAP primitive tests passed (local pure-logic checks only).");
