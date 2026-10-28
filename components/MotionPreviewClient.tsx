@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import TrustScoreDial from "../../components/TrustScoreDial";
-import { HoopCheckDraw, MotionNumber, MotionSwoosh, PlayerCardSkeletons, usePullToRefresh } from "../../components/HoopMotion";
+import TrustScoreDial from "./TrustScoreDial";
+import { HoopCheckDraw, MotionNumber, MotionSwoosh, PlayerCardSkeletons, usePullToRefresh } from "./HoopMotion";
 
 export default function MotionPreviewClient() {
   const [checksVisible, setChecksVisible] = useState(false);
