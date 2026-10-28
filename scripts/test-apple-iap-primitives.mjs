@@ -298,6 +298,61 @@ for (const invalidEnvironments of [[], ["Production", "Production"], ["Developme
   );
 }
 
+let productionOnlyWrites = 0;
+await assert.rejects(
+  notificationHandler.handleAppleServerNotification({
+    ...notificationInput,
+    allowedEnvironments: ["Production"],
+    persistence: {
+      ...mockPersistence,
+      async recordVerifiedNotification() {
+        productionOnlyWrites++;
+        return { inserted: true, processed: false };
+      },
+      async reconcileVerifiedNotification() { productionOnlyWrites++; },
+      async markNotificationProcessed() { productionOnlyWrites++; },
+    },
+  }),
+  notificationHandler.AppleNotificationRejectedError,
+);
+assert.equal(
+  productionOnlyWrites,
+  0,
+  "Sandbox notifications must not reach persistence when production-only mode is configured",
+);
+
+let mismatchedTransactionEnvironmentWrites = 0;
+await assert.rejects(
+  notificationHandler.handleAppleServerNotification({
+    ...notificationInput,
+    verifier: {
+      ...mockVerifier,
+      async verifyAndDecodeTransaction() {
+        return {
+          transactionId: "transaction-123",
+          originalTransactionId: "original-123",
+          bundleId: "online.hoopcheck.app",
+          productId: "online.hoopcheck.pro.monthly",
+          environment: "Production",
+          appAccountToken: trustedAccountToken,
+        };
+      },
+    },
+    persistence: {
+      ...mockPersistence,
+      async recordVerifiedNotification() { mismatchedTransactionEnvironmentWrites++; return { inserted: true, processed: false }; },
+      async reconcileVerifiedNotification() { mismatchedTransactionEnvironmentWrites++; },
+      async markNotificationProcessed() { mismatchedTransactionEnvironmentWrites++; },
+    },
+  }),
+  notificationHandler.AppleNotificationRejectedError,
+);
+assert.equal(
+  mismatchedTransactionEnvironmentWrites,
+  0,
+  "nested transaction environment mismatch must fail before persistence",
+);
+
 const handled = await notificationHandler.handleAppleServerNotification(notificationInput);
 assert.deepEqual(handled, { outcome: "recorded", notificationUUID: "notification-123" });
 assert.equal(verifyNotificationCalls, 1);
