@@ -32,9 +32,14 @@ export function requireCapacitorStagingOrigin(
     );
   }
 
+  // DNS treats a trailing dot as the same absolute hostname. Normalize it
+  // before checking the production domain so a trailing-dot URL cannot bypass
+  // the fail-closed staging restriction.
+  const normalizedHostname = url.hostname.toLowerCase().replace(/\.$/, "");
+
   if (
-    url.hostname === "hoopcheck.online" ||
-    url.hostname.endsWith(".hoopcheck.online")
+    normalizedHostname === "hoopcheck.online" ||
+    normalizedHostname.endsWith(".hoopcheck.online")
   ) {
     throw new Error(
       "Production HoopCheck hosts are blocked for the native staging prototype. Use a dedicated staging hostname outside hoopcheck.online.",
