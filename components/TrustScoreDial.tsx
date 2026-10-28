@@ -29,6 +29,7 @@ export default function TrustScoreDial({
   const offset = circumference * (1 - safeScore / 100);
   const dialRef = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState(false);
+  const [animatedScore, setAnimatedScore] = useState(0);
   useEffect(() => {
     const node = dialRef.current;
     if (!node) return;
@@ -36,7 +37,7 @@ export default function TrustScoreDial({
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
-  const bandColor = score === null ? "currentColor" : safeScore < 40 ? "#E5484D" : safeScore < 70 ? "#FF8A24" : "#1E9E50";
+  const bandColor = score === null ? "currentColor" : animatedScore < 40 ? "#E5484D" : animatedScore < 70 ? "#FF8A24" : "#1E9E50";
 
   return (
     <div className={`hc-trust-score hc-trust-score--${size}`}>
@@ -56,7 +57,7 @@ export default function TrustScoreDial({
             transform={`rotate(-90 ${dimension / 2} ${dimension / 2})`}
           />}
         </svg>
-        <strong aria-label={score === null ? t("trustScoreUnavailable") : t("scoreOutOf100").replace("{score}",String(score))}>{score === null ? "—" : <MotionNumber value={safeScore} duration={900} />}</strong>
+        <strong aria-label={score === null ? t("trustScoreUnavailable") : t("scoreOutOf100").replace("{score}",String(score))}>{score === null ? "—" : <MotionNumber value={safeScore} duration={900} onValueChange={setAnimatedScore} />}</strong>
       </div>
       <div className="hc-trust-score__copy">
         <span>HoopCheck {t("trustScore")}</span>
