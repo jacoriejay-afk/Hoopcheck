@@ -174,6 +174,7 @@ const mockPersistence = {
 const notificationInput = {
   signedPayload: "signed-notification",
   expectedBundleId: "online.hoopcheck.app",
+  allowedProductIds: ["online.hoopcheck.pro.monthly", "online.hoopcheck.premium.monthly"],
   verifier: mockVerifier,
   persistence: mockPersistence,
   allowedEnvironments: ["Sandbox"],
@@ -271,6 +272,36 @@ assert.equal(
   0,
   "renewal metadata for a different product must fail before persistence",
 );
+
+let unknownProductWrites = 0;
+await assert.rejects(
+  notificationHandler.handleAppleServerNotification({
+    ...notificationInput,
+    verifier: {
+      ...mockVerifier,
+      async verifyAndDecodeTransaction() {
+        return {
+          transactionId: "transaction-unknown",
+          originalTransactionId: "original-unknown",
+          bundleId: "online.hoopcheck.app",
+          productId: "online.hoopcheck.unregistered.monthly",
+          environment: "Sandbox",
+        };
+      },
+    },
+    persistence: {
+      ...mockPersistence,
+      async recordVerifiedNotification() {
+        unknownProductWrites++;
+        return { inserted: true, processed: false };
+      },
+      async reconcileVerifiedNotification() { unknownProductWrites++; },
+      async markNotificationProcessed() { unknownProductWrites++; },
+    },
+  }),
+  notificationHandler.AppleNotificationRejectedError,
+);
+assert.equal(unknownProductWrites, 0, "unregistered products must fail before persistence");
 
 ledgerInserted = false;
 ledgerProcessed = false;
