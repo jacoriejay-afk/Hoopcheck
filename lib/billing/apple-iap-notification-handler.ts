@@ -86,6 +86,11 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
 /**
  * Verify outer and nested signed data before any persistence or reconciliation.
  * A malformed, unverifiable, wrong-bundle, or unsupported-environment payload
@@ -201,6 +206,14 @@ export async function handleAppleServerNotification(input: {
     }
     if (!input.allowedProductIds.includes(transaction.productId)) {
       throw new AppleNotificationRejectedError("Verified transaction product ID is not allowed.");
+    }
+    // This app uses a server-issued appAccountToken to bind StoreKit
+    // transactions to a HoopCheck account. Never send a transaction lacking
+    // that ownership marker to the reconciliation adapter.
+    if (!isUuid(transaction.appAccountToken)) {
+      throw new AppleNotificationRejectedError(
+        "Verified transaction lacks a valid appAccountToken for account ownership.",
+      );
     }
   }
 
