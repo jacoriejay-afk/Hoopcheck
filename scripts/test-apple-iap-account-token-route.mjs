@@ -12,7 +12,7 @@ assert.match(source, /export const dynamic = ["']force-dynamic["']/);
 assert.match(source, /Cache-Control["']?\s*:\s*["']private, no-store, max-age=0["']/);
 assert.match(source, /function jsonNoStore\(/);
 assert.match(source, /return NextResponse\.json\(body,/);
-assert.doesNotMatch(source, /return NextResponse\.json\(/g, "all route responses should go through the no-store helper");
+assert.equal((source.match(/return NextResponse\.json\(/g) ?? []).length, 1, "only the no-store helper may call NextResponse.json directly");
 assert.match(source, /auth\.getUser\(accessToken\)/, "the bearer token must be verified with Supabase Auth");
 assert.match(source, /\.insert\(\{ user_id: userId \}\)/, "the server derives user_id from the verified session");
 assert.doesNotMatch(source, /request\.json\(|request\.formData\(/, "clients must not submit a user ID or appAccountToken");
