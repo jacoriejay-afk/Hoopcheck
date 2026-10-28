@@ -353,15 +353,25 @@ assert.equal(
   "nested transaction environment mismatch must fail before persistence",
 );
 
+const notificationCountsBeforeHappyPath = {
+  verifyNotificationCalls,
+  verifyTransactionCalls,
+  reconcileCalls,
+  markProcessedCalls,
+};
 const handled = await notificationHandler.handleAppleServerNotification(notificationInput);
 assert.deepEqual(handled, { outcome: "recorded", notificationUUID: "notification-123" });
-assert.equal(verifyNotificationCalls, 1);
-assert.equal(verifyTransactionCalls, 1);
-assert.equal(reconcileCalls, 1);
-assert.equal(markProcessedCalls, 1);
+assert.equal(verifyNotificationCalls, notificationCountsBeforeHappyPath.verifyNotificationCalls + 1);
+assert.equal(verifyTransactionCalls, notificationCountsBeforeHappyPath.verifyTransactionCalls + 1);
+assert.equal(reconcileCalls, notificationCountsBeforeHappyPath.reconcileCalls + 1);
+assert.equal(markProcessedCalls, notificationCountsBeforeHappyPath.markProcessedCalls + 1);
 const duplicate = await notificationHandler.handleAppleServerNotification(notificationInput);
 assert.deepEqual(duplicate, { outcome: "duplicate", notificationUUID: "notification-123" });
-assert.equal(reconcileCalls, 1, "processed duplicates must not reconcile twice");
+assert.equal(
+  reconcileCalls,
+  notificationCountsBeforeHappyPath.reconcileCalls + 1,
+  "processed duplicates must not reconcile twice",
+);
 
 const invalidBundleVerifier = {
   ...mockVerifier,
