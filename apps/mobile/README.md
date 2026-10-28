@@ -23,6 +23,10 @@ This isolated React Native / Expo app does not replace or modify the Next.js web
 
 **Not yet release-ready:** no native iOS/Android build or physical-device recovery test has been completed. The mobile app does not include purchase/restore subscription flows, account deletion, support-ticket creation, or user moderation/reporting screens. Team review submission depends on the existing web API and still needs a configured API origin plus end-to-end verification in a safe test environment. The live coach table was empty when inspected, so no coaches are fabricated.
 
+## Apple IAP release preflight
+
+Before starting a native store build, run `npm run check:apple-iap-release` from `apps/mobile`. This verifies that iOS and Android identifiers are no longer placeholders, the server-side Apple bundle ID matches the iOS bundle ID, and Pro/Premium use distinct configured App Store Connect product IDs. It intentionally fails while these identifiers are unset. Passing this preflight is not proof of Apple signature verification, StoreKit purchase/restore, entitlement reconciliation, or App Store approval.
+
 ## EAS build profiles
 
 `eas.json` defines internal development and preview profiles plus a production build profile. This is configuration only: no EAS build has been started, no signing credentials have been created, and no store submission has occurred. Do not start a store build until the final iOS bundle identifier and Android application ID replace the `com.example.hoopcheck` placeholders and the remaining release checklist is reviewed.
