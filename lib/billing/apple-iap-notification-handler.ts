@@ -154,8 +154,31 @@ export async function handleAppleServerNotification(input: {
   let transaction: VerifiedAppleTransaction | null = null;
   let renewalInfo: VerifiedAppleRenewalInfo | null = null;
 
+  // If Apple includes a nested signed object field, it must be a non-empty
+  // string. Do not silently downgrade malformed signed data to a no-data event.
+  const signedTransactionInfo = notification.data?.signedTransactionInfo;
+  const signedRenewalInfo = notification.data?.signedRenewalInfo;
+  if (
+    signedTransactionInfo !== undefined &&
+    signedTransactionInfo !== null &&
+    !isNonEmptyString(signedTransactionInfo)
+  ) {
+    throw new AppleNotificationRejectedError(
+      "Signed transaction info is present but malformed.",
+    );
+  }
+  if (
+    signedRenewalInfo !== undefined &&
+    signedRenewalInfo !== null &&
+    !isNonEmptyString(signedRenewalInfo)
+  ) {
+    throw new AppleNotificationRejectedError(
+      "Signed renewal info is present but malformed.",
+    );
+  }
+
   // Verify every nested signed object before the first database write.
-  if (notification.data?.signedTransactionInfo) {
+  if (isNonEmptyString(signedTransactionInfo)) {
     transaction = await input.verifier.verifyAndDecodeTransaction(
       notification.data.signedTransactionInfo,
     );
@@ -181,9 +204,9 @@ export async function handleAppleServerNotification(input: {
     }
   }
 
-  if (notification.data?.signedRenewalInfo) {
+  if (isNonEmptyString(signedRenewalInfo)) {
     renewalInfo = await input.verifier.verifyAndDecodeRenewalInfo(
-      notification.data.signedRenewalInfo,
+      signedRenewalInfo,
     );
     if (
       !isNonEmptyString(renewalInfo.originalTransactionId) ||
