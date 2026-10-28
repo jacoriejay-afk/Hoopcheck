@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 
 type Game = { id:string; team_id:string; opponent_team_id:string|null; opponent_name:string; status:string; home_score:number|null; away_score:number|null; scheduled_at:string|null };
 type Prediction = { my_pick:string|null; locked:boolean; total_picks:number; results:{winner_team_id:string;total_picks:number;winner_percent:number;correct_picks:number}|null };
-export default function GameWinnerPrediction({game,homeName,awayName,userId}:{game:Game;homeName:string;awayName:string;userId:string}) {
+export default function GameWinnerPrediction({game,homeName,awayName}:{game:Game;homeName:string;awayName:string}) {
  const [data,setData]=useState<Prediction|null>(null); const [busy,setBusy]=useState(false); const [notice,setNotice]=useState("");
  const token=useCallback(async()=>{const {data:{session}}=await supabase.auth.getSession();return session?.access_token||"";},[]);
  const refresh=useCallback(async()=>{const t=await token();const res=await fetch("/api/game-predictions?gameId="+encodeURIComponent(game.id),{headers:{Authorization:"Bearer "+t},cache:"no-store"});const json=await res.json();if(res.ok)setData(json);},[game.id,token]);
