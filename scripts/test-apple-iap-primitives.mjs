@@ -755,4 +755,52 @@ if (originalProductEnv.APPLE_IAP_PREMIUM_PRODUCT_ID === undefined) {
   process.env.APPLE_IAP_PREMIUM_PRODUCT_ID = originalProductEnv.APPLE_IAP_PREMIUM_PRODUCT_ID;
 }
 
+
+const duplicateProductEnvResult = appleCandidate.buildAppleEntitlementCandidate({
+  ...candidateInput,
+  transaction: { ...verifiedProductionTransaction, productId: "same.product" },
+});
+process.env.APPLE_IAP_PRO_PRODUCT_ID = "same.product";
+process.env.APPLE_IAP_PREMIUM_PRODUCT_ID = "same.product";
+assert.equal(
+  appleCandidate.buildAppleEntitlementCandidate(candidateInput).reason,
+  "unknown_product",
+  "duplicate Pro/Premium product configuration must fail closed",
+);
+process.env.APPLE_IAP_PRO_PRODUCT_ID = "online.hoopcheck.pro.monthly";
+process.env.APPLE_IAP_PREMIUM_PRODUCT_ID = "online.hoopcheck.premium.monthly";
+assert.equal(duplicateProductEnvResult.reason, "unknown_product", "unconfigured product must not become a candidate");
+
+const activeStripePro = { plan: "pro", status: "active", currentPeriodEnd: "2026-11-28T12:00:00.000Z" };
+const activeStripePremium = { plan: "premium", status: "active", currentPeriodEnd: "2026-11-28T12:00:00.000Z" };
+const activeApplePro = { ...validApple, plan: "pro" };
+assert.deepEqual(
+  entitlement.resolveEffectiveEntitlement({ stripe: activeStripePro, apple: [activeApplePro], now }),
+  { plan: "pro", sources: ["stripe", "apple"] },
+  "equivalent active Pro subscriptions from both providers should preserve both sources",
+);
+assert.deepEqual(
+  entitlement.resolveEffectiveEntitlement({ stripe: activeStripePremium, apple: [activeApplePro], now }),
+  { plan: "premium", sources: ["stripe"] },
+  "a lower Apple tier must not replace an active Stripe Premium entitlement",
+);
+assert.deepEqual(
+  entitlement.resolveEffectiveEntitlement({
+    stripe: activeStripePro,
+    apple: [{ ...validApple, revokedAt: "2026-10-27T12:00:00.000Z" }],
+    now,
+  }),
+  { plan: "pro", sources: ["stripe"] },
+  "a revoked Apple candidate must not remove a valid Stripe entitlement",
+);
+assert.deepEqual(
+  entitlement.resolveEffectiveEntitlement({
+    stripe: { plan: "pro", status: "active", currentPeriodEnd: "2026-10-27T12:00:00.000Z" },
+    apple: [activeApplePro],
+    now,
+  }),
+  { plan: "pro", sources: ["apple"] },
+  "an expired Stripe candidate must not block a valid Apple candidate",
+);
+
 console.log("Apple IAP primitive tests passed (local pure-logic checks only).");
