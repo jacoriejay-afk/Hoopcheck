@@ -7,6 +7,7 @@ on:
       - "lib/billing/effective-entitlement.ts"
       - "apps/mobile/src/billing/apple-account-token.ts"
       - "scripts/test-apple-iap-primitives.mjs"
+      - "scripts/test-apple-account-token-client.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/apple-iap-primitives.yml"
@@ -18,6 +19,7 @@ on:
       - "lib/billing/effective-entitlement.ts"
       - "apps/mobile/src/billing/apple-account-token.ts"
       - "scripts/test-apple-iap-primitives.mjs"
+      - "scripts/test-apple-account-token-client.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/apple-iap-primitives.yml"
@@ -41,3 +43,5 @@ jobs:
         run: npm ci
       - name: Run Apple IAP primitive tests
         run: npm run test:apple-iap
+      - name: Run native account-token client tests
+        run: node scripts/test-apple-account-token-client.mjs
