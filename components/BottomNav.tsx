@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { MotionSwoosh } from "./HoopMotion";
 import { supabase } from "../lib/supabase";
 import { usePathname } from "next/navigation";
 import { useAuthState } from "./AuthProvider";
@@ -37,6 +38,19 @@ function NavIcon({ label }: { label: (typeof items)[number][2] }) {
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const previousPath = useRef(pathname);
+  const [swooshActive, setSwooshActive] = useState(false);
+  useEffect(() => {
+    const previous = previousPath.current;
+    previousPath.current = pathname;
+    const tabs = ["/", "/dashboard", "/feed", "/fan-feed", "/search", "/notifications", "/profile"];
+    const isTab = (path: string) => tabs.some(tab => tab === path || (tab !== "/" && path.startsWith(tab + "/")));
+    if (previous !== pathname && isTab(previous) && isTab(pathname)) {
+      setSwooshActive(true);
+      const timer = window.setTimeout(() => setSwooshActive(false), 460);
+      return () => window.clearTimeout(timer);
+    }
+  }, [pathname]);
   const { signedIn, userId } = useAuthState();
   const { t } = useLanguage();
   const [accountType, setAccountType] = useState<string | null>(null);
