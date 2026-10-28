@@ -19,6 +19,58 @@ const classification = await loadTypeScriptModule("../lib/billing/apple-iap-clas
 const entitlement = await loadTypeScriptModule("../lib/billing/effective-entitlement.ts");
 const verifierConfig = await loadTypeScriptModule("../lib/billing/apple-iap-verifier-config.ts");
 const notificationHandler = await loadTypeScriptModule("../lib/billing/apple-iap-notification-handler.ts");
+const signedDataVerifierAdapter = await loadTypeScriptModule("../lib/billing/apple-iap-signed-data-verifier-adapter.ts");
+
+let verifierConstructorArgs = null;
+const fakeAppleLibrary = {
+  Environment: { PRODUCTION: "APPLE_PRODUCTION", SANDBOX: "APPLE_SANDBOX" },
+  SignedDataVerifier: class {
+    constructor(...args) { verifierConstructorArgs = args; }
+    async verifyAndDecodeNotification(value) { return { notificationUUID: value }; }
+    async verifyAndDecodeTransaction(value) { return { transactionId: value }; }
+    async verifyAndDecodeRenewalInfo(value) { return { productId: value }; }
+  },
+};
+const fakeRootCertificate = Buffer.from("test-root-certificate");
+const sandboxAppleVerifier = signedDataVerifierAdapter.createAppleNotificationVerifier(
+  fakeAppleLibrary,
+  {
+    bundleId: "online.hoopcheck.app",
+    environment: "Sandbox",
+    rootCertificates: [fakeRootCertificate],
+  },
+);
+assert.equal(verifierConstructorArgs[1], true, "online certificate checks default to enabled");
+assert.equal(verifierConstructorArgs[2], "APPLE_SANDBOX");
+assert.equal(verifierConstructorArgs[3], "online.hoopcheck.app");
+assert.deepEqual(await sandboxAppleVerifier.verifyAndDecodeNotification("signed-notification"), {
+  notificationUUID: "signed-notification",
+});
+assert.deepEqual(await sandboxAppleVerifier.verifyAndDecodeTransaction("signed-transaction"), {
+  transactionId: "signed-transaction",
+});
+assert.deepEqual(await sandboxAppleVerifier.verifyAndDecodeRenewalInfo("signed-renewal"), {
+  productId: "signed-renewal",
+});
+assert.throws(
+  () => signedDataVerifierAdapter.createAppleNotificationVerifier(fakeAppleLibrary, {
+    bundleId: "com.example.hoopcheck",
+    environment: "Sandbox",
+    rootCertificates: [fakeRootCertificate],
+  }),
+  signedDataVerifierAdapter.AppleVerifierAdapterConfigurationError,
+  "placeholder bundle IDs must fail closed",
+);
+assert.throws(
+  () => signedDataVerifierAdapter.createAppleNotificationVerifier(fakeAppleLibrary, {
+    bundleId: "online.hoopcheck.app",
+    environment: "Production",
+    rootCertificates: [fakeRootCertificate],
+  }),
+  signedDataVerifierAdapter.AppleVerifierAdapterConfigurationError,
+  "production verification must require the numeric Apple app ID",
+);
+
 
 const trustedAccountToken = "550e8400-e29b-41d4-a716-446655440000";
 assert.equal(
