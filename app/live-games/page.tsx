@@ -47,6 +47,30 @@ function scoreText(game: Game) {
     : null;
 }
 
+const COUNTRY_FLAGS: Record<string, string> = {
+  "united states": "🇺🇸", "usa": "🇺🇸", "united kingdom": "🇬🇧", "uk": "🇬🇧",
+  "azerbaijan": "🇦🇿", "turkey": "🇹🇷", "türkiye": "🇹🇷", "germany": "🇩🇪",
+  "france": "🇫🇷", "spain": "🇪🇸", "italy": "🇮🇹", "greece": "🇬🇷",
+  "serbia": "🇷🇸", "croatia": "🇭🇷", "slovenia": "🇸🇮", "lithuania": "🇱🇹",
+  "latvia": "🇱🇻", "estonia": "🇪🇪", "poland": "🇵🇱", "ukraine": "🇺🇦",
+  "romania": "🇷🇴", "bulgaria": "🇧🇬", "portugal": "🇵🇹", "netherlands": "🇳🇱",
+  "belgium": "🇧🇪", "sweden": "🇸🇪", "finland": "🇫🇮", "denmark": "🇩🇰",
+  "norway": "🇳🇴", "iceland": "🇮🇸", "austria": "🇦🇹", "switzerland": "🇨🇭",
+  "czechia": "🇨🇿", "czech republic": "🇨🇿", "slovakia": "🇸🇰", "hungary": "🇭🇺",
+  "cyprus": "🇨🇾", "israel": "🇮🇱", "japan": "🇯🇵", "australia": "🇦🇺",
+  "new zealand": "🇳🇿", "canada": "🇨🇦", "mexico": "🇲🇽", "brazil": "🇧🇷",
+  "argentina": "🇦🇷", "chile": "🇨🇱", "south korea": "🇰🇷", "china": "🇨🇳",
+  "qatar": "🇶🇦", "saudi arabia": "🇸🇦", "united arab emirates": "🇦🇪",
+  "georgia": "🇬🇪", "armenia": "🇦🇲", "kosovo": "🇽🇰", "montenegro": "🇲🇪",
+  "north macedonia": "🇲🇰", "bosnia and herzegovina": "🇧🇦", "ireland": "🇮🇪",
+};
+function countryFlag(country: string) {
+  return COUNTRY_FLAGS[country.trim().toLocaleLowerCase()] || "🌍";
+}
+function countryAnchor(country: string) {
+  return `country-${country.toLocaleLowerCase().normalize("NFKD").replace(/[\\u0300-\\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unknown"}`;
+}
+
 export default function LiveGamesPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [teams, setTeams] = useState<Record<string, Team>>({});
@@ -150,7 +174,7 @@ export default function LiveGamesPage() {
     if (filter === "live" && !(availability.state === "LIVE" && availability.phase !== "post-game")) return false;
     if (filter === "my-teams" && !followedIds.some(id => id === game.team_id || id === game.opponent_team_id)) return false;
     const search = query.trim().toLocaleLowerCase();
-    if (search && ![home?.name, away?.name, game.opponent_name, leagueName].some(value => value?.toLocaleLowerCase().includes(search))) return false;
+    if (search && ![home?.name, away?.name, game.opponent_name, leagueName, game.country, home?.country, away?.country].some(value => value?.toLocaleLowerCase().includes(search))) return false;
     return true;
   }), [prepared, leagueFilter, filter, followedIds, query, teams]);
 
@@ -176,7 +200,37 @@ export default function LiveGamesPage() {
   }).sort((a,b) => Date.parse(b.game.ends_at || b.game.started_at || b.game.scheduled_at || "") - Date.parse(a.game.ends_at || a.game.started_at || a.game.scheduled_at || ""));
 
   const postGameOpen = filtered.filter(({availability,game}) => availability.phase === "post-game" && availability.chatOpen && !["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()));
+
   const nextUpcoming = upcoming[0] || null;
+
+  const countryGroups = useMemo(() => {
+    const byCountry = new Map<string, { country: string; live: typeof live; upcoming: typeof upcoming; recent: typeof recent; postGame: typeof postGameOpen }>();
+    const countryFor = (entry: typeof prepared[number]) =>
+      (entry.game.country || entry.home?.country || entry.away?.country || "Country not listed").trim() || "Country not listed";
+    const ensure = (country: string) => {
+      if (!byCountry.has(country)) byCountry.set(country, { country, live: [], upcoming: [], recent: [], postGame: [] });
+      return byCountry.get(country)!;
+    };
+    live.forEach(entry => ensure(countryFor(entry)).live.push(entry));
+    upcoming.forEach(entry => ensure(countryFor(entry)).upcoming.push(entry));
+    recent.forEach(entry => ensure(countryFor(entry)).recent.push(entry));
+    postGameOpen.forEach(entry => ensure(countryFor(entry)).postGame.push(entry));
+    return Array.from(byCountry.values()).sort((a, b) =>
+      Number(b.live.length > 0) - Number(a.live.length > 0) ||
+      (b.live.length + b.upcoming.length) - (a.live.length + a.upcoming.length) ||
+      a.country.localeCompare(b.country)
+    );
+  }, [live, upcoming, recent, postGameOpen, prepared]);
+
+  const countryLeagueGroups = (entries: typeof upcoming) => {
+    const groups = new Map<string, typeof upcoming>();
+    entries.forEach(entry => {
+      const league = entry.game.league_name || teams[entry.game.team_id]?.league_name || "League not listed";
+      if (!groups.has(league)) groups.set(league, []);
+      groups.get(league)!.push(entry);
+    });
+    return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
+  };
 
   async function toggleReminder(gameId: string) {
     if (!userId || reminding) return;
@@ -266,26 +320,44 @@ export default function LiveGamesPage() {
     </section>
     {message && <p className="hc-live-hub-message" role="status">{message}</p>}
 
-    <section className="hc-live-hub-section">
-      <div className="hc-live-section-heading"><div><p className="eyebrow">RIGHT NOW</p><h2>LIVE NOW <span>{live.length}</span></h2></div><p>Real-time conversations, one game at a time.</p></div>
-      {live.length ? <div className="hc-live-hub-grid">{live.map(entry => <GameCard key={entry.game.id} entry={entry} variant="live" />)}</div>
-        : <div className="hc-live-empty"><div className="hc-live-empty__icon"><HoopIcon name="basketball" size={24} /></div><div><h3>No live games right now</h3>{upcoming[0] ? <><p>Next tip-off: {formatViewerLocalTime(upcoming[0].game.scheduled_at || upcoming[0].game.started_at)}. Set a reminder and we’ll keep it on your list.</p><div className="hc-live-empty__actions"><button type="button" className={`hc-remind-button ${reminders.includes(upcoming[0].game.id) ? "is-set" : ""}`} disabled={reminding===upcoming[0].game.id} onClick={() => void toggleReminder(upcoming[0].game.id)}><HoopIcon name="bell" size={16}/>{reminders.includes(upcoming[0].game.id) ? "REMINDER SET" : "REMIND ME"}</button></div></> : <p>When a game is live, its chat will appear here. There are no confirmed upcoming tip-off times yet.</p>}</div></div>}
-      {postGameOpen.length > 0 && <><div className="hc-live-section-heading hc-live-post-heading"><div><p className="eyebrow">STAY IN THE CONVERSATION</p><h2>POST-GAME CHAT <span>{postGameOpen.length}</span></h2></div></div><div className="hc-live-hub-grid">{postGameOpen.map(entry => <GameCard key={entry.game.id} entry={entry} variant="postgame" />)}</div></>}
+        <section className="hc-live-country-browser" aria-label="Games by country">
+      <div className="hc-live-section-heading"><div><p className="eyebrow">WORLDWIDE TIP-OFFS</p><h2>BROWSE BY COUNTRY <span>{countryGroups.length}</span></h2></div><p>Live games appear first inside each country, followed by upcoming fixtures grouped by league.</p></div>
+      {countryGroups.length > 0 && <nav className="hc-live-country-index" aria-label="Jump to country">
+        <span className="hc-live-country-index__label">JUMP TO</span>
+        {countryGroups.map(group => <a key={group.country} href={`#${countryAnchor(group.country)}`} title={group.country}>{countryFlag(group.country)} <span>{group.country}</span></a>)}
+      </nav>}
+      {countryGroups.length ? countryGroups.map(group => (
+        <section className="hc-live-country-section" id={countryAnchor(group.country)} key={group.country} aria-label={`${group.country} games`}>
+          <header className="hc-live-country-heading">
+            <div className="hc-live-country-heading__name"><span className="hc-live-country-flag" aria-hidden="true">{countryFlag(group.country)}</span><div><h3>{group.country}</h3><p>{group.live.length} live · {group.upcoming.length} upcoming</p></div></div>
+            <a href="#top" className="hc-live-country-top">Back to top ↑</a>
+          </header>
+          {group.live.length > 0 && <div className="hc-live-country-block">
+            <div className="hc-live-country-subheading"><h4><span className="hc-live-dot" /> LIVE NOW</h4><span>{group.live.length}</span></div>
+            <div className="hc-live-hub-grid">{group.live.map(entry => <GameCard key={entry.game.id} entry={entry} variant="live" />)}</div>
+          </div>}
+          {group.postGame.length > 0 && <div className="hc-live-country-block">
+            <div className="hc-live-country-subheading"><h4>POST-GAME CHAT</h4><span>{group.postGame.length}</span></div>
+            <div className="hc-live-hub-grid">{group.postGame.map(entry => <GameCard key={entry.game.id} entry={entry} variant="postgame" />)}</div>
+          </div>}
+          {group.upcoming.length > 0 && <div className="hc-live-country-block">
+            <div className="hc-live-country-subheading"><h4>UPCOMING BY LEAGUE</h4><span>{group.upcoming.length}</span></div>
+            {countryLeagueGroups(group.upcoming).map(([league, entries]) => <section className="hc-live-country-league" key={league} aria-label={league}>
+              <h5>{league}<span>{entries.length}</span></h5>
+              <div className="hc-live-hub-grid">{entries.map(entry => <GameCard key={entry.game.id} entry={entry} variant="upcoming" />)}</div>
+            </section>)}
+          </div>}
+          {group.recent.length > 0 && <div className="hc-live-country-block">
+            <div className="hc-live-country-subheading"><h4>RECENTLY FINISHED</h4><span>{group.recent.length}</span></div>
+            {countryLeagueGroups(group.recent).map(([league, entries]) => <section className="hc-live-country-league" key={league} aria-label={league}>
+              <h5>{league}<span>{entries.length}</span></h5>
+              <div className="hc-live-hub-grid">{entries.map(entry => <GameCard key={entry.game.id} entry={entry} variant="recent" />)}</div>
+            </section>)}
+          </div>}
+        </section>
+      )) : <div className="hc-live-empty"><div className="hc-live-empty__icon"><HoopIcon name="basketball" size={24} /></div><div><h3>{games.length ? "No games match these filters" : "No games scheduled yet"}</h3><p>{games.length ? "Try another country, team, league, or filter." : "The game schedule has no fixtures yet. Games will appear by country when schedule data is available."}</p>{nextUpcoming && <button type="button" className={`hc-remind-button ${reminders.includes(nextUpcoming.game.id) ? "is-set" : ""}`} disabled={reminding===nextUpcoming.game.id} onClick={() => void toggleReminder(nextUpcoming.game.id)}><HoopIcon name="bell" size={16}/>{reminders.includes(nextUpcoming.game.id) ? "REMINDER SET" : "REMIND ME"}</button>}</div></div>}
     </section>
-
-    <section className="hc-live-hub-section">
-      <div className="hc-live-section-heading"><div><p className="eyebrow">NEXT UP</p><h2>UPCOMING <span>{upcoming.length}</span></h2></div><p>Tip-off times are shown in your local timezone.</p></div>
-      {upcoming.length ? <div className="hc-live-hub-grid">{upcoming.map(entry => <GameCard key={entry.game.id} entry={entry} variant="upcoming" />)}</div>
-        : <div className="hc-live-empty"><div className="hc-live-empty__icon"><HoopIcon name="calendar" size={24} /></div><div><h3>No confirmed upcoming games</h3><p>There are no scheduled fixtures in the current game feed yet. We’ll show them here when the provider supplies confirmed tip-off times.</p></div></div>}
-    </section>
-
-    <section className="hc-live-hub-section hc-live-recent-section">
-      <div className="hc-live-section-heading"><div><p className="eyebrow">FINAL WHISTLE</p><h2>RECENTLY FINISHED <span>{recent.length}</span></h2></div><p>Games from the last 48 hours.</p></div>
-      {recent.length ? <div className="hc-live-hub-grid">{recent.map(entry => <GameCard key={entry.game.id} entry={entry} variant="recent" />)}</div>
-        : <div className="hc-live-recent-empty">Recent final scores will appear here when available.</div>}
-    </section>
-
-    {!filtered.length && <section className="hc-live-no-games"><CourtLines variant="circle" className="hc-court-empty-art" /><h2>{games.length ? "No games match these filters" : "No games scheduled yet"}</h2><p>{games.length ? "Try another team, league, or filter — or browse the full team directory." : "The game schedule has no fixtures yet. Browse the team directory while the schedule feed is being populated."}</p><Link href="/teams" className="btn">Browse Teams</Link></section>}
-    <div className="hc-live-hub-footer"><span>Game states refresh automatically every 60 seconds.</span><Link href="/teams">Explore teams <span aria-hidden="true">→</span></Link></div>
+    {!filtered.length && <section className="hc-live-no-games"><CourtLines variant="circle" className="hc-court-empty-art" /><h2>{games.length ? "No games match these filters" : "No games scheduled yet"}</h2><p>{games.length ? "Try another country, team, league, or filter — or browse the full team directory." : "The game schedule has no fixtures yet. Browse the team directory while the schedule feed is being populated."}</p><Link href="/teams" className="btn">Browse Teams</Link></section>}
+        <div className="hc-live-hub-footer"><span>Game states refresh automatically every 60 seconds.</span><Link href="/teams">Explore teams <span aria-hidden="true">→</span></Link></div>
   </div></main>;
 }
