@@ -15,7 +15,7 @@ import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
 import { submitReviewReport } from "../../../lib/review-reports";
-import HoopLoading from "../../../components/HoopLoading";
+import { PlayerCardSkeletons } from "../../../components/HoopMotion";
 import FollowButton from "../../../components/FollowButton";
 import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
@@ -438,7 +438,7 @@ export default function TeamDetailPage() {
             HoopCheck
           </div>
 
-          <HoopLoading label={t("loadingTeamIntelligence")} />
+          <PlayerCardSkeletons count={4} />
         </section>
       </main>
     );
