@@ -5,6 +5,7 @@ import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
 import { VerifiedBadge } from "../../components/HoopCheckUI";
 import { supabase } from "../../lib/supabase";
+import { HoopCheckDraw } from "../../components/HoopMotion";
 
 export default function VerificationPage() {
   const [accountType,setAccountType]=useState<"player"|"coach">("player");
@@ -84,7 +85,7 @@ export default function VerificationPage() {
     <header className="topbar verification-topbar"><Link href="/" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/account">Account</Link></nav></header>
     <section className="hero-card"><p className="eyebrow">{accountType==="coach" ? "COACH VERIFICATION" : "PLAYER VERIFICATION"}</p><h1>{accountType==="coach" ? "Get your verified coach badge." : "Get your player badge."}</h1><p className="muted">Verification helps HoopCheck confirm professional basketball identities. Secure identity verification uses a government ID or passport plus a live selfie check.</p></section>
     <section className="dashboard-card" style={{marginTop:24}}>
-      {status==="approved" ? <><h2><VerifiedBadge label="Verified" /> Verified {accountType==="coach" ? "Coach" : "Player"}</h2><p className="muted">Your professional identity is verified. {accountType==="coach" ? "You can now request placement with teams from your dashboard." : "Your player verification is active."}</p></> :
+      {status==="approved" ? <><h2><HoopCheckDraw label="Profile verified" /><VerifiedBadge label="Verified" /> Verified {accountType==="coach" ? "Coach" : "Player"}</h2><p className="muted">Your professional identity is verified. {accountType==="coach" ? "You can now request placement with teams from your dashboard." : "Your player verification is active."}</p></> :
        status==="pending" ? <><h2>Request under review</h2><p className="muted">We have your request. You do not need to submit another one.</p></> :
        <><div className="card" style={{marginBottom:16,border:"1px solid var(--orange)"}}>
         <p className="eyebrow">IDENTITY CHECK</p>
@@ -103,7 +104,7 @@ export default function VerificationPage() {
         <label>Verification document (optional)<input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={e=>setDocumentFile(e.target.files?.[0]||null)} /></label>
         {documentFile&&<label>Document type<select value={documentType} onChange={e=>setDocumentType(e.target.value as "passport"|"basketball_license"|"national_id"|"other")}><option value="basketball_license">Basketball license</option><option value="passport">Passport</option><option value="national_id">National ID</option><option value="other">Other</option></select></label>}
         <label>Anything else we should know?<textarea value={note} onChange={e=>setNote(e.target.value)} maxLength={1000} rows={5}/></label>
-        {message&&<p role="status">{message}</p>}
+        {message&&<p role="status" className={message.startsWith("Verification request submitted.") ? "hc-motion-success" : undefined}>{message.startsWith("Verification request submitted.")&&<HoopCheckDraw label="Verification request submitted" />}{message}</p>}
         <button className="btn" disabled={submitting}>{submitting?"Submitting...":"Request Verification"}</button>
         <p className="muted">Use the secure identity check above for passports/IDs and face matching. Do not upload identity documents through this fallback form unless HoopCheck support specifically asks you to.</p>
        </form>} </>}
