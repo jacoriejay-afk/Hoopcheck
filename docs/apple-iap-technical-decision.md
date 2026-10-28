@@ -20,6 +20,13 @@ Status: proposed implementation direction; not production-ready.
 - `lib/billing/apple-iap-classification.ts` adds pure product-ID mapping (from `APPLE_IAP_PRO_PRODUCT_ID` / `APPLE_IAP_PREMIUM_PRODUCT_ID`) and notification-type classification. It does not verify signatures, persist events, or grant access; unknown or unconfigured products fail closed.
 - `lib/billing/apple-iap-verifier-config.ts` validates server-only verifier configuration and fails closed on the placeholder bundle ID, missing root certificates, malformed certificate base64, or missing production Apple app ID. It constructs no verifier and processes no payloads by itself.
 
+## Notification orchestration boundary
+
+- `lib/billing/apple-iap-notification-handler.ts` now defines a framework-neutral handler that requires injected verification and persistence adapters.
+- It verifies the outer notification and any nested signed transaction/renewal data before the first write, checks bundle/environment consistency, records by notification UUID, and only marks an event processed after reconciliation succeeds.
+- An unprocessed ledger row is retryable after a transient reconciliation failure; already-processed duplicates are short-circuited. The persistence adapter must make reconciliation idempotent and serialize concurrent work per notification/transaction to close race conditions.
+- This is not an HTTP route and is not wired to Supabase. No request can currently grant access through this module alone. The future adapter must bind the verified transaction to the correct HoopCheck account and must never overwrite Stripe-owned subscription columns.
+
 ## Regression checks
 
 - Run `npm run test:apple-iap` to exercise pure product mapping, notification classification, entitlement precedence/expiry, and verifier-configuration rejection cases.
