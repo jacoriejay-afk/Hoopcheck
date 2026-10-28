@@ -756,20 +756,18 @@ if (originalProductEnv.APPLE_IAP_PREMIUM_PRODUCT_ID === undefined) {
 }
 
 
-const duplicateProductEnvResult = appleCandidate.buildAppleEntitlementCandidate({
-  ...candidateInput,
-  transaction: { ...verifiedProductionTransaction, productId: "same.product" },
-});
 process.env.APPLE_IAP_PRO_PRODUCT_ID = "same.product";
 process.env.APPLE_IAP_PREMIUM_PRODUCT_ID = "same.product";
 assert.equal(
-  appleCandidate.buildAppleEntitlementCandidate(candidateInput).reason,
+  appleCandidate.buildAppleEntitlementCandidate({
+    ...candidateInput,
+    transaction: { ...verifiedProductionTransaction, productId: "same.product" },
+  }).reason,
   "unknown_product",
   "duplicate Pro/Premium product configuration must fail closed",
 );
 process.env.APPLE_IAP_PRO_PRODUCT_ID = "online.hoopcheck.pro.monthly";
 process.env.APPLE_IAP_PREMIUM_PRODUCT_ID = "online.hoopcheck.premium.monthly";
-assert.equal(duplicateProductEnvResult.reason, "unknown_product", "unconfigured product must not become a candidate");
 
 const activeStripePro = { plan: "pro", status: "active", currentPeriodEnd: "2026-11-28T12:00:00.000Z" };
 const activeStripePremium = { plan: "premium", status: "active", currentPeriodEnd: "2026-11-28T12:00:00.000Z" };
