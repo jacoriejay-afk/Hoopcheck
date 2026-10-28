@@ -55,9 +55,16 @@ export async function POST(request: Request) {
   const authClient = createClient(config.url, config.anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const { data: authData, error: authError } = await authClient.auth.getUser(accessToken);
-  if (authError || !authData.user) {
-    return jsonNoStore({ error: "Your sign-in session is invalid or expired." }, { status: 401 });
+  let userId: string;
+  try {
+    const { data: authData, error: authError } = await authClient.auth.getUser(accessToken);
+    if (authError || !authData.user) {
+      return jsonNoStore({ error: "Your sign-in session is invalid or expired." }, { status: 401 });
+    }
+    userId = authData.user.id;
+  } catch (error) {
+    console.error("Apple IAP authentication lookup failed:", error);
+    return jsonNoStore({ error: "Apple purchases are temporarily unavailable." }, { status: 503 });
   }
 
   const admin = createClient(config.url, config.serviceRoleKey, {
@@ -65,7 +72,6 @@ export async function POST(request: Request) {
   });
 
   try {
-    const userId = authData.user.id;
     const existing = await admin
       .from("apple_iap_account_tokens")
       .select("app_account_token")
