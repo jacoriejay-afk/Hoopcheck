@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "audit:surfaces": "node scripts/audit-hardcoded-surfaces.mjs",
-    "test:apple-iap": "node scripts/test-apple-iap-primitives.mjs"
+    "test:apple-iap": "node scripts/test-apple-iap-primitives.mjs",
+    "test:apple-iap-route": "node scripts/test-apple-iap-account-token-route.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.7.0",
