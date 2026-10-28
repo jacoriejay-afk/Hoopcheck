@@ -32,4 +32,30 @@ const placeholderConfig = spawnSync(process.execPath, [checker.pathname], {
 assert.equal(placeholderConfig.status, 1, "preflight must reject placeholder bundle identifiers");
 assert.match(placeholderConfig.stderr, /APPLE_IAP_BUNDLE_ID to the registered iOS bundle identifier/);
 
+const mismatchedBundle = spawnSync(process.execPath, [checker.pathname], {
+  cwd: process.cwd(),
+  env: {
+    ...process.env,
+    APPLE_IAP_BUNDLE_ID: "com.hoopcheck.different",
+    APPLE_IAP_PRO_PRODUCT_ID: "hoopcheck.pro.monthly",
+    APPLE_IAP_PREMIUM_PRODUCT_ID: "hoopcheck.premium.monthly",
+  },
+  encoding: "utf8",
+});
+assert.equal(mismatchedBundle.status, 1, "preflight must reject a bundle ID that differs from app.json");
+assert.match(mismatchedBundle.stderr, /must exactly match expo.ios.bundleIdentifier/);
+
+const duplicateProducts = spawnSync(process.execPath, [checker.pathname], {
+  cwd: process.cwd(),
+  env: {
+    ...process.env,
+    APPLE_IAP_BUNDLE_ID: "com.example.hoopcheck",
+    APPLE_IAP_PRO_PRODUCT_ID: "same.product",
+    APPLE_IAP_PREMIUM_PRODUCT_ID: "same.product",
+  },
+  encoding: "utf8",
+});
+assert.equal(duplicateProducts.status, 1, "preflight must reject duplicate product IDs");
+assert.match(duplicateProducts.stderr, /must use distinct App Store Connect product IDs/);
+
 console.log("Apple IAP release-readiness fail-closed tests passed.");
