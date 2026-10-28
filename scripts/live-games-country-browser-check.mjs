@@ -92,6 +92,7 @@ try {
     assert.equal(await page.locator('.hc-fan-side-switch button[aria-pressed="true"]').innerText(), "WOMEN'S");
     assert.equal(await page.locator(".hc-live-country-section").count(), 3, "Expected three country sections in the test fixture.");
     assert.ok(await page.locator("#country-azerbaijan .hc-live-badge--visible").count() >= 1, "Azerbaijan must show a live game.");
+    assert.ok(await page.locator("#country-azerbaijan .hc-live-country-league").count() >= 1, "Azerbaijan live games should be grouped by league.");
     assert.ok(await page.locator("#country-spain .hc-live-country-league").count() >= 1, "Spain upcoming games should be grouped by league.");
     assert.ok(await page.locator("#country-lithuania .hc-live-country-league").count() >= 1, "Lithuania upcoming games should be grouped by league.");
     assert.ok(await page.getByRole("button", { name: /REMIND ME/i }).count() >= 2, "Upcoming games should keep Remind Me actions.");
