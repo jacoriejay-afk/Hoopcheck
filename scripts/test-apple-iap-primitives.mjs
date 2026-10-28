@@ -249,7 +249,7 @@ let ledgerInserted = false;
 let ledgerProcessed = false;
 let shouldFailReconcile = false;
 const verifiedNotification = {
-  notificationUUID: "notification-123",
+  notificationUUID: "550e8400-e29b-41d4-a716-446655440099",
   notificationType: "DID_RENEW",
   data: {
     bundleId: "online.hoopcheck.app",
@@ -443,6 +443,40 @@ assert.equal(
   "nested transaction environment mismatch must fail before persistence",
 );
 
+for (const invalidNotificationUUID of ["notification-123", "", "550e8400-e29b-41d4-a716-44665544009Z"]) {
+  let invalidNotificationUUIDWrites = 0;
+  await assert.rejects(
+    notificationHandler.handleAppleServerNotification({
+      ...notificationInput,
+      verifier: {
+        ...mockVerifier,
+        async verifyAndDecodeNotification() {
+          return {
+            ...verifiedNotification,
+            notificationUUID: invalidNotificationUUID,
+          };
+        },
+      },
+      persistence: {
+        ...mockPersistence,
+        async recordVerifiedNotification() {
+          invalidNotificationUUIDWrites++;
+          return { inserted: true, processed: false };
+        },
+        async reconcileVerifiedNotification() { invalidNotificationUUIDWrites++; },
+        async markNotificationProcessed() { invalidNotificationUUIDWrites++; },
+      },
+    }),
+    notificationHandler.AppleNotificationRejectedError,
+    "malformed notification UUIDs must be rejected",
+  );
+  assert.equal(
+    invalidNotificationUUIDWrites,
+    0,
+    "invalid notification UUIDs must be rejected before persistence",
+  );
+}
+
 const notificationCountsBeforeHappyPath = {
   verifyNotificationCalls,
   verifyTransactionCalls,
@@ -450,13 +484,13 @@ const notificationCountsBeforeHappyPath = {
   markProcessedCalls,
 };
 const handled = await notificationHandler.handleAppleServerNotification(notificationInput);
-assert.deepEqual(handled, { outcome: "recorded", notificationUUID: "notification-123" });
+assert.deepEqual(handled, { outcome: "recorded", notificationUUID: "550e8400-e29b-41d4-a716-446655440099" });
 assert.equal(verifyNotificationCalls, notificationCountsBeforeHappyPath.verifyNotificationCalls + 1);
 assert.equal(verifyTransactionCalls, notificationCountsBeforeHappyPath.verifyTransactionCalls + 1);
 assert.equal(reconcileCalls, notificationCountsBeforeHappyPath.reconcileCalls + 1);
 assert.equal(markProcessedCalls, notificationCountsBeforeHappyPath.markProcessedCalls + 1);
 const duplicate = await notificationHandler.handleAppleServerNotification(notificationInput);
-assert.deepEqual(duplicate, { outcome: "duplicate", notificationUUID: "notification-123" });
+assert.deepEqual(duplicate, { outcome: "duplicate", notificationUUID: "550e8400-e29b-41d4-a716-446655440099" });
 assert.equal(
   reconcileCalls,
   notificationCountsBeforeHappyPath.reconcileCalls + 1,
@@ -677,7 +711,7 @@ const retry = await notificationHandler.handleAppleServerNotification({
     async markNotificationProcessed() { ledgerProcessed = true; },
   },
 });
-assert.deepEqual(retry, { outcome: "duplicate", notificationUUID: "notification-123" });
+assert.deepEqual(retry, { outcome: "duplicate", notificationUUID: "550e8400-e29b-41d4-a716-446655440099" });
 assert.equal(ledgerProcessed, true, "retry must complete an unprocessed notification");
 
 
