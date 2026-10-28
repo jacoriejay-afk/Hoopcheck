@@ -519,6 +519,38 @@ assert.equal(
   "verified transactions missing product identity must fail before persistence",
 );
 
+let missingAccountTokenWrites = 0;
+await assert.rejects(
+  notificationHandler.handleAppleServerNotification({
+    ...notificationInput,
+    verifier: {
+      ...mockVerifier,
+      async verifyAndDecodeTransaction() {
+        return {
+          transactionId: "transaction-no-token",
+          originalTransactionId: "original-no-token",
+          bundleId: "online.hoopcheck.app",
+          productId: "online.hoopcheck.pro.monthly",
+          environment: "Sandbox",
+          appAccountToken: null,
+        };
+      },
+    },
+    persistence: {
+      ...mockPersistence,
+      async recordVerifiedNotification() { missingAccountTokenWrites++; return { inserted: true, processed: false }; },
+      async reconcileVerifiedNotification() { missingAccountTokenWrites++; },
+      async markNotificationProcessed() { missingAccountTokenWrites++; },
+    },
+  }),
+  notificationHandler.AppleNotificationRejectedError,
+);
+assert.equal(
+  missingAccountTokenWrites,
+  0,
+  "verified transactions without a valid account token must fail before persistence",
+);
+
 let mismatchedRenewalWrites = 0;
 await assert.rejects(
   notificationHandler.handleAppleServerNotification({
