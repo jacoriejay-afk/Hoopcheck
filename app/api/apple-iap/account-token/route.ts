@@ -31,7 +31,7 @@ function getBearerToken(request: Request): string | null {
  * this endpoint is enabled in an environment. The service-role client never
  * leaves this server module.
  */
-export async function GET(request: Request) {
+export async function POST(request: Request) {
   const accessToken = getBearerToken(request);
   if (!accessToken) {
     return NextResponse.json({ error: "Sign in to prepare Apple purchases." }, { status: 401 });
