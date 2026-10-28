@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
+import { HoopCheckDraw } from "./HoopMotion";
 
 type ClaimProfileButtonProps = { entityType:"team"|"coach"; entityId:string; entityName:string };
 
@@ -56,9 +57,9 @@ export default function ClaimProfileButton({entityType,entityId,entityName}:Clai
       </div>
       {method==="official_email" ? <label className="hc-claim-field">Organization email<input type="email" value={email} onChange={event=>setEmail(event.target.value)} placeholder="name@club-domain.com" /></label>
         : <label className="hc-claim-field">Verification document<input type="file" accept=".pdf,image/jpeg,image/png,image/webp" onChange={event=>setFile(event.target.files?.[0]||null)}/><small>PDF, JPG, PNG, or WebP · max 10 MB · stored privately</small></label>}
-      {message&&<p className="hc-claim-message" role="status">{message}</p>}
+      {message&&<p className="hc-claim-message" role="status">{message.startsWith("Claim submitted.")&&<HoopCheckDraw label="Team claim submitted" />}{message}</p>}
       <button type="button" className="btn" disabled={busy} onClick={()=>void submit()}>{busy?"Submitting…":"Submit for Admin Review"}</button>
     </div>}
-    {!open&&message&&<small className="hc-claim-message" role="status">{message}</small>}
+    {!open&&message&&<small className="hc-claim-message" role="status">{message.startsWith("Claim submitted.")&&<HoopCheckDraw label="Team claim submitted" />}{message}</small>}
   </div>;
 }

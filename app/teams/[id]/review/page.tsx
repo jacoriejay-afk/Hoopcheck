@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../../lib/supabase";
+import { HoopCheckDraw } from "../../../../components/HoopMotion";
 
 type Team = {
   id: string;
@@ -643,10 +644,8 @@ export default function TeamReviewPage() {
 
           {message && (
             <div className="card">
-              <p
-                role="status"
-                aria-live="polite"
-              >
+              <p role="status" aria-live="polite" className={message.startsWith("Review submitted.") ? "hc-motion-success" : undefined}>
+                {message.startsWith("Review submitted.") && <HoopCheckDraw label="Review submitted" />}
                 {message}
               </p>
             </div>

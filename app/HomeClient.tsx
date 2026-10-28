@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
-import { getCachedSession } from "../lib/supabase";
+import { getCachedSession, supabase } from "../lib/supabase";
+import { MotionNumber } from "../components/HoopMotion";
 import CategoryTile, { type CategoryTileKind } from "../components/CategoryTile";
 import { HoopIcon, type HoopIconName } from "../components/HoopCheckUI";
 
@@ -41,11 +42,20 @@ function CategoryIcon({ name }: { name: string }) {
 
 export default function Home() {
   const router = useRouter();
+  const [directoryCounts, setDirectoryCounts] = useState<{ teams: number; leagues: number } | null>(null);
 
   useEffect(() => {
     getCachedSession().then(({ data }) => {
       if (data.session) router.replace("/dashboard");
     });
+    let active = true;
+    void Promise.all([
+      supabase.from("teams").select("id", { count: "exact", head: true }).eq("active", true),
+      supabase.from("leagues").select("id", { count: "exact", head: true }).eq("active", true),
+    ]).then(([teamsResult, leaguesResult]) => {
+      if (active) setDirectoryCounts({ teams: teamsResult.count ?? 0, leagues: leaguesResult.count ?? 0 });
+    }).catch(() => { if (active) setDirectoryCounts({ teams: 0, leagues: 0 }); });
+    return () => { active = false; };
   }, [router]);
 
   return (
@@ -106,6 +116,10 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="hc-motion-directory-counts" aria-label="HoopCheck directory totals">
+        <div><strong>{directoryCounts ? <MotionNumber value={directoryCounts.teams} label={String(directoryCounts.teams) + " teams"} /> : "—"}</strong><span>TEAMS IN THE DIRECTORY</span></div>
+        <div><strong>{directoryCounts ? <MotionNumber value={directoryCounts.leagues} label={String(directoryCounts.leagues) + " leagues"} /> : "—"}</strong><span>LEAGUES COVERED</span></div>
+      </section>
       <section className="hc-quick-access" aria-labelledby="hc-quick-access-heading">
         <div className="hc-quick-access-heading">
           <span className="hc-template-eyebrow">YOUR NEXT MOVE</span>

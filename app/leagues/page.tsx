@@ -7,7 +7,7 @@ useState,
 import Link from "next/link";
 import DirectoryLayout from "../../components/DirectoryLayout";
 import { supabase } from "../../lib/supabase";
-import HoopLoading from "../../components/HoopLoading";
+import { PlayerCardSkeletons } from "../../components/HoopMotion";
 import SearchBar from "../../components/SearchBar";
 import GeoBadge from "../../components/GeoBadge";
 
@@ -68,7 +68,7 @@ return (
     {(query || country) && <button type="button" className="hc-directory-reset" onClick={() => { setQuery(""); setCountry(""); }}>Clear filters</button>}
   </section>
   <section className="grid hc-team-directory-list">
-    {loading ? (<div className="card"><HoopLoading label="Scanning professional leagues..." /></div>) : leagues.length === 0 ? (
+    {loading ? (<PlayerCardSkeletons count={5} />) : leagues.length === 0 ? (
       <div className="card">
         <div className="eyebrow">
           Coming Soon

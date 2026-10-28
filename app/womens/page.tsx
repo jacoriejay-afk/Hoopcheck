@@ -5,7 +5,7 @@ import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import { useEffect, useMemo, useState } from "react";
 import DirectoryLayout from "../../components/DirectoryLayout";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
-import HoopLoading from "../../components/HoopLoading";
+import { PlayerCardSkeletons } from "../../components/HoopMotion";
 import SearchBar from "../../components/SearchBar";
 import TeamMap from "../../components/TeamMap";
 import { useLanguage } from "../../components/LanguageProvider";
@@ -103,7 +103,7 @@ export default function Womens() {
           <button type="button" className={viewMode === "list" ? "is-active" : ""} onClick={() => setViewMode("list")}>☷ {t("list")}</button>
           <button type="button" className={viewMode === "map" ? "is-active" : ""} onClick={() => setViewMode("map")}>◎ {t("map")}</button>
         </div>
-        {loading ? <div className="hc-womens-loading"><HoopLoading label={t("loadingWomensTeams")} /></div> : viewMode === "map" ? (
+        {loading ? <div className="hc-womens-loading"><PlayerCardSkeletons count={5} /></div> : viewMode === "map" ? (
           <TeamMap profileBasePath="womens" teams={filtered.map(team => ({...team, latitude:null, longitude:null}))} />
         ) : filtered.length ? (
           <section className="hc-womens-team-list" aria-label={t("womensTeamResults")}>

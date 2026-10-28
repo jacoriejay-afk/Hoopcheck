@@ -4,6 +4,7 @@ import { Graduate, Inter } from "next/font/google";
 import Link from "next/link";
 import Script from "next/script";
 import "./globals.css";
+import "./hoopcheck-motion.css";
 import "./hoopcheck-rebrand.css";
 import "./hoopcheck-polish.css";
 import "./hoopcheck-final-overrides.css";
