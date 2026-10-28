@@ -208,7 +208,7 @@ export default function FanLivePage() {
 
   const home=selected?teams[selected.team_id]:null;
   const away=selected?(teams[selected.opponent_team_id||""]||{id:"",name:selected.opponent_name}):null;
-  const isClosed=selected?!roomOpen(selected,clock):false;
+  const isClosed=selected?finalStatus(selected.status)||(Number.isFinite(Date.parse(selected.ends_at||""))?clock.getTime()>=Date.parse(selected.ends_at||""):(Number.isFinite(Date.parse(selected.scheduled_at||selected.started_at||""))&&clock.getTime()>=Date.parse(selected.scheduled_at||selected.started_at||"")+4*60*60_000)):false;
   const availability=selected?getGameAvailability({status:selected.status,scheduledAt:selected.scheduled_at,startedAt:selected.started_at,endsAt:selected.ends_at,now:clock}):null;
   const shownMessages=useMemo(()=>messages.filter(m=>!blockedUsers.has(m.user_id)&&!mutedUsers.has(m.user_id)),[messages,blockedUsers,mutedUsers]);
 
