@@ -23,6 +23,7 @@ import TrustScoreDial from "../../../components/TrustScoreDial";
 import Surface from "../../../components/Surface";
 import TeamRosterSpots from "../../../components/TeamRosterSpots";
 import OfficialReviewResponse from "../../../components/OfficialReviewResponse";
+import TeamPayTimeline from "../../../components/TeamPayTimeline";
 
 type Team = {
   id: string;
@@ -572,6 +573,7 @@ export default function TeamDetailPage() {
         <TeamRosterSpots teamId={team.id} teamName={team.name} />
 
       </section>
+      <TeamPayTimeline teamId={team.id} />
       {!hasAccess ? (
         <section className="hero">
           <Surface className="card hc-team-membership-surface">
