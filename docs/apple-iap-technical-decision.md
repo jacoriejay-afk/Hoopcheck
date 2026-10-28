@@ -18,12 +18,14 @@ Status: proposed implementation direction; not production-ready.
 - The new migration `supabase/migrations/20261028120000_add_apple_iap_foundation.sql` creates isolated Apple subscription, transaction, and notification-ledger tables. It is feature-branch code only and has not been applied to any database.
 - `lib/billing/effective-entitlement.ts` contains a pure, fail-closed resolution primitive for already-verified provider records. It is deliberately not wired into current access routes or RLS policies; current production access behavior is unchanged.
 - `lib/billing/apple-iap-classification.ts` adds pure product-ID mapping (from `APPLE_IAP_PRO_PRODUCT_ID` / `APPLE_IAP_PREMIUM_PRODUCT_ID`) and notification-type classification. It does not verify signatures, persist events, or grant access; unknown or unconfigured products fail closed.
+- `lib/billing/apple-iap-verifier-config.ts` validates server-only verifier configuration and fails closed on the placeholder bundle ID, missing root certificates, malformed certificate base64, or missing production Apple app ID. It constructs no verifier and processes no payloads by itself.
 
 ## Not yet decided / required before release
 
 - Permanent bundle identifier: current iOS identifier is still `com.example.hoopcheck`.
 - Whether the two subscription products already exist in App Store Connect; suggested product IDs remain unregistered assumptions.
 - The active production API alias and target server runtime for the Apple endpoints.
+- The Apple server-library package and synchronized npm lockfile update; no endpoint should be enabled before this is complete.
 - A non-production Supabase environment or isolated integration-test fixtures for the entitlement data model.
 - EAS signing setup and a physical iOS device for sandbox testing.
 
