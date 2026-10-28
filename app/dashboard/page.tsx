@@ -11,6 +11,7 @@ import PlayerContactButton from "../../components/PlayerContactButton";
 import SearchBar from "../../components/SearchBar";
 import { useLanguage } from "../../components/LanguageProvider";
 import { HoopIcon, CategoryIconTile, VerifiedBadge } from "../../components/HoopCheckUI";
+import FanPredictionLeaderboard from "../../components/FanPredictionLeaderboard";
 
 type Profile = { display_name: string | null; player_verified: boolean; coach_verified?: boolean; account_type: "player"|"coach"|"scout"|"agent"|"fan"; moderation_status?: string; moderation_note?: string | null };
 type Subscription = {
@@ -253,6 +254,7 @@ export default function DashboardPage() {
           </article>
         </section>
 
+        {profile?.account_type === "fan" && <FanPredictionLeaderboard />}
         <section className="hc-mobile-dashboard" aria-label={t("exploreHoopCheck")}>
           <SearchBar className="hc-mobile-search" name="q" placeholder={t("searchPeoplePlaceholder")} ariaLabel={t("searchPeoplePlaceholder")} />
 
