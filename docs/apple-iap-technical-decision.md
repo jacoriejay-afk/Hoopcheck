@@ -16,7 +16,8 @@ Status: proposed implementation direction; not production-ready.
 - Keep App Store Connect key material and root certificates in server-only secret configuration. Never expose them as `EXPO_PUBLIC_*` variables.
 - Process notifications idempotently and reconcile status against the App Store Server API where needed.
 - The new migration `supabase/migrations/20261028120000_add_apple_iap_foundation.sql` creates isolated Apple subscription, transaction, and notification-ledger tables. It is feature-branch code only and has not been applied to any database.
-- `lib/billing/effective-entitlement.ts` now contains a pure, fail-closed resolution primitive for already-verified provider records. It is deliberately not wired into current access routes or RLS policies; current production access behavior is unchanged.
+- `lib/billing/effective-entitlement.ts` contains a pure, fail-closed resolution primitive for already-verified provider records. It is deliberately not wired into current access routes or RLS policies; current production access behavior is unchanged.
+- `lib/billing/apple-iap-classification.ts` adds pure product-ID mapping (from `APPLE_IAP_PRO_PRODUCT_ID` / `APPLE_IAP_PREMIUM_PRODUCT_ID`) and notification-type classification. It does not verify signatures, persist events, or grant access; unknown or unconfigured products fail closed.
 
 ## Not yet decided / required before release
 
@@ -30,7 +31,7 @@ Status: proposed implementation direction; not production-ready.
 
 1. Confirm the permanent app identifiers and existing App Store Connect products.
 2. Review the isolated Apple-provider persistence and effective-entitlement contract without modifying Stripe-owned fields.
-3. Implement signed-transaction verification and Notifications V2 handling on the server.
+3. Add the Apple server-library dependency and lockfile update, configure trusted Apple root certificates and permanent app identifiers, then implement signed-transaction verification and Notifications V2 handling. The pure classifier is not a webhook handler and must not be used before signature verification.
 4. Integrate purchase, restore, status display, and Apple subscription management in the Expo app.
 5. Audit every direct subscription read and RLS policy before wiring the resolver into actual authorization.
 6. Validate duplicate/out-of-order events, expiry, refund/revocation, account switching, and coexistence with Stripe.
