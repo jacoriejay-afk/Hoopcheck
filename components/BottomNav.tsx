@@ -68,7 +68,9 @@ export default function BottomNav() {
   if (!signedIn || pathname.startsWith("/admin")) return null;
 
   return (
-    <nav className="bottom-nav hc-bottom-tab-bar" aria-label="Mobile navigation">
+    <>
+      <MotionSwoosh active={swooshActive} />
+      <nav className="bottom-nav hc-bottom-tab-bar" aria-label="Mobile navigation">
       {items.map(([href, translationKey, label]) => {
         const destination = href === "/feed" && fanAccount ? "/fan-feed" : href;
         const active = destination === "/"
@@ -81,6 +83,7 @@ export default function BottomNav() {
           </Link>
         );
       })}
-    </nav>
+      </nav>
+    </>
   );
 }
