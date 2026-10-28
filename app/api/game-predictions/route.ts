@@ -15,7 +15,7 @@ function clients() {
     db: createClient(url, service, { auth: { autoRefreshToken: false, persistSession: false } }),
   };
 }
-async function currentUser(request: Request, auth: ReturnType<typeof createClient>) {
+async function currentUser(request: Request, auth: any) {
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
   if (!token) return null;
   const { data } = await auth.auth.getUser(token);
