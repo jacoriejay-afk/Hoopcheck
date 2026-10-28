@@ -1,6 +1,6 @@
 import { checkAppleTransactionOwnership } from "./apple-iap-ownership";
 import { getApplePlanForProductId } from "./apple-iap-classification";
-import type { EffectiveEntitlementCandidate } from "./effective-entitlement";
+import type { AppleEntitlementCandidate } from "./effective-entitlement";
 
 export type VerifiedAppleTransactionForEntitlement = {
   transactionId?: string | null;
@@ -17,7 +17,7 @@ export type VerifiedAppleRenewalForEntitlement = {
 };
 
 export type AppleEntitlementCandidateResult =
-  | { accepted: true; candidate: EffectiveEntitlementCandidate }
+  | { accepted: true; candidate: AppleEntitlementCandidate }
   | {
       accepted: false;
       reason:
@@ -106,8 +106,6 @@ export function buildAppleEntitlementCandidate(input: {
       currentPeriodEnd: (inGracePeriod ? graceExpiration! : expiration).toISOString(),
       lastVerifiedAt: now.toISOString(),
       revokedAt: null,
-      transactionId: input.transaction.transactionId,
-      originalTransactionId: input.transaction.originalTransactionId,
     },
   };
 }
