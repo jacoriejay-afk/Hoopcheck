@@ -205,6 +205,28 @@ const notificationInput = {
   persistence: mockPersistence,
   allowedEnvironments: ["Sandbox"],
 };
+for (const invalidAllowlist of [
+  [],
+  ["online.hoopcheck.pro.monthly", "online.hoopcheck.pro.monthly"],
+  [" online.hoopcheck.pro.monthly", "online.hoopcheck.premium.monthly"],
+]) {
+  let invalidAllowlistWrites = 0;
+  await assert.rejects(
+    notificationHandler.handleAppleServerNotification({
+      ...notificationInput,
+      allowedProductIds: invalidAllowlist,
+      persistence: {
+        ...mockPersistence,
+        async recordVerifiedNotification() {
+          invalidAllowlistWrites++;
+          return { inserted: true, processed: false };
+        },
+      },
+    }),
+    notificationHandler.AppleNotificationRejectedError,
+  );
+  assert.equal(invalidAllowlistWrites, 0, "invalid product allowlists must fail before persistence");
+}
 const handled = await notificationHandler.handleAppleServerNotification(notificationInput);
 assert.deepEqual(handled, { outcome: "recorded", notificationUUID: "notification-123" });
 assert.equal(verifyNotificationCalls, 1);
