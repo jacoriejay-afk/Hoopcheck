@@ -56,7 +56,7 @@ export type AppleNotificationPersistence = {
     notificationUUID: string;
     notificationType: string;
     environment: string;
-  }): Promise<{ inserted: boolean }>;
+  }): Promise<{ inserted: boolean; processed: boolean }>;
   /**
    * Reconcile using verified transaction/renewal data and trusted account
    * ownership. Implementations must be idempotent and must not overwrite
@@ -67,6 +67,8 @@ export type AppleNotificationPersistence = {
     transaction: VerifiedAppleTransaction | null;
     renewalInfo: VerifiedAppleRenewalInfo | null;
   }): Promise<void>;
+  /** Mark processed only after reconciliation commits successfully. */
+  markNotificationProcessed(notificationUUID: string): Promise<void>;
 };
 
 export type AppleNotificationResult =
@@ -161,7 +163,9 @@ export async function handleAppleServerNotification(input: {
     environment,
   });
 
-  if (!ledger.inserted) {
+  // A previously inserted but unprocessed event must be retried: it may have
+  // failed during reconciliation after the first ledger write.
+  if (!ledger.inserted && ledger.processed) {
     return { outcome: "duplicate", notificationUUID };
   }
 
@@ -170,6 +174,7 @@ export async function handleAppleServerNotification(input: {
     transaction,
     renewalInfo,
   });
+  await input.persistence.markNotificationProcessed(notificationUUID);
 
-  return { outcome: "recorded", notificationUUID };
+  return { outcome: ledger.inserted ? "recorded" : "duplicate", notificationUUID };
 }
