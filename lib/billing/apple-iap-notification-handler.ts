@@ -110,9 +110,15 @@ export async function handleAppleServerNotification(input: {
   if (
     !Array.isArray(input.allowedProductIds) ||
     input.allowedProductIds.length === 0 ||
-    input.allowedProductIds.some((productId) => !isNonEmptyString(productId))
+    input.allowedProductIds.some(
+      (productId) =>
+        !isNonEmptyString(productId) || productId.trim() !== productId,
+    ) ||
+    new Set(input.allowedProductIds).size !== input.allowedProductIds.length
   ) {
-    throw new AppleNotificationRejectedError("Allowed Apple product IDs are not configured.");
+    throw new AppleNotificationRejectedError(
+      "Allowed Apple product IDs must be configured, trimmed, and unique.",
+    );
   }
 
   // Cryptographic verification is deliberately the first operation with data.
