@@ -448,6 +448,7 @@ const mobileToken = await mobileAccountToken.getAppleAppAccountToken(
 assert.equal(mobileToken, expectedAppAccountToken);
 assert.equal(tokenRequestUrl, "https://hoopcheck.example/api/apple-iap/account-token");
 assert.equal(tokenRequestHeaders.Authorization, "Bearer supabase-access-token");
+assert.equal(tokenRequestHeaders.Accept, "application/json");
 await assert.rejects(
   mobileAccountToken.getAppleAppAccountToken("https://hoopcheck.example", "", async () => {
     throw new Error("fetch must not run without a token");
