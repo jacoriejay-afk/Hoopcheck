@@ -1,0 +1,41 @@
+name: Apple IAP primitive checks
+
+on:
+  pull_request:
+    paths:
+      - "lib/billing/apple-iap-*.ts"
+      - "lib/billing/effective-entitlement.ts"
+      - "scripts/test-apple-iap-primitives.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/apple-iap-primitives.yml"
+  push:
+    branches:
+      - "feat/apple-iap-foundation"
+    paths:
+      - "lib/billing/apple-iap-*.ts"
+      - "lib/billing/effective-entitlement.ts"
+      - "scripts/test-apple-iap-primitives.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/apple-iap-primitives.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  apple-iap-primitives:
+    name: Apple IAP pure-logic regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run Apple IAP primitive tests
+        run: npm run test:apple-iap
