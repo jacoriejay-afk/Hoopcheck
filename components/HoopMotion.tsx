@@ -89,7 +89,7 @@ export function usePullToRefresh(onRefresh: () => Promise<unknown> | unknown, th
   }, [distance, onRefresh, refreshing, threshold]);
   return {
     pullToRefreshProps: { onTouchStart, onTouchMove, onTouchEnd },
-    pullIndicator: <div className={`hc-motion-pull-indicator${refreshing ? " is-refreshing" : ""}`} style={{ height: distance, transition: reduced ? "none" : undefined }} aria-live="polite">{refreshing ? "Refreshing…" : distance > 8 ? "Release to refresh" : ""}</div>,
+    pullIndicator: <div className={`hc-motion-pull-indicator${refreshing ? " is-refreshing" : ""}`} style={{ height: distance, transition: reduced ? "none" : undefined }} aria-live="polite"><><span className="hc-motion-basketball" aria-hidden="true" />{refreshing ? "Refreshing…" : distance > 8 ? "Release to refresh" : ""}</></div>,
   };
 }
 
