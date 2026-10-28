@@ -140,3 +140,14 @@ Relevant commits:
 - `9e47b5268f79932791a46be51814a18751eaee6c` — added test cases.
 
 These tests are committed but have not yet been executed in this environment. The sample hostname in the unit test is only a validation fixture; it is not a verified or designated HoopCheck staging environment. No staging deployment, native build, production environment change, or merge occurred.
+
+### 8. Production-host normalization regression — 2026-10-28
+
+A source review found that DNS-equivalent trailing-dot hostnames (for example, `hoopcheck.online.`) could evade the earlier exact production-host check. The validator now normalizes the hostname by lowercasing and removing one final dot before applying the production-domain block. Regression cases were added for both the apex domain and a subdomain with a trailing dot.
+
+- Validator commit: `78798bed798068b253e4550b36161aa2efece8c1`
+- Regression-test commit: `25e886805571a66e8e9f4d7265986082b3aea452`
+
+The current combined status for the test commit reports all four Vercel checks as failed with the Vercel build-rate-limit response. This is not evidence that the code tests failed or passed; the test command has not been executed in a local Node environment during this task. CI must run successfully before this guard is considered verified.
+
+No staging resources, production settings, databases, payment settings, or deployments were changed.
