@@ -16,6 +16,7 @@ on:
     paths:
       - "lib/billing/apple-iap-*.ts"
       - "lib/billing/effective-entitlement.ts"
+      - "apps/mobile/src/billing/apple-account-token.ts"
       - "scripts/test-apple-iap-primitives.mjs"
       - "package.json"
       - "package-lock.json"
