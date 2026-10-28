@@ -35,10 +35,21 @@ try {
       if (!target) throw new Error("Pull-to-refresh preview surface missing");
       const makeTouch = (y) => new Touch({ identifier: 1, target, clientX: 40, clientY: y });
       target.dispatchEvent(new TouchEvent("touchstart", { bubbles: true, touches: [makeTouch(20)] }));
-      target.dispatchEvent(new TouchEvent("touchmove", { bubbles: true, touches: [makeTouch(220)] }));
-      target.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [makeTouch(220)], touches: [] }));
+    });
+    await page.waitForTimeout(50);
+    await page.evaluate(() => {
+      const target = document.querySelector(".hc-motion-preview-pull");
+      const touch = new Touch({ identifier: 1, target, clientX: 40, clientY: 220 });
+      target.dispatchEvent(new TouchEvent("touchmove", { bubbles: true, touches: [touch] }));
+    });
+    await page.waitForTimeout(50);
+    await page.evaluate(() => {
+      const target = document.querySelector(".hc-motion-preview-pull");
+      const touch = new Touch({ identifier: 1, target, clientX: 40, clientY: 220 });
+      target.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [touch], touches: [] }));
     });
     await page.waitForTimeout(900);
+    assert.match(await page.locator(".hc-motion-preview-pull").innerText(), /Refreshes: 1/);
     assert.equal(await page.locator(".hc-motion-preview-counts strong").count(), 2);
     await page.screenshot({ path: `${out}/motion-${theme}.png`, fullPage: true, animations: "disabled" });
     await context.close();
