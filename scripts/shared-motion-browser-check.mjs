@@ -51,7 +51,7 @@ try {
       target.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [touch], touches: [] }));
     });
     await page.waitForTimeout(900);
-    assert.match(await page.locator(".hc-motion-preview-pull").innerText(), /Refreshes: 1/);
+    assert.match(await page.locator(".hc-motion-preview-grid article:nth-child(4) p").innerText(), /Refreshes: 1/);
     assert.equal(await page.locator(".hc-motion-preview-counts strong").count(), 2);
     await page.screenshot({ path: `${out}/motion-${theme}.png`, fullPage: true, animations: "disabled" });
     await context.close();
