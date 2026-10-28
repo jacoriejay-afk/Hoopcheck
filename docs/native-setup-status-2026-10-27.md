@@ -124,3 +124,19 @@ Updated `capacitor.config.ts` in commit `b6b8f4e9d30679b7a29316f542ad802aa83ca73
 - External auth/payment callbacks still require a separately reviewed native-link implementation. This change does not claim deep links, auth, checkout, or device behavior are tested.
 
 **Verification limitation:** this was a source change through the GitHub contents API. No local Capacitor CLI execution, native build, staging runtime, or device test was performed in this step. The staging Supabase project and explicit test-mode Stripe configuration remain unresolved. No environment variables, Supabase resources, production settings, or deployments were changed.
+
+### 7. Unit-testable staging-origin guard — 2026-10-28
+
+Extracted the Capacitor URL guard into `lib/capacitor-staging-origin.ts`, wired it into `capacitor.config.ts`, and added `npm run test:capacitor-origin` with tests for:
+- missing/blank configuration;
+- valid HTTPS staging origins and trailing-slash normalization;
+- rejecting `hoopcheck.online` and all subdomains;
+- rejecting HTTP, credentials, paths, queries, and fragments.
+
+Relevant commits:
+- `1464b510e66fa2fe9cd3d5dd05287526807ad2ef` — extracted the validation helper.
+- `97cc3cf7b7b67992bdda041876ec1e6ecf8cfb5e` — wired Capacitor config to the helper.
+- `33067eba73f6cefdcef0324e267abce23fda5253` — added test script.
+- `9e47b5268f79932791a46be51814a18751eaee6c` — added test cases.
+
+These tests are committed but have not yet been executed in this environment. The sample hostname in the unit test is only a validation fixture; it is not a verified or designated HoopCheck staging environment. No staging deployment, native build, production environment change, or merge occurred.
