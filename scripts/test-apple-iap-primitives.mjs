@@ -551,6 +551,41 @@ assert.equal(
   "verified transactions without a valid account token must fail before persistence",
 );
 
+for (const malformedToken of ["account-token", "550e8400-e29b-41d4-a716-44665544000Z", ""]) {
+  let malformedTokenWrites = 0;
+  await assert.rejects(
+    notificationHandler.handleAppleServerNotification({
+      ...notificationInput,
+      verifier: {
+        ...mockVerifier,
+        async verifyAndDecodeTransaction() {
+          return {
+            transactionId: "transaction-malformed-token",
+            originalTransactionId: "original-malformed-token",
+            bundleId: "online.hoopcheck.app",
+            productId: "online.hoopcheck.pro.monthly",
+            environment: "Sandbox",
+            appAccountToken: malformedToken,
+          };
+        },
+      },
+      persistence: {
+        ...mockPersistence,
+        async recordVerifiedNotification() { malformedTokenWrites++; return { inserted: true, processed: false }; },
+        async reconcileVerifiedNotification() { malformedTokenWrites++; },
+        async markNotificationProcessed() { malformedTokenWrites++; },
+      },
+    }),
+    notificationHandler.AppleNotificationRejectedError,
+  );
+  assert.equal(
+    malformedTokenWrites,
+    0,
+    "malformed appAccountToken values must be rejected before persistence",
+  );
+}
+
+
 let mismatchedRenewalWrites = 0;
 await assert.rejects(
   notificationHandler.handleAppleServerNotification({
