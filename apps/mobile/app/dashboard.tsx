@@ -46,6 +46,14 @@ export default function DashboardScreen() {
           <Text style={styles.value}>{email || "Signed-in member"}</Text>
           <Text style={styles.role}>Account type: {accountType}</Text>
         </View>
+        <Pressable onPress={() => router.push("/membership")} style={styles.membershipCard}>
+          <View style={styles.directoryIcon}><Ionicons name="diamond-outline" size={22} color="#FF5A1F" /></View>
+          <View style={styles.playerWideBody}>
+            <Text style={styles.directoryTitle}>Membership</Text>
+            <Text style={styles.directoryCaption}>View Pro and Premium plans</Text>
+          </View>
+          <Text style={styles.directoryAction}>View plans →</Text>
+        </Pressable>
         <Text style={styles.sectionTitle}>Explore basketball</Text>
         <Pressable onPress={() => router.push("/players")} style={styles.playerWideCard}>
           <View style={styles.directoryIcon}><Ionicons name="people-outline" size={22} color="#FF5A1F" /></View>
@@ -103,6 +111,7 @@ const styles = StyleSheet.create({
   value: { color: "#FFFFFF", fontSize: 16, fontWeight: "700", marginTop: 8 },
   role: { color: "#BDBDBD", marginTop: 8, textTransform: "capitalize" },
   sectionTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "900", marginTop: 26, marginBottom: 12 },
+  membershipCard: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#17110D", borderRadius: 12, borderWidth: 1, borderColor: "#604020", padding: 14, marginTop: 18 },
   playerWideCard: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#111111", borderRadius: 12, borderWidth: 1, borderColor: "#303030", padding: 14, marginBottom: 10 },
   playerWideBody: { flex: 1 },
   directoryRow: { flexDirection: "row", gap: 10 },
