@@ -17,6 +17,7 @@ import "./hoopcheck-directory-card-fixes.css";
 import "./hoopcheck-theme-audit.css";
 import "./hoopcheck-lm2-contract.css";
 import "./hoopcheck-root-cause.css";
+import "./hoopcheck-motion.css";
 import ThemeProvider from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
 import MobileAuth from "../components/MobileAuth";
@@ -28,6 +29,7 @@ import AnalyticsTracker from "../components/AnalyticsTracker";
 import SiteHeader from "../components/SiteHeader";
 import Logo from "../components/Logo";
 import CourtLines from "../components/CourtLines";
+import PageTransition from "../components/PageTransition";
 import { SITE_URL } from "../lib/site-url";
 
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
@@ -113,7 +115,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <MobileAuth />
               <BottomNav />
               <GlobalBackButton />
-              {children}
+              <PageTransition>{children}</PageTransition>
             </LanguageProvider>
           </AuthProvider>
         </ThemeProvider>

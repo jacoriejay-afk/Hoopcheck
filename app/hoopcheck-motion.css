@@ -1,0 +1,58 @@
+/* HoopCheck shared motion system — keep motion consistent and inexpensive. */
+:root {
+  --hc-motion-fast: 140ms;
+  --hc-motion-base: 220ms;
+  --hc-motion-slow: 320ms;
+  --hc-motion-ease: cubic-bezier(.2, .75, .25, 1);
+  --hc-motion-ease-out: cubic-bezier(0, 0, .2, 1);
+}
+
+/* Animate only compositor-friendly properties to avoid layout jank on route changes. */
+.hc-route-transition {
+  min-width: 0;
+  animation: hc-route-enter var(--hc-motion-base) var(--hc-motion-ease-out) backwards;
+}
+
+@keyframes hc-route-enter {
+  from { opacity: .72; }
+  to { opacity: 1; }
+}
+
+/* Shared interaction motion; does not change sizing or the existing visual system. */
+:where(a, button, [role="button"], input, select, textarea) {
+  transition-duration: var(--hc-motion-fast);
+  transition-timing-function: var(--hc-motion-ease);
+}
+
+:where(a, button, [role="button"]):focus-visible {
+  scroll-margin-block: 6rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where(a, button, [role="button"]):not(:disabled):not([aria-disabled="true"]) {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --hc-motion-fast: 0ms;
+    --hc-motion-base: 0ms;
+    --hc-motion-slow: 0ms;
+  }
+
+  .hc-route-transition {
+    animation: none !important;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
