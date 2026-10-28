@@ -8,6 +8,8 @@ import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import { getGameAvailability } from "../../lib/game-availability";
 import "./fan-live.css";
+import "../game-predictions.css";
+import GameWinnerPrediction from "../../components/GameWinnerPrediction";
 
 type Game = { id:string; team_id:string; opponent_team_id:string|null; opponent_name:string; status:string; home_score:number|null; away_score:number|null; started_at:string|null; ends_at:string|null; scheduled_at:string|null; league_name:string|null; country:string|null; period_label:string|null };
 type Team = { id:string; name:string; logo_url?:string|null };
@@ -37,6 +39,7 @@ export default function FanLivePage() {
   const [body,setBody]=useState("");
   const [loading,setLoading]=useState(true);
   const [allowed,setAllowed]=useState(false);
+  const [chatEnabled,setChatEnabled]=useState(false);
   const [userId,setUserId]=useState<string|null>(null);
   const [sending,setSending]=useState(false);
   const [message,setMessage]=useState("");
@@ -64,14 +67,17 @@ export default function FanLivePage() {
       ["active","trialing"].includes(subscription?.status||"") &&
       ["active","trialing","pro","premium"].includes(subscription?.access_status??"active") &&
       (!subscription?.current_period_end || new Date(subscription.current_period_end)>new Date());
-    setAllowed(Boolean(active));
-    if(!active){setGames([]);setSelected(null);setLoading(false);return;}
-    const [{data:gameRows,error:gameError},{data:controls}] = await Promise.all([
-      supabase.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_name,country,period_label").in("status",["scheduled","live","final","cancelled","postponed","abandoned"]).order("scheduled_at",{ascending:true,nullsFirst:false}).limit(500),
-      supabase.from("fan_live_chat_user_controls").select("target_user_id,is_blocked,is_muted").eq("user_id",user.id)
-    ]);
-    if(gameError) setMessage("Game updates are temporarily unavailable. Reconnecting…");
-    const rawGames=(gameRows||[]) as Game[];
+    const playerCanPredict=profile?.account_type==="player";
+    setChatEnabled(Boolean(active));
+    setAllowed(Boolean(active||playerCanPredict));
+    if(!active&&!playerCanPredict){setGames([]);setSelected(null);setLoading(false);return;}
+    const gameResult = profile?.account_type === "player"
+      ? await fetch("/api/game-predictions?mode=games", { headers: { Authorization: "Bearer " + (session?.access_token || "") }, cache: "no-store" })
+          .then(async response => { const json = await response.json(); return { data: json.games || [], error: response.ok ? null : new Error("player-game-list-unavailable") }; })
+      : await supabase.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_name,country,period_label").in("status",["scheduled","live","final","cancelled","postponed","abandoned"]).order("scheduled_at",{ascending:true,nullsFirst:false}).limit(500);
+    const {data:controls}=await supabase.from("fan_live_chat_user_controls").select("target_user_id,is_blocked,is_muted").eq("user_id",user.id);
+    if(gameResult.error) setMessage("Game updates are temporarily unavailable. Reconnecting…");
+    const rawGames=(gameResult.data||[]) as Game[];
     const candidateIds=Array.from(new Set(rawGames.flatMap(g=>[g.team_id,g.opponent_team_id].filter((x):x is string=>Boolean(x)))));
     const {data:sideRows}=candidateIds.length?await supabase.from("teams").select("id").in("id",candidateIds).eq("basketball_type",basketballSide==="womens"?"womens":"mens"):{data:[] as {id:string}[]};
     const sideIds=new Set((sideRows||[]).map((row:any)=>row.id));
@@ -119,7 +125,7 @@ export default function FanLivePage() {
   },[load]);
 
   useEffect(()=>{
-    if(!selected||!allowed||!userId)return;
+    if(!selected||!chatEnabled||!userId)return;
     let stopped=false;
     const gameId=selected.id;
     const heartbeat=async()=>{
@@ -139,10 +145,10 @@ export default function FanLivePage() {
       stopped=true;window.clearInterval(timer);void supabase.removeChannel(presenceChannel);
       void supabase.from("fan_live_chat_presence").delete().eq("game_id",gameId).eq("user_id",userId);
     };
-  },[selected?.id,selected?.status,selected?.scheduled_at,selected?.ends_at,allowed,userId,refreshPresence]);
+  },[selected?.id,selected?.status,selected?.scheduled_at,selected?.ends_at,chatEnabled,userId,refreshPresence]);
 
   useEffect(()=>{
-    if(!selected){setMessages([]);setPresenceCount(0);return;}
+    if(!selected||!chatEnabled){setMessages([]);setPresenceCount(0);return;}
     const gameId=selected.id; void loadMessages(gameId); void refreshPresence(gameId);
     const channel=supabase.channel("fan-live-chat-messages-"+gameId)
       .on("postgres_changes",{event:"INSERT",schema:"public",table:"fan_live_chat_messages",filter:"game_id=eq."+gameId},payload=>{
@@ -156,7 +162,7 @@ export default function FanLivePage() {
         setProfiles(current=>current[item.user_id]?current:{...current,[item.user_id]:{display_name:null,avatar_url:null}});
       }).subscribe();
     return()=>{void supabase.removeChannel(channel);};
-  },[selected?.id,loadMessages,refreshPresence]);
+  },[selected?.id,chatEnabled,loadMessages,refreshPresence]);
 
   useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:"smooth",block:"end"});},[messages.length,selected?.id]);
 
@@ -202,7 +208,7 @@ export default function FanLivePage() {
 
   const home=selected?teams[selected.team_id]:null;
   const away=selected?(teams[selected.opponent_team_id||""]||{id:"",name:selected.opponent_name}):null;
-  const isClosed=selected?!roomOpen(selected,clock):false;
+  const isClosed=selected?finalStatus(selected.status)||(Number.isFinite(Date.parse(selected.ends_at||""))?clock.getTime()>=Date.parse(selected.ends_at||""):(Number.isFinite(Date.parse(selected.scheduled_at||selected.started_at||""))&&clock.getTime()>=Date.parse(selected.scheduled_at||selected.started_at||"")+4*60*60_000)):false;
   const availability=selected?getGameAvailability({status:selected.status,scheduledAt:selected.scheduled_at,startedAt:selected.started_at,endsAt:selected.ends_at,now:clock}):null;
   const shownMessages=useMemo(()=>messages.filter(m=>!blockedUsers.has(m.user_id)&&!mutedUsers.has(m.user_id)),[messages,blockedUsers,mutedUsers]);
 
@@ -217,8 +223,9 @@ export default function FanLivePage() {
     {!games.length?<section className="dashboard-card"><h2>No games available</h2><p className="muted">Check back when the game schedule is updated.</p><Link href="/live-games" className="btn">Browse Games</Link></section>:<section className="hc-live-room-grid">
       <aside className="dashboard-card hc-live-room-list"><div className="hc-live-room-list-heading"><span className="card-kicker">FAN HQ · GAME ROOMS</span><span>{games.length}</span></div>{games.map(game=>{const a=teams[game.team_id],b=teams[game.opponent_team_id||""]||{id:"",name:game.opponent_name};return <button key={game.id} type="button" className={"hc-live-room-game"+(selected?.id===game.id?" is-selected":"")} onClick={()=>setSelected(game)}><div className="hc-live-room-game-teams"><TeamLogo team={a}/><div><strong>{a?.name||"Team"} vs {b.name}</strong><span>{game.home_score??"—"} : {game.away_score??"—"} · {game.period_label||game.status}</span></div></div><span className={"hc-live-room-game-status"+(game.status==="live"?" is-live":"")}>{game.status==="live"?"● LIVE":finalStatus(game.status)?"FINAL":roomOpen(game)?"CHAT OPEN":"UPCOMING"}</span></button>})}</aside>
       {selected&&<section className="dashboard-card hc-live-room-panel">
+        <GameWinnerPrediction game={selected} homeName={home?.name||"Home"} awayName={away?.name||selected.opponent_name}  />
         <header className="hc-live-room-scoreboard"><div className="hc-live-room-team"><TeamLogo team={home}/><strong>{home?.name||"Team"}</strong></div><div className="hc-live-room-score"><span className={"hc-live-badge"+(selected.status==="live"?" is-live":"")}>{selected.status==="live"?<><i/> LIVE</>:finalStatus(selected.status)?"FINAL":availability?.state||"UPCOMING"}</span><strong>{selected.home_score??"—"} <span>:</span> {selected.away_score??"—"}</strong><small>{selected.period_label||selected.league_name||"Score updates automatically"}</small></div><div className="hc-live-room-team"><TeamLogo team={away}/><strong>{away?.name||selected.opponent_name}</strong></div></header>
-        {isClosed?<div className="hc-live-closed-state"><span className="hc-live-closed-icon">✓</span><h2>Chat closed — final score</h2><p>{home?.name||"Home"} {selected.home_score??"—"} – {selected.away_score??"—"} {away?.name||selected.opponent_name}</p><small>This room is read-only after full-time.</small></div>:!roomOpen(selected,clock)?<div className="hc-live-empty-state"><h2>Chat opens 30 minutes before tip-off</h2><p>{selected.scheduled_at?new Date(selected.scheduled_at).toLocaleString():"Tip-off time is not confirmed yet."}</p></div>:<div className="hc-live-chat-shell">
+        {isClosed?<div className="hc-live-closed-state"><span className="hc-live-closed-icon">✓</span><h2>Chat closed — final score</h2><p>{home?.name||"Home"} {selected.home_score??"—"} – {selected.away_score??"—"} {away?.name||selected.opponent_name}</p><small>This room is read-only after full-time.</small></div>:!chatEnabled?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div><h2>Make your game prediction</h2><p>Players can pick either team before tip-off and change their pick until the game starts. Fan chat remains available to eligible Pro and Premium Fan members.</p></div>:!roomOpen(selected,clock)?<div className="hc-live-empty-state"><h2>Chat opens 30 minutes before tip-off</h2><p>{selected.scheduled_at?new Date(selected.scheduled_at).toLocaleString():"Tip-off time is not confirmed yet."}</p></div>:<div className="hc-live-chat-shell">
           <div className="hc-live-chat-toolbar"><span><i className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"fan":"fans"} chatting</span><span>1 message / 2 seconds</span></div>
           <div className="hc-live-chat-messages" aria-live="polite" aria-label="Live chat messages">
             {!shownMessages.length?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div><h2>You're the first fan in — say something</h2><p>Kick off the conversation while you watch.</p></div>:shownMessages.map(item=><article key={item.id} className={"hc-live-chat-message"+(item.user_id===userId?" is-own":"")+(item.failed?" is-failed":"")}>
