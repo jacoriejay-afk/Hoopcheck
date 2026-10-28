@@ -39,6 +39,7 @@ export default function FanLivePage() {
   const [body,setBody]=useState("");
   const [loading,setLoading]=useState(true);
   const [allowed,setAllowed]=useState(false);
+  const [chatEnabled,setChatEnabled]=useState(false);
   const [userId,setUserId]=useState<string|null>(null);
   const [sending,setSending]=useState(false);
   const [message,setMessage]=useState("");
@@ -66,8 +67,10 @@ export default function FanLivePage() {
       ["active","trialing"].includes(subscription?.status||"") &&
       ["active","trialing","pro","premium"].includes(subscription?.access_status??"active") &&
       (!subscription?.current_period_end || new Date(subscription.current_period_end)>new Date());
-    setAllowed(Boolean(active));
-    if(!active){setGames([]);setSelected(null);setLoading(false);return;}
+    const playerCanPredict=profile?.account_type==="player";
+    setChatEnabled(Boolean(active));
+    setAllowed(Boolean(active||playerCanPredict));
+    if(!active&&!playerCanPredict){setGames([]);setSelected(null);setLoading(false);return;}
     const [{data:gameRows,error:gameError},{data:controls}] = await Promise.all([
       supabase.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_name,country,period_label").in("status",["scheduled","live","final","cancelled","postponed","abandoned"]).order("scheduled_at",{ascending:true,nullsFirst:false}).limit(500),
       supabase.from("fan_live_chat_user_controls").select("target_user_id,is_blocked,is_muted").eq("user_id",user.id)
@@ -141,10 +144,10 @@ export default function FanLivePage() {
       stopped=true;window.clearInterval(timer);void supabase.removeChannel(presenceChannel);
       void supabase.from("fan_live_chat_presence").delete().eq("game_id",gameId).eq("user_id",userId);
     };
-  },[selected?.id,selected?.status,selected?.scheduled_at,selected?.ends_at,allowed,userId,refreshPresence]);
+  },[selected?.id,selected?.status,selected?.scheduled_at,selected?.ends_at,chatEnabled,userId,refreshPresence]);
 
   useEffect(()=>{
-    if(!selected){setMessages([]);setPresenceCount(0);return;}
+    if(!selected||!chatEnabled){setMessages([]);setPresenceCount(0);return;}
     const gameId=selected.id; void loadMessages(gameId); void refreshPresence(gameId);
     const channel=supabase.channel("fan-live-chat-messages-"+gameId)
       .on("postgres_changes",{event:"INSERT",schema:"public",table:"fan_live_chat_messages",filter:"game_id=eq."+gameId},payload=>{
@@ -158,7 +161,7 @@ export default function FanLivePage() {
         setProfiles(current=>current[item.user_id]?current:{...current,[item.user_id]:{display_name:null,avatar_url:null}});
       }).subscribe();
     return()=>{void supabase.removeChannel(channel);};
-  },[selected?.id,loadMessages,refreshPresence]);
+  },[selected?.id,chatEnabled,loadMessages,refreshPresence]);
 
   useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:"smooth",block:"end"});},[messages.length,selected?.id]);
 
@@ -221,7 +224,7 @@ export default function FanLivePage() {
       {selected&&<section className="dashboard-card hc-live-room-panel">
         <GameWinnerPrediction game={selected} homeName={home?.name||"Home"} awayName={away?.name||selected.opponent_name}  />
         <header className="hc-live-room-scoreboard"><div className="hc-live-room-team"><TeamLogo team={home}/><strong>{home?.name||"Team"}</strong></div><div className="hc-live-room-score"><span className={"hc-live-badge"+(selected.status==="live"?" is-live":"")}>{selected.status==="live"?<><i/> LIVE</>:finalStatus(selected.status)?"FINAL":availability?.state||"UPCOMING"}</span><strong>{selected.home_score??"—"} <span>:</span> {selected.away_score??"—"}</strong><small>{selected.period_label||selected.league_name||"Score updates automatically"}</small></div><div className="hc-live-room-team"><TeamLogo team={away}/><strong>{away?.name||selected.opponent_name}</strong></div></header>
-        {isClosed?<div className="hc-live-closed-state"><span className="hc-live-closed-icon">✓</span><h2>Chat closed — final score</h2><p>{home?.name||"Home"} {selected.home_score??"—"} – {selected.away_score??"—"} {away?.name||selected.opponent_name}</p><small>This room is read-only after full-time.</small></div>:!roomOpen(selected,clock)?<div className="hc-live-empty-state"><h2>Chat opens 30 minutes before tip-off</h2><p>{selected.scheduled_at?new Date(selected.scheduled_at).toLocaleString():"Tip-off time is not confirmed yet."}</p></div>:<div className="hc-live-chat-shell">
+        {isClosed?<div className="hc-live-closed-state"><span className="hc-live-closed-icon">✓</span><h2>Chat closed — final score</h2><p>{home?.name||"Home"} {selected.home_score??"—"} – {selected.away_score??"—"} {away?.name||selected.opponent_name}</p><small>This room is read-only after full-time.</small></div>:!chatEnabled?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div><h2>Make your game prediction</h2><p>Players can pick either team before tip-off and change their pick until the game starts. Fan chat remains available to eligible Pro and Premium Fan members.</p></div>:!roomOpen(selected,clock)?<div className="hc-live-empty-state"><h2>Chat opens 30 minutes before tip-off</h2><p>{selected.scheduled_at?new Date(selected.scheduled_at).toLocaleString():"Tip-off time is not confirmed yet."}</p></div>:<div className="hc-live-chat-shell">
           <div className="hc-live-chat-toolbar"><span><i className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"fan":"fans"} chatting</span><span>1 message / 2 seconds</span></div>
           <div className="hc-live-chat-messages" aria-live="polite" aria-label="Live chat messages">
             {!shownMessages.length?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div><h2>You're the first fan in — say something</h2><p>Kick off the conversation while you watch.</p></div>:shownMessages.map(item=><article key={item.id} className={"hc-live-chat-message"+(item.user_id===userId?" is-own":"")+(item.failed?" is-failed":"")}>
