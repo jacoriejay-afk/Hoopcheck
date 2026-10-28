@@ -20,6 +20,8 @@ test("rejects production domain and all its subdomains", () => {
     "https://hoopcheck.online",
     "https://www.hoopcheck.online",
     "https://preview.hoopcheck.online",
+    "https://hoopcheck.online.",
+    "https://preview.hoopcheck.online.",
   ]) {
     assert.throws(() => requireCapacitorStagingOrigin(url), /Production HoopCheck hosts are blocked/);
   }
