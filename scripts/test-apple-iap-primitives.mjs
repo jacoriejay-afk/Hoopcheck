@@ -14,6 +14,7 @@ async function loadTypeScriptModule(path) {
 }
 
 const accountToken = await loadTypeScriptModule("../lib/billing/apple-iap-account-token.ts");
+const ownership = await loadTypeScriptModule("../lib/billing/apple-iap-ownership.ts");
 const classification = await loadTypeScriptModule("../lib/billing/apple-iap-classification.ts");
 const entitlement = await loadTypeScriptModule("../lib/billing/effective-entitlement.ts");
 const verifierConfig = await loadTypeScriptModule("../lib/billing/apple-iap-verifier-config.ts");
@@ -33,6 +34,37 @@ assert.equal(
 assert.equal(accountToken.matchesAppleAccountToken(null, trustedAccountToken), false);
 assert.equal(accountToken.matchesAppleAccountToken("not-a-uuid", trustedAccountToken), false);
 assert.equal(accountToken.matchesAppleAccountToken(trustedAccountToken, undefined), false);
+
+const ownedTransaction = {
+  authenticatedUserId: "user-123",
+  transactionVerified: true,
+  transactionAppAccountToken: trustedAccountToken,
+  expectedStoredToken: trustedAccountToken,
+};
+assert.deepEqual(ownership.checkAppleTransactionOwnership(ownedTransaction), { owned: true });
+assert.deepEqual(
+  ownership.checkAppleTransactionOwnership({ ...ownedTransaction, authenticatedUserId: " " }),
+  { owned: false, reason: "unauthenticated" },
+);
+assert.deepEqual(
+  ownership.checkAppleTransactionOwnership({ ...ownedTransaction, transactionVerified: false }),
+  { owned: false, reason: "transaction_unverified" },
+);
+assert.deepEqual(
+  ownership.checkAppleTransactionOwnership({ ...ownedTransaction, transactionAppAccountToken: null }),
+  { owned: false, reason: "missing_transaction_token" },
+);
+assert.deepEqual(
+  ownership.checkAppleTransactionOwnership({ ...ownedTransaction, expectedStoredToken: undefined }),
+  { owned: false, reason: "missing_stored_token" },
+);
+assert.deepEqual(
+  ownership.checkAppleTransactionOwnership({
+    ...ownedTransaction,
+    transactionAppAccountToken: "550e8400-e29b-41d4-a716-446655440001",
+  }),
+  { owned: false, reason: "token_mismatch" },
+);
 
 const productEnv = {
   APPLE_IAP_PRO_PRODUCT_ID: "online.hoopcheck.pro.monthly",
