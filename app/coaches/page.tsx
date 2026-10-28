@@ -9,7 +9,7 @@ import Link from "next/link";
 import DirectoryLayout from "../../components/DirectoryLayout";
 
 import { supabase } from "../../lib/supabase";
-import HoopLoading from "../../components/HoopLoading";
+import { PlayerCardSkeletons } from "../../components/HoopMotion";
 import SearchBar from "../../components/SearchBar";
 import CourtLines from "../../components/CourtLines";
 import TrustScoreDial from "../../components/TrustScoreDial";
@@ -94,7 +94,7 @@ export default function CoachesPage() {
       </section>
 
       <section className="grid hc-team-directory-list">
-        {loading ? (<div className="card"><HoopLoading label="Scanning coaching profiles..." /></div>) : coaches.length === 0 ? (
+        {loading ? (<PlayerCardSkeletons count={5} />) : coaches.length === 0 ? (
           <div className="card hc-coach-empty">
             <CourtLines variant="circle" className="hc-court-empty-art" />
             <div className="eyebrow hc-court-section-kicker">Coming Soon</div>
