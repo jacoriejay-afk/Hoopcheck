@@ -1,6 +1,11 @@
-import { checkAppleTransactionOwnership } from "./apple-iap-ownership";
-import { getApplePlanForProductId } from "./apple-iap-classification";
-import type { AppleEntitlementCandidate } from "./effective-entitlement";
+export type AppleEntitlementCandidate = {
+  plan: "pro" | "premium";
+  status: "active" | "grace_period";
+  environment: "Production";
+  currentPeriodEnd: string;
+  lastVerifiedAt: string;
+  revokedAt: null;
+};
 
 export type VerifiedAppleTransactionForEntitlement = {
   transactionId?: string | null;
@@ -52,13 +57,18 @@ export function buildAppleEntitlementCandidate(input: {
   renewalInfo?: VerifiedAppleRenewalForEntitlement | null;
   now?: Date;
 }): AppleEntitlementCandidateResult {
-  const ownership = checkAppleTransactionOwnership({
-    authenticatedUserId: input.authenticatedUserId,
-    transactionVerified: input.transactionVerified,
-    transactionAppAccountToken: input.transaction.appAccountToken,
-    expectedStoredToken: input.expectedStoredToken,
-  });
-  if (!ownership.owned) return { accepted: false, reason: ownership.reason };
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!input.authenticatedUserId?.trim()) return { accepted: false, reason: "unauthenticated" };
+  if (!input.transactionVerified) return { accepted: false, reason: "transaction_unverified" };
+  if (!input.transaction.appAccountToken || !uuidPattern.test(input.transaction.appAccountToken)) {
+    return { accepted: false, reason: "missing_transaction_token" };
+  }
+  if (!input.expectedStoredToken || !uuidPattern.test(input.expectedStoredToken)) {
+    return { accepted: false, reason: "missing_stored_token" };
+  }
+  if (input.transaction.appAccountToken.toLowerCase() !== input.expectedStoredToken.toLowerCase()) {
+    return { accepted: false, reason: "token_mismatch" };
+  }
 
   if (
     !input.transaction.transactionId?.trim() ||
@@ -68,7 +78,14 @@ export function buildAppleEntitlementCandidate(input: {
     return { accepted: false, reason: "missing_transaction_identity" };
   }
 
-  const plan = getApplePlanForProductId(input.transaction.productId, process.env);
+  const proProductId = process.env.APPLE_IAP_PRO_PRODUCT_ID;
+  const premiumProductId = process.env.APPLE_IAP_PREMIUM_PRODUCT_ID;
+  if (!proProductId || !premiumProductId || proProductId === premiumProductId) {
+    return { accepted: false, reason: "unknown_product" };
+  }
+  const plan =
+    input.transaction.productId === proProductId ? "pro" :
+    input.transaction.productId === premiumProductId ? "premium" : null;
   if (!plan) return { accepted: false, reason: "unknown_product" };
   if (input.transaction.environment !== "Production") {
     return { accepted: false, reason: "non_production_environment" };
