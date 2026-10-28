@@ -334,7 +334,10 @@ export default function LiveGamesPage() {
           </header>
           {group.live.length > 0 && <div className="hc-live-country-block">
             <div className="hc-live-country-subheading"><h4><span className="hc-live-dot" /> LIVE NOW</h4><span>{group.live.length}</span></div>
-            <div className="hc-live-hub-grid">{group.live.map(entry => <GameCard key={entry.game.id} entry={entry} variant="live" />)}</div>
+            {countryLeagueGroups(group.live).map(([league, entries]) => <section className="hc-live-country-league" key={league} aria-label={league}>
+              <h5>{league}<span>{entries.length}</span></h5>
+              <div className="hc-live-hub-grid">{entries.map(entry => <GameCard key={entry.game.id} entry={entry} variant="live" />)}</div>
+            </section>)}
           </div>}
           {group.postGame.length > 0 && <div className="hc-live-country-block">
             <div className="hc-live-country-subheading"><h4>POST-GAME CHAT</h4><span>{group.postGame.length}</span></div>
