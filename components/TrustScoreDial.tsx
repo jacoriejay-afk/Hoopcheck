@@ -26,7 +26,17 @@ export default function TrustScoreDial({
   const radius = (dimension - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const safeScore = score === null ? 0 : Math.max(0, Math.min(100, score));
-  const offset = circumference * (1 - safeScore / 100);\n  const dialRef = useRef<HTMLDivElement>(null);\n  const [revealed, setRevealed] = useState(false);\n  useEffect(() => {\n    const node = dialRef.current;\n    if (!node) return;\n    const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setRevealed(true); observer.disconnect(); } }, { threshold: 0.35 });\n    observer.observe(node);\n    return () => observer.disconnect();\n  }, []);\n  const bandColor = score === null ? "currentColor" : safeScore < 40 ? "#E5484D" : safeScore < 70 ? "#FF8A24" : "#1E9E50";
+  const offset = circumference * (1 - safeScore / 100);
+  const dialRef = useRef<HTMLDivElement>(null);
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => {
+    const node = dialRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setRevealed(true); observer.disconnect(); } }, { threshold: 0.35 });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  const bandColor = score === null ? "currentColor" : safeScore < 40 ? "#E5484D" : safeScore < 70 ? "#FF8A24" : "#1E9E50";
 
   return (
     <div className={`hc-trust-score hc-trust-score--${size}`}>
