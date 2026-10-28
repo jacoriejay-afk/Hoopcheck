@@ -99,7 +99,8 @@ export async function handleAppleServerNotification(input: {
   allowedProductIds: readonly string[];
   verifier: AppleNotificationVerifier;
   persistence: AppleNotificationPersistence;
-  allowedEnvironments?: readonly string[];
+  /** Explicit environment allowlist; production adapters should pass ["Production"]. */
+  allowedEnvironments: readonly string[];
 }): Promise<AppleNotificationResult> {
   if (!isNonEmptyString(input.signedPayload)) {
     throw new AppleNotificationRejectedError("Missing signedPayload.");
@@ -120,6 +121,18 @@ export async function handleAppleServerNotification(input: {
       "Allowed Apple product IDs must be configured, trimmed, and unique.",
     );
   }
+  if (
+    !Array.isArray(input.allowedEnvironments) ||
+    input.allowedEnvironments.length === 0 ||
+    input.allowedEnvironments.some(
+      (environment) => environment !== "Sandbox" && environment !== "Production",
+    ) ||
+    new Set(input.allowedEnvironments).size !== input.allowedEnvironments.length
+  ) {
+    throw new AppleNotificationRejectedError(
+      "Allowed Apple environments must be explicitly configured with unique supported values.",
+    );
+  }
 
   // Cryptographic verification is deliberately the first operation with data.
   const notification = await input.verifier.verifyAndDecodeNotification(input.signedPayload);
@@ -134,8 +147,7 @@ export async function handleAppleServerNotification(input: {
   if (bundleId !== input.expectedBundleId) {
     throw new AppleNotificationRejectedError("Verified notification bundle ID does not match.");
   }
-  const allowedEnvironments = input.allowedEnvironments ?? ["Sandbox", "Production"];
-  if (!isNonEmptyString(environment) || !allowedEnvironments.includes(environment)) {
+  if (!isNonEmptyString(environment) || !input.allowedEnvironments.includes(environment)) {
     throw new AppleNotificationRejectedError("Verified notification environment is not allowed.");
   }
 
