@@ -57,10 +57,10 @@ export default function TeamPayTimeline({ teamId }: { teamId: string }) {
     <div className="eyebrow">PAY TRANSPARENCY</div>
     <h2>Monthly pay check-ins</h2>
     <p className="muted">Anonymous aggregate reports from verified players who played for this team. A month appears only after at least 3 check-ins. Individual submissions are never shown.</p>
-    {months.length ? <div className="hc-pay-month-strip" aria-label="Monthly aggregated pay reports">
-      {months.map(item => <article className="card hc-pay-month" key={item.month}>
+    {months.length ? <div className="hc-pay-month-strip" aria-label="Monthly aggregated pay reports" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12, marginTop: 16 }}>
+      {months.map(item => <article className="card hc-pay-month" key={item.month} style={{ minWidth: 0, padding: 16 }}>
         <h3>{monthLabel(item.month)}</h3><p className="muted">{item.total} anonymous check-ins</p>
-        <div className="hc-pay-counts">
+        <div className="hc-pay-counts" style={{ display: "grid", gap: 8 }}>
           <span><strong>{item.on_time}</strong> on time</span>
           <span><strong>{item.late}</strong> late</span>
           <span><strong>{item.missing}</strong> missing</span>
@@ -72,7 +72,7 @@ export default function TeamPayTimeline({ teamId }: { teamId: string }) {
       <p className="muted">One check-in per team per month. Your individual answer is private and never displayed.</p>
       <label htmlFor={"pay-month-" + teamId}>Month</label>
       <input id={"pay-month-" + teamId} type="month" value={selectedMonth.slice(0, 7)} onChange={e => setSelectedMonth(e.target.value + "-01")} />
-      <div className="hc-pay-status-options">{options.map(option => <button key={option.value} type="button" aria-pressed={status === option.value} className={status === option.value ? "btn" : "btn dark"} onClick={() => setStatus(option.value)}>{option.label}</button>)}</div>
+      <div className="hc-pay-status-options" style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "12px 0" }}>{options.map(option => <button key={option.value} type="button" aria-pressed={status === option.value} className={status === option.value ? "btn" : "btn dark"} onClick={() => setStatus(option.value)}>{option.label}</button>)}</div>
       <button type="button" className="btn" onClick={submit} disabled={busy || !selectedMonth}>{busy ? "Submitting…" : "Submit one-tap check-in"}</button>
       {message && <p role="status" aria-live="polite">{message}</p>}
     </div>}
