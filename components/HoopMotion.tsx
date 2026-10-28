@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type TouchEvent } from "react";
 
 function useReducedMotion() {
-  const [reduced, setReduced] = useState(true);
+  const [reduced, setReduced] = useState(false);
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => setReduced(media.matches);
