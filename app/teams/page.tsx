@@ -10,7 +10,7 @@ import Link from "next/link";
 import DirectoryLayout from "../../components/DirectoryLayout";
 
 import { supabase } from "../../lib/supabase";
-import HoopLoading from "../../components/HoopLoading";
+import { PlayerCardSkeletons, usePullToRefresh } from "../../components/HoopMotion";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import SearchBar from "../../components/SearchBar";
 import CourtLines from "../../components/CourtLines";
@@ -44,6 +44,8 @@ export default function TeamsPage() {
   const [mapCoordinates, setMapCoordinates] = useState<Record<string, { latitude: number | null; longitude: number | null }>>({});
 
   const [loading, setLoading] = useState(true);
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const { pullToRefreshProps, pullIndicator } = usePullToRefresh(() => setRefreshVersion(value => value + 1));
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
@@ -158,7 +160,7 @@ export default function TeamsPage() {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [query, country, continent, league, division, leagueOptions, page]);
+  }, [query, country, continent, league, division, leagueOptions, page, refreshVersion]);
 
 
   useEffect(() => {
@@ -306,7 +308,7 @@ export default function TeamsPage() {
       )}
       {viewMode === "list" && (
       <section className="grid hc-team-directory-list">
-        {loading ? (<div className="card"><HoopLoading label="Scanning professional teams..." /></div>) : teams.length === 0 ? (
+        {loading ? (<PlayerCardSkeletons count={5} />) : teams.length === 0 ? (
           <div className="card hc-team-empty">
             <CourtLines variant="arc" className="hc-court-empty-art" />
             <div className="eyebrow hc-court-section-kicker">
