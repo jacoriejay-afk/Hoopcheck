@@ -45,7 +45,7 @@ export async function getAppleAppAccountToken(
   let response: Response;
   try {
     response = await fetchImpl(endpoint.toString(), {
-      method: "GET",
+      method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         Accept: "application/json",
