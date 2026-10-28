@@ -1,4 +1,3 @@
-import { matchesAppleAccountToken } from "./apple-iap-account-token";
 
 export type AppleTransactionOwnershipResult =
   | { owned: true }
@@ -11,6 +10,8 @@ export type AppleTransactionOwnershipResult =
         | "missing_stored_token"
         | "token_mismatch";
     };
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Fail-closed ownership gate for user-initiated Apple transaction recovery.
@@ -38,7 +39,11 @@ export function checkAppleTransactionOwnership(input: {
   if (typeof input.expectedStoredToken !== "string" || !input.expectedStoredToken.trim()) {
     return { owned: false, reason: "missing_stored_token" };
   }
-  if (!matchesAppleAccountToken(input.transactionAppAccountToken, input.expectedStoredToken)) {
+  if (
+    !UUID_PATTERN.test(input.transactionAppAccountToken) ||
+    !UUID_PATTERN.test(input.expectedStoredToken) ||
+    input.transactionAppAccountToken.toLowerCase() !== input.expectedStoredToken.toLowerCase()
+  ) {
     return { owned: false, reason: "token_mismatch" };
   }
   return { owned: true };
