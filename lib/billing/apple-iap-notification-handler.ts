@@ -1,0 +1,268 @@
+/**
+ * Framework-neutral, fail-closed orchestration for App Store Server Notifications V2.
+ *
+ * This function is intentionally not an HTTP route and has no database client.
+ * The production adapter must supply Apple's SignedDataVerifier methods and an
+ * idempotent persistence/reconciliation implementation. Do not pass decoded
+ * client payloads here: verifier methods must perform cryptographic verification.
+ */
+export type VerifiedAppleNotification = {
+  notificationUUID?: string | null;
+  notificationType?: string | null;
+  subtype?: string | null;
+  data?: {
+    bundleId?: string | null;
+    environment?: string | null;
+    signedTransactionInfo?: string | null;
+    signedRenewalInfo?: string | null;
+  } | null;
+};
+
+export type VerifiedAppleTransaction = {
+  transactionId?: string | null;
+  originalTransactionId?: string | null;
+  bundleId?: string | null;
+  productId?: string | null;
+  environment?: string | null;
+  appAccountToken?: string | null;
+  expiresDate?: number | null;
+  revocationDate?: number | null;
+  purchaseDate?: number | null;
+};
+
+export type VerifiedAppleRenewalInfo = {
+  autoRenewStatus?: number | null;
+  expirationIntent?: number | null;
+  gracePeriodExpiresDate?: number | null;
+  isInBillingRetryPeriod?: boolean | null;
+  originalTransactionId?: string | null;
+  productId?: string | null;
+  renewalDate?: number | null;
+};
+
+export type AppleNotificationVerifier = {
+  verifyAndDecodeNotification(signedPayload: string): Promise<VerifiedAppleNotification>;
+  verifyAndDecodeTransaction(signedTransaction: string): Promise<VerifiedAppleTransaction>;
+  verifyAndDecodeRenewalInfo(signedRenewalInfo: string): Promise<VerifiedAppleRenewalInfo>;
+};
+
+export type AppleNotificationPersistence = {
+  /**
+   * Must atomically insert by notification UUID and return false if it already
+   * exists. Store a minimal audit record; never treat an unverified payload as
+   * an entitlement update.
+   */
+  recordVerifiedNotification(input: {
+    notificationUUID: string;
+    notificationType: string;
+    environment: string;
+  }): Promise<{ inserted: boolean; processed: boolean }>;
+  /**
+   * Reconcile using verified transaction/renewal data and trusted account
+   * ownership. Implementations must be idempotent and must not overwrite
+   * Stripe-owned subscription columns.
+   */
+  reconcileVerifiedNotification(input: {
+    notification: VerifiedAppleNotification;
+    transaction: VerifiedAppleTransaction | null;
+    renewalInfo: VerifiedAppleRenewalInfo | null;
+  }): Promise<void>;
+  /** Mark processed only after reconciliation commits successfully. */
+  markNotificationProcessed(notificationUUID: string): Promise<void>;
+};
+
+export type AppleNotificationResult =
+  | { outcome: "recorded"; notificationUUID: string }
+  | { outcome: "duplicate"; notificationUUID: string };
+
+export class AppleNotificationRejectedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AppleNotificationRejectedError";
+  }
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+/**
+ * Verify outer and nested signed data before any persistence or reconciliation.
+ * A malformed, unverifiable, wrong-bundle, or unsupported-environment payload
+ * fails before writes. Database adapters must additionally bind the transaction
+ * to an authenticated HoopCheck user/appAccountToken before granting access.
+ */
+export async function handleAppleServerNotification(input: {
+  signedPayload: string;
+  expectedBundleId: string;
+  /** Exact product IDs registered for this app; unknown products fail closed. */
+  allowedProductIds: readonly string[];
+  verifier: AppleNotificationVerifier;
+  persistence: AppleNotificationPersistence;
+  /** Explicit environment allowlist; production adapters should pass ["Production"]. */
+  allowedEnvironments: readonly string[];
+}): Promise<AppleNotificationResult> {
+  if (!isNonEmptyString(input.signedPayload)) {
+    throw new AppleNotificationRejectedError("Missing signedPayload.");
+  }
+  if (!isNonEmptyString(input.expectedBundleId)) {
+    throw new AppleNotificationRejectedError("Expected bundle ID is not configured.");
+  }
+  if (
+    !Array.isArray(input.allowedProductIds) ||
+    input.allowedProductIds.length === 0 ||
+    input.allowedProductIds.some(
+      (productId) =>
+        !isNonEmptyString(productId) || productId.trim() !== productId,
+    ) ||
+    new Set(input.allowedProductIds).size !== input.allowedProductIds.length
+  ) {
+    throw new AppleNotificationRejectedError(
+      "Allowed Apple product IDs must be configured, trimmed, and unique.",
+    );
+  }
+  if (
+    !Array.isArray(input.allowedEnvironments) ||
+    input.allowedEnvironments.length === 0 ||
+    input.allowedEnvironments.some(
+      (environment) => environment !== "Sandbox" && environment !== "Production",
+    ) ||
+    new Set(input.allowedEnvironments).size !== input.allowedEnvironments.length
+  ) {
+    throw new AppleNotificationRejectedError(
+      "Allowed Apple environments must be explicitly configured with unique supported values.",
+    );
+  }
+
+  // Cryptographic verification is deliberately the first operation with data.
+  const notification = await input.verifier.verifyAndDecodeNotification(input.signedPayload);
+  const notificationUUID = notification.notificationUUID;
+  const notificationType = notification.notificationType;
+  const bundleId = notification.data?.bundleId;
+  const environment = notification.data?.environment;
+
+  if (!isUuid(notificationUUID) || !isNonEmptyString(notificationType)) {
+    throw new AppleNotificationRejectedError(
+      "Verified notification lacks a valid UUID or type.",
+    );
+  }
+  if (bundleId !== input.expectedBundleId) {
+    throw new AppleNotificationRejectedError("Verified notification bundle ID does not match.");
+  }
+  if (!isNonEmptyString(environment) || !input.allowedEnvironments.includes(environment)) {
+    throw new AppleNotificationRejectedError("Verified notification environment is not allowed.");
+  }
+
+  let transaction: VerifiedAppleTransaction | null = null;
+  let renewalInfo: VerifiedAppleRenewalInfo | null = null;
+
+  // If Apple includes a nested signed object field, it must be a non-empty
+  // string. Do not silently downgrade malformed signed data to a no-data event.
+  const signedTransactionInfo = notification.data?.signedTransactionInfo;
+  const signedRenewalInfo = notification.data?.signedRenewalInfo;
+  if (
+    signedTransactionInfo !== undefined &&
+    signedTransactionInfo !== null &&
+    !isNonEmptyString(signedTransactionInfo)
+  ) {
+    throw new AppleNotificationRejectedError(
+      "Signed transaction info is present but malformed.",
+    );
+  }
+  if (
+    signedRenewalInfo !== undefined &&
+    signedRenewalInfo !== null &&
+    !isNonEmptyString(signedRenewalInfo)
+  ) {
+    throw new AppleNotificationRejectedError(
+      "Signed renewal info is present but malformed.",
+    );
+  }
+
+  // Verify every nested signed object before the first database write.
+  if (isNonEmptyString(signedTransactionInfo)) {
+    transaction = await input.verifier.verifyAndDecodeTransaction(
+      signedTransactionInfo,
+    );
+    if (
+      transaction.bundleId !== input.expectedBundleId ||
+      transaction.environment !== environment
+    ) {
+      throw new AppleNotificationRejectedError(
+        "Verified transaction bundle ID or environment does not match the notification.",
+      );
+    }
+    if (
+      !isNonEmptyString(transaction.transactionId) ||
+      !isNonEmptyString(transaction.originalTransactionId) ||
+      !isNonEmptyString(transaction.productId)
+    ) {
+      throw new AppleNotificationRejectedError(
+        "Verified transaction lacks its transaction chain or product identifier.",
+      );
+    }
+    if (!input.allowedProductIds.includes(transaction.productId)) {
+      throw new AppleNotificationRejectedError("Verified transaction product ID is not allowed.");
+    }
+    // This app uses a server-issued appAccountToken to bind StoreKit
+    // transactions to a HoopCheck account. Never send a transaction lacking
+    // that ownership marker to the reconciliation adapter.
+    if (!isUuid(transaction.appAccountToken)) {
+      throw new AppleNotificationRejectedError(
+        "Verified transaction lacks a valid appAccountToken for account ownership.",
+      );
+    }
+  }
+
+  if (isNonEmptyString(signedRenewalInfo)) {
+    renewalInfo = await input.verifier.verifyAndDecodeRenewalInfo(
+      signedRenewalInfo,
+    );
+    if (
+      !isNonEmptyString(renewalInfo.originalTransactionId) ||
+      !isNonEmptyString(renewalInfo.productId)
+    ) {
+      throw new AppleNotificationRejectedError(
+        "Verified renewal info lacks its transaction chain or product identifier.",
+      );
+    }
+    if (!input.allowedProductIds.includes(renewalInfo.productId)) {
+      throw new AppleNotificationRejectedError("Verified renewal product ID is not allowed.");
+    }
+    if (
+      transaction &&
+      (renewalInfo.originalTransactionId !== transaction.originalTransactionId ||
+        renewalInfo.productId !== transaction.productId)
+    ) {
+      throw new AppleNotificationRejectedError(
+        "Verified renewal info does not match the transaction chain or product.",
+      );
+    }
+  }
+
+  const ledger = await input.persistence.recordVerifiedNotification({
+    notificationUUID,
+    notificationType,
+    environment,
+  });
+
+  // A previously inserted but unprocessed event must be retried: it may have
+  // failed during reconciliation after the first ledger write.
+  if (!ledger.inserted && ledger.processed) {
+    return { outcome: "duplicate", notificationUUID };
+  }
+
+  await input.persistence.reconcileVerifiedNotification({
+    notification,
+    transaction,
+    renewalInfo,
+  });
+  await input.persistence.markNotificationProcessed(notificationUUID);
+
+  return { outcome: ledger.inserted ? "recorded" : "duplicate", notificationUUID };
+}

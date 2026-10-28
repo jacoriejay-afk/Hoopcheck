@@ -29,5 +29,7 @@ jobs:
         run: npm install
       - name: TypeScript typecheck
         run: npm run typecheck
+      - name: Apple IAP release preflight fail-closed regression test
+        run: npm run test:apple-iap-release
       - name: Expo dependency and configuration diagnostics
         run: npx expo-doctor

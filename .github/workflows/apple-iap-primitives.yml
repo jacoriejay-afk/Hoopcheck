@@ -1,0 +1,59 @@
+name: Apple IAP primitive checks
+
+on:
+  pull_request:
+    paths:
+      - "lib/billing/apple-iap-*.ts"
+      - "lib/billing/effective-entitlement.ts"
+      - "apps/mobile/src/billing/apple-account-token.ts"
+      - "scripts/test-apple-iap-primitives.mjs"
+      - "scripts/test-apple-iap-account-token-route.mjs"
+      - "scripts/test-apple-account-token-client.mjs"
+      - "scripts/test-apple-iap-migration.mjs"
+      - "app/api/apple-iap/account-token/route.ts"
+      - "supabase/migrations/20261028120000_add_apple_iap_foundation.sql"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/apple-iap-primitives.yml"
+  push:
+    branches:
+      - "feat/apple-iap-foundation"
+    paths:
+      - "lib/billing/apple-iap-*.ts"
+      - "lib/billing/effective-entitlement.ts"
+      - "apps/mobile/src/billing/apple-account-token.ts"
+      - "scripts/test-apple-iap-primitives.mjs"
+      - "scripts/test-apple-iap-account-token-route.mjs"
+      - "scripts/test-apple-account-token-client.mjs"
+      - "scripts/test-apple-iap-migration.mjs"
+      - "app/api/apple-iap/account-token/route.ts"
+      - "supabase/migrations/20261028120000_add_apple_iap_foundation.sql"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/apple-iap-primitives.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  apple-iap-primitives:
+    name: Apple IAP pure-logic regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run Apple IAP primitive tests
+        run: npm run test:apple-iap
+      - name: Check Apple IAP migration contract (static only)
+        run: node scripts/test-apple-iap-migration.mjs
+      - name: Run native account-token client tests
+        run: node scripts/test-apple-account-token-client.mjs
+      - name: Check account-token API security contract (static only)
+        run: npm run test:apple-iap-route
