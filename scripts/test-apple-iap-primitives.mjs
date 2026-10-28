@@ -227,6 +227,29 @@ for (const invalidAllowlist of [
   );
   assert.equal(invalidAllowlistWrites, 0, "invalid product allowlists must fail before persistence");
 }
+for (const invalidEnvironments of [[], ["Production", "Production"], ["Development"]]) {
+  let invalidEnvironmentVerifications = 0;
+  await assert.rejects(
+    notificationHandler.handleAppleServerNotification({
+      ...notificationInput,
+      allowedEnvironments: invalidEnvironments,
+      verifier: {
+        ...mockVerifier,
+        async verifyAndDecodeNotification(payload) {
+          invalidEnvironmentVerifications++;
+          return mockVerifier.verifyAndDecodeNotification(payload);
+        },
+      },
+    }),
+    notificationHandler.AppleNotificationRejectedError,
+  );
+  assert.equal(
+    invalidEnvironmentVerifications,
+    0,
+    "invalid environment allowlists must fail before verifying or writing",
+  );
+}
+
 const handled = await notificationHandler.handleAppleServerNotification(notificationInput);
 assert.deepEqual(handled, { outcome: "recorded", notificationUUID: "notification-123" });
 assert.equal(verifyNotificationCalls, 1);
