@@ -7,8 +7,10 @@ on:
       - "lib/billing/effective-entitlement.ts"
       - "apps/mobile/src/billing/apple-account-token.ts"
       - "scripts/test-apple-iap-primitives.mjs"
+      - "scripts/test-apple-iap-account-token-route.mjs"
       - "scripts/test-apple-account-token-client.mjs"
       - "scripts/test-apple-iap-migration.mjs"
+      - "app/api/apple-iap/account-token/route.ts"
       - "supabase/migrations/20261028120000_add_apple_iap_foundation.sql"
       - "package.json"
       - "package-lock.json"
@@ -51,3 +53,5 @@ jobs:
         run: node scripts/test-apple-iap-migration.mjs
       - name: Run native account-token client tests
         run: node scripts/test-apple-account-token-client.mjs
+      - name: Check account-token API security contract (static only)
+        run: npm run test:apple-iap-route
