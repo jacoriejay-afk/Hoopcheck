@@ -10,12 +10,12 @@
 /* Animate only compositor-friendly properties to avoid layout jank on route changes. */
 .hc-route-transition {
   min-width: 0;
-  animation: hc-route-enter var(--hc-motion-base) var(--hc-motion-ease-out) both;
+  animation: hc-route-enter var(--hc-motion-base) var(--hc-motion-ease-out) backwards;
 }
 
 @keyframes hc-route-enter {
-  from { opacity: .72; transform: translate3d(0, 6px, 0); }
-  to { opacity: 1; transform: translate3d(0, 0, 0); }
+  from { opacity: .72; }
+  to { opacity: 1; }
 }
 
 /* Shared interaction motion; does not change sizing or the existing visual system. */
@@ -43,7 +43,6 @@
 
   .hc-route-transition {
     animation: none !important;
-    transform: none !important;
   }
 
   html {
