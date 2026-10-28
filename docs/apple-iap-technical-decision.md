@@ -15,6 +15,8 @@ Status: proposed implementation direction; not production-ready.
 - Verify signed transaction information and App Store Server Notifications V2 using Apple's verification APIs; do not trust client-decoded JWS payloads.
 - Keep App Store Connect key material and root certificates in server-only secret configuration. Never expose them as `EXPO_PUBLIC_*` variables.
 - Process notifications idempotently and reconcile status against the App Store Server API where needed.
+- The new migration `supabase/migrations/20261028120000_add_apple_iap_foundation.sql` creates isolated Apple subscription, transaction, and notification-ledger tables. It is feature-branch code only and has not been applied to any database.
+- `lib/billing/effective-entitlement.ts` now contains a pure, fail-closed resolution primitive for already-verified provider records. It is deliberately not wired into current access routes or RLS policies; current production access behavior is unchanged.
 
 ## Not yet decided / required before release
 
@@ -27,10 +29,11 @@ Status: proposed implementation direction; not production-ready.
 ## Safe sequencing
 
 1. Confirm the permanent app identifiers and existing App Store Connect products.
-2. Build the isolated Apple-provider persistence and effective-entitlement contract without modifying Stripe-owned fields.
+2. Review the isolated Apple-provider persistence and effective-entitlement contract without modifying Stripe-owned fields.
 3. Implement signed-transaction verification and Notifications V2 handling on the server.
 4. Integrate purchase, restore, status display, and Apple subscription management in the Expo app.
-5. Validate duplicate/out-of-order events, expiry, refund/revocation, account switching, and coexistence with Stripe.
-6. Run typecheck, unit/integration tests, cloud native build, and physical-device sandbox checks separately and report their actual outcomes.
+5. Audit every direct subscription read and RLS policy before wiring the resolver into actual authorization.
+6. Validate duplicate/out-of-order events, expiry, refund/revocation, account switching, and coexistence with Stripe.
+7. Run typecheck, unit/integration tests, cloud native build, and physical-device sandbox checks separately and report their actual outcomes.
 
-No runtime dependencies, app identifiers, database schemas, production configuration, or billing records were changed by this decision record.
+No production configuration or billing records have been changed, and the resolver is not yet an active access-control path.
