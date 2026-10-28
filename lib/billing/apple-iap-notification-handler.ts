@@ -156,12 +156,20 @@ export async function handleAppleServerNotification(input: {
       notification.data.signedRenewalInfo,
     );
     if (
-      renewalInfo.originalTransactionId &&
-      transaction?.originalTransactionId &&
-      renewalInfo.originalTransactionId !== transaction.originalTransactionId
+      !isNonEmptyString(renewalInfo.originalTransactionId) ||
+      !isNonEmptyString(renewalInfo.productId)
     ) {
       throw new AppleNotificationRejectedError(
-        "Verified renewal info does not match the transaction chain.",
+        "Verified renewal info lacks its transaction chain or product identifier.",
+      );
+    }
+    if (
+      transaction &&
+      (renewalInfo.originalTransactionId !== transaction.originalTransactionId ||
+        renewalInfo.productId !== transaction.productId)
+    ) {
+      throw new AppleNotificationRejectedError(
+        "Verified renewal info does not match the transaction chain or product.",
       );
     }
   }
