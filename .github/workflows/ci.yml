@@ -88,6 +88,17 @@ jobs:
           THEME_TEST_LANGUAGE: es
         run: node scripts/theme-browser-check.mjs
 
+      - name: Verify Live Games country grouping and capture light/dark screenshots
+        run: node scripts/live-games-country-browser-check.mjs
+
+      - name: Upload Live Games country screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hoopcheck-live-games-country-screenshots
+          path: artifacts/live-games-country/**/*.png
+          if-no-files-found: warn
+
       - name: Upload theme screenshots
         if: always()
         uses: actions/upload-artifact@v4
