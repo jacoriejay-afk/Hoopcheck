@@ -273,7 +273,7 @@ const mockVerifier = {
       bundleId: "online.hoopcheck.app",
       productId: "online.hoopcheck.pro.monthly",
       environment: "Sandbox",
-      appAccountToken: "account-token",
+      appAccountToken: trustedAccountToken,
       expiresDate: Date.parse("2026-11-28T12:00:00.000Z"),
     };
   },
