@@ -17,6 +17,28 @@ const PRODUCT_PLAN_ENV: Record<ApplePlan, string> = {
   premium: "APPLE_IAP_PREMIUM_PRODUCT_ID",
 };
 
+/**
+ * Return the exact product allowlist for server-side notification verification.
+ * Missing or duplicated configuration returns an empty list so callers can
+ * fail closed instead of accepting arbitrary App Store product identifiers.
+ */
+export function getAllowedAppleProductIds(
+  env: NodeJS.ProcessEnv = process.env,
+): string[] {
+  const proProductId = env[PRODUCT_PLAN_ENV.pro]?.trim();
+  const premiumProductId = env[PRODUCT_PLAN_ENV.premium]?.trim();
+
+  if (
+    !proProductId ||
+    !premiumProductId ||
+    proProductId === premiumProductId
+  ) {
+    return [];
+  }
+
+  return [proProductId, premiumProductId];
+}
+
 export function getApplePlanForProductId(
   productId: string | null | undefined,
   env: NodeJS.ProcessEnv = process.env,
