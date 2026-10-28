@@ -146,8 +146,10 @@ export async function handleAppleServerNotification(input: {
   const bundleId = notification.data?.bundleId;
   const environment = notification.data?.environment;
 
-  if (!isNonEmptyString(notificationUUID) || !isNonEmptyString(notificationType)) {
-    throw new AppleNotificationRejectedError("Verified notification lacks its UUID or type.");
+  if (!isUuid(notificationUUID) || !isNonEmptyString(notificationType)) {
+    throw new AppleNotificationRejectedError(
+      "Verified notification lacks a valid UUID or type.",
+    );
   }
   if (bundleId !== input.expectedBundleId) {
     throw new AppleNotificationRejectedError("Verified notification bundle ID does not match.");
