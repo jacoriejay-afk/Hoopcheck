@@ -74,6 +74,20 @@ assert.equal(
 );
 assert.equal(
   entitlement.resolveEffectiveEntitlement({
+    apple: [{ ...validApple, lastVerifiedAt: "not-a-timestamp" }],
+    now,
+  }).plan,
+  "free",
+);
+assert.equal(
+  entitlement.resolveEffectiveEntitlement({
+    apple: [{ ...validApple, lastVerifiedAt: "2026-10-28T12:01:00.000Z" }],
+    now,
+  }).plan,
+  "free",
+);
+assert.equal(
+  entitlement.resolveEffectiveEntitlement({
     apple: [{ ...validApple, currentPeriodEnd: "2026-10-28T11:00:00.000Z" }],
     now,
   }).plan,
