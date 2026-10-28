@@ -13,10 +13,26 @@ async function loadTypeScriptModule(path) {
   return import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 }
 
+const accountToken = await loadTypeScriptModule("../lib/billing/apple-iap-account-token.ts");
 const classification = await loadTypeScriptModule("../lib/billing/apple-iap-classification.ts");
 const entitlement = await loadTypeScriptModule("../lib/billing/effective-entitlement.ts");
 const verifierConfig = await loadTypeScriptModule("../lib/billing/apple-iap-verifier-config.ts");
 const notificationHandler = await loadTypeScriptModule("../lib/billing/apple-iap-notification-handler.ts");
+
+const trustedAccountToken = "550e8400-e29b-41d4-a716-446655440000";
+assert.equal(
+  accountToken.matchesAppleAccountToken(trustedAccountToken, trustedAccountToken.toUpperCase()),
+  true,
+  "verified transaction token should match trusted stored token case-insensitively",
+);
+assert.equal(
+  accountToken.matchesAppleAccountToken("550e8400-e29b-41d4-a716-446655440001", trustedAccountToken),
+  false,
+  "a different appAccountToken must not bind to this user",
+);
+assert.equal(accountToken.matchesAppleAccountToken(null, trustedAccountToken), false);
+assert.equal(accountToken.matchesAppleAccountToken("not-a-uuid", trustedAccountToken), false);
+assert.equal(accountToken.matchesAppleAccountToken(trustedAccountToken, undefined), false);
 
 const productEnv = {
   APPLE_IAP_PRO_PRODUCT_ID: "online.hoopcheck.pro.monthly",
