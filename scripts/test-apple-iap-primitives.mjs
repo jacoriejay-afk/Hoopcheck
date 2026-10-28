@@ -561,6 +561,26 @@ assert.equal(appleCandidate.buildAppleEntitlementCandidate({
   ...candidateInput,
   transaction: { ...verifiedProductionTransaction, appAccountToken: "550e8400-e29b-41d4-a716-446655440001" },
 }).reason, "token_mismatch");
+assert.equal(appleCandidate.buildAppleEntitlementCandidate({
+  ...candidateInput,
+  transactionVerified: false,
+}).reason, "transaction_unverified");
+assert.equal(appleCandidate.buildAppleEntitlementCandidate({
+  ...candidateInput,
+  authenticatedUserId: "",
+}).reason, "unauthenticated");
+assert.equal(appleCandidate.buildAppleEntitlementCandidate({
+  ...candidateInput,
+  transaction: { ...verifiedProductionTransaction, expiresDate: Number.NaN },
+}).reason, "invalid_expiration");
+assert.equal(appleCandidate.buildAppleEntitlementCandidate({
+  ...candidateInput,
+  now: new Date("invalid"),
+}).reason, "invalid_expiration");
+assert.equal(appleCandidate.buildAppleEntitlementCandidate({
+  ...candidateInput,
+  transaction: { ...verifiedProductionTransaction, transactionId: " " },
+}).reason, "missing_transaction_identity");
 const graceCandidate = appleCandidate.buildAppleEntitlementCandidate({
   ...candidateInput,
   transaction: { ...verifiedProductionTransaction, expiresDate: Date.parse("2026-10-27T12:00:00.000Z") },
