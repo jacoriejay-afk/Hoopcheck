@@ -124,7 +124,7 @@ export default function FanLivePage() {
   },[load]);
 
   useEffect(()=>{
-    if(!selected||!allowed||!userId)return;
+    if(!selected||!chatEnabled||!userId)return;
     let stopped=false;
     const gameId=selected.id;
     const heartbeat=async()=>{
