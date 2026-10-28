@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "audit:surfaces": "node scripts/audit-hardcoded-surfaces.mjs"
+    "test:native-links": "node --experimental-strip-types --test lib/native-links.test.ts",
+    "audit:surfaces": "node scripts/audit-hardcoded-surfaces.mjs",
+    "test:capacitor-origin": "node --experimental-strip-types --test lib/capacitor-staging-origin.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.7.0",

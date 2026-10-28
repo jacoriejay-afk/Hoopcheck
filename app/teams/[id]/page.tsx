@@ -23,6 +23,7 @@ import TrustScoreDial from "../../../components/TrustScoreDial";
 import Surface from "../../../components/Surface";
 import TeamRosterSpots from "../../../components/TeamRosterSpots";
 import OfficialReviewResponse from "../../../components/OfficialReviewResponse";
+import ShareEntityButton from "../../../components/ShareEntityButton";
 
 type Team = {
   id: string;
@@ -568,7 +569,7 @@ export default function TeamDetailPage() {
           <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow"><span aria-hidden="true">🔒</span> Player reviews are a Premium fan feature</span><Link href="/membership" className="btn">Upgrade</Link></Surface>
         )}
 
-        <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} /></div>
+        <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} /><ShareEntityButton path={`/teams/${team.id}`} title={team.name} text={`Check out ${team.name} on HoopCheck`} /></div>
         <TeamRosterSpots teamId={team.id} teamName={team.name} />
 
       </section>

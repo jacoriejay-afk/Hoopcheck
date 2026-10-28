@@ -10,6 +10,7 @@ import PlayerContactButton from "../../../components/PlayerContactButton";
 import PlayerProfilePanel from "../../../components/PlayerProfilePanel";
 import { HoopIcon, VerifiedBadge } from "../../../components/HoopCheckUI";
 import PlayerJourney from "../../../components/PlayerJourney";
+import ShareEntityButton from "../../../components/ShareEntityButton";
 
 type Player = {
   id: string;
@@ -161,7 +162,7 @@ export default function PlayerProfilePage() {
               {player.player_verified ? "Verified professional player" : "HoopCheck player"}
             </p>
           </div>
-          <div style={{ marginTop: 14, display:"flex", gap:10, flexWrap:"wrap" }}><FollowButton targetType="player" targetId={player.id} /><PlayerContactButton playerId={player.id} /></div>
+          <div style={{ marginTop: 14, display:"flex", gap:10, flexWrap:"wrap" }}><FollowButton targetType="player" targetId={player.id} /><PlayerContactButton playerId={player.id} /><ShareEntityButton path={`/players/${player.id}`} title={player.display_name || "HoopCheck Player"} text={`View ${player.display_name || "this player"} on HoopCheck`} /></div>
         </section>
 
         {viewerType==="player" && !isOwnProfile && !connectionAccepted ? (
