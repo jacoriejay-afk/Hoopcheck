@@ -97,7 +97,7 @@ try {
     assert.ok(await page.getByRole("button", { name: /REMIND ME/i }).count() >= 2, "Upcoming games should keep Remind Me actions.");
     await page.screenshot({ path: `${artifactsDir}/live-games-${theme}-womens-desktop.png`, fullPage: true, animations: "disabled" });
 
-    const countrySearch = page.getByRole("textbox", { name: "Search games by country, team, or league" });
+    const countrySearch = page.getByRole("searchbox", { name: "Search games by country, team, or league" });
     await countrySearch.fill("Lithuania");
     assert.equal(await page.locator(".hc-live-country-section").count(), 1, "Country-name search should filter to one country.");
     assert.equal(await page.locator(".hc-live-country-section h3").innerText(), "Lithuania");
