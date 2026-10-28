@@ -33,6 +33,14 @@ export async function GET(request: Request) {
     const user = await currentUser(request, auth);
     if (!user) return NextResponse.json({ error: "Sign in to view predictions." }, { status: 401 });
     const url = new URL(request.url);
+    if (url.searchParams.get("mode") === "games") {
+      const { data: games, error } = await db.from("fan_live_games")
+        .select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_name,country,period_label")
+        .in("status", ["scheduled","live","final","finished","cancelled","postponed","abandoned"])
+        .order("scheduled_at", { ascending: true, nullsFirst: false }).limit(500);
+      if (error) throw error;
+      return NextResponse.json({ games: games || [] }, { headers: { "Cache-Control": "private, no-store" } });
+    }
     if (url.searchParams.get("mode") === "leaderboard") {
       const [{ data: games, error: gamesError }, { data: picks, error: picksError }] = await Promise.all([
         db.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,scheduled_at,ends_at").in("status", ["final", "finished"]).order("ends_at", { ascending: false }).limit(100),
