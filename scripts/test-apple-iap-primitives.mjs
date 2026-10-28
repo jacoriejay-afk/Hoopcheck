@@ -210,6 +210,40 @@ await assert.rejects(
 );
 assert.equal(invalidBundleWrites, 0, "wrong bundle must fail before persistence");
 
+let incompleteTransactionWrites = 0;
+await assert.rejects(
+  notificationHandler.handleAppleServerNotification({
+    ...notificationInput,
+    verifier: {
+      ...mockVerifier,
+      async verifyAndDecodeTransaction() {
+        return {
+          bundleId: "online.hoopcheck.app",
+          environment: "Sandbox",
+          originalTransactionId: "original-123",
+          transactionId: "transaction-123",
+          // productId intentionally missing
+        };
+      },
+    },
+    persistence: {
+      ...mockPersistence,
+      async recordVerifiedNotification() {
+        incompleteTransactionWrites++;
+        return { inserted: true, processed: false };
+      },
+      async reconcileVerifiedNotification() { incompleteTransactionWrites++; },
+      async markNotificationProcessed() { incompleteTransactionWrites++; },
+    },
+  }),
+  notificationHandler.AppleNotificationRejectedError,
+);
+assert.equal(
+  incompleteTransactionWrites,
+  0,
+  "verified transactions missing product identity must fail before persistence",
+);
+
 ledgerInserted = false;
 ledgerProcessed = false;
 shouldFailReconcile = true;
