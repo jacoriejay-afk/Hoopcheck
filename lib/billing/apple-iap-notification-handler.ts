@@ -95,6 +95,8 @@ function isNonEmptyString(value: unknown): value is string {
 export async function handleAppleServerNotification(input: {
   signedPayload: string;
   expectedBundleId: string;
+  /** Exact product IDs registered for this app; unknown products fail closed. */
+  allowedProductIds: readonly string[];
   verifier: AppleNotificationVerifier;
   persistence: AppleNotificationPersistence;
   allowedEnvironments?: readonly string[];
@@ -104,6 +106,13 @@ export async function handleAppleServerNotification(input: {
   }
   if (!isNonEmptyString(input.expectedBundleId)) {
     throw new AppleNotificationRejectedError("Expected bundle ID is not configured.");
+  }
+  if (
+    !Array.isArray(input.allowedProductIds) ||
+    input.allowedProductIds.length === 0 ||
+    input.allowedProductIds.some((productId) => !isNonEmptyString(productId))
+  ) {
+    throw new AppleNotificationRejectedError("Allowed Apple product IDs are not configured.");
   }
 
   // Cryptographic verification is deliberately the first operation with data.
@@ -149,6 +158,9 @@ export async function handleAppleServerNotification(input: {
         "Verified transaction lacks its transaction chain or product identifier.",
       );
     }
+    if (!input.allowedProductIds.includes(transaction.productId)) {
+      throw new AppleNotificationRejectedError("Verified transaction product ID is not allowed.");
+    }
   }
 
   if (notification.data?.signedRenewalInfo) {
@@ -162,6 +174,9 @@ export async function handleAppleServerNotification(input: {
       throw new AppleNotificationRejectedError(
         "Verified renewal info lacks its transaction chain or product identifier.",
       );
+    }
+    if (!input.allowedProductIds.includes(renewalInfo.productId)) {
+      throw new AppleNotificationRejectedError("Verified renewal product ID is not allowed.");
     }
     if (
       transaction &&
