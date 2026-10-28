@@ -251,7 +251,8 @@ export default function TeamsPage() {
   }, [viewMode, query, country, continent, league, division, leagueOptions]);
 
   return (
-    <main className="hc-team-directory-page">
+    <main className="hc-team-directory-page" {...pullToRefreshProps}>
+      {pullIndicator}
       <FanBasketballSideSwitch lockedHint />
       <DirectoryLayout current="teams" />
 
