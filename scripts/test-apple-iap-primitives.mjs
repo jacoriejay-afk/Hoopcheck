@@ -305,6 +305,44 @@ const notificationInput = {
   persistence: mockPersistence,
   allowedEnvironments: ["Sandbox"],
 };
+
+for (const malformedField of ["signedTransactionInfo", "signedRenewalInfo"]) {
+  let malformedPayloadWrites = 0;
+  const malformedPayloadVerifier = {
+    ...mockVerifier,
+    async verifyAndDecodeNotification() {
+      return {
+        ...verifiedNotification,
+        data: {
+          ...verifiedNotification.data,
+          [malformedField]: "   ",
+        },
+      };
+    },
+  };
+  await assert.rejects(
+    notificationHandler.handleAppleServerNotification({
+      ...notificationInput,
+      verifier: malformedPayloadVerifier,
+      persistence: {
+        ...mockPersistence,
+        async recordVerifiedNotification() {
+          malformedPayloadWrites++;
+          return { inserted: true, processed: false };
+        },
+        async reconcileVerifiedNotification() { malformedPayloadWrites++; },
+        async markNotificationProcessed() { malformedPayloadWrites++; },
+      },
+    }),
+    notificationHandler.AppleNotificationRejectedError,
+    `malformed ${malformedField} must be rejected`,
+  );
+  assert.equal(
+    malformedPayloadWrites,
+    0,
+    `malformed ${malformedField} must be rejected before persistence`,
+  );
+}
 for (const invalidAllowlist of [
   [],
   ["online.hoopcheck.pro.monthly", "online.hoopcheck.pro.monthly"],
