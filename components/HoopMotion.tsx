@@ -14,7 +14,7 @@ function useReducedMotion() {
   return reduced;
 }
 
-export function MotionNumber({ value, duration = 900, className, label }: { value: number; duration?: number; className?: string; label?: string }) {
+export function MotionNumber({ value, duration = 900, className, label, onValueChange }: { value: number; duration?: number; className?: string; label?: string; onValueChange?: (value: number) => void }) {
   const reduced = useReducedMotion();
   const [shown, setShown] = useState(reduced ? value : 0);
   const [visible, setVisible] = useState(false);
@@ -30,19 +30,21 @@ export function MotionNumber({ value, duration = 900, className, label }: { valu
   }, []);
   useEffect(() => {
     if (!visible) return;
-    if (reduced || !Number.isFinite(value)) { setShown(value); return; }
+    if (reduced || !Number.isFinite(value)) { setShown(value); onValueChange?.(value); return; }
     let frame = 0;
     const start = performance.now();
     const from = 0;
     const tick = (now: number) => {
       const progress = Math.min(1, (now - start) / Math.max(1, duration));
       const eased = 1 - Math.pow(1 - progress, 3);
-      setShown(Math.round(from + (value - from) * eased));
+      const current = Math.round(from + (value - from) * eased);
+      setShown(current);
+      onValueChange?.(current);
       if (progress < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [visible, value, duration, reduced]);
+  }, [visible, value, duration, reduced, onValueChange]);
   return <span ref={ref} className={className} aria-label={label || String(value)}>{Math.round(shown).toLocaleString()}</span>;
 }
 
