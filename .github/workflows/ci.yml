@@ -22,6 +22,7 @@ jobs:
       STRIPE_PREMIUM_PRICE_ID: price_ci_premium
       NEXT_PUBLIC_SITE_URL: https://hoopcheck.online
       HOOPCHECK_THEME_TEST_MODE: "true"
+      HOOPCHECK_MOTION_TEST_MODE: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -97,4 +98,17 @@ jobs:
         with:
           name: hoopcheck-theme-screenshots
           path: artifacts/theme-check/**/*.png
+          if-no-files-found: warn
+
+      - name: Record shared motion demos in light and dark
+        run: node scripts/shared-motion-browser-check.mjs
+
+      - name: Upload shared motion screenshots and recordings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hoopcheck-shared-motion-proof
+          path: |
+            artifacts/shared-motion/**/*.png
+            artifacts/shared-motion/**/*.webm
           if-no-files-found: warn
