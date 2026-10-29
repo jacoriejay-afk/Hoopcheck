@@ -2517,6 +2517,7 @@ export type Database = {
           last_synced_at: string | null
           league_id: string | null
           league_name: string | null
+          logo_bg: string
           logo_url: string | null
           name: string
           source: string | null
@@ -2534,6 +2535,7 @@ export type Database = {
           last_synced_at?: string | null
           league_id?: string | null
           league_name?: string | null
+          logo_bg?: string
           logo_url?: string | null
           name: string
           source?: string | null
@@ -2739,6 +2741,8 @@ export type Database = {
           id: string
           league_id: string | null
           league_name: string | null
+          logo_bg: string
+          logo_url: string | null
           name: string
         }
         Insert: {
@@ -2749,6 +2753,8 @@ export type Database = {
           id?: string
           league_id?: string | null
           league_name?: string | null
+          logo_bg?: string
+          logo_url?: string | null
           name: string
         }
         Update: {
@@ -2759,6 +2765,8 @@ export type Database = {
           id?: string
           league_id?: string | null
           league_name?: string | null
+          logo_bg?: string
+          logo_url?: string | null
           name?: string
         }
         Relationships: [
