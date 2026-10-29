@@ -19,7 +19,7 @@ const fallbackTeamFixture = {
   name: "Baku Falcons QA",
   country: "Azerbaijan",
   league_name: "QA League",
-  league_id: leagueFixture?.id || "c8d92f50-20d6-4b13-a6c8-9a7b3c1b2001",
+  league_id: "c8d92f50-20d6-4b13-a6c8-9a7b3c1b2001",
   city: "Baku",
   logo_url: null,
   logo_bg: "transparent",
@@ -155,7 +155,7 @@ try {
         else if (url.pathname.includes("/rest/v1/feed_post_comments")) data = [];
         else if (url.pathname.includes("/rest/v1/feed_post_checks")) data = [];
         else if (url.pathname.includes("/rest/v1/reviews")) data = [];
-        else if (url.pathname.includes("/rest/v1/teams")) { const requestedId = (url.searchParams.get("id") || "").replace(/^eq\\./, ""); data = requestedId ? [requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture] : [teamFixture, fallbackTeamFixture]; }
+        else if (url.pathname.includes("/rest/v1/teams")) { const requestedId = (url.searchParams.get("id") || "").replace(/^eq\./, ""); data = requestedId ? [requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture] : [teamFixture, fallbackTeamFixture]; }
         else if (url.pathname.includes("/rest/v1/coaches")) data = [coachFixture];
         else if (url.pathname.includes("/rest/v1/leagues")) data = [leagueFixture];
         await route.fulfill({
@@ -277,7 +277,7 @@ try {
       if (url.pathname === "/auth/v1/user") data = user;
       else if (url.pathname.includes("/rest/v1/profiles")) data = single ? profile : [];
       else if (url.pathname.includes("/rest/v1/subscriptions")) data = single ? subscription : [];
-      else if (url.pathname.includes("/rest/v1/teams")) { const requestedId = (url.searchParams.get("id") || "").replace(/^eq\\./, ""); data = requestedId ? (requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture) : [teamFixture, fallbackTeamFixture]; }
+      else if (url.pathname.includes("/rest/v1/teams")) { const requestedId = (url.searchParams.get("id") || "").replace(/^eq\./, ""); data = requestedId ? (requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture) : [teamFixture, fallbackTeamFixture]; }
       else if (url.pathname.includes("/rest/v1/leagues")) data = single ? leagueFixture : [leagueFixture];
       else if (url.pathname.includes("/rest/v1/coaches")) data = single ? coachFixture : [coachFixture];
       else if (url.pathname.includes("/rest/v1/team_league_memberships")) data = [];
