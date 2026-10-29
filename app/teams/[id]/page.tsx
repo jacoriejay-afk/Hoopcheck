@@ -26,6 +26,7 @@ import OfficialReviewResponse from "../../../components/OfficialReviewResponse";
 import TeamPayTimeline from "../../../components/TeamPayTimeline";
 import TeamLogo from "../../../components/TeamLogo";
 import ClaimedTeamLogoEditor from "../../../components/ClaimedTeamLogoEditor";
+import TeamPlayersHistory from "../../../components/TeamPlayersHistory";
 
 type Team = {
   id: string;
@@ -560,8 +561,9 @@ export default function TeamDetailPage() {
   return (
     <main className="hc-entity-profile-page hc-team-entity-profile">
 
-<section className="hero">
+<section className="hero" id="overview">
         <div className="hc-team-profile-heading hc-team-profile-heading--club"><TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={96} className="hc-team-profile-logo" /><div className="hc-team-profile-heading__copy"><p className="hc-team-profile-kicker">HOOPCHECK CLUB PROFILE</p><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || t("countryNotListed")}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
+        <nav className="hc-team-profile-nav" aria-label="Team profile sections"><a href="#overview">Overview</a><a href="#reviews">Reviews</a><a href="#players">Players</a><a href="#roster-board">Roster Board</a><a href="#pay-transparency">Pay Transparency</a></nav>
         {reviewTier === "pro" ? (
           <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score">
             <span className="eyebrow">Trust Score</span><h2>Premium</h2><Link href="/membership" className="btn">Upgrade</Link>
@@ -574,10 +576,8 @@ export default function TeamDetailPage() {
 
         <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} variant="club" />{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}</div>
         <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
-        <TeamRosterSpots teamId={team.id} teamName={team.name} />
 
       </section>
-      <TeamPayTimeline teamId={team.id} />
       {!hasAccess ? (
         <section className="hero">
           <Surface className="card hc-team-membership-surface">
@@ -589,7 +589,7 @@ export default function TeamDetailPage() {
         </section>
       ) : (
         <>
-          <section className="hero">
+          <section className="hero" id="reviews">
             {!hasAccess && (
               <div className="card" style={{ marginBottom: 24, borderColor: "rgba(255,106,0,.45)" }}>
                 <div className="eyebrow">{t("membersOnlyTitle")}</div>
@@ -734,6 +734,18 @@ export default function TeamDetailPage() {
           </section>
         </>
       )}
+
+      <TeamPlayersHistory teamId={team.id} />
+      <section className="hero" id="roster-board">
+        <div className="eyebrow">ROSTER BOARD</div>
+        <h2>Open roster spots</h2>
+        <TeamRosterSpots teamId={team.id} teamName={team.name} />
+      </section>
+      <section className="hero" id="pay-transparency">
+        <div className="eyebrow">PAY TRANSPARENCY</div>
+        <h2>Payment history</h2>
+        <TeamPayTimeline teamId={team.id} />
+      </section>
 
       {team && <FanTeamPosts teamId={team.id} />}
 
