@@ -79,6 +79,22 @@ export default function AdminTeamLogosPage() {
     finally { setBusy(false); }
   }
 
+  async function revertToFallback() {
+    if (!selectedTeam) return;
+    const [tableName, id] = selectedTeam.split(":") as ["teams" | "womens_teams", string];
+    const team = teams.find((item) => item.id === id && item.tableName === tableName);
+    if (!team?.logo_url) { setMessage("This team is already using its fallback."); return; }
+    if (!window.confirm(`Remove the approved logo for ${team.name} and restore its designed fallback?`)) return;
+    setBusy(true); setMessage("");
+    try {
+      const { error } = await supabase.from(tableName).update({ logo_url: null, logo_bg: "transparent" }).eq("id", id);
+      if (error) throw error;
+      setTeams((items) => items.map((item) => item.id === id && item.tableName === tableName ? { ...item, logo_url: null, logo_bg: "transparent" } : item));
+      setMessage("Logo reverted to the designed fallback. Stored file retained for recovery.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not revert logo."); }
+    finally { setBusy(false); }
+  }
+
   async function fetchCandidates() {
     const sourceUrls = urls.split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
     if (!selectedTeam) { setMessage("Select a team first; each candidate must be tied to a team."); return; }
@@ -118,7 +134,7 @@ export default function AdminTeamLogosPage() {
     setCandidates((items) => items.map((item, i) => i === index ? { ...item, [key]: value } : item));
   }
 
-  return <main style={{ minHeight: "100vh", background: "#0A0A0A", color: "#F7F7F5", padding: "28px 16px 70px" }}>
+  return <main className="admin-team-logo-studio" style={{ minHeight: "100vh", background: "#0A0A0A", color: "#F7F7F5", padding: "28px 16px 70px" }}>
     <div style={{ maxWidth: 1050, margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
         <div><p style={{ color: "#FF5A1F", fontWeight: 900, letterSpacing: ".16em", fontSize: 11 }}>HOOPCHECK ADMIN</p><h1 style={{ fontSize: "clamp(2rem,5vw,3rem)", margin: "6px 0" }}>Team Logo Studio</h1><p style={{ color: "#aaa" }}>Upload logos or review source-page candidates. Fetched candidates are never published without approval.</p></div>
@@ -133,6 +149,7 @@ export default function AdminTeamLogosPage() {
         </section>
         <section style={{ border: "1px solid #333", background: "#111", borderRadius: 14, padding: 18, marginTop: 16 }}>
           <h2>2. Upload an approved logo</h2>
+          {selectedTeam && teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.logo_url && <button type="button" disabled={busy} onClick={() => void revertToFallback()} style={{ marginBottom: 12, border: "1px solid #F5B800", borderRadius: 999, background: "transparent", color: "#F7F7F5", padding: "9px 14px", fontWeight: 800 }}>Revert to designed fallback</button>}
           <p style={{ color: "#aaa" }}>PNG, SVG, JPG, or WebP. Maximum 5 MB. The image is copied into the HoopCheck team-logos bucket.</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 }}>
             <label style={{ display: "grid", gap: 7 }}>Logo file<input type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp" onChange={(event: ChangeEvent<HTMLInputElement>) => setFile(event.target.files?.[0] || null)}/></label>

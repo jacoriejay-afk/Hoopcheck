@@ -1137,3 +1137,78 @@ html.theme-dark .hc-team-follow-pill.is-following { color: #F7F7F5; }
 @media (prefers-reduced-motion: reduce) {
   .hc-team-follow-pill { transition: none; }
 }
+
+.hc-claimed-logo-editor {
+  margin: 12px 0;
+  border: 1px solid var(--border, rgba(128,128,128,.35));
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.hc-claimed-logo-editor summary { cursor: pointer; font-weight: 850; color: var(--orange, #FF5A1F); }
+.hc-claimed-logo-editor details > p { color: var(--muted, #666); font-size: 13px; }
+.hc-claimed-logo-editor label { display: grid; gap: 6px; margin: 10px 0; font-size: 13px; font-weight: 750; }
+.hc-claimed-logo-editor input, .hc-claimed-logo-editor select { max-width: 100%; border: 1px solid var(--border, #888); border-radius: 8px; padding: 8px; background: var(--surface, #F7F7F5); color: var(--text, #0A0A0A); }
+.hc-claimed-logo-editor button { border: 0; border-radius: 999px; background: #FF5A1F; color: #fff; padding: 10px 16px; font-weight: 900; }
+.hc-claimed-logo-editor button:disabled { opacity: .6; }
+.hc-claimed-logo-editor [role="status"] { font-size: 13px; }
+
+.hc-team-profile-nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 4px 0 18px;
+  padding: 6px;
+  border: 1px solid var(--border, rgba(128,128,128,.28));
+  border-radius: 999px;
+  background: var(--surface, rgba(128,128,128,.06));
+}
+.hc-team-profile-nav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 8px 13px;
+  border-radius: 999px;
+  color: var(--text, #0A0A0A);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 850;
+}
+html.theme-dark .hc-team-profile-nav a { color: #F7F7F5; }
+.hc-team-profile-nav a:hover, .hc-team-profile-nav a:focus-visible { background: #FF5A1F; color: #FFFFFF; outline-offset: 2px; }
+.hc-team-players-history { scroll-margin-top: 90px; }
+.hc-team-players-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-top: 16px; }
+#overview, #reviews, #players, #roster-board, #pay-transparency { scroll-margin-top: 84px; }
+@media (max-width: 560px) {
+  .hc-team-profile-nav { border-radius: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hc-team-profile-nav a { white-space: nowrap; padding-inline: 8px; }
+}
+
+.hc-claimed-profile-chip { display: inline-flex; width: fit-content; border: 1px solid rgba(30,158,80,.65); border-radius: 999px; padding: 5px 9px; margin: 0 0 8px; color: #176C3D; background: rgba(30,158,80,.09); font-size: 10px; font-weight: 950; letter-spacing: .06em; }
+html.theme-dark .hc-claimed-profile-chip { color: #79E2A1; border-color: rgba(121,226,161,.6); }
+
+.hc-team-overview-latest { margin-top: 14px; }
+.hc-team-overview-latest__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.hc-team-overview-latest__top h2 { margin: 0; font-size: clamp(1.05rem, 2.4vw, 1.4rem); }
+.hc-team-overview-latest__top strong { color: #FF5A1F; white-space: nowrap; }
+
+.hc-team-score-categories { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.hc-team-score-categories span { display: grid; gap: 3px; min-width: 88px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border, rgba(128,128,128,.3)); }
+.hc-team-score-categories small { font-size: 10px; color: var(--muted, #666); }
+.hc-team-score-categories strong { color: var(--text, #0A0A0A); font-size: 16px; }
+html.theme-dark .hc-team-score-categories strong { color: #F7F7F5; }
+
+html.theme-light .admin-team-logo-studio { background: #F7F7F5 !important; color: #0A0A0A !important; }
+html.theme-light .admin-team-logo-studio section,
+html.theme-light .admin-team-logo-studio article { background: #FFFFFF !important; border-color: #D5D5D5 !important; color: #0A0A0A !important; }
+html.theme-light .admin-team-logo-studio h1,
+html.theme-light .admin-team-logo-studio h2,
+html.theme-light .admin-team-logo-studio h3,
+html.theme-light .admin-team-logo-studio label,
+html.theme-light .admin-team-logo-studio span { color: #0A0A0A; }
+html.theme-light .admin-team-logo-studio p { color: #4A4A4A !important; }
+html.theme-light .admin-team-logo-studio input,
+html.theme-light .admin-team-logo-studio select,
+html.theme-light .admin-team-logo-studio textarea { background: #FFFFFF !important; color: #0A0A0A !important; border-color: #B8B8B8 !important; }
+html.theme-light .admin-team-logo-studio [role="status"] { background: #FFFFFF !important; border-color: #B8B8B8 !important; color: #0A0A0A !important; }
+html.theme-light .admin-team-logo-studio button { color: #FFFFFF; }

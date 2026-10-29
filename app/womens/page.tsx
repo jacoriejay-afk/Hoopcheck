@@ -19,6 +19,7 @@ type WomensTeam = {
   league_id: string | null;
   league_name: string | null;
   logo_url?: string | null;
+  logo_bg?: "transparent" | "light" | "dark" | null;
 };
 
 export default function Womens() {
@@ -36,7 +37,7 @@ export default function Womens() {
     async function load() {
       const [teamResult, leagueResult] = await Promise.all([
         supabase.from("womens_teams")
-          .select("id,name,country,city,league_id,league_name")
+          .select("id,name,country,city,league_id,league_name,logo_url,logo_bg")
           .eq("active", true).order("name"),
         supabase.from("womens_leagues")
           .select("id,name,country,level")
@@ -108,7 +109,7 @@ export default function Womens() {
         ) : filtered.length ? (
           <section className="hc-womens-team-list" aria-label={t("womensTeamResults")}>
             {filtered.map(team => (
-              <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" logoUrl={team.logo_url} />
+              <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" logoUrl={team.logo_url} logoBg={team.logo_bg} />
             ))}
           </section>
         ) : (

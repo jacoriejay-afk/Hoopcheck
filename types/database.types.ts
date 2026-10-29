@@ -2517,6 +2517,7 @@ export type Database = {
           last_synced_at: string | null
           league_id: string | null
           league_name: string | null
+          logo_bg: string
           logo_url: string | null
           name: string
           source: string | null
@@ -2534,6 +2535,7 @@ export type Database = {
           last_synced_at?: string | null
           league_id?: string | null
           league_name?: string | null
+          logo_bg?: string
           logo_url?: string | null
           name: string
           source?: string | null
@@ -2739,6 +2741,8 @@ export type Database = {
           id: string
           league_id: string | null
           league_name: string | null
+          logo_bg: string
+          logo_url: string | null
           name: string
         }
         Insert: {
@@ -2749,6 +2753,8 @@ export type Database = {
           id?: string
           league_id?: string | null
           league_name?: string | null
+          logo_bg?: string
+          logo_url?: string | null
           name: string
         }
         Update: {
@@ -2759,6 +2765,8 @@ export type Database = {
           id?: string
           league_id?: string | null
           league_name?: string | null
+          logo_bg?: string
+          logo_url?: string | null
           name?: string
         }
         Relationships: [
@@ -2776,6 +2784,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_team_profile_claimed: { Args: { p_team_id: string; p_team_table?: string }; Returns: boolean }
+      set_claimed_team_logo: { Args: { p_logo_bg?: string; p_logo_url: string; p_team_id: string; p_team_table?: string }; Returns: undefined }
       admin_delete_directory_entry: {
         Args: { p_id: string; p_type: string }
         Returns: boolean
