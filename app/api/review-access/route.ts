@@ -62,7 +62,7 @@ export async function GET(request: Request) {
 
     const response: Record<string, unknown> = {
       tier,
-      canWrite: accountType === "player" && active && entityType !== "womens-team",
+      canWrite: accountType === "player" && entityType !== "womens-team",
       categories: ["Communication", "Professionalism", "Development", "Payment", "Pay on time", "Housing", "Medical support", "Coaching quality", "Facilities", "Playing time honesty"],
       summary: null,
       reviews: [],
