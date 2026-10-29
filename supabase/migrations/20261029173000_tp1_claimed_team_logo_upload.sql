@@ -48,7 +48,7 @@ language sql
 stable
 security definer
 set search_path = public
-as $
+as $is_team_claimed$
   select case
     when p_team_table = 'teams' then exists (
       select 1 from public.profile_claim_requests c
@@ -60,7 +60,7 @@ as $
     ) and exists (select 1 from public.womens_teams t where t.id = p_team_id)
     else false
   end;
-$;
+$is_team_claimed$;
 revoke all on function public.is_team_profile_claimed(uuid, text) from public;
 grant execute on function public.is_team_profile_claimed(uuid, text) to anon, authenticated;
 
