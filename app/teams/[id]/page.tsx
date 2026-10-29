@@ -25,6 +25,7 @@ import TeamRosterSpots from "../../../components/TeamRosterSpots";
 import OfficialReviewResponse from "../../../components/OfficialReviewResponse";
 import TeamPayTimeline from "../../../components/TeamPayTimeline";
 import TeamLogo from "../../../components/TeamLogo";
+import ClaimedTeamLogoEditor from "../../../components/ClaimedTeamLogoEditor";
 
 type Team = {
   id: string;
@@ -572,6 +573,7 @@ export default function TeamDetailPage() {
         )}
 
         <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} variant="club" />{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}</div>
+        <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
         <TeamRosterSpots teamId={team.id} teamName={team.name} />
 
       </section>
