@@ -286,7 +286,7 @@ try {
       else if (url.pathname.includes("/rest/v1/follow_relationships")) data = single ? null : [];
       else if (url.pathname.includes("/rest/v1/rpc/get_follow_count")) data = 0;
       else if (url.pathname.includes("/rest/v1/rpc/get_review_verification")) data = [];
-      else if (url.pathname.includes("/rest/v1/rpc/is_current_user_admin_or_moderator")) data = false;
+      else if (url.pathname.includes("/rest/v1/rpc/is_current_user_admin_or_moderator")) data = true;
       else if (url.pathname.includes("/rest/v1/rpc/get_current_user_admin_role")) data = "member";
       await route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(data) });
     });
