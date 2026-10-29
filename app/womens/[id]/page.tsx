@@ -7,6 +7,7 @@ import {useLanguage} from "../../../components/LanguageProvider";
 import FollowButton from "../../../components/FollowButton";
 import Surface from "../../../components/Surface";
 import HoopLoading from "../../../components/HoopLoading";
+import TeamLogo from "../../../components/TeamLogo";
 
 export default function WomensTeam(){
  const {formatDate,formatNumber,t}=useLanguage();
@@ -15,7 +16,7 @@ export default function WomensTeam(){
    let active = true;
    (async () => {
      const { data: teamData, error: teamError } = await supabase.from("womens_teams")
-       .select("id,name,country,city,league_id,league_name,logo_url").eq("id", id).maybeSingle();
+       .select("id,name,country,city,league_id,league_name,logo_url,logo_bg").eq("id", id).maybeSingle();
      if (teamError) console.error("Unable to load women’s team profile:", teamError);
      if (!active) return;
      setTeam(teamData || null);
@@ -52,7 +53,7 @@ export default function WomensTeam(){
  if(!team)return <main className="page-shell hc-womens-profile-page"><div className="page-container"><Surface as="section" className="hero-card"><h1>{t("womenTeamNotFound")}</h1><Link href="/womens" className="btn">{t("backToWomensBasketball")}</Link></Surface></div></main>;
  const average=ratingAverage;
  return <main className="page-shell hc-womens-profile-page"><div className="page-container">
- <Surface as="section" className="hero-card"><p className="eyebrow">{t("womensTeamProfile")}</p><div className="hc-team-profile-heading"><span className="hc-team-profile-logo" aria-hidden="true">{team.logo_url?<img src={team.logo_url} alt="" width={64} height={64}/>:String(team.name).split(/\s+/).slice(0,2).map((part:string)=>part[0]).join("").toUpperCase()}</span><div><h1>{team.name}</h1><p className="hc-team-profile-meta">{team.country||t("international")}{team.city?" · "+team.city:""} · {team.league_name||t("professional")}</p></div></div><div className="actions"><FollowButton targetType="team" targetId={team.id}/>{canReview&&<Link href={"/womens/"+team.id+"/review"} className="btn">{t("writeAReview")}</Link>}</div></Surface>
+ <Surface as="section" className="hero-card"><p className="eyebrow">{t("womensTeamProfile")}</p><div className="hc-team-profile-heading hc-team-profile-heading--club"><TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={96} className="hc-team-profile-logo"/><div className="hc-team-profile-heading__copy"><p className="hc-team-profile-kicker">HOOPCHECK CLUB PROFILE</p><h1>{team.name}</h1><p className="hc-team-profile-meta">{team.country||t("international")}{team.city?" · "+team.city:""} · {team.league_name||t("professional")}</p></div></div><div className="actions"><FollowButton targetType="team" targetId={team.id}/>{canReview&&<Link href={"/womens/"+team.id+"/review"} className="btn">{t("writeAReview")}</Link>}</div></Surface>
  <section className="grid compact-grid">
     {["premium","player","member"].includes(reviewTier) ? <Surface className="card"><span className="card-kicker">{t("rating")}</span><h2>{average===null?"—":average.toFixed(1)+"/5"}</h2><p className="muted">{formatNumber(ratingCount)+" "+(ratingCount===1?t("publishedReview"):t("publishedReviews"))}</p></Surface> : reviewTier === "pro" ? <Surface className="card hc-fan-review-teaser"><span className="card-kicker">{t("rating")}</span><h2 aria-label="Overall star rating">★★★★★</h2><p className="muted">Fan Pro preview</p><Link href="/membership" className="btn">Upgrade</Link></Surface> : <Surface className="card hc-membership-locked-state"><span aria-hidden="true">🔒</span><h2>Player reviews are a Premium fan feature</h2><Link href="/membership" className="btn">Upgrade</Link></Surface>}
     <Surface className="card"><span className="card-kicker">{t("league")}</span><h2>{team.league_name||t("professional")}</h2><p className="muted">{team.country||t("international")}</p></Surface>
