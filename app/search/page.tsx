@@ -14,8 +14,8 @@ import Surface from "../../components/Surface";
 import { useLanguage } from "../../components/LanguageProvider";
 
 type Coach = { id: string; name: string; country: string | null; city: string | null };
-type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null };
-type WomensTeam = { id: string; name: string; country: string | null; city: string | null; league_name: string | null };
+type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
+type WomensTeam = { id: string; name: string; country: string | null; city: string | null; league_name: string | null; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
 type League = { id: string; name: string; country: string | null; level: string | null };
 type Player = {
   id: string;
