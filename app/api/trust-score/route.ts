@@ -47,7 +47,7 @@ export async function GET(request: Request) {
         ]);
         const active = ["active", "trialing"].includes(subscription?.status || "") &&
           (!subscription?.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now());
-        if (profile?.account_type === "player" && active) tier = "player";
+        if (profile?.account_type === "player") tier = "player";
         else if (profile?.account_type === "fan" && active && subscription?.plan === "premium") tier = "premium";
         else if (profile?.account_type === "fan" && active && subscription?.plan === "pro") tier = "pro";
         else if (profile?.account_type && profile.account_type !== "fan" && active) tier = "member";
