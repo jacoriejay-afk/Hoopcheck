@@ -456,7 +456,7 @@ try {
           status: 200,
           contentType: "application/json",
           body: JSON.stringify({
-            imageData: "data:image/svg+xml,%3Csvg xmlns='%27http://www.w3.org/2000/svg%27' viewBox='%270 0 100 100%27%3E%3Crect width='%27100%27 height='%27100%27 fill='%23FF5A1F'/%3E%3C/svg%3E",
+            imageData: "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23FF5A1F%22%2F%3E%3C%2Fsvg%3E",
             mimeType: "image/svg+xml",
             imageUrl: "https://official.example/logo.svg",
           }),
