@@ -10,6 +10,7 @@ import SearchBar from "../../components/SearchBar";
 import CourtLines from "../../components/CourtLines";
 import { getGameAvailability, formatViewerLocalTime } from "../../lib/game-availability";
 import { HoopIcon } from "../../components/HoopCheckUI";
+import TeamLogo from "../../components/TeamLogo";
 import "./live-games-chat.css";
 
 type Game = {
@@ -28,7 +29,7 @@ type Game = {
   country: string | null;
   period_label: string | null;
 };
-type Team = { id: string; name: string; logo_url?: string | null; country?: string | null; league_name?: string | null };
+type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null; country?: string | null; league_name?: string | null };
 type Filter = "all" | "live" | "my-teams";
 
 const activeSubscription = (subscription: {plan?: string|null;status?: string|null;current_period_end?: string|null} | null) =>
@@ -102,7 +103,7 @@ export default function LiveGamesPage() {
 
     const ids = Array.from(new Set(nextGames.flatMap(game => [game.team_id, game.opponent_team_id].filter((id): id is string => Boolean(id)))));
     if (ids.length) {
-      const { data: teamRows } = await supabase.from("teams").select("id,name,logo_url,country,league_name").in("id", ids);
+      const { data: teamRows } = await supabase.from("teams").select("id,name,logo_url,logo_bg,country,league_name").in("id", ids);
       setTeams(Object.fromEntries((teamRows || []).map((team: Team) => [team.id, team])));
     } else setTeams({});
 
@@ -212,7 +213,7 @@ export default function LiveGamesPage() {
         </div>
         <div className="hc-live-card__teams">
           <div className="hc-live-card__side">
-            <span className="hc-live-card__crest hc-live-team-logo" aria-hidden="true">{home?.logo_url ? <img src={home.logo_url} alt="" onError={e => { e.currentTarget.style.display = "none"; }} /> : null}<span>{initials(home?.name || "Team")}</span></span>
+            <TeamLogo name={home?.name || "Team"} logoUrl={home?.logo_url} logoBg={home?.logo_bg} size={44} className="hc-live-card__crest hc-live-team-logo" />
             <strong>{home?.name || "Team"}</strong>
           </div>
           <div className="hc-live-card__middle">
@@ -220,7 +221,7 @@ export default function LiveGamesPage() {
             {game.period_label && <small>{game.period_label}</small>}
           </div>
           <div className="hc-live-card__side hc-live-card__side--away">
-            <span className="hc-live-card__crest hc-live-team-logo" aria-hidden="true">{away?.logo_url ? <img src={away.logo_url} alt="" onError={e => { e.currentTarget.style.display = "none"; }} /> : null}<span>{initials(away?.name || game.opponent_name)}</span></span>
+            <TeamLogo name={away?.name || game.opponent_name} logoUrl={away?.logo_url} logoBg={away?.logo_bg} size={44} className="hc-live-card__crest hc-live-team-logo" />
             <strong>{away?.name || game.opponent_name}</strong>
           </div>
         </div>

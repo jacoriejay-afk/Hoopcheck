@@ -27,6 +27,7 @@ type Team = {
   division?: string | null;
   city: string | null;
   logo_url?: string | null;
+  logo_bg?: "transparent" | "light" | "dark" | null;
   latitude?: number | null;
   longitude?: number | null;
 };
@@ -115,7 +116,7 @@ export default function TeamsPage() {
         try {
           let request = supabase
             .from("teams")
-            .select("id, name, country, league_name, league_id, city, logo_url", { count: "exact" })
+            .select("id, name, country, league_name, league_id, city, logo_url, logo_bg", { count: "exact" })
             .eq("active", true)
             .eq("basketball_type", "mens")
             .order("name");
@@ -213,7 +214,7 @@ export default function TeamsPage() {
       const all: Team[] = [];
       for (let offset = 0; offset < 5000; offset += 500) {
         let request = supabase.from("teams")
-          .select("id,name,country,league_name,league_id,city,logo_url")
+          .select("id,name,country,league_name,league_id,city,logo_url,logo_bg")
           .eq("active", true).order("name");
         const term = query.trim();
         if (term) {
@@ -342,7 +343,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           teams.map((team) => (
-            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={isPlayerAccount ? "player" : trustScores[team.id]?.tier} logoUrl={team.logo_url} />
+            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={isPlayerAccount ? "player" : trustScores[team.id]?.tier} logoUrl={team.logo_url} logoBg={team.logo_bg} />
           ))
         )}
       </section>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import FollowButton from "./FollowButton";
 import { HoopIcon } from "./HoopCheckUI";
 import Surface from "./Surface";
+import TeamLogo from "./TeamLogo";
 import { useLanguage } from "./LanguageProvider";
 
 type TeamDirectoryRowProps = {
@@ -19,15 +20,15 @@ type TeamDirectoryRowProps = {
   trustExplanation?: string;
   averageRating?: number | null;
   logoUrl?: string | null;
+  logoBg?: "transparent" | "light" | "dark" | null;
   trustTier?: "free" | "pro" | "premium" | "player" | "member" | "unknown";
 };
 
 export default function TeamDirectoryRow({
   id, name, city, country, leagueName, href, kind = "mens", showFollow = true,
-  trustReviewCount = 0, averageRating = null, logoUrl = null, trustTier = "unknown",
+  trustReviewCount = 0, averageRating = null, logoUrl = null, logoBg = "transparent", trustTier = "unknown",
 }: TeamDirectoryRowProps) {
   const { t } = useLanguage();
-  const monogram = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   const metadata = [city, country, leagueName].filter(Boolean).join(", ") || t("international");
   const hasReviews = trustReviewCount > 0;
   const hasRating = averageRating !== null && averageRating !== undefined;
@@ -35,9 +36,7 @@ export default function TeamDirectoryRow({
     <Surface className={"hc-team-directory-row hc-scout-card hc-team-directory-row--" + kind}>
       <Link href={href} className="hc-team-directory-row__main" aria-label={t("openTeamProfile") + ": " + name}>
         <span className="hc-scout-card__identity">
-          <span className="hc-team-logo-tile" aria-hidden="true">
-            {logoUrl ? <img src={logoUrl} alt="" width={48} height={48} loading="lazy" /> : <span>{monogram}</span>}
-          </span>
+          <TeamLogo name={name} logoUrl={logoUrl} logoBg={logoBg} size={48} />
           <span className="hc-scout-card__identity-copy">
             <h2 title={name}>{name}</h2>
             <p title={metadata}>{metadata}</p>
