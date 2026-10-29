@@ -64,7 +64,7 @@ begin
   if p_team_table not in ('teams', 'womens_teams') then
     raise exception 'Invalid team table';
   end if;
-  if p_logo_url !~ ('^https://[^/]+/storage/v1/object/public/team-logos/' || p_team_table || '/' || p_team_id::text || '/[^?]+$') then
+  if p_logo_url is null or p_logo_url !~ ('^https://[^/]+/storage/v1/object/public/team-logos/' || p_team_table || '/' || p_team_id::text || '/[^?]+$') then
     raise exception 'Logo must be stored in this team''s HoopCheck Storage path';
   end if;
   if not exists (
