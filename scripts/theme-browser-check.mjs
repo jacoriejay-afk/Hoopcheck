@@ -435,6 +435,36 @@ try {
         fullPage: true,
         animations: "disabled",
       });
+      if (requestedPath === "/teams") {
+        await page.locator(".hc-team-logo--image").first().waitFor({ state: "visible", timeout: 10000 });
+        await page.locator(".hc-team-logo--fallback").first().waitFor({ state: "visible", timeout: 10000 });
+        await page.screenshot({ path: `${artifactsDir}/team-directory-approved-and-fallback-${theme}.png`, fullPage: true, animations: "disabled" });
+      }
+      if (requestedPath === "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2") {
+        await page.locator(".hc-team-logo--image").first().waitFor({ state: "visible", timeout: 10000 });
+        await page.screenshot({ path: `${artifactsDir}/team-profile-approved-logo-${theme}.png`, fullPage: true, animations: "disabled" });
+      }
+      if (requestedPath === "/teams/a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f0") {
+        await page.locator(".hc-team-logo--fallback").first().waitFor({ state: "visible", timeout: 10000 });
+        await page.screenshot({ path: `${artifactsDir}/team-profile-hexagon-fallback-${theme}.png`, fullPage: true, animations: "disabled" });
+      }
+      if (requestedPath === "/admin/team-logos" && testLanguage === "en") {
+        await page.locator("select").first().waitFor({ state: "visible", timeout: 10000 });
+        await page.locator("select").first().selectOption({ index: 1 });
+        await page.locator("textarea").first().fill("https://official.example/club");
+        await page.route("**/api/admin/team-logo-candidate", route => route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            imageData: "data:image/svg+xml,%3Csvg xmlns='%27http://www.w3.org/2000/svg%27' viewBox='%270 0 100 100%27%3E%3Crect width='%27100%27 height='%27100%27 fill='%23FF5A1F'/%3E%3C/svg%3E",
+            mimeType: "image/svg+xml",
+            imageUrl: "https://official.example/logo.svg",
+          }),
+        }));
+        await page.getByRole("button", { name: "Fetch candidate previews" }).click();
+        await page.locator('img[alt="Logo candidate preview"]').waitFor({ state: "visible", timeout: 10000 });
+        await page.screenshot({ path: `${artifactsDir}/admin-logo-candidate-approval-flow-${theme}.png`, fullPage: true, animations: "disabled" });
+      }
       routeSweepResults.push({ theme, ...result, status: errors.length ? "FAIL" : result.pageWrapper ? "PASS" : "NO_MAIN", reason: errors.join("; ") || (result.pageWrapper ? "" : "route rendered no main element") });
     }
     if (testLanguage === "en") {
