@@ -10,15 +10,16 @@ import { getGameAvailability } from "../../lib/game-availability";
 import "./fan-live.css";
 import "../game-predictions.css";
 import GameWinnerPrediction from "../../components/GameWinnerPrediction";
+import TeamLogo from "../../components/TeamLogo";
 
 type Game = { id:string; team_id:string; opponent_team_id:string|null; opponent_name:string; status:string; home_score:number|null; away_score:number|null; started_at:string|null; ends_at:string|null; scheduled_at:string|null; league_name:string|null; country:string|null; period_label:string|null };
-type Team = { id:string; name:string; logo_url?:string|null };
+type Team = { id:string; name:string; logo_url?:string|null; logo_bg?:"transparent"|"light"|"dark"|null };
 type ChatMessage = { id:string; body:string; created_at:string; user_id:string; pending?:boolean; failed?:boolean };
 type Profile = { display_name:string|null; avatar_url:string|null };
 
 const finalStatus = (status:string) => ["final","finished","cancelled","canceled","postponed","abandoned"].includes(status.toLowerCase());
 const initials = (name:string) => name.trim().split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join("").toUpperCase() || "HC";
-const TeamLogo = ({team}:{team:Team|null|undefined}) => <span className="hc-live-team-logo">{team?.logo_url?<img src={team.logo_url} alt="" onError={e=>{e.currentTarget.style.display="none";}}/>:null}<span className="hc-live-team-monogram">{initials(team?.name||"Team")}</span></span>;
+const renderTeamLogo = (team:Team|null|undefined) => <TeamLogo name={team?.name||"Team"} logoUrl={team?.logo_url} logoBg={team?.logo_bg} size={44} className="hc-live-team-logo" />;
 
 const roomOpen = (game:Game, now=new Date()) => {
   if (finalStatus(game.status)) return false;
@@ -86,7 +87,7 @@ export default function FanLivePage() {
     setMutedUsers(new Set((controls||[]).filter((x:any)=>x.is_muted).map((x:any)=>x.target_user_id)));
     setBlockedUsers(new Set((controls||[]).filter((x:any)=>x.is_blocked).map((x:any)=>x.target_user_id)));
     const ids=Array.from(new Set(next.flatMap(g=>[g.team_id,g.opponent_team_id].filter((x):x is string=>Boolean(x)))));
-    const {data:teamRows}=ids.length?await supabase.from("teams").select("id,name,logo_url").in("id",ids):{data:[] as Team[]};
+    const {data:teamRows}=ids.length?await supabase.from("teams").select("id,name,logo_url,logo_bg").in("id",ids):{data:[] as Team[]};
     setTeams(Object.fromEntries((teamRows||[]).map((t:Team)=>[t.id,t])));
     const requested=typeof window!=="undefined"?new URLSearchParams(window.location.search).get("gameId"):null;
     setSelected(current=>(current&&next.find(g=>g.id===current.id))||next.find(g=>g.id===requested)||next.find(g=>g.status==="live")||next[0]||null);
