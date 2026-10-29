@@ -172,7 +172,7 @@ function SearchContent() {
             : Promise.resolve({ data: [], error: null }),
           wantsMensTeams
             ? (() => {
-                let request = supabase.from("teams").select("id, name, country, city, league_name")
+                let request = supabase.from("teams").select("id, name, country, city, league_name, logo_url, logo_bg")
                   .eq("basketball_type", "mens")
                   .or(`name.ilike.${searchTerm},country.ilike.${searchTerm},city.ilike.${searchTerm},league_name.ilike.${searchTerm}`)
                   .order("name").limit(30);
@@ -182,7 +182,7 @@ function SearchContent() {
             : Promise.resolve({ data: [], error: null }),
           wantsWomensTeams
             ? (() => {
-                let request = supabase.from("womens_teams").select("id, name, country, city, league_name")
+                let request = supabase.from("womens_teams").select("id, name, country, city, league_name, logo_url, logo_bg")
                   .or(`name.ilike.${searchTerm},country.ilike.${searchTerm},city.ilike.${searchTerm},league_name.ilike.${searchTerm}`)
                   .order("name").limit(30);
                 if (countryFilter) request = request.eq("country", countryFilter);
@@ -383,7 +383,7 @@ function SearchContent() {
               <div className="group-heading"><span>03</span><h3>{t("mensTeams")}</h3></div>
               <div className="result-grid">
                 {visibleTeams.map((team) => (
-                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" />
+                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" logoUrl={team.logo_url} logoBg={team.logo_bg} />
                 ))}
               </div>
             </section>
@@ -394,7 +394,7 @@ function SearchContent() {
               <div className="group-heading"><span>04</span><h3>{t("womensTeams")}</h3></div>
               <div className="result-grid">
                 {visibleWomensTeams.map((team) => (
-                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" />
+                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" logoUrl={team.logo_url} logoBg={team.logo_bg} />
                 ))}
               </div>
             </section>
