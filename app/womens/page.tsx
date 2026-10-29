@@ -37,7 +37,7 @@ export default function Womens() {
     async function load() {
       const [teamResult, leagueResult] = await Promise.all([
         supabase.from("womens_teams")
-          .select("id,name,country,city,league_id,league_name")
+          .select("id,name,country,city,league_id,league_name,logo_url,logo_bg")
           .eq("active", true).order("name"),
         supabase.from("womens_leagues")
           .select("id,name,country,level")
