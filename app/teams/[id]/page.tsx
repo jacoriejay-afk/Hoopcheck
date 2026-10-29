@@ -337,7 +337,7 @@ export default function TeamDetailPage() {
         cache: "no-store",
       });
       const reviewPayload = response.ok ? await response.json() : null;
-      const tier = (reviewPayload?.tier || "free") as typeof reviewTier;
+      const tier = profileResult.data?.account_type === "player" ? "player" : ((reviewPayload?.tier || "free") as typeof reviewTier);
       setReviewTier(tier);
       const fullRead = ["premium", "player", "member"].includes(tier);
       const canReadAnything = tier !== "free";
