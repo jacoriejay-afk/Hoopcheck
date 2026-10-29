@@ -5,7 +5,7 @@ import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
 import TeamLogo from "../../../components/TeamLogo";
 
-type Team = { id: string; name: string; country: string | null; logo_url: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
+type Team = { id: string; tableName: "teams" | "womens_teams"; name: string; country: string | null; logo_url: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
 type Candidate = { sourceUrl: string; teamId: string; imageData: string; mimeType: string; imageUrl: string; bg: "transparent" | "light" | "dark"; approved: boolean };
 
 const inputStyle: React.CSSProperties = { width: "100%", padding: 12, borderRadius: 8, border: "1px solid #444", background: "#111", color: "#fff" };
@@ -28,29 +28,37 @@ export default function AdminTeamLogosPage() {
       setLoading(false);
       return;
     }
-    const { data, error } = await supabase.from("teams").select("id,name,country,logo_url,logo_bg").order("name").limit(2000);
+    const [{ data: mens, error: mensError }, { data: womens, error: womensError }] = await Promise.all([
+      supabase.from("teams").select("id,name,country,logo_url,logo_bg").order("name").limit(2000),
+      supabase.from("womens_teams").select("id,name,country,logo_url,logo_bg").order("name").limit(1000),
+    ]);
+    const error = mensError || womensError;
     if (error) setMessage(error.message);
-    else setTeams((data || []) as Team[]);
+    else setTeams([
+      ...((mens || []).map((team) => ({ ...team, tableName: "teams" as const }))),
+      ...((womens || []).map((team) => ({ ...team, tableName: "womens_teams" as const }))),
+    ] as Team[]);
     setLoading(false);
   }
 
   useEffect(() => { void loadTeams(); }, []);
 
   async function uploadApproved(teamId: string, imageData: string, mimeType: string, background: "transparent" | "light" | "dark") {
-    const team = teams.find((item) => item.id === teamId);
+    const [tableName, id] = teamId.split(":") as ["teams" | "womens_teams", string];
+    const team = teams.find((item) => item.id === id && item.tableName === tableName);
     if (!team) throw new Error("Choose a team before approving this logo.");
     const ext = mimeType === "image/svg+xml" ? "svg" : mimeType === "image/webp" ? "webp" : mimeType === "image/png" ? "png" : "jpg";
     const base64 = imageData.split(",")[1] || "";
     const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
     const blob = new Blob([bytes], { type: mimeType });
     if (blob.size < 1024 || blob.size > 5 * 1024 * 1024) throw new Error("Logo must be between 1 KB and 5 MB.");
-    const path = `teams/${teamId}/logo.${ext}`;
+    const path = `${tableName}/${id}/logo.${ext}`;
     const { error: uploadError } = await supabase.storage.from("team-logos").upload(path, blob, { upsert: true, contentType: mimeType, cacheControl: "3600" });
     if (uploadError) throw uploadError;
     const { data: publicData } = supabase.storage.from("team-logos").getPublicUrl(path);
-    const { error: updateError } = await supabase.from("teams").update({ logo_url: publicData.publicUrl, logo_bg: background }).eq("id", teamId);
+    const { error: updateError } = await supabase.from(tableName).update({ logo_url: publicData.publicUrl, logo_bg: background }).eq("id", id);
     if (updateError) throw updateError;
-    setTeams((items) => items.map((item) => item.id === teamId ? { ...item, logo_url: publicData.publicUrl, logo_bg: background } : item));
+    setTeams((items) => items.map((item) => item.id === id && item.tableName === tableName ? { ...item, logo_url: publicData.publicUrl, logo_bg: background } : item));
   }
 
   async function uploadManual() {
@@ -120,8 +128,8 @@ export default function AdminTeamLogosPage() {
       {loading ? <p>Checking access and loading teams…</p> : <>
         <section style={{ border: "1px solid #333", background: "#111", borderRadius: 14, padding: 18, marginTop: 22 }}>
           <h2>1. Choose a team</h2>
-          <label style={{ display: "grid", gap: 7 }}>Team<select value={selectedTeam} onChange={(event) => setSelectedTeam(event.target.value)} style={inputStyle}><option value="">Select team…</option>{teams.map((team) => <option key={team.id} value={team.id}>{team.name}{team.country ? ` — ${team.country}` : ""}</option>)}</select></label>
-          {selectedTeam && <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 12 }}><TeamLogo name={teams.find((team) => team.id === selectedTeam)?.name || "Team"} logoUrl={teams.find((team) => team.id === selectedTeam)?.logo_url} logoBg={teams.find((team) => team.id === selectedTeam)?.logo_bg} size={64}/><span>{teams.find((team) => team.id === selectedTeam)?.logo_url ? "Current approved logo" : "Using designed fallback"}</span></div>}
+          <label style={{ display: "grid", gap: 7 }}>Team<select value={selectedTeam} onChange={(event) => setSelectedTeam(event.target.value)} style={inputStyle}><option value="">Select team…</option>{teams.map((team) => <option key={team.tableName + ":" + team.id} value={team.tableName + ":" + team.id}>{team.tableName === "womens_teams" ? "Women · " : "Team · "}{team.name}{team.country ? ` — ${team.country}` : ""}</option>)}</select></label>
+          {selectedTeam && <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 12 }}><TeamLogo name={teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.name || "Team"} logoUrl={teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.logo_url} logoBg={teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.logo_bg} size={64}/><span>{teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.logo_url ? "Current approved logo" : "Using designed fallback"}</span></div>}
         </section>
         <section style={{ border: "1px solid #333", background: "#111", borderRadius: 14, padding: 18, marginTop: 16 }}>
           <h2>2. Upload an approved logo</h2>
@@ -140,7 +148,7 @@ export default function AdminTeamLogosPage() {
           <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
             {candidates.map((candidate, index) => <article key={candidate.sourceUrl + index} style={{ border: "1px solid #444", borderRadius: 12, padding: 14, display: "grid", gridTemplateColumns: "100px minmax(0,1fr)", gap: 14, alignItems: "center" }}>
               <div style={{ background: candidate.bg === "light" ? "#F7F7F5" : candidate.bg === "dark" ? "#0A0A0A" : "#222", borderRadius: 10, padding: 8 }}><img src={candidate.imageData} alt="Logo candidate preview" style={{ width: 84, height: 84, objectFit: "contain" }}/></div>
-              <div style={{ minWidth: 0 }}><p style={{ overflowWrap: "anywhere", color: "#aaa", fontSize: 12 }}>{candidate.sourceUrl}</p><p style={{ overflowWrap: "anywhere", fontSize: 12 }}>Image: {candidate.imageUrl}</p><label>Assign team<select value={candidate.teamId} onChange={(event) => updateCandidate(index, "teamId", event.target.value)} style={{ ...inputStyle, marginTop: 5 }}>{teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}</select></label><label style={{ display: "block", marginTop: 8 }}>Tile background<select value={candidate.bg} onChange={(event) => updateCandidate(index, "bg", event.target.value)} style={{ ...inputStyle, marginTop: 5 }}><option value="transparent">Transparent</option><option value="light">Light</option><option value="dark">Dark</option></select></label><button disabled={busy || candidate.approved} onClick={() => void approveCandidate(index)} style={{ marginTop: 10, border: 0, borderRadius: 999, background: candidate.approved ? "#333" : "#FF5A1F", color: "#fff", padding: "9px 14px", fontWeight: 900 }}>{candidate.approved ? "Approved and published" : "Approve and publish"}</button></div>
+              <div style={{ minWidth: 0 }}><p style={{ overflowWrap: "anywhere", color: "#aaa", fontSize: 12 }}>{candidate.sourceUrl}</p><p style={{ overflowWrap: "anywhere", fontSize: 12 }}>Image: {candidate.imageUrl}</p><label>Assign team<select value={candidate.teamId} onChange={(event) => updateCandidate(index, "teamId", event.target.value)} style={{ ...inputStyle, marginTop: 5 }}>{teams.map((team) => <option key={team.tableName + ":" + team.id} value={team.tableName + ":" + team.id}>{team.tableName === "womens_teams" ? "Women · " : "Team · "}{team.name}</option>)}</select></label><label style={{ display: "block", marginTop: 8 }}>Tile background<select value={candidate.bg} onChange={(event) => updateCandidate(index, "bg", event.target.value)} style={{ ...inputStyle, marginTop: 5 }}><option value="transparent">Transparent</option><option value="light">Light</option><option value="dark">Dark</option></select></label><button disabled={busy || candidate.approved} onClick={() => void approveCandidate(index)} style={{ marginTop: 10, border: 0, borderRadius: 999, background: candidate.approved ? "#333" : "#FF5A1F", color: "#fff", padding: "9px 14px", fontWeight: 900 }}>{candidate.approved ? "Approved and published" : "Approve and publish"}</button></div>
             </article>)}
           </div>
         </section>
