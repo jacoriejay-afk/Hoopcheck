@@ -24,6 +24,7 @@ import Surface from "../../../components/Surface";
 import TeamRosterSpots from "../../../components/TeamRosterSpots";
 import OfficialReviewResponse from "../../../components/OfficialReviewResponse";
 import TeamPayTimeline from "../../../components/TeamPayTimeline";
+import TeamLogo from "../../../components/TeamLogo";
 
 type Team = {
   id: string;
@@ -33,6 +34,7 @@ type Team = {
   league_id: string | null;
   city: string | null;
   logo_url?: string | null;
+  logo_bg?: "transparent" | "light" | "dark" | null;
 };
 
 type Coach = {
@@ -211,7 +213,7 @@ export default function TeamDetailPage() {
       } = await supabase
         .from("teams")
         .select(
-          "id, name, country, league_name, league_id, city, logo_url"
+          "id, name, country, league_name, league_id, city, logo_url, logo_bg"
         )
         .eq("id", id)
         .maybeSingle();
@@ -558,7 +560,7 @@ export default function TeamDetailPage() {
     <main className="hc-entity-profile-page hc-team-entity-profile">
 
 <section className="hero">
-        <div className="hc-team-profile-heading"><span className="hc-team-profile-logo" aria-hidden="true">{team.logo_url ? <img src={team.logo_url} alt="" width={64} height={64} /> : team.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span><div><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || t("countryNotListed")}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
+        <div className="hc-team-profile-heading hc-team-profile-heading--club"><TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={96} className="hc-team-profile-logo" /><div className="hc-team-profile-heading__copy"><p className="hc-team-profile-kicker">HOOPCHECK CLUB PROFILE</p><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || t("countryNotListed")}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
         {reviewTier === "pro" ? (
           <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score">
             <span className="eyebrow">Trust Score</span><h2>Premium</h2><Link href="/membership" className="btn">Upgrade</Link>
