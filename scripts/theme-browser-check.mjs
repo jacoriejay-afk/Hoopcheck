@@ -11,7 +11,18 @@ const teamFixture = {
   league_name: "Turkish Basketball League",
   league_id: "c8d92f50-20d6-4b13-a6c8-9a7b3c1b2001",
   city: "Istanbul",
+  logo_url: "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 rx=%2718%27 fill=%27%23FF5A1F%27/%3E%3Ctext x=%2750%27 y=%2763%27 font-size=%2742%27 font-weight=%27900%27 text-anchor=%27middle%27 fill=%27white%27%3EEG%3C/text%3E%3C/svg%3E",
+  logo_bg: "light",
+};
+const fallbackTeamFixture = {
+  id: "a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f0",
+  name: "Baku Falcons QA",
+  country: "Azerbaijan",
+  league_name: "QA League",
+  league_id: leagueFixture?.id || "c8d92f50-20d6-4b13-a6c8-9a7b3c1b2001",
+  city: "Baku",
   logo_url: null,
+  logo_bg: "transparent",
 };
 const leagueFixture = {
   id: "c8d92f50-20d6-4b13-a6c8-9a7b3c1b2001",
@@ -144,7 +155,7 @@ try {
         else if (url.pathname.includes("/rest/v1/feed_post_comments")) data = [];
         else if (url.pathname.includes("/rest/v1/feed_post_checks")) data = [];
         else if (url.pathname.includes("/rest/v1/reviews")) data = [];
-        else if (url.pathname.includes("/rest/v1/teams")) data = [teamFixture];
+        else if (url.pathname.includes("/rest/v1/teams")) { const requestedId = (url.searchParams.get("id") || "").replace(/^eq\\./, ""); data = requestedId ? [requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture] : [teamFixture, fallbackTeamFixture]; }
         else if (url.pathname.includes("/rest/v1/coaches")) data = [coachFixture];
         else if (url.pathname.includes("/rest/v1/leagues")) data = [leagueFixture];
         await route.fulfill({
@@ -226,7 +237,7 @@ try {
 
   const mainRoutes = [
     "/", "/dashboard", "/feed", "/account", "/settings", "/profile", "/search",
-    "/teams", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2", "/coaches", "/coaches/11111111-1111-4111-8111-111111111111", "/leagues", "/players", "/womens", "/directory",
+    "/teams", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2", "/teams/a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f0", "/admin/team-logos", "/coaches", "/coaches/11111111-1111-4111-8111-111111111111", "/leagues", "/players", "/womens", "/directory",
     "/reviews", "/membership", "/notifications", "/support", "/verification",
     "/privacy-center", "/privacy", "/terms", "/community-guidelines", "/login",
     "/signup", "/onboarding", "/fan-live", "/live-games", "/partners", "/copyright",
@@ -266,7 +277,7 @@ try {
       if (url.pathname === "/auth/v1/user") data = user;
       else if (url.pathname.includes("/rest/v1/profiles")) data = single ? profile : [];
       else if (url.pathname.includes("/rest/v1/subscriptions")) data = single ? subscription : [];
-      else if (url.pathname.includes("/rest/v1/teams")) data = single ? teamFixture : [teamFixture];
+      else if (url.pathname.includes("/rest/v1/teams")) { const requestedId = (url.searchParams.get("id") || "").replace(/^eq\\./, ""); data = requestedId ? (requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture) : [teamFixture, fallbackTeamFixture]; }
       else if (url.pathname.includes("/rest/v1/leagues")) data = single ? leagueFixture : [leagueFixture];
       else if (url.pathname.includes("/rest/v1/coaches")) data = single ? coachFixture : [coachFixture];
       else if (url.pathname.includes("/rest/v1/team_league_memberships")) data = [];
