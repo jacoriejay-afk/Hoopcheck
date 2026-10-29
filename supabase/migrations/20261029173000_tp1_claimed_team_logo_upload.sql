@@ -42,6 +42,28 @@ drop policy if exists "claim proof owner and admin read" on storage.objects;
 create policy "claim proof owner and admin read" on storage.objects for select to authenticated
 using (bucket_id = 'profile-claim-proofs' and ((storage.foldername(name))[1] = (select auth.uid())::text or public.is_current_user_admin_or_moderator()));
 
+create or replace function public.is_team_profile_claimed(p_team_id uuid, p_team_table text default 'teams')
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $
+  select case
+    when p_team_table = 'teams' then exists (
+      select 1 from public.profile_claim_requests c
+      where c.entity_type = 'team' and c.entity_id = p_team_id and c.status = 'approved'
+    ) and exists (select 1 from public.teams t where t.id = p_team_id)
+    when p_team_table = 'womens_teams' then exists (
+      select 1 from public.profile_claim_requests c
+      where c.entity_type = 'team' and c.entity_id = p_team_id and c.status = 'approved'
+    ) and exists (select 1 from public.womens_teams t where t.id = p_team_id)
+    else false
+  end;
+$;
+revoke all on function public.is_team_profile_claimed(uuid, text) from public;
+grant execute on function public.is_team_profile_claimed(uuid, text) to anon, authenticated;
+
 -- TP-1 follow-up: allow only approved club claimants to publish a logo for their own team.
 create or replace function public.set_claimed_team_logo(
   p_team_id uuid,
