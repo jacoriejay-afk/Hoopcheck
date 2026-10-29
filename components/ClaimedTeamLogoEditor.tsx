@@ -7,6 +7,8 @@ type Props = { teamId: string; teamName: string; teamTable?: "teams" | "womens_t
 
 export default function ClaimedTeamLogoEditor({ teamId, teamName, teamTable = "teams", onSaved }: Props) {
   const [allowed, setAllowed] = useState(false);
+  const [claimed, setClaimed] = useState(false);
+  const [claimChecked, setClaimChecked] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [bg, setBg] = useState<"transparent" | "light" | "dark">("transparent");
   const [busy, setBusy] = useState(false);
@@ -15,7 +17,14 @@ export default function ClaimedTeamLogoEditor({ teamId, teamName, teamTable = "t
   useEffect(() => {
     let active = true;
     void (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const [{ data: { session } }, claimedResult] = await Promise.all([
+        supabase.auth.getSession(),
+        supabase.rpc("is_team_profile_claimed", { p_team_id: teamId, p_team_table: teamTable }),
+      ]);
+      if (active) {
+        setClaimed(Boolean(claimedResult.data));
+        setClaimChecked(true);
+      }
       if (!session?.user) { if (active) setAllowed(false); return; }
       const { data, error } = await supabase.from("profile_claim_requests").select("id")
         .eq("requester_id", session.user.id).eq("entity_type", "team").eq("entity_id", teamId)
@@ -47,7 +56,8 @@ export default function ClaimedTeamLogoEditor({ teamId, teamName, teamTable = "t
     finally { setBusy(false); }
   }
 
-  if (!allowed) return null;
+  if (!claimChecked) return null;
+  if (!allowed) return claimed ? <div className="hc-claimed-profile-chip">CLAIMED · COMPLETE PROFILE</div> : null;
   return <section className="hc-claimed-logo-editor" aria-label={`Manage ${teamName} logo`}>
     <span className="hc-claimed-profile-chip">CLAIMED · COMPLETE PROFILE</span>
     <details><summary>Manage club logo</summary>
