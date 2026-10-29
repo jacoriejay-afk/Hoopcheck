@@ -1183,3 +1183,6 @@ html.theme-dark .hc-team-profile-nav a { color: #F7F7F5; }
   .hc-team-profile-nav { border-radius: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hc-team-profile-nav a { white-space: nowrap; padding-inline: 8px; }
 }
+
+.hc-claimed-profile-chip { display: inline-flex; width: fit-content; border: 1px solid rgba(30,158,80,.65); border-radius: 999px; padding: 5px 9px; margin: 0 0 8px; color: #176C3D; background: rgba(30,158,80,.09); font-size: 10px; font-weight: 950; letter-spacing: .06em; }
+html.theme-dark .hc-claimed-profile-chip { color: #79E2A1; border-color: rgba(121,226,161,.6); }
