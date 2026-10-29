@@ -566,7 +566,7 @@ export default function TeamDetailPage() {
         ) : ["premium", "player", "member"].includes(reviewTier) ? (
           <Surface as="div" className="hc-entity-trust-score"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /></Surface>
         ) : (
-          <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow"><span aria-hidden="true">🔒</span> Player reviews are a Premium fan feature</span><Link href="/membership" className="btn">Upgrade</Link></Surface>
+          <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow"><span aria-hidden="true">🔒</span> Full reviews are available to Premium fans and eligible player accounts</span><Link href="/membership" className="btn">Upgrade</Link></Surface>
         )}
 
         <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} /></div>
@@ -578,8 +578,8 @@ export default function TeamDetailPage() {
         <section className="hero">
           <Surface className="card hc-team-membership-surface">
             <div className="eyebrow">{t("membersOnly")}</div>
-            <h2>🔒 Player reviews are a Premium fan feature</h2>
-            <p>Upgrade to Fan Premium to unlock every review, rating, category score, and Trust Score detail.</p>
+            <h2>🔒 Full reviews are available to Premium fans and eligible player accounts</h2>
+            <p>Premium fans can read full reviews, ratings, category scores, and Trust Score details. Eligible player accounts can continue to review teams they have played for.</p>
             <div className="actions"><Link href="/membership" className="btn">Upgrade</Link><Link href="/login" className="btn dark">{t("logIn")}</Link></div>
           </Surface>
         </section>
