@@ -149,7 +149,7 @@ export default function AdminTeamLogosPage() {
         </section>
         <section style={{ border: "1px solid #333", background: "#111", borderRadius: 14, padding: 18, marginTop: 16 }}>
           <h2>2. Upload an approved logo</h2>
-          {selectedTeam && teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.logo_url && <button type="button" disabled={busy} onClick={() => void revertToFallback()} style={{ marginBottom: 12, border: "1px solid #F5B800", borderRadius: 999, background: "transparent", color: "#F7F7F5", padding: "9px 14px", fontWeight: 800 }}>Revert to designed fallback</button>
+          {selectedTeam && teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.logo_url && <button type="button" disabled={busy} onClick={() => void revertToFallback()} style={{ marginBottom: 12, border: "1px solid #F5B800", borderRadius: 999, background: "transparent", color: "#F7F7F5", padding: "9px 14px", fontWeight: 800 }}>Revert to designed fallback</button>}
           <p style={{ color: "#aaa" }}>PNG, SVG, JPG, or WebP. Maximum 5 MB. The image is copied into the HoopCheck team-logos bucket.</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 }}>
             <label style={{ display: "grid", gap: 7 }}>Logo file<input type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp" onChange={(event: ChangeEvent<HTMLInputElement>) => setFile(event.target.files?.[0] || null)}/></label>
