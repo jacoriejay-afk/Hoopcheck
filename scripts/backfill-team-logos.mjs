@@ -12,6 +12,7 @@ import fs from "node:fs/promises";
 const APPLY = process.argv.includes("--apply");
 const APPROVED_SAMPLE = process.argv.includes("--approved-sample");
 const LIMIT = Math.max(1, Number(process.argv.find((arg) => arg.startsWith("--limit="))?.split("=")[1] || 10));
+const OFFSET = Math.max(0, Number(process.argv.find((arg) => arg.startsWith("--offset="))?.split("=")[1] || 0));
 const SAMPLE = process.argv.includes("--sample");
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -128,7 +129,7 @@ async function findOnWikimedia(teamName) {
   return null;
 }
 async function getRows(table) {
-  let query = supabase.from(table).select("id,name,country,city,league_id,league_name,logo_url" + (table === "teams" ? ",website" : "")).is("logo_url", null).order("name").limit(LIMIT);
+  let query = supabase.from(table).select("id,name,country,city,league_id,league_name,logo_url" + (table === "teams" ? ",website" : "")).is("logo_url", null).order("name").range(OFFSET, OFFSET + LIMIT - 1);
   const { data, error } = await query;
   if (error) throw new Error(table + ": " + error.message);
   return (data || []).map((row) => ({ ...row, __table: table }));
@@ -137,7 +138,7 @@ async function main() {
   const tables = SAMPLE ? ["teams"] : ["teams", "womens_teams"];
   const rows = [];
   for (const table of tables) rows.push(...await getRows(table));
-  const chosen = rows.slice(0, LIMIT);
+  const chosen = rows;
   for (const row of chosen) {
     const key = normalize(row.name);
     let candidate = null;
