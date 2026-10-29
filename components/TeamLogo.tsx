@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export type LogoBackground = "transparent" | "light" | "dark";
 
-const PALETTE = ["#FF5A1F", "#E84393", "#2456C8", "#1E9E50", "#6C3FD4", "#F5B800"] as const;
+const PALETTE = ["#8A2A0D", "#8C1B53", "#173C86", "#176C3D", "#4C2A90", "#7B5900"] as const;
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -37,7 +37,9 @@ export default function TeamLogo({
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   const fallbackColor = useMemo(() => PALETTE[hashName(name)], [name]);
+  useEffect(() => { setImageFailed(false); }, [logoUrl]);
   const showImage = Boolean(logoUrl && !imageFailed);
+  const displaySize = Math.min(256, Math.max(24, size));
   const tileBackground = logoBg === "light" ? "#F7F7F5" : logoBg === "dark" ? "#0A0A0A" : "transparent";
 
   return (
@@ -45,17 +47,17 @@ export default function TeamLogo({
       className={`hc-team-logo ${showImage ? "hc-team-logo--image" : "hc-team-logo--fallback"} ${className}`.trim()}
       role="img"
       aria-label={`${name} team logo`}
-      style={{ width: size, height: size, minWidth: size, background: showImage ? tileBackground : fallbackColor }}
+      style={{ width: displaySize, height: displaySize, minWidth: displaySize, background: showImage ? tileBackground : fallbackColor }}
     >
       {showImage ? (
         <img
           src={logoUrl as string}
           alt=""
-          width={size}
-          height={size}
+          width={displaySize}
+          height={displaySize}
           loading="lazy"
           onError={() => setImageFailed(true)}
-          style={{ width: "100%", height: "100%", objectFit: "contain", padding: Math.max(3, Math.round(size * 0.08)), display: "block" }}
+          style={{ width: "100%", height: "100%", objectFit: "contain", padding: Math.max(3, Math.round(displaySize * 0.08)), display: "block" }}
         />
       ) : (
         <svg viewBox="0 0 100 100" aria-hidden="true" className="hc-team-logo__crest">
