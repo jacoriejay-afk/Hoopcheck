@@ -1017,3 +1017,99 @@ html.theme-dark .hc-coaches-directory-page .hc-floating-action,
 html.theme-light .hc-coaches-directory-page .hc-floating-action {
   display:none!important;
 }
+
+
+/* TP-1 shared team identity: consistent fallbacks and contrast-safe logo tiles. */
+.hc-team-logo {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 18px;
+  color: #F7F7F5;
+  vertical-align: middle;
+  box-shadow: 0 8px 24px rgba(0,0,0,.16);
+}
+.hc-team-logo--fallback { border: 1px solid rgba(247,247,245,.45); }
+.hc-team-logo__crest { width: 100%; height: 100%; display: block; }
+.hc-team-logo--image { border: 1px solid rgba(128,128,128,.28); }
+.hc-team-profile-heading--club {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 0 22px;
+  margin-bottom: 14px;
+}
+.hc-team-profile-heading--club::before {
+  content: "";
+  position: absolute;
+  inset: 0 -12px;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 18px;
+  background: radial-gradient(ellipse at 12% 50%, rgba(255,90,31,.10), transparent 68%);
+}
+.hc-team-profile-heading--club .hc-team-profile-logo {
+  flex: 0 0 auto;
+  width: 96px;
+  height: 96px;
+  border-radius: 22px;
+}
+.hc-team-profile-heading__copy { min-width: 0; }
+.hc-team-profile-kicker {
+  margin: 0 0 6px;
+  color: var(--orange, #FF5A1F);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .18em;
+}
+.hc-team-profile-heading--club h1 {
+  margin: 0;
+  font-family: var(--font-collegiate, "Arial Black", Inter, sans-serif);
+  font-weight: 950;
+  letter-spacing: -.035em;
+  line-height: 1.02;
+  overflow-wrap: anywhere;
+}
+.hc-team-profile-heading--club .hc-team-profile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 9px 0 0;
+  line-height: 1.45;
+}
+.hc-team-entity-profile .hc-entity-trust-score { margin-top: 8px; }
+.hc-team-entity-profile .hc-fan-upgrade-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.hc-team-entity-profile .hc-fan-upgrade-banner .btn,
+.hc-team-entity-profile .hc-membership-locked-score .btn {
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.hc-team-entity-profile .hc-fan-upgrade-banner strong { min-width: 0; flex: 1 1 220px; }
+.hc-team-entity-profile .entity-actions .btn,
+.hc-team-entity-profile .entity-actions a.btn {
+  border-radius: 999px;
+}
+html.theme-light .hc-team-profile-heading--club,
+html.theme-light .hc-team-profile-heading--club h1,
+html.theme-light .hc-team-profile-meta { color: #0A0A0A; }
+html.theme-dark .hc-team-profile-heading--club,
+html.theme-dark .hc-team-profile-heading--club h1,
+html.theme-dark .hc-team-profile-meta { color: #F7F7F5; }
+@media (max-width: 560px) {
+  .hc-team-profile-heading--club { gap: 12px; padding: 14px 0 18px; }
+  .hc-team-profile-heading--club .hc-team-profile-logo { width: 76px; height: 76px; flex-basis: 76px; border-radius: 17px; }
+  .hc-team-profile-heading--club h1 { font-size: clamp(1.45rem, 7vw, 2.2rem); }
+  .hc-team-profile-heading--club .hc-team-profile-meta { font-size: 12px; }
+  .hc-team-entity-profile .hc-fan-upgrade-banner { align-items: stretch; }
+  .hc-team-entity-profile .hc-fan-upgrade-banner .btn { align-self: flex-start; }
+}
