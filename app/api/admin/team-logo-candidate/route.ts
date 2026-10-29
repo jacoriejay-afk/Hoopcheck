@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
     if (!url || !key || !token) return NextResponse.json({ error: "Admin session is required." }, { status: 401 });
-    const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+    const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: "Bearer " + token } } });
     const { data: userData, error: userError } = await client.auth.getUser(token);
     if (userError || !userData.user) return NextResponse.json({ error: "Admin session is invalid." }, { status: 401 });
     const { data: isAdmin, error: roleError } = await client.rpc("is_current_user_admin_or_moderator");
