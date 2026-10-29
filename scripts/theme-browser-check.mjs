@@ -236,7 +236,7 @@ try {
   }
 
   const mainRoutes = [
-    "/", "/dashboard", "/feed", "/account", "/settings", "/profile", "/search",
+    "/", "/dashboard", "/feed", "/account", "/settings", "/profile", "/search", "/search?q=Baku",
     "/teams", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2", "/teams/a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f0", "/admin/team-logos", "/coaches", "/coaches/11111111-1111-4111-8111-111111111111", "/leagues", "/players", "/womens", "/directory",
     "/reviews", "/membership", "/notifications", "/support", "/verification",
     "/privacy-center", "/privacy", "/terms", "/community-guidelines", "/login",
@@ -435,6 +435,11 @@ try {
         fullPage: true,
         animations: "disabled",
       });
+      if (requestedPath === "/search?q=Baku") {
+        await page.locator(".hc-team-logo--image").first().waitFor({ state: "visible", timeout: 10000 });
+        await page.locator(".hc-team-logo--fallback").first().waitFor({ state: "visible", timeout: 10000 });
+        await page.screenshot({ path: `${artifactsDir}/search-results-approved-and-fallback-${theme}.png`, fullPage: true, animations: "disabled" });
+      }
       if (requestedPath === "/teams") {
         await page.locator(".hc-team-logo--image").first().waitFor({ state: "visible", timeout: 10000 });
         await page.locator(".hc-team-logo--fallback").first().waitFor({ state: "visible", timeout: 10000 });
