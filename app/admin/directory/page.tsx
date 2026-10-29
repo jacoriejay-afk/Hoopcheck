@@ -129,6 +129,7 @@ export default function AdminDirectoryPage() {
           </div>
 
           <div style={styles.headerActions}>
+            <Link href="/admin/team-logos" style={styles.secondaryButton}>Team Logo Studio</Link>
             <Link href="/admin/reviews" className="admin-primary-action" style={styles.secondaryButton}>{t("reviewQueue")}</Link>
             <Link href="/admin/claims" style={styles.secondaryButton}>{t("profileClaims")}</Link>
             <Link href="/admin/support" style={styles.secondaryButton}>{t("communityInbox")}</Link>
