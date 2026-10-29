@@ -4,9 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
+import TeamLogo from "../../components/TeamLogo";
 import "../fan-feed/fan-feed.css";
 
-type Team = { id:string; name:string; logo_url:string|null; league_name:string|null; country:string|null; city:string|null };
+type Team = { id:string; name:string; logo_url:string|null; logo_bg?:"transparent"|"light"|"dark"|null; league_name:string|null; country:string|null; city:string|null };
 type Game = { id:string; team_id:string; opponent_name:string; status:string; scheduled_at:string|null; home_score:number|null; away_score:number|null; period_label:string|null; league_name:string|null };
 
 export default function TeamHubPage(){
@@ -24,7 +25,7 @@ export default function TeamHubPage(){
     const ids=(follows||[]).map((x:any)=>x.target_id).filter(Boolean);
     if(!ids.length){setTeams([]);setGames([]);setLoading(false);return;}
     const [{data:teamRows},{data:gameRows}]=await Promise.all([
-      supabase.from("teams").select("id,name,logo_url,league_name,country,city").in("id",ids).order("name",{ascending:true}),
+      supabase.from("teams").select("id,name,logo_url,logo_bg,league_name,country,city").in("id",ids).order("name",{ascending:true}),
       supabase.from("fan_live_games").select("id,team_id,opponent_name,status,scheduled_at,home_score,away_score,period_label,league_name").in("team_id",ids).in("status",["scheduled","live","in_progress"]).order("scheduled_at",{ascending:true}).limit(100)
     ]);
     setTeams((teamRows||[]) as Team[]);
@@ -41,7 +42,7 @@ export default function TeamHubPage(){
     {signedIn&&!teams.length&&<section className="dashboard-card hc-feed-empty"><p className="eyebrow">START FOLLOWING</p><h2>Your Team Hub starts here.</h2><p>Follow teams to see upcoming games, live scores and team-tagged fan updates.</p><Link className="btn" href="/teams">Find teams</Link></section>}
     {!!message&&<p className="hc-feed-message" role="status">{message}</p>}
     <section style={{display:"grid",gap:16,marginTop:18}}>{teams.map(team=>{const teamGames=games.filter(g=>g.team_id===team.id).slice(0,3);return <article key={team.id} className="dashboard-card hc-feed-ticket" style={{padding:20}}>
-      <div style={{display:"flex",alignItems:"center",gap:14}}><span className="hc-live-team-logo">{team.logo_url?<img src={team.logo_url} alt="" onError={e=>{e.currentTarget.style.display="none";}}/>:null}<span className="hc-live-team-monogram">{team.name.split(/\\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}</span></span><div style={{minWidth:0,flex:1}}><h2 style={{margin:"0 0 4px"}}>{team.name}</h2><p className="muted" style={{margin:0}}>{[team.league_name,team.city,team.country].filter(Boolean).join(" · ")||"Basketball team"}</p></div><Link className="btn" href={`/teams/${team.id}`}>Team page</Link></div>
+      <div style={{display:"flex",alignItems:"center",gap:14}}><TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={52} className="hc-live-team-logo" /><div style={{minWidth:0,flex:1}}><h2 style={{margin:"0 0 4px"}}>{team.name}</h2><p className="muted" style={{margin:0}}>{[team.league_name,team.city,team.country].filter(Boolean).join(" · ")||"Basketball team"}</p></div><Link className="btn" href={`/teams/${team.id}`}>Team page</Link></div>
       <div style={{marginTop:16}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}><h3 style={{margin:0}}>Next games & live score</h3><Link href={`/teams/${team.id}`} style={{color:"var(--orange)",fontWeight:900}}>Team updates →</Link></div>
       {!teamGames.length?<p className="muted" style={{marginBottom:0}}>No upcoming game has been published yet.</p>:<div style={{display:"grid",gap:8,marginTop:10}}>{teamGames.map(game=><div key={game.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,padding:"12px",border:"1px solid var(--border)",borderRadius:12}}><div><strong>{["live","in_progress"].includes(game.status.toLowerCase())?"● LIVE NOW":"vs. "+game.opponent_name}</strong><p className="muted" style={{fontSize:12,margin:"4px 0 0"}}>{game.league_name||team.league_name||"Basketball"}{game.scheduled_at?" · "+new Date(game.scheduled_at).toLocaleString():""}{game.period_label?" · "+game.period_label:""}</p></div><strong style={{whiteSpace:"nowrap"}}>{game.home_score!=null&&game.away_score!=null?`${game.home_score} – ${game.away_score}`:"UP NEXT"}</strong></div>)}</div>}</div>
     </article>;})}</section>
