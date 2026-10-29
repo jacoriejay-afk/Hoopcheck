@@ -1,0 +1,73 @@
+name: HoopCheck Logo Backfill
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Write validated logo assets to production (false = dry run)"
+        required: true
+        type: boolean
+        default: false
+      offset:
+        description: "Start offset within each table"
+        required: true
+        type: number
+        default: 0
+      limit:
+        description: "Maximum records per table in this batch (keep batches small)"
+        required: true
+        type: number
+        default: 10
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hoopcheck-logo-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://ucbdceaieyenljcwlhnj.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      HOOPCHECK_LOGO_BACKFILL_APPROVED: ${{ inputs.apply && 'YES' || 'NO' }}
+      HOOPCHECK_TEAM_LOGO_BUCKET: team-logos
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify required secret for production writes
+        if: inputs.apply
+        env:
+          KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::error::Add SUPABASE_SERVICE_ROLE_KEY in GitHub repository Actions secrets before applying."
+            exit 1
+          fi
+      - name: Run guarded logo backfill
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARGS=(--limit=${{ inputs.limit }} --offset=${{ inputs.offset }})
+          if [ "${{ inputs.apply }}" = "true" ]; then
+            ARGS+=(--apply --approved-sample)
+          fi
+          node scripts/backfill-team-logos.mjs "${ARGS[@]}" | tee logo-backfill-report.json
+      - name: Upload batch report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hoopcheck-logo-backfill-report-${{ github.run_id }}
+          path: logo-backfill-report.json
+          if-no-files-found: warn
+          retention-days: 14
