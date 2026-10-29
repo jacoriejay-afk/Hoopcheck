@@ -9,6 +9,7 @@ import Surface from "../../../components/Surface";
 import HoopLoading from "../../../components/HoopLoading";
 import TeamLogo from "../../../components/TeamLogo";
 import ClaimedTeamLogoEditor from "../../../components/ClaimedTeamLogoEditor";
+import TeamPlayersHistory from "../../../components/TeamPlayersHistory";
 
 export default function WomensTeam(){
  const {formatDate,formatNumber,t}=useLanguage();
