@@ -1113,3 +1113,27 @@ html.theme-dark .hc-team-profile-meta { color: #F7F7F5; }
   .hc-team-entity-profile .hc-fan-upgrade-banner { align-items: stretch; }
   .hc-team-entity-profile .hc-fan-upgrade-banner .btn { align-self: flex-start; }
 }
+
+.hc-team-follow-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid #FF5A1F;
+  font: inherit;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color .16s ease, color .16s ease, border-color .16s ease, transform .16s ease;
+}
+.hc-team-follow-pill:disabled { opacity: .65; cursor: wait; }
+.hc-team-follow-pill.is-not-following { background: #FF5A1F; color: #FFFFFF; }
+.hc-team-follow-pill.is-following { background: transparent; color: var(--text, #151515); border-color: currentColor; }
+html.theme-dark .hc-team-follow-pill.is-following { color: #F7F7F5; }
+.hc-team-follow-pill:focus-visible { outline: 3px solid #FF5A1F; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .hc-team-follow-pill { transition: none; }
+}
