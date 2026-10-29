@@ -1197,3 +1197,18 @@ html.theme-dark .hc-claimed-profile-chip { color: #79E2A1; border-color: rgba(12
 .hc-team-score-categories small { font-size: 10px; color: var(--muted, #666); }
 .hc-team-score-categories strong { color: var(--text, #0A0A0A); font-size: 16px; }
 html.theme-dark .hc-team-score-categories strong { color: #F7F7F5; }
+
+html.theme-light .admin-team-logo-studio { background: #F7F7F5 !important; color: #0A0A0A !important; }
+html.theme-light .admin-team-logo-studio section,
+html.theme-light .admin-team-logo-studio article { background: #FFFFFF !important; border-color: #D5D5D5 !important; color: #0A0A0A !important; }
+html.theme-light .admin-team-logo-studio h1,
+html.theme-light .admin-team-logo-studio h2,
+html.theme-light .admin-team-logo-studio h3,
+html.theme-light .admin-team-logo-studio label,
+html.theme-light .admin-team-logo-studio span { color: #0A0A0A; }
+html.theme-light .admin-team-logo-studio p { color: #4A4A4A !important; }
+html.theme-light .admin-team-logo-studio input,
+html.theme-light .admin-team-logo-studio select,
+html.theme-light .admin-team-logo-studio textarea { background: #FFFFFF !important; color: #0A0A0A !important; border-color: #B8B8B8 !important; }
+html.theme-light .admin-team-logo-studio [role="status"] { background: #FFFFFF !important; border-color: #B8B8B8 !important; color: #0A0A0A !important; }
+html.theme-light .admin-team-logo-studio button { color: #FFFFFF; }
