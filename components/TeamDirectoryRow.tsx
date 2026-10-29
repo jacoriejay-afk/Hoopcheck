@@ -46,8 +46,8 @@ export default function TeamDirectoryRow({
         </span>
       </Link>
       <div className="hc-scout-card__stats" aria-label={t("teamReviewStatistics")}>
-        {trustTier === "free" ? <div className="hc-directory-locked"><strong>🔒 Player reviews are a Premium fan feature</strong><Link href="/membership" className="btn">Upgrade</Link></div>
-        : trustTier === "pro" ? <div className="hc-directory-locked"><strong>Trust Score</strong><small>Fan Premium feature</small><Link href="/membership" className="btn">Upgrade</Link></div>
+        {trustTier === "free" ? <div className="hc-directory-locked"><strong>🔒 Full reviews are a Premium fan feature; player accounts can contribute</strong><Link href="/membership" className="btn">Upgrade</Link></div>
+        : trustTier === "pro" ? <div className="hc-directory-locked"><strong>Trust Score</strong><small>Premium fan feature</small><Link href="/membership" className="btn">Upgrade</Link></div>
         : (!hasRating && !hasReviews) ? <p className="hc-scout-card__empty">{t("teamDirectoryEmptyReviews")}</p>
         : <><div className="hc-scout-card__stat"><strong>{hasRating ? <><span className="hc-scout-card__star" aria-hidden="true">★</span> {averageRating.toFixed(1)}</> : "—"}</strong><small>{t("ratingLabel")}</small></div><div className="hc-scout-card__stat"><strong>{trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div><div className="hc-scout-card__stat"><strong>—</strong><small>{t("seasonsLabel")}</small></div></>}
       </div>
