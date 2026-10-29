@@ -1191,3 +1191,9 @@ html.theme-dark .hc-claimed-profile-chip { color: #79E2A1; border-color: rgba(12
 .hc-team-overview-latest__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .hc-team-overview-latest__top h2 { margin: 0; font-size: clamp(1.05rem, 2.4vw, 1.4rem); }
 .hc-team-overview-latest__top strong { color: #FF5A1F; white-space: nowrap; }
+
+.hc-team-score-categories { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.hc-team-score-categories span { display: grid; gap: 3px; min-width: 88px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border, rgba(128,128,128,.3)); }
+.hc-team-score-categories small { font-size: 10px; color: var(--muted, #666); }
+.hc-team-score-categories strong { color: var(--text, #0A0A0A); font-size: 16px; }
+html.theme-dark .hc-team-score-categories strong { color: #F7F7F5; }
