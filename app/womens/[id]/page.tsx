@@ -27,7 +27,7 @@ export default function WomensTeam(){
          headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store",
        });
        const payload = response.ok ? await response.json() : null;
-       const tier = (payload?.tier || "free") as typeof reviewTier;
+       const tier = profile?.account_type === "player" ? "player" : ((payload?.tier || "free") as typeof reviewTier);
        if (!active) return;
        setReviewTier(tier);
        const fullRead = ["premium", "player", "member"].includes(tier);
