@@ -49,6 +49,7 @@ export default function ClaimedTeamLogoEditor({ teamId, teamName, teamTable = "t
 
   if (!allowed) return null;
   return <section className="hc-claimed-logo-editor" aria-label={`Manage ${teamName} logo`}>
+    <span className="hc-claimed-profile-chip">CLAIMED · COMPLETE PROFILE</span>
     <details><summary>Manage club logo</summary>
       <p>Upload an official club logo. Accepted formats: PNG, SVG, JPG, WebP · 1 KB–5 MB.</p>
       <label>Logo image<input type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp" onChange={event => setFile(event.target.files?.[0] || null)} /></label>
