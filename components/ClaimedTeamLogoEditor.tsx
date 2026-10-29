@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type Props = { teamId: string; teamName: string; onSaved?: (logoUrl: string, logoBg: "transparent" | "light" | "dark") => void };
+type Props = { teamId: string; teamName: string; teamTable?: "teams" | "womens_teams"; onSaved?: (logoUrl: string, logoBg: "transparent" | "light" | "dark") => void };
 
-export default function ClaimedTeamLogoEditor({ teamId, teamName, onSaved }: Props) {
+export default function ClaimedTeamLogoEditor({ teamId, teamName, teamTable = "teams", onSaved }: Props) {
   const [allowed, setAllowed] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [bg, setBg] = useState<"transparent" | "light" | "dark">("transparent");
@@ -23,7 +23,7 @@ export default function ClaimedTeamLogoEditor({ teamId, teamName, onSaved }: Pro
       if (active) setAllowed(!error && Boolean(data?.length));
     })();
     return () => { active = false; };
-  }, [teamId]);
+  }, [teamId, teamTable]);
 
   async function save() {
     if (!file || busy) return;
@@ -34,11 +34,11 @@ export default function ClaimedTeamLogoEditor({ teamId, teamName, onSaved }: Pro
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) throw new Error("Please sign in again.");
       const ext = file.type === "image/svg+xml" ? "svg" : file.type === "image/webp" ? "webp" : file.type === "image/png" ? "png" : "jpg";
-      const path = `teams/${teamId}/claimed-${session.user.id}-${Date.now()}.${ext}`;
+      const path = `${teamTable}/${teamId}/claimed-${session.user.id}-${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage.from("team-logos").upload(path, file, { upsert: false, contentType: file.type, cacheControl: "3600" });
       if (uploadError) throw uploadError;
       const { data: publicData } = supabase.storage.from("team-logos").getPublicUrl(path);
-      const { error: updateError } = await supabase.rpc("set_claimed_team_logo", { p_team_id: teamId, p_logo_url: publicData.publicUrl, p_logo_bg: bg });
+      const { error: updateError } = await supabase.rpc("set_claimed_team_logo", { p_team_id: teamId, p_logo_url: publicData.publicUrl, p_logo_bg: bg, p_team_table: teamTable });
       if (updateError) throw updateError;
       onSaved?.(publicData.publicUrl, bg);
       setFile(null);
