@@ -129,13 +129,16 @@ async function findOnWikimedia(teamName) {
   return null;
 }
 async function getRows(table) {
-  let query = supabase.from(table).select("id,name,country,city,league_id,league_name,logo_url" + (table === "teams" ? ",website" : "")).is("logo_url", null).order("name").range(OFFSET, OFFSET + LIMIT - 1);
+  const fields = table === "leagues"
+    ? "id,name,country,logo_url,website"
+    : "id,name,country,city,league_id,league_name,logo_url" + (table === "teams" ? ",website" : "");
+  let query = supabase.from(table).select(fields).or("logo_url.is.null,logo_url.eq.").order("name").range(OFFSET, OFFSET + LIMIT - 1);
   const { data, error } = await query;
   if (error) throw new Error(table + ": " + error.message);
   return (data || []).map((row) => ({ ...row, __table: table }));
 }
 async function main() {
-  const tables = SAMPLE ? ["teams"] : ["teams", "womens_teams"];
+  const tables = SAMPLE ? ["teams"] : ["teams", "womens_teams", "leagues"];
   const rows = [];
   for (const table of tables) rows.push(...await getRows(table));
   const chosen = rows;
@@ -148,7 +151,7 @@ async function main() {
       sources.push({ url: officialUrl, type: "Official team site" });
       try { candidate = await findOnSite(officialUrl, row.name, "Official team site"); } catch { /* skip this source */ }
     }
-    if (!candidate && row.league_id) {
+    if (!candidate && row.__table !== "leagues" && row.league_id) {
       try {
         const { data: league } = await supabase.from("leagues").select("id,name,website").eq("id", row.league_id).maybeSingle();
         if (league?.website) {
