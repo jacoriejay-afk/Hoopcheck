@@ -107,3 +107,20 @@ html.theme-light main :where(.muted, .subtle, .secondary-text, .meta, .hc-catego
 html.theme-dark main :where(.muted, .subtle, .secondary-text, .meta, .hc-category-tile__description) {
   color: #B8B8B3 !important;
 }
+
+/* Category identity is explicit, so glyph colors never depend on inherited theme ink. */
+html .hc-category-tile[data-category="teams"] .hc-category-tile__hex,
+html .hc-category-tile__hex[data-category="teams"] { background: #FF5A1F !important; color: #FFFFFF !important; }
+html .hc-category-tile[data-category="womens"] .hc-category-tile__hex,
+html .hc-category-tile__hex[data-category="womens"] { background: #E84393 !important; color: #FFFFFF !important; }
+html .hc-category-tile[data-category="coaches"] .hc-category-tile__hex,
+html .hc-category-tile__hex[data-category="coaches"] { background: #2456C8 !important; color: #FFFFFF !important; }
+html .hc-category-tile[data-category="leagues"] .hc-category-tile__hex,
+html .hc-category-tile__hex[data-category="leagues"] { background: #1E9E50 !important; color: #FFFFFF !important; }
+html .hc-category-tile[data-category="players"] .hc-category-tile__hex,
+html .hc-category-tile__hex[data-category="players"] { background: #6C3FD4 !important; color: #FFFFFF !important; }
+html .hc-category-tile[data-category="reviews"] .hc-category-tile__hex,
+html .hc-category-tile__hex[data-category="reviews"] { background: #0A0A0A !important; color: #FFFFFF !important; }
+html .hc-category-tile[data-category="alerts"] .hc-category-tile__hex,
+html .hc-category-tile__hex[data-category="alerts"] { background: #F5B800 !important; color: #0A0A0A !important; }
+html .hc-category-tile__hex[data-category="alerts"] :where(svg, path, span) { color: #0A0A0A !important; stroke: currentColor !important; }
