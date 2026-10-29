@@ -3,41 +3,41 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type Stop = { id: string; player_id: string; team_name: string; seasons: string; position: string | null; country: string };
-type Player = { id: string; display_name: string | null };
+type Player = { id: string; display_name: string | null; username: string | null; position: string | null };
 
-export default function TeamPlayersHistory({ teamId }: { teamId: string }) {
-  const [rows, setRows] = useState<Array<Stop & { display_name: string | null }>>([]);
+export default function TeamPlayersHistory({ teamId, teamTable = "teams" }: { teamId: string; teamTable?: "teams" | "womens_teams" }) {
+  const [rows, setRows] = useState<Player[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let active = true;
     void (async () => {
-      const { data, error } = await supabase.from("player_career_stops")
-        .select("id,player_id,team_name,seasons,position,country")
-        .eq("team_id", teamId).eq("is_public", true)
-        .order("stop_order", { ascending: true }).limit(100);
-      if (error || !data?.length) { if (active) { setRows([]); setLoaded(true); } return; }
-      const ids = Array.from(new Set(data.map(row => row.player_id)));
-      const { data: profiles } = await supabase.from("profiles").select("id,display_name").in("id", ids);
-      const names = new Map(((profiles || []) as Player[]).map(profile => [profile.id, profile.display_name]));
+      const teamField = teamTable === "womens_teams" ? "selected_womens_team_id" : "selected_team_id";
+      const { data, error } = await supabase.from("profiles")
+        .select("id,display_name,username,position")
+        .eq("account_type", "player")
+        .eq("profile_visibility", "public")
+        .eq(teamField, teamId)
+        .order("display_name", { ascending: true })
+        .limit(100);
       if (active) {
-        setRows((data as Stop[]).map(row => ({ ...row, display_name: names.get(row.player_id) || null })));
+        setRows(error ? [] : (data || []) as Player[]);
         setLoaded(true);
       }
     })();
     return () => { active = false; };
-  }, [teamId]);
+  }, [teamId, teamTable]);
 
   return <section id="players" className="hero hc-team-players-history">
-    <div className="eyebrow">PLAYER HISTORY</div>
-    <h2>Players who played here</h2>
-    {!loaded ? <p className="muted">Loading public player history…</p> : rows.length ? <div className="hc-team-players-grid">
-      {rows.map(row => <article className="card" key={row.id}>
-        <h3>{row.display_name || "HoopCheck player"}</h3>
-        <p className="muted">{row.position ? row.position + " · " : ""}{row.seasons}</p>
-        <p className="muted">{row.country}</p>
+    <div className="eyebrow">PLAYER DIRECTORY</div>
+    <h2>Players associated with this team</h2>
+    <p className="muted">Only public player profiles currently linked to this club are shown.</p>
+    {!loaded ? <p className="muted">Loading public player profiles…</p> : rows.length ? <div className="hc-team-players-grid">
+      {rows.map(player => <article className="card" key={player.id}>
+        <h3>{player.display_name || player.username || "HoopCheck player"}</h3>
+        <p className="muted">{player.position || "Position not listed"}</p>
+        <a className="btn dark" href={"/players/" + player.id}>View player</a>
       </article>)}
-    </div> : <p className="muted">No players have added a public career-history entry for this team yet.</p>}
+    </div> : <p className="muted">No public player profiles are currently linked to this team.</p>}
   </section>;
 }
