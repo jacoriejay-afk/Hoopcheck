@@ -20,19 +20,23 @@ const MAX_BYTES = 5 * 1024 * 1024;
 const MIN_DIMENSION = 64;
 const HINTS_PATH = new URL("./team-logo-source-hints.json", import.meta.url);
 
-if (!SUPABASE_URL || !SERVICE_KEY) {
-  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.");
+if (!SUPABASE_URL || !(SERVICE_KEY || process.env.SUPABASE_ANON_KEY)) {
+  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or a Supabase key.");
   process.exit(1);
+}
+if (APPLY && !SERVICE_KEY) {
+  console.error("Production writes require SUPABASE_SERVICE_ROLE_KEY; an anon/publishable key is read-only.");
+  process.exit(2);
 }
 if (APPLY && (!APPROVED_SAMPLE || process.env.HOOPCHECK_LOGO_BACKFILL_APPROVED !== "YES")) {
   console.error("Refusing production writes. Supply --apply --approved-sample and HOOPCHECK_LOGO_BACKFILL_APPROVED=YES after reviewing the dry-run report.");
   process.exit(2);
 }
-const supabase = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
-const hints = JSON.parse(await fs.readFile(HINTS_PATH, "utf8"));
+const supabase = createClient(SUPABASE_URL, SERVICE_KEY || process.env.SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 const report = [];
 
 function normalize(value = "") { return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
+const hints = Object.fromEntries(Object.entries(JSON.parse(await fs.readFile(HINTS_PATH, "utf8"))).map(([name, url]) => [normalize(name), url]));
 function tokens(value) { return normalize(value).split(/\s+/).filter((part) => part.length > 2 && !["basket","basketball","club","team","bc","the"].includes(part)); }
 function resolveUrl(value, base) { try { return new URL(value, base); } catch { return null; } }
 function getAttr(tag, name) { const match = tag.match(new RegExp(name + "\\s*=\\s*['\"]([^'\"]+)['\"]", "i")); return match?.[1] || ""; }
