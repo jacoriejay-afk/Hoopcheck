@@ -2776,6 +2776,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      set_claimed_team_logo: { Args: { p_logo_bg?: string; p_logo_url: string; p_team_id: string; p_team_table?: string }; Returns: undefined }
       admin_delete_directory_entry: {
         Args: { p_id: string; p_type: string }
         Returns: boolean
