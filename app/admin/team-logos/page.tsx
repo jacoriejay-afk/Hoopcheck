@@ -134,7 +134,7 @@ export default function AdminTeamLogosPage() {
     setCandidates((items) => items.map((item, i) => i === index ? { ...item, [key]: value } : item));
   }
 
-  return <main style={{ minHeight: "100vh", background: "#0A0A0A", color: "#F7F7F5", padding: "28px 16px 70px" }}>
+  return <main className="admin-team-logo-studio" style={{ minHeight: "100vh", background: "#0A0A0A", color: "#F7F7F5", padding: "28px 16px 70px" }}>
     <div style={{ maxWidth: 1050, margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
         <div><p style={{ color: "#FF5A1F", fontWeight: 900, letterSpacing: ".16em", fontSize: 11 }}>HOOPCHECK ADMIN</p><h1 style={{ fontSize: "clamp(2rem,5vw,3rem)", margin: "6px 0" }}>Team Logo Studio</h1><p style={{ color: "#aaa" }}>Upload logos or review source-page candidates. Fetched candidates are never published without approval.</p></div>
