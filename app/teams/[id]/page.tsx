@@ -569,7 +569,7 @@ export default function TeamDetailPage() {
           <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow"><span aria-hidden="true">🔒</span> Player reviews are a Premium fan feature</span><Link href="/membership" className="btn">Upgrade</Link></Surface>
         )}
 
-        <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} /></div>
+        <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} />{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}</div>
         <TeamRosterSpots teamId={team.id} teamName={team.name} />
 
       </section>
