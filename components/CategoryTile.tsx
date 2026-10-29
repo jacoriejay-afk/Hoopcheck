@@ -45,9 +45,10 @@ export default function CategoryTile({
     <Link
       href={href}
       className={`hc-category-tile ${className}`.trim()}
+      data-category={category}
       style={{ "--category-color": color } as CSSProperties}
     >
-      <span className="hc-category-tile__hex" aria-hidden="true">
+      <span className="hc-category-tile__hex" data-category={category} aria-hidden="true">
         <span className="hc-category-tile__icon">
           <CategoryIcon kind={category} />
         </span>

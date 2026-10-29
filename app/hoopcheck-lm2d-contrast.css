@@ -1,0 +1,126 @@
+/* LM-2D contrast lock: final shared overrides for theme-paired foreground/backgrounds. */
+:root {
+  --hc-category-teams: #FF5A1F;
+  --hc-category-womens: #E84393;
+  --hc-category-coaches: #2456C8;
+  --hc-category-leagues: #1E9E50;
+  --hc-category-players: #6C3FD4;
+  --hc-category-reviews: #0A0A0A;
+  --hc-category-alerts: #F5B800;
+  --hc-placeholder-on-light: #595954;
+  --hc-placeholder-on-dark: #B8B8B3;
+}
+
+/* Fixed brand orange always pairs with black ink, regardless of selected theme. */
+html .hc-dashboard-shell .hc-dashboard-membership-badge {
+  background: #FF5A1F !important;
+  color: #0A0A0A !important;
+  border: 1px solid #FF5A1F !important;
+  font-weight: 900 !important;
+}
+html .hc-dashboard-shell .hc-dashboard-membership-badge * {
+  color: #0A0A0A !important;
+}
+
+/* Category icons use saturated brand fills everywhere, with a locked contrasting glyph. */
+html :where(.hc-category-tile__hex, .hc-template-mini-icon, .hc-mobile-icon, .hc-mobile-category-icon, .hc-icon-tile) {
+  opacity: 1 !important;
+  border-color: transparent;
+}
+html :where(.hc-category-tile__hex, .hc-template-mini-icon, .hc-mobile-icon, .hc-mobile-category-icon, .hc-icon-tile) svg {
+  opacity: 1 !important;
+  stroke: currentColor !important;
+}
+html :where(.hc-category-tile__hex, .hc-template-mini-icon, .hc-mobile-icon, .hc-mobile-category-icon, .hc-icon-tile)[style*="teams"],
+html :where(.hc-category-tile__hex, .hc-template-mini-icon, .hc-mobile-icon, .hc-mobile-category-icon, .hc-icon-tile)[style*="#FF5A1F"] {
+  background-color: #FF5A1F !important; color: #FFFFFF !important;
+}
+html :where(.hc-category-tile__hex, .hc-template-mini-icon, .hc-mobile-icon, .hc-mobile-category-icon, .hc-icon-tile)[style*="womens"],
+html :where(.hc-category-tile__hex, .hc-template-mini-icon, .hc-mobile-icon, .hc-mobile-category-icon, .hc-icon-tile)[style*="#E84393"] {
+  background-color: #E84393 !important; color: #FFFFFF !important;
+}
+html :where(.hc-category-tile__hex, .hc-template-mini-icon, .hc-mobile-icon, .hc-mobile-category-icon, .hc-icon-tile)[style*="coaches"],
+html :where(.hc-category-tile__hex, .hc-template-mini-icon, .hc-mobile-icon, .hc-mobile-category-icon, .hc-icon-tile)[style*="#2456C8"] {
+  background-color: #2456C8 !important; color: #FFFFFF !important;
+}
+html :where(.hc-category-tile__hex, .hc-template-mini-icon, .hc-mobile-icon, .hc-mobile-category-icon, .hc-icon-tile)[style*="leagues"],
+html :where(.hc-category-tile__hex, .hc-template-mini-icon, .hc-mobile-icon, .hc-mobile-category-icon, .hc-icon-tile)[style*="#1E9E50"] {
+  background-color: #1E9E50 !important; color: #FFFFFF !important;
+}
+html :where(.hc-category-tile__hex, .hc-template-mini-icon, .hc-mobile-icon, .hc-mobile-category-icon, .hc-icon-tile)[style*="players"],
+html :where(.hc-category-tile__hex, .hc-template-mini-icon, .hc-mobile-icon, .hc-mobile-category-icon, .hc-icon-tile)[style*="#6C3FD4"] {
+  background-color: #6C3FD4 !important; color: #FFFFFF !important;
+}
+html :where(.hc-category-tile__hex, .hc-template-mini-icon, .hc-mobile-icon, .hc-mobile-category-icon, .hc-icon-tile)[style*="alerts"],
+html :where(.hc-category-tile__hex, .hc-template-mini-icon, .hc-mobile-icon, .hc-mobile-category-icon, .hc-icon-tile)[style*="#F5B800"] {
+  background-color: #F5B800 !important; color: #0A0A0A !important;
+}
+html .hc-category-tile__hex {
+  background: var(--category-color, #FF5A1F) !important;
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+}
+html .hc-category-tile__hex :where(svg, path, span) { color: inherit !important; stroke: currentColor !important; }
+html .hc-template-mini-icon {
+  background: var(--tile-color, #FF5A1F) !important;
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+}
+html .hc-template-directory-links a:nth-child(1) .hc-template-mini-icon { background: #FF5A1F !important; color: #FFFFFF !important; }
+html .hc-template-directory-links a:nth-child(2) .hc-template-mini-icon { background: #E84393 !important; color: #FFFFFF !important; }
+html .hc-template-directory-links a:nth-child(3) .hc-template-mini-icon { background: #2456C8 !important; color: #FFFFFF !important; }
+html .hc-template-directory-links a:nth-child(4) .hc-template-mini-icon { background: #1E9E50 !important; color: #FFFFFF !important; }
+html .hc-template-directory-links .hc-template-mini-icon :where(svg, path) { color: inherit !important; stroke: currentColor !important; }
+html .hc-dashboard-shell .hc-mobile-icon,
+html .hc-dashboard-shell .hc-mobile-category-icon { background: #FF5A1F !important; color: #FFFFFF !important; }
+html .hc-dashboard-shell .hc-mobile-icon.hc-icon-pink,
+html .hc-dashboard-shell .hc-mobile-category-icon.hc-icon-pink { background: #E84393 !important; color: #FFFFFF !important; }
+html .hc-dashboard-shell .hc-mobile-icon.hc-icon-blue,
+html .hc-dashboard-shell .hc-mobile-category-icon.hc-icon-blue { background: #2456C8 !important; color: #FFFFFF !important; }
+html .hc-dashboard-shell .hc-mobile-icon.hc-icon-green,
+html .hc-dashboard-shell .hc-mobile-category-icon.hc-icon-green { background: #1E9E50 !important; color: #FFFFFF !important; }
+html .hc-dashboard-shell .hc-mobile-icon.hc-icon-purple,
+html .hc-dashboard-shell .hc-mobile-category-icon.hc-icon-purple { background: #6C3FD4 !important; color: #FFFFFF !important; }
+html .hc-dashboard-shell .hc-mobile-icon.hc-icon-yellow,
+html .hc-dashboard-shell .hc-mobile-category-icon.hc-icon-yellow { background: #F5B800 !important; color: #0A0A0A !important; }
+
+/* Place content below the iOS status bar on every top-level screen. */
+html body main {
+  padding-block-start: max(16px, calc(env(safe-area-inset-top, 0px) + 16px));
+}
+html body main.hc-template-home { padding-block-start: max(16px, calc(env(safe-area-inset-top, 0px) + 16px)); }
+
+/* Placeholder text is opaque and theme-specific, with at least readable text contrast. */
+html.theme-light main :where(input, textarea, select)::placeholder,
+html.theme-light :where(input, textarea, select)::placeholder {
+  color: #595954 !important;
+  opacity: 1 !important;
+}
+html.theme-dark main :where(input, textarea, select)::placeholder,
+html.theme-dark :where(input, textarea, select)::placeholder {
+  color: #B8B8B3 !important;
+  opacity: 1 !important;
+}
+html.theme-light main :where(.muted, .subtle, .secondary-text, .meta, .hc-category-tile__description) {
+  color: #595954 !important;
+}
+html.theme-dark main :where(.muted, .subtle, .secondary-text, .meta, .hc-category-tile__description) {
+  color: #B8B8B3 !important;
+}
+
+/* Category identity is explicit, so glyph colors never depend on inherited theme ink. */
+html .hc-category-tile[data-category="teams"] .hc-category-tile__hex,
+html .hc-category-tile__hex[data-category="teams"] { background: #FF5A1F !important; color: #FFFFFF !important; }
+html .hc-category-tile[data-category="womens"] .hc-category-tile__hex,
+html .hc-category-tile__hex[data-category="womens"] { background: #E84393 !important; color: #FFFFFF !important; }
+html .hc-category-tile[data-category="coaches"] .hc-category-tile__hex,
+html .hc-category-tile__hex[data-category="coaches"] { background: #2456C8 !important; color: #FFFFFF !important; }
+html .hc-category-tile[data-category="leagues"] .hc-category-tile__hex,
+html .hc-category-tile__hex[data-category="leagues"] { background: #1E9E50 !important; color: #FFFFFF !important; }
+html .hc-category-tile[data-category="players"] .hc-category-tile__hex,
+html .hc-category-tile__hex[data-category="players"] { background: #6C3FD4 !important; color: #FFFFFF !important; }
+html .hc-category-tile[data-category="reviews"] .hc-category-tile__hex,
+html .hc-category-tile__hex[data-category="reviews"] { background: #0A0A0A !important; color: #FFFFFF !important; }
+html .hc-category-tile[data-category="alerts"] .hc-category-tile__hex,
+html .hc-category-tile__hex[data-category="alerts"] { background: #F5B800 !important; color: #0A0A0A !important; }
+html .hc-category-tile__hex[data-category="alerts"] :where(svg, path, span) { color: #0A0A0A !important; stroke: currentColor !important; }
