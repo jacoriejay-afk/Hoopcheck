@@ -5,9 +5,9 @@ import { supabase } from "../lib/supabase";
 import { HoopIcon } from "./HoopCheckUI";
 import { useLanguage } from "./LanguageProvider";
 
-type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string };
+type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string; variant?: "default" | "club" };
 
-export default function FollowButton({ targetType, targetId }: Props) {
+export default function FollowButton({ targetType, targetId, variant = "default" }: Props) {
   const { formatNumber, t } = useLanguage();
   const [following, setFollowing] = useState(false);
   const [notify, setNotify] = useState(true);
@@ -97,7 +97,7 @@ export default function FollowButton({ targetType, targetId }: Props) {
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
       <button
         type="button"
-        className="btn dark"
+        className={variant === "club" ? `hc-team-follow-pill ${following ? "is-following" : "is-not-following"}` : "btn dark"}
         onClick={toggle}
         disabled={busy}
         title={following ? t("followingProfileTitle") : t("followProfileTitle")}
