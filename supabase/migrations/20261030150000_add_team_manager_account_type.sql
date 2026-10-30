@@ -8,7 +8,7 @@ begin
   select pg_get_functiondef('public.handle_new_user()'::regprocedure) into definition;
   definition := replace(
     definition,
-    "account_type_value NOT IN ('player', 'coach', 'scout', 'agent', 'fan')",
+    'account_type_value NOT IN (''player'', ''coach'', ''scout'', ''agent'', ''fan'')',
     "account_type_value NOT IN ('player', 'coach', 'manager', 'scout', 'agent', 'fan')"
   );
   if definition not like '%manager%' then
@@ -19,7 +19,7 @@ begin
   select pg_get_functiondef('public.admin_update_profile(uuid,text,boolean,text,text,text,text,text,text,text,text,text,boolean,text,text)'::regprocedure) into definition;
   definition := replace(
     definition,
-    "('player','coach','scout','agent','fan')",
+    '(''player'',''coach'',''scout'',''agent'',''fan'')',
     "('player','coach','manager','scout','agent','fan')"
   );
   if definition not like '%manager%' then
@@ -30,7 +30,7 @@ begin
   select pg_get_functiondef('public.enforce_private_nonplayer_profiles()'::regprocedure) into definition;
   definition := replace(
     definition,
-    "new.account_type in ('scout','agent','fan')",
+    'new.account_type in (''scout'',''agent'',''fan'')',
     "new.account_type in ('manager','scout','agent','fan')"
   );
   if definition not like '%manager%' then
