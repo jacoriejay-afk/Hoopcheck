@@ -36,7 +36,7 @@ export default function TeamOfficialUpdates({ teamId }: { teamId?: string }) {
         <Link href={"/teams/" + post.team_id} style={{ display: "inline-flex", alignItems: "center", gap: 9, fontWeight: 800 }}>
           {post.teams && <TeamLogo name={post.teams.name} logoUrl={post.teams.logo_url} logoBg={post.teams.logo_bg as any} size={30} />}
           {post.teams?.name || "Official team"}
-          <span className="hc-team-official-badge">OFFICIAL</span>
+          <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: ".08em", color: "var(--orange)", border: "1px solid var(--orange)", borderRadius: 999, padding: "3px 7px" }}>OFFICIAL</span>
         </Link>
         <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{post.body}</p>
         <small className="muted">{new Date(post.created_at).toLocaleString()}</small>
