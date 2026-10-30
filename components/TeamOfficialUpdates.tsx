@@ -9,6 +9,7 @@ type OfficialPost = {
   id: string;
   team_id: string;
   body: string;
+  image_url: string | null;
   created_at: string;
   teams?: { name: string; logo_url: string | null; logo_bg: string | null } | null;
 };
@@ -38,7 +39,8 @@ export default function TeamOfficialUpdates({ teamId }: { teamId?: string }) {
           {post.teams?.name || "Official team"}
           <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: ".08em", color: "var(--orange)", border: "1px solid var(--orange)", borderRadius: 999, padding: "3px 7px" }}>OFFICIAL</span>
         </Link>
-        {post.image_url && <img src={post.image_url} alt={"Official update from " + (post.teams?.name || "team")} loading="lazy" style={{ display: "block", width: "100%", maxHeight: 420, objectFit: "cover", borderRadius: 12, marginTop: 12 }} />}\n        <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{post.body}</p>
+        {post.image_url && <img src={post.image_url} alt={"Official update from " + (post.teams?.name || "team")} loading="lazy" style={{ display: "block", width: "100%", maxHeight: 420, objectFit: "cover", borderRadius: 12, marginTop: 12 }} />}
+        <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{post.body}</p>
         <small className="muted">{new Date(post.created_at).toLocaleString()}</small>
       </article>)}
     </div>
