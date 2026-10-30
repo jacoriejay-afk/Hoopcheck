@@ -17,6 +17,7 @@ export default function TeamDashboardPage() {
   const [teamId, setTeamId] = useState("");
   const [body, setBody] = useState("");
   const [image, setImage] = useState<File | null>(null);
+  const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [message, setMessage] = useState("");
@@ -58,14 +59,18 @@ export default function TeamDashboardPage() {
     setPosting(true); setMessage("");
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      const form = new FormData();
+      form.set("team_id", teamId);
+      form.set("body", body.trim());
+      if (image) form.set("image", image);
       const response = await fetch("/api/team-fanfeed", {
         method: "POST",
-        headers: { Authorization: "Bearer " + session?.access_token, "Content-Type": "application/json" },
-        body: JSON.stringify({ team_id: teamId, body: body.trim() }),
+        headers: { Authorization: "Bearer " + session?.access_token },
+        body: form,
       });
       const result = await response.json();
       if (!response.ok || !result.allowed) throw new Error(result.message || "Your update could not be published.");
-      setBody("");
+      setBody(""); setImage(null);
       setMessage("Your official team update is live on FanFeed.");
       await load(userId);
     } catch (error: any) {
@@ -106,7 +111,9 @@ export default function TeamDashboardPage() {
         <p className="eyebrow">OFFICIAL TEAM FANFEED</p>
         <h2>Publish an update</h2>
         <label className="hc-claim-field">Team<select value={teamId} onChange={e => setTeamId(e.target.value)}>{teams.map(team => <option key={team.id} value={team.id}>{team.name} · {[team.city, team.country].filter(Boolean).join(", ")}</option>)}</select></label>
-        <textarea value={body} onChange={e => setBody(e.target.value)} maxLength={1000} rows={5} placeholder="Share an official announcement, roster update, game information, or club news…" style={{ width: "100%", marginTop: 12 }} />\n        <label className="hc-claim-field" style={{ display: "block", marginTop: 12 }}>Attach a team photo (optional)\n          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setImage(e.target.files?.[0] || null)} />\n        </label>\n        <small className="muted">JPG, PNG, or WebP · Maximum 8 MB · Images are safety-screened before publication.</small>
+        <textarea value={body} onChange={e => setBody(e.target.value)} maxLength={1000} rows={5} placeholder="Share an official announcement, roster update, game information, or club news…" style={{ width: "100%", marginTop: 12 }} />
+        <label className="hc-claim-field" style={{ display: "block", marginTop: 12 }}>Attach a team photo (optional)\n          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setImage(e.target.files?.[0] || null)} />\n        </label>
+        <small className="muted">JPG, PNG, or WebP · Maximum 8 MB · Images are safety-screened before publication.</small>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}>
           <small className="muted">{body.length}/1000 · Published updates are labelled as official team communications.</small>
           <button className="btn" disabled={posting || !teamId || !body.trim()} onClick={() => void publish()}>{posting ? "Publishing…" : "Publish to FanFeed"}</button>
