@@ -9,7 +9,7 @@ begin
   definition := replace(
     definition,
     'account_type_value NOT IN (''player'', ''coach'', ''scout'', ''agent'', ''fan'')',
-    "account_type_value NOT IN ('player', 'coach', 'manager', 'scout', 'agent', 'fan')"
+    'account_type_value NOT IN (''player'', ''coach'', ''manager'', ''scout'', ''agent'', ''fan'')'
   );
   if definition not like '%manager%' then
     raise exception 'Could not safely extend handle_new_user account type validation';
@@ -20,7 +20,7 @@ begin
   definition := replace(
     definition,
     '(''player'',''coach'',''scout'',''agent'',''fan'')',
-    "('player','coach','manager','scout','agent','fan')"
+    '(''player'',''coach'',''manager'',''scout'',''agent'',''fan'')'
   );
   if definition not like '%manager%' then
     raise exception 'Could not safely extend admin_update_profile account type validation';
@@ -31,7 +31,7 @@ begin
   definition := replace(
     definition,
     'new.account_type in (''scout'',''agent'',''fan'')',
-    "new.account_type in ('manager','scout','agent','fan')"
+    'new.account_type in (''manager'',''scout'',''agent'',''fan'')'
   );
   if definition not like '%manager%' then
     raise exception 'Could not safely extend non-player profile privacy rules';
