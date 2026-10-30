@@ -7,7 +7,7 @@ import HoopLoading from "../../components/HoopLoading";
 
 type Team = { id: string; name: string; country: string | null; city: string | null };
 type Claim = { id: string; entity_id: string; status: "pending" | "approved" | "rejected"; created_at: string };
-type Post = { id: string; team_id: string; author_id: string; body: string; created_at: string; status: string };
+type Post = { id: string; team_id: string; author_id: string; body: string; image_url: string | null; created_at: string; status: string };
 
 export default function TeamDashboardPage() {
   const [userId, setUserId] = useState("");
@@ -16,6 +16,7 @@ export default function TeamDashboardPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [teamId, setTeamId] = useState("");
   const [body, setBody] = useState("");
+  const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [message, setMessage] = useState("");
@@ -34,7 +35,7 @@ export default function TeamDashboardPage() {
     setTeams(list);
     setTeamId(current => list.some(t => t.id === current) ? current : list[0]?.id || "");
     const { data: postRows } = await (supabase as any).from("team_fanfeed_posts")
-      .select("id,team_id,author_id,body,created_at,status").in("team_id", approvedIds)
+      .select("id,team_id,author_id,body,image_url,created_at,status").in("team_id", approvedIds)
       .eq("author_id", uid).order("created_at", { ascending: false }).limit(100);
     setPosts((postRows || []) as Post[]);
   }, []);
@@ -57,14 +58,18 @@ export default function TeamDashboardPage() {
     setPosting(true); setMessage("");
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      const form = new FormData();
+      form.set("team_id", teamId);
+      form.set("body", body.trim());
+      if (image) form.set("image", image);
       const response = await fetch("/api/team-fanfeed", {
         method: "POST",
-        headers: { Authorization: "Bearer " + session?.access_token, "Content-Type": "application/json" },
-        body: JSON.stringify({ team_id: teamId, body: body.trim() }),
+        headers: { Authorization: "Bearer " + session?.access_token },
+        body: form,
       });
       const result = await response.json();
       if (!response.ok || !result.allowed) throw new Error(result.message || "Your update could not be published.");
-      setBody("");
+      setBody(""); setImage(null);
       setMessage("Your official team update is live on FanFeed.");
       await load(userId);
     } catch (error: any) {
@@ -106,6 +111,8 @@ export default function TeamDashboardPage() {
         <h2>Publish an update</h2>
         <label className="hc-claim-field">Team<select value={teamId} onChange={e => setTeamId(e.target.value)}>{teams.map(team => <option key={team.id} value={team.id}>{team.name} · {[team.city, team.country].filter(Boolean).join(", ")}</option>)}</select></label>
         <textarea value={body} onChange={e => setBody(e.target.value)} maxLength={1000} rows={5} placeholder="Share an official announcement, roster update, game information, or club news…" style={{ width: "100%", marginTop: 12 }} />
+        <label className="hc-claim-field" style={{ display: "block", marginTop: 12 }}>Attach a team photo (optional)\n          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => { const selected = e.target.files?.[0] || null; if (selected && selected.size > 4 * 1024 * 1024) { setImage(null); setMessage("Team photos must be 4 MB or smaller."); e.target.value = ""; return; } setImage(selected); setMessage(""); }} />\n        </label>
+        <small className="muted">JPG, PNG, or WebP · Maximum 4 MB · Images are safety-screened before publication.</small>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}>
           <small className="muted">{body.length}/1000 · Published updates are labelled as official team communications.</small>
           <button className="btn" disabled={posting || !teamId || !body.trim()} onClick={() => void publish()}>{posting ? "Publishing…" : "Publish to FanFeed"}</button>
@@ -121,7 +128,7 @@ export default function TeamDashboardPage() {
       <section style={{ marginTop: 22 }}>
         <div className="section-heading"><div><p className="eyebrow">PUBLISHED BY YOUR TEAM</p><h2>Manage official updates</h2></div></div>
         <div style={{ display: "grid", gap: 12 }}>{posts.map(post => <article className="dashboard-card" key={post.id} style={{ padding: 18 }}>
-          <p style={{ whiteSpace: "pre-wrap" }}>{post.body}</p><small className="muted">{new Date(post.created_at).toLocaleString()}</small>
+          {post.image_url && <img src={post.image_url} alt="Official team update" style={{ display: "block", width: "100%", maxHeight: 360, objectFit: "cover", borderRadius: 12, marginBottom: 12 }} />}<p style={{ whiteSpace: "pre-wrap" }}>{post.body}</p><small className="muted">{new Date(post.created_at).toLocaleString()}</small>
           <div style={{ marginTop: 12 }}><button className="btn dark" onClick={() => void remove(post)}>Delete update</button></div>
         </article>)}{!posts.length && <p className="muted">Your official FanFeed updates will appear here.</p>}</div>
       </section>

@@ -9,6 +9,7 @@ type OfficialPost = {
   id: string;
   team_id: string;
   body: string;
+  image_url: string | null;
   created_at: string;
   teams?: { name: string; logo_url: string | null; logo_bg: string | null } | null;
 };
@@ -19,7 +20,7 @@ export default function TeamOfficialUpdates({ teamId }: { teamId?: string }) {
     let active = true;
     void (async () => {
       let query = (supabase as any).from("team_fanfeed_posts")
-        .select("id,team_id,body,created_at,teams(name,logo_url,logo_bg)")
+        .select("id,team_id,body,image_url,created_at,teams(name,logo_url,logo_bg)")
         .eq("status", "published").order("created_at", { ascending: false }).limit(30);
       if (teamId) query = query.eq("team_id", teamId);
       const { data } = await query;
@@ -38,6 +39,7 @@ export default function TeamOfficialUpdates({ teamId }: { teamId?: string }) {
           {post.teams?.name || "Official team"}
           <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: ".08em", color: "var(--orange)", border: "1px solid var(--orange)", borderRadius: 999, padding: "3px 7px" }}>OFFICIAL</span>
         </Link>
+        {post.image_url && <img src={post.image_url} alt={"Official update from " + (post.teams?.name || "team")} loading="lazy" style={{ display: "block", width: "100%", maxHeight: 420, objectFit: "cover", borderRadius: 12, marginTop: 12 }} />}
         <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{post.body}</p>
         <small className="muted">{new Date(post.created_at).toLocaleString()}</small>
       </article>)}

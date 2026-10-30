@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     if (auth.error) return auth.error;
     const db = serviceClient();
     const { data, error } = await db.from("team_fanfeed_posts")
-      .select("id,team_id,author_id,body,status,created_at,updated_at,teams(name,logo_url)")
+      .select("id,team_id,author_id,body,image_url,status,created_at,updated_at,teams(name,logo_url)")
       .order("created_at", { ascending: false }).limit(300);
     if (error) return NextResponse.json({ error: "Official team updates could not be loaded." }, { status: 500 });
     return NextResponse.json({ posts: data || [] });

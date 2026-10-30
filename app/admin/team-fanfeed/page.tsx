@@ -11,6 +11,7 @@ type Post = {
   team_id: string;
   author_id: string;
   body: string;
+  image_url: string | null;
   status: "published" | "removed";
   created_at: string;
   updated_at: string;
@@ -109,6 +110,7 @@ export default function AdminTeamFanFeedPage() {
           <div><span className={"hc-claim-admin-status is-" + post.status}>{post.status}</span><h2>{post.teams?.name || "Team profile"}</h2><p className="muted">Posted {new Date(post.created_at).toLocaleString()}</p></div>
           <Link href={"/teams/" + post.team_id} className="hc-claim-admin-open">Open team →</Link>
         </div>
+        {post.image_url && <img src={post.image_url} alt="Official team post attachment" style={{ display: "block", width: "100%", maxHeight: 360, objectFit: "contain", borderRadius: 12, marginBottom: 12 }} />}
         <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{post.body}</p>
         <p className="muted">Author ID: {post.author_id}</p>
         <div className="hc-claim-admin-actions">
