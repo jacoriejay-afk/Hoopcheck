@@ -4,6 +4,8 @@ import { randomUUID } from "crypto";
 
 export const runtime = "nodejs";
 
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -34,10 +36,11 @@ async function moderate(body: string, imageDataUrl?: string) {
 
 export async function POST(request: Request) {
   let uploadedPath: string | null = null;
+  let db: ReturnType<typeof adminClient> | null = null;
   try {
     const token = (request.headers.get("authorization") || "").match(/^Bearer\s+(\S+)$/i)?.[1];
     if (!token) return NextResponse.json({ allowed: false, message: "Sign in is required." }, { status: 401 });
-    const db = adminClient();
+    db = adminClient();
     const { data: userData, error: userError } = await db.auth.getUser(token);
     const user = userData?.user;
     if (userError || !user) return NextResponse.json({ allowed: false, message: "Your session is invalid." }, { status: 401 });
@@ -50,8 +53,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: false, message: "Choose a valid team profile." }, { status: 400 });
     if (!body || body.length > 1000)
       return NextResponse.json({ allowed: false, message: "Write an update between 1 and 1,000 characters." }, { status: 400 });
-    if (image !== null && (!(image instanceof File) || !["image/jpeg","image/png","image/webp"].includes(image.type) || image.size > 8 * 1024 * 1024))
-      return NextResponse.json({ allowed: false, message: "Choose a JPG, PNG, or WebP image up to 8 MB." }, { status: 400 });
+    if (image !== null && (!(image instanceof File) || !["image/jpeg","image/png","image/webp"].includes(image.type) || image.size > MAX_IMAGE_BYTES))
+      return NextResponse.json({ allowed: false, message: "Choose a JPG, PNG, or WebP image up to 4 MB." }, { status: 400 });
 
     const { data: claim } = await db.from("profile_claim_requests").select("id")
       .eq("entity_type", "team").eq("entity_id", teamId).eq("requester_id", user.id).eq("status", "approved").maybeSingle();
@@ -82,10 +85,15 @@ export async function POST(request: Request) {
       .select("id,team_id,body,image_url,created_at,status").single();
     if (error || !post) {
       if (uploadedPath) await db.storage.from("feed-images").remove([uploadedPath]);
+      uploadedPath = null;
       return NextResponse.json({ allowed: false, message: "Your official update could not be published." }, { status: 400 });
     }
+    uploadedPath = null;
     return NextResponse.json({ allowed: true, post });
   } catch (error) {
+    if (db && uploadedPath) {
+      try { await db.storage.from("feed-images").remove([uploadedPath]); } catch { /* best-effort cleanup */ }
+    }
     console.error("Team FanFeed publishing failed", error);
     return NextResponse.json({ allowed: false, message: "Team FanFeed could not complete the request." }, { status: 500 });
   }
