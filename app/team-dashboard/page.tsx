@@ -17,7 +17,6 @@ export default function TeamDashboardPage() {
   const [teamId, setTeamId] = useState("");
   const [body, setBody] = useState("");
   const [image, setImage] = useState<File | null>(null);
-  const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [message, setMessage] = useState("");
