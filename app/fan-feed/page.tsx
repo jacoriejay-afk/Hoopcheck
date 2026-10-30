@@ -6,6 +6,7 @@ import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import TeamLogo from "../../components/TeamLogo";
+import TeamOfficialUpdates from "../../components/TeamOfficialUpdates";
 import HoopLoading from "../../components/HoopLoading";
 import { useLanguage } from "../../components/LanguageProvider";
 import "./fan-feed.css";
@@ -190,6 +191,7 @@ export default function FanFeedPage() {
       <FanBasketballSideSwitch /><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/fans">{ft("discoverFans")}</Link><Link href="/team-hub">{ft("teamHub")}</Link><Link href="/teams">{ft("teams")}</Link></nav></header>
     <section className="hero-card hc-feed-hero"><div><p className="eyebrow">{ft("kicker")}</p><h1>{ft("title")}</h1><p className="muted">{ft("subtitle")}</p></div><p className="hc-feed-expiry-note">{ft("teamFirst")}<span>{ft("fanOnlyNote")}</span></p></section>
+    <TeamOfficialUpdates />
     <section className="dashboard-card hc-feed-composer" style={{ marginTop: 18 }}>
       <span className="card-kicker">{ft("postForTeam")}</span>
       <div className="hc-feed-composer__editor"><div className="hc-feed-composer__avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : "HC"}</div><textarea value={body} maxLength={500} rows={3} onChange={e => setBody(e.target.value)} placeholder={ft("composerPlaceholder")} /></div>

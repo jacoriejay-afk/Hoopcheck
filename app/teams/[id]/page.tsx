@@ -26,6 +26,8 @@ import OfficialReviewResponse from "../../../components/OfficialReviewResponse";
 import TeamPayTimeline from "../../../components/TeamPayTimeline";
 import TeamLogo from "../../../components/TeamLogo";
 import ClaimedTeamLogoEditor from "../../../components/ClaimedTeamLogoEditor";
+import ClaimProfileButton from "../../../components/ClaimProfileButton";
+import TeamOfficialUpdates from "../../../components/TeamOfficialUpdates";
 import TeamPlayersHistory from "../../../components/TeamPlayersHistory";
 
 type Team = {
@@ -574,7 +576,7 @@ export default function TeamDetailPage() {
           <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow"><span aria-hidden="true">🔒</span> Player reviews are a Premium fan feature</span><Link href="/membership" className="btn">Upgrade</Link></Surface>
         )}
 
-        <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} variant="club" />{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}</div>
+        <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} variant="club" />{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}<ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} /><Link href="/team-dashboard" className="btn dark">Team Portal</Link></div>
         <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
         {["premium", "player", "member"].includes(reviewTier) && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">LATEST PLAYER REVIEW</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || t("playerExperience")}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
       </section>
@@ -747,7 +749,7 @@ export default function TeamDetailPage() {
         <TeamPayTimeline teamId={team.id} />
       </section>
 
-      {team && <FanTeamPosts teamId={team.id} />}
+      {team && <><TeamOfficialUpdates teamId={team.id} /><FanTeamPosts teamId={team.id} /></>}
 
       {accountType === "player" && (
         <section className="hero hc-team-write-review"><div className="eyebrow">{t("shareYourExperience")}</div><h2>{t("writeAReviewTitle")}</h2><p className="muted">{t("helpNextPlayer")}</p><Link href={hasAccess ? `/teams/${team.id}/review` : "/membership"} className="btn">{hasAccess ? t("writeAReview") : t("unlockReviews")}</Link></section>
