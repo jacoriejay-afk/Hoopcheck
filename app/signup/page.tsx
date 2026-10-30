@@ -9,12 +9,13 @@ import { getCachedSession, supabase } from "../../lib/supabase";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
 
 const TERMS_VERSION = "2026-10-01";
-type AccountType = "player" | "coach" | "scout" | "agent" | "fan";
+type AccountType = "player" | "coach" | "manager" | "scout" | "agent" | "fan";
 type Team = { id:string; name:string; country:string|null; league_name:string|null };
 
 const ACCOUNT_TYPES: {value:AccountType; title:string; description:string; icon:HoopIconName}[] = [
   {value:"player",title:"Player",description:"Professional basketball player: build a verified career profile, research before signing, review teams you played for, and connect with the basketball industry.",icon:"basketball"},
-  {value:"coach",title:"Coach",description:"Coach: build a coaching profile, research organizations, pursue verification, and connect with players when eligible.",icon:"clipboard-check"},
+  {value:"coach",title:"Coach",description:"Coach: build a coaching profile, research organizations, and claim your team when authorized.",icon:"clipboard-check"},
+  {value:"manager",title:"Team Manager",description:"Team manager or club representative: claim your organization, submit verification, and manage official team updates after approval.",icon:"users"},
   {value:"scout",title:"Scout",description:"Scout: discover players and research teams, leagues, markets, and talent around the world.",icon:"search"},
   {value:"agent",title:"Agent",description:"Agent: research players, teams, leagues, markets, and recruiting opportunities.",icon:"users"},
   {value:"fan",title:"Fan",description:"Fan: follow favorite teams, track leagues, and personalize a basketball-first experience.",icon:"star"},
@@ -119,7 +120,7 @@ export default function SignupPage() {
       <div className="auth-hero">
         <div className="eyebrow">JOIN HOOPCHECK</div>
         <h1>Choose your lane.<br/>Then build your experience.</h1>
-        <p>HoopCheck adapts the signup experience to how you use basketball. Players get professional profile tools; fans, scouts, agents, and coaches get a cleaner research-first experience.</p>
+        <p>HoopCheck adapts the signup experience to how you use basketball. Players get professional profile tools; coaches and team managers can request team control; fans, scouts, and agents get a research-first experience.</p>
         <div className="feature-grid">
           <div className="feature"><strong>01</strong><span>Research global basketball.</span></div>
           <div className="feature"><strong>02</strong><span>Follow teams you care about.</span></div>
