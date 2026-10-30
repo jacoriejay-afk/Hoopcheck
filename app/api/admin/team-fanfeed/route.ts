@@ -14,7 +14,7 @@ async function authorize(request: Request) {
   const token = (request.headers.get("authorization") || "").match(/^Bearer\s+(\S+)$/i)?.[1];
   if (!token) return { error: NextResponse.json({ error: "Sign in is required." }, { status: 401 }) };
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !anon) return { error: NextResponse.json({ error: "Server authentication is not configured." }, { status: 503 }) };
   const userClient = createClient(url, anon, {
     auth: { autoRefreshToken: false, persistSession: false },
