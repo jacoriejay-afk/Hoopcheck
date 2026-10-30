@@ -43,31 +43,7 @@ create policy "fans read followed official team updates"
     )
   );
 
--- Inserts are intentionally server-only so every official update passes safety moderation.\nrevoke insert on public.team_fanfeed_posts from authenticated;\n\ndrop policy if exists "approved team claimants manage own official updates" on public.team_fanfeed_posts;
-create policy "approved team claimants manage own official updates"
-  on public.team_fanfeed_posts for update to authenticated
-  using (
-    author_id = (select auth.uid())
-    and exists (
-      select 1 from public.profile_claim_requests c
-      where c.entity_type = 'team'
-        and c.entity_id = team_fanfeed_posts.team_id
-        and c.requester_id = (select auth.uid())
-        and c.status = 'approved'
-    )
-  )
-  with check (
-    author_id = (select auth.uid())
-    and exists (
-      select 1 from public.profile_claim_requests c
-      where c.entity_type = 'team'
-        and c.entity_id = team_fanfeed_posts.team_id
-        and c.requester_id = (select auth.uid())
-        and c.status = 'approved'
-    )
-  );
-
-drop policy if exists "approved team claimants delete own official updates" on public.team_fanfeed_posts;
+-- Inserts are intentionally server-only so every official update passes safety moderation.\nrevoke insert on public.team_fanfeed_posts from authenticated;\n\n-- Updates are server-only so edits can be safety-moderated.\nrevoke update on public.team_fanfeed_posts from authenticated;\n\ndrop policy if exists "approved team claimants delete own official updates" on public.team_fanfeed_posts;
 create policy "approved team claimants delete own official updates"
   on public.team_fanfeed_posts for delete to authenticated
   using (
@@ -81,5 +57,5 @@ create policy "approved team claimants delete own official updates"
     )
   );
 
-grant select, update, delete on public.team_fanfeed_posts to authenticated;
+grant select, delete on public.team_fanfeed_posts to authenticated;
 grant all on public.team_fanfeed_posts to service_role;
