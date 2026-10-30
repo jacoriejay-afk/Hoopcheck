@@ -111,8 +111,8 @@ export default function TeamDashboardPage() {
         <h2>Publish an update</h2>
         <label className="hc-claim-field">Team<select value={teamId} onChange={e => setTeamId(e.target.value)}>{teams.map(team => <option key={team.id} value={team.id}>{team.name} · {[team.city, team.country].filter(Boolean).join(", ")}</option>)}</select></label>
         <textarea value={body} onChange={e => setBody(e.target.value)} maxLength={1000} rows={5} placeholder="Share an official announcement, roster update, game information, or club news…" style={{ width: "100%", marginTop: 12 }} />
-        <label className="hc-claim-field" style={{ display: "block", marginTop: 12 }}>Attach a team photo (optional)\n          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setImage(e.target.files?.[0] || null)} />\n        </label>
-        <small className="muted">JPG, PNG, or WebP · Maximum 8 MB · Images are safety-screened before publication.</small>
+        <label className="hc-claim-field" style={{ display: "block", marginTop: 12 }}>Attach a team photo (optional)\n          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => { const selected = e.target.files?.[0] || null; if (selected && selected.size > 4 * 1024 * 1024) { setImage(null); setMessage("Team photos must be 4 MB or smaller."); e.target.value = ""; return; } setImage(selected); setMessage(""); }} />\n        </label>
+        <small className="muted">JPG, PNG, or WebP · Maximum 4 MB · Images are safety-screened before publication.</small>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}>
           <small className="muted">{body.length}/1000 · Published updates are labelled as official team communications.</small>
           <button className="btn" disabled={posting || !teamId || !body.trim()} onClick={() => void publish()}>{posting ? "Publishing…" : "Publish to FanFeed"}</button>
