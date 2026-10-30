@@ -43,21 +43,7 @@ create policy "fans read followed official team updates"
     )
   );
 
-drop policy if exists "approved team claimants publish official updates" on public.team_fanfeed_posts;
-create policy "approved team claimants publish official updates"
-  on public.team_fanfeed_posts for insert to authenticated
-  with check (
-    author_id = (select auth.uid())
-    and exists (
-      select 1 from public.profile_claim_requests c
-      where c.entity_type = 'team'
-        and c.entity_id = team_fanfeed_posts.team_id
-        and c.requester_id = (select auth.uid())
-        and c.status = 'approved'
-    )
-  );
-
-drop policy if exists "approved team claimants manage own official updates" on public.team_fanfeed_posts;
+-- Inserts are intentionally server-only so every official update passes safety moderation.\nrevoke insert on public.team_fanfeed_posts from authenticated;\n\ndrop policy if exists "approved team claimants manage own official updates" on public.team_fanfeed_posts;
 create policy "approved team claimants manage own official updates"
   on public.team_fanfeed_posts for update to authenticated
   using (
@@ -95,5 +81,5 @@ create policy "approved team claimants delete own official updates"
     )
   );
 
-grant select, insert, update, delete on public.team_fanfeed_posts to authenticated;
+grant select, update, delete on public.team_fanfeed_posts to authenticated;
 grant all on public.team_fanfeed_posts to service_role;
