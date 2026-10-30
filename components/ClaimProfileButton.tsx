@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 type ClaimProfileButtonProps = { entityType:"team"|"coach"; entityId:string; entityName:string };
@@ -9,6 +9,22 @@ const FREE_EMAIL_DOMAINS = new Set(["gmail.com","yahoo.com","outlook.com","hotma
 
 export default function ClaimProfileButton({entityType,entityId,entityName}:ClaimProfileButtonProps) {
   const [open,setOpen] = useState(false);
+  const [eligible,setEligible] = useState(false);
+  const [eligibilityChecked,setEligibilityChecked] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) { if (active) setEligibilityChecked(true); return; }
+      const { data } = await supabase.from("profiles").select("account_type").eq("id", session.user.id).maybeSingle();
+      if (active) {
+        setEligible(data?.account_type === "coach" || data?.account_type === "manager");
+        setEligibilityChecked(true);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
   const [method,setMethod] = useState<"official_email"|"document">("official_email");
   const [email,setEmail] = useState("");
   const [file,setFile] = useState<File|null>(null);
@@ -45,10 +61,12 @@ export default function ClaimProfileButton({entityType,entityId,entityName}:Clai
     setBusy(false);
   }
 
+  if (!eligibilityChecked || !eligible) return null;
+
   return <div className="hc-claim-control">
-    <button type="button" className="hc-claim-trigger" onClick={()=>{setMessage("");setOpen(value=>!value);}}><span aria-hidden="true">✓</span> Claim This Profile</button>
+    <button type="button" className="hc-claim-trigger" onClick={()=>{setMessage("");setOpen(value=>!value);}}><span aria-hidden="true">✓</span> {entityType === "team" ? "Claim Your Team" : "Claim This Profile"}</button>
     {open&&<div className="hc-claim-panel">
-      <div className="hc-claim-panel__heading"><div><p className="eyebrow">ORGANIZATION VERIFICATION</p><h3>Claim {entityName}</h3></div><button type="button" aria-label="Close claim form" onClick={()=>setOpen(false)}>×</button></div>
+      <div className="hc-claim-panel__heading"><div><p className="eyebrow">TEAM / ORGANIZATION VERIFICATION</p><h3>Claim {entityName}</h3></div><button type="button" aria-label="Close claim form" onClick={()=>setOpen(false)}>×</button></div>
       <p>Claims are reviewed by a HoopCheck admin. Claiming a profile does not let an organization edit or remove player reviews.</p>
       <div className="hc-claim-methods">
         <label><input type="radio" checked={method==="official_email"} onChange={()=>setMethod("official_email")}/><span><strong>Official email</strong><small>Use an organization-domain email address.</small></span></label>
