@@ -34,7 +34,7 @@ async function moderate(text: string) {
 
 export async function POST(request: Request) {
   try {
-    const token = (request.headers.get("authorization") || "").match(/^Bearer\\s+(\\S+)$/i)?.[1];
+    const token = (request.headers.get("authorization") || "").match(/^Bearer\s+(\S+)$/i)?.[1];
     if (!token) return NextResponse.json({ allowed: false, message: "Sign in is required." }, { status: 401 });
     const db = adminClient();
     const { data: userData, error: userError } = await db.auth.getUser(token);

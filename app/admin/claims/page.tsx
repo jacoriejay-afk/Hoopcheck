@@ -70,7 +70,7 @@ export default function AdminClaimsPage() {
 
   if(loading) return <main className="page-shell admin-light-shell"><div className="page-container"><HoopLoading label="Loading profile claim queue..." /></div></main>;
   return <main className="page-shell admin-light-shell"><div className="page-container">
-    <header className="topbar"><Link href="/admin/directory" className="brand" aria-label="HoopCheck Admin"><Logo variant="full" size={30}/></Link><nav className="topnav"><Link href="/admin/reviews">Reviews</Link><Link href="/admin/users">Users</Link><Link href="/admin/directory">Directory</Link></nav></header>
+    <header className="topbar"><Link href="/admin/directory" className="brand" aria-label="HoopCheck Admin"><Logo variant="full" size={30}/></Link><nav className="topnav"><Link href="/admin/reviews">Reviews</Link><Link href="/admin/users">Users</Link><Link href="/admin/directory">Directory</Link><Link href="/admin/team-fanfeed">Team FanFeed</Link></nav></header>
     <section className="hero-card"><p className="eyebrow">ADMIN · ORGANIZATION VERIFICATION</p><h1>Profile Claim Queue</h1><p className="muted">Review official organization emails or private evidence uploads. Approval enables official responses, never review editing or removal.</p></section>
     {message&&<p className="hc-claim-admin-message" role="status">{message}</p>}
     <div className="hc-claim-admin-summary"><strong>{claims.filter(row=>row.status==="pending").length}</strong><span>Pending claims</span><strong>{claims.filter(row=>row.status==="approved").length}</strong><span>Approved</span><strong>{claims.filter(row=>row.status==="rejected").length}</strong><span>Rejected</span></div>
