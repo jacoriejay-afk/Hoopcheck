@@ -56,3 +56,59 @@
     transition-duration: .01ms !important;
   }
 }
+
+
+/* Shared page polish: compact micro-captions, consistent loading shimmer, and
+   stronger homepage contrast/focus without changing the established layout. */
+:where(.eyebrow,.card-kicker,.hc-template-eyebrow,.hc-home-kicker,.hc-template-section-title > a) {
+  font-size: 9px;
+  line-height: 1.3;
+  letter-spacing: .11em;
+}
+.hc-route-transition {
+  animation: hc-route-enter 180ms var(--hc-motion-ease-out) both;
+}
+@keyframes hc-route-enter {
+  from { opacity: .82; }
+  to { opacity: 1; }
+}
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,
+.hc-player-directory-page,.hc-womens-directory-page,.hc-global-search-page) .eyebrow,
+:where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,
+.hc-player-directory-page,.hc-womens-directory-page,.hc-global-search-page) .card-kicker {
+  color: #9a3d00;
+}
+.hc-template-home .hc-template-hero-copy > p { color: #e0e0dc; }
+.hc-template-home .hc-home-kicker,
+.hc-template-home .hc-template-eyebrow { color: #ff8a38; }
+.hc-template-home .hc-template-category :where(strong,small,p) { color: #f7f7f5; }
+.hc-template-home .hc-template-category small { opacity: .92; }
+.hc-template-home :where(a,button):focus-visible {
+  outline: 3px solid #ff8a38;
+  outline-offset: 4px;
+}
+.hc-template-home .hc-quick-access-links a {
+  min-height: 48px;
+  color: #111;
+  font-weight: 900;
+}
+.hc-player-profile-completion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 16px 0;
+  padding: 18px;
+  border: 1px solid var(--hc-border, #d8d8d2);
+  border-left: 4px solid var(--hc-orange, #ff5a1f);
+  background: var(--hc-surface-raised, #fff);
+  color: var(--hc-foreground, #111);
+}
+.hc-player-profile-completion > div { min-width: 0; flex: 1 1 280px; }
+.hc-player-profile-completion h2 { margin: 6px 0; font-size: clamp(18px,2vw,24px); }
+.hc-player-profile-completion p { margin: 0; max-width: 720px; line-height: 1.5; }
+@media (max-width: 640px) {
+  .hc-player-profile-completion { align-items: stretch; padding: 14px; }
+  .hc-player-profile-completion .btn { width: 100%; justify-content: center; }
+}
