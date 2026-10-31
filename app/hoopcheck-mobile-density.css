@@ -73,14 +73,47 @@
   .hc-dashboard-shell .hc-dashboard-hero-description { margin: 4px 0 10px; font-size: 13px; }
   .hc-dashboard-shell .hc-dashboard-profile-block {
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 9px;
-    padding: 10px;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 12px;
     margin: 8px 0 10px;
   }
-  .hc-dashboard-shell .hc-dashboard-avatar { width: 42px; height: 42px; }
-  .hc-dashboard-shell .hc-dashboard-profile-copy { min-width: 0; }
+  /* The identity wrapper contains both avatar and copy. Keep it in the flexible
+     first grid column so the name and membership badge never collapse vertically. */
+  .hc-dashboard-shell .hc-dashboard-profile-identity {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+  }
+  .hc-dashboard-shell .hc-dashboard-avatar {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+  }
+  .hc-dashboard-shell .hc-dashboard-profile-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .hc-dashboard-shell .hc-dashboard-profile-label,
+  .hc-dashboard-shell .hc-dashboard-username,
+  .hc-dashboard-shell .hc-dashboard-membership-badge {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
   .hc-dashboard-shell .hc-dashboard-username {
     display: block;
     font-size: 15px;
@@ -95,12 +128,17 @@
     white-space: nowrap;
   }
   .hc-dashboard-shell .hc-dashboard-stat-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    width: 100%;
+    min-width: 0;
     gap: 7px;
     margin: 10px 0 14px;
   }
   .hc-dashboard-shell .hc-dashboard-stat-card {
+    width: 100%;
     min-width: 0;
+    box-sizing: border-box;
     padding: 9px 8px;
     border-radius: 10px;
   }
@@ -224,9 +262,9 @@
 }
 
 @media (max-width: 380px) {
-  .hc-dashboard-shell .hc-dashboard-profile-block { grid-template-columns: 38px minmax(0, 1fr); }
-  .hc-dashboard-shell .hc-dashboard-avatar { width: 36px; height: 36px; }
-  .hc-dashboard-shell .hc-dashboard-edit-profile { grid-column: 1 / -1; justify-self: start; }
+  .hc-dashboard-shell .hc-dashboard-profile-block { grid-template-columns: minmax(0, 1fr); }
+  .hc-dashboard-shell .hc-dashboard-avatar { width: 38px; height: 38px; flex-basis: 38px; }
+  .hc-dashboard-shell .hc-dashboard-edit-profile { grid-column: 1; justify-self: start; }
   .hc-mobile-quick-card { grid-template-columns: 28px minmax(0, 1fr) 12px; padding: 8px 7px; }
   .hc-mobile-icon { width: 28px; height: 28px; }
   .hc-directory-list, .hc-mobile-category-list { gap: 6px; }
