@@ -3848,3 +3848,33 @@ button.hc-setting-row { appearance: none; }
 /* Final theme override: globals.css loads after the shared surface contract. */
 html.theme-dark body .hc-feed-composer { background:#171717!important; background-color:#171717!important; color:#f8f8f5!important; }
 html.theme-light body .hc-feed-composer { background:var(--hc-surface-raised)!important; background-color:var(--hc-surface-raised)!important; color:#111!important; }
+
+
+/* Accessible selection contrast in both app themes. */
+html.theme-dark main :where(select,option,optgroup) { color-scheme: dark; }
+html.theme-dark main :where(select) { background-color:#191919!important; color:#F7F7F5!important; border-color:#505050!important; -webkit-text-fill-color:#F7F7F5!important; }
+html.theme-dark main :where(select option,select optgroup) { background-color:#191919!important; color:#F7F7F5!important; }
+html.theme-dark main :where(select option:checked) { background-color:#FF5A1F!important; color:#FFFFFF!important; }
+html.theme-light main :where(select,option,optgroup) { color-scheme:light; }
+html.theme-light main :where(select) { background-color:#FFFFFF!important; color:#171717!important; border-color:#CFCFC9!important; -webkit-text-fill-color:#171717!important; }
+html.theme-light main :where(select option,select optgroup) { background-color:#FFFFFF!important; color:#171717!important; }
+html.theme-light main :where(select option:checked) { background-color:#FFE5D9!important; color:#7A260B!important; }
+html.theme-dark main :where(input[type="radio"],input[type="checkbox"]) { accent-color:#FF5A1F; }
+html.theme-light main :where(input[type="radio"],input[type="checkbox"]) { accent-color:#E84B16; }
+
+/* Three-step team/profile claim verification flow. */
+.hc-claim-steps { display:grid; gap:8px; margin:14px 0; padding:0; list-style:none; }
+.hc-claim-steps li { display:grid; grid-template-columns:28px minmax(0,1fr); gap:9px; align-items:start; padding:10px; border:1px solid var(--hc-border); border-radius:9px; background:var(--hc-surface-soft); color:var(--hc-foreground); }
+.hc-claim-steps li>span { display:grid; width:26px; height:26px; place-items:center; border:1px solid var(--hc-border); border-radius:50%; background:var(--hc-surface-raised); color:var(--hc-foreground); font-size:11px; font-weight:950; }
+.hc-claim-steps li.is-current>span { border-color:#FF5A1F; background:#FF5A1F; color:#FFFFFF; }
+.hc-claim-steps li>div { display:grid; gap:3px; min-width:0; }
+.hc-claim-steps li strong { color:var(--hc-foreground); font-size:11px; }
+.hc-claim-steps li small { color:var(--hc-foreground-muted); font-size:10px; line-height:1.4; }
+html.theme-dark .hc-claim-panel { background:#171717; color:#F7F7F5; border-color:#444; }
+html.theme-dark .hc-claim-panel :where(h3,p,strong,label) { color:#F7F7F5; }
+html.theme-dark .hc-claim-panel :where(.hc-claim-methods label,.hc-claim-field input) { background:#202020; color:#F7F7F5; border-color:#505050; }
+html.theme-dark .hc-claim-panel :where(.hc-claim-methods small,.hc-claim-field small) { color:#B8B8B2; }
+html.theme-light .hc-claim-panel { background:#FFFFFF; color:#171717; }
+html.theme-light .hc-claim-panel :where(h3,p,strong,label) { color:#171717; }
+html.theme-light .hc-claim-panel :where(.hc-claim-methods label,.hc-claim-field input) { background:#F7F7F5; color:#171717; border-color:#D8D8D2; }
+@media(max-width:480px) { .hc-claim-panel { width:min(calc(100vw - 28px),430px); padding:13px; } .hc-claim-steps { gap:6px; } .hc-claim-steps li { padding:8px; } }
