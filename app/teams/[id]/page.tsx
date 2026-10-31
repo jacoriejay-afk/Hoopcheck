@@ -573,7 +573,7 @@ export default function TeamDetailPage() {
         ) : ["premium", "player", "member"].includes(reviewTier) ? (
           <Surface as="div" className="hc-entity-trust-score"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /><div className="hc-team-score-categories" aria-label="Category ratings">{([{label:"Communication",value:publicSummary.communication_rating},{label:"Professionalism",value:publicSummary.professionalism_rating},{label:"Development",value:publicSummary.development_rating},{label:"Payment",value:publicSummary.payment_rating}] as const).filter(item => item.value !== null).map(item => <span key={item.label}><small>{item.label}</small><strong>{Number(item.value).toFixed(1)}</strong></span>)}</div></Surface>
         ) : (
-          <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow"><span aria-hidden="true">🔒</span> Player reviews are a Premium fan feature</span><Link href="/membership" className="btn">Upgrade</Link></Surface>
+          <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow"><span aria-hidden="true">🔒</span> Full player reviews are available to eligible HoopCheck accounts</span><Link href="/membership" className="btn">Upgrade</Link></Surface>
         )}
 
         <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} variant="club" />{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}<ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} /><Link href="/team-dashboard" className="btn dark">Team Portal</Link></div>
@@ -585,7 +585,7 @@ export default function TeamDetailPage() {
           <Surface className="card hc-team-membership-surface">
             <div className="eyebrow">{t("membersOnly")}</div>
             <h2>🔒 Player reviews are a Premium fan feature</h2>
-            <p>Upgrade to Fan Premium to unlock every review, rating, category score, and Trust Score detail.</p>
+            <p>Players, administrators, and other eligible active members can access full reviews and ratings. Fan accounts can unlock full reviews, category scores, and Trust Score details with Fan Premium.</p>
             <div className="actions"><Link href="/membership" className="btn">Upgrade</Link><Link href="/login" className="btn dark">{t("logIn")}</Link></div>
           </Surface>
         </section>
