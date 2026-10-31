@@ -17,6 +17,7 @@ import "./hoopcheck-directory-card-fixes.css";
 import "./hoopcheck-theme-audit.css";
 import "./hoopcheck-lm2-contract.css";
 import "./hoopcheck-root-cause.css";
+import "./hoopcheck-mobile-density.css";
 import "./hoopcheck-lm2d-contrast.css";
 import "./hoopcheck-motion.css";
 import ThemeProvider from "../components/ThemeProvider";
