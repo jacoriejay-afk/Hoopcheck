@@ -585,7 +585,7 @@ export default function TeamDetailPage() {
           <Surface className="card hc-team-membership-surface">
             <div className="eyebrow">{t("membersOnly")}</div>
             <h2>🔒 Player reviews are a Premium fan feature</h2>
-            <p>Players, administrators, and other eligible active members can access full reviews and ratings. Fan accounts can unlock full reviews, category scores, and Trust Score details with Fan Premium.</p>
+            <p>Players, administrators, and other eligible active members can access full reviews and ratings. Fan Pro includes limited rating access; Fan Premium unlocks full reviews, category scores, and Trust Score details for fan accounts.</p>
             <div className="actions"><Link href="/membership" className="btn">Upgrade</Link><Link href="/login" className="btn dark">{t("logIn")}</Link></div>
           </Surface>
         </section>
