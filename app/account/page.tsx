@@ -224,6 +224,7 @@ export default function AccountPage() {
     }
     const updates = {
       display_name: name || null, bio: bio.trim().slice(0, 500) || null,
+      position: profile.account_type === "player" ? position.trim().slice(0, 40) || null : profile.position,
       years_pro: years,
       current_country: currentCountry.trim().slice(0, 80) || null,
       current_country_public: profile.account_type === "player" ? countryPublic : false,
@@ -437,7 +438,7 @@ export default function AccountPage() {
             <p className="muted" style={{fontSize:12}}>{t("nameLocked")}</p>
             <label htmlFor="display-name" className="muted">{t("displayName")}</label><input id="display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder={t("displayNamePlaceholder")} />
             {profile.account_type === "player" && <label htmlFor="position" className="muted">{t("position")}</label>}
-            {profile.account_type === "player" && <input id="position" value={position} readOnly disabled />}
+            {profile.account_type === "player" && <input id="position" value={position} onChange={e => setPosition(e.target.value)} maxLength={40} placeholder="e.g. Point Guard" disabled={savingProfile} />}
             {profile.account_type === "player" && <label htmlFor="years-pro" className="muted">{t("yearsAsPro")}</label>}
             {profile.account_type === "player" && <input id="years-pro" type="number" value={yearsPro} readOnly disabled />}
             {profile.account_type === "coach" && <><label htmlFor="coaching-experience" className="muted">{t("coachingExperience")}</label><textarea id="coaching-experience" value={coachingExperience} onChange={e=>setCoachingExperience(e.target.value)} maxLength={1000} rows={4} placeholder={t("coachingExperiencePlaceholder")} /><label htmlFor="coach-specialties" className="muted">{t("coachingSpecialties")}</label><textarea id="coach-specialties" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("coachingSpecialtiesPlaceholder")} /></>}
@@ -465,8 +466,8 @@ export default function AccountPage() {
               </optgroup>
             </select>
                         {profile.account_type === "player" && <>
-              <label htmlFor="current-country" className="muted">{t("currentCountry")}</label><select id="current-country" value={currentCountry} disabled><option value={currentCountry}>{currentCountry || t("notSelected")}</option></select><p className="muted" style={{fontSize:12}}>{t("currentCountryManaged")}</p>
-              <label htmlFor="current-team" className="muted">{t("currentTeam")}</label><select id="current-team" value={currentTeam} disabled><option value={currentTeam}>{currentTeam || t("notSelected")}</option></select><p className="muted" style={{fontSize:12}}>{t("currentTeamManaged")}</p>
+              <label htmlFor="current-country" className="muted">{t("currentCountry")}</label><input id="current-country" value={currentCountry} onChange={e=>setCurrentCountry(e.target.value)} maxLength={80} placeholder="Country where you currently play" disabled={savingProfile} />
+              <label htmlFor="current-team" className="muted">{t("currentTeam")}</label><input id="current-team" value={currentTeam} onChange={e=>setCurrentTeam(e.target.value)} maxLength={120} placeholder="Current team or Free Agent" disabled={savingProfile} />
             </>}
             <label htmlFor="bio" className="muted">{t("playerBio")}</label><textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder={t("playerBioPlaceholder")} />
                         {profile.account_type === "player" && <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>{t("showFreeAgent")}</span></label>}
