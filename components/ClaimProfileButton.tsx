@@ -67,7 +67,12 @@ export default function ClaimProfileButton({entityType,entityId,entityName}:Clai
     <button type="button" className="hc-claim-trigger" onClick={()=>{setMessage("");setOpen(value=>!value);}}><span aria-hidden="true">✓</span> {entityType === "team" ? "Claim Your Team" : "Claim This Profile"}</button>
     {open&&<div className="hc-claim-panel">
       <div className="hc-claim-panel__heading"><div><p className="eyebrow">TEAM / ORGANIZATION VERIFICATION</p><h3>Claim {entityName}</h3></div><button type="button" aria-label="Close claim form" onClick={()=>setOpen(false)}>×</button></div>
-      <p>Claims are reviewed by a HoopCheck admin. Claiming a profile does not let an organization edit or remove player reviews.</p>
+      <p>Complete these three steps to request official verification. A claim never gives an organization permission to edit or remove player reviews.</p>
+      <ol className="hc-claim-steps" aria-label="Three steps to claim this profile">
+        <li className="is-current"><span>1</span><div><strong>Identify the organization</strong><small>Confirm you are claiming {entityName} as an authorized representative.</small></div></li>
+        <li className="is-current"><span>2</span><div><strong>Submit verification proof</strong><small>Use an official organization email or upload an official document.</small></div></li>
+        <li><span>3</span><div><strong>HoopCheck review</strong><small>An admin checks your evidence and updates the claim status.</small></div></li>
+      </ol>
       <div className="hc-claim-methods">
         <label><input type="radio" checked={method==="official_email"} onChange={()=>setMethod("official_email")}/><span><strong>Official email</strong><small>Use an organization-domain email address.</small></span></label>
         <label><input type="radio" checked={method==="document"} onChange={()=>setMethod("document")}/><span><strong>Upload proof</strong><small>Submit an official letter, contract, or organization document.</small></span></label>
