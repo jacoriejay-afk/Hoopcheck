@@ -440,7 +440,7 @@ export default function AccountPage() {
             {profile.account_type === "player" && <label htmlFor="position" className="muted">{t("position")}</label>}
             {profile.account_type === "player" && <input id="position" value={position} onChange={e => setPosition(e.target.value)} maxLength={40} placeholder="e.g. Point Guard" disabled={savingProfile} />}
             {profile.account_type === "player" && <label htmlFor="years-pro" className="muted">{t("yearsAsPro")}</label>}
-            {profile.account_type === "player" && <input id="years-pro" type="number" value={yearsPro} readOnly disabled />}
+            {profile.account_type === "player" && <input id="years-pro" type="number" min={0} max={50} step={1} value={yearsPro} onChange={e=>setYearsPro(e.target.value)} disabled={savingProfile} /> }
             {profile.account_type === "coach" && <><label htmlFor="coaching-experience" className="muted">{t("coachingExperience")}</label><textarea id="coaching-experience" value={coachingExperience} onChange={e=>setCoachingExperience(e.target.value)} maxLength={1000} rows={4} placeholder={t("coachingExperiencePlaceholder")} /><label htmlFor="coach-specialties" className="muted">{t("coachingSpecialties")}</label><textarea id="coach-specialties" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("coachingSpecialtiesPlaceholder")} /></>}
             <label htmlFor="hometown">{t("hometown")}</label><input id="hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder={t("cityStateRegion")} />
             <label htmlFor="nationality">{t("nationality")}</label>
