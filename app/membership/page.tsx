@@ -375,7 +375,6 @@ function MembershipContent() {
                 >
                   {checkoutLoading === `pro-${billingInterval}` ? "Opening Checkout..." : `Get Pro — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}
                 </button>
-              </div>
               </div>}
 
               <div className="plan-card featured">
