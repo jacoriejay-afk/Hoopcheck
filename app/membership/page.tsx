@@ -237,6 +237,7 @@ function MembershipContent() {
 
   const isActive =
     subscription?.status === "active" || subscription?.status === "trialing";
+  const premiumOnlyAccount = accountType === "coach" || accountType === "manager";
 
   return (
     <main className="hc-membership-page">
@@ -345,7 +346,7 @@ function MembershipContent() {
               <button type="button" aria-pressed={billingInterval==="year"} className={billingInterval==="year" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 10%</small></button>
             </div>
             <div className="hc-membership-value"><span className="hc-membership-value__mark">★</span><div><strong>Best flexibility, better value.</strong><p>Choose monthly, 6-month, or annual billing. The total shown is the amount charged for the selected term.</p></div></div><div className="plans">
-              <div className="plan-card">
+              {!premiumOnlyAccount && <div className="plan-card">
                 <div className="plan-top">
                   <div>
                     <div className="eyebrow">HOOPCHECK PRO</div>
@@ -374,10 +375,10 @@ function MembershipContent() {
                 >
                   {checkoutLoading === `pro-${billingInterval}` ? "Opening Checkout..." : `Get Pro — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}
                 </button>
-              </div>
+              </div>}
 
               <div className="plan-card featured">
-                <div className="featured-badge">MORE ACCESS</div>
+                <div className="featured-badge">{premiumOnlyAccount ? "REQUIRED PLAN" : "MORE ACCESS"}</div>
                 <div className="plan-top">
                   <div>
                     <div className="eyebrow">HOOPCHECK PREMIUM</div>
@@ -389,7 +390,7 @@ function MembershipContent() {
                   </div>
                 </div>
                 <p className="plan-description">
-                  Everything in Pro plus expanded research capabilities.
+                  {premiumOnlyAccount ? "The full HoopCheck research membership for coaches and team managers." : "Everything in Pro plus expanded research capabilities."}
                 </p>
                 <ul>
                   <li>Everything in Pro</li>
