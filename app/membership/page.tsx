@@ -237,6 +237,7 @@ function MembershipContent() {
 
   const isActive =
     subscription?.status === "active" || subscription?.status === "trialing";
+  const premiumOnlyAccount = accountType === "coach" || accountType === "manager";
 
   return (
     <main className="hc-membership-page">
@@ -377,7 +378,7 @@ function MembershipContent() {
               </div>
 
               <div className="plan-card featured">
-                <div className="featured-badge">MORE ACCESS</div>
+                <div className="featured-badge">{premiumOnlyAccount ? "REQUIRED PLAN" : "MORE ACCESS"}</div>
                 <div className="plan-top">
                   <div>
                     <div className="eyebrow">HOOPCHECK PREMIUM</div>
@@ -389,7 +390,7 @@ function MembershipContent() {
                   </div>
                 </div>
                 <p className="plan-description">
-                  Everything in Pro plus expanded research capabilities.
+                  {premiumOnlyAccount ? "The full HoopCheck research membership for coaches and team managers." : "Everything in Pro plus expanded research capabilities."}
                 </p>
                 <ul>
                   <li>Everything in Pro</li>
