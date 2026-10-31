@@ -656,19 +656,8 @@ export default function CoachDetailPage() {
         </div>
       </section>
 
-      {!hasAccess && (
-        <section className="grid">
-          <div className="card rating-locked-card">
-            <div className="eyebrow">Community Rating</div>
-            <h2>Player reviews require an eligible membership</h2>
-            <p>Players and other eligible active members can access full reviews and ratings. Fan access depends on the active plan.</p>
-            <div className="actions"><Link href="/signup" className="btn">Create Free Account</Link><Link href="/membership" className="btn dark">Unlock Ratings</Link></div>
-          </div>
-        </section>
-      )}
-
-      {!hasAccess ? (
-        <section className="hero"><div className="card hc-membership-locked-state"><h2>🔒 Player reviews are a Premium fan feature</h2><Link href="/membership" className="btn">Upgrade</Link></div></section>
+      {!hasAccess && reviewTier === "free" && accountType !== "player" ? (
+        <section className="hero"><div className="card hc-membership-locked-state"><h2>Player reviews require an eligible membership</h2><Link href="/membership" className="btn">Upgrade</Link></div></section>
       ) : reviewTier === "pro" ? (
         <section className="hero hc-fan-review-teaser">
           <h2>Player ratings and reviews</h2>
