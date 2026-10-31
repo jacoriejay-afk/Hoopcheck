@@ -220,13 +220,12 @@ export default function LeagueDetailPage() {
         ? await supabase.from("teams")
             .select("id, name, country, city, league_id, active")
             .in("id", teamIds)
-            .eq("active", true)
             .order("name")
         : { data: [], error: null };
 
       if (linkedTeamsError) console.error("League team detail lookup failed:", linkedTeamsError);
       const allTeams = linkedTeams || [];
-      setTeams(allTeams.map(({ active: _active, ...team }) => team));
+      setTeams(allTeams.filter((team) => team.active).map(({ active: _active, ...team }) => team));
       setTeamHistory(membershipRows.map((membership) => ({
         ...membership,
         team: allTeams.find((team) => team.id === membership.team_id),
