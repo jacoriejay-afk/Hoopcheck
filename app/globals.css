@@ -3848,3 +3848,49 @@ button.hc-setting-row { appearance: none; }
 /* Final theme override: globals.css loads after the shared surface contract. */
 html.theme-dark body .hc-feed-composer { background:#171717!important; background-color:#171717!important; color:#f8f8f5!important; }
 html.theme-light body .hc-feed-composer { background:var(--hc-surface-raised)!important; background-color:var(--hc-surface-raised)!important; color:#111!important; }
+
+
+/* Unified form contrast: prevent light text on white native controls. */
+html.theme-dark main :where(select, option, optgroup) { color-scheme:dark; }
+html.theme-dark main :where(select) { background:#191919!important; color:#F7F7F5!important; border-color:#505050!important; -webkit-text-fill-color:#F7F7F5!important; }
+html.theme-dark main :where(select option, select optgroup) { background:#191919!important; color:#F7F7F5!important; }
+html.theme-dark main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), textarea) { color:#F7F7F5; -webkit-text-fill-color:#F7F7F5; }
+html.theme-light main :where(select, option, optgroup) { color-scheme:light; }
+html.theme-light main :where(select) { background:#FFFFFF!important; color:#171717!important; border-color:#CFCFC9!important; -webkit-text-fill-color:#171717!important; }
+html.theme-light main :where(select option, select optgroup) { background:#FFFFFF!important; color:#171717!important; }
+html.theme-light main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), textarea) { color:#171717; -webkit-text-fill-color:#171717; }
+html.theme-dark main :where(input[type="radio"], input[type="checkbox"]) { accent-color:#FF5A1F; }
+html.theme-light main :where(input[type="radio"], input[type="checkbox"]) { accent-color:#E84B16; }
+html.theme-dark .hc-claim-panel { background:#171717; color:#F7F7F5; border-color:#444; }
+html.theme-dark .hc-claim-panel :where(h3,p,strong,label) { color:#F7F7F5; }
+html.theme-dark .hc-claim-panel :where(.hc-claim-field input) { background:#202020; color:#F7F7F5; border-color:#505050; }
+html.theme-dark .hc-claim-panel :where(.hc-claim-field small) { color:#B8B8B2; }
+html.theme-light .hc-claim-panel { background:#FFFFFF; color:#171717; }
+html.theme-light .hc-claim-panel :where(h3,p,strong,label) { color:#171717; }
+html.theme-light .hc-claim-panel :where(.hc-claim-field input) { background:#F7F7F5; color:#171717; border-color:#D8D8D2; }
+
+/* Keep profile and directory content inside the viewport at every breakpoint. */
+main, main :where(section,article,form,.card,.dashboard-card,.hero-card,.page-container,.page-content) { min-width:0; }
+main :where(h1,h2,h3,p,small,strong,label,a,button) { overflow-wrap:anywhere; }
+main :where(input,select,textarea) { max-width:100%; min-width:0; }
+.hc-entity-profile-page, .hc-womens-profile-page { width:100%; max-width:1440px; margin-inline:auto; padding-inline:clamp(12px,2.6vw,32px); }
+.hc-entity-profile-page > .hero, .hc-womens-profile-page > .page-container { width:100%; max-width:100%; min-width:0; }
+.hc-entity-profile-page .grid, .hc-womens-profile-page .grid { grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); }
+.hc-team-profile-heading, .hc-team-profile-heading__copy { min-width:0; }
+.hc-claim-control, .hc-claim-panel { min-width:0; max-width:100%; }
+.hc-claim-panel { width:min(430px,calc(100vw - 28px)); }
+.hc-claim-field input { width:100%; }
+@media(max-width:700px) {
+  .hc-entity-profile-page, .hc-womens-profile-page { padding-inline:12px; }
+  .hc-entity-profile-page .hero, .hc-womens-profile-page .hero-card { padding-inline:14px; }
+  .hc-entity-profile-page .entity-actions, .hc-entity-profile-page .actions { display:flex; flex-wrap:wrap; gap:8px; }
+  .hc-entity-profile-page .entity-actions > *, .hc-entity-profile-page .actions > * { min-width:0; max-width:100%; }
+  .hc-team-profile-heading { align-items:flex-start; gap:12px; }
+  .hc-team-profile-heading .hc-team-profile-logo { flex:0 0 auto; max-width:72px; }
+  .hc-team-profile-heading__copy h1 { font-size:clamp(25px,8vw,42px); line-height:1.02; }
+}
+@media(max-width:420px) {
+  .hc-entity-profile-page, .hc-womens-profile-page { padding-inline:10px; }
+  .hc-entity-profile-page .entity-actions > .btn, .hc-entity-profile-page .actions > .btn { flex:1 1 100%; }
+  .hc-claim-panel { padding:13px; }
+}

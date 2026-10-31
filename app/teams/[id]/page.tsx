@@ -573,36 +573,25 @@ export default function TeamDetailPage() {
         ) : ["premium", "player", "member"].includes(reviewTier) ? (
           <Surface as="div" className="hc-entity-trust-score"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /><div className="hc-team-score-categories" aria-label="Category ratings">{([{label:"Communication",value:publicSummary.communication_rating},{label:"Professionalism",value:publicSummary.professionalism_rating},{label:"Development",value:publicSummary.development_rating},{label:"Payment",value:publicSummary.payment_rating}] as const).filter(item => item.value !== null).map(item => <span key={item.label}><small>{item.label}</small><strong>{Number(item.value).toFixed(1)}</strong></span>)}</div></Surface>
         ) : (
-          <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow"><span aria-hidden="true">🔒</span> Player reviews are a Premium fan feature</span><Link href="/membership" className="btn">Upgrade</Link></Surface>
+          <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow">Full player reviews require an eligible membership</span><Link href="/membership" className="btn">Upgrade</Link></Surface>
         )}
 
         <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} variant="club" />{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}<ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} /><Link href="/team-dashboard" className="btn dark">Team Portal</Link></div>
         <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
         {["premium", "player", "member"].includes(reviewTier) && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">LATEST PLAYER REVIEW</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || t("playerExperience")}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
       </section>
-      {!hasAccess ? (
+      {!hasAccess && reviewTier === "free" && accountType !== "player" ? (
         <section className="hero">
           <Surface className="card hc-team-membership-surface">
-            <div className="eyebrow">{t("membersOnly")}</div>
-            <h2>🔒 Player reviews are a Premium fan feature</h2>
-            <p>Upgrade to Fan Premium to unlock every review, rating, category score, and Trust Score detail.</p>
+            <div className="eyebrow">{t("membershipRequired")}</div>
+            <h2>Player reviews require an eligible membership</h2>
+            <p>Sign in with an eligible active membership to view full player reviews and ratings. Players and other eligible members keep their existing access.</p>
             <div className="actions"><Link href="/membership" className="btn">Upgrade</Link><Link href="/login" className="btn dark">{t("logIn")}</Link></div>
           </Surface>
         </section>
       ) : (
         <>
           <section className="hero" id="reviews">
-            {!hasAccess && (
-              <div className="card" style={{ marginBottom: 24, borderColor: "rgba(255,106,0,.45)" }}>
-                <div className="eyebrow">{t("membersOnlyTitle")}</div>
-                <h3>{t("playerReviewsLocked")}</h3>
-                <p>{t("membershipStartsMessage")}</p>
-                <div className="actions">
-                  <Link href="/signup" className="btn">{t("createFreeAccount")}</Link>
-                  <Link href="/login" className="btn dark">{t("logIn")}</Link>
-                </div>
-              </div>
-            )}
             <div className="eyebrow">
               {membershipPlan === "premium" && accountType === "fan" ? t("playerRatings") : t("approvedReviewsHeading")}
             </div>
