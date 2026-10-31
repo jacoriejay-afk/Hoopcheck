@@ -592,17 +592,6 @@ export default function TeamDetailPage() {
       ) : (
         <>
           <section className="hero" id="reviews">
-            {!hasAccess && (
-              <div className="card" style={{ marginBottom: 24, borderColor: "rgba(255,106,0,.45)" }}>
-                <div className="eyebrow">{t("membersOnlyTitle")}</div>
-                <h3>{t("playerReviewsLocked")}</h3>
-                <p>{t("membershipStartsMessage")}</p>
-                <div className="actions">
-                  <Link href="/signup" className="btn">{t("createFreeAccount")}</Link>
-                  <Link href="/login" className="btn dark">{t("logIn")}</Link>
-                </div>
-              </div>
-            )}
             <div className="eyebrow">
               {membershipPlan === "premium" && accountType === "fan" ? t("playerRatings") : t("approvedReviewsHeading")}
             </div>
