@@ -129,11 +129,8 @@ export default function AdminDirectoryPage() {
           </div>
 
           <div style={styles.headerActions}>
-            <Link href="/admin/team-logos" style={styles.secondaryButton}>Team Logo Studio</Link>
             <Link href="/admin/reviews" className="admin-primary-action" style={styles.secondaryButton}>{t("reviewQueue")}</Link>
-            <Link href="/admin/claims" style={styles.secondaryButton}>{t("profileClaims")}</Link>
-            <Link href="/admin/team-fanfeed" style={styles.secondaryButton}>Team FanFeed</Link>
-            <Link href="/admin/support" style={styles.secondaryButton}>{t("communityInbox")}</Link>
+            <Link href="/admin/users?account_type=manager" style={styles.secondaryButton}>Team Managers</Link>
 
             <Link
               href="/dashboard"
@@ -195,83 +192,45 @@ export default function AdminDirectoryPage() {
             </span>
           </div>
 
-          <div style={styles.cardGrid}>
-            <DirectoryCard
-              number="01"
-              title="Coaches"
-              description="Manage coach profiles, teams, countries, sources, and active status."
-              href="/admin/directory/manage?kind=coaches"
-            />
+          <div style={styles.adminGroup}>
+            <h3 style={styles.groupTitle}>People &amp; Access</h3>
+            <div style={styles.cardGrid}>
+              <DirectoryCard number="01" title="Users & Player Control" description="Search accounts, manage account types, verification, membership, and profile status." href="/admin/users" />
+              <DirectoryCard number="02" title="Team Managers" description="Find and manage Team Manager accounts, review their account details, and confirm the correct team-representative role." href="/admin/users?account_type=manager" />
+              <DirectoryCard number="03" title="Player Verification" description="Review professional-player verification requests and manage Verified Player badges." href="/admin/verification" />
+            </div>
+          </div>
 
-            <DirectoryCard
-              number="02"
-              title="Teams"
-              description="Manage professional teams and connect each team to its league."
-              href="/admin/directory/manage?kind=teams"
-            />
+          <div style={styles.adminGroup}>
+            <h3 style={styles.groupTitle}>Community &amp; Moderation</h3>
+            <div style={styles.cardGrid}>
+              <DirectoryCard number="04" title="Review Queue" description="Review player-submitted team, coach, and league reviews." href="/admin/reviews" />
+              <DirectoryCard number="05" title="Review Comments" description="Approve, reject, or flag player comments on review posts." href="/admin/comments" />
+              <DirectoryCard number="06" title="Content Reports" description="Review reports across reviews, HoopFeed posts, and live-game chat." href="/admin/content-reports" />
+              <DirectoryCard number="07" title="Profile Reports" description="Review profile reports and resolve or dismiss flags." href="/admin/reports" />
+              <DirectoryCard number="08" title="Profile Claims" description="Review requests to claim team and professional profiles." href="/admin/claims" />
+              <DirectoryCard number="09" title="Community Inbox" description="Handle member support, partnership, sponsor, and donation inquiries." href="/admin/support" />
+              <DirectoryCard number="10" title="Team FanFeed" description="Review and manage team-focused fan community activity." href="/admin/team-fanfeed" />
+            </div>
+          </div>
 
-            <DirectoryCard
-              number="03"
-              title="Leagues"
-              description="Manage leagues, countries, seasons, and competition levels."
-              href="/admin/directory/manage?kind=leagues"
-            />
+          <div style={styles.adminGroup}>
+            <h3 style={styles.groupTitle}>Basketball Directory</h3>
+            <div style={styles.cardGrid}>
+              <DirectoryCard number="11" title="Coaches" description="Manage coach profiles, teams, countries, sources, and active status." href="/admin/directory/manage?kind=coaches" />
+              <DirectoryCard number="12" title="Teams" description="Manage professional teams and connect each team to its league." href="/admin/directory/manage?kind=teams" />
+              <DirectoryCard number="13" title="Leagues" description="Manage leagues, countries, seasons, and competition levels." href="/admin/directory/manage?kind=leagues" />
+              <DirectoryCard number="14" title="Team Logo Studio" description="Manage team logos and directory visual assets." href="/admin/team-logos" />
+              <DirectoryCard number="15" title="Data Providers" description="Manage licensed providers, sync status, source documentation, and import history." href="/admin/directory/providers" />
+            </div>
+          </div>
 
-            <DirectoryCard
-              number="04"
-              title="Data Providers"
-              description="Manage licensed data providers, sync status, source documentation, and import history."
-              href="/admin/directory/providers"
-            />
-
-            <DirectoryCard
-              number="05"
-              title="Rights & Coverage"
-              description="Track country and league rights, commercial use, redistribution, evidence, and production approval."
-              href="/admin/rights"
-            />
-
-            <DirectoryCard
-              number="06"
-              title="Users & Player Control"
-              description="Look up any user, filter by account type, edit account type and verification, warn or flag profiles, and moderate profile photos."
-              href="/admin/users"
-            />
-
-            <DirectoryCard
-              number="07"
-              title="Player Verification"
-              description="Review professional-player verification requests and manage Verified Player badges."
-              href="/admin/verification"
-            />
-
-            <DirectoryCard
-              number="08"
-              title="Review Comments"
-              description="Approve, reject, or flag player comments on review posts."
-              href="/admin/comments"
-            />
-
-            <DirectoryCard
-              number="10"
-              title="Community Inbox"
-              description="Review help requests, sponsor inquiries, and donation/support requests from members."
-              href="/admin/support"
-            />
-
-            <DirectoryCard
-              number="11"
-              title="Profile Reports"
-              description="Review reports submitted by research accounts and resolve or dismiss profile flags."
-              href="/admin/reports"
-            />
-
-            <DirectoryCard
-              number="12"
-              title="Licensed Provider Gate"
-              description="Sofascore is registered as research-only until written commercial/API permission is verified. No scraping or unlicensed redistribution is enabled."
-              href="/admin/directory/providers"
-            />
+          <div style={styles.adminGroup}>
+            <h3 style={styles.groupTitle}>Data Rights &amp; Coverage</h3>
+            <div style={styles.cardGrid}>
+              <DirectoryCard number="16" title="Rights & Coverage" description="Track country and league rights, commercial use, redistribution, evidence, and production approval." href="/admin/rights" />
+              <DirectoryCard number="17" title="Licensed Provider Gate" description="Track research-only providers until written commercial/API permission is verified. No scraping or unlicensed redistribution is enabled." href="/admin/directory/providers" />
+            </div>
           </div>
         </section>
 
@@ -577,6 +536,10 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: "0.08em",
     textTransform: "uppercase",
   },
+
+  adminGroup: { marginTop: "24px" },
+
+  groupTitle: { margin: "0 0 12px", color: "#73736E", fontSize: "11px", fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" },
 
   cardGrid: {
     display: "grid",
