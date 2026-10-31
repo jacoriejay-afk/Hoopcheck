@@ -553,7 +553,7 @@ export default function CoachDetailPage() {
         ) : ["premium", "player", "member"].includes(reviewTier) ? (
           <div className="hc-entity-trust-score"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedReviews"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /></div>
         ) : (
-          <div className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow"><span aria-hidden="true">🔒</span> Player reviews are a Premium fan feature</span><Link href="/membership" className="btn">Upgrade</Link></div>
+          <div className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow">Full player reviews require an eligible membership</span><Link href="/membership" className="btn">Upgrade</Link></div>
         )}
 
         <div className="entity-actions"><WatchButton targetType="coach" targetId={coach.id} targetName={coach.name} />{accountType === "player" ? <Link href={`/coaches/${coach.id}/review`} className="btn">Write a Review</Link> : null}</div>
@@ -660,8 +660,8 @@ export default function CoachDetailPage() {
         <section className="grid">
           <div className="card rating-locked-card">
             <div className="eyebrow">Community Rating</div>
-            <h2>🔒 Player reviews are a Premium fan feature</h2>
-            <p>Upgrade to Fan Premium to unlock every review and rating.</p>
+            <h2>Player reviews require an eligible membership</h2>
+            <p>Players and other eligible active members can access full reviews and ratings. Fan access depends on the active plan.</p>
             <div className="actions"><Link href="/signup" className="btn">Create Free Account</Link><Link href="/membership" className="btn dark">Unlock Ratings</Link></div>
           </div>
         </section>
