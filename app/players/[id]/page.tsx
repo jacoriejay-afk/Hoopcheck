@@ -143,9 +143,20 @@ export default function PlayerProfilePage() {
           <nav className="topnav">
             <Link href="/search">Search</Link>
             <Link href="/dashboard">Dashboard</Link>
-            <Link href={isOwnProfile ? "/account#edit-profile" : "/account"}>{isOwnProfile ? "Edit Profile" : "Account"}</Link>
+            <Link href={isOwnProfile ? "/account#profile-editor" : "/account"}>{isOwnProfile ? "Edit Profile" : "Account"}</Link>
           </nav>
         </header>
+
+        {isOwnProfile && (
+          <section className="hc-player-profile-completion" aria-label="Complete your player profile">
+            <div>
+              <span className="card-kicker">YOUR PLAYER PROFILE</span>
+              <h2>Make your profile work for you</h2>
+              <p className="muted">Add your playing position, years as a pro, current team, location and bio so teams, coaches and other players can understand your basketball background.</p>
+            </div>
+            <Link href="/account#profile-editor" className="btn">Complete player profile <HoopIcon name="arrow-right" size={16} /></Link>
+          </section>
+        )}
 
         <section className="player-profile-hero hc-player-profile-hero">
           <div className="player-profile-avatar">{player.avatar_url ? <img src={player.avatar_url} alt="" /> : (player.display_name?.trim()?.charAt(0)?.toUpperCase() || "P")}</div>
@@ -196,7 +207,7 @@ export default function PlayerProfilePage() {
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 12 }}>
             <Link href="/search" className="btn">Explore HoopCheck</Link>
-            <Link href={isOwnProfile ? "/account#edit-profile" : "/account"} className="btn dark">{isOwnProfile ? "Edit Profile" : "My Account"}</Link><button type="button" className="btn dark" onClick={reportProfile}>Report Profile</button>{reportMessage&&<span className="muted">{reportMessage}</span>}
+            <Link href={isOwnProfile ? "/account#profile-editor" : "/account"} className="btn dark">{isOwnProfile ? "Edit Profile" : "My Account"}</Link><button type="button" className="btn dark" onClick={reportProfile}>Report Profile</button>{reportMessage&&<span className="muted">{reportMessage}</span>}
             <div className="bottom-back"><button type="button" className="btn dark" onClick={() => window.history.back()}><HoopIcon name="arrow-right" size={16} style={{ transform: "rotate(180deg)" }} /> Back</button></div>
           </div>
         </section>
