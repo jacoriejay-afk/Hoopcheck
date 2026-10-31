@@ -192,36 +192,45 @@ export default function LeagueDetailPage() {
       }
 
       setLeague(leagueData);
-      setLoading(false);
 
-      const { data: teamData, error: teamError } = await supabase
-        .from("teams")
-        .select("id, name, country, city, league_id")
-        .eq("league_id", id)
-        .eq("active", true)
-        .order("name");
-
-      if (!teamError && teamData) {
-        // The league's direct team relationship is the source of truth for the
-        // current directory. Historical membership rows should never hide teams.
-        setTeams(teamData);
-        const { data: membershipRows } = await supabase
-          .from("team_league_memberships")
+      // Some imported leagues are linked through team_league_memberships rather
+      // than teams.league_id. Load both sources and union them so league pages
+      // never silently omit clubs that are already in the active roster.
+      const [directResult, membershipResult] = await Promise.all([
+        supabase.from("teams")
+          .select("id, name, country, city, league_id")
+          .eq("league_id", id)
+          .eq("active", true)
+          .order("name"),
+        supabase.from("team_league_memberships")
           .select("id,team_id,season,start_date,end_date,active")
           .eq("league_id", id)
           .eq("active", true)
-          .order("season", { ascending: false });
-        if (membershipRows) {
-          const ids = membershipRows.map((x) => x.team_id);
-          const { data: rows } = ids.length
-            ? await supabase.from("teams").select("id,name").in("id", ids)
-            : { data: [] as any[] };
-          setTeamHistory(membershipRows.map((x) => ({
-            ...x,
-            team: rows?.find((t) => t.id === x.team_id)
-          })));
-        }
-      }
+          .order("season", { ascending: false }),
+      ]);
+
+      if (directResult.error) console.error("League direct team lookup failed:", directResult.error);
+      if (membershipResult.error) console.error("League membership lookup failed:", membershipResult.error);
+      const membershipRows = membershipResult.data || [];
+      const teamIds = Array.from(new Set([
+        ...(directResult.data || []).map((team) => team.id),
+        ...membershipRows.map((membership) => membership.team_id),
+      ]));
+      const { data: linkedTeams, error: linkedTeamsError } = teamIds.length
+        ? await supabase.from("teams")
+            .select("id, name, country, city, league_id, active")
+            .in("id", teamIds)
+            .eq("active", true)
+            .order("name")
+        : { data: [], error: null };
+
+      if (linkedTeamsError) console.error("League team detail lookup failed:", linkedTeamsError);
+      const allTeams = linkedTeams || [];
+      setTeams(allTeams.map(({ active: _active, ...team }) => team));
+      setTeamHistory(membershipRows.map((membership) => ({
+        ...membership,
+        team: allTeams.find((team) => team.id === membership.team_id),
+      })).filter((membership) => membership.team));
 
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
