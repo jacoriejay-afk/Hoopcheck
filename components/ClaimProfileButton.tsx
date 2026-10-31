@@ -37,11 +37,14 @@ export default function ClaimProfileButton({entityType,entityId,entityName}:Clai
     if (normalizedEmail) {
       const domain=normalizedEmail.split("@")[1];
       if (!normalizedEmail.includes("@") || !domain || FREE_EMAIL_DOMAINS.has(domain)) {
-        setMessage("Use an official organization email domain, not a personal email provider."); return;
+        setMessage("Use an official organization email domain, not a personal email provider. The domain will be checked against the club’s public contact information."); return;
       }
     }
-    if (!normalizedEmail && !file) {
-      setMessage("Enter your official organization email. You may also attach a supporting document."); return;
+    if (!normalizedEmail) {
+      setMessage("An official organization email is required."); return;
+    }
+    if (!file) {
+      setMessage("A supporting organization document is required. Email-only claims are not accepted."); return;
     }
     if (file && file.size > 10*1024*1024) { setMessage("Claim documents must be 10 MB or smaller."); return; }
     if (file && !["application/pdf","image/jpeg","image/png","image/webp"].includes(file.type)) {
@@ -59,7 +62,7 @@ export default function ClaimProfileButton({entityType,entityId,entityName}:Clai
     const {error}=await supabase.from("profile_claim_requests").insert({
       entity_type:entityType, entity_id:entityId, requester_id:session.user.id,
       organization_email:normalizedEmail || null,
-      verification_method:proofDocumentPath ? "document" : "official_email",
+      verification_method:"document",
       proof_document_path:proofDocumentPath, status:"pending"
     });
     if(error) setMessage(error.code==="23505" ? "A claim request for this profile is already pending." : "Unable to submit the claim. Please try again.");
@@ -77,21 +80,21 @@ export default function ClaimProfileButton({entityType,entityId,entityName}:Clai
     </button>
     {open&&<div className="hc-claim-panel">
       <div className="hc-claim-panel__heading"><div><p className="eyebrow">TEAM / ORGANIZATION VERIFICATION</p><h3>Claim {entityName}</h3></div><button type="button" aria-label="Close claim form" onClick={()=>setOpen(false)}>×</button></div>
-      <p>Complete the verification steps below. A claim never gives an organization permission to edit or remove player reviews.</p>
+      <p>Team claims require BOTH an official organization email and documentary proof. A claim never gives an organization permission to edit or remove player reviews.</p>
       <ol className="hc-claim-steps" aria-label="Three steps to claim this profile">
         <li className="is-current"><span>1</span><div><strong>Identify the organization</strong><small>Confirm you are claiming {entityName} as an authorized representative.</small></div></li>
-        <li className="is-current"><span>2</span><div><strong>Submit verification details</strong><small>Provide your official organization email. Add a supporting document if available.</small></div></li>
+        <li className="is-current"><span>2</span><div><strong>Submit verification details</strong><small>Provide an organization-domain email AND upload official proof of your authority to represent this club. Both are required.</small></div></li>
         <li><span>3</span><div><strong>HoopCheck review</strong><small>An admin checks your evidence and updates the claim status.</small></div></li>
       </ol>
       <label className="hc-claim-field">Official organization email
         <input type="email" value={email} onChange={event=>setEmail(event.target.value)} placeholder="name@club-domain.com" autoComplete="email" />
       </label>
-      <label className="hc-claim-field">Supporting document (optional)
+      <label className="hc-claim-field">Required supporting document
         <input type="file" accept=".pdf,image/jpeg,image/png,image/webp" onChange={event=>setFile(event.target.files?.[0]||null)} />
-        <small>PDF, JPG, PNG, or WebP · max 10 MB · stored privately</small>
+        <small>Required · PDF, JPG, PNG, or WebP · max 10 MB · stored privately</small>
       </label>
       {message&&<p className="hc-claim-message" role="status">{message}</p>}
-      <button type="button" className="btn" disabled={busy} onClick={()=>void submit()}>{busy?"Submitting…":"Submit for Admin Review"}</button>
+      <button type="button" className="btn" disabled={busy} onClick={()=>void submit()}>{busy?"Submitting…":"Submit Both Items for Admin Review"}</button>
     </div>}
     {!open&&message&&<small className="hc-claim-message" role="status">{message}</small>}
   </div>;
