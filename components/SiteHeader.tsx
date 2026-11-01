@@ -39,6 +39,7 @@ export default function SiteHeader() {
           <Link href="/directory" className={active("/directory") ? "is-active" : ""} onClick={closeMenu}>{t("browseDirectories")}</Link>
           <Link href="/reviews" className={active("/reviews") ? "is-active" : ""} onClick={closeMenu}>{t("reviews")}</Link>
           <Link href="/notifications" className={active("/notifications") ? "is-active" : ""} onClick={closeMenu}>{t("alerts")}</Link>
+          {signedIn && <Link href="/account#account-settings" className={pathname.startsWith("/account") ? "is-active" : ""} onClick={closeMenu}>{t("settings")}</Link>}
         </div>
         <div className="hc-header-actions">
           <Link href="/search" className="hc-header-icon" aria-label={t("search")} onClick={closeMenu}><SearchIcon /></Link>
