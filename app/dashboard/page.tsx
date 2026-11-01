@@ -10,7 +10,6 @@ import PlayerContactButton from "../../components/PlayerContactButton";
 import SearchBar from "../../components/SearchBar";
 import { useLanguage } from "../../components/LanguageProvider";
 import { HoopIcon, CategoryIconTile, VerifiedBadge } from "../../components/HoopCheckUI";
-import "../hoopcheck-dashboard-mobile.css";
 
 type Profile = { display_name: string | null; player_verified: boolean; coach_verified?: boolean; account_type: "player"|"coach"|"scout"|"agent"|"fan"; moderation_status?: string; moderation_note?: string | null };
 type Subscription = {
@@ -215,8 +214,9 @@ export default function DashboardPage() {
       <div className="page-container">
         {(profile?.moderation_status === "warned" || profile?.moderation_status === "flagged") && <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{profile.moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{profile.moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section>}        <section className="hc-dashboard-welcome" aria-labelledby="hc-dashboard-welcome-title">
           <p className="eyebrow hc-dashboard-page-label">{t("dashboardLabel")}</p>
-          <h1 id="hc-dashboard-welcome-title">Your basketball command center<span>.</span></h1>
-          <p className="hc-dashboard-hero-description">Manage your profile, membership, reviews and basketball network.</p>
+          <p className="eyebrow hc-dashboard-kicker">{t("overseasHub")}</p>
+          <h1 id="hc-dashboard-welcome-title">KNOW WHO YOU’RE SIGNING WITH<span>.</span></h1>
+          <p className="hc-dashboard-hero-description">{t("dashboardHeroDescription")}</p>
         </section>
 
         <section className="hc-dashboard-profile-block" aria-label={t("yourProfile")}>
@@ -230,7 +230,7 @@ export default function DashboardPage() {
               <span className="hc-dashboard-membership-badge">{planLabel.replace("HoopCheck ","")}{activeMembership ? " · ACTIVE" : " · "+statusLabel.toUpperCase()}</span>
             </div>
           </div>
-          <Link href="/profile" className="hc-dashboard-edit-profile">{t("editProfile")} <span className="hc-dashboard-edit-arrow" aria-hidden="true">→</span></Link>
+          <Link href="/profile" className="hc-dashboard-edit-profile">{t("editProfile")} <span aria-hidden="true">→</span></Link>
         </section>
 
         <section className="hc-dashboard-stat-grid" aria-label={t("accountControls")}>
