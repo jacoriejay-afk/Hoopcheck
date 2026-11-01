@@ -54,7 +54,7 @@ export default function BottomNav() {
   if (!signedIn || pathname.startsWith("/admin")) return null;
 
   return (
-    <nav className="bottom-nav hc-bottom-tab-bar" aria-label="Mobile navigation">
+    <nav className="bottom-nav hc-bottom-tab-bar hc-mobile-tabbar-repair" aria-label="Mobile navigation">
       {items.map(([href, translationKey, label]) => {
         const destination = href === "/feed" && fanAccount ? "/fan-feed" : href;
         const active = destination === "/"
