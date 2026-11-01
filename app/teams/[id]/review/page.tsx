@@ -210,7 +210,7 @@ export default function TeamReviewPage() {
 
       const { data: subscription } = await supabase
         .from("subscriptions")
-        .select("status, current_period_end")
+        .select("plan,status,current_period_end,access_status")
         .eq("user_id", user.id)
         .maybeSingle();
 
