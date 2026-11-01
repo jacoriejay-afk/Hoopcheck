@@ -356,3 +356,106 @@ html.theme-dark main:not(.hc-template-home) :where(input,textarea,select)::place
   html.theme-light .hc-bottom-tab-bar > a { color: #22221F !important; }
   html.theme-light .hc-bottom-tab-bar > a.active { background: #EAEAE5 !important; color: #D94712 !important; }
 }
+
+
+/* Mobile tab bar hardening: paint the complete navigation surface and every
+   tap target independently so underlying page content cannot show through. */
+@media (max-width: 767px) {
+  html body nav.bottom-nav.hc-bottom-tab-bar {
+    position: fixed !important;
+    inset: auto 0 0 0 !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    min-height: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    isolation: isolate !important;
+    z-index: 2147483000 !important;
+    background: #0A0A0A !important;
+    background-color: #0A0A0A !important;
+    background-image: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    border-top: 1px solid #343434 !important;
+  }
+  html body nav.bottom-nav.hc-bottom-tab-bar::before,
+  html body nav.bottom-nav.hc-bottom-tab-bar::after {
+    content: none !important;
+    display: none !important;
+  }
+  html body nav.bottom-nav.hc-bottom-tab-bar > a,
+  html body nav.bottom-nav.hc-bottom-tab-bar > a:link,
+  html body nav.bottom-nav.hc-bottom-tab-bar > a:visited {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    min-height: 50px !important;
+    margin: 0 !important;
+    padding: 5px 1px !important;
+    gap: 4px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    background: #0A0A0A !important;
+    background-color: #0A0A0A !important;
+    background-image: none !important;
+    color: #F7F7F5 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    text-decoration: none !important;
+    -webkit-text-fill-color: #F7F7F5 !important;
+  }
+  html body nav.bottom-nav.hc-bottom-tab-bar > a.active {
+    background: #242421 !important;
+    background-color: #242421 !important;
+    color: #FF5A1F !important;
+    -webkit-text-fill-color: #FF5A1F !important;
+  }
+  html body nav.bottom-nav.hc-bottom-tab-bar > a > span,
+  html body nav.bottom-nav.hc-bottom-tab-bar > a > span *,
+  html body nav.bottom-nav.hc-bottom-tab-bar > a svg,
+  html body nav.bottom-nav.hc-bottom-tab-bar > a svg * {
+    color: inherit !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  html body nav.bottom-nav.hc-bottom-tab-bar .bottom-nav-label {
+    display: block !important;
+    max-width: 100% !important;
+    color: inherit !important;
+    -webkit-text-fill-color: currentColor !important;
+    font-size: 9px !important;
+    font-weight: 600 !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+  }
+  html.theme-light body nav.bottom-nav.hc-bottom-tab-bar {
+    background: #F7F7F5 !important;
+    background-color: #F7F7F5 !important;
+    border-top-color: #D4D4CE !important;
+  }
+  html.theme-light body nav.bottom-nav.hc-bottom-tab-bar > a,
+  html.theme-light body nav.bottom-nav.hc-bottom-tab-bar > a:link,
+  html.theme-light body nav.bottom-nav.hc-bottom-tab-bar > a:visited {
+    background: #F7F7F5 !important;
+    background-color: #F7F7F5 !important;
+    color: #22221F !important;
+    -webkit-text-fill-color: #22221F !important;
+  }
+  html.theme-light body nav.bottom-nav.hc-bottom-tab-bar > a.active {
+    background: #EAEAE5 !important;
+    background-color: #EAEAE5 !important;
+    color: #D94712 !important;
+    -webkit-text-fill-color: #D94712 !important;
+  }
+}
