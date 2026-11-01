@@ -215,8 +215,9 @@ export default function TeamReviewPage() {
         .maybeSingle();
 
       const hasActiveSubscription =
-        subscription?.status === "active" ||
-        subscription?.status === "trialing";
+        (subscription?.status === "active" || subscription?.status === "trialing" ||
+          subscription?.access_status === "pro" || subscription?.access_status === "premium") &&
+        (subscription?.plan === "pro" || subscription?.plan === "premium");
       const hasValidSubscription =
         hasActiveSubscription &&
         (!subscription?.current_period_end ||

@@ -279,7 +279,12 @@ export default function DashboardPage() {
                     <span className="hc-mobile-card-copy"><strong>FIND FAN</strong><small>Connect with fans like you</small></span>
                     <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
                   </Link>
-                  <Link href="/live-games" className="hc-mobile-quick-card">\n                    <span className="hc-mobile-icon hc-icon-orange" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>\n                    <span className="hc-mobile-card-copy"><strong>GAME PICKS</strong><small>Pick winners before tip-off</small></span>\n                    <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>\n                  </Link>\n                  <Link href="/fan-live" className="hc-mobile-quick-card hc-mobile-quick-card-fan-wide">
+                  <Link href="/live-games" className="hc-mobile-quick-card">
+                    <span className="hc-mobile-icon hc-icon-orange" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
+                    <span className="hc-mobile-card-copy"><strong>GAME PICKS</strong><small>Pick winners before tip-off</small></span>
+                    <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
+                  </Link>
+                  <Link href="/fan-live" className="hc-mobile-quick-card hc-mobile-quick-card-fan-wide">
                     <span className="hc-mobile-icon hc-icon-green" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
                     <span className="hc-mobile-card-copy"><strong>LIVE GAME CHATS</strong><small>Chat during real games</small></span>
                     <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
