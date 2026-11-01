@@ -210,13 +210,14 @@ export default function TeamReviewPage() {
 
       const { data: subscription } = await supabase
         .from("subscriptions")
-        .select("status, current_period_end")
+        .select("plan,status,current_period_end,access_status")
         .eq("user_id", user.id)
         .maybeSingle();
 
       const hasActiveSubscription =
-        subscription?.status === "active" ||
-        subscription?.status === "trialing";
+        (subscription?.status === "active" || subscription?.status === "trialing" ||
+          subscription?.access_status === "pro" || subscription?.access_status === "premium") &&
+        (subscription?.plan === "pro" || subscription?.plan === "premium");
       const hasValidSubscription =
         hasActiveSubscription &&
         (!subscription?.current_period_end ||

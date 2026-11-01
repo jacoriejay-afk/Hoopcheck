@@ -71,7 +71,7 @@ export async function POST(req: Request) {
 
   const { data: subscription, error: subscriptionError } = await supabase
     .from("subscriptions")
-    .select("status,current_period_end")
+    .select("plan,status,current_period_end,access_status")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -80,8 +80,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unable to verify your membership." }, { status: 500 });
   }
 
-  const paid = (subscription?.status === "active" || subscription?.status === "trialing") &&
-    (!subscription.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now());
+  const hasPaidPlan = subscription?.plan === "pro" || subscription?.plan === "premium";
+  const hasEntitledAccess = subscription?.status === "active" || subscription?.status === "trialing" || subscription?.access_status === "pro" || subscription?.access_status === "premium";
+  const paid = hasPaidPlan && hasEntitledAccess &&
+    (!subscription?.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now());
   if (!paid) {
     return NextResponse.json({ error: "An active HoopCheck membership is required to submit ratings or reviews." }, { status: 403 });
   }

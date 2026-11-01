@@ -264,7 +264,7 @@ export default function DashboardPage() {
                 <p className="hc-mobile-eyebrow">{t("yourShortcuts")}</p>
                 <h2 id="hc-quick-access-heading">{t("quickAccess")}</h2>
               </div>
-              <span className="hc-mobile-section-count" aria-hidden="true">{profile?.account_type === "fan" ? "03" : "04"}</span>
+              <span className="hc-mobile-section-count" aria-hidden="true">{profile?.account_type === "fan" ? "04" : "04"}</span>
             </div>
             <div className="hc-mobile-quick-grid">
               {profile?.account_type === "fan" ? (
@@ -279,7 +279,12 @@ export default function DashboardPage() {
                     <span className="hc-mobile-card-copy"><strong>FIND FAN</strong><small>Connect with fans like you</small></span>
                     <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
                   </Link>
-                  <Link href="/fan-live" className="hc-mobile-quick-card hc-mobile-quick-card-fan-wide" style={profile?.account_type === "fan" ? { gridColumn: "1 / -1" } : undefined}>
+                  <Link href="/live-games" className="hc-mobile-quick-card">
+                    <span className="hc-mobile-icon hc-icon-orange" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
+                    <span className="hc-mobile-card-copy"><strong>GAME PICKS</strong><small>Pick winners before tip-off</small></span>
+                    <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
+                  </Link>
+                  <Link href="/fan-live" className="hc-mobile-quick-card hc-mobile-quick-card-fan-wide">
                     <span className="hc-mobile-icon hc-icon-green" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
                     <span className="hc-mobile-card-copy"><strong>LIVE GAME CHATS</strong><small>Chat during real games</small></span>
                     <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>

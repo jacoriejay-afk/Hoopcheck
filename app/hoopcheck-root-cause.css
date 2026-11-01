@@ -327,3 +327,32 @@ html.theme-dark main:not(.hc-template-home) :where(input,textarea,select)::place
   .hc-template-home.hc-home-redesign .hc-home-hero h1 { font-size: 32px !important; }
   html body main .hc-prediction-options { grid-template-columns: minmax(0, 1fr) !important; }
 }
+
+
+/* Opaque mobile navigation: no translucent/transparent tap targets over page content. */
+@media (max-width: 767px) {
+  html .bottom-nav.hc-bottom-tab-bar,
+  html nav.bottom-nav.hc-bottom-tab-bar {
+    background: #0A0A0A !important;
+    background-color: #0A0A0A !important;
+    opacity: 1 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  html .hc-bottom-tab-bar > a {
+    background: #0A0A0A !important;
+    opacity: 1 !important;
+    color: #F7F7F5 !important;
+  }
+  html .hc-bottom-tab-bar > a :where(span, svg, path) { opacity: 1 !important; }
+  html .hc-bottom-tab-bar > a.active {
+    background: #20201E !important;
+    color: #FF5A1F !important;
+    border-radius: 8px !important;
+  }
+  html.theme-light .bottom-nav.hc-bottom-tab-bar,
+  html.theme-light nav.bottom-nav.hc-bottom-tab-bar,
+  html.theme-light .hc-bottom-tab-bar > a { background: #F7F7F5 !important; }
+  html.theme-light .hc-bottom-tab-bar > a { color: #22221F !important; }
+  html.theme-light .hc-bottom-tab-bar > a.active { background: #EAEAE5 !important; color: #D94712 !important; }
+}
