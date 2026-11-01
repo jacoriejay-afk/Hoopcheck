@@ -11,7 +11,6 @@ import PlayerContactButton from "../../components/PlayerContactButton";
 import SearchBar from "../../components/SearchBar";
 import { useLanguage } from "../../components/LanguageProvider";
 import { HoopIcon, CategoryIconTile, VerifiedBadge } from "../../components/HoopCheckUI";
-import FanPredictionLeaderboard from "../../components/FanPredictionLeaderboard";
 
 type Profile = { display_name: string | null; player_verified: boolean; coach_verified?: boolean; account_type: "player"|"coach"|"scout"|"agent"|"fan"; moderation_status?: string; moderation_note?: string | null };
 type Subscription = {
@@ -254,7 +253,6 @@ export default function DashboardPage() {
           </article>
         </section>
 
-        {profile?.account_type === "fan" && <FanPredictionLeaderboard />}
         <section className="hc-mobile-dashboard" aria-label={t("exploreHoopCheck")}>
           <SearchBar className="hc-mobile-search" name="q" placeholder={t("searchPeoplePlaceholder")} ariaLabel={t("searchPeoplePlaceholder")} />
 
@@ -264,7 +262,7 @@ export default function DashboardPage() {
                 <p className="hc-mobile-eyebrow">{t("yourShortcuts")}</p>
                 <h2 id="hc-quick-access-heading">{t("quickAccess")}</h2>
               </div>
-              <span className="hc-mobile-section-count" aria-hidden="true">{profile?.account_type === "fan" ? "04" : "04"}</span>
+              <span className="hc-mobile-section-count" aria-hidden="true">{profile?.account_type === "fan" ? "03" : "04"}</span>
             </div>
             <div className="hc-mobile-quick-grid">
               {profile?.account_type === "fan" ? (
@@ -277,11 +275,6 @@ export default function DashboardPage() {
                   <Link href="/fans" className="hc-mobile-quick-card">
                     <span className="hc-mobile-icon hc-icon-purple" aria-hidden="true"><CategoryIconTile category="players" size="sm" /></span>
                     <span className="hc-mobile-card-copy"><strong>FIND FAN</strong><small>Connect with fans like you</small></span>
-                    <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
-                  </Link>
-                  <Link href="/live-games" className="hc-mobile-quick-card">
-                    <span className="hc-mobile-icon hc-icon-orange" aria-hidden="true"><CategoryIconTile category="reviews" size="sm" /></span>
-                    <span className="hc-mobile-card-copy"><strong>GAME PICKS</strong><small>Pick winners before tip-off</small></span>
                     <span className="hc-mobile-chevron" aria-hidden="true"><HoopIcon name="chevron-right" size={16} /></span>
                   </Link>
                   <Link href="/fan-live" className="hc-mobile-quick-card hc-mobile-quick-card-fan-wide">
