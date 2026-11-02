@@ -1,5 +1,9 @@
 /* DM-2 — loaded last so shared paired surfaces outrank legacy component CSS. */
 :root, html.theme-light {
+  --hc-nav-bg: #F7F7F5;
+  --hc-nav-fg: #22221F;
+  --hc-nav-active-bg: #EAEAE5;
+  --hc-nav-active-fg: #FF5A1F;
   --hc-card-surface: #FFFFFF;
   --hc-card-border: #D9D9D4;
   --hc-on-card: #151515;
@@ -16,6 +20,10 @@
   --hc-empty-foreground: #3F3F3A;
 }
 html.theme-dark {
+  --hc-nav-bg: #0A0A0A;
+  --hc-nav-fg: #F5F5F0;
+  --hc-nav-active-bg: #242421;
+  --hc-nav-active-fg: #FF5A1F;
   --hc-card-surface: #171717;
   --hc-card-border: #3A3A3A;
   --hc-on-card: #F5F5F0;
@@ -197,3 +205,22 @@ html.theme-dark body main .hc-live-hub-message {
 }
 html.theme-light body main .hc-live-card__vs,
 html.theme-dark body main .hc-live-card__vs { color: var(--hc-on-card-muted) !important; }
+
+/* Global and bottom navigation headers are themed pairs, not fixed black bars. */
+html.theme-light body :where(.site-header-global,.hc-template-header,.hc-header-nav,.bottom-nav,.hc-bottom-tab-bar,.hc-lm2f-bottom-nav),
+html.theme-dark body :where(.site-header-global,.hc-template-header,.hc-header-nav,.bottom-nav,.hc-bottom-tab-bar,.hc-lm2f-bottom-nav) {
+  background: var(--hc-nav-bg) !important;
+  color: var(--hc-nav-fg) !important;
+  border-color: var(--hc-card-border) !important;
+}
+html.theme-light body :where(.site-header-global,.hc-template-header,.hc-header-nav,.bottom-nav,.hc-bottom-tab-bar,.hc-lm2f-bottom-nav) :where(a,button,span,svg),
+html.theme-dark body :where(.site-header-global,.hc-template-header,.hc-header-nav,.bottom-nav,.hc-bottom-tab-bar,.hc-lm2f-bottom-nav) :where(a,button,span,svg) {
+  color: var(--hc-nav-fg);
+  -webkit-text-fill-color: currentColor;
+}
+html.theme-light body :where(.bottom-nav,.hc-bottom-tab-bar,.hc-lm2f-bottom-nav) :where(a.active,.active a),
+html.theme-dark body :where(.bottom-nav,.hc-bottom-tab-bar,.hc-lm2f-bottom-nav) :where(a.active,.active a) {
+  background: var(--hc-nav-active-bg) !important;
+  color: var(--hc-nav-active-fg) !important;
+  -webkit-text-fill-color: var(--hc-nav-active-fg) !important;
+}
