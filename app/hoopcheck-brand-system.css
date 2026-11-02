@@ -1,0 +1,119 @@
+/* BRAND-1 — one owned hexagon shape language and one scoreboard hierarchy. */
+:root {
+  --hc-hex-clip: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  --hc-motion-score: 900ms;
+  --hc-motion-medium: var(--hc-motion-base, 220ms);
+  --hc-score-low: #E5484D;
+  --hc-score-mid: #FF8A24;
+  --hc-score-high: #1E9E50;
+}
+
+/* Existing Inter body and Graduate display assets are used; no new font or icon package. */
+body { font-family: var(--font-sans, Inter), Inter, system-ui, sans-serif; }
+:where(.eyebrow,.card-kicker,.hc-template-eyebrow,.hc-home-kicker,.hc-team-profile-kicker,
+  .hc-dashboard-kicker,.hc-feed-topic-label,.section-kicker,.category-kicker) {
+  font-family: var(--font-sans, Inter), Inter, system-ui, sans-serif;
+  font-weight: 850;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+:where(.hc-trust-score__dial strong,.hc-team-score-categories strong,.hc-scout-card__stat strong,
+  .hc-dashboard-stat-value,.hc-dashboard-stat-card strong,.hc-motion-directory-counts strong,
+  .hc-scoreboard-number,.hc-stat-number,.hc-price-number,[data-scoreboard-number]) {
+  font-family: var(--font-display, Georgia, serif) !important;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: .015em;
+}
+
+/* Team marks, player identities, category icons and verification marks share the same six-sided cut. */
+:where(.hc-team-logo,.hc-team-logo-tile,.hc-team-profile-logo,.hc-team-row__crest,
+  .hc-scout-card__jersey,.hc-dashboard-avatar,.hc-member-profile-avatar,
+  .player-avatar-fallback,.hc-feed-post-avatar,.hc-feed-composer__avatar,
+  .hc-user-avatar,.user-avatar,.profile-avatar,[class*="__avatar"]) {
+  border-radius: 0 !important;
+  clip-path: var(--hc-hex-clip);
+  overflow: hidden;
+}
+:where(.hc-dashboard-avatar,.hc-member-profile-avatar,.hc-feed-post-avatar,
+  .hc-feed-composer__avatar,.player-avatar-fallback,[class*="__avatar"]) img {
+  clip-path: var(--hc-hex-clip);
+  border-radius: 0 !important;
+}
+:where(.hc-template-category-icon,.hc-template-mini-icon,.hc-category-icon,
+  .category-icon,.hc-category-tile__hex,.hc-category-tile__icon) {
+  border-radius: 0 !important;
+  clip-path: var(--hc-hex-clip);
+}
+:where(.hc-verified-badge,.hc-hex-badge) {
+  border-radius: 0 !important;
+  clip-path: var(--hc-hex-clip);
+  overflow: hidden;
+}
+.hc-team-logo { box-shadow: none !important; }
+
+/* The score ring, its number and its red/orange/green band share a single 900ms reveal. */
+.hc-trust-score__dial svg { overflow: visible; }
+.hc-trust-score__dial svg circle:last-child {
+  transition: stroke var(--hc-motion-medium) var(--hc-motion-ease, cubic-bezier(.2,.75,.25,1));
+}
+.hc-trust-score__dial strong {
+  font-size: inherit;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Court markings are subtle and limited to hero art and true empty states. */
+.hc-template-court-lines {
+  background:
+    radial-gradient(ellipse at 50% 50%, transparent 0 27%, rgba(247,247,245,.20) 27.3% 27.8%, transparent 28.1%),
+    radial-gradient(ellipse at 100% 50%, transparent 0 42%, rgba(247,247,245,.15) 42.3% 42.7%, transparent 43%),
+    linear-gradient(90deg, transparent 49.7%, rgba(247,247,245,.15) 50%, transparent 50.3%);
+  opacity: .45;
+  pointer-events: none;
+}
+.hc-court-lines:not(.hc-court-empty-art):not(.hc-brand-hero-court) { display: none !important; }
+.hc-brand-hero-court { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; opacity: .08; pointer-events: none; }
+.hc-feed-hero { position: relative; isolation: isolate; overflow: hidden; }
+.hc-feed-hero > :not(.hc-brand-hero-court) { position: relative; z-index: 1; }
+.hc-court-empty-art {
+  display: block !important;
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 0;
+  width: min(230px, 48%);
+  height: auto;
+  color: var(--hc-foreground-muted, currentColor);
+  opacity: .085;
+  pointer-events: none;
+}
+:where(.hc-coach-empty,.hc-team-empty,.hc-live-no-games) { position: relative; isolation: isolate; overflow: hidden; }
+:where(.hc-coach-empty,.hc-team-empty,.hc-live-no-games) > :not(.hc-court-empty-art) { position: relative; z-index: 1; }
+
+/* ANIM-1 timing/easing is the single transition contract; the existing reduced-motion layer wins. */
+:where(a,button,[role="button"],input,select,textarea) {
+  transition-duration: var(--hc-motion-fast, 140ms);
+  transition-timing-function: var(--hc-motion-ease, cubic-bezier(.2,.75,.25,1));
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-trust-score__dial svg circle:last-child { transition: none !important; }
+  .hc-template-court-lines,.hc-court-empty-art { opacity: .06; }
+}
+
+.hc-motion-check { display:inline-flex; align-items:center; justify-content:center; vertical-align:middle; margin-right:.35em; flex:0 0 auto; }
+.hc-motion-check svg { display:block; overflow:visible; }
+.hc-motion-check__ring { stroke-dasharray:63; stroke-dashoffset:63; animation:hc-brand-check-draw 380ms var(--hc-motion-ease, cubic-bezier(.2,.75,.25,1)) forwards; }
+.hc-motion-check__path { stroke-dasharray:19; stroke-dashoffset:19; animation:hc-brand-check-draw 340ms var(--hc-motion-ease, cubic-bezier(.2,.75,.25,1)) 240ms forwards; }
+@keyframes hc-brand-check-draw { to { stroke-dashoffset:0; } }
+
+/* Wide hexagonal label cuts for compact status badges; body copy remains untouched. */
+:where(.hc-feed-plan-tag,.hc-feed-verified,.hc-feed-post-topic,.hc-status-badge) {
+  clip-path: polygon(12% 0, 88% 0, 100% 50%, 88% 100%, 12% 100%, 0 50%);
+  border-radius: 0 !important;
+}
+:where(.hc-feed-comments-panel,.hc-global-search-page,.hc-player-directory-page) img[style*="border-radius: 50%"],
+.hc-feed-comments-panel img {
+  clip-path: var(--hc-hex-clip);
+  border-radius: 0 !important;
+}
