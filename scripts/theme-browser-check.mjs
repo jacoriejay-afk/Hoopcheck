@@ -194,7 +194,7 @@ try {
             .filter((element) => {
               const style = getComputedStyle(element);
               const rect = element.getBoundingClientRect();
-              return style.backgroundColor === "rgb(255, 255, 255)" && rect.width > 16 && rect.height > 12 &&
+              return element.tagName !== "IMG" && element.tagName !== "SVG" && style.backgroundColor === "rgb(255, 255, 255)" && rect.width > 16 && rect.height > 12 &&
                 style.display !== "none" && style.visibility !== "hidden";
             })
             .slice(0, 30)
@@ -375,6 +375,13 @@ try {
           completionCard: (() => { const el=document.querySelector(".hc-ia-completion"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null,copy:el.textContent?.trim()||null}; })(),
           homeLiveCard: (() => { const el=document.querySelector(".hc-ia-live-strip"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null}; })(),
           teamProfileHeader: (() => { const el=document.querySelector(".hc-team-profile-hero"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("h1"); const meta=el.querySelector(".hc-team-profile-meta"); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor,title:title?getComputedStyle(title).color:null,meta:meta?getComputedStyle(meta).color:null}; })(),
+          primaryButton: (() => { const el=document.querySelector("main .btn:not(.dark), main .hc-searchbar__submit"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,text:el.textContent?.trim()||null}; })(),
+          searchSubmit: (() => { const el=document.querySelector("main .hc-searchbar__submit"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color}; })(),
+          directorySwitcher: (() => { const el=document.querySelector("main .hc-directory-switcher"); if(!el)return null; const st=getComputedStyle(el); const label=el.querySelector(".hc-directory-switcher-label"); return {background:st.backgroundColor,color:st.color,label:label?getComputedStyle(label).color:null}; })(),
+          liveHero: (() => { const el=document.querySelector("main .hc-live-hub-hero"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("h1"); const eyebrow=el.querySelector(".eyebrow"); const copy=el.querySelector("p:last-child"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null,eyebrow:eyebrow?getComputedStyle(eyebrow).color:null,copy:copy?getComputedStyle(copy).color:null}; })(),
+          teamActiveTab: (() => { const el=document.querySelector("main .hc-team-profile-nav a[aria-current='page']"); return el?getComputedStyle(el).color:null; })(),
+          teamKicker: (() => { const el=document.querySelector("main .hc-team-profile-kicker"); return el?getComputedStyle(el).color:null; })(),
+          textButton: (() => { const el=document.querySelector("main .hc-text-button"); return el?getComputedStyle(el).color:null; })(),
           liveEmpty: (() => { const el=document.querySelector(".hc-live-no-games,.hc-live-empty"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor}; })(),
           remindButton: (() => { const el=document.querySelector(".hc-remind-button"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor,text:el.textContent?.trim()||null}; })(),
           upcomingPill: (() => { const el=document.querySelector(".hc-live-state"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,text:el.textContent?.trim()||null}; })(),
@@ -482,16 +489,34 @@ try {
         if (!result.completionCard?.copy?.includes("43%")) errors.push("Profile completion fixture did not render the expected 43% text: " + JSON.stringify(result.completionCard));
         if (result.homeLiveCard?.background !== expectedSurface || result.homeLiveCard?.title !== expectedText) errors.push("Home Live Games pair mismatch: " + JSON.stringify(result.homeLiveCard));
       }
+      const expectedPrimarySurface = "rgb(255, 90, 31)";
+      const expectedPrimaryText = "rgb(17, 17, 17)";
+      if (result.primaryButton && (result.primaryButton.background !== expectedPrimarySurface || result.primaryButton.color !== expectedPrimaryText)) errors.push("Primary button pair mismatch: " + JSON.stringify(result.primaryButton));
+      if (result.searchSubmit && (result.searchSubmit.background !== expectedPrimarySurface || result.searchSubmit.color !== expectedPrimaryText)) errors.push("Search submit pair mismatch: " + JSON.stringify(result.searchSubmit));
+      const expectedAccent = theme === "dark" ? "rgb(255, 138, 92)" : "rgb(184, 62, 20)";
+      if (requestedPath === "/search" && (result.directorySwitcher?.background !== expectedSurface || result.directorySwitcher?.label !== expectedAccent)) errors.push("Directory switcher pair mismatch: " + JSON.stringify(result.directorySwitcher));
+      if (requestedPath === "/live-games") {
+        const expectedHeroSurface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
+        const expectedHeroText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
+        const expectedHeroMuted = theme === "dark" ? "rgb(184, 184, 179)" : "rgb(98, 98, 93)";
+        if (result.liveHero?.background !== expectedHeroSurface || result.liveHero?.title !== expectedHeroText || result.liveHero?.eyebrow !== expectedAccent || result.liveHero?.copy !== expectedHeroMuted) errors.push("Live Games hero pair mismatch: " + JSON.stringify(result.liveHero));
+      }
+      if (requestedPath === "/account" && result.textButton && result.textButton !== expectedAccent) errors.push("Account text-action accent mismatch: " + result.textButton);
       if (requestedPath === "/teams/" + teamFixture.id) {
         const expectedSurface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
         const expectedText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
         if (result.teamProfileHeader?.background !== expectedSurface) errors.push("Team profile header surface mismatch: " + JSON.stringify(result.teamProfileHeader));
         if (result.teamProfileHeader?.title !== expectedText) errors.push("Team profile title mismatch: " + JSON.stringify(result.teamProfileHeader));
+        const expectedAccent = theme === "dark" ? "rgb(255, 138, 92)" : "rgb(184, 62, 20)";
+        if (result.teamActiveTab !== expectedAccent) errors.push("Team active tab accent mismatch: " + result.teamActiveTab);
+        if (result.teamKicker !== expectedAccent) errors.push("Team profile kicker accent mismatch: " + result.teamKicker);
       }
       if (requestedPath === "/live-games") {
         const expectedEmpty = theme === "dark" ? "rgb(20, 20, 20)" : "rgb(248, 248, 246)";
         const expectedReminder = theme === "dark" ? "rgb(32, 32, 32)" : "rgb(255, 255, 255)";
         if (result.liveEmpty?.background !== expectedEmpty) errors.push("Live empty state surface mismatch: " + JSON.stringify(result.liveEmpty));
+        const expectedEmptyText = theme === "dark" ? "rgb(229, 229, 223)" : "rgb(63, 63, 58)";
+        if (result.liveEmpty?.color !== expectedEmptyText) errors.push("Live empty-state text mismatch: " + JSON.stringify(result.liveEmpty));
         if (result.remindButton?.background !== expectedReminder) errors.push("REMIND ME surface mismatch: " + JSON.stringify(result.remindButton));
         const expectedUpcomingSurface = theme === "dark" ? "rgb(36, 36, 36)" : "rgb(241, 241, 237)";
         const expectedUpcomingText = theme === "dark" ? "rgb(231, 231, 225)" : "rgb(76, 76, 70)";
