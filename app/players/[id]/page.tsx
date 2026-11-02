@@ -54,7 +54,7 @@ export default function PlayerProfilePage() {
 
       if (!error && data?.[0]) {
         if (user?.id === params.id) {
-          const { data: own } = await supabase.from("profiles").select("height,favorite_leagues,hometown,profile_visibility").eq("id", params.id).maybeSingle();
+          const { data: own } = await supabase.from("profiles").select("avatar_url,position,current_team,current_country,favorite_leagues,height,bio,hometown,profile_visibility").eq("id", params.id).maybeSingle();
           setPlayer({ ...data[0], ...(own || {}), account_type: "player" });
         } else {
           setPlayer({ ...data[0], account_type: "player", profile_visibility: "public" });
