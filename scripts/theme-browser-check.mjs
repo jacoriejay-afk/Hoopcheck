@@ -280,6 +280,22 @@ try {
       else if (url.pathname.includes("/rest/v1/teams")) { const requestedId = (url.searchParams.get("id") || "").replace(/^eq\./, ""); data = requestedId ? (requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture) : [teamFixture, fallbackTeamFixture]; }
       else if (url.pathname.includes("/rest/v1/leagues")) data = single ? leagueFixture : [leagueFixture];
       else if (url.pathname.includes("/rest/v1/coaches")) data = single ? coachFixture : [coachFixture];
+      else if (url.pathname.includes("/rest/v1/fan_live_games")) data = [{
+        id: "22222222-2222-4222-8222-222222222222",
+        team_id: teamFixture.id,
+        opponent_team_id: null,
+        opponent_name: "Upcoming QA Opponent",
+        status: "scheduled",
+        home_score: null,
+        away_score: null,
+        started_at: null,
+        ends_at: null,
+        scheduled_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+        league_id: leagueFixture.id,
+        league_name: leagueFixture.name,
+        country: "Türkiye",
+        period_label: null,
+      }];
       else if (url.pathname.includes("/rest/v1/team_league_memberships")) data = [];
       else if (url.pathname.includes("/rest/v1/reviews")) data = [];
       else if (url.pathname.includes("/rest/v1/team_roster_spots")) data = [];
@@ -336,6 +352,7 @@ try {
           identityChip: (() => { const el=document.querySelector(".hc-ia-identity"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null}; })(),
           liveEmpty: (() => { const el=document.querySelector(".hc-live-no-games,.hc-live-empty"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor}; })(),
           remindButton: (() => { const el=document.querySelector(".hc-remind-button"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor}; })(),
+          upcomingPill: (() => { const el=document.querySelector(".hc-live-state"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,text:el.textContent?.trim()||null}; })(),
           safeAreaTop: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hc-safe-area-top")) || 0,
           bodyTopPadding: parseFloat(getComputedStyle(document.body).paddingTop) || 0,
           headerTop: document.querySelector(".site-header-global") ? document.querySelector(".site-header-global").getBoundingClientRect().top : null,
@@ -422,6 +439,20 @@ try {
       if (result.criticalControlContrast.length) errors.push("low contrast critical controls: " + JSON.stringify(result.criticalControlContrast));
       if (theme === "dark" && result.whiteSurfaceOffenders.length) errors.push("white surface offenders: " + JSON.stringify(result.whiteSurfaceOffenders));
       if (result.lowContrastText.length) errors.push("low contrast text: " + JSON.stringify(result.lowContrastText));
+      if (requestedPath === "/dashboard") {
+        const expectedSurface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
+        const expectedText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
+        if (result.quickAccessRow?.background !== expectedSurface) errors.push("Quick Access surface mismatch: " + JSON.stringify(result.quickAccessRow));
+        if (result.quickAccessRow?.title !== expectedText) errors.push("Quick Access title mismatch: " + JSON.stringify(result.quickAccessRow));
+        if (result.identityChip?.background !== expectedSurface) errors.push("Signed-in chip surface mismatch: " + JSON.stringify(result.identityChip));
+      }
+      if (requestedPath === "/live-games") {
+        const expectedEmpty = theme === "dark" ? "rgb(20, 20, 20)" : "rgb(248, 248, 246)";
+        const expectedReminder = theme === "dark" ? "rgb(32, 32, 32)" : "rgb(255, 255, 255)";
+        if (result.liveEmpty?.background !== expectedEmpty) errors.push("Live empty state surface mismatch: " + JSON.stringify(result.liveEmpty));
+        if (result.remindButton?.background !== expectedReminder) errors.push("REMIND ME surface mismatch: " + JSON.stringify(result.remindButton));
+        if (!result.upcomingPill?.text?.toUpperCase().includes("UPCOMING")) errors.push("Upcoming status pill missing: " + JSON.stringify(result.upcomingPill));
+      }
       if (["/dashboard", "/search", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2"].includes(requestedPath)) {
         const visibleText = await page.locator("body").innerText();
         const expectedText = testLanguage === "es"
