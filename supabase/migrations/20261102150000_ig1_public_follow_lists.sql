@@ -42,3 +42,19 @@ as $$
 $$;
 revoke all on function public.get_public_follow_list(text,text,uuid,uuid) from public;
 grant execute on function public.get_public_follow_list(text,text,uuid,uuid) to authenticated;
+
+create or replace function public.get_public_following_count(p_user_id uuid)
+returns bigint language sql stable security definer set search_path = public
+as $$
+  select count(*)
+  from public.follow_relationships fr
+  left join public.profiles target_profile on fr.target_type in ('player','fan') and target_profile.id = fr.target_id
+  where fr.follower_id = p_user_id
+    and (
+      auth.uid() = p_user_id
+      or fr.target_type = 'team'
+      or target_profile.profile_visibility = 'public'
+    );
+$$;
+revoke all on function public.get_public_following_count(uuid) from public;
+grant execute on function public.get_public_following_count(uuid) to anon, authenticated;
