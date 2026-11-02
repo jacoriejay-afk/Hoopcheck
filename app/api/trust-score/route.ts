@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { hasActiveMembershipAtLeast } from "../../../../lib/membership-tier";
+import { hasActiveMembershipAtLeast } from "../../../lib/membership-tier";
 import { calculateTrustScore, type TrustScoreReview } from "../../../lib/trust-score";
 
 export const dynamic = "force-dynamic";
