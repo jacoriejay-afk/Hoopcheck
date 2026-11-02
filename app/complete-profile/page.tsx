@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import HoopLoading from "../../components/HoopLoading";
 import ProfileAvatar from "../../components/ProfileAvatar";
 import { HoopIcon } from "../../components/HoopCheckUI";
@@ -38,7 +38,6 @@ const fieldCopy: Record<FieldKey, { label: string; hint: string; placeholder: st
 
 export default function CompleteProfilePage() {
   const router = useRouter();
-  const search = useSearchParams();
   const [userId, setUserId] = useState("");
   const [profile, setProfile] = useState<PlayerRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -171,6 +170,7 @@ export default function CompleteProfilePage() {
                 {isActive && <div className="hc-ux2b-editor">
                   <p className="muted">{copy.hint}</p>
                   {field.key === "photo" ? <label className="hc-ux2b-file"><span>{photo?.name || copy.placeholder}</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={event => setPhoto(event.target.files?.[0] || null)} /></label> :
+                    field.key === "position" ? <select aria-label={copy.label} value={value} onChange={event => setValue(event.target.value)}><option value="">Choose position</option><option value="PG">Point Guard (PG)</option><option value="SG">Shooting Guard (SG)</option><option value="SF">Small Forward (SF)</option><option value="PF">Power Forward (PF)</option><option value="C">Center (C)</option></select> :
                     field.key === "bio" ? <textarea value={value} onChange={event => setValue(event.target.value)} maxLength={500} rows={4} placeholder={copy.placeholder} /> :
                     <input value={value} onChange={event => setValue(event.target.value)} maxLength={field.key === "height" ? 24 : 160} placeholder={copy.placeholder} />}
                   <div className="hc-ux2b-editor-actions"><button type="button" className="btn" disabled={saving || (field.key === "photo" && !photo)} onClick={() => void saveField()}>{saving ? "Saving..." : "Save detail"}</button><button type="button" className="btn dark" disabled={saving} onClick={() => setActiveField(null)}>Cancel</button></div>
