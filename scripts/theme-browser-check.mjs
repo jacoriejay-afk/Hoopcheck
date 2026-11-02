@@ -169,7 +169,7 @@ try {
       const path = routeName === "dashboard" ? "/dashboard" : routeName === "feed" ? "/feed" : "/admin/directory";
       await page.goto(baseURL + path, { waitUntil: "domcontentloaded", timeout: 30000 });
       console.log("THEME_BROWSER_PAGE", JSON.stringify({ routeName, theme, url: page.url(), title: await page.title(), body: (await page.locator("body").innerText().catch(() => "")).slice(0, 240) }));
-      const wrapperSelector = routeName === "dashboard" ? "main.hc-dashboard-shell" : routeName === "feed" ? "main.hc-feed-page" : "main.admin-directory-shell";
+      const wrapperSelector = routeName === "dashboard" ? "main.hc-ia-home, main.hc-dashboard-shell" : routeName === "feed" ? "main.hc-feed-page" : "main.admin-directory-shell";
       await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
       if (routeName === "feed") {
         await page.locator(".hc-feed-composer").waitFor({ state: "visible", timeout: 30000 });
@@ -186,7 +186,7 @@ try {
           themeClass: document.documentElement.classList.contains("theme-dark") ? "dark" :
             document.documentElement.classList.contains("theme-light") ? "light" : "missing",
           body: color("body"),
-          pageWrapper: color(wrapperSelector),
+          pageWrapper: color(wrapperSelector.split(",")[0]),
           composer: routeName === "feed" ? color(".hc-feed-composer") : null,
           topicChip: routeName === "feed" ? color(".hc-feed-topic-chip") : null,
           filterChip: routeName === "feed" ? color(".hc-feed-filter-chip:not(.is-active)") : null,
