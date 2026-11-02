@@ -167,7 +167,7 @@ export default function PlayerProfilePage() {
               <div className="hc-social-stats">
                 <span><strong>{socialCounts.reviews}</strong><small>Reviews</small></span>
                 <Link href={"/connections?mode=followers&type=player&id=" + player.id}><strong>{socialCounts.followers}</strong><small>Followers</small></Link>
-                <Link href="/connections?mode=following"><strong>{socialCounts.following}</strong><small>Following</small></Link>
+                <Link href={"/connections?mode=following&id=" + player.id}><strong>{socialCounts.following}</strong><small>Following</small></Link>
               </div>
               <div className="player-profile-heading">
                 <h1>{player.display_name || "HoopCheck Player"} {player.player_verified && <VerifiedBadge label="Verified professional player" />}</h1>
