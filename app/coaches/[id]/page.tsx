@@ -314,7 +314,7 @@ export default function CoachDetailPage() {
         cache: "no-store",
       });
       const reviewPayload = response.ok ? await response.json() : null;
-      const tier = profile?.account_type === "player" ? "player" : ((reviewPayload?.tier || "free") as typeof reviewTier);
+      const tier = (reviewPayload?.tier || "free") as typeof reviewTier;
       setReviewTier(tier);
       const fullRead = ["premium", "player", "member"].includes(tier);
       setHasAccess(tier !== "free");
