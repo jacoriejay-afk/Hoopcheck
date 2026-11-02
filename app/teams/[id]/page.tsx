@@ -528,7 +528,7 @@ export default function TeamDetailPage() {
         <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
         {["premium", "player", "member"].includes(reviewTier) && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">LATEST PLAYER REVIEW</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || t("playerExperience")}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
       </section>
-      {!hasAccess && reviewTier === "free" && accountType !== "player" ? (
+      {!hasAccess && reviewTier === "free" ? (
         <section className="hero">
           <Surface className="card hc-team-membership-surface">
             <div className="eyebrow">{t("membershipRequired")}</div>
