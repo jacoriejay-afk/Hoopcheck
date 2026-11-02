@@ -1,0 +1,77 @@
+/* UX-1: compact density contract. Layout-only overrides; data, routes and interactions remain owned by page components. */
+:where(.hc-template-home,.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) {
+  --hc-ux-card-gap: 12px;
+  --hc-ux-card-pad: 14px;
+}
+:where(.hc-template-home,.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) .page-container {
+  gap: 12px;
+}
+:where(.hc-template-home,.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) :where(.card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.state-card,.form-card,.hc-profile-info-card,.hc-team-facts-card,.hc-directory-result,.hc-player-result,.hc-review-card,.hc-feed-composer,.hc-live-hub-card) {
+  box-sizing: border-box;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 14px !important;
+}
+:where(.hc-template-home,.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) :where(.grid,.hc-mobile-dashboard,.hc-mobile-quick-grid,.hc-live-hub-grid,.hc-live-room-grid,.hc-feed-stream,.hc-player-stats,.hc-team-stat-grid) {
+  row-gap: 12px !important;
+  column-gap: 12px !important;
+}
+:where(.hc-template-home,.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) :where(.eyebrow,.card-kicker) {
+  margin-bottom: 6px;
+}
+:where(.hc-template-home,.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) :where(section > h2,header h2,.section-heading h2,.hc-mobile-section-heading h2) {
+  margin-top: 0;
+  margin-bottom: 8px;
+  line-height: 1.08;
+}
+.hc-dashboard-shell .hc-dashboard-welcome { padding: 14px 16px !important; margin-bottom: 12px !important; }
+.hc-dashboard-shell .hc-dashboard-welcome h1 { font-size: clamp(23px, 5.7vw, 30px) !important; line-height: 1.06 !important; }
+.hc-dashboard-shell .hc-dashboard-profile-block { padding: 12px !important; margin-bottom: 12px !important; gap: 10px !important; }
+.hc-dashboard-shell .hc-dashboard-stat-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 10px !important; margin-bottom: 12px !important; }
+.hc-dashboard-shell .hc-dashboard-stat-card { padding: 12px !important; height: auto !important; min-height: 0 !important; }
+.hc-dashboard-shell .hc-mobile-dashboard { gap: 12px !important; }
+.hc-dashboard-shell .hc-mobile-quick-grid { gap: 8px !important; }
+.hc-account-page .hc-account-settings-header { margin-bottom: 12px !important; padding-top: 0 !important; }
+.hc-account-page .hc-account-settings-header h1 { font-size: clamp(24px, 6vw, 32px) !important; line-height: 1.06 !important; margin: 0 !important; }
+.hc-account-page > .page-container > section { margin-top: 12px !important; }
+.hc-account-page .dashboard-card { padding: 14px !important; }
+.hc-account-page .account-profile-form { gap: 10px !important; }
+.hc-account-page .hc-account-public-profile { gap: 10px !important; }
+.hc-account-page :where(.hc-settings-group,.hc-setting-row) { min-height: 44px; }
+.hc-fan-feed-page .hc-feed-hero { padding: 16px !important; gap: 12px !important; border-radius: 14px !important; }
+.hc-fan-feed-page .hc-feed-hero h1 { font-size: clamp(25px, 6vw, 36px) !important; margin: 4px 0 8px !important; line-height: 1.05 !important; }
+.hc-fan-feed-page .hc-feed-composer { padding: 14px !important; }
+.hc-live-hub-page .hc-live-hub-hero { padding: 16px !important; margin-bottom: 12px !important; }
+.hc-live-hub-page .hc-live-hub-card { padding: 12px !important; }
+.hc-live-hub-page .hc-live-card__teams { gap: 10px !important; }
+:where(.hc-template-home,.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) :where(button,a.btn,[role="button"],input[type="button"],input[type="submit"],summary) {
+  min-height: 44px;
+}
+:where(.hc-template-home,.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 800;
+}
+:where(.hc-template-home,.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) details > summary::-webkit-details-marker { display: none; }
+:where(.hc-template-home,.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) details[open] > summary { margin-bottom: 10px; }
+@media (max-width: 767px) {
+  :where(.hc-template-home,.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) .page-container { width: 100%; max-width: 100%; }
+  :where(.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page) :where(.hc-team-stat-grid,.hc-player-stats,.hc-profile-stat-grid,[class*="stat-pair"],[class*="stat-grid"]) {
+    display: grid !important;
+    grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+    gap: 10px !important;
+  }
+  .hc-account-page .hc-account-settings-header h1 { font-size: 25px !important; }
+  .hc-fan-feed-page .hc-feed-hero { align-items: flex-start !important; flex-direction: column !important; }
+  .hc-live-hub-page .hc-live-hub-card { padding: 12px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.hc-template-home,.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) * {
+    scroll-behavior: auto !important;
+  }
+}
