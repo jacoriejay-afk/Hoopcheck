@@ -82,16 +82,13 @@ export default function ProfilePage() {
   }
 
   const name = p.display_name || p.username || "HoopCheck Member";
-  const initials = name.trim().split(/\s+/).slice(0, 2).map((part: string) => part[0]).join("").toUpperCase() || "HC";
   return (
     <main className="page-shell hc-member-profile-page">
       <div className="page-container">
         <section className="hero-card compact-hero" aria-labelledby="hc-member-profile-title">
           <div className="hc-member-profile-identity">
             <div className="hc-member-profile-avatar-wrap">
-              <div className="hc-member-profile-avatar">
-                {p.avatar_url ? <img src={p.avatar_url} alt={name + " profile photo"} /> : <span>{initials}</span>}
-              </div>
+              <ProfileAvatar name={name} src={p.avatar_url} className="hc-member-profile-avatar" size={76} />
               {p.avatar_url && p.avatar_moderation_status === "pending" && <span className="hc-profile-photo-state">{t("photoReview")}</span>}
             </div>
             <div className="hc-member-profile-copy">
@@ -120,7 +117,9 @@ export default function ProfilePage() {
 
         </section>
 
-        <section className="hc-profile-overview" aria-label={t("profileOverview")}>\n          {p.account_type === "player" && <PlayerProfileCompletionCard profile={p} />}\n          <div className="grid compact-grid">
+        <section className="hc-profile-overview" aria-label={t("profileOverview")}>
+          {p.account_type === "player" && <PlayerProfileCompletionCard profile={p} />}
+          <div className="grid compact-grid">
             <Surface className="card hc-profile-info-card">
               <span className="card-kicker">{t("basketball")}</span>
               <h2>{p.basketball_type === "womens" ? t("womensBasketball") : t("mensBasketball")}</h2>
