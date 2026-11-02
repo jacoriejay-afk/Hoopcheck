@@ -354,7 +354,7 @@ try {
       if (requestedPath === "/feed") await page.locator(".hc-feed-composer").waitFor({ state: "visible", timeout: 15000 });
       if (requestedPath === "/live-games") {
         await page.locator(".hc-live-state").waitFor({ state: "visible", timeout: 15000 });
-        await page.locator(".hc-remind-button").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator(".hc-remind-button").first().waitFor({ state: "visible", timeout: 15000 });
       }
       if (requestedPath === "/teams/" + teamFixture.id) await page.locator(".hc-team-profile-hero h1").waitFor({ state: "visible", timeout: 15000 });
       const result = await page.evaluate(({ requestedPath, navigationError }) => {
