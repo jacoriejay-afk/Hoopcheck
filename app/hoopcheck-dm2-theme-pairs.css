@@ -425,3 +425,12 @@ html.theme-dark body main .hc-live-state {
   border-color: var(--hc-card-border) !important;
   -webkit-text-fill-color: var(--hc-chip-foreground) !important;
 }
+
+
+/* Team profile legacy kicker rules used a fixed orange (#FF6A00) with higher
+   specificity. Reassert the semantic accent pair at the final theme layer. */
+html.theme-light body main.hc-team-entity-profile .hc-team-profile-hero > .hc-team-profile-kicker,
+html.theme-dark body main.hc-team-entity-profile .hc-team-profile-hero > .hc-team-profile-kicker {
+  color: var(--hc-accent-text) !important;
+  -webkit-text-fill-color: var(--hc-accent-text) !important;
+}
