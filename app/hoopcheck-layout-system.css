@@ -46,3 +46,45 @@
 .hc-account-page .hc-setting-row .hc-setting-chevron { color:var(--hc-muted,#737373); }
 @media (max-width:480px) { .hc-account-page .hc-account-identity-actions { margin-left:0; } }
 html body .hc-global-page-shell main.page-shell { padding-block-start:12px !important; }
+
+
+/* FIT-1: one mobile geometry contract for every route inside the global PageShell.
+   Some pages place utility controls before .page-container, so target the container
+   anywhere below the page shell rather than only as a direct child. */
+@media (max-width: 767px) {
+  .hc-global-page-shell main.page-shell {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin-inline: 0 !important;
+    padding-inline: 16px !important;
+  }
+
+  .hc-global-page-shell main.page-shell .page-container {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 1200px !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+  }
+
+  /* Feed previously replaced the shell gutter with a second 12px inner gutter.
+     Keep the same 16px shell edges as every other mobile surface. */
+  .hc-global-page-shell main.hc-feed-page {
+    padding-inline: 16px !important;
+  }
+
+  .hc-global-page-shell main.page-shell :where(.hero-card, .dashboard-card, .hc-layout-card,
+    .hc-layout-group, .hc-live-hub-section, .hc-live-hub-filters, .hc-live-hub-hero,
+    .hc-live-hub-grid, .hc-feed-stream, .hc-feed-shared-card) {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .hc-global-page-shell main.page-shell :where(.grid, .hc-live-hub-grid, .hc-feed-stream) {
+    width: 100%;
+    margin-inline: 0;
+  }
+}
