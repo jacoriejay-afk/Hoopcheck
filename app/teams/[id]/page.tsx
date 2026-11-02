@@ -185,6 +185,8 @@ export default function TeamDetailPage() {
     useState(false);
   const [accountType, setAccountType] = useState<string>("");
   const [membershipPlan, setMembershipPlan] = useState<string>("");
+  const [knownPlayerFollowers, setKnownPlayerFollowers] = useState<string[]>([]);
+  const [teamReviewCount, setTeamReviewCount] = useState(0);
   const [reviewTier, setReviewTier] = useState<"free" | "pro" | "premium" | "player" | "member">("free");
 
   const [loading, setLoading] =
@@ -234,6 +236,8 @@ export default function TeamDetailPage() {
 
       setTeam(teamData);
       setLoading(false);
+      const { count: approvedReviewCount } = await supabase.from("reviews").select("id", { count: "exact", head: true }).eq("team_id", id).eq("status", "approved");
+      setTeamReviewCount(approvedReviewCount || 0);
 
       const { data: membershipData } = await supabase.from("team_league_memberships").select("id,league_id,season,start_date,end_date,active").eq("team_id", id).eq("active", true).order("season", { ascending: false });
       if (membershipData) {
@@ -270,6 +274,10 @@ export default function TeamDetailPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
 
+      if (user) {
+        const { data: sharedProfiles } = await supabase.rpc("get_shared_team_followers", { p_team_id: id });
+        setKnownPlayerFollowers((sharedProfiles || []).map((row: any) => row.display_name).filter(Boolean));
+      }
       if (!user) {
         setLoading(false);
         return;
@@ -564,8 +572,16 @@ export default function TeamDetailPage() {
   return (
     <main className="hc-entity-profile-page hc-team-entity-profile">
 
-<section className="hero" id="overview">
-        <div className="hc-team-profile-heading hc-team-profile-heading--club"><TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={96} className="hc-team-profile-logo" /><div className="hc-team-profile-heading__copy"><p className="hc-team-profile-kicker">HOOPCHECK CLUB PROFILE</p><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || t("countryNotListed")}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
+<section className="hero hc-team-profile-hero hc-social-profile-header" id="overview">
+        <div className="hc-social-profile-top hc-team-social-top">
+        <div className="hc-team-profile-heading hc-team-profile-heading--club"><TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={72} className="hc-team-profile-logo" /><div className="hc-team-profile-heading__copy"><p className="hc-team-profile-kicker">HOOPCHECK CLUB PROFILE</p><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || t("countryNotListed")}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
+        <div className="hc-social-stats hc-team-social-stats">
+          <span><strong>{teamReviewCount}</strong><small>Reviews</small></span>
+          <span><strong>{trustScoreData?.score == null ? "—" : trustScoreData.score.toFixed(1)}</strong><small>Trust Score</small></span>
+          <FollowButton targetType="team" targetId={team.id} variant="club" showNotifications={false} />
+        </div>
+        </div>
+        {knownPlayerFollowers.length > 0 && <p className="hc-team-social-proof">Followed by players you follow: <strong>{knownPlayerFollowers.join(", ")}</strong></p>}
         <nav className="hc-team-profile-nav" aria-label="Team profile sections"><a href="#overview">Overview</a><a href="#reviews">Reviews</a><a href="#players">Players</a><a href="#roster-board">Roster Board</a><a href="#pay-transparency">Pay Transparency</a></nav>
         {reviewTier === "pro" ? (
           <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score">
@@ -577,10 +593,11 @@ export default function TeamDetailPage() {
           <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow">Full player reviews require an eligible membership</span><Link href="/membership" className="btn">Upgrade</Link></Surface>
         )}
 
-        <div className="entity-actions"><FollowButton targetType="team" targetId={team.id} variant="club" />{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}<ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} /><Link href="/team-dashboard" className="btn dark">Team Portal</Link></div>
+
+      </section>
+        <div className="entity-actions">{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}<ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} /><Link href="/team-dashboard" className="btn dark">Team Portal</Link></div>
         <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
         {["premium", "player", "member"].includes(reviewTier) && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">LATEST PLAYER REVIEW</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || t("playerExperience")}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
-      </section>
       {!hasAccess && reviewTier === "free" && accountType !== "player" ? (
         <section className="hero">
           <Surface className="card hc-team-membership-surface">

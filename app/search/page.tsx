@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import PlayerContactButton from "../../components/PlayerContactButton";
+import FollowButton from "../../components/FollowButton";
 import { VerifiedBadge } from "../../components/HoopCheckUI";
 import SearchBar from "../../components/SearchBar";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
@@ -17,6 +18,7 @@ type Coach = { id: string; name: string; country: string | null; city: string | 
 type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
 type WomensTeam = { id: string; name: string; country: string | null; city: string | null; league_name: string | null; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
 type League = { id: string; name: string; country: string | null; level: string | null };
+type SocialSuggestion = { entity_type: "player" | "team"; entity_id: string; display_name: string; avatar_url: string | null; detail: string | null; player_verified: boolean };
 type Player = {
   id: string;
   display_name: string | null;
@@ -113,7 +115,8 @@ function SearchContent() {
   const initialType = searchParams.get("type");
   const basketballSide = useFanBasketballSide();
   const [isFanAccount, setIsFanAccount] = useState(false);
-  useEffect(() => { void (async () => { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const { data } = await supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(); setIsFanAccount(data?.account_type === "fan"); })(); }, []);
+  const [suggestions, setSuggestions] = useState<SocialSuggestion[]>([]);
+  useEffect(() => { void (async () => { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const [{ data }, { data: graphSuggestions }] = await Promise.all([supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(), supabase.rpc("get_social_suggestions")]); setIsFanAccount(data?.account_type === "fan"); setSuggestions((graphSuggestions || []) as SocialSuggestion[]); })(); }, []);
 
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -280,6 +283,19 @@ function SearchContent() {
         <PlayerUsernameConnect />
       </Surface>
 
+      {!query && suggestions.length > 0 && (
+        <section className="hc-suggested-for-you" aria-label="Suggested for you">
+          <div className="group-heading"><span>HC</span><h2>Suggested for you</h2></div>
+          <div className="hc-suggested-row">
+            {suggestions.map((item) => <Link key={item.entity_type + item.entity_id} href={item.entity_type === "team" ? "/teams/" + item.entity_id : "/players/" + item.entity_id} className="hc-suggested-card">
+              {item.avatar_url ? <img src={item.avatar_url} alt="" /> : <span className="hc-suggested-avatar">{(item.display_name || "HC").slice(0,1).toUpperCase()}</span>}
+              <strong>{item.display_name} {item.player_verified && <VerifiedBadge label="Verified player" />}</strong>
+              <small>{item.entity_type === "team" ? "Team" : "Player"} · {item.detail}</small>
+            </Link>)}
+          </div>
+        </section>
+      )}
+
       <section className="search-hero">
         <div className="eyebrow">{t("globalResearch")}</div>
         <h1>{t("searchBasketballWorld")}</h1>
@@ -344,19 +360,15 @@ function SearchContent() {
               <div className="group-heading"><span>01</span><h3>{t("players")}</h3></div>
               <div className="result-grid">
                 {visiblePlayers.map((player) => (
-                  <Link href={`/players/${player.id}`} key={player.id} className="result-card">
-                    <div className="result-type">{t("players").toUpperCase()}</div>
-                    <h4>{player.display_name || t("hoopCheckPlayer")} {player.player_verified && <VerifiedBadge label={t("verifiedPlayer")} />}</h4>
-                    <p>
-                      {[
-                        player.player_position,
-                        player.years_pro ? `${player.years_pro} years pro` : null,
-                        player.current_team,
-                        player.current_country || player.country,
-                      ].filter(Boolean).join(" · ") || t("professionalProfile")}
-                    </p>
-                    <span className="result-link">{t("viewPlayerProfile")}</span>
-                  </Link>
+                  <article className="result-card" key={player.id}>
+                    <Link href={`/players/${player.id}`} className="hc-search-player-result">
+                      <div className="result-type">{t("players").toUpperCase()}</div>
+                      <h4>{player.display_name || t("hoopCheckPlayer")} {player.player_verified && <VerifiedBadge label={t("verifiedPlayer")} />}</h4>
+                      <p>{[player.player_position, player.years_pro ? `${player.years_pro} years pro` : null, player.current_team, player.current_country || player.country].filter(Boolean).join(" · ") || t("professionalProfile")}</p>
+                      <span className="result-link">{t("viewPlayerProfile")}</span>
+                    </Link>
+                    <FollowButton targetType="player" targetId={player.id} showNotifications={false} />
+                  </article>
                 ))}
               </div>
             </section>
