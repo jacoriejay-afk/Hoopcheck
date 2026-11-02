@@ -182,7 +182,7 @@ html.theme-dark main:not(.hc-template-home) :where(.card,.panel,.settings-card,.
 }
 html.theme-light main:not(.hc-template-home) :where(.card,.panel,.settings-card,.profile-card,.review-card,.quick-card,.form-card,.modal-content,.modal-panel,.hc-prediction) :where(h1,h2,h3,h4,p,span,strong,small,label,li,dt,dd) { color: var(--hc-content-ink) !important; }
 html.theme-dark main:not(.hc-template-home) :where(.card,.panel,.settings-card,.profile-card,.review-card,.quick-card,.form-card,.modal-content,.modal-panel,.hc-prediction) :where(h1,h2,h3,h4,p,span,strong,small,label,li,dt,dd) { color: var(--hc-content-ink) !important; }
-html.theme-light main:not(.hc-template-home) :where(input,textarea,select) { background: #FFFFFF !important; color: #171717 !important; -webkit-text-fill-color: #171717 !important; }
+html.theme-light main:not(.hc-template-home) :where(input,textarea,select) { background: var(--hc-surface) !important; color: #171717 !important; -webkit-text-fill-color: #171717 !important; }
 html.theme-dark main:not(.hc-template-home) :where(input,textarea,select) { background: #1B1B1B !important; color: #F5F5F0 !important; -webkit-text-fill-color: #F5F5F0 !important; }
 html.theme-light main:not(.hc-template-home) :where(input,textarea,select)::placeholder { color: #666660 !important; -webkit-text-fill-color: #666660 !important; }
 html.theme-dark main:not(.hc-template-home) :where(input,textarea,select)::placeholder { color: #BDBDB7 !important; -webkit-text-fill-color: #BDBDB7 !important; }
