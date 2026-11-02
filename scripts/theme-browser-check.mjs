@@ -562,7 +562,9 @@ try {
       await page.getByRole("heading", { name: "AJUSTES" }).waitFor({ state: "visible", timeout: 10000 });
       await page.screenshot({ path: `${artifactsDir}/language-live-02-settings-es.png`, fullPage: true, animations: "disabled" });
       assert.equal(await page.evaluate(() => performance.timeOrigin), beforeSwitchOrigin, "language selection reloaded the document");
-      await page.locator("a.site-header-brand").click();
+      const homeTab = page.locator(".hc-lm2f-bottom-nav a[href=\"/dashboard\"]:visible, .hc-bottom-tab-bar a[href=\"/dashboard\"]:visible, nav.bottom-nav a[href=\"/dashboard\"]:visible").first();
+      await homeTab.waitFor({ state: "visible", timeout: 10000 });
+      await homeTab.click();
       await page.waitForURL(/\/dashboard$/, { timeout: 15000 });
       await page.locator(".hc-ia-identity").waitFor({ state: "visible", timeout: 15000 });
       await page.locator(".hc-ia-door").first().waitFor({ state: "visible", timeout: 15000 });
