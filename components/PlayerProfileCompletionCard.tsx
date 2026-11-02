@@ -1,31 +1,58 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { getPlayerProfileCompletion, type PlayerProfileCompletionRecord } from "../lib/player-profile-completion";
 import { supabase } from "../lib/supabase";
 import { HoopIcon } from "./HoopCheckUI";
 
 export default function PlayerProfileCompletionCard({ profile }: { profile: PlayerProfileCompletionRecord }) {
-  const completion = getPlayerProfileCompletion(profile);
-  const complete = completion.percentage === 100;
-  const publicProfileHref = profile.id ? "/players/" + encodeURIComponent(profile.id) : "/profile";
-  const [isPublic, setIsPublic] = useState(profile.profile_visibility === "public");
+  const [currentProfile, setCurrentProfile] = useState(profile);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
-  if (profile.account_type !== "player") return null;
+
+  const refreshProfile = useCallback(async () => {
+    if (!profile.id) return;
+    const { data, error: readError } = await supabase.from("profiles")
+      .select("id,account_type,avatar_url,position,current_team,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
+      .eq("id", profile.id).maybeSingle();
+    if (!readError && data) setCurrentProfile(current => ({ ...current, ...data }));
+  }, [profile.id]);
+
+  useEffect(() => {
+    void refreshProfile();
+    const onFocus = () => { void refreshProfile(); };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") void refreshProfile();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [refreshProfile]);
+
+  const completion = getPlayerProfileCompletion(currentProfile);
+  const complete = completion.percentage === 100;
+  const publicProfileHref = currentProfile.id ? "/players/" + encodeURIComponent(currentProfile.id) : "/profile";
+  const isPublic = currentProfile.profile_visibility === "public";
 
   async function makePublic() {
-    if (!profile.id || publishing) return;
+    if (!currentProfile.id || publishing) return;
     setPublishing(true);
     setError("");
-    const { error: updateError } = await supabase.from("profiles")
+    const { data, error: updateError } = await supabase.from("profiles")
       .update({ profile_visibility: "public" })
-      .eq("id", profile.id);
-    if (updateError) setError(updateError.message);
-    else setIsPublic(true);
+      .eq("id", currentProfile.id)
+      .select("id,account_type,avatar_url,position,current_team,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
+      .maybeSingle();
+    if (updateError || !data) setError(updateError?.message || "Your profile could not be made public. Please try again.");
+    else setCurrentProfile(current => ({ ...current, ...data }));
     setPublishing(false);
   }
+
+  if (currentProfile.account_type !== "player") return null;
 
   return (
     <section className="hc-ux2b-completion-card" aria-label="Player profile completion">
@@ -45,7 +72,7 @@ export default function PlayerProfileCompletionCard({ profile }: { profile: Play
           {isPublic ? (
             <Link href={publicProfileHref} className="btn">View Public Profile <HoopIcon name="arrow-up-right" size={16} /></Link>
           ) : (
-            <button type="button" className="btn" disabled={publishing || !profile.id} onClick={() => void makePublic()}>
+            <button type="button" className="btn" disabled={publishing || !currentProfile.id} onClick={() => void makePublic()}>
               {publishing ? "Publishing..." : "Make Public"} <HoopIcon name="arrow-right" size={16} />
             </button>
           )}
