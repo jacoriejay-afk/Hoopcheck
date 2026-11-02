@@ -187,6 +187,7 @@ export default function TeamDetailPage() {
   const [membershipPlan, setMembershipPlan] = useState<string>("");
   const [knownPlayerFollowers, setKnownPlayerFollowers] = useState<string[]>([]);
   const [teamReviewCount, setTeamReviewCount] = useState(0);
+  const [teamFollowerCount, setTeamFollowerCount] = useState(0);
   const [reviewTier, setReviewTier] = useState<"free" | "pro" | "premium" | "player" | "member">("free");
 
   const [loading, setLoading] =
@@ -572,29 +573,31 @@ export default function TeamDetailPage() {
   return (
     <main className="hc-entity-profile-page hc-team-entity-profile">
 
-<section className="hero hc-team-profile-hero hc-social-profile-header" id="overview">
-        <div className="hc-social-profile-top hc-team-social-top">
-        <div className={`hc-team-profile-heading hc-team-profile-heading--club${team.name.length > 28 ? " is-long-name" : ""}`}><TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={72} className="hc-team-profile-logo" /><div className="hc-team-profile-heading__copy"><p className="hc-team-profile-kicker">HOOPCHECK CLUB PROFILE</p><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || t("countryNotListed")}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
-        <div className="hc-social-stats hc-team-social-stats">
-          <span><strong>{teamReviewCount}</strong><small>Reviews</small></span>
-          <span><strong>{trustScoreData?.score == null ? "—" : trustScoreData.score.toFixed(1)}</strong><small>Trust Score</small></span>
-          <FollowButton targetType="team" targetId={team.id} variant="club" showNotifications={false} />
+<section className="hero hc-team-profile-hero hc-social-profile-header" id="overview" aria-labelledby="hc-team-profile-title">
+        <div className="hc-team-profile-topline">
+          <TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={88} className="hc-team-profile-logo" />
+          <FollowButton targetType="team" targetId={team.id} variant="club" showCount={false} showNotifications={false} onCountChange={setTeamFollowerCount} />
         </div>
+        <p className="hc-team-profile-kicker">HOOPCHECK CLUB PROFILE</p>
+        <h1 id="hc-team-profile-title" className={team.name.length > 28 ? "is-long-name" : ""}>{team.name}</h1>
+        <p className="hc-team-profile-meta" title={[team.country || t("countryNotListed"), team.city, league?.name || team.league_name].filter(Boolean).join(" · ")}>
+          <span>{team.country || t("countryNotListed")}</span>
+          {team.city ? <span className="hc-team-profile-meta__city"> · {team.city}</span> : null}
+          {(league?.name || team.league_name) ? <span className="hc-team-profile-meta__league"> · {league?.name || team.league_name}</span> : null}
+        </p>
+        <div className="hc-team-profile-stats" aria-label="Team profile statistics">
+          <div className="hc-team-profile-stat"><strong>{teamReviewCount}</strong><small>Reviews</small></div>
+          <div className="hc-team-profile-stat hc-team-profile-stat--trust">
+            {trustScoreData?.score == null ? <strong className="hc-team-profile-stat__missing">—</strong> : <span className="hc-team-profile-mini-ring"><TrustScoreDial score={trustScoreData.score} explanation={trustScoreData.explanation || t("trustScoreUnavailable")} reviewCount={trustScoreData.reviewCount} verifiedReviewCount={trustScoreData.verifiedReviewCount} /></span>}
+            <small>Trust Score</small>
+          </div>
+          <div className="hc-team-profile-stat"><strong>{teamFollowerCount}</strong><small>Followers</small></div>
         </div>
-        {knownPlayerFollowers.length > 0 && <p className="hc-team-social-proof">Followed by players you follow: <strong>{knownPlayerFollowers.join(", ")}</strong></p>}
-        <nav className="hc-team-profile-nav" aria-label="Team profile sections"><a href="#overview">Overview</a><a href="#reviews">Reviews</a><a href="#players">Players</a><a href="#roster-board">Roster Board</a><a href="#pay-transparency">Pay Transparency</a></nav>
-        {reviewTier === "pro" ? (
-          <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score">
-            <span className="eyebrow">Trust Score</span><h2>Premium</h2><Link href="/membership" className="btn">Upgrade</Link>
-          </Surface>
-        ) : ["premium", "player", "member"].includes(reviewTier) ? (
-          <Surface as="div" className="hc-entity-trust-score"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /><div className="hc-team-score-categories" aria-label="Category ratings">{([{label:"Communication",value:publicSummary.communication_rating},{label:"Professionalism",value:publicSummary.professionalism_rating},{label:"Development",value:publicSummary.development_rating},{label:"Payment",value:publicSummary.payment_rating}] as const).filter(item => item.value !== null).map(item => <span key={item.label}><small>{item.label}</small><strong>{Number(item.value).toFixed(1)}</strong></span>)}</div></Surface>
-        ) : (
-          <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow">Full player reviews require an eligible membership</span><Link href="/membership" className="btn">Upgrade</Link></Surface>
-        )}
-
-
       </section>
+      <nav className="hc-team-profile-nav" aria-label="Team profile sections">
+        <a href="#overview" aria-current="page">Overview</a><a href="#reviews">Reviews</a><a href="#players">Players</a><a href="#roster-board">Roster Board</a><a href="#pay-transparency">Pay Transparency</a>
+      </nav>
+      {knownPlayerFollowers.length > 0 && <p className="hc-team-social-proof">Followed by players you follow: <strong>{knownPlayerFollowers.join(", ")}</strong></p>}
         <div className="entity-actions">{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}<ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} /><Link href="/team-dashboard" className="btn dark">Team Portal</Link></div>
         <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
         {["premium", "player", "member"].includes(reviewTier) && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">LATEST PLAYER REVIEW</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || t("playerExperience")}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
@@ -610,6 +613,10 @@ export default function TeamDetailPage() {
       ) : (
         <>
           <section className="hero" id="reviews">
+            {["premium", "player", "member"].includes(reviewTier) ? (
+              <Surface as="div" className="hc-entity-trust-score hc-team-reviews-trust-strip"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /><div className="hc-team-score-categories" aria-label="Category ratings">{([{label:"Communication",value:publicSummary.communication_rating},{label:"Professionalism",value:publicSummary.professionalism_rating},{label:"Development",value:publicSummary.development_rating},{label:"Payment",value:publicSummary.payment_rating}] as const).filter(item => item.value !== null).map(item => <span key={item.label}><small>{item.label}</small><strong>{Number(item.value).toFixed(1)}</strong></span>)}</div></Surface>
+            ) : null}
+            {reviewTier === "pro" ? <Surface as="div" className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow">Trust Score</span><h2>Premium</h2><Link href="/membership" className="btn">Upgrade</Link></Surface> : null}
             <div className="eyebrow">
               {membershipPlan === "premium" && accountType === "fan" ? t("playerRatings") : t("approvedReviewsHeading")}
             </div>
