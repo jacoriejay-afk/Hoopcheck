@@ -478,3 +478,33 @@ html.theme-dark body main .hc-live-hub-card :where(.hc-live-state,.hc-live-badge
   color: var(--hc-chip-foreground) !important;
   -webkit-text-fill-color: var(--hc-chip-foreground) !important;
 }
+
+
+/* Computed-style regression hardening: selectors below match actual browser probes. */
+html.theme-light body main .hc-directory-switcher .hc-directory-switcher-label,
+html.theme-dark body main .hc-directory-switcher .hc-directory-switcher-label {
+ color: var(--hc-accent-text) !important;
+ -webkit-text-fill-color: var(--hc-accent-text) !important;
+}
+html.theme-light body main.hc-team-entity-profile a[aria-current="page"],
+html.theme-dark body main.hc-team-entity-profile a[aria-current="page"] {
+ color: var(--hc-accent-text) !important;
+ -webkit-text-fill-color: var(--hc-accent-text) !important;
+}
+html.theme-light body main .hc-live-hub-hero p:last-child,
+html.theme-dark body main .hc-live-hub-hero p:last-child {
+ color: var(--hc-hero-muted) !important;
+ -webkit-text-fill-color: var(--hc-hero-muted) !important;
+}
+html.theme-light body main .hc-live-empty,
+html.theme-dark body main .hc-live-empty,
+html.theme-light body main .hc-live-no-games,
+html.theme-dark body main .hc-live-no-games {
+ color: var(--hc-empty-foreground) !important;
+ -webkit-text-fill-color: var(--hc-empty-foreground) !important;
+}
+html.theme-light body main .hc-live-hub-card .hc-live-state,
+html.theme-dark body main .hc-live-hub-card .hc-live-state {
+ color: var(--hc-chip-foreground) !important;
+ -webkit-text-fill-color: var(--hc-chip-foreground) !important;
+}
