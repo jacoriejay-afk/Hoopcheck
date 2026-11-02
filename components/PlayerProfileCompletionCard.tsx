@@ -7,13 +7,13 @@ import { supabase } from "../lib/supabase";
 import { HoopIcon } from "./HoopCheckUI";
 
 export default function PlayerProfileCompletionCard({ profile }: { profile: PlayerProfileCompletionRecord }) {
-  if (profile.account_type !== "player") return null;
   const completion = getPlayerProfileCompletion(profile);
   const complete = completion.percentage === 100;
   const publicProfileHref = profile.id ? "/players/" + encodeURIComponent(profile.id) : "/profile";
   const [isPublic, setIsPublic] = useState(profile.profile_visibility === "public");
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
+  if (profile.account_type !== "player") return null;
 
   async function makePublic() {
     if (!profile.id || publishing) return;
