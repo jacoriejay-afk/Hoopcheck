@@ -36,3 +36,15 @@ export function FeedLoadingSkeleton({ count = 3 }: { count?: number }) {
     </article>)}
   </section>;
 }
+
+export function FeedStoryRing({ expiresAt, now, children }: { expiresAt: string; now: number; children: ReactNode }) {
+  const remaining = Math.max(0, Math.min(1, (new Date(expiresAt).getTime() - now) / 86400000));
+  return <span className="hc-feed-story-ring" style={{ background: `conic-gradient(var(--hc-orange) ${remaining * 360}deg, var(--hc-border) 0deg)` }}>{children}</span>;
+}
+
+export function FeedTimeRemaining({ expiresAt, now }: { expiresAt: string; now: number }) {
+  const minutes = Math.max(0, Math.ceil((new Date(expiresAt).getTime() - now) / 60000));
+  if (minutes <= 0) return <>Expired</>;
+  if (minutes < 60) return <>{minutes}m left</>;
+  return <>{Math.ceil(minutes / 60)}h left</>;
+}
