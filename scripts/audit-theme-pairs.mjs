@@ -8,6 +8,7 @@ const contract = css.split("/* DM-1 — paired semantic tokens")[1] ?? "";
 // fails if its selector loses either half of the foreground/background pair.
 const requiredPairs = [
   [".hc-live-no-games", "--hc-empty-bg", "--hc-empty-fg"],
+  [".hc-live-hub-card", "--hc-card-bg", "--hc-card-fg"],
   [".hc-live-empty", "--hc-empty-bg", "--hc-empty-fg"],
   [".hc-live-recent-empty", "--hc-empty-bg", "--hc-empty-fg"],
   [".hc-live-empty-state", "--hc-empty-bg", "--hc-empty-fg"],
@@ -24,6 +25,7 @@ const requiredPairs = [
   [".btn-primary", "--hc-button-primary-bg", "--hc-button-primary-fg"],
   [".btn-outline", "--hc-button-outline-bg", "--hc-button-outline-fg"],
   [".btn-ghost", "--hc-button-ghost-bg", "--hc-button-ghost-fg"],
+  [".btn.dark", "--hc-button-dark-bg", "--hc-button-dark-fg"],
 ];
 
 const errors = [];
