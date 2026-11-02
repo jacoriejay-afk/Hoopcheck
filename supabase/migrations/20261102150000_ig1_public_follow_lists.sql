@@ -22,14 +22,15 @@ as $$
     fr.target_id,
     case when p_mode = 'followers' then follower.display_name
       when fr.target_type in ('player','fan') then target_profile.display_name
-      when fr.target_type = 'team' then team.name else null end,
-    case when p_mode = 'followers' then follower.avatar_url else target_profile.avatar_url end,
+      when fr.target_type = 'team' then coalesce(team.name, womens_team.name) else null end,
+    case when p_mode = 'followers' then follower.avatar_url else coalesce(target_profile.avatar_url, team.logo_url, womens_team.logo_url) end,
     case when p_mode = 'followers' then follower.account_type else target_profile.account_type end,
     case when p_mode = 'followers' then coalesce(follower.player_verified,false) else coalesce(target_profile.player_verified,false) end
   from public.follow_relationships fr
   left join public.profiles follower on follower.id = fr.follower_id
   left join public.profiles target_profile on fr.target_type in ('player','fan') and target_profile.id = fr.target_id
   left join public.teams team on fr.target_type = 'team' and team.id = fr.target_id
+  left join public.womens_teams womens_team on fr.target_type = 'team' and womens_team.id = fr.target_id
   where (
     (p_mode = 'followers' and fr.target_type = p_target_type and fr.target_id = p_target_id)
     or (p_mode = 'following' and fr.follower_id = p_user_id and (auth.uid() = p_user_id or follower.profile_visibility = 'public'))
