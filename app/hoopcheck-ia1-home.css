@@ -27,7 +27,7 @@
 .hc-ia-door strong { font-size:12px; letter-spacing:.025em; }
 .hc-ia-door small { color:var(--hc-on-card-muted); font-size:11px; line-height:1.35; }
 .hc-ia-door>svg:last-child { flex:0 0 auto; color:var(--hc-on-card-muted); }
-.hc-ia-follow-list { display:grid; border:1px solid var(--hc-card-border); border-radius:13px; overflow:hidden; background:var(--hc-card-surface); }
+.hc-ia-follow-list { display:grid; border:1px solid var(--hc-card-border); border-radius:13px; overflow:hidden; background:var(--hc-card-surface); color:var(--hc-on-card); }
 .hc-ia-follow-list>a { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; color:var(--hc-on-card); text-decoration:none; border-bottom:1px solid var(--hc-card-border); }
 .hc-ia-follow-list>a:last-child { border-bottom:0; }
 .hc-ia-follow-list>a>span { display:grid; gap:4px; min-width:0; }
