@@ -165,3 +165,17 @@
   .hc-feed-page .hc-feed-skeleton__photo,
   .hc-feed-page .hc-feed-skeleton__actions i { animation: none !important; }
 }
+
+.hc-feed-page .hc-feed-post-topic,
+.hc-feed-page .hc-feed-jersey-tag,
+.hc-feed-page .hc-feed-expiring-soon,
+.hc-feed-page .hc-feed-plan-tag {
+  border-color: var(--hc-border) !important;
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+}
+.hc-feed-page .hc-feed-refresh-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 8px;
+}
