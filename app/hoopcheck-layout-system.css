@@ -163,3 +163,62 @@ main :where(button,a.btn)[aria-disabled="true"] {
 }
 main :where(button,a.btn,input[type="button"],input[type="submit"]):disabled :where(span,svg),
 main :where(button,a.btn)[aria-disabled="true"] :where(span,svg) { color: inherit !important; }
+
+
+/* Additional game-card surfaces and text that were previously hard-coded light. */
+html.theme-dark main .hc-live-hub-card.is-recent,
+html.theme-dark main .hc-live-hub-card {
+  background: var(--hc-card-bg) !important;
+  color: var(--hc-card-fg) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light main .hc-live-hub-card.is-recent,
+html.theme-light main .hc-live-hub-card {
+  background: var(--hc-card-bg) !important;
+  color: var(--hc-card-fg) !important;
+  border-color: var(--hc-border) !important;
+}
+main .hc-live-hub-card :where(.hc-live-card__league,.hc-live-card__middle small,
+  .hc-live-card__meta,.hc-live-card__muted,.hc-live-hub-footer) {
+  color: var(--hc-foreground-muted) !important;
+}
+main .hc-live-hub-card :where(.hc-live-card__side strong,.hc-live-card__score,
+  .hc-live-card__vs,.hc-live-hub-footer a) {
+  color: var(--hc-card-fg) !important;
+}
+main .hc-live-hub-card .hc-live-badge,
+main .hc-live-hub-card .hc-live-state { color: var(--hc-badge-neutral-fg); }
+main .hc-live-hub-card .hc-live-badge { background: var(--hc-badge-live-bg) !important; color: var(--hc-badge-live-fg) !important; }
+main .hc-live-hub-card .hc-live-state--soon { background: var(--hc-badge-live-bg) !important; color: var(--hc-badge-live-fg) !important; }
+main .hc-live-hub-card .hc-live-state--post { background: var(--hc-badge-final-bg) !important; color: var(--hc-badge-final-fg) !important; }
+main .hc-live-empty__icon,.hc-live-empty-ball {
+  background: var(--hc-badge-live-bg) !important;
+  color: var(--hc-badge-live-fg) !important;
+}
+main .hc-live-hub-message {
+  background: var(--hc-badge-live-bg) !important;
+  color: var(--hc-badge-live-fg) !important;
+}
+
+/* Standard .btn is the filled action; named modifiers define outline/ghost/dark pairs. */
+:root { --hc-button-dark-bg: #171717; --hc-button-dark-fg: #FFFFFF; }
+html.theme-dark { --hc-button-dark-bg: #F5F5F0; --hc-button-dark-fg: #171717; }
+html.theme-light { --hc-button-dark-bg: #171717; --hc-button-dark-fg: #FFFFFF; }
+main :where(.btn,a.btn,button.btn) {
+  background: var(--hc-button-primary-bg);
+  color: var(--hc-button-primary-fg);
+}
+main :where(.btn,.btn-primary,a.btn,button.btn) :where(span,svg) { color: inherit; }
+main :where(.btn.secondary,.btn-secondary,.btn-outline,a.btn-outline,button.btn-outline) {
+  background: var(--hc-button-outline-bg) !important;
+  color: var(--hc-button-outline-fg) !important;
+  border-color: var(--hc-control-border, var(--hc-border)) !important;
+}
+main :where(.btn.ghost,.btn-ghost,.button-ghost) {
+  background: var(--hc-button-ghost-bg) !important;
+  color: var(--hc-button-ghost-fg) !important;
+}
+main :where(.btn.dark,.btn-dark) {
+  background: var(--hc-button-dark-bg) !important;
+  color: var(--hc-button-dark-fg) !important;
+}
