@@ -3947,3 +3947,21 @@ main :where(input,select,textarea) { max-width:100%; min-width:0; }
   .hc-social-profile-actions .btn,.hc-feed-action-pill { transition:transform .16s ease,background-color .16s ease,border-color .16s ease; }
   .hc-social-profile-actions .btn:active,.hc-feed-action-pill:active { transform:scale(.97); }
 }
+
+
+.hc-social-profile-header { display:block !important; }
+.hc-team-profile-hero .hc-team-profile-heading { align-items:center; gap:14px; }
+.hc-team-profile-hero .hc-team-profile-heading__copy h1 { font-size:clamp(21px,3vw,28px); line-height:1.08; margin:2px 0; }
+.hc-team-profile-hero .hc-team-profile-heading__copy .hc-team-profile-meta { font-size:12px; margin:4px 0 0; }
+.hc-team-profile-hero .hc-entity-trust-score { display:flex; align-items:center; gap:12px; padding:10px 12px; margin:10px 0; min-height:0; }
+.hc-team-profile-hero .hc-team-score-categories { display:flex; flex-wrap:wrap; gap:8px 14px; }
+.hc-team-profile-hero .hc-team-score-categories span { display:grid; gap:1px; }
+.hc-team-profile-hero .hc-team-score-categories small { font-size:9px; }
+.hc-team-profile-hero .hc-team-profile-nav { overflow-x:auto; white-space:nowrap; }
+.hc-search-player-result { display:block; color:inherit; text-decoration:none; }
+.result-card:has(.hc-search-player-result) { display:flex; flex-direction:column; align-items:flex-start; gap:10px; }
+.hc-feed-action-pill { min-height:44px; padding:10px 15px; }
+@media (max-width:600px) {
+  .hc-team-profile-hero .hc-team-profile-heading { align-items:center; }
+  .hc-team-profile-hero .hc-entity-trust-score { align-items:flex-start; }
+}
