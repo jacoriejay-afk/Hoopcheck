@@ -135,14 +135,15 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <div>
                 <strong>HoopCheck</strong>
                 <span className="muted">Account required for member access.</span>
-                <Link href="/membership">Membership</Link>
+                <Link href="/support">Support</Link>
+                <Link href="/directory">Explore Directory</Link>
               </div>
               <div>
                 <strong>Account</strong>
                 <Link href="/login">Log In</Link>
                 <Link href="/signup">Sign Up</Link>
-                <Link href="/membership">Membership</Link>
-                <Link href="/dashboard">Dashboard</Link>
+                <Link href="/account">Account & Settings</Link>
+                <Link href="/dashboard">Home</Link>
               </div>
               <div>
                 <strong>Legal</strong>
