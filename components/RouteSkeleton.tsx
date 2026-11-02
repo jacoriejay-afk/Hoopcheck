@@ -49,9 +49,8 @@ export default function RouteSkeleton({ variant }: RouteSkeletonProps) {
         {variant !== "dashboard" && (
           <Card>
             <Bar width="23%" height={9} />
-            <Bar width={variant === "home" ? "72%" : "48%"} height={variant === "home" ? 38 : 30} />
+            <Bar width="48%" height={30} />
             <Bar width="82%" />
-            {variant === "home" && <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}><Bar width="132px" height={42} /><Bar width="96px" height={42} /></div>}
           </Card>
         )}
         {variant === "home" && (

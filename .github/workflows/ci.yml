@@ -136,6 +136,7 @@ jobs:
 
       - name: Build and capture route bundle sizes
         run: |
+          set -o pipefail
           mkdir -p artifacts/performance artifacts/lighthouse
           npm run build 2>&1 | tee artifacts/performance/next-build.log
 
