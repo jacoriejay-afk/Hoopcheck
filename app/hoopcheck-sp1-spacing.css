@@ -36,7 +36,9 @@ html body main > .hc-womens-profile-page:first-child {
 html body main > .hero:first-child,
 html body main > .hero-card:first-child,
 html body main > section:first-child,
-html body main > article:first-child {
+html body main > article:first-child,
+html body main > .page-container > :first-child,
+html body main > .page-content > :first-child {
   margin-block-start: 0 !important;
 }
 
@@ -55,7 +57,7 @@ html body main.hc-entity-profile-page > .hero:first-child,
 html body main.hc-entity-profile-page > .hero-card:first-child,
 html body main.hc-team-entity-profile > .hero:first-child,
 html body main.hc-entity-profile-page > .page-container > .hero:first-child {
-  padding-block-start: var(--hc-space-page) !important;
+  padding-block-start: 0 !important;
   margin-block-start: 0 !important;
 }
 
