@@ -459,6 +459,7 @@ try {
         };
       }, { requestedPath, navigationError });
       const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
+      const expectedSurface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
       const errors = [];
       if (result.themeClass !== theme) errors.push("html theme class mismatch");
       if (result.body !== expectedPage) errors.push("body background mismatch");
@@ -479,7 +480,6 @@ try {
       const expectedActiveNavText = theme === "dark" ? "rgb(255, 138, 92)" : "rgb(184, 62, 20)";
       if (result.bottomNavPair && result.bottomNavPair.activeColor && result.bottomNavPair.activeColor !== expectedActiveNavText) errors.push("Bottom tab bar active label mismatch: " + JSON.stringify(result.bottomNavPair));
       if (requestedPath === "/dashboard") {
-        const expectedSurface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
         const expectedText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
         if (result.quickAccessRow?.background !== expectedSurface) errors.push("Quick Access surface mismatch: " + JSON.stringify(result.quickAccessRow));
         if (result.quickAccessRow?.title !== expectedText) errors.push("Quick Access title mismatch: " + JSON.stringify(result.quickAccessRow));
@@ -503,7 +503,6 @@ try {
       }
       if (requestedPath === "/account" && result.textButton && result.textButton !== expectedAccent) errors.push("Account text-action accent mismatch: " + result.textButton);
       if (requestedPath === "/teams/" + teamFixture.id) {
-        const expectedSurface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
         const expectedText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
         if (result.teamProfileHeader?.background !== expectedSurface) errors.push("Team profile header surface mismatch: " + JSON.stringify(result.teamProfileHeader));
         if (result.teamProfileHeader?.title !== expectedText) errors.push("Team profile title mismatch: " + JSON.stringify(result.teamProfileHeader));
