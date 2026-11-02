@@ -287,8 +287,8 @@ try {
           data = ids.map((id) => id === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture);
         } else data = [teamFixture, fallbackTeamFixture];
       }
-      else if (url.pathname.includes("/rest/v1/leagues")) data = single ? leagueFixture : [leagueFixture];
-      else if (url.pathname.includes("/rest/v1/coaches")) data = single ? coachFixture : [coachFixture];
+      else if (url.pathname.includes("/rest/v1/leagues")) data = single || (url.searchParams.get("id") || "").startsWith("eq.") ? leagueFixture : [leagueFixture];
+      else if (url.pathname.includes("/rest/v1/coaches")) data = single || (url.searchParams.get("id") || "").startsWith("eq.") ? coachFixture : [coachFixture];
       else if (url.pathname.includes("/rest/v1/fan_live_games")) data = [{
         id: "22222222-2222-4222-8222-222222222222",
         team_id: teamFixture.id,
