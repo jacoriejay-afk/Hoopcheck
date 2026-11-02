@@ -104,3 +104,212 @@
   .hc-dossier-team-grid { grid-template-columns:minmax(0,1fr); }
   .hc-dossier-team-grid>div+div { border-left:0; border-top:1px solid #303030; padding:12px 0 0; }
 }
+
+
+/* PP-3: player dossier surfaces, typography and spacing use semantic theme tokens only.
+   The former fixed --athletic-darkBg/#0A0A0A identity surface and fixed white/grey text
+   caused a black dossier with dark inherited text in light mode. */
+.hc-player-dossier {
+  width:100%;
+  min-width:0;
+  gap:12px;
+  margin:12px 0 0;
+  color:var(--hc-foreground);
+}
+.hc-player-dossier .rounded-xl { border-radius:16px; }
+.hc-player-dossier .hc-dossier-identity,
+.hc-player-dossier .hc-profile-panel {
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  border:1px solid var(--hc-border);
+  border-radius:16px;
+  background:var(--hc-surface-raised);
+  color:var(--hc-foreground);
+  padding:16px;
+  box-shadow:none;
+}
+.hc-player-dossier .hc-dossier-identity {
+  grid-template-columns:minmax(0,1fr) minmax(180px,240px);
+  gap:16px;
+}
+.hc-player-dossier :where(.hc-profile-eyebrow,.hc-dossier-team-grid span,.hc-dossier-overview-stats span,
+.hc-profile-record-count,.hc-profile-stat-cell span,.hc-profile-empty p,.hc-profile-disclaimer,
+.hc-profile-panel-footer p,.hc-contract-table th,.hc-contract-table td small,
+.hc-contract-mobile-top>div>span,.hc-contract-mobile-row dt,.hc-contract-verification,
+.hc-agent-review-meta,.hc-agent-rating>span,.hc-agent-rating small,.hc-profile-panel-footer) {
+  color:var(--hc-foreground-muted);
+}
+.hc-player-dossier .hc-profile-eyebrow {
+  margin:0 0 8px;
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.12em;
+}
+.hc-player-dossier :where(.hc-dossier-name,.hc-dossier-team-grid strong,.hc-dossier-overview-stats strong,
+.hc-profile-panel-heading h2,.hc-profile-stat-cell strong,.hc-profile-empty strong,
+.hc-contract-table td,.hc-contract-table td strong,.hc-contract-mobile-row dd,
+.hc-agent-review-title h3,.hc-agent-rating strong,.hc-profile-bio) {
+  color:var(--hc-foreground);
+}
+.hc-player-dossier .hc-dossier-name {
+  font-size:clamp(25px,4vw,36px);
+  line-height:1.05;
+}
+.hc-player-dossier .hc-dossier-username { color:var(--hc-foreground-muted); }
+.hc-player-dossier .hc-dossier-tags { margin-top:12px; }
+.hc-player-dossier .hc-dossier-tag {
+  border-color:var(--hc-border);
+  background:var(--hc-surface-soft);
+  color:var(--hc-foreground);
+}
+.hc-player-dossier .hc-dossier-tag-orange {
+  border-color:var(--hc-orange);
+  background:var(--hc-orange);
+  color:#151515;
+}
+.hc-player-dossier .hc-dossier-team-grid {
+  margin-top:14px;
+  border-top:1px solid var(--hc-border);
+}
+.hc-player-dossier .hc-dossier-team-grid>div { padding:12px 12px 0 0; }
+.hc-player-dossier .hc-dossier-team-grid>div+div {
+  border-left:1px solid var(--hc-border);
+  padding-left:14px;
+}
+.hc-player-dossier .hc-dossier-team-grid strong { font-size:13px; }
+.hc-player-dossier .hc-dossier-overview-stats>div {
+  border:1px solid var(--hc-border);
+  border-radius:12px;
+  background:var(--hc-surface-soft);
+  padding:12px;
+}
+.hc-player-dossier .hc-dossier-overview-stats strong { font-size:26px; }
+.hc-player-dossier .hc-dossier-accent { background:var(--hc-orange); }
+.hc-player-dossier .hc-profile-panel { padding:0; }
+.hc-player-dossier .hc-profile-panel-heading {
+  padding:14px 16px;
+  border-bottom:1px solid var(--hc-border);
+}
+.hc-player-dossier .hc-profile-panel-heading h2 { font-size:clamp(20px,3vw,25px); }
+.hc-player-dossier .hc-profile-record-count {
+  border-color:var(--hc-border);
+  background:var(--hc-surface-soft);
+}
+.hc-player-dossier .hc-profile-stat-grid,
+.hc-player-dossier .hc-profile-stat-cell,
+.hc-player-dossier .hc-contract-table th,
+.hc-player-dossier .hc-contract-table td,
+.hc-player-dossier .hc-agent-review-row,
+.hc-player-dossier .hc-profile-disclaimer,
+.hc-player-dossier .hc-profile-panel-footer,
+.hc-player-dossier .hc-contract-mobile-row,
+.hc-player-dossier .hc-contract-mobile-row dl {
+  border-color:var(--hc-border);
+}
+.hc-player-dossier .hc-profile-stat-cell strong { font-size:24px; }
+.hc-player-dossier .hc-profile-empty { padding:20px 16px; }
+.hc-player-dossier .hc-profile-empty p,
+.hc-player-dossier .hc-profile-disclaimer,
+.hc-player-dossier .hc-profile-panel-footer p { line-height:1.5; }
+.hc-player-dossier .hc-contract-table th {
+  background:var(--hc-surface-soft);
+  color:var(--hc-foreground-muted);
+}
+.hc-player-dossier .hc-contract-table td { background:var(--hc-surface-raised); }
+.hc-player-dossier .hc-contract-table td small,
+.hc-player-dossier .hc-contract-mobile-top>div>span,
+.hc-player-dossier .hc-contract-mobile-row dt,
+.hc-player-dossier .hc-contract-verification { color:var(--hc-foreground-muted); }
+.hc-player-dossier .hc-contract-mobile-row dl { border-top-color:var(--hc-border); }
+.hc-player-dossier .hc-profile-bio { padding:16px; }
+.hc-player-dossier .hc-profile-panel-footer {
+  background:var(--hc-surface-soft);
+  padding:12px 16px;
+}
+.hc-player-dossier .hc-agent-rating {
+  border-color:var(--hc-border);
+  background:var(--hc-surface-soft);
+}
+.hc-player-dossier .hc-profile-outline-link {
+  border-color:var(--hc-border);
+  background:var(--hc-surface-soft);
+  color:var(--hc-foreground);
+}
+.hc-player-dossier .hc-profile-outline-link:hover { border-color:var(--hc-orange); color:var(--hc-foreground); }
+
+@media(max-width:760px) {
+  .hc-player-dossier .hc-dossier-identity {
+    grid-template-columns:minmax(0,1fr);
+    gap:12px;
+    padding:16px;
+  }
+  .hc-player-dossier .hc-dossier-overview-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .hc-player-dossier .hc-profile-panel-heading { padding:13px 14px; }
+}
+@media(max-width:420px) {
+  .hc-player-dossier .hc-dossier-team-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .hc-player-dossier .hc-dossier-team-grid>div+div {
+    border-left:1px solid var(--hc-border);
+    border-top:0;
+    padding:12px 0 0 12px;
+  }
+}
+
+/* Player social header: keep avatar and all three counters on one horizontal band.
+   Identity and action rows follow below inside the same compact header card. */
+.player-profile-page .hc-social-profile-header {
+  width:100%;
+  min-height:0;
+  height:auto;
+  box-sizing:border-box;
+  padding:16px !important;
+  border-radius:16px;
+  margin:0 0 12px !important;
+  background:var(--hc-surface-raised);
+  color:var(--hc-foreground);
+  border:1px solid var(--hc-border);
+}
+.player-profile-page .hc-social-profile-top {
+  display:grid;
+  grid-template-columns:72px minmax(0,1fr);
+  align-items:start;
+  gap:14px;
+}
+.player-profile-page .hc-social-avatar-frame { width:72px; height:72px; }
+.player-profile-page .hc-social-profile-main { display:grid; gap:10px; min-width:0; }
+.player-profile-page .hc-social-stats {
+  display:flex;
+  flex-wrap:nowrap;
+  justify-content:flex-start;
+  align-items:center;
+  gap:clamp(10px,2.5vw,22px);
+}
+.player-profile-page .hc-social-stats > :where(span,a) { min-width:0; text-align:left; }
+.player-profile-page .hc-social-stats strong { color:var(--hc-foreground); }
+.player-profile-page .hc-social-stats small { color:var(--hc-foreground-muted); }
+.player-profile-page .player-profile-heading h1 { color:var(--hc-foreground); }
+.player-profile-page .player-profile-heading .muted { color:var(--hc-foreground-muted) !important; }
+.player-profile-page .hc-social-profile-actions { margin:0; gap:8px; }
+.player-profile-page .hc-social-profile-actions .btn { min-height:36px; }
+.player-profile-page .hc-contact-request-gate {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  min-height:0;
+  margin:0;
+  padding:8px 12px;
+  border:1px solid var(--hc-border);
+  border-radius:10px;
+  background:var(--hc-surface-soft);
+  color:var(--hc-foreground);
+}
+.player-profile-page .hc-contact-request-gate strong { color:var(--hc-foreground); }
+.player-profile-page .hc-contact-request-gate p { margin:0; color:var(--hc-foreground-muted); font-size:12px; line-height:1.35; }
+@media(max-width:380px) {
+  .player-profile-page .hc-social-profile-top { grid-template-columns:60px minmax(0,1fr); gap:10px; }
+  .player-profile-page .hc-social-avatar-frame { width:60px; height:60px; }
+  .player-profile-page .hc-social-stats { gap:8px; }
+  .player-profile-page .hc-social-stats small { font-size:9px; letter-spacing:0; }
+}
