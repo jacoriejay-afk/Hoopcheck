@@ -415,3 +415,13 @@ html.theme-dark body main .hc-live-state {
   color: var(--hc-chip-foreground) !important;
   border-color: var(--hc-card-border) !important;
 }
+
+
+/* Keep the neutral live status pill explicitly paired in both themes. */
+html.theme-light body main .hc-live-state,
+html.theme-dark body main .hc-live-state {
+  background: var(--hc-chip-surface) !important;
+  color: var(--hc-chip-foreground) !important;
+  border-color: var(--hc-card-border) !important;
+  -webkit-text-fill-color: var(--hc-chip-foreground) !important;
+}
