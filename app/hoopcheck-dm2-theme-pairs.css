@@ -18,6 +18,13 @@
   --hc-live-chip-foreground: #8F3215;
   --hc-button-primary-surface: #FF5A1F;
   --hc-button-primary-foreground: #111111;
+  --hc-button-primary-bg: #FF5A1F;
+  --hc-button-primary-fg: #111111;
+  --hc-button-outline-bg: #FFFFFF;
+  --hc-button-outline-fg: #151515;
+  --hc-brand-tile-bg: #FF5A1F;
+  --hc-brand-tile-fg: #17110E;
+  --hc-brand-tile-border: #17110E;
   --hc-button-outline-surface: #FFFFFF;
   --hc-button-outline-foreground: #151515;
   --hc-empty-surface: #F8F8F6;
@@ -42,6 +49,13 @@ html.theme-dark {
   --hc-live-chip-foreground: #FFB18F;
   --hc-button-primary-surface: #FF5A1F;
   --hc-button-primary-foreground: #111111;
+  --hc-button-primary-bg: #FF5A1F;
+  --hc-button-primary-fg: #111111;
+  --hc-button-outline-bg: #202020;
+  --hc-button-outline-fg: #F5F5F0;
+  --hc-brand-tile-bg: #FF5A1F;
+  --hc-brand-tile-fg: #17110E;
+  --hc-brand-tile-border: #17110E;
   --hc-button-outline-surface: #202020;
   --hc-button-outline-foreground: #F5F5F0;
   --hc-empty-surface: #141414;
