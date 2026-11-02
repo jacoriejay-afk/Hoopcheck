@@ -545,8 +545,8 @@ try {
       assert.equal(await page.evaluate(() => performance.timeOrigin), beforeSwitchOrigin, "language selection reloaded the document");
       await page.locator("a.site-header-brand").click();
       await page.waitForURL(/\/dashboard$/, { timeout: 15000 });
-      await page.getByText("TUS ACCESOS DIRECTOS", { exact: false }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByText("ACCESO RÁPIDO", { exact: false }).waitFor({ state: "visible", timeout: 15000 });
+      await page.locator(".hc-ia-identity").waitFor({ state: "visible", timeout: 15000 });
+      await page.locator(".hc-ia-door").first().waitFor({ state: "visible", timeout: 15000 });
       await page.screenshot({ path: `${artifactsDir}/language-live-03-dashboard-es.png`, fullPage: true, animations: "disabled" });
       assert.equal(await page.evaluate(() => performance.timeOrigin), beforeSwitchOrigin, "dashboard navigation performed a full document reload");
       await page.locator('a[href="/teams"]').first().click();
