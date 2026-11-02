@@ -352,6 +352,8 @@ try {
           bottomNavPair: (() => { const el=document.querySelector(".hc-lm2f-bottom-nav,.hc-bottom-tab-bar,.bottom-nav"); if(!el)return null; const st=getComputedStyle(el); const tab=el.querySelector(".hc-lm2f-tab:not(.active),a:not(.active)"); const active=el.querySelector(".hc-lm2f-tab.active,a.active"); return {background:st.backgroundColor,color:st.color,tabColor:tab?getComputedStyle(tab).color:null,activeColor:active?getComputedStyle(active).color:null}; })(),
           quickAccessRow: (() => { const el=document.querySelector(".hc-ia-door"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor,title:title?getComputedStyle(title).color:null,titleText:title?.textContent?.trim()||null}; })(),
           identityChip: (() => { const el=document.querySelector(".hc-ia-identity"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null}; })(),
+          completionCard: (() => { const el=document.querySelector(".hc-ia-completion"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null}; })(),
+          homeLiveCard: (() => { const el=document.querySelector(".hc-ia-live-strip"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null}; })(),
           liveEmpty: (() => { const el=document.querySelector(".hc-live-no-games,.hc-live-empty"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor}; })(),
           remindButton: (() => { const el=document.querySelector(".hc-remind-button"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor}; })(),
           upcomingPill: (() => { const el=document.querySelector(".hc-live-state"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,text:el.textContent?.trim()||null}; })(),
@@ -454,12 +456,20 @@ try {
         if (result.quickAccessRow?.background !== expectedSurface) errors.push("Quick Access surface mismatch: " + JSON.stringify(result.quickAccessRow));
         if (result.quickAccessRow?.title !== expectedText) errors.push("Quick Access title mismatch: " + JSON.stringify(result.quickAccessRow));
         if (result.identityChip?.background !== expectedSurface) errors.push("Signed-in chip surface mismatch: " + JSON.stringify(result.identityChip));
+        if (result.identityChip?.title !== expectedText) errors.push("Signed-in chip text mismatch: " + JSON.stringify(result.identityChip));
+        if (result.completionCard?.background !== expectedSurface || result.completionCard?.title !== expectedText) errors.push("Profile completion pair mismatch: " + JSON.stringify(result.completionCard));
+        if (result.homeLiveCard?.background !== expectedSurface || result.homeLiveCard?.title !== expectedText) errors.push("Home Live Games pair mismatch: " + JSON.stringify(result.homeLiveCard));
       }
       if (requestedPath === "/live-games") {
         const expectedEmpty = theme === "dark" ? "rgb(20, 20, 20)" : "rgb(248, 248, 246)";
         const expectedReminder = theme === "dark" ? "rgb(32, 32, 32)" : "rgb(255, 255, 255)";
         if (result.liveEmpty?.background !== expectedEmpty) errors.push("Live empty state surface mismatch: " + JSON.stringify(result.liveEmpty));
         if (result.remindButton?.background !== expectedReminder) errors.push("REMIND ME surface mismatch: " + JSON.stringify(result.remindButton));
+        const expectedUpcomingSurface = theme === "dark" ? "rgb(36, 36, 36)" : "rgb(241, 241, 237)";
+        const expectedUpcomingText = theme === "dark" ? "rgb(231, 231, 225)" : "rgb(76, 76, 70)";
+        const expectedReminderText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
+        if (result.upcomingPill?.background !== expectedUpcomingSurface || result.upcomingPill?.color !== expectedUpcomingText) errors.push("UPCOMING pill pair mismatch: " + JSON.stringify(result.upcomingPill));
+        if (result.remindButton?.color !== expectedReminderText) errors.push("REMIND ME text mismatch: " + JSON.stringify(result.remindButton));
         if (!result.upcomingPill?.text?.toUpperCase().includes("UPCOMING")) errors.push("Upcoming status pill missing: " + JSON.stringify(result.upcomingPill));
       }
       if (["/dashboard", "/search", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2"].includes(requestedPath)) {
