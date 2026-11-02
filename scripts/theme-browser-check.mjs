@@ -505,6 +505,10 @@ try {
     }
     await context.close();
   }
+  const requiredScreens = ["/dashboard", "/feed", "/search", "/notifications", "/account", "/live-games", "/teams/" + teamFixture.id];
+  const requiredFailures = routeSweepResults.filter((result) => requiredScreens.includes(result.requestedPath) && result.status !== "PASS");
+  assert.equal(requiredFailures.length, 0, "DM-2 required screen regression: " + JSON.stringify(requiredFailures));
+  console.log("DM2_REQUIRED_SCREEN_SWEEP=PASS " + JSON.stringify(requiredScreens));
   console.log("THEME_ROUTE_SWEEP=" + JSON.stringify(routeSweepResults, null, 2));
 
 } finally {
