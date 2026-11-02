@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../../lib/supabase";
+import { HoopCheckDraw } from "../../../../components/HoopMotion";
 
 type Team = {
   id: string;
@@ -648,6 +649,7 @@ export default function TeamReviewPage() {
                 role="status"
                 aria-live="polite"
               >
+                {message.startsWith("Review submitted.") && <HoopCheckDraw size={20} label="Review submitted" />}
                 {message}
               </p>
             </div>
