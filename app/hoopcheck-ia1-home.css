@@ -10,7 +10,7 @@
 .hc-ia-identity>span:last-child { display:grid; gap:1px; }
 .hc-ia-identity small { color:var(--hc-muted); font-size:9px; letter-spacing:.12em; }
 .hc-ia-identity strong { color:var(--hc-foreground); font-size:13px; }
-.hc-ia-avatar { display:grid; place-items:center; width:34px; height:34px; border-radius:50%; background:var(--hc-foreground); color:var(--hc-background); font-weight:800; }
+.hc-ia-avatar { display:grid; place-items:center; width:34px; height:34px; border-radius:50%; background:var(--hc-foreground); color:var(--hc-page-bg); font-weight:800; }
 .hc-ia-completion,.hc-ia-live-strip { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 16px; border:1px solid var(--hc-border); border-radius:14px; background:var(--hc-surface); color:var(--hc-foreground); text-decoration:none; }
 .hc-ia-completion>span:first-child,.hc-ia-live-strip>span:nth-child(2) { display:grid; gap:4px; }
 .hc-ia-completion small,.hc-ia-live-strip small { color:var(--hc-muted); line-height:1.4; }
