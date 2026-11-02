@@ -7,6 +7,7 @@ const files = {
   nav: await readFile("app/hoopcheck-lm2f-bottom-nav.css", "utf8"),
   finalTheme: await readFile("app/hoopcheck-dm2-theme-pairs.css", "utf8"),
   finalOverrides: await readFile("app/hoopcheck-final-overrides.css", "utf8"),
+  layout: await readFile("app/layout.tsx", "utf8"),
   team: await readFile("app/hoopcheck-directory-profile.css", "utf8"),
 };
 const errors = [];
@@ -116,6 +117,11 @@ if(!navTextRule || !navTextRule.includes("var(--hc-nav-fg"))
 const navActiveRule=blockAfter(files.nav,"html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active");
 if(!navActiveRule || !navActiveRule.includes("var(--hc-nav-active-fg"))
   errors.push("Bottom tab bar: active label must use --hc-nav-active-fg");
+const layoutSystemImport=files.layout.indexOf('import "./hoopcheck-layout-system.css";');
+const dm2Import=files.layout.indexOf('import "./hoopcheck-dm2-theme-pairs.css";');
+if(layoutSystemImport < 0 || dm2Import < 0 || dm2Import < layoutSystemImport)
+  errors.push("DM-2 theme contract must load after the shared layout-system stylesheet");
+
 if(!files.finalTheme.includes("var(--hc-nav-bg)") || !files.finalTheme.includes("var(--hc-nav-fg)"))
   errors.push("Global headers must consume the semantic nav surface/foreground pair");
 
