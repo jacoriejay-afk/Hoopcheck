@@ -706,7 +706,7 @@ a {
 .eyebrow {
   display: inline-flex;
   align-items: center;
-  color: var(--orange);
+  color: var(--hc-accent-text);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 2px;
@@ -2976,7 +2976,7 @@ body { background-color: var(--hc-page-bg); }
 .hc-searchbar__input::placeholder { color:#737373; opacity:1; white-space:nowrap; text-overflow:ellipsis; }
 .hc-searchbar__input::-webkit-search-cancel-button { display:none; }
 .hc-searchbar__clear { display:grid; flex:0 0 30px; place-items:center; width:30px; height:30px; border:0; border-radius:50%; background:#f1f1ee; color:#333; font-size:22px; line-height:1; cursor:pointer; }
-.hc-searchbar__submit { display:inline-flex; flex:0 0 auto; align-items:center; justify-content:center; min-width:104px; height:42px; padding:0 18px; border:0; border-radius:9px; background:#FF5A1F; color:#111; font-size:12px; font-weight:900; letter-spacing:.07em; text-transform:uppercase; cursor:pointer; }
+.hc-searchbar__submit { display:inline-flex; flex:0 0 auto; align-items:center; justify-content:center; min-width:104px; height:42px; padding:0 18px; border:0; border-radius:9px; background:var(--hc-button-primary-surface); color:var(--hc-button-primary-foreground); font-size:12px; font-weight:900; letter-spacing:.07em; text-transform:uppercase; cursor:pointer; }
 .hc-searchbar__submit:disabled { opacity:.55; cursor:not-allowed; }
 .global-search.hc-searchbar { max-width:100%; }
 @media(max-width:600px) {
@@ -3789,7 +3789,7 @@ button.hc-setting-row { appearance: none; }
 .hc-switch.is-on { background: #FF5A1F; border-color: #FF5A1F; }
 .hc-switch.is-on span { transform: translateX(16px); }
 .hc-setting-subrow { display:flex; justify-content:flex-end; padding: 5px 14px 8px; background: var(--hc-surface); border-bottom: 1px solid var(--hc-divider); }
-.hc-text-button { padding: 4px 0; border: 0; background: transparent; color: var(--brand-orange, #FF5A1F); font-size: 12px; font-weight: 650; cursor: pointer; }
+.hc-text-button { padding: 4px 0; border: 0; background: transparent; color: var(--hc-accent-text); font-size: 12px; font-weight: 650; cursor: pointer; }
 .hc-settings-group.is-danger { margin-top: 34px; }
 .hc-settings-group.is-danger > h3 { color: var(--hc-danger); }
 .hc-setting-row.is-danger .hc-setting-icon,.hc-setting-row.is-danger .hc-setting-copy strong { color: var(--hc-danger); }
