@@ -493,8 +493,8 @@ try {
         const expectedReminder = theme === "dark" ? "rgb(32, 32, 32)" : "rgb(255, 255, 255)";
         if (result.liveEmpty?.background !== expectedEmpty) errors.push("Live empty state surface mismatch: " + JSON.stringify(result.liveEmpty));
         if (result.remindButton?.background !== expectedReminder) errors.push("REMIND ME surface mismatch: " + JSON.stringify(result.remindButton));
-        const expectedUpcomingSurface = theme === "dark" ? "rgb(58, 33, 25)" : "rgb(255, 240, 233)";
-        const expectedUpcomingText = theme === "dark" ? "rgb(255, 177, 143)" : "rgb(143, 50, 21)";
+        const expectedUpcomingSurface = theme === "dark" ? "rgb(36, 36, 36)" : "rgb(241, 241, 237)";
+        const expectedUpcomingText = theme === "dark" ? "rgb(231, 231, 225)" : "rgb(76, 76, 70)";
         const expectedReminderText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
         if (result.upcomingPill?.background !== expectedUpcomingSurface || result.upcomingPill?.color !== expectedUpcomingText) errors.push("UPCOMING pill pair mismatch: " + JSON.stringify(result.upcomingPill));
         if (result.remindButton?.color !== expectedReminderText) errors.push("REMIND ME text mismatch: " + JSON.stringify(result.remindButton));
