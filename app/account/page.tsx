@@ -7,6 +7,7 @@ import HoopLoading from "../../components/HoopLoading";
 import { supabase } from "../../lib/supabase";
 import ThemeToast from "../../components/ThemeToast";
 import Surface from "../../components/Surface";
+import { GroupCard, Row } from "../../components/LayoutSystem";
 import { useTheme } from "../../components/ThemeProvider";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
 
@@ -53,12 +54,10 @@ function SettingsGlyph({name}:{name:string}) {
   return <span className="hc-setting-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={paths[name]||paths.user}/></svg></span>;
 }
 function SettingsGroup({title,children,danger=false}:{title:string;children:React.ReactNode;danger?:boolean}) {
- return <section className={"hc-settings-group"+(danger?" is-danger":"")}><h3>{title}</h3><div className="hc-settings-list">{children}</div></section>;
+ return <GroupCard title={title} className={"hc-settings-group"+(danger?" is-danger":"")}>{children}</GroupCard>;
 }
 function SettingsRow({icon,label,value,href,onClick,danger=false}:{icon:string;label:string;value:string;href?:string;onClick?:()=>void;danger?:boolean}) {
- const content=<><SettingsGlyph name={icon}/><span className="hc-setting-copy"><strong>{label}</strong></span><span className="hc-setting-value">{value}</span><span className="hc-setting-chevron" aria-hidden="true">›</span></>;
- if(href)return <Link className={"hc-setting-row"+(danger?" is-danger":"")} href={href}>{content}</Link>;
- return <button type="button" className={"hc-setting-row"+(danger?" is-danger":"")} onClick={onClick}>{content}</button>;
+ return <Row icon={<SettingsGlyph name={icon}/>} label={<strong>{label}</strong>} value={value} href={href} onClick={onClick} className={"hc-setting-row"+(danger?" is-danger":"")}/>;
 }
 function SettingsToggle({icon,label,checked,onChange}:{icon:string;label:string;checked:boolean;onChange:(value:boolean)=>void}) {
  return <div className="hc-setting-row"><SettingsGlyph name={icon}/><span className="hc-setting-copy"><strong>{label}</strong></span><button type="button" role="switch" aria-checked={checked} className={"hc-switch"+(checked?" is-on":"")} onClick={()=>onChange(!checked)}><span/></button></div>;
@@ -379,9 +378,13 @@ export default function AccountPage() {
             {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{(displayName || email || "H").trim().charAt(0).toUpperCase()}</span>}
           </span>
           <div className="hc-account-settings-identity-copy">
-            <strong>{displayName || t("yourAccount")}</strong>
+            <div className="hc-account-identity-title"><strong>{displayName || t("yourAccount")}</strong><span className="hc-account-membership-pill">{subscription?.plan === "premium" ? "Premium" : subscription?.plan === "pro" ? t("pro") : t("freePlan")}</span></div>
             <p>{email || t("emailNotSet")}</p>
           </div>
+        </div>
+        <div className="hc-account-identity-actions">
+          <a href="#profile-editor" className="btn">{t("editProfile")}</a>
+          {profile.account_type === "player" && settingsVisibility === "public" ? <Link href={userId ? `/players/${encodeURIComponent(userId)}` : "/profile"} className="btn dark">{t("profilePublic")}</Link> : null}
         </div>
       </header>
       {(profile as any).moderation_status === "warned" || (profile as any).moderation_status === "flagged" ? <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{(profile as any).moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{(profile as any).moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section> : null}
