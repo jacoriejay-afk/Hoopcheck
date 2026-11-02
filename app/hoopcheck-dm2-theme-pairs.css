@@ -4,6 +4,10 @@
   --hc-nav-fg: #22221F;
   --hc-nav-active-bg: #EAEAE5;
   --hc-nav-active-fg: #B83E14;
+  --hc-card: #FFFFFF;
+  --hc-border: #D9D9D4;
+  --hc-foreground: #151515;
+  --hc-foreground-muted: #62625D;
   --hc-card-surface: #FFFFFF;
   --hc-card-border: #D9D9D4;
   --hc-on-card: #151515;
@@ -24,6 +28,10 @@ html.theme-dark {
   --hc-nav-fg: #F5F5F0;
   --hc-nav-active-bg: #242421;
   --hc-nav-active-fg: #FF8A5C;
+  --hc-card: #171717;
+  --hc-border: #3A3A3A;
+  --hc-foreground: #F5F5F0;
+  --hc-foreground-muted: #B8B8B3;
   --hc-card-surface: #171717;
   --hc-card-border: #3A3A3A;
   --hc-on-card: #F5F5F0;
