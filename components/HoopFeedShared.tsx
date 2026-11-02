@@ -1,10 +1,11 @@
 "use client";
 
 import type { HTMLAttributes, ReactNode } from "react";
+import { Card } from "./LayoutSystem";
 
 /** Shared visual primitives for both HoopCheck feed surfaces. These wrappers own presentation only. */
 export function FeedPostCard({ children, className = "", ...props }: { children: ReactNode; className?: string } & HTMLAttributes<HTMLElement>) {
-  return <article {...props} className={`dashboard-card hc-feed-ticket hc-feed-shared-card ${className}`.trim()}>{children}</article>;
+  return <Card {...props} className={`dashboard-card hc-feed-ticket hc-feed-shared-card ${className}`.trim()}>{children}</Card>;
 }
 
 export function FeedAuthorRow({ children, className = "" }: { children: ReactNode; className?: string }) {
