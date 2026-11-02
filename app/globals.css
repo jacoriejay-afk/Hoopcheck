@@ -3095,10 +3095,10 @@ body { background-color: var(--hc-page-bg); }
 
 /* Live Games hub — schedule discovery around the existing per-game chat. */
 .hc-live-hub-page { padding-bottom:calc(112px + env(safe-area-inset-bottom)); }
-.hc-live-hub-hero { position:relative; display:flex; align-items:center; justify-content:space-between; gap:24px; margin:18px 0 24px; padding:clamp(24px,5vw,48px); overflow:hidden; border:1px solid #2d2d2d; border-radius:20px; background:#0b0b0b; color:#fff; }
+.hc-live-hub-hero { position:relative; display:flex; align-items:center; justify-content:space-between; gap:24px; margin:18px 0 24px; padding:clamp(24px,5vw,48px); overflow:hidden; border:1px solid var(--hc-hero-border); border-radius:20px; background:var(--hc-hero-surface); color:var(--hc-on-hero); }
 .hc-live-hub-hero::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.13; background:radial-gradient(circle at 72% 50%,transparent 0 70px,#ff5a1f 71px 72px,transparent 73px 110px,#ff5a1f 111px 112px,transparent 113px); }
 .hc-live-hub-hero>div:first-child { position:relative; z-index:1; }
-.hc-live-hub-hero .eyebrow { color:#ff7b48; }
+.hc-live-hub-hero .eyebrow { color:var(--hc-accent-text); }
 .hc-live-hub-hero h1 { margin:8px 0 10px; font-family:var(--font-display),Impact,sans-serif; font-size:clamp(28px,5vw,52px); line-height:1.08; letter-spacing:-.035em; }
 .hc-live-hub-hero h1 span { color:#ff5a1f; }
 .hc-live-hub-hero p:last-child { max-width:480px; margin:0; color:#c9c9c9; line-height:1.6; }
