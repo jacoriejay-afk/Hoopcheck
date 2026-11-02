@@ -995,6 +995,8 @@ button, a, input, select, textarea { -webkit-tap-highlight-color:transparent; }
   --hc-orange:#ff5500;
   --hc-surface:var(--hc-card-surface);
   --hc-border:var(--hc-card-border);
+  --hc-foreground:var(--hc-on-card);
+  --hc-foreground-muted:var(--hc-on-card-muted);
   --hc-radius:12px;
 }
 :where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,
