@@ -3965,3 +3965,12 @@ main :where(input,select,textarea) { max-width:100%; min-width:0; }
   .hc-team-profile-hero .hc-team-profile-heading { align-items:center; }
   .hc-team-profile-hero .hc-entity-trust-score { align-items:flex-start; }
 }
+
+
+.hc-team-social-top { display:flex; align-items:center; justify-content:space-between; gap:18px; }
+.hc-team-social-top .hc-team-profile-heading { flex:1 1 auto; min-width:0; }
+.hc-team-social-top .hc-team-social-stats { flex:0 1 auto; justify-content:flex-end; border:0; margin:0; padding:0; }
+@media (max-width:600px) {
+  .hc-team-social-top { gap:10px; align-items:flex-start; }
+  .hc-team-social-top .hc-team-social-stats { gap:8px; }
+}
