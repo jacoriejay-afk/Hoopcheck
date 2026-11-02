@@ -10,6 +10,7 @@ const files = {
 };
 const errors = [];
 const requiredTokens = [
+  "--hc-card","--hc-border","--hc-foreground","--hc-foreground-muted",
   "--hc-card-surface","--hc-card-border","--hc-on-card","--hc-on-card-muted",
   "--hc-chip-surface","--hc-chip-foreground","--hc-live-chip-surface",
   "--hc-live-chip-foreground","--hc-button-primary-surface","--hc-button-primary-foreground",
@@ -38,10 +39,15 @@ function contrast(fg,bg) {
 }
 for (const theme of ["html.theme-light","html.theme-dark"]) {
   for (const token of requiredTokens) if (!tokenValue(theme,token)) errors.push(`${theme} missing ${token}`);
+  for (const [alias,canonical] of [["--hc-card","--hc-card-surface"],["--hc-border","--hc-card-border"],["--hc-foreground","--hc-on-card"],["--hc-foreground-muted","--hc-on-card-muted"]]) {
+    if (tokenValue(theme,alias) !== tokenValue(theme,canonical)) errors.push(`${theme} legacy alias ${alias} must equal ${canonical}`);
+  }
 }
 const contrastPairs=[
   ["html.theme-light","--hc-on-card","--hc-card-surface"],
   ["html.theme-dark","--hc-on-card","--hc-card-surface"],
+  ["html.theme-light","--hc-foreground","--hc-card"],
+  ["html.theme-dark","--hc-foreground","--hc-card"],
   ["html.theme-light","--hc-chip-foreground","--hc-chip-surface"],
   ["html.theme-dark","--hc-chip-foreground","--hc-chip-surface"],
   ["html.theme-light","--hc-live-chip-foreground","--hc-live-chip-surface"],
