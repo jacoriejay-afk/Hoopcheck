@@ -139,6 +139,7 @@ jobs:
           set -o pipefail
           mkdir -p artifacts/performance artifacts/lighthouse
           npm run build 2>&1 | tee artifacts/performance/next-build.log
+          node scripts/measure-route-bundles.mjs | tee artifacts/performance/route-bundles.txt
 
       - name: Verify Chrome is available
         run: google-chrome --version
