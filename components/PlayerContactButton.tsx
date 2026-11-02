@@ -3,6 +3,7 @@
 import Link from "next/link"; // Used by compact sign-in and upgrade actions.
 import { useEffect, useState } from "react";
 import { getCachedSession, supabase } from "../lib/supabase";
+import { isAtLeastTier } from "../lib/membership-tier";
 
 type RequestRow = { id:string; requester_id:string; player_id:string; message:string|null; status:string; created_at:string; };
 type MessageRow = { id:string; request_id:string; sender_id:string; body:string; created_at:string; };
@@ -29,7 +30,7 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
       supabase.from("player_contact_requests").select("id,requester_id,player_id,message,status,created_at").or(`requester_id.eq.${user.id},player_id.eq.${user.id}`).eq("player_id",playerId).maybeSingle()
     ]);
     setAccountType(profileResult.data?.account_type||"");
-    setPremium(["pro","premium"].includes(subscriptionResult.data?.plan||"") && (subscriptionResult.data?.status==="active" || subscriptionResult.data?.status==="trialing"));
+    setPremium(isAtLeastTier(subscriptionResult.data?.plan, "pro") && (subscriptionResult.data?.status==="active" || subscriptionResult.data?.status==="trialing"));
     const r=requestResult.data as RequestRow|null;
     setRequest(r);
     if(r?.status==="accepted"){

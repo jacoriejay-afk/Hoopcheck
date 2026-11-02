@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
+import { hasActiveMembershipAtLeast } from "../../../lib/membership-tier";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { submitReviewReport } from "../../../lib/review-reports";
 import HoopLoading from "../../../components/HoopLoading";
@@ -293,7 +294,7 @@ export default function LeagueDetailPage() {
 
       const fanHasPaidPlan =
         profileResult.data?.account_type !== "fan" ||
-        ["pro", "premium"].includes(subscription?.plan || "");
+        hasActiveMembershipAtLeast(subscription);
       const access =
         (subscriptionIsActive && fanHasPaidPlan) ||
         isAdmin;

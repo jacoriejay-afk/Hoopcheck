@@ -7,6 +7,7 @@ import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
 import { useLanguage } from "../../components/LanguageProvider";
+import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import { CategoryIconTile, HoopIcon } from "../../components/HoopCheckUI";
 
@@ -59,7 +60,7 @@ export default function DashboardPage() {
       ]);
       if (!mounted) return;
       setProfile(p as Profile|null);
-      const activeMember = ["pro","premium"].includes(subscription?.plan||"") && ["active","trialing"].includes(subscription?.status||"") && (!subscription?.access_status || ["active","trialing","pro","premium"].includes(subscription.access_status));
+      const activeMember = hasActiveMembershipAtLeast(subscription);
       const followedIds = (follows||[]).map((row:any)=>row.target_id).filter(Boolean);
 
       if (followedIds.length) {

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import { isAtLeastTier } from "../lib/membership-tier";
 
 export type BasketballSide = "mens" | "womens";
 const STORAGE_KEY = "hoopcheck:fan-basketball-side";
@@ -47,7 +48,7 @@ export default function FanBasketballSideSwitch({ lockedHint = false }: { locked
       const fan = profile?.account_type === "fan";
       const active = ["active", "trialing"].includes(subscription?.status || "") &&
         (!subscription?.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now());
-      const premiumTier = active && ["pro", "premium"].includes(subscription?.plan || "");
+      const premiumTier = active && isAtLeastTier(subscription?.plan, "pro");
       setIsFan(fan);
       setCanSwitch(fan && premiumTier);
       let preferred = profile?.preferred_basketball_side as BasketballSide | null;

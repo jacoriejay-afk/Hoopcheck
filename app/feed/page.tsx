@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import CourtLines from "../../components/CourtLines";
@@ -48,10 +49,7 @@ export default function Feed(){
   const [msg,setMsg]=useState(""); const [postingStreak,setPostingStreak]=useState(0); const [loading,setLoading]=useState(true); const [posting,setPosting]=useState(false); const [now,setNow]=useState(0); const textareaRef = useRef<HTMLTextAreaElement|null>(null);
   const visiblePosts = (topicFilter==="All" ? posts : posts.filter(p=>p.topic_tag===topicFilter)).slice().sort((a,b)=>feedSort==="Latest" ? new Date(b.created_at).getTime()-new Date(a.created_at).getTime() : new Date(a.expires_at).getTime()-new Date(b.expires_at).getTime());
 
-  const access=["player","fan","scout","agent"].includes(profile?.account_type||"") &&
-    (subscription?.plan==="pro"||subscription?.plan==="premium") &&
-    (subscription?.status==="active"||subscription?.status==="trialing") &&
-    (subscription?.access_status==null||["active","trialing","pro","premium"].includes(subscription.access_status));
+  const access=["player","fan","scout","agent"].includes(profile?.account_type||"") && hasActiveMembershipAtLeast(subscription);
 
   async function load(currentUser:any, currentProfile:Profile){
     const connectionPromise=currentProfile.account_type==="player"
@@ -100,7 +98,7 @@ export default function Feed(){
     // Keep the player HoopFeed surface strictly player-only; fans have their own feed.
     if(p?.account_type==="fan"){setLoading(false);router.replace("/fan-feed");return;}
     if(p?.account_type==="player"){const {data:activity}=await supabase.from("feed_posting_activity").select("activity_date").eq("user_id",u.id).order("activity_date",{ascending:false}).limit(370);setPostingStreak(calculatePostingStreak(activity||[]));}
-    const memberActive=(s?.plan==="pro"||s?.plan==="premium")&&(s?.status==="active"||s?.status==="trialing")&&(s?.access_status==null||["active","trialing","pro","premium"].includes(s.access_status));
+    const memberActive=hasActiveMembershipAtLeast(s);
     setLoading(false);
     if(p&&memberActive)void load(u,p);
   })();},[]);
