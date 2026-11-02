@@ -17,7 +17,7 @@ const requiredTokens = [
 ];
 function blockAfter(source, selector) {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = source.match(new RegExp("(?:^|})\\s*[^{}]*" + escaped + "[^{}]*\\{([^}]*)\\}", "m"));
+  const match = source.match(new RegExp("(?:^|})\\s*[^{}]*" + escaped + "(?![a-zA-Z0-9_-])[^{}]*\\{([^}]*)\\}", "m"));
   return match?.[1] ?? null;
 }
 function tokenValue(themeSelector, token) {
