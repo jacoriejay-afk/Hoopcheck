@@ -1,0 +1,166 @@
+/* DM-2 — loaded last so shared paired surfaces outrank legacy component CSS. */
+:root, html.theme-light {
+  --hc-card-surface: #FFFFFF;
+  --hc-card-border: #D9D9D4;
+  --hc-on-card: #151515;
+  --hc-on-card-muted: #62625D;
+  --hc-chip-surface: #F1F1ED;
+  --hc-chip-foreground: #4C4C46;
+  --hc-live-chip-surface: #FFF0E9;
+  --hc-live-chip-foreground: #8F3215;
+  --hc-button-primary-surface: #FF5A1F;
+  --hc-button-primary-foreground: #111111;
+  --hc-button-outline-surface: #FFFFFF;
+  --hc-button-outline-foreground: #151515;
+  --hc-empty-surface: #F8F8F6;
+  --hc-empty-foreground: #3F3F3A;
+}
+html.theme-dark {
+  --hc-card-surface: #171717;
+  --hc-card-border: #3A3A3A;
+  --hc-on-card: #F5F5F0;
+  --hc-on-card-muted: #B8B8B3;
+  --hc-chip-surface: #242424;
+  --hc-chip-foreground: #E7E7E1;
+  --hc-live-chip-surface: #3A2119;
+  --hc-live-chip-foreground: #FFB18F;
+  --hc-button-primary-surface: #FF5A1F;
+  --hc-button-primary-foreground: #111111;
+  --hc-button-outline-surface: #202020;
+  --hc-button-outline-foreground: #F5F5F0;
+  --hc-empty-surface: #141414;
+  --hc-empty-foreground: #E5E5DF;
+}
+
+/* Page canvas and shared card surfaces. Intentional dark editorial hero panels are excluded. */
+html.theme-light body main.hc-ia-home,
+html.theme-dark body main.hc-ia-home {
+  background: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html.theme-light body main :where(
+  .card,.dashboard-card,.compact-card,.panel,.result-card,.quick-card,.settings-card,
+  .profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,
+  .hc-profile-info-card,.hc-review-card,.hc-player-result,.hc-directory-result,
+  .hc-review-state,.hc-coach-empty,.admin-panel,.admin-card,.admin-section,.admin-stat-card,
+  .admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,
+  .auth-card,.hc-auth-card,.legal-card,.hc-shared-directory-tiles,.hc-shared-directory-tiles a,
+  .hc-team-facts-card,.hc-dashboard-stat-card,.hc-dashboard-profile-block,.hc-team-directory-row,
+  .hc-ia-identity,.hc-ia-completion,.hc-ia-live-strip,.hc-ia-door,.hc-ia-follow-list,
+  .hc-ia-feed-card,.hc-layout-card,.hc-layout-group,.hc-settings-group,.hc-account-settings-header,
+  .hc-social-profile-header,.hc-template-category,.hc-template-panel:not(.hc-template-player-panel),
+  .hc-dashboard-shell .dashboard-command-tile,.hc-dashboard-shell .fan-feature-card,
+  .hc-live-hub-card,.hc-live-hub-filters
+),
+html.theme-dark body main :where(
+  .card,.dashboard-card,.compact-card,.panel,.result-card,.quick-card,.settings-card,
+  .profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,
+  .hc-profile-info-card,.hc-review-card,.hc-player-result,.hc-directory-result,
+  .hc-review-state,.hc-coach-empty,.admin-panel,.admin-card,.admin-section,.admin-stat-card,
+  .admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,
+  .auth-card,.hc-auth-card,.legal-card,.hc-shared-directory-tiles,.hc-shared-directory-tiles a,
+  .hc-team-facts-card,.hc-dashboard-stat-card,.hc-dashboard-profile-block,.hc-team-directory-row,
+  .hc-ia-identity,.hc-ia-completion,.hc-ia-live-strip,.hc-ia-door,.hc-ia-follow-list,
+  .hc-ia-feed-card,.hc-layout-card,.hc-layout-group,.hc-settings-group,.hc-account-settings-header,
+  .hc-social-profile-header,.hc-template-category,.hc-template-panel:not(.hc-template-player-panel),
+  .hc-dashboard-shell .dashboard-command-tile,.hc-dashboard-shell .fan-feature-card,
+  .hc-live-hub-card,.hc-live-hub-filters
+) {
+  background: var(--hc-card-surface) !important;
+  color: var(--hc-on-card) !important;
+  border-color: var(--hc-card-border) !important;
+  -webkit-text-fill-color: var(--hc-on-card);
+}
+
+/* Descendant text cannot retain a stale white/black declaration from a component stylesheet. */
+html.theme-light body main :where(
+  .card,.dashboard-card,.compact-card,.panel,.result-card,.quick-card,.settings-card,
+  .profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,
+  .hc-profile-info-card,.hc-review-card,.hc-player-result,.hc-directory-result,
+  .hc-ia-identity,.hc-ia-completion,.hc-ia-live-strip,.hc-ia-door,.hc-ia-follow-list,.hc-ia-feed-card,
+  .hc-template-category,.hc-template-panel:not(.hc-template-player-panel),
+  .hc-live-hub-card
+) :where(h1,h2,h3,h4,p,small,strong,span,a:not(.btn),div) {
+  color: var(--hc-on-card) !important;
+  -webkit-text-fill-color: currentColor;
+}
+html.theme-dark body main :where(
+  .card,.dashboard-card,.compact-card,.panel,.result-card,.quick-card,.settings-card,
+  .profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-team-row,
+  .hc-profile-info-card,.hc-review-card,.hc-player-result,.hc-directory-result,
+  .hc-ia-identity,.hc-ia-completion,.hc-ia-live-strip,.hc-ia-door,.hc-ia-follow-list,.hc-ia-feed-card,
+  .hc-template-category,.hc-template-panel:not(.hc-template-player-panel),
+  .hc-live-hub-card
+) :where(h1,h2,h3,h4,p,small,strong,span,a:not(.btn),div) {
+  color: var(--hc-on-card) !important;
+  -webkit-text-fill-color: currentColor;
+}
+html.theme-light body main :where(
+  .hc-ia-identity small,.hc-ia-completion small,.hc-ia-live-strip small,.hc-ia-door small,
+  .hc-ia-follow-list small,.hc-ia-feed-card small,.hc-live-card__league,.hc-live-card__muted,
+  .hc-live-card__middle small,.hc-live-card__meta,.hc-live-empty p,.hc-live-no-games p,
+  .hc-live-recent-empty,.muted
+),
+html.theme-dark body main :where(
+  .hc-ia-identity small,.hc-ia-completion small,.hc-ia-live-strip small,.hc-ia-door small,
+  .hc-ia-follow-list small,.hc-ia-feed-card small,.hc-live-card__league,.hc-live-card__muted,
+  .hc-live-card__middle small,.hc-live-card__meta,.hc-live-empty p,.hc-live-no-games p,
+  .hc-live-recent-empty,.muted
+) { color: var(--hc-on-card-muted) !important; -webkit-text-fill-color: currentColor; }
+
+/* Empty states are paired surfaces too, not transparent light-theme leftovers. */
+html.theme-light body main :where(.empty-state,.admin-empty-state,.hc-feed-empty,.hc-live-empty,.hc-live-no-games,.hc-live-recent-empty,.hc-live-empty-state,.hc-live-closed-state,.hc-womens-empty-state,.hc-coach-empty,.hc-review-state),
+html.theme-dark body main :where(.empty-state,.admin-empty-state,.hc-feed-empty,.hc-live-empty,.hc-live-no-games,.hc-live-recent-empty,.hc-live-empty-state,.hc-live-closed-state,.hc-womens-empty-state,.hc-coach-empty,.hc-review-state) {
+  background: var(--hc-empty-surface) !important;
+  color: var(--hc-empty-foreground) !important;
+  border-color: var(--hc-card-border) !important;
+}
+
+/* Upcoming/live/final pills use complete theme pairs. */
+html.theme-light body main :where(.hc-live-state,.hc-live-badge,.hc-live-room-game-status) ,
+html.theme-dark body main :where(.hc-live-state,.hc-live-badge,.hc-live-room-game-status) {
+  background: var(--hc-chip-surface) !important;
+  color: var(--hc-chip-foreground) !important;
+  border: 1px solid var(--hc-card-border) !important;
+  -webkit-text-fill-color: currentColor;
+}
+html.theme-light body main :where(.hc-live-state--soon,.hc-live-badge.is-live,.hc-live-room-game-status.is-live),
+html.theme-dark body main :where(.hc-live-state--soon,.hc-live-badge.is-live,.hc-live-room-game-status.is-live) {
+  background: var(--hc-live-chip-surface) !important;
+  color: var(--hc-live-chip-foreground) !important;
+}
+
+/* Primary, outline and reminder actions use a paired button token family. */
+html.theme-light body main :where(.btn:not(.dark),.hc-live-join),
+html.theme-dark body main :where(.btn:not(.dark),.hc-live-join) {
+  background: var(--hc-button-primary-surface) !important;
+  color: var(--hc-button-primary-foreground) !important;
+  border-color: var(--hc-button-primary-surface) !important;
+  -webkit-text-fill-color: var(--hc-button-primary-foreground) !important;
+}
+html.theme-light body main :where(.btn.dark,.btn-outline,.btn-ghost,.hc-remind-button),
+html.theme-dark body main :where(.btn.dark,.btn-outline,.btn-ghost,.hc-remind-button) {
+  background: var(--hc-button-outline-surface) !important;
+  color: var(--hc-button-outline-foreground) !important;
+  border-color: var(--hc-card-border) !important;
+  -webkit-text-fill-color: var(--hc-button-outline-foreground) !important;
+}
+html.theme-light body main .hc-remind-button.is-set,
+html.theme-dark body main .hc-remind-button.is-set {
+  background: var(--hc-live-chip-surface) !important;
+  color: var(--hc-live-chip-foreground) !important;
+  border-color: var(--hc-card-border) !important;
+  -webkit-text-fill-color: var(--hc-live-chip-foreground) !important;
+}
+html.theme-light body main .hc-live-hub-filter-tabs button,
+html.theme-dark body main .hc-live-hub-filter-tabs button {
+  background: var(--hc-card-surface) !important;
+  color: var(--hc-on-card) !important;
+  border-color: var(--hc-card-border) !important;
+}
+html.theme-light body main .hc-live-hub-filter-tabs button.is-active,
+html.theme-dark body main .hc-live-hub-filter-tabs button.is-active {
+  background: var(--hc-live-chip-surface) !important;
+  color: var(--hc-live-chip-foreground) !important;
+  border-color: var(--hc-orange) !important;
+}
