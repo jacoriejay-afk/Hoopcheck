@@ -29,6 +29,7 @@ revoke all on function public.current_user_has_live_game_membership() from publi
 grant execute on function public.current_user_has_live_game_membership() to authenticated;
 
 drop policy if exists "eligible fans view live games" on public.fan_live_games;
+drop policy if exists "active pro premium fans can view games" on public.fan_live_games;
 create policy "eligible members view live games"
 on public.fan_live_games for select to authenticated
 using (
@@ -37,6 +38,7 @@ using (
 );
 
 drop policy if exists "eligible fans read live chat" on public.fan_live_chat_messages;
+drop policy if exists "active pro premium fans can read game chat" on public.fan_live_chat_messages;
 create policy "eligible members read live chat"
 on public.fan_live_chat_messages for select to authenticated
 using (
@@ -54,6 +56,7 @@ using (
 );
 
 drop policy if exists "eligible fans send live chat" on public.fan_live_chat_messages;
+drop policy if exists "active pro premium fans can send in open game chat" on public.fan_live_chat_messages;
 create policy "eligible members send live chat"
 on public.fan_live_chat_messages for insert to authenticated
 with check (
@@ -99,6 +102,7 @@ with check (
 );
 
 drop policy if exists "eligible fans publish own game presence" on public.fan_live_chat_presence;
+drop policy if exists "active pro premium fans publish own game presence" on public.fan_live_chat_presence;
 create policy "eligible members publish own game presence"
 on public.fan_live_chat_presence for insert to authenticated
 with check (
@@ -108,6 +112,7 @@ with check (
 );
 
 drop policy if exists "eligible fans update own game presence" on public.fan_live_chat_presence;
+drop policy if exists "active pro premium fans update own game presence" on public.fan_live_chat_presence;
 create policy "eligible members update own game presence"
 on public.fan_live_chat_presence for update to authenticated
 using (user_id = (select auth.uid()))
@@ -118,6 +123,7 @@ with check (
 );
 
 drop policy if exists "eligible fans read game presence" on public.fan_live_chat_presence;
+drop policy if exists "active pro premium fans read game presence" on public.fan_live_chat_presence;
 create policy "eligible members read game presence"
 on public.fan_live_chat_presence for select to authenticated
 using (
