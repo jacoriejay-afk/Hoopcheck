@@ -476,7 +476,7 @@ try {
       if (["/dashboard", "/search", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2"].includes(requestedPath)) {
         const visibleText = await page.locator("body").innerText();
         const expectedText = testLanguage === "es"
-          ? requestedPath === "/dashboard" ? ["TUS ACCESOS DIRECTOS", "ACCESO RÁPIDO"]
+          ? requestedPath === "/dashboard" ? ["YOUR SHORTCUTS", "QUICK ACCESS", "SIGNED IN AS", "COMPLETE YOUR PROFILE", "LIVE GAMES"]
             : requestedPath === "/search" ? ["CONEXIÓN ENTRE JUGADORES", "EMPIEZA A INVESTIGAR"]
             : ["TABLERO DE PLANTILLA", "AÚN NO HAY RESEÑAS APROBADAS"]
           : requestedPath === "/dashboard" ? ["YOUR SHORTCUTS", "Quick Access"]
