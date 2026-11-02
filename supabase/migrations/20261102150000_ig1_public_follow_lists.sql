@@ -58,3 +58,25 @@ as $$
 $$;
 revoke all on function public.get_public_following_count(uuid) from public;
 grant execute on function public.get_public_following_count(uuid) to anon, authenticated;
+
+create or replace function public.get_shared_team_followers(p_team_id uuid)
+returns table(display_name text)
+language sql stable security definer set search_path = public
+as $$
+  select distinct follower.display_name
+  from public.follow_relationships mine
+  join public.follow_relationships team_follow
+    on team_follow.follower_id = mine.target_id
+   and team_follow.target_type = 'team'
+   and team_follow.target_id = p_team_id
+  join public.profiles follower on follower.id = mine.target_id
+  where mine.follower_id = auth.uid()
+    and mine.target_type = 'player'
+    and follower.account_type = 'player'
+    and follower.profile_visibility = 'public'
+    and follower.display_name is not null
+  order by follower.display_name
+  limit 3;
+$$;
+revoke all on function public.get_shared_team_followers(uuid) from public;
+grant execute on function public.get_shared_team_followers(uuid) to authenticated;
