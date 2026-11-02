@@ -44,7 +44,7 @@ function contrast(fg,bg) {
 }
 for (const theme of ["html.theme-light","html.theme-dark"]) {
   for (const token of requiredTokens) if (!tokenValue(theme,token)) errors.push(`${theme} missing ${token}`);
-  for (const [alias,canonical] of [["--hc-card","--hc-card-surface"],["--hc-border","--hc-card-border"],["--hc-foreground","--hc-on-card"],["--hc-foreground-muted","--hc-on-card-muted"],["--hc-button-primary-bg","--hc-button-primary-surface"],["--hc-button-primary-fg","--hc-button-primary-foreground"],["--hc-button-outline-bg","--hc-button-outline-surface"],["--hc-button-outline-fg","--hc-button-outline-foreground"]]) {
+  for (const [alias,canonical] of [["--hc-card","--hc-card-surface"],["--hc-border","--hc-card-border"],["--hc-foreground","--hc-on-card"],["--hc-foreground-muted","--hc-on-card-muted"],["--hc-button-primary-bg","--hc-button-primary-surface"],["--hc-button-primary-fg","--hc-button-primary-foreground"],["--hc-button-outline-bg","--hc-button-outline-surface"],["--hc-button-outline-fg","--hc-button-outline-foreground"],["--hc-hero-surface","--hc-card-surface"],["--hc-on-hero","--hc-on-card"],["--hc-hero-muted","--hc-on-card-muted"],["--hc-hero-border","--hc-card-border"]]) {
     if (tokenValue(theme,alias) !== tokenValue(theme,canonical)) errors.push(`${theme} legacy alias ${alias} must equal ${canonical}`);
   }
 }
