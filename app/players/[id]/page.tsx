@@ -10,6 +10,8 @@ import PlayerContactButton from "../../../components/PlayerContactButton";
 import PlayerProfilePanel from "../../../components/PlayerProfilePanel";
 import { HoopIcon, VerifiedBadge } from "../../../components/HoopCheckUI";
 import PlayerJourney from "../../../components/PlayerJourney";
+import PlayerProfileCompletionCard from "../../../components/PlayerProfileCompletionCard";
+import ProfileAvatar from "../../../components/ProfileAvatar";
 
 type Player = {
   id: string;
@@ -24,6 +26,11 @@ type Player = {
   current_team: string | null;
   player_verified: boolean;
   player_verified_at: string | null;
+  height?: string | null;
+  favorite_leagues?: string | null;
+  hometown?: string | null;
+  profile_visibility?: string | null;
+  account_type?: string;
 };
 
 export default function PlayerProfilePage() {
@@ -46,7 +53,12 @@ export default function PlayerProfilePage() {
         .rpc("get_public_player_profile", { p_user_id: params.id });
 
       if (!error && data?.[0]) {
-        setPlayer(data[0]);
+        if (user?.id === params.id) {
+          const { data: own } = await supabase.from("profiles").select("height,favorite_leagues,hometown,profile_visibility").eq("id", params.id).maybeSingle();
+          setPlayer({ ...data[0], ...(own || {}), account_type: "player" });
+        } else {
+          setPlayer({ ...data[0], account_type: "player", profile_visibility: "public" });
+        }
         const { data: countryVisibility } = await supabase.rpc("is_player_country_public", { p_user_id: params.id });
         setCountryPublic(countryVisibility === true);
         setLoading(false);
@@ -54,7 +66,7 @@ export default function PlayerProfilePage() {
         // Owners can always open their own player profile, even if they keep it private.
         const { data: own } = await supabase
           .from("profiles")
-          .select("id,display_name,avatar_url,country,bio,position,years_pro,current_country,current_country_public,current_team,player_verified,player_verified_at,account_type")
+          .select("id,display_name,avatar_url,country,bio,position,years_pro,current_country,current_country_public,current_team,height,favorite_leagues,hometown,profile_visibility,player_verified,player_verified_at,account_type")
           .eq("id", params.id)
           .eq("account_type", "player")
           .maybeSingle();
@@ -73,6 +85,11 @@ export default function PlayerProfilePage() {
             current_team: own.current_team,
             player_verified: Boolean(own.player_verified),
             player_verified_at: own.player_verified_at,
+            height: own.height,
+            favorite_leagues: own.favorite_leagues,
+            hometown: own.hometown,
+            profile_visibility: own.profile_visibility,
+            account_type: "player",
           });
           setLoading(false);
         }
@@ -147,19 +164,10 @@ export default function PlayerProfilePage() {
           </nav>
         </header>
 
-        {isOwnProfile && (
-          <section className="hc-player-profile-completion" aria-label="Complete your player profile">
-            <div>
-              <span className="card-kicker">YOUR PLAYER PROFILE</span>
-              <h2>Make your profile work for you</h2>
-              <p className="muted">Add your playing position, years as a pro, current team, location and bio so teams, coaches and other players can understand your basketball background.</p>
-            </div>
-            <Link href="/account#profile-editor" className="btn">Complete player profile <HoopIcon name="arrow-right" size={16} /></Link>
-          </section>
-        )}
+        {isOwnProfile && player && <PlayerProfileCompletionCard profile={player} />}
 
         <section className="player-profile-hero hc-player-profile-hero">
-          <div className="player-profile-avatar">{player.avatar_url ? <img src={player.avatar_url} alt="" /> : (player.display_name?.trim()?.charAt(0)?.toUpperCase() || "P")}</div>
+          <ProfileAvatar name={player.display_name || "Player"} src={player.avatar_url} className="player-profile-avatar" size={60} />
           <div className="player-profile-heading">
             <p className="eyebrow">PLAYER PROFILE</p>
             <h1>
