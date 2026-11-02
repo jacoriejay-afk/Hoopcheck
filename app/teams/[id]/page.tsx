@@ -14,6 +14,7 @@ import FanTeamPosts from "../../../components/FanTeamPosts";
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
+import { hasActiveMembershipAtLeast } from "../../../lib/membership-tier";
 import { submitReviewReport } from "../../../lib/review-reports";
 import HoopLoading from "../../../components/HoopLoading";
 import FollowButton from "../../../components/FollowButton";
@@ -331,7 +332,7 @@ export default function TeamDetailPage() {
 
       const fanHasPaidPlan =
         profileResult.data?.account_type !== "fan" ||
-        ["pro", "premium"].includes(subscription?.plan || "");
+        hasActiveMembershipAtLeast(subscription);
       const access =
         (subscriptionIsActive && fanHasPaidPlan) ||
         isAdmin;
