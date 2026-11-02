@@ -186,6 +186,7 @@ export default function TeamDetailPage() {
   const [accountType, setAccountType] = useState<string>("");
   const [membershipPlan, setMembershipPlan] = useState<string>("");
   const [knownPlayerFollowers, setKnownPlayerFollowers] = useState<string[]>([]);
+  const [teamReviewCount, setTeamReviewCount] = useState(0);
   const [reviewTier, setReviewTier] = useState<"free" | "pro" | "premium" | "player" | "member">("free");
 
   const [loading, setLoading] =
@@ -235,6 +236,8 @@ export default function TeamDetailPage() {
 
       setTeam(teamData);
       setLoading(false);
+      const { count: approvedReviewCount } = await supabase.from("reviews").select("id", { count: "exact", head: true }).eq("team_id", id).eq("status", "approved");
+      setTeamReviewCount(approvedReviewCount || 0);
 
       const { data: membershipData } = await supabase.from("team_league_memberships").select("id,league_id,season,start_date,end_date,active").eq("team_id", id).eq("active", true).order("season", { ascending: false });
       if (membershipData) {
@@ -572,7 +575,7 @@ export default function TeamDetailPage() {
 <section className="hero hc-team-profile-hero hc-social-profile-header" id="overview">
         <div className="hc-team-profile-heading hc-team-profile-heading--club"><TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={72} className="hc-team-profile-logo" /><div className="hc-team-profile-heading__copy"><p className="hc-team-profile-kicker">HOOPCHECK CLUB PROFILE</p><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || t("countryNotListed")}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
         <div className="hc-social-stats hc-team-social-stats">
-          <span><strong>{publicSummary.review_count}</strong><small>Reviews</small></span>
+          <span><strong>{teamReviewCount}</strong><small>Reviews</small></span>
           <span><strong>{trustScoreData?.score == null ? "—" : trustScoreData.score.toFixed(1)}</strong><small>Trust Score</small></span>
           <FollowButton targetType="team" targetId={team.id} variant="club" showNotifications={false} />
         </div>
