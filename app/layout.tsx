@@ -21,6 +21,7 @@ import "./hoopcheck-lm2d-contrast.css";
 import "./hoopcheck-motion.css";
 import "./hoopcheck-mobile-tabbar-repair.css";
 import "./hoopcheck-lm2e-account-layout.css";
+import "./hoopcheck-brand-system.css";
 import ThemeProvider from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
 import MobileAuth from "../components/MobileAuth";
