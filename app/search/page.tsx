@@ -17,6 +17,7 @@ type Coach = { id: string; name: string; country: string | null; city: string | 
 type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
 type WomensTeam = { id: string; name: string; country: string | null; city: string | null; league_name: string | null; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
 type League = { id: string; name: string; country: string | null; level: string | null };
+type SocialSuggestion = { entity_type: "player" | "team"; entity_id: string; display_name: string; avatar_url: string | null; detail: string | null; player_verified: boolean };
 type Player = {
   id: string;
   display_name: string | null;
@@ -113,7 +114,8 @@ function SearchContent() {
   const initialType = searchParams.get("type");
   const basketballSide = useFanBasketballSide();
   const [isFanAccount, setIsFanAccount] = useState(false);
-  useEffect(() => { void (async () => { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const { data } = await supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(); setIsFanAccount(data?.account_type === "fan"); })(); }, []);
+  const [suggestions, setSuggestions] = useState<SocialSuggestion[]>([]);
+  useEffect(() => { void (async () => { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const [{ data }, { data: graphSuggestions }] = await Promise.all([supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(), supabase.rpc("get_social_suggestions")]); setIsFanAccount(data?.account_type === "fan"); setSuggestions((graphSuggestions || []) as SocialSuggestion[]); })(); }, []);
 
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -279,6 +281,19 @@ function SearchContent() {
         </p>
         <PlayerUsernameConnect />
       </Surface>
+
+      {!query && suggestions.length > 0 && (
+        <section className="hc-suggested-for-you" aria-label="Suggested for you">
+          <div className="group-heading"><span>HC</span><h2>Suggested for you</h2></div>
+          <div className="hc-suggested-row">
+            {suggestions.map((item) => <Link key={item.entity_type + item.entity_id} href={item.entity_type === "team" ? "/teams/" + item.entity_id : "/players/" + item.entity_id} className="hc-suggested-card">
+              {item.avatar_url ? <img src={item.avatar_url} alt="" /> : <span className="hc-suggested-avatar">{(item.display_name || "HC").slice(0,1).toUpperCase()}</span>}
+              <strong>{item.display_name} {item.player_verified && <VerifiedBadge label="Verified player" />}</strong>
+              <small>{item.entity_type === "team" ? "Team" : "Player"} · {item.detail}</small>
+            </Link>)}
+          </div>
+        </section>
+      )}
 
       <section className="search-hero">
         <div className="eyebrow">{t("globalResearch")}</div>
