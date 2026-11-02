@@ -275,76 +275,23 @@ export default function TeamDetailPage() {
         return;
       }
 
-      const [
-        profileResult,
-        subscriptionResult,
-        adminResult,
-      ] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("account_type")
-          .eq("id", user.id)
-          .maybeSingle(),
-
-        supabase
-          .from("subscriptions")
-          .select(
-            "plan, status, current_period_end"
-          )
-          .eq(
-            "user_id",
-            user.id
-          )
-          .maybeSingle(),
-
-        supabase.rpc(
-          "is_current_user_admin_or_moderator"
-        ),
+      const [profileResult, subscriptionResult] = await Promise.all([
+        supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
+        supabase.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id", user.id).maybeSingle(),
       ]);
 
-      const subscription =
-        subscriptionResult.data;
+      const subscription = subscriptionResult.data;
       setAccountType(profileResult.data?.account_type || "");
-      setMembershipPlan(subscription?.plan || "");
-
-      const currentPeriodEnd =
-        subscription?.current_period_end
-          ? new Date(
-              subscription.current_period_end
-            )
-          : null;
-
-      const subscriptionIsActive =
-        (
-          subscription?.status ===
-            "active" ||
-          subscription?.status ===
-            "trialing"
-        ) &&
-        (
-          !currentPeriodEnd ||
-          currentPeriodEnd >
-            new Date()
-        );
-
-      const isAdmin =
-        adminResult.data === true;
-
-      const fanHasPaidPlan =
-        profileResult.data?.account_type !== "fan" ||
-        hasActiveMembershipAtLeast(subscription);
-      const access =
-        (subscriptionIsActive && fanHasPaidPlan) ||
-        isAdmin;
-
-      setHasAccess(access);
+      setMembershipPlan(hasActiveMembershipAtLeast(subscription) ? (subscription?.plan || "") : "");
 
       const response = await fetch(`/api/review-access?entityType=team&entityId=${encodeURIComponent(id)}`, {
         headers: { Authorization: `Bearer ${session?.access_token || ""}` },
         cache: "no-store",
       });
       const reviewPayload = response.ok ? await response.json() : null;
-      const tier = profileResult.data?.account_type === "player" ? "player" : ((reviewPayload?.tier || "free") as typeof reviewTier);
+      // The server entitlement response is authoritative; do not override it
+      // with account role or a second client-side membership calculation.
+      const tier = (reviewPayload?.tier || "free") as typeof reviewTier;
       setReviewTier(tier);
       const fullRead = ["premium", "player", "member"].includes(tier);
       const canReadAnything = tier !== "free";
@@ -581,7 +528,7 @@ export default function TeamDetailPage() {
         <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
         {["premium", "player", "member"].includes(reviewTier) && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">LATEST PLAYER REVIEW</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || t("playerExperience")}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
       </section>
-      {!hasAccess && reviewTier === "free" && accountType !== "player" ? (
+      {!hasAccess && reviewTier === "free" ? (
         <section className="hero">
           <Surface className="card hc-team-membership-surface">
             <div className="eyebrow">{t("membershipRequired")}</div>

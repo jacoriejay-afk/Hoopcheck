@@ -1212,3 +1212,15 @@ html.theme-light .admin-team-logo-studio select,
 html.theme-light .admin-team-logo-studio textarea { background: #FFFFFF !important; color: #0A0A0A !important; border-color: #B8B8B8 !important; }
 html.theme-light .admin-team-logo-studio [role="status"] { background: #FFFFFF !important; border-color: #B8B8B8 !important; color: #0A0A0A !important; }
 html.theme-light .admin-team-logo-studio button { color: #FFFFFF; }
+
+
+/* Gate-1 / TP-1: keep fallback crests brand-filled in light mode. */
+html.theme-light main .hc-team-logo--fallback {
+  background: #FF5A1F !important;
+  color: #FFFFFF !important;
+}
+html.theme-light main .hc-team-logo--fallback .hc-team-logo__crest,
+html.theme-light main .hc-team-logo--fallback .hc-team-logo__crest text {
+  opacity: 1 !important;
+  fill: #FFFFFF !important;
+}
