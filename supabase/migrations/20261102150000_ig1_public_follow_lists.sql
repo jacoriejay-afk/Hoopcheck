@@ -107,17 +107,20 @@ as $$
     group by candidate.id
   ),
   team_suggestions as (
-    select 'team'::text as entity_type, team.id as entity_id,
-      team.name as display_name, team.logo_url as avatar_url,
-      coalesce(team.country, team.league_name, 'Team') as detail,
+    select 'team'::text as entity_type, coalesce(team.id, womens_team.id) as entity_id,
+      coalesce(team.name, womens_team.name) as display_name,
+      coalesce(team.logo_url, womens_team.logo_url) as avatar_url,
+      coalesce(team.country, womens_team.country, team.league_name, womens_team.league_name, 'Team') as detail,
       false as player_verified,
       count(*) as connection_weight
     from public.follow_relationships graph
     join followed_players fp on fp.target_id = graph.follower_id
-    join public.teams team on team.id = graph.target_id
+    left join public.teams team on team.id = graph.target_id
+    left join public.womens_teams womens_team on womens_team.id = graph.target_id
     where graph.target_type = 'team'
-      and not exists (select 1 from public.follow_relationships mine where mine.follower_id = auth.uid() and mine.target_type = 'team' and mine.target_id = team.id)
-    group by team.id
+      and coalesce(team.id, womens_team.id) is not null
+      and not exists (select 1 from public.follow_relationships mine where mine.follower_id = auth.uid() and mine.target_type = 'team' and mine.target_id = coalesce(team.id, womens_team.id))
+    group by team.id, womens_team.id
   )
   select entity_type, entity_id, display_name, avatar_url, detail, player_verified
   from (
