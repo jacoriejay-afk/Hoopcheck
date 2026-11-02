@@ -63,7 +63,7 @@ export default function AdminTeamFanFeedPage() {
     setMessage("");
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
-      window.location.href = "/login";
+      window.location.assign("/login");
       return;
     }
     const response = await fetch("/api/admin/team-fanfeed", {

@@ -3857,7 +3857,7 @@ html.theme-dark main :where(select option, select optgroup) { background:#191919
 html.theme-dark main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), textarea) { color:#F7F7F5; -webkit-text-fill-color:#F7F7F5; }
 html.theme-light main :where(select, option, optgroup) { color-scheme:light; }
 html.theme-light main :where(select) { background:var(--hc-surface)!important; color:#171717!important; border-color:#CFCFC9!important; -webkit-text-fill-color:#171717!important; }
-html.theme-light main :where(select option, select optgroup) { background:#FFFFFF!important; color:#171717!important; }
+html.theme-light main :where(select option, select optgroup) { background:var(--hc-surface)!important; color:#171717!important; }
 html.theme-light main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), textarea) { color:#171717; -webkit-text-fill-color:#171717; }
 html.theme-dark main :where(input[type="radio"], input[type="checkbox"]) { accent-color:#FF5A1F; }
 html.theme-light main :where(input[type="radio"], input[type="checkbox"]) { accent-color:#E84B16; }
