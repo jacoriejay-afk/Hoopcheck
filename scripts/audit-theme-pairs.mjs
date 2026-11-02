@@ -88,6 +88,7 @@ const authoredPairs=[
   ["Live reminder button",".hc-remind-button","live",["--hc-button-outline-surface","--hc-button-outline-foreground","--hc-card-border"]],
   ["Live empty state",".hc-live-empty","live",["--hc-empty-surface","--hc-empty-foreground","--hc-card-border"]],
   ["Live no-games state",".hc-live-no-games","live",["--hc-empty-surface","--hc-empty-foreground","--hc-card-border"]],
+  ["Team profile header light",".hc-team-entity-profile .hc-team-profile-hero","team",["--hc-card","--hc-foreground","--hc-border"]],
   ["Team profile header","html.theme-dark .hc-team-entity-profile .hc-team-profile-hero","team",["--hc-card","--hc-foreground","--hc-border"]],
   ["Team follow button",".hc-team-profile-topline .hc-team-follow-pill.is-not-following","team",["--hc-button-primary-bg","--hc-button-primary-fg"]],
   ["Team following button",".hc-team-profile-topline .hc-team-follow-pill.is-following","team",["--hc-button-outline-bg","--hc-button-outline-fg","--hc-border"]],
