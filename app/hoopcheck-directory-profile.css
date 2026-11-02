@@ -1061,7 +1061,7 @@ html.theme-light .hc-coaches-directory-page .hc-floating-action {
 .hc-team-profile-heading__copy { min-width: 0; }
 .hc-team-profile-kicker {
   margin: 0 0 6px;
-  color: var(--orange, #FF5A1F);
+  color: var(--hc-accent-text);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: .18em;
@@ -1410,11 +1410,15 @@ html.theme-dark .hc-team-entity-profile .hc-team-profile-hero {
   line-height:1!important;
   white-space:nowrap!important;
 }
-.hc-team-entity-profile .hc-team-profile-nav a[aria-current="page"],
+.hc-team-entity-profile .hc-team-profile-nav a[aria-current="page"] {
+  color:var(--hc-nav-active-fg)!important;
+  border-bottom:2px solid var(--hc-nav-active-fg)!important;
+}
 .hc-team-entity-profile .hc-team-profile-nav a:hover,
 .hc-team-entity-profile .hc-team-profile-nav a:focus-visible {
-  color:var(--hc-orange)!important;
-  border-bottom:2px solid var(--hc-orange)!important;
+  color:var(--hc-button-primary-fg)!important;
+  background:var(--hc-button-primary-bg)!important;
+  border-bottom:2px solid var(--hc-button-primary-bg)!important;
   outline-offset:3px;
 }
 .hc-team-entity-profile .hc-team-reviews-trust-strip {
