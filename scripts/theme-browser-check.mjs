@@ -348,6 +348,8 @@ try {
           body: color(document.body),
           pageWrapper: color(main),
           mainClass: main?.className || null,
+          headerPair: (() => { const el=document.querySelector(".site-header-global"); if(!el)return null; const st=getComputedStyle(el); const label=el.querySelector("a,button"); return {background:st.backgroundColor,color:st.color,labelColor:label?getComputedStyle(label).color:null}; })(),
+          bottomNavPair: (() => { const el=document.querySelector(".hc-lm2f-bottom-nav,.hc-bottom-tab-bar,.bottom-nav"); if(!el)return null; const st=getComputedStyle(el); const tab=el.querySelector(".hc-lm2f-tab,.active,a"); return {background:st.backgroundColor,color:st.color,tabColor:tab?getComputedStyle(tab).color:null}; })(),
           quickAccessRow: (() => { const el=document.querySelector(".hc-ia-door"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor,title:title?getComputedStyle(title).color:null,titleText:title?.textContent?.trim()||null}; })(),
           identityChip: (() => { const el=document.querySelector(".hc-ia-identity"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null}; })(),
           liveEmpty: (() => { const el=document.querySelector(".hc-live-no-games,.hc-live-empty"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor}; })(),
@@ -439,6 +441,11 @@ try {
       if (result.criticalControlContrast.length) errors.push("low contrast critical controls: " + JSON.stringify(result.criticalControlContrast));
       if (theme === "dark" && result.whiteSurfaceOffenders.length) errors.push("white surface offenders: " + JSON.stringify(result.whiteSurfaceOffenders));
       if (result.lowContrastText.length) errors.push("low contrast text: " + JSON.stringify(result.lowContrastText));
+      const expectedNavSurface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(247, 247, 245)";
+      const expectedNavText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(34, 34, 31)";
+      if (result.headerPair && result.headerPair.background !== expectedNavSurface) errors.push("Global header surface mismatch: " + JSON.stringify(result.headerPair));
+      if (result.bottomNavPair && result.bottomNavPair.background !== expectedNavSurface) errors.push("Bottom tab bar surface mismatch: " + JSON.stringify(result.bottomNavPair));
+      if (result.bottomNavPair && result.bottomNavPair.tabColor !== expectedNavText) errors.push("Bottom tab bar label mismatch: " + JSON.stringify(result.bottomNavPair));
       if (requestedPath === "/dashboard") {
         const expectedSurface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
         const expectedText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
