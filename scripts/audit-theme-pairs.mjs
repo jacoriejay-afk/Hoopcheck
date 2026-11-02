@@ -9,6 +9,7 @@ const files = {
   finalOverrides: await readFile("app/hoopcheck-final-overrides.css", "utf8"),
   layout: await readFile("app/layout.tsx", "utf8"),
   team: await readFile("app/hoopcheck-directory-profile.css", "utf8"),
+  polish: await readFile("app/hoopcheck-polish.css", "utf8"),
 };
 const errors = [];
 const requiredTokens = [
@@ -19,6 +20,7 @@ const requiredTokens = [
   "--hc-button-outline-bg","--hc-button-outline-fg","--hc-brand-tile-bg","--hc-brand-tile-fg","--hc-brand-tile-border",
   "--hc-button-outline-surface","--hc-button-outline-foreground","--hc-empty-surface","--hc-empty-foreground",
   "--hc-nav-bg","--hc-nav-fg","--hc-nav-active-bg","--hc-nav-active-fg",
+  "--hc-accent-text","--hc-hero-surface","--hc-on-hero","--hc-hero-muted","--hc-hero-border",
 ];
 function blockAfter(source, selector) {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -69,6 +71,12 @@ const contrastPairs=[
   ["html.theme-dark","--hc-button-outline-fg","--hc-button-outline-bg"],
   ["html.theme-light","--hc-brand-tile-fg","--hc-brand-tile-bg"],
   ["html.theme-dark","--hc-brand-tile-fg","--hc-brand-tile-bg"],
+  ["html.theme-light","--hc-accent-text","--hc-card-surface"],
+  ["html.theme-dark","--hc-accent-text","--hc-card-surface"],
+  ["html.theme-light","--hc-on-hero","--hc-hero-surface"],
+  ["html.theme-dark","--hc-on-hero","--hc-hero-surface"],
+  ["html.theme-light","--hc-hero-muted","--hc-hero-surface"],
+  ["html.theme-dark","--hc-hero-muted","--hc-hero-surface"],
 ];
 for (const [theme,fgToken,bgToken] of contrastPairs) {
   const fg=tokenValue(theme,fgToken),bg=tokenValue(theme,bgToken);
@@ -94,6 +102,15 @@ const authoredPairs=[
   ["Team follow button",".hc-team-profile-topline .hc-team-follow-pill.is-not-following","team",["--hc-button-primary-bg","--hc-button-primary-fg"]],
   ["Team following button",".hc-team-profile-topline .hc-team-follow-pill.is-following","team",["--hc-button-outline-bg","--hc-button-outline-fg","--hc-border"]],
   ["Team logo fallback",".hc-team-profile-topline .hc-team-logo--fallback","team",["--hc-brand-tile-bg","--hc-brand-tile-border"]],
+  ["Shared primary button",".btn","live",["--hc-button-primary-surface","--hc-button-primary-foreground"]],
+  ["Search submit button",".hc-searchbar__submit","live",["--hc-button-primary-surface","--hc-button-primary-foreground"]],
+  ["Live Games hero",".hc-live-hub-hero","live",["--hc-hero-surface","--hc-on-hero","--hc-hero-border"]],
+  ["Directory switcher",".hc-directory-switcher","polish",["--hc-card-surface","--hc-on-card","--hc-card-border"]],
+  ["Directory switcher label",".hc-directory-switcher-label","polish",["--hc-accent-text"]],
+  ["Team profile active tab",'.hc-team-entity-profile .hc-team-profile-nav a[aria-current="page"]',"team",["--hc-nav-active-fg"]],
+  ["Team profile kicker",".hc-team-profile-kicker","team",["--hc-accent-text"]],
+  ["Text action button",".hc-text-button","live",["--hc-accent-text"]],
+  ["Eyebrow label",".eyebrow","live",["--hc-accent-text"]],
 ];
 for(const [label,selector,file,tokens] of authoredPairs){
   const rule=blockAfter(files[file],selector);
