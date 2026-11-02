@@ -5,6 +5,7 @@ import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
 import TeamLogo from "../../components/TeamLogo";
 import TeamOfficialUpdates from "../../components/TeamOfficialUpdates";
 import HoopLoading from "../../components/HoopLoading";
@@ -92,7 +93,7 @@ export default function FanFeedPage() {
       ]);
       if (!alive) return;
       setUser(u); setProfile(p as Profile | null);
-      const active = ["pro", "premium"].includes(s?.plan || "") && ["active", "trialing"].includes(s?.status || "") && ["active", "trialing", "pro", "premium"].includes(s?.access_status ?? "active");
+      const active = hasActiveMembershipAtLeast(s);
       if (p?.account_type !== "fan") { setLoading(false); return; }
       setMembershipActive(active);
       if (!active) { setLoading(false); return; }
