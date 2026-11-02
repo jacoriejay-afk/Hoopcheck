@@ -88,3 +88,51 @@ html body .hc-global-page-shell main.page-shell { padding-block-start:12px !impo
     margin-inline: 0;
   }
 }
+
+
+/* FIT-1 coverage for the homepage and directory/profile routes, which use
+   their own main element instead of the .page-shell class. */
+@media (max-width: 767px) {
+  .hc-global-page-shell main.hc-template-home > .page-container {
+    box-sizing: border-box !important;
+    width: calc(100% - 32px) !important;
+    max-width: 1280px !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+  }
+
+  .hc-global-page-shell main.hc-template-home :where(.hc-template-explore, .hc-template-directory) {
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+  }
+
+  .hc-global-page-shell main.hc-team-directory-page,
+  .hc-global-page-shell main.hc-coaches-directory-page,
+  .hc-global-page-shell main.hc-leagues-directory-page,
+  .hc-global-page-shell main.hc-player-directory-page,
+  .hc-global-page-shell main.hc-womens-directory-page,
+  .hc-global-page-shell main.hc-entity-profile-page,
+  .hc-global-page-shell main.hc-womens-profile-page {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 1200px !important;
+    margin-inline: auto !important;
+    padding-inline: 16px !important;
+  }
+
+  .hc-global-page-shell main.hc-team-directory-page .page-container,
+  .hc-global-page-shell main.hc-coaches-directory-page .page-container,
+  .hc-global-page-shell main.hc-leagues-directory-page .page-container,
+  .hc-global-page-shell main.hc-player-directory-page .page-container,
+  .hc-global-page-shell main.hc-womens-directory-page .page-container,
+  .hc-global-page-shell main.hc-entity-profile-page .page-container,
+  .hc-global-page-shell main.hc-womens-profile-page .page-container {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+  }
+}
