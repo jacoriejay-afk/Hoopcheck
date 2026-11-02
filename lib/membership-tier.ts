@@ -26,6 +26,9 @@ export function hasActiveMembershipAtLeast(
   if (!subscription || !isAtLeastTier(subscription.plan, required)) return false;
   if (!["active", "trialing"].includes(subscription.status || "")) return false;
   if (subscription.access_status && !["active", "trialing", "pro", "premium"].includes(subscription.access_status)) return false;
-  if (subscription.current_period_end && new Date(subscription.current_period_end).getTime() <= now) return false;
+  if (subscription.current_period_end) {
+    const periodEnd = new Date(subscription.current_period_end).getTime();
+    if (!Number.isFinite(periodEnd) || periodEnd <= now) return false;
+  }
   return true;
 }
