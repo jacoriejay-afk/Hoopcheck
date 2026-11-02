@@ -273,8 +273,8 @@ html.theme-dark body main .hc-directory-switcher {
 }
 html.theme-light body main .hc-directory-switcher-label,
 html.theme-dark body main .hc-directory-switcher-label {
-  color: var(--hc-on-card) !important;
-  -webkit-text-fill-color: var(--hc-on-card) !important;
+  color: var(--hc-accent-text) !important;
+  -webkit-text-fill-color: var(--hc-accent-text) !important;
 }
 html.theme-light body main .hc-live-hub-hero,
 html.theme-dark body main .hc-live-hub-hero {
