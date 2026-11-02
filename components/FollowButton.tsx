@@ -39,7 +39,9 @@ export default function FollowButton({ targetType, targetId, variant = "default"
         supabase.rpc("get_follow_count", { p_target_type: targetType, p_target_id: targetId }),
       ]);
       if (!mounted) return;
-      const nextCount = Number(countResult.data ?? 0);\n      setCount(nextCount);\n      onCountChange?.(nextCount);
+      const nextCount = Number(countResult.data ?? 0);
+      setCount(nextCount);
+      onCountChange?.(nextCount);
       if (followResult.data) {
         setFollowing(true);
         setNotify(Boolean(followResult.data.notify_reviews || followResult.data.notify_ratings || followResult.data.notify_updates));
@@ -59,13 +61,16 @@ export default function FollowButton({ targetType, targetId, variant = "default"
     const wasFollowing = following;
     const previousCount = count;
     setFollowing(!wasFollowing);
-    const nextCount = Math.max(0, count + (wasFollowing ? -1 : 1));\n    setCount(nextCount);\n    onCountChange?.(nextCount);
+    const nextCount = Math.max(0, count + (wasFollowing ? -1 : 1));
+    setCount(nextCount);
+    onCountChange?.(nextCount);
     if (wasFollowing) {
       const { error } = await supabase.from("follow_relationships").delete()
         .eq("follower_id", user.id).eq("target_type", targetType).eq("target_id", targetId);
       if (error) {
         setFollowing(wasFollowing);
-        setCount(previousCount);\n        onCountChange?.(previousCount);
+        setCount(previousCount);
+        onCountChange?.(previousCount);
       }
     } else {
       const { error } = await supabase.from("follow_relationships").insert({
