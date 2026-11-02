@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCachedSession, supabase } from "../../lib/supabase";
@@ -9,8 +9,15 @@ import SearchBar from "../../components/SearchBar";
 import { useLanguage } from "../../components/LanguageProvider";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import { CategoryIconTile, HoopIcon } from "../../components/HoopCheckUI";
+import ProfileAvatar from "../../components/ProfileAvatar";
+import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
 
 type Profile = {
+  id?: string;
+  height?: string | null;
+  favorite_leagues?: string | null;
+  current_country?: string | null;
+  profile_visibility?: string | null;
   display_name: string | null;
   first_name?: string | null;
   last_name?: string | null;
@@ -53,7 +60,7 @@ export default function DashboardPage() {
       setEmail(user.email||"");
 
       const [{data:p},{data:subscription},{data:follows}] = await Promise.all([
-        supabase.from("profiles").select("display_name,first_name,last_name,bio,position,current_team,nationality,hometown,avatar_url,player_verified,account_type").eq("id",user.id).maybeSingle(),
+        supabase.from("profiles").select("id,display_name,first_name,last_name,bio,position,current_team,current_country,favorite_leagues,height,nationality,hometown,avatar_url,player_verified,profile_visibility,account_type").eq("id",user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",user.id).maybeSingle(),
         supabase.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").order("created_at",{ascending:false}).limit(100)
       ]);
@@ -103,17 +110,11 @@ export default function DashboardPage() {
   },[router,basketballSide]);
 
   const displayName = profile?.display_name || [profile?.first_name,profile?.last_name].filter(Boolean).join(" ") || email.split("@")[0] || "Player";
-  const completion = useMemo(()=>{
-    if(!profile || profile.account_type==="fan") return 100;
-    const fields=[profile.display_name,profile.bio,profile.position,profile.current_team,profile.nationality,profile.hometown,profile.avatar_url];
-    return Math.round(fields.filter(value=>Boolean(String(value||"").trim())).length/fields.length*100);
-  },[profile]);
-
-  if(loading) return <main className="page-shell dashboard-page"><div className="page-container"><HoopLoading label={t("loadingDashboard")}/></div></main>;
+    if(loading) return <main className="page-shell dashboard-page"><div className="page-container"><HoopLoading label={t("loadingDashboard")}/></div></main>;
 
   if(profile?.account_type==="fan") return (
     <main className="page-shell hc-ia-home"><div className="page-container">
-      <header className="hc-ia-welcome"><p className="eyebrow">FAN HQ</p><h1>YOUR BASKETBALL COMMUNITY<span>.</span></h1><p className="muted">Your teams, fan conversations, and live game rooms in one place.</p><div className="hc-ia-identity"><span className="hc-ia-avatar">{displayName.charAt(0).toUpperCase()}</span><span><small>SIGNED IN AS</small><strong>{displayName}</strong></span></div></header>
+      <header className="hc-ia-welcome"><p className="eyebrow">FAN HQ</p><h1>YOUR BASKETBALL COMMUNITY<span>.</span></h1><p className="muted">Your teams, fan conversations, and live game rooms in one place.</p><div className="hc-ia-identity"><ProfileAvatar name={displayName} src={profile?.avatar_url} className="hc-ia-avatar" size={44}/><span><small>SIGNED IN AS</small><strong>{displayName}</strong></span></div></header>
       <section className="hc-ia-section"><h2>YOUR FAN SIDE</h2><div className="hc-ia-fan-grid">
         <Link href="/team-hub" className="hc-ia-door"><CategoryIconTile category="teams" size="sm"/><span><strong>TEAM HUB</strong><small>Followed teams and updates</small></span><HoopIcon name="chevron-right" size={18}/></Link>
         <Link href="/fan-feed" className="hc-ia-door"><CategoryIconTile category="reviews" size="sm"/><span><strong>FAN HOOPFEED</strong><small>Posts from teams you follow</small></span><HoopIcon name="chevron-right" size={18}/></Link>
@@ -132,10 +133,10 @@ export default function DashboardPage() {
           <p className="eyebrow">YOUR DAILY FRONT DOOR</p>
           <h1>KNOW WHO YOU’RE SIGNING WITH<span>.</span></h1>
           <p className="muted">Real player experiences. Make your next move with confidence.</p>
-          <div className="hc-ia-identity"><span className="hc-ia-avatar">{displayName.charAt(0).toUpperCase()}</span><span><small>SIGNED IN AS</small><strong>{displayName}</strong></span></div>
+          <div className="hc-ia-identity"><ProfileAvatar name={displayName} src={profile?.avatar_url} className="hc-ia-avatar" size={44}/><span><small>SIGNED IN AS</small><strong>{displayName}</strong></span></div>
         </header>
 
-        {completion < 100 && <Link href="/account#edit-profile" className="hc-ia-completion"><span><strong>COMPLETE YOUR PROFILE</strong><small>{completion}% complete · Add your basketball background so players and organisations can recognise your experience.</small></span><span>Continue <HoopIcon name="arrow-right" size={16}/></span></Link>}
+        {profile?.account_type === "player" && <PlayerProfileCompletionCard profile={profile} />}
 
         <Link href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>LIVE GAMES</strong><small>{"See live and upcoming games"}</small></span><span>Open hub <HoopIcon name="arrow-right" size={16}/></span></Link>
 

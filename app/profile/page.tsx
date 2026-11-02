@@ -6,6 +6,8 @@ import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Surface from "../../components/Surface";
+import ProfileAvatar from "../../components/ProfileAvatar";
+import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
 import { useLanguage } from "../../components/LanguageProvider";
 
 function calculatePostingStreak(rows: { activity_date: string }[]) {
@@ -42,7 +44,7 @@ export default function ProfilePage() {
       const result = await Promise.race([
         supabase
           .from("profiles")
-          .select("id,display_name,username,first_name,last_name,account_type,bio,position,years_pro,current_country,current_team,player_verified,coach_verified,avatar_url,avatar_moderation_status,basketball_type,free_agent,hometown,nationality,interests,favorite_leagues,profile_visibility")
+          .select("id,display_name,username,first_name,last_name,account_type,bio,position,years_pro,current_country,current_team,height,player_verified,coach_verified,avatar_url,avatar_moderation_status,basketball_type,free_agent,hometown,nationality,interests,favorite_leagues,profile_visibility")
           .eq("id", user.id)
           .maybeSingle(),
         new Promise<any>((resolve) => setTimeout(() => resolve({ data: null }), 2500)),
@@ -80,20 +82,13 @@ export default function ProfilePage() {
   }
 
   const name = p.display_name || p.username || "HoopCheck Member";
-  const initials = name.trim().split(/\s+/).slice(0, 2).map((part: string) => part[0]).join("").toUpperCase() || "HC";
-  const profileFields = [p.display_name || p.username, p.bio, p.position, p.years_pro != null ? String(p.years_pro) : "", p.current_country, p.current_team, p.avatar_url, p.hometown || p.nationality];
-  const profileCompletion = Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100);
-  const firstMissingField = !p.position ? "position" : !p.current_country ? "location" : !p.bio ? "bio" : "profile details";
-
   return (
     <main className="page-shell hc-member-profile-page">
       <div className="page-container">
         <section className="hero-card compact-hero" aria-labelledby="hc-member-profile-title">
           <div className="hc-member-profile-identity">
             <div className="hc-member-profile-avatar-wrap">
-              <div className="hc-member-profile-avatar">
-                {p.avatar_url ? <img src={p.avatar_url} alt={name + " profile photo"} /> : <span>{initials}</span>}
-              </div>
+              <ProfileAvatar name={name} src={p.avatar_url} className="hc-member-profile-avatar" size={76} />
               {p.avatar_url && p.avatar_moderation_status === "pending" && <span className="hc-profile-photo-state">{t("photoReview")}</span>}
             </div>
             <div className="hc-member-profile-copy">
@@ -123,10 +118,7 @@ export default function ProfilePage() {
         </section>
 
         <section className="hc-profile-overview" aria-label={t("profileOverview")}>
-          {profileCompletion < 100 && <div className="hc-profile-completion">
-            <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href="/account#profile-editor">Complete profile <span aria-hidden="true">→</span></Link></div>
-            <div className="hc-profile-completion-track" role="progressbar" aria-label={t("profileCompleteness")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}><span style={{width: profileCompletion + "%"}} /></div>
-          </div>}
+          {p.account_type === "player" && <PlayerProfileCompletionCard profile={p} />}
           <div className="grid compact-grid">
             <Surface className="card hc-profile-info-card">
               <span className="card-kicker">{t("basketball")}</span>

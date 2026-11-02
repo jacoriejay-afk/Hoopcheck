@@ -6,6 +6,8 @@ import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
 import { supabase } from "../../lib/supabase";
 import ThemeToast from "../../components/ThemeToast";
+import ProfileAvatar from "../../components/ProfileAvatar";
+import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
 import Surface from "../../components/Surface";
 import { useTheme } from "../../components/ThemeProvider";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
@@ -18,6 +20,7 @@ type Subscription = {
 };
 
 type Profile = {
+  id?: string; username?: string | null; height?: string | null; favorite_leagues?: string | null; hometown?: string | null;
   account_type: "player"|"coach"|"scout"|"agent"|"fan";
   display_name: string | null;
   first_name: string | null;
@@ -116,7 +119,7 @@ export default function AccountPage() {
       setEmail(user.email ?? "");
       setUserId(user.id);
       const [{ data: profileData }, { data: subscriptionData }, { data: adminRoleData }] = await Promise.all([
-        supabase.from("profiles").select("account_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("id,account_type,display_name,username,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,height,favorite_leagues,hometown,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
         supabase.rpc("get_current_user_admin_role"),
       ]);
@@ -375,15 +378,14 @@ export default function AccountPage() {
         <p className="hc-account-settings-kicker">{t("settings")}</p>
         <h1>{t("accountPreferences")}</h1>
         <div className="hc-account-settings-identity">
-          <span className="hc-account-settings-avatar" aria-hidden="true">
-            {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{(displayName || email || "H").trim().charAt(0).toUpperCase()}</span>}
-          </span>
+          <ProfileAvatar name={displayName || email} src={avatarUrl} className="hc-account-settings-avatar" size={52} />
           <div className="hc-account-settings-identity-copy">
             <strong>{displayName || t("yourAccount")}</strong>
             <p>{email || t("emailNotSet")}</p>
           </div>
         </div>
       </header>
+      {profile.account_type === "player" && <PlayerProfileCompletionCard profile={{...profile, id:userId}} />}
       {(profile as any).moderation_status === "warned" || (profile as any).moderation_status === "flagged" ? <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{(profile as any).moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{(profile as any).moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section> : null}
       {adminRole && <section className="dashboard-card" style={{marginBottom:16}}><p className="eyebrow">{adminRole.toUpperCase()}</p><h2>{t("adminControlCenter")}</h2><div className="account-actions" style={{display:"flex",gap:10,flexWrap:"wrap"}}><Link href="/admin/directory" className="btn">{t("openAdminPanel")}</Link><Link href="/admin/reviews" className="btn dark">{t("manageReviews")}</Link><Link href="/admin/rights" className="btn dark">{t("rightsCoverage")}</Link></div></section>}
       <section id="account-settings" className="hc-settings" aria-label={t("accountSettings")}>
@@ -507,7 +509,9 @@ export default function AccountPage() {
       </section>
       <section className="dashboard-card" style={{marginTop:24}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,flexWrap:"wrap"}}><div><p className="eyebrow">{t("privacy")}</p><h2>{t("managePersonalData")}</h2><p className="muted">{t("privacyRequestDescription")}</p></div><Link href="/privacy-center" className="btn">{t("privacyRequestCenter")}</Link></div></section>
 
-      <section className="dashboard-card hc-account-public-profile" style={{marginTop:24}}><div className="hc-account-section-copy"><p className="eyebrow">{t("publicProfile")}</p><h2>{t("seeHowPlayersSeeYou")}</h2><p className="muted">{settingsVisibility === "public" ? t("previewPublicProfile") : t("profileNotPublicDescription")}</p></div><div className="actions hc-account-public-actions">{profile.account_type === "player" && (settingsVisibility === "public" ? <Link href={userId ? `/players/${encodeURIComponent(userId)}` : "/profile"} className="btn">{t("profilePublic")} <HoopIcon name="arrow-up-right" size={16} /></Link> : <a href="#profile-editor" className="btn">{t("editVisibility")}</a>)}<a href="#profile-editor" className="btn dark">{t("editProfile")}</a></div></section>\n\n      <section id="edit-profile" style={{marginTop:32}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,marginBottom:18}}><div><p className="eyebrow">{t("reviewHistory")}</p><h2>{t("myReviews")}</h2></div><Link href="/search" className="btn">{t("findAnother")}</Link></div>
+      <section className="dashboard-card hc-account-public-profile" style={{marginTop:24}}><div className="hc-account-section-copy"><p className="eyebrow">{t("publicProfile")}</p><h2>{t("seeHowPlayersSeeYou")}</h2><p className="muted">{settingsVisibility === "public" ? t("previewPublicProfile") : t("profileNotPublicDescription")}</p></div><div className="actions hc-account-public-actions">{profile.account_type === "player" && (settingsVisibility === "public" ? <Link href={userId ? `/players/${encodeURIComponent(userId)}` : "/profile"} className="btn">{t("profilePublic")} <HoopIcon name="arrow-up-right" size={16} /></Link> : <a href="#profile-editor" className="btn">{t("editVisibility")}</a>)}<a href="#profile-editor" className="btn dark">{t("editProfile")}</a></div></section>
+
+      <section id="edit-profile" style={{marginTop:32}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,marginBottom:18}}><div><p className="eyebrow">{t("reviewHistory")}</p><h2>{t("myReviews")}</h2></div><Link href="/search" className="btn">{t("findAnother")}</Link></div>
       {!reviews.length ? <div className="dashboard-card"><h2>{t("noReviewsYet")}</h2><p>{t("shareExperience")}</p></div> :
         <div style={{display:"grid",gap:16}}>{reviews.map(review => { const targetId=review.coach_id??review.team_id??review.league_id??""; const target=targets[targetId]; const href=review.coach_id?"/coaches/"+targetId:review.team_id?"/teams/"+targetId:"/leagues/"+targetId; return <article key={review.id} className="dashboard-card"><div style={{display:"flex",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}><div><span className="card-kicker">{review.coach_id?t("coach").toUpperCase():review.team_id?t("team").toUpperCase():t("leagues").toUpperCase()}</span><h2>{target?.name??t("directoryEntry")}</h2></div><strong>{t(review.status).toUpperCase()}</strong></div>{review.title&&<h3>{review.title}</h3>}<p>{review.body}</p><p className="muted">{t("overall")}: {review.overall_rating}/5 · {new Date(review.created_at).toLocaleDateString()}</p><Link href={href} className="btn dark">{t("viewProfile")}</Link></article>; })}</div>}
       </section>
