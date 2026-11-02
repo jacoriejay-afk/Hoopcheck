@@ -474,7 +474,7 @@ try {
         const missingText = expectedText.filter((expected) => !visibleText.toLocaleUpperCase().includes(expected.toLocaleUpperCase()));
         if (missingText.length) errors.push("language assertions missing: " + missingText.join(", "));
         if (testLanguage === "en" && requestedPath === "/dashboard") {
-          const requiredHomeCopy = ["SIGNED IN AS","COMPLETE YOUR PROFILE","LIVE GAMES","MEN’S TEAMS","WOMEN’S TEAMS","COACHES","LEAGUES"];
+          const requiredHomeCopy = ["SIGNED IN AS","COMPLETE YOUR PROFILE","LIVE GAMES","MEN'S TEAMS","WOMEN'S TEAMS","COACHES","LEAGUES"];
           const missingHomeCopy = requiredHomeCopy.filter((label) => !visibleText.toLocaleUpperCase().includes(label));
           if (missingHomeCopy.length) errors.push("Home card copy missing: " + missingHomeCopy.join(", "));
         }
