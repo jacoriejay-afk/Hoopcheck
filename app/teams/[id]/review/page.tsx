@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../../lib/supabase";
+import { isAtLeastTier } from "../../../../lib/membership-tier";
 
 type Team = {
   id: string;
@@ -217,7 +218,7 @@ export default function TeamReviewPage() {
       const hasActiveSubscription =
         (subscription?.status === "active" || subscription?.status === "trialing" ||
           subscription?.access_status === "pro" || subscription?.access_status === "premium") &&
-        (subscription?.plan === "pro" || subscription?.plan === "premium");
+        isAtLeastTier(subscription?.plan, "pro");
       const hasValidSubscription =
         hasActiveSubscription &&
         (!subscription?.current_period_end ||
