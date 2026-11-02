@@ -83,7 +83,7 @@ for(const [label,selector,file,tokens] of authoredPairs){
     errors.push(`${label}: hard-coded surface/foreground color found in component rule`);
 }
 const pageShellRule=blockAfter(files.finalOverrides,".page-shell");
-if(!pageShellRule || !pageShellRule.includes("var(--hc-card-surface)") || !pageShellRule.includes("var(--hc-card-border)"))
+if(!pageShellRule || !pageShellRule.includes("var(--hc-card-surface)") || !pageShellRule.includes("var(--hc-card-border)") || !pageShellRule.includes("var(--hc-on-card)") || !pageShellRule.includes("var(--hc-on-card-muted)"))
   errors.push("PageShell: local surface and border must inherit the active card token pair");
 if(pageShellRule && /--hc-(?:surface|border)\\s*:\\s*#[0-9a-f]{3,8}/i.test(pageShellRule))
   errors.push("PageShell: fixed light/dark surface or border value is forbidden");
