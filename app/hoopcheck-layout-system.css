@@ -225,7 +225,7 @@ main :where(.btn.dark,.btn-dark) {
 
 
 /* Disabled form controls retain readable paired contrast in either theme. */
-main :where(input,textarea,select):disabled {
+main input:disabled, main textarea:disabled, main select:disabled {
   background: var(--hc-button-disabled-bg) !important;
   color: var(--hc-button-disabled-fg) !important;
   border-color: var(--hc-control-border, var(--hc-border)) !important;
