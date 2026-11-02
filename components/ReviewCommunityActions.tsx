@@ -79,23 +79,14 @@ export default function ReviewCommunityActions({ reviewId }: { reviewId: string 
         return;
       }
 
-      if (liked) {
-        const { error } = await supabase
-          .from("review_likes")
-          .delete()
-          .eq("review_id", reviewId)
-          .eq("user_id", user.id);
-        if (error) throw error;
-        setLiked(false);
-        setLikes((value) => value === null ? null : Math.max(0, value - 1));
-      } else {
-        const { error } = await supabase
-          .from("review_likes")
-          .insert({ review_id: reviewId, user_id: user.id });
-        if (error) throw error;
-        setLiked(true);
-        setLikes((value) => value === null ? null : value + 1);
-      }
+      const wasLiked = liked;
+      const previousLikes = likes;
+      setLiked(!wasLiked);
+      setLikes((value) => value === null ? null : wasLiked ? Math.max(0, value - 1) : value + 1);
+      const result = wasLiked
+        ? await supabase.from("review_likes").delete().eq("review_id", reviewId).eq("user_id", user.id)
+        : await supabase.from("review_likes").insert({ review_id: reviewId, user_id: user.id });
+      if (result.error) throw result.error;
     } catch {
       setMsg("Your like could not be updated. Please try again.");
       void load();

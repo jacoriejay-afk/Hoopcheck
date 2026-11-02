@@ -74,7 +74,6 @@ export default function Home() {
               alt=""
               fill
               priority
-              unoptimized
               sizes="(max-width: 760px) 78vw, 42vw"
               className="hc-home-basketball-image"
             />

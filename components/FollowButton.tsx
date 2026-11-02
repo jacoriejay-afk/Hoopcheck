@@ -54,31 +54,34 @@ export default function FollowButton({ targetType, targetId, variant = "default"
       window.location.href = "/login";
       return;
     }
+    const wasFollowing = following;
+    const wasNotify = notify;
+    const nextFollowing = !wasFollowing;
     setBusy(true);
-    if (following) {
-      const { error } = await supabase.from("follow_relationships").delete()
-        .eq("follower_id", user.id).eq("target_type", targetType).eq("target_id", targetId);
-      if (!error) {
-        setFollowing(false);
-        setCount((v) => Math.max(0, v - 1));
-      }
-    } else {
-      const { error } = await supabase.from("follow_relationships").insert({
-        follower_id: user.id,
-        target_type: targetType,
-        target_id: targetId,
-        notify_reviews: true,
-        notify_ratings: true,
-        notify_updates: true,
-      });
-      if (!error) {
-        setFollowing(true);
-        setNotify(true);
-        setCount((v) => v + 1);
-      }
+    setFollowing(nextFollowing);
+    setCount((value) => nextFollowing ? value + 1 : Math.max(0, value - 1));
+    if (nextFollowing) setNotify(true);
+    try {
+      const result = nextFollowing
+        ? await supabase.from("follow_relationships").insert({
+            follower_id: user.id,
+            target_type: targetType,
+            target_id: targetId,
+            notify_reviews: true,
+            notify_ratings: true,
+            notify_updates: true,
+          })
+        : await supabase.from("follow_relationships").delete()
+            .eq("follower_id", user.id).eq("target_type", targetType).eq("target_id", targetId);
+      if (result.error) throw result.error;
+    } catch {
+      setFollowing(wasFollowing);
+      setCount((value) => nextFollowing ? Math.max(0, value - 1) : value + 1);
+      setNotify(wasNotify);
+    } finally {
+      setSignedIn(true);
+      setBusy(false);
     }
-    setSignedIn(true);
-    setBusy(false);
   }
 
   async function toggleNotify() {
