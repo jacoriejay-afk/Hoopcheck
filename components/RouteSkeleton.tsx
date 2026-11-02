@@ -53,11 +53,6 @@ export default function RouteSkeleton({ variant }: RouteSkeletonProps) {
             <Bar width="82%" />
           </Card>
         )}
-        {variant === "home" && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 12 }}>
-            {Array.from({ length: 7 }, (_, i) => <Card key={i}><Bar width="38px" height={38} /><Bar width="78%" /><Bar width="95%" height={9} /></Card>)}
-          </div>
-        )}
         {(variant === "search" || variant === "teams" || variant === "team" || variant === "dashboard") && (
           <div style={{ display: "grid", gap: 12 }}>
             {Array.from({ length: rows }, (_, i) => (
