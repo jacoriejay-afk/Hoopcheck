@@ -3127,8 +3127,7 @@ body { background-color: var(--hc-page-bg); }
 .hc-live-hub-card.is-live { border-color:rgba(255,90,31,.65); box-shadow:0 0 0 1px rgba(255,90,31,.1),0 8px 28px rgba(255,90,31,.08); }
 .hc-live-hub-card.is-recent { background:var(--hc-empty-surface); color:var(--hc-empty-foreground); border-color:var(--hc-card-border); }
 .hc-live-hub-card__top { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:17px; }
-.hc-live-badge,.hc-live-state { display:inline-flex; align-items:center; gap:6px; min-height:25px; padding:5px 8px; border:1px solid var(--hc-card-border); border-radius:5px; font-size:9px; font-weight:950; letter-spacing:.09em; white-space:nowrap; }
-.hc-live-state { background:var(--hc-chip-surface); color:var(--hc-chip-foreground); }
+.hc-live-badge,.hc-live-state { display:inline-flex; align-items:center; gap:6px; min-height:25px; padding:5px 8px; border:1px solid var(--hc-card-border); border-radius:5px; background:var(--hc-chip-surface); color:var(--hc-chip-foreground); font-size:9px; font-weight:950; letter-spacing:.09em; white-space:nowrap; }
 .hc-live-badge { background:var(--hc-live-chip-surface); color:var(--hc-live-chip-foreground); }
 .hc-live-badge>span { color:var(--hc-orange); animation:hc-live-pulse 1.7s ease-in-out infinite; }
 .hc-live-state--soon { background:var(--hc-live-chip-surface); color:var(--hc-live-chip-foreground); }
