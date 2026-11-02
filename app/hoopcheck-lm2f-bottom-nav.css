@@ -20,7 +20,7 @@
     padding: 5px 0 calc(5px + env(safe-area-inset-bottom, 0px)) !important;
     box-sizing: border-box !important;
     overflow: visible !important;
-    background: var(--hc-nav-bg, #0A0A0A) !important;
+    background: var(--hc-nav-bg) !important;
     border: 0 !important;
     border-top: 1px solid var(--hc-border, #444) !important;
     border-radius: 0 !important;
