@@ -4,6 +4,8 @@ const files = {
   tokens: await readFile("app/hoopcheck-dm2-theme-pairs.css", "utf8"),
   home: await readFile("app/hoopcheck-ia1-home.css", "utf8"),
   live: await readFile("app/globals.css", "utf8"),
+  nav: await readFile("app/hoopcheck-lm2f-bottom-nav.css", "utf8"),
+  finalTheme: await readFile("app/hoopcheck-dm2-theme-pairs.css", "utf8"),
 };
 const errors = [];
 const requiredTokens = [
@@ -11,6 +13,7 @@ const requiredTokens = [
   "--hc-chip-surface","--hc-chip-foreground","--hc-live-chip-surface",
   "--hc-live-chip-foreground","--hc-button-primary-surface","--hc-button-primary-foreground",
   "--hc-button-outline-surface","--hc-button-outline-foreground","--hc-empty-surface","--hc-empty-foreground",
+  "--hc-nav-bg","--hc-nav-fg","--hc-nav-active-bg","--hc-nav-active-fg",
 ];
 function blockAfter(source, selector) {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -46,6 +49,10 @@ const contrastPairs=[
   ["html.theme-dark","--hc-empty-foreground","--hc-empty-surface"],
   ["html.theme-light","--hc-button-primary-foreground","--hc-button-primary-surface"],
   ["html.theme-dark","--hc-button-primary-foreground","--hc-button-primary-surface"],
+  ["html.theme-light","--hc-nav-fg","--hc-nav-bg"],
+  ["html.theme-dark","--hc-nav-fg","--hc-nav-bg"],
+  ["html.theme-light","--hc-nav-active-fg","--hc-nav-active-bg"],
+  ["html.theme-dark","--hc-nav-active-fg","--hc-nav-active-bg"],
 ];
 for (const [theme,fgToken,bgToken] of contrastPairs) {
   const fg=tokenValue(theme,fgToken),bg=tokenValue(theme,bgToken);
@@ -74,6 +81,18 @@ for(const [label,selector,file,tokens] of authoredPairs){
   if(/\b(?:background(?:-color)?|color|border-color)\s*:\s*(?:#[0-9a-f]{3,8}\b|rgba?\(|white\b|black\b)/i.test(rule))
     errors.push(`${label}: hard-coded surface/foreground color found in component rule`);
 }
+const navRule=blockAfter(files.nav,"html.theme-light body nav.hc-lm2f-bottom-nav");
+if(!navRule || !navRule.includes("var(--hc-nav-bg") || !navRule.includes("var(--hc-card-border"))
+  errors.push("Bottom tab bar: surface and border must use nav/card tokens");
+const navTextRule=blockAfter(files.nav,"html.theme-dark body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab");
+if(!navTextRule || !navTextRule.includes("var(--hc-nav-fg"))
+  errors.push("Bottom tab bar: label foreground must use --hc-nav-fg");
+const navActiveRule=blockAfter(files.nav,"html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active");
+if(!navActiveRule || !navActiveRule.includes("var(--hc-nav-active-fg"))
+  errors.push("Bottom tab bar: active label must use --hc-nav-active-fg");
+if(!files.finalTheme.includes("var(--hc-nav-bg)") || !files.finalTheme.includes("var(--hc-nav-fg)"))
+  errors.push("Global headers must consume the semantic nav surface/foreground pair");
+
 if(errors.length){
   console.error("THEME_PAIR_AUDIT=FAIL");
   for(const error of errors)console.error("- "+error);
