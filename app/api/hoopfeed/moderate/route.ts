@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { hasActiveMembershipAtLeast } from "../../../../lib/membership-tier";
 
 export const runtime = "nodejs";
 
