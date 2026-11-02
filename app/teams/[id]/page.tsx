@@ -573,11 +573,13 @@ export default function TeamDetailPage() {
     <main className="hc-entity-profile-page hc-team-entity-profile">
 
 <section className="hero hc-team-profile-hero hc-social-profile-header" id="overview">
+        <div className="hc-social-profile-top hc-team-social-top">
         <div className="hc-team-profile-heading hc-team-profile-heading--club"><TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={72} className="hc-team-profile-logo" /><div className="hc-team-profile-heading__copy"><p className="hc-team-profile-kicker">HOOPCHECK CLUB PROFILE</p><h1>{team.name}</h1><p className="hc-team-profile-meta"><span>{team.country || t("countryNotListed")}</span>{team.city ? <><span aria-hidden="true"> · </span><span>{team.city}</span></> : null}{(league?.name || team.league_name) ? <><span aria-hidden="true"> · </span><span>{league?.name || team.league_name}</span></> : null}</p></div></div>
         <div className="hc-social-stats hc-team-social-stats">
           <span><strong>{teamReviewCount}</strong><small>Reviews</small></span>
           <span><strong>{trustScoreData?.score == null ? "—" : trustScoreData.score.toFixed(1)}</strong><small>Trust Score</small></span>
           <FollowButton targetType="team" targetId={team.id} variant="club" showNotifications={false} />
+        </div>
         </div>
         {knownPlayerFollowers.length > 0 && <p className="hc-team-social-proof">Followed by players you follow: <strong>{knownPlayerFollowers.join(", ")}</strong></p>}
         <nav className="hc-team-profile-nav" aria-label="Team profile sections"><a href="#overview">Overview</a><a href="#reviews">Reviews</a><a href="#players">Players</a><a href="#roster-board">Roster Board</a><a href="#pay-transparency">Pay Transparency</a></nav>
