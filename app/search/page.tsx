@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import PlayerContactButton from "../../components/PlayerContactButton";
+import FollowButton from "../../components/FollowButton";
 import { VerifiedBadge } from "../../components/HoopCheckUI";
 import SearchBar from "../../components/SearchBar";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
@@ -359,19 +360,15 @@ function SearchContent() {
               <div className="group-heading"><span>01</span><h3>{t("players")}</h3></div>
               <div className="result-grid">
                 {visiblePlayers.map((player) => (
-                  <Link href={`/players/${player.id}`} key={player.id} className="result-card">
-                    <div className="result-type">{t("players").toUpperCase()}</div>
-                    <h4>{player.display_name || t("hoopCheckPlayer")} {player.player_verified && <VerifiedBadge label={t("verifiedPlayer")} />}</h4>
-                    <p>
-                      {[
-                        player.player_position,
-                        player.years_pro ? `${player.years_pro} years pro` : null,
-                        player.current_team,
-                        player.current_country || player.country,
-                      ].filter(Boolean).join(" · ") || t("professionalProfile")}
-                    </p>
-                    <span className="result-link">{t("viewPlayerProfile")}</span>
-                  </Link>
+                  <article className="result-card" key={player.id}>
+                    <Link href={`/players/${player.id}`} className="hc-search-player-result">
+                      <div className="result-type">{t("players").toUpperCase()}</div>
+                      <h4>{player.display_name || t("hoopCheckPlayer")} {player.player_verified && <VerifiedBadge label={t("verifiedPlayer")} />}</h4>
+                      <p>{[player.player_position, player.years_pro ? `${player.years_pro} years pro` : null, player.current_team, player.current_country || player.country].filter(Boolean).join(" · ") || t("professionalProfile")}</p>
+                      <span className="result-link">{t("viewPlayerProfile")}</span>
+                    </Link>
+                    <FollowButton targetType="player" targetId={player.id} showNotifications={false} />
+                  </article>
                 ))}
               </div>
             </section>
