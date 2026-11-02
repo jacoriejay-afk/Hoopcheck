@@ -67,6 +67,12 @@ export default function PlayerProfilePage() {
           .maybeSingle();
         if (own) {
           setCountryPublic(Boolean(own.current_country_public));
+          const [followersResult, followingResult, reviewsResult] = await Promise.all([
+            supabase.rpc("get_follow_count", { p_target_type: "player", p_target_id: params.id }),
+            supabase.rpc("get_public_following_count", { p_user_id: params.id }),
+            supabase.from("reviews").select("id", { count: "exact", head: true }).eq("author_id", params.id).eq("status", "approved"),
+          ]);
+          setSocialCounts({ followers: Number(followersResult.data || 0), following: Number(followingResult.data || 0), reviews: Number(reviewsResult.count || 0) });
           setPlayer({
             id: own.id,
             display_name: own.display_name,
