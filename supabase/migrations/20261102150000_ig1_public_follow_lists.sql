@@ -80,3 +80,52 @@ as $$
 $$;
 revoke all on function public.get_shared_team_followers(uuid) from public;
 grant execute on function public.get_shared_team_followers(uuid) to authenticated;
+
+create or replace function public.get_social_suggestions()
+returns table(entity_type text, entity_id uuid, display_name text, avatar_url text, detail text, player_verified boolean)
+language sql stable security definer set search_path = public
+as $$
+  with followed_players as (
+    select target_id from public.follow_relationships
+    where follower_id = auth.uid() and target_type = 'player'
+  ),
+  player_suggestions as (
+    select 'player'::text as entity_type, candidate.id as entity_id,
+      candidate.display_name, candidate.avatar_url,
+      coalesce(candidate.current_team, candidate.current_country, candidate.country, 'Player') as detail,
+      coalesce(candidate.player_verified,false) as player_verified,
+      count(*) as connection_weight
+    from public.follow_relationships graph
+    join followed_players fp on fp.target_id = graph.follower_id
+    join public.profiles candidate on candidate.id = graph.target_id
+    where graph.target_type = 'player'
+      and candidate.profile_visibility = 'public'
+      and candidate.account_type = 'player'
+      and candidate.id <> auth.uid()
+      and not exists (select 1 from public.follow_relationships mine where mine.follower_id = auth.uid() and mine.target_type = 'player' and mine.target_id = candidate.id)
+    group by candidate.id
+  ),
+  team_suggestions as (
+    select 'team'::text as entity_type, team.id as entity_id,
+      team.name as display_name, team.logo_url as avatar_url,
+      coalesce(team.country, team.league_name, 'Team') as detail,
+      false as player_verified,
+      count(*) as connection_weight
+    from public.follow_relationships graph
+    join followed_players fp on fp.target_id = graph.follower_id
+    join public.teams team on team.id = graph.target_id
+    where graph.target_type = 'team'
+      and not exists (select 1 from public.follow_relationships mine where mine.follower_id = auth.uid() and mine.target_type = 'team' and mine.target_id = team.id)
+    group by team.id
+  )
+  select entity_type, entity_id, display_name, avatar_url, detail, player_verified
+  from (
+    select * from player_suggestions
+    union all
+    select * from team_suggestions
+  ) suggestions
+  order by connection_weight desc, display_name
+  limit 8;
+$$;
+revoke all on function public.get_social_suggestions() from public;
+grant execute on function public.get_social_suggestions() to authenticated;
