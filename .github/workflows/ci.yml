@@ -167,7 +167,8 @@ jobs:
                 ],
                 "numberOfRuns": 3,
                 "settings": {
-                  "preset": "mobile",
+                  "emulatedFormFactor": "mobile",
+                  "throttlingMethod": "simulate",
                   "chromeFlags": "--no-sandbox --headless"
                 }
               },
