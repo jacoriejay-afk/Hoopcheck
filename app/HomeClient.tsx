@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { getCachedSession } from "../lib/supabase";
 import CategoryTile, { type CategoryTileKind } from "../components/CategoryTile";
+import CourtLines from "../components/CourtLines";
 import { HoopIcon, type HoopIconName } from "../components/HoopCheckUI";
 
 const categories: {
@@ -67,7 +68,7 @@ export default function Home() {
         </div>
 
         <div className="hc-template-hero-art hc-home-hero-art" aria-hidden="true">
-          <div className="hc-template-court-lines" />
+          <CourtLines variant="arc" className="hc-brand-hero-court" />
           <div className="hc-home-image-frame">
             <Image
               src="https://images.unsplash.com/photo-1519861531473-9200262188bf?auto=format&fit=crop&w=1100&q=85"
