@@ -1,16 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import { PageShell } from "../../components/LayoutSystem";
+import { FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptyState, FeedLoadingSkeleton, FeedStoryRing, FeedTimeRemaining } from "../../components/HoopFeedShared";
 import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
 import TeamLogo from "../../components/TeamLogo";
 import TeamOfficialUpdates from "../../components/TeamOfficialUpdates";
-import HoopLoading from "../../components/HoopLoading";
 import { useLanguage } from "../../components/LanguageProvider";
 import "./fan-feed.css";
+import "./hoopfeed-shared.css";
 import { fanFeedI18n } from "./i18n";
 
 type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
@@ -40,6 +42,9 @@ export default function FanFeedPage() {
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [liked, setLiked] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [now, setNow] = useState(0);
+  const touchStartY = useRef<number | null>(null);
   const [membershipActive, setMembershipActive] = useState(false);
   const [posting, setPosting] = useState(false);
   const [message, setMessage] = useState("");
@@ -81,6 +86,8 @@ export default function FanFeedPage() {
       setComments(grouped);
     } else setComments({});
   }, [basketballSide]);
+
+  useEffect(() => { setNow(Date.now()); const timer = window.setInterval(() => setNow(Date.now()), 60000); return () => window.clearInterval(timer); }, []);
 
   useEffect(() => {
     let alive = true;
@@ -184,11 +191,11 @@ export default function FanFeedPage() {
     else { setFollowing(prev => new Set(prev).add(targetId)); setMessage(ft("following")); }
   }
 
-  if (loading) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><HoopLoading label={ft("loading")} /></div></main>;
-  if (!user) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("title")}</h1><p>{ft("signIn")}</p><Link className="btn" href="/login">{t("signIn")}</Link></section></div></main>;
-  if (profile?.account_type !== "fan") return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("fansOnly")}</h1><p>{ft("separateSurface")}</p><Link className="btn" href="/login">{ft("playerFeed")}</Link></section></div></main>;
-  if (!membershipActive) return <main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("membershipRequired")}</h1><p>{ft("membershipDescription")}</p><Link className="btn" href="/membership">{t("membership")}</Link></section></div></main>;
-  return <main className="page-shell hc-feed-page hc-fan-feed-page">
+  if (loading) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><FeedLoadingSkeleton count={3} /></div></main></PageShell>;
+  if (!user) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("title")}</h1><p>{ft("signIn")}</p><Link className="btn" href="/login">{t("signIn")}</Link></section></div></main></PageShell>;
+  if (profile?.account_type !== "fan") return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("fansOnly")}</h1><p>{ft("separateSurface")}</p><Link className="btn" href="/login">{ft("playerFeed")}</Link></section></div></main></PageShell>;
+  if (!membershipActive) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("membershipRequired")}</h1><p>{ft("membershipDescription")}</p><Link className="btn" href="/membership">{t("membership")}</Link></section></div></main></PageShell>;
+  return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page" onTouchStart={event => { touchStartY.current = window.scrollY === 0 ? (event.touches[0]?.clientY ?? null) : null; }} onTouchEnd={event => { const start = touchStartY.current; touchStartY.current = null; const end = event.changedTouches[0]?.clientY ?? 0; if (start !== null && end - start > 80 && user && !refreshing) { void (async () => { setRefreshing(true); await load(user.id); setRefreshing(false); })(); } }}>
       <FanBasketballSideSwitch /><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/fans">{ft("discoverFans")}</Link><Link href="/team-hub">{ft("teamHub")}</Link><Link href="/teams">{ft("teams")}</Link></nav></header>
     <section className="hero-card hc-feed-hero"><div><p className="eyebrow">{ft("kicker")}</p><h1>{ft("title")}</h1><p className="muted">{ft("subtitle")}</p></div><p className="hc-feed-expiry-note">{ft("teamFirst")}<span>{ft("fanOnlyNote")}</span></p></section>
@@ -204,12 +211,13 @@ export default function FanFeedPage() {
       {message && <p className="hc-feed-message" role="status">{message}</p>}
       {!teams.length && <p className="muted">{ft("followTeamFirst")} <Link href="/teams">{ft("teams")}</Link></p>}
     </section>
-    <section className="hc-feed-stream" aria-label={ft("recentPosts")}>{posts.length ? posts.map(post => <article key={post.id} className="dashboard-card hc-feed-ticket">
-      <header className="hc-feed-post-header"><div className="hc-feed-post-author"><Link href={"/fans/" + post.author_id} aria-label={ft("viewFanProfile")}>{post.profiles?.avatar_url ? <img src={post.profiles.avatar_url} alt="" className="hc-feed-post-avatar" /> : <div className="player-avatar-fallback hc-feed-post-avatar">HC</div>}</Link><div className="hc-feed-post-author__meta"><Link href={"/fans/" + post.author_id}><strong>{post.profiles?.display_name || ft("fan")}</strong></Link><small>{formatDate(post.created_at, { dateStyle: "medium", timeStyle: "short" })}</small></div></div>{post.teams && <Link className="hc-feed-post-topic" href={"/teams/" + post.team_id}><TeamLogo name={post.teams.name} logoUrl={post.teams.logo_url} logoBg={post.teams.logo_bg} size={28} />{post.teams.name}</Link>}</header>
-      {post.body.trim() && <p style={{ whiteSpace: "pre-wrap" }}>{post.body}</p>}{post.image_url && <img src={post.image_url} alt={ft("postPhoto")} className="hc-feed-post-image" />}{post.video_url && <video src={post.video_url} controls playsInline preload="metadata" className="hc-feed-post-image" aria-label={ft("videoPostLabel")} />}
-      <div className="hc-feed-post-actions"><button type="button" className={"hc-feed-action-pill" + (liked.has(post.id) ? " is-active" : "")} onClick={() => void toggleCheck(post)}>{liked.has(post.id) ? "✓ " + ft("checked") : "＋ " + ft("check")} · {(post.fan_feed_checks || []).length}</button><button type="button" className="hc-feed-action-pill" onClick={() => setOpenComments(prev => ({ ...prev, [post.id]: !prev[post.id] }))}>{ft("comment")} · {(comments[post.id] || []).length}</button><button type="button" className="hc-feed-action-pill" onClick={() => void sharePost(post)}>{ft("share")}</button>{post.author_id === user.id && <><button type="button" className="hc-feed-action-pill" onClick={() => void archivePost(post)}>{ft("archive")}</button><button type="button" className="hc-feed-action-pill" onClick={() => void deletePost(post)}>{ft("delete")}</button></>}<span className="hc-feed-expires">{ft("expires")} {new Date(post.expires_at).toLocaleTimeString()}</span></div>
+    <div className="hc-feed-refresh-row"><button type="button" className="hc-feed-refresh" disabled={refreshing} onClick={async () => { if (!user) return; setRefreshing(true); await load(user.id); setRefreshing(false); }}>{refreshing ? "Refreshing…" : "↻ Refresh"}</button></div>
+    <section className="hc-feed-stream" aria-label={ft("recentPosts")}>{posts.length ? posts.map(post => <FeedPostCard key={post.id}>
+      <header className="hc-feed-post-header"><FeedAuthorRow><Link href={"/fans/" + post.author_id} aria-label={ft("viewFanProfile")}><FeedStoryRing expiresAt={post.expires_at} now={now}>{post.profiles?.avatar_url ? <img src={post.profiles.avatar_url} alt="" className="hc-feed-post-avatar" /> : <div className="player-avatar-fallback hc-feed-post-avatar">HC</div>}</FeedStoryRing></Link><div className="hc-feed-post-author__meta"><Link href={"/fans/" + post.author_id}><strong>{post.profiles?.display_name || ft("fan")}</strong></Link><small>{formatDate(post.created_at, { dateStyle: "medium", timeStyle: "short" })} · <FeedTimeRemaining expiresAt={post.expires_at} now={now} /></small></div></FeedAuthorRow>{post.teams && <Link className="hc-feed-post-topic" href={"/teams/" + post.team_id}><TeamLogo name={post.teams.name} logoUrl={post.teams.logo_url} logoBg={post.teams.logo_bg} size={28} />{post.teams.name}</Link>}</header>
+      <FeedMediaArea>{post.body.trim() && <p style={{ whiteSpace: "pre-wrap" }}>{post.body}</p>}{post.image_url && <img src={post.image_url} alt={ft("postPhoto")} className="hc-feed-post-image" />}{post.video_url && <video src={post.video_url} controls playsInline preload="metadata" className="hc-feed-post-image" aria-label={ft("videoPostLabel")} />}</FeedMediaArea>
+      <FeedActionRow><button type="button" className={"hc-feed-action-pill" + (liked.has(post.id) ? " is-active" : "")} onClick={() => void toggleCheck(post)}>{liked.has(post.id) ? "✓ " + ft("checked") : "＋ " + ft("check")} · {(post.fan_feed_checks || []).length}</button><button type="button" className="hc-feed-action-pill" onClick={() => setOpenComments(prev => ({ ...prev, [post.id]: !prev[post.id] }))}>{ft("comment")} · {(comments[post.id] || []).length}</button><button type="button" className="hc-feed-action-pill" onClick={() => void sharePost(post)}>{ft("share")}</button>{post.author_id === user.id && <><button type="button" className="hc-feed-action-pill" onClick={() => void archivePost(post)}>{ft("archive")}</button><button type="button" className="hc-feed-action-pill" onClick={() => void deletePost(post)}>{ft("delete")}</button></>}<span className="hc-feed-expires">{ft("expires")} {new Date(post.expires_at).toLocaleTimeString()}</span></FeedActionRow>
       {openComments[post.id] && <div className="hc-feed-comments-panel"><strong>{ft("comments")}</strong>{(comments[post.id] || []).map(c => <div key={c.id}><strong>{c.profiles?.display_name || ft("fan")}</strong><p>{c.body}</p></div>)}<div className="hc-feed-composer__footer"><input value={drafts[post.id] || ""} maxLength={500} onChange={e => setDrafts(prev => ({ ...prev, [post.id]: e.target.value }))} placeholder={ft("commentPlaceholder")} /><button className="btn" onClick={() => void addComment(post.id)}>{ft("send")}</button></div></div>}
       <footer><button type="button" className="hc-feed-action-pill" disabled={post.author_id === user.id || following.has(post.author_id)} onClick={() => void followFan(post.author_id)}>{following.has(post.author_id) ? ft("following") : ft("followFan")}</button></footer>
-    </article>) : <div className="dashboard-card hc-feed-empty"><span className="eyebrow">{ft("emptyKicker")}</span><h2>{ft("emptyTitle")}</h2><p className="muted">{ft("emptyBody")}</p><Link className="btn" href="/fans">{ft("discoverFans")}</Link></div>}</section>
-  </div></main>;
+    </FeedPostCard>) : <FeedEmptyState><span className="eyebrow">{ft("emptyKicker")}</span><h2>{ft("emptyTitle")}</h2><p className="muted">{ft("emptyBody")}</p><Link className="btn" href="/fans">{ft("discoverFans")}</Link></FeedEmptyState>}</section>
+  </div></main></PageShell>;
 }
