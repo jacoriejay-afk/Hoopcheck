@@ -409,7 +409,7 @@ try {
               const rect = element.getBoundingClientRect();
               const cls = typeof element.className === "string" ? element.className : "";
               if (/(logo|avatar|photo|portrait|image)/i.test(cls)) return false;
-              return style.backgroundColor === "rgb(255, 255, 255)" && rect.width > 16 && rect.height > 12 &&
+              return element.tagName !== "IMG" && element.tagName !== "SVG" && style.backgroundColor === "rgb(255, 255, 255)" && rect.width > 16 && rect.height > 12 &&
                 style.display !== "none" && style.visibility !== "hidden";
             })
             .slice(0, 20)
