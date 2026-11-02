@@ -182,3 +182,88 @@ html body .hc-global-page-shell main.hc-feed-page {
   justify-content: flex-end;
   margin: 0 0 8px;
 }
+
+/* Finish the theme-token migration for legacy feed-specific surfaces and controls. */
+.hc-feed-page .hc-feed-hero {
+  border: 1px solid var(--hc-border) !important;
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+}
+.hc-feed-page .hc-feed-hero::after { display: none !important; }
+.hc-feed-page .hc-feed-hero :where(h1,p,span,strong,small) { color: var(--hc-foreground) !important; }
+.hc-feed-page .hc-feed-hero .muted,
+.hc-feed-page .hc-feed-hero .hc-feed-expiry-note span { color: var(--hc-foreground-muted) !important; }
+.hc-feed-page .hc-feed-composer {
+  border-color: var(--hc-border) !important;
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+}
+.hc-feed-page .hc-feed-composer :where(.card-kicker,.eyebrow,.hc-feed-country-copy strong,.hc-feed-country-copy small,.hc-feed-counter) {
+  color: var(--hc-foreground) !important;
+}
+.hc-feed-page .hc-feed-composer textarea,
+.hc-feed-page .hc-feed-composer input:not([type="checkbox"]),
+.hc-feed-page .hc-feed-team-select {
+  border-color: var(--hc-border) !important;
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  -webkit-text-fill-color: var(--hc-input-fg);
+}
+.hc-feed-page .hc-feed-composer textarea::placeholder { color: var(--hc-foreground-muted) !important; }
+.hc-feed-page .hc-feed-country-optin {
+  border-color: var(--hc-border) !important;
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+}
+.hc-feed-page .hc-feed-country-optin :where(strong,small) { color: var(--hc-foreground) !important; }
+.hc-feed-page .hc-feed-composer__footer { border-color: var(--hc-border) !important; }
+.hc-feed-page .hc-feed-photo-button,
+.hc-feed-page .hc-feed-counter,
+.hc-feed-page .hc-feed-sort-toggle button {
+  border-color: var(--hc-border) !important;
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+}
+.hc-feed-page .hc-feed-switch { background: var(--hc-border) !important; }
+.hc-feed-page .hc-feed-country-optin input:checked + .hc-feed-switch { background: var(--hc-orange) !important; }
+.hc-feed-page .hc-feed-post-button {
+  background: var(--hc-orange) !important;
+  color: var(--hc-foreground) !important;
+}
+.hc-feed-page .hc-feed-topic-chip,
+.hc-feed-page .hc-feed-filter-chip {
+  border-color: var(--hc-border) !important;
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+}
+.hc-feed-page .hc-feed-topic-chip.is-selected,
+.hc-feed-page .hc-feed-filter-chip.is-active,
+.hc-feed-page .hc-feed-sort-toggle button.is-active {
+  border-color: var(--hc-orange) !important;
+  background: color-mix(in srgb, var(--hc-orange) 16%, var(--hc-surface-raised)) !important;
+  color: var(--hc-foreground) !important;
+}
+.hc-feed-page .hc-feed-game-score {
+  border-color: var(--hc-orange) !important;
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+}
+.hc-feed-page .hc-feed-game-score :where(span,strong,i) { color: var(--hc-foreground) !important; }
+.hc-feed-page .hc-feed-comments-panel {
+  border: 1px solid var(--hc-border) !important;
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+}
+.hc-feed-page .hc-feed-comments-panel :where(p,strong,small,button,input) { color: var(--hc-foreground) !important; }
+.hc-feed-page .hc-feed-comments-panel :where(input,button) {
+  border-color: var(--hc-border) !important;
+  background: var(--hc-surface-raised) !important;
+}
+.hc-feed-page .hc-feed-streak {
+  border-color: var(--hc-border) !important;
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+}
+.hc-feed-page .hc-feed-message { color: var(--hc-foreground) !important; }
+.hc-feed-page .hc-feed-expiry-note { color: var(--hc-foreground) !important; }
+.hc-feed-page .hc-feed-expiry-note span { color: var(--hc-foreground-muted) !important; }
