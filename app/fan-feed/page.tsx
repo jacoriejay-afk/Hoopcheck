@@ -10,7 +10,6 @@ import { FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptySta
 import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
 import TeamLogo from "../../components/TeamLogo";
 import TeamOfficialUpdates from "../../components/TeamOfficialUpdates";
-import HoopLoading from "../../components/HoopLoading";
 import { useLanguage } from "../../components/LanguageProvider";
 import "./fan-feed.css";
 import "./hoopfeed-shared.css";
@@ -209,7 +208,7 @@ export default function FanFeedPage() {
       {message && <p className="hc-feed-message" role="status">{message}</p>}
       {!teams.length && <p className="muted">{ft("followTeamFirst")} <Link href="/teams">{ft("teams")}</Link></p>}
     </section>
-    <div className="hc-feed-refresh-row"><button type="button" className="hc-feed-refresh" disabled={refreshing} onClick={async () => { if (!user) return; setRefreshing(true); await load(user.id); setRefreshing(false); }}>{refreshing ? ft("refreshing") : ft("refresh")}</button></div>
+    <div className="hc-feed-refresh-row"><button type="button" className="hc-feed-refresh" disabled={refreshing} onClick={async () => { if (!user) return; setRefreshing(true); await load(user.id); setRefreshing(false); }}>{refreshing ? "Refreshing…" : "↻ Refresh"}</button></div>
     <section className="hc-feed-stream" aria-label={ft("recentPosts")}>{posts.length ? posts.map(post => <FeedPostCard key={post.id}>
       <header className="hc-feed-post-header"><FeedAuthorRow><Link href={"/fans/" + post.author_id} aria-label={ft("viewFanProfile")}>{post.profiles?.avatar_url ? <img src={post.profiles.avatar_url} alt="" className="hc-feed-post-avatar" /> : <div className="player-avatar-fallback hc-feed-post-avatar">HC</div>}</Link><div className="hc-feed-post-author__meta"><Link href={"/fans/" + post.author_id}><strong>{post.profiles?.display_name || ft("fan")}</strong></Link><small>{formatDate(post.created_at, { dateStyle: "medium", timeStyle: "short" })}</small></div></FeedAuthorRow>{post.teams && <Link className="hc-feed-post-topic" href={"/teams/" + post.team_id}><TeamLogo name={post.teams.name} logoUrl={post.teams.logo_url} logoBg={post.teams.logo_bg} size={28} />{post.teams.name}</Link>}</header>
       <FeedMediaArea>{post.body.trim() && <p style={{ whiteSpace: "pre-wrap" }}>{post.body}</p>}{post.image_url && <img src={post.image_url} alt={ft("postPhoto")} className="hc-feed-post-image" />}{post.video_url && <video src={post.video_url} controls playsInline preload="metadata" className="hc-feed-post-image" aria-label={ft("videoPostLabel")} />}</FeedMediaArea>
