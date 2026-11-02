@@ -213,10 +213,21 @@ html.theme-dark body :where(.site-header-global,.hc-template-header,.hc-header-n
   color: var(--hc-nav-fg) !important;
   border-color: var(--hc-card-border) !important;
 }
-html.theme-light body :where(.site-header-global,.hc-template-header,.hc-header-nav,.bottom-nav,.hc-bottom-tab-bar,.hc-lm2f-bottom-nav) :where(a,button,span,svg),
-html.theme-dark body :where(.site-header-global,.hc-template-header,.hc-header-nav,.bottom-nav,.hc-bottom-tab-bar,.hc-lm2f-bottom-nav) :where(a,button,span,svg) {
-  color: var(--hc-nav-fg);
-  -webkit-text-fill-color: currentColor;
+html.theme-light body :where(.site-header-global,.hc-template-header,.hc-header-nav,.bottom-nav,.hc-bottom-tab-bar,.hc-lm2f-bottom-nav) :where(a,button,svg),
+html.theme-dark body :where(.site-header-global,.hc-template-header,.hc-header-nav,.bottom-nav,.hc-bottom-tab-bar,.hc-lm2f-bottom-nav) :where(a,button,svg) {
+  color: var(--hc-nav-fg) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+html.theme-light body .hc-header-nav > a.is-active,
+html.theme-dark body .hc-header-nav > a.is-active,
+html.theme-light body :where(.bottom-nav,.hc-bottom-tab-bar,.hc-lm2f-bottom-nav) a.active,
+html.theme-dark body :where(.bottom-nav,.hc-bottom-tab-bar,.hc-lm2f-bottom-nav) a.active {
+  color: var(--hc-nav-active-fg) !important;
+  -webkit-text-fill-color: var(--hc-nav-active-fg) !important;
+}
+html.theme-light body .hc-template-header .hc-wordmark span,
+html.theme-dark body .hc-template-header .hc-wordmark span {
+  color: var(--hc-orange) !important;
 }
 html.theme-light body :where(.bottom-nav,.hc-bottom-tab-bar,.hc-lm2f-bottom-nav) :where(a.active,.active a),
 html.theme-dark body :where(.bottom-nav,.hc-bottom-tab-bar,.hc-lm2f-bottom-nav) :where(a.active,.active a) {
