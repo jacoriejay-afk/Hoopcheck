@@ -32,7 +32,7 @@ as $$
   left join public.teams team on fr.target_type = 'team' and team.id = fr.target_id
   where (
     (p_mode = 'followers' and fr.target_type = p_target_type and fr.target_id = p_target_id)
-    or (p_mode = 'following' and fr.follower_id = p_user_id and auth.uid() = p_user_id)
+    or (p_mode = 'following' and fr.follower_id = p_user_id and (auth.uid() = p_user_id or follower.profile_visibility = 'public'))
   )
   and (
     (p_mode = 'followers' and follower.profile_visibility = 'public')
