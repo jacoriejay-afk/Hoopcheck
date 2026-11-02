@@ -94,7 +94,7 @@ const authoredPairs=[
   ["Home feed card",".hc-ia-feed-card","home",["--hc-card-surface","--hc-on-card","--hc-card-border"]],
   ["Live game card",".hc-live-hub-card","live",["--hc-card-surface","--hc-on-card","--hc-card-border"]],
   ["Live upcoming/status pill",".hc-live-state","live",["--hc-chip-surface","--hc-chip-foreground","--hc-card-border"]],
-  ["Live badge",".hc-live-badge","live",["--hc-live-chip-surface","--hc-live-chip-foreground","--hc-card-border"]],
+  ["Live badge",".hc-live-badge ","live",["--hc-live-chip-surface","--hc-live-chip-foreground","--hc-card-border"]],
   ["Live reminder button",".hc-remind-button","live",["--hc-button-outline-surface","--hc-button-outline-foreground","--hc-card-border"]],
   ["Live empty state",".hc-live-empty","live",["--hc-empty-surface","--hc-empty-foreground","--hc-card-border"]],
   ["Live no-games state",".hc-live-no-games","live",["--hc-empty-surface","--hc-empty-foreground","--hc-card-border"]],
