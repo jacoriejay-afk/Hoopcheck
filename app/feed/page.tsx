@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import CourtLines from "../../components/CourtLines";
@@ -100,7 +101,7 @@ export default function Feed(){
     // Keep the player HoopFeed surface strictly player-only; fans have their own feed.
     if(p?.account_type==="fan"){setLoading(false);router.replace("/fan-feed");return;}
     if(p?.account_type==="player"){const {data:activity}=await supabase.from("feed_posting_activity").select("activity_date").eq("user_id",u.id).order("activity_date",{ascending:false}).limit(370);setPostingStreak(calculatePostingStreak(activity||[]));}
-    const memberActive=(s?.plan==="pro"||s?.plan==="premium")&&(s?.status==="active"||s?.status==="trialing")&&(s?.access_status==null||["active","trialing","pro","premium"].includes(s.access_status));
+    const memberActive=hasActiveMembershipAtLeast(s);
     setLoading(false);
     if(p&&memberActive)void load(u,p);
   })();},[]);
