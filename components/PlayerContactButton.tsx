@@ -29,7 +29,7 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
       supabase.from("player_contact_requests").select("id,requester_id,player_id,message,status,created_at").or(`requester_id.eq.${user.id},player_id.eq.${user.id}`).eq("player_id",playerId).maybeSingle()
     ]);
     setAccountType(profileResult.data?.account_type||"");
-    setPremium(["pro","premium"].includes(subscriptionResult.data?.plan||"") && (subscriptionResult.data?.status==="active" || subscriptionResult.data?.status==="trialing"));
+    setPremium(isAtLeastTier(subscriptionResult.data?.plan, "pro") && (subscriptionResult.data?.status==="active" || subscriptionResult.data?.status==="trialing"));
     const r=requestResult.data as RequestRow|null;
     setRequest(r);
     if(r?.status==="accepted"){
