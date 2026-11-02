@@ -404,3 +404,14 @@ html.theme-light body main .hc-live-state {
 html.theme-dark body main .hc-live-state {
   border-color: var(--hc-card-border) !important;
 }
+
+html.theme-light body main .hc-live-state {
+  background: var(--hc-chip-surface) !important;
+  color: var(--hc-chip-foreground) !important;
+  border-color: var(--hc-card-border) !important;
+}
+html.theme-dark body main .hc-live-state {
+  background: var(--hc-chip-surface) !important;
+  color: var(--hc-chip-foreground) !important;
+  border-color: var(--hc-card-border) !important;
+}
