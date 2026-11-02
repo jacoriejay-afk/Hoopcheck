@@ -36,7 +36,6 @@ export default function DashboardPage() {
   const basketballSide = useFanBasketballSide();
   const [profile,setProfile] = useState<Profile|null>(null);
   const [email,setEmail] = useState("");
-  const [userId,setUserId] = useState("");
   const [teams,setTeams] = useState<Team[]>([]);
   const [reviews,setReviews] = useState<Review[]>([]);
   const [feedPost,setFeedPost] = useState<FeedPost|null>(null);
@@ -51,7 +50,7 @@ export default function DashboardPage() {
       const user = session?.user;
       if (!user) { if(mounted) router.replace("/login?next=/dashboard"); return; }
       if (!mounted) return;
-      setUserId(user.id); setEmail(user.email||"");
+      setEmail(user.email||"");
 
       const [{data:p},{data:subscription},{data:follows}] = await Promise.all([
         supabase.from("profiles").select("display_name,first_name,last_name,bio,position,current_team,nationality,hometown,avatar_url,player_verified,account_type").eq("id",user.id).maybeSingle(),
@@ -64,12 +63,11 @@ export default function DashboardPage() {
       const followedIds = (follows||[]).map((row:any)=>row.target_id).filter(Boolean);
 
       if (followedIds.length) {
-        const source = basketballSide === "womens" ? "womens_teams" : "teams";
-        let teamQuery = supabase.from(source).select("id,name,country,league_name").in("id",followedIds).limit(100);
-        if (source === "teams") teamQuery = teamQuery.eq("basketball_type","mens") as any;
-        const {data:teamRows} = await teamQuery;
+        const teamResult = basketballSide === "womens"
+          ? await supabase.from("womens_teams").select("id,name,country,league_name").in("id",followedIds).limit(100)
+          : await supabase.from("teams").select("id,name,country,league_name").in("id",followedIds).eq("basketball_type","mens").limit(100);
         if (!mounted) return;
-        setTeams((teamRows||[]) as Team[]);
+        setTeams((teamResult.data||[]) as Team[]);
         if (p?.account_type !== "fan") {
           const {data:reviewRows} = await supabase.from("reviews").select("id,team_id,title,body,overall_rating,created_at").in("team_id",followedIds).eq("status","approved").order("created_at",{ascending:false}).limit(3);
           if (!mounted) return;
