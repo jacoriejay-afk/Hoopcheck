@@ -11,7 +11,7 @@ import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import CourtLines from "../../components/CourtLines";
 import { useLanguage } from "../../components/LanguageProvider";
-import "./hoopfeed-shared.css";
+import "../hoopfeed-shared.css";
 
 type MiniProfile = { display_name: string | null; avatar_url: string | null; current_country?: string | null; current_country_public?: boolean; current_team?: string | null };
 type Post = { id:string; shared_post_id?:string|null; shared_post?:{author_id:string;profiles?:{display_name:string|null}|null}|null; body:string; image_url:string|null; video_url?:string|null; location_country:string|null; topic_tag?:TopicTag|null; game_day_team?:string|null; game_day_opponent?:string|null; game_day_score_for?:number|null; game_day_score_against?:number|null; created_at:string; expires_at:string; author_id:string; ageLabel?:string; expiresLabel?:string; profiles?:MiniProfile|null };
