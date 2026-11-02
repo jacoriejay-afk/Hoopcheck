@@ -574,7 +574,7 @@ export default function TeamDetailPage() {
         <div className="hc-social-stats hc-team-social-stats">
           <span><strong>{publicSummary.review_count}</strong><small>Reviews</small></span>
           <span><strong>{trustScoreData?.score == null ? "—" : trustScoreData.score.toFixed(1)}</strong><small>Trust Score</small></span>
-          <FollowButton targetType="team" targetId={team.id} variant="club" />
+          <FollowButton targetType="team" targetId={team.id} variant="club" showNotifications={false} />
         </div>
         {knownPlayerFollowers.length > 0 && <p className="hc-team-social-proof">Followed by players you follow: <strong>{knownPlayerFollowers.join(", ")}</strong></p>}
         <nav className="hc-team-profile-nav" aria-label="Team profile sections"><a href="#overview">Overview</a><a href="#reviews">Reviews</a><a href="#players">Players</a><a href="#roster-board">Roster Board</a><a href="#pay-transparency">Pay Transparency</a></nav>
