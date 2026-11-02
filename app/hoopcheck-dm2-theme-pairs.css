@@ -4,6 +4,11 @@
   --hc-nav-fg: #22221F;
   --hc-nav-active-bg: #EAEAE5;
   --hc-nav-active-fg: #B83E14;
+  --hc-accent-text: #B83E14;
+  --hc-hero-surface: #FFFFFF;
+  --hc-on-hero: #151515;
+  --hc-hero-muted: #62625D;
+  --hc-hero-border: #D9D9D4;
   --hc-card: #FFFFFF;
   --hc-border: #D9D9D4;
   --hc-foreground: #151515;
@@ -35,6 +40,11 @@ html.theme-dark {
   --hc-nav-fg: #F5F5F0;
   --hc-nav-active-bg: #242421;
   --hc-nav-active-fg: #FF8A5C;
+  --hc-accent-text: #FF8A5C;
+  --hc-hero-surface: #171717;
+  --hc-on-hero: #F5F5F0;
+  --hc-hero-muted: #B8B8B3;
+  --hc-hero-border: #3A3A3A;
   --hc-card: #171717;
   --hc-border: #3A3A3A;
   --hc-foreground: #F5F5F0;
@@ -161,15 +171,25 @@ html.theme-dark body main :where(.hc-live-state--soon,.hc-live-badge.is-live,.hc
 }
 
 /* Primary, outline and reminder actions use a paired button token family. */
-html.theme-light body main :where(.btn:not(.dark),.hc-live-join),
-html.theme-dark body main :where(.btn:not(.dark),.hc-live-join) {
+html.theme-light body main .btn:not(.dark),
+html.theme-dark body main .btn:not(.dark),
+html.theme-light body main .hc-live-join,
+html.theme-dark body main .hc-live-join,
+html.theme-light body main .hc-searchbar__submit,
+html.theme-dark body main .hc-searchbar__submit {
   background: var(--hc-button-primary-surface) !important;
   color: var(--hc-button-primary-foreground) !important;
   border-color: var(--hc-button-primary-surface) !important;
   -webkit-text-fill-color: var(--hc-button-primary-foreground) !important;
 }
-html.theme-light body main :where(.btn.dark,.btn-outline,.btn-ghost,.hc-remind-button),
-html.theme-dark body main :where(.btn.dark,.btn-outline,.btn-ghost,.hc-remind-button) {
+html.theme-light body main .btn.dark,
+html.theme-dark body main .btn.dark,
+html.theme-light body main .btn-outline,
+html.theme-dark body main .btn-outline,
+html.theme-light body main .btn-ghost,
+html.theme-dark body main .btn-ghost,
+html.theme-light body main .hc-remind-button,
+html.theme-dark body main .hc-remind-button {
   background: var(--hc-button-outline-surface) !important;
   color: var(--hc-button-outline-foreground) !important;
   border-color: var(--hc-card-border) !important;
@@ -227,6 +247,93 @@ html.theme-dark body main .hc-live-hub-message {
 }
 html.theme-light body main .hc-live-card__vs,
 html.theme-dark body main .hc-live-card__vs { color: var(--hc-on-card-muted) !important; }
+
+/* Accent copy, feature hero and text actions use theme-safe foregrounds. */
+html.theme-light body main .eyebrow,
+html.theme-light body main .hc-team-profile-kicker,
+html.theme-light body main .hc-live-section-heading .eyebrow,
+html.theme-light body main .hc-live-hub-hero .eyebrow,
+html.theme-dark body main .eyebrow,
+html.theme-dark body main .hc-team-profile-kicker,
+html.theme-dark body main .hc-live-section-heading .eyebrow,
+html.theme-dark body main .hc-live-hub-hero .eyebrow {
+  color: var(--hc-accent-text) !important;
+  -webkit-text-fill-color: var(--hc-accent-text) !important;
+}
+html.theme-light body main .hc-text-button,
+html.theme-dark body main .hc-text-button {
+  color: var(--hc-accent-text) !important;
+  -webkit-text-fill-color: var(--hc-accent-text) !important;
+}
+html.theme-light body main .hc-directory-switcher,
+html.theme-dark body main .hc-directory-switcher {
+  background: var(--hc-card-surface) !important;
+  color: var(--hc-on-card) !important;
+  border-color: var(--hc-card-border) !important;
+}
+html.theme-light body main .hc-directory-switcher-label,
+html.theme-dark body main .hc-directory-switcher-label {
+  color: var(--hc-on-card) !important;
+  -webkit-text-fill-color: var(--hc-on-card) !important;
+}
+html.theme-light body main .hc-live-hub-hero,
+html.theme-dark body main .hc-live-hub-hero {
+  background: var(--hc-hero-surface) !important;
+  color: var(--hc-on-hero) !important;
+  border-color: var(--hc-hero-border) !important;
+}
+html.theme-light body main .hc-live-hub-hero h1,
+html.theme-dark body main .hc-live-hub-hero h1 {
+  color: var(--hc-on-hero) !important;
+  -webkit-text-fill-color: var(--hc-on-hero) !important;
+}
+html.theme-light body main .hc-live-hub-hero h1 span,
+html.theme-dark body main .hc-live-hub-hero h1 span {
+  color: var(--hc-accent-text) !important;
+  -webkit-text-fill-color: var(--hc-accent-text) !important;
+}
+html.theme-light body main .hc-live-hub-hero p:last-child,
+html.theme-dark body main .hc-live-hub-hero p:last-child {
+  color: var(--hc-hero-muted) !important;
+  -webkit-text-fill-color: var(--hc-hero-muted) !important;
+}
+html.theme-light body main .hc-live-hub-card .hc-live-state,
+html.theme-dark body main .hc-live-hub-card .hc-live-state {
+  background: var(--hc-chip-surface) !important;
+  color: var(--hc-chip-foreground) !important;
+  border-color: var(--hc-card-border) !important;
+  -webkit-text-fill-color: var(--hc-chip-foreground) !important;
+}
+html.theme-light body main .hc-live-empty,
+html.theme-dark body main .hc-live-empty,
+html.theme-light body main .hc-live-no-games,
+html.theme-dark body main .hc-live-no-games,
+html.theme-light body main .hc-live-empty-state,
+html.theme-dark body main .hc-live-empty-state {
+  background: var(--hc-empty-surface) !important;
+  color: var(--hc-empty-foreground) !important;
+  border-color: var(--hc-card-border) !important;
+  -webkit-text-fill-color: var(--hc-empty-foreground) !important;
+}
+html.theme-light body main .hc-team-entity-profile .hc-team-profile-hero > .hc-team-profile-kicker,
+html.theme-dark body main .hc-team-entity-profile .hc-team-profile-hero > .hc-team-profile-kicker {
+  color: var(--hc-accent-text) !important;
+  -webkit-text-fill-color: var(--hc-accent-text) !important;
+}
+html.theme-light body main .hc-team-entity-profile .hc-team-profile-nav a[aria-current="page"],
+html.theme-dark body main .hc-team-entity-profile .hc-team-profile-nav a[aria-current="page"] {
+  color: var(--hc-nav-active-fg) !important;
+  -webkit-text-fill-color: var(--hc-nav-active-fg) !important;
+  border-bottom-color: var(--hc-nav-active-fg) !important;
+}
+html.theme-light body main .hc-team-entity-profile .hc-team-profile-nav a:hover,
+html.theme-dark body main .hc-team-entity-profile .hc-team-profile-nav a:hover,
+html.theme-light body main .hc-team-entity-profile .hc-team-profile-nav a:focus-visible,
+html.theme-dark body main .hc-team-entity-profile .hc-team-profile-nav a:focus-visible {
+  background: var(--hc-button-primary-surface) !important;
+  color: var(--hc-button-primary-foreground) !important;
+  -webkit-text-fill-color: var(--hc-button-primary-foreground) !important;
+}
 
 /* Global and bottom navigation headers are themed pairs, not fixed black bars. */
 html.theme-light body :where(.site-header-global,.hc-template-header,.hc-header-nav,.bottom-nav,.hc-bottom-tab-bar,.hc-lm2f-bottom-nav),
