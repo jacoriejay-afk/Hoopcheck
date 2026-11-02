@@ -136,3 +136,16 @@ html body .hc-global-page-shell main.page-shell { padding-block-start:12px !impo
     padding-inline: 0 !important;
   }
 }
+
+
+/* Search is a full-width custom main surface (not a .page-shell); give it
+   the same single 16px mobile gutter instead of its legacy 10px inset. */
+@media (max-width: 767px) {
+  .hc-global-page-shell main.hc-global-search-page {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin-inline: 0 !important;
+    padding-inline: 16px !important;
+  }
+}
