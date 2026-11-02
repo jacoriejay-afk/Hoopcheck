@@ -80,7 +80,7 @@ html.theme-light body main :where(
   .hc-ia-identity,.hc-ia-completion,.hc-ia-live-strip,.hc-ia-door,.hc-ia-follow-list,.hc-ia-feed-card,
   .hc-template-category,.hc-template-panel:not(.hc-template-player-panel),
   .hc-live-hub-card
-) :where(h1,h2,h3,h4,p,small,strong,span,a:not(.btn),div) {
+) :where(h1,h2,h3,h4,p,small,strong,a:not(.btn),li,label) {
   color: var(--hc-on-card) !important;
   -webkit-text-fill-color: currentColor;
 }
@@ -124,7 +124,7 @@ html.theme-dark body main :where(.hc-live-state,.hc-live-badge,.hc-live-room-gam
   border: 1px solid var(--hc-card-border) !important;
   -webkit-text-fill-color: currentColor;
 }
-html.theme-light body main :where(.hc-live-state--soon,.hc-live-badge.is-live,.hc-live-room-game-status.is-live),
+html.theme-light body main :where(.hc-live-state--soon,.hc-live-badge--visible,.hc-live-room-game-status.is-live),
 html.theme-dark body main :where(.hc-live-state--soon,.hc-live-badge.is-live,.hc-live-room-game-status.is-live) {
   background: var(--hc-live-chip-surface) !important;
   color: var(--hc-live-chip-foreground) !important;
@@ -164,3 +164,36 @@ html.theme-dark body main .hc-live-hub-filter-tabs button.is-active {
   color: var(--hc-live-chip-foreground) !important;
   border-color: var(--hc-orange) !important;
 }
+
+/* Preserve category/avatar accent treatment while pairing all text surfaces. */
+html.theme-light body main .hc-ia-identity .hc-ia-avatar,
+html.theme-dark body main .hc-ia-identity .hc-ia-avatar {
+  background: var(--hc-foreground) !important;
+  color: var(--hc-page-bg) !important;
+  -webkit-text-fill-color: var(--hc-page-bg) !important;
+}
+
+/* Live hub headings, counters, notices and footer copy use semantic status tokens. */
+html.theme-light body main .hc-live-section-heading .eyebrow,
+html.theme-dark body main .hc-live-section-heading .eyebrow { color: var(--hc-orange) !important; }
+html.theme-light body main .hc-live-section-heading h2 span,
+html.theme-dark body main .hc-live-section-heading h2 span {
+  background: var(--hc-chip-surface) !important;
+  color: var(--hc-chip-foreground) !important;
+}
+html.theme-light body main .hc-live-section-heading>p,
+html.theme-dark body main .hc-live-section-heading>p,
+html.theme-light body main .hc-live-hub-footer,
+html.theme-dark body main .hc-live-hub-footer {
+  color: var(--hc-on-card-muted) !important;
+  border-color: var(--hc-card-border) !important;
+}
+html.theme-light body main .hc-live-hub-footer a,
+html.theme-dark body main .hc-live-hub-footer a,
+html.theme-light body main .hc-live-hub-message,
+html.theme-dark body main .hc-live-hub-message {
+  background: var(--hc-live-chip-surface) !important;
+  color: var(--hc-live-chip-foreground) !important;
+}
+html.theme-light body main .hc-live-card__vs,
+html.theme-dark body main .hc-live-card__vs { color: var(--hc-on-card-muted) !important; }
