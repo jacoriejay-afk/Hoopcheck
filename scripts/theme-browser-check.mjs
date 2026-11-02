@@ -337,6 +337,17 @@ try {
         const expectedSearchHeading = testLanguage === "es" ? "CONEXIÓN ENTRE JUGADORES" : "PLAYER CONNECT";
         await page.waitForFunction((expected) => document.body.innerText.toLocaleUpperCase().includes(expected), expectedSearchHeading, { timeout: 15000 });
       }
+      if (requestedPath === "/dashboard") {
+        await page.locator(".hc-ia-identity").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator(".hc-ia-completion").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator(".hc-ia-door").first().waitFor({ state: "visible", timeout: 15000 });
+      }
+      if (requestedPath === "/feed") await page.locator(".hc-feed-composer").waitFor({ state: "visible", timeout: 15000 });
+      if (requestedPath === "/live-games") {
+        await page.locator(".hc-live-state").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator(".hc-remind-button").waitFor({ state: "visible", timeout: 15000 });
+      }
+      if (requestedPath === "/teams/" + teamFixture.id) await page.locator(".hc-team-profile-hero h1").waitFor({ state: "visible", timeout: 15000 });
       const result = await page.evaluate(({ requestedPath, navigationError }) => {
         const main = document.querySelector("main");
         const color = (element) => element ? getComputedStyle(element).backgroundColor : null;
