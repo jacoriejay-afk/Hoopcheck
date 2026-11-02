@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { HoopIcon } from "./HoopCheckUI";
+import Link from "next/link";
 import { useLanguage } from "./LanguageProvider";
 
 type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string; variant?: "default" | "club" };
@@ -55,12 +56,16 @@ export default function FollowButton({ targetType, targetId, variant = "default"
       return;
     }
     setBusy(true);
-    if (following) {
+    const wasFollowing = following;
+    const previousCount = count;
+    setFollowing(!wasFollowing);
+    setCount((value) => Math.max(0, value + (wasFollowing ? -1 : 1)));
+    if (wasFollowing) {
       const { error } = await supabase.from("follow_relationships").delete()
         .eq("follower_id", user.id).eq("target_type", targetType).eq("target_id", targetId);
-      if (!error) {
-        setFollowing(false);
-        setCount((v) => Math.max(0, v - 1));
+      if (error) {
+        setFollowing(wasFollowing);
+        setCount(previousCount);
       }
     } else {
       const { error } = await supabase.from("follow_relationships").insert({
@@ -71,10 +76,11 @@ export default function FollowButton({ targetType, targetId, variant = "default"
         notify_ratings: true,
         notify_updates: true,
       });
-      if (!error) {
-        setFollowing(true);
+      if (error) {
+        setFollowing(wasFollowing);
+        setCount(previousCount);
+      } else {
         setNotify(true);
-        setCount((v) => v + 1);
       }
     }
     setSignedIn(true);
@@ -104,7 +110,7 @@ export default function FollowButton({ targetType, targetId, variant = "default"
       >
         {following ? <HoopIcon name="check" size={15} /> : <HoopIcon name="user" size={15} />} {following ? t("following") : t("follow")}
       </button>
-      <span className="follow-count muted">{t("followerCount").replace("{count}", formatNumber(count))}</span>
+      <Link className="follow-count muted hc-follow-count-link" href={"/connections?mode=followers&type=" + encodeURIComponent(targetType) + "&id=" + encodeURIComponent(targetId)} aria-label={formatNumber(count) + " followers"}>{t("followerCount").replace("{count}", formatNumber(count))}</Link>
       <button
           type="button"
           aria-label={t("toggleNotifications")}
