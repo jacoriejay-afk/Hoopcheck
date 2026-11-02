@@ -11,6 +11,7 @@ import "./fan-live.css";
 import "../game-predictions.css";
 import GameWinnerPrediction from "../../components/GameWinnerPrediction";
 import TeamLogo from "../../components/TeamLogo";
+import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
 
 type Game = { id:string; team_id:string; opponent_team_id:string|null; opponent_name:string; status:string; home_score:number|null; away_score:number|null; started_at:string|null; ends_at:string|null; scheduled_at:string|null; league_name:string|null; country:string|null; period_label:string|null };
 type Team = { id:string; name:string; logo_url?:string|null; logo_bg?:"transparent"|"light"|"dark"|null };
@@ -64,15 +65,16 @@ export default function FanLivePage() {
       supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle(),
       supabase.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id",user.id).maybeSingle()
     ]);
-    const active=profile?.account_type==="fan" && ["pro","premium"].includes(subscription?.plan||"") &&
-      ["active","trialing"].includes(subscription?.status||"") &&
-      ["active","trialing","pro","premium"].includes(subscription?.access_status??"active") &&
-      (!subscription?.current_period_end || new Date(subscription.current_period_end)>new Date());
-    const playerCanPredict=profile?.account_type==="player";
-    setChatEnabled(Boolean(active));
-    setAllowed(Boolean(active||playerCanPredict));
-    if(!active&&!playerCanPredict){setGames([]);setSelected(null);setLoading(false);return;}
-    const gameResult = profile?.account_type === "player"
+    const paidMember = hasActiveMembershipAtLeast(subscription);
+    const fanCanChat = profile?.account_type === "fan" && paidMember;
+    const playerCanChat = profile?.account_type === "player" && paidMember;
+    const playerCanPredict = profile?.account_type === "player";
+    setChatEnabled(Boolean(fanCanChat || playerCanChat));
+    setAllowed(Boolean(fanCanChat || playerCanChat || playerCanPredict));
+    if (!fanCanChat && !playerCanChat && !playerCanPredict) {
+      setGames([]); setSelected(null); setLoading(false); return;
+    }
+    const gameResult = profile?.account_type === "player" && !playerCanChat
       ? await fetch("/api/game-predictions?mode=games", { headers: { Authorization: "Bearer " + (session?.access_token || "") }, cache: "no-store" })
           .then(async response => { const json = await response.json(); return { data: json.games || [], error: response.ok ? null : new Error("player-game-list-unavailable") }; })
       : await supabase.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_name,country,period_label").in("status",["scheduled","live","final","cancelled","postponed","abandoned"]).order("scheduled_at",{ascending:true,nullsFirst:false}).limit(500);
@@ -213,16 +215,16 @@ export default function FanLivePage() {
   const availability=selected?getGameAvailability({status:selected.status,scheduledAt:selected.scheduled_at,startedAt:selected.started_at,endsAt:selected.ends_at,now:clock}):null;
   const shownMessages=useMemo(()=>messages.filter(m=>!blockedUsers.has(m.user_id)&&!mutedUsers.has(m.user_id)),[messages,blockedUsers,mutedUsers]);
 
-  if(loading)return <main className="page-shell hc-live-room"><div className="page-container"><HoopLoading label="Loading Fan HQ…" /></div></main>;
-  if(!userId)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">FAN HQ</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in as a Pro or Premium Fan to join live game conversations.</p><Link className="btn" href="/login">Sign in</Link></section></div></main>;
-  if(!allowed)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM FAN</p><h1>LIVE GAME CHAT</h1><p className="muted">An active Pro or Premium Fan membership is required to join game rooms.</p><Link className="btn" href="/membership">View Membership</Link></section></div></main>;
+  if(loading)return <main className="page-shell hc-live-room"><div className="page-container"><HoopLoading label="Loading Live Game Hub…" /></div></main>;
+  if(!userId)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">FAN HQ</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in to access Live Game Hub features available to your account.</p><Link className="btn" href="/login">Sign in</Link></section></div></main>;
+  if(!allowed)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM MEMBERS</p><h1>LIVE GAME CHAT</h1><p className="muted">An active Pro or Premium membership is required to join game chats. Free players can still make game predictions.</p><Link className="btn" href="/membership">View Membership</Link></section></div></main>;
 
   return <main className="page-shell hc-live-room">
       <FanBasketballSideSwitch /><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/live-games">All Games</Link><Link href="/teams">Teams</Link></nav></header>
-    <section className="hero-card hc-live-room-hero"><div><p className="eyebrow">HOOPCHECK · FAN HQ</p><h1>LIVE GAME CHAT<span>.</span></h1><p className="muted">Real-time conversation with fans watching the same game.</p></div><div className="hc-live-presence-chip"><span className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"fan":"fans"} in room</div></section>
+    <section className="hero-card hc-live-room-hero"><div><p className="eyebrow">HOOPCHECK · LIVE GAME HUB</p><h1>LIVE GAME CHAT<span>.</span></h1><p className="muted">Real-time conversation with fans watching the same game.</p></div><div className="hc-live-presence-chip"><span className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"fan":"fans"} in room</div></section>
     {!games.length?<section className="dashboard-card"><h2>No games available</h2><p className="muted">Check back when the game schedule is updated.</p><Link href="/live-games" className="btn">Browse Games</Link></section>:<section className="hc-live-room-grid">
-      <aside className="dashboard-card hc-live-room-list"><div className="hc-live-room-list-heading"><span className="card-kicker">FAN HQ · GAME ROOMS</span><span>{games.length}</span></div>{games.map(game=>{const a=teams[game.team_id],b=teams[game.opponent_team_id||""]||{id:"",name:game.opponent_name};return <button key={game.id} type="button" className={"hc-live-room-game"+(selected?.id===game.id?" is-selected":"")} onClick={()=>setSelected(game)}><div className="hc-live-room-game-teams">{renderTeamLogo(a)}<div><strong>{a?.name||"Team"} vs {b.name}</strong><span>{game.home_score??"—"} : {game.away_score??"—"} · {game.period_label||game.status}</span></div></div><span className={"hc-live-room-game-status"+(game.status==="live"?" is-live":"")}>{game.status==="live"?"● LIVE":finalStatus(game.status)?"FINAL":roomOpen(game)?"CHAT OPEN":"UPCOMING"}</span></button>})}</aside>
+      <aside className="dashboard-card hc-live-room-list"><div className="hc-live-room-list-heading"><span className="card-kicker">LIVE GAME HUB · GAME ROOMS</span><span>{games.length}</span></div>{games.map(game=>{const a=teams[game.team_id],b=teams[game.opponent_team_id||""]||{id:"",name:game.opponent_name};return <button key={game.id} type="button" className={"hc-live-room-game"+(selected?.id===game.id?" is-selected":"")} onClick={()=>setSelected(game)}><div className="hc-live-room-game-teams">{renderTeamLogo(a)}<div><strong>{a?.name||"Team"} vs {b.name}</strong><span>{game.home_score??"—"} : {game.away_score??"—"} · {game.period_label||game.status}</span></div></div><span className={"hc-live-room-game-status"+(game.status==="live"?" is-live":"")}>{game.status==="live"?"● LIVE":finalStatus(game.status)?"FINAL":roomOpen(game)?"CHAT OPEN":"UPCOMING"}</span></button>})}</aside>
       {selected&&<section className="dashboard-card hc-live-room-panel">
         <GameWinnerPrediction game={selected} homeName={home?.name||"Home"} awayName={away?.name||selected.opponent_name}  />
         <header className="hc-live-room-scoreboard"><div className="hc-live-room-team">{renderTeamLogo(home)}<strong>{home?.name||"Team"}</strong></div><div className="hc-live-room-score"><span className={"hc-live-badge"+(selected.status==="live"?" is-live":"")}>{selected.status==="live"?<><i/> LIVE</>:finalStatus(selected.status)?"FINAL":availability?.state||"UPCOMING"}</span><strong>{selected.home_score??"—"} <span>:</span> {selected.away_score??"—"}</strong><small>{selected.period_label||selected.league_name||"Score updates automatically"}</small></div><div className="hc-live-room-team">{renderTeamLogo(away)}<strong>{away?.name||selected.opponent_name}</strong></div></header>
