@@ -62,6 +62,12 @@ const contrastPairs=[
   ["html.theme-dark","--hc-nav-fg","--hc-nav-bg"],
   ["html.theme-light","--hc-nav-active-fg","--hc-nav-active-bg"],
   ["html.theme-dark","--hc-nav-active-fg","--hc-nav-active-bg"],
+  ["html.theme-light","--hc-button-primary-fg","--hc-button-primary-bg"],
+  ["html.theme-dark","--hc-button-primary-fg","--hc-button-primary-bg"],
+  ["html.theme-light","--hc-button-outline-fg","--hc-button-outline-bg"],
+  ["html.theme-dark","--hc-button-outline-fg","--hc-button-outline-bg"],
+  ["html.theme-light","--hc-brand-tile-fg","--hc-brand-tile-bg"],
+  ["html.theme-dark","--hc-brand-tile-fg","--hc-brand-tile-bg"],
 ];
 for (const [theme,fgToken,bgToken] of contrastPairs) {
   const fg=tokenValue(theme,fgToken),bg=tokenValue(theme,bgToken);
