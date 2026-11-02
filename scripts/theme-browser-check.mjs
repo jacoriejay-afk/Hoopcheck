@@ -355,7 +355,7 @@ try {
           completionCard: (() => { const el=document.querySelector(".hc-ia-completion"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null}; })(),
           homeLiveCard: (() => { const el=document.querySelector(".hc-ia-live-strip"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null}; })(),
           liveEmpty: (() => { const el=document.querySelector(".hc-live-no-games,.hc-live-empty"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor}; })(),
-          remindButton: (() => { const el=document.querySelector(".hc-remind-button"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor}; })(),
+          remindButton: (() => { const el=document.querySelector(".hc-remind-button"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor,text:el.textContent?.trim()||null}; })(),
           upcomingPill: (() => { const el=document.querySelector(".hc-live-state"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,text:el.textContent?.trim()||null}; })(),
           safeAreaTop: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hc-safe-area-top")) || 0,
           bodyTopPadding: parseFloat(getComputedStyle(document.body).paddingTop) || 0,
@@ -470,6 +470,7 @@ try {
         const expectedReminderText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
         if (result.upcomingPill?.background !== expectedUpcomingSurface || result.upcomingPill?.color !== expectedUpcomingText) errors.push("UPCOMING pill pair mismatch: " + JSON.stringify(result.upcomingPill));
         if (result.remindButton?.color !== expectedReminderText) errors.push("REMIND ME text mismatch: " + JSON.stringify(result.remindButton));
+        if (!result.remindButton?.text?.toUpperCase().includes("REMIND ME")) errors.push("REMIND ME label missing: " + JSON.stringify(result.remindButton));
         if (!result.upcomingPill?.text?.toUpperCase().includes("UPCOMING")) errors.push("Upcoming status pill missing: " + JSON.stringify(result.upcomingPill));
       }
       if (["/dashboard", "/search", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2"].includes(requestedPath)) {
