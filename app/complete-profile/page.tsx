@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import HoopLoading from "../../components/HoopLoading";
@@ -48,7 +48,7 @@ export default function CompleteProfilePage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  async function loadProfile() {
+  const loadProfile = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.replace("/login?next=/complete-profile"); return; }
     setUserId(user.id);
@@ -59,9 +59,9 @@ export default function CompleteProfilePage() {
     if (!data || data.account_type !== "player") { setError("The player profile checklist is available to player accounts."); setLoading(false); return; }
     setProfile(data as PlayerRecord);
     setLoading(false);
-  }
+  }, [router]);
 
-  useEffect(() => { void loadProfile(); }, []);
+  useEffect(() => { void loadProfile(); }, [loadProfile]);
 
   const completion = useMemo(() => getPlayerProfileCompletion(profile), [profile]);
   const displayName = profile?.display_name || profile?.username || "Player";
