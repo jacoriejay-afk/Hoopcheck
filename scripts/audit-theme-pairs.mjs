@@ -7,13 +7,15 @@ const files = {
   nav: await readFile("app/hoopcheck-lm2f-bottom-nav.css", "utf8"),
   finalTheme: await readFile("app/hoopcheck-dm2-theme-pairs.css", "utf8"),
   finalOverrides: await readFile("app/hoopcheck-final-overrides.css", "utf8"),
+  team: await readFile("app/hoopcheck-directory-profile.css", "utf8"),
 };
 const errors = [];
 const requiredTokens = [
   "--hc-card","--hc-border","--hc-foreground","--hc-foreground-muted",
   "--hc-card-surface","--hc-card-border","--hc-on-card","--hc-on-card-muted",
   "--hc-chip-surface","--hc-chip-foreground","--hc-live-chip-surface",
-  "--hc-live-chip-foreground","--hc-button-primary-surface","--hc-button-primary-foreground",
+  "--hc-live-chip-foreground","--hc-button-primary-surface","--hc-button-primary-foreground","--hc-button-primary-bg","--hc-button-primary-fg",
+  "--hc-button-outline-bg","--hc-button-outline-fg","--hc-brand-tile-bg","--hc-brand-tile-fg","--hc-brand-tile-border",
   "--hc-button-outline-surface","--hc-button-outline-foreground","--hc-empty-surface","--hc-empty-foreground",
   "--hc-nav-bg","--hc-nav-fg","--hc-nav-active-bg","--hc-nav-active-fg",
 ];
@@ -80,6 +82,10 @@ const authoredPairs=[
   ["Live reminder button",".hc-remind-button","live",["--hc-button-outline-surface","--hc-button-outline-foreground","--hc-card-border"]],
   ["Live empty state",".hc-live-empty","live",["--hc-empty-surface","--hc-empty-foreground","--hc-card-border"]],
   ["Live no-games state",".hc-live-no-games","live",["--hc-empty-surface","--hc-empty-foreground","--hc-card-border"]],
+  ["Team profile header","html.theme-dark .hc-team-entity-profile .hc-team-profile-hero","team",["--hc-card","--hc-foreground","--hc-border"]],
+  ["Team follow button",".hc-team-profile-topline .hc-team-follow-pill.is-not-following","team",["--hc-button-primary-bg","--hc-button-primary-fg"]],
+  ["Team following button",".hc-team-profile-topline .hc-team-follow-pill.is-following","team",["--hc-button-outline-bg","--hc-button-outline-fg","--hc-border"]],
+  ["Team logo fallback",".hc-team-profile-topline .hc-team-logo--fallback","team",["--hc-brand-tile-bg","--hc-brand-tile-border"]],
 ];
 for(const [label,selector,file,tokens] of authoredPairs){
   const rule=blockAfter(files[file],selector);
