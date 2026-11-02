@@ -94,7 +94,7 @@ const authoredPairs=[
   ["Home feed card",".hc-ia-feed-card","home",["--hc-card-surface","--hc-on-card","--hc-card-border"]],
   ["Live game card",".hc-live-hub-card","live",["--hc-card-surface","--hc-on-card","--hc-card-border"]],
   ["Live upcoming/status pill",".hc-live-state","live",["--hc-chip-surface","--hc-chip-foreground","--hc-card-border"]],
-  ["Live badge",".hc-live-badge ","live",["--hc-live-chip-surface","--hc-live-chip-foreground","--hc-card-border"]],
+  ["Live status pill","html.theme-dark body main .hc-live-state","finalTheme",["--hc-chip-surface","--hc-chip-foreground","--hc-card-border"]],
   ["Live reminder button",".hc-remind-button","live",["--hc-button-outline-surface","--hc-button-outline-foreground","--hc-card-border"]],
   ["Live empty state",".hc-live-empty","live",["--hc-empty-surface","--hc-empty-foreground","--hc-card-border"]],
   ["Live no-games state",".hc-live-no-games","live",["--hc-empty-surface","--hc-empty-foreground","--hc-card-border"]],
@@ -103,15 +103,15 @@ const authoredPairs=[
   ["Team follow button",".hc-team-profile-topline .hc-team-follow-pill.is-not-following","team",["--hc-button-primary-bg","--hc-button-primary-fg"]],
   ["Team following button",".hc-team-profile-topline .hc-team-follow-pill.is-following","team",["--hc-button-outline-bg","--hc-button-outline-fg","--hc-border"]],
   ["Team logo fallback",".hc-team-profile-topline .hc-team-logo--fallback","team",["--hc-brand-tile-bg","--hc-brand-tile-border"]],
-  ["Shared primary button",".btn","live",["--hc-button-primary-surface","--hc-button-primary-foreground"]],
+  ["Shared primary button","html.theme-dark body main .btn:not(.dark)","finalTheme",["--hc-button-primary-surface","--hc-button-primary-foreground"]],
   ["Search submit button",".hc-searchbar__submit","live",["--hc-button-primary-surface","--hc-button-primary-foreground"]],
   ["Live Games hero",".hc-live-hub-hero","live",["--hc-hero-surface","--hc-on-hero","--hc-hero-border"]],
-  ["Directory switcher",".hc-directory-switcher","polish",["--hc-card-surface","--hc-on-card","--hc-card-border"]],
-  ["Directory switcher label",".hc-directory-switcher-label","polish",["--hc-accent-text"]],
+  ["Directory switcher","html.theme-dark body main .hc-directory-switcher","finalTheme",["--hc-card-surface","--hc-on-card","--hc-card-border"]],
+  ["Directory switcher label","html.theme-dark body main .hc-directory-switcher-label","finalTheme",["--hc-accent-text"]],
   ["Team profile active tab",'.hc-team-entity-profile .hc-team-profile-nav a[aria-current="page"]',"team",["--hc-nav-active-fg"]],
   ["Team profile kicker",".hc-team-profile-kicker","team",["--hc-accent-text"]],
   ["Text action button",".hc-text-button","live",["--hc-accent-text"]],
-  ["Eyebrow label",".eyebrow","live",["--hc-accent-text"]],
+  ["Eyebrow label","html.theme-dark body main .eyebrow","finalTheme",["--hc-accent-text"]],
 ];
 for(const [label,selector,file,tokens] of authoredPairs){
   const rule=blockAfter(files[file],selector);
