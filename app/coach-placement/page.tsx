@@ -2,6 +2,7 @@
 import {useEffect,useState} from "react";
 import Link from "next/link";
 import {supabase} from "../../lib/supabase";
+import {isAtLeastTier} from "../../lib/membership-tier";
 import HoopLoading from "../../components/HoopLoading";
 type Team={id:string;name:string;country:string|null;league_name:string|null};
 type Request={id:string;team_id:string;status:string;requested_role:string|null;reviewer_note:string|null};
