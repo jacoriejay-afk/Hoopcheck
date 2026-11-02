@@ -129,11 +129,11 @@ export default function DashboardPage() {
   return (
     <main className="page-shell hc-ia-home">
       <div className="page-container">
+        <SearchBar className="hc-ia-search" name="q" placeholder={t("searchPeoplePlaceholder")} ariaLabel={t("searchPeoplePlaceholder")}/>
         <header className="hc-ia-welcome">
           <p className="eyebrow">YOUR DAILY FRONT DOOR</p>
           <h1>KNOW WHO YOU’RE SIGNING WITH<span>.</span></h1>
           <p className="muted">Real player experiences. Make your next move with confidence.</p>
-          <SearchBar className="hc-ia-search" name="q" placeholder={t("searchPeoplePlaceholder")} ariaLabel={t("searchPeoplePlaceholder")}/>
           <div className="hc-ia-identity"><span className="hc-ia-avatar">{displayName.charAt(0).toUpperCase()}</span><span><small>SIGNED IN AS</small><strong>{displayName}</strong></span></div>
         </header>
 
