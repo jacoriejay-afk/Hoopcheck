@@ -139,7 +139,7 @@ export default function DashboardPage() {
 
         {completion < 100 && <Link href="/account#edit-profile" className="hc-ia-completion"><span><strong>COMPLETE YOUR PROFILE</strong><small>{completion}% complete · Add your basketball background so players and organisations can recognise your experience.</small></span><span>Continue <HoopIcon name="arrow-right" size={16}/></span></Link>}
 
-        <Link href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>LIVE GAMES</strong><small>{liveCounts.live} live now · {liveCounts.upcoming} upcoming</small></span><span>Open hub <HoopIcon name="arrow-right" size={16}/></span></Link>
+        <Link href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>LIVE GAMES</strong><small>{profile?.account_type === "fan" ? `${liveCounts.live} live now · ${liveCounts.upcoming} upcoming` : "See live and upcoming games"}</small></span><span>Open hub <HoopIcon name="arrow-right" size={16}/></span></Link>
 
         <section className="hc-ia-section">
           <div className="hc-ia-section-heading"><div><p className="eyebrow">YOUR SHORTCUTS</p><h2>QUICK ACCESS</h2></div><Link href="/directory">Explore all <HoopIcon name="arrow-right" size={15}/></Link></div>
