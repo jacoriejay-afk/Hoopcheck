@@ -25,7 +25,7 @@ type Profile = {
 };
 type Team = { id:string; name:string; country:string|null; league_name:string|null };
 type Review = { id:string; team_id:string; title:string|null; body:string; overall_rating:number; created_at:string };
-type FeedPost = { id:string; body:string; created_at:string; expires_at:string; author_id:string; profiles?:{display_name:string|null}|null };
+type FeedPost = { id:string; body:string; created_at:string; expires_at:string; author_id:string; profiles?:{display_name:string|null}[]|null };
 
 const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000, fallback?: T) =>
   Promise.race([Promise.resolve(promise), new Promise<T>((resolve) => setTimeout(() => resolve(fallback as T), ms))]);
@@ -137,7 +137,7 @@ export default function DashboardPage() {
 
         {completion < 100 && <Link href="/account#edit-profile" className="hc-ia-completion"><span><strong>COMPLETE YOUR PROFILE</strong><small>{completion}% complete · Add your basketball background so players and organisations can recognise your experience.</small></span><span>Continue <HoopIcon name="arrow-right" size={16}/></span></Link>}
 
-        <Link href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>LIVE GAMES</strong><small>{profile?.account_type === "fan" ? `${liveCounts.live} live now · ${liveCounts.upcoming} upcoming` : "See live and upcoming games"}</small></span><span>Open hub <HoopIcon name="arrow-right" size={16}/></span></Link>
+        <Link href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>LIVE GAMES</strong><small>{"See live and upcoming games"}</small></span><span>Open hub <HoopIcon name="arrow-right" size={16}/></span></Link>
 
         <section className="hc-ia-section">
           <div className="hc-ia-section-heading"><div><p className="eyebrow">YOUR SHORTCUTS</p><h2>QUICK ACCESS</h2></div><Link href="/directory">Explore all <HoopIcon name="arrow-right" size={15}/></Link></div>
@@ -158,7 +158,7 @@ export default function DashboardPage() {
         {reviews.length>0 && <section className="hc-ia-section"><div className="hc-ia-section-heading"><div><p className="eyebrow">PLAYER EXPERIENCES</p><h2>RECENT REVIEWS ON YOUR TEAMS</h2></div></div><div className="hc-ia-follow-list">{reviews.slice(0,3).map(review=><Link key={review.id} href={(basketballSide==="womens"?"/womens/":"/teams/")+review.team_id}><span><strong>{review.title||"Player review"}</strong><small>{review.body.slice(0,110)}{review.body.length>110?"…":""} · {review.overall_rating}/5</small></span><HoopIcon name="chevron-right" size={17}/></Link>)}</div></section>}
 
         <section className="hc-ia-section hc-ia-feed-teaser"><div className="hc-ia-section-heading"><div><p className="eyebrow">PLAYER NETWORK</p><h2>HOOPFEED</h2></div><Link href="/feed">Open feed <HoopIcon name="arrow-right" size={15}/></Link></div>
-          {hasFeedAccess && feedPost ? <Link href="/feed" className="hc-ia-feed-card"><strong>{feedPost.profiles?.display_name||"A player you follow"}</strong><p>{feedPost.body.slice(0,180)}{feedPost.body.length>180?"…":""}</p><small>Latest post · Posts expire after 24 hours</small></Link> : <Link href="/feed" className="hc-ia-feed-card"><strong>Open HoopFeed</strong><p>Updates from players you follow and your accepted connections.</p><small>Followers-only · 24-hour posts</small></Link>}
+          {hasFeedAccess && feedPost ? <Link href="/feed" className="hc-ia-feed-card"><strong>{feedPost.profiles?.[0]?.display_name||"A player you follow"}</strong><p>{feedPost.body.slice(0,180)}{feedPost.body.length>180?"…":""}</p><small>Latest post · Posts expire after 24 hours</small></Link> : <Link href="/feed" className="hc-ia-feed-card"><strong>Open HoopFeed</strong><p>Updates from players you follow and your accepted connections.</p><small>Followers-only · 24-hour posts</small></Link>}
         </section>
         <Link href="/account" className="hc-ia-account-link">Account, membership, reviews and settings <HoopIcon name="arrow-right" size={16}/></Link>
       </div>
