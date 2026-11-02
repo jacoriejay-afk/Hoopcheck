@@ -222,3 +222,143 @@ html.theme-dark main.admin-directory-shell :where(div,section,article,aside)[sty
   background-color: var(--hc-surface-raised) !important;
   border-color: var(--hc-border) !important;
 }
+
+/* DM-2 — one paired surface contract for every card-like component. */
+:root,
+html.theme-light {
+  --hc-card-surface: #FFFFFF;
+  --hc-card-border: #D9D9D4;
+  --hc-on-card: #151515;
+  --hc-on-card-muted: #62625D;
+  --hc-chip-surface: #F1F1ED;
+  --hc-chip-foreground: #4C4C46;
+  --hc-live-chip-surface: #FFF0E9;
+  --hc-live-chip-foreground: #8F3215;
+  --hc-button-outline-surface: #FFFFFF;
+  --hc-button-outline-foreground: #151515;
+  --hc-empty-surface: #F8F8F6;
+  --hc-empty-foreground: #3F3F3A;
+}
+html.theme-dark {
+  --hc-card-surface: #171717;
+  --hc-card-border: #3A3A3A;
+  --hc-on-card: #F5F5F0;
+  --hc-on-card-muted: #B8B8B3;
+  --hc-chip-surface: #242424;
+  --hc-chip-foreground: #E7E7E1;
+  --hc-live-chip-surface: #3A2119;
+  --hc-live-chip-foreground: #FFB18F;
+  --hc-button-outline-surface: #202020;
+  --hc-button-outline-foreground: #F5F5F0;
+  --hc-empty-surface: #141414;
+  --hc-empty-foreground: #E5E5DF;
+}
+
+/* Page canvas and common cards use the same surface/foreground pair. */
+html.theme-light main.hc-ia-home,
+html.theme-dark main.hc-ia-home {
+  background: var(--hc-page-bg) !important;
+  color: var(--hc-foreground) !important;
+}
+html.theme-light body main :where(
+  .hc-ia-identity,.hc-ia-completion,.hc-ia-live-strip,.hc-ia-door,
+  .hc-ia-follow-list,.hc-ia-feed-card,.hc-layout-card,.hc-layout-group,
+  .hc-settings-group,.hc-account-settings-header,.hc-template-category,
+  .hc-template-panel:not(.hc-template-player-panel),
+  .hc-dashboard-shell .dashboard-command-tile,.hc-dashboard-shell .fan-feature-card,
+  .hc-live-hub-card,.hc-live-empty,.hc-live-no-games,.hc-live-recent-empty,
+  .hc-live-empty-state,.hc-live-closed-state,.hc-live-next-tip,.hc-live-hub-filters
+),
+html.theme-dark body main :where(
+  .hc-ia-identity,.hc-ia-completion,.hc-ia-live-strip,.hc-ia-door,
+  .hc-ia-follow-list,.hc-ia-feed-card,.hc-layout-card,.hc-layout-group,
+  .hc-settings-group,.hc-account-settings-header,.hc-template-category,
+  .hc-template-panel:not(.hc-template-player-panel),
+  .hc-dashboard-shell .dashboard-command-tile,.hc-dashboard-shell .fan-feature-card,
+  .hc-live-hub-card,.hc-live-empty,.hc-live-no-games,.hc-live-recent-empty,
+  .hc-live-empty-state,.hc-live-closed-state,.hc-live-next-tip,.hc-live-hub-filters
+) {
+  background: var(--hc-card-surface) !important;
+  color: var(--hc-on-card) !important;
+  border-color: var(--hc-card-border) !important;
+  -webkit-text-fill-color: var(--hc-on-card);
+}
+
+/* Text inside those cards inherits the card foreground; muted copy stays paired too. */
+html.theme-light body main :where(
+  .hc-ia-identity,.hc-ia-completion,.hc-ia-live-strip,.hc-ia-door,
+  .hc-ia-follow-list,.hc-ia-feed-card,.hc-template-category,.hc-template-panel:not(.hc-template-player-panel),
+  .hc-dashboard-shell .dashboard-command-tile,.hc-dashboard-shell .fan-feature-card,
+  .hc-live-hub-card,.hc-live-empty,.hc-live-no-games,.hc-live-recent-empty,
+  .hc-live-empty-state,.hc-live-closed-state,.hc-live-next-tip
+) :where(h1,h2,h3,h4,p,small,strong,span,a:not(.btn),div) {
+  color: var(--hc-on-card) !important;
+  -webkit-text-fill-color: currentColor;
+}
+html.theme-dark body main :where(
+  .hc-ia-identity,.hc-ia-completion,.hc-ia-live-strip,.hc-ia-door,
+  .hc-ia-follow-list,.hc-ia-feed-card,.hc-template-category,.hc-template-panel:not(.hc-template-player-panel),
+  .hc-dashboard-shell .dashboard-command-tile,.hc-dashboard-shell .fan-feature-card,
+  .hc-live-hub-card,.hc-live-empty,.hc-live-no-games,.hc-live-recent-empty,
+  .hc-live-empty-state,.hc-live-closed-state,.hc-live-next-tip
+) :where(h1,h2,h3,h4,p,small,strong,span,a:not(.btn),div) {
+  color: var(--hc-on-card) !important;
+  -webkit-text-fill-color: currentColor;
+}
+html.theme-light body main :where(.hc-ia-identity small,.hc-ia-completion small,.hc-ia-live-strip small,.hc-ia-door small,.hc-ia-follow-list small,.hc-ia-feed-card small,.hc-live-card__league,.hc-live-card__muted,.hc-live-card__middle small,.hc-live-card__meta,.hc-live-empty p,.hc-live-no-games p,.hc-live-recent-empty),
+html.theme-dark body main :where(.hc-ia-identity small,.hc-ia-completion small,.hc-ia-live-strip small,.hc-ia-door small,.hc-ia-follow-list small,.hc-ia-feed-card small,.hc-live-card__league,.hc-live-card__muted,.hc-live-card__middle small,.hc-live-card__meta,.hc-live-empty p,.hc-live-no-games p,.hc-live-recent-empty) {
+  color: var(--hc-on-card-muted) !important;
+  -webkit-text-fill-color: currentColor;
+}
+
+/* Status pills and reminder controls are complete foreground/background pairs. */
+html.theme-light body main :where(.hc-live-state,.hc-live-badge) {
+  background: var(--hc-chip-surface) !important;
+  color: var(--hc-chip-foreground) !important;
+  border: 1px solid var(--hc-card-border) !important;
+}
+html.theme-dark body main :where(.hc-live-state,.hc-live-badge) {
+  background: var(--hc-chip-surface) !important;
+  color: var(--hc-chip-foreground) !important;
+  border: 1px solid var(--hc-card-border) !important;
+}
+html.theme-light body main :where(.hc-live-state--soon,.hc-live-badge) {
+  background: var(--hc-live-chip-surface) !important;
+  color: var(--hc-live-chip-foreground) !important;
+}
+html.theme-dark body main :where(.hc-live-state--soon,.hc-live-badge) {
+  background: var(--hc-live-chip-surface) !important;
+  color: var(--hc-live-chip-foreground) !important;
+}
+html.theme-light body main .hc-remind-button,
+html.theme-dark body main .hc-remind-button {
+  background: var(--hc-button-outline-surface) !important;
+  color: var(--hc-button-outline-foreground) !important;
+  border: 1px solid var(--hc-card-border) !important;
+  -webkit-text-fill-color: var(--hc-button-outline-foreground) !important;
+}
+html.theme-light body main .hc-remind-button.is-set,
+html.theme-dark body main .hc-remind-button.is-set {
+  background: var(--hc-live-chip-surface) !important;
+  color: var(--hc-live-chip-foreground) !important;
+  border-color: var(--hc-card-border) !important;
+  -webkit-text-fill-color: var(--hc-live-chip-foreground) !important;
+}
+html.theme-light body main .hc-live-hub-filter-tabs button,
+html.theme-dark body main .hc-live-hub-filter-tabs button {
+  background: var(--hc-card-surface) !important;
+  color: var(--hc-on-card) !important;
+  border-color: var(--hc-card-border) !important;
+}
+html.theme-light body main .hc-live-hub-filter-tabs button.is-active,
+html.theme-dark body main .hc-live-hub-filter-tabs button.is-active {
+  background: var(--hc-live-chip-surface) !important;
+  color: var(--hc-live-chip-foreground) !important;
+  border-color: var(--hc-orange) !important;
+}
+
+/* Guardrail selectors for the original Home regressions and shared app surfaces. */
+html.theme-light body main :where(.hc-ia-identity,.hc-ia-completion,.hc-ia-live-strip,.hc-ia-door) *,
+html.theme-dark body main :where(.hc-ia-identity,.hc-ia-completion,.hc-ia-live-strip,.hc-ia-door) * {
+  text-shadow: none;
+}
