@@ -13,7 +13,7 @@ export default function ConnectionsPage(){
   const mode=params.get("mode")==="following"?"following":params.get("mode")==="followers"?"followers":"";
   const {data:{session}}=await supabase.auth.getSession();
   const currentUser=session?.user;
-  if((mode==="following"||!mode)&&!currentUser){window.location.replace("/login?next=/connections");return;}
+  if(!mode&&!currentUser){window.location.replace("/login?next=/connections");return;}
   const profileResult=currentUser?await supabase.from("profiles").select("account_type").eq("id",currentUser.id).maybeSingle():{data:null};
   if(live){
    setUserId(currentUser?.id||"");setAccountType(profileResult.data?.account_type||"");setListMode(mode);
@@ -22,7 +22,7 @@ export default function ConnectionsPage(){
     const targetId=params.get("id");
     if(mode==="followers"&&!targetId)setListError("A profile or team is required to view followers.");
     else{
-     const {data:rows,error}=await supabase.rpc("get_public_follow_list",{p_mode:mode,p_target_type:mode==="followers"?(params.get("type")||"player"):null,p_target_id:mode==="followers"?targetId:null,p_user_id:mode==="following"?currentUser?.id:null});
+     const {data:rows,error}=await supabase.rpc("get_public_follow_list",{p_mode:mode,p_target_type:mode==="followers"?(params.get("type")||"player"):null,p_target_id:mode==="followers"?targetId:null,p_user_id:mode==="following"?(params.get("id")||currentUser?.id):null});
      if(error)setListError("Connections could not be loaded. Please try again.");
      else setRows((rows||[]) as FollowRow[]);
     }
