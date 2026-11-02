@@ -46,3 +46,140 @@
 .hc-account-page .hc-setting-row .hc-setting-chevron { color:var(--hc-muted,#737373); }
 @media (max-width:480px) { .hc-account-page .hc-account-identity-actions { margin-left:0; } }
 html body .hc-global-page-shell main.page-shell { padding-block-start:12px !important; }
+
+
+/* TP-2 typography rhythm: shared scale for entity detail pages. */
+.hc-entity-profile-page,
+.player-profile-page {
+  --hc-type-display-leading: 1.1;
+  --hc-type-body-leading: 1.4;
+  --hc-type-label-leading: 1.3;
+  --hc-type-label-tracking: .08em;
+  --hc-type-label-value-gap: 4px;
+  --hc-type-block-gap: 12px;
+}
+.hc-entity-profile-page :where(h1,h2,h3),
+.player-profile-page :where(h1,h2,h3) {
+  line-height: var(--hc-type-display-leading);
+  letter-spacing: .015em;
+  overflow-wrap: break-word;
+}
+.hc-entity-profile-page :where(p,li,dd),
+.player-profile-page :where(p,li,dd) {
+  line-height: var(--hc-type-body-leading);
+}
+.hc-entity-profile-page :where(.eyebrow,.hc-team-profile-kicker,.hc-team-profile-meta-label),
+.player-profile-page :where(.eyebrow) {
+  line-height: var(--hc-type-label-leading);
+  letter-spacing: var(--hc-type-label-tracking);
+}
+.hc-entity-profile-page .eyebrow,
+.player-profile-page .eyebrow {
+  margin-block-end: var(--hc-type-label-value-gap);
+}
+.hc-entity-profile-page :where(.hc-team-profile-kicker) {
+  margin: 0 0 8px;
+  line-height: var(--hc-type-label-leading);
+  letter-spacing: var(--hc-type-label-tracking);
+}
+.hc-team-profile-heading--club .hc-team-profile-heading__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  gap: 8px;
+}
+.hc-team-profile-heading--club .hc-team-profile-heading__copy > :where(.hc-team-profile-kicker,h1,.hc-team-profile-meta) {
+  margin-block: 0;
+}
+.hc-team-profile-heading--club h1 {
+  max-width: 100%;
+  line-height: 1.1;
+  letter-spacing: .01em;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+.hc-team-profile-heading--club.is-long-name h1 {
+  font-size: clamp(1.25rem, 5.2vw, 1.85rem);
+  line-height: 1.12;
+  letter-spacing: .005em;
+}
+.hc-team-profile-heading--club .hc-team-profile-meta {
+  margin: 0;
+  line-height: 1.4;
+  gap: 2px 4px;
+}
+.hc-team-profile-nav {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 16px;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 14px;
+}
+.hc-team-profile-nav a {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  hyphens: none;
+  min-width: max-content;
+  line-height: 1.3;
+}
+.hc-team-social-stats > span {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  line-height: 1.3;
+}
+.hc-team-social-stats > span strong {
+  line-height: 1.1;
+  letter-spacing: .01em;
+}
+.hc-team-social-stats > span small {
+  line-height: 1.3;
+  letter-spacing: .04em;
+}
+.hc-team-score-categories span {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  line-height: 1.3;
+}
+.hc-team-score-categories small { line-height: 1.3; letter-spacing: .04em; }
+.hc-team-score-categories strong { line-height: 1.1; }
+.hc-entity-profile-page :where(.hc-review-category-row,.review-footer,.hc-review-verified) {
+  line-height: 1.4;
+}
+.hc-entity-profile-page :where(.hc-review-category-row) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-block: 6px;
+}
+.hc-entity-profile-page :where(.hc-review-category-row > :first-child) {
+  min-width: 0;
+  line-height: 1.4;
+}
+.hc-entity-profile-page :where(.card,.hero) > .eyebrow + :where(h1,h2,h3,strong,p) {
+  margin-block-start: 4px;
+}
+.hc-entity-profile-page :where(h1,h2,h3) + :where(p,.muted,.hc-team-profile-meta) {
+  margin-block-start: 12px;
+}
+.player-profile-page :where(.hc-player-profile-heading,.hc-player-profile-header) :where(h1,h2,p) {
+  line-height: var(--hc-type-body-leading);
+}
+@media (max-width: 560px) {
+  .hc-team-profile-nav { display:flex; flex-wrap:nowrap; gap:16px; }
+  .hc-team-profile-nav a { white-space:nowrap; min-width:max-content; padding-inline:12px; }
+}
