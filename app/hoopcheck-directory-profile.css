@@ -1452,3 +1452,23 @@ html.theme-dark .hc-team-entity-profile .hc-team-profile-hero {
 @media (prefers-reduced-motion:reduce) {
   .hc-team-entity-profile .hc-team-profile-nav { scroll-behavior:auto; }
 }
+
+/* TM-1 shared body geometry: MOD-1 width and spacing contract. */
+.hc-team-profile-topline > div > span { display:none!important; }
+.hc-team-entity-profile > .hero:not(.hc-team-profile-hero) {
+  box-sizing:border-box;
+  width:calc(100% - 32px);
+  max-width:1200px;
+  min-width:0;
+  margin:0 auto 12px!important;
+  padding:16px!important;
+}
+.hc-team-entity-profile .card,
+.hc-team-entity-profile .hc-layout-card,
+.hc-team-entity-profile .hc-layout-group {
+  box-sizing:border-box;
+  width:100%;
+  max-width:none;
+  min-width:0;
+}
+.hc-team-entity-profile .hc-team-reviews-trust-strip { width:100%; }
