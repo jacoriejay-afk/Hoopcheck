@@ -272,18 +272,9 @@ export default function TeamDetailPage() {
       const user = session?.user;
 
       if (user) {
-        const { data: followedPlayers } = await supabase.from("follow_relationships").select("target_id").eq("follower_id", user.id).eq("target_type", "player").limit(100);
-        const followedIds = (followedPlayers || []).map((row: any) => row.target_id).filter(Boolean);
-        if (followedIds.length) {
-          const { data: teamFollows } = await supabase.from("follow_relationships").select("follower_id").eq("target_type", "team").eq("target_id", id).in("follower_id", followedIds);
-          const sharedIds = (teamFollows || []).map((row: any) => row.follower_id).filter(Boolean);
-          if (sharedIds.length) {
-            const { data: sharedProfiles } = await supabase.from("profiles").select("display_name").in("id", sharedIds).eq("profile_visibility", "public").eq("account_type", "player").limit(3);
-            setKnownPlayerFollowers((sharedProfiles || []).map((row: any) => row.display_name).filter(Boolean));
-          }
-        }
+        const { data: sharedProfiles } = await supabase.rpc("get_shared_team_followers", { p_team_id: id });
+        setKnownPlayerFollowers((sharedProfiles || []).map((row: any) => row.display_name).filter(Boolean));
       }
-
       if (!user) {
         setLoading(false);
         return;
