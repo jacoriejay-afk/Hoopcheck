@@ -186,7 +186,8 @@ export default function TeamDetailPage() {
   const [accountType, setAccountType] = useState<string>("");
   const [membershipPlan, setMembershipPlan] = useState<string>("");
   const [knownPlayerFollowers, setKnownPlayerFollowers] = useState<string[]>([]);
-  const [teamReviewCount, setTeamReviewCount] = useState(0);\n  const [teamFollowerCount, setTeamFollowerCount] = useState(0);
+  const [teamReviewCount, setTeamReviewCount] = useState(0);
+  const [teamFollowerCount, setTeamFollowerCount] = useState(0);
   const [reviewTier, setReviewTier] = useState<"free" | "pro" | "premium" | "player" | "member">("free");
 
   const [loading, setLoading] =
