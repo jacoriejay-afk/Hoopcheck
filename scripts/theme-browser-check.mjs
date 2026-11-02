@@ -354,6 +354,7 @@ try {
           identityChip: (() => { const el=document.querySelector(".hc-ia-identity"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null}; })(),
           completionCard: (() => { const el=document.querySelector(".hc-ia-completion"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null}; })(),
           homeLiveCard: (() => { const el=document.querySelector(".hc-ia-live-strip"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null}; })(),
+          teamProfileHeader: (() => { const el=document.querySelector(".hc-team-profile-hero"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("h1"); const meta=el.querySelector(".hc-team-profile-meta"); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor,title:title?getComputedStyle(title).color:null,meta:meta?getComputedStyle(meta).color:null}; })(),
           liveEmpty: (() => { const el=document.querySelector(".hc-live-no-games,.hc-live-empty"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor}; })(),
           remindButton: (() => { const el=document.querySelector(".hc-remind-button"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor,text:el.textContent?.trim()||null}; })(),
           upcomingPill: (() => { const el=document.querySelector(".hc-live-state"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,text:el.textContent?.trim()||null}; })(),
@@ -459,6 +460,12 @@ try {
         if (result.identityChip?.title !== expectedText) errors.push("Signed-in chip text mismatch: " + JSON.stringify(result.identityChip));
         if (result.completionCard?.background !== expectedSurface || result.completionCard?.title !== expectedText) errors.push("Profile completion pair mismatch: " + JSON.stringify(result.completionCard));
         if (result.homeLiveCard?.background !== expectedSurface || result.homeLiveCard?.title !== expectedText) errors.push("Home Live Games pair mismatch: " + JSON.stringify(result.homeLiveCard));
+      }
+      if (requestedPath === "/teams/" + teamFixture.id) {
+        const expectedSurface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
+        const expectedText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
+        if (result.teamProfileHeader?.background !== expectedSurface) errors.push("Team profile header surface mismatch: " + JSON.stringify(result.teamProfileHeader));
+        if (result.teamProfileHeader?.title !== expectedText) errors.push("Team profile title mismatch: " + JSON.stringify(result.teamProfileHeader));
       }
       if (requestedPath === "/live-games") {
         const expectedEmpty = theme === "dark" ? "rgb(20, 20, 20)" : "rgb(248, 248, 246)";
