@@ -125,6 +125,12 @@
     visibility: visible !important;
   }
 
+  html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active::before,
+  html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active::after {
+    content: none !important;
+    display: none !important;
+  }
+
   /* The active marker is a real child of the active tab, never a bar pseudo-element. */
   html body nav.hc-lm2f-bottom-nav .hc-lm2f-active-indicator {
     position: absolute !important;
