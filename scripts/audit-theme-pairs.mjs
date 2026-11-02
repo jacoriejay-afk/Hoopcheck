@@ -6,6 +6,7 @@ const files = {
   live: await readFile("app/globals.css", "utf8"),
   nav: await readFile("app/hoopcheck-lm2f-bottom-nav.css", "utf8"),
   finalTheme: await readFile("app/hoopcheck-dm2-theme-pairs.css", "utf8"),
+  finalOverrides: await readFile("app/hoopcheck-final-overrides.css", "utf8"),
 };
 const errors = [];
 const requiredTokens = [
@@ -81,6 +82,12 @@ for(const [label,selector,file,tokens] of authoredPairs){
   if(/\b(?:background(?:-color)?|color|border-color)\s*:\s*(?:#[0-9a-f]{3,8}\b|rgba?\(|white\b|black\b)/i.test(rule))
     errors.push(`${label}: hard-coded surface/foreground color found in component rule`);
 }
+const pageShellRule=blockAfter(files.finalOverrides,".page-shell");
+if(!pageShellRule || !pageShellRule.includes("var(--hc-card-surface)") || !pageShellRule.includes("var(--hc-card-border)"))
+  errors.push("PageShell: local surface and border must inherit the active card token pair");
+if(pageShellRule && /--hc-(?:surface|border)\\s*:\\s*#[0-9a-f]{3,8}/i.test(pageShellRule))
+  errors.push("PageShell: fixed light/dark surface or border value is forbidden");
+
 const navRule=blockAfter(files.nav,"html.theme-light body nav.hc-lm2f-bottom-nav");
 if(!navRule || !navRule.includes("var(--hc-nav-bg") || !navRule.includes("var(--hc-card-border"))
   errors.push("Bottom tab bar: surface and border must use nav/card tokens");
