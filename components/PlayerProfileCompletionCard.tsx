@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { getPlayerProfileCompletion, type PlayerProfileCompletionRecord } from "../lib/player-profile-completion";
+import { supabase } from "../lib/supabase";
 import { HoopIcon } from "./HoopCheckUI";
 
 export default function PlayerProfileCompletionCard({ profile }: { profile: PlayerProfileCompletionRecord }) {
@@ -9,6 +11,21 @@ export default function PlayerProfileCompletionCard({ profile }: { profile: Play
   const completion = getPlayerProfileCompletion(profile);
   const complete = completion.percentage === 100;
   const publicProfileHref = profile.id ? "/players/" + encodeURIComponent(profile.id) : "/profile";
+  const [isPublic, setIsPublic] = useState(profile.profile_visibility === "public");
+  const [publishing, setPublishing] = useState(false);
+  const [error, setError] = useState("");
+
+  async function makePublic() {
+    if (!profile.id || publishing) return;
+    setPublishing(true);
+    setError("");
+    const { error: updateError } = await supabase.from("profiles")
+      .update({ profile_visibility: "public" })
+      .eq("id", profile.id);
+    if (updateError) setError(updateError.message);
+    else setIsPublic(true);
+    setPublishing(false);
+  }
 
   return (
     <section className="hc-ux2b-completion-card" aria-label="Player profile completion">
@@ -25,10 +42,12 @@ export default function PlayerProfileCompletionCard({ profile }: { profile: Play
       </div>
       {complete ? (
         <div className="hc-ux2b-completion-actions">
-          {profile.profile_visibility === "public" ? (
+          {isPublic ? (
             <Link href={publicProfileHref} className="btn">View Public Profile <HoopIcon name="arrow-up-right" size={16} /></Link>
           ) : (
-            <Link href="/complete-profile?makePublic=1" className="btn">Make Public <HoopIcon name="arrow-right" size={16} /></Link>
+            <button type="button" className="btn" disabled={publishing || !profile.id} onClick={() => void makePublic()}>
+              {publishing ? "Publishing..." : "Make Public"} <HoopIcon name="arrow-right" size={16} />
+            </button>
           )}
         </div>
       ) : (
@@ -36,6 +55,7 @@ export default function PlayerProfileCompletionCard({ profile }: { profile: Play
           Complete profile <span>Continue <HoopIcon name="arrow-right" size={16} /></span>
         </Link>
       )}
+      {error && <p className="hc-ux2b-error" role="alert">{error}</p>}
     </section>
   );
 }
