@@ -11,9 +11,13 @@ import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import { CategoryIconTile, HoopIcon } from "../../components/HoopCheckUI";
 import ProfileAvatar from "../../components/ProfileAvatar";
 import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
-import { getPlayerProfileCompletion } from "../../lib/player-profile-completion";
 
 type Profile = {
+  id?: string;
+  height?: string | null;
+  favorite_leagues?: string | null;
+  current_country?: string | null;
+  profile_visibility?: string | null;
   display_name: string | null;
   first_name?: string | null;
   last_name?: string | null;
@@ -106,7 +110,7 @@ export default function DashboardPage() {
   },[router,basketballSide]);
 
   const displayName = profile?.display_name || [profile?.first_name,profile?.last_name].filter(Boolean).join(" ") || email.split("@")[0] || "Player";
-  const completion = getPlayerProfileCompletion(profile);\n\n    if(loading) return <main className="page-shell dashboard-page"><div className="page-container"><HoopLoading label={t("loadingDashboard")}/></div></main>;
+    if(loading) return <main className="page-shell dashboard-page"><div className="page-container"><HoopLoading label={t("loadingDashboard")}/></div></main>;
 
   if(profile?.account_type==="fan") return (
     <main className="page-shell hc-ia-home"><div className="page-container">
@@ -129,7 +133,7 @@ export default function DashboardPage() {
           <p className="eyebrow">YOUR DAILY FRONT DOOR</p>
           <h1>KNOW WHO YOU’RE SIGNING WITH<span>.</span></h1>
           <p className="muted">Real player experiences. Make your next move with confidence.</p>
-          <div className="hc-ia-identity"><span className="hc-ia-avatar">{displayName.charAt(0).toUpperCase()}</span><span><small>SIGNED IN AS</small><strong>{displayName}</strong></span></div>
+          <div className="hc-ia-identity"><ProfileAvatar name={displayName} src={profile?.avatar_url} className="hc-ia-avatar" size={44}/><span><small>SIGNED IN AS</small><strong>{displayName}</strong></span></div>
         </header>
 
         {profile?.account_type === "player" && <PlayerProfileCompletionCard profile={profile} />}
