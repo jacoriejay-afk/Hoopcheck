@@ -38,7 +38,7 @@ export default function AdminTeamFanFeedPage() {
     });
     const payload = await response.json().catch(() => ({}));
     if (response.status === 401) {
-      window.location.href = "/login";
+      window.location.assign("/login");
       return;
     }
     if (response.status === 403) {
