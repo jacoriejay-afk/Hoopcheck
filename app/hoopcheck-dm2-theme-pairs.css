@@ -91,7 +91,7 @@ html.theme-dark body main :where(
   .hc-ia-identity,.hc-ia-completion,.hc-ia-live-strip,.hc-ia-door,.hc-ia-follow-list,.hc-ia-feed-card,
   .hc-template-category,.hc-template-panel:not(.hc-template-player-panel),
   .hc-live-hub-card
-) :where(h1,h2,h3,h4,p,small,strong,span,a:not(.btn),div) {
+) :where(h1,h2,h3,h4,p,small,strong,a:not(.btn),li,label) {
   color: var(--hc-on-card) !important;
   -webkit-text-fill-color: currentColor;
 }
