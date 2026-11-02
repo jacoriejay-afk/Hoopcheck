@@ -107,6 +107,7 @@ export default function AccountPage() {
   const [passwordMessage, setPasswordMessage] = useState("");
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [adminRole, setAdminRole] = useState<"admin"|"moderator"|null>(null);
 
   useEffect(() => {
     async function load() {
@@ -114,9 +115,10 @@ export default function AccountPage() {
       if (!user) { window.location.href = "/login"; return; }
       setEmail(user.email ?? "");
       setUserId(user.id);
-      const [{ data: profileData }, { data: subscriptionData }] = await Promise.all([
+      const [{ data: profileData }, { data: subscriptionData }, { data: adminRoleData }] = await Promise.all([
         supabase.from("profiles").select("account_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
+        supabase.rpc("get_current_user_admin_role"),
       ]);
       const nextProfile: Profile = profileData
         ? { ...emptyProfile, ...profileData }
@@ -139,6 +141,7 @@ export default function AccountPage() {
       setAvatarUrl(nextProfile.avatar_url ?? "");
       setAvatarStatus(nextProfile.avatar_moderation_status ?? "approved");
       setSubscription(subscriptionData ?? null);
+      setAdminRole(adminRoleData === "admin" || adminRoleData === "moderator" ? adminRoleData : null);
       setVerified(Boolean(nextProfile.player_verified || (nextProfile as any).coach_verified));
       const { data } = await supabase.from("reviews")
         .select("id,status,title,body,overall_rating,created_at,coach_id,team_id,league_id")
@@ -382,6 +385,7 @@ export default function AccountPage() {
         </div>
       </header>
       {(profile as any).moderation_status === "warned" || (profile as any).moderation_status === "flagged" ? <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{(profile as any).moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{(profile as any).moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section> : null}
+      {adminRole && <section className="dashboard-card" style={{marginBottom:16}}><p className="eyebrow">{adminRole.toUpperCase()}</p><h2>{t("adminControlCenter")}</h2><div className="account-actions" style={{display:"flex",gap:10,flexWrap:"wrap"}}><Link href="/admin/directory" className="btn">{t("openAdminPanel")}</Link><Link href="/admin/reviews" className="btn dark">{t("manageReviews")}</Link><Link href="/admin/rights" className="btn dark">{t("rightsCoverage")}</Link></div></section>}
       <section id="account-settings" className="hc-settings" aria-label={t("accountSettings")}>
         <SettingsGroup title={t("accountSection")}>
           <SettingsRow icon="user" label={t("editProfile")} value={t("editDetails")} href="#profile-editor" />
