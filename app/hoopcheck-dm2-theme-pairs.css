@@ -364,3 +364,43 @@ html.theme-dark body :where(.bottom-nav,.hc-bottom-tab-bar,.hc-lm2f-bottom-nav) 
   color: var(--hc-nav-active-fg) !important;
   -webkit-text-fill-color: var(--hc-nav-active-fg) !important;
 }
+
+/* Explicit, independently auditable component contracts. */
+html.theme-light body main .btn:not(.dark) {
+  background: var(--hc-button-primary-surface) !important;
+  color: var(--hc-button-primary-foreground) !important;
+  border-color: var(--hc-button-primary-surface) !important;
+}
+html.theme-dark body main .btn:not(.dark) {
+  background: var(--hc-button-primary-surface) !important;
+  color: var(--hc-button-primary-foreground) !important;
+  border-color: var(--hc-button-primary-surface) !important;
+}
+html.theme-light body main .hc-directory-switcher {
+  background: var(--hc-card-surface) !important;
+  color: var(--hc-on-card) !important;
+  border-color: var(--hc-card-border) !important;
+}
+html.theme-dark body main .hc-directory-switcher {
+  background: var(--hc-card-surface) !important;
+  color: var(--hc-on-card) !important;
+  border-color: var(--hc-card-border) !important;
+}
+html.theme-light body main .hc-directory-switcher-label {
+  color: var(--hc-accent-text) !important;
+}
+html.theme-dark body main .hc-directory-switcher-label {
+  color: var(--hc-accent-text) !important;
+}
+html.theme-light body main .eyebrow {
+  color: var(--hc-accent-text) !important;
+}
+html.theme-dark body main .eyebrow {
+  color: var(--hc-accent-text) !important;
+}
+html.theme-light body main .hc-live-state {
+  border-color: var(--hc-card-border) !important;
+}
+html.theme-dark body main .hc-live-state {
+  border-color: var(--hc-card-border) !important;
+}
