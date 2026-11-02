@@ -4614,14 +4614,14 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   grid-template-columns: minmax(150px, .7fr) minmax(0, 2.3fr);
   align-items: center;
   gap: 18px;
-  background: #101010;
-  color: #fff;
-  border-bottom: 3px solid var(--hc-orange, #ff6a00);
+  background: var(--hc-card-surface);
+  color: var(--hc-on-card);
+  border-bottom: 3px solid var(--hc-card-border);
 }
 .hc-template-home .hc-quick-access-heading .hc-template-eyebrow {
   display: block;
   margin-bottom: 5px;
-  color: #ff8a38;
+  color: var(--hc-accent-text);
   font-size: 9px;
   font-weight: 900;
   letter-spacing: .16em;
@@ -4715,9 +4715,9 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   justify-content: center;
   min-height: 36px;
   padding: 8px 11px;
-  color: #f3f3f3;
-  background: #1b1b1b;
-  border: 1px solid #383838;
+  color: var(--hc-chip-foreground);
+  background: var(--hc-chip-surface);
+  border: 1px solid var(--hc-card-border);
   font-size: 11px;
   font-weight: 850;
   text-decoration: none;
@@ -4725,11 +4725,11 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 }
 .hc-directory-switcher a:hover,
 .hc-directory-switcher a:focus-visible {
-  color: #fff;
-  background: #302219;
-  border-color: var(--hc-orange, #ff6a00);
+  color: var(--hc-live-chip-foreground);
+  background: var(--hc-live-chip-surface);
+  border-color: var(--hc-card-border);
 }
-.hc-directory-switcher a:focus-visible { outline: 2px solid #ff8a38; outline-offset: 2px; }
+.hc-directory-switcher a:focus-visible { outline: 2px solid var(--hc-accent-text); outline-offset: 2px; }
 @media (max-width: 700px) {
   .hc-directory-switcher {
     width: calc(100% - 22px);

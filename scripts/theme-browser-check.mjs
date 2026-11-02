@@ -169,7 +169,7 @@ try {
       const path = routeName === "dashboard" ? "/dashboard" : routeName === "feed" ? "/feed" : "/admin/directory";
       await page.goto(baseURL + path, { waitUntil: "domcontentloaded", timeout: 30000 });
       console.log("THEME_BROWSER_PAGE", JSON.stringify({ routeName, theme, url: page.url(), title: await page.title(), body: (await page.locator("body").innerText().catch(() => "")).slice(0, 240) }));
-      const wrapperSelector = routeName === "dashboard" ? "main.hc-dashboard-shell" : routeName === "feed" ? "main.hc-feed-page" : "main.admin-directory-shell";
+      const wrapperSelector = routeName === "dashboard" ? "main.hc-ia-home, main.hc-dashboard-shell" : routeName === "feed" ? "main.hc-feed-page" : "main.admin-directory-shell";
       await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
       if (routeName === "feed") {
         await page.locator(".hc-feed-composer").waitFor({ state: "visible", timeout: 30000 });
@@ -186,7 +186,7 @@ try {
           themeClass: document.documentElement.classList.contains("theme-dark") ? "dark" :
             document.documentElement.classList.contains("theme-light") ? "light" : "missing",
           body: color("body"),
-          pageWrapper: color(wrapperSelector),
+          pageWrapper: color(wrapperSelector.split(",")[0]),
           composer: routeName === "feed" ? color(".hc-feed-composer") : null,
           topicChip: routeName === "feed" ? color(".hc-feed-topic-chip") : null,
           filterChip: routeName === "feed" ? color(".hc-feed-filter-chip:not(.is-active)") : null,
@@ -194,7 +194,7 @@ try {
             .filter((element) => {
               const style = getComputedStyle(element);
               const rect = element.getBoundingClientRect();
-              return style.backgroundColor === "rgb(255, 255, 255)" && rect.width > 16 && rect.height > 12 &&
+              return element.tagName !== "IMG" && element.tagName !== "SVG" && style.backgroundColor === "rgb(255, 255, 255)" && rect.width > 16 && rect.height > 12 &&
                 style.display !== "none" && style.visibility !== "hidden";
             })
             .slice(0, 30)
@@ -275,11 +275,36 @@ try {
       let data = [];
       const single = request.headers()["accept"]?.includes("vnd.pgrst.object");
       if (url.pathname === "/auth/v1/user") data = user;
-      else if (url.pathname.includes("/rest/v1/profiles")) data = single ? profile : [];
-      else if (url.pathname.includes("/rest/v1/subscriptions")) data = single ? subscription : [];
-      else if (url.pathname.includes("/rest/v1/teams")) { const requestedId = (url.searchParams.get("id") || "").replace(/^eq\./, ""); data = requestedId ? (requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture) : [teamFixture, fallbackTeamFixture]; }
-      else if (url.pathname.includes("/rest/v1/leagues")) data = single ? leagueFixture : [leagueFixture];
-      else if (url.pathname.includes("/rest/v1/coaches")) data = single ? coachFixture : [coachFixture];
+      else if (url.pathname.includes("/rest/v1/profiles")) data = single || (url.searchParams.get("id") || "").startsWith("eq.") ? profile : [profile];
+      else if (url.pathname.includes("/rest/v1/subscriptions")) data = single || (url.searchParams.get("user_id") || "").startsWith("eq.") ? subscription : [subscription];
+      else if (url.pathname.includes("/rest/v1/teams")) {
+        const idFilter = url.searchParams.get("id") || "";
+        if (idFilter.startsWith("eq.")) {
+          const requestedId = idFilter.slice(3);
+          data = requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture;
+        } else if (idFilter.startsWith("in.(")) {
+          const ids = idFilter.slice(4, -1).split(",").filter(Boolean);
+          data = ids.map((id) => id === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture);
+        } else data = [teamFixture, fallbackTeamFixture];
+      }
+      else if (url.pathname.includes("/rest/v1/leagues")) data = single || (url.searchParams.get("id") || "").startsWith("eq.") ? leagueFixture : [leagueFixture];
+      else if (url.pathname.includes("/rest/v1/coaches")) data = single || (url.searchParams.get("id") || "").startsWith("eq.") ? coachFixture : [coachFixture];
+      else if (url.pathname.includes("/rest/v1/fan_live_games")) data = [{
+        id: "22222222-2222-4222-8222-222222222222",
+        team_id: teamFixture.id,
+        opponent_team_id: null,
+        opponent_name: "Upcoming QA Opponent",
+        status: "scheduled",
+        home_score: null,
+        away_score: null,
+        started_at: null,
+        ends_at: null,
+        scheduled_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+        league_id: leagueFixture.id,
+        league_name: leagueFixture.name,
+        country: "Türkiye",
+        period_label: null,
+      }];
       else if (url.pathname.includes("/rest/v1/team_league_memberships")) data = [];
       else if (url.pathname.includes("/rest/v1/reviews")) data = [];
       else if (url.pathname.includes("/rest/v1/team_roster_spots")) data = [];
@@ -321,6 +346,17 @@ try {
         const expectedSearchHeading = testLanguage === "es" ? "CONEXIÓN ENTRE JUGADORES" : "PLAYER CONNECT";
         await page.waitForFunction((expected) => document.body.innerText.toLocaleUpperCase().includes(expected), expectedSearchHeading, { timeout: 15000 });
       }
+      if (requestedPath === "/dashboard") {
+        await page.locator(".hc-ia-identity").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator(".hc-ia-completion").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator(".hc-ia-door").first().waitFor({ state: "visible", timeout: 15000 });
+      }
+      if (requestedPath === "/feed") await page.locator(".hc-feed-composer").waitFor({ state: "visible", timeout: 15000 });
+      if (requestedPath === "/live-games") {
+        await page.locator(".hc-live-state").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator(".hc-remind-button").first().waitFor({ state: "visible", timeout: 15000 });
+      }
+      if (requestedPath === "/teams/" + teamFixture.id) await page.locator(".hc-team-profile-hero h1").waitFor({ state: "visible", timeout: 15000 });
       const result = await page.evaluate(({ requestedPath, navigationError }) => {
         const main = document.querySelector("main");
         const color = (element) => element ? getComputedStyle(element).backgroundColor : null;
@@ -332,6 +368,23 @@ try {
           body: color(document.body),
           pageWrapper: color(main),
           mainClass: main?.className || null,
+          headerPair: (() => { const el=document.querySelector(".site-header-global"); if(!el)return null; const st=getComputedStyle(el); const label=el.querySelector("a,button"); return {background:st.backgroundColor,color:st.color,labelColor:label?getComputedStyle(label).color:null}; })(),
+          bottomNavPair: (() => { const el=document.querySelector(".hc-lm2f-bottom-nav,.hc-bottom-tab-bar,.bottom-nav"); if(!el)return null; const st=getComputedStyle(el); const tab=el.querySelector(".hc-lm2f-tab:not(.active),a:not(.active)"); const active=el.querySelector(".hc-lm2f-tab.active,a.active"); return {background:st.backgroundColor,color:st.color,tabColor:tab?getComputedStyle(tab).color:null,activeColor:active?getComputedStyle(active).color:null}; })(),
+          quickAccessRow: (() => { const el=document.querySelector(".hc-ia-door"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor,title:title?getComputedStyle(title).color:null,titleText:title?.textContent?.trim()||null}; })(),
+          identityChip: (() => { const el=document.querySelector(".hc-ia-identity"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null}; })(),
+          completionCard: (() => { const el=document.querySelector(".hc-ia-completion"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null,copy:el.textContent?.trim()||null}; })(),
+          homeLiveCard: (() => { const el=document.querySelector(".hc-ia-live-strip"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("strong"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null}; })(),
+          teamProfileHeader: (() => { const el=document.querySelector(".hc-team-profile-hero"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("h1"); const meta=el.querySelector(".hc-team-profile-meta"); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor,title:title?getComputedStyle(title).color:null,meta:meta?getComputedStyle(meta).color:null}; })(),
+          primaryButton: (() => { const el=document.querySelector("main .btn:not(.dark), main .hc-searchbar__submit"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,text:el.textContent?.trim()||null}; })(),
+          searchSubmit: (() => { const el=document.querySelector("main .hc-searchbar__submit"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color}; })(),
+          directorySwitcher: (() => { const el=document.querySelector("main .hc-directory-switcher"); if(!el)return null; const st=getComputedStyle(el); const label=el.querySelector(".hc-directory-switcher-label"); return {background:st.backgroundColor,color:st.color,label:label?getComputedStyle(label).color:null}; })(),
+          liveHero: (() => { const el=document.querySelector("main .hc-live-hub-hero"); if(!el)return null; const st=getComputedStyle(el); const title=el.querySelector("h1"); const eyebrow=el.querySelector(".eyebrow"); const copy=el.querySelector("p:last-child"); return {background:st.backgroundColor,color:st.color,title:title?getComputedStyle(title).color:null,eyebrow:eyebrow?getComputedStyle(eyebrow).color:null,copy:copy?getComputedStyle(copy).color:null}; })(),
+          teamActiveTab: (() => { const el=document.querySelector("main .hc-team-profile-nav a[aria-current='page']"); return el?getComputedStyle(el).color:null; })(),
+          teamKicker: (() => { const el=document.querySelector("main .hc-team-profile-kicker"); return el?getComputedStyle(el).color:null; })(),
+          textButton: (() => { const el=document.querySelector("main .hc-text-button"); return el?getComputedStyle(el).color:null; })(),
+          liveEmpty: (() => { const el=document.querySelector(".hc-live-no-games,.hc-live-empty"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor}; })(),
+          remindButton: (() => { const el=document.querySelector(".hc-remind-button"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,borderColor:st.borderTopColor,text:el.textContent?.trim()||null}; })(),
+          upcomingPill: (() => { const el=document.querySelector(".hc-live-state"); if(!el)return null; const st=getComputedStyle(el); return {background:st.backgroundColor,color:st.color,text:el.textContent?.trim()||null}; })(),
           safeAreaTop: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hc-safe-area-top")) || 0,
           bodyTopPadding: parseFloat(getComputedStyle(document.body).paddingTop) || 0,
           headerTop: document.querySelector(".site-header-global") ? document.querySelector(".site-header-global").getBoundingClientRect().top : null,
@@ -356,7 +409,7 @@ try {
               const rect = element.getBoundingClientRect();
               const cls = typeof element.className === "string" ? element.className : "";
               if (/(logo|avatar|photo|portrait|image)/i.test(cls)) return false;
-              return style.backgroundColor === "rgb(255, 255, 255)" && rect.width > 16 && rect.height > 12 &&
+              return element.tagName !== "IMG" && element.tagName !== "SVG" && style.backgroundColor === "rgb(255, 255, 255)" && rect.width > 16 && rect.height > 12 &&
                 style.display !== "none" && style.visibility !== "hidden";
             })
             .slice(0, 20)
@@ -406,6 +459,7 @@ try {
         };
       }, { requestedPath, navigationError });
       const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
+      const expectedSurface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
       const errors = [];
       if (result.themeClass !== theme) errors.push("html theme class mismatch");
       if (result.body !== expectedPage) errors.push("body background mismatch");
@@ -418,10 +472,63 @@ try {
       if (result.criticalControlContrast.length) errors.push("low contrast critical controls: " + JSON.stringify(result.criticalControlContrast));
       if (theme === "dark" && result.whiteSurfaceOffenders.length) errors.push("white surface offenders: " + JSON.stringify(result.whiteSurfaceOffenders));
       if (result.lowContrastText.length) errors.push("low contrast text: " + JSON.stringify(result.lowContrastText));
+      const expectedNavSurface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(247, 247, 245)";
+      const expectedNavText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(34, 34, 31)";
+      if (result.headerPair && result.headerPair.background !== expectedNavSurface) errors.push("Global header surface mismatch: " + JSON.stringify(result.headerPair));
+      if (result.bottomNavPair && result.bottomNavPair.background !== expectedNavSurface) errors.push("Bottom tab bar surface mismatch: " + JSON.stringify(result.bottomNavPair));
+      if (result.bottomNavPair && result.bottomNavPair.tabColor !== expectedNavText) errors.push("Bottom tab bar label mismatch: " + JSON.stringify(result.bottomNavPair));
+      const expectedActiveNavText = theme === "dark" ? "rgb(255, 138, 92)" : "rgb(184, 62, 20)";
+      if (result.bottomNavPair && result.bottomNavPair.activeColor && result.bottomNavPair.activeColor !== expectedActiveNavText) errors.push("Bottom tab bar active label mismatch: " + JSON.stringify(result.bottomNavPair));
+      if (requestedPath === "/dashboard") {
+        const expectedText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
+        if (result.quickAccessRow?.background !== expectedSurface) errors.push("Quick Access surface mismatch: " + JSON.stringify(result.quickAccessRow));
+        if (result.quickAccessRow?.title !== expectedText) errors.push("Quick Access title mismatch: " + JSON.stringify(result.quickAccessRow));
+        if (result.identityChip?.background !== expectedSurface) errors.push("Signed-in chip surface mismatch: " + JSON.stringify(result.identityChip));
+        if (result.identityChip?.title !== expectedText) errors.push("Signed-in chip text mismatch: " + JSON.stringify(result.identityChip));
+        if (result.completionCard?.background !== expectedSurface || result.completionCard?.title !== expectedText) errors.push("Profile completion pair mismatch: " + JSON.stringify(result.completionCard));
+        if (!result.completionCard?.copy?.includes("43%")) errors.push("Profile completion fixture did not render the expected 43% text: " + JSON.stringify(result.completionCard));
+        if (result.homeLiveCard?.background !== expectedSurface || result.homeLiveCard?.title !== expectedText) errors.push("Home Live Games pair mismatch: " + JSON.stringify(result.homeLiveCard));
+      }
+      const expectedPrimarySurface = "rgb(255, 90, 31)";
+      const expectedPrimaryText = "rgb(17, 17, 17)";
+      if (result.primaryButton && (result.primaryButton.background !== expectedPrimarySurface || result.primaryButton.color !== expectedPrimaryText)) errors.push("Primary button pair mismatch: " + JSON.stringify(result.primaryButton));
+      if (result.searchSubmit && (result.searchSubmit.background !== expectedPrimarySurface || result.searchSubmit.color !== expectedPrimaryText)) errors.push("Search submit pair mismatch: " + JSON.stringify(result.searchSubmit));
+      const expectedAccent = theme === "dark" ? "rgb(255, 138, 92)" : "rgb(184, 62, 20)";
+      if (requestedPath === "/search" && (result.directorySwitcher?.background !== expectedSurface || result.directorySwitcher?.label !== expectedAccent)) errors.push("Directory switcher pair mismatch: " + JSON.stringify(result.directorySwitcher));
+      if (requestedPath === "/live-games") {
+        const expectedHeroSurface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
+        const expectedHeroText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
+        const expectedHeroMuted = theme === "dark" ? "rgb(184, 184, 179)" : "rgb(98, 98, 93)";
+        if (result.liveHero?.background !== expectedHeroSurface || result.liveHero?.title !== expectedHeroText || result.liveHero?.eyebrow !== expectedAccent || result.liveHero?.copy !== expectedHeroMuted) errors.push("Live Games hero pair mismatch: " + JSON.stringify(result.liveHero));
+      }
+      if (requestedPath === "/account" && result.textButton && result.textButton !== expectedAccent) errors.push("Account text-action accent mismatch: " + result.textButton);
+      if (requestedPath === "/teams/" + teamFixture.id) {
+        const expectedText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
+        if (result.teamProfileHeader?.background !== expectedSurface) errors.push("Team profile header surface mismatch: " + JSON.stringify(result.teamProfileHeader));
+        if (result.teamProfileHeader?.title !== expectedText) errors.push("Team profile title mismatch: " + JSON.stringify(result.teamProfileHeader));
+        const expectedAccent = theme === "dark" ? "rgb(255, 138, 92)" : "rgb(184, 62, 20)";
+        if (result.teamActiveTab !== expectedAccent) errors.push("Team active tab accent mismatch: " + result.teamActiveTab);
+        if (result.teamKicker !== expectedAccent) errors.push("Team profile kicker accent mismatch: " + result.teamKicker);
+      }
+      if (requestedPath === "/live-games") {
+        const expectedEmpty = theme === "dark" ? "rgb(20, 20, 20)" : "rgb(248, 248, 246)";
+        const expectedReminder = theme === "dark" ? "rgb(32, 32, 32)" : "rgb(255, 255, 255)";
+        if (result.liveEmpty?.background !== expectedEmpty) errors.push("Live empty state surface mismatch: " + JSON.stringify(result.liveEmpty));
+        const expectedEmptyText = theme === "dark" ? "rgb(229, 229, 223)" : "rgb(63, 63, 58)";
+        if (result.liveEmpty?.color !== expectedEmptyText) errors.push("Live empty-state text mismatch: " + JSON.stringify(result.liveEmpty));
+        if (result.remindButton?.background !== expectedReminder) errors.push("REMIND ME surface mismatch: " + JSON.stringify(result.remindButton));
+        const expectedUpcomingSurface = theme === "dark" ? "rgb(36, 36, 36)" : "rgb(241, 241, 237)";
+        const expectedUpcomingText = theme === "dark" ? "rgb(231, 231, 225)" : "rgb(76, 76, 70)";
+        const expectedReminderText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
+        if (result.upcomingPill?.background !== expectedUpcomingSurface || result.upcomingPill?.color !== expectedUpcomingText) errors.push("UPCOMING pill pair mismatch: " + JSON.stringify(result.upcomingPill));
+        if (result.remindButton?.color !== expectedReminderText) errors.push("REMIND ME text mismatch: " + JSON.stringify(result.remindButton));
+        if (!result.remindButton?.text?.toUpperCase().includes("REMIND ME")) errors.push("REMIND ME label missing: " + JSON.stringify(result.remindButton));
+        if (!result.upcomingPill?.text?.toUpperCase().includes("UPCOMING")) errors.push("Upcoming status pill missing: " + JSON.stringify(result.upcomingPill));
+      }
       if (["/dashboard", "/search", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2"].includes(requestedPath)) {
         const visibleText = await page.locator("body").innerText();
         const expectedText = testLanguage === "es"
-          ? requestedPath === "/dashboard" ? ["TUS ACCESOS DIRECTOS", "ACCESO RÁPIDO"]
+          ? requestedPath === "/dashboard" ? ["YOUR SHORTCUTS", "QUICK ACCESS", "SIGNED IN AS", "COMPLETE YOUR PROFILE", "LIVE GAMES"]
             : requestedPath === "/search" ? ["CONEXIÓN ENTRE JUGADORES", "EMPIEZA A INVESTIGAR"]
             : ["TABLERO DE PLANTILLA", "AÚN NO HAY RESEÑAS APROBADAS"]
           : requestedPath === "/dashboard" ? ["YOUR SHORTCUTS", "Quick Access"]
@@ -429,6 +536,12 @@ try {
             : ["ROSTER BOARD", "No approved reviews yet"];
         const missingText = expectedText.filter((expected) => !visibleText.toLocaleUpperCase().includes(expected.toLocaleUpperCase()));
         if (missingText.length) errors.push("language assertions missing: " + missingText.join(", "));
+        if (testLanguage === "en" && requestedPath === "/dashboard") {
+          const requiredHomeCopy = ["SIGNED IN AS","COMPLETE YOUR PROFILE","LIVE GAMES","MEN'S TEAMS","WOMEN'S TEAMS","COACHES","LEAGUES"];
+          const normalizedHomeText = visibleText.toLocaleUpperCase().replace(/[’‘]/g, "'");
+          const missingHomeCopy = requiredHomeCopy.filter((label) => !normalizedHomeText.includes(label));
+          if (missingHomeCopy.length) errors.push("Home card copy missing: " + missingHomeCopy.join(", "));
+        }
       }
       await page.screenshot({
         path: `${artifactsDir}/routes/${requestedPath.replace(/[^a-z0-9-]+/gi, "_")}-${theme}-${testLanguage}-mobile.png`,
@@ -482,13 +595,15 @@ try {
       await page.getByRole("heading", { name: "AJUSTES" }).waitFor({ state: "visible", timeout: 10000 });
       await page.screenshot({ path: `${artifactsDir}/language-live-02-settings-es.png`, fullPage: true, animations: "disabled" });
       assert.equal(await page.evaluate(() => performance.timeOrigin), beforeSwitchOrigin, "language selection reloaded the document");
-      await page.locator("a.site-header-brand").click();
-      await page.waitForURL(/\/dashboard$/, { timeout: 15000 });
-      await page.getByText("TUS ACCESOS DIRECTOS", { exact: false }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByText("ACCESO RÁPIDO", { exact: false }).waitFor({ state: "visible", timeout: 15000 });
+      const homeTab = page.locator(".hc-lm2f-bottom-nav a[href=\"/\"]:visible, .hc-bottom-tab-bar a[href=\"/\"]:visible, nav.bottom-nav a[href=\"/\"]:visible").first();
+      await homeTab.waitFor({ state: "visible", timeout: 10000 });
+      await homeTab.click();
+      await page.waitForURL((url) => url.pathname === "/" || url.pathname === "/dashboard", { timeout: 15000 });
+      await page.locator(".hc-ia-identity").waitFor({ state: "visible", timeout: 15000 });
+      await page.locator(".hc-ia-door").first().waitFor({ state: "visible", timeout: 15000 });
       await page.screenshot({ path: `${artifactsDir}/language-live-03-dashboard-es.png`, fullPage: true, animations: "disabled" });
       assert.equal(await page.evaluate(() => performance.timeOrigin), beforeSwitchOrigin, "dashboard navigation performed a full document reload");
-      await page.locator('a[href="/teams"]').first().click();
+      await page.locator('a[href="/teams"]:visible').first().click();
       await page.waitForURL(/\/teams$/, { timeout: 15000 });
       await page.locator('a[href="/teams/' + teamFixture.id + '"]').first().click();
       await page.waitForURL(new RegExp("/teams/" + teamFixture.id + "$"), { timeout: 15000 });
@@ -501,6 +616,10 @@ try {
     }
     await context.close();
   }
+  const requiredScreens = ["/dashboard", "/feed", "/search", "/notifications", "/account", "/live-games", "/teams/" + teamFixture.id];
+  const requiredFailures = routeSweepResults.filter((result) => requiredScreens.includes(result.requestedPath) && result.status !== "PASS");
+  assert.equal(requiredFailures.length, 0, "DM-2 required screen regression: " + JSON.stringify(requiredFailures));
+  console.log("DM2_REQUIRED_SCREEN_SWEEP=PASS " + JSON.stringify(requiredScreens));
   console.log("THEME_ROUTE_SWEEP=" + JSON.stringify(routeSweepResults, null, 2));
 
 } finally {
