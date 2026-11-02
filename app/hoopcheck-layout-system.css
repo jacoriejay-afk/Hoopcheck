@@ -46,3 +46,120 @@
 .hc-account-page .hc-setting-row .hc-setting-chevron { color:var(--hc-muted,#737373); }
 @media (max-width:480px) { .hc-account-page .hc-account-identity-actions { margin-left:0; } }
 html body .hc-global-page-shell main.page-shell { padding-block-start:12px !important; }
+
+
+/* DM-1 — paired semantic tokens: a foreground is never authored independently
+   from the surface it sits on. Keep this block after all legacy stylesheets. */
+:root {
+  --hc-card-bg: #FFFFFF;
+  --hc-card-fg: #151515;
+  --hc-button-primary-bg: #FF5A1F;
+  --hc-button-primary-fg: #17110E;
+  --hc-button-outline-bg: #FFFFFF;
+  --hc-button-outline-fg: #252521;
+  --hc-button-ghost-bg: transparent;
+  --hc-button-ghost-fg: #252521;
+  --hc-button-disabled-bg: #E8E8E4;
+  --hc-button-disabled-fg: #555550;
+  --hc-badge-neutral-bg: #EEEEEA;
+  --hc-badge-neutral-fg: #393934;
+  --hc-badge-live-bg: #FFF0E9;
+  --hc-badge-live-fg: #9D3410;
+  --hc-badge-final-bg: #EAEAE6;
+  --hc-badge-final-fg: #41413B;
+  --hc-empty-bg: #FFFFFF;
+  --hc-empty-fg: #151515;
+}
+html.theme-light {
+  --hc-card-bg: #FFFFFF; --hc-card-fg: #151515;
+  --hc-button-primary-bg: #FF5A1F; --hc-button-primary-fg: #17110E;
+  --hc-button-outline-bg: #FFFFFF; --hc-button-outline-fg: #252521;
+  --hc-button-ghost-bg: transparent; --hc-button-ghost-fg: #252521;
+  --hc-button-disabled-bg: #E8E8E4; --hc-button-disabled-fg: #555550;
+  --hc-badge-neutral-bg: #EEEEEA; --hc-badge-neutral-fg: #393934;
+  --hc-badge-live-bg: #FFF0E9; --hc-badge-live-fg: #9D3410;
+  --hc-badge-final-bg: #EAEAE6; --hc-badge-final-fg: #41413B;
+  --hc-empty-bg: #FFFFFF; --hc-empty-fg: #151515;
+}
+html.theme-dark {
+  --hc-card-bg: #171717; --hc-card-fg: #F5F5F0;
+  --hc-button-primary-bg: #FF6A36; --hc-button-primary-fg: #17110E;
+  --hc-button-outline-bg: #171717; --hc-button-outline-fg: #F5F5F0;
+  --hc-button-ghost-bg: transparent; --hc-button-ghost-fg: #F5F5F0;
+  --hc-button-disabled-bg: #292929; --hc-button-disabled-fg: #B8B8B3;
+  --hc-badge-neutral-bg: #292929; --hc-badge-neutral-fg: #F5F5F0;
+  --hc-badge-live-bg: #4A2116; --hc-badge-live-fg: #FFB69B;
+  --hc-badge-final-bg: #242424; --hc-badge-final-fg: #F5F5F0;
+  --hc-empty-bg: #171717; --hc-empty-fg: #F5F5F0;
+}
+
+/* Empty/loading states use the same paired card tokens on every route. */
+main :where(.hc-live-no-games,.hc-live-empty,.hc-live-recent-empty,.hc-live-empty-state,
+  .hc-live-closed-state,.hc-womens-empty-state,.hc-coach-empty,.hc-review-state,
+  .empty-state,.admin-empty-state,.hc-feed-empty,.hc-empty-state) {
+  background: var(--hc-empty-bg) !important;
+  color: var(--hc-empty-fg) !important;
+  border-color: var(--hc-border) !important;
+}
+main :where(.hc-live-no-games,.hc-live-empty,.hc-live-recent-empty,.hc-live-empty-state,
+  .hc-live-closed-state,.hc-womens-empty-state,.hc-coach-empty,.hc-review-state,
+  .empty-state,.admin-empty-state,.hc-feed-empty,.hc-empty-state) :where(h1,h2,h3,h4,p,span,strong,small,a:not(.btn)) {
+  color: inherit !important;
+}
+
+/* Live Game Hub + game-room status labels: fill and text are a single token pair. */
+main :where(.hc-live-state,.hc-live-badge,.hc-live-room-game-status,.hc-live-room-score .hc-live-badge) {
+  background: var(--hc-badge-neutral-bg) !important;
+  color: var(--hc-badge-neutral-fg) !important;
+  border: 1px solid var(--hc-border);
+}
+main :where(.hc-live-badge,.hc-live-state--soon,.hc-live-room-game-status.is-live) {
+  background: var(--hc-badge-live-bg) !important;
+  color: var(--hc-badge-live-fg) !important;
+}
+main :where(.hc-live-state--post,.hc-live-state:has(+ .hc-live-card__league)) {
+  background: var(--hc-badge-final-bg) !important;
+  color: var(--hc-badge-final-fg) !important;
+}
+main .hc-live-badge > span { color: inherit !important; }
+
+/* All reminder states keep their foreground paired with their own fill. */
+main .hc-remind-button {
+  background: var(--hc-button-outline-bg) !important;
+  color: var(--hc-button-outline-fg) !important;
+  border: 1px solid var(--hc-control-border, var(--hc-border)) !important;
+}
+main .hc-remind-button.is-set {
+  background: var(--hc-badge-live-bg) !important;
+  color: var(--hc-badge-live-fg) !important;
+  border-color: var(--hc-badge-live-fg) !important;
+}
+main .hc-remind-button:disabled {
+  background: var(--hc-button-disabled-bg) !important;
+  color: var(--hc-button-disabled-fg) !important;
+  opacity: 1 !important;
+}
+main .hc-remind-button :where(svg,span) { color: inherit !important; }
+
+/* Common button variants use explicit paired tokens, including disabled controls. */
+main :where(.btn-primary,.button-primary,.hc-button-primary,.btn.primary) {
+  background: var(--hc-button-primary-bg) !important;
+  color: var(--hc-button-primary-fg) !important;
+}
+main :where(.btn-outline,.button-outline,.hc-button-outline,.btn-secondary) {
+  background: var(--hc-button-outline-bg) !important;
+  color: var(--hc-button-outline-fg) !important;
+  border-color: var(--hc-control-border, var(--hc-border)) !important;
+}
+main :where(.btn-ghost,.button-ghost,.hc-button-ghost) {
+  background: var(--hc-button-ghost-bg) !important;
+  color: var(--hc-button-ghost-fg) !important;
+}
+main :where(button,a.btn,input[type="button"],input[type="submit"]):disabled,
+main :where(button,a.btn)[aria-disabled="true"] {
+  background: var(--hc-button-disabled-bg) !important;
+  color: var(--hc-button-disabled-fg) !important;
+  opacity: 1 !important;
+}
+main :where(button,a.btn,input[type="button"],input[type="submit"]):disabled :where(span,svg),
+main :where(button,a.btn)[aria-disabled="true"] :where(span,svg) { color: inherit !important; }
