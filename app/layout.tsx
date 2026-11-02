@@ -20,6 +20,7 @@ import "./hoopcheck-root-cause.css";
 import "./hoopcheck-lm2d-contrast.css";
 import "./hoopcheck-motion.css";
 import "./hoopcheck-mobile-tabbar-repair.css";
+import "./hoopcheck-lm2e-account-layout.css";
 import ThemeProvider from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
 import MobileAuth from "../components/MobileAuth";
@@ -104,7 +105,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
   return (
     <html lang={initialLanguage} dir={initialLanguage === "ar" ? "rtl" : "ltr"} className={`${displayFont.variable} ${sansFont.variable} ${initialTheme === "dark" ? "theme-dark" : "theme-light"}`} suppressHydrationWarning>
-      <head><Script id="hoopcheck-theme-init" strategy="beforeInteractive">{`(function(){try{var root=document.documentElement;var m=document.cookie.match(/(?:^|;\\s*)hoopcheck-theme=([^;]+)/);var cookie=m?decodeURIComponent(m[1]):null;var stored=localStorage.getItem("hoopcheck-theme");var pref=stored||cookie||"${initialTheme}";if(pref==="dynamic")pref="dark";if(pref!=="dark"&&pref!=="light"&&pref!=="system")pref="system";var dark=pref==="dark"||(pref==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);root.classList.toggle("theme-dark",dark);root.classList.toggle("theme-light",!dark);root.style.colorScheme=dark?"dark":"light";if(stored!==pref)localStorage.setItem("hoopcheck-theme",pref);if(cookie!==pref)document.cookie="hoopcheck-theme="+encodeURIComponent(pref)+"; Path=/; Max-Age=31536000; SameSite=Lax";}catch(e){}})();`}</Script></head>
+      <head><Script id="hoopcheck-theme-init" strategy="beforeInteractive">{ `(function(){try{var root=document.documentElement;var m=document.cookie.match(/(?:^|;\\s*)hoopcheck-theme=([^;]+)/);var cookie=m?decodeURIComponent(m[1]):null;var stored=localStorage.getItem("hoopcheck-theme");var pref=stored||cookie||"${initialTheme}";if(pref==="dynamic")pref="dark";if(pref!=="dark"&&pref!=="light"&&pref!=="system")pref="system";var dark=pref==="dark"||(pref==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);root.classList.toggle("theme-dark",dark);root.classList.toggle("theme-light",!dark);root.style.colorScheme=dark?"dark":"light";if(stored!==pref)localStorage.setItem("hoopcheck-theme",pref);if(cookie!==pref)document.cookie="hoopcheck-theme="+encodeURIComponent(pref)+"; Path=/; Max-Age=31536000; SameSite=Lax";}catch(e){}})();` }</Script></head>
       <body className={sansFont.className}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c") }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c") }} />
