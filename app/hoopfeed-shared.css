@@ -1,6 +1,7 @@
 /* HF-2 shared HoopFeed presentation. Role and data permissions remain in the existing route logic. */
-.hc-feed-page {
+html body .hc-global-page-shell main.hc-feed-page {
   padding-block-start: 0 !important;
+  padding-top: 0 !important;
   padding-inline: 0 !important;
   color: var(--hc-foreground);
 }
@@ -29,6 +30,8 @@
   overflow: hidden;
 }
 .hc-feed-page .hc-feed-shared-card::after { display: none !important; }
+.hc-feed-page .hc-feed-shared-card > .hc-feed-post-header { padding: 0 !important; border: 0 !important; }
+.hc-feed-page .hc-feed-shared-card > .hc-feed-post-header::after { display: none !important; }
 .hc-feed-page .hc-feed-shared-card > .hc-feed-post-header { padding: 0 !important; border: 0 !important; }
 .hc-feed-page .hc-feed-post-header {
   display: flex;
