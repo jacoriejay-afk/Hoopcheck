@@ -49,10 +49,7 @@ export default function Feed(){
   const [msg,setMsg]=useState(""); const [postingStreak,setPostingStreak]=useState(0); const [loading,setLoading]=useState(true); const [posting,setPosting]=useState(false); const [now,setNow]=useState(0); const textareaRef = useRef<HTMLTextAreaElement|null>(null);
   const visiblePosts = (topicFilter==="All" ? posts : posts.filter(p=>p.topic_tag===topicFilter)).slice().sort((a,b)=>feedSort==="Latest" ? new Date(b.created_at).getTime()-new Date(a.created_at).getTime() : new Date(a.expires_at).getTime()-new Date(b.expires_at).getTime());
 
-  const access=["player","fan","scout","agent"].includes(profile?.account_type||"") &&
-    (subscription?.plan==="pro"||subscription?.plan==="premium") &&
-    (subscription?.status==="active"||subscription?.status==="trialing") &&
-    (subscription?.access_status==null||["active","trialing","pro","premium"].includes(subscription.access_status));
+  const access=["player","fan","scout","agent"].includes(profile?.account_type||"") && hasActiveMembershipAtLeast(subscription);
 
   async function load(currentUser:any, currentProfile:Profile){
     const connectionPromise=currentProfile.account_type==="player"
