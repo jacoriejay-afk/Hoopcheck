@@ -508,3 +508,48 @@ html.theme-dark body main .hc-live-hub-card .hc-live-state {
  color: var(--hc-chip-foreground) !important;
  -webkit-text-fill-color: var(--hc-chip-foreground) !important;
 }
+
+
+/* Final DM-2 regression overrides: match the exact live DOM probes and defeat legacy !important rules. */
+html.theme-light body main .hc-global-search-page .hc-directory-switcher .hc-directory-switcher-label,
+html.theme-dark body main .hc-global-search-page .hc-directory-switcher .hc-directory-switcher-label {
+  color: var(--hc-accent-text) !important;
+  -webkit-text-fill-color: var(--hc-accent-text) !important;
+}
+html.theme-light body main.hc-team-entity-profile .hc-team-profile-nav a[aria-current="page"],
+html.theme-dark body main.hc-team-entity-profile .hc-team-profile-nav a[aria-current="page"] {
+  color: var(--hc-accent-text) !important;
+  -webkit-text-fill-color: var(--hc-accent-text) !important;
+}
+html.theme-light body main.hc-team-entity-profile .hc-team-profile-hero > .hc-team-profile-kicker,
+html.theme-dark body main.hc-team-entity-profile .hc-team-profile-hero > .hc-team-profile-kicker {
+  color: var(--hc-accent-text) !important;
+  -webkit-text-fill-color: var(--hc-accent-text) !important;
+}
+html.theme-light body main.hc-account-page .eyebrow,
+html.theme-dark body main.hc-account-page .eyebrow,
+html.theme-light body main.hc-account-page :where(.hc-account-settings-header,.hc-settings-group) .eyebrow,
+html.theme-dark body main.hc-account-page :where(.hc-account-settings-header,.hc-settings-group) .eyebrow {
+  color: var(--hc-accent-text) !important;
+  -webkit-text-fill-color: var(--hc-accent-text) !important;
+}
+html.theme-light body main.hc-global-search-page .search-hero .eyebrow,
+html.theme-dark body main.hc-global-search-page .search-hero .eyebrow {
+  color: var(--hc-accent-text) !important;
+  -webkit-text-fill-color: var(--hc-accent-text) !important;
+}
+html.theme-light body main .hc-live-hub-hero > div:first-child > p:last-child,
+html.theme-dark body main .hc-live-hub-hero > div:first-child > p:last-child {
+  color: var(--hc-hero-muted) !important;
+  -webkit-text-fill-color: var(--hc-hero-muted) !important;
+}
+html.theme-light body main :where(.hc-live-empty,.hc-live-no-games) > p,
+html.theme-dark body main :where(.hc-live-empty,.hc-live-no-games) > p {
+  color: var(--hc-empty-foreground) !important;
+  -webkit-text-fill-color: var(--hc-empty-foreground) !important;
+}
+html.theme-light body main .hc-live-hub-card .hc-live-state,
+html.theme-dark body main .hc-live-hub-card .hc-live-state {
+  color: var(--hc-chip-foreground) !important;
+  -webkit-text-fill-color: var(--hc-chip-foreground) !important;
+}
