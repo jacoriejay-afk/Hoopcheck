@@ -446,6 +446,8 @@ try {
       if (result.headerPair && result.headerPair.background !== expectedNavSurface) errors.push("Global header surface mismatch: " + JSON.stringify(result.headerPair));
       if (result.bottomNavPair && result.bottomNavPair.background !== expectedNavSurface) errors.push("Bottom tab bar surface mismatch: " + JSON.stringify(result.bottomNavPair));
       if (result.bottomNavPair && result.bottomNavPair.tabColor !== expectedNavText) errors.push("Bottom tab bar label mismatch: " + JSON.stringify(result.bottomNavPair));
+      const expectedActiveNavText = theme === "dark" ? "rgb(255, 138, 92)" : "rgb(184, 62, 20)";
+      if (result.bottomNavPair && result.bottomNavPair.activeColor && result.bottomNavPair.activeColor !== expectedActiveNavText) errors.push("Bottom tab bar active label mismatch: " + JSON.stringify(result.bottomNavPair));
       if (requestedPath === "/dashboard") {
         const expectedSurface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
         const expectedText = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
