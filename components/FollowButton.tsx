@@ -6,9 +6,9 @@ import { HoopIcon } from "./HoopCheckUI";
 import Link from "next/link";
 import { useLanguage } from "./LanguageProvider";
 
-type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string; variant?: "default" | "club"; showCount?: boolean; showNotifications?: boolean };
+type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string; variant?: "default" | "club"; showCount?: boolean; showNotifications?: boolean; onCountChange?: (count: number) => void };
 
-export default function FollowButton({ targetType, targetId, variant = "default", showCount = true, showNotifications = true }: Props) {
+export default function FollowButton({ targetType, targetId, variant = "default", showCount = true, showNotifications = true, onCountChange }: Props) {
   const { formatNumber, t } = useLanguage();
   const [following, setFollowing] = useState(false);
   const [notify, setNotify] = useState(true);
@@ -39,7 +39,7 @@ export default function FollowButton({ targetType, targetId, variant = "default"
         supabase.rpc("get_follow_count", { p_target_type: targetType, p_target_id: targetId }),
       ]);
       if (!mounted) return;
-      setCount(Number(countResult.data ?? 0));
+      const nextCount = Number(countResult.data ?? 0);\n      setCount(nextCount);\n      onCountChange?.(nextCount);
       if (followResult.data) {
         setFollowing(true);
         setNotify(Boolean(followResult.data.notify_reviews || followResult.data.notify_ratings || followResult.data.notify_updates));
@@ -59,13 +59,13 @@ export default function FollowButton({ targetType, targetId, variant = "default"
     const wasFollowing = following;
     const previousCount = count;
     setFollowing(!wasFollowing);
-    setCount((value) => Math.max(0, value + (wasFollowing ? -1 : 1)));
+    const nextCount = Math.max(0, count + (wasFollowing ? -1 : 1));\n    setCount(nextCount);\n    onCountChange?.(nextCount);
     if (wasFollowing) {
       const { error } = await supabase.from("follow_relationships").delete()
         .eq("follower_id", user.id).eq("target_type", targetType).eq("target_id", targetId);
       if (error) {
         setFollowing(wasFollowing);
-        setCount(previousCount);
+        setCount(previousCount);\n        onCountChange?.(previousCount);
       }
     } else {
       const { error } = await supabase.from("follow_relationships").insert({
