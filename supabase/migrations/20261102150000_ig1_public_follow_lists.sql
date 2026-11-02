@@ -41,7 +41,7 @@ as $$
   order by fr.created_at desc;
 $$;
 revoke all on function public.get_public_follow_list(text,text,uuid,uuid) from public;
-grant execute on function public.get_public_follow_list(text,text,uuid,uuid) to authenticated;
+grant execute on function public.get_public_follow_list(text,text,uuid,uuid) to anon, authenticated;
 
 create or replace function public.get_public_following_count(p_user_id uuid)
 returns bigint language sql stable security definer set search_path = public
