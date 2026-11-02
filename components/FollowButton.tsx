@@ -6,9 +6,9 @@ import { HoopIcon } from "./HoopCheckUI";
 import Link from "next/link";
 import { useLanguage } from "./LanguageProvider";
 
-type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string; variant?: "default" | "club"; showCount?: boolean };
+type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string; variant?: "default" | "club"; showCount?: boolean; showNotifications?: boolean };
 
-export default function FollowButton({ targetType, targetId, variant = "default", showCount = true }: Props) {
+export default function FollowButton({ targetType, targetId, variant = "default", showCount = true, showNotifications = true }: Props) {
   const { formatNumber, t } = useLanguage();
   const [following, setFollowing] = useState(false);
   const [notify, setNotify] = useState(true);
@@ -111,7 +111,7 @@ export default function FollowButton({ targetType, targetId, variant = "default"
         {following ? <HoopIcon name="check" size={15} /> : <HoopIcon name="user" size={15} />} {following ? t("following") : t("follow")}
       </button>
       {showCount && <Link className="follow-count muted hc-follow-count-link" href={"/connections?mode=followers&type=" + encodeURIComponent(targetType) + "&id=" + encodeURIComponent(targetId)} aria-label={formatNumber(count) + " followers"}>{t("followerCount").replace("{count}", formatNumber(count))}</Link>}
-      <button
+      {showNotifications && (      <button
           type="button"
           aria-label={t("toggleNotifications")}
           title={following ? t("teamAlerts") : t("followToEnableAlerts")}
@@ -121,6 +121,7 @@ export default function FollowButton({ targetType, targetId, variant = "default"
         >
           <><HoopIcon name="bell" size={15} /> {notify ? t("on") : t("off")}</>
         </button>
+      )}
       {!signedIn && <span className="muted" style={{ fontSize: 12 }}>{t("signInToFollow")}</span>}
     </div>
   );
