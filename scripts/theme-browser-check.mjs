@@ -275,8 +275,8 @@ try {
       let data = [];
       const single = request.headers()["accept"]?.includes("vnd.pgrst.object");
       if (url.pathname === "/auth/v1/user") data = user;
-      else if (url.pathname.includes("/rest/v1/profiles")) data = single ? profile : [];
-      else if (url.pathname.includes("/rest/v1/subscriptions")) data = single ? subscription : [];
+      else if (url.pathname.includes("/rest/v1/profiles")) data = single || (url.searchParams.get("id") || "").startsWith("eq.") ? profile : [profile];
+      else if (url.pathname.includes("/rest/v1/subscriptions")) data = single || (url.searchParams.get("user_id") || "").startsWith("eq.") ? subscription : [subscription];
       else if (url.pathname.includes("/rest/v1/teams")) { const requestedId = (url.searchParams.get("id") || "").replace(/^eq\./, ""); data = requestedId ? (requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture) : [teamFixture, fallbackTeamFixture]; }
       else if (url.pathname.includes("/rest/v1/leagues")) data = single ? leagueFixture : [leagueFixture];
       else if (url.pathname.includes("/rest/v1/coaches")) data = single ? coachFixture : [coachFixture];
