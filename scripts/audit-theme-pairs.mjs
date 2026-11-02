@@ -26,6 +26,7 @@ const requiredPairs = [
   [".btn-outline", "--hc-button-outline-bg", "--hc-button-outline-fg"],
   [".btn-ghost", "--hc-button-ghost-bg", "--hc-button-ghost-fg"],
   [".btn.dark", "--hc-button-dark-bg", "--hc-button-dark-fg"],
+  ["input:disabled", "--hc-button-disabled-bg", "--hc-button-disabled-fg"],
 ];
 
 const errors = [];
