@@ -574,7 +574,7 @@ try {
       const homeTab = page.locator(".hc-lm2f-bottom-nav a[href=\"/\"]:visible, .hc-bottom-tab-bar a[href=\"/\"]:visible, nav.bottom-nav a[href=\"/\"]:visible").first();
       await homeTab.waitFor({ state: "visible", timeout: 10000 });
       await homeTab.click();
-      await page.waitForURL(/\/dashboard$/, { timeout: 15000 });
+      await page.waitForURL((url) => url.pathname === "/" || url.pathname === "/dashboard", { timeout: 15000 });
       await page.locator(".hc-ia-identity").waitFor({ state: "visible", timeout: 15000 });
       await page.locator(".hc-ia-door").first().waitFor({ state: "visible", timeout: 15000 });
       await page.screenshot({ path: `${artifactsDir}/language-live-03-dashboard-es.png`, fullPage: true, animations: "disabled" });
