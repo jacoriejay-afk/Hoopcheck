@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { isAtLeastTier } from "../../../../lib/membership-tier";
 
 
 function stripeIdentityModeConfigured() {
@@ -45,7 +46,7 @@ export async function POST(req:Request){
   if(profile.account_type==="coach"){
     const {data:sub}=await supabase.from("subscriptions").select("plan,status,current_period_end").eq("user_id",user.id).maybeSingle();
     const active=(sub?.status==="active"||sub?.status==="trialing") && (sub?.current_period_end==null || new Date(sub.current_period_end)>new Date());
-    if(!active || !["pro","premium"].includes(sub?.plan||"")) return NextResponse.json({error:"Coach identity verification is available to active Pro and Premium coaches."},{status:403});
+    if(!active || !isAtLeastTier(sub?.plan, "pro")) return NextResponse.json({error:"Coach identity verification is available to active Pro and Premium coaches."},{status:403});
   }
   if(profile.identity_verification_status==="verified")
     return NextResponse.json({error:`This ${profile.account_type} is already identity verified.`},{status:409});
