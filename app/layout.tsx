@@ -23,6 +23,7 @@ import "./hoopcheck-mobile-tabbar-repair.css";
 import "./hoopcheck-lm2e-account-layout.css";
 import "./hoopcheck-lm2f-bottom-nav.css";
 import "./hoopcheck-lg1-logo-contrast.css";
+import "./hoopcheck-ux2b-profile-completion.css";
 import "./hoopcheck-ia1-home.css";
 import ThemeProvider from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
