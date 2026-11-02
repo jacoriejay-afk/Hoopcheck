@@ -28,6 +28,8 @@
   box-shadow: none !important;
   overflow: hidden;
 }
+.hc-feed-page .hc-feed-shared-card::after { display: none !important; }
+.hc-feed-page .hc-feed-shared-card > .hc-feed-post-header { padding: 0 !important; border: 0 !important; }
 .hc-feed-page .hc-feed-post-header {
   display: flex;
   align-items: center;
