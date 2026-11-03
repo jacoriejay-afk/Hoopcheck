@@ -20,7 +20,7 @@ type Subscription = {
 
 function MembershipContent() {
   const searchParams = useSearchParams();
-  const { signedIn } = useAuthState();
+  const { signedIn, ready: authReady } = useAuthState();
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
@@ -239,7 +239,7 @@ function MembershipContent() {
 
   const isActive =
     subscription?.status === "active" || subscription?.status === "trialing";
-  const currentPlan = loading ? null : isActive && subscription?.plan === "premium" ? "premium" : isActive && subscription?.plan === "pro" ? "pro" : "free";
+  const currentPlan = loading || !authReady ? null : isActive && subscription?.plan === "premium" ? "premium" : isActive && subscription?.plan === "pro" ? "pro" : "free";
 
   return (
     <main className="hc-membership-page">
@@ -349,11 +349,10 @@ function MembershipContent() {
             </div>
             <div className="hc-membership-value"><span className="hc-membership-value__mark">★</span><div><strong>Best flexibility, better value.</strong><p>Choose monthly, 6-month, or annual billing. The total shown is the amount charged for the selected term.</p></div></div><div className="plans">
               <div className="plan-card hc-free-plan-card">
-                <div className="plan-top"><div><div className="eyebrow">HOOPCHECK FREE</div><h3>Free</h3></div><div className="price"><strong>$0</strong><span>always free</span></div></div>
+                <div className="plan-top"><div><div className="eyebrow">HOOPCHECK FREE</div>{currentPlan === "free" && signedIn && <div className="hc-current-plan-badge">CURRENT PLAN</div>}<h3>Free</h3></div><div className="price"><strong>$0</strong><span>always free</span></div></div>
                 <p className="plan-description">Explore HoopCheck and build your basketball network.</p>
                 <ul><li>Browse the global directory</li><li>Create and manage your profile</li><li>Follow teams and players</li></ul>
                 {currentPlan === "free" && signedIn ? <button className="btn plan-button" disabled>Current plan</button> : currentPlan === null && signedIn ? <button className="btn plan-button" disabled>Checking plan…</button> : currentPlan !== "free" && currentPlan !== null ? <button className="btn plan-button" disabled>Included</button> : <Link href="/signup" className="btn plan-button">Create free account</Link>}
-                {currentPlan === "free" && signedIn && <div className="hc-current-plan-badge">CURRENT PLAN</div>}
               </div>
               <div className="plan-card">
                 <div className="plan-top">
