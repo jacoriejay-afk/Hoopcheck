@@ -5,58 +5,52 @@ import { supabase } from "../lib/supabase";
 import { HoopIcon } from "./HoopCheckUI";
 import Link from "next/link";
 import { useLanguage } from "./LanguageProvider";
+import { useAuthState } from "./AuthProvider";
 
 type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string; variant?: "default" | "club"; showCount?: boolean; showNotifications?: boolean; onCountChange?: (count: number) => void };
 
 export default function FollowButton({ targetType, targetId, variant = "default", showCount = true, showNotifications = true, onCountChange }: Props) {
   const { formatNumber, t } = useLanguage();
+  const { userId, signedIn, ready: authReady } = useAuthState();
   const [following, setFollowing] = useState(false);
   const [notify, setNotify] = useState(true);
   const [count, setCount] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user;
-      if (!mounted) return;
-      setSignedIn(Boolean(user));
+    if (!authReady) return () => { mounted = false; };
+    const followPromise = userId
+      ? supabase.from("follow_relationships")
+          .select("notify_reviews,notify_ratings,notify_updates")
+          .eq("follower_id", userId)
+          .eq("target_type", targetType)
+          .eq("target_id", targetId)
+          .maybeSingle()
+      : Promise.resolve({ data: null });
 
-      const followPromise = user
-        ? supabase.from("follow_relationships")
-            .select("notify_reviews,notify_ratings,notify_updates")
-            .eq("follower_id", user.id)
-            .eq("target_type", targetType)
-            .eq("target_id", targetId)
-            .maybeSingle()
-        : Promise.resolve({ data: null });
-
-      // Do not block the card from rendering on the follower-count RPC.
-      const [followResult, countResult] = await Promise.all([
-        followPromise,
-        supabase.rpc("get_follow_count", { p_target_type: targetType, p_target_id: targetId }),
-      ]);
+    void Promise.all([
+      followPromise,
+      supabase.rpc("get_follow_count", { p_target_type: targetType, p_target_id: targetId }),
+    ]).then(([followResult, countResult]) => {
       if (!mounted) return;
       const nextCount = Number(countResult.data ?? 0);
       setCount(nextCount);
       onCountChange?.(nextCount);
+      setFollowing(Boolean(followResult.data));
       if (followResult.data) {
-        setFollowing(true);
         setNotify(Boolean(followResult.data.notify_reviews || followResult.data.notify_ratings || followResult.data.notify_updates));
       }
-    })();
+    });
     return () => { mounted = false; };
-  }, [targetType, targetId]);
+  }, [targetType, targetId, userId, authReady]);
 
   async function toggle() {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
-    if (!user) {
+    if (!authReady || !userId) {
       window.location.href = "/login";
       return;
     }
+    const user = { id: userId };
     setBusy(true);
     const wasFollowing = following;
     const previousCount = count;
@@ -84,15 +78,15 @@ export default function FollowButton({ targetType, targetId, variant = "default"
       if (error) {
         setFollowing(wasFollowing);
         setCount(previousCount);
+        onCountChange?.(previousCount);
       } else {
         setNotify(true);
       }
     }
-    setSignedIn(true);
     setBusy(false);
   }
 
-  async function toggleNotify() {
+    async function toggleNotify() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !following) return;
     const next = !notify;
@@ -110,7 +104,7 @@ export default function FollowButton({ targetType, targetId, variant = "default"
         type="button"
         className={variant === "club" ? `hc-team-follow-pill ${following ? "is-following" : "is-not-following"}` : "btn dark"}
         onClick={toggle}
-        disabled={busy}
+        disabled={busy || !authReady}
         title={following ? t("followingProfileTitle") : t("followProfileTitle")}
       >
         {following ? <HoopIcon name="check" size={15} /> : <HoopIcon name="user" size={15} />} {following ? t("following") : t("follow")}
@@ -127,7 +121,7 @@ export default function FollowButton({ targetType, targetId, variant = "default"
           <><HoopIcon name="bell" size={15} /> {notify ? t("on") : t("off")}</>
         </button>
       )}
-      {!signedIn && <span className="muted" style={{ fontSize: 12 }}>{t("signInToFollow")}</span>}
+      {authReady && !signedIn && <span className="muted" style={{ fontSize: 12 }}>{t("signInToFollow")}</span>}
     </div>
   );
 }
