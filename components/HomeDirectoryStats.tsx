@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 type Stat = { label: string; value: number | null };
-const roundDown = (value: number) => value > 0 ? Math.floor(value / 10) * 10 : null;
+const roundDown = (value: number) => value <= 0 ? null : value < 10 ? value : value < 100 ? Math.floor(value / 5) * 5 : value < 1000 ? Math.floor(value / 10) * 10 : Math.floor(value / 100) * 100;
 
 export default function HomeDirectoryStats() {
   const [stats, setStats] = useState<Stat[]>([]);
