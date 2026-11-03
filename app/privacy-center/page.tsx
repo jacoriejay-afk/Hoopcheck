@@ -26,15 +26,29 @@ export default function PrivacyCenterPage() {
 
   async function load() {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { window.location.href="/login"; return; }
-    setUserId(user.id);
-    const { data, error: requestError } = await supabase.from("privacy_requests")
-      .select("id,request_type,status,details,created_at,updated_at,completed_at")
-      .eq("requester_id",user.id).order("created_at",{ascending:false});
-    if (requestError) setError("We couldn't load your privacy requests.");
-    else setRequests(data ?? []);
-    setLoading(false);
+    setError("");
+
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        window.location.href = "/login";
+        return;
+      }
+
+      setUserId(user.id);
+      const { data, error: requestError } = await supabase.from("privacy_requests")
+        .select("id,request_type,status,details,created_at,updated_at,completed_at")
+        .eq("requester_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (requestError) throw requestError;
+      setRequests(data ?? []);
+    } catch (loadError) {
+      console.error("Unable to load privacy requests:", loadError);
+      setError("We couldn't load your privacy requests. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(()=>{ void load(); },[]);
