@@ -11,11 +11,18 @@ type AuthState = {
   ready: boolean;
   membershipTier: MembershipTier;
   membershipActive: boolean;
-  membershipReady: boolean;\n  refreshMembership: () => Promise<void>;
+  membershipReady: boolean;
+  refreshMembership: () => Promise<void>;
 };
+
 const AuthContext = createContext<AuthState>({
-  userId: null, signedIn: false, ready: false,
-  membershipTier: "free", membershipActive: false, membershipReady: false, refreshMembership: async () => {},
+  userId: null,
+  signedIn: false,
+  ready: false,
+  membershipTier: "free",
+  membershipActive: false,
+  membershipReady: false,
+  refreshMembership: async () => {},
 });
 
 export function useAuthState() {
@@ -36,7 +43,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         setUserId(data.session?.user?.id ?? null);
         setReady(true);
       }
-    }).catch(() => { if (mounted) setReady(true); });
+    }).catch(() => {
+      if (mounted) setReady(true);
+    });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (mounted) {
         setUserId(session?.user?.id ?? null);
@@ -49,31 +58,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     };
   }, []);
 
-  useEffect(() => {
-    let mounted = true;
-    setMembershipTier("free");
-    setMembershipActive(false);
-    if (!userId) { setMembershipReady(true); return () => { mounted = false; }; }
-    setMembershipReady(false);
-    void supabase.from("subscriptions")
-      .select("plan,status,access_status,current_period_end")
-      .eq("user_id", userId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!mounted) return;
-        const active = hasActiveMembershipAtLeast(data, "pro");
-        setMembershipActive(active);
-        setMembershipTier(active && (data?.plan === "premium" || data?.plan === "pro") ? data.plan : "free");
-        setMembershipReady(true);
-      }).catch(() => { if (mounted) setMembershipReady(true); });
-    return () => { mounted = false; };
-  }, [userId]);
-
-  return <AuthContext.Provider value={{
-    userId, signedIn: Boolean(userId), ready,
-    membershipTier, membershipActive, membershipReady, refreshMembership,
-  }}>{children}</AuthContext.Provider>;
-}  const refreshMembership = useCallback(async () => {
+  const refreshMembership = useCallback(async () => {
     if (!userId) {
       setMembershipTier("free");
       setMembershipActive(false);
@@ -101,3 +86,18 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     void refreshMembership();
   }, [refreshMembership]);
+
+  return (
+    <AuthContext.Provider value={{
+      userId,
+      signedIn: Boolean(userId),
+      ready,
+      membershipTier,
+      membershipActive,
+      membershipReady,
+      refreshMembership,
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
