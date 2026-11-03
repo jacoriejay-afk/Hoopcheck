@@ -40,7 +40,7 @@ export default function HomeDesktopIdentity() {
       ]);
       if(!active)return;
       const counts=new Map<string,number>();
-      for(const row of countryResult.data||[]){const country=(row.country||"").trim();if(country)counts.set(country,(counts.get(country)||0)+1);}
+      for(const row of [...(countryResult.data||[]),...(womensCountryResult.data||[])]){const country=(row.country||"").trim();if(country)counts.set(country,(counts.get(country)||0)+1);}
       setCountryCounts([...counts.entries()].map(([country,count])=>({country,count})));
       if(teamResult.data){setFeatured(teamResult.data as Team);}
       const games=(gameResult.data||[]) as Game[];
