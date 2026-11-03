@@ -24,7 +24,7 @@ export default function TrustScoreDial({
   const radius = (dimension - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const safeScore = score === null ? 0 : Math.max(0, Math.min(100, score));
-  const offset = circumference * (1 - safeScore / 100);\n  const [animated, setAnimated] = useState(false);\n  useEffect(() => {\n    setAnimated(false);\n    if (score === null || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setAnimated(true); return; }\n    const frame = window.requestAnimationFrame(() => setAnimated(true));\n    return () => window.cancelAnimationFrame(frame);\n  }, [score]);
+  const offset = circumference * (1 - safeScore / 100);\n  const [animated, setAnimated] = useState(false);\n  useEffect(() => {\n    setAnimated(false);\n    if (score === null || window.matchMedia("(prefers-reduced-motion: reduce)").matches || !window.matchMedia("(min-width: 1024px)").matches) { setAnimated(true); return; }\n    const frame = window.requestAnimationFrame(() => setAnimated(true));\n    return () => window.cancelAnimationFrame(frame);\n  }, [score]);
 
   return (
     <div className={`hc-trust-score hc-trust-score--${size}`}>
