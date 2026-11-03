@@ -123,3 +123,36 @@
   .hc-ia-welcome h1 { font-size:46px; }
   .hc-desk-team-row { grid-template-columns:minmax(180px,1.4fr) minmax(100px,1fr) minmax(90px,.8fr) 80px 60px 72px; gap:8px; padding-inline:12px; font-size:12px; }
 }
+
+@media (min-width:1024px) {
+  main.hc-live-hub-page { width:min(calc(100% - 48px),1200px); max-width:1200px; margin-inline:auto; padding:28px 0 80px; }
+  .hc-live-hub-page > .page-container { width:100%; max-width:none; padding:0; display:grid; gap:0; }
+  .hc-live-hub-hero { width:100%; min-height:260px; padding:42px 48px; display:grid; grid-template-columns:minmax(0,1fr) 320px; align-items:center; border-radius:22px; }
+  .hc-live-hub-hero h1 { font-size:56px; line-height:1.02; }
+  .hc-live-hub-filters { margin-top:24px; display:flex; align-items:center; justify-content:space-between; gap:24px; padding:18px 20px; }
+  .hc-live-hub-filter-tools { display:flex; flex:1; justify-content:flex-end; gap:12px; }
+  .hc-live-hub-search { width:min(100%,420px); }
+  .hc-live-hub-section { margin-top:48px; }
+  .hc-live-section-heading h2 { font-size:32px; }
+  .hc-live-hub-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  .hc-live-hub-card { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.4fr); grid-template-rows:auto auto auto; gap:12px 20px; align-items:center; padding:18px 20px; border-radius:16px; }
+  .hc-live-hub-card__top { grid-column:1/-1; display:flex; justify-content:space-between; align-items:center; }
+  .hc-live-card__teams { grid-column:1; grid-row:2; }
+  .hc-live-card__meta { grid-column:1; grid-row:3; }
+  .hc-live-card__actions { grid-column:2; grid-row:2/span 2; justify-content:flex-end; align-self:center; }
+  .hc-live-card__teams { gap:12px; }
+  .hc-live-card__side strong { font-size:13px; }
+  .hc-live-card__score { font-size:22px; }
+  .hc-live-hub-footer { margin-top:36px; }
+  .site-header-global { width:100%; }
+  .hc-header-nav { max-width:1200px; }
+}
+@media (min-width:1024px) and (max-width:1279px) {
+  .hc-live-hub-card { grid-template-columns:1fr; }
+  .hc-live-card__actions { grid-column:1; grid-row:auto; justify-content:flex-start; }
+}
+@media (min-width:1024px) and (max-width:1919px) {
+  .hc-ia-section-heading h2,.hc-live-section-heading h2 { line-height:1.12; }
+  .hc-global-page-shell :where(section,article,header,nav,div) { min-width:0; }
+  .hc-global-page-shell :where(h1,h2,h3,p,a,span,strong,small,dt,dd) { overflow-wrap:anywhere; }
+}
