@@ -4,6 +4,7 @@ import Link from "next/link"; // Used by compact sign-in and upgrade actions.
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuthState } from "./AuthProvider";
+import FeatureLink from "./FeatureLink";
 import { isAtLeastTier } from "../lib/membership-tier";
 
 type RequestRow = { id:string; requester_id:string; player_id:string; message:string|null; status:string; created_at:string; };
@@ -93,7 +94,7 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
       return <span className="contact-gate hc-contact-request-gate" style={{ display: "inline-flex", alignItems: "center", margin: 0, padding: "8px 12px" }}><strong>Request waiting</strong></span>;
     }
     if (accountType === "player" && !premium) {
-      return <Link href="/membership" className="btn">Upgrade to Add</Link>;
+      return <FeatureLink href="/membership" className="btn">Upgrade to Add</FeatureLink>;
     }
     if ((accountType === "player" || accountType === "scout" || accountType === "agent") && premium) {
       return <button className="btn" onClick={() => void sendRequest()} disabled={busy}>{busy ? "Adding..." : "Add Player"}</button>;
