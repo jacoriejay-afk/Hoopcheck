@@ -191,7 +191,7 @@ export default function TeamsPage() {
   }, [teams]);
 
   useEffect(() => {
-    if (!teams.length) { setFollowerCounts({}); return; }
+    if (!teams.length || !window.matchMedia("(min-width: 1024px)").matches) { setFollowerCounts({}); return; }
     let active = true;
     const ids = teams.map(team => team.id).filter(Boolean);
     void Promise.all(ids.map(async id => {
