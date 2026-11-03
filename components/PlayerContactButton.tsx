@@ -79,6 +79,7 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
   }
 
   if (compact) {
+    if (!authReady) return null;
     if (!userId) {
       return <Link href="/login" className="btn">Sign in to Add</Link>;
     }
