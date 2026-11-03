@@ -54,7 +54,7 @@ export default function CategoryTile({
         </span>
       </span>
       <span className="hc-category-tile__label">{label}</span>
-      {description ? <span className="hc-category-tile__description">{description}</span> : null}
+      {description ? <span className="hc-category-tile__description">{description}</span> : null}\n      {count !== undefined ? <span className="hc-category-tile__count">{count.toLocaleString()} listings</span> : null}
       <span className="hc-category-tile__arrow" aria-hidden="true">
         <HoopIcon name="arrow-right" size={16} />
       </span>
