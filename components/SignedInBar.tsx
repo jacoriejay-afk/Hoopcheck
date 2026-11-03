@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import NotificationBell from "./NotificationBell";
 import GlobalSearch from "./GlobalSearch";
+import FeatureLink from "./FeatureLink";
 import { getCachedSession, supabase } from "../lib/supabase";
 
 export default function SignedInBar(){
@@ -22,7 +23,7 @@ export default function SignedInBar(){
       <Link href="/teams" onClick={()=>setMenuOpen(false)}>Teams</Link>
       <Link href="/players" onClick={()=>setMenuOpen(false)}>Players</Link>
       <Link href="/leagues" onClick={()=>setMenuOpen(false)}>Leagues</Link>
-      <Link href="/feed" onClick={()=>setMenuOpen(false)}>Community Feed</Link>
+      <FeatureLink href="/feed" onClick={()=>setMenuOpen(false)}>Community Feed</FeatureLink>
       <Link href={profileHref} onClick={()=>setMenuOpen(false)}>Profile</Link>
       <Link href="/settings" onClick={()=>setMenuOpen(false)}>Settings</Link>
       <Link href="/support" onClick={()=>setMenuOpen(false)}>Help & Support</Link>
