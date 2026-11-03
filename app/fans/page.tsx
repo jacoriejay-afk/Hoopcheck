@@ -11,7 +11,38 @@ type Fan={id:string;display_name:string|null;username:string|null;avatar_url:str
 
 export default function FansPage(){
   const [fans,setFans]=useState<Fan[]>([]); const [loading,setLoading]=useState(true); const [q,setQ]=useState("");
-  useEffect(()=>{(async()=>{const {data:{session}}=await supabase.auth.getSession();const user=session?.user;if(!user){location.href="/login";return;}const {data}=await supabase.from("profiles").select("id,display_name,username,avatar_url,bio").eq("account_type","fan").neq("id",user.id).order("display_name").limit(100);setFans((data||[]) as Fan[]);setLoading(false);})();},[]);
+  useEffect(() => {
+    let active = true;
+
+    void (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
+        if (!user) {
+          if (active) window.location.href = "/login";
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id,display_name,username,avatar_url,bio")
+          .eq("account_type", "fan")
+          .neq("id", user.id)
+          .order("display_name")
+          .limit(100);
+
+        if (error) throw error;
+        if (active) setFans((data || []) as Fan[]);
+      } catch (error) {
+        console.error("Unable to load fan directory:", error);
+        if (active) setFans([]);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+
+    return () => { active = false; };
+  }, []);
   if(loading)return <main className="page-shell hc-fans-directory-page"><div className="page-container"><HoopLoading label="Loading fans..." /></div></main>;
   const filtered=fans.filter(f=>(f.display_name||f.username||"").toLowerCase().includes(q.toLowerCase()));
   return <main className="page-shell hc-fans-directory-page"><div className="page-container">
