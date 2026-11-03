@@ -499,7 +499,7 @@ try {
       await page.getByText("ACCESO RÁPIDO", { exact: false }).waitFor({ state: "visible", timeout: 15000 });
       await page.screenshot({ path: `${artifactsDir}/language-live-03-dashboard-es.png`, fullPage: true, animations: "disabled" });
       assert.equal(await page.evaluate(() => performance.timeOrigin), beforeSwitchOrigin, "dashboard navigation performed a full document reload");
-      await page.locator('a[href="/teams"]').first().click();
+      await page.locator('a[href="/teams"]:visible').first().click();
       await page.waitForURL(/\/teams$/, { timeout: 15000 });
       await page.locator('a[href="/teams/' + teamFixture.id + '"]').first().click();
       await page.waitForURL(new RegExp("/teams/" + teamFixture.id + "$"), { timeout: 15000 });
