@@ -3,6 +3,7 @@ import FollowButton from "./FollowButton";
 import { HoopIcon } from "./HoopCheckUI";
 import Surface from "./Surface";
 import TeamLogo from "./TeamLogo";
+import TrustScoreDial from "./TrustScoreDial";
 import { useLanguage } from "./LanguageProvider";
 
 type TeamDirectoryRowProps = {
@@ -26,7 +27,7 @@ type TeamDirectoryRowProps = {
 
 export default function TeamDirectoryRow({
   id, name, city, country, leagueName, href, kind = "mens", showFollow = true,
-  trustScore = null, trustReviewCount = 0, logoUrl = null, logoBg = "transparent", trustTier = "unknown",
+  trustScore = null, trustScore = null, trustReviewCount = 0, trustExplanation = "", logoUrl = null, logoBg = "transparent", trustTier = "unknown",
 }: TeamDirectoryRowProps) {
   const { t } = useLanguage();
   const hasTrustScore = typeof trustScore === "number" && Number.isFinite(trustScore);
@@ -45,7 +46,7 @@ export default function TeamDirectoryRow({
       <div className="hc-scout-card__stats" aria-label={t("teamReviewStatistics")}>
         {trustTier === "free" ? <div className="hc-directory-locked"><strong>Full player reviews require an eligible membership</strong><Link href="/membership" className="btn">Upgrade</Link></div>
         : trustTier === "pro" ? <div className="hc-directory-locked"><strong>Trust Score</strong><small>Full Trust Score details require Fan Premium</small><Link href="/membership" className="btn">Upgrade</Link></div>
-        : <><div className="hc-scout-card__stat"><strong>{hasTrustScore ? Math.round(trustScore) : "—"}</strong><small>Trust Score</small></div><div className="hc-scout-card__stat"><strong>{trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div></>}
+        : <><TrustScoreDial score={hasTrustScore ? trustScore : null} explanation={trustExplanation || "Not enough player reviews to calculate a Trust Score yet."} reviewCount={trustReviewCount} verifiedReviewCount={0} size="mini"/><div className="hc-scout-card__stat"><strong>{trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div></>}
       </div>
       <footer className="hc-scout-card__ticket">
         <Link href={href} className="hc-scout-card__report-link">{t("openScoutingReport")} <span aria-hidden="true">→</span></Link>
