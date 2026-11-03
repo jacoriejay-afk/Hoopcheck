@@ -3,15 +3,15 @@
 import { usePathname } from "next/navigation";
 
 /**
- * Keep the route wrapper stable. Next App Router handles segment transitions
- * and loading boundaries; avoiding a pathname key prevents needless wrapper
- * remounts that can reset client state or amplify navigation jank.
+ * Key the page slot to its pathname so the shared, lightweight entrance
+ * animation restarts on route changes. Global providers and navigation live
+ * outside this wrapper and remain mounted.
  */
 export default function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="hc-route-transition" data-route={pathname}>
+    <div key={pathname} className="hc-route-transition" data-route={pathname}>
       {children}
     </div>
   );
