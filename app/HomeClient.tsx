@@ -22,7 +22,8 @@ const emptyCounts={teams:0,womens:0,coaches:0,leagues:0,players:0};
 
 export default function Home(){
  const router=useRouter();
- const [counts,setCounts]=useState(emptyCounts);\n const [countsLoaded,setCountsLoaded]=useState(false);
+ const [counts,setCounts]=useState(emptyCounts);
+ const [countsLoaded,setCountsLoaded]=useState(false);
  const [teams,setTeams]=useState<Team[]>([]);
  const [reviewCounts,setReviewCounts]=useState<Record<string,number>>({});
  const [trustScores,setTrustScores]=useState<Record<string,number|null>>({});
