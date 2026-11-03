@@ -217,7 +217,7 @@ export default function FanLivePage() {
 
   if(loading)return <main className="page-shell hc-live-room"><div className="page-container"><HoopLoading label="Loading Live Game Hub…" /></div></main>;
   if(!userId)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">LIVE GAME HUB</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in to access Live Game Hub features available to your account.</p><Link className="btn" href="/login">Sign in</Link></section></div></main>;
-  if(!allowed)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM MEMBERS</p><h1>LIVE GAME CHAT</h1><p className="muted">An active Pro or Premium membership is required to join game chats. Free players can still make game predictions.</p><Link className="btn" href="/membership">View Membership</Link></section></div></main>;
+  if(!allowed)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM MEMBERS</p><h1>MEMBERSHIP REQUIRED</h1><p className="muted">An active Pro or Premium membership is required to join game chats. Free players can still make game predictions.</p><Link className="btn" href="/membership">View Membership</Link></section></div></main>;
 
   return <main className="page-shell hc-live-room">
       <FanBasketballSideSwitch /><div className="page-container">
