@@ -5,11 +5,13 @@ import { supabase } from "../lib/supabase";
 import { HoopIcon } from "./HoopCheckUI";
 import Link from "next/link";
 import { useLanguage } from "./LanguageProvider";
+import { useAuthState } from "./AuthProvider";
 
 type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string; variant?: "default" | "club"; showCount?: boolean; showNotifications?: boolean; onCountChange?: (count: number) => void };
 
 export default function FollowButton({ targetType, targetId, variant = "default", showCount = true, showNotifications = true, onCountChange }: Props) {
   const { formatNumber, t } = useLanguage();
+  const { userId, signedIn, ready: authReady } = useAuthState();
   const [following, setFollowing] = useState(false);
   const [notify, setNotify] = useState(true);
   const [count, setCount] = useState(0);
@@ -48,7 +50,7 @@ export default function FollowButton({ targetType, targetId, variant = "default"
       }
     })();
     return () => { mounted = false; };
-  }, [targetType, targetId]);
+  }, [targetType, targetId, userId, authReady]);
 
   async function toggle() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -127,7 +129,7 @@ export default function FollowButton({ targetType, targetId, variant = "default"
           <><HoopIcon name="bell" size={15} /> {notify ? t("on") : t("off")}</>
         </button>
       )}
-      {!signedIn && <span className="muted" style={{ fontSize: 12 }}>{t("signInToFollow")}</span>}
+      {authReady && !signedIn && <span className="muted" style={{ fontSize: 12 }}>{t("signInToFollow")}</span>}
     </div>
   );
 }
