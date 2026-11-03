@@ -38,6 +38,7 @@ import CourtLines from "../components/CourtLines";
 import PageTransition from "../components/PageTransition";
 import { PageShell } from "../components/LayoutSystem";
 import "./hoopcheck-layout-system.css";
+import "./hoopcheck-desk-fix-2.css";
 import { SITE_URL } from "../lib/site-url";
 
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
@@ -122,8 +123,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <SiteHeader />
               <MobileAuth />
               <BottomNav />
-              <GlobalBackButton />
-              <PageShell><PageTransition>{children}</PageTransition></PageShell>
+              <PageShell><GlobalBackButton /><PageTransition>{children}</PageTransition></PageShell>
             </LanguageProvider>
           </AuthProvider>
         </ThemeProvider>
@@ -156,7 +156,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             </div>
           </div>
           <div className="footer-bottom">
-            <span>© {new Date().getFullYear()} HoopCheck. All rights reserved.</span>
+            <span>© {new Date().getFullYear()} HoopCheck. All rights reserved.</span>
             <span>Built for basketball players.</span>
           </div>
         </footer>
