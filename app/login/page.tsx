@@ -17,9 +17,22 @@ export default function LoginPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    setReason(params.get("reason")?.trim() || "");
+    const suppliedReason = params.get("reason")?.trim() || "";
+    setReason(suppliedReason);
     const candidate = params.get("returnTo") || "";
-    if (candidate.startsWith("/") && !candidate.startsWith("//")) setReturnTo(candidate);
+    if (candidate.startsWith("/") && !candidate.startsWith("//")) {
+      setReturnTo(candidate);
+    } else if (document.referrer) {
+      try {
+        const previous = new URL(document.referrer);
+        if (previous.origin === window.location.origin && previous.pathname !== "/login") {
+          setReturnTo(previous.pathname + previous.search + previous.hash);
+          if (!suppliedReason) setReason("Sign in to continue");
+        }
+      } catch {
+        // Ignore invalid or cross-origin referrers.
+      }
+    }
   }, []);
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
