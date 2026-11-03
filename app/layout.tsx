@@ -38,6 +38,7 @@ import CourtLines from "../components/CourtLines";
 import PageTransition from "../components/PageTransition";
 import { PageShell } from "../components/LayoutSystem";
 import "./hoopcheck-layout-system.css";
+import "./hoopcheck-desktop-layout.css";
 import { SITE_URL } from "../lib/site-url";
 
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
