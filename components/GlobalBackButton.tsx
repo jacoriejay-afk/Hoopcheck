@@ -4,7 +4,8 @@ import { useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 function getFallbackPath(pathname: string): string {
-  if (pathname === "/" || pathname === "/dashboard") return "/";
+  if (pathname === "/") return "/dashboard";
+  if (pathname === "/dashboard") return "/";
   if (pathname.startsWith("/teams/")) return "/teams";
   if (pathname.startsWith("/players/")) return "/players";
   if (pathname.startsWith("/coaches/")) return "/coaches";
