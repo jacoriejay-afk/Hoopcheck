@@ -10,7 +10,8 @@ type AuthState = {
   signedIn: boolean;
   ready: boolean;
   membershipTier: MembershipTier;
-  membershipActive: boolean;\n  membershipReady: boolean;
+  membershipActive: boolean;
+  membershipReady: boolean;
 };
 const AuthContext = createContext<AuthState>({
   userId: null, signedIn: false, ready: false,
@@ -25,7 +26,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [userId, setUserId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [membershipTier, setMembershipTier] = useState<MembershipTier>("free");
-  const [membershipActive, setMembershipActive] = useState(false);\n  const [membershipReady, setMembershipReady] = useState(false);
+  const [membershipActive, setMembershipActive] = useState(false);
+  const [membershipReady, setMembershipReady] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -60,7 +62,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         if (!mounted) return;
         const active = hasActiveMembershipAtLeast(data, "pro");
         setMembershipActive(active);
-        setMembershipTier(active && (data?.plan === "premium" || data?.plan === "pro") ? data.plan : "free");\n        setMembershipReady(true);
+        setMembershipTier(active && (data?.plan === "premium" || data?.plan === "pro") ? data.plan : "free");
+        setMembershipReady(true);
       });
     return () => { mounted = false; };
   }, [userId]);
