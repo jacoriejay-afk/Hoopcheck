@@ -49,6 +49,6 @@ export default function FansPage(){
     <section className="hero-card"><p className="eyebrow">FAN NETWORK</p><h1>Find Fans</h1><p className="muted">Pro and Premium Fans can send connection requests to other fans.</p><SearchBar value={q} onChange={setQ} onSubmit={setQ} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search fans" /></section>
     <section className="grid" style={{marginTop:14}}>{filtered.map(f=><article className="dashboard-card" key={f.id}><div style={{display:"flex",gap:12,alignItems:"center"}}>{f.avatar_url?<img src={f.avatar_url} alt="" style={{width:46,height:46,borderRadius:"50%",objectFit:"cover"}}/>:<div className="player-avatar-fallback">HC</div>}<div><h2 style={{margin:0}}>{f.display_name||f.username||"HoopCheck Fan"}</h2><p className="muted" style={{margin:"4px 0 0"}}>@{f.username||"fan"}</p></div></div>{f.bio&&<p className="muted">{f.bio}</p>}<div style={{marginTop:12}}><FanConnectionButton fanId={f.id}/></div><Link href={"/fans/"+f.id} className="btn dark" style={{marginTop:10}}>View Fan Profile</Link></article>)}</section>
     {!filtered.length&&<div className="dashboard-card" style={{marginTop:14}}><h2>No fans found.</h2></div>}
-    <div className="bottom-back"><button type="button" className="btn dark" onClick={()=>window.history.back()}>← Back</button></div>
+
   </div></main>;
 }
