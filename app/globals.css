@@ -3974,3 +3974,44 @@ main :where(input,select,textarea) { max-width:100%; min-width:0; }
   .hc-team-social-top { gap:10px; align-items:flex-start; }
   .hc-team-social-top .hc-team-social-stats { gap:8px; }
 }
+
+
+/* HERO-1 — Live Game Hub uses the same active-theme surface/foreground pair as cards. */
+.hc-live-hub-hero {
+  background: var(--hc-card, var(--hc-surface-raised, #fff)) !important;
+  color: var(--hc-foreground, #0a0a0a) !important;
+  border-color: var(--hc-border, rgba(128,128,128,.24)) !important;
+}
+html.theme-dark .hc-live-hub-hero {
+  background: var(--hc-card, var(--hc-surface-raised, #171717)) !important;
+  color: var(--hc-foreground, #f7f7f5) !important;
+}
+.hc-live-hub-hero :where(h1,h2,h3,strong) {
+  color: var(--hc-foreground, #0a0a0a) !important;
+  background: transparent !important;
+}
+html.theme-dark .hc-live-hub-hero :where(h1,h2,h3,strong) {
+  color: var(--hc-foreground, #f7f7f5) !important;
+}
+.hc-live-hub-hero :where(p,.muted) {
+  color: var(--hc-foreground-muted, var(--hc-muted, #686868)) !important;
+  background: transparent !important;
+}
+html.theme-dark .hc-live-hub-hero :where(p,.muted) {
+  color: var(--hc-foreground-muted, #bdbdbd) !important;
+}
+.hc-live-hub-hero .eyebrow {
+  color: var(--hc-orange, #ff5a1f) !important;
+  background: transparent !important;
+  white-space: nowrap !important;
+  font-size: clamp(8px, 2.3vw, 11px) !important;
+  letter-spacing: .12em !important;
+  line-height: 1.2;
+}
+.hc-live-hub-hero h1 { overflow-wrap: normal; word-break: normal; }
+.hc-team-entity-profile :where(.hero,.card,.dashboard-card) :where(h2,h3) {
+  color: var(--hc-foreground, #0a0a0a);
+}
+html.theme-dark .hc-team-entity-profile :where(.hero,.card,.dashboard-card) :where(h2,h3) {
+  color: var(--hc-foreground, #f7f7f5);
+}
