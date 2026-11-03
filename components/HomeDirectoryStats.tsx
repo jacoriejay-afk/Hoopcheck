@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 type Stat = { label: string; value: number | null };
@@ -8,6 +8,27 @@ const roundDown = (value: number) => value <= 0 ? null : value < 10 ? value : va
 
 export default function HomeDirectoryStats() {
   const [stats, setStats] = useState<Stat[]>([]);
+  const [progress, setProgress] = useState(1);
+  const root = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!stats.length) return;
+    const desktop = window.matchMedia("(min-width: 1024px)").matches;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!desktop || reducedMotion) { setProgress(1); return; }
+    setProgress(0);
+    const node = root.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(entries => {
+      if (!entries.some(entry => entry.isIntersecting)) return;
+      observer.disconnect();
+      const start = performance.now();
+      const tick = (now: number) => { const next = Math.min(1, (now - start) / 720); setProgress(next); if (next < 1) requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+    }, { threshold: 0.25 });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [stats.length]);
+
   useEffect(() => {
     let active = true;
     void Promise.all([
@@ -36,9 +57,9 @@ export default function HomeDirectoryStats() {
   }, []);
 
   if (!stats.length) return null;
-  return <section className="hc-home-directory-stats" aria-label="Live directory totals">
+  return <section ref={root} className="hc-home-directory-stats" aria-label="Live directory totals">
     {stats.map(stat => <div className="hc-home-directory-stat" key={stat.label}>
-      <strong>{stat.value == null ? "" : `${stat.value.toLocaleString()}+`}</strong>
+      <strong>{stat.value == null ? "" : `${Math.floor(stat.value * progress).toLocaleString()}+`}</strong>
       <span>{stat.label}</span>
     </div>)}
   </section>;

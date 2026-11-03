@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useLanguage } from "./LanguageProvider";
 
 type TrustScoreDialProps = {
@@ -25,6 +26,13 @@ export default function TrustScoreDial({
   const circumference = 2 * Math.PI * radius;
   const safeScore = score === null ? 0 : Math.max(0, Math.min(100, score));
   const offset = circumference * (1 - safeScore / 100);
+  const [animated, setAnimated] = useState(false);
+  useEffect(() => {
+    setAnimated(false);
+    if (score === null || window.matchMedia("(prefers-reduced-motion: reduce)").matches || !window.matchMedia("(min-width: 1024px)").matches) { setAnimated(true); return; }
+    const frame = window.requestAnimationFrame(() => setAnimated(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [score]);
 
   return (
     <div className={`hc-trust-score hc-trust-score--${size}`}>
@@ -40,7 +48,7 @@ export default function TrustScoreDial({
             strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={circumference}
-            strokeDashoffset={offset}
+            strokeDashoffset={animated ? offset : circumference}
             transform={`rotate(-90 ${dimension / 2} ${dimension / 2})`}
           />}
         </svg>
