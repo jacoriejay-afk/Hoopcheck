@@ -1,7 +1,7 @@
 /* DESK-3 — desktop visual identity. Mobile is deliberately untouched. */
 .hc-d3-desktop-only,.hc-d3-desktop-search,.hc-d3-ticker{display:none}
 .hc-d3-desktop-trust{display:none}
-.hc-d3-mobile-trust{display:block}
+.hc-d3-mobile-trust{display:contents}
 .hc-d3-mobile-only{display:block}
 @media (min-width:1024px){
   .hc-d3-desktop-only,.hc-d3-desktop-search,.hc-d3-ticker{display:block}
