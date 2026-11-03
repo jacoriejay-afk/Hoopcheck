@@ -41,3 +41,46 @@
 .hc-ia-feed-card small { color:var(--hc-muted); font-size:11px; }
 .hc-ia-account-link { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 2px; color:var(--hc-muted); font-size:12px; font-weight:700; text-decoration:none; }
 @media(max-width:640px){.hc-ia-door-grid,.hc-ia-fan-grid{grid-template-columns:1fr}.hc-ia-home .page-container{width:calc(100% - 28px)}.hc-ia-live-strip{padding:12px}.hc-ia-live-strip>span:last-child{font-size:11px}}
+
+
+/* Dark-mode surface contract: the IA-1 dashboard cards must not retain legacy
+   hard-coded white backgrounds. Keep these semantic surfaces paired with the
+   active theme tokens, including nested labels and icons. */
+html.theme-dark main.hc-ia-home :is(
+  .hc-ia-identity,
+  .hc-ia-completion,
+  .hc-ia-live-strip,
+  .hc-ia-door,
+  .hc-ia-follow-list,
+  .hc-ia-feed-card
+) {
+  background-color: var(--hc-surface-raised, #171717) !important;
+  color: var(--hc-foreground, #F5F5F0) !important;
+  border-color: var(--hc-border, #333333) !important;
+}
+html.theme-dark main.hc-ia-home :is(
+  .hc-ia-identity,
+  .hc-ia-completion,
+  .hc-ia-live-strip,
+  .hc-ia-door,
+  .hc-ia-follow-list,
+  .hc-ia-feed-card
+) :where(strong, span, p, small, a, svg) {
+  color: inherit;
+}
+html.theme-dark main.hc-ia-home :is(
+  .hc-ia-identity small,
+  .hc-ia-completion small,
+  .hc-ia-live-strip small,
+  .hc-ia-door small,
+  .hc-ia-follow-list small,
+  .hc-ia-feed-card small,
+  .hc-ia-door > svg:last-child,
+  .hc-ia-follow-list svg
+) {
+  color: var(--hc-foreground-muted, #B8B8B3) !important;
+}
+html.theme-dark main.hc-ia-home .hc-ia-avatar {
+  background-color: var(--hc-surface-soft, #1B1B1B) !important;
+  color: var(--hc-foreground, #F5F5F0) !important;
+}
