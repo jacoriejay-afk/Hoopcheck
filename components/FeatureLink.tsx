@@ -11,15 +11,15 @@ type Props = {
   requiredTier?: MembershipTier;
   className?: string;
   children: ReactNode;
-  ariaLabel?: string;
+  ariaLabel?: string;\n  onClick?: () => void;
 };
 
-export default function FeatureLink({ href, requiredTier = "pro", className = "", children, ariaLabel }: Props) {
+export default function FeatureLink({ href, requiredTier = "pro", className = "", children, ariaLabel, onClick }: Props) {
   const { membershipTier, ready } = useAuthState();
   const locked = ready && !isAtLeastTier(membershipTier, requiredTier);
   return (
     <Link href={href} className={className + (locked ? " hc-feature-link is-tier-locked" : " hc-feature-link")}
-      aria-label={ariaLabel}
+      aria-label={ariaLabel}\n      onClick={onClick}
       data-tier-locked={locked ? "true" : "false"}>
       {children}
       {locked && <span className="hc-feature-lock-state"><HoopIcon name="lock" size={13}/><small>{requiredTier === "premium" ? "Premium" : "Pro"}</small></span>}
