@@ -12,6 +12,7 @@ type AuthState = {
   membershipTier: MembershipTier;
   membershipActive: boolean;
   membershipReady: boolean;
+  membershipError: boolean;
   refreshMembership: () => Promise<void>;
 };
 
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthState>({
   membershipTier: "free",
   membershipActive: false,
   membershipReady: false,
+  membershipError: false,
   refreshMembership: async () => {},
 });
 
@@ -35,6 +37,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [membershipTier, setMembershipTier] = useState<MembershipTier>("free");
   const [membershipActive, setMembershipActive] = useState(false);
   const [membershipReady, setMembershipReady] = useState(false);
+  const [membershipError, setMembershipError] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -62,10 +65,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     if (!userId) {
       setMembershipTier("free");
       setMembershipActive(false);
+      setMembershipError(false);
       setMembershipReady(true);
       return;
     }
     setMembershipReady(false);
+    setMembershipError(false);
     try {
       const { data, error } = await supabase.from("subscriptions")
         .select("plan,status,access_status,current_period_end")
@@ -78,6 +83,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     } catch {
       setMembershipActive(false);
       setMembershipTier("free");
+      setMembershipError(true);
     } finally {
       setMembershipReady(true);
     }
@@ -95,6 +101,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       membershipTier,
       membershipActive,
       membershipReady,
+      membershipError,
       refreshMembership,
     }}>
       {children}
