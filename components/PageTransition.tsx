@@ -3,15 +3,17 @@
 import { usePathname } from "next/navigation";
 
 /**
- * Keeps one shared, lightweight entrance animation for every App Router page.
- * Keying by pathname remounts only the page slot; global providers and navigation
- * remain mounted, so auth/theme/language state does not reset on navigation.
+ * Shared route content wrapper.
+ *
+ * Intentionally does not key/remount the wrapper by pathname: Next App Router
+ * owns route changes and should retain shared/client state where possible.
+ * Route-level loading.tsx boundaries provide feedback while segments load.
  */
 export default function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div key={pathname} className="hc-route-transition" data-route={pathname}>
+    <div className="hc-route-transition" data-route={pathname}>
       {children}
     </div>
   );
