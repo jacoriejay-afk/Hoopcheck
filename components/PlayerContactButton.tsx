@@ -25,7 +25,7 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
     if(!userId){return;}
     const [profileResult,subscriptionResult,requestResult]=await Promise.all([
       supabase.from("profiles").select("account_type").eq("id",userId).maybeSingle(),
-      supabase.from("subscriptions").select("plan,status").eq("user_id",userId).maybeSingle(),
+      supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",userId).maybeSingle(),
       supabase.from("player_contact_requests").select("id,requester_id,player_id,message,status,created_at").or(`requester_id.eq.${userId},player_id.eq.${userId}`).eq("player_id",playerId).maybeSingle()
     ]);
     setAccountType(profileResult.data?.account_type||"");
