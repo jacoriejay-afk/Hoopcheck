@@ -29,8 +29,6 @@ export default function TeamDirectoryRow({
   trustScore = null, trustReviewCount = 0, logoUrl = null, logoBg = "transparent", trustTier = "unknown",
 }: TeamDirectoryRowProps) {
   const { t } = useLanguage();
-  const metadata = [city, country, leagueName].filter(Boolean).join(", ") || t("international");
-  const hasReviews = trustReviewCount > 0;
   const hasTrustScore = typeof trustScore === "number" && Number.isFinite(trustScore);
   return (
     <Surface className={"hc-team-directory-row hc-scout-card hc-team-directory-row--" + kind}>
@@ -39,7 +37,7 @@ export default function TeamDirectoryRow({
           <TeamLogo name={name} logoUrl={logoUrl} logoBg={logoBg} size={48} />
           <span className="hc-scout-card__identity-copy">
             <h2 title={name}>{name}</h2>
-            <p title={metadata}>{metadata}</p><span className="hc-scout-card__details"><small>{leagueName || "League not listed"}</small><small>{country || "Country not listed"}</small></span>
+            <p>{city || "City not listed"}</p><span className="hc-scout-card__details"><small>{leagueName || "League not listed"}</small><small>{country || "Country not listed"}</small></span>
           </span>
           <span className="hc-team-directory-row__arrow" aria-hidden="true"><HoopIcon name="chevron-right" size={18} /></span>
         </span>
