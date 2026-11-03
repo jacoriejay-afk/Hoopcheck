@@ -11,6 +11,23 @@ export default function HomeDirectoryStats() {
   const [progress, setProgress] = useState(0);
   const root = useRef<HTMLElement | null>(null);
   useEffect(() => {
+    if (!stats.length) return;
+    const node = root.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(entries => {
+      if (!entries.some(entry => entry.isIntersecting)) return;
+      observer.disconnect();
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduced) { setProgress(1); return; }
+      const start = performance.now();
+      const tick = (now: number) => { const next = Math.min(1, (now - start) / 720); setProgress(next); if (next < 1) requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+    }, { threshold: 0.25 });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [stats.length]);
+
+  useEffect(() => {
     let active = true;
     void Promise.all([
       supabase.from("profiles").select("id", { count: "exact", head: true })
