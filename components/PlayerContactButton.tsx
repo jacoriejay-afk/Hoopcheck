@@ -2,14 +2,15 @@
 
 import Link from "next/link"; // Used by compact sign-in and upgrade actions.
 import { useEffect, useState } from "react";
-import { getCachedSession, supabase } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
+import { useAuthState } from "./AuthProvider";
 import { isAtLeastTier } from "../lib/membership-tier";
 
 type RequestRow = { id:string; requester_id:string; player_id:string; message:string|null; status:string; created_at:string; };
 type MessageRow = { id:string; request_id:string; sender_id:string; body:string; created_at:string; };
 
 export default function PlayerContactButton({ playerId, compact = false }: { playerId:string; compact?: boolean }) {
-  const [userId,setUserId]=useState("");
+  const { userId, ready: authReady } = useAuthState();
   const [accountType,setAccountType]=useState("");
   const [premium,setPremium]=useState(false);
   const [request,setRequest]=useState<RequestRow|null>(null);
@@ -20,14 +21,11 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
   const [messages,setMessages]=useState<MessageRow[]>([]);
 
   async function load(){
-    const {data:{session}}=await getCachedSession();
-    const user=session?.user;
-    if(!user){return;}
-    setUserId(user.id);
+    if(!userId){return;}
     const [profileResult,subscriptionResult,requestResult]=await Promise.all([
-      supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle(),
-      supabase.from("subscriptions").select("plan,status").eq("user_id",user.id).maybeSingle(),
-      supabase.from("player_contact_requests").select("id,requester_id,player_id,message,status,created_at").or(`requester_id.eq.${user.id},player_id.eq.${user.id}`).eq("player_id",playerId).maybeSingle()
+      supabase.from("profiles").select("account_type").eq("id",userId).maybeSingle(),
+      supabase.from("subscriptions").select("plan,status").eq("user_id",userId).maybeSingle(),
+      supabase.from("player_contact_requests").select("id,requester_id,player_id,message,status,created_at").or(`requester_id.eq.${userId},player_id.eq.${userId}`).eq("player_id",playerId).maybeSingle()
     ]);
     setAccountType(profileResult.data?.account_type||"");
     setPremium(isAtLeastTier(subscriptionResult.data?.plan, "pro") && (subscriptionResult.data?.status==="active" || subscriptionResult.data?.status==="trialing"));
@@ -38,7 +36,7 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
       setMessages((m||[]) as MessageRow[]);
     }
   }
-  useEffect(()=>{void load()},[playerId]);
+  useEffect(()=>{if(authReady)void load()},[playerId,userId,authReady]);
 
   useEffect(()=>{
     if(!request?.id || request.status!=="accepted") return;
