@@ -204,3 +204,29 @@
   .hc-home-directory-stats { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .hc-home-directory-stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
 }
+
+@media (min-width: 761px) {
+  /* Route content participates in the same shell column even when legacy pages add wrappers. */
+  .hc-global-page-shell .hc-route-transition > main:not(.hc-reading-page):not(.legal-page) {
+    width: 100% !important;
+    max-width: 1760px !important;
+    margin-inline: auto !important;
+  }
+  .hc-global-page-shell .hc-route-transition > main > .page-container,
+  .hc-global-page-shell .hc-route-transition > main > section,
+  .hc-global-page-shell .hc-route-transition > main > article {
+    width: 100% !important;
+    max-width: 1760px !important;
+    margin-inline: auto !important;
+  }
+  .hc-global-page-shell .hc-route-transition > main .hc-entity-profile-page,
+  .hc-global-page-shell .hc-route-transition > main .hc-team-entity-profile,
+  .hc-global-page-shell .hc-route-transition > main .hc-womens-profile-page {
+    width: 100% !important;
+    max-width: 1760px !important;
+  }
+  .hc-global-page-shell .hc-route-transition > main :where(.hc-team-profile-sections, .hc-team-profile-content, .hc-team-detail-sections) {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
