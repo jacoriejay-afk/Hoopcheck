@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import Logo from "../../components/Logo";
 import { supabase } from "../../lib/supabase";
@@ -12,6 +12,15 @@ export default function LoginPage() {
   const [messageIsSuccess, setMessageIsSuccess] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [reason, setReason] = useState("");
+  const [returnTo, setReturnTo] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setReason(params.get("reason")?.trim() || "");
+    const candidate = params.get("returnTo") || "";
+    if (candidate.startsWith("/") && !candidate.startsWith("//")) setReturnTo(candidate);
+  }, []);
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,7 +63,8 @@ export default function LoginPage() {
       setMessage("Login successful! Your account is working. Opening your HoopCheck workspace…");
       setMessageIsSuccess(true);
       window.setTimeout(() => {
-        window.location.replace(needsOnboarding ? "/onboarding" : "/dashboard");
+        const destination = needsOnboarding ? "/onboarding" : (returnTo || "/dashboard");
+        window.location.replace(destination);
       }, 900);
     } catch (error) {
       console.error("Login failed:", error);
@@ -99,6 +109,7 @@ export default function LoginPage() {
           Log in to research coaches, teams, leagues, and player experiences
           around the world.
         </p>
+        {reason && <p className="hc-auth-reason" role="status">{reason}</p>}
       </section>
 
       <section className="hc-auth-form-section" style={{ maxWidth: "520px", margin: "0 auto", padding: "20px 6% 100px" }}>
@@ -144,7 +155,7 @@ export default function LoginPage() {
 
           <p className="muted" style={{ marginTop: 22, marginBottom: 0 }}>
             Don&apos;t have a HoopCheck account?{" "}
-            <Link href="/signup" style={{ color: "var(--orange)", fontWeight: 900 }}>Create one</Link>
+            <Link href={returnTo ? "/signup?returnTo=" + encodeURIComponent(returnTo) : "/signup"} style={{ color: "var(--orange)", fontWeight: 900 }}>Create one</Link>
           </p>
         </div>
       </section>
