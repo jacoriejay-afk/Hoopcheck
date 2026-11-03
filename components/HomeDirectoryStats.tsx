@@ -12,13 +12,15 @@ export default function HomeDirectoryStats() {
   const root = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (!stats.length) return;
+    const desktop = window.matchMedia("(min-width: 1024px)").matches;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!desktop || reducedMotion) { setProgress(1); return; }
+    setProgress(0);
     const node = root.current;
     if (!node) return;
     const observer = new IntersectionObserver(entries => {
       if (!entries.some(entry => entry.isIntersecting)) return;
       observer.disconnect();
-      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches || !window.matchMedia("(min-width: 1024px)").matches;
-      if (reduced) { setProgress(1); return; }
       const start = performance.now();
       const tick = (now: number) => { const next = Math.min(1, (now - start) / 720); setProgress(next); if (next < 1) requestAnimationFrame(tick); };
       requestAnimationFrame(tick);
