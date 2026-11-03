@@ -61,7 +61,7 @@ export default function TeamLogo({
         />
       ) : (
         <svg viewBox="0 0 100 100" aria-hidden="true" className="hc-team-logo__crest">
-          <path d="M50 5 88 20v28c0 22-15 37-38 47C27 85 12 70 12 48V20Z" fill="none" stroke="#F7F7F5" strokeWidth="4" />
+          <path d="M22 6H78L96 50 78 94H22L4 50Z" fill="none" stroke="#F7F7F5" strokeWidth="4" />
           <text x="50" y="57" textAnchor="middle" dominantBaseline="middle" fill="#F7F7F5" fontSize={initials(name).length > 1 ? "30" : "36"} fontWeight="900" fontFamily="Inter, Arial, sans-serif">{initials(name)}</text>
         </svg>
       )}
