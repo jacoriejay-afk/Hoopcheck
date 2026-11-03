@@ -181,3 +181,14 @@
   .hc-ia-home .hc-desk-how,.hc-ia-home .hc-desk-membership { display:none !important; }
   .hc-ia-home .hc-category-tile__count { display:none !important; }
 }
+
+@media (min-width:1024px) {
+  .hc-desk-games-section { grid-row:4; }
+  main.hc-coaches-directory-page .hc-coach-directory-tools { grid-column:1; grid-row:3; position:sticky; top:104px; padding:20px; border:1px solid var(--hc-border); border-radius:16px; background:var(--hc-surface-raised); }
+  main.hc-womens-directory-page .hc-womens-filters { grid-column:1; grid-row:3; position:sticky; top:104px; padding:20px; border:1px solid var(--hc-border); border-radius:16px; background:var(--hc-surface-raised); }
+  main.hc-coaches-directory-page .hc-coach-directory-summary,main.hc-team-directory-page .hc-directory-summary { grid-column:2; }
+  main.hc-coaches-directory-page .grid,main.hc-womens-directory-page .grid { grid-column:2; grid-row:3 / span 4; }
+}
+@media (max-width:1023px) {
+  .hc-ia-home .hc-desk-games-section { display:none !important; }
+}
