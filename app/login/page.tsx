@@ -63,7 +63,7 @@ export default function LoginPage() {
       setMessage("Login successful! Your account is working. Opening your HoopCheck workspace…");
       setMessageIsSuccess(true);
       window.setTimeout(() => {
-        const destination = needsOnboarding ? "/onboarding" : (returnTo || "/dashboard");
+        const destination = needsOnboarding ? (returnTo ? "/onboarding?returnTo=" + encodeURIComponent(returnTo) : "/onboarding") : (returnTo || "/dashboard");
         window.location.replace(destination);
       }, 900);
     } catch (error) {
