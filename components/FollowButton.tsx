@@ -104,7 +104,7 @@ export default function FollowButton({ targetType, targetId, variant = "default"
         type="button"
         className={variant === "club" ? `hc-team-follow-pill ${following ? "is-following" : "is-not-following"}` : "btn dark"}
         onClick={toggle}
-        disabled={busy}
+        disabled={busy || !authReady}
         title={following ? t("followingProfileTitle") : t("followProfileTitle")}
       >
         {following ? <HoopIcon name="check" size={15} /> : <HoopIcon name="user" size={15} />} {following ? t("following") : t("follow")}
