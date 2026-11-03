@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuthState } from "./AuthProvider";
 import FeatureLink from "./FeatureLink";
-import { isAtLeastTier } from "../lib/membership-tier";
+import { hasActiveMembershipAtLeast } from "../lib/membership-tier";
 
 type RequestRow = { id:string; requester_id:string; player_id:string; message:string|null; status:string; created_at:string; };
 type MessageRow = { id:string; request_id:string; sender_id:string; body:string; created_at:string; };
@@ -29,7 +29,7 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
       supabase.from("player_contact_requests").select("id,requester_id,player_id,message,status,created_at").or(`requester_id.eq.${userId},player_id.eq.${userId}`).eq("player_id",playerId).maybeSingle()
     ]);
     setAccountType(profileResult.data?.account_type||"");
-    setPremium(isAtLeastTier(subscriptionResult.data?.plan, "pro") && (subscriptionResult.data?.status==="active" || subscriptionResult.data?.status==="trialing"));
+    setPremium(hasActiveMembershipAtLeast(subscriptionResult.data, "pro"));
     const r=requestResult.data as RequestRow|null;
     setRequest(r);
     if(r?.status==="accepted"){
