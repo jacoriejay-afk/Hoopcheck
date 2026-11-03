@@ -237,3 +237,10 @@
   .hc-scout-card__details { display: flex; flex-wrap: wrap; gap: 8px 14px; min-width: 0; }
   .hc-scout-card__details small { color: var(--hc-foreground-muted, #666); font-size: 11px; font-weight: 750; }
 }
+
+.global-back-wrap {
+  width: 100%;
+  max-width: 1760px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
