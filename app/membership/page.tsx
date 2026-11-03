@@ -5,6 +5,7 @@ import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { useAuthState } from "../../components/AuthProvider";
 
 type Plan = "pro" | "premium";
 type BillingInterval = "month" | "6_month" | "year";
@@ -19,6 +20,7 @@ type Subscription = {
 
 function MembershipContent() {
   const searchParams = useSearchParams();
+  const { signedIn } = useAuthState();
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
@@ -237,6 +239,7 @@ function MembershipContent() {
 
   const isActive =
     subscription?.status === "active" || subscription?.status === "trialing";
+  const currentPlan = isActive && subscription?.plan === "premium" ? "premium" : isActive && subscription?.plan === "pro" ? "pro" : "free";
 
   return (
     <main className="hc-membership-page">
@@ -266,7 +269,7 @@ function MembershipContent() {
             <span className="muted"> You can keep using your current access or choose a paid membership below.</span>
           </div>
         )}
-        {isActive && subscription?.stripe_subscription_id ? (
+        {isActive && subscription?.stripe_subscription_id && (
           <div className="active-card" id="manage-subscription">
             <div className="eyebrow">CURRENT MEMBERSHIP</div>
             <h2>
@@ -305,8 +308,8 @@ function MembershipContent() {
               subscription settings through the billing portal.
             </div>
           </div>
-        ) : (
-          <>
+        )}
+        <>
             <div className="section-heading">
               <div className="eyebrow">CHOOSE YOUR ACCESS</div>
               <h2>
@@ -345,10 +348,17 @@ function MembershipContent() {
               <button type="button" aria-pressed={billingInterval==="year"} className={billingInterval==="year" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 10%</small></button>
             </div>
             <div className="hc-membership-value"><span className="hc-membership-value__mark">★</span><div><strong>Best flexibility, better value.</strong><p>Choose monthly, 6-month, or annual billing. The total shown is the amount charged for the selected term.</p></div></div><div className="plans">
+              <div className="plan-card hc-free-plan-card">
+                <div className="plan-top"><div><div className="eyebrow">HOOPCHECK FREE</div><h3>Free</h3></div><div className="price"><strong>$0</strong><span>always free</span></div></div>
+                <p className="plan-description">Explore HoopCheck and build your basketball network.</p>
+                <ul><li>Browse the global directory</li><li>Create and manage your profile</li><li>Follow teams and players</li></ul>
+                {currentPlan === "free" && signedIn ? <button className="btn plan-button" disabled>Current plan</button> : currentPlan !== "free" ? <button className="btn plan-button" disabled>Included</button> : <Link href="/signup" className="btn plan-button">Create free account</Link>}
+                {currentPlan === "free" && signedIn && <div className="hc-current-plan-badge">CURRENT PLAN</div>}
+              </div>
               <div className="plan-card">
                 <div className="plan-top">
                   <div>
-                    <div className="eyebrow">HOOPCHECK PRO</div>
+                    <div className="eyebrow">HOOPCHECK PRO</div>{currentPlan === "pro" && signedIn && <div className="hc-current-plan-badge">CURRENT PLAN</div>}
                     <h3>Pro</h3>
                   </div>
                   <div className="price">
@@ -367,17 +377,11 @@ function MembershipContent() {
                   <li>Team research</li>
                   <li>League research</li>
                 </ul>
-                <button
-                  className="btn plan-button"
-                  onClick={() => startCheckout("pro")}
-                  disabled={checkoutLoading !== null || loading}
-                >
-                  {checkoutLoading === `pro-${billingInterval}` ? "Opening Checkout..." : `Get Pro — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}
-                </button>
+                {currentPlan === "pro" && signedIn ? <button className="btn plan-button" disabled>Current plan</button> : currentPlan === "premium" ? <button className="btn plan-button" disabled>Included</button> : <button className="btn plan-button" onClick={() => startCheckout("pro")} disabled={checkoutLoading !== null || loading}>{checkoutLoading === `pro-${billingInterval}` ? "Opening Checkout..." : `Upgrade to Pro — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}</button>}
               </div>
 
               <div className="plan-card featured">
-                <div className="featured-badge">MORE ACCESS</div>
+                {currentPlan === "premium" && signedIn ? <div className="hc-current-plan-badge">CURRENT PLAN</div> : <div className="featured-badge">MORE ACCESS</div>}
                 <div className="plan-top">
                   <div>
                     <div className="eyebrow">HOOPCHECK PREMIUM</div>
@@ -400,13 +404,7 @@ function MembershipContent() {
                   <li>Premium discovery features</li>
                   <li>Priority access to new features</li>
                 </ul>
-                <button
-                  className="btn plan-button"
-                  onClick={() => startCheckout("premium")}
-                  disabled={checkoutLoading !== null || loading}
-                >
-                  {checkoutLoading === `premium-${billingInterval}` ? "Opening Checkout..." : `Get Premium — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}
-                </button>
+                {currentPlan === "premium" && signedIn ? <button className="btn plan-button" disabled>Current plan</button> : <button className="btn plan-button" onClick={() => startCheckout("premium")} disabled={checkoutLoading !== null || loading}>{checkoutLoading === `premium-${billingInterval}` ? "Opening Checkout..." : `Upgrade to Premium — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}</button>}
               </div>
             </div>
 
@@ -428,7 +426,6 @@ function MembershipContent() {
               </p>
             </div>
           </>
-        )}
       </section>
 
       <section className="hero bottom-cta">
