@@ -7,6 +7,7 @@ import { useAuthState } from "./AuthProvider";
 import { useLanguage } from "./LanguageProvider";
 import { supabase } from "../lib/supabase";
 import Logo from "./Logo";
+import FeatureLink from "./FeatureLink";
 
 function SearchIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.4" /><path d="m16 16 4.5 4.5" /></svg>; }
 function UserIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5" /><path d="M4.5 21c.4-4.4 3-6.7 7.5-6.7s7.1 2.3 7.5 6.7Z" /></svg>; }
@@ -21,7 +22,7 @@ export default function SiteHeader() {
     <Link href={signedIn?"/dashboard":"/"} className="site-header-brand" aria-label="HoopCheck home"><Logo variant="full" size={42}/></Link>
     <button type="button" className="hc-mobile-menu-toggle" aria-label={menuOpen?"Close menu":"Open menu"} aria-expanded={menuOpen} onClick={()=>setMenuOpen(v=>!v)}><span/><span/><span/></button>
     <nav className={menuOpen?"hc-header-nav is-open":"hc-header-nav"} aria-label="Primary navigation">
-      <div className="hc-header-links">{links.map(item=><Link key={item.href} href={item.href} className={active(item.href)?"is-active":""} onClick={closeMenu}>{item.label}</Link>)}</div>
+      <div className="hc-header-links">{links.map(item=>["/live-games","/connections"].includes(item.href)||item.href==="/feed" ? <FeatureLink key={item.href} href={item.href} className={active(item.href)?"is-active":""}>{item.label}</FeatureLink> : <Link key={item.href} href={item.href} className={active(item.href)?"is-active":""} onClick={closeMenu}>{item.label}</Link>)}</div>
       <div className="hc-header-actions"><Link href="/search" className="hc-header-icon" aria-label={t("search")} onClick={closeMenu}><SearchIcon/></Link>{!signedIn&&<Link href="/login" className="hc-signin-button" onClick={closeMenu}>SIGN IN <span aria-hidden="true">↗</span></Link>}<Link href={signedIn?"/account":"/login"} className="hc-header-icon" aria-label={signedIn?"Account":"Sign in"} onClick={closeMenu}><UserIcon/></Link></div>
     </nav>
   </header>;
