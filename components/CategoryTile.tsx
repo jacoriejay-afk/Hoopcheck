@@ -32,12 +32,14 @@ export default function CategoryTile({
   category,
   href,
   description,
+  count,
   className = "",
 }: {
   label: string;
   category: CategoryTileKind;
   href: string;
   description?: string;
+  count?: number;
   className?: string;
 }) {
   const color = categoryColors[category];
