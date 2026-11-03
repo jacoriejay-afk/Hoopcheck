@@ -1,0 +1,69 @@
+/* DESK-2 — desktop-only product presentation. No rules below 1023px. */
+@media (min-width:1024px) {
+  :root { --hc-content-max:1200px; --hc-page-gutter:24px; }
+  .hc-global-page-shell { width:100%; }
+  .hc-global-page-shell .page-shell { width:100%; max-width:none !important; padding:24px 24px 80px !important; }
+  .hc-global-page-shell .page-shell > .page-container,
+  .hc-global-page-shell .page-shell > main,
+  .hc-global-page-shell main.page-shell { width:min(100%,1200px); max-width:1200px !important; margin-inline:auto; }
+  .hc-global-page-shell main.page-shell { padding:24px 0 80px !important; }
+  main.hc-template-home.hc-ia-home { width:100%; max-width:none; padding:0 0 72px; }
+  main.hc-template-home.hc-ia-home .page-container { width:min(calc(100% - 48px),1200px); max-width:1200px; margin-inline:auto; display:grid; gap:0; }
+  .hc-ia-home .hc-ia-search { grid-row:2; margin:24px 0 0; width:100%; }
+  .hc-ia-home .hc-ia-welcome { grid-row:1; display:grid; grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr); align-items:center; gap:16px 48px; width:100%; min-height:340px; padding:52px 56px; border:1px solid var(--hc-border); border-radius:24px; background:linear-gradient(120deg,var(--hc-surface-raised) 0%,var(--hc-surface) 70%); box-shadow:0 14px 40px rgba(0,0,0,.06); }
+  html.theme-dark .hc-ia-home .hc-ia-welcome { background:linear-gradient(120deg,#151515 0%,#101010 70%); box-shadow:none; }
+  .hc-ia-welcome > .eyebrow,.hc-ia-welcome > h1,.hc-ia-welcome > .muted,.hc-ia-welcome > .hc-home-hero-actions { grid-column:1; }
+  .hc-ia-welcome > .eyebrow { margin:0; color:var(--hc-orange); font-size:12px; font-weight:850; letter-spacing:.14em; }
+  .hc-ia-welcome h1 { max-width:680px; margin:0; font-size:clamp(48px,5vw,56px); line-height:1.02; letter-spacing:-.045em; }
+  .hc-ia-welcome > .muted { max-width:570px; font-size:17px; line-height:1.55; }
+  .hc-home-hero-actions { display:flex; align-items:center; gap:18px; margin-top:4px; }
+  .hc-ia-welcome:after { content:""; grid-column:2; grid-row:1 / span 4; width:100%; min-height:210px; background:radial-gradient(ellipse at 65% 50%,rgba(255,90,31,.14),transparent 60%); border:1px solid var(--hc-border); border-radius:18px; }
+  .hc-ia-search .search-bar,.hc-ia-search form,.hc-ia-search .search-container { width:100%; max-width:none; }
+  .hc-ia-search input { min-height:60px; font-size:17px; }
+  .hc-ia-live-strip { grid-row:3; margin-top:40px; min-height:112px; padding:24px 28px; border-radius:18px; }
+  .hc-ia-live-strip > span:nth-child(2) { display:flex; align-items:center; gap:14px; font-size:18px; }
+  .hc-ia-live-strip small { font-size:13px; }
+  .hc-ia-section { margin-top:64px; gap:20px; }
+  .hc-ia-section-heading { margin-bottom:2px; }
+  .hc-ia-section-heading .eyebrow { color:var(--hc-orange); font-size:12px; margin-bottom:8px; }
+  .hc-ia-section-heading h2 { font-size:32px; line-height:1.12; }
+  .hc-ia-door-grid { grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px; }
+  .hc-ia-door { min-height:170px; padding:22px; align-items:flex-start; flex-direction:column; justify-content:space-between; border-radius:16px; transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
+  .hc-ia-door:hover { transform:translateY(-4px); border-color:var(--hc-orange); box-shadow:0 12px 28px rgba(0,0,0,.08); }
+  .hc-ia-door strong { font-size:15px; }
+  .hc-ia-door small { font-size:13px; }
+  .hc-shared-directory-hero,.hc-shared-directory-tiles { grid-column:1/-1; }
+  main.hc-team-directory-page,main.hc-coaches-directory-page,main.hc-leagues-directory-page,main.hc-player-directory-page,main.hc-womens-directory-page { width:min(calc(100% - 48px),1200px); max-width:1200px; padding:32px 0 80px; margin-inline:auto; display:grid; grid-template-columns:240px minmax(0,1fr); gap:20px 28px; align-items:start; }
+  .hc-shared-directory-hero { grid-column:1/-1; width:100%; padding:28px 0 8px; }
+  .hc-shared-directory-hero h1 { font-size:48px; line-height:1.05; }
+  .hc-shared-directory-tiles { grid-column:1/-1; width:100%; }
+  .hc-shared-directory-tile-grid { grid-template-columns:repeat(5,minmax(0,1fr)); }
+  main.hc-team-directory-page .research-search,main.hc-coaches-directory-page .research-search,main.hc-leagues-directory-page .research-search,main.hc-player-directory-page .research-search,main.hc-womens-directory-page .research-search,main.hc-leagues-directory-page .hc-league-filter { grid-column:1; grid-row:3; position:sticky; top:104px; width:100%; }
+  main.hc-team-directory-page .grid,main.hc-coaches-directory-page .grid,main.hc-leagues-directory-page .grid,main.hc-player-directory-page .grid,main.hc-womens-directory-page .grid { grid-column:2; grid-row:3 / span 4; width:100%; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; padding:0; }
+  main.hc-team-directory-page .team-filter-row,main.hc-coaches-directory-page .team-filter-row,main.hc-leagues-directory-page .team-filter-row,main.hc-player-directory-page .team-filter-row,main.hc-womens-directory-page .team-filter-row { display:grid; grid-template-columns:1fr; gap:12px; }
+  main.hc-team-directory-page .research-search,main.hc-coaches-directory-page .research-search,main.hc-leagues-directory-page .hc-league-filter,main.hc-player-directory-page .research-search,main.hc-womens-directory-page .research-search { padding:20px; border-radius:16px; }
+  .hc-team-directory-row { min-height:260px; }
+  .hc-team-entity-profile { width:min(calc(100% - 48px),1200px); max-width:1200px; margin-inline:auto; }
+  .hc-team-entity-profile > .hero:first-of-type { border-radius:20px; padding:28px; }
+  .hc-team-entity-profile > .hero:not(:first-of-type) { margin-top:0; }
+  .hc-team-entity-profile { grid-template-columns:minmax(0,1fr) 320px; gap:24px 32px; }
+  .hc-team-entity-profile > .hero:first-of-type { grid-column:1/-1; }
+  .hc-team-entity-profile > .hero:not(:first-of-type) { grid-column:1; }
+  .hc-team-entity-profile .hc-team-write-review,.hc-team-entity-profile .hc-team-facts-card { grid-column:2; }
+  .hc-team-entity-profile .hc-team-facts-card { grid-row:2; }
+  .hc-team-entity-profile .hc-team-write-review { grid-row:3; }
+  .site-footer { margin-top:64px; }
+  .site-footer .footer-inner,.site-footer .footer-bottom { width:min(calc(100% - 48px),1200px); max-width:1200px; padding-inline:0; }
+  .site-footer .footer-inner { grid-template-columns:minmax(260px,1.1fr) minmax(0,2fr); gap:64px; padding-block:56px; }
+  .site-footer .footer-links { grid-template-columns:repeat(3,minmax(0,1fr)); gap:32px; }
+  .site-footer .footer-bottom { padding-block:20px 28px; }
+  .hc-entity-profile-page,.player-profile-page { width:min(calc(100% - 48px),1200px); max-width:1200px; margin-inline:auto; }
+}
+@media (min-width:1280px) and (max-width:1919px) {
+  .hc-ia-door-grid { grid-template-columns:repeat(5,minmax(0,1fr)); }
+}
+@media (min-width:1024px) and (max-width:1279px) {
+  .hc-ia-door-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .hc-ia-door-grid > :nth-child(4),.hc-ia-door-grid > :nth-child(5) { grid-column:span 1; }
+  main.hc-team-directory-page .grid,main.hc-coaches-directory-page .grid,main.hc-leagues-directory-page .grid,main.hc-player-directory-page .grid,main.hc-womens-directory-page .grid { grid-template-columns:1fr; }
+}
