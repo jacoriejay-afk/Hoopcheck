@@ -6,6 +6,7 @@ import HoopLoading from "../../components/HoopLoading";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { useAuthState } from "../../components/AuthProvider";
+import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
 
 type Plan = "pro" | "premium";
 type BillingInterval = "month" | "6_month" | "year";
@@ -13,6 +14,7 @@ type BillingInterval = "month" | "6_month" | "year";
 type Subscription = {
   plan: Plan;
   status: string;
+  access_status?: string | null;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   stripe_subscription_id: string | null;
@@ -238,9 +240,8 @@ function MembershipContent() {
     }
   }
 
-  const isActive =
-    subscription?.status === "active" || subscription?.status === "trialing";
-  const currentPlan = loading || !authReady ? null : isActive && subscription?.plan === "premium" ? "premium" : isActive && subscription?.plan === "pro" ? "pro" : "free";
+  const isActive = hasActiveMembershipAtLeast(subscription, "pro");
+  const currentPlan = loading || !authReady ? null : hasActiveMembershipAtLeast(subscription, "premium") ? "premium" : isActive ? "pro" : "free";
 
   return (
     <main className="hc-membership-page">
