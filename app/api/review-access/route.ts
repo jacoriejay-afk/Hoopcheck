@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { calculateReviewSummary } from "../../../lib/review-summary";
 
 export const dynamic = "force-dynamic";
 
@@ -78,18 +79,14 @@ export async function GET(request: Request) {
       .order("created_at", { ascending: false });
     if (rowsError) throw rowsError;
     const rows = (rawRows || []) as unknown as Array<Record<string, unknown>>;
-    const avg = (key: string) => {
-      const values = rows.map((row: Record<string, unknown>) => Number(row[key]))
-        .filter((value: number) => Number.isFinite(value) && value >= 1 && value <= 5);
-      return values.length ? Math.round(values.reduce((sum: number, value: number) => sum + value, 0) / values.length * 100) / 100 : null;
-    };
+    const summary = calculateReviewSummary(rows, fullRead && entityType !== "womens-team");
     response.summary = {
-      overall_rating: avg("overall_rating"),
-      review_count: fullRead ? rows.length : undefined,
-      communication_rating: fullRead && entityType !== "womens-team" ? avg("communication_rating") : undefined,
-      professionalism_rating: fullRead && entityType !== "womens-team" ? avg("professionalism_rating") : undefined,
-      development_rating: fullRead && entityType !== "womens-team" ? avg("development_rating") : undefined,
-      payment_rating: fullRead && entityType !== "womens-team" ? avg("payment_rating") : undefined,
+      overall_rating: summary.overall_rating,
+      review_count: fullRead ? summary.review_count : undefined,
+      communication_rating: fullRead && entityType !== "womens-team" ? summary.communication_rating : undefined,
+      professionalism_rating: fullRead && entityType !== "womens-team" ? summary.professionalism_rating : undefined,
+      development_rating: fullRead && entityType !== "womens-team" ? summary.development_rating : undefined,
+      payment_rating: fullRead && entityType !== "womens-team" ? summary.payment_rating : undefined,
     };
     if (fullRead) response.reviews = rows;
 
