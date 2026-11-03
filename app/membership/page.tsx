@@ -26,6 +26,7 @@ function MembershipContent() {
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
+  const [subscriptionLoadFailed, setSubscriptionLoadFailed] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [billingInterval, setBillingInterval] = useState<BillingInterval>("month");
   const [accountType, setAccountType] = useState<string | null>(null);
@@ -38,6 +39,7 @@ function MembershipContent() {
 
   async function loadSubscription() {
     setLoading(true);
+    setSubscriptionLoadFailed(false);
     setError("");
 
     const {
@@ -67,6 +69,7 @@ function MembershipContent() {
     if (error) {
       console.error("Error loading subscription:", error);
       setError("We couldn't load your membership status.");
+      setSubscriptionLoadFailed(true);
     } else {
       setSubscription(data as Subscription | null);
       await refreshMembership();
@@ -241,7 +244,7 @@ function MembershipContent() {
   }
 
   const isActive = hasActiveMembershipAtLeast(subscription, "pro");
-  const currentPlan = loading || !authReady ? null : hasActiveMembershipAtLeast(subscription, "premium") ? "premium" : isActive ? "pro" : "free";
+  const currentPlan = loading || !authReady || subscriptionLoadFailed ? null : hasActiveMembershipAtLeast(subscription, "premium") ? "premium" : isActive ? "pro" : "free";
 
   return (
     <main className="hc-membership-page">
@@ -354,7 +357,7 @@ function MembershipContent() {
                 <div className="plan-top"><div><div className="eyebrow">HOOPCHECK FREE</div>{currentPlan === "free" && signedIn && <div className="hc-current-plan-badge">CURRENT PLAN</div>}<h3>Free</h3></div><div className="price"><strong>$0</strong><span>always free</span></div></div>
                 <p className="plan-description">Explore HoopCheck and build your basketball network.</p>
                 <ul><li>Browse the global directory</li><li>Create and manage your profile</li><li>Follow teams and players</li></ul>
-                {currentPlan === "free" && signedIn ? <button className="btn plan-button" disabled>Current plan</button> : currentPlan === null && signedIn ? <button className="btn plan-button" disabled>Checking plan…</button> : currentPlan !== "free" && currentPlan !== null ? <button className="btn plan-button" disabled>Included</button> : <Link href="/signup" className="btn plan-button">Create free account</Link>}
+                {currentPlan === "free" && signedIn ? <button className="btn plan-button" disabled>Current plan</button> : currentPlan === null && signedIn ? <button className="btn plan-button" disabled>{subscriptionLoadFailed ? "Unable to verify plan" : "Checking plan…"}</button> : currentPlan !== "free" && currentPlan !== null ? <button className="btn plan-button" disabled>Included</button> : <Link href="/signup" className="btn plan-button">Create free account</Link>}
               </div>
               <div className="plan-card">
                 <div className="plan-top">
@@ -378,7 +381,7 @@ function MembershipContent() {
                   <li>Team research</li>
                   <li>League research</li>
                 </ul>
-                {currentPlan === "pro" && signedIn ? <button className="btn plan-button" disabled>Current plan</button> : currentPlan === "premium" ? <button className="btn plan-button" disabled>Included</button> : currentPlan === null ? <button className="btn plan-button" disabled>Checking plan…</button> : <button className="btn plan-button" onClick={() => startCheckout("pro")} disabled={checkoutLoading !== null || loading}>{checkoutLoading === `pro-${billingInterval}` ? "Opening Checkout..." : `Upgrade to Pro — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}</button>}
+                {currentPlan === "pro" && signedIn ? <button className="btn plan-button" disabled>Current plan</button> : currentPlan === "premium" ? <button className="btn plan-button" disabled>Included</button> : currentPlan === null ? <button className="btn plan-button" disabled>{subscriptionLoadFailed ? "Unable to verify plan" : "Checking plan…"}</button> : <button className="btn plan-button" onClick={() => startCheckout("pro")} disabled={checkoutLoading !== null || loading}>{checkoutLoading === `pro-${billingInterval}` ? "Opening Checkout..." : `Upgrade to Pro — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}</button>}
               </div>
 
               <div className="plan-card featured">
