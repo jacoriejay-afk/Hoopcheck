@@ -60,7 +60,7 @@ function MembershipContent() {
 
     const { data, error } = await supabase
       .from("subscriptions")
-      .select("plan, status, current_period_end, cancel_at_period_end, stripe_subscription_id")
+      .select("plan, status, access_status, current_period_end, cancel_at_period_end, stripe_subscription_id")
       .eq("user_id", user.id)
       .maybeSingle();
 
