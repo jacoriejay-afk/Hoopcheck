@@ -192,3 +192,26 @@
 @media (max-width:1023px) {
   .hc-ia-home .hc-desk-games-section { display:none !important; }
 }
+
+@media (min-width:1024px) {
+  main.hc-team-directory-page > .hero:has(.research-search) { grid-column:1; grid-row:3; position:sticky; top:104px; margin:0; }
+  main.hc-team-directory-page > .hero:has(.research-search) .research-search { padding:20px; }
+  main.hc-team-directory-page > .hero:has(.dashboard-card:not(.research-search)) { grid-column:1/-1; }
+  main.hc-coaches-directory-page .hc-coach-directory-tools { grid-column:1; grid-row:3; }
+  main.hc-coaches-directory-page .hc-coach-directory-summary { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+  main.hc-leagues-directory-page .hc-league-filter { grid-column:1; grid-row:3; }
+  main.hc-player-directory-page > .page-container { width:100%; max-width:1200px; display:grid; grid-template-columns:240px minmax(0,1fr); gap:20px 28px; align-items:start; }
+  main.hc-player-directory-page > .page-container > .hc-shared-directory-hero,
+  main.hc-player-directory-page > .page-container > .hc-shared-directory-tiles { grid-column:1/-1; }
+  main.hc-player-directory-page > .page-container > .dashboard-card:has(.research-search) { grid-column:1; grid-row:3; position:sticky; top:104px; margin:0 !important; }
+  main.hc-player-directory-page > .page-container > :not(.hc-shared-directory-hero):not(.hc-shared-directory-tiles):not(.dashboard-card:has(.research-search)) { grid-column:2; }
+  main.hc-player-directory-page .hc-player-results,main.hc-player-directory-page .hc-player-result-count { grid-column:2; }
+  main.hc-womens-directory-page > .page-container { width:100%; max-width:1200px; display:grid; grid-template-columns:240px minmax(0,1fr); gap:20px 28px; align-items:start; }
+  main.hc-womens-directory-page > .page-container > .hc-shared-directory-hero,
+  main.hc-womens-directory-page > .page-container > .hc-shared-directory-tiles { grid-column:1/-1; }
+  main.hc-womens-directory-page .hc-womens-search-panel { grid-column:1; grid-row:3; position:sticky; top:104px; }
+  main.hc-womens-directory-page .hc-womens-results-heading,main.hc-womens-directory-page .hc-womens-view-toggle,
+  main.hc-womens-directory-page .hc-womens-team-list,main.hc-womens-directory-page .hc-womens-empty-state,
+  main.hc-womens-directory-page .hc-womens-loading { grid-column:2; }
+  main.hc-womens-directory-page .hc-womens-team-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+}
