@@ -53,7 +53,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     let mounted = true;
     setMembershipTier("free");
     setMembershipActive(false);
-    if (!userId) return () => { mounted = false; };
+    if (!userId) { setMembershipReady(true); return () => { mounted = false; }; }
+    setMembershipReady(false);
     void supabase.from("subscriptions")
       .select("plan,status,access_status,current_period_end")
       .eq("user_id", userId)
@@ -64,7 +65,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         setMembershipActive(active);
         setMembershipTier(active && (data?.plan === "premium" || data?.plan === "pro") ? data.plan : "free");
         setMembershipReady(true);
-      });
+      }).catch(() => { if (mounted) setMembershipReady(true); });
     return () => { mounted = false; };
   }, [userId]);
 
