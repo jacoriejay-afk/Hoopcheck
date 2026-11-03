@@ -4015,3 +4015,10 @@ html.theme-dark .hc-live-hub-hero :where(p,.muted) {
 html.theme-dark .hc-team-entity-profile :where(.hero,.card,.dashboard-card) :where(h2,h3) {
   color: var(--hc-foreground, #f7f7f5);
 }
+
+/* Shared feature-link lock state: retain preview copy while making access explicit. */
+.hc-feature-link { position:relative; }
+.hc-feature-lock-state { display:inline-flex; align-items:center; gap:5px; width:max-content; margin-left:8px; padding:4px 7px; border:1px solid var(--hc-border,var(--border)); border-radius:999px; color:var(--hc-foreground-muted,var(--muted)); background:var(--hc-surface-soft,var(--surface)); font-size:10px; font-weight:800; line-height:1; vertical-align:middle; }
+.hc-feature-lock-state small { font-size:10px; font-weight:850; }
+.hc-feature-link.is-tier-locked .hc-feature-lock-state { color:var(--hc-orange,#FF5A1F); border-color:color-mix(in srgb,var(--hc-orange,#FF5A1F) 45%,transparent); }
+.hc-feature-link:focus-visible { outline:2px solid var(--hc-orange,#FF5A1F); outline-offset:3px; }
