@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import TeamLogo from "./TeamLogo";
 import TrustScoreDial from "./TrustScoreDial";
+import HomeDirectoryStats from "./HomeDirectoryStats";
 
 type Team = { id:string; name:string; country:string|null; city:string|null; league_name:string|null; logo_url:string|null; logo_bg:"transparent"|"light"|"dark"|null };
 type Game = { id:string; team_id:string; opponent_team_id:string|null; opponent_name:string; status:string; scheduled_at:string|null };
@@ -73,7 +74,7 @@ export default function HomeDesktopIdentity() {
           <p className="hc-d3-eyebrow">THE GLOBAL BASKETBALL INTELLIGENCE HUB</p>
           <h1>KNOW WHO YOU’RE<br/><em>SIGNING WITH.</em></h1>
           <p className="hc-d3-hero__sub">Real player experiences. Check the team, coach, or league before you commit.</p>
-          <div className="hc-d3-stats"><div><strong>GLOBAL</strong><span>DIRECTORY</span></div><div><strong>{countryCounts.length.toLocaleString()}</strong><span>COUNTRIES WITH TEAMS</span></div><div><strong>{countryCounts.reduce((n,c)=>n+c.count,0).toLocaleString()}</strong><span>ACTIVE MEN’S TEAMS</span></div></div>
+          <HomeDirectoryStats/>
           <div className="hc-home-hero-actions"><Link href="/signup" className="hc-template-cta hc-home-cta">CREATE YOUR ACCOUNT</Link><Link href="/login" className="hc-home-signin">SIGN IN</Link></div>
         </div>
         <div className="hc-d3-hero__visual">
