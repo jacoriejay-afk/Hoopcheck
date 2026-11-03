@@ -1,0 +1,28 @@
+"use client";
+
+import Link from "next/link";
+import type { ReactNode } from "react";
+import { isAtLeastTier, type MembershipTier } from "../lib/membership-tier";
+import { useAuthState } from "./AuthProvider";
+import { HoopIcon } from "./HoopCheckUI";
+
+type Props = {
+  href: string;
+  requiredTier?: MembershipTier;
+  className?: string;
+  children: ReactNode;
+  ariaLabel?: string;
+};
+
+export default function FeatureLink({ href, requiredTier = "pro", className = "", children, ariaLabel }: Props) {
+  const { membershipTier, ready } = useAuthState();
+  const locked = ready && !isAtLeastTier(membershipTier, requiredTier);
+  return (
+    <Link href={href} className={className + (locked ? " hc-feature-link is-tier-locked" : " hc-feature-link")}
+      aria-label={ariaLabel}
+      data-tier-locked={locked ? "true" : "false"}>
+      {children}
+      {locked && <span className="hc-feature-lock-state"><HoopIcon name="lock" size={13}/><small>{requiredTier === "premium" ? "Premium" : "Pro"}</small></span>}
+    </Link>
+  );
+}
