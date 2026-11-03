@@ -167,3 +167,17 @@
   .hc-category-tile__arrow { position:absolute; top:22px; right:20px; color:var(--hc-foreground-muted); }
   html.theme-light .hc-ia-door-grid .hc-category-tile { box-shadow:0 8px 24px rgba(10,10,10,.04); }
 }
+
+/* Keep the pre-DESK-2 mobile homepage composition intact below 1024px. */
+@media (max-width:1023px) {
+  .hc-ia-home .page-container { display:grid; }
+  .hc-desk-search-section { display:contents; }
+  .hc-ia-home .hc-ia-search { order:1; }
+  .hc-ia-home .hc-ia-welcome { order:2; }
+  .hc-ia-home .hc-ia-live-strip { order:3; }
+  .hc-ia-home .hc-desk-category-section { order:4; }
+  .hc-ia-home .hc-desk-hero-stats,.hc-ia-home .hc-desk-search-chips,
+  .hc-ia-home .hc-desk-game-rail,.hc-ia-home .hc-desk-directory,
+  .hc-ia-home .hc-desk-how,.hc-ia-home .hc-desk-membership { display:none !important; }
+  .hc-ia-home .hc-category-tile__count { display:none !important; }
+}
