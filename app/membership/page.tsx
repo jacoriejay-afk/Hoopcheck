@@ -408,7 +408,8 @@ function MembershipContent() {
               </div>
             </div>
 
-            <p className="hc-promo-hint">Have a promo code? Enter it on the secure Stripe Checkout page before you pay.</p>\n            <div className="subscription-legal">
+            <p className="hc-promo-hint">Have a promo code? Enter it on the secure Stripe Checkout page before you pay.</p>
+            <div className="subscription-legal">
               <p>
                 By purchasing a HoopCheck membership, you agree to our{" "}
                 <Link href="/terms">Terms of Service</Link> and acknowledge our{" "}
