@@ -23,6 +23,7 @@ export default function Home(){
  useEffect(()=>{getCachedSession().then(({data})=>{if(data.session)router.replace("/dashboard");});},[router]);
  return <main className="hc-template-home hc-home-redesign hc-ia-home hc-ia-public-home">
    <div className="hc-d3-desktop-only"><HomeDesktopIdentity/></div>
+   <div className="hc-d3-live-band hc-d3-desktop-only"><Link href="/live-games"><span>LIVE GAMES</span><span>OPEN THE HUB →</span></Link></div>
    <div className="page-container">
    <div className="hc-d3-mobile-only">
    <SearchBar className="hc-ia-search" name="q" placeholder="Search teams, coaches, leagues, or players" ariaLabel="Search basketball directory"/>
@@ -31,6 +32,7 @@ export default function Home(){
    <HomeDirectoryStats />
    </div>
    <div className="hc-d3-desktop-search"><SearchBar className="hc-ia-search" name="q" placeholder="Search teams, coaches, leagues, or players" ariaLabel="Search basketball directory"/></div>
+   <section className="hc-d3-membership-band hc-d3-desktop-only"><Link href="/membership"><span>MEMBERSHIP</span><span>EXPLORE OPTIONS →</span></Link></section>
    <section className="hc-ia-section"><div className="hc-ia-section-heading"><div><p className="eyebrow">YOUR NEXT MOVE</p><h2>EXPLORE HOOPCHECK</h2></div><Link href="/directory">All directories <HoopIcon name="arrow-right" size={15}/></Link></div><div className="hc-template-category-grid hc-home-category-grid hc-ia-door-grid">{categories.map(category=><CategoryTile key={category.label} label={category.label} category={category.category} href={category.href} description={category.subtitle} className="hc-home-category-tile"/>)}</div></section>
  </div></main>;
 }
