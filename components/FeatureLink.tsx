@@ -16,8 +16,8 @@ type Props = {
 };
 
 export default function FeatureLink({ href, requiredTier = "pro", className = "", children, ariaLabel, onClick }: Props) {
-  const { membershipTier, ready, membershipReady } = useAuthState();
-  const locked = ready && membershipReady && !isAtLeastTier(membershipTier, requiredTier);
+  const { membershipTier, ready, membershipReady, membershipError } = useAuthState();
+  const locked = ready && membershipReady && !membershipError && !isAtLeastTier(membershipTier, requiredTier);
   return (
     <Link href={href} className={className + (locked ? " hc-feature-link is-tier-locked" : " hc-feature-link")}
       aria-label={ariaLabel}
