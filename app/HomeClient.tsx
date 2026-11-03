@@ -7,6 +7,7 @@ import { getCachedSession } from "../lib/supabase";
 import CategoryTile, { type CategoryTileKind } from "../components/CategoryTile";
 import SearchBar from "../components/SearchBar";
 import { HoopIcon } from "../components/HoopCheckUI";
+import HomeDirectoryStats from "../components/HomeDirectoryStats";
 
 const categories:{label:string;subtitle:string;href:string;category:CategoryTileKind}[]=[
  {label:"Men’s Teams",subtitle:"Research teams before you sign",href:"/teams",category:"teams"},
@@ -23,6 +24,7 @@ export default function Home(){
    <SearchBar className="hc-ia-search" name="q" placeholder="Search teams, coaches, leagues, or players" ariaLabel="Search basketball directory"/>
    <header className="hc-ia-welcome"><p className="eyebrow">THE GLOBAL BASKETBALL INTELLIGENCE HUB</p><h1>KNOW WHO YOU’RE SIGNING WITH<span>.</span></h1><p className="muted">Real player experiences. Check the team, coach, or league before you commit.</p><div className="hc-home-hero-actions"><Link href="/signup" className="hc-template-cta hc-home-cta">CREATE YOUR ACCOUNT <HoopIcon name="arrow-right" size={17}/></Link><Link href="/login" className="hc-home-signin">SIGN IN <HoopIcon name="arrow-up-right" size={15}/></Link></div></header>
    <Link href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>LIVE GAMES</strong><small>See live and upcoming games</small></span><span>Open hub <HoopIcon name="arrow-right" size={16}/></span></Link>
+   <HomeDirectoryStats />
    <section className="hc-ia-section"><div className="hc-ia-section-heading"><div><p className="eyebrow">YOUR NEXT MOVE</p><h2>EXPLORE HOOPCHECK</h2></div><Link href="/directory">All directories <HoopIcon name="arrow-right" size={15}/></Link></div><div className="hc-template-category-grid hc-home-category-grid hc-ia-door-grid">{categories.map(category=><CategoryTile key={category.label} label={category.label} category={category.category} href={category.href} description={category.subtitle} className="hc-home-category-tile"/>)}</div></section>
  </div></main>;
 }
