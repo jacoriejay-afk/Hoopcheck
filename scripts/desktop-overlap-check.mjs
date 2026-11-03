@@ -7,7 +7,6 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 
 const baseURL = process.env.BASE_URL;
 if (!baseURL) throw new Error("Set BASE_URL to the deployment under test.");
@@ -17,12 +16,8 @@ try {
 } catch {
   throw new Error("Playwright is required. Install it in the test environment (npm i -D playwright) and install Chromium.");
 }
-const routes = process.env.ROUTES_JSON ? JSON.parse(process.env.ROUTES_JSON) : [
-  "/", "/teams", "/womens", "/coaches", "/leagues", "/players",
-  "/teams/desktop-audit-team", "/coaches/desktop-audit-coach",
-  "/leagues/desktop-audit-league", "/players/desktop-audit-player",
-  "/live-games", "/live-games/hub", "/feed", "/search", "/notifications", "/account", "/login"
-];
+if (!process.env.ROUTES_JSON) throw new Error("Set ROUTES_JSON to the 16 real, accessible route paths (including real entity slugs) for this environment.");
+const routes = JSON.parse(process.env.ROUTES_JSON);
 const widths = [1920, 1440, 1280, 1024];
 const outDir = process.env.SCREENSHOT_DIR || "artifacts/desktop-layout";
 fs.mkdirSync(outDir, { recursive: true });
@@ -39,7 +34,7 @@ try {
         const url = new URL(route, baseURL).toString();
         try {
           await page.goto(url, { waitUntil: "networkidle", timeout: 45000 });
-          await page.evaluate(() => document.fonts?.ready);
+          await page.evaluate(() => document.fonts.ready.then(() => true));
           const audit = await page.evaluate((allowed) => {
             const visible = (el) => {
               const s = getComputedStyle(el), r = el.getBoundingClientRect();
