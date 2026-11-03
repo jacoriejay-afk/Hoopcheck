@@ -1,8 +1,22 @@
 /* DESK-3 — desktop visual identity. Mobile is deliberately untouched. */
 .hc-d3-desktop-only,.hc-d3-desktop-search,.hc-d3-ticker{display:none}
+.hc-d3-desktop-trust{display:none}
+.hc-d3-mobile-trust{display:block}
 .hc-d3-mobile-only{display:block}
 @media (min-width:1024px){
   .hc-d3-desktop-only,.hc-d3-desktop-search,.hc-d3-ticker{display:block}
+  .hc-d3-desktop-trust{display:flex}
+  .hc-d3-mobile-trust{display:none}
+  .hc-d3-membership-band{width:100vw;margin-left:calc(50% - 50vw)}
+  .hc-team-directory-row{border-left:3px solid transparent;transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
+  .hc-team-directory-row--mens{--hc-d3-category:#6C3FD4}
+  .hc-team-directory-row--womens{--hc-d3-category:#E84393}
+  .hc-team-directory-row:hover{transform:translateY(-3px);border-left-color:var(--hc-d3-category,#FF5A1F);box-shadow:0 12px 28px #00000016}
+  .hc-team-directory-row .hc-trust-score--mini{align-items:center;gap:8px}
+  .hc-team-directory-row .hc-trust-score--mini .hc-trust-score__copy{display:none}
+  .hc-team-directory-row .hc-trust-score--mini .hc-trust-score__dial{width:48px!important;height:48px!important}
+  .hc-team-directory-row .hc-trust-score--mini svg{width:48px;height:48px}
+  .hc-team-directory-row .hc-trust-score--mini strong{font-family:var(--font-display),Georgia,serif;font-size:15px}
   .hc-d3-mobile-only{display:none}
   .hc-d3-desktop-search{max-width:1600px;margin:28px auto 0;padding:0 24px}
   .hc-d3-hero .hc-home-directory-stats{grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:28px 0 18px}
