@@ -45,7 +45,7 @@ export default function TeamDirectoryRow({
       <div className="hc-scout-card__stats" aria-label={t("teamReviewStatistics")}>
         {trustTier === "free" ? <div className="hc-directory-locked"><strong>Full player reviews require an eligible membership</strong><Link href="/membership" className="btn">Upgrade</Link></div>
         : trustTier === "pro" ? <div className="hc-directory-locked"><strong>Trust Score</strong><small>Full Trust Score details require Fan Premium</small><Link href="/membership" className="btn">Upgrade</Link></div>
-        : <><div className="hc-scout-card__stat"><strong>{hasTrustScore ? Math.round(trustScore) : "—"}</strong><small>Trust Score</small></div><div className="hc-scout-card__stat"><strong>{trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div></>
+        : <><div className="hc-scout-card__stat"><strong>{hasTrustScore ? Math.round(trustScore) : "—"}</strong><small>Trust Score</small></div><div className="hc-scout-card__stat"><strong>{trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div></>}
       </div>
       <footer className="hc-scout-card__ticket">
         <Link href={href} className="hc-scout-card__report-link">{t("openScoutingReport")} <span aria-hidden="true">→</span></Link>
