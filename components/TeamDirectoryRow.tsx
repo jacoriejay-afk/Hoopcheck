@@ -18,6 +18,7 @@ type TeamDirectoryRowProps = {
   trustScore?: number | null;
   trustReviewCount?: number;
   trustVerifiedReviewCount?: number;
+  followerCount?: number | null;
   trustExplanation?: string;
   averageRating?: number | null;
   logoUrl?: string | null;
@@ -27,7 +28,7 @@ type TeamDirectoryRowProps = {
 
 export default function TeamDirectoryRow({
   id, name, city, country, leagueName, href, kind = "mens", showFollow = true,
-  trustScore = null, trustReviewCount = 0, trustVerifiedReviewCount = 0, trustExplanation = "", logoUrl = null, logoBg = "transparent", trustTier = "unknown",
+  trustScore = null, trustReviewCount = 0, trustVerifiedReviewCount = 0, followerCount = null, trustExplanation = "", logoUrl = null, logoBg = "transparent", trustTier = "unknown",
 }: TeamDirectoryRowProps) {
   const { t } = useLanguage();
   const hasTrustScore = typeof trustScore === "number" && Number.isFinite(trustScore);
@@ -46,7 +47,7 @@ export default function TeamDirectoryRow({
       <div className="hc-scout-card__stats" aria-label={t("teamReviewStatistics")}>
         {trustTier === "free" ? <div className="hc-directory-locked"><strong>Full player reviews require an eligible membership</strong><Link href="/membership" className="btn">Upgrade</Link></div>
         : trustTier === "pro" ? <div className="hc-directory-locked"><strong>Trust Score</strong><small>Full Trust Score details require Fan Premium</small><Link href="/membership" className="btn">Upgrade</Link></div>
-        : <><div className="hc-d3-mobile-trust"><div className="hc-scout-card__stat"><strong>{hasTrustScore ? Math.round(trustScore) : "—"}</strong><small>Trust Score</small></div><div className="hc-scout-card__stat"><strong>{trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div></div><div className="hc-d3-desktop-trust"><TrustScoreDial score={hasTrustScore ? trustScore : null} explanation={trustExplanation || "Not enough player reviews to calculate a Trust Score yet."} reviewCount={trustReviewCount} verifiedReviewCount={trustVerifiedReviewCount} size="mini"/><div className="hc-scout-card__stat"><strong>{trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div></div></>}
+        : <><div className="hc-d3-mobile-trust"><div className="hc-scout-card__stat"><strong>{hasTrustScore ? Math.round(trustScore) : "—"}</strong><small>Trust Score</small></div><div className="hc-scout-card__stat"><strong>{trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div></div><div className="hc-d3-desktop-trust"><TrustScoreDial score={hasTrustScore ? trustScore : null} explanation={trustExplanation || "Not enough player reviews to calculate a Trust Score yet."} reviewCount={trustReviewCount} verifiedReviewCount={trustVerifiedReviewCount} size="mini"/><div className="hc-scout-card__stat"><strong>{trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div><div className="hc-scout-card__stat"><strong>{followerCount == null ? "—" : followerCount}</strong><small>FOLLOWERS</small></div></div></>}
       </div>
       <footer className="hc-scout-card__ticket">
         <Link href={href} className="hc-scout-card__report-link">{t("openScoutingReport")} <span aria-hidden="true">→</span></Link>
