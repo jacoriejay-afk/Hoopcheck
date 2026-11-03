@@ -139,7 +139,7 @@ export default function DashboardPage() {
 
         {completion < 100 && <Link href="/account#edit-profile" className="hc-ia-completion"><span><strong>{t("home.completeProfile")}</strong><small>{t("home.profileCompletion").replace("{percent}", String(completion))}</small></span><span>{t("home.continue")} <HoopIcon name="arrow-right" size={16}/></span></Link>}
 
-        <FeatureLink href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>{t("home.liveGames")}</strong><small>{t("home.liveDescription")}</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></Link>
+        <FeatureLink href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>{t("home.liveGames")}</strong><small>{t("home.liveDescription")}</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></FeatureLink>
 
         <section className="hc-ia-section">
           <div className="hc-ia-section-heading"><div><p className="eyebrow">{t("home.shortcuts")}</p><h2>{t("home.quickAccess")}</h2></div><Link href="/directory">{t("home.exploreAll")} <HoopIcon name="arrow-right" size={15}/></Link></div>
