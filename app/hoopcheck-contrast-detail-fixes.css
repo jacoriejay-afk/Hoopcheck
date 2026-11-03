@@ -1,0 +1,11 @@
+/* AUDIT-2: shared contrast contract for footer and primary navigation. */
+.site-footer { background:#0A0A0A !important; color:#F7F7F5 !important; }
+.site-footer .footer-links,.site-footer .footer-links strong,.site-footer .footer-links a,.site-footer .footer-links .muted,.site-footer .footer-bottom,.site-footer .footer-bottom span { color:#F7F7F5 !important; -webkit-text-fill-color:#F7F7F5 !important; }
+.site-footer .footer-links a:hover { color:#FF8A55 !important; -webkit-text-fill-color:#FF8A55 !important; }
+.site-header-global .hc-header-links > a { color:#F7F7F5 !important; -webkit-text-fill-color:#F7F7F5 !important; opacity:1 !important; }
+.site-header-global .hc-header-links > a:hover { color:#FF8A55 !important; -webkit-text-fill-color:#FF8A55 !important; background:rgba(255,90,31,.12) !important; }
+.site-header-global .hc-header-links > a.is-active { color:#FF8A55 !important; -webkit-text-fill-color:#FF8A55 !important; border-color:rgba(255,90,31,.75) !important; background:rgba(255,90,31,.14) !important; }
+.hc-team-logo--fallback { background:var(--hc-team-fallback,#8A2A0D) !important; border:0 !important; border-radius:0 !important; clip-path:polygon(25% 0,75% 0,100% 25%,100% 75%,75% 100%,25% 100%,0 75%,0 25%); }
+.hc-team-logo--fallback .hc-team-logo__crest { display:block; width:100%; height:100%; }
+.hc-team-logo--fallback .hc-team-logo__crest text { fill:#FFFFFF !important; font-weight:1000 !important; paint-order:stroke; stroke:rgba(0,0,0,.2); stroke-width:1px; }
+body:has(.hc-team-entity-profile) .global-back-button,body:has(.hc-womens-profile-page) .global-back-button,body:has(.hc-coach-entity-profile) .global-back-button,body:has(.hc-league-entity-profile) .global-back-button,body:has(.player-profile-page) .global-back-button { display:none !important; }
