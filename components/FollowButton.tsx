@@ -16,7 +16,6 @@ export default function FollowButton({ targetType, targetId, variant = "default"
   const [notify, setNotify] = useState(true);
   const [count, setCount] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -44,7 +43,9 @@ export default function FollowButton({ targetType, targetId, variant = "default"
       }
     });
     return () => { mounted = false; };
-  }, [targetType, targetId, userId, authReady]);  async function toggle() {
+  }, [targetType, targetId, userId, authReady]);
+
+  async function toggle() {
     if (!authReady || !userId) {
       window.location.href = "/login";
       return;
