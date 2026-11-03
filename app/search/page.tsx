@@ -133,8 +133,11 @@ function SearchContent() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
   useEffect(() => {
+    let active = true;
+
     async function search() {
       if (!query) {
+        if (!active) return;
         setCoaches([]);
         setTeams([]);
         setWomensTeams([]);
@@ -203,6 +206,7 @@ function SearchContent() {
             : Promise.resolve({ data: [], error: null }),
         ]);
 
+        if (!active) return;
         if (playerResult.error) throw playerResult.error;
         if (coachResult.error) throw coachResult.error;
         if (teamResult.error) throw teamResult.error;
@@ -210,20 +214,23 @@ function SearchContent() {
         if (leagueResult.error) throw leagueResult.error;
 
 
-        setPlayers((playerResult.data || []) as Player[]);
-        setCoaches(coachResult.data || []);
-        setTeams(teamResult.data || []);
-        setWomensTeams(womensTeamResult.data || []);
-        setLeagues(leagueResult.data || []);
+        if (active) {
+          setPlayers((playerResult.data || []) as Player[]);
+          setCoaches(coachResult.data || []);
+          setTeams(teamResult.data || []);
+          setWomensTeams(womensTeamResult.data || []);
+          setLeagues(leagueResult.data || []);
+        }
       } catch (err) {
         console.error(err);
-        setError("Something went wrong while searching. Please try again.");
+        if (active) setError("Something went wrong while searching. Please try again.");
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
 
-    search();
+    void search();
+    return () => { active = false; };
   }, [query, countryFilter, verifiedOnly, typeFilter]);
 
   useEffect(() => { setSearchInput(query); }, [query]);

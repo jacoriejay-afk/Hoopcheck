@@ -190,11 +190,7 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        <div className="bottom-back">
-          <button type="button" className="btn dark" onClick={() => window.history.back()}>
-            <HoopIcon name="arrow-right" size={16} style={{ transform: "rotate(180deg)" }} /> {t("back")}
-          </button>
-        </div>
+
       </div>
     </main>
   );

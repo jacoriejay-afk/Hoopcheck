@@ -33,23 +33,28 @@ const filteredLeagues = leagues.filter((league) => {
 });
 
 useEffect(() => {
+let active = true;
+
 async function loadLeagues() {
-const { data, error } = await supabase
-.from("leagues")
-.select("id, name, country, level, season, active")
-.eq("active", true)
-.order("name");
+  try {
+    const { data, error } = await supabase
+      .from("leagues")
+      .select("id, name, country, level, season, active")
+      .eq("active", true)
+      .order("name");
 
-  if (error) {
+    if (error) throw error;
+    if (active) setLeagues(data || []);
+  } catch (error) {
     console.error("Error loading leagues:", error);
-    setLeagues([]);
-  } else {
-    setLeagues(data || []);
+    if (active) setLeagues([]);
+  } finally {
+    if (active) setLoading(false);
   }
-  setLoading(false);
 }
-loadLeagues();
 
+void loadLeagues();
+return () => { active = false; };
 }, []);
 
 return (

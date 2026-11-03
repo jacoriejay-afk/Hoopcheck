@@ -3,9 +3,9 @@
 import { usePathname } from "next/navigation";
 
 /**
- * Keeps one shared, lightweight entrance animation for every App Router page.
- * Keying by pathname remounts only the page slot; global providers and navigation
- * remain mounted, so auth/theme/language state does not reset on navigation.
+ * Key the page slot to its pathname so the shared, lightweight entrance
+ * animation restarts on route changes. Global providers and navigation live
+ * outside this wrapper and remain mounted.
  */
 export default function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
