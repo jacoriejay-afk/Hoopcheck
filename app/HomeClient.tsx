@@ -24,7 +24,8 @@ export default function Home(){
  const router=useRouter();
  const [counts,setCounts]=useState(emptyCounts);
  const [teams,setTeams]=useState<Team[]>([]);
- const [reviewCounts,setReviewCounts]=useState<Record<string,number>>({});\n const [trustScores,setTrustScores]=useState<Record<string,number|null>>({});
+ const [reviewCounts,setReviewCounts]=useState<Record<string,number>>({});
+ const [trustScores,setTrustScores]=useState<Record<string,number|null>>({});
  const [games,setGames]=useState<Game[]>([]);
  useEffect(()=>{getCachedSession().then(({data})=>{if(data.session)router.replace("/dashboard");});},[router]);
  useEffect(()=>{
@@ -42,6 +43,7 @@ export default function Home(){
    if(!active)return;
    setCounts({teams:mens.count||0,womens:womens.count||0,coaches:coaches.count||0,leagues:leagues.count||0,players:players.count||0});
    const listed=(teamRows.data||[]) as Team[];setTeams(listed);
+   if(listed.length){try{const response=await fetch("/api/trust-score?entityType=team&entityIds="+listed.map(x=>encodeURIComponent(x.id)).join(","),{cache:"no-store"});const payload=response.ok?await response.json():null;if(active&&payload?.scores){const scores:Record<string,number|null>={};for(const [id,value] of Object.entries(payload.scores as Record<string,{score:number|null}>))scores[id]=value?.score??null;setTrustScores(scores);}}catch{}}
    setGames((gameRows.data||[]) as Game[]);
    if(listed.length){
     const reviews=await supabase.from("reviews").select("team_id").in("team_id",listed.map(x=>x.id)).eq("status","approved");
