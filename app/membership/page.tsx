@@ -20,7 +20,7 @@ type Subscription = {
 
 function MembershipContent() {
   const searchParams = useSearchParams();
-  const { signedIn, ready: authReady } = useAuthState();
+  const { signedIn, ready: authReady, refreshMembership } = useAuthState();
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,6 +67,7 @@ function MembershipContent() {
       setError("We couldn't load your membership status.");
     } else {
       setSubscription(data as Subscription | null);
+      await refreshMembership();
     }
 
     setLoading(false);
