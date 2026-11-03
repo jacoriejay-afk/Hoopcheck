@@ -169,7 +169,7 @@ try {
       const path = routeName === "dashboard" ? "/dashboard" : routeName === "feed" ? "/feed" : "/admin/directory";
       await page.goto(baseURL + path, { waitUntil: "domcontentloaded", timeout: 30000 });
       console.log("THEME_BROWSER_PAGE", JSON.stringify({ routeName, theme, url: page.url(), title: await page.title(), body: (await page.locator("body").innerText().catch(() => "")).slice(0, 240) }));
-      const wrapperSelector = routeName === "dashboard" ? "main.hc-dashboard-shell" : routeName === "feed" ? "main.hc-feed-page" : "main.admin-directory-shell";
+      const wrapperSelector = routeName === "dashboard" ? "main.hc-ia-home" : routeName === "feed" ? "main.hc-feed-page" : "main.admin-directory-shell";
       await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
       if (routeName === "feed") {
         await page.locator(".hc-feed-composer").waitFor({ state: "visible", timeout: 30000 });
