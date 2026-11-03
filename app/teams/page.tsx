@@ -39,6 +39,7 @@ export default function TeamsPage() {
   const [teams, setTeams] =
     useState<Team[]>([]);
   const [trustScores, setTrustScores] = useState<Record<string, TrustSummary>>({});
+  const [followerCounts, setFollowerCounts] = useState<Record<string, number>>({});
   const [teamCoordinates, setTeamCoordinates] = useState<Record<string, { latitude: number | null; longitude: number | null }>>({});
   const [mapTeams, setMapTeams] = useState<Team[]>([]);
   const [mapTrustScores, setMapTrustScores] = useState<Record<string, TrustSummary>>({});
@@ -175,7 +176,7 @@ export default function TeamsPage() {
 
 
   useEffect(() => {
-    if (!teams.length) { setTrustScores({}); return; }
+    if (!teams.length) { setTrustScores({}); setFollowerCounts({}); return; }
     let active = true;
     const ids = teams.map(team => team.id).filter(Boolean);
     void (async () => {
@@ -186,6 +187,22 @@ export default function TeamsPage() {
       const payload = response.ok ? await response.json() : null;
       if (active && payload?.scores) setTrustScores(payload.scores as Record<string, TrustSummary>);
     })().catch(() => { if (active) setTrustScores({}); });
+    return () => { active = false; };
+  }, [teams]);
+
+  useEffect(() => {
+    if (!teams.length) { setFollowerCounts({}); return; }
+    let active = true;
+    const ids = teams.map(team => team.id).filter(Boolean);
+    void Promise.all(ids.map(async id => {
+      const { count, error } = await supabase.from("follow_relationships")
+        .select("id", { count: "exact", head: true })
+        .eq("target_type", "team").eq("target_id", id);
+      return [id, error || count == null ? null : count] as const;
+    })).then(rows => {
+      if (!active) return;
+      setFollowerCounts(Object.fromEntries(rows.filter((row): row is readonly [string, number] => row[1] !== null)));
+    }).catch(() => { if (active) setFollowerCounts({}); });
     return () => { active = false; };
   }, [teams]);
 
@@ -343,7 +360,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           teams.map((team) => (
-            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={isPlayerAccount ? "player" : trustScores[team.id]?.tier} logoUrl={team.logo_url} logoBg={team.logo_bg} />
+            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} followerCount={followerCounts[team.id] ?? null} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={isPlayerAccount ? "player" : trustScores[team.id]?.tier} logoUrl={team.logo_url} logoBg={team.logo_bg} />
           ))
         )}
       </section>
