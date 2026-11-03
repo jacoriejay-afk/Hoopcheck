@@ -81,7 +81,7 @@ export default function DirectoryImportPage(){
         const category=String(row.basketball_type||"mens").trim().toLowerCase()==="womens"?"womens":"mens";
         const normalize=(value:string)=>value.normalize("NFKD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
         const [mensMatches,womensMatches]=await Promise.all([
-          supabase.from("teams").select("id,name,city,basketball_type").ilike("city",city||""),
+          (city ? supabase.from("teams").select("id,name,city,basketball_type").eq("city",city) : supabase.from("teams").select("id,name,city,basketball_type").is("city",null)),
           supabase.from("womens_teams").select("id,name,city"),
         ]);
         if(mensMatches.error||womensMatches.error){errors++;continue;}
