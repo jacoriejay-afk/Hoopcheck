@@ -52,12 +52,23 @@ const user = {
   user_metadata: { display_name: "Theme Test" },
   created_at: "2026-01-01T00:00:00.000Z",
 };
+const sessionIssuedAt = Math.floor(Date.now() / 1000);
+const sessionJwtPayload = btoa(JSON.stringify({
+  sub: userId,
+  aud: "authenticated",
+  role: "authenticated",
+  iat: sessionIssuedAt,
+  exp: sessionIssuedAt + 3600,
+})).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 const session = {
-  access_token: "theme-test-access-token",
+  // Supabase Auth decodes exp from the access-token JWT before accepting a
+  // persisted session. A plain fixture string is treated as an invalid token,
+  // which triggers refresh and leaves the dashboard stuck in its loading state.
+  access_token: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${sessionJwtPayload}.theme-test-signature`,
   refresh_token: "theme-test-refresh-token",
   token_type: "bearer",
   expires_in: 3600,
-  expires_at: Math.floor(Date.now() / 1000) + 3600,
+  expires_at: sessionIssuedAt + 3600,
   user,
 };
 const profile = {
