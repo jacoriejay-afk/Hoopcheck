@@ -230,3 +230,10 @@
     max-width: none !important;
   }
 }
+
+@media (min-width: 761px) {
+  .hc-scout-card__stats { grid-template-columns: repeat(2, minmax(0,1fr)) !important; }
+  .hc-scout-card__identity-copy { display: grid; grid-template-columns: minmax(0,1fr); gap: 3px; }
+  .hc-scout-card__details { display: flex; flex-wrap: wrap; gap: 8px 14px; min-width: 0; }
+  .hc-scout-card__details small { color: var(--hc-foreground-muted, #666); font-size: 11px; font-weight: 750; }
+}
