@@ -33,8 +33,9 @@ export default function HomeDesktopIdentity() {
   useEffect(()=>{
     let active=true;
     void (async()=>{
-      const [countryResult,teamResult,gameResult]=await Promise.all([
+      const [countryResult,womensCountryResult,teamResult,gameResult]=await Promise.all([
         supabase.from("teams").select("country").eq("active",true).eq("basketball_type","mens").not("country","is",null).limit(5000),
+        supabase.from("womens_teams").select("country").eq("active",true).not("country","is",null).limit(5000),
         supabase.from("teams").select("id,name,country,city,league_name,logo_url,logo_bg").eq("active",true).eq("basketball_type","mens").order("name").limit(1).maybeSingle(),
         supabase.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,scheduled_at").in("status",["live","scheduled"]).order("scheduled_at",{ascending:true,nullsFirst:false}).limit(12)
       ]);
