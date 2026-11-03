@@ -239,7 +239,7 @@ function MembershipContent() {
 
   const isActive =
     subscription?.status === "active" || subscription?.status === "trialing";
-  const currentPlan = isActive && subscription?.plan === "premium" ? "premium" : isActive && subscription?.plan === "pro" ? "pro" : "free";
+  const currentPlan = loading ? null : isActive && subscription?.plan === "premium" ? "premium" : isActive && subscription?.plan === "pro" ? "pro" : "free";
 
   return (
     <main className="hc-membership-page">
@@ -352,7 +352,7 @@ function MembershipContent() {
                 <div className="plan-top"><div><div className="eyebrow">HOOPCHECK FREE</div><h3>Free</h3></div><div className="price"><strong>$0</strong><span>always free</span></div></div>
                 <p className="plan-description">Explore HoopCheck and build your basketball network.</p>
                 <ul><li>Browse the global directory</li><li>Create and manage your profile</li><li>Follow teams and players</li></ul>
-                {currentPlan === "free" && signedIn ? <button className="btn plan-button" disabled>Current plan</button> : currentPlan !== "free" ? <button className="btn plan-button" disabled>Included</button> : <Link href="/signup" className="btn plan-button">Create free account</Link>}
+                {currentPlan === "free" && signedIn ? <button className="btn plan-button" disabled>Current plan</button> : currentPlan === null && signedIn ? <button className="btn plan-button" disabled>Checking plan…</button> : currentPlan !== "free" && currentPlan !== null ? <button className="btn plan-button" disabled>Included</button> : <Link href="/signup" className="btn plan-button">Create free account</Link>}
                 {currentPlan === "free" && signedIn && <div className="hc-current-plan-badge">CURRENT PLAN</div>}
               </div>
               <div className="plan-card">
@@ -377,7 +377,7 @@ function MembershipContent() {
                   <li>Team research</li>
                   <li>League research</li>
                 </ul>
-                {currentPlan === "pro" && signedIn ? <button className="btn plan-button" disabled>Current plan</button> : currentPlan === "premium" ? <button className="btn plan-button" disabled>Included</button> : <button className="btn plan-button" onClick={() => startCheckout("pro")} disabled={checkoutLoading !== null || loading}>{checkoutLoading === `pro-${billingInterval}` ? "Opening Checkout..." : `Upgrade to Pro — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}</button>}
+                {currentPlan === "pro" && signedIn ? <button className="btn plan-button" disabled>Current plan</button> : currentPlan === "premium" ? <button className="btn plan-button" disabled>Included</button> : currentPlan === null ? <button className="btn plan-button" disabled>Checking plan…</button> : <button className="btn plan-button" onClick={() => startCheckout("pro")} disabled={checkoutLoading !== null || loading}>{checkoutLoading === `pro-${billingInterval}` ? "Opening Checkout..." : `Upgrade to Pro — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}</button>}
               </div>
 
               <div className="plan-card featured">
@@ -404,7 +404,7 @@ function MembershipContent() {
                   <li>Premium discovery features</li>
                   <li>Priority access to new features</li>
                 </ul>
-                {currentPlan === "premium" && signedIn ? <button className="btn plan-button" disabled>Current plan</button> : <button className="btn plan-button" onClick={() => startCheckout("premium")} disabled={checkoutLoading !== null || loading}>{checkoutLoading === `premium-${billingInterval}` ? "Opening Checkout..." : `Upgrade to Premium — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}</button>}
+                {currentPlan === "premium" && signedIn ? <button className="btn plan-button" disabled>Current plan</button> : currentPlan === null ? <button className="btn plan-button" disabled>Checking plan…</button> : <button className="btn plan-button" onClick={() => startCheckout("premium")} disabled={checkoutLoading !== null || loading}>{checkoutLoading === `premium-${billingInterval}` ? "Opening Checkout..." : `Upgrade to Premium — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}</button>}
               </div>
             </div>
 
