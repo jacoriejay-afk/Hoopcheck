@@ -5,15 +5,14 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuthState } from "./AuthProvider";
 import FeatureLink from "./FeatureLink";
-import { hasActiveMembershipAtLeast } from "../lib/membership-tier";
+import { isAtLeastTier } from "../lib/membership-tier";
 
 type RequestRow = { id:string; requester_id:string; player_id:string; message:string|null; status:string; created_at:string; };
 type MessageRow = { id:string; request_id:string; sender_id:string; body:string; created_at:string; };
 
 export default function PlayerContactButton({ playerId, compact = false }: { playerId:string; compact?: boolean }) {
-  const { userId, ready: authReady } = useAuthState();
+  const { userId, ready: authReady, membershipTier, membershipReady, membershipError } = useAuthState();
   const [accountType,setAccountType]=useState("");
-  const [premium,setPremium]=useState(false);
   const [request,setRequest]=useState<RequestRow|null>(null);
   const [message,setMessage]=useState("");
   const [draft,setDraft]=useState("");
@@ -23,13 +22,11 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
 
   async function load(){
     if(!userId){return;}
-    const [profileResult,subscriptionResult,requestResult]=await Promise.all([
+    const [profileResult,requestResult]=await Promise.all([
       supabase.from("profiles").select("account_type").eq("id",userId).maybeSingle(),
-      supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",userId).maybeSingle(),
       supabase.from("player_contact_requests").select("id,requester_id,player_id,message,status,created_at").or(`requester_id.eq.${userId},player_id.eq.${userId}`).eq("player_id",playerId).maybeSingle()
     ]);
     setAccountType(profileResult.data?.account_type||"");
-    setPremium(hasActiveMembershipAtLeast(subscriptionResult.data, "pro"));
     const r=requestResult.data as RequestRow|null;
     setRequest(r);
     if(r?.status==="accepted"){
@@ -37,7 +34,7 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
       setMessages((m||[]) as MessageRow[]);
     }
   }
-  useEffect(()=>{if(authReady)void load()},[playerId,userId,authReady]);
+  useEffect(()=>{if(authReady && membershipReady)void load()},[playerId,userId,authReady,membershipReady]);
 
   useEffect(()=>{
     if(!request?.id || request.status!=="accepted") return;
@@ -79,8 +76,11 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
     setBusy(false);
   }
 
+  const premium = !membershipError && isAtLeastTier(membershipTier, "pro");
+
   if (compact) {
-    if (!authReady) return null;
+    if (!authReady || !membershipReady) return null;
+    if (membershipError) return <span className="contact-gate hc-contact-request-gate">Membership status unavailable</span>;
     if (!userId) {
       return <Link href="/login" className="btn">Sign in to Add</Link>;
     }
@@ -102,6 +102,7 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
     return null;
   }
 
+  if(membershipError && userId) return <div className="contact-gate hc-contact-request-gate"><strong>Membership status unavailable</strong><p className="muted">Refresh your account status before using player connections.</p></div>;
   if(accountType==="player" && request?.player_id===userId && request.status==="pending"){
     return <div className="contact-box hc-contact-request-card"><span className="card-kicker">PLAYER REQUEST</span><h3>Another Pro/Premium player wants to connect</h3><p className="muted">{request.message||"A player wants access to your profile and HoopFeed connection."}</p><div className="actions"><button className="btn" onClick={()=>void respond("accepted")} disabled={busy}>Accept</button><button className="btn dark" onClick={()=>void respond("rejected")} disabled={busy}>Decline</button></div>{info&&<p className="muted">{info}</p>}</div>;
   }
