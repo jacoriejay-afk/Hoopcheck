@@ -52,12 +52,23 @@ const user = {
   user_metadata: { display_name: "Theme Test" },
   created_at: "2026-01-01T00:00:00.000Z",
 };
+const sessionIssuedAt = Math.floor(Date.now() / 1000);
+const sessionJwtPayload = btoa(JSON.stringify({
+  sub: userId,
+  aud: "authenticated",
+  role: "authenticated",
+  iat: sessionIssuedAt,
+  exp: sessionIssuedAt + 3600,
+})).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 const session = {
-  access_token: "theme-test-access-token",
+  // Supabase Auth decodes exp from the access-token JWT before accepting a
+  // persisted session. A plain fixture string is treated as an invalid token,
+  // which triggers refresh and leaves the dashboard stuck in its loading state.
+  access_token: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${sessionJwtPayload}.theme-test-signature`,
   refresh_token: "theme-test-refresh-token",
   token_type: "bearer",
   expires_in: 3600,
-  expires_at: Math.floor(Date.now() / 1000) + 3600,
+  expires_at: sessionIssuedAt + 3600,
   user,
 };
 const profile = {
@@ -169,7 +180,7 @@ try {
       const path = routeName === "dashboard" ? "/dashboard" : routeName === "feed" ? "/feed" : "/admin/directory";
       await page.goto(baseURL + path, { waitUntil: "domcontentloaded", timeout: 30000 });
       console.log("THEME_BROWSER_PAGE", JSON.stringify({ routeName, theme, url: page.url(), title: await page.title(), body: (await page.locator("body").innerText().catch(() => "")).slice(0, 240) }));
-      const wrapperSelector = routeName === "dashboard" ? "main.hc-dashboard-shell" : routeName === "feed" ? "main.hc-feed-page" : "main.admin-directory-shell";
+      const wrapperSelector = routeName === "dashboard" ? "main.hc-ia-home" : routeName === "feed" ? "main.hc-feed-page" : "main.admin-directory-shell";
       await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
       if (routeName === "feed") {
         await page.locator(".hc-feed-composer").waitFor({ state: "visible", timeout: 30000 });
@@ -488,7 +499,7 @@ try {
       await page.getByText("ACCESO RÁPIDO", { exact: false }).waitFor({ state: "visible", timeout: 15000 });
       await page.screenshot({ path: `${artifactsDir}/language-live-03-dashboard-es.png`, fullPage: true, animations: "disabled" });
       assert.equal(await page.evaluate(() => performance.timeOrigin), beforeSwitchOrigin, "dashboard navigation performed a full document reload");
-      await page.locator('a[href="/teams"]').first().click();
+      await page.locator('a[href="/teams"]:visible').first().click();
       await page.waitForURL(/\/teams$/, { timeout: 15000 });
       await page.locator('a[href="/teams/' + teamFixture.id + '"]').first().click();
       await page.waitForURL(new RegExp("/teams/" + teamFixture.id + "$"), { timeout: 15000 });

@@ -114,14 +114,14 @@ export default function DashboardPage() {
 
   if(profile?.account_type==="fan") return (
     <main className="page-shell hc-ia-home"><div className="page-container">
-      <header className="hc-ia-welcome"><p className="eyebrow">FAN HQ</p><h1>YOUR BASKETBALL COMMUNITY<span>.</span></h1><p className="muted">Your teams, fan conversations, and live game rooms in one place.</p><div className="hc-ia-identity"><span className="hc-ia-avatar">{displayName.charAt(0).toUpperCase()}</span><span><small>SIGNED IN AS</small><strong>{displayName}</strong></span></div></header>
-      <section className="hc-ia-section"><h2>YOUR FAN SIDE</h2><div className="hc-ia-fan-grid">
-        <Link href="/team-hub" className="hc-ia-door"><CategoryIconTile category="teams" size="sm"/><span><strong>TEAM HUB</strong><small>Followed teams and updates</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-        <Link href="/fan-feed" className="hc-ia-door"><CategoryIconTile category="reviews" size="sm"/><span><strong>FAN HOOPFEED</strong><small>Posts from teams you follow</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-        <Link href="/fans" className="hc-ia-door"><CategoryIconTile category="players" size="sm"/><span><strong>FIND FAN</strong><small>Discover and connect with fans</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-        <Link href="/live-games" className="hc-ia-door"><CategoryIconTile category="leagues" size="sm"/><span><strong>LIVE GAMES</strong><small>{liveCounts.live} live · {liveCounts.upcoming} upcoming</small></span><HoopIcon name="chevron-right" size={18}/></Link>
+      <header className="hc-ia-welcome"><p className="eyebrow">{t("home.fanEyebrow")}</p><h1>{t("home.fanTitle")}<span>.</span></h1><p className="muted">{t("home.fanDescription")}</p><div className="hc-ia-identity"><span className="hc-ia-avatar">{displayName.charAt(0).toUpperCase()}</span><span><small>{t("home.signedIn")}</small><strong>{displayName}</strong></span></div></header>
+      <section className="hc-ia-section"><h2>{t("home.fanSide")}</h2><div className="hc-ia-fan-grid">
+        <Link href="/team-hub" className="hc-ia-door"><CategoryIconTile category="teams" size="sm"/><span><strong>{t("home.teamHub")}</strong><small>{t("home.teamHubDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
+        <Link href="/fan-feed" className="hc-ia-door"><CategoryIconTile category="reviews" size="sm"/><span><strong>{t("home.fanFeed")}</strong><small>{t("home.fanFeedDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
+        <Link href="/fans" className="hc-ia-door"><CategoryIconTile category="players" size="sm"/><span><strong>{t("home.findFan")}</strong><small>{t("home.findFanDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
+        <Link href="/live-games" className="hc-ia-door"><CategoryIconTile category="leagues" size="sm"/><span><strong>{t("home.liveGames")}</strong><small>{liveCounts.live} live · {liveCounts.upcoming} upcoming</small></span><HoopIcon name="chevron-right" size={18}/></Link>
       </div></section>
-      <Link href="/account" className="hc-ia-account-link">Account, membership and settings <HoopIcon name="arrow-right" size={16}/></Link>
+      <Link href="/account" className="hc-ia-account-link">{t("home.accountSettings")} <HoopIcon name="arrow-right" size={16}/></Link>
     </div></main>
   );
 
@@ -130,38 +130,38 @@ export default function DashboardPage() {
       <div className="page-container">
         <SearchBar className="hc-ia-search" name="q" placeholder={t("searchPeoplePlaceholder")} ariaLabel={t("searchPeoplePlaceholder")}/>
         <header className="hc-ia-welcome">
-          <p className="eyebrow">YOUR DAILY FRONT DOOR</p>
-          <h1>KNOW WHO YOU’RE SIGNING WITH<span>.</span></h1>
-          <p className="muted">Real player experiences. Make your next move with confidence.</p>
+          <p className="eyebrow">{t("home.eyebrow")}</p>
+          <h1>{t("home.headline")}<span>.</span></h1>
+          <p className="muted">{t("home.description")}</p>
           <div className="hc-ia-identity"><span className="hc-ia-avatar">{displayName.charAt(0).toUpperCase()}</span><span><small>SIGNED IN AS</small><strong>{displayName}</strong></span></div>
         </header>
 
-        {completion < 100 && <Link href="/account#edit-profile" className="hc-ia-completion"><span><strong>COMPLETE YOUR PROFILE</strong><small>{completion}% complete · Add your basketball background so players and organisations can recognise your experience.</small></span><span>Continue <HoopIcon name="arrow-right" size={16}/></span></Link>}
+        {completion < 100 && <Link href="/account#edit-profile" className="hc-ia-completion"><span><strong>{t("home.completeProfile")}</strong><small>{t("home.profileCompletion").replace("{percent}", String(completion))}</small></span><span>{t("home.continue")} <HoopIcon name="arrow-right" size={16}/></span></Link>}
 
-        <Link href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>LIVE GAMES</strong><small>{"See live and upcoming games"}</small></span><span>Open hub <HoopIcon name="arrow-right" size={16}/></span></Link>
+        <Link href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>{t("home.liveGames")}</strong><small>{t("home.liveDescription")}</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></Link>
 
         <section className="hc-ia-section">
-          <div className="hc-ia-section-heading"><div><p className="eyebrow">YOUR SHORTCUTS</p><h2>QUICK ACCESS</h2></div><Link href="/directory">Explore all <HoopIcon name="arrow-right" size={15}/></Link></div>
+          <div className="hc-ia-section-heading"><div><p className="eyebrow">{t("home.shortcuts")}</p><h2>{t("home.quickAccess")}</h2></div><Link href="/directory">{t("home.exploreAll")} <HoopIcon name="arrow-right" size={15}/></Link></div>
           <div className="hc-ia-door-grid">
-            <Link href="/teams" className="hc-ia-door"><CategoryIconTile category="teams" size="sm"/><span><strong>MEN’S TEAMS</strong><small>Research teams before you sign</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-            <Link href="/womens" className="hc-ia-door"><CategoryIconTile category="womens" size="sm"/><span><strong>WOMEN’S TEAMS</strong><small>Explore women’s basketball</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-            <Link href="/coaches" className="hc-ia-door"><CategoryIconTile category="coaches" size="sm"/><span><strong>COACHES</strong><small>Check coaching reputations</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-            <Link href="/leagues" className="hc-ia-door"><CategoryIconTile category="leagues" size="sm"/><span><strong>LEAGUES</strong><small>Compare competitions</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-            <Link href="/players" className="hc-ia-door"><CategoryIconTile category="players" size="sm"/><span><strong>PLAYERS</strong><small>Discover basketball players</small></span><HoopIcon name="chevron-right" size={18}/></Link>
+            <Link href="/teams" className="hc-ia-door"><CategoryIconTile category="teams" size="sm"/><span><strong>{t("home.mensTeams")}</strong><small>{t("home.mensDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
+            <Link href="/womens" className="hc-ia-door"><CategoryIconTile category="womens" size="sm"/><span><strong>{t("home.womensTeams")}</strong><small>{t("home.womensDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
+            <Link href="/coaches" className="hc-ia-door"><CategoryIconTile category="coaches" size="sm"/><span><strong>{t("home.coaches")}</strong><small>{t("home.coachesDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
+            <Link href="/leagues" className="hc-ia-door"><CategoryIconTile category="leagues" size="sm"/><span><strong>{t("home.leagues")}</strong><small>{t("home.leaguesDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
+            <Link href="/players" className="hc-ia-door"><CategoryIconTile category="players" size="sm"/><span><strong>{t("home.players")}</strong><small>{t("home.playersDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
           </div>
         </section>
 
         <section className="hc-ia-section">
-          <div className="hc-ia-section-heading"><div><p className="eyebrow">YOUR NETWORK</p><h2>TEAMS YOU FOLLOW</h2></div><Link href="/teams">Find teams <HoopIcon name="arrow-right" size={15}/></Link></div>
-          {teams.length ? <div className="hc-ia-follow-list">{teams.slice(0,4).map(team=><Link key={team.id} href={basketballSide==="womens"?"/womens/"+team.id:"/teams/"+team.id}><span><strong>{team.name}</strong><small>{[team.country,team.league_name].filter(Boolean).join(" · ")}</small></span><HoopIcon name="chevron-right" size={17}/></Link>)}</div> : <p className="hc-ia-empty">Follow teams to see their updates here. <Link href="/teams">Browse teams</Link></p>}
+          <div className="hc-ia-section-heading"><div><p className="eyebrow">{t("home.network")}</p><h2>{t("home.teamsFollow")}</h2></div><Link href="/teams">{t("home.findTeams")} <HoopIcon name="arrow-right" size={15}/></Link></div>
+          {teams.length ? <div className="hc-ia-follow-list">{teams.slice(0,4).map(team=><Link key={team.id} href={basketballSide==="womens"?"/womens/"+team.id:"/teams/"+team.id}><span><strong>{team.name}</strong><small>{[team.country,team.league_name].filter(Boolean).join(" · ")}</small></span><HoopIcon name="chevron-right" size={17}/></Link>)}</div> : <p className="hc-ia-empty">{t("home.emptyTeams")} <Link href="/teams">{t("home.browseTeams")}</Link></p>}
         </section>
 
-        {reviews.length>0 && <section className="hc-ia-section"><div className="hc-ia-section-heading"><div><p className="eyebrow">PLAYER EXPERIENCES</p><h2>RECENT REVIEWS ON YOUR TEAMS</h2></div></div><div className="hc-ia-follow-list">{reviews.slice(0,3).map(review=><Link key={review.id} href={(basketballSide==="womens"?"/womens/":"/teams/")+review.team_id}><span><strong>{review.title||"Player review"}</strong><small>{review.body.slice(0,110)}{review.body.length>110?"…":""} · {review.overall_rating}/5</small></span><HoopIcon name="chevron-right" size={17}/></Link>)}</div></section>}
+        {reviews.length>0 && <section className="hc-ia-section"><div className="hc-ia-section-heading"><div><p className="eyebrow">{t("home.experiences")}</p><h2>{t("home.recentReviews")}</h2></div></div><div className="hc-ia-follow-list">{reviews.slice(0,3).map(review=><Link key={review.id} href={(basketballSide==="womens"?"/womens/":"/teams/")+review.team_id}><span><strong>{review.title||t("home.playerReview")}</strong><small>{review.body.slice(0,110)}{review.body.length>110?"…":""} · {review.overall_rating}/5</small></span><HoopIcon name="chevron-right" size={17}/></Link>)}</div></section>}
 
-        <section className="hc-ia-section hc-ia-feed-teaser"><div className="hc-ia-section-heading"><div><p className="eyebrow">PLAYER NETWORK</p><h2>HOOPFEED</h2></div><Link href="/feed">Open feed <HoopIcon name="arrow-right" size={15}/></Link></div>
-          {hasFeedAccess && feedPost ? <Link href="/feed" className="hc-ia-feed-card"><strong>{feedPost.profiles?.[0]?.display_name||"A player you follow"}</strong><p>{feedPost.body.slice(0,180)}{feedPost.body.length>180?"…":""}</p><small>Latest post · Posts expire after 24 hours</small></Link> : <Link href="/feed" className="hc-ia-feed-card"><strong>Open HoopFeed</strong><p>Updates from players you follow and your accepted connections.</p><small>Followers-only · 24-hour posts</small></Link>}
+        <section className="hc-ia-section hc-ia-feed-teaser"><div className="hc-ia-section-heading"><div><p className="eyebrow">{t("home.playerNetwork")}</p><h2>{t("home.hoopFeed")}</h2></div><Link href="/feed">{t("home.openFeed")} <HoopIcon name="arrow-right" size={15}/></Link></div>
+          {hasFeedAccess && feedPost ? <Link href="/feed" className="hc-ia-feed-card"><strong>{feedPost.profiles?.[0]?.display_name||t("home.playerFollow")}</strong><p>{feedPost.body.slice(0,180)}{feedPost.body.length>180?"…":""}</p><small>{t("home.latestPost")}</small></Link> : <Link href="/feed" className="hc-ia-feed-card"><strong>{t("home.openHoopFeed")}</strong><p>{t("home.feedDescription")}</p><small>{t("home.followersOnly")}</small></Link>}
         </section>
-        <Link href="/account" className="hc-ia-account-link">Account, membership, reviews and settings <HoopIcon name="arrow-right" size={16}/></Link>
+        <Link href="/account" className="hc-ia-account-link">{t("home.accountReviewsSettings")} <HoopIcon name="arrow-right" size={16}/></Link>
       </div>
     </main>
   );
