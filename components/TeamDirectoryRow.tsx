@@ -27,7 +27,7 @@ type TeamDirectoryRowProps = {
 
 export default function TeamDirectoryRow({
   id, name, city, country, leagueName, href, kind = "mens", showFollow = true,
-  trustScore = null, trustScore = null, trustReviewCount = 0, trustExplanation = "", logoUrl = null, logoBg = "transparent", trustTier = "unknown",
+  trustScore = null, trustReviewCount = 0, trustExplanation = "", logoUrl = null, logoBg = "transparent", trustTier = "unknown",
 }: TeamDirectoryRowProps) {
   const { t } = useLanguage();
   const hasTrustScore = typeof trustScore === "number" && Number.isFinite(trustScore);
