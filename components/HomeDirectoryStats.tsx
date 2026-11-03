@@ -8,7 +8,7 @@ const roundDown = (value: number) => value <= 0 ? null : value < 10 ? value : va
 
 export default function HomeDirectoryStats() {
   const [stats, setStats] = useState<Stat[]>([]);
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState(1);
   const root = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (!stats.length) return;
