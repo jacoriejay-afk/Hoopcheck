@@ -3,17 +3,14 @@
 import { usePathname } from "next/navigation";
 
 /**
- * Shared route content wrapper.
- *
- * Intentionally does not key/remount the wrapper by pathname: Next App Router
- * owns route changes and should retain shared/client state where possible.
- * Route-level loading.tsx boundaries provide feedback while segments load.
+ * Animate the page slot on route changes. The key remounts only this content
+ * wrapper; shared providers, header, navigation, and auth state stay mounted.
  */
 export default function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="hc-route-transition" data-route={pathname}>
+    <div key={pathname} className="hc-route-transition" data-route={pathname}>
       {children}
     </div>
   );
