@@ -10,6 +10,7 @@ import Surface from "../../components/Surface";
 import { GroupCard, Row } from "../../components/LayoutSystem";
 import { useTheme } from "../../components/ThemeProvider";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
+import { calculateProfileCompletion } from "../../lib/profile-completion";
 
 type Subscription = {
   plan: "pro" | "premium" | null;
@@ -209,6 +210,7 @@ export default function AccountPage() {
     if (error) { setProfileMessage(error.message); return; }
 
     setAvatarUrl(pendingUrl);
+    setProfile(current => ({ ...current, avatar_url: pendingUrl, avatar_moderation_status: "approved" }));
     setAvatarStatus("approved");
     setCropFile(null);
     setCropPreview("");
@@ -225,6 +227,10 @@ export default function AccountPage() {
       const updates: Record<string, unknown> = {
         display_name: name || null,
         bio: bio.trim().slice(0, 500) || null,
+        position: profile.account_type === "player" ? position.trim() || null : null,
+        years_pro: profile.account_type === "player" && yearsPro.trim() !== "" ? Number(yearsPro) : null,
+        current_country: profile.account_type === "player" ? currentCountry.trim() || null : null,
+        current_team: profile.account_type === "player" ? currentTeam.trim() || null : null,
         hometown: hometown.trim().slice(0, 120) || null,
         nationality: nationality.trim().slice(0, 80) || null,
         interests: interests.trim().slice(0, 500) || null,
@@ -375,11 +381,11 @@ export default function AccountPage() {
         <h1>{t("accountPreferences")}</h1>
         <div className="hc-account-settings-identity">
           <span className="hc-account-settings-avatar" aria-hidden="true">
-            {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{(displayName || email || "H").trim().charAt(0).toUpperCase()}</span>}
+            {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{(displayName || email || "H").trim().split(/\s+/).slice(0,2).map(part => part[0]).join("").toUpperCase()}</span>}
           </span>
           <div className="hc-account-settings-identity-copy">
             <div className="hc-account-identity-title"><strong>{displayName || t("yourAccount")}</strong><span className="hc-account-membership-pill">{subscription?.plan === "premium" ? "Premium" : subscription?.plan === "pro" ? t("pro") : t("freePlan")}</span></div>
-            <p>{email || t("emailNotSet")}</p>
+            <p>{email || t("emailNotSet")}</p><p className="hc-account-visibility-status"><span aria-hidden="true" />{settingsVisibility === "public" ? "Profile visible to everyone" : "Profile visible to players only"}</p>
           </div>
         </div>
         <div className="hc-account-identity-actions">
@@ -387,7 +393,7 @@ export default function AccountPage() {
           {profile.account_type === "player" && settingsVisibility === "public" ? <Link href={userId ? `/players/${encodeURIComponent(userId)}` : "/profile"} className="btn dark">{t("profilePublic")}</Link> : null}
         </div>
       </header>
-      {(profile as any).moderation_status === "warned" || (profile as any).moderation_status === "flagged" ? <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{(profile as any).moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{(profile as any).moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section> : null}
+      {(() => { const completion = calculateProfileCompletion({ ...profile, display_name: displayName, bio, avatar_url: avatarUrl, hometown, nationality, interests, favorite_leagues: favoriteLeagues }); const next = completion.nextMissing; return completion.percentage < 100 && next ? <section className="dashboard-card hc-account-profile-completion" style={{marginTop:12}}><strong>Profile {completion.percentage}% complete</strong><p className="muted">Add your {next.label} next.</p><a className="btn" href={"/account#profile-editor-field-" + next.key}>{next.key === "avatar_url" ? "Add photo" : "Complete profile"}</a></section> : null; })()}\n      {(profile as any).moderation_status === "warned" || (profile as any).moderation_status === "flagged" ? <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{(profile as any).moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{(profile as any).moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section> : null}
       {adminRole && <section className="dashboard-card" style={{marginBottom:16}}><p className="eyebrow">{adminRole.toUpperCase()}</p><h2>{t("adminControlCenter")}</h2><div className="account-actions" style={{display:"flex",gap:10,flexWrap:"wrap"}}><Link href="/admin/directory" className="btn">{t("openAdminPanel")}</Link><Link href="/admin/reviews" className="btn dark">{t("manageReviews")}</Link><Link href="/admin/rights" className="btn dark">{t("rightsCoverage")}</Link></div></section>}
       <section id="account-settings" className="hc-settings" aria-label={t("accountSettings")}>
         <SettingsGroup title={t("accountSection")}>
@@ -449,16 +455,16 @@ export default function AccountPage() {
             <label className="muted">{t("firstName")}</label><input value={profile.first_name ?? ""} readOnly />
             <label className="muted">{t("lastName")}</label><input value={profile.last_name ?? ""} readOnly />
             <p className="muted" style={{fontSize:12}}>{t("nameLocked")}</p>
-            <label htmlFor="display-name" className="muted">{t("displayName")}</label><input id="display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder={t("displayNamePlaceholder")} />
+            <label htmlFor="display-name" className="muted">{t("displayName")}</label><input id="profile-editor-field-display_name" name="display_name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder={t("displayNamePlaceholder")} />
             {profile.account_type === "player" && <label htmlFor="position" className="muted">{t("position")}</label>}
             {profile.account_type === "player" && <input id="position" value={position} readOnly aria-describedby="player-identity-locked" />}
             {profile.account_type === "player" && <label htmlFor="years-pro" className="muted">{t("yearsAsPro")}</label>}
             {profile.account_type === "player" && <p id="player-identity-locked" className="muted" style={{fontSize:11,margin:0}}>Position, professional years, and current team details are protected and must be changed through HoopCheck verification.</p>}
             {profile.account_type === "player" && <input id="years-pro" type="number" value={yearsPro} readOnly aria-describedby="player-identity-locked" /> }
             {profile.account_type === "coach" && <><label htmlFor="coaching-experience" className="muted">{t("coachingExperience")}</label><textarea id="coaching-experience" value={coachingExperience} onChange={e=>setCoachingExperience(e.target.value)} maxLength={1000} rows={4} placeholder={t("coachingExperiencePlaceholder")} /><label htmlFor="coach-specialties" className="muted">{t("coachingSpecialties")}</label><textarea id="coach-specialties" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("coachingSpecialtiesPlaceholder")} /></>}
-            <label htmlFor="hometown">{t("hometown")}</label><input id="hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder={t("cityStateRegion")} />
-            <label htmlFor="nationality">{t("nationality")}</label>
-            <select id="nationality" value={nationality} onChange={e=>setNationality(e.target.value)} disabled={savingProfile}>
+            <label htmlFor="profile-editor-field-hometown">{t("hometown")}</label><input id="profile-editor-field-hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder={t("cityStateRegion")} />
+            <label htmlFor="profile-editor-field-nationality">{t("nationality")}</label>
+            <select id="profile-editor-field-nationality" value={nationality} onChange={e=>setNationality(e.target.value)} disabled={savingProfile}>
               <option value="">{t("selectNationality")}</option>
               <optgroup label={t("africa")}>
                 {["Algeria","Angola","Benin","Botswana","Burkina Faso","Burundi","Cameroon","Cape Verde","Central African Republic","Chad","Comoros","Côte d’Ivoire","Democratic Republic of the Congo","Djibouti","Egypt","Equatorial Guinea","Eritrea","Eswatini","Ethiopia","Gabon","Gambia","Ghana","Guinea","Guinea-Bissau","Kenya","Lesotho","Liberia","Libya","Madagascar","Malawi","Mali","Mauritania","Mauritius","Morocco","Mozambique","Namibia","Niger","Nigeria","Republic of the Congo","Rwanda","São Tomé and Príncipe","Senegal","Seychelles","Sierra Leone","Somalia","South Africa","South Sudan","Sudan","Tanzania","Togo","Tunisia","Uganda","Zambia","Zimbabwe"].map(x=><option key={x} value={x}>{x}</option>)}
@@ -483,11 +489,11 @@ export default function AccountPage() {
               <label htmlFor="current-country" className="muted">{t("currentCountry")}</label><input id="current-country" value={currentCountry} readOnly aria-describedby="player-identity-locked" />
               <label htmlFor="current-team" className="muted">{t("currentTeam")}</label><input id="current-team" value={currentTeam} readOnly aria-describedby="player-identity-locked" />
             </>}
-            <label htmlFor="bio" className="muted">{t("playerBio")}</label><textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder={t("playerBioPlaceholder")} />
+            <label htmlFor="profile-editor-field-bio" className="muted">{t("playerBio")}</label><textarea id="profile-editor-field-bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder={t("playerBioPlaceholder")} />
                         {profile.account_type === "player" && <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>{t("showFreeAgent")}</span></label>}
             {["scout","agent"].includes(profile.account_type) && <>
-              <label htmlFor="interests" className="muted">{t("basketballInterests")}</label><textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("scoutAgentInterestsPlaceholder")} />
-              <label htmlFor="favorite-leagues" className="muted">{t("leaguesOfInterest")}</label><textarea id="favorite-leagues" value={favoriteLeagues} onChange={e=>setFavoriteLeagues(e.target.value)} maxLength={500} rows={3} placeholder={t("leaguesMarketsPlaceholder")} />
+              <label htmlFor="profile-editor-field-interests" className="muted">{t("basketballInterests")}</label><textarea id="profile-editor-field-interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("scoutAgentInterestsPlaceholder")} />
+              <label htmlFor="profile-editor-field-favorite_leagues" className="muted">{t("leaguesOfInterest")}</label><textarea id="profile-editor-field-favorite_leagues" value={favoriteLeagues} onChange={e=>setFavoriteLeagues(e.target.value)} maxLength={500} rows={3} placeholder={t("leaguesMarketsPlaceholder")} />
             </>}
             {profile.account_type === "fan" && <label htmlFor="interests" className="muted">{t("basketballInterests")}</label>}
             {profile.account_type === "fan" && <textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("fanInterestsPlaceholder")} />}

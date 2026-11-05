@@ -10,6 +10,7 @@ import { useLanguage } from "../../components/LanguageProvider";
 import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import { CategoryIconTile, HoopIcon } from "../../components/HoopCheckUI";
+import { calculateProfileCompletion } from "../../lib/profile-completion";
 
 type Profile = {
   display_name: string | null;
@@ -54,7 +55,7 @@ export default function DashboardPage() {
       setEmail(user.email||"");
 
       const [{data:p},{data:subscription},{data:follows}] = await Promise.all([
-        supabase.from("profiles").select("display_name,first_name,last_name,bio,position,current_team,nationality,hometown,avatar_url,player_verified,account_type").eq("id",user.id).maybeSingle(),
+        supabase.from("profiles").select("display_name,first_name,last_name,bio,position,current_team,nationality,hometown,avatar_url,interests,favorite_leagues,player_verified,account_type").eq("id",user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",user.id).maybeSingle(),
         supabase.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").order("created_at",{ascending:false}).limit(100)
       ]);
@@ -104,11 +105,7 @@ export default function DashboardPage() {
   },[router,basketballSide]);
 
   const displayName = profile?.display_name || [profile?.first_name,profile?.last_name].filter(Boolean).join(" ") || email.split("@")[0] || "Player";
-  const completion = useMemo(()=>{
-    if(!profile || profile.account_type==="fan") return 100;
-    const fields=[profile.display_name,profile.bio,profile.position,profile.current_team,profile.nationality,profile.hometown,profile.avatar_url];
-    return Math.round(fields.filter(value=>Boolean(String(value||"").trim())).length/fields.length*100);
-  },[profile]);
+  const completion = calculateProfileCompletion(profile).percentage;
 
   if(loading) return <main className="page-shell dashboard-page"><div className="page-container"><HoopLoading label={t("loadingDashboard")}/></div></main>;
 
