@@ -7,6 +7,7 @@ import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Surface from "../../components/Surface";
 import { useLanguage } from "../../components/LanguageProvider";
+import { calculateProfileCompletion } from "../../lib/profile-completion";
 
 function calculatePostingStreak(rows: { activity_date: string }[]) {
   const dates = new Set(rows.map(row => String(row.activity_date).slice(0, 10)));
@@ -81,9 +82,10 @@ export default function ProfilePage() {
 
   const name = p.display_name || p.username || "HoopCheck Member";
   const initials = name.trim().split(/\s+/).slice(0, 2).map((part: string) => part[0]).join("").toUpperCase() || "HC";
-  const profileFields = [p.display_name || p.username, p.bio, p.position, p.years_pro != null ? String(p.years_pro) : "", p.current_country, p.current_team, p.avatar_url, p.hometown || p.nationality];
-  const profileCompletion = Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100);
-  const firstMissingField = !p.position ? "position" : !p.current_country ? "location" : !p.bio ? "bio" : "profile details";
+  const completion = calculateProfileCompletion(p);
+  const profileCompletion = completion.percentage;
+  const firstMissingField = completion.nextMissing?.label ?? "profile details";
+  const nextFieldAnchor = completion.nextMissing?.key ?? "profile-editor";
 
   return (
     <main className="page-shell hc-member-profile-page">
@@ -124,7 +126,7 @@ export default function ProfilePage() {
 
         <section className="hc-profile-overview" aria-label={t("profileOverview")}>
           {profileCompletion < 100 && <div className="hc-profile-completion">
-            <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href="/account#profile-editor">Complete profile <span aria-hidden="true">→</span></Link></div>
+            <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href={"/account#profile-editor-field-" + nextFieldAnchor}>Complete profile <span aria-hidden="true">→</span></Link></div>
             <div className="hc-profile-completion-track" role="progressbar" aria-label={t("profileCompleteness")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}><span style={{width: profileCompletion + "%"}} /></div>
           </div>}
           <div className="grid compact-grid">
