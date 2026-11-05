@@ -455,16 +455,16 @@ export default function AccountPage() {
             <label className="muted">{t("firstName")}</label><input value={profile.first_name ?? ""} readOnly />
             <label className="muted">{t("lastName")}</label><input value={profile.last_name ?? ""} readOnly />
             <p className="muted" style={{fontSize:12}}>{t("nameLocked")}</p>
-            <label htmlFor="display-name" className="muted">{t("displayName")}</label><input id="display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder={t("displayNamePlaceholder")} />
+            <label htmlFor="display-name" className="muted">{t("displayName")}</label><input id="profile-editor-field-display_name" name="display_name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder={t("displayNamePlaceholder")} />
             {profile.account_type === "player" && <label htmlFor="position" className="muted">{t("position")}</label>}
             {profile.account_type === "player" && <input id="position" value={position} readOnly aria-describedby="player-identity-locked" />}
             {profile.account_type === "player" && <label htmlFor="years-pro" className="muted">{t("yearsAsPro")}</label>}
             {profile.account_type === "player" && <p id="player-identity-locked" className="muted" style={{fontSize:11,margin:0}}>Position, professional years, and current team details are protected and must be changed through HoopCheck verification.</p>}
             {profile.account_type === "player" && <input id="years-pro" type="number" value={yearsPro} readOnly aria-describedby="player-identity-locked" /> }
             {profile.account_type === "coach" && <><label htmlFor="coaching-experience" className="muted">{t("coachingExperience")}</label><textarea id="coaching-experience" value={coachingExperience} onChange={e=>setCoachingExperience(e.target.value)} maxLength={1000} rows={4} placeholder={t("coachingExperiencePlaceholder")} /><label htmlFor="coach-specialties" className="muted">{t("coachingSpecialties")}</label><textarea id="coach-specialties" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("coachingSpecialtiesPlaceholder")} /></>}
-            <label htmlFor="hometown">{t("hometown")}</label><input id="hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder={t("cityStateRegion")} />
-            <label htmlFor="nationality">{t("nationality")}</label>
-            <select id="nationality" value={nationality} onChange={e=>setNationality(e.target.value)} disabled={savingProfile}>
+            <label htmlFor="profile-editor-field-hometown">{t("hometown")}</label><input id="profile-editor-field-hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder={t("cityStateRegion")} />
+            <label htmlFor="profile-editor-field-nationality">{t("nationality")}</label>
+            <select id="profile-editor-field-nationality" value={nationality} onChange={e=>setNationality(e.target.value)} disabled={savingProfile}>
               <option value="">{t("selectNationality")}</option>
               <optgroup label={t("africa")}>
                 {["Algeria","Angola","Benin","Botswana","Burkina Faso","Burundi","Cameroon","Cape Verde","Central African Republic","Chad","Comoros","Côte d’Ivoire","Democratic Republic of the Congo","Djibouti","Egypt","Equatorial Guinea","Eritrea","Eswatini","Ethiopia","Gabon","Gambia","Ghana","Guinea","Guinea-Bissau","Kenya","Lesotho","Liberia","Libya","Madagascar","Malawi","Mali","Mauritania","Mauritius","Morocco","Mozambique","Namibia","Niger","Nigeria","Republic of the Congo","Rwanda","São Tomé and Príncipe","Senegal","Seychelles","Sierra Leone","Somalia","South Africa","South Sudan","Sudan","Tanzania","Togo","Tunisia","Uganda","Zambia","Zimbabwe"].map(x=><option key={x} value={x}>{x}</option>)}
@@ -489,11 +489,11 @@ export default function AccountPage() {
               <label htmlFor="current-country" className="muted">{t("currentCountry")}</label><input id="current-country" value={currentCountry} readOnly aria-describedby="player-identity-locked" />
               <label htmlFor="current-team" className="muted">{t("currentTeam")}</label><input id="current-team" value={currentTeam} readOnly aria-describedby="player-identity-locked" />
             </>}
-            <label htmlFor="bio" className="muted">{t("playerBio")}</label><textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder={t("playerBioPlaceholder")} />
+            <label htmlFor="profile-editor-field-bio" className="muted">{t("playerBio")}</label><textarea id="profile-editor-field-bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder={t("playerBioPlaceholder")} />
                         {profile.account_type === "player" && <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>{t("showFreeAgent")}</span></label>}
             {["scout","agent"].includes(profile.account_type) && <>
-              <label htmlFor="interests" className="muted">{t("basketballInterests")}</label><textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("scoutAgentInterestsPlaceholder")} />
-              <label htmlFor="favorite-leagues" className="muted">{t("leaguesOfInterest")}</label><textarea id="favorite-leagues" value={favoriteLeagues} onChange={e=>setFavoriteLeagues(e.target.value)} maxLength={500} rows={3} placeholder={t("leaguesMarketsPlaceholder")} />
+              <label htmlFor="profile-editor-field-interests" className="muted">{t("basketballInterests")}</label><textarea id="profile-editor-field-interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("scoutAgentInterestsPlaceholder")} />
+              <label htmlFor="profile-editor-field-favorite_leagues" className="muted">{t("leaguesOfInterest")}</label><textarea id="profile-editor-field-favorite_leagues" value={favoriteLeagues} onChange={e=>setFavoriteLeagues(e.target.value)} maxLength={500} rows={3} placeholder={t("leaguesMarketsPlaceholder")} />
             </>}
             {profile.account_type === "fan" && <label htmlFor="interests" className="muted">{t("basketballInterests")}</label>}
             {profile.account_type === "fan" && <textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("fanInterestsPlaceholder")} />}
