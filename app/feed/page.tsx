@@ -63,7 +63,7 @@ export default function Feed(){
       : Promise.resolve({data:[]});
     const [connectionsResult,followsResult,feedResult]=await Promise.all([
       connectionPromise,followPromise,
-      supabase.from("feed_posts").select("id,shared_post_id,body,image_url,video_url,location_country,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country,current_country_public,current_team)")
+      supabase.from("feed_posts").select("id,shared_post_id,body,image_url,video_url,location_country,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,created_at,expires_at,author_id,profiles:profiles!feed_posts_author_id_fkey(display_name,avatar_url,current_country,current_country_public,current_team)")
         .eq("status","approved").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(30)
     ]);
     const connectedPlayerIds=(connectionsResult.data||[]).flatMap((x:any)=>x.requester_id===currentUser.id?[x.player_id]:[x.requester_id]).filter(Boolean);
@@ -74,7 +74,7 @@ export default function Feed(){
     const sharedIds=[...new Set((feedResult.data||[]).map((r:any)=>r.shared_post_id).filter(Boolean))] as string[];
     let sharedPostsById:Record<string,any>={};
     if(sharedIds.length){
-      const {data:sharedRows,error:sharedError}=await supabase.from("feed_posts").select("id,author_id,profiles(display_name)").in("id",sharedIds);
+      const {data:sharedRows,error:sharedError}=await supabase.from("feed_posts").select("id,author_id,profiles:profiles!feed_posts_author_id_fkey(display_name)").in("id",sharedIds);
       if(sharedError){setMsg(sharedError.message);return;}
       sharedPostsById=Object.fromEntries((sharedRows||[]).map((r:any)=>[r.id,{...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)}]));
     }
@@ -86,7 +86,7 @@ export default function Feed(){
     if(!rows.length){setComments({});setChecks({});setMine({});return;}
     const ids=rows.map(p=>p.id);
     void Promise.all([
-      supabase.from("feed_post_comments").select("id,post_id,body,created_at,author_id,profiles(display_name,avatar_url)").in("post_id",ids).order("created_at",{ascending:true}),
+      supabase.from("feed_post_comments").select("id,post_id,body,created_at,author_id,profiles:profiles!feed_post_comments_author_id_fkey(display_name,avatar_url)").in("post_id",ids).order("created_at",{ascending:true}),
       supabase.from("feed_post_checks").select("post_id,user_id").in("post_id",ids)
     ]).then(([commentsResult,checksResult])=>{
       const cg:Record<string,Comment[]>={};const cc:Record<string,number>={};const cm:Record<string,boolean>={};
