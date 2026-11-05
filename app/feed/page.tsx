@@ -63,7 +63,7 @@ export default function Feed(){
       : Promise.resolve({data:[]});
     const [connectionsResult,followsResult,feedResult]=await Promise.all([
       connectionPromise,followPromise,
-      supabase.from("feed_posts").select("id,shared_post_id,shared_post:feed_posts!feed_posts_shared_post_id_fkey(author_id,profiles(display_name)),body,image_url,video_url,location_country,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country,current_country_public,current_team)")
+      supabase.from("feed_posts").select("id,shared_post_id,body,image_url,video_url,location_country,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,created_at,expires_at,author_id,profiles(display_name,avatar_url,current_country,current_country_public,current_team)")
         .eq("status","approved").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(30)
     ]);
     const connectedPlayerIds=(connectionsResult.data||[]).flatMap((x:any)=>x.requester_id===currentUser.id?[x.player_id]:[x.requester_id]).filter(Boolean);
@@ -71,8 +71,15 @@ export default function Feed(){
     if(feedResult.error){setMsg(feedResult.error.message);return;}
     const {data:archiveRows}=await supabase.from("feed_post_archives").select("post_id").eq("user_id",currentUser.id);
     const archiveIds=new Set((archiveRows||[]).map((r:any)=>r.post_id));
+    const sharedIds=[...new Set((feedResult.data||[]).map((r:any)=>r.shared_post_id).filter(Boolean))] as string[];
+    let sharedPostsById:Record<string,any>={};
+    if(sharedIds.length){
+      const {data:sharedRows,error:sharedError}=await supabase.from("feed_posts").select("id,author_id,profiles(display_name)").in("id",sharedIds);
+      if(sharedError){setMsg(sharedError.message);return;}
+      sharedPostsById=Object.fromEntries((sharedRows||[]).map((r:any)=>[r.id,{...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)}]));
+    }
     const now=Date.now();
-    let rows=(feedResult.data||[]).filter((r:any)=>!archiveIds.has(r.id)).map((r:any)=>{const post={...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)} as Post;return {...post,ageLabel:ago(post.created_at,now),expiresLabel:`Expires in ${Math.max(0,Math.ceil((new Date(post.expires_at).getTime()-now)/3600000))}h`};});
+    let rows=(feedResult.data||[]).filter((r:any)=>!archiveIds.has(r.id)).map((r:any)=>{const post={...r,shared_post:r.shared_post_id?sharedPostsById[r.shared_post_id]||null:null,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)} as Post;return {...post,ageLabel:ago(post.created_at,now),expiresLabel:`Expires in ${Math.max(0,Math.ceil((new Date(post.expires_at).getTime()-now)/3600000))}h`};});
     if(currentProfile.account_type==="fan") rows=rows.filter(p=>followedPlayerIds.includes(p.author_id));
     if(currentProfile.account_type==="player") rows=rows.filter(p=>p.author_id===currentUser.id||connectedPlayerIds.includes(p.author_id)||followedPlayerIds.includes(p.author_id));
     setPosts(rows);
