@@ -381,11 +381,11 @@ export default function AccountPage() {
         <h1>{t("accountPreferences")}</h1>
         <div className="hc-account-settings-identity">
           <span className="hc-account-settings-avatar" aria-hidden="true">
-            {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{(displayName || email || "H").trim().split(/\\s+/).slice(0,2).map(part => part[0]).join("").toUpperCase()}</span>}
+            {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{(displayName || email || "H").trim().split(/\s+/).slice(0,2).map(part => part[0]).join("").toUpperCase()}</span>}
           </span>
           <div className="hc-account-settings-identity-copy">
             <div className="hc-account-identity-title"><strong>{displayName || t("yourAccount")}</strong><span className="hc-account-membership-pill">{subscription?.plan === "premium" ? "Premium" : subscription?.plan === "pro" ? t("pro") : t("freePlan")}</span></div>
-            <p>{email || t("emailNotSet")}</p>
+            <p>{email || t("emailNotSet")}</p><p className="hc-account-visibility-status"><span aria-hidden="true" />{settingsVisibility === "public" ? "Profile visible to everyone" : "Profile visible to players only"}</p>
           </div>
         </div>
         <div className="hc-account-identity-actions">
