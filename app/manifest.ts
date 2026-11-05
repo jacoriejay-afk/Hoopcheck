@@ -14,10 +14,22 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: "portrait-primary",
     icons: [
       {
-        src: "/favicon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
+        src: "/icons/hoopcheck-192.png",
+        sizes: "192x192",
+        type: "image/png",
         purpose: "any"
+      },
+      {
+        src: "/icons/hoopcheck-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any"
+      },
+      {
+        src: "/icons/hoopcheck-maskable-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable"
       }
     ]
   };
