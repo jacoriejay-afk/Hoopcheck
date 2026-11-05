@@ -55,7 +55,7 @@ export default function DashboardPage() {
       setEmail(user.email||"");
 
       const [{data:p},{data:subscription},{data:follows}] = await Promise.all([
-        supabase.from("profiles").select("display_name,first_name,last_name,bio,position,current_team,nationality,hometown,avatar_url,player_verified,account_type").eq("id",user.id).maybeSingle(),
+        supabase.from("profiles").select("display_name,first_name,last_name,bio,position,current_team,nationality,hometown,avatar_url,interests,favorite_leagues,player_verified,account_type").eq("id",user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",user.id).maybeSingle(),
         supabase.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").order("created_at",{ascending:false}).limit(100)
       ]);
