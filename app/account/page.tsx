@@ -10,6 +10,7 @@ import Surface from "../../components/Surface";
 import { GroupCard, Row } from "../../components/LayoutSystem";
 import { useTheme } from "../../components/ThemeProvider";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
+import { calculateProfileCompletion } from "../../lib/profile-completion";
 
 type Subscription = {
   plan: "pro" | "premium" | null;
@@ -209,6 +210,7 @@ export default function AccountPage() {
     if (error) { setProfileMessage(error.message); return; }
 
     setAvatarUrl(pendingUrl);
+    setProfile(current => ({ ...current, avatar_url: pendingUrl, avatar_moderation_status: "approved" }));
     setAvatarStatus("approved");
     setCropFile(null);
     setCropPreview("");
@@ -225,6 +227,10 @@ export default function AccountPage() {
       const updates: Record<string, unknown> = {
         display_name: name || null,
         bio: bio.trim().slice(0, 500) || null,
+        position: profile.account_type === "player" ? position.trim() || null : null,
+        years_pro: profile.account_type === "player" && yearsPro.trim() !== "" ? Number(yearsPro) : null,
+        current_country: profile.account_type === "player" ? currentCountry.trim() || null : null,
+        current_team: profile.account_type === "player" ? currentTeam.trim() || null : null,
         hometown: hometown.trim().slice(0, 120) || null,
         nationality: nationality.trim().slice(0, 80) || null,
         interests: interests.trim().slice(0, 500) || null,
