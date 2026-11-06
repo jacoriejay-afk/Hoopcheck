@@ -55,6 +55,8 @@ create table if not exists public.team_fan_group_posts (
 );
 create index if not exists team_fan_group_posts_timeline_idx
   on public.team_fan_group_posts(team_id,is_pinned desc,created_at desc) where status='published';
+create unique index if not exists team_fan_group_one_pinned_post_idx
+  on public.team_fan_group_posts(team_id) where is_pinned=true and status='published';
 
 create table if not exists public.team_fan_group_comments (
   id uuid primary key default gen_random_uuid(),
