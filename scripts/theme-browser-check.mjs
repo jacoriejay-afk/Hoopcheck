@@ -259,6 +259,13 @@ try {
     "/privacy-center", "/privacy", "/terms", "/community-guidelines", "/login",
     "/signup", "/onboarding", "/fan-live", "/live-games", "/partners", "/copyright",
   ];
+  const themeComponentInventory = [
+    { route: "/live-games", selector: ".hc-live-empty", surface: "Live and upcoming empty-state card" },
+    { route: "/live-games", selector: ".hc-live-empty__icon", surface: "Empty-state icon chip" },
+    { route: "/live-games", selector: ".hc-live-section-heading h2 span", surface: "Live/upcoming/recent count badge (including zero)" },
+    { route: "/live-games", selector: ".hc-live-hub-filters", surface: "Hub filter card; regression sentinel" },
+    { route: "/live-games", selector: ".hc-live-hub-card", surface: "Populated game card; regression sentinel" },
+  ];
   const routeSweepResults = [];
   for (const theme of ["dark", "light"]) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
@@ -327,6 +334,9 @@ try {
       try {
         await page.goto(baseURL + requestedPath, { waitUntil: "domcontentloaded", timeout: 20000 });
         await page.waitForTimeout(300);
+        if (requestedPath === "/live-games") {
+          await page.locator("main.hc-live-hub-page").waitFor({ state: "visible", timeout: 15000 });
+        }
       } catch (error) {
         navigationError = error instanceof Error ? error.message : String(error);
       }
@@ -424,6 +434,58 @@ try {
       }, { requestedPath, navigationError });
       const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
       const errors = [];
+      if (requestedPath === "/live-games") {
+        const audit = await page.evaluate(() => {
+          const read = (selector) => {
+            const element = document.querySelector(selector);
+            if (!element) return null;
+            const style = getComputedStyle(element);
+            return { background: style.backgroundColor, color: style.color, text: (element.textContent || "").trim() };
+          };
+          return {
+            emptyCards: Array.from(document.querySelectorAll(".hc-live-empty")).map((element) => {
+              const heading = element.querySelector("h3");
+              const body = element.querySelector("p");
+              const icon = element.querySelector(".hc-live-empty__icon");
+              const style = (node) => node ? getComputedStyle(node) : null;
+              return {
+                background: style(element).backgroundColor,
+                color: style(element).color,
+                headingColor: style(heading)?.color || null,
+                bodyColor: style(body)?.color || null,
+                iconBackground: style(icon)?.backgroundColor || null,
+                iconColor: style(icon)?.color || null,
+              };
+            }),
+            countBadges: Array.from(document.querySelectorAll(".hc-live-section-heading h2 span")).map(read),
+            filterCard: read(".hc-live-hub-filters"),
+            populatedGameCards: document.querySelectorAll(".hc-live-hub-card").length,
+          };
+        });
+        const raised = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
+        const soft = theme === "dark" ? "rgb(27, 27, 27)" : "rgb(248, 248, 246)";
+        const foreground = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
+        const muted = theme === "dark" ? "rgb(184, 184, 179)" : "rgb(102, 102, 97)";
+        const accent = "rgb(255, 90, 31)";
+        if (audit.emptyCards.length !== 2) errors.push("live-games: expected two empty-state cards; got " + audit.emptyCards.length);
+        for (const [index, card] of audit.emptyCards.entries()) {
+          if (card.background !== raised || card.color !== foreground || card.headingColor !== foreground || card.bodyColor !== muted) {
+            errors.push("live-games: empty card " + index + " has unpaired surface/foreground tokens: " + JSON.stringify(card));
+          }
+          if (card.iconBackground !== soft || card.iconColor !== accent) {
+            errors.push("live-games: empty card icon chip lost its paired tint: " + JSON.stringify(card));
+          }
+        }
+        if (audit.countBadges.length !== 3) errors.push("live-games: expected three section count badges; got " + audit.countBadges.length);
+        for (const [index, badge] of audit.countBadges.entries()) {
+          if (badge.text !== "0" || badge.background !== soft || badge.color !== foreground) {
+            errors.push("live-games: count badge " + index + " is blank or has an unpaired theme: " + JSON.stringify(badge));
+          }
+        }
+        if (audit.filterCard?.background !== raised) errors.push("live-games: filter card surface regressed: " + JSON.stringify(audit.filterCard));
+        if (audit.populatedGameCards !== 0) errors.push("live-games: empty-fixture test unexpectedly rendered game cards");
+        result.liveHubPairing = audit;
+      }
       if (result.themeClass !== theme) errors.push("html theme class mismatch");
       if (result.body !== expectedPage) errors.push("body background mismatch");
       if (result.pageWrapper && result.pageWrapper !== expectedPage) errors.push("main background mismatch");
@@ -524,6 +586,7 @@ try {
     }
     await context.close();
   }
+  console.log("THEME_COMPONENT_INVENTORY=" + JSON.stringify(themeComponentInventory, null, 2));
   console.log("THEME_ROUTE_SWEEP=" + JSON.stringify(routeSweepResults, null, 2));
 
 } finally {
