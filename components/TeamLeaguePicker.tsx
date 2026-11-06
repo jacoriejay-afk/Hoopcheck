@@ -33,6 +33,7 @@ function cleanName(value:string){
     .replace(/[^a-z0-9]+/g," ").trim().replace(/\s+/g," ");
 }
 function initials(value:string){return value.split(/\s+/).filter(Boolean).map(word=>word[0]).join("");}
+function abbreviations(value:string){const words=cleanName(value).split(" ").filter(word=>word.length>1);return [words.map(word=>word[0]).join(""),words.map(word=>word.slice(0,2)).join("")].join(" ");}
 function norm(value:string|null|undefined){return (value||"").trim().toLowerCase();}
 
 export default function TeamLeaguePicker({
