@@ -195,6 +195,18 @@ html.theme-dark body main :where(.hc-team-profile-hero,.hc-live-hub-hero,.hc-dos
   color: var(--hc-on-surface-raised) !important;
 }
 
+/* Remove the old dark-theme highlight bars that were painted behind club hero text. */
+html.theme-dark body main.hc-entity-profile-page .hc-team-profile-hero :where(h1,p:not(.hc-team-profile-kicker),.hc-team-profile-meta) {
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--hc-on-surface-raised) !important;
+}
+html.theme-light body main.hc-entity-profile-page .hc-team-profile-hero :where(h1,p:not(.hc-team-profile-kicker),.hc-team-profile-meta) {
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--hc-on-surface-raised) !important;
+}
+
 /* Side-by-side visual review harness uses the exact same semantic pairings. */
 .hc-card-audit-preview {
   min-width: 0;
