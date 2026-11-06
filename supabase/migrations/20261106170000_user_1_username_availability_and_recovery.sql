@@ -20,9 +20,9 @@ grant execute on function public.is_username_available(text) to anon, authentica
 create or replace function public.save_my_username(candidate_username text)
 returns void
 language plpgsql
-security definer
+security invoker
 set search_path = public, pg_temp
-as $$
+as $
 declare
   normalized_username text := lower(btrim(candidate_username));
   current_user_id uuid := auth.uid();
@@ -44,4 +44,5 @@ end;
 $$;
 
 revoke all on function public.save_my_username(text) from public;
+revoke all on function public.save_my_username(text) from anon;
 grant execute on function public.save_my_username(text) to authenticated;
