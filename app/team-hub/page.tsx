@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import TeamLogo from "../../components/TeamLogo";
 import TeamFanGroupEntry from "../../components/TeamFanGroupEntry";
+import PlayersIFollow from "../../components/PlayersIFollow";
 import "../fan-feed/fan-feed.css";
 
 type Team = { id:string; name:string; logo_url:string|null; logo_bg?:"transparent"|"light"|"dark"|null; league_name:string|null; country:string|null; city:string|null };
@@ -40,6 +41,7 @@ export default function TeamHubPage(){
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/teams">Discover teams</Link><Link href="/fan-feed">Fan HoopFeed</Link></nav></header>
     <section className="hero-card hc-feed-hero"><div><p className="eyebrow">FAN HQ · PERSONAL DASHBOARD</p><h1>Your Team Hub</h1><p className="muted">Your favorite teams, upcoming matchups, live scores and the latest fan conversations—all in one place.</p></div><p className="hc-feed-expiry-note">YOUR TEAMS<span>Scores and schedules refresh automatically.</span></p></section>
     {!signedIn&&<section className="dashboard-card hc-feed-empty"><h2>Sign in to see your teams</h2><p>Follow your favorite teams to build your personalized Team Hub.</p><Link className="btn" href="/login">Sign in</Link></section>}
+    {signedIn&&<PlayersIFollow />}
     {signedIn&&!teams.length&&<section className="dashboard-card hc-feed-empty"><p className="eyebrow">START FOLLOWING</p><h2>Your Team Hub starts here.</h2><p>Follow teams to see upcoming games, live scores and team-tagged fan updates.</p><Link className="btn" href="/teams">Find teams</Link></section>}
     {!!message&&<p className="hc-feed-message" role="status">{message}</p>}
     <section style={{display:"grid",gap:16,marginTop:18}}>{teams.map(team=>{const teamGames=games.filter(g=>g.team_id===team.id).slice(0,3);return <article key={team.id} className="dashboard-card hc-feed-ticket" style={{padding:20}}>
