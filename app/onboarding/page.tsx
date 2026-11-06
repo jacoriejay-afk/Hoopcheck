@@ -57,7 +57,7 @@ export default function OnboardingPage(){
    <optgroup label="Oceania">{["Australia","Fiji","Kiribati","Marshall Islands","Micronesia","Nauru","New Zealand","Palau","Papua New Guinea","Samoa","Solomon Islands","Tonga","Tuvalu","Vanuatu"].map(x=><option key={x}>{x}</option>)}</optgroup>
    </select></label></>}
    <TeamLeaguePicker mode="team" label="Team to follow" value={favoriteTeamName} returnValue="name" onChange={setFavoriteTeamName} basketballType={basketballType} placeholder="Search teams by name, city or country" />
-   {accountType==="player"&&<div><label>Basketball</label><div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:6}}><button type="button" className={basketballType==="mens"?"btn":"btn dark"} onClick={()=>setBasketballType("mens")}>Men’s</button><button type="button" className={basketballType==="womens"?"btn":"btn dark"} onClick={()=>setBasketballType("womens")}>Women’s</button></div></div>}
+   {accountType==="player"&&<div><label>Basketball</label><div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:6}}><button type="button" className={basketballType==="mens"?"btn":"btn dark"} onClick={()=>{setBasketballType("mens");setFavoriteTeamName("");}}>Men’s</button><button type="button" className={basketballType==="womens"?"btn":"btn dark"} onClick={()=>{setBasketballType("womens");setFavoriteTeamName("");}}>Women’s</button></div></div>}
    <label>Bio<textarea value={bio} onChange={e=>setBio(e.target.value)} rows={5} maxLength={500} placeholder="Tell the basketball community about yourself." /></label>
    {message&&<p className="muted">{message}</p>}
    <button className="btn" onClick={save} disabled={saving}>{saving?"Saving...":"Save & Go to Dashboard"}</button>
