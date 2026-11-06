@@ -70,7 +70,7 @@ export default function TeamOnboardingPage() {
     const added=nextIds.filter(id=>!previous.includes(id));
     if(step===1)setMyTeams(nextIds); else setWatching(nextIds);
     for(const id of added){
-      let team=teams.find(item=>item.id===id);
+      let team:Team|null|undefined=teams.find(item=>item.id===id);
       if(!team){
         const {data}=await supabase.from("teams").select("id,name,country,city,league_name,logo_url,logo_bg").eq("id",id).maybeSingle();
         team=data as Team|null;
