@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export const metadata = { title: "Offline | HoopCheck", robots: { index: false, follow: false } };
 
 export default function OfflinePage() {
@@ -7,7 +9,7 @@ export default function OfflinePage() {
         <p className="eyebrow">HOOPCHECK · OFFLINE MODE</p>
         <h1>You’re off the court network.</h1>
         <p>Reconnect to load your latest clubs, players, reviews and community activity. Static app assets already saved on this device will remain available.</p>
-        <a href="/">Try again</a>
+        <Link href="/">Try again</Link>
       </section>
       <style>{`
         .hc-offline-page{min-height:100svh;display:grid;place-items:center;padding:24px;background:var(--hc-page-bg,#0a0a0a);color:var(--hc-foreground,#f5f5f0)}
