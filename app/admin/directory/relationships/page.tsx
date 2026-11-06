@@ -87,7 +87,7 @@ export default function RelationshipsPage() {
           <label>Season<input style={input} value={form.season||""} onChange={e=>setForm({...form,season:e.target.value})} placeholder="2026-27" /></label>
         </div> : <div style={grid()}>
           <TeamLeaguePicker mode="team" label="Team" value={form.team_id||""} onChange={value=>setForm({...form,team_id:value})} placeholder="Search team" />
-          <TeamLeaguePicker mode="league" label="League" value={form.league_id||""} onChange={value=>setForm({...form,league_id:value})} placeholder="Search league" />
+          <TeamLeaguePicker mode="league" allCategories label="League" value={form.league_id||""} onChange={value=>setForm({...form,league_id:value})} placeholder="Search league" />
           <label>Season<input style={input} value={form.season||""} onChange={e=>setForm({...form,season:e.target.value})} placeholder="2026-27" /></label>
           <label>Start date<input type="date" style={input} value={form.start_date||""} onChange={e=>setForm({...form,start_date:e.target.value})} /></label>
           <label>End date<input type="date" style={input} value={form.end_date||""} onChange={e=>setForm({...form,end_date:e.target.value})} /></label>
