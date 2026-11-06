@@ -110,6 +110,10 @@ function ThemeColumn({ theme }: { theme: "light" | "dark" }) {
 
       <section className="hc-card-audit-section">
         <h2>ACCOUNT / SETTINGS CARDS</h2>
+        <header className="hc-account-settings-header">
+          <p className="hc-account-settings-kicker">ACCOUNT SETTINGS</p>
+          <h3>Account preferences</h3>
+        </header>
         <Card className="dashboard-card">
           <p className="eyebrow">ACCOUNT OVERVIEW</p>
           <h3>Jacorie Archie</h3>
@@ -129,6 +133,11 @@ function ThemeColumn({ theme }: { theme: "light" | "dark" }) {
 
       <section className="hc-card-audit-section">
         <h2>MEMBERSHIP CARDS</h2>
+        <Surface as="section" className="membership-hero">
+          <p className="eyebrow">MEMBERSHIP</p>
+          <h3>Choose your level</h3>
+          <p className="muted">Flexible plans for every stage of your basketball journey.</p>
+        </Surface>
         <Surface as="article" className="plan-card">
           <p className="eyebrow">HOOPCHECK MEMBERSHIP</p>
           <h3>Premium</h3>
