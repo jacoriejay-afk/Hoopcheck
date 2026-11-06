@@ -465,7 +465,9 @@ try {
       const errors = [];
       if (requestedPath === "/fan-feed") {
         await page.locator("main.hc-fan-feed-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
+        await page.waitForFunction((teamName) => document.querySelector("main.hc-fan-feed-page .hc-feed-hero h1")?.textContent?.trim() === teamName, teamFixture.name, { timeout: 15000 });
         await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").waitFor({ state: "visible", timeout: 15000 });
+        await page.waitForFunction((teamName) => document.querySelector("main.hc-fan-feed-page .hc-feed-composer textarea")?.getAttribute("placeholder")?.includes(teamName), teamFixture.name, { timeout: 15000 });
         await page.locator("main.hc-fan-feed-page .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
         const teamHeading = (await page.locator("main.hc-fan-feed-page .hc-feed-hero h1").innerText()).trim();
         const composerPlaceholder = await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").getAttribute("placeholder");
