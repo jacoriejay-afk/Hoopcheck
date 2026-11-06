@@ -167,6 +167,20 @@ export async function POST(
       );
     }
 
+    const { data: checkoutProfile, error: checkoutProfileError } = await supabase
+      .from("profiles")
+      .select("account_type")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (checkoutProfileError || !checkoutProfile) {
+      return NextResponse.json({ error: "Unable to verify your HoopCheck account type." }, { status: 403 });
+    }
+
+    if (["coach", "manager"].includes(checkoutProfile.account_type) && plan !== "premium") {
+      return NextResponse.json({ error: "Coach and Team Manager accounts require HoopCheck Premium." }, { status: 403 });
+    }
+
     const submittedPromoCode =
       typeof body.promoCode === "string" ? body.promoCode.trim() : "";
     if (submittedPromoCode && (submittedPromoCode.length > 64 || !/^[a-zA-Z0-9_-]+$/.test(submittedPromoCode))) {
