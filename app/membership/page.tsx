@@ -341,8 +341,8 @@ function MembershipContent() {
 
             <div className="hc-billing-options" role="group" aria-label="Choose billing term">
               <button type="button" aria-pressed={billingInterval==="month"} className={billingInterval==="month" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("month")}><span>Monthly</span><small>Flexible billing</small></button>
-              <button type="button" aria-pressed={billingInterval==="6_month"} className={billingInterval==="6_month" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("6_month")}><span>6 months</span><small>Save 15%</small></button>
-              <button type="button" aria-pressed={billingInterval==="year"} className={billingInterval==="year" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 10%</small></button>
+              <button type="button" aria-pressed={billingInterval==="6_month"} className={billingInterval==="6_month" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("6_month")}><span>6 months</span><small>Save 10%</small></button>
+              <button type="button" aria-pressed={billingInterval==="year"} className={billingInterval==="year" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 15%</small></button>
             </div>
             <div className="hc-membership-value"><span className="hc-membership-value__mark">★</span><div><strong>Best flexibility, better value.</strong><p>Choose monthly, 6-month, or annual billing. The total shown is the amount charged for the selected term.</p></div></div><div className="plans">
               <div className="plan-card">
@@ -352,7 +352,7 @@ function MembershipContent() {
                     <h3>Pro</h3>
                   </div>
                   <div className="price">
-                    <strong>{billingInterval==="month" ? "\$4.99" : billingInterval==="6_month" ? "\$25.45" : "\$53.89"}</strong>
+                    <strong>{billingInterval==="month" ? "\$4.99" : billingInterval==="6_month" ? "\$26.95" : "\$50.90"}</strong>
                     <span>{billingInterval==="month" ? "billed monthly" : billingInterval==="6_month" ? "billed every 6 months" : "billed annually"}</span>
                   </div>
                 </div>
@@ -384,7 +384,7 @@ function MembershipContent() {
                     <h3>Premium</h3>
                   </div>
                   <div className="price">
-                    <strong>{billingInterval==="month" ? "\$9.99" : billingInterval==="6_month" ? "\$50.95" : "\$107.89"}</strong>
+                    <strong>{billingInterval==="month" ? "\$9.99" : billingInterval==="6_month" ? "\$53.95" : "\$101.90"}</strong>
                     <span>{billingInterval==="month" ? "billed monthly" : billingInterval==="6_month" ? "billed every 6 months" : "billed annually"}</span>
                   </div>
                 </div>
