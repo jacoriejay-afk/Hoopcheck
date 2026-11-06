@@ -66,7 +66,7 @@ export default function TeamLeaguePicker({
         if(mode==="league"){
           const table=leagueSource||(allCategories?"leagues":activeGender==="womens"?"womens_leagues":"leagues");
           const rows=await fetchAll<LeagueRow>(table,table==="womens_leagues"?"id,name,country":"id,name,country,basketball_type",q=>q.eq("active",true).order("name"));
-          const eligibleRows=allCategories||table==="womens_leagues"||!basketballType?rows:rows.filter(row=>norm(row.basketball_type)===basketballType);
+          const eligibleRows=allCategories||table==="womens_leagues"?rows:rows.filter(row=>!row.basketball_type||norm(row.basketball_type)===activeGender);
           nextItems=eligibleRows.map(row=>({id:row.id,name:row.name,country:row.country||"",city:"",leagues:[],leagueIds:[],aliases:[row.name]}));
         }else{
           const table=directorySource;
