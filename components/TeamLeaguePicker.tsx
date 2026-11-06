@@ -164,7 +164,7 @@ export default function TeamLeaguePicker({
     <div className="hc-shared-picker-values">
       {displayItems.map(item=><span key={item.id} className="hc-shared-picker-chip"><span>{item.name}</span><button type="button" aria-label={"Remove "+item.name} onClick={()=>remove(item)} disabled={disabled}>×</button></span>)}
       <button type="button" className="hc-shared-picker-trigger" disabled={disabled} onClick={()=>setOpen(true)}>{displayItems.length?(multiple?"Add another":"Change selection"):(placeholder||(mode==="team"?"Choose a team":"Choose a league"))}</button>
-      {displayItems.length>0&&!multiple&&<button type="button" className="hc-shared-picker-clear" onClick={()=>remove(selectedItems[0])} disabled={disabled}>Remove</button>}
+      {displayItems.length>0&&!multiple&&<button type="button" className="hc-shared-picker-clear" onClick={()=>remove(displayItems[0])} disabled={disabled}>Remove</button>}
     </div>
     {open&&<div className="hc-shared-picker-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setOpen(false);}}>
       <section className="hc-shared-picker-dialog" role="dialog" aria-modal="true" aria-label={label||(mode==="team"?"Choose a team":"Choose a league")}>
