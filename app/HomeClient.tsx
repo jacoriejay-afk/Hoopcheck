@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCachedSession } from "../lib/supabase";
+import { getCachedSession, supabase } from "../lib/supabase";
 import CategoryTile, { type CategoryTileKind } from "../components/CategoryTile";
 import SearchBar from "../components/SearchBar";
 import { HoopIcon } from "../components/HoopCheckUI";
@@ -20,7 +20,7 @@ const categories:{label:string;subtitle:string;href:string;category:CategoryTile
 
 export default function Home(){
  const router=useRouter();
- useEffect(()=>{getCachedSession().then(({data})=>{if(data.session)router.replace("/dashboard");});},[router]);
+ useEffect(()=>{getCachedSession().then(({data})=>{if(data.session)router.replace("/dashboard");});},[router]);\n useEffect(()=>{let active=true;void Promise.all([supabase.from("teams").select("id",{count:"exact",head:true}).eq("active",true).eq("basketball_type","mens"),supabase.from("womens_teams").select("id",{count:"exact",head:true}).eq("active",true),supabase.from("coaches").select("id",{count:"exact",head:true}),supabase.from("leagues").select("id",{count:"exact",head:true}).eq("active",true),supabase.from("profiles").select("id",{count:"exact",head:true}).eq("account_type","player").eq("profile_visibility","public").neq("moderation_status","suspended").not("username","is",null)]).then(([teams,womens,coaches,leagues,players])=>{if(!active)return;const next:Partial<Record<CategoryTileKind,number>>={};if(teams.count!=null)next.teams=teams.count;if(womens.count!=null)next.womens=womens.count;if(coaches.count!=null)next.coaches=coaches.count;if(leagues.count!=null)next.leagues=leagues.count;if(players.count!=null)next.players=players.count;setDirectoryCounts(next);}).catch(()=>{if(active)setDirectoryCounts({});});return()=>{active=false;};},[]);
  useEffect(()=>{if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;const nodes=Array.from(document.querySelectorAll<HTMLElement>(".hc-ia-door,.hc-d3-membership-band"));nodes.forEach((node,index)=>{node.classList.add("hc-d3-reveal");node.style.transitionDelay=`${Math.min(index,4)*.06}s`;});const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add("is-visible");observer.unobserve(entry.target);}}),{threshold:.12});nodes.forEach(node=>observer.observe(node));return()=>observer.disconnect();},[]);
  return <main className="hc-template-home hc-home-redesign hc-ia-home hc-ia-public-home">
    <div className="hc-d3-desktop-only"><HomeDesktopIdentity/></div>
@@ -32,7 +32,7 @@ export default function Home(){
    <HomeDirectoryStats />
    </div>
    <div className="hc-d3-desktop-search"><SearchBar className="hc-ia-search" name="q" placeholder="Search teams, coaches, leagues, or players" ariaLabel="Search basketball directory"/></div>
-   <section className="hc-ia-section"><div className="hc-ia-section-heading"><div><p className="eyebrow">YOUR NEXT MOVE</p><h2>EXPLORE HOOPCHECK</h2></div><Link href="/directory">All directories <HoopIcon name="arrow-right" size={15}/></Link></div><div className="hc-template-category-grid hc-home-category-grid hc-ia-door-grid">{categories.map(category=><CategoryTile key={category.label} label={category.label} category={category.category} href={category.href} description={category.subtitle} className="hc-home-category-tile"/>)}</div></section>
+   <section className="hc-ia-section"><div className="hc-ia-section-heading"><div><p className="eyebrow">YOUR NEXT MOVE</p><h2>EXPLORE HOOPCHECK</h2></div><Link href="/directory">All directories <HoopIcon name="arrow-right" size={15}/></Link></div><div className="hc-template-category-grid hc-home-category-grid hc-ia-door-grid">{categories.filter(category=>directoryCounts[category.category]!=null).map(category=><CategoryTile key={category.label} label={category.label} category={category.category} href={category.href} description={category.subtitle} count={directoryCounts[category.category]} className="hc-home-category-tile"/>)}</div></section>
    <div className="hc-d3-live-band hc-d3-desktop-only"><Link href="/live-games"><span>LIVE GAMES</span><span>OPEN THE HUB →</span></Link></div>
    <section className="hc-d3-membership-band hc-d3-desktop-only"><Link href="/membership"><span>MEMBERSHIP</span><span>EXPLORE OPTIONS →</span></Link></section>
  </div></main>;
