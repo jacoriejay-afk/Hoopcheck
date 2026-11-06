@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "audit:surfaces": "node scripts/audit-hardcoded-surfaces.mjs",
-    "check:hf4-fan-groups": "node scripts/check-hf4-fan-groups.mjs"
+    "check:hf4-fan-groups": "node scripts/check-hf4-fan-groups.mjs",
+    "audit:bundle": "node scripts/audit-bundle.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.7.0",
