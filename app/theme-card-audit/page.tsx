@@ -78,6 +78,16 @@ function ThemeColumn({ theme }: { theme: "light" | "dark" }) {
       </section>
 
       <section className="hc-card-audit-section">
+        <h2>PLAYER PROFILE HERO</h2>
+        <Surface as="section" className="hero-card player-profile-hero hc-player-profile-hero">
+          <p className="eyebrow">PLAYER PROFILE</p>
+          <h2>Alex Morgan</h2>
+          <p className="muted">Guard · United States · 5 Pro Seasons</p>
+          <strong>Followers 120 · Reviews 8</strong>
+        </Surface>
+      </section>
+
+      <section className="hc-card-audit-section">
         <h2>LIVE GAME HUB HERO</h2>
         <header className="hc-live-hub-hero">
           <div>
