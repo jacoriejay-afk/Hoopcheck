@@ -222,3 +222,25 @@ html.theme-dark main.admin-directory-shell :where(div,section,article,aside)[sty
   background-color: var(--hc-surface-raised) !important;
   border-color: var(--hc-border) !important;
 }
+
+
+/* HOME-1: directory statistic cards use a paired surface/ink contract in both themes.
+   This selector is intentionally in the canonical token layer, not the page stylesheet. */
+html.theme-light main .hc-home-directory-stat {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark main .hc-home-directory-stat {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light main .hc-home-directory-stat strong,
+html.theme-dark main .hc-home-directory-stat strong {
+  color: var(--hc-foreground) !important;
+}
+html.theme-light main .hc-home-directory-stat span,
+html.theme-dark main .hc-home-directory-stat span {
+  color: var(--hc-foreground-muted) !important;
+}
