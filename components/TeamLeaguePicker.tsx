@@ -42,6 +42,7 @@ export default function TeamLeaguePicker({
   const [open,setOpen]=useState(false);
   const [items,setItems]=useState<Item[]>([]);
   const [loading,setLoading]=useState(false);
+  const [hasLoaded,setHasLoaded]=useState(false);
   const [loadError,setLoadError]=useState("");
   const [query,setQuery]=useState("");
   const [debouncedQuery,setDebouncedQuery]=useState("");
@@ -55,7 +56,7 @@ export default function TeamLeaguePicker({
   useEffect(()=>{const timer=window.setTimeout(()=>setDebouncedQuery(query.trim()),250);return()=>window.clearTimeout(timer);},[query]);
 
   useEffect(()=>{
-    if(!open||items.length) return;
+    if(!open||hasLoaded) return;
     let active=true; setLoading(true); setLoadError("");
     void (async()=>{
       try{
@@ -109,14 +110,14 @@ export default function TeamLeaguePicker({
           }
           nextItems.sort((a,b)=>a.name.localeCompare(b.name));
         }
-        if(active) setItems(nextItems);
+        if(active) { setItems(nextItems); setHasLoaded(true); }
       }catch(error){
         console.error("Team/league picker load failed:",error);
         if(active) setLoadError("We couldn't load the directory. Close this picker and try again.");
       }finally{if(active)setLoading(false);}
     })();
     return()=>{active=false;};
-  },[open,items.length,mode,activeGender]);
+  },[open,hasLoaded,mode,activeGender]);
 
   const countries=useMemo(()=>[...new Set(items.map(item=>item.country).filter(Boolean))].sort(),[items]);
   const leagues=useMemo(()=>{
@@ -144,12 +145,13 @@ export default function TeamLeaguePicker({
     }else{
       setSelectedIds([item.id]); onChange?.(displayValue(item)); onChangeMany?.([displayValue(item)]);
     }
+    onSelectItem?.({id:item.id,name:item.name,country:item.country,city:item.city,league_name:item.leagues[0]||""});
     setOpen(false);setQuery("");setCountry("");setLeague("");
   }
   function remove(item:Item){
     const next=selectedIds.filter(id=>id!==item.id);
     setSelectedIds(next);onChangeMany?.(next.map(id=>{const found=items.find(entry=>entry.id===id);return found?displayValue(found):id;}));
-    if(!multiple)onChange?.("");
+    if(!multiple){onChange?.("");onSelectItem?.({id:"",name:"",country:"",city:"",league_name:""});}
   }
 
   return <div className="hc-shared-picker">
@@ -163,7 +165,7 @@ export default function TeamLeaguePicker({
       <section className="hc-shared-picker-dialog" role="dialog" aria-modal="true" aria-label={label||(mode==="team"?"Choose a team":"Choose a league")}>
         <header className="hc-shared-picker-sticky">
           <div className="hc-shared-picker-dialog-heading"><strong>{mode==="team"?"Choose a team":"Choose a league"}</strong><button type="button" onClick={()=>setOpen(false)} aria-label="Close picker">×</button></div>
-          {basketballType==null&&mode==="team"&&<div className="hc-shared-picker-gender"><button type="button" className={activeGender==="mens"?"is-active":""} onClick={()=>{setActiveGender("mens");setItems([]);setCountry("");setLeague("");}}>Men’s</button><button type="button" className={activeGender==="womens"?"is-active":""} onClick={()=>{setActiveGender("womens");setItems([]);setCountry("");setLeague("");}}>Women’s</button></div>}
+          {basketballType==null&&mode==="team"&&<div className="hc-shared-picker-gender"><button type="button" className={activeGender==="mens"?"is-active":""} onClick={()=>{setActiveGender("mens");setItems([]);setHasLoaded(false);setCountry("");setLeague("");}}>Men’s</button><button type="button" className={activeGender==="womens"?"is-active":""} onClick={()=>{setActiveGender("womens");setItems([]);setHasLoaded(false);setCountry("");setLeague("");}}>Women’s</button></div>}
           <label className="hc-shared-picker-search-label">Search {mode==="team"?"teams":"leagues"}<input autoFocus value={query} onChange={event=>setQuery(event.target.value)} placeholder="Name, abbreviation, city or country…" /></label>
           <div className="hc-shared-picker-filters">
             <label>Country<select value={country} onChange={event=>{setCountry(event.target.value);setLeague("");}}><option value="">All countries</option>{countries.map(item=><option key={item} value={item}>{item}</option>)}</select></label>
