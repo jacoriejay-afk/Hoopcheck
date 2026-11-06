@@ -31,3 +31,10 @@ The live `profiles` table has many inbound foreign keys. A read-only catalog que
 ## Release status
 
 This was a read-only catalog inspection. No production migrations, data mutations, auth deletions, subscription cancellations, merges or deployments were performed.
+
+
+## Follow-up safety hardening on the feature branch (2026-11-06)
+
+The legacy `POST /api/account/delete` handler has now been replaced on this branch with a fail-closed `409 ACCOUNT_DELETION_LIFECYCLE_NOT_READY` response. It no longer cancels Stripe subscriptions, removes storage, or deletes Auth users. This is an interim safety guard, not the completed DEL-1 lifecycle. The profile UI's existing delete action will receive the explanatory response and leave the account intact.
+
+This guard must remain until the complete 30-day lifecycle and its tests replace it. It has not been deployed to production.
