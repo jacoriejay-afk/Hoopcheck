@@ -157,6 +157,14 @@ export async function POST(request: Request) {
       if (!["open", "approval"].includes(mode)) return NextResponse.json({ ok: false, message: "Choose a valid join mode." }, { status: 400 });
       const { error } = await db.from("team_fan_groups").update({ join_mode: mode, updated_at: new Date().toISOString() }).eq("team_id", teamId);
       if (error) throw error;
+      if (mode === "open") {
+        const { data: pending } = await db.from("team_fan_group_join_requests").select("id,user_id").eq("team_id", teamId).eq("status", "pending");
+        if (pending?.length) {
+          await db.from("team_fan_group_members").upsert(pending.map((r: any) => ({ team_id: teamId, user_id: r.user_id })), { onConflict: "team_id,user_id" });
+          await db.from("team_fan_group_join_requests").update({ status: "approved", reviewed_at: new Date().toISOString(), reviewed_by: user.id }).in("id", pending.map((r: any) => r.id));
+          await notify(db, pending.map((r: any) => r.user_id), teamId, "group_approved", "Your Fan Group request was approved", "You're now a member of " + group.group_name + ".");
+        }
+      }
       return NextResponse.json({ ok: true });
     }
     if (action === "review_request") {
