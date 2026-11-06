@@ -470,8 +470,12 @@ try {
         await page.waitForFunction((teamName) => document.querySelector("main.hc-fan-feed-page .hc-feed-composer textarea")?.getAttribute("placeholder")?.includes(teamName), teamFixture.name, { timeout: 15000 });
         await page.locator("main.hc-fan-feed-page .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
         const teamHeading = (await page.locator("main.hc-fan-feed-page .hc-feed-hero h1").innerText()).trim();
+        const teamSubtitle = (await page.locator("main.hc-fan-feed-page .hc-feed-hero .muted").innerText()).trim();
+        const fanHqEyebrow = (await page.locator("main.hc-fan-feed-page .hc-feed-hero .eyebrow").innerText()).trim();
         const composerPlaceholder = await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").getAttribute("placeholder");
         if (teamHeading !== teamFixture.name) errors.push("fan-feed: hero is not wired to the selected team's real name: " + teamHeading);
+        if (!teamSubtitle.includes(teamFixture.name)) errors.push("fan-feed: hero subtitle is missing the selected team's real name: " + teamSubtitle);
+        if (!fanHqEyebrow.includes("FAN HQ")) errors.push("fan-feed: real Fan HQ eyebrow is missing: " + fanHqEyebrow);
         if (!composerPlaceholder?.includes(teamFixture.name)) errors.push("fan-feed: composer placeholder is not team-specific: " + composerPlaceholder);
         const emptyCopy = (await page.locator("main.hc-fan-feed-page .hc-feed-empty").innerText()).trim();
         const expectedEmptyTitle = testLanguage === "es" ? "Tu feed de fans empieza aquí." : "Your fan feed starts here.";
@@ -484,7 +488,7 @@ try {
         const expectedDiscoverFans = testLanguage === "es" ? "Descubrir fans" : "Discover fans";
         if ((await discoverFans.innerText().catch(() => "")).trim() !== expectedDiscoverFans) errors.push("fan-feed: EMPTY-1 Discover Fans action label is incorrect");
         const audienceNote = (await page.locator("main.hc-fan-feed-page .hc-feed-expiry-note").innerText()).trim();
-        if (!audienceNote || /KICKER|TITLE|Subtitle|TEAM FIRST|Fan Only Note/.test(audienceNote)) errors.push("fan-feed: audience note is missing or still scaffolded: " + audienceNote);
+        if (!audienceNote || !audienceNote.includes("24") || /KICKER|TITLE|Subtitle|TEAM FIRST|Fan Only Note/.test(audienceNote)) errors.push("fan-feed: audience note is missing or still scaffolded: " + audienceNote);
       }
       if (requestedPath.startsWith("/team-hub/groups/")) {
         await page.locator("main.hc-team-fan-group-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
