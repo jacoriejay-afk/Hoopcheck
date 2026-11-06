@@ -87,6 +87,15 @@ function ThemeColumn({ theme }: { theme: "light" | "dark" }) {
           </div>
           <span aria-hidden="true">◉</span>
         </header>
+        <article className="hc-live-hub-card">
+          <strong>Orlando Lions · vs · Miami Waves</strong>
+          <p className="muted">National League · Today, 7:30 PM</p>
+          <span>Upcoming game chat</span>
+        </article>
+        <section className="hc-live-hub-filters">
+          <strong>Filter games</strong>
+          <p className="muted">All games · Live only · My teams</p>
+        </section>
       </section>
 
       <section className="hc-card-audit-section">
