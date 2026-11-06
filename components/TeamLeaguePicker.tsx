@@ -51,7 +51,7 @@ export default function TeamLeaguePicker({
   const [activeGender,setActiveGender]=useState<Gender>(basketballType||"mens");
   const [selectedIds,setSelectedIds]=useState<string[]>(values||(value?[value]:[]));
 
-  useEffect(()=>{setActiveGender(basketballType||"mens");},[basketballType]);
+  useEffect(()=>{setActiveGender(basketballType||"mens");setItems([]);setHasLoaded(false);setCountry("");setLeague("");},[basketballType]);
   useEffect(()=>{setSelectedIds(values||(value?[value]:[]));},[value,values?.join("|")]);
   useEffect(()=>{const timer=window.setTimeout(()=>setDebouncedQuery(query.trim()),250);return()=>window.clearTimeout(timer);},[query]);
 
