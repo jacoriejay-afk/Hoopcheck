@@ -9,7 +9,7 @@ import HoopLoading from "../../../../components/HoopLoading";
 import "../../../../app/hoopfeed-shared.css";
 
 type Summary = { group_name: string; member_count: number; join_mode: "open" | "approval"; is_member: boolean; has_pending_request: boolean };
-type GroupPost = { id: string; team_id: string; author_id: string; body: string; image_url: string | null; is_pinned: boolean; created_at: string; profiles?: { display_name: string | null; avatar_url: string | null } | null };
+type GroupPost = { id: string; team_id: string; author_id: string; body: string; image_url: string | null; image_src?: string | null; is_pinned: boolean; created_at: string; profiles?: { display_name: string | null; avatar_url: string | null } | null };
 type GroupComment = { id: string; post_id: string; author_id: string; body: string; created_at: string; profiles?: { display_name: string | null } | null };
 type Member = { user_id: string; joined_at: string; moderator_type?: string | null; display_name?: string | null };
 
