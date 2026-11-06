@@ -23,6 +23,8 @@ const requiredCards = [
   [".hc-account-page .dashboard-card", "dashboard-card"],
   [".hc-review-card", "ReviewCard"],
   [".hc-membership-page .plan-card", "plan-card"],
+  [".membership-hero", "membership-hero"],
+  [".hc-account-settings-header", "hc-account-settings-header"],
   [".hc-layout-card", "Card"],
   [".hc-layout-group", "GroupCard"],
 ];
