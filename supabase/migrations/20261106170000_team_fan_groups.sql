@@ -103,13 +103,14 @@ for each row execute function public.ensure_team_fan_group();
 create or replace function public.transfer_team_fan_group_moderator()
 returns trigger language plpgsql security definer set search_path=public as $$
 begin
-  if new.entity_type='team' and new.status='approved'
-     and (tg_op='INSERT' or old.status is distinct from new.status) then
-    insert into public.team_fan_group_moderators(team_id,user_id,moderator_type)
-    values(new.entity_id,new.requester_id,'club_admin')
-    on conflict(team_id,user_id) do update set moderator_type='club_admin';
-    delete from public.team_fan_group_moderators
-    where team_id=new.entity_id and moderator_type='platform';
+  if new.entity_type='team' and new.status='approved' then
+    if tg_op='INSERT' or old.status is distinct from new.status then
+      insert into public.team_fan_group_moderators(team_id,user_id,moderator_type)
+      values(new.entity_id,new.requester_id,'club_admin')
+      on conflict(team_id,user_id) do update set moderator_type='club_admin';
+      delete from public.team_fan_group_moderators
+      where team_id=new.entity_id and moderator_type='platform';
+    end if;
   end if;
   return new;
 end; $$;
