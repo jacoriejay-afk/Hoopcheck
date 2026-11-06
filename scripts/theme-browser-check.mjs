@@ -257,7 +257,7 @@ try {
     "/teams", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2", "/teams/a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f0", "/admin/team-logos", "/coaches", "/coaches/11111111-1111-4111-8111-111111111111", "/leagues", "/players", "/womens", "/directory",
     "/reviews", "/membership", "/notifications", "/support", "/verification",
     "/privacy-center", "/privacy", "/terms", "/community-guidelines", "/login",
-    "/signup", "/onboarding", "/fan-live", "/live-games", "/partners", "/copyright",
+    "/signup", "/onboarding", "/fan-live", "/live-games", "/theme-card-audit", "/partners", "/copyright",
   ];
   const themeComponentInventory = [
     { route: "/live-games", selector: ".hc-live-empty", surface: "Live and upcoming empty-state card" },
@@ -336,6 +336,10 @@ try {
         await page.waitForTimeout(300);
         if (requestedPath === "/live-games") {
           await page.locator("main.hc-live-hub-page").waitFor({ state: "visible", timeout: 15000 });
+        }
+        if (requestedPath === "/theme-card-audit") {
+          await page.locator("main.hc-card-audit-page .hc-card-audit-preview[data-theme-preview='light']").waitFor({ state: "visible", timeout: 15000 });
+          await page.locator("main.hc-card-audit-page .hc-card-audit-preview[data-theme-preview='dark']").waitFor({ state: "visible", timeout: 15000 });
         }
       } catch (error) {
         navigationError = error instanceof Error ? error.message : String(error);
@@ -434,6 +438,16 @@ try {
       }, { requestedPath, navigationError });
       const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
       const errors = [];
+      if (requestedPath === "/theme-card-audit") {
+        const previews = await page.locator("main.hc-card-audit-page .hc-card-audit-preview").count();
+        if (previews !== 2) errors.push("theme-card-audit: expected side-by-side light and dark specimens; got " + previews);
+        for (const themePreview of ["light", "dark"]) {
+          const preview = page.locator(".hc-card-audit-preview[data-theme-preview='" + themePreview + "']");
+          for (const selector of [".hc-live-empty", ".hc-live-empty__icon", ".hc-live-section-heading h2 span", ".hc-live-hub-filters", ".hc-live-hub-card"]) {
+            if (await preview.locator(selector).count() === 0) errors.push("theme-card-audit/" + themePreview + ": missing " + selector);
+          }
+        }
+      }
       if (requestedPath === "/live-games") {
         const audit = await page.evaluate(() => {
           const read = (selector) => {
