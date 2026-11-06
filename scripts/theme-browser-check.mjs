@@ -305,12 +305,12 @@ try {
         const fanSurfaceRoute = activeRoutePath === "/fan-feed" || activeRoutePath.startsWith("/team-hub/groups/");
         const accountTypeQuery = (url.searchParams.get("select") || "").includes("account_type");
         const fanProfile = { ...profile, account_type: "fan" };
-        data = fanSurfaceRoute && accountTypeQuery ? (single ? fanProfile : [fanProfile]) : single ? profile : [];
+        data = fanSurfaceRoute && accountTypeQuery ? fanProfile : single ? profile : [];
       }
       else if (url.pathname.includes("/rest/v1/subscriptions")) {
         const fanSurfaceRoute = activeRoutePath === "/fan-feed" || activeRoutePath.startsWith("/team-hub/groups/");
         const subscriptionQuery = (url.searchParams.get("select") || "").includes("plan");
-        data = fanSurfaceRoute && subscriptionQuery ? (single ? subscription : [subscription]) : single ? subscription : [];
+        data = fanSurfaceRoute && subscriptionQuery ? subscription : single ? subscription : [];
       }
       else if (url.pathname.includes("/rest/v1/teams")) {
         const idFilter = url.searchParams.get("id") || "";
