@@ -14,7 +14,12 @@ import HoopLoading from "../../components/HoopLoading";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import SearchBar from "../../components/SearchBar";
 import CourtLines from "../../components/CourtLines";
-import TeamMap from "../../components/TeamMap";
+import dynamic from "next/dynamic";
+
+const TeamMap = dynamic(() => import("../../components/TeamMap"), {
+  ssr: false,
+  loading: () => <div className="card" aria-live="polite">Loading team map…</div>,
+});
 import Surface from "../../components/Surface";
 import { useLanguage } from "../../components/LanguageProvider";
 
