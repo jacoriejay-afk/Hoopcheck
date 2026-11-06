@@ -127,22 +127,25 @@ for each row execute function public.transfer_team_fan_group_moderator();
 
 create or replace function public.is_team_fan_group_member(p_team_id uuid,p_user_id uuid default auth.uid())
 returns boolean language sql stable security definer set search_path=public as $$
-  select exists(
-    select 1 from public.team_fan_group_members m
-    join public.profiles p on p.id=m.user_id and p.account_type='fan'
-    where m.team_id=p_team_id and m.user_id=p_user_id
-  ) or exists(select 1 from public.team_fan_group_moderators m where m.team_id=p_team_id and m.user_id=p_user_id)
-  or (
-    p_user_id=auth.uid()
-    and exists(select 1 from public.team_fan_group_moderators m where m.team_id=p_team_id and m.moderator_type='platform')
-    and public.is_current_user_admin_or_moderator()
-  );
+  select case when p_user_id is distinct from auth.uid() then false else (
+    exists(
+      select 1 from public.team_fan_group_members m
+      join public.profiles p on p.id=m.user_id and p.account_type='fan'
+      where m.team_id=p_team_id and m.user_id=auth.uid()
+    ) or exists(select 1 from public.team_fan_group_moderators m where m.team_id=p_team_id and m.user_id=auth.uid())
+    or (
+      exists(select 1 from public.team_fan_group_moderators m where m.team_id=p_team_id and m.moderator_type='platform')
+      and public.is_current_user_admin_or_moderator()
+    )
+  ) end;
 $$;
 create or replace function public.is_team_fan_group_moderator(p_team_id uuid,p_user_id uuid default auth.uid())
 returns boolean language sql stable security definer set search_path=public as $$
-  select exists(select 1 from public.team_fan_group_moderators m where m.team_id=p_team_id and m.user_id=p_user_id)
-  or (exists(select 1 from public.team_fan_group_moderators m where m.team_id=p_team_id and m.moderator_type='platform')
-      and public.is_current_user_admin_or_moderator() and p_user_id=auth.uid());
+  select case when p_user_id is distinct from auth.uid() then false else (
+    exists(select 1 from public.team_fan_group_moderators m where m.team_id=p_team_id and m.user_id=auth.uid())
+    or (exists(select 1 from public.team_fan_group_moderators m where m.team_id=p_team_id and m.moderator_type='platform')
+        and public.is_current_user_admin_or_moderator())
+  ) end;
 $$;
 revoke all on function public.is_team_fan_group_member(uuid,uuid) from public;
 revoke all on function public.is_team_fan_group_moderator(uuid,uuid) from public;
@@ -199,7 +202,7 @@ for select to authenticated using(reporter_id=auth.uid() or public.is_team_fan_g
 -- Extend the existing notification type allowlist without changing existing notification behavior.
 alter table public.notifications drop constraint if exists notifications_notification_type_check;
 alter table public.notifications add constraint notifications_notification_type_check
-check(notification_type in ('review','rating','update','group_request','group_approved','group_report'));
+check(notification_type in ('review','rating','update','game_reminder','group_request','group_approved','group_report'));
 
 -- Existing approved claims are transferred at migration time as well as by the trigger.
 insert into public.team_fan_group_moderators(team_id,user_id,moderator_type)
