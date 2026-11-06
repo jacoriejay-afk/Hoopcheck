@@ -191,6 +191,9 @@ try {
       // Auth/profile hydration can redirect /dashboard after its loading shell first
       // appears. Wait for that navigation to settle before reading computed styles.
       await page.waitForLoadState("domcontentloaded").catch(() => {});
+      // Give client-side auth redirects a brief chance to complete after the
+      // dashboard's initial loading shell becomes visible.
+      await page.waitForTimeout(750);
       const computed = await page.evaluate(({ wrapperSelector, routeName }) => {
         const color = (selector) => {
           const element = document.querySelector(selector);
