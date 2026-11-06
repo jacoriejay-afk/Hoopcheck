@@ -495,7 +495,7 @@ export default function AccountPage() {
               <label htmlFor="current-country" className="muted">{t("currentCountry")}</label><input id="current-country" value={currentCountry} readOnly aria-describedby="player-identity-locked" />
               <label htmlFor="current-team" className="muted">{t("currentTeam")}</label><input id="current-team" value={currentTeam} readOnly aria-describedby="player-identity-locked" />
             </>}
-            <TeamLeaguePicker mode="team" label="Favorite team" value={favoriteTeam} returnValue="name" onChange={setFavoriteTeam} basketballType={profile.basketball_type||null} placeholder="Search teams by name, city or country" />
+            <TeamLeaguePicker mode="team" multiple returnValue="name" label="Favorite teams" values={favoriteTeam.split(",").map(item=>item.trim()).filter(Boolean)} onChangeMany={items=>setFavoriteTeam(items.join(", ").slice(0,500))} basketballType={profile.basketball_type||null} placeholder="Search and add favorite teams" />
             <label htmlFor="profile-editor-field-bio" className="muted">{t("playerBio")}</label><textarea id="profile-editor-field-bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder={t("playerBioPlaceholder")} />
                         {profile.account_type === "player" && <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>{t("showFreeAgent")}</span></label>}
             {["scout","agent"].includes(profile.account_type) && <>
