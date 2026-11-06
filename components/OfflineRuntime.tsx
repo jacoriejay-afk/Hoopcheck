@@ -6,10 +6,19 @@ export default function OfflineRuntime() {
   const [offline, setOffline] = useState(false);
   const [updateReady, setUpdateReady] = useState(false);
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
+  const [currentVersion, setCurrentVersion] = useState<string | null>(null);
 
   useEffect(() => {
     const updateNetwork = () => setOffline(!navigator.onLine);
     updateNetwork();
+    void fetch("/api/app-version", { cache: "no-store" }).then((response) => response.ok ? response.json() : null).then((payload) => {
+      const nextVersion = typeof payload?.version === "string" ? payload.version : null;
+      if (!nextVersion) return;
+      setCurrentVersion(nextVersion);
+      const previousVersion = localStorage.getItem("hoopcheck-app-version");
+      if (previousVersion && previousVersion !== nextVersion) setUpdateReady(true);
+      else if (!previousVersion) localStorage.setItem("hoopcheck-app-version", nextVersion);
+    }).catch(() => {});
     window.addEventListener("online", updateNetwork);
     window.addEventListener("offline", updateNetwork);
 
@@ -56,7 +65,9 @@ export default function OfflineRuntime() {
   }, []);
 
   function applyUpdate() {
-    registration?.waiting?.postMessage({ type: "SKIP_WAITING" });
+    if (currentVersion) localStorage.setItem("hoopcheck-app-version", currentVersion);
+    if (registration?.waiting) registration.waiting.postMessage({ type: "SKIP_WAITING" });
+    else window.location.reload();
   }
 
   if (!offline && !updateReady) return null;
