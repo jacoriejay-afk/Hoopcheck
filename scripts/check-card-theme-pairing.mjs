@@ -28,11 +28,9 @@ const failures = [];
 for (const token of requiredPairs) {
   if (!tokens.includes(token) && !contract.includes(token)) failures.push(`Missing semantic token: ${token}`);
 }
-for (const selector of requiredCards) {
+for (const [selector, specimen] of requiredCards) {
   if (!contract.includes(selector)) failures.push(`Card pairing contract missing: ${selector}`);
-  if (!auditPage.includes(selector.replace(/^\.hc-account-page /, "")) &&
-      !auditPage.includes(selector.replace(/^\.hc-membership-page /, "")) &&
-      !auditPage.includes(selector)) failures.push(`Visual audit page missing specimen: ${selector}`);
+  if (!auditPage.includes(specimen)) failures.push(`Visual audit page missing specimen for: ${selector}`);
 }
 if (!layout.includes('import "./hoopcheck-card-pairing.css";')) failures.push("Card pairing CSS is not loaded by the root layout.");
 if (!layout.includes('import "./hoopcheck-card-pairing.css";') ||
