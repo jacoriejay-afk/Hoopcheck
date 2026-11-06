@@ -9,6 +9,7 @@ const TERMS_VERSION = "2026-10-01";
 const ACCOUNT_TYPES = [
   { value: "player", label: "Player" },
   { value: "coach", label: "Coach" },
+  { value: "manager", label: "Team Manager / Club" },
   { value: "scout", label: "Scout" },
   { value: "agent", label: "Agent" },
   { value: "fan", label: "Fan" },
