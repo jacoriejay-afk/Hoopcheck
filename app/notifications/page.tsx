@@ -7,7 +7,7 @@ import HoopLoading from "../../components/HoopLoading";
 import WatchButton from "../../components/WatchButton";
 import { HoopIcon } from "../../components/HoopCheckUI";
 
-type Notice={id:string;target_type:"team"|"coach"|"league"|"game"|"player";target_id:string;notification_type:"review"|"rating"|"update"|"trust_score"|"roster_spot"|"pay_warning"|"game_reminder";title:string;body:string;read_at:string|null;created_at:string};
+type Notice={id:string;target_type:"team"|"coach"|"league"|"game"|"player";target_id:string;notification_type:"review"|"rating"|"update"|"trust_score"|"roster_spot"|"pay_warning"|"game_reminder"|"player_team_change";title:string;body:string;read_at:string|null;created_at:string};
 
 export default function NotificationsPage(){
   const [items,setItems]=useState<Notice[]>([]);
