@@ -99,8 +99,14 @@ export default function FollowButton({ targetType, targetId, variant = "default"
         setCount(previousCount);
         onCountChange?.(previousCount);
         showFailure();
-      } else if (nextFollowing) {
-        setNotify(true);
+      } else {
+        if (nextFollowing) setNotify(true);
+        const { data: reconciledCount } = await supabase.rpc("get_follow_count", { p_target_type: targetType, p_target_id: targetId });
+        if (reconciledCount !== null && reconciledCount !== undefined) {
+          const value = Number(reconciledCount);
+          setCount(value);
+          onCountChange?.(value);
+        }
       }
     } catch {
       setFollowing(wasFollowing);
