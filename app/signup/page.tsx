@@ -1,12 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Logo from "../../components/Logo";
 import { useRouter } from "next/navigation";
 import { HoopIcon, type HoopIconName } from "../../components/HoopCheckUI";
 import { getCachedSession, supabase } from "../../lib/supabase";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
+import UsernameField, { type UsernameFieldHandle } from "../../components/UsernameField";
 
 const TERMS_VERSION = "2026-10-01";
 type AccountType = "player" | "coach" | "manager" | "scout" | "agent" | "fan";
@@ -26,7 +27,7 @@ export default function SignupPage() {
   const { language, setLanguage } = useLanguage();
   const [accountType, setAccountType] = useState<AccountType | null>(null);
   const [firstName,setFirstName]=useState(""); const [lastName,setLastName]=useState("");
-  const [username,setUsername]=useState(""); const [position,setPosition]=useState("PG");
+  const [username,setUsername]=useState(""); const usernameFieldRef=useRef<UsernameFieldHandle>(null); const [position,setPosition]=useState("PG");
   const [yearsPro,setYearsPro]=useState("0"); const [professionalExperience,setProfessionalExperience]=useState(false);
   const [formerTeams,setFormerTeams]=useState<string[]>([]); const [favoriteTeamId,setFavoriteTeamId]=useState("");
   const [teams,setTeams]=useState<Team[]>([]);
@@ -60,7 +61,8 @@ export default function SignupPage() {
     event.preventDefault(); setLoading(true); setError("");
     if(!accountType){setError("Choose an account type first.");setLoading(false);return;}
     if(firstName.trim().length<2||lastName.trim().length<2){setError("Please enter your first and last name.");setLoading(false);return;}
-    if(!/^[a-zA-Z0-9_]{3,20}$/.test(username.trim())){setError("Username must be 3–20 characters using only letters, numbers, or underscores.");setLoading(false);return;}
+    const usernameCheck=await usernameFieldRef.current?.validate();
+    if(!usernameCheck?.valid){const message=usernameCheck?.message||"Use 3–20 characters: letters, numbers, or underscores.";setError("Username: "+message);usernameFieldRef.current?.focus();setLoading(false);return;}
     if(password.length<6){setError("Password must be at least 6 characters.");setLoading(false);return;}
     if(password!==confirmPassword){setError("Passwords do not match.");setLoading(false);return;}
     if(!birthMonth||!birthDay||!birthYear){setError("Birthdate is required.");setLoading(false);return;}
@@ -145,7 +147,7 @@ export default function SignupPage() {
             <div><label htmlFor="first-name">First Name</label><input id="first-name" value={firstName} onChange={e=>setFirstName(e.target.value)} autoComplete="given-name" required /></div>
             <div><label htmlFor="last-name">Last Name</label><input id="last-name" value={lastName} onChange={e=>setLastName(e.target.value)} autoComplete="family-name" required /></div>
           </div>
-          <label htmlFor="username">Username</label><input id="username" value={username} onChange={e=>setUsername(e.target.value.replace(/\s+/g,"").toLowerCase())} autoComplete="username" inputMode="text" placeholder="yourname" required />
+          <UsernameField ref={usernameFieldRef} value={username} onChange={setUsername} disabled={loading} />
 
           {isPlayer ? <>
             <div className="signup-two-col">
