@@ -278,6 +278,30 @@ try {
     ]);
     const page = await context.newPage();
     let activeRoutePath = "";
+    let liveGameFixtureMode: "empty" | "populated" = "empty";
+    const fixtureNow = Date.now();
+    const liveGameFixtures = [
+      {
+        id: "33333333-3333-4333-8333-333333333331", team_id: teamFixture.id, opponent_team_id: fallbackTeamFixture.id,
+        opponent_name: fallbackTeamFixture.name, status: "live", home_score: 52, away_score: 48,
+        started_at: new Date(fixtureNow - 20 * 60_000).toISOString(), ends_at: new Date(fixtureNow + 35 * 60_000).toISOString(),
+        scheduled_at: new Date(fixtureNow - 20 * 60_000).toISOString(), league_id: leagueFixture.id,
+        league_name: "QA League", country: "Azerbaijan", period_label: "Q3",
+      },
+      {
+        id: "33333333-3333-4333-8333-333333333332", team_id: teamFixture.id, opponent_team_id: fallbackTeamFixture.id,
+        opponent_name: fallbackTeamFixture.name, status: "scheduled", home_score: null, away_score: null,
+        started_at: null, ends_at: null, scheduled_at: new Date(fixtureNow + 2 * 60 * 60_000).toISOString(),
+        league_id: leagueFixture.id, league_name: "QA League", country: "Azerbaijan", period_label: null,
+      },
+      {
+        id: "33333333-3333-4333-8333-333333333333", team_id: teamFixture.id, opponent_team_id: fallbackTeamFixture.id,
+        opponent_name: fallbackTeamFixture.name, status: "final", home_score: 80, away_score: 74,
+        started_at: new Date(fixtureNow - 2 * 60 * 60_000).toISOString(), ends_at: new Date(fixtureNow - 60 * 60_000).toISOString(),
+        scheduled_at: new Date(fixtureNow - 2 * 60 * 60_000).toISOString(), league_id: leagueFixture.id,
+        league_name: "QA League", country: "Azerbaijan", period_label: null,
+      },
+    ];
     await page.addInitScript(({ themePreference, authSession, language }) => {
       localStorage.setItem("hoopcheck-theme", themePreference);
       localStorage.setItem("hoopcheck-language", language);
@@ -311,6 +335,9 @@ try {
         const fanSurfaceRoute = activeRoutePath === "/fan-feed" || activeRoutePath.startsWith("/team-hub/groups/");
         const subscriptionQuery = (url.searchParams.get("select") || "").includes("plan");
         data = fanSurfaceRoute && subscriptionQuery ? subscription : single ? subscription : [];
+      }
+      else if (url.pathname.includes("/rest/v1/fan_live_games")) {
+        data = activeRoutePath === "/live-games" && liveGameFixtureMode === "populated" ? liveGameFixtures : [];
       }
       else if (url.pathname.includes("/rest/v1/teams")) {
         const idFilter = url.searchParams.get("id") || "";
@@ -572,6 +599,39 @@ try {
         if (audit.filterCard?.background !== raised) errors.push("live-games: filter card surface regressed: " + JSON.stringify(audit.filterCard));
         if (audit.populatedGameCards !== 0) errors.push("live-games: empty-fixture test unexpectedly rendered game cards");
         result.liveHubPairing = audit;
+
+        liveGameFixtureMode = "populated";
+        await page.reload({ waitUntil: "domcontentloaded", timeout: 20000 });
+        await page.locator("main.hc-live-hub-page").waitFor({ state: "visible", timeout: 15000 });
+        await page.waitForFunction(() => document.querySelectorAll("main.hc-live-hub-page .hc-live-hub-card").length >= 3, null, { timeout: 15000 });
+        const populatedAudit = await page.evaluate(() => {
+          const read = (element) => {
+            if (!element) return null;
+            const style = getComputedStyle(element);
+            return { background: style.backgroundColor, color: style.color, text: (element.textContent || "").trim() };
+          };
+          return {
+            cards: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-hub-card")).map(read),
+            counts: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-section-heading h2 span")).map(read),
+            filter: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-filters")),
+            liveChatLinks: document.querySelectorAll('main.hc-live-hub-page a[href^="/fan-live?gameId="]').length,
+            renderedText: document.querySelector("main.hc-live-hub-page")?.innerText || "",
+          };
+        });
+        if (populatedAudit.cards.length !== 3) errors.push("live-games: populated fixture did not render three real GameCard rows");
+        for (const [index, card] of populatedAudit.cards.entries()) {
+          if (card.background !== raised || card.color !== foreground) errors.push("live-games: populated GameCard " + index + " has an unpaired theme: " + JSON.stringify(card));
+        }
+        if (populatedAudit.counts.length !== 3 || populatedAudit.counts.some(badge => badge.text !== "1" || badge.background !== soft || badge.color !== foreground)) {
+          errors.push("live-games: populated section badges are not visibly paired: " + JSON.stringify(populatedAudit.counts));
+        }
+        if (populatedAudit.filter?.background !== raised) errors.push("live-games: populated filter card surface regressed");
+        if (populatedAudit.liveChatLinks < 1) errors.push("live-games: live chat entry is missing from populated game cards");
+        if (["KICKER", "TITLE", "Subtitle", "TEAM FIRST", "Fan Only Note", "Composer Placeholder", "EMPTY TITLE", "EMPTY KICKER", "Empty Body", "Lorem", "TODO", "Placeholder"].some(term => populatedAudit.renderedText.includes(term))) {
+          errors.push("live-games: populated route rendered scaffold text");
+        }
+        result.liveHubPopulated = populatedAudit;
+        liveGameFixtureMode = "empty";
       }
       if (result.themeClass !== theme) errors.push("html theme class mismatch");
       if (result.body !== expectedPage) errors.push("body background mismatch");
