@@ -120,9 +120,9 @@ export async function POST(request: Request) {
         const ext = image.type === "image/jpeg" ? "jpg" : image.type === "image/png" ? "png" : "webp";
         uploadedPath = teamId + "/" + user.id + "/" + randomUUID() + "." + ext;
         const bytes = Buffer.from(await image.arrayBuffer());
-        const { error } = await db.storage.from("feed-images").upload(uploadedPath, bytes, { contentType: image.type, cacheControl: "31536000", upsert: false });
+        const { error } = await db.storage.from("fan-group-images").upload(uploadedPath, bytes, { contentType: image.type, cacheControl: "31536000", upsert: false });
         if (error) throw error;
-        imageUrl = db.storage.from("feed-images").getPublicUrl(uploadedPath).data.publicUrl;
+        imageUrl = uploadedPath;
       }
       const { data, error } = await db.from("team_fan_group_posts").insert({ team_id: teamId, author_id: user.id, body: text, image_url: imageUrl }).select("id,team_id,author_id,body,image_url,is_pinned,status,created_at").single();
       if (error) throw error;
@@ -203,7 +203,7 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ ok: false, message: "Unsupported Fan Group action." }, { status: 400 });
   } catch (error) {
-    if (db && uploadedPath) { try { await db.storage.from("feed-images").remove([uploadedPath]); } catch { /* best effort */ } }
+    if (db && uploadedPath) { try { await db.storage.from("fan-group-images").remove([uploadedPath]); } catch { /* best effort */ } }
     console.error("Team Fan Group action failed", error);
     return NextResponse.json({ ok: false, message: "The Fan Group action could not be completed." }, { status: 500 });
   }
