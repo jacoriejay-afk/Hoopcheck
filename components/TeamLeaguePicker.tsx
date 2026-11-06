@@ -137,10 +137,10 @@ export default function TeamLeaguePicker({
     }).slice(0,50);
   },[items,country,league,debouncedQuery,mode]);
 
-  const selectedItems=useMemo(()=>selectedIds.map(id=>items.find(item=>item.id===id)||items.find(item=>returnValue==="name"&&item.name===id)).filter(Boolean) as Item[],[items,selectedIds,returnValue]);
+  const selectedItems=useMemo(()=>selectedIds.map(id=>items.find(item=>item.id===id)||items.find(item=>returnValue==="name"&&(item.name===id||item.aliases.includes(id)))).filter(Boolean) as Item[],[items,selectedIds,returnValue]);
   const displayItems=selectedItems.length?selectedItems:(returnValue==="name"?selectedIds.map(name=>({id:name,name,country:"",city:"",leagues:[],leagueIds:[],aliases:[name]})):[]);
   function displayValue(item:Item){return returnValue==="name"?item.name:item.id;}
-  function canonicalIds(){return selectedIds.map(id=>items.find(item=>item.id===id||(returnValue==="name"&&item.name===id))?.id||id);}
+  function canonicalIds(){return selectedIds.map(id=>items.find(item=>item.id===id||(returnValue==="name"&&(item.name===id||item.aliases.includes(id))))?.id||id);}
   function choose(item:Item){
     if(multiple){
       const currentIds=canonicalIds();
