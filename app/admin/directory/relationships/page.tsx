@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../../../lib/supabase";
+import TeamLeaguePicker from "../../../../components/TeamLeaguePicker";
 
 type Coach = { id: string; name: string };
 type Team = { id: string; name: string };
@@ -81,12 +82,12 @@ export default function RelationshipsPage() {
         <h2 style={{marginTop:0}}>{editing?"Edit":"Add"} relationship</h2>
         {tab==="coach" ? <div style={grid()}>
           <label>Coach<select style={input} value={form.coach_id||""} onChange={e=>setForm({...form,coach_id:e.target.value})}><option value="">Select coach</option>{coaches.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-          <label>Team<select style={input} value={form.team_id||""} onChange={e=>setForm({...form,team_id:e.target.value})}><option value="">Select team</option>{teams.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+          <TeamLeaguePicker mode="team" label="Team" value={form.team_id||""} onChange={value=>setForm({...form,team_id:value})} placeholder="Search team" />
           <label>Role<input style={input} value={form.role||""} onChange={e=>setForm({...form,role:e.target.value})} placeholder="Head Coach" /></label>
           <label>Season<input style={input} value={form.season||""} onChange={e=>setForm({...form,season:e.target.value})} placeholder="2026-27" /></label>
         </div> : <div style={grid()}>
-          <label>Team<select style={input} value={form.team_id||""} onChange={e=>setForm({...form,team_id:e.target.value})}><option value="">Select team</option>{teams.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-          <label>League<select style={input} value={form.league_id||""} onChange={e=>setForm({...form,league_id:e.target.value})}><option value="">Select league</option>{leagues.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+          <TeamLeaguePicker mode="team" label="Team" value={form.team_id||""} onChange={value=>setForm({...form,team_id:value})} placeholder="Search team" />
+          <TeamLeaguePicker mode="league" allCategories label="League" value={form.league_id||""} onChange={value=>setForm({...form,league_id:value})} placeholder="Search league" />
           <label>Season<input style={input} value={form.season||""} onChange={e=>setForm({...form,season:e.target.value})} placeholder="2026-27" /></label>
           <label>Start date<input type="date" style={input} value={form.start_date||""} onChange={e=>setForm({...form,start_date:e.target.value})} /></label>
           <label>End date<input type="date" style={input} value={form.end_date||""} onChange={e=>setForm({...form,end_date:e.target.value})} /></label>
