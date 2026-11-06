@@ -4,6 +4,8 @@ const css = readFileSync("app/hoopcheck-hub-empty-state-pairing.css", "utf8");
 const layout = readFileSync("app/layout.tsx", "utf8");
 const auditPage = readFileSync("app/theme-card-audit/page.tsx", "utf8");
 const browserCheck = readFileSync("scripts/theme-browser-check.mjs", "utf8");
+const fanFeedPage = readFileSync("app/fan-feed/page.tsx", "utf8");
+const fanFeedI18n = readFileSync("app/fan-feed/i18n.ts", "utf8");
 const failures = [];
 
 const requiredCss = [
@@ -47,6 +49,19 @@ const requiredBrowserCoverage = [
 ];
 for (const required of requiredBrowserCoverage) {
   if (!browserCheck.includes(required)) failures.push("Browser regression inventory missing: " + required);
+}
+
+const scaffoldTerms = ["KICKER", "TITLE", "Subtitle", "TEAM FIRST", "Fan Only Note", "Composer Placeholder", "EMPTY TITLE", "EMPTY KICKER", "Empty Body", "Lorem", "TODO", "Placeholder"];
+for (const term of scaffoldTerms) {
+  if (!browserCheck.includes(term)) failures.push("Rendered scaffold guard is missing term: " + term);
+}
+for (const route of ['"/fan-feed"', '"/team-hub/groups/"', '"/live-games"', '"/theme-card-audit"']) {
+  if (!browserCheck.includes(route)) failures.push("Browser route coverage missing: " + route);
+}
+if (!fanFeedPage.includes("selectedTeam?.name") ||
+    !fanFeedPage.includes("fanFeedTeamComposerPlaceholder") ||
+    !fanFeedI18n.includes('composer: "Post to {team} fans…"')) {
+  failures.push("Fan team feed hero/composer are not wired to the selected team's real name.");
 }
 
 const importLine = 'import "./hoopcheck-hub-empty-state-pairing.css";';
