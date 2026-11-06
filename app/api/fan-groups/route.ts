@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
 
 export const runtime = "nodejs";
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const MAX_TEXT = 2000;
 
 function adminClient() {
