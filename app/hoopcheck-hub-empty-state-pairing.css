@@ -120,3 +120,9 @@
   color:#B83E14!important;
   border-color:#FFC0A7!important;
 }
+
+.hc-live-hub-page .hc-live-recent-empty {
+  background:transparent!important;
+  color:var(--hc-foreground-muted)!important;
+  border-color:var(--hc-border)!important;
+}
