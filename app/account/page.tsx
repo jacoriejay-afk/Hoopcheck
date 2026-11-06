@@ -33,6 +33,7 @@ type Profile = {
   current_country: string | null;
   current_country_public: boolean;
   current_team: string | null;
+  favorite_teams?: string | null;
   profile_visibility: "public" | "private" | "players_only";
   player_verified: boolean; coach_verified?: boolean; coach_profile_id?: string | null; experience_summary?: string | null;
   profile_claimed: boolean;
@@ -47,7 +48,7 @@ type Target = { id: string; name: string };
 const emptyProfile: Profile = {
   account_type: "player",
   display_name: null, first_name: null, last_name: null, professional_experience: false,
-  bio: null, position: null, years_pro: null, current_country: null, current_country_public: true, current_team: null,
+  bio: null, position: null, years_pro: null, current_country: null, current_country_public: true, current_team: null, favorite_teams: null,
   profile_visibility: "public", player_verified: false, profile_claimed: true,
   avatar_url: null, avatar_moderation_status: "approved"
 };
@@ -83,6 +84,7 @@ export default function AccountPage() {
   const [currentCountry, setCurrentCountry] = useState("");
   const [countryPublic, setCountryPublic] = useState(false);
   const [currentTeam, setCurrentTeam] = useState("");
+  const [favoriteTeam, setFavoriteTeam] = useState("");
   const [hometown, setHometown] = useState("");
   const [nationality, setNationality] = useState("");
   const [interests, setInterests] = useState("");
@@ -118,7 +120,7 @@ export default function AccountPage() {
       setEmail(user.email ?? "");
       setUserId(user.id);
       const [{ data: profileData }, { data: subscriptionData }, { data: adminRoleData }] = await Promise.all([
-        supabase.from("profiles").select("account_type,basketball_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("account_type,basketball_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,favorite_teams,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
         supabase.rpc("get_current_user_admin_role"),
       ]);
@@ -133,6 +135,7 @@ export default function AccountPage() {
       setCurrentCountry(nextProfile.current_country ?? "");
       setCountryPublic(Boolean(nextProfile.current_country_public));
       setCurrentTeam(nextProfile.current_team ?? "");
+      setFavoriteTeam(nextProfile.favorite_teams ?? "");
       setHometown((nextProfile as any).hometown ?? "");
       setNationality((nextProfile as any).nationality ?? "");
       setFreeAgent(Boolean((nextProfile as any).free_agent));
@@ -233,6 +236,7 @@ export default function AccountPage() {
         years_pro: profile.account_type === "player" && yearsPro.trim() !== "" ? Number(yearsPro) : null,
         current_country: profile.account_type === "player" ? currentCountry.trim() || null : null,
         current_team: profile.account_type === "player" ? currentTeam.trim() || null : null,
+        favorite_teams: favoriteTeam.trim().slice(0,500) || null,
         hometown: hometown.trim().slice(0, 120) || null,
         nationality: nationality.trim().slice(0, 80) || null,
         interests: interests.trim().slice(0, 500) || null,
@@ -491,11 +495,12 @@ export default function AccountPage() {
               <label htmlFor="current-country" className="muted">{t("currentCountry")}</label><input id="current-country" value={currentCountry} readOnly aria-describedby="player-identity-locked" />
               <label htmlFor="current-team" className="muted">{t("currentTeam")}</label><input id="current-team" value={currentTeam} readOnly aria-describedby="player-identity-locked" />
             </>}
+            <TeamLeaguePicker mode="team" label="Favorite team" value={favoriteTeam} returnValue="name" onChange={setFavoriteTeam} basketballType={profile.basketball_type||null} placeholder="Search teams by name, city or country" />
             <label htmlFor="profile-editor-field-bio" className="muted">{t("playerBio")}</label><textarea id="profile-editor-field-bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder={t("playerBioPlaceholder")} />
                         {profile.account_type === "player" && <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>{t("showFreeAgent")}</span></label>}
             {["scout","agent"].includes(profile.account_type) && <>
               <label htmlFor="profile-editor-field-interests" className="muted">{t("basketballInterests")}</label><textarea id="profile-editor-field-interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("scoutAgentInterestsPlaceholder")} />
-              <TeamLeaguePicker mode="league" multiple returnValue="name" label={t("leaguesOfInterest")} values={favoriteLeagues.split(",").map(item=>item.trim()).filter(Boolean)} onChangeMany={items=>setFavoriteLeagues(items.join(", ").slice(0,500))} basketballType={profile.basketball_type||null} placeholder="Search and add leagues" />
+              <TeamLeaguePicker mode="league" multiple returnValue="name" label={t("leaguesOfInterest")} values={favoriteLeagues.split(",").map(item=>item.trim()).filter(Boolean)} onChangeMany={items=>setFavoriteLeagues(items.join(", ").slice(0,500))} basketballType={profile.basketball_type||null} directorySource={profile.basketball_type==="womens"?"womens_teams":"teams"} placeholder="Search and add leagues" />
             </>}
             {profile.account_type === "fan" && <label htmlFor="interests" className="muted">{t("basketballInterests")}</label>}
             {profile.account_type === "fan" && <textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("fanInterestsPlaceholder")} />}
