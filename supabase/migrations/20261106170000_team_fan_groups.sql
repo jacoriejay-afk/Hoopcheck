@@ -120,8 +120,11 @@ for each row execute function public.transfer_team_fan_group_moderator();
 
 create or replace function public.is_team_fan_group_member(p_team_id uuid,p_user_id uuid default auth.uid())
 returns boolean language sql stable security definer set search_path=public as $$
-  select exists(select 1 from public.team_fan_group_members m where m.team_id=p_team_id and m.user_id=p_user_id)
-  or exists(select 1 from public.team_fan_group_moderators m where m.team_id=p_team_id and m.user_id=p_user_id);
+  select exists(
+    select 1 from public.team_fan_group_members m
+    join public.profiles p on p.id=m.user_id and p.account_type='fan'
+    where m.team_id=p_team_id and m.user_id=p_user_id
+  ) or exists(select 1 from public.team_fan_group_moderators m where m.team_id=p_team_id and m.user_id=p_user_id);
 $$;
 create or replace function public.is_team_fan_group_moderator(p_team_id uuid,p_user_id uuid default auth.uid())
 returns boolean language sql stable security definer set search_path=public as $$
@@ -138,7 +141,7 @@ create or replace function public.get_team_fan_group_summary(p_team_id uuid)
 returns table(group_name text,member_count bigint,join_mode text,is_member boolean,has_pending_request boolean)
 language sql stable security definer set search_path=public as $$
   select g.group_name,
-    (select count(*) from public.team_fan_group_members m where m.team_id=g.team_id),
+    (select count(*) from public.team_fan_group_members m join public.profiles p on p.id=m.user_id and p.account_type='fan' where m.team_id=g.team_id),
     g.join_mode,
     public.is_team_fan_group_member(g.team_id,auth.uid()),
     exists(select 1 from public.team_fan_group_join_requests r where r.team_id=g.team_id and r.user_id=auth.uid() and r.status='pending')
