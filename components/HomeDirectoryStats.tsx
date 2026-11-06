@@ -59,7 +59,7 @@ export default function HomeDirectoryStats() {
   if (!stats.length) return null;
   return <section ref={root} className="hc-home-directory-stats" aria-label="Live directory totals">
     {stats.map(stat => <div className="hc-home-directory-stat" key={stat.label}>
-      <strong>{stat.value == null ? "" : `${Math.floor(stat.value * progress).toLocaleString()}+`}</strong>
+      <strong>{stat.value == null ? "—" : `${Math.floor(stat.value * progress).toLocaleString()}+`}</strong>
       <span>{stat.label}</span>
     </div>)}
   </section>;
