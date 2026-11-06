@@ -1,0 +1,153 @@
+"use client";
+
+import CategoryTile from "../../components/CategoryTile";
+import PlayerProfilePanel from "../../components/PlayerProfilePanel";
+import ReviewCard from "../../components/ReviewCard";
+import Surface from "../../components/Surface";
+import { Card, GroupCard } from "../../components/LayoutSystem";
+
+const contractSample = [{
+  id: "audit-contract-1",
+  team: "Northside Basketball",
+  league: "National League",
+  country: "United States",
+  season: "2025–26",
+  status: "Active" as const,
+  games: 18,
+  salary: null,
+  currency: null,
+  paymentStatus: "Verified",
+  verified: true,
+}];
+
+const reviewSample = [{
+  id: "audit-review-1",
+  agent: "Jordan Smith",
+  organization: "Player Representation",
+  rating: 4.5,
+  date: "Nov 2026",
+  summary: "Clear communication and reliable support throughout the season.",
+  verified: true,
+}];
+
+function ThemeColumn({ theme }: { theme: "light" | "dark" }) {
+  return (
+    <section className="hc-card-audit-preview" data-theme-preview={theme} aria-label={theme + " theme card preview"}>
+      <header className="hc-card-audit-section">
+        <h2>{theme.toUpperCase()} THEME</h2>
+        <p className="muted">Semantic surface + paired foreground</p>
+      </header>
+
+      <section className="hc-card-audit-section">
+        <h2>HOMEPAGE / DIRECTORY CARDS</h2>
+        <div className="hc-card-audit-sample">
+          <CategoryTile label="Men’s Teams" category="teams" href="/teams" description="Research teams before you sign" />
+        </div>
+      </section>
+
+      <section className="hc-card-audit-section">
+        <h2>CLUB PROFILE HERO</h2>
+        <Surface as="section" className="hero hc-team-profile-hero">
+          <p className="eyebrow">HOOPCHECK CLUB PROFILE</p>
+          <h1>Northside Basketball</h1>
+          <p className="muted">Orlando, United States · National League</p>
+          <div className="hc-card-audit-sample">
+            <strong>Reviews&nbsp;&nbsp; 12</strong>
+            <span> · Trust Score&nbsp;&nbsp; 84</span>
+            <span> · Followers&nbsp;&nbsp; 240</span>
+          </div>
+          <button type="button" className="btn">Following</button>
+        </Surface>
+      </section>
+
+      <section className="hc-card-audit-section">
+        <h2>PLAYER PROFILE / DOSSIER</h2>
+        <PlayerProfilePanel
+          playerName="Alex Morgan"
+          username="alexmorgan"
+          position="Guard"
+          nationality="United States"
+          currentTeam="Northside Basketball"
+          currentCountry="United States"
+          seasonsPro={5}
+          verifiedPlayer
+          bio="Five seasons of professional basketball experience."
+          contracts={contractSample}
+          reviews={reviewSample}
+        />
+      </section>
+
+      <section className="hc-card-audit-section">
+        <h2>LIVE GAME HUB HERO</h2>
+        <header className="hc-live-hub-hero">
+          <div>
+            <p className="eyebrow">HOOPCHECK · LIVE GAME HUB</p>
+            <h1>LIVE GAME CHAT<span>.</span></h1>
+            <p>Watch together. Follow live and upcoming games, and join the conversation.</p>
+          </div>
+          <span aria-hidden="true">◉</span>
+        </header>
+      </section>
+
+      <section className="hc-card-audit-section">
+        <h2>ACCOUNT / SETTINGS CARDS</h2>
+        <Card className="dashboard-card">
+          <p className="eyebrow">ACCOUNT OVERVIEW</p>
+          <h3>Jacorie Archie</h3>
+          <p className="muted">PLAYER · PREMIUM</p>
+          <strong>Profile 85% complete</strong>
+        </Card>
+        <GroupCard title="Account settings" className="hc-settings-group">
+          <p>Profile and privacy</p>
+          <p>Notifications and preferences</p>
+        </GroupCard>
+      </section>
+
+      <section className="hc-card-audit-section">
+        <h2>REVIEW CARDS</h2>
+        <ReviewCard username="Overseas Player" date="Nov 6, 2026" rating={4.5} text="Clear expectations, professional communication, and a positive team environment." />
+      </section>
+
+      <section className="hc-card-audit-section">
+        <h2>MEMBERSHIP CARDS</h2>
+        <Surface as="article" className="plan-card">
+          <p className="eyebrow">HOOPCHECK MEMBERSHIP</p>
+          <h3>Premium</h3>
+          <p className="muted">Full access to player tools and live game features.</p>
+          <strong>$9.99 / month</strong>
+          <ul><li>Full review access</li><li>Live Game Hub</li><li>Player profile tools</li></ul>
+        </Surface>
+      </section>
+
+      <section className="hc-card-audit-section">
+        <h2>GENERIC PANEL / MODAL</h2>
+        <Surface as="section" className="hero-card">
+          <h3>Confirm your next move</h3>
+          <p className="muted">This is a representative shared hero/panel surface.</p>
+        </Surface>
+        <Surface as="section" className="modal-panel">
+          <h3>Report submitted</h3>
+          <p className="muted">Your report is queued for moderation.</p>
+        </Surface>
+      </section>
+    </section>
+  );
+}
+
+export default function ThemeCardAuditPage() {
+  return (
+    <main className="page-shell hc-card-audit-page">
+      <div className="page-container">
+        <header className="hc-card-audit-heading">
+          <p className="eyebrow">INTERNAL VISUAL REGRESSION CHECK</p>
+          <h1>Card Theme Audit</h1>
+          <p className="muted">Review the shared card families side by side. Every specimen uses the same surface/foreground pairing contract.</p>
+        </header>
+        <div className="hc-card-audit-grid">
+          <ThemeColumn theme="light" />
+          <ThemeColumn theme="dark" />
+        </div>
+      </div>
+    </main>
+  );
+}
