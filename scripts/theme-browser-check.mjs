@@ -332,14 +332,13 @@ try {
       if (url.pathname === "/auth/v1/user") data = user;
       else if (url.pathname.includes("/rest/v1/profiles")) {
         const fanSurfaceRoute = activeRoutePath === "/fan-feed" || activeRoutePath.startsWith("/team-hub/groups/");
-        const accountTypeQuery = (url.searchParams.get("select") || "").includes("account_type");
+        const accountTypeQuery = (url.searchParams.get("select") || "").includes("account_type") && (url.searchParams.get("id") || "").startsWith("eq.");
         const fanProfile = { ...profile, account_type: "fan" };
-        data = fanSurfaceRoute && accountTypeQuery ? fanProfile : single ? profile : [];
+        data = accountTypeQuery ? (fanSurfaceRoute ? fanProfile : profile) : single ? profile : [];
       }
       else if (url.pathname.includes("/rest/v1/subscriptions")) {
-        const fanSurfaceRoute = activeRoutePath === "/fan-feed" || activeRoutePath.startsWith("/team-hub/groups/");
-        const subscriptionQuery = (url.searchParams.get("select") || "").includes("plan");
-        data = fanSurfaceRoute && subscriptionQuery ? subscription : single ? subscription : [];
+        const subscriptionQuery = (url.searchParams.get("select") || "").includes("plan") && (url.searchParams.get("user_id") || "").startsWith("eq.");
+        data = subscriptionQuery ? subscription : single ? subscription : [];
       }
       else if (url.pathname.includes("/rest/v1/fan_live_games")) {
         data = activeRoutePath === "/live-games" && liveGameFixtureMode === "populated" ? liveGameFixtures : [];
