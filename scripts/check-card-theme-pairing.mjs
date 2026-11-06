@@ -13,15 +13,15 @@ const requiredPairs = [
   "--hc-card: var(--hc-surface-raised)",
 ];
 const requiredCards = [
-  ".hc-category-tile",
-  ".hc-live-hub-hero",
-  ".hc-team-profile-hero",
-  ".hc-dossier-identity",
-  ".hc-account-page .dashboard-card",
-  ".hc-review-card",
-  ".hc-membership-page .plan-card",
-  ".hc-layout-card",
-  ".hc-layout-group",
+  [".hc-category-tile", "CategoryTile"],
+  [".hc-live-hub-hero", "hc-live-hub-hero"],
+  [".hc-team-profile-hero", "hc-team-profile-hero"],
+  [".hc-dossier-identity", "PlayerProfilePanel"],
+  [".hc-account-page .dashboard-card", "dashboard-card"],
+  [".hc-review-card", "ReviewCard"],
+  [".hc-membership-page .plan-card", "plan-card"],
+  [".hc-layout-card", "Card"],
+  [".hc-layout-group", "GroupCard"],
 ];
 const failures = [];
 
