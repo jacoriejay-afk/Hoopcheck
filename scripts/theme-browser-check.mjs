@@ -312,7 +312,19 @@ try {
       else if (url.pathname.includes("/rest/v1/team_league_memberships")) data = [];
       else if (url.pathname.includes("/rest/v1/reviews")) data = [];
       else if (url.pathname.includes("/rest/v1/team_roster_spots")) data = [];
-      else if (url.pathname.includes("/rest/v1/follow_relationships")) data = single ? null : [];
+      else if (url.pathname.includes("/rest/v1/follow_relationships")) {
+        const isFanTeamFollow = activeRoutePath === "/fan-feed" && url.searchParams.get("target_type") === "eq.team";
+        data = isFanTeamFollow ? [{ target_id: teamFixture.id, target_type: "team" }] : single ? null : [];
+      }
+      else if (url.pathname.includes("/rest/v1/rpc/get_team_fan_group_summary")) {
+        data = activeRoutePath.startsWith("/team-hub/groups/") ? [{
+          group_name: teamFixture.name + " Fan Group",
+          member_count: 12,
+          join_mode: "open",
+          is_member: true,
+          has_pending_request: false,
+        }] : [];
+      }
       else if (url.pathname.includes("/rest/v1/rpc/get_follow_count")) data = 0;
       else if (url.pathname.includes("/rest/v1/rpc/get_review_verification")) data = [];
       else if (url.pathname.includes("/rest/v1/rpc/is_current_user_admin_or_moderator")) data = true;
@@ -451,6 +463,23 @@ try {
       }, { requestedPath, navigationError });
       const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
       const errors = [];
+      if (requestedPath === "/fan-feed") {
+        await page.locator("main.hc-fan-feed-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator("main.hc-fan-feed-page .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
+        const teamHeading = (await page.locator("main.hc-fan-feed-page .hc-feed-hero h1").innerText()).trim();
+        const composerPlaceholder = await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").getAttribute("placeholder");
+        if (teamHeading !== teamFixture.name) errors.push("fan-feed: hero is not wired to the selected team's real name: " + teamHeading);
+        if (!composerPlaceholder?.includes(teamFixture.name)) errors.push("fan-feed: composer placeholder is not team-specific: " + composerPlaceholder);
+        if (await page.locator('main.hc-fan-feed-page .hc-feed-empty a[href="/fans"]').count() !== 1) errors.push("fan-feed: EMPTY-1 Discover Fans action is missing");
+        const audienceNote = (await page.locator("main.hc-fan-feed-page .hc-feed-expiry-note").innerText()).trim();
+        if (!audienceNote || /KICKER|TITLE|Subtitle|TEAM FIRST|Fan Only Note/.test(audienceNote)) errors.push("fan-feed: audience note is missing or still scaffolded: " + audienceNote);
+      }
+      if (requestedPath.startsWith("/team-hub/groups/")) {
+        await page.locator("main.hc-team-fan-group-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator("main.hc-team-fan-group-page .hc-team-fan-group-composer textarea").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator("main.hc-team-fan-group-page .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
+      }
       if (requestedPath === "/theme-card-audit") {
         const previews = await page.locator("main.hc-card-audit-page .hc-card-audit-preview").count();
         if (previews !== 2) errors.push("theme-card-audit: expected side-by-side light and dark specimens; got " + previews);
