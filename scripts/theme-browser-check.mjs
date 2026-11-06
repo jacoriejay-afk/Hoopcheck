@@ -261,11 +261,16 @@ try {
     "/team-hub/groups/" + teamFixture.id, "/live-games", "/theme-card-audit", "/partners", "/copyright",
   ];
   const themeComponentInventory = [
+    { route: "/live-games", selector: ".hc-live-hub-hero", surface: "Hub hero surface/foreground pair" },
     { route: "/live-games", selector: ".hc-live-empty", surface: "Live and upcoming empty-state card" },
     { route: "/live-games", selector: ".hc-live-empty__icon", surface: "Empty-state icon chip" },
     { route: "/live-games", selector: ".hc-live-section-heading h2 span", surface: "Live/upcoming/recent count badge (including zero)" },
+    { route: "/live-games", selector: ".hc-live-recent-empty", surface: "Recently Finished dashed empty state" },
     { route: "/live-games", selector: ".hc-live-hub-filters", surface: "Hub filter card; regression sentinel" },
     { route: "/live-games", selector: ".hc-live-hub-card", surface: "Populated game card; regression sentinel" },
+    { route: "/live-games", selector: ".hc-live-card__crest", surface: "Game-card team logo chip" },
+    { route: "/live-games", selector: ".hc-live-join", surface: "Live chat entry" },
+    { route: "/live-games", selector: ".hc-live-card__meta", surface: "Game-card metadata" },
   ];
   const routeSweepResults = [];
   for (const theme of ["dark", "light"]) {
