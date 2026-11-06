@@ -1,0 +1,186 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "../lib/supabase";
+
+type Gender = "mens" | "womens";
+type TeamRow = { id:string; name:string; country:string|null; city:string|null; league_name:string|null; league_id?:string|null; basketball_type?:string|null; created_at?:string|null };
+type LeagueRow = { id:string; name:string; country:string|null; basketball_type?:string|null };
+type MembershipRow = { team_id:string; league_id:string; active?:boolean|null };
+type Item = { id:string; name:string; country:string; city:string; leagues:string[]; leagueIds:string[]; aliases:string[] };
+type Props = {
+  mode?: "team"|"league"; label?:string; placeholder?:string; value?:string; values?:string[];
+  multiple?:boolean; returnValue?:"id"|"name"; basketballType?:Gender|null;
+  onChange?:(value:string)=>void; onChangeMany?:(values:string[])=>void;
+  disabled?:boolean;
+};
+
+async function fetchAll<T>(table:string, columns:string, filters:(query:any)=>any):Promise<T[]> {
+  const rows:T[]=[]; const pageSize=1000;
+  for(let offset=0;offset<10000;offset+=pageSize){
+    let query=supabase.from(table).select(columns); query=filters(query);
+    const {data,error}=await query.range(offset,offset+pageSize-1);
+    if(error) throw error;
+    const page=(data||[]) as T[]; rows.push(...page);
+    if(page.length<pageSize) break;
+  }
+  return rows;
+}
+function cleanName(value:string){
+  return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/\b(women'?s|women|female|ladies|girls|men'?s|men|male)\b/g," ")
+    .replace(/\b(basketball|club|bc|b\.c\.|b\.k\.|bk)\b/g," ")
+    .replace(/[^a-z0-9]+/g," ").trim().replace(/\s+/g," ");
+}
+function initials(value:string){return value.split(/\s+/).filter(Boolean).map(word=>word[0]).join("");}
+function norm(value:string|null|undefined){return (value||"").trim().toLowerCase();}
+
+export default function TeamLeaguePicker({
+  mode="team",label,placeholder,value="",values,multiple=false,returnValue="id",
+  basketballType=null,onChange,onChangeMany,disabled=false,
+}:Props){
+  const [open,setOpen]=useState(false);
+  const [items,setItems]=useState<Item[]>([]);
+  const [loading,setLoading]=useState(false);
+  const [loadError,setLoadError]=useState("");
+  const [query,setQuery]=useState("");
+  const [debouncedQuery,setDebouncedQuery]=useState("");
+  const [country,setCountry]=useState("");
+  const [league,setLeague]=useState("");
+  const [activeGender,setActiveGender]=useState<Gender>(basketballType||"mens");
+  const [selectedIds,setSelectedIds]=useState<string[]>(values||(value?[value]:[]));
+
+  useEffect(()=>{setActiveGender(basketballType||"mens");},[basketballType]);
+  useEffect(()=>{setSelectedIds(values||(value?[value]:[]));},[value,values?.join("|")]);
+  useEffect(()=>{const timer=window.setTimeout(()=>setDebouncedQuery(query.trim()),250);return()=>window.clearTimeout(timer);},[query]);
+
+  useEffect(()=>{
+    if(!open||items.length) return;
+    let active=true; setLoading(true); setLoadError("");
+    void (async()=>{
+      try{
+        let nextItems:Item[]=[];
+        if(mode==="league"){
+          const table=activeGender==="womens"?"womens_leagues":"leagues";
+          const rows=await fetchAll<LeagueRow>(table,"id,name,country,basketball_type",q=>q.eq("active",true).order("name"));
+          nextItems=rows.map(row=>({id:row.id,name:row.name,country:row.country||"",city:"",leagues:[],leagueIds:[],aliases:[row.name]}));
+        }else{
+          const table=activeGender==="womens"?"womens_teams":"teams";
+          const columns=activeGender==="womens"?"id,name,country,city,league_name,league_id,created_at":"id,name,country,city,league_name,league_id,basketball_type,created_at";
+          const [teamRows,leagueRows,memberships]=await Promise.all([
+            fetchAll<TeamRow>(table,columns,q=>q.eq("active",true).order("name")),
+            fetchAll<LeagueRow>(activeGender==="womens"?"womens_leagues":"leagues","id,name,country,basketball_type",q=>q.eq("active",true).order("name")),
+            activeGender==="womens"?Promise.resolve([] as MembershipRow[]):fetchAll<MembershipRow>("team_league_memberships","team_id,league_id,active",q=>q.eq("active",true)),
+          ]);
+          const leagueById=new Map(leagueRows.map(row=>[row.id,row]));
+          const membershipByTeam=new Map<string,string[]>();
+          for(const membership of memberships){
+            const leagueName=leagueById.get(membership.league_id)?.name;
+            if(leagueName) membershipByTeam.set(membership.team_id,[...(membershipByTeam.get(membership.team_id)||[]),leagueName]);
+          }
+          const grouped=new Map<string,TeamRow[]>();
+          for(const row of teamRows){
+            if(row.basketball_type&&activeGender==="mens"&&!["mens","men","male"].includes(norm(row.basketball_type))) continue;
+            if(row.basketball_type&&activeGender==="womens"&&!["womens","women","female"].includes(norm(row.basketball_type))) continue;
+            const key=cleanName(row.name)+"|"+norm(row.country);
+            const group=grouped.get(key)||[]; group.push(row); grouped.set(key,group);
+          }
+          for(const rows of grouped.values()){
+            const cities=[...new Set(rows.map(row=>norm(row.city)).filter(Boolean))];
+            const cityBuckets=new Map<string,TeamRow[]>();
+            for(const row of rows){
+              const city=norm(row.city); const bucket=city|| (cities.length===1?cities[0]:"");
+              const group=cityBuckets.get(bucket)||[]; group.push(row); cityBuckets.set(bucket,group);
+            }
+            for(const group of cityBuckets.values()){
+              const sorted=[...group].sort((a,b)=>(a.created_at||"9999").localeCompare(b.created_at||"9999")||a.id.localeCompare(b.id));
+              const canonical=sorted[0];
+              const leagueNames=[...new Set(sorted.flatMap(row=>[
+                ...(row.league_name?[row.league_name]:[]),
+                ...(row.league_id&&leagueById.has(row.league_id)?[leagueById.get(row.league_id)!.name]:[]),
+                ...(membershipByTeam.get(row.id)||[]),
+              ]))].sort();
+              const leagueIds=[...new Set(sorted.flatMap(row=>[
+                ...(row.league_id?[row.league_id]:[]),
+                ...memberships.filter(m=>m.team_id===row.id).map(m=>m.league_id),
+              ]))];
+              nextItems.push({id:canonical.id,name:canonical.name,country:canonical.country||"",city:canonical.city||"",leagues:leagueNames,leagueIds,aliases:[...new Set(sorted.map(row=>row.name))]});
+            }
+          }
+          nextItems.sort((a,b)=>a.name.localeCompare(b.name));
+        }
+        if(active) setItems(nextItems);
+      }catch(error){
+        console.error("Team/league picker load failed:",error);
+        if(active) setLoadError("We couldn't load the directory. Close this picker and try again.");
+      }finally{if(active)setLoading(false);}
+    })();
+    return()=>{active=false;};
+  },[open,items.length,mode,activeGender]);
+
+  const countries=useMemo(()=>[...new Set(items.map(item=>item.country).filter(Boolean))].sort(),[items]);
+  const leagues=useMemo(()=>{
+    const pool=items.filter(item=>!country||item.country===country);
+    return [...new Set(pool.flatMap(item=>mode==="league"?[item.name]:item.leagues))].sort();
+  },[items,country,mode]);
+  const filtered=useMemo(()=>{
+    const q=debouncedQuery.toLowerCase();
+    return items.filter(item=>{
+      if(country&&item.country!==country)return false;
+      if(league&&(mode==="league"?item.name!==league:!item.leagues.includes(league)))return false;
+      if(!q)return true;
+      const fields=[item.name,...item.aliases,item.city,item.country,...item.leagues,initials(item.name)];
+      return fields.some(field=>norm(field).includes(q))||initials(item.name).toLowerCase().startsWith(q);
+    }).slice(0,50);
+  },[items,country,league,debouncedQuery,mode]);
+
+  const selectedItems=useMemo(()=>selectedIds.map(id=>items.find(item=>item.id===id)||items.find(item=>returnValue==="name"&&item.name===id)).filter(Boolean) as Item[],[items,selectedIds,returnValue]);
+  function displayValue(item:Item){return returnValue==="name"?item.name:item.id;}
+  function choose(item:Item){
+    if(multiple){
+      const next=selectedIds.includes(item.id)?selectedIds.filter(id=>id!==item.id):[...selectedIds,item.id];
+      setSelectedIds(next);
+      onChangeMany?.(next.map(id=>{const found=items.find(entry=>entry.id===id);return found?displayValue(found):id;}));
+    }else{
+      setSelectedIds([item.id]); onChange?.(displayValue(item)); onChangeMany?.([displayValue(item)]);
+    }
+    setOpen(false);setQuery("");setCountry("");setLeague("");
+  }
+  function remove(item:Item){
+    const next=selectedIds.filter(id=>id!==item.id);
+    setSelectedIds(next);onChangeMany?.(next.map(id=>{const found=items.find(entry=>entry.id===id);return found?displayValue(found):id;}));
+    if(!multiple)onChange?.("");
+  }
+
+  return <div className="hc-shared-picker">
+    {label&&<label className="hc-shared-picker-label">{label}</label>}
+    <div className="hc-shared-picker-values">
+      {selectedItems.map(item=><span key={item.id} className="hc-shared-picker-chip"><span>{item.name}</span><button type="button" aria-label={"Remove "+item.name} onClick={()=>remove(item)} disabled={disabled}>×</button></span>)}
+      <button type="button" className="hc-shared-picker-trigger" disabled={disabled} onClick={()=>setOpen(true)}>{selectedItems.length?(multiple?"Add another":"Change selection"):(placeholder||(mode==="team"?"Choose a team":"Choose a league"))}</button>
+      {selectedItems.length>0&&!multiple&&<button type="button" className="hc-shared-picker-clear" onClick={()=>remove(selectedItems[0])} disabled={disabled}>Remove</button>}
+    </div>
+    {open&&<div className="hc-shared-picker-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setOpen(false);}}>
+      <section className="hc-shared-picker-dialog" role="dialog" aria-modal="true" aria-label={label||(mode==="team"?"Choose a team":"Choose a league")}>
+        <header className="hc-shared-picker-sticky">
+          <div className="hc-shared-picker-dialog-heading"><strong>{mode==="team"?"Choose a team":"Choose a league"}</strong><button type="button" onClick={()=>setOpen(false)} aria-label="Close picker">×</button></div>
+          {basketballType==null&&mode==="team"&&<div className="hc-shared-picker-gender"><button type="button" className={activeGender==="mens"?"is-active":""} onClick={()=>{setActiveGender("mens");setItems([]);setCountry("");setLeague("");}}>Men’s</button><button type="button" className={activeGender==="womens"?"is-active":""} onClick={()=>{setActiveGender("womens");setItems([]);setCountry("");setLeague("");}}>Women’s</button></div>}
+          <label className="hc-shared-picker-search-label">Search {mode==="team"?"teams":"leagues"}<input autoFocus value={query} onChange={event=>setQuery(event.target.value)} placeholder="Name, abbreviation, city or country…" /></label>
+          <div className="hc-shared-picker-filters">
+            <label>Country<select value={country} onChange={event=>{setCountry(event.target.value);setLeague("");}}><option value="">All countries</option>{countries.map(item=><option key={item} value={item}>{item}</option>)}</select></label>
+            <label>League<select value={league} onChange={event=>setLeague(event.target.value)}><option value="">All leagues</option>{leagues.map(item=><option key={item} value={item}>{item}</option>)}</select></label>
+          </div>
+          <p className="hc-shared-picker-count">{loading?"Loading directory…":filtered.length+(filtered.length===50?"+":"")+" results shown · maximum 50"}</p>
+        </header>
+        <div className="hc-shared-picker-results" aria-live="polite">
+          {loading?<p className="hc-shared-picker-state">Loading directory…</p>
+            :loadError?<p className="hc-shared-picker-state" role="alert">{loadError}</p>
+            :!debouncedQuery&&!country&&!league?<p className="hc-shared-picker-state">Search by name or use the country and league filters to browse.</p>
+            :debouncedQuery.length===1?<p className="hc-shared-picker-state">Type at least 2 characters to search.</p>
+            :filtered.length?filtered.map(item=><button type="button" key={item.id} className={"hc-shared-picker-row"+(selectedIds.includes(item.id)?" is-selected":"")} onClick={()=>choose(item)}><span className="hc-shared-picker-row-main"><strong>{item.name}</strong><small>{[item.city,item.country,item.leagues.slice(0,1).join("")].filter(Boolean).join(" · ")||"Basketball directory"}</small></span><span className="hc-shared-picker-row-check">{selectedIds.includes(item.id)?"✓":"+"}</span></button>)
+            :<p className="hc-shared-picker-state">No "+mode+" matches '"+(debouncedQuery||league||country)+"' — try the spelling, or browse by country and league.</p>}
+        </div>
+        <footer className="hc-shared-picker-footer"><button type="button" className="btn dark" onClick={()=>setOpen(false)}>Close</button></footer>
+      </section>
+    </div>}
+  </div>;
+}
