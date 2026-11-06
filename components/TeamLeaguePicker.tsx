@@ -65,14 +65,14 @@ export default function TeamLeaguePicker({
         let nextItems:Item[]=[];
         if(mode==="league"){
           const table=allCategories?"leagues":activeGender==="womens"?"womens_leagues":"leagues";
-          const rows=await fetchAll<LeagueRow>(table,"id,name,country,basketball_type",q=>q.eq("active",true).order("name"));
+          const rows=await fetchAll<LeagueRow>(table,table==="womens_leagues"?"id,name,country":"id,name,country,basketball_type",q=>q.eq("active",true).order("name"));
           nextItems=rows.map(row=>({id:row.id,name:row.name,country:row.country||"",city:"",leagues:[],leagueIds:[],aliases:[row.name]}));
         }else{
           const table=directorySource;
           const columns=directorySource==="womens_teams"?"id,name,country,city,league_name,league_id,created_at":"id,name,country,city,league_name,league_id,basketball_type,created_at";
           const [teamRows,leagueRows,memberships]=await Promise.all([
             fetchAll<TeamRow>(table,columns,q=>q.eq("active",true).order("name")),
-            fetchAll<LeagueRow>(directorySource==="womens_teams"?"womens_leagues":"leagues","id,name,country,basketball_type",q=>q.eq("active",true).order("name")),
+            fetchAll<LeagueRow>(directorySource==="womens_teams"?"womens_leagues":"leagues",directorySource==="womens_teams"?"id,name,country":"id,name,country,basketball_type",q=>q.eq("active",true).order("name")),
             directorySource==="womens_teams"?Promise.resolve([] as MembershipRow[]):fetchAll<MembershipRow>("team_league_memberships","team_id,league_id,active",q=>q.eq("active",true)),
           ]);
           const leagueById=new Map(leagueRows.map(row=>[row.id,row]));
