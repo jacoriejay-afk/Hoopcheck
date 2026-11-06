@@ -9,7 +9,7 @@ type LeagueRow = { id:string; name:string; country:string|null; basketball_type?
 type MembershipRow = { team_id:string; league_id:string; active?:boolean|null };
 type Item = { id:string; name:string; country:string; city:string; leagues:string[]; leagueIds:string[]; aliases:string[] };
 type Props = {
-  mode?: "team"|"league"; directorySource?:"teams"|"womens_teams"; allCategories?:boolean; label?:string; placeholder?:string; value?:string; values?:string[];
+  mode?: "team"|"league"; directorySource?:"teams"|"womens_teams"; leagueSource?:"leagues"|"womens_leagues"; allCategories?:boolean; label?:string; placeholder?:string; value?:string; values?:string[];
   multiple?:boolean; returnValue?:"id"|"name"; basketballType?:Gender|null;
   onChange?:(value:string)=>void; onChangeMany?:(values:string[])=>void;
   onSelectItem?:(item:{id:string;name:string;country:string;city:string;league_name:string})=>void;
@@ -38,7 +38,7 @@ function abbreviations(value:string){const words=cleanName(value).split(" ").fil
 function norm(value:string|null|undefined){return (value||"").trim().toLowerCase();}
 
 export default function TeamLeaguePicker({
-  mode="team",directorySource="teams",allCategories=false,label,placeholder,value="",values,multiple=false,returnValue="id",
+  mode="team",directorySource="teams",leagueSource,allCategories=false,label,placeholder,value="",values,multiple=false,returnValue="id",
   basketballType=null,onChange,onChangeMany,onSelectItem,disabled=false,
 }:Props){
   const [open,setOpen]=useState(false);
@@ -64,7 +64,7 @@ export default function TeamLeaguePicker({
       try{
         let nextItems:Item[]=[];
         if(mode==="league"){
-          const table=allCategories?"leagues":activeGender==="womens"?"womens_leagues":"leagues";
+          const table=leagueSource||(allCategories?"leagues":activeGender==="womens"?"womens_leagues":"leagues");
           const rows=await fetchAll<LeagueRow>(table,table==="womens_leagues"?"id,name,country":"id,name,country,basketball_type",q=>q.eq("active",true).order("name"));
           nextItems=rows.map(row=>({id:row.id,name:row.name,country:row.country||"",city:"",leagues:[],leagueIds:[],aliases:[row.name]}));
         }else{
@@ -119,7 +119,7 @@ export default function TeamLeaguePicker({
       }finally{if(active)setLoading(false);}
     })();
     return()=>{active=false;};
-  },[open,hasLoaded,mode,activeGender,directorySource,allCategories,selectedIds.length]);
+  },[open,hasLoaded,mode,activeGender,directorySource,leagueSource,allCategories,selectedIds.length]);
 
   const countries=useMemo(()=>[...new Set(items.map(item=>item.country).filter(Boolean))].sort(),[items]);
   const leagues=useMemo(()=>{
