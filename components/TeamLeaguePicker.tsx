@@ -9,7 +9,7 @@ type LeagueRow = { id:string; name:string; country:string|null; basketball_type?
 type MembershipRow = { team_id:string; league_id:string; active?:boolean|null };
 type Item = { id:string; name:string; country:string; city:string; leagues:string[]; leagueIds:string[]; aliases:string[] };
 type Props = {
-  mode?: "team"|"league"; label?:string; placeholder?:string; value?:string; values?:string[];
+  mode?: "team"|"league"; directorySource?:"teams"|"womens_teams"; label?:string; placeholder?:string; value?:string; values?:string[];
   multiple?:boolean; returnValue?:"id"|"name"; basketballType?:Gender|null;
   onChange?:(value:string)=>void; onChangeMany?:(values:string[])=>void;
   disabled?:boolean;
@@ -36,7 +36,7 @@ function initials(value:string){return value.split(/\s+/).filter(Boolean).map(wo
 function norm(value:string|null|undefined){return (value||"").trim().toLowerCase();}
 
 export default function TeamLeaguePicker({
-  mode="team",label,placeholder,value="",values,multiple=false,returnValue="id",
+  mode="team",directorySource="teams",label,placeholder,value="",values,multiple=false,returnValue="id",
   basketballType=null,onChange,onChangeMany,disabled=false,
 }:Props){
   const [open,setOpen]=useState(false);
@@ -62,16 +62,16 @@ export default function TeamLeaguePicker({
       try{
         let nextItems:Item[]=[];
         if(mode==="league"){
-          const table=activeGender==="womens"?"womens_leagues":"leagues";
+          const table=directorySource==="womens_teams"?"womens_leagues":"leagues";
           const rows=await fetchAll<LeagueRow>(table,"id,name,country,basketball_type",q=>q.eq("active",true).order("name"));
           nextItems=rows.map(row=>({id:row.id,name:row.name,country:row.country||"",city:"",leagues:[],leagueIds:[],aliases:[row.name]}));
         }else{
-          const table=activeGender==="womens"?"womens_teams":"teams";
-          const columns=activeGender==="womens"?"id,name,country,city,league_name,league_id,created_at":"id,name,country,city,league_name,league_id,basketball_type,created_at";
+          const table=directorySource;
+          const columns=directorySource==="womens_teams"?"id,name,country,city,league_name,league_id,created_at":"id,name,country,city,league_name,league_id,basketball_type,created_at";
           const [teamRows,leagueRows,memberships]=await Promise.all([
             fetchAll<TeamRow>(table,columns,q=>q.eq("active",true).order("name")),
-            fetchAll<LeagueRow>(activeGender==="womens"?"womens_leagues":"leagues","id,name,country,basketball_type",q=>q.eq("active",true).order("name")),
-            activeGender==="womens"?Promise.resolve([] as MembershipRow[]):fetchAll<MembershipRow>("team_league_memberships","team_id,league_id,active",q=>q.eq("active",true)),
+            fetchAll<LeagueRow>(directorySource==="womens_teams"?"womens_leagues":"leagues","id,name,country,basketball_type",q=>q.eq("active",true).order("name")),
+            directorySource==="womens_teams"?Promise.resolve([] as MembershipRow[]):fetchAll<MembershipRow>("team_league_memberships","team_id,league_id,active",q=>q.eq("active",true)),
           ]);
           const leagueById=new Map(leagueRows.map(row=>[row.id,row]));
           const membershipByTeam=new Map<string,string[]>();
@@ -117,7 +117,7 @@ export default function TeamLeaguePicker({
       }finally{if(active)setLoading(false);}
     })();
     return()=>{active=false;};
-  },[open,hasLoaded,mode,activeGender]);
+  },[open,hasLoaded,mode,activeGender,directorySource]);
 
   const countries=useMemo(()=>[...new Set(items.map(item=>item.country).filter(Boolean))].sort(),[items]);
   const leagues=useMemo(()=>{
