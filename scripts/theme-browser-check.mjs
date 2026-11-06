@@ -614,6 +614,8 @@ try {
             cards: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-hub-card")).map(read),
             counts: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-section-heading h2 span")).map(read),
             filter: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-filters")),
+            heroTitle: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero h1")),
+            liveChatEntry: read(document.querySelector("main.hc-live-hub-page .hc-live-join")),
             liveChatLinks: document.querySelectorAll('main.hc-live-hub-page a[href^="/fan-live?gameId="]').length,
             renderedText: document.querySelector("main.hc-live-hub-page")?.innerText || "",
           };
@@ -625,8 +627,11 @@ try {
         if (populatedAudit.counts.length !== 3 || populatedAudit.counts.some(badge => badge.text !== "1" || badge.background !== soft || badge.color !== foreground)) {
           errors.push("live-games: populated section badges are not visibly paired: " + JSON.stringify(populatedAudit.counts));
         }
-        if (populatedAudit.filter?.background !== raised) errors.push("live-games: populated filter card surface regressed");
-        if (populatedAudit.liveChatLinks < 1) errors.push("live-games: live chat entry is missing from populated game cards");
+        if (populatedAudit.filter?.background !== raised || populatedAudit.filter?.color !== foreground) errors.push("live-games: populated filter card surface/foreground regressed");
+        if (populatedAudit.heroTitle?.color !== foreground) errors.push("live-games: hero title foreground is not paired: " + JSON.stringify(populatedAudit.heroTitle));
+        if (populatedAudit.liveChatLinks < 1 || populatedAudit.liveChatEntry?.background !== "rgb(255, 90, 31)" || populatedAudit.liveChatEntry?.color !== "rgb(17, 17, 17)") {
+          errors.push("live-games: live chat entry is missing or its text/surface pair is unreadable: " + JSON.stringify(populatedAudit.liveChatEntry));
+        }
         if (["KICKER", "TITLE", "Subtitle", "TEAM FIRST", "Fan Only Note", "Composer Placeholder", "EMPTY TITLE", "EMPTY KICKER", "Empty Body", "Lorem", "TODO", "Placeholder"].some(term => populatedAudit.renderedText.includes(term))) {
           errors.push("live-games: populated route rendered scaffold text");
         }
