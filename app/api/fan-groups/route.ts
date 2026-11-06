@@ -208,8 +208,10 @@ export async function POST(request: Request) {
         const { error } = await db.from("team_fan_group_posts").update({ is_pinned: true }).eq("id", postId).eq("team_id", teamId).eq("status", "published");
         if (error) throw error;
       } else {
+        const { data: removedPost } = await db.from("team_fan_group_posts").select("id,image_url").eq("id", postId).eq("team_id", teamId).maybeSingle();
         const { error } = await db.from("team_fan_group_posts").update({ status: "removed", is_pinned: false }).eq("id", postId).eq("team_id", teamId);
         if (error) throw error;
+        if (removedPost?.image_url) await db.storage.from("fan-group-images").remove([removedPost.image_url]);
       }
       return NextResponse.json({ ok: true });
     }
