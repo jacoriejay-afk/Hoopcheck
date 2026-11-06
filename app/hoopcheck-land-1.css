@@ -17,7 +17,7 @@
   gap:var(--hc-land-section-gap)!important;
 }
 .hc-template-home .hc-d3-hero {
-  box-sizing:border-box!important;width:100%!important;max-width:none!important;margin:0!important;
+  box-sizing:border-box!important;width:min(calc(100% - (var(--hc-land-gutter) * 2)),var(--hc-land-width))!important;max-width:var(--hc-land-width)!important;margin:0 auto!important;
   padding:clamp(28px,4vw,54px) 0!important;
 }
 .hc-template-home .hc-d3-hero__inner {
@@ -106,15 +106,15 @@ html.theme-light .hc-template-home .hc-home-directory-stat {background:var(--hc-
 .auth-page-shell .signup-page .feature {border-radius:10px!important;}
 @media(max-width:760px){
   .site-header-global.hc-template-header {width:min(calc(100% - (var(--hc-land-gutter) * 2)),var(--hc-land-width))!important;}
-  .hc-template-home.hc-ia-home > .page-container {width:calc(100% - 24px)!important;gap:20px!important;}
+  .hc-template-home.hc-ia-home > .page-container {width:min(calc(100% - (var(--hc-land-gutter) * 2)),var(--hc-land-width))!important;gap:20px!important;}
   .hc-template-home .hc-d3-hero__inner {width:100%!important;} .hc-template-home .hc-d3-ticker {width:min(calc(100% - (var(--hc-land-gutter) * 2)),var(--hc-land-width))!important;}
   .hc-template-home .hc-d3-hero {padding:28px 0!important;}
   .hc-template-home .hc-home-directory-stats {grid-template-columns:repeat(2,minmax(0,1fr))!important;}
   .hc-template-home .hc-home-directory-stat:last-child {grid-column:1/-1;}
   .hc-template-home .hc-home-hero-actions :is(.hc-home-cta,.hc-home-signin) {width:100%!important;flex:1 1 100%!important;}
-  .hc-login-page {width:calc(100% - 24px)!important;min-height:calc(100svh - 24px)!important;padding:18px 0 30px!important;}
+  .hc-login-page {width:min(calc(100% - (var(--hc-land-gutter) * 2)),var(--hc-land-width))!important;min-height:calc(100svh - 24px)!important;padding:18px 0 30px!important;}
   .hc-login-card {padding:22px 18px!important;}
-  .auth-page-shell .signup-nav,.auth-page-shell .signup-page {width:calc(100% - 24px)!important;}
+  .auth-page-shell .signup-nav,.auth-page-shell .signup-page {width:min(calc(100% - (var(--hc-land-gutter) * 2)),var(--hc-land-width))!important;}
   .auth-page-shell .signup-page {grid-template-columns:minmax(0,1fr);gap:16px;padding-top:12px!important;}
   .auth-page-shell .signup-page .auth-hero {padding:20px!important;}
 }
