@@ -4063,3 +4063,5 @@ html.theme-dark .hc-shared-picker-dialog{--hc-surface-raised:#171717;--hc-surfac
  .hc-shared-picker-row-main strong{font-size:15px}
  .hc-shared-picker-footer{padding:10px 14px calc(10px + env(safe-area-inset-bottom))}
 }
+
+.hc-shared-picker-filters.is-league-picker{grid-template-columns:1fr}
