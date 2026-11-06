@@ -618,7 +618,8 @@ try {
         await page.locator("main.hc-live-hub-page").waitFor({ state: "visible", timeout: 15000 });
         await page.waitForFunction(() => document.querySelectorAll("main.hc-live-hub-page .hc-live-hub-card").length >= 3, null, { timeout: 15000 });
         const populatedAudit = await page.evaluate(() => {
-          const read = (element) => {
+          const read = (value) => {
+            const element = typeof value === "string" ? document.querySelector(value) : value;
             if (!element) return null;
             const style = getComputedStyle(element);
             return { background: style.backgroundColor, color: style.color, text: (element.textContent || "").trim() };
