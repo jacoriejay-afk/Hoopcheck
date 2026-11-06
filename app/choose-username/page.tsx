@@ -2,15 +2,13 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import UsernameField, { type UsernameFieldHandle } from "../../components/UsernameField";
 
 export default function ChooseUsernamePage() {
   const router = useRouter();
-  const params = useSearchParams();
-  const next = params.get("next") || "/dashboard";
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  const [safeNext, setSafeNext] = useState("/dashboard");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -19,6 +17,8 @@ export default function ChooseUsernamePage() {
 
   useEffect(() => {
     let active = true;
+    const requestedNext = new URLSearchParams(window.location.search).get("next") || "/dashboard";
+    setSafeNext(requestedNext.startsWith("/") && !requestedNext.startsWith("//") ? requestedNext : "/dashboard");
     void supabase.auth.getUser().then(({ data }) => {
       if (!active) return;
       if (!data.user) router.replace("/login");
