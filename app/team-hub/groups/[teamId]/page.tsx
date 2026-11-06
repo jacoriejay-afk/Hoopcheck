@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { supabase } from "../../../../../lib/supabase";
-import { PageShell } from "../../../../../components/LayoutSystem";
-import HoopLoading from "../../../../../components/HoopLoading";
-import "../../../../../app/hoopfeed-shared.css";
+import { supabase } from "../../../../lib/supabase";
+import { PageShell } from "../../../../components/LayoutSystem";
+import HoopLoading from "../../../../components/HoopLoading";
+import "../../../../app/hoopfeed-shared.css";
 
 type Summary = { group_name: string; member_count: number; join_mode: "open" | "approval"; is_member: boolean; has_pending_request: boolean };
 type GroupPost = { id: string; team_id: string; author_id: string; body: string; image_url: string | null; is_pinned: boolean; created_at: string; profiles?: { display_name: string | null; avatar_url: string | null } | null };
@@ -54,7 +54,10 @@ export default function TeamFanGroupPage() {
       const { data: postRows } = await supabase.from("team_fan_group_posts")
         .select("id,team_id,author_id,body,image_url,is_pinned,created_at,profiles:profiles!team_fan_group_posts_author_id_fkey(display_name,avatar_url)")
         .eq("team_id", teamId).eq("status", "published").order("is_pinned", { ascending: false }).order("created_at", { ascending: false });
-      const normalized = (postRows || []).map((p: any) => ({ ...p, profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles }));
+      const normalized = await Promise.all((postRows || []).map(async (p: any) => {
+        const { data: signed } = p.image_url ? await supabase.storage.from("fan-group-images").createSignedUrl(p.image_url, 3600) : { data: null };
+        return { ...p, image_src: signed?.signedUrl || null, profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles };
+      }));
       setPosts(normalized as GroupPost[]);
       const ids = normalized.map((p: any) => p.id);
       if (ids.length) {
@@ -126,7 +129,7 @@ export default function TeamFanGroupPage() {
       <section className="hc-feed-stream" aria-label="Fan Group posts">{posts.length ? posts.map(post => <article key={post.id} className="dashboard-card hc-feed-shared-card hc-team-fan-group-post">
         <header className="hc-feed-post-header"><div className="hc-feed-shared-author"><div className="hc-feed-post-author__meta"><strong>{post.profiles?.display_name || "Fan"}</strong><small>{new Date(post.created_at).toLocaleString()}</small></div></div>{post.is_pinned && <span className="hc-feed-post-topic">PINNED</span>}</header>
         {post.body && <div className="hc-feed-post-body"><p>{post.body}</p></div>}
-        {post.image_url && <img src={post.image_url} alt="Fan Group post" className="hc-feed-post-image"/>}
+        {post.image_src && <img src={post.image_src} alt="Fan Group post" className="hc-feed-post-image"/>}
         <div className="hc-team-fan-group-post-actions"><button type="button" className="hc-feed-action-pill" onClick={() => { const reason = window.prompt("Why are you reporting this post?"); if (reason) void act("report_post", { post_id: post.id, reason }); }}>Report</button>{isModerator && <><button type="button" className="hc-feed-action-pill" onClick={() => void act("pin_post", { post_id: post.id })}>Pin</button><button type="button" className="hc-feed-action-pill" onClick={() => void act("remove_post", { post_id: post.id })}>Remove</button></>}</div>
         <div className="hc-team-fan-group-comments">{(comments[post.id] || []).map(c => <p key={c.id}><strong>{c.profiles?.display_name || "Fan"}:</strong> {c.body}</p>)}<div><input value={commentDrafts[post.id] || ""} maxLength={1000} onChange={e => setCommentDrafts(old => ({ ...old, [post.id]: e.target.value }))} placeholder="Write a comment…" /><button className="btn" disabled={busy || !commentDrafts[post.id]?.trim()} onClick={() => void comment(post.id)}>Send</button></div></div>
       </article>) : <section className="dashboard-card hc-feed-empty hc-feed-shared-empty"><h2>Start the conversation</h2><p className="muted">No one has posted in this Fan Group yet.</p></section>}</section>
