@@ -131,7 +131,12 @@ returns boolean language sql stable security definer set search_path=public as $
     select 1 from public.team_fan_group_members m
     join public.profiles p on p.id=m.user_id and p.account_type='fan'
     where m.team_id=p_team_id and m.user_id=p_user_id
-  ) or exists(select 1 from public.team_fan_group_moderators m where m.team_id=p_team_id and m.user_id=p_user_id);
+  ) or exists(select 1 from public.team_fan_group_moderators m where m.team_id=p_team_id and m.user_id=p_user_id)
+  or (
+    p_user_id=auth.uid()
+    and exists(select 1 from public.team_fan_group_moderators m where m.team_id=p_team_id and m.moderator_type='platform')
+    and public.is_current_user_admin_or_moderator()
+  );
 $$;
 create or replace function public.is_team_fan_group_moderator(p_team_id uuid,p_user_id uuid default auth.uid())
 returns boolean language sql stable security definer set search_path=public as $$
