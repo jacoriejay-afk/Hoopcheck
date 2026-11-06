@@ -15,9 +15,10 @@ export default function SignInScreen() {
     if (!email.trim() || !password) { Alert.alert("Missing details", "Enter your email and password."); return; }
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
       if (error) throw error;
-      router.replace("/dashboard");
+      const profile = await supabase.from("profiles").select("username").eq("id", data.user.id).maybeSingle();
+      router.replace(profile.data && !profile.data.username?.trim() ? "/choose-username" : "/dashboard");
     } catch (error) {
       Alert.alert("Could not sign in", error instanceof Error ? error.message : "Please try again.");
     } finally { setBusy(false); }
