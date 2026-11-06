@@ -33,8 +33,11 @@ export async function proxy(request: NextRequest) {
 
   if (!data?.claims) {
     const url = request.nextUrl.clone();
+    const returnTo = request.nextUrl.pathname + request.nextUrl.search;
     url.pathname = "/login";
     url.search = "";
+    url.searchParams.set("reason", "Sign in to access this page");
+    url.searchParams.set("returnTo", returnTo);
     return NextResponse.redirect(url);
   }
 
@@ -66,15 +69,20 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/search/:path*",
-    "/players/:path*",
-    "/coaches/:path*",
-    "/teams/:path*",
-    "/leagues/:path*",
     "/dashboard/:path*",
     "/settings/:path*",
     "/profile/:path*",
     "/feed/:path*",
+    "/notifications/:path*",
+    "/privacy-center/:path*",
+    "/support/:path*",
+    "/partners/:path*",
+    "/verification/:path*",
+    "/team-dashboard/:path*",
+    "/onboarding/:path*",
+    "/teams/:id/review",
+    "/coaches/:id/review",
+    "/leagues/:id/review",
     "/admin/:path*",
   ],
 };
