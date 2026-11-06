@@ -3978,12 +3978,12 @@ main :where(input,select,textarea) { max-width:100%; min-width:0; }
 
 /* HERO-1 — Live Game Hub uses the same active-theme surface/foreground pair as cards. */
 .hc-live-hub-hero {
-  background: var(--hc-card, var(--hc-surface-raised, #fff)) !important;
+  background: var(--hc-surface-raised, #fff) !important;
   color: var(--hc-foreground, #0a0a0a) !important;
   border-color: var(--hc-border, rgba(128,128,128,.24)) !important;
 }
 html.theme-dark .hc-live-hub-hero {
-  background: var(--hc-card, var(--hc-surface-raised, #171717)) !important;
+  background: var(--hc-surface-raised, #171717) !important;
   color: var(--hc-foreground, #f7f7f5) !important;
 }
 .hc-live-hub-hero :where(h1,h2,h3,strong) {
