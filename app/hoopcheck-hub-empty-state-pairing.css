@@ -126,3 +126,4 @@
   color:var(--hc-foreground-muted)!important;
   border-color:var(--hc-border)!important;
 }
+.hc-live-hub-page .hc-live-section-heading .eyebrow { color:var(--hc-foreground-muted)!important; }
