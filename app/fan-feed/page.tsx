@@ -13,7 +13,7 @@ import TeamOfficialUpdates from "../../components/TeamOfficialUpdates";
 import { useLanguage } from "../../components/LanguageProvider";
 import "./fan-feed.css";
 import "../hoopfeed-shared.css";
-import { fanFeedI18n } from "./i18n";
+import { fanFeedI18n, fanFeedTeamComposerPlaceholder, fanFeedTeamSubtitle } from "./i18n";
 
 type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
 type Profile = { id: string; display_name: string | null; avatar_url: string | null; account_type: string };
@@ -49,6 +49,10 @@ export default function FanFeedPage() {
   const [posting, setPosting] = useState(false);
   const [message, setMessage] = useState("");
   const basketballSide = useFanBasketballSide();
+  const selectedTeam = teams.find(team => team.id === teamId) || null;
+  const teamComposerPlaceholder = selectedTeam
+    ? fanFeedTeamComposerPlaceholder(selectedTeam.name, language)
+    : ft("composerPlaceholder");
 
   const load = useCallback(async (uid: string) => {
     const [{ data: follows }, { data: teamFollows }] = await Promise.all([
@@ -198,11 +202,11 @@ export default function FanFeedPage() {
   return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page" onTouchStart={event => { touchStartY.current = window.scrollY === 0 ? (event.touches[0]?.clientY ?? null) : null; }} onTouchEnd={event => { const start = touchStartY.current; touchStartY.current = null; const end = event.changedTouches[0]?.clientY ?? 0; if (start !== null && end - start > 80 && user && !refreshing) { void (async () => { setRefreshing(true); await load(user.id); setRefreshing(false); })(); } }}>
       <FanBasketballSideSwitch /><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/fans">{ft("discoverFans")}</Link><Link href="/team-hub">{ft("teamHub")}</Link><Link href="/teams">{ft("teams")}</Link></nav></header>
-    <section className="hero-card hc-feed-hero"><div><p className="eyebrow">{ft("kicker")}</p><h1>{ft("title")}</h1><p className="muted">{ft("subtitle")}</p></div><p className="hc-feed-expiry-note">{ft("teamFirst")}<span>{ft("fanOnlyNote")}</span></p></section>
+    <section className="hero-card hc-feed-hero"><div><p className="eyebrow">{ft("kicker")}</p><h1>{selectedTeam?.name || ft("title")}</h1><p className="muted">{selectedTeam ? fanFeedTeamSubtitle(selectedTeam.name, language) : ft("subtitle")}</p></div><p className="hc-feed-expiry-note">{ft("teamFirst")}<span>{ft("fanOnlyNote")}</span></p></section>
     <TeamOfficialUpdates />
     <section className="dashboard-card hc-feed-composer" style={{ marginTop: 18 }}>
       <span className="card-kicker">{ft("postForTeam")}</span>
-      <div className="hc-feed-composer__editor"><div className="hc-feed-composer__avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : "HC"}</div><textarea value={body} maxLength={500} rows={3} onChange={e => setBody(e.target.value)} placeholder={ft("composerPlaceholder")} /></div>
+      <div className="hc-feed-composer__editor"><div className="hc-feed-composer__avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : "HC"}</div><textarea value={body} maxLength={500} rows={3} onChange={e => setBody(e.target.value)} placeholder={teamComposerPlaceholder} /></div>
       <label className="hc-feed-topic-label" htmlFor="fan-team-select">{ft("chooseTeam")}</label>
       <select id="fan-team-select" value={teamId} onChange={e => setTeamId(e.target.value)} className="hc-feed-team-select" required><option value="">{ft("selectTeam")}</option>{teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}</select>
       <div className="hc-feed-composer__footer"><label className="hc-feed-photo-button" htmlFor="fan-feed-photo">{ft("addPhoto")}</label><input id="fan-feed-photo" className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={e => { const f = e.target.files?.[0]; if (!f) return; if (f.size > 8 * 1024 * 1024 || !f.type.startsWith("image/")) { setMessage(ft("photoLimit")); return; } setPhoto(f); setPhotoPreview(URL.createObjectURL(f)); setVideo(null); setVideoPreview(""); }} /><label className="hc-feed-photo-button" htmlFor="fan-feed-video">{ft("addVideo")}</label><input id="fan-feed-video" className="visually-hidden" type="file" accept="video/mp4,video/webm,video/quicktime" onChange={e => { const f=e.target.files?.[0]; if(!f)return; if(f.size>50*1024*1024 || !["video/mp4","video/webm","video/quicktime"].includes(f.type)){setMessage(ft("videoLimit"));return;} setVideo(f);setVideoPreview(URL.createObjectURL(f));setPhoto(null);setPhotoPreview(""); }} /><span className="hc-feed-counter">{body.length}/500</span><button className="btn hc-feed-post-button" disabled={posting || !teamId || (!body.trim() && !photo && !video)} onClick={() => void publish()}>{posting ? ft("posting") : ft("post")}</button></div>
