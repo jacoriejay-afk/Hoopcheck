@@ -6,6 +6,7 @@ const auditPage = readFileSync("app/theme-card-audit/page.tsx", "utf8");
 const browserCheck = readFileSync("scripts/theme-browser-check.mjs", "utf8");
 const fanFeedPage = readFileSync("app/fan-feed/page.tsx", "utf8");
 const fanFeedI18n = readFileSync("app/fan-feed/i18n.ts", "utf8");
+const themeAudit = readFileSync("app/hoopcheck-theme-audit.css", "utf8");
 const failures = [];
 
 const requiredCss = [
@@ -25,6 +26,12 @@ const requiredCss = [
 ];
 for (const required of requiredCss) {
   if (!css.includes(required)) failures.push("Missing hub theme CSS contract: " + required);
+}
+for (const selector of [":not(.hc-live-empty *)", ":not(.hc-live-section-heading *)", ":not(.hc-live-hub-card *)", ":not(.hc-live-recent-empty *)"]) {
+  if (!themeAudit.includes(selector)) failures.push("Global theme ink pass is not excluding paired live hub surface: " + selector);
+}
+if (!css.includes(".hc-live-hub-page .hc-live-section-heading .eyebrow")) {
+  failures.push("Live hub section eyebrow is missing its muted foreground token.");
 }
 
 const requiredAuditPage = [
