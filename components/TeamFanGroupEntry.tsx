@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
 
@@ -12,7 +12,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
   const [isModerator, setIsModerator] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const load = async () => {
+  const load = useCallback(async () => {
     const [{ data: { user } }, { data: rows }] = await Promise.all([
       supabase.auth.getUser(),
       supabase.rpc("get_team_fan_group_summary", { p_team_id: teamId })
@@ -32,8 +32,8 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
     }
     const row = Array.isArray(rows) ? rows[0] : rows;
     setSummary(row || null);
-  };
-  useEffect(() => { void load(); }, [teamId]);
+  }, [teamId]);
+  useEffect(() => { void load(); }, [load]);
   async function join() {
     setBusy(true); setMessage("");
     const { data: { session } } = await supabase.auth.getSession();
