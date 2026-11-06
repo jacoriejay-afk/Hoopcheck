@@ -42,13 +42,13 @@ export default function TeamFanGroupPage() {
       supabase.rpc("get_team_fan_group_summary", { p_team_id: teamId }),
       supabase.from("team_fan_group_moderators").select("user_id,moderator_type").eq("team_id", teamId)
     ]);
-    if (profile?.account_type !== "fan") { router.replace("/teams/" + teamId); return; }
     setTeamName(team?.name || "Team");
     const row = Array.isArray(summaryRows) ? summaryRows[0] : summaryRows;
     setSummary(row || null);
     const { data: platformAdmin } = await supabase.rpc("is_current_user_admin_or_moderator");
     const moderator = Boolean((moderators || []).some((m: any) => m.user_id === currentUser.id) ||
       ((moderators || []).some((m: any) => m.moderator_type === "platform") && platformAdmin === true));
+    if (profile?.account_type !== "fan" && !moderator) { router.replace("/teams/" + teamId); return; }
     setIsModerator(moderator);
     if (row?.is_member) {
       const { data: postRows } = await supabase.from("team_fan_group_posts")
