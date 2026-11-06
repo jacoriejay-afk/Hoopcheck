@@ -335,8 +335,8 @@ export default function TeamsPage() {
         }))} />
       )}
       {viewMode === "list" && (
-      <section className="grid hc-team-directory-list">
-        {loading ? (<div className="card"><HoopLoading label="Scanning professional teams..." /></div>) : teams.length === 0 ? (
+      <section className="grid hc-team-directory-list" aria-busy={loading}>
+        {loading && teams.length === 0 ? (<div className="card"><HoopLoading label="Scanning professional teams..." /></div>) : teams.length === 0 ? (
           <div className="card hc-team-empty">
             <CourtLines variant="arc" className="hc-court-empty-art" />
             <div className="eyebrow hc-court-section-kicker">
