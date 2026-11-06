@@ -83,3 +83,51 @@
   .hc-card-audit-grid { grid-template-columns:minmax(0,1fr); }
   .hc-card-audit-page { padding-top:16px; }
 }
+
+/* The hub hero is intentionally a dark surface in both themes; pin its light ink. */
+.hc-live-hub-page .hc-live-hub-hero {
+  background:#0B0B0B!important;
+  color:#FFFFFF!important;
+  border-color:#2D2D2D!important;
+}
+.hc-live-hub-page .hc-live-hub-hero h1 { color:#FFFFFF!important; }
+.hc-live-hub-page .hc-live-hub-hero .eyebrow { color:#FF7B48!important; }
+.hc-live-hub-page .hc-live-hub-hero h1 span { color:#FF5A1F!important; }
+.hc-live-hub-page .hc-live-hub-hero p:not(.eyebrow) { color:#C9C9C9!important; }
+
+/* Populated and recently finished game cards use the same paired card tokens. */
+.hc-live-hub-page .hc-live-hub-card,
+.hc-live-hub-page .hc-live-hub-card.is-recent {
+  background:var(--hc-surface-raised)!important;
+  color:var(--hc-foreground)!important;
+  border-color:var(--hc-border)!important;
+}
+.hc-live-hub-page .hc-live-hub-card :where(strong) { color:var(--hc-foreground)!important; }
+.hc-live-hub-page .hc-live-card__league,
+.hc-live-hub-page .hc-live-card__meta,
+.hc-live-hub-page .hc-live-card__muted,
+.hc-live-hub-page .hc-live-card__vs,
+.hc-live-hub-page .hc-live-card__middle small {
+  color:var(--hc-foreground-muted)!important;
+}
+.hc-live-hub-page .hc-live-card__meta svg { color:var(--hc-orange)!important; }
+.hc-live-hub-page .hc-live-card__score { color:var(--hc-foreground)!important; }
+.hc-live-hub-page .hc-live-card__crest {
+  background:var(--hc-surface-soft)!important;
+  color:var(--hc-foreground)!important;
+  border-color:var(--hc-border)!important;
+}
+.hc-live-hub-page .hc-live-join {
+  background:#FF5A1F!important;
+  color:#111111!important;
+}
+.hc-live-hub-page .hc-remind-button {
+  background:var(--hc-surface-soft)!important;
+  color:var(--hc-foreground)!important;
+  border-color:var(--hc-border)!important;
+}
+.hc-live-hub-page .hc-remind-button.is-set {
+  background:#FFF0E9!important;
+  color:#B83E14!important;
+  border-color:#FFC0A7!important;
+}
