@@ -4,12 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 type Gender = "mens" | "womens";
-type TeamRow = { id:string; name:string; country:string|null; city:string|null; league_name:string|null; league_id?:string|null; basketball_type?:string|null; created_at?:string|null };
+type TeamRow = { id:string; name:string; country:string|null; city:string|null; league_name:string|null; league_id?:string|null; basketball_type?:string|null; created_at?:string|null; source?:"teams"|"womens_teams" };
 type LeagueRow = { id:string; name:string; country:string|null; basketball_type?:string|null };
 type MembershipRow = { team_id:string; league_id:string; active?:boolean|null };
 type Item = { id:string; name:string; country:string; city:string; leagues:string[]; leagueIds:string[]; aliases:string[] };
 type Props = {
-  mode?: "team"|"league"; directorySource?:"teams"|"womens_teams"; leagueSource?:"leagues"|"womens_leagues"; allCategories?:boolean; label?:string; placeholder?:string; value?:string; values?:string[];
+  mode?: "team"|"league"; directorySource?:"teams"|"womens_teams"|"both"; leagueSource?:"leagues"|"womens_leagues"; allCategories?:boolean; label?:string; placeholder?:string; value?:string; values?:string[];
   multiple?:boolean; returnValue?:"id"|"name"; basketballType?:Gender|null;
   onChange?:(value:string)=>void; onChangeMany?:(values:string[])=>void;
   onSelectItem?:(item:{id:string;name:string;country:string;city:string;league_name:string})=>void;
@@ -69,47 +69,64 @@ export default function TeamLeaguePicker({
           const eligibleRows=allCategories||table==="womens_leagues"?rows:rows.filter(row=>!row.basketball_type||norm(row.basketball_type)===activeGender);
           nextItems=eligibleRows.map(row=>({id:row.id,name:row.name,country:row.country||"",city:"",leagues:[],leagueIds:[],aliases:[row.name]}));
         }else{
-          const table=directorySource;
-          const columns=directorySource==="womens_teams"?"id,name,country,city,league_name,league_id,created_at":"id,name,country,city,league_name,league_id,basketball_type,created_at";
-          const [teamRows,leagueRows,memberships]=await Promise.all([
-            fetchAll<TeamRow>(table,columns,q=>q.eq("active",true).order("name")),
-            fetchAll<LeagueRow>(directorySource==="womens_teams"?"womens_leagues":"leagues",directorySource==="womens_teams"?"id,name,country":"id,name,country,basketball_type",q=>q.eq("active",true).order("name")),
-            directorySource==="womens_teams"?Promise.resolve([] as MembershipRow[]):fetchAll<MembershipRow>("team_league_memberships","team_id,league_id,active",q=>q.eq("active",true)),
-          ]);
-          const eligibleLeagueRows=directorySource==="womens_teams"?leagueRows:leagueRows.filter(row=>!row.basketball_type||norm(row.basketball_type)===activeGender);
-          const leagueById=new Map(eligibleLeagueRows.map(row=>[row.id,row]));
-          const membershipByTeam=new Map<string,string[]>();
-          for(const membership of memberships){
-            const leagueName=leagueById.get(membership.league_id)?.name;
-            if(leagueName) membershipByTeam.set(membership.team_id,[...(membershipByTeam.get(membership.team_id)||[]),leagueName]);
-          }
+          const sources:("teams"|"womens_teams")[]=directorySource==="both"?["teams","womens_teams"]:[directorySource];
+          const dataSets=await Promise.all(sources.map(async source=>{
+            const columns=source==="womens_teams"?"id,name,country,city,league_name,league_id,created_at":"id,name,country,city,league_name,league_id,basketball_type,created_at";
+            const [rows,leagueRows,memberships]=await Promise.all([
+              fetchAll<TeamRow>(source,columns,q=>q.eq("active",true).order("name")),
+              fetchAll<LeagueRow>(source==="womens_teams"?"womens_leagues":"leagues",source==="womens_teams"?"id,name,country":"id,name,country,basketball_type",q=>q.eq("active",true).order("name")),
+              source==="womens_teams"?Promise.resolve([] as MembershipRow[]):fetchAll<MembershipRow>("team_league_memberships","team_id,league_id,active",q=>q.eq("active",true)),
+            ]);
+            const leagueById=new Map(leagueRows.map(row=>[row.id,row]));
+            const context=new Map<string,{names:string[];ids:string[]}>();
+            for(const row of rows){
+              const names=[...(row.league_name?[row.league_name]:[]),...(row.league_id&&leagueById.has(row.league_id)?[leagueById.get(row.league_id)!.name]:[])];
+              const ids=row.league_id?[row.league_id]:[];
+              if(source==="teams"){
+                for(const membership of memberships.filter(entry=>entry.team_id===row.id)){
+                  const leagueName=leagueById.get(membership.league_id)?.name;
+                  if(leagueName)names.push(leagueName);
+                  ids.push(membership.league_id);
+                }
+              }
+              context.set(source+":"+row.id,{names:[...new Set(names)],ids:[...new Set(ids)]});
+            }
+            return {rows:rows.map(row=>({...row,source})),context};
+          }));
+          const teamRows=dataSets.flatMap(set=>set.rows);
+          const leagueContext=new Map<string,{names:string[];ids:string[]}>();
+          for(const set of dataSets)for(const [key,value] of set.context)leagueContext.set(key,value);
           const grouped=new Map<string,TeamRow[]>();
           for(const row of teamRows){
-            if(row.basketball_type&&activeGender==="mens"&&!["mens","men","male"].includes(norm(row.basketball_type))) continue;
-            if(row.basketball_type&&activeGender==="womens"&&!["womens","women","female"].includes(norm(row.basketball_type))) continue;
+            if(row.source==="womens_teams"&&activeGender!=="womens")continue;
+            if(row.source==="teams"&&row.basketball_type&&activeGender==="mens"&&!["mens","men","male"].includes(norm(row.basketball_type)))continue;
+            if(row.source==="teams"&&row.basketball_type&&activeGender==="womens"&&!["womens","women","female"].includes(norm(row.basketball_type)))continue;
             const key=cleanName(row.name)+"|"+norm(row.country);
-            const group=grouped.get(key)||[]; group.push(row); grouped.set(key,group);
+            const group=grouped.get(key)||[];group.push(row);grouped.set(key,group);
           }
           for(const rows of grouped.values()){
             const cities=[...new Set(rows.map(row=>norm(row.city)).filter(Boolean))];
             const cityBuckets=new Map<string,TeamRow[]>();
             for(const row of rows){
-              const city=norm(row.city); const bucket=city|| (cities.length===1?cities[0]:"");
-              const group=cityBuckets.get(bucket)||[]; group.push(row); cityBuckets.set(bucket,group);
+              const city=norm(row.city);const bucket=city||(cities.length===1?cities[0]:"");
+              const group=cityBuckets.get(bucket)||[];group.push(row);cityBuckets.set(bucket,group);
             }
             for(const group of cityBuckets.values()){
-              const sorted=[...group].sort((a,b)=>(a.created_at||"9999").localeCompare(b.created_at||"9999")||a.id.localeCompare(b.id));
+              const sorted=[...group].sort((a,b)=>{
+                if(directorySource==="both"&&activeGender==="womens"){
+                  const priority=(row:TeamRow)=>row.source==="womens_teams"?0:1;
+                  const diff=priority(a)-priority(b);if(diff)return diff;
+                }
+                return (a.created_at||"9999").localeCompare(b.created_at||"9999")||a.id.localeCompare(b.id);
+              });
               const canonical=sorted[0];
-              const leagueNames=[...new Set(sorted.flatMap(row=>[
-                ...(row.league_name?[row.league_name]:[]),
-                ...(row.league_id&&leagueById.has(row.league_id)?[leagueById.get(row.league_id)!.name]:[]),
-                ...(membershipByTeam.get(row.id)||[]),
-              ]))].sort();
-              const leagueIds=[...new Set(sorted.flatMap(row=>[
-                ...(row.league_id?[row.league_id]:[]),
-                ...memberships.filter(m=>m.team_id===row.id).map(m=>m.league_id),
-              ]))];
-              nextItems.push({id:canonical.id,name:canonical.name,country:canonical.country||"",city:canonical.city||"",leagues:leagueNames,leagueIds,aliases:[...new Set(sorted.map(row=>row.name))]});
+              const leagueNames=[...new Set(sorted.flatMap(row=>leagueContext.get((row.source||"teams")+":"+row.id)?.names||[]))].sort();
+              const leagueIds=[...new Set(sorted.flatMap(row=>leagueContext.get((row.source||"teams")+":"+row.id)?.ids||[]))];
+              nextItems.push({
+                id:directorySource==="both"?(canonical.source||"teams")+":"+canonical.id:canonical.id,
+                name:canonical.name,country:canonical.country||"",city:canonical.city||"",
+                leagues:leagueNames,leagueIds,aliases:[...new Set(sorted.map(row=>row.name))],
+              });
             }
           }
           nextItems.sort((a,b)=>a.name.localeCompare(b.name));
