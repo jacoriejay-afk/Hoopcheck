@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import PlayerContactButton from "../../components/PlayerContactButton";
 import FollowButton from "../../components/FollowButton";
@@ -111,6 +111,7 @@ function PlayerUsernameConnect() {
 function SearchContent() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const query = searchParams.get("q")?.trim() || "";
   const initialType = searchParams.get("type");
   const basketballSide = useFanBasketballSide();
@@ -234,6 +235,21 @@ function SearchContent() {
   }, [query, countryFilter, verifiedOnly, typeFilter]);
 
   useEffect(() => { setSearchInput(query); }, [query]);
+
+  // Debounce URL-backed search so typing issues one server query per pause,
+  // while retaining the previous result set until the new query resolves.
+  useEffect(() => {
+    const nextQuery = searchInput.trim();
+    if (nextQuery === query) return;
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      if (nextQuery) params.set("q", nextQuery);
+      else params.delete("q");
+      const suffix = params.toString();
+      router.replace(suffix ? `/search?${suffix}` : "/search", { scroll: false });
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [searchInput, query, router]);
   useEffect(() => {
     if (initialType === "players" || initialType === "coaches" || initialType === "mens-teams" || initialType === "womens-teams" || initialType === "leagues") {
       setTypeFilter(initialType);
@@ -328,7 +344,7 @@ function SearchContent() {
             {!loading && <div className="result-count">{totalResults} {t("resultCount")}</div>}
           </div>
 
-          {!loading && !error && (
+          {!error && (
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 24 }}>
               {(["all", "players", "coaches", "mens-teams", "womens-teams", "leagues"] as const).map((type) => (
                 <button
