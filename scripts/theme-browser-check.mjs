@@ -278,7 +278,7 @@ try {
     ]);
     const page = await context.newPage();
     let activeRoutePath = "";
-    let liveGameFixtureMode: "empty" | "populated" = "empty";
+    let liveGameFixtureMode = "empty";
     const fixtureNow = Date.now();
     const liveGameFixtures = [
       {
