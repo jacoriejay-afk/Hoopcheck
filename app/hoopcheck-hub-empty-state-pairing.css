@@ -22,7 +22,8 @@
 }
 
 /* CARD-3 visual review page: render both semantic token sets side by side. */
-.hc-card-audit-page { padding:24px 0 80px; }
+.hc-card-audit-page { padding:24px 0 80px; background:var(--hc-page-bg); color:var(--hc-foreground); }
+.hc-card-audit-page > .page-container > .hc-card-audit-heading .eyebrow { color:var(--hc-foreground-muted)!important; }
 .hc-card-audit-heading { margin:0 0 20px; }
 .hc-card-audit-heading h1,.hc-card-audit-heading h2 { margin:6px 0; }
 .hc-card-audit-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; }
