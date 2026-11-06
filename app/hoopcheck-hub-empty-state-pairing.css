@@ -1,0 +1,22 @@
+/* HUB-1: Live Game Hub empty states and section counts use inseparable theme pairs. */
+.hc-live-hub-page .hc-live-empty {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+.hc-live-hub-page .hc-live-empty :where(h3) {
+  color: var(--hc-foreground) !important;
+}
+.hc-live-hub-page .hc-live-empty :where(p) {
+  color: var(--hc-foreground-muted) !important;
+}
+.hc-live-hub-page .hc-live-empty__icon {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-orange) !important;
+  border: 1px solid var(--hc-border) !important;
+}
+.hc-live-hub-page .hc-live-section-heading h2 span {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  border: 1px solid var(--hc-border) !important;
+}
