@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 const USERNAME_PATTERN = /^[A-Za-z0-9_]{3,20}$/;
@@ -27,7 +27,7 @@ const UsernameField = forwardRef<UsernameFieldHandle, Props>(function UsernameFi
 
   const normalized = value.trim().toLowerCase();
 
-  async function checkAvailability(candidate: string): Promise<{ valid: boolean; message?: string }> {
+  const checkAvailability = useCallback(async (candidate: string): Promise<{ valid: boolean; message?: string }> => {
     if (!USERNAME_PATTERN.test(candidate)) {
       setAvailability("invalid");
       setError("Use 3–20 characters: letters, numbers, or underscores.");
@@ -57,22 +57,24 @@ const UsernameField = forwardRef<UsernameFieldHandle, Props>(function UsernameFi
       setError("We couldn't check availability. Please try again.");
       return { valid: false, message: "We couldn't check availability. Please try again." };
     }
-  }
+  }, []);
 
   useEffect(() => {
     if (!normalized) {
+      requestRef.current++;
       setAvailability("idle");
       setError("");
       return;
     }
     if (!USERNAME_PATTERN.test(normalized)) {
+      requestRef.current++;
       setAvailability("invalid");
       setError("Use 3–20 characters: letters, numbers, or underscores.");
       return;
     }
     const timer = window.setTimeout(() => { void checkAvailability(normalized); }, 450);
     return () => window.clearTimeout(timer);
-  }, [normalized]);
+  }, [normalized, checkAvailability]);
 
   useImperativeHandle(ref, () => ({
     validate: async () => checkAvailability(normalized),
@@ -80,7 +82,7 @@ const UsernameField = forwardRef<UsernameFieldHandle, Props>(function UsernameFi
       inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       inputRef.current?.focus({ preventScroll: true });
     },
-  }), [normalized, error]);
+  }), [normalized, checkAvailability]);
 
   const message = error || (availability === "available" ? "✓ available" : "");
   return (
