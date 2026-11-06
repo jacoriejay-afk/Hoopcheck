@@ -257,7 +257,8 @@ try {
     "/teams", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2", "/teams/a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f0", "/admin/team-logos", "/coaches", "/coaches/11111111-1111-4111-8111-111111111111", "/leagues", "/players", "/womens", "/directory",
     "/reviews", "/membership", "/notifications", "/support", "/verification",
     "/privacy-center", "/privacy", "/terms", "/community-guidelines", "/login",
-    "/signup", "/onboarding", "/fan-live", "/live-games", "/theme-card-audit", "/partners", "/copyright",
+    "/signup", "/onboarding", "/fan-live", "/fan-feed", "/team-hub",
+    "/team-hub/groups/" + teamFixture.id, "/live-games", "/theme-card-audit", "/partners", "/copyright",
   ];
   const themeComponentInventory = [
     { route: "/live-games", selector: ".hc-live-empty", surface: "Live and upcoming empty-state card" },
@@ -299,7 +300,10 @@ try {
       let data = [];
       const single = request.headers()["accept"]?.includes("vnd.pgrst.object");
       if (url.pathname === "/auth/v1/user") data = user;
-      else if (url.pathname.includes("/rest/v1/profiles")) data = single ? profile : [];
+      else if (url.pathname.includes("/rest/v1/profiles")) {
+        const fanSurfaceRoute = requestedPath === "/fan-feed" || requestedPath.startsWith("/team-hub/groups/");
+        data = single ? (fanSurfaceRoute ? { ...profile, account_type: "fan" } : profile) : [];
+      }
       else if (url.pathname.includes("/rest/v1/subscriptions")) data = single ? subscription : [];
       else if (url.pathname.includes("/rest/v1/teams")) { const requestedId = (url.searchParams.get("id") || "").replace(/^eq\./, ""); data = requestedId ? (requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture) : [teamFixture, fallbackTeamFixture]; }
       else if (url.pathname.includes("/rest/v1/leagues")) data = single ? leagueFixture : [leagueFixture];
@@ -355,7 +359,14 @@ try {
       const result = await page.evaluate(({ requestedPath, navigationError }) => {
         const main = document.querySelector("main");
         const color = (element) => element ? getComputedStyle(element).backgroundColor : null;
+        const scaffoldTerms = ["KICKER", "TITLE", "Subtitle", "TEAM FIRST", "Fan Only Note", "Composer Placeholder", "EMPTY TITLE", "EMPTY KICKER", "Empty Body", "Lorem", "TODO", "Placeholder"];
+        const renderedCopy = main?.innerText || "";
+        const renderedAttributes = Array.from(main?.querySelectorAll("*") || []).flatMap((element) =>
+          ["placeholder", "aria-label", "title", "alt"].map((name) => element.getAttribute(name) || "")
+        ).join("\\n");
+        const scaffoldMatches = scaffoldTerms.filter((term) => renderedCopy.includes(term) || renderedAttributes.includes(term));
         return {
+          scaffoldMatches,
           requestedPath,
           resolvedPath: location.pathname,
           themeClass: document.documentElement.classList.contains("theme-dark") ? "dark" :
@@ -504,6 +515,7 @@ try {
       if (result.body !== expectedPage) errors.push("body background mismatch");
       if (result.pageWrapper && result.pageWrapper !== expectedPage) errors.push("main background mismatch");
       if (result.navigationError) errors.push("navigation error");
+      if (result.scaffoldMatches?.length) errors.push("rendered scaffold strings: " + result.scaffoldMatches.join(", "));
       if (result.bodyTopPadding < result.safeAreaTop - 1) errors.push("top safe-area padding missing");
       if (result.headerTop !== null && result.headerTop < result.safeAreaTop - 1) errors.push("header overlaps the status-bar safe area");
       if (result.mainTop !== null && result.mainTop < result.safeAreaTop - 1) errors.push("main content overlaps the status-bar safe area");
