@@ -130,16 +130,18 @@ export default function TeamLeaguePicker({
       if(country&&item.country!==country)return false;
       if(league&&(mode==="league"?item.name!==league:!item.leagues.includes(league)))return false;
       if(!q)return true;
-      const fields=[item.name,...item.aliases,item.city,item.country,...item.leagues,initials(item.name)];
+      const fields=[item.name,...item.aliases,item.city,item.country,...item.leagues,initials(item.name),abbreviations(item.name)];
       return fields.some(field=>norm(field).includes(q))||initials(item.name).toLowerCase().startsWith(q);
     }).slice(0,50);
   },[items,country,league,debouncedQuery,mode]);
 
   const selectedItems=useMemo(()=>selectedIds.map(id=>items.find(item=>item.id===id)||items.find(item=>returnValue==="name"&&item.name===id)).filter(Boolean) as Item[],[items,selectedIds,returnValue]);
   function displayValue(item:Item){return returnValue==="name"?item.name:item.id;}
+  function canonicalIds(){return selectedIds.map(id=>items.find(item=>item.id===id||(returnValue==="name"&&item.name===id))?.id||id);}
   function choose(item:Item){
     if(multiple){
-      const next=selectedIds.includes(item.id)?selectedIds.filter(id=>id!==item.id):[...selectedIds,item.id];
+      const currentIds=canonicalIds();
+      const next=currentIds.includes(item.id)?currentIds.filter(id=>id!==item.id):[...currentIds,item.id];
       setSelectedIds(next);
       onChangeMany?.(next.map(id=>{const found=items.find(entry=>entry.id===id);return found?displayValue(found):id;}));
     }else{
@@ -149,7 +151,7 @@ export default function TeamLeaguePicker({
     setOpen(false);setQuery("");setCountry("");setLeague("");
   }
   function remove(item:Item){
-    const next=selectedIds.filter(id=>id!==item.id);
+    const next=canonicalIds().filter(id=>id!==item.id);
     setSelectedIds(next);onChangeMany?.(next.map(id=>{const found=items.find(entry=>entry.id===id);return found?displayValue(found):id;}));
     if(!multiple){onChange?.("");onSelectItem?.({id:"",name:"",country:"",city:"",league_name:""});}
   }
@@ -178,7 +180,7 @@ export default function TeamLeaguePicker({
             :loadError?<p className="hc-shared-picker-state" role="alert">{loadError}</p>
             :!debouncedQuery&&!country&&!league?<p className="hc-shared-picker-state">Search by name or use the country and league filters to browse.</p>
             :debouncedQuery.length===1?<p className="hc-shared-picker-state">Type at least 2 characters to search.</p>
-            :filtered.length?filtered.map(item=><button type="button" key={item.id} className={"hc-shared-picker-row"+(selectedIds.includes(item.id)?" is-selected":"")} onClick={()=>choose(item)}><span className="hc-shared-picker-row-main"><strong>{item.name}</strong><small>{[item.city,item.country,item.leagues.slice(0,1).join("")].filter(Boolean).join(" · ")||"Basketball directory"}</small></span><span className="hc-shared-picker-row-check">{selectedIds.includes(item.id)?"✓":"+"}</span></button>)
+            :filtered.length?filtered.map(item=><button type="button" key={item.id} className={"hc-shared-picker-row"+(selectedIds.includes(item.id)?" is-selected":"")} onClick={()=>choose(item)}><span className="hc-shared-picker-row-main"><strong>{item.name}</strong><small>{[item.city,item.country,item.leagues.slice(0,1).join(""),item.leagues.length>1?"+"+(item.leagues.length-1)+" more leagues":""].filter(Boolean).join(" · ")||"Basketball directory"}</small></span><span className="hc-shared-picker-row-check">{selectedIds.includes(item.id)?"✓":"+"}</span></button>)
             :<p className="hc-shared-picker-state">No "+mode+" matches '"+(debouncedQuery||league||country)+"' — try the spelling, or browse by country and league.</p>}
         </div>
         <footer className="hc-shared-picker-footer"><button type="button" className="btn dark" onClick={()=>setOpen(false)}>Close</button></footer>
