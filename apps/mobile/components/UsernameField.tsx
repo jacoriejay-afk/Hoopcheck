@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { supabase } from "../src/lib/supabase";
 
@@ -14,7 +14,7 @@ const UsernameField = forwardRef<UsernameFieldHandle, Props>(function UsernameFi
   const [message, setMessage] = useState("");
   const normalized = value.trim().toLowerCase();
 
-  async function check(candidate: string): Promise<{ valid: boolean; message?: string }> {
+  const check = useCallback(async (candidate: string): Promise<{ valid: boolean; message?: string }> => {
     if (!USERNAME_PATTERN.test(candidate)) {
       const text = "Use 3–20 characters: letters, numbers, or underscores.";
       setState("invalid"); setMessage(text); return { valid: false, message: text };
@@ -37,18 +37,19 @@ const UsernameField = forwardRef<UsernameFieldHandle, Props>(function UsernameFi
       setState("error"); setMessage("We couldn't check availability. Please try again.");
       return { valid: false, message: "We couldn't check availability. Please try again." };
     }
-  }
+  }, []);
 
   useEffect(() => {
-    if (!normalized) { setState("idle"); setMessage(""); return; }
+    if (!normalized) { requestRef.current++; setState("idle"); setMessage(""); return; }
     if (!USERNAME_PATTERN.test(normalized)) {
+      requestRef.current++;
       setState("invalid"); setMessage("Use 3–20 characters: letters, numbers, or underscores."); return;
     }
     const timer = setTimeout(() => { void check(normalized); }, 450);
     return () => clearTimeout(timer);
-  }, [normalized]);
+  }, [normalized, check]);
 
-  useImperativeHandle(ref, () => ({ validate: () => check(normalized), focus: () => inputRef.current?.focus() }), [normalized]);
+  useImperativeHandle(ref, () => ({ validate: () => check(normalized), focus: () => inputRef.current?.focus() }), [normalized, check]);
 
   return (
     <View style={styles.wrap}>
