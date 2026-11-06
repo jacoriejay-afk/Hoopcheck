@@ -598,7 +598,7 @@ export default function TeamDetailPage() {
       <nav className="hc-team-profile-nav" aria-label="Team profile sections">
         <a href="#overview" aria-current="page">Overview</a><a href="#reviews">Reviews</a><a href="#players">Players</a><a href="#roster-board">Roster Board</a><a href="#pay-transparency">Pay Transparency</a>
       </nav>
-      {accountType === "fan" && <TeamFanGroupEntry teamId={team.id} />}
+      <TeamFanGroupEntry teamId={team.id} />
 
       {knownPlayerFollowers.length > 0 && <p className="hc-team-social-proof">Followed by players you follow: <strong>{knownPlayerFollowers.join(", ")}</strong></p>}
         <div className="entity-actions">{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}<ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} /><Link href="/team-dashboard" className="btn dark">Team Portal</Link></div>
