@@ -465,8 +465,14 @@ try {
         await page.screenshot({ path: `${artifactsDir}/team-profile-hexagon-fallback-${theme}.png`, fullPage: true, animations: "disabled" });
       }
       if (requestedPath === "/admin/team-logos" && testLanguage === "en") {
+        await page.getByRole("button", { name: "Search teams by name, city or country" }).click();
+        const teamSearch = page.getByRole("dialog").locator("input").first();
+        await teamSearch.waitFor({ state: "visible", timeout: 10000 });
+        await teamSearch.fill("A.B.B Ego Spor");
+        await page.getByRole("button", { name: /A\.B\.B Ego Spor/ }).click();
+        await page.getByRole("button", { name: "Fetch candidate previews" }).waitFor({ state: "visible", timeout: 10000 });
         await page.locator("select").first().waitFor({ state: "visible", timeout: 10000 });
-        await page.locator("select").first().selectOption({ index: 1 });
+        await page.locator("select").first().selectOption("light");
         await page.locator("textarea").first().fill("https://official.example/club");
         await page.route("**/api/admin/team-logo-candidate", route => route.fulfill({
           status: 200,
