@@ -135,6 +135,9 @@ export async function POST(request: Request) {
       const postId = String(form.get("post_id") || "");
       const reason = String(form.get("reason") || "").trim().slice(0, 500);
       if (reason.length < 3) return NextResponse.json({ ok: false, message: "Add a short reason for the report." }, { status: 400 });
+      const { data: reportedPost } = await db.from("team_fan_group_posts").select("id").eq("id", postId).eq("team_id", teamId).eq("status", "published").maybeSingle();
+      if (!reportedPost) return NextResponse.json({ ok: false, message: "This group post is no longer available." }, { status: 404 });
+      if (profile?.account_type !== "fan") return NextResponse.json({ ok: false, message: "Only fans can report group posts." }, { status: 403 });
       const { error } = await db.from("team_fan_group_reports").insert({ team_id: teamId, post_id: postId, reporter_id: user.id, reason });
       if (error?.code === "23505") return NextResponse.json({ ok: false, message: "You already reported this post." }, { status: 409 });
       if (error) throw error;
@@ -171,6 +174,7 @@ export async function POST(request: Request) {
     }
     if (action === "remove_member") {
       const memberId = String(form.get("user_id") || "");
+      await db.from("team_fan_group_moderators").delete().eq("team_id", teamId).eq("user_id", memberId).eq("moderator_type", "fan_co_moderator");
       const { error } = await db.from("team_fan_group_members").delete().eq("team_id", teamId).eq("user_id", memberId);
       if (error) throw error;
       return NextResponse.json({ ok: true });
