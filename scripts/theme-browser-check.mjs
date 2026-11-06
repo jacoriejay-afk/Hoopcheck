@@ -188,6 +188,9 @@ try {
         await page.locator(".hc-feed-filter-chip").first().waitFor({ state: "visible", timeout: 30000 });
       }
 
+      // Auth/profile hydration can redirect /dashboard after its loading shell first
+      // appears. Wait for that navigation to settle before reading computed styles.
+      await page.waitForLoadState("domcontentloaded").catch(() => {});
       const computed = await page.evaluate(({ wrapperSelector, routeName }) => {
         const color = (selector) => {
           const element = document.querySelector(selector);
