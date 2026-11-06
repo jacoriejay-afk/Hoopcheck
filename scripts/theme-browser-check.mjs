@@ -148,6 +148,7 @@ try {
           "access-control-allow-credentials": "true",
           "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS",
           "access-control-allow-headers": "authorization,apikey,content-type,prefer,accept,range,x-client-info",
+        "cache-control": "no-store",
         };
         if (request.method() === "OPTIONS") {
           await route.fulfill({ status: 204, headers: cors, body: "" });
