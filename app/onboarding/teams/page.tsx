@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import TeamLeaguePicker from "../../../components/TeamLeaguePicker";
@@ -65,21 +65,6 @@ export default function TeamOnboardingPage() {
     } finally {setBusy(null);}
   },[userId]);
 
-  async function chooseCareerTeam(team:Team) {
-    if(myTeams.includes(team.id)) {setMyTeams(v=>v.filter(id=>id!==team.id));return;}
-    setMyTeams(v=>[...v,team.id]); await saveFollow(team,false);
-    if(accountType==="player") {
-      const {error}=await supabase.from("player_team_affiliations").upsert(
-        {user_id:userId,team_id:team.id,relationship:"former",verified:false},
-        {onConflict:"user_id,team_id"}
-      );
-      if(error) setMessage("Team followed, but career history needs a retry: "+error.message);
-    }
-  }
-  async function chooseWatchingTeam(team:Team) {
-    if(watching.includes(team.id)){setWatching(v=>v.filter(id=>id!==team.id));return;}
-    setWatching(v=>[...v,team.id]); await saveFollow(team,true);
-  }
   async function updatePickerSelection(nextIds:string[]) {
     const previous=step===1?myTeams:watching;
     const added=nextIds.filter(id=>!previous.includes(id));
