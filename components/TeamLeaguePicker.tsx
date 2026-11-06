@@ -12,6 +12,7 @@ type Props = {
   mode?: "team"|"league"; directorySource?:"teams"|"womens_teams"; label?:string; placeholder?:string; value?:string; values?:string[];
   multiple?:boolean; returnValue?:"id"|"name"; basketballType?:Gender|null;
   onChange?:(value:string)=>void; onChangeMany?:(values:string[])=>void;
+  onSelectItem?:(item:{id:string;name:string;country:string;city:string;league_name:string})=>void;
   disabled?:boolean;
 };
 
@@ -38,7 +39,7 @@ function norm(value:string|null|undefined){return (value||"").trim().toLowerCase
 
 export default function TeamLeaguePicker({
   mode="team",directorySource="teams",label,placeholder,value="",values,multiple=false,returnValue="id",
-  basketballType=null,onChange,onChangeMany,disabled=false,
+  basketballType=null,onChange,onChangeMany,onSelectItem,disabled=false,
 }:Props){
   const [open,setOpen]=useState(false);
   const [items,setItems]=useState<Item[]>([]);
