@@ -1545,33 +1545,50 @@ html.theme-dark .hc-team-entity-profile :where(.hc-profile-review-list,.hc-team-
 
 
 /* CARD-2 — explicit, non-fading club hero foreground on the same raised surface as Fan Group. */
-.hc-team-entity-profile .hc-team-profile-hero {
+html main.hc-team-entity-profile .hc-team-profile-hero {
   background: var(--hc-surface-raised) !important;
   color: var(--hc-foreground) !important;
   border-color: var(--hc-border) !important;
 }
-.hc-team-entity-profile .hc-team-profile-hero > .hc-team-profile-kicker {
+html main.hc-team-entity-profile .hc-team-profile-hero > .hc-team-profile-kicker {
   color: var(--hc-orange) !important;
   -webkit-text-fill-color: var(--hc-orange) !important;
   background: transparent !important;
   opacity: 1 !important;
   filter: none !important;
 }
-.hc-team-entity-profile .hc-team-profile-hero > #hc-team-profile-title,
-.hc-team-entity-profile .hc-team-profile-hero .hc-team-profile-stat > strong,
-.hc-team-entity-profile .hc-team-profile-hero .hc-team-profile-stat__missing {
+html main.hc-team-entity-profile .hc-team-profile-hero > #hc-team-profile-title,
+html main.hc-team-entity-profile .hc-team-profile-hero .hc-team-profile-stat > strong,
+html main.hc-team-entity-profile .hc-team-profile-hero .hc-team-profile-stat__missing {
   color: var(--hc-foreground) !important;
   -webkit-text-fill-color: var(--hc-foreground) !important;
   background: transparent !important;
   opacity: 1 !important;
   filter: none !important;
 }
-.hc-team-entity-profile .hc-team-profile-hero :where(.hc-team-profile-meta,.hc-team-profile-meta *, .hc-team-profile-stat > small) {
+html main.hc-team-entity-profile .hc-team-profile-hero > .hc-team-profile-meta,
+html main.hc-team-entity-profile .hc-team-profile-hero > .hc-team-profile-meta *,
+html main.hc-team-entity-profile .hc-team-profile-hero .hc-team-profile-stat > small {
   color: var(--hc-foreground-muted) !important;
   -webkit-text-fill-color: var(--hc-foreground-muted) !important;
   background: transparent !important;
   opacity: 1 !important;
   filter: none !important;
 }
-.hc-team-entity-profile .hc-team-profile-hero .hc-team-profile-stats { border-top-color: var(--hc-border) !important; }
-.hc-team-entity-profile .hc-team-profile-hero .hc-team-profile-stat + .hc-team-profile-stat { border-left-color: var(--hc-border) !important; }
+html main.hc-team-entity-profile .hc-team-profile-hero .hc-team-profile-stats {
+  border-top-color: var(--hc-border) !important;
+}
+html main.hc-team-entity-profile .hc-team-profile-hero .hc-team-profile-stat + .hc-team-profile-stat {
+  border-left-color: var(--hc-border) !important;
+}
+html main.hc-team-entity-profile .hc-team-reviews-trust-strip {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html main.hc-team-entity-profile .hc-team-reviews-trust-strip :where(h1,h2,h3,strong,span) {
+  color: var(--hc-foreground) !important;
+}
+html main.hc-team-entity-profile .hc-team-reviews-trust-strip :where(p,small,.muted) {
+  color: var(--hc-foreground-muted) !important;
+}
