@@ -22,6 +22,7 @@ export default function TeamFanGroupPage() {
   const [teamName, setTeamName] = useState("");
   const [summary, setSummary] = useState<Summary | null>(null);
   const [isModerator, setIsModerator] = useState(false);
+  const [isFan, setIsFan] = useState(false);
   const [posts, setPosts] = useState<GroupPost[]>([]);
   const [comments, setComments] = useState<Record<string, GroupComment[]>>({});
   const [members, setMembers] = useState<Member[]>([]);
@@ -43,6 +44,7 @@ export default function TeamFanGroupPage() {
       supabase.from("team_fan_group_moderators").select("user_id,moderator_type").eq("team_id", teamId)
     ]);
     setTeamName(team?.name || "Team");
+    setIsFan(profile?.account_type === "fan");
     const row = Array.isArray(summaryRows) ? summaryRows[0] : summaryRows;
     setSummary(row || null);
     const { data: platformAdmin } = await supabase.rpc("is_current_user_admin_or_moderator");
@@ -130,8 +132,8 @@ export default function TeamFanGroupPage() {
         <header className="hc-feed-post-header"><div className="hc-feed-shared-author"><div className="hc-feed-post-author__meta"><strong>{post.profiles?.display_name || "Fan"}</strong><small>{new Date(post.created_at).toLocaleString()}</small></div></div>{post.is_pinned && <span className="hc-feed-post-topic">PINNED</span>}</header>
         {post.body && <div className="hc-feed-post-body"><p>{post.body}</p></div>}
         {post.image_src && <img src={post.image_src} alt="Fan Group post" className="hc-feed-post-image"/>}
-        <div className="hc-team-fan-group-post-actions"><button type="button" className="hc-feed-action-pill" onClick={() => { const reason = window.prompt("Why are you reporting this post?"); if (reason) void act("report_post", { post_id: post.id, reason }); }}>Report</button>{isModerator && <><button type="button" className="hc-feed-action-pill" onClick={() => void act("pin_post", { post_id: post.id })}>Pin</button><button type="button" className="hc-feed-action-pill" onClick={() => void act("remove_post", { post_id: post.id })}>Remove</button></>}</div>
-        <div className="hc-team-fan-group-comments">{(comments[post.id] || []).map(c => <p key={c.id}><strong>{c.profiles?.display_name || "Fan"}:</strong> {c.body}</p>)}<div><input value={commentDrafts[post.id] || ""} maxLength={1000} onChange={e => setCommentDrafts(old => ({ ...old, [post.id]: e.target.value }))} placeholder="Write a comment…" /><button className="btn" disabled={busy || !commentDrafts[post.id]?.trim()} onClick={() => void comment(post.id)}>Send</button></div></div>
+        <div className="hc-team-fan-group-post-actions">{isFan && <button type="button" className="hc-feed-action-pill" onClick={() => { const reason = window.prompt("Why are you reporting this post?"); if (reason) void act("report_post", { post_id: post.id, reason }); }}>Report</button>}{isModerator && <><button type="button" className="hc-feed-action-pill" onClick={() => void act("pin_post", { post_id: post.id })}>Pin</button><button type="button" className="hc-feed-action-pill" onClick={() => void act("remove_post", { post_id: post.id })}>Remove</button></>}</div>
+        <div className="hc-team-fan-group-comments">{(comments[post.id] || []).map(c => <p key={c.id}><strong>{c.profiles?.display_name || "Fan"}:</strong> {c.body}</p>)}{isFan && <div><input value={commentDrafts[post.id] || ""} maxLength={1000} onChange={e => setCommentDrafts(old => ({ ...old, [post.id]: e.target.value }))} placeholder="Write a comment…" /><button className="btn" disabled={busy || !commentDrafts[post.id]?.trim()} onClick={() => void comment(post.id)}>Send</button></div>}</div>
       </article>) : <section className="dashboard-card hc-feed-empty hc-feed-shared-empty"><h2>Start the conversation</h2><p className="muted">No one has posted in this Fan Group yet.</p></section>}</section>
     </>}
     {isModerator && <section className="dashboard-card hc-feed-shared-card hc-team-fan-group-moderator"><div className="hc-team-fan-group-mod-head"><div><p className="eyebrow">MODERATION</p><h2>Moderator panel</h2></div><label>Membership <select value={summary.join_mode} onChange={e => void act("set_join_mode", { join_mode: e.target.value })}><option value="open">Open join</option><option value="approval">Approval required</option></select></label></div>
