@@ -34,7 +34,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
     setMessage(result.message || (result.requested ? "Join request sent. A moderator will review it." : result.ok ? "You joined the Fan Group." : "Could not join this group."));
     await load(); setBusy(false);
   }
-  if (!summary) return null;
+  if (!isFan || !summary) return null;
   return <section className="hc-team-fan-group-entry">
     <div><p className="eyebrow">FAN HQ · OFFICIAL COMMUNITY</p><h2>{summary.group_name}</h2><p className="muted">{Number(summary.member_count || 0).toLocaleString()} members · {summary.join_mode === "open" ? "Open to join" : "Approval required"}</p></div>
     {isFan && (summary.is_member
