@@ -6,6 +6,7 @@ import HoopLoading from "../../../components/HoopLoading";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import FollowButton from "../../../components/FollowButton";
+import FanCareerFollowButton from "../../../components/FanCareerFollowButton";
 import PlayerContactButton from "../../../components/PlayerContactButton";
 import PlayerProfilePanel from "../../../components/PlayerProfilePanel";
 import { HoopIcon, VerifiedBadge } from "../../../components/HoopCheckUI";
@@ -173,7 +174,7 @@ export default function PlayerProfilePage() {
                 <h1>{player.display_name || "HoopCheck Player"} {player.player_verified && <VerifiedBadge label="Verified professional player" />}</h1>
                 <p className="muted">{[player.player_position, player.current_team, player.current_country || player.country].filter(Boolean).join(" · ") || (player.player_verified ? "Verified professional player" : "HoopCheck player")}</p>
               </div>
-              <div className="hc-social-profile-actions">{isOwnProfile ? <Link href="/account#profile-editor" className="btn">Edit Profile</Link> : <FollowButton targetType="player" targetId={player.id} showCount={false} showNotifications={false} />}<PlayerContactButton playerId={player.id} /></div>
+              <div className="hc-social-profile-actions">{isOwnProfile ? <Link href="/account#profile-editor" className="btn">Edit Profile</Link> : viewerType === "fan" ? <FanCareerFollowButton playerId={player.id} playerName={player.display_name} /> : <FollowButton targetType="player" targetId={player.id} showCount={false} showNotifications={false} />}<PlayerContactButton playerId={player.id} /></div>
             </div>
           </div>
         </section>
