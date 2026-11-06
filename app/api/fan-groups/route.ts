@@ -84,8 +84,8 @@ export async function POST(request: Request) {
         if (error) throw error;
         return NextResponse.json({ ok: true, joined: true });
       }
-      const { error } = await db.from("team_fan_group_join_requests").upsert({ team_id: teamId, user_id: user.id, status: "pending" }, { onConflict: "team_id,user_id", ignoreDuplicates: true });
-      if (error) throw error;
+      const { error } = await db.from("team_fan_group_join_requests").insert({ team_id: teamId, user_id: user.id, status: "pending" });
+      if (error && error.code !== "23505") throw error;
       const { data: mods } = await db.from("team_fan_group_moderators").select("user_id,moderator_type").eq("team_id", teamId);
       const moderatorIds = (mods || []).map((m: any) => m.user_id).filter(Boolean);
       if ((mods || []).some((m: any) => m.moderator_type === "platform")) {
