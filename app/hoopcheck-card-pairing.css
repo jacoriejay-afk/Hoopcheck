@@ -35,6 +35,8 @@ html.theme-dark {
   .hc-ia-completion,
   .hc-ia-live-strip,
   .hc-team-profile-hero,
+  .hc-player-profile-hero,
+  .hc-player-profile-completion,
   .hc-dossier-identity,
   .hc-profile-panel,
   .hc-account-settings-header,
@@ -95,6 +97,8 @@ html.theme-dark {
   .hc-ia-completion,
   .hc-ia-live-strip,
   .hc-team-profile-hero,
+  .hc-player-profile-hero,
+  .hc-player-profile-completion,
   .hc-dossier-identity,
   .hc-profile-panel,
   .hc-account-settings-header,
@@ -155,6 +159,8 @@ html.theme-dark {
   .hc-ia-completion,
   .hc-ia-live-strip,
   .hc-team-profile-hero,
+  .hc-player-profile-hero,
+  .hc-player-profile-completion,
   .hc-dossier-identity,
   .hc-profile-panel,
   .hc-account-settings-header,
@@ -240,7 +246,7 @@ html.theme-light body main.hc-entity-profile-page .hc-team-profile-hero :where(h
   --hc-border:#333333; --hc-on-surface-raised:#F5F5F0; --hc-on-surface-raised-muted:#B8B8B3;
   --hc-card:#171717; --hc-text:#F5F5F0; --hc-ink:#F5F5F0; --hc-paper:#0A0A0A; --hc-paper-strong:#171717;
 }
-.hc-card-audit-page .hc-card-audit-preview :where(.hc-surface,.hc-layout-card,.hc-layout-group,.hc-template-category,.hc-category-tile,.hc-ia-door,.hc-live-hub-hero,.hc-live-hub-card,.hc-live-hub-filters,.hc-ia-completion,.hc-ia-live-strip,.hc-team-profile-hero,.hc-dossier-identity,.hc-profile-panel,.hc-review-card,.hc-membership-hero,.plan-card,.dashboard-card,.hero-card,.modal-panel) {
+.hc-card-audit-page .hc-card-audit-preview :where(.hc-surface,.hc-layout-card,.hc-layout-group,.hc-template-category,.hc-category-tile,.hc-ia-door,.hc-live-hub-hero,.hc-live-hub-card,.hc-live-hub-filters,.hc-ia-completion,.hc-ia-live-strip,.hc-team-profile-hero,.hc-player-profile-hero,.hc-player-profile-completion,.hc-dossier-identity,.hc-profile-panel,.hc-review-card,.hc-membership-hero,.plan-card,.dashboard-card,.hero-card,.modal-panel) {
   background-color:var(--hc-surface-raised)!important;
   color:var(--hc-on-surface-raised)!important;
   border-color:var(--hc-border)!important;
