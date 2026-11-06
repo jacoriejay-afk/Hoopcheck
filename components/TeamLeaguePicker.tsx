@@ -7,7 +7,7 @@ type Gender = "mens" | "womens";
 type TeamRow = { id:string; name:string; country:string|null; city:string|null; league_name:string|null; league_id?:string|null; basketball_type?:string|null; created_at?:string|null; source?:"teams"|"womens_teams" };
 type LeagueRow = { id:string; name:string; country:string|null; basketball_type?:string|null };
 type MembershipRow = { team_id:string; league_id:string; active?:boolean|null };
-type Item = { id:string; name:string; country:string; city:string; leagues:string[]; leagueIds:string[]; aliases:string[] };
+type Item = { id:string; name:string; country:string; city:string; leagues:string[]; leagueIds:string[]; aliases:string[]; aliasIds:string[] };
 type Props = {
   mode?: "team"|"league"; directorySource?:"teams"|"womens_teams"|"both"; leagueSource?:"leagues"|"womens_leagues"; allCategories?:boolean; label?:string; placeholder?:string; value?:string; values?:string[];
   multiple?:boolean; returnValue?:"id"|"name"; basketballType?:Gender|null;
@@ -67,7 +67,7 @@ export default function TeamLeaguePicker({
           const table=leagueSource||(allCategories?"leagues":activeGender==="womens"?"womens_leagues":"leagues");
           const rows=await fetchAll<LeagueRow>(table,table==="womens_leagues"?"id,name,country":"id,name,country,basketball_type",q=>q.eq("active",true).order("name"));
           const eligibleRows=allCategories||table==="womens_leagues"?rows:rows.filter(row=>!row.basketball_type||norm(row.basketball_type)===activeGender);
-          nextItems=eligibleRows.map(row=>({id:row.id,name:row.name,country:row.country||"",city:"",leagues:[],leagueIds:[],aliases:[row.name]}));
+          nextItems=eligibleRows.map(row=>({id:row.id,name:row.name,country:row.country||"",city:"",leagues:[],leagueIds:[],aliases:[row.name],aliasIds:[row.id]}));
         }else{
           const sources:("teams"|"womens_teams")[]=directorySource==="both"?["teams","womens_teams"]:[directorySource];
           const dataSets=await Promise.all(sources.map(async source=>{
@@ -125,7 +125,7 @@ export default function TeamLeaguePicker({
               nextItems.push({
                 id:directorySource==="both"?(canonical.source||"teams")+":"+canonical.id:canonical.id,
                 name:canonical.name,country:canonical.country||"",city:canonical.city||"",
-                leagues:leagueNames,leagueIds,aliases:[...new Set(sorted.map(row=>row.name))],
+                leagues:leagueNames,leagueIds,aliases:[...new Set(sorted.map(row=>row.name))],aliasIds:[...new Set(sorted.map(row=>directorySource==="both"?(row.source||"teams")+":"+row.id:row.id))],
               });
             }
           }
@@ -156,10 +156,10 @@ export default function TeamLeaguePicker({
     }).slice(0,50);
   },[items,country,league,debouncedQuery,mode]);
 
-  const selectedItems=useMemo(()=>selectedIds.map(id=>items.find(item=>item.id===id)||items.find(item=>returnValue==="name"&&(item.name===id||item.aliases.includes(id)))).filter(Boolean) as Item[],[items,selectedIds,returnValue]);
-  const displayItems=selectedItems.length?selectedItems:(returnValue==="name"?selectedIds.map(name=>({id:name,name,country:"",city:"",leagues:[],leagueIds:[],aliases:[name]})):[]);
+  const selectedItems=useMemo(()=>selectedIds.map(id=>items.find(item=>item.id===id||item.aliasIds.includes(id))||items.find(item=>returnValue==="name"&&(item.name===id||item.aliases.includes(id)))).filter(Boolean) as Item[],[items,selectedIds,returnValue]);
+  const displayItems=selectedItems.length?selectedItems:(returnValue==="name"?selectedIds.map(name=>({id:name,name,country:"",city:"",leagues:[],leagueIds:[],aliases:[name],aliasIds:[name]})):[]);
   function displayValue(item:Item){return returnValue==="name"?item.name:item.id;}
-  function canonicalIds(){return selectedIds.map(id=>items.find(item=>item.id===id||(returnValue==="name"&&(item.name===id||item.aliases.includes(id))))?.id||id);}
+  function canonicalIds(){return selectedIds.map(id=>items.find(item=>item.id===id||item.aliasIds.includes(id)||(returnValue==="name"&&(item.name===id||item.aliases.includes(id))))?.id||id);}
   function choose(item:Item){
     if(multiple){
       const currentIds=canonicalIds();
