@@ -640,8 +640,8 @@ try {
           errors.push("live-games: populated section badges are not visibly paired: " + JSON.stringify(populatedAudit.counts));
         }
         if (populatedAudit.filter?.background !== raised || populatedAudit.filter?.color !== foreground) errors.push("live-games: populated filter card surface/foreground regressed");
-        if (populatedAudit.hero?.background !== "rgb(11, 11, 11)" || populatedAudit.heroTitle?.color !== "rgb(255, 255, 255)" ||
-            populatedAudit.heroEyebrow?.color !== "rgb(255, 123, 72)" || populatedAudit.heroSubtitle?.color !== "rgb(201, 201, 201)") {
+        if (populatedAudit.hero?.background !== raised || populatedAudit.hero?.color !== foreground || populatedAudit.heroTitle?.color !== foreground ||
+            populatedAudit.heroEyebrow?.color !== accent || populatedAudit.heroSubtitle?.color !== muted) {
           errors.push("live-games: hero dark-surface/light-ink pairing regressed: " + JSON.stringify({hero:populatedAudit.hero, title:populatedAudit.heroTitle, eyebrow:populatedAudit.heroEyebrow, subtitle:populatedAudit.heroSubtitle}));
         }
         if (populatedAudit.crests.length !== 6 || populatedAudit.crests.some(crest => crest.background !== soft || crest.color !== foreground)) {
