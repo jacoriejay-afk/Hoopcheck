@@ -105,9 +105,9 @@ html.theme-light .hc-template-home .hc-home-directory-stat {background:var(--hc-
 .auth-page-shell .signup-page .feature-grid {gap:9px!important;}
 .auth-page-shell .signup-page .feature {border-radius:10px!important;}
 @media(max-width:760px){
-  .site-header-global.hc-template-header {width:calc(100% - 24px)!important;}
+  .site-header-global.hc-template-header {width:min(calc(100% - (var(--hc-land-gutter) * 2)),var(--hc-land-width))!important;}
   .hc-template-home.hc-ia-home > .page-container {width:calc(100% - 24px)!important;gap:20px!important;}
-  .hc-template-home .hc-d3-hero__inner,.hc-template-home .hc-d3-ticker {width:calc(100% - 24px)!important;}
+  .hc-template-home .hc-d3-hero__inner {width:100%!important;} .hc-template-home .hc-d3-ticker {width:min(calc(100% - (var(--hc-land-gutter) * 2)),var(--hc-land-width))!important;}
   .hc-template-home .hc-d3-hero {padding:28px 0!important;}
   .hc-template-home .hc-home-directory-stats {grid-template-columns:repeat(2,minmax(0,1fr))!important;}
   .hc-template-home .hc-home-directory-stat:last-child {grid-column:1/-1;}
