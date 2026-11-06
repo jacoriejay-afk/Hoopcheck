@@ -85,10 +85,28 @@ type LanguageContextValue = {
   formatRelativeTime: (value: string | number | Date) => string;
   setLanguage: (language: Language) => void;
 };
-const validLanguage = (value: unknown): value is Language => typeof value === "string" && Object.prototype.hasOwnProperty.call(labels, value);
+const validLanguage = (value: unknown): value is Language => typeof value === "string" && Object.prototype.hasOwnProperty.call(locales, value);
+
+function browserLanguage(): Language {
+  if (typeof navigator === "undefined") return "en";
+  for (const candidate of navigator.languages?.length ? navigator.languages : [navigator.language]) {
+    const normalized = String(candidate || "").toLowerCase().split("-")[0];
+    if (validLanguage(normalized)) return normalized;
+  }
+  return "en";
+}
+
+function readableFallback(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^\w/, (letter) => letter.toUpperCase());
+}
 
 const fallbackContext: LanguageContextValue = {
-  language:"en", t:(key)=>labels.en?.[key] || key,
+  language:"en", t:(key)=>labels.en?.[key] || readableFallback(key),
   formatNumber:(value, options)=>new Intl.NumberFormat("en-US", options).format(value),
   formatDate:(value, options)=>new Intl.DateTimeFormat("en-US", options).format(new Date(value)),
   formatRelativeTime:(value)=>new Intl.RelativeTimeFormat("en-US",{numeric:"auto"}).format(Math.round((new Date(value).getTime()-Date.now())/3600000),"hour"),
@@ -110,6 +128,9 @@ export default function LanguageProvider({ children, initialLanguage = "en" }: {
       localStorage.setItem("hoopcheck-language", next);
       document.cookie = "hoopcheck-language=" + encodeURIComponent(next) + "; Path=/; Max-Age=31536000; SameSite=Lax";
       window.dispatchEvent(new CustomEvent("hoopcheck-language-change", { detail: next }));
+      void supabase.auth.getUser().then(({ data }) => {
+        if (data.user) void supabase.from("profiles").update({ preferred_language: next }).eq("id", data.user.id);
+      });
     }
   }, []);
   useEffect(() => {
@@ -133,15 +154,20 @@ export default function LanguageProvider({ children, initialLanguage = "en" }: {
         .eq("id", userId)
         .maybeSingle();
       if (mounted) {
-        // A device selection is written synchronously by setLanguage. Prefer it over a stale
-        // profile response so an older server value cannot undo a live locale switch.
-        const deviceLanguage = localStorage.getItem("hoopcheck-language");
-        apply(deviceLanguage || profile?.preferred_language || "en");
+        // The account setting is authoritative across devices. Local storage is only
+        // a fallback for accounts that have not selected a language yet.
+        const accountLanguage = profile?.preferred_language;
+        const localLanguage = localStorage.getItem("hoopcheck-language");
+        apply(validLanguage(accountLanguage) ? accountLanguage : validLanguage(localLanguage) ? localLanguage : browserLanguage());
       }
     };
-    void supabase.auth.getUser().then(({ data }) => { if (data.user) void loadProfileLanguage(data.user.id); });
+    void supabase.auth.getUser().then(({ data }) => {
+      if (data.user) void loadProfileLanguage(data.user.id);
+      else apply(validLanguage(localStorage.getItem("hoopcheck-language")) ? localStorage.getItem("hoopcheck-language") : browserLanguage());
+    });
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") && session?.user) void loadProfileLanguage(session.user.id);
+      if (event === "SIGNED_IN" && session?.user) void loadProfileLanguage(session.user.id);
+      if (event === "SIGNED_OUT") apply(validLanguage(localStorage.getItem("hoopcheck-language")) ? localStorage.getItem("hoopcheck-language") : browserLanguage());
     });
     return () => {
       mounted = false;
@@ -152,7 +178,7 @@ export default function LanguageProvider({ children, initialLanguage = "en" }: {
   const value = useMemo<LanguageContextValue>(() => {
     const locale = locales[language];
     return {
-      language, setLanguage, t: (key) => dashboardTranslations[language]?.[key] ?? sharedUiTranslations[language]?.[key] ?? extraLabels[language]?.[key] ?? labels[language]?.[key] ?? dashboardTranslations.en?.[key] ?? sharedUiTranslations.en?.[key] ?? extraLabels.en?.[key] ?? labels.en?.[key] ?? key,
+      language, setLanguage, t: (key) => dashboardTranslations[language]?.[key] ?? sharedUiTranslations[language]?.[key] ?? extraLabels[language]?.[key] ?? labels[language]?.[key] ?? dashboardTranslations.en?.[key] ?? sharedUiTranslations.en?.[key] ?? extraLabels.en?.[key] ?? labels.en?.[key] ?? readableFallback(key),
       formatNumber: (number, options) => new Intl.NumberFormat(locale, options).format(number),
       formatDate: (date, options) => new Intl.DateTimeFormat(locale, options).format(new Date(date)),
       formatRelativeTime: (date) => {
