@@ -303,10 +303,26 @@ try {
       if (url.pathname === "/auth/v1/user") data = user;
       else if (url.pathname.includes("/rest/v1/profiles")) {
         const fanSurfaceRoute = activeRoutePath === "/fan-feed" || activeRoutePath.startsWith("/team-hub/groups/");
-        data = single ? (fanSurfaceRoute ? { ...profile, account_type: "fan" } : profile) : [];
+        const accountTypeQuery = (url.searchParams.get("select") || "").includes("account_type");
+        const fanProfile = { ...profile, account_type: "fan" };
+        data = fanSurfaceRoute && accountTypeQuery ? (single ? fanProfile : [fanProfile]) : single ? profile : [];
       }
-      else if (url.pathname.includes("/rest/v1/subscriptions")) data = single ? subscription : [];
-      else if (url.pathname.includes("/rest/v1/teams")) { const requestedId = (url.searchParams.get("id") || "").replace(/^eq\./, ""); data = requestedId ? (requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture) : [teamFixture, fallbackTeamFixture]; }
+      else if (url.pathname.includes("/rest/v1/subscriptions")) {
+        const fanSurfaceRoute = activeRoutePath === "/fan-feed" || activeRoutePath.startsWith("/team-hub/groups/");
+        const subscriptionQuery = (url.searchParams.get("select") || "").includes("plan");
+        data = fanSurfaceRoute && subscriptionQuery ? (single ? subscription : [subscription]) : single ? subscription : [];
+      }
+      else if (url.pathname.includes("/rest/v1/teams")) {
+        const idFilter = url.searchParams.get("id") || "";
+        if (idFilter.startsWith("eq.")) {
+          const id = idFilter.slice(3);
+          const row = id === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture;
+          data = single ? row : [row];
+        } else if (idFilter.startsWith("in.")) {
+          const ids = idFilter.slice(3).replace(/^\(|\)$/g, "").split(",");
+          data = [teamFixture, fallbackTeamFixture].filter(row => ids.includes(row.id));
+        } else data = [teamFixture, fallbackTeamFixture];
+      }
       else if (url.pathname.includes("/rest/v1/leagues")) data = single ? leagueFixture : [leagueFixture];
       else if (url.pathname.includes("/rest/v1/coaches")) data = single ? coachFixture : [coachFixture];
       else if (url.pathname.includes("/rest/v1/team_league_memberships")) data = [];
