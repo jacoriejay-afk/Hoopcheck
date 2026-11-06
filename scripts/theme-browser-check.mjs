@@ -420,10 +420,11 @@ try {
       }
       const result = await page.evaluate(({ requestedPath, navigationError }) => {
         const main = document.querySelector("main");
+        const routeRoot = document.body;
         const color = (element) => element ? getComputedStyle(element).backgroundColor : null;
         const scaffoldTerms = ["KICKER", "TITLE", "Subtitle", "TEAM FIRST", "Fan Only Note", "Composer Placeholder", "EMPTY TITLE", "EMPTY KICKER", "Empty Body", "Lorem", "TODO", "Placeholder"];
-        const renderedCopy = main?.innerText || "";
-        const renderedAttributes = Array.from(main?.querySelectorAll("*") || []).flatMap((element) =>
+        const renderedCopy = routeRoot?.innerText || "";
+        const renderedAttributes = Array.from(routeRoot?.querySelectorAll("*") || []).flatMap((element) =>
           ["placeholder", "aria-label", "title", "alt"].map((name) => element.getAttribute(name) || "")
         ).join("\\n");
         const scaffoldMatches = scaffoldTerms.filter((term) => renderedCopy.includes(term) || renderedAttributes.includes(term));
