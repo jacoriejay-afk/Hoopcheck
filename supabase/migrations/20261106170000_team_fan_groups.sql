@@ -89,8 +89,10 @@ returns trigger language plpgsql security definer set search_path=public as $$
 begin
   insert into public.team_fan_groups(team_id,group_name) values(new.id,new.name || ' Fan Group')
   on conflict(team_id) do update set group_name=excluded.group_name;
-  insert into public.team_fan_group_moderators(team_id,moderator_type)
-  values(new.id,'platform') on conflict do nothing;
+  if not exists (select 1 from public.team_fan_group_moderators m where m.team_id=new.id) then
+    insert into public.team_fan_group_moderators(team_id,moderator_type)
+    values(new.id,'platform') on conflict do nothing;
+  end if;
   return new;
 end; $$;
 drop trigger if exists teams_ensure_fan_group on public.teams;
@@ -183,3 +185,25 @@ for select to authenticated using(reporter_id=auth.uid() or public.is_team_fan_g
 alter table public.notifications drop constraint if exists notifications_notification_type_check;
 alter table public.notifications add constraint notifications_notification_type_check
 check(notification_type in ('review','rating','update','group_request','group_approved','group_report'));
+
+-- Existing approved claims are transferred at migration time as well as by the trigger.
+insert into public.team_fan_group_moderators(team_id,user_id,moderator_type)
+select c.entity_id,c.requester_id,'club_admin'
+from public.profile_claim_requests c
+where c.entity_type='team' and c.status='approved'
+on conflict(team_id,user_id) do update set moderator_type='club_admin';
+delete from public.team_fan_group_moderators m
+where m.moderator_type='platform'
+and exists(select 1 from public.team_fan_group_moderators c where c.team_id=m.team_id and c.moderator_type='club_admin');
+
+-- Group images must not be publicly readable; members receive short-lived signed URLs.
+insert into storage.buckets(id,name,public)
+values('fan-group-images','fan-group-images',false)
+on conflict(id) do nothing;
+drop policy if exists "fan group members read group images" on storage.objects;
+create policy "fan group members read group images"
+on storage.objects for select to authenticated
+using (
+  bucket_id='fan-group-images'
+  and public.is_team_fan_group_member(((storage.foldername(name))[1])::uuid,(select auth.uid()))
+);
