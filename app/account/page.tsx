@@ -11,6 +11,7 @@ import { GroupCard, Row } from "../../components/LayoutSystem";
 import { useTheme } from "../../components/ThemeProvider";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
 import { calculateProfileCompletion } from "../../lib/profile-completion";
+import TeamLeaguePicker from "../../components/TeamLeaguePicker";
 
 type Subscription = {
   plan: "pro" | "premium" | null;
@@ -21,6 +22,7 @@ type Subscription = {
 
 type Profile = {
   account_type: "player"|"coach"|"scout"|"agent"|"fan";
+  basketball_type?: "mens"|"womens"|null;
   display_name: string | null;
   first_name: string | null;
   last_name: string | null;
@@ -116,7 +118,7 @@ export default function AccountPage() {
       setEmail(user.email ?? "");
       setUserId(user.id);
       const [{ data: profileData }, { data: subscriptionData }, { data: adminRoleData }] = await Promise.all([
-        supabase.from("profiles").select("account_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("account_type,basketball_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
         supabase.rpc("get_current_user_admin_role"),
       ]);
@@ -493,7 +495,7 @@ export default function AccountPage() {
                         {profile.account_type === "player" && <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>{t("showFreeAgent")}</span></label>}
             {["scout","agent"].includes(profile.account_type) && <>
               <label htmlFor="profile-editor-field-interests" className="muted">{t("basketballInterests")}</label><textarea id="profile-editor-field-interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("scoutAgentInterestsPlaceholder")} />
-              <label htmlFor="profile-editor-field-favorite_leagues" className="muted">{t("leaguesOfInterest")}</label><textarea id="profile-editor-field-favorite_leagues" value={favoriteLeagues} onChange={e=>setFavoriteLeagues(e.target.value)} maxLength={500} rows={3} placeholder={t("leaguesMarketsPlaceholder")} />
+              <TeamLeaguePicker mode="league" multiple returnValue="name" label={t("leaguesOfInterest")} values={favoriteLeagues.split(",").map(item=>item.trim()).filter(Boolean)} onChangeMany={items=>setFavoriteLeagues(items.join(", ").slice(0,500))} basketballType={profile.basketball_type||null} placeholder="Search and add leagues" />
             </>}
             {profile.account_type === "fan" && <label htmlFor="interests" className="muted">{t("basketballInterests")}</label>}
             {profile.account_type === "fan" && <textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("fanInterestsPlaceholder")} />}
