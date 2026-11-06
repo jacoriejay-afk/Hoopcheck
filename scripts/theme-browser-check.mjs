@@ -277,6 +277,7 @@ try {
       { name: "sb-ci-auth-token", value: encodedSession, url: baseURL },
     ]);
     const page = await context.newPage();
+    let activeRoutePath = "";
     await page.addInitScript(({ themePreference, authSession, language }) => {
       localStorage.setItem("hoopcheck-theme", themePreference);
       localStorage.setItem("hoopcheck-language", language);
@@ -301,7 +302,7 @@ try {
       const single = request.headers()["accept"]?.includes("vnd.pgrst.object");
       if (url.pathname === "/auth/v1/user") data = user;
       else if (url.pathname.includes("/rest/v1/profiles")) {
-        const fanSurfaceRoute = requestedPath === "/fan-feed" || requestedPath.startsWith("/team-hub/groups/");
+        const fanSurfaceRoute = activeRoutePath === "/fan-feed" || activeRoutePath.startsWith("/team-hub/groups/");
         data = single ? (fanSurfaceRoute ? { ...profile, account_type: "fan" } : profile) : [];
       }
       else if (url.pathname.includes("/rest/v1/subscriptions")) data = single ? subscription : [];
@@ -335,6 +336,7 @@ try {
 
     for (const requestedPath of mainRoutes) {
       let navigationError = null;
+      activeRoutePath = requestedPath;
       try {
         await page.goto(baseURL + requestedPath, { waitUntil: "domcontentloaded", timeout: 20000 });
         await page.waitForTimeout(300);
