@@ -4,91 +4,68 @@ import { gzipSync } from "node:zlib";
 
 const root = process.cwd();
 const nextDir = path.join(root, ".next");
-const manifestPaths = [
-  path.join(nextDir, "build-manifest.json"),
-  path.join(nextDir, "app-build-manifest.json"),
+const appPathsFile = path.join(nextDir, "server", "app-paths-manifest.json");
+const appPaths = (() => {
+  try { return JSON.parse(fs.readFileSync(appPathsFile, "utf8")); }
+  catch { return null; }
+})();
+
+function walkJs(directory, files = []) {
+  if (!fs.existsSync(directory)) return files;
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const fullPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) walkJs(fullPath, files);
+    else if (entry.isFile() && entry.name.endsWith(".js")) files.push(fullPath);
+  }
+  return files;
+}
+
+if (!appPaths) {
+  console.error("Bundle audit: Next.js app-paths manifest is missing or unreadable.");
+  process.exit(1);
+}
+
+const requiredRoutes = [
+  { label: "Homepage", key: "/page" },
+  { label: "Club profile", key: "/teams/[id]/page" },
+  { label: "HoopFeed", key: "/feed/page" },
 ];
-
-function readJson(file) {
-  try { return JSON.parse(fs.readFileSync(file, "utf8")); }
-  catch { return null; }
+const missingRoutes = requiredRoutes.filter(({ key }) => !Object.hasOwn(appPaths, key));
+if (missingRoutes.length) {
+  console.error("Bundle audit: expected app routes are missing from app-paths manifest:");
+  missingRoutes.forEach(({ label, key }) => console.error(`- ${label}: ${key}`));
+  process.exit(1);
 }
 
-function collectJs(value, out = new Set()) {
-  if (typeof value === "string" && value.endsWith(".js")) out.add(value);
-  else if (Array.isArray(value)) value.forEach((item) => collectJs(item, out));
-  else if (value && typeof value === "object") Object.values(value).forEach((item) => collectJs(item, out));
-  return out;
+const chunkDirectory = path.join(nextDir, "static", "chunks");
+const chunks = walkJs(chunkDirectory).map((file) => {
+  const bytes = fs.readFileSync(file);
+  return {
+    file: path.relative(nextDir, file).split(path.sep).join("/"),
+    kb: gzipSync(bytes).byteLength / 1024,
+  };
+}).sort((a, b) => b.kb - a.kb);
+
+if (!chunks.length) {
+  console.error("Bundle audit: no emitted client JavaScript chunks were found.");
+  process.exit(1);
 }
 
-function resolveAsset(relative) {
-  const normalized = relative.replace(/^\/+/, "");
-  // Next manifests commonly store paths beginning with "static/"; others store
-  // paths relative to .next/static. Resolve both without duplicating the segment.
-  return normalized.startsWith("static/")
-    ? path.join(nextDir, normalized)
-    : path.join(nextDir, "static", normalized);
-}
+const totalKb = chunks.reduce((sum, chunk) => sum + chunk.kb, 0);
+console.log("\\nHoopCheck production client JavaScript (gzip)");
+console.log(`- Total emitted client chunks: ${totalKb.toFixed(1)} KB across ${chunks.length} files`);
+console.log("- Route manifest checks:");
+requiredRoutes.forEach(({ label, key }) => console.log(`  - ${label}: present (${appPaths[key]})`));
+console.log("\\nFive largest emitted JavaScript chunks (not package attribution):");
+chunks.slice(0, 5).forEach(({ file, kb }) => console.log(`- ${kb.toFixed(1)} KB gzip  ${file}`));
 
-function gzipKb(relative) {
-  try { return gzipSync(fs.readFileSync(resolveAsset(relative))).byteLength / 1024; }
-  catch { return null; }
-}
-
-const manifests = manifestPaths.map(readJson).filter(Boolean);
-if (!manifests.length) {
-  console.error("Bundle audit: Next.js build manifests were not found. Run after next build.");
-  process.exitCode = 1;
-} else {
-  const routeFiles = new Map();
-  for (const manifest of manifests) {
-    for (const [route, files] of Object.entries(manifest.pages || {})) {
-      const current = routeFiles.get(route) || new Set();
-      for (const file of collectJs(files)) current.add(file);
-      routeFiles.set(route, current);
-    }
+for (const [label, envName] of [
+  ["Homepage", "BUNDLE_BUDGET_HOME_KB"],
+  ["Club profile", "BUNDLE_BUDGET_CLUB_KB"],
+  ["HoopFeed", "BUNDLE_BUDGET_FEED_KB"],
+]) {
+  const budget = Number(process.env[envName]);
+  if (Number.isFinite(budget) && budget > 0) {
+    console.log(`- ${label} route budget ${envName}=${budget} KB is configured; route-level chunk attribution is not available from Next.js 16 app-paths manifest and is not inferred.`);
   }
-
-  const targets = [
-    { label: "Homepage", keys: ["/", "/page"], env: "BUNDLE_BUDGET_HOME_KB" },
-    { label: "Club profile", keys: ["/teams/[id]/page", "/teams/[id]"], env: "BUNDLE_BUDGET_CLUB_KB" },
-    { label: "HoopFeed", keys: ["/feed/page", "/feed"], env: "BUNDLE_BUDGET_FEED_KB" },
-  ];
-  let missing = false;
-  console.log("\nHoopCheck first-load JavaScript (gzip; unique route manifest assets)");
-  for (const target of targets) {
-    const files = new Set();
-    for (const key of target.keys) for (const file of routeFiles.get(key) || []) files.add(file);
-    if (!files.size) {
-      console.error(`- ${target.label}: route entry missing (checked ${target.keys.join(", ")})`);
-      missing = true;
-      continue;
-    }
-    const sizes = [...files].map((file) => ({ file, kb: gzipKb(file) }));
-    const unreadable = sizes.filter((item) => item.kb === null);
-    if (unreadable.length) {
-      console.error(`- ${target.label}: ${unreadable.length} manifest assets could not be read`);
-      missing = true;
-    }
-    const kb = sizes.reduce((sum, item) => sum + (item.kb ?? 0), 0);
-    const budget = Number(process.env[target.env]);
-    const status = Number.isFinite(budget) && budget > 0
-      ? (kb > budget ? "OVER BUDGET" : "within budget")
-      : "baseline (budget not configured)";
-    console.log(`- ${target.label}: ${kb.toFixed(1)} KB gzip / ${files.size} JS files (${status})`);
-    if (Number.isFinite(budget) && budget > 0 && kb > budget) {
-      console.warn(`  WARNING: ${target.env} is ${budget} KB; measured ${kb.toFixed(1)} KB.`);
-    }
-  }
-
-  const allJs = new Set();
-  for (const files of routeFiles.values()) for (const file of files) allJs.add(file);
-  const largest = [...allJs]
-    .map((file) => ({ file, kb: gzipKb(file) }))
-    .filter((item) => item.kb !== null)
-    .sort((a, b) => b.kb - a.kb)
-    .slice(0, 5);
-  console.log("\nFive largest emitted JavaScript chunks (not package attribution):");
-  largest.forEach((item) => console.log(`- ${item.kb.toFixed(1)} KB gzip  ${item.file}`));
-  if (missing) process.exitCode = 1;
 }
