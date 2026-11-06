@@ -556,8 +556,8 @@ try {
       }
       if (requestedPath === "/live-games") {
         const audit = await page.evaluate(() => {
-          const read = (selector) => {
-            const element = document.querySelector(selector);
+          const read = (value) => {
+            const element = typeof value === "string" ? document.querySelector(value) : value;
             if (!element) return null;
             const style = getComputedStyle(element);
             return { background: style.backgroundColor, color: style.color, text: (element.textContent || "").trim() };
