@@ -49,6 +49,11 @@ const requiredBrowserCoverage = [
   '".hc-live-section-heading h2 span"',
   '".hc-live-hub-filters"',
   '".hc-live-hub-card"',
+  '".hc-live-hub-hero"',
+  '".hc-live-recent-empty"',
+  '".hc-live-card__crest"',
+  '".hc-live-join"',
+  '".hc-live-card__meta"',
   'THEME_COMPONENT_INVENTORY',
 ];
 for (const required of requiredBrowserCoverage) {
