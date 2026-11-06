@@ -27,11 +27,11 @@ const UsernameField = forwardRef<UsernameFieldHandle, Props>(function UsernameFi
 
   const normalized = value.trim().toLowerCase();
 
-  async function checkAvailability(candidate: string) {
+  async function checkAvailability(candidate: string): Promise<{ valid: boolean; message?: string }> {
     if (!USERNAME_PATTERN.test(candidate)) {
       setAvailability("invalid");
       setError("Use 3–20 characters: letters, numbers, or underscores.");
-      return false;
+      return { valid: false, message: "Use 3–20 characters: letters, numbers, or underscores." };
     }
     const requestId = ++requestRef.current;
     setAvailability("checking");
@@ -40,22 +40,22 @@ const UsernameField = forwardRef<UsernameFieldHandle, Props>(function UsernameFi
       const { data, error: rpcError } = await supabase.rpc("is_username_available", {
         candidate_username: candidate,
       });
-      if (requestId !== requestRef.current) return false;
+      if (requestId !== requestRef.current) return { valid: false };
       if (rpcError) throw rpcError;
       if (data !== true) {
         setAvailability("taken");
         setError("That username is taken.");
-        return false;
+        return { valid: false, message: "That username is taken." };
       }
       setAvailability("available");
       setError("");
-      return true;
+      return { valid: true };
     } catch (checkError) {
-      if (requestId !== requestRef.current) return false;
+      if (requestId !== requestRef.current) return { valid: false };
       console.error("Username availability check failed:", checkError);
       setAvailability("error");
       setError("We couldn't check availability. Please try again.");
-      return false;
+      return { valid: false, message: "We couldn't check availability. Please try again." };
     }
   }
 
@@ -75,13 +75,7 @@ const UsernameField = forwardRef<UsernameFieldHandle, Props>(function UsernameFi
   }, [normalized]);
 
   useImperativeHandle(ref, () => ({
-    validate: async () => {
-      const valid = await checkAvailability(normalized);
-      return {
-        valid,
-        message: valid ? undefined : (error || (USERNAME_PATTERN.test(normalized) ? "That username is taken." : "Use 3–20 characters: letters, numbers, or underscores.")),
-      };
-    },
+    validate: async () => checkAvailability(normalized),
     focus: () => {
       inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       inputRef.current?.focus({ preventScroll: true });
