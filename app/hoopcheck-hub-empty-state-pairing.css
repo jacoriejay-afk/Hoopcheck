@@ -50,6 +50,7 @@
 .hc-card-audit-preview .hc-card-audit-section { display:grid; gap:8px; }
 .hc-card-audit-preview .hc-card-audit-section > .hc-live-section-heading { margin:0; }
 .hc-card-audit-preview .hc-live-section-heading h2 { color:var(--hc-foreground)!important; }
+.hc-card-audit-preview .hc-live-section-heading .eyebrow { color:var(--hc-foreground-muted)!important; }
 .hc-card-audit-preview .hc-live-section-heading h2 span {
   background:var(--hc-surface-soft)!important; color:var(--hc-foreground)!important;
   border:1px solid var(--hc-border)!important;
