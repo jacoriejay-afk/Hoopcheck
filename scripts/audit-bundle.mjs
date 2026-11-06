@@ -10,12 +10,12 @@ const appPaths = (() => {
   catch { return null; }
 })();
 
-function walkJs(directory, files = []) {
+function walkClientJs(directory, files = []) {
   if (!fs.existsSync(directory)) return files;
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const fullPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) walkJs(fullPath, files);
-    else if (entry.isFile() && entry.name.endsWith(".js")) files.push(fullPath);
+    if (entry.isDirectory()) walkClientJs(fullPath, files);
+    else if (entry.isFile() && /\\.(?:js|mjs|cjs)$/i.test(entry.name)) files.push(fullPath);
   }
   return files;
 }
@@ -37,8 +37,8 @@ if (missingRoutes.length) {
   process.exit(1);
 }
 
-const chunkDirectory = path.join(nextDir, "static", "chunks");
-const chunks = walkJs(chunkDirectory).map((file) => {
+const clientAssetDirectory = path.join(nextDir, "static");
+const chunks = walkClientJs(clientAssetDirectory).map((file) => {
   const bytes = fs.readFileSync(file);
   return {
     file: path.relative(nextDir, file).split(path.sep).join("/"),
@@ -47,7 +47,7 @@ const chunks = walkJs(chunkDirectory).map((file) => {
 }).sort((a, b) => b.kb - a.kb);
 
 if (!chunks.length) {
-  console.error("Bundle audit: no emitted client JavaScript chunks were found.");
+  console.error("Bundle audit: no emitted client JavaScript assets were found under .next/static (checked .js, .mjs and .cjs files).");
   process.exit(1);
 }
 
