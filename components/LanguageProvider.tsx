@@ -106,7 +106,7 @@ function readableFallback(key: string): string {
 }
 
 const fallbackContext: LanguageContextValue = {
-  language:"en", t:(key)=>labels.en?.[key] || key,
+  language:"en", t:(key)=>labels.en?.[key] || readableFallback(key),
   formatNumber:(value, options)=>new Intl.NumberFormat("en-US", options).format(value),
   formatDate:(value, options)=>new Intl.DateTimeFormat("en-US", options).format(new Date(value)),
   formatRelativeTime:(value)=>new Intl.RelativeTimeFormat("en-US",{numeric:"auto"}).format(Math.round((new Date(value).getTime()-Date.now())/3600000),"hour"),
