@@ -15,7 +15,7 @@ function walkClientJs(directory, files = []) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const fullPath = path.join(directory, entry.name);
     if (entry.isDirectory()) walkClientJs(fullPath, files);
-    else if (entry.isFile() && /\\.(?:js|mjs|cjs)$/i.test(entry.name)) files.push(fullPath);
+    else if (entry.isFile() && /\.(?:js|mjs|cjs)$/i.test(entry.name)) files.push(fullPath);
   }
   return files;
 }
