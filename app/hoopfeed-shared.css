@@ -267,3 +267,21 @@ html body .hc-global-page-shell main.hc-feed-page {
 .hc-feed-page .hc-feed-message { color: var(--hc-foreground) !important; }
 .hc-feed-page .hc-feed-expiry-note { color: var(--hc-foreground) !important; }
 .hc-feed-page .hc-feed-expiry-note span { color: var(--hc-foreground-muted) !important; }
+
+/* HF-4: text is a first-class post body, not media metadata. */
+.hc-feed-page .hc-feed-post-body {
+  margin: 14px 0 0;
+  color: var(--hc-foreground);
+  min-width: 0;
+}
+.hc-feed-page .hc-feed-post-body p {
+  margin: 0;
+  color: inherit;
+  font-size: 15px;
+  line-height: 1.65;
+  font-weight: 450;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.hc-feed-page .hc-feed-post-body + .hc-feed-media-area { margin-top: 12px; }
+.hc-feed-page .hc-feed-media-area:empty { display: none; }
