@@ -58,7 +58,7 @@ export default function TeamLeaguePicker({
   useEffect(()=>{const timer=window.setTimeout(()=>setDebouncedQuery(query.trim()),250);return()=>window.clearTimeout(timer);},[query]);
 
   useEffect(()=>{
-    if(!open||hasLoaded) return;
+    if((!open&&selectedIds.length===0)||hasLoaded) return;
     let active=true; setLoading(true); setLoadError("");
     void (async()=>{
       try{
@@ -119,7 +119,7 @@ export default function TeamLeaguePicker({
       }finally{if(active)setLoading(false);}
     })();
     return()=>{active=false;};
-  },[open,hasLoaded,mode,activeGender,directorySource,allCategories]);
+  },[open,hasLoaded,mode,activeGender,directorySource,allCategories,selectedIds.length]);
 
   const countries=useMemo(()=>[...new Set(items.map(item=>item.country).filter(Boolean))].sort(),[items]);
   const leagues=useMemo(()=>{
@@ -138,6 +138,7 @@ export default function TeamLeaguePicker({
   },[items,country,league,debouncedQuery,mode]);
 
   const selectedItems=useMemo(()=>selectedIds.map(id=>items.find(item=>item.id===id)||items.find(item=>returnValue==="name"&&item.name===id)).filter(Boolean) as Item[],[items,selectedIds,returnValue]);
+  const displayItems=selectedItems.length?selectedItems:(returnValue==="name"?selectedIds.map(name=>({id:name,name,country:"",city:"",leagues:[],leagueIds:[],aliases:[name]})):[]);
   function displayValue(item:Item){return returnValue==="name"?item.name:item.id;}
   function canonicalIds(){return selectedIds.map(id=>items.find(item=>item.id===id||(returnValue==="name"&&item.name===id))?.id||id);}
   function choose(item:Item){
@@ -161,9 +162,9 @@ export default function TeamLeaguePicker({
   return <div className="hc-shared-picker">
     {label&&<label className="hc-shared-picker-label">{label}</label>}
     <div className="hc-shared-picker-values">
-      {selectedItems.map(item=><span key={item.id} className="hc-shared-picker-chip"><span>{item.name}</span><button type="button" aria-label={"Remove "+item.name} onClick={()=>remove(item)} disabled={disabled}>×</button></span>)}
-      <button type="button" className="hc-shared-picker-trigger" disabled={disabled} onClick={()=>setOpen(true)}>{selectedItems.length?(multiple?"Add another":"Change selection"):(placeholder||(mode==="team"?"Choose a team":"Choose a league"))}</button>
-      {selectedItems.length>0&&!multiple&&<button type="button" className="hc-shared-picker-clear" onClick={()=>remove(selectedItems[0])} disabled={disabled}>Remove</button>}
+      {displayItems.map(item=><span key={item.id} className="hc-shared-picker-chip"><span>{item.name}</span><button type="button" aria-label={"Remove "+item.name} onClick={()=>remove(item)} disabled={disabled}>×</button></span>)}
+      <button type="button" className="hc-shared-picker-trigger" disabled={disabled} onClick={()=>setOpen(true)}>{displayItems.length?(multiple?"Add another":"Change selection"):(placeholder||(mode==="team"?"Choose a team":"Choose a league"))}</button>
+      {displayItems.length>0&&!multiple&&<button type="button" className="hc-shared-picker-clear" onClick={()=>remove(selectedItems[0])} disabled={disabled}>Remove</button>}
     </div>
     {open&&<div className="hc-shared-picker-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setOpen(false);}}>
       <section className="hc-shared-picker-dialog" role="dialog" aria-modal="true" aria-label={label||(mode==="team"?"Choose a team":"Choose a league")}>
@@ -171,9 +172,9 @@ export default function TeamLeaguePicker({
           <div className="hc-shared-picker-dialog-heading"><strong>{mode==="team"?"Choose a team":"Choose a league"}</strong><button type="button" onClick={()=>setOpen(false)} aria-label="Close picker">×</button></div>
           {basketballType==null&&!allCategories&&<div className="hc-shared-picker-gender"><button type="button" className={activeGender==="mens"?"is-active":""} onClick={()=>{setActiveGender("mens");setItems([]);setHasLoaded(false);setCountry("");setLeague("");}}>Men’s</button><button type="button" className={activeGender==="womens"?"is-active":""} onClick={()=>{setActiveGender("womens");setItems([]);setHasLoaded(false);setCountry("");setLeague("");}}>Women’s</button></div>}
           <label className="hc-shared-picker-search-label">Search {mode==="team"?"teams":"leagues"}<input autoFocus value={query} onChange={event=>setQuery(event.target.value)} placeholder="Name, abbreviation, city or country…" /></label>
-          <div className="hc-shared-picker-filters">
+          <div className={"hc-shared-picker-filters"+(mode==="league"?" is-league-picker":"")}>
             <label>Country<select value={country} onChange={event=>{setCountry(event.target.value);setLeague("");}}><option value="">All countries</option>{countries.map(item=><option key={item} value={item}>{item}</option>)}</select></label>
-            <label>League<select value={league} onChange={event=>setLeague(event.target.value)}><option value="">All leagues</option>{leagues.map(item=><option key={item} value={item}>{item}</option>)}</select></label>
+            {mode==="team"&&<label>League<select value={league} onChange={event=>setLeague(event.target.value)}><option value="">All leagues</option>{leagues.map(item=><option key={item} value={item}>{item}</option>)}</select></label>}
           </div>
           <p className="hc-shared-picker-count">{loading?"Loading directory…":filtered.length+(filtered.length===50?"+":"")+" results shown · maximum 50"}</p>
         </header>
