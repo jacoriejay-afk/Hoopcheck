@@ -55,7 +55,7 @@ export default function TeamFanGroupPage() {
         .select("id,team_id,author_id,body,image_url,is_pinned,created_at,profiles:profiles!team_fan_group_posts_author_id_fkey(display_name,avatar_url)")
         .eq("team_id", teamId).eq("status", "published").order("is_pinned", { ascending: false }).order("created_at", { ascending: false });
       const normalized = await Promise.all((postRows || []).map(async (p: any) => {
-        const { data: signed } = p.image_url ? await supabase.storage.from("fan-group-images").createSignedUrl(p.image_url, 3600) : { data: null };
+        const { data: signed } = p.image_url ? await supabase.storage.from("fan-group-images").createSignedUrl(p.image_url, 600) : { data: null };
         return { ...p, image_src: signed?.signedUrl || null, profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles };
       }));
       setPosts(normalized as GroupPost[]);
