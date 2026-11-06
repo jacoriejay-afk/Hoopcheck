@@ -29,6 +29,8 @@ export default function GlobalBackButton() {
   const router = useRouter();
   const pathname = usePathname();
 
+  if (pathname === "/" || pathname === "/login" || pathname === "/signup" || pathname.startsWith("/signup/")) return null;
+
   const goBack = useCallback(() => {
     if (typeof window === "undefined") return;
 
