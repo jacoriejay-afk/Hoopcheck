@@ -573,6 +573,12 @@ try {
             }),
             countBadges: Array.from(document.querySelectorAll(".hc-live-section-heading h2 span")).map(read),
             filterCard: read(".hc-live-hub-filters"),
+            recentEmpty: (() => {
+              const element = document.querySelector(".hc-live-recent-empty");
+              if (!element) return null;
+              const style = getComputedStyle(element);
+              return { background: style.backgroundColor, color: style.color, borderStyle: style.borderStyle };
+            })(),
             populatedGameCards: document.querySelectorAll(".hc-live-hub-card").length,
           };
         });
@@ -597,6 +603,7 @@ try {
           }
         }
         if (audit.filterCard?.background !== raised) errors.push("live-games: filter card surface regressed: " + JSON.stringify(audit.filterCard));
+        if (audit.recentEmpty?.borderStyle !== "dashed" || audit.recentEmpty?.color !== muted) errors.push("live-games: Recently Finished empty state lost its readable dashed treatment: " + JSON.stringify(audit.recentEmpty));
         if (audit.populatedGameCards !== 0) errors.push("live-games: empty-fixture test unexpectedly rendered game cards");
         result.liveHubPairing = audit;
 
@@ -614,7 +621,12 @@ try {
             cards: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-hub-card")).map(read),
             counts: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-section-heading h2 span")).map(read),
             filter: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-filters")),
+            hero: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero")),
             heroTitle: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero h1")),
+            heroEyebrow: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero .eyebrow")),
+            heroSubtitle: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero > div:first-child > p:last-child")),
+            crests: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-card__crest")).map(read),
+            mutedLabels: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-card__league, main.hc-live-hub-page .hc-live-card__meta, main.hc-live-hub-page .hc-live-card__muted, main.hc-live-hub-page .hc-live-card__vs, main.hc-live-hub-page .hc-live-card__middle small")).map(read),
             liveChatEntry: read(document.querySelector("main.hc-live-hub-page .hc-live-join")),
             liveChatLinks: document.querySelectorAll('main.hc-live-hub-page a[href^="/fan-live?gameId="]').length,
             renderedText: document.querySelector("main.hc-live-hub-page")?.innerText || "",
@@ -628,7 +640,14 @@ try {
           errors.push("live-games: populated section badges are not visibly paired: " + JSON.stringify(populatedAudit.counts));
         }
         if (populatedAudit.filter?.background !== raised || populatedAudit.filter?.color !== foreground) errors.push("live-games: populated filter card surface/foreground regressed");
-        if (populatedAudit.heroTitle?.color !== foreground) errors.push("live-games: hero title foreground is not paired: " + JSON.stringify(populatedAudit.heroTitle));
+        if (populatedAudit.hero?.background !== "rgb(11, 11, 11)" || populatedAudit.heroTitle?.color !== "rgb(255, 255, 255)" ||
+            populatedAudit.heroEyebrow?.color !== "rgb(255, 123, 72)" || populatedAudit.heroSubtitle?.color !== "rgb(201, 201, 201)") {
+          errors.push("live-games: hero dark-surface/light-ink pairing regressed: " + JSON.stringify({hero:populatedAudit.hero, title:populatedAudit.heroTitle, eyebrow:populatedAudit.heroEyebrow, subtitle:populatedAudit.heroSubtitle}));
+        }
+        if (populatedAudit.crests.length !== 6 || populatedAudit.crests.some(crest => crest.background !== soft || crest.color !== foreground)) {
+          errors.push("live-games: team logo chips lost their paired surface/foreground tokens: " + JSON.stringify(populatedAudit.crests));
+        }
+        if (populatedAudit.mutedLabels.some(label => label.color !== muted)) errors.push("live-games: populated card metadata is not using readable muted foreground: " + JSON.stringify(populatedAudit.mutedLabels));
         if (populatedAudit.liveChatLinks < 1 || populatedAudit.liveChatEntry?.background !== "rgb(255, 90, 31)" || populatedAudit.liveChatEntry?.color !== "rgb(17, 17, 17)") {
           errors.push("live-games: live chat entry is missing or its text/surface pair is unreadable: " + JSON.stringify(populatedAudit.liveChatEntry));
         }
