@@ -84,17 +84,6 @@
   .hc-card-audit-page { padding-top:16px; }
 }
 
-/* The hub hero is intentionally a dark surface in both themes; pin its light ink. */
-.hc-live-hub-page .hc-live-hub-hero {
-  background:#0B0B0B!important;
-  color:#FFFFFF!important;
-  border-color:#2D2D2D!important;
-}
-.hc-live-hub-page .hc-live-hub-hero h1 { color:#FFFFFF!important; }
-.hc-live-hub-page .hc-live-hub-hero .eyebrow { color:#FF7B48!important; }
-.hc-live-hub-page .hc-live-hub-hero h1 span { color:#FF5A1F!important; }
-.hc-live-hub-page .hc-live-hub-hero p:not(.eyebrow) { color:#C9C9C9!important; }
-
 /* Populated and recently finished game cards use the same paired card tokens. */
 .hc-live-hub-page .hc-live-hub-card,
 .hc-live-hub-page .hc-live-hub-card.is-recent {
