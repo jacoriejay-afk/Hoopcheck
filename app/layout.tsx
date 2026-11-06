@@ -24,6 +24,7 @@ import "./hoopcheck-lm2e-account-layout.css";
 import "./hoopcheck-lm2f-bottom-nav.css";
 import "./hoopcheck-lg1-logo-contrast.css";
 import "./hoopcheck-ia1-home.css";
+import OfflineRuntime from "../components/OfflineRuntime";
 import ThemeProvider from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
 import MobileAuth from "../components/MobileAuth";
@@ -117,6 +118,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c") }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c") }} />
         <ProtectionLayer />
+        <OfflineRuntime />
         <ThemeProvider initialTheme={initialTheme}>
           <AuthProvider>
             <LanguageProvider initialLanguage={initialLanguage}>
