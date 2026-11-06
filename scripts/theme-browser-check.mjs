@@ -473,7 +473,16 @@ try {
         const composerPlaceholder = await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").getAttribute("placeholder");
         if (teamHeading !== teamFixture.name) errors.push("fan-feed: hero is not wired to the selected team's real name: " + teamHeading);
         if (!composerPlaceholder?.includes(teamFixture.name)) errors.push("fan-feed: composer placeholder is not team-specific: " + composerPlaceholder);
-        if (await page.locator('main.hc-fan-feed-page .hc-feed-empty a[href="/fans"]').count() !== 1) errors.push("fan-feed: EMPTY-1 Discover Fans action is missing");
+        const emptyCopy = (await page.locator("main.hc-fan-feed-page .hc-feed-empty").innerText()).trim();
+        const expectedEmptyTitle = testLanguage === "es" ? "Tu feed de fans empieza aquí." : "Your fan feed starts here.";
+        const expectedEmptyBody = testLanguage === "es"
+          ? "Sigue equipos y fans para ver publicaciones y conversaciones."
+          : "Follow teams and fans to see team-tagged posts and conversations.";
+        if (!emptyCopy.includes(expectedEmptyTitle) || !emptyCopy.includes(expectedEmptyBody)) errors.push("fan-feed: EMPTY-1 headline/body copy is missing or not translated");
+        const discoverFans = page.locator('main.hc-fan-feed-page .hc-feed-empty a[href="/fans"]');
+        if (await discoverFans.count() !== 1) errors.push("fan-feed: EMPTY-1 Discover Fans action is missing");
+        const expectedDiscoverFans = testLanguage === "es" ? "Descubrir fans" : "Discover fans";
+        if ((await discoverFans.innerText().catch(() => "")).trim() !== expectedDiscoverFans) errors.push("fan-feed: EMPTY-1 Discover Fans action label is incorrect");
         const audienceNote = (await page.locator("main.hc-fan-feed-page .hc-feed-expiry-note").innerText()).trim();
         if (!audienceNote || /KICKER|TITLE|Subtitle|TEAM FIRST|Fan Only Note/.test(audienceNote)) errors.push("fan-feed: audience note is missing or still scaffolded: " + audienceNote);
       }
