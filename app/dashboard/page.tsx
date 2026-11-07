@@ -43,6 +43,7 @@ export default function DashboardPage() {
   const [reviews,setReviews] = useState<Review[]>([]);
   const [feedPost,setFeedPost] = useState<FeedPost|null>(null);
   const [liveCounts,setLiveCounts] = useState({live:0,upcoming:0});
+  const [fanLiveCountsAvailable,setFanLiveCountsAvailable] = useState(false);
   const [hasFeedAccess,setHasFeedAccess] = useState(false);
   const [loading,setLoading] = useState(true);
 
@@ -97,7 +98,7 @@ export default function DashboardPage() {
       if (p?.account_type === "fan" && activeMember) {
         const {data:games} = await supabase.from("fan_live_games").select("status,scheduled_at").in("status",["live","scheduled"]).order("scheduled_at",{ascending:true}).limit(200);
         const now = Date.now();
-        if (mounted) setLiveCounts({live:(games||[]).filter((g:any)=>g.status==="live").length,upcoming:(games||[]).filter((g:any)=>g.status==="scheduled" && (!g.scheduled_at || new Date(g.scheduled_at).getTime()>=now)).length});
+        if (mounted) { setLiveCounts({live:(games||[]).filter((g:any)=>g.status==="live").length,upcoming:(games||[]).filter((g:any)=>g.status==="scheduled" && (!g.scheduled_at || new Date(g.scheduled_at).getTime()>=now)).length}); setFanLiveCountsAvailable(true); }
       }
       if (mounted) setLoading(false);
     }
@@ -113,10 +114,10 @@ export default function DashboardPage() {
   if(profile?.account_type==="fan") return (
     <main className="page-shell hc-ia-home"><div className="page-container">
       <header className="hc-ia-welcome"><p className="eyebrow">{t("home.fanEyebrow")}</p><h1>{t("home.fanTitle")}<span>.</span></h1><p className="muted">{t("home.fanDescription")}</p><div className="hc-ia-identity"><span className="hc-ia-avatar">{displayName.charAt(0).toUpperCase()}</span><span><small>{t("home.signedIn")}</small><strong>{displayName}</strong></span></div></header>
-      <Link href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>{t("home.liveGames")}</strong><small>{liveCounts.live} live · {liveCounts.upcoming} upcoming</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></Link>
+      <Link href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>{t("home.liveGames")}</strong><small>{fanLiveCountsAvailable ? `${liveCounts.live} live · ${liveCounts.upcoming} upcoming` : "Open the live game hub"}</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></Link>
       {teams.length > 0 && <section className="hc-ia-section hc-ia-your-clubs">
         <div className="hc-ia-section-heading"><div><p className="eyebrow">YOUR CLUBS</p><h2>Teams you follow</h2></div><Link href="/team-hub">Open Team Hub <HoopIcon name="arrow-right" size={15}/></Link></div>
-        <div className="hc-ia-fan-grid">{teams.slice(0,4).map(team => <Link key={team.id} href={`/teams/${team.id}`} className="hc-ia-door"><TeamLogo name={team.name} size={40} className="hc-live-team-logo"/><span><strong>{team.name}</strong><small>{[team.league_name,team.country].filter(Boolean).join(" · ") || "Basketball club"}</small></span><HoopIcon name="chevron-right" size={18}/></Link>)}</div>
+        <div className="hc-ia-fan-grid">{teams.slice(0,4).map(team => <Link key={team.id} href={basketballSide === "womens" ? `/womens/${team.id}` : `/teams/${team.id}`} className="hc-ia-door"><TeamLogo name={team.name} size={40} className="hc-live-team-logo"/><span><strong>{team.name}</strong><small>{[team.league_name,team.country].filter(Boolean).join(" · ") || "Basketball club"}</small></span><HoopIcon name="chevron-right" size={18}/></Link>)}</div>
       </section>}
       {teams.length === 0 && <section className="hc-ia-section hc-ia-your-clubs">
         <p className="eyebrow">START YOUR FAN HQ</p><h2>Follow your first club</h2>
