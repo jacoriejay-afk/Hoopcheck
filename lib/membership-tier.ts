@@ -91,7 +91,7 @@ export function getHoopCheckEntitlements(args: {
     canCompare: isAdmin || ((isPlayer || isFan) && isAtLeastTier(tier, "pro")) || (otherMember && active),
     canUseContractCheck: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) || (otherMember && active),
     canUseProPassport: isAdmin || (role === "agent" && isAtLeastTier(tier, "pro")) ||
-      (isPlayer && isAtLeastTier(tier, "pro")),
+      (isPlayer && isAtLeastTier(tier, "premium")),
     canUsePayOnTimeIndex: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) || (otherMember && active),
     canViewTeamPayHistory: Boolean(role) && !isFan,
   };
