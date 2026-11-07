@@ -55,10 +55,9 @@ export async function GET(request: Request) {
       accountType && accountType !== "fan" && accountType !== "player" && entitlements.hasPaidMembership ? "member" :
       entitlements.tier;
     const fullRead = entitlements.canReadFullReviews;
-    const canWrite = entitlements.canWriteReviews && (
+    const canWrite = entitlements.canWriteReviews && profile?.player_verified === true && (
       entityType !== "womens-team" ||
-      (profile?.basketball_type === "womens" && profile.player_verified === true &&
-        profile.selected_womens_team_id === entityId)
+      (profile?.basketball_type === "womens" && profile.selected_womens_team_id === entityId)
     );
 
     const targetColumn = entityType === "team" ? "team_id" : entityType === "coach" ? "coach_id" : "womens_team_id";
