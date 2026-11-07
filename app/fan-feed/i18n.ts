@@ -163,10 +163,10 @@ const fanHqCanonical: Partial<Record<keyof typeof en, string>> = {
   loading: "Loading Fan HQ…",
   published: "Your post is live in your club Fan Group.",
   shareTitle: "HoopCheck Fan HQ",
-  post: "Post",
 };
 
 export function fanFeedI18n(key: keyof typeof en, language: Language, sharedFallback?: string): string {
+  if (key === "post") return localized[language]?.post ?? "Post";
   if (fanHqCanonical[key]) return fanHqCanonical[key]!;
   return localized[language]?.[key] ?? additional[language]?.[key] ?? (sharedFallback && sharedFallback !== key ? sharedFallback : undefined) ?? en[key];
 }
