@@ -16,15 +16,27 @@ export default function NotificationsPage(){
   const [errorMessage,setErrorMessage]=useState("");
   const [marking,setMarking]=useState(false);
   const [filter,setFilter]=useState<"all"|"games"|"clubs"|"reviews"|"unread">("all");
-  useEffect(()=>{(async()=>{
-    const {data:{session}}=await supabase.auth.getSession();
-    const user=session?.user;
-    if(!user){window.location.href="/login";return;}
-    const {data,error}=await supabase.from("notifications").select("id,target_type,target_id,notification_type,title,body,read_at,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(100);
-    if(error)setErrorMessage("Alerts could not be loaded. Please try again.");
-    else setItems(data||[]);
-    setLoading(false);
-  })()},[]);
+  useEffect(()=>{
+    let active=true;
+    async function loadAlerts(){
+      try{
+        const {data:{session},error:sessionError}=await supabase.auth.getSession();
+        if(!active)return;
+        if(sessionError)throw sessionError;
+        const user=session?.user;
+        if(!user){window.location.href="/login";return;}
+        const {data,error}=await supabase.from("notifications").select("id,target_type,target_id,notification_type,title,body,read_at,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(100);
+        if(!active)return;
+        if(error)throw error;
+        setItems(data||[]);
+      }catch(error){
+        console.error("Unable to load HoopCheck alerts:",error);
+        if(active)setErrorMessage("Alerts could not be loaded. Please try again.");
+      }finally{if(active)setLoading(false);}
+    }
+    void loadAlerts();
+    return ()=>{active=false;};
+  },[]);
   async function markAll(){
     const {data:{session}}=await supabase.auth.getSession();
     const user=session?.user;
