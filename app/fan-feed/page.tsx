@@ -7,7 +7,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { PageShell } from "../../components/LayoutSystem";
 import { FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptyState, FeedLoadingSkeleton, FeedStoryRing, FeedTimeRemaining } from "../../components/HoopFeedShared";
-import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 import TeamLogo from "../../components/TeamLogo";
 import TeamOfficialUpdates from "../../components/TeamOfficialUpdates";
 import { useLanguage } from "../../components/LanguageProvider";
@@ -104,7 +104,7 @@ export default function FanFeedPage() {
       ]);
       if (!alive) return;
       setUser(u); setProfile(p as Profile | null);
-      const active = hasActiveMembershipAtLeast(s);
+      const active = getHoopCheckEntitlements({ accountType: p?.account_type, subscription: s }).canReadFanFeed;
       if (p?.account_type !== "fan") { setLoading(false); return; }
       setMembershipActive(active);
       if (!active) { setLoading(false); return; }
