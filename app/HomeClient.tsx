@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import "./hoopcheck-brand-home.css";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getCachedSession } from "../lib/supabase";
