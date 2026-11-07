@@ -87,7 +87,7 @@ export default function TeamsPage() {
       if (!session?.user) { if (active) { setIsPlayerAccount(false); setIsFanAccount(false); } return; }
       const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", session.user.id).maybeSingle();
       if (active) { setIsPlayerAccount(profile?.account_type === "player"); setIsFanAccount(profile?.account_type === "fan"); }
-    })().catch(() => { if (active) setIsPlayerAccount(false); });
+    })().catch(() => { if (active) { setIsPlayerAccount(false); setIsFanAccount(false); } });
     return () => { active = false; };
   }, []);
 
