@@ -742,7 +742,7 @@ export default function LeagueDetailPage() {
 
             <div className="card">
               <div className="eyebrow">
-                Player Feedback
+                {accountType === "fan" ? "LEAGUE FEEDBACK" : "Player Feedback"}
               </div>
 
               <h2>
@@ -822,14 +822,14 @@ export default function LeagueDetailPage() {
                       >
                         <div>
                           <div className="eyebrow">
-                            {review.is_anonymous ? "Anonymous Player Review" : "Player Review"}
+                            {accountType === "fan" ? (review.is_anonymous ? "Anonymous review" : "League review") : (review.is_anonymous ? "Anonymous Player Review" : "Player Review")}
                           </div>
 
                           <h3>
-                            {review.title || "Player experience"}
+                            {review.title || (accountType === "fan" ? "League review" : "Player experience")}
                           </h3>
                           {review.player_verified && (
-                            <div className="hc-review-verified"><VerifiedBadge label="Verified player" /><span>Verified Player</span></div>
+                            <div className="hc-review-verified"><VerifiedBadge label={accountType === "fan" ? "Verified review" : "Verified player"} /><span>{accountType === "fan" ? "Verified review" : "Verified Player"}</span></div>
                           )}
                         </div>
 
