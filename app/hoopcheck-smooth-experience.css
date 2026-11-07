@@ -147,3 +147,5 @@
 .hc-smooth-wire__empty{font-size:13px;line-height:1.5;}
 .hc-smooth-wire__empty p{opacity:.8;}
 .hc-smooth-wire__empty a{color:var(--brand-orange);font-weight:700;}
+
+.hc-smooth-inbox-error{margin:12px 0;padding:10px 12px;border:1px solid #d75a43;border-radius:10px;color:var(--hc-text-primary,var(--ink));font-size:13px;line-height:1.45;}
