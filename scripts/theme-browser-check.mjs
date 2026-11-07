@@ -549,6 +549,8 @@ try {
         await pickerSearch.fill("Ego");
         const followedClub = picker.getByRole("option").filter({ hasText: teamFixture.name });
         await followedClub.waitFor({ state: "visible", timeout: 10000 });
+        const followedClubCount = await picker.getByRole("option").count();
+        if (followedClubCount !== 1) errors.push("fan-feed: picker must contain only the followed club list, found " + followedClubCount + " options");
         await followedClub.click();
         await page.waitForURL("**/team-hub/groups/" + teamFixture.id, { timeout: 10000 });
         await page.locator("main.hc-team-fan-group-page .hc-team-fan-group-composer textarea").waitFor({ state: "visible", timeout: 10000 });
