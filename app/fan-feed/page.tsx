@@ -151,6 +151,15 @@ export default function FanFeedPage() {
     setDrafts(prev => ({ ...prev, [post.id]: "" }));
     await load(user.id);
   }
+  async function reportPost(post: FanPost, reason: string) {
+    if (!user || !reason.trim()) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    const form = new FormData(); form.append("action", "report_post"); form.append("team_id", post.team_id); form.append("post_id", post.id); form.append("reason", reason.trim());
+    const response = await fetch("/api/fan-groups", { method: "POST", headers: { Authorization: "Bearer " + session?.access_token }, body: form });
+    const result = await response.json();
+    setMessage(response.ok && result.ok ? ft("reportSent") : result.message || ft("reportFailed"));
+  }
+
   async function followFan(targetId: string) {
     if (!user || targetId === user.id) return;
     const { error } = await supabase.from("follow_relationships").upsert({ follower_id: user.id, target_id: targetId, target_type: "fan" }, { onConflict: "follower_id,target_type,target_id" });
