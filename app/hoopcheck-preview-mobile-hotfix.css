@@ -52,3 +52,12 @@
  .hc-team-entity-profile .hc-team-branded-hero h1 { font-size:clamp(25px,7.5vw,36px) !important; line-height:1.12 !important; overflow-wrap:break-word !important; }
  .hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-stats { min-width:0; }
 }
+
+/* Compact completion strip uses actual profile completeness and next missing field. */
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-completion { margin:4px 0 0 !important; padding:12px !important; background:#161616 !important; border:1px solid #383838 !important; border-radius:12px !important; color:#f7f7f5 !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-completion-copy { color:#f7f7f5 !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-completion-copy strong { color:#f7f7f5 !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-completion-copy span { color:#bdbdbd !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-completion-copy a { color:#ff8a54 !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-completion-track { background:#333 !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-completion-track > span { background:#ff5a1f !important; }
