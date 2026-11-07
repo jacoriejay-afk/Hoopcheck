@@ -9,6 +9,7 @@ type ReviewRow = {
   id: string;
   team_id: string | null;
   coach_id: string | null;
+  womens_team_id?: string | null;
   overall_rating: number | null;
   created_at: string;
   author_id: string;
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
     .split(",").map(value => value.trim()).filter(Boolean);
   const ids = Array.from(new Set([...(singularId ? [singularId] : []), ...requestedIds])).slice(0, 100);
 
-  if (!["team", "coach"].includes(entityType || "") || ids.length === 0 ||
+  if (!["team", "coach", "womens-team"].includes(entityType || "") || ids.length === 0 ||
       ids.some(id => !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))) {
     return NextResponse.json({ error: "Provide a valid entity type and one or more IDs." }, { status: 400 });
   }
@@ -72,9 +73,13 @@ export async function GET(request: Request) {
     const db = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const targetColumn = entityType === "team" ? "team_id" : "coach_id";
-    const { data: rows, error } = await db.from("reviews")
-      .select("id,team_id,coach_id,overall_rating,created_at,author_id")
+    const targetColumn = entityType === "team" ? "team_id" : entityType === "coach" ? "coach_id" : "womens_team_id";
+    const reviewTable = entityType === "womens-team" ? "womens_team_reviews" : "reviews";
+    const reviewColumns = entityType === "womens-team"
+      ? "id,womens_team_id,overall_rating,created_at,author_id"
+      : "id,team_id,coach_id,overall_rating,created_at,author_id";
+    const { data: rows, error } = await db.from(reviewTable)
+      .select(reviewColumns)
       .eq("status", "approved")
       .in(targetColumn, ids);
     if (error) throw error;
