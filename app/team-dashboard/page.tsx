@@ -45,7 +45,9 @@ export default function TeamDashboardPage() {
     void (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { window.location.href = "/login"; return; }
+      const { data: profile, error: profileError } = await supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
       if (!active) return;
+      if (profileError || !profile || profile.account_type === "fan") { window.location.replace("/dashboard"); return; }
       setUserId(user.id);
       await load(user.id);
       if (active) setLoading(false);
