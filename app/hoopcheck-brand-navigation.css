@@ -1,0 +1,70 @@
+/* Shared navigation brand pass: preserve links, roles, icons, and mobile geometry. */
+html body header.site-header-global.hc-template-header {
+  --hc-header-orange: #ff5a1f;
+  background: #0a0a0a;
+  color: #f7f7f5;
+  border-bottom: 2px solid #ff5a1f;
+}
+html body header.site-header-global .site-header-brand {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+html body header.site-header-global .hc-header-links a {
+  color: #f7f7f5;
+  font-weight: 800;
+  text-decoration: none;
+  transition: color .15s ease;
+}
+html body header.site-header-global .hc-header-links a:hover,
+html body header.site-header-global .hc-header-links a.is-active {
+  color: #ff5a1f;
+}
+html body header.site-header-global .hc-header-icon {
+  color: #f7f7f5;
+}
+html body header.site-header-global .hc-signin-button {
+  background: #ff5a1f;
+  border-color: #ff5a1f;
+  color: #0a0a0a;
+  font-weight: 900;
+}
+html body header.site-header-global a:focus-visible,
+html body header.site-header-global button:focus-visible {
+  outline: 3px solid #ff5a1f;
+  outline-offset: 3px;
+}
+@media(max-width:700px) {
+  html body header.site-header-global .hc-header-nav.is-open {
+    background: #0a0a0a;
+    color: #f7f7f5;
+  }
+  html body header.site-header-global .hc-header-links a {
+    min-height: 40px;
+  }
+  html body nav.hc-lm2f-bottom-nav {
+    background: #0a0a0a;
+    border-top: 1px solid #343434;
+    color: #e6e6e6;
+  }
+  html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab {
+    color: #e6e6e6;
+  }
+  html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active,
+  html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab[aria-current="page"] {
+    color: #ff5a1f;
+  }
+  html body nav.hc-lm2f-bottom-nav .hc-lm2f-tab-icon,
+  html body nav.hc-lm2f-bottom-nav svg.hc-lm2f-tab-svg {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+  }
+  html body nav.hc-lm2f-bottom-nav .hc-lm2f-active-indicator {
+    background: #ff5a1f;
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  html body header.site-header-global .hc-header-links a { transition: none; }
+}
