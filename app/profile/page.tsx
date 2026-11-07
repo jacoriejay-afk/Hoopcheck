@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import "../hoopcheck-brand-profile.css";
+import OwnProfilePostsGrid from "../../components/OwnProfilePostsGrid";
 import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
@@ -150,6 +151,8 @@ export default function ProfilePage() {
             </Surface>
           </div>
         </section>
+
+        {p.account_type === "player" && <OwnProfilePostsGrid userId={p.id} />}
 
         <section className="dashboard-card compact-section">
           <p className="eyebrow">{t("about")}</p>
