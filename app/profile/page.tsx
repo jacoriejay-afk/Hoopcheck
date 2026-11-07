@@ -119,7 +119,7 @@ export default function ProfilePage() {
               </Link>
             ) : (
               <Link href="/account#profile-editor" className="btn dark hc-profile-public-button">
-                <span>{t("profilePrivate")}</span><HoopIcon name="arrow-up-right" size={16} />
+                <span>Profile visibility · {t("profilePrivate")}</span><HoopIcon name="arrow-up-right" size={16} />
               </Link>
             ))}
           </div>
