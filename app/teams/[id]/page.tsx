@@ -26,6 +26,7 @@ import TeamRosterSpots from "../../../components/TeamRosterSpots";
 import OfficialReviewResponse from "../../../components/OfficialReviewResponse";
 import TeamPayTimeline from "../../../components/TeamPayTimeline";
 import TeamLogo from "../../../components/TeamLogo";
+import TeamProfileHero from "../../../components/TeamProfileHero";
 import ClaimedTeamLogoEditor from "../../../components/ClaimedTeamLogoEditor";
 import ClaimProfileButton from "../../../components/ClaimProfileButton";
 import TeamOfficialUpdates from "../../../components/TeamOfficialUpdates";
@@ -575,27 +576,19 @@ export default function TeamDetailPage() {
   return (
     <main className="hc-entity-profile-page hc-team-entity-profile">
 
-<section className="hero hc-team-profile-hero hc-social-profile-header" id="overview" aria-labelledby="hc-team-profile-title">
-        <div className="hc-team-profile-topline">
-          <TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={88} className="hc-team-profile-logo" />
-          <FollowButton targetType="team" targetId={team.id} variant="club" showCount={false} showNotifications={false} onCountChange={setTeamFollowerCount} />
-        </div>
-        <p className="hc-team-profile-kicker">HOOPCHECK CLUB PROFILE</p>
-        <h1 id="hc-team-profile-title" className={team.name.length > 28 ? "is-long-name" : ""}>{team.name}</h1>
-        <p className="hc-team-profile-meta" title={[team.country || t("countryNotListed"), team.city, league?.name || team.league_name].filter(Boolean).join(" · ")}>
-          <span>{team.country || t("countryNotListed")}</span>
-          {team.city ? <span className="hc-team-profile-meta__city"> · {team.city}</span> : null}
-          {(league?.name || team.league_name) ? <span className="hc-team-profile-meta__league"> · {league?.name || team.league_name}</span> : null}
-        </p>
-        <div className="hc-team-profile-stats" aria-label="Team profile statistics">
-          <div className="hc-team-profile-stat"><strong>{teamReviewCount}</strong><small>Reviews</small></div>
-          <div className="hc-team-profile-stat hc-team-profile-stat--trust">
-            {trustScoreData?.score == null ? <strong className="hc-team-profile-stat__missing">—</strong> : <span className="hc-team-profile-mini-ring"><TrustScoreDial score={trustScoreData.score} explanation={trustScoreData.explanation || t("trustScoreUnavailable")} reviewCount={trustScoreData.reviewCount} verifiedReviewCount={trustScoreData.verifiedReviewCount} /></span>}
-            <small>Trust Score</small>
-          </div>
-          <div className="hc-team-profile-stat"><strong>{teamFollowerCount}</strong><small>Followers</small></div>
-        </div>
-      </section>
+<TeamProfileHero
+        teamId={team.id}
+        name={team.name}
+        country={team.country || t("countryNotListed")}
+        city={team.city}
+        leagueName={league?.name || team.league_name}
+        logoUrl={team.logo_url}
+        logoBg={team.logo_bg}
+        reviewCount={teamReviewCount}
+        followerCount={teamFollowerCount}
+        trustScore={trustScoreData}
+        onFollowerCountChange={setTeamFollowerCount}
+      />
       <nav className="hc-team-profile-nav" aria-label="Team profile sections">
         <a href="#overview" aria-current="page">Overview</a><a href="#reviews">Reviews</a><a href="#players">Players</a><a href="#roster-board">Roster Board</a>{accountType && accountType !== "fan" ? <a href="#pay-transparency">Pay Transparency</a> : null}
       </nav>
