@@ -121,3 +121,42 @@
 .hc-player-dossier-hero .hc-social-stats > * { min-width:0; }
 .hc-player-dossier-hero .hc-social-stats strong { font-variant-numeric:tabular-nums; }
 @media(max-width:600px){ .hc-player-dossier-hero .hc-social-profile-actions { display:flex;flex-wrap:wrap;gap:8px; } .hc-player-dossier-hero .hc-social-profile-actions > * { max-width:100%; } }
+
+/* LIGHT-UX: explicit light surfaces, with dark branded heroes kept readable.
+   Scoped to html.theme-light so dark mode remains unchanged. */
+html.theme-light .hc-membership-comparison .hc-membership-plan {
+ background:#fffdf9 !important;color:#171717 !important;border:1px solid #c9c2b9 !important;
+ box-shadow:0 5px 20px rgba(32,25,19,.06);
+}
+html.theme-light .hc-membership-comparison .hc-membership-plan.is-current {
+ background:linear-gradient(150deg,#fff1e8,#fffdf9) !important;border:2px solid #c8430e !important;
+}
+html.theme-light .hc-membership-comparison .hc-membership-plan h3,
+html.theme-light .hc-membership-comparison .hc-membership-plan .price,
+html.theme-light .hc-membership-comparison .hc-membership-plan li {color:#171717 !important;}
+html.theme-light .hc-membership-comparison .hc-membership-plan .eyebrow {color:#a83a0b !important;}
+html.theme-light .hc-membership-comparison .hc-membership-plan small {color:#4c453e !important;}
+html.theme-light .hc-member-profile-page .hc-profile-membership-link,
+html.theme-light .hc-member-profile-page .hc-profile-quick-link {
+ background:#fffdf9 !important;color:#171717 !important;border-color:#bcb3a8 !important;
+}
+html.theme-light .hc-member-profile-page .hc-profile-membership-link svg:first-child,
+html.theme-light .hc-member-profile-page .hc-profile-quick-link svg {color:#b83d0a !important;}
+html.theme-light .hc-member-profile-page .hc-profile-quick-link:hover,
+html.theme-light .hc-member-profile-page .hc-profile-membership-link:hover {background:#fff0e7 !important;}
+/* The Account, Club and Player identity heroes are intentionally dark in both themes. */
+html.theme-light .hc-player-dossier-hero,
+html.theme-light .hc-team-entity-profile .hc-team-branded-hero,
+html.theme-light .hc-member-profile-page .hero-card.compact-hero {
+ color:#f7f7f5 !important;
+}
+html.theme-light .hc-player-dossier-hero :is(h1,h2,strong),
+html.theme-light .hc-team-entity-profile .hc-team-branded-hero :is(h1,h2,strong),
+html.theme-light .hc-member-profile-page .hero-card.compact-hero :is(h1,h2,strong) {color:#f7f7f5 !important;}
+html.theme-light .hc-player-dossier-hero :is(.muted,small,.hc-social-profile-bio),
+html.theme-light .hc-team-entity-profile .hc-team-branded-hero .muted,
+html.theme-light .hc-member-profile-page .hero-card.compact-hero .muted {color:#d4d4d4 !important;}
+html.theme-light .hc-member-profile-page .hero-card.compact-hero .hc-profile-completion-copy span {color:#d4d4d4 !important;}
+html.theme-light .hc-player-dossier-hero .hc-social-stats a {color:#f7f7f5 !important;}
+html.theme-light .hc-player-dossier-hero .hc-social-profile-actions :is(a,button),
+html.theme-light .hc-team-entity-profile .hc-team-branded-hero :is(a,button) {border-color:#ff8a54;}
