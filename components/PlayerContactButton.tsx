@@ -116,7 +116,7 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
     return <div className="contact-box hc-contact-request-card"><span className="card-kicker">HOOPCHAT</span><h3>Connected player</h3><div className="contact-messages">{messages.map(m=><div key={m.id} className={m.sender_id===userId?"contact-message mine":"contact-message"}>{m.body}<small>{new Date(m.created_at).toLocaleString()}</small></div>)}</div><textarea value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Write a message..." rows={3}/><button className="btn" onClick={()=>void sendMessage()} disabled={busy||!draft.trim()}>{busy?"Sending...":"Send Message"}</button></div>;
   }
   if(accountType==="player" && !request){
-    if(!premium)return <div className="contact-gate hc-contact-request-gate"><strong>Pro/Premium Player feature</strong><p className="muted">Upgrade to Pro or Premium to send a player request.</p></div>;
+    if(!canAsk)return <div className="contact-gate hc-contact-request-gate"><strong>Pro/Premium Player feature</strong><p className="muted">Upgrade to Pro or Premium to send a player request.</p></div>;
     return <div className="contact-box hc-contact-request-card"><span className="card-kicker">PLAYER CONNECTION</span><h3>Request player access</h3><p className="muted">Send a request to connect. The player must accept before HoopChat messaging opens.</p><textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Introduce yourself..." rows={3}/><button className="btn" onClick={()=>void sendRequest()} disabled={busy}>{busy?"Sending...":"Send Player Request"}</button>{info&&<p className="muted">{info}</p>}</div>;
   }
 
