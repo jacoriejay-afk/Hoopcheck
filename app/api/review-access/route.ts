@@ -53,7 +53,7 @@ export async function GET(request: Request) {
     }
 
     const tier = isAdmin ? "premium" :
-      accountType === "player" ? "player" :
+      accountType === "player" && active && ["pro", "premium"].includes(plan) ? "player" :
       accountType === "fan" && active && plan === "premium" ? "premium" :
       accountType === "fan" && active && plan === "pro" ? "pro" :
       accountType !== "fan" && accountType !== "" && active ? "member" : "free";
