@@ -597,7 +597,7 @@ export default function TeamDetailPage() {
         </div>
       </section>
       <nav className="hc-team-profile-nav" aria-label="Team profile sections">
-        <a href="#overview" aria-current="page">Overview</a><a href="#reviews">Reviews</a><a href="#players">Players</a><a href="#roster-board">Roster Board</a><a href="#pay-transparency">Pay Transparency</a>
+        <a href="#overview" aria-current="page">Overview</a><a href="#reviews">Reviews</a><a href="#players">Players</a><a href="#roster-board">Roster Board</a>{accountType && accountType !== "fan" ? <a href="#pay-transparency">Pay Transparency</a> : null}
       </nav>
       <TeamFanGroupEntry teamId={team.id} />
 
