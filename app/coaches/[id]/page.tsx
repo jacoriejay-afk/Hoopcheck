@@ -550,7 +550,7 @@ export default function CoachDetailPage() {
           {coach.name}
         </h1>
         {reviewTier === "pro" ? (
-          <div className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow">Trust Score</span><h2>Premium</h2><Link href="/membership" className="btn">Upgrade</Link></div>
+          <div className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow">Trust Score</span><h2>{accountType === "fan" ? "Fan Premium" : "Premium"}</h2><Link href="/membership" className="btn">{accountType === "fan" ? "Upgrade to Fan Premium" : "Upgrade"}</Link></div>
         ) : ["premium", "player", "member"].includes(reviewTier) ? (
           <div className="hc-entity-trust-score"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedReviews"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /></div>
         ) : (
@@ -666,7 +666,7 @@ export default function CoachDetailPage() {
           <div className="hc-review-star-row"><span aria-hidden="true">★★★★★</span><strong>{publicSummary.overall_rating == null ? "—" : publicSummary.overall_rating.toFixed(1)+"/5"}</strong></div>
           <h3>Coach breakdown</h3>
           <div className="hc-review-category-teaser">{["Communication","Professionalism","Development","Payment"].map(label=><div className="hc-review-category-row" key={label}><span>{label}</span><span className="hc-review-score-blur" aria-label="Score available with Fan Premium">★★★★★</span></div>)}</div>
-          <p>Fan Pro shows the outline. Upgrade to Fan Premium for every review and rating.</p><Link href="/membership" className="btn">Upgrade</Link>
+          <p>Fan Pro shows the outline. Upgrade to Fan Premium for every coach review and rating.</p><Link href="/membership" className="btn">Upgrade to Fan Premium</Link>
         </section>
       ) : (
         <>
