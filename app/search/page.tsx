@@ -116,8 +116,9 @@ function SearchContent() {
   const initialType = searchParams.get("type");
   const basketballSide = useFanBasketballSide();
   const [isFanAccount, setIsFanAccount] = useState(false);
+  const [roleReady, setRoleReady] = useState(false);
   const [suggestions, setSuggestions] = useState<SocialSuggestion[]>([]);
-  useEffect(() => { void (async () => { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const [{ data }, { data: graphSuggestions }] = await Promise.all([supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(), supabase.rpc("get_social_suggestions")]); setIsFanAccount(data?.account_type === "fan"); setSuggestions((graphSuggestions || []) as SocialSuggestion[]); })(); }, []);
+  useEffect(() => { let active = true; void (async () => { try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const [{ data }, { data: graphSuggestions }] = await Promise.all([supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(), supabase.rpc("get_social_suggestions")]); if (!active) return; const fan = data?.account_type === "fan"; setIsFanAccount(fan); setSuggestions(((graphSuggestions || []) as SocialSuggestion[]).filter(item => !fan || item.entity_type === "team")); } catch (error) { console.error("Unable to load search role context:", error); } finally { if (active) setRoleReady(true); } })(); return () => { active = false; }; }, []);
 
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -137,6 +138,7 @@ function SearchContent() {
     let active = true;
 
     async function search() {
+      if (!roleReady) return;
       if (!query) {
         if (!active) return;
         setCoaches([]);
@@ -152,7 +154,7 @@ function SearchContent() {
 
       try {
         const searchTerm = `%${query}%`;
-        const wantsPlayers = typeFilter === "all" || typeFilter === "players";
+        const wantsPlayers = !isFanAccount && (typeFilter === "all" || typeFilter === "players");
         const wantsCoaches = typeFilter === "all" || typeFilter === "coaches";
         const wantsMensTeams = typeFilter === "all" || typeFilter === "mens-teams";
         const wantsWomensTeams = typeFilter === "all" || typeFilter === "womens-teams";
@@ -232,7 +234,7 @@ function SearchContent() {
 
     void search();
     return () => { active = false; };
-  }, [query, countryFilter, verifiedOnly, typeFilter]);
+  }, [query, countryFilter, verifiedOnly, typeFilter, roleReady, isFanAccount]);
 
   useEffect(() => { setSearchInput(query); }, [query]);
 
@@ -251,12 +253,14 @@ function SearchContent() {
     return () => window.clearTimeout(timer);
   }, [searchInput, query, router]);
   useEffect(() => {
-    if (initialType === "players" || initialType === "coaches" || initialType === "mens-teams" || initialType === "womens-teams" || initialType === "leagues") {
-      setTypeFilter(initialType);
-    } else if (isFanAccount) {
-      setTypeFilter(basketballSide === "womens" ? "womens-teams" : "mens-teams");
+    if (!roleReady) return;
+    if (isFanAccount) {
+      setTypeFilter(initialType === "coaches" || initialType === "mens-teams" || initialType === "womens-teams" || initialType === "leagues" ? initialType : "all");
+      return;
     }
-  }, [initialType, isFanAccount, basketballSide]);
+    if (initialType === "players" || initialType === "coaches" || initialType === "mens-teams" || initialType === "womens-teams" || initialType === "leagues") setTypeFilter(initialType);
+    else setTypeFilter("all");
+  }, [initialType, isFanAccount, roleReady, basketballSide]);
 
   const countries = useMemo(() => Array.from(new Set([
     ...players.map((x) => x.country),
@@ -267,7 +271,7 @@ function SearchContent() {
     ...leagues.map((x) => x.country),
   ].filter(Boolean) as string[])).sort(), [players, coaches, teams, womensTeams, leagues]);
 
-  const visiblePlayers = typeFilter === "all" || typeFilter === "players"
+  const visiblePlayers = !isFanAccount && (typeFilter === "all" || typeFilter === "players")
     ? players.filter((x) => !countryFilter || x.country === countryFilter || x.current_country === countryFilter)
     : [];
   const visibleCoaches = typeFilter === "all" || typeFilter === "coaches"
@@ -283,7 +287,7 @@ function SearchContent() {
     ? leagues.filter((x) => !countryFilter || x.country === countryFilter)
     : [];
 
-  const totalResults = visiblePlayers.length + visibleCoaches.length + visibleTeams.length + visibleWomensTeams.length + visibleLeagues.length;
+  const totalResults = (isFanAccount ? 0 : visiblePlayers.length) + visibleCoaches.length + visibleTeams.length + visibleWomensTeams.length + visibleLeagues.length;
 
   return (
     <main className="search-page hc-global-search-page">
@@ -294,19 +298,19 @@ function SearchContent() {
         <Link href="/womens">{t("womensTeams")}</Link>
         <Link href="/coaches">{t("coaches")}</Link>
         <Link href="/leagues">{t("leagues")}</Link>
-        <Link href="/players">{t("players")}</Link>
+        {!isFanAccount && <Link href="/players">{t("players")}</Link>}
         <Link href="/search">{t("globalSearch")}</Link>
         </nav>
-      <Surface as="section" className="dashboard-card hc-player-connect-surface" style={{ margin: "0 0 18px", padding: "16px" }}>
+      {roleReady && !isFanAccount && <Surface as="section" className="dashboard-card hc-player-connect-surface" style={{ margin: "0 0 18px", padding: "16px" }}>
         <div className="eyebrow">{t("playerConnect")}</div>
         <h2 style={{ margin: "4px 0 6px" }}>{t("addAPlayer")}</h2>
         <p className="muted" style={{ margin: "0 0 12px" }}>
           {t("enterPlayerUsername")}
         </p>
         <PlayerUsernameConnect />
-      </Surface>
+      </Surface>}
 
-      {!query && suggestions.length > 0 && (
+      {roleReady && !query && suggestions.length > 0 && (
         <section className="hc-suggested-for-you" aria-label="Suggested for you">
           <div className="group-heading"><span>HC</span><h2>Suggested for you</h2></div>
           <div className="hc-suggested-row">
@@ -322,15 +326,15 @@ function SearchContent() {
       <section className="search-hero">
         <div className="eyebrow">{t("globalResearch")}</div>
         <h1>{t("searchBasketballWorld")}</h1>
-        <p>{t("findBasketballPeople")}</p>
+        <p>{isFanAccount ? t("searchBasketballWorld") : t("findBasketballPeople")}</p>
 
         <SearchBar
           className="search-form"
           name="q"
           value={searchInput}
           onChange={setSearchInput}
-          placeholder={t("searchPeoplePlaceholder")}
-          ariaLabel={t("searchPeoplePlaceholder")}
+          placeholder={isFanAccount ? t("searchBasketballWorld") : t("searchPeoplePlaceholder")}
+          ariaLabel={isFanAccount ? t("searchBasketballWorld") : t("searchPeoplePlaceholder")}
         />
       </section>
 
@@ -346,7 +350,7 @@ function SearchContent() {
 
           {!error && (
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 24 }}>
-              {(["all", "players", "coaches", "mens-teams", "womens-teams", "leagues"] as const).map((type) => (
+              {(isFanAccount ? (["all", "coaches", "mens-teams", "womens-teams", "leagues"] as const) : (["all", "players", "coaches", "mens-teams", "womens-teams", "leagues"] as const)).map((type) => (
                 <button
                   key={type}
                   type="button"
@@ -459,7 +463,7 @@ function SearchContent() {
           <div className="eyebrow">{t("startResearching")}</div>
           <h2>{t("searchBeforeSign")}</h2>
           <div className="quick-links">
-            <Link href="/coaches" className="quick-card"><span>01</span><strong>{t("browseCoaches")}</strong><small>{t("researchPlayerExperiences")}</small></Link>
+            <Link href="/coaches" className="quick-card"><span>01</span><strong>{t("browseCoaches")}</strong><small>{isFanAccount ? t("researchCoach") : t("researchPlayerExperiences")}</small></Link>
             <Link href="/teams" className="quick-card"><span>02</span><strong>{t("browseTeams")}</strong><small>{t("exploreProfessionalOrganizations")}</small></Link>
             <Link href="/leagues" className="quick-card"><span>03</span><strong>{t("browseLeagues")}</strong><small>{t("exploreLeaguesWorldwide")}</small></Link>
           </div>
