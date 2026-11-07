@@ -62,7 +62,8 @@ export async function GET(request: Request) {
     const tier = entitlements.tier;
     // Keep the existing player presentation token for downstream directory cards;
     // the authorization decision itself is made only by the shared resolver.
-    const displayTier = accountType === "player" && entitlements.canViewTrustScore ? "player" : tier;
+    const displayTier = entitlements.canViewTrustScore && accountType === "player" ? "player" :
+      entitlements.canViewTrustScore && accountType && accountType !== "fan" ? "member" : tier;
     if (!entitlements.canViewTrustScore) {
       const hidden = { tier, locked: true, score: null, reviewCount: null, verifiedReviewCount: null, explanation: null, averageRating: null };
       const scores = Object.fromEntries(ids.map(id => [id, hidden]));
