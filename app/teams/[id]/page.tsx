@@ -580,6 +580,8 @@ export default function TeamDetailPage() {
           title="Player reviews require an eligible membership"
           description="Sign in with an eligible active membership to view full player reviews and ratings. Players and other eligible members keep their existing access."
           actionLabel="Upgrade"
+          accountType={accountType}
+          tier={reviewTier}
         />
       ) : (
         <>
