@@ -91,7 +91,7 @@ export function getHoopCheckEntitlements(args: {
   return {
     tier,
     hasPaidMembership: active,
-    canReadHoopFeed: active && ["player", "fan", "scout", "agent"].includes(role),
+    canReadHoopFeed: active && ["player", "scout", "agent"].includes(role),
     canWriteHoopFeed: isPlayer && isAtLeastTier(tier, "pro"),
     canReadFanFeed: isFan && isAtLeastTier(tier, "pro"),
     canWriteFanFeed: isFan && isAtLeastTier(tier, "pro"),
