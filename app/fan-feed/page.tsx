@@ -15,7 +15,7 @@ import "./fan-feed.css";
 import "../hoopfeed-shared.css";
 import { fanFeedI18n, fanFeedTeamComposerPlaceholder, fanFeedTeamSubtitle } from "./i18n";
 
-type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
+type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null; group_name?: string | null };
 type Profile = { id: string; display_name: string | null; avatar_url: string | null; account_type: string };
 type FanPost = { id: string; author_id: string; team_id: string; body: string; image_url: string | null; video_url?: string | null; created_at: string; expires_at: string; profiles?: Profile | null; teams?: Team | null; fan_feed_checks?: { user_id: string }[]; fan_feed_comments?: { id: string }[] };
 
@@ -32,6 +32,8 @@ export default function FanFeedPage() {
   const [following, setFollowing] = useState<Set<string>>(new Set());
   const [body, setBody] = useState("");
   const [teamId, setTeamId] = useState("");
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [teamSearch, setTeamSearch] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState("");
   const [video, setVideo] = useState<File | null>(null);
@@ -50,6 +52,7 @@ export default function FanFeedPage() {
   const [message, setMessage] = useState("");
   const basketballSide = useFanBasketballSide();
   const selectedTeam = teams.find(team => team.id === teamId) || null;
+  const filteredTeams = teams.filter(team => team.name.toLowerCase().includes(teamSearch.trim().toLowerCase()));
   const teamComposerPlaceholder = selectedTeam
     ? fanFeedTeamComposerPlaceholder(selectedTeam.name, language)
     : ft("composerPlaceholder");
@@ -67,7 +70,10 @@ export default function FanFeedPage() {
     setFollowing(new Set(fanIds));
     const teamQuery = await supabase.from("teams").select("id,name,logo_url,logo_bg").in("id", scopedTeamIds.length ? scopedTeamIds : ["00000000-0000-0000-0000-000000000000"]);
     const followedTeams = (teamQuery.data || []) as Team[];
-    setTeams(followedTeams);
+    const { data: groupRows } = scopedTeamIds.length ? await supabase.from("team_fan_groups").select("team_id,group_name").in("team_id", scopedTeamIds) : { data: [] as { team_id: string; group_name: string }[] };
+    const groupNames = new Map((groupRows || []).map((group: any) => [group.team_id, group.group_name]));
+    const teamsWithGroups = followedTeams.map(team => ({ ...team, group_name: groupNames.get(team.id) || team.name + " Fans" }));
+    setTeams(teamsWithGroups);
     setTeamId(current => followedTeams.some(team => team.id === current) ? current : followedTeams[0]?.id || "");
     if (!fanIds.length && !sideTeamIds.size) { setPosts([]); return; }
     const query = supabase.from("fan_feed_posts")
@@ -78,8 +84,9 @@ export default function FanFeedPage() {
     const { data: archiveRows } = await supabase.from("fan_feed_archives").select("post_id").eq("user_id", uid);
     const archivedIds = new Set((archiveRows || []).map((r: any) => r.post_id));
     setArchived(archivedIds);
-    const rows = (data || []).filter((p: any) => !archivedIds.has(p.id) && sideTeamIds.has(p.team_id) && (fanIds.includes(p.author_id) || scopedTeamIds.includes(p.team_id)))
-      .map((p: any) => ({ ...p, checks: p.fan_feed_checks || [], profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles, teams: Array.isArray(p.teams) ? p.teams[0] : p.teams }));
+    const groupNameByTeam = new Map(teamsWithGroups.map(team => [team.id, team.group_name || team.name + " Fans"]));
+    const rows = (data || []).filter((p: any) => !archivedIds.has(p.id) && sideTeamIds.has(p.team_id) && scopedTeamIds.includes(p.team_id) && (fanIds.includes(p.author_id) || scopedTeamIds.includes(p.team_id)))
+      .map((p: any) => { const team = Array.isArray(p.teams) ? p.teams[0] : p.teams; return { ...p, checks: p.fan_feed_checks || [], profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles, teams: team ? { ...team, group_name: groupNameByTeam.get(p.team_id) || team.name + " Fans" } : null }; });
     setPosts(rows.map((p: any) => ({ ...p, checks: p.fan_feed_checks || [] })) as FanPost[]);
     setLiked(new Set(rows.filter((p: any) => (p.fan_feed_checks || []).some((l: any) => l.user_id === uid)).map((p: any) => p.id)));
     const ids = rows.map((p: any) => p.id);
