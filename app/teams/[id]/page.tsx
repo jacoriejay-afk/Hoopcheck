@@ -186,6 +186,7 @@ export default function TeamDetailPage() {
   const [hasAccess, setHasAccess] =
     useState(false);
   const [accountType, setAccountType] = useState<string>("");
+  const [hasApprovedTeamClaim, setHasApprovedTeamClaim] = useState(false);
   const [membershipPlan, setMembershipPlan] = useState<string>("");
   const [knownPlayerFollowers, setKnownPlayerFollowers] = useState<string[]>([]);
   const [teamReviewCount, setTeamReviewCount] = useState(0);
@@ -316,6 +317,16 @@ export default function TeamDetailPage() {
       const subscription =
         subscriptionResult.data;
       setAccountType(profileResult.data?.account_type || "");
+      // Team Portal belongs to the approved representative of THIS club, not every manager.
+      const { data: approvedTeamClaim } = await supabase
+        .from("profile_claim_requests")
+        .select("id")
+        .eq("requester_id", user.id)
+        .eq("entity_type", "team")
+        .eq("entity_id", id)
+        .eq("status", "approved")
+        .maybeSingle();
+      setHasApprovedTeamClaim(Boolean(approvedTeamClaim));
       setMembershipPlan(subscription?.plan || "");
 
       const currentPeriodEnd =
@@ -602,7 +613,7 @@ export default function TeamDetailPage() {
       <TeamFanGroupEntry teamId={team.id} />
 
       {accountType !== "fan" && knownPlayerFollowers.length > 0 && <p className="hc-team-social-proof">Followed by players you follow: <strong>{knownPlayerFollowers.join(", ")}</strong></p>}
-        <div className="entity-actions">{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}<ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} />{["coach","manager","admin"].includes(accountType) && <Link href="/team-dashboard" className="btn dark">Team Portal</Link>}</div>
+        <div className="entity-actions">{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}<ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} />{hasApprovedTeamClaim && <Link href="/team-dashboard" className="btn dark">Team Portal</Link>}</div>
         {accountType !== "fan" && <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />}
         {["premium", "player", "member"].includes(reviewTier) && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">{accountType === "fan" ? "LATEST TEAM REVIEW" : "LATEST PLAYER REVIEW"}</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || (accountType === "fan" ? "Team review" : t("playerExperience"))}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
       {!hasAccess && reviewTier === "free" && accountType !== "player" ? (
