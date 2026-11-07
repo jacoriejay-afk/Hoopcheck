@@ -21,6 +21,7 @@ export default function TeamFanGroupPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [teamName, setTeamName] = useState("");
+  const [teamBasketballSide, setTeamBasketballSide] = useState<"mens" | "womens">("mens");
   const [summary, setSummary] = useState<Summary | null>(null);
   const [isModerator, setIsModerator] = useState(false);
   const [isFan, setIsFan] = useState(false);
@@ -40,18 +41,19 @@ export default function TeamFanGroupPage() {
     if (!currentUser) { setLoading(false); return; }
     const [{ data: profile }, { data: team }, { data: summaryRows }, { data: moderators }] = await Promise.all([
       supabase.from("profiles").select("account_type").eq("id", currentUser.id).maybeSingle(),
-      supabase.from("teams").select("name").eq("id", teamId).maybeSingle(),
+      supabase.from("teams").select("name,basketball_type").eq("id", teamId).maybeSingle(),
       supabase.rpc("get_team_fan_group_summary", { p_team_id: teamId }),
       supabase.from("team_fan_group_moderators").select("user_id,moderator_type").eq("team_id", teamId)
     ]);
     setTeamName(team?.name || "Team");
+    setTeamBasketballSide(team?.basketball_type === "womens" ? "womens" : "mens");
     setIsFan(profile?.account_type === "fan");
     const row = Array.isArray(summaryRows) ? summaryRows[0] : summaryRows;
     setSummary(row || null);
     const { data: platformAdmin } = await supabase.rpc("is_current_user_admin_or_moderator");
     const moderator = Boolean((moderators || []).some((m: any) => m.user_id === currentUser.id) ||
       ((moderators || []).some((m: any) => m.moderator_type === "platform") && platformAdmin === true));
-    if (profile?.account_type !== "fan" && !moderator) { router.replace("/teams/" + teamId); return; }
+    if (profile?.account_type !== "fan" && !moderator) { router.replace((team?.basketball_type === "womens" ? "/womens/" : "/teams/") + teamId); return; }
     setIsModerator(moderator);
     if (row?.is_member) {
       const { data: postRows } = await supabase.from("team_fan_group_posts")
@@ -121,10 +123,10 @@ export default function TeamFanGroupPage() {
   }
   if (loading) return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><HoopLoading label="Loading Fan Group…" /></div></main></PageShell>;
   if (!user) return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><section className="hero-card"><h1>Sign in to join this Fan Group</h1><Link className="btn" href="/login">Sign in</Link></section></div></main></PageShell>;
-  if (!summary) return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><h1>Fan Group unavailable</h1><Link href={"/teams/" + teamId}>Back to team</Link></div></main></PageShell>;
+  if (!summary) return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><h1>Fan Group unavailable</h1><Link href={teamProfileHref}>Back to team</Link></div></main></PageShell>;
 
   return <PageShell><main className="page-shell hc-feed-page hc-team-fan-group-page"><div className="page-container">
-    <header className="topbar"><Link href="/team-hub" className="brand">TEAM HUB</Link><nav className="topnav"><Link href={"/teams/" + teamId}>Team page</Link><Link href="/team-hub">Your teams</Link></nav></header>
+    <header className="topbar"><Link href="/team-hub" className="brand">TEAM HUB</Link><nav className="topnav"><Link href={teamProfileHref}>Team page</Link><Link href="/team-hub">Your teams</Link></nav></header>
     <section className="hero-card hc-feed-hero"><p className="eyebrow">FAN HQ · OFFICIAL COMMUNITY</p><h1>{summary.group_name}</h1><p className="muted">{teamName} supporters, together in one official fan space.</p><p className="hc-feed-expiry-note">{Number(summary.member_count || 0).toLocaleString()} MEMBERS <span>Group posts stay here permanently.</span></p></section>
     {!summary.is_member && <section className="dashboard-card hc-feed-shared-card hc-team-fan-group-locked"><h2>Join to see the conversation</h2><p className="muted">The group is visible to everyone, but posts and comments are private to members.</p>{summary.join_mode === "open" ? <button className="btn" disabled={busy} onClick={() => void act("join")}>Join Fan Group</button> : <button className="btn" disabled={busy || summary.has_pending_request} onClick={() => void act("join")}>{summary.has_pending_request ? "Request Pending" : "Request to Join"}</button>}</section>}
     {summary.is_member && <>
