@@ -34,6 +34,7 @@ export default function TeamFanGroupPage() {
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const teamProfileHref = (teamBasketballSide === "womens" ? "/womens/" : "/teams/") + teamId;
 
   const load = useCallback(async () => {
     const { data: { user: currentUser } } = await supabase.auth.getUser();
