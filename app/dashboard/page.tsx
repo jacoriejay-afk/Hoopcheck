@@ -104,7 +104,7 @@ export default function DashboardPage() {
     return ()=>{mounted=false;};
   },[router,basketballSide]);
 
-  const displayName = profile?.display_name || [profile?.first_name,profile?.last_name].filter(Boolean).join(" ") || email.split("@")[0] || "Player";
+  const displayName = profile?.display_name || [profile?.first_name,profile?.last_name].filter(Boolean).join(" ") || email.split("@")[0] || (profile?.account_type === "fan" ? t("fan") : "Player");
   const completion = calculateProfileCompletion(profile).percentage;
 
   if(loading) return <main className="page-shell dashboard-page"><div className="page-container"><HoopLoading label={t("loadingDashboard")}/></div></main>;
@@ -115,7 +115,7 @@ export default function DashboardPage() {
       <section className="hc-ia-section"><h2>{t("home.fanSide")}</h2><div className="hc-ia-fan-grid">
         <Link href="/team-hub" className="hc-ia-door"><CategoryIconTile category="teams" size="sm"/><span><strong>{t("home.teamHub")}</strong><small>{t("home.teamHubDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
         <Link href="/fan-feed" className="hc-ia-door"><CategoryIconTile category="reviews" size="sm"/><span><strong>{t("home.fanFeed")}</strong><small>{t("home.fanFeedDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-        <Link href="/fans" className="hc-ia-door"><CategoryIconTile category="players" size="sm"/><span><strong>{t("home.findFan")}</strong><small>{t("home.findFanDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
+        <Link href="/fans" className="hc-ia-door"><CategoryIconTile category="reviews" icon="users" size="sm"/><span><strong>{t("home.findFan")}</strong><small>{t("home.findFanDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
         <Link href="/live-games" className="hc-ia-door"><CategoryIconTile category="leagues" size="sm"/><span><strong>{t("home.liveGames")}</strong><small>{liveCounts.live} live · {liveCounts.upcoming} upcoming</small></span><HoopIcon name="chevron-right" size={18}/></Link>
       </div></section>
       <Link href="/account" className="hc-ia-account-link">{t("home.accountSettings")} <HoopIcon name="arrow-right" size={16}/></Link>
