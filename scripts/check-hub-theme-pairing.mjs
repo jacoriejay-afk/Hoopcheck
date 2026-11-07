@@ -90,7 +90,7 @@ if (fanFeedPage.includes('from("fan_feed_posts")') ||
     !fanFeedPage.includes('from("team_fan_group_members")') ||
     !fanFeedPage.includes('basketballSide === "womens"') ||
     !fanFeedPage.includes("FanBasketballSideSwitch") ||
-    fanFeedPage.includes('from("feed_posts")') ||
+    fanFeedPage.includes('from("fan_feed_posts")') ||
     !fanFeedPage.includes('router.push("/team-hub/groups/" + team.id)') ||
     fanFeedPage.includes("hc-feed-composer__editor") ||
     !bottomNav.includes('accountType === "fan" ? "FAN HQ" : "HoopFeed"') ||
