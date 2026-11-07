@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
-import { hasActiveMembershipAtLeast } from "../../../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { submitReviewReport } from "../../../lib/review-reports";
 import HoopLoading from "../../../components/HoopLoading";
@@ -260,7 +260,7 @@ export default function CoachDetailPage() {
       } = await supabase
         .from("subscriptions")
         .select(
-          "plan, status, current_period_end"
+          "plan, status, access_status, current_period_end"
         )
         .eq(
           "user_id",
@@ -282,34 +282,12 @@ export default function CoachDetailPage() {
         );
       }
 
-      const currentPeriodEnd =
-        subscription?.current_period_end
-          ? new Date(
-              subscription.current_period_end
-            )
-          : null;
-
-      const subscriptionIsActive =
-        (
-          subscription?.status ===
-            "active" ||
-          subscription?.status ===
-            "trialing"
-        ) &&
-        (
-          !currentPeriodEnd ||
-          currentPeriodEnd >
-            new Date()
-        );
-
-      const fanHasPaidPlan =
-        profile?.account_type !== "fan" ||
-        hasActiveMembershipAtLeast(subscription);
-      const access =
-        (subscriptionIsActive && fanHasPaidPlan) ||
-        Boolean(adminResult);
-
-      setHasAccess(access);
+      const entitlements = getHoopCheckEntitlements({
+        accountType: profile?.account_type,
+        subscription,
+        isAdmin: adminResult === true,
+      });
+      setHasAccess(entitlements.hasPaidMembership);
 
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       const response = await fetch(`/api/review-access?entityType=coach&entityId=${encodeURIComponent(id)}`, {
@@ -322,7 +300,7 @@ export default function CoachDetailPage() {
       const fullRead = reviewPayload?.canReadFull === true;
       setCanReadFullReviews(fullRead);
       setCanWriteReviews(reviewPayload?.canWrite === true);
-      setHasAccess(tier !== "free");
+      setHasAccess(entitlements.hasPaidMembership);
       setReviewLoading(fullRead);
       const summary = reviewPayload?.summary;
       if (summary) {
@@ -571,7 +549,7 @@ export default function CoachDetailPage() {
         </p>
 
         <div className="actions">
-          {accountType === "player" && hasAccess ? (
+          {accountType === "player" && canWriteReviews ? (
             <Link
               href={`/coaches/${coach.id}/review`}
               className="btn"
