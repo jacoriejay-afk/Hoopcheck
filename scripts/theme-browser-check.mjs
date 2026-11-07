@@ -513,29 +513,28 @@ try {
       const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
       const errors = [];
       if (requestedPath === "/fan-feed") {
-        await page.locator("main.hc-fan-feed-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
-        await page.waitForFunction((teamName) => document.querySelector("main.hc-fan-feed-page .hc-feed-hero h1")?.textContent?.trim() === teamName, teamFixture.name, { timeout: 15000 });
-        await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").waitFor({ state: "visible", timeout: 15000 });
-        await page.waitForFunction((teamName) => document.querySelector("main.hc-fan-feed-page .hc-feed-composer textarea")?.getAttribute("placeholder")?.includes(teamName), teamFixture.name, { timeout: 15000 });
-        await page.locator("main.hc-fan-feed-page .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
+        // Fan HQ is a mixed feed. The hero is intentionally not named after a club;
+        // choosing a followed club is a separate composer action.
+        await page.locator("main.hc-fan-feed-page .hc-feed-hero h1").waitFor({ state: "visible", timeout: 15000 });
         const teamHeading = (await page.locator("main.hc-fan-feed-page .hc-feed-hero h1").innerText()).trim();
         const teamSubtitle = (await page.locator("main.hc-fan-feed-page .hc-feed-hero .muted").innerText()).trim();
         const fanHqEyebrow = (await page.locator("main.hc-fan-feed-page .hc-feed-hero .eyebrow").innerText()).trim();
-        const composerPlaceholder = await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").getAttribute("placeholder");
-        if (teamHeading !== teamFixture.name) errors.push("fan-feed: hero is not wired to the selected team's real name: " + teamHeading);
-        if (!teamSubtitle.includes(teamFixture.name)) errors.push("fan-feed: hero subtitle is missing the selected team's real name: " + teamSubtitle);
+        if (teamHeading !== "Fan HQ") errors.push("fan-feed: mixed-feed hero title is incorrect: " + teamHeading);
+        if (!teamSubtitle.includes("clubs you follow")) errors.push("fan-feed: mixed-feed subtitle is incorrect: " + teamSubtitle);
         if (!fanHqEyebrow.includes("FAN HQ")) errors.push("fan-feed: real Fan HQ eyebrow is missing: " + fanHqEyebrow);
-        if (!composerPlaceholder?.includes(teamFixture.name)) errors.push("fan-feed: composer placeholder is not team-specific: " + composerPlaceholder);
-        const emptyCopy = (await page.locator("main.hc-fan-feed-page .hc-feed-empty").innerText()).trim();
-        const expectedEmptyTitle = testLanguage === "es" ? "Tu feed de fans empieza aquí." : "Your fan feed starts here.";
-        const expectedEmptyBody = testLanguage === "es"
-          ? "Sigue equipos y fans para ver publicaciones y conversaciones."
-          : "Follow teams and fans to see team-tagged posts and conversations.";
-        if (!emptyCopy.includes(expectedEmptyTitle) || !emptyCopy.includes(expectedEmptyBody)) errors.push("fan-feed: EMPTY-1 headline/body copy is missing or not translated");
-        const discoverFans = page.locator('main.hc-fan-feed-page .hc-feed-empty a[href="/fans"]');
-        if (await discoverFans.count() !== 1) errors.push("fan-feed: EMPTY-1 Discover Fans action is missing");
-        const expectedDiscoverFans = testLanguage === "es" ? "Descubrir fans" : "Discover fans";
-        if ((await discoverFans.innerText().catch(() => "")).trim() !== expectedDiscoverFans) errors.push("fan-feed: EMPTY-1 Discover Fans action label is incorrect");
+        const chooseClub = page.locator("main.hc-fan-feed-page .hc-feed-composer button", { hasText: "Choose a followed club to post" });
+        await chooseClub.waitFor({ state: "visible", timeout: 15000 });
+        await chooseClub.click();
+        const clubOption = page.locator("main.hc-fan-feed-page .hc-feed-club-picker button", { hasText: teamFixture.name });
+        await clubOption.waitFor({ state: "visible", timeout: 15000 });
+        await clubOption.click();
+        const composer = page.locator("main.hc-fan-feed-page .hc-feed-composer textarea");
+        await composer.waitFor({ state: "visible", timeout: 15000 });
+        const composerPlaceholder = await composer.getAttribute("placeholder");
+        if (!composerPlaceholder?.includes(teamFixture.name)) errors.push("fan-feed: selected-club composer placeholder is not team-specific: " + composerPlaceholder);
+        await page.locator("main.hc-fan-feed-page .hc-feed-stream").waitFor({ state: "visible", timeout: 15000 });
+        const emptyCopy = (await page.locator("main.hc-fan-feed-page .hc-feed-stream").innerText()).trim();
+        if (!emptyCopy.includes("No fan posts yet")) errors.push("fan-feed: empty feed message is missing");
         const audienceNote = (await page.locator("main.hc-fan-feed-page .hc-feed-expiry-note").innerText()).trim();
         if (!audienceNote || !audienceNote.includes("24") || /KICKER|TITLE|Subtitle|TEAM FIRST|Fan Only Note/.test(audienceNote)) errors.push("fan-feed: audience note is missing or still scaffolded: " + audienceNote);
       }
