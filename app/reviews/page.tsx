@@ -268,7 +268,7 @@ export default function ReviewsAnalyticsPage() {
                     <div className="hc-review-author">
                       <strong>{authorName}</strong>
                       <small>
-                        {item.author?.player_verified ? "Verified player · " : ""}
+                        {item.author?.player_verified ? "Verified reviewer · " : ""}
                         {readableDate(item.created_at)}
                       </small>
                     </div>
