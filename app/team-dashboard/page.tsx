@@ -47,7 +47,7 @@ export default function TeamDashboardPage() {
       if (!user) { window.location.href = "/login"; return; }
       const { data: profile, error: profileError } = await supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
       if (!active) return;
-      if (profileError || !profile || profile.account_type === "fan") { window.location.replace("/dashboard"); return; }
+      if (profileError || !profile || !["coach", "manager", "admin"].includes(profile.account_type)) { window.location.replace("/dashboard"); return; }
       setUserId(user.id);
       await load(user.id);
       if (active) setLoading(false);
@@ -124,7 +124,11 @@ export default function TeamDashboardPage() {
         <div className="section-heading"><div><p className="eyebrow">YOUR ORGANIZATIONS</p><h2>Claimed team profiles</h2></div></div>
         <div style={{ display: "grid", gap: 12 }}>{teams.map(team => <article className="dashboard-card" key={team.id} style={{ padding: 18 }}>
           <h3>{team.name}</h3><p className="muted">{[team.city, team.country].filter(Boolean).join(", ")}</p>
-          <Link href={"/teams/" + team.id} className="btn">View public profile</Link>
+          <div className="actions">
+            <Link href={"/teams/" + team.id} className="btn">View public profile</Link>
+            <Link href={"/team-hub/groups/" + team.id} className="btn dark">Moderate fan group</Link>
+            <Link href={"/teams/" + team.id + "#reviews"} className="btn">View team reviews</Link>
+          </div>
         </article>)}</div>
       </section>
       <section style={{ marginTop: 22 }}>
