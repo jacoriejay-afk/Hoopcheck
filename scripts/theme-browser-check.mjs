@@ -369,13 +369,13 @@ try {
       else if (url.pathname.includes("/rest/v1/team_fan_group_posts")) data = [];
       else if (url.pathname.includes("/rest/v1/team_fan_group_comments")) data = [];
       else if (url.pathname.includes("/rest/v1/rpc/get_team_fan_group_summary")) {
-        data = activeRoutePath.startsWith("/team-hub/groups/") ? [{
+        data = [{
           group_name: teamFixture.name + " Fan Group",
           member_count: 12,
           join_mode: "open",
           is_member: true,
           has_pending_request: false,
-        }] : [];
+        }];
       }
       else if (url.pathname.includes("/rest/v1/rpc/get_follow_count")) data = 0;
       else if (url.pathname.includes("/rest/v1/rpc/get_review_verification")) data = [];
