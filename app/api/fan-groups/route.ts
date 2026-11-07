@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     const { data: explicitMod } = await db.from("team_fan_group_moderators").select("id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle();
     const { data: platformMod } = await db.from("team_fan_group_moderators").select("id").eq("team_id", teamId).eq("moderator_type", "platform").maybeSingle();
     const { data: isPlatformAdmin } = await db.rpc("is_current_user_admin_or_moderator");
-    const isModerator = Boolean(explicitMod || (platformMod && (profile?.account_type === "admin" || isPlatformAdmin)));
+    const isModerator = Boolean(entitlements.canModerateFanGroups || explicitMod || (platformMod && (profile?.account_type === "admin" || isPlatformAdmin)));
     const { data: membership } = await db.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle();
     const isMember = Boolean(membership);
 
