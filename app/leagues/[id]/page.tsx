@@ -708,7 +708,7 @@ export default function LeagueDetailPage() {
                   )
                 )}
               </div>
-            ) : null)}
+            )}
           </section>
         </>
       )}
