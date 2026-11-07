@@ -60,6 +60,9 @@ export async function GET(request: Request) {
     }
     const entitlements = getHoopCheckEntitlements({ accountType, subscription, isAdmin });
     const tier = entitlements.tier;
+    // Keep the existing player presentation token for downstream directory cards;
+    // the authorization decision itself is made only by the shared resolver.
+    const displayTier = accountType === "player" && entitlements.canViewTrustScore ? "player" : tier;
     if (!entitlements.canViewTrustScore) {
       const hidden = { tier, locked: true, score: null, reviewCount: null, verifiedReviewCount: null, explanation: null, averageRating: null };
       const scores = Object.fromEntries(ids.map(id => [id, hidden]));
@@ -121,7 +124,7 @@ export async function GET(request: Request) {
         reviewerVerified: Boolean(verifiedByAuthor[row.author_id]),
       }));
       const calculated = calculateTrustScore({ averageRating, reviews: scoreReviews });
-      scores[id] = { ...calculated, averageRating, tier };
+      scores[id] = { ...calculated, averageRating, tier: displayTier };
 
       // Record at most one snapshot per entity per day. The shared TS utility
       // remains the only place where the score formula is calculated.
