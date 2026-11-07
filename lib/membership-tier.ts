@@ -5,6 +5,7 @@ export type HoopCheckEntitlements = {
   tier: MembershipTier;
   hasPaidMembership: boolean;
   canReadFullReviews: boolean;
+  canViewTrustScore: boolean;
   canWriteReviews: boolean;
   canUseLiveGameHub: boolean;
   canUseLiveGameChat: boolean;
@@ -83,6 +84,7 @@ export function getHoopCheckEntitlements(args: {
     hasPaidMembership: active,
     canReadFullReviews: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) ||
       (isFan && isAtLeastTier(tier, "premium")) || (otherMember && active),
+    canViewTrustScore: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) || (isFan && isAtLeastTier(tier, "premium")) || (otherMember && active),
     canWriteReviews: isPlayer && isAtLeastTier(tier, "pro"),
     canUseLiveGameHub: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) ||
       (isFan && isAtLeastTier(tier, "premium")),
