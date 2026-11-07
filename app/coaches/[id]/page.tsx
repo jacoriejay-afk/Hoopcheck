@@ -635,6 +635,7 @@ export default function CoachDetailPage() {
       </section>
 
       {hasAccess && (
+        <>
         <section className="grid">
           <div className="card">
             <div className="eyebrow">Overall Rating</div>
