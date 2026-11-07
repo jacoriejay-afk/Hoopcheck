@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { hasActiveMembershipAtLeast } from "../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../lib/membership-tier";
 
 type MonthAggregate = { month: string; total: number; on_time: number; late: number; missing: number };
 const options = [
@@ -42,8 +42,12 @@ export default function TeamPayTimeline({ teamId }: { teamId: string }) {
         supabase.from("profiles").select("account_type,player_verified").eq("id", session.user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id", session.user.id).maybeSingle(),
       ]);
-      if (profile?.account_type !== "player" || profile.player_verified !== true ||
-          !hasActiveMembershipAtLeast(subscription)) return;
+      const entitlements = getHoopCheckEntitlements({
+        accountType: profile?.account_type,
+        subscription,
+        playerVerified: profile?.player_verified === true,
+      });
+      if (!entitlements.canSubmitPayCheckIn) return;
       const { data: eligible } = await supabase.rpc("can_user_review_team", { p_user_id: session.user.id, p_team_id: teamId });
       if (eligible === true) {
         setCanSubmit(true);
