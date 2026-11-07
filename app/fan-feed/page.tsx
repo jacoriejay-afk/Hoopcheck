@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { PageShell } from "../../components/LayoutSystem";
-import { FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptyState, FeedLoadingSkeleton, FeedStoryRing, FeedTimeRemaining } from "../../components/HoopFeedShared";
+import { FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptyState, FeedLoadingSkeleton } from "../../components/HoopFeedShared";
 import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 import TeamLogo from "../../components/TeamLogo";
 import TeamOfficialUpdates from "../../components/TeamOfficialUpdates";
@@ -17,7 +17,8 @@ import { fanFeedI18n, fanFeedTeamComposerPlaceholder } from "./i18n";
 
 type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null; group_name?: string | null };
 type Profile = { id: string; display_name: string | null; avatar_url: string | null; account_type: string };
-type FanPost = { id: string; author_id: string; team_id: string; body: string; image_url: string | null; video_url?: string | null; created_at: string; expires_at: string; profiles?: Profile | null; teams?: Team | null; fan_feed_checks?: { user_id: string }[]; fan_feed_comments?: { id: string }[] };
+type FanPost = { id: string; author_id: string; team_id: string; body: string; image_url: string | null; image_src?: string | null; is_pinned: boolean; created_at: string; profiles?: Profile | null; teams?: Team | null };
+type GroupComment = { id: string; post_id: string; author_id: string; body: string; created_at: string; profiles?: { display_name: string | null; avatar_url?: string | null } | null };
 
 export default function FanFeedPage() {
   const { t, language, formatDate } = useLanguage();
@@ -36,26 +37,17 @@ export default function FanFeedPage() {
   const [teamSearch, setTeamSearch] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState("");
-  const [video, setVideo] = useState<File | null>(null);
-  const [videoPreview, setVideoPreview] = useState("");
-  const [archived, setArchived] = useState<Set<string>>(new Set());
-  const [comments, setComments] = useState<Record<string, any[]>>({});
+  const [comments, setComments] = useState<Record<string, GroupComment[]>>({});
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
-  const [liked, setLiked] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [now, setNow] = useState(0);
-  const touchStartY = useRef<number | null>(null);
   const [membershipActive, setMembershipActive] = useState(false);
   const [posting, setPosting] = useState(false);
   const [message, setMessage] = useState("");
   const basketballSide = useFanBasketballSide();
   const selectedTeam = teams.find(team => team.id === teamId) || null;
   const filteredTeams = teams.filter(team => team.name.toLowerCase().includes(teamSearch.trim().toLowerCase()));
-  const teamComposerPlaceholder = selectedTeam
-    ? fanFeedTeamComposerPlaceholder(selectedTeam.name, language)
-    : ft("composerPlaceholder");
+  const teamComposerPlaceholder = selectedTeam ? fanFeedTeamComposerPlaceholder(selectedTeam.name, language) : ft("composerPlaceholder");
 
   const load = useCallback(async (uid: string) => {
     const [{ data: follows }, { data: teamFollows }] = await Promise.all([
@@ -72,33 +64,38 @@ export default function FanFeedPage() {
     const followedTeams = (teamQuery.data || []) as Team[];
     const { data: groupRows } = scopedTeamIds.length ? await supabase.from("team_fan_groups").select("team_id,group_name").in("team_id", scopedTeamIds) : { data: [] as { team_id: string; group_name: string }[] };
     const groupNames = new Map((groupRows || []).map((group: any) => [group.team_id, group.group_name]));
-    const teamsWithGroups = followedTeams.map(team => ({ ...team, group_name: groupNames.get(team.id) || team.name + " Fans" }));
+    const { data: memberRows } = scopedTeamIds.length
+      ? await supabase.from("team_fan_group_members").select("team_id").eq("user_id", uid).in("team_id", scopedTeamIds)
+      : { data: [] as { team_id: string }[] };
+    const memberTeamIds = (memberRows || []).map((row: any) => row.team_id);
+    const memberSet = new Set(memberTeamIds);
+    const teamsWithGroups = followedTeams.map(team => ({ ...team, group_name: groupNames.get(team.id) || team.name + " Fan Group", is_member: memberSet.has(team.id) }));
     setTeams(teamsWithGroups);
-    setTeamId(current => followedTeams.some(team => team.id === current) ? current : followedTeams[0]?.id || "");
-    if (!fanIds.length && !sideTeamIds.size) { setPosts([]); return; }
-    const query = supabase.from("fan_feed_posts")
-      .select("id,author_id,team_id,body,image_url,video_url,created_at,expires_at,profiles!fan_feed_posts_author_id_fkey(id,display_name,avatar_url,account_type),teams(id,name,logo_url,logo_bg),fan_feed_checks(user_id),fan_feed_comments(id)")
-      .gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(100);
-    const { data, error } = await query;
+    setTeamId(current => teamsWithGroups.some(team => team.id === current) ? current : teamsWithGroups.find(team => team.is_member)?.id || teamsWithGroups[0]?.id || "");
+    if (!memberTeamIds.length) { setPosts([]); setComments({}); return; }
+    const { data, error } = await supabase.from("team_fan_group_posts")
+      .select("id,author_id,team_id,body,image_url,is_pinned,created_at,profiles:profiles!team_fan_group_posts_author_id_fkey(id,display_name,avatar_url,account_type),teams(id,name,logo_url,logo_bg)")
+      .in("team_id", memberTeamIds).eq("status", "published")
+      .order("is_pinned", { ascending: false }).order("created_at", { ascending: false }).limit(100);
     if (error) { setMessage(error.message); return; }
-    const { data: archiveRows } = await supabase.from("fan_feed_archives").select("post_id").eq("user_id", uid);
-    const archivedIds = new Set((archiveRows || []).map((r: any) => r.post_id));
-    setArchived(archivedIds);
-    const groupNameByTeam = new Map(teamsWithGroups.map(team => [team.id, team.group_name || team.name + " Fans"]));
-    const rows = (data || []).filter((p: any) => !archivedIds.has(p.id) && sideTeamIds.has(p.team_id) && scopedTeamIds.includes(p.team_id) && (fanIds.includes(p.author_id) || scopedTeamIds.includes(p.team_id)))
-      .map((p: any) => { const team = Array.isArray(p.teams) ? p.teams[0] : p.teams; return { ...p, checks: p.fan_feed_checks || [], profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles, teams: team ? { ...team, group_name: groupNameByTeam.get(p.team_id) || team.name + " Fans" } : null }; });
-    setPosts(rows.map((p: any) => ({ ...p, checks: p.fan_feed_checks || [] })) as FanPost[]);
-    setLiked(new Set(rows.filter((p: any) => (p.fan_feed_checks || []).some((l: any) => l.user_id === uid)).map((p: any) => p.id)));
-    const ids = rows.map((p: any) => p.id);
+    const groupNameByTeam = new Map(teamsWithGroups.map(team => [team.id, team.group_name || team.name + " Fan Group"]));
+    const rows = await Promise.all((data || []).map(async (p: any) => {
+      const team = Array.isArray(p.teams) ? p.teams[0] : p.teams;
+      const author = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
+      const { data: signed } = p.image_url ? await supabase.storage.from("fan-group-images").createSignedUrl(p.image_url, 600) : { data: null };
+      return { ...p, profiles: author, image_src: signed?.signedUrl || null, teams: team ? { ...team, group_name: groupNameByTeam.get(p.team_id) || team.name + " Fan Group" } : null };
+    }));
+    setPosts(rows as FanPost[]);
+    const ids = rows.map((post: any) => post.id);
     if (ids.length) {
-      const { data: commentRows } = await supabase.from("fan_feed_comments").select("id,post_id,author_id,body,created_at,profiles(display_name,avatar_url)").in("post_id", ids).order("created_at", { ascending: true });
-      const grouped: Record<string, any[]> = {};
-      (commentRows || []).forEach((c: any) => { (grouped[c.post_id] ||= []).push({ ...c, profiles: Array.isArray(c.profiles) ? c.profiles[0] : c.profiles }); });
+      const { data: commentRows } = await supabase.from("team_fan_group_comments")
+        .select("id,post_id,author_id,body,created_at,profiles:profiles!team_fan_group_comments_author_id_fkey(display_name,avatar_url)")
+        .in("post_id", ids).order("created_at", { ascending: true });
+      const grouped: Record<string, GroupComment[]> = {};
+      (commentRows || []).forEach((comment: any) => { (grouped[comment.post_id] ||= []).push({ ...comment, profiles: Array.isArray(comment.profiles) ? comment.profiles[0] : comment.profiles }); });
       setComments(grouped);
     } else setComments({});
   }, [basketballSide]);
-
-  useEffect(() => { setNow(Date.now()); const timer = window.setInterval(() => setNow(Date.now()), 60000); return () => window.clearInterval(timer); }, []);
 
   useEffect(() => {
     let alive = true;
