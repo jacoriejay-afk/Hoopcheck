@@ -72,14 +72,11 @@ export default function CoachesPage() {
     const ids = coaches.map(coach => coach.id);
     void (async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", session.user.id).maybeSingle();
-        if (active) setViewerRole(profile?.account_type || "");
-      } else if (active) setViewerRole("");
       const response = await fetch(`/api/trust-score?entityType=coach&entityIds=${ids.map(encodeURIComponent).join(",")}`, {
         headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}, cache: "no-store",
       });
       const payload = response.ok ? await response.json() : null;
+      if (active) setViewerRole(payload?.accountType || "");
       if (active && payload?.scores) setTrustScores(payload.scores as Record<string, TrustSummary>);
     })().catch(() => { if (active) setTrustScores({}); });
     return () => { active = false; };
