@@ -154,4 +154,19 @@ export function fanFeedTeamComposerPlaceholder(teamName: string, language: Langu
   return withTeam(teamSurfaceCopy[language]?.composer || teamSurfaceCopy.en!.composer, teamName);
 }
 
-export function fanFeedI18n(key: keyof typeof en, language: Language, sharedFallback?: string): string { return additional[language]?.[key] ?? localized[language]?.[key] ?? (sharedFallback && sharedFallback !== key ? sharedFallback : undefined) ?? en[key]; }
+const fanHqCanonical: Partial<Record<keyof typeof en, string>> = {
+  title: "Fan HQ",
+  kicker: "FAN HQ · CLUB COMMUNITIES",
+  membershipRequired: "Fan HQ requires an active Pro or Premium fan membership",
+  membershipDescription: "An active Pro or Premium fan membership is required to access your club groups.",
+  separateSurface: "Fan HQ is separate from player HoopFeed.",
+  loading: "Loading Fan HQ…",
+  published: "Your post is live in your club Fan Group.",
+  shareTitle: "HoopCheck Fan HQ",
+  post: "Post",
+};
+
+export function fanFeedI18n(key: keyof typeof en, language: Language, sharedFallback?: string): string {
+  if (fanHqCanonical[key]) return fanHqCanonical[key]!;
+  return localized[language]?.[key] ?? additional[language]?.[key] ?? (sharedFallback && sharedFallback !== key ? sharedFallback : undefined) ?? en[key];
+}
