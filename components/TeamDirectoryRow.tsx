@@ -51,7 +51,7 @@ export default function TeamDirectoryRow({
         : <><div className="hc-d3-mobile-trust"><div className="hc-scout-card__stat"><strong>{hasTrustScore ? Math.round(trustScore) : "—"}</strong><small>Trust Score</small></div><div className="hc-scout-card__stat"><strong>{trustReviewCount == null ? "—" : trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div></div><div className="hc-d3-desktop-trust"><TrustScoreDial score={hasTrustScore ? trustScore : null} explanation={trustExplanation || (fanView ? "Not enough team reviews to calculate a Trust Score yet." : "Not enough player reviews to calculate a Trust Score yet.")} reviewCount={trustReviewCount ?? 0} verifiedReviewCount={trustVerifiedReviewCount} size="mini"/><div className="hc-scout-card__stat"><strong>{trustReviewCount == null ? "—" : trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div><div className="hc-scout-card__stat"><strong>{followerCount == null ? "—" : followerCount}</strong><small>FOLLOWERS</small></div></div></>}
       </div>
       <footer className="hc-scout-card__ticket">
-        <Link href={href} className="hc-scout-card__report-link">{fanView ? "View Team Profile" : t("openScoutingReport")} <span aria-hidden="true">→</span></Link>
+        <Link href={href} className="hc-scout-card__report-link">{t("openTeamProfile")} <span aria-hidden="true">→</span></Link>
         {showFollow && <div className="hc-team-directory-row__follow"><FollowButton targetType="team" targetId={id} /></div>}
       </footer>
     </Surface>
