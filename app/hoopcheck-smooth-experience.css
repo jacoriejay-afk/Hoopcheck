@@ -48,3 +48,23 @@
   .hc-smooth-reveal,.hc-smooth-score,.hc-smooth-skeleton::after { animation: none !important; }
   .hc-smooth-reveal,.hc-smooth-score { opacity: 1 !important; transform: none !important; }
 }
+
+/* Pre-Sign: responsive and theme-neutral, with no fabricated verification data. */
+.hc-smooth-presign {padding:20px 0 100px; color:var(--hc-text-primary,var(--ink));}
+.hc-smooth-presign-hero {background:var(--hc-surface-raised,var(--paper));border:1px solid var(--hc-border,var(--border));border-radius:18px;padding:clamp(18px,4vw,30px);margin-bottom:14px;}
+.hc-smooth-presign-hero h1 {font-size:clamp(30px,6vw,56px);line-height:1.02;margin:10px 0;color:inherit;}
+.hc-smooth-presign-hero h1 span {color:var(--brand-orange);}
+.hc-smooth-presign-hero p {max-width:56ch;line-height:1.5;}
+.hc-smooth-presign-meter {height:8px;border-radius:99px;background:var(--hc-border,var(--border));overflow:hidden;margin:20px 0 8px;}
+.hc-smooth-presign-meter span {display:block;height:100%;background:var(--brand-orange);transition:width 220ms ease;}
+.hc-smooth-presign-list {display:grid;gap:10px;}
+.hc-smooth-presign-item {display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:14px;align-items:start;padding:16px;border-radius:14px;border:1px solid var(--hc-border,var(--border));background:var(--hc-surface-raised,var(--paper));}
+.hc-smooth-presign-number {font-weight:800;color:var(--brand-orange);font-variant-numeric:tabular-nums;}
+.hc-smooth-presign-item h2 {font-size:18px;margin:0 0 7px;line-height:1.2;color:inherit;}
+.hc-smooth-presign-item p {font-size:14px;line-height:1.5;margin:0 0 9px;opacity:.82;}
+.hc-smooth-presign-item a {color:var(--brand-orange);font-weight:700;font-size:13px;}
+.hc-smooth-presign-check {display:flex;gap:7px;align-items:center;font-size:12px;cursor:pointer;white-space:nowrap;}
+.hc-smooth-presign-check input {accent-color:var(--brand-orange);width:18px;height:18px;}
+.hc-smooth-presign-note {font-size:12px;line-height:1.5;opacity:.7;margin-top:20px;}
+@media(max-width:540px){.hc-smooth-presign-item {grid-template-columns:24px minmax(0,1fr);gap:10px;padding:14px;}.hc-smooth-presign-check {grid-column:2;}}
+@media(prefers-reduced-motion:reduce){.hc-smooth-presign-meter span{transition:none;}}
