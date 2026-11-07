@@ -614,12 +614,9 @@ export default function LeagueDetailPage() {
                   this league.
                 </p>
 
-                <Link
-                  href={`/leagues/${league.id}/review`}
-                  className="btn"
-                >
-                  {t("writeAReview")}
-                </Link>
+                {canWriteReviews ? (
+                  <Link href={`/leagues/${league.id}/review`} className="btn">{t("writeAReview")}</Link>
+                ) : null}
               </div>
             ) : (
               <div
