@@ -20,7 +20,15 @@ export default function TeamPayTimeline({ teamId }: { teamId: string }) {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const refresh = useCallback(async () => {
-    const response = await fetch("/api/team-pay-checkins?teamId=" + encodeURIComponent(teamId), { cache: "no-store" });
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      setMonths([]);
+      return;
+    }
+    const response = await fetch("/api/team-pay-checkins?teamId=" + encodeURIComponent(teamId), {
+      headers: { Authorization: "Bearer " + session.access_token },
+      cache: "no-store",
+    });
     const payload = response.ok ? await response.json() : { months: [] };
     setMonths(Array.isArray(payload.months) ? payload.months : []);
   }, [teamId]);
