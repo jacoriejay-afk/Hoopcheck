@@ -85,6 +85,8 @@ if (!fanFeedPage.includes('ft("feedExplainer")') ||
     !fanFeedPage.includes("filteredTeams.map") ||
     !fanFeedPage.includes('ft("searchFollowedTeams")') ||
     !fanFeedPage.includes("hc-fan-feed-group-label") ||
+    !fanFeedPage.includes("post.teams?.name") ||
+    !fanFeedPage.includes("post.group_name") ||
     !fanFeedI18n.includes('"feedExplainer": "Posts from the fan groups of the clubs you follow."')) {
   failures.push("Fan HQ is missing its plain-language purpose, followed-club picker, locked group destination, or group context.");
 }
