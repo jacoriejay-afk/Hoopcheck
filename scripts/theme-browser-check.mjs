@@ -536,18 +536,14 @@ try {
         const followedClub = picker.getByRole("option").filter({ hasText: teamFixture.name });
         await followedClub.waitFor({ state: "visible", timeout: 10000 });
         await followedClub.click();
-        const composer = page.locator("main.hc-fan-feed-page .hc-feed-composer textarea");
-        await composer.waitFor({ state: "visible", timeout: 10000 });
-        const composerPlaceholder = await composer.getAttribute("placeholder");
-        if (!composerPlaceholder?.includes(teamFixture.name)) errors.push("fan-feed: locked composer placeholder is not club-specific: " + composerPlaceholder);
-        const targetLabel = (await page.locator("main.hc-fan-feed-page .hc-fan-feed-target").innerText()).trim();
-        const expectedPostingLabel = testLanguage === "es" ? "Publicando para" : "Posting to";
-        if (!targetLabel.includes(expectedPostingLabel) || !targetLabel.includes(teamFixture.name)) errors.push("fan-feed: composer target is not locked and labelled: " + targetLabel);
-        await page.locator("main.hc-fan-feed-page .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
-        const emptyCopy = (await page.locator("main.hc-fan-feed-page .hc-feed-empty").innerText()).trim();
-        const expectedEmptyTitle = testLanguage === "es" ? "Aún no hay publicaciones: sé el primero en publicar para " + teamFixture.name + "." : "No posts yet — be the first to post for " + teamFixture.name + ".";
+        await page.waitForURL("**/team-hub/groups/" + teamFixture.id, { timeout: 10000 });
+        await page.locator("main.hc-team-fan-group-page .hc-team-fan-group-composer textarea").waitFor({ state: "visible", timeout: 10000 });
+        const targetLabel = (await page.locator("main.hc-team-fan-group-page .hc-team-group-posting-target").innerText()).trim();
+        if (!targetLabel.includes("Posting to") || !targetLabel.includes(teamFixture.name) || !targetLabel.includes("Fan Group")) errors.push("fan-feed: picker did not open the locked club group composer: " + targetLabel);
+        const emptyCopy = (await page.locator("main.hc-team-fan-group-page .hc-feed-empty").innerText()).trim();
+        const expectedEmptyTitle = "No posts yet — be the first to post for " + teamFixture.name + ".";
         if (!emptyCopy.includes(expectedEmptyTitle)) errors.push("fan-feed: club-specific EMPTY-1 headline is missing: " + emptyCopy);
-        if (!emptyCopy.includes(testLanguage === "es" ? "Sé el primero en publicar" : "Be the first to post")) errors.push("fan-feed: EMPTY-1 post action is missing");
+        if (!emptyCopy.includes("Be the first to post")) errors.push("fan-feed: EMPTY-1 post action is missing");
       }
       if (requestedPath.startsWith("/team-hub/groups/")) {
         await page.locator("main.hc-team-fan-group-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
@@ -555,6 +551,9 @@ try {
         await page.locator("main.hc-team-fan-group-page .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
         const lockedTarget = (await page.locator("main.hc-team-fan-group-page .hc-team-group-posting-target").innerText()).trim();
         if (!lockedTarget.includes("Posting to") || !lockedTarget.includes(teamFixture.name) || !lockedTarget.includes("Fan Group")) errors.push("team-hub group: composer does not explain its locked club/group destination: " + lockedTarget);
+        const groupEmpty = (await page.locator("main.hc-team-fan-group-page .hc-feed-empty").innerText()).trim();
+        if (!groupEmpty.includes("No posts yet — be the first to post for " + teamFixture.name + ".")) errors.push("team-hub group: real club-specific empty state is missing");
+        if (!groupEmpty.includes("Be the first to post")) errors.push("team-hub group: empty-state composer action is missing");
       }
       if (requestedPath === "/theme-card-audit") {
         const previews = await page.locator("main.hc-card-audit-page .hc-card-audit-preview").count();
