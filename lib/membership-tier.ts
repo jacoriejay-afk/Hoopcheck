@@ -4,6 +4,10 @@ export type HoopCheckAccountType = "player" | "fan" | "coach" | "agent" | "club_
 export type HoopCheckEntitlements = {
   tier: MembershipTier;
   hasPaidMembership: boolean;
+  canReadHoopFeed: boolean;
+  canWriteHoopFeed: boolean;
+  canReadFanFeed: boolean;
+  canWriteFanFeed: boolean;
   canReadFullReviews: boolean;
   canViewTrustScore: boolean;
   canWriteReviews: boolean;
@@ -82,6 +86,10 @@ export function getHoopCheckEntitlements(args: {
   return {
     tier,
     hasPaidMembership: active,
+    canReadHoopFeed: active && ["player", "fan", "scout", "agent"].includes(role),
+    canWriteHoopFeed: isPlayer && isAtLeastTier(tier, "pro"),
+    canReadFanFeed: isFan && isAtLeastTier(tier, "pro"),
+    canWriteFanFeed: isFan && isAtLeastTier(tier, "pro"),
     canReadFullReviews: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) ||
       (isFan && isAtLeastTier(tier, "premium")) || (otherMember && active),
     canViewTrustScore: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) || (isFan && isAtLeastTier(tier, "premium")) || (otherMember && active),
