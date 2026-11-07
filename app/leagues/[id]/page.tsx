@@ -548,7 +548,7 @@ export default function LeagueDetailPage() {
         <Link href="/womens">Women’s Teams</Link>
         <Link href="/coaches">Coaches</Link>
         <Link href="/leagues">Leagues</Link>
-        <Link href="/players">Players</Link>
+        {accountType !== "fan" && <Link href="/players">Players</Link>}
         <Link href="/search">Global Search</Link>
       </nav>
 <section className="hero">
@@ -742,7 +742,7 @@ export default function LeagueDetailPage() {
 
             <div className="card">
               <div className="eyebrow">
-                Player Feedback
+                {accountType === "fan" ? "LEAGUE FEEDBACK" : "Player Feedback"}
               </div>
 
               <h2>
@@ -750,17 +750,10 @@ export default function LeagueDetailPage() {
               </h2>
 
               <p>
-                Approved player experiences
-                currently available for this
-                league.
+                {accountType === "fan" ? "Approved league experiences currently available for this league." : "Approved player experiences currently available for this league."}
               </p>
 
-              <Link
-                href={`/leagues/${league.id}/review`}
-                className="btn"
-              >
-                Add Your Experience
-              </Link>
+              {accountType === "player" && <Link href={`/leagues/${league.id}/review`} className="btn">Add Your Experience</Link>}
             </div>
           </section>
 
@@ -768,8 +761,8 @@ export default function LeagueDetailPage() {
             {!hasAccess && (
               <div className="card" style={{ marginBottom: 24, borderColor: "rgba(255,106,0,.45)" }}>
                 <div className="eyebrow">Members Only</div>
-                <h3>Player reviews are locked</h3>
-                <p>Sign in and choose a membership to unlock player reviews.</p>
+                <h3>{accountType === "fan" ? "Full league reviews require Fan Premium" : "League reviews are locked"}</h3>
+                <p>{accountType === "fan" ? "Upgrade to Fan Premium to read full league ratings and reviews." : "Sign in and choose an eligible membership to unlock league reviews."}</p>
                 <div className="actions">
                   <Link href="/signup" className="btn">Create Free Account</Link>
                   <Link href="/login" className="btn dark">Log In</Link>
@@ -781,9 +774,7 @@ export default function LeagueDetailPage() {
             </div>
 
             <h2>
-              What players
-              <br />
-              are saying.
+              {accountType === "fan" ? "What the community is saying." : <>What players<br/>are saying.</>}
             </h2>
 
             {reviewLoading ? (
@@ -798,17 +789,10 @@ export default function LeagueDetailPage() {
                 </h3>
 
                 <p>
-                  Be one of the first players
-                  to share an experience with
-                  this league.
+                  {accountType === "fan" ? "No league reviews have been published yet." : "Be one of the first players to share an experience with this league."}
                 </p>
 
-                <Link
-                  href={`/leagues/${league.id}/review`}
-                  className="btn"
-                >
-                  {t("writeAReview")}
-                </Link>
+                {accountType === "player" && <Link href={`/leagues/${league.id}/review`} className="btn">{t("writeAReview")}</Link>}
               </div>
             ) : (
               <div
@@ -838,14 +822,14 @@ export default function LeagueDetailPage() {
                       >
                         <div>
                           <div className="eyebrow">
-                            {review.is_anonymous ? "Anonymous Player Review" : "Player Review"}
+                            {accountType === "fan" ? (review.is_anonymous ? "Anonymous review" : "League review") : (review.is_anonymous ? "Anonymous Player Review" : "Player Review")}
                           </div>
 
                           <h3>
-                            {review.title || "Player experience"}
+                            {review.title || (accountType === "fan" ? "League review" : "Player experience")}
                           </h3>
                           {review.player_verified && (
-                            <div className="hc-review-verified"><VerifiedBadge label="Verified player" /><span>Verified Player</span></div>
+                            <div className="hc-review-verified"><VerifiedBadge label={accountType === "fan" ? "Verified review" : "Verified player"} /><span>{accountType === "fan" ? "Verified review" : "Verified Player"}</span></div>
                           )}
                         </div>
 
