@@ -231,6 +231,33 @@ export function fanFeedExpiryLabel(expiresAt: string, now: number, language: Lan
   return Math.ceil(remaining / 60) + labels.hours;
 }
 
+
+const loadErrorCopy: Record<Language, string> = {
+  en: "Could not load the fan feed. Please try again.",
+  es: "No se pudo cargar el feed de fans. Inténtalo de nuevo.",
+  fr: "Impossible de charger le fil des fans. Réessayez.",
+  de: "Der Fan-Feed konnte nicht geladen werden. Bitte versuche es erneut.",
+  tr: "Fan akışı yüklenemedi. Lütfen tekrar deneyin.",
+  pt: "Não foi possível carregar o feed de fãs. Tente novamente.",
+  it: "Impossibile caricare il feed dei fan. Riprova.",
+  el: "Δεν ήταν δυνατή η φόρτωση της ροής φιλάθλων. Δοκιμάστε ξανά.",
+  ar: "تعذر تحميل موجز المشجعين. يُرجى المحاولة مرة أخرى.",
+  ru: "Не удалось загрузить ленту фанатов. Попробуйте ещё раз.",
+  az: "Fan lentini yükləmək mümkün olmadı. Yenidən cəhd edin.",
+  pl: "Nie udało się załadować kanału fanów. Spróbuj ponownie.",
+  zh: "无法加载粉丝动态，请重试。",
+  ja: "ファンフィードを読み込めませんでした。もう一度お試しください。",
+  sr: "Nije moguće učitati feed navijača. Pokušajte ponovo.",
+  fi: "Fanisyötettä ei voitu ladata. Yritä uudelleen.",
+  he: "לא ניתן לטעון את פיד האוהדים. נסו שוב.",
+  lt: "Nepavyko įkelti fanų srauto. Bandykite dar kartą.",
+  uk: "Не вдалося завантажити стрічку фанатів. Спробуйте ще раз.",
+};
+
+export function fanFeedLoadError(language: Language): string {
+  return loadErrorCopy[language] || loadErrorCopy.en;
+}
+
 function withTeam(template: string, teamName: string) {
   return template.replaceAll("{team}", teamName);
 }

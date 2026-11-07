@@ -13,7 +13,7 @@ import TeamOfficialUpdates from "../../components/TeamOfficialUpdates";
 import { useLanguage } from "../../components/LanguageProvider";
 import "./fan-feed.css";
 import "../hoopfeed-shared.css";
-import { fanFeedI18n, fanFeedTeamComposerPlaceholder, fanFeedTeamSubtitle, fanFeedTeamEmptyTitle, fanFeedTeamEmptyBody, fanFeedRefreshLabel, fanFeedRefreshError, fanFeedExpiryLabel } from "./i18n";
+import { fanFeedI18n, fanFeedTeamComposerPlaceholder, fanFeedTeamSubtitle, fanFeedTeamEmptyTitle, fanFeedTeamEmptyBody, fanFeedRefreshLabel, fanFeedRefreshError, fanFeedExpiryLabel, fanFeedLoadError } from "./i18n";
 
 type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
 type Profile = { id: string; display_name: string | null; avatar_url: string | null; account_type: string };
@@ -108,7 +108,8 @@ export default function FanFeedPage() {
   useEffect(() => {
     let alive = true;
     void (async () => {
-      const { data: { user: u } } = await supabase.auth.getUser();
+      try {
+        const { data: { user: u } } = await supabase.auth.getUser();
       if (!u) { if (alive) setLoading(false); return; }
       const [{ data: p }, { data: s }] = await Promise.all([
         supabase.from("profiles").select("id,display_name,avatar_url,account_type").eq("id", u.id).maybeSingle(),
@@ -121,9 +122,15 @@ export default function FanFeedPage() {
       setMembershipActive(active);
       if (!active) { setLoading(false); return; }
       await load(u.id); if (alive) setLoading(false);
+      } catch (error) {
+        if (alive) {
+          setMessage(error instanceof Error ? error.message : fanFeedLoadError(language));
+          setLoading(false);
+        }
+      }
     })();
     return () => { alive = false; };
-  }, [load]);
+  }, [load, language]);
 
   async function refreshFeed() {
     if (!user || refreshing) return;
