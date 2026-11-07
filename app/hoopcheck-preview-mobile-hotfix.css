@@ -94,3 +94,11 @@
 .hc-member-profile-page .hc-profile-quick-link svg { color:#ff5a1f; }
 .hc-member-profile-page .hc-profile-action-hub a:focus-visible { outline:3px solid #ff8a54;outline-offset:3px; }
 @media(max-width:340px){ .hc-member-profile-page .hc-profile-quick-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+/* Membership comparison: visual parity with the black/orange account and dossier. */
+.hc-membership-comparison .hc-membership-plan { background:linear-gradient(150deg,#181818,#0b0b0b) !important;color:#f7f7f5 !important;border:1px solid #424242;border-radius:16px;min-width:0; }
+.hc-membership-comparison .hc-membership-plan.is-current { border:2px solid #ff5a1f !important;background:linear-gradient(155deg,#2c170f,#0b0b0b) !important; }
+.hc-membership-comparison .hc-membership-plan h3,.hc-membership-comparison .hc-membership-plan .price { color:#f7f7f5 !important; }
+.hc-membership-comparison .hc-membership-plan .eyebrow { color:#ff8a54 !important; }
+.hc-membership-comparison .hc-membership-plan li { color:#e5e5e5 !important; }
+.hc-membership-comparison .hc-membership-plan button:focus-visible { outline:3px solid #ff8a54;outline-offset:3px; }
