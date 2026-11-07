@@ -1,0 +1,15 @@
+/* Mobile visual fixes validated against owner preview screenshots. */
+.hc-ia-live-strip { grid-template-columns: 12px minmax(0,1fr) auto !important; min-width:0; }
+.hc-ia-live-strip > span:nth-child(2) { min-width:0; overflow-wrap:normal; word-break:normal; }
+.hc-ia-live-strip > span:nth-child(2) strong, .hc-ia-live-strip > span:nth-child(2) small { display:block; white-space:normal; word-break:normal; overflow-wrap:break-word; }
+.hc-ia-live-strip > span:last-child { min-width:0; }
+.hc-ia-live-dot--inactive { visibility:hidden; box-shadow:none; }
+@media(max-width:480px) { .hc-ia-live-strip { gap:10px !important; padding:14px !important; } .hc-ia-live-strip > span:last-child { font-size:12px; } }
+/* The pastel member card must keep dark ink even in the global dark theme. */
+.hc-member-profile-page .hero-card.compact-hero { color:#25232c !important; }
+.hc-member-profile-page .hero-card.compact-hero .eyebrow,
+.hc-member-profile-page .hero-card.compact-hero h1,
+.hc-member-profile-page .hero-card.compact-hero h1 span { color:#25232c !important; opacity:1 !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-email { color:#595561 !important; opacity:1 !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-member-profile-avatar { background:#ece8e5 !important; color:#25232c !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-edit-button { color:#161616 !important; }
