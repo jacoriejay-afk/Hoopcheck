@@ -102,7 +102,7 @@ export default function BottomNav() {
           <Link
             key={href}
             href={destination}
-            className={active ? "hc-lm2f-tab active" : "hc-lm2f-tab"}
+            className={active ? "hc-lm2f-tab hc-smooth-press active" : "hc-lm2f-tab hc-smooth-press"}
             aria-current={active ? "page" : undefined}
           >
             <span className="hc-lm2f-tab-icon"><TabIcon label={label} /></span>
