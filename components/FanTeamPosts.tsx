@@ -45,8 +45,8 @@ export default function FanTeamPosts({ teamId, teamType = "mens" }: { teamId:str
       const now=new Date().toISOString();
       const [postResult, gameResult] = await Promise.all([
         supabase.rpc("get_fan_team_hub_posts", {
-          p_team_id: teamType === "mens" ? teamId : null,
-          p_womens_team_id: teamType === "womens" ? teamId : null,
+          p_team_id: teamId,
+          p_womens_team_id: teamType === "womens" ? teamId : undefined,
         }),
         teamType === "mens"
           ? supabase.from("fan_live_games").select("id,opponent_name,status,scheduled_at,started_at,home_score,away_score,period_label,league_name").eq("team_id",teamId).in("status",["scheduled","live","in_progress"]).order("scheduled_at",{ascending:true}).limit(10)
