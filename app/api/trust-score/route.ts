@@ -66,9 +66,9 @@ export async function GET(request: Request) {
     const displayTier = entitlements.canViewTrustScore && accountType === "player" ? "player" :
       entitlements.canViewTrustScore && accountType && accountType !== "fan" ? "member" : tier;
     if (!entitlements.canViewTrustScore) {
-      const hidden = { tier, locked: true, score: null, reviewCount: null, verifiedReviewCount: null, explanation: null, averageRating: null };
+      const hidden = { accountType, tier, locked: true, score: null, reviewCount: null, verifiedReviewCount: null, explanation: null, averageRating: null };
       const scores = Object.fromEntries(ids.map(id => [id, hidden]));
-      return NextResponse.json(singularId && ids.length === 1 ? hidden : { scores }, { headers: { "Cache-Control": "private, no-store" } });
+      return NextResponse.json(singularId && ids.length === 1 ? hidden : { scores, accountType }, { headers: { "Cache-Control": "private, no-store" } });
     }
     const db = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
@@ -96,7 +96,7 @@ export async function GET(request: Request) {
 
     const scores: Record<string, ReturnType<typeof calculateTrustScore> & { averageRating: number | null; tier: string }> = {};
     for (const id of ids) {
-      const entityReviews = reviews.filter(row => (entityType === "team" ? row.team_id : row.coach_id) === id);
+      const entityReviews = reviews.filter(row => (entityType === "team" ? row.team_id : entityType === "womens-team" ? row.womens_team_id : row.coach_id) === id);
       const ratings = entityReviews.map(row => Number(row.overall_rating)).filter(value => Number.isFinite(value) && value >= 1 && value <= 5);
       const averageRating = ratings.length ? ratings.reduce((sum, value) => sum + value, 0) / ratings.length : null;
       const scoreReviews: TrustScoreReview[] = entityReviews.map(row => ({
@@ -144,8 +144,8 @@ export async function GET(request: Request) {
     }
 
     const headers = { "Cache-Control": "private, no-store" };
-    if (singularId && ids.length === 1) return NextResponse.json(scores[singularId], { headers });
-    return NextResponse.json({ scores }, { headers });
+    if (singularId && ids.length === 1) return NextResponse.json({ ...scores[singularId], accountType }, { headers });
+    return NextResponse.json({ scores, accountType }, { headers });
   } catch (error) {
     console.error("Trust Score calculation failed", error);
     return NextResponse.json({ error: "Trust Score could not be calculated right now." }, { status: 500 });
