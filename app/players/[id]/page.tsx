@@ -165,7 +165,7 @@ export default function PlayerProfilePage() {
           </nav>
         </header>
 
-        <section className="player-profile-hero hc-player-profile-hero hc-social-profile-header">
+        <section className="player-profile-hero hc-player-profile-hero hc-social-profile-header hc-player-dossier-hero">
           <div className="hc-social-profile-top">
             <div className="hc-social-avatar-frame"><div className="player-profile-avatar">{player.avatar_url ? <img src={player.avatar_url} alt="" /> : (player.display_name?.trim()?.charAt(0)?.toUpperCase() || "P")}</div></div>
             <div className="hc-social-profile-main">
