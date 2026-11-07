@@ -75,7 +75,7 @@ for (const route of ['"/fan-feed"', '"/team-hub/groups/"', '"/live-games"', '"/t
   if (!browserCheck.includes(route)) failures.push("Browser route coverage missing: " + route);
 }
 if (!fanFeedPage.includes("<h1>Fan HQ</h1>") ||
-    !fanFeedPage.includes("Posts from the fan groups of clubs you follow.") ||
+    !fanFeedPage.includes("Fan posts about the clubs you follow.") ||
     !fanFeedPage.includes("selectedTeam.name} fans") ||
     !fanFeedPage.includes("fanFeedTeamComposerPlaceholder") ||
     !fanFeedI18n.includes('composer: "Post to {team} fans…"')) {
