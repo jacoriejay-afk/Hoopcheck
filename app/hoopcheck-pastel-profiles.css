@@ -149,3 +149,52 @@
 @media(max-width:600px) {
   .hc-coach-entity-profile > section.hero:first-of-type {padding:20px 14px !important;border-radius:22px !important;}
 }
+
+/* Women's clubs use the same social identity as men's clubs, without changing access gates. */
+.hc-womens-profile-page {
+  --social-cream:#fffaf7;--social-ink:#25232c;--social-muted:#696775;
+  --social-pink:#f8d9e8;--social-lavender:#ebe3ff;--social-border:#eee5ed;
+}
+.hc-womens-profile-page .page-container {max-width:960px;margin-inline:auto;}
+.hc-womens-profile-page .hc-social-profile-header {
+  background:var(--social-cream) !important;color:var(--social-ink) !important;
+  border:1px solid var(--social-border) !important;border-radius:28px !important;
+  box-shadow:0 10px 35px rgba(82,57,78,.07) !important;
+  padding:clamp(20px,4vw,38px) !important;
+}
+.hc-womens-profile-page .hc-team-social-top,
+.hc-womens-profile-page .hc-team-profile-heading--club {
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;
+}
+.hc-womens-profile-page .hc-team-profile-heading__copy {min-width:0;max-width:100%;}
+.hc-womens-profile-page .hc-team-profile-heading__copy h1 {
+  color:var(--social-ink) !important;font:800 clamp(23px,5vw,32px)/1.2 Inter,system-ui,sans-serif !important;
+  letter-spacing:-.035em;overflow-wrap:anywhere;
+}
+.hc-womens-profile-page .hc-team-profile-kicker {color:#a04576 !important;}
+.hc-womens-profile-page .hc-team-profile-meta,
+.hc-womens-profile-page .hc-team-social-proof {color:var(--social-muted) !important;}
+.hc-womens-profile-page .hc-team-profile-logo {
+  width:clamp(112px,22vw,154px) !important;height:clamp(112px,22vw,154px) !important;
+  border-radius:50% !important;outline:4px solid #f5b8d3;
+  background:var(--social-lavender) !important;overflow:hidden;
+}
+.hc-womens-profile-page .hc-team-social-stats {
+  display:flex;justify-content:center;align-items:center;flex-wrap:wrap;
+  gap:12px;width:100%;
+}
+.hc-womens-profile-page .hc-team-social-stats > span {
+  min-width:90px;display:flex;flex-direction:column;align-items:center;
+  border-radius:16px;background:var(--social-lavender) !important;
+  color:var(--social-ink) !important;padding:12px 16px;
+}
+.hc-womens-profile-page .hc-team-social-stats strong,
+.hc-womens-profile-page .hc-team-social-stats small {color:var(--social-ink) !important;}
+.hc-womens-profile-page .hc-social-profile-header > .actions {
+  display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:16px;
+}
+.hc-womens-profile-page .hc-social-profile-header .btn {border-radius:16px !important;min-height:44px;}
+@media(max-width:600px){
+ .hc-womens-profile-page .hc-social-profile-header {padding:20px 14px !important;border-radius:22px !important;}
+ .hc-womens-profile-page .hc-team-social-stats > span {min-width:76px;padding:10px;}
+}
