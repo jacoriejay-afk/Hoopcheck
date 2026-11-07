@@ -80,7 +80,8 @@ begin
    if new.dispute_status is distinct from old.dispute_status then
      -- Only the linked player may open a dispute. Resolution is reserved
      -- for a separate audited moderator operation.
-     if new.dispute_status <> 'pending' or old.player_id is distinct from auth.uid()
+     if (not (new.dispute_status='pending' and old.player_id=auth.uid())
+         and not (new.dispute_status in ('resolved','rejected') and private.is_admin_or_moderator()))
         or new.player_name is distinct from old.player_name
         or new.position is distinct from old.position
         or new.jersey_number is distinct from old.jersey_number
@@ -148,3 +149,27 @@ begin
 end $$;
 revoke all on function public.dispute_my_club_roster_entry(uuid,text) from public,anon;
 grant execute on function public.dispute_my_club_roster_entry(uuid,text) to authenticated;
+
+-- Moderators close a dispute atomically; managers cannot call this RPC.
+create or replace function public.resolve_club_roster_dispute(p_dispute_id uuid,p_resolution text)
+returns void language plpgsql security definer set search_path=public
+as $$
+declare v_dispute public.club_roster_disputes%rowtype;
+begin
+ if auth.uid() is null or not private.is_admin_or_moderator() then
+   raise exception 'HoopCheck moderation only';
+ end if;
+ if p_resolution not in ('resolved','rejected') then
+   raise exception 'Invalid resolution';
+ end if;
+ select * into v_dispute from public.club_roster_disputes where id=p_dispute_id for update;
+ if not found or v_dispute.status <> 'pending' then
+   raise exception 'No pending dispute found';
+ end if;
+ update public.club_roster_disputes
+ set status=p_resolution,resolved_by=auth.uid(),resolved_at=now()
+ where id=v_dispute.id;
+ update public.club_roster_entries set dispute_status=p_resolution where id=v_dispute.entry_id;
+end $$;
+revoke all on function public.resolve_club_roster_dispute(uuid,text) from public,anon;
+grant execute on function public.resolve_club_roster_dispute(uuid,text) to authenticated;
