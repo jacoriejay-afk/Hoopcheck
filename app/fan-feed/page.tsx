@@ -16,7 +16,7 @@ import "./fan-feed.css";
 import "../hoopfeed-shared.css";
 import { fanFeedI18n } from "./i18n";
 
-type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null; group_name?: string | null; is_member?: boolean };
+type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null; basketball_type?: "mens" | "womens" | null; group_name?: string | null; is_member?: boolean };
 type Profile = { id: string; display_name: string | null; avatar_url: string | null; account_type: string };
 type FanPost = { id: string; author_id: string; team_id: string; body: string; image_url: string | null; image_src?: string | null; is_pinned: boolean; created_at: string; profiles?: Profile | null; teams?: Team | null };
 type GroupComment = { id: string; post_id: string; author_id: string; body: string; created_at: string; profiles?: { display_name: string | null; avatar_url?: string | null } | null };
