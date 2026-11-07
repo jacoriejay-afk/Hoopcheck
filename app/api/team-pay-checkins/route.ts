@@ -33,7 +33,16 @@ export async function GET(request: Request) {
   const teamId = url.searchParams.get("teamId") || "";
   if (!/^[0-9a-f-]{36}$/i.test(teamId)) return NextResponse.json({ error: "Provide a valid team." }, { status: 400 });
   try {
-    const { db } = clients();
+    const token = authorized(request);
+    if (!token) return NextResponse.json({ error: "Sign in to view team pay history." }, { status: 401 });
+    const { auth, db } = clients();
+    const { data: authData, error: authError } = await auth.auth.getUser(token);
+    if (authError || !authData.user) return NextResponse.json({ error: "Sign in to view team pay history." }, { status: 401 });
+    const { data: viewer, error: viewerError } = await db.from("profiles").select("account_type").eq("id", authData.user.id).maybeSingle();
+    if (viewerError) throw viewerError;
+    if (!viewer?.account_type || viewer.account_type === "fan") {
+      return NextResponse.json({ error: "Team pay history is not available for this account." }, { status: 403 });
+    }
     const months = lastTwelveMonths();
     const { data, error } = await db.from("team_pay_checkins").select("pay_month,pay_status").eq("team_id", teamId).gte("pay_month", months[0]).lte("pay_month", months[11]);
     if (error) throw error;
