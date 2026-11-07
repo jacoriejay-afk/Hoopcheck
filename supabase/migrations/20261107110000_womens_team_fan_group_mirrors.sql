@@ -45,7 +45,7 @@ for each row execute function public.sync_womens_team_fan_group_mirror();
 -- Backfill existing women's teams. The teams_ensure_fan_group trigger creates
 -- the matching group automatically; the explicit upsert makes this migration
 -- safe if that trigger was disabled during a previous import.
-insert into public.teams
+insert into public.teams as existing
   (id, name, country, city, league_name, active, basketball_type, logo_url, logo_bg, source)
 select
   w.id, w.name, w.country, w.city, w.league_name, w.active,
@@ -60,7 +60,7 @@ on conflict (id) do update set
   basketball_type = 'womens',
   logo_url = excluded.logo_url,
   logo_bg = excluded.logo_bg
-where public.teams.source = 'womens_teams_mirror';
+where existing.source = 'womens_teams_mirror';
 
 insert into public.team_fan_groups (team_id, group_name)
 select t.id, t.name || ' Fan Group'
