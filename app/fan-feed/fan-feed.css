@@ -53,3 +53,5 @@
 @media(prefers-color-scheme:dark){html[data-theme="dark"] .hc-fan-feed-page, [data-theme="dark"] .hc-fan-feed-page{background:var(--paper);color:var(--ink)}}
 
 .hc-fan-feed-page .hc-feed-post-avatar-fallback{display:grid;place-items:center;background:#111;color:var(--orange);font-weight:950}
+
+@media(max-width:600px){.hc-fan-feed-page .topbar{flex-wrap:wrap}.hc-fan-feed-page .topnav{flex-wrap:wrap;justify-content:flex-end}.hc-fan-feed-page .hc-feed-post-header{align-items:flex-start;flex-wrap:wrap}.hc-fan-feed-page .hc-feed-post-topic{max-width:100%}}
