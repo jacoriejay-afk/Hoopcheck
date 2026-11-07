@@ -72,6 +72,7 @@ export default function FanFeedPage() {
     const scopedTeamIds = teamIds.filter((id: string) => sideTeamIds.has(id));
     setFollowing(new Set(fanIds));
     const teamQuery = await supabase.from("teams").select("id,name,logo_url,logo_bg").in("id", scopedTeamIds.length ? scopedTeamIds : ["00000000-0000-0000-0000-000000000000"]);
+    if (!isCurrentRequest()) return;
     const followedTeams = (teamQuery.data || []) as Team[];
     setTeams(followedTeams);
     setTeamId(current => followedTeams.some(team => team.id === current) ? current : followedTeams[0]?.id || "");
