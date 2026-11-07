@@ -556,69 +556,33 @@ export default function LeagueDetailPage() {
         <>
           <section className="grid">
             <div className="card">
-              <div className="eyebrow">
-                Overall Rating
-              </div>
-
-              <h2
-                style={{
-                  fontSize: "58px",
-                  color:
-                    "var(--orange)",
-                  marginBottom:
-                    "4px",
-                }}
-              >
+              <div className="eyebrow">Overall Rating</div>
+              <h2 style={{ fontSize: "58px", color: "var(--orange)", marginBottom: "4px" }}>
                 {average.toFixed(1)}
               </h2>
-
-              <p>
-                Based on{" "}
-                {reviews.length}{" "}
-                approved{" "}
-                {reviews.length === 1
-                  ? "review"
-                  : "reviews"}
-                .
-              </p>
+              <p>Overall community rating</p>
             </div>
 
             {canReadFullReviews ? (
-            <div className="card" style={{ position: "relative", overflow: "hidden" }}>
-              <div className="eyebrow">League Breakdown</div>
-              {canReadFullReviews ? (
-                reviews.length === 0 ? <p>{t("noApprovedReviewsYet")}</p> : <>
+              <div className="card">
+                <div className="eyebrow">League Breakdown</div>
+                {reviews.length === 0 ? <p>{t("noApprovedReviewsYet")}</p> : <>
                   <RatingBar label="Communication" value={communication} />
                   <RatingBar label="Professionalism" value={professionalism} />
                   <RatingBar label="Development" value={development} />
                   <RatingBar label="Payment" value={payment} />
-                </>
-              )}
-            </div>
+                </>}
+              </div>
             ) : null}
 
-            {canWriteReviews && <div className="card">
-              <div className="eyebrow">
-                Player Feedback
-              </div>}
-
-              <h2>
-                {reviews.length}
-              </h2>
-
-              <p>
-                Approved player experiences
-                currently available for this
-                league.
-              </p>
-
-              <Link
-                href={`/leagues/${league.id}/review`}
-                className="btn"
-              >
-                Add Your Experience
-              </Link>
-            </div>
+            {canWriteReviews ? (
+              <div className="card">
+                <div className="eyebrow">Player Feedback</div>
+                <h2>{reviews.length}</h2>
+                <p>Approved player experiences currently available for this league.</p>
+                <Link href={`/leagues/${league.id}/review`} className="btn">Add Your Experience</Link>
+              </div>
+            ) : null}
           </section>
 
           <section className="hero">
