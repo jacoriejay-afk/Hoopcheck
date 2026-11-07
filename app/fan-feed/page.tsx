@@ -108,7 +108,8 @@ export default function FanFeedPage() {
   useEffect(() => {
     let alive = true;
     void (async () => {
-      const { data: { user: u } } = await supabase.auth.getUser();
+      try {
+        const { data: { user: u } } = await supabase.auth.getUser();
       if (!u) { if (alive) setLoading(false); return; }
       const [{ data: p }, { data: s }] = await Promise.all([
         supabase.from("profiles").select("id,display_name,avatar_url,account_type").eq("id", u.id).maybeSingle(),
