@@ -499,16 +499,11 @@ export default function LeagueDetailPage() {
         )}
 
         <div className="actions">
-          <Link
-            href={
-              accountType === "player" && hasAccess
-                ? `/leagues/${league.id}/review`
-                : accountType === "player" ? "/membership" : "/leagues"
-            }
-            className="btn"
-          >
-            {accountType === "player" ? (hasAccess ? t("writeAReview") : t("becomeMemberToReview")) : t("backToLeagues")}
-          </Link>
+          {accountType === "player" ? (
+            <Link href={canWriteReviews ? `/leagues/${league.id}/review` : "/membership"} className="btn">
+              {canWriteReviews ? t("writeAReview") : t("becomeMemberToReview")}
+            </Link>
+          ) : null}
 
           <Link
             href="/leagues"
@@ -557,40 +552,7 @@ export default function LeagueDetailPage() {
         )}
       </section>
 
-      {!hasAccess ? (
-        <section className="hero">
-          <div className="card">
-            <div className="eyebrow">
-              Members Only
-            </div>
-
-            <h2>
-              Know the league
-              before you commit.
-            </h2>
-
-            <p>
-              Research the league before your next move. Membership starts at $4.99/month and can be managed through Stripe anytime.
-            </p>
-
-            <div className="actions">
-              <Link
-                href="/membership"
-                className="btn"
-              >
-                View Membership
-              </Link>
-
-              <Link
-                href="/login"
-                className="btn dark"
-              >
-                Log In
-              </Link>
-            </div>
-          </div>
-        </section>
-      ) : (
+      {hasAccess ? (
         <>
           <section className="grid">
             <div className="card">
@@ -621,35 +583,24 @@ export default function LeagueDetailPage() {
               </p>
             </div>
 
+            {canReadFullReviews ? (
             <div className="card" style={{ position: "relative", overflow: "hidden" }}>
               <div className="eyebrow">League Breakdown</div>
-              {hasAccess ? (
+              {canReadFullReviews ? (
                 reviews.length === 0 ? <p>{t("noApprovedReviewsYet")}</p> : <>
                   <RatingBar label="Communication" value={communication} />
                   <RatingBar label="Professionalism" value={professionalism} />
                   <RatingBar label="Development" value={development} />
                   <RatingBar label="Payment" value={payment} />
                 </>
-              ) : (
-                <div style={{ padding: "24px 0" }}>
-                  <div style={{ filter: "blur(7px)", opacity: 0.35, pointerEvents: "none" }}>
-                    <div style={{ height: 16, width: "75%", background: "#555", borderRadius: 8, marginBottom: 14 }} />
-                    <div style={{ height: 16, width: "60%", background: "#555", borderRadius: 8, marginBottom: 14 }} />
-                    <div style={{ height: 16, width: "68%", background: "#555", borderRadius: 8 }} />
-                  </div>
-                  <div style={{ marginTop: -58, textAlign: "center", position: "relative" }}>
-                    <strong>Ratings locked</strong>
-                    <p className="muted">Create a free account, then unlock full ratings with membership.</p>
-                    <div className="actions"><Link href="/signup" className="btn">Create Free Account</Link><Link href="/membership" className="btn dark">Unlock Ratings</Link></div>
-                  </div>
-                </div>
               )}
             </div>
+            ) : null}
 
-            <div className="card">
+            {canWriteReviews && <div className="card">
               <div className="eyebrow">
                 Player Feedback
-              </div>
+              </div>}
 
               <h2>
                 {reviews.length}
@@ -671,17 +622,7 @@ export default function LeagueDetailPage() {
           </section>
 
           <section className="hero">
-            {!hasAccess && (
-              <div className="card" style={{ marginBottom: 24, borderColor: "rgba(255,106,0,.45)" }}>
-                <div className="eyebrow">Members Only</div>
-                <h3>Player reviews are locked</h3>
-                <p>Sign in and choose a membership to unlock player reviews.</p>
-                <div className="actions">
-                  <Link href="/signup" className="btn">Create Free Account</Link>
-                  <Link href="/login" className="btn dark">Log In</Link>
-                </div>
-              </div>
-            )}
+
             <div className="eyebrow">
               Approved Reviews
             </div>
