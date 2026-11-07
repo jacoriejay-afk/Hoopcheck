@@ -91,4 +91,39 @@ const additional: Partial<Record<Language, Partial<Record<keyof typeof en,string
  az:{fansOnly:"Yalnız fan hesabları",separateSurface:"Fan HoopFeed oyunçu HoopFeed-indən ayrıdır.",playerFeed:"Oyunçu HoopFeed-i",teamFirst:"Sənin komandan. Sənin icman.",postForTeam:"KOMANDAN ÜÇÜN PAYLAŞ",composerPlaceholder:"Komandanızda nə baş verir? (maksimum 500 simvol)",photoLimit:"8 MB-a qədər JPG, PNG və ya WebP şəkli seçin.",photoPreview:"Şəkil önizləməsi",removePhoto:"Şəkli sil",posting:"Paylaşılır…",moderating:"Paylaşım təhlükəsizlik üçün yoxlanılır…",published:"Paylaşımınız yayımlandı.",publishFailed:"Paylaşımı yayımlamaq mümkün olmadı.",commentFailed:"Şərhi yayımlamaq mümkün olmadı.",commentPlaceholder:"Şərh əlavə edin…",expires:"Bitmə vaxtı",postPhoto:"Fan paylaşımının şəkli",fan:"Fan",loading:"Fan HoopFeed yüklənir…",followTeamFirst:"Paylaşmazdan əvvəl komandanı izləyin.",recentPosts:"Son fan paylaşımları",emptyKicker:"FAN İCMASI",shareTitle:"HoopCheck Fan HoopFeed",videoPostLabel:"Fan paylaşım videosu"}
 };
 
+
+const teamSurfaceCopy: Partial<Record<Language, { subtitle: string; composer: string }>> = {
+  en: { subtitle: "The Fan HQ for {team}. Connect with supporters and share team updates.", composer: "Post to {team} fans…" },
+  es: { subtitle: "El Fan HQ de {team}. Conecta con otros seguidores y comparte novedades.", composer: "Publica para los fans de {team}…" },
+  fr: { subtitle: "Le Fan HQ de {team}. Échangez avec les supporters et partagez les actualités.", composer: "Publier pour les fans de {team}…" },
+  de: { subtitle: "Das Fan-HQ von {team}. Vernetze dich mit Fans und teile Team-Updates.", composer: "Für die Fans von {team} posten…" },
+  az: { subtitle: "{team} fanlarının mərkəzi. Digər tərəfdarlarla əlaqə qurun və yenilikləri paylaşın.", composer: "{team} fanları üçün paylaşım et…" },
+  tr: { subtitle: "{team} taraftarlarının buluşma noktası. Taraftarlarla bağlantı kurun ve takım haberlerini paylaşın.", composer: "{team} taraftarları için paylaş…" },
+  pt: { subtitle: "O Fan HQ de {team}. Ligue-se aos adeptos e partilhe novidades da equipa.", composer: "Publicar para os fãs de {team}…" },
+  it: { subtitle: "Il Fan HQ di {team}. Connettiti con i tifosi e condividi aggiornamenti.", composer: "Pubblica per i fan di {team}…" },
+  ru: { subtitle: "Фан-центр {team}. Общайтесь с болельщиками и делитесь новостями команды.", composer: "Опубликовать для болельщиков {team}…" },
+  pl: { subtitle: "Fan HQ drużyny {team}. Łącz się z kibicami i udostępniaj aktualności.", composer: "Opublikuj dla kibiców {team}…" },
+  zh: { subtitle: "{team} 球迷中心。与其他球迷交流并分享球队动态。", composer: "发布给 {team} 的球迷…" },
+  ja: { subtitle: "{team}のファンHQ。ファンとつながり、チームの最新情報を共有しましょう。", composer: "{team}のファンに投稿…" },
+  fi: { subtitle: "{team} fanien keskus. Yhdistä kannattajiin ja jaa joukkueen uutisia.", composer: "Julkaise {team} -joukkueen faneille…" },
+  he: { subtitle: "מרכז האוהדים של {team}. התחברו לאוהדים ושתפו עדכונים על הקבוצה.", composer: "פרסום לאוהדי {team}…" },
+  lt: { subtitle: "{team} gerbėjų centras. Bendraukite su sirgaliais ir dalykitės naujienomis.", composer: "Skelbti {team} gerbėjams…" },
+  uk: { subtitle: "Фан-центр {team}. Спілкуйтеся з уболівальниками та діліться новинами команди.", composer: "Опублікувати для вболівальників {team}…" },
+  sr: { subtitle: "Fan centar za {team}. Poveži se sa navijačima i deli novosti o timu.", composer: "Објави за навијаче {team}…" },
+  el: { subtitle: "Το Fan HQ της {team}. Συνδεθείτε με φιλάθλους και μοιραστείτε νέα της ομάδας.", composer: "Δημοσίευση για τους φιλάθλους της {team}…" },
+  ar: { subtitle: "مركز مشجعي {team}. تواصل مع المشجعين وشارك أخبار الفريق.", composer: "انشر لجماهير {team}…" },
+};
+
+function withTeam(template: string, teamName: string) {
+  return template.replaceAll("{team}", teamName);
+}
+
+export function fanFeedTeamSubtitle(teamName: string, language: Language): string {
+  return withTeam(teamSurfaceCopy[language]?.subtitle || teamSurfaceCopy.en!.subtitle, teamName);
+}
+
+export function fanFeedTeamComposerPlaceholder(teamName: string, language: Language): string {
+  return withTeam(teamSurfaceCopy[language]?.composer || teamSurfaceCopy.en!.composer, teamName);
+}
+
 export function fanFeedI18n(key: keyof typeof en, language: Language, sharedFallback?: string): string { return additional[language]?.[key] ?? localized[language]?.[key] ?? (sharedFallback && sharedFallback !== key ? sharedFallback : undefined) ?? en[key]; }
