@@ -17,7 +17,7 @@ const keys = [
   "canModerateFanGroups", "canCompare", "canUseContractCheck",
   "canUseProPassport", "canUsePayOnTimeIndex", "canViewTeamPayHistory",
   "canSubmitPayCheckIn", "canUseAskPlayer", "canConnectWithFans",
-  "canSwitchBasketballSide", "canStartCoachIdentityVerification",
+  "canSwitchBasketballSide", "canStartCoachIdentityVerification", "canUseRecruitingNetwork",
 ];
 
 const cases = [
@@ -42,7 +42,7 @@ const cases = [
     canReadFullReviews:true, canViewTrustScore:true, canWriteReviews:true,
     canUseLiveGameHub:true, canUseLiveGameChat:true, canUseFanGroups:false,
     canModerateFanGroups:false, canCompare:true, canUseContractCheck:true,
-    canUseProPassport:true, canUsePayOnTimeIndex:true, canViewTeamPayHistory:true,
+    canUseProPassport:true, canUseRecruitingNetwork:true, canUsePayOnTimeIndex:true, canViewTeamPayHistory:true,
     canSubmitPayCheckIn:true, canUseAskPlayer:true,
   }],
   ["Fan Free", { accountType: "fan" }, {
