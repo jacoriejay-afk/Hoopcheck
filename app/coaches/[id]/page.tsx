@@ -538,7 +538,7 @@ export default function CoachDetailPage() {
         <Link href="/womens">Women’s Teams</Link>
         <Link href="/coaches">Coaches</Link>
         <Link href="/leagues">Leagues</Link>
-        <Link href="/players">Players</Link>
+        {accountType !== "fan" && <Link href="/players">Players</Link>}
         <Link href="/search">Global Search</Link>
       </nav>
 <section className="hero">
@@ -554,7 +554,7 @@ export default function CoachDetailPage() {
         ) : ["premium", "player", "member"].includes(reviewTier) ? (
           <div className="hc-entity-trust-score"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedReviews"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /></div>
         ) : (
-          <div className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow">Full player reviews require an eligible membership</span><Link href="/membership" className="btn">Upgrade</Link></div>
+          <div className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow">{accountType === "fan" ? "Full coach reviews are available with Fan Premium" : "Full coach reviews require an eligible membership"}</span><Link href="/membership" className="btn">{accountType === "fan" ? "View Fan Premium" : "View Membership"}</Link></div>
         )}
 
         <div className="entity-actions"><WatchButton targetType="coach" targetId={coach.id} targetName={coach.name} />{accountType === "player" ? <Link href={`/coaches/${coach.id}/review`} className="btn">Write a Review</Link> : null}</div>
@@ -661,7 +661,7 @@ export default function CoachDetailPage() {
         <section className="hero"><div className="card hc-membership-locked-state"><h2>Player reviews require an eligible membership</h2><Link href="/membership" className="btn">Upgrade</Link></div></section>
       ) : reviewTier === "pro" ? (
         <section className="hero hc-fan-review-teaser">
-          <h2>Player ratings and reviews</h2>
+          <h2>Coach ratings and reviews</h2>
           <h3>Overall rating</h3>
           <div className="hc-review-star-row"><span aria-hidden="true">★★★★★</span><strong>{publicSummary.overall_rating == null ? "—" : publicSummary.overall_rating.toFixed(1)+"/5"}</strong></div>
           <h3>Coach breakdown</h3>
@@ -732,9 +732,7 @@ export default function CoachDetailPage() {
               </h2>
 
               <p>
-                Approved player experiences
-                currently available for this
-                coach.
+                {accountType === "fan" ? "Approved coaching experiences currently available for this coach." : "Approved player experiences currently available for this coach."}
               </p>
 
               {accountType === "player" && <Link href={`/coaches/${coach.id}/review`} className="btn">Add Your Experience</Link>}
@@ -745,8 +743,8 @@ export default function CoachDetailPage() {
             {!hasAccess && (
               <div className="card" style={{ marginBottom: 24, borderColor: "rgba(255,106,0,.45)" }}>
                 <div className="eyebrow">Members Only</div>
-                <h3>Player reviews are locked</h3>
-                <p>Sign in and choose a membership to unlock player reviews.</p>
+                <h3>{accountType === "fan" ? "Full coach reviews are available with Fan Premium" : "Coach reviews are locked"}</h3>
+                <p>{accountType === "fan" ? "Upgrade to Fan Premium to read full coach ratings and reviews." : "Sign in and choose an eligible membership to unlock coach reviews."}</p>
                 <div className="actions">
                   <Link href="/signup" className="btn">Create Free Account</Link>
                   <Link href="/login" className="btn dark">Log In</Link>
@@ -810,14 +808,14 @@ export default function CoachDetailPage() {
                       >
                         <div>
                           <div className="eyebrow">
-                            {review.is_anonymous ? "Anonymous Player Review" : "Player Review"}
+                            {accountType === "fan" ? (review.is_anonymous ? "Anonymous review" : "Coach review") : (review.is_anonymous ? "Anonymous Player Review" : "Player Review")}
                           </div>
 
                           <h3>
                             {review.title || "Player experience"}
                           </h3>
                           {review.player_verified && (
-                            <div className="hc-review-verified"><VerifiedBadge label="Verified player" /><span>Verified Player</span></div>
+                            <div className="hc-review-verified"><VerifiedBadge label={accountType === "fan" ? "Verified review" : "Verified player"} /><span>{accountType === "fan" ? "Verified review" : "Verified Player"}</span></div>
                           )}
                         </div>
 
