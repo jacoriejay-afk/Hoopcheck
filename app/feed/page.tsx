@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { PageShell } from "../../components/LayoutSystem";
 import { FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptyState, FeedLoadingSkeleton, FeedStoryRing, FeedTimeRemaining } from "../../components/HoopFeedShared";
@@ -10,7 +9,6 @@ import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import CourtLines from "../../components/CourtLines";
-import { useLanguage } from "../../components/LanguageProvider";
 import "../hoopfeed-shared.css";
 
 type MiniProfile = { display_name: string | null; avatar_url: string | null; current_country?: string | null; current_country_public?: boolean; current_team?: string | null };
@@ -39,8 +37,6 @@ const ago = (v:string, now:number) => {
 };
 
 export default function Feed(){
-  const router = useRouter();
-  const { t } = useLanguage();
   const [posts,setPosts]=useState<Post[]>([]);
   const [comments,setComments]=useState<Record<string,Comment[]>>({});
   const [checks,setChecks]=useState<Record<string,number>>({}); const [checkBursts,setCheckBursts]=useState<Record<string,boolean>>({});
@@ -52,13 +48,13 @@ export default function Feed(){
   const [msg,setMsg]=useState(""); const [refreshing,setRefreshing]=useState(false); const [postingStreak,setPostingStreak]=useState(0); const [loading,setLoading]=useState(true); const [posting,setPosting]=useState(false); const [now,setNow]=useState(0); const textareaRef = useRef<HTMLTextAreaElement|null>(null); const touchStartY = useRef<number|null>(null);
   const visiblePosts = (topicFilter==="All" ? posts : posts.filter(p=>p.topic_tag===topicFilter)).slice().sort((a,b)=>feedSort==="Latest" ? new Date(b.created_at).getTime()-new Date(a.created_at).getTime() : new Date(a.expires_at).getTime()-new Date(b.expires_at).getTime());
 
-  const access=["player","fan","scout","agent"].includes(profile?.account_type||"") && hasActiveMembershipAtLeast(subscription);
+  const access=["player","scout","agent"].includes(profile?.account_type||"") && hasActiveMembershipAtLeast(subscription);
 
   async function load(currentUser:any, currentProfile:Profile){
     const connectionPromise=currentProfile.account_type==="player"
       ? supabase.from("player_contact_requests").select("requester_id,player_id").or(`requester_id.eq.${currentUser.id},player_id.eq.${currentUser.id}`).eq("status","accepted").limit(100)
       : Promise.resolve({data:[]});
-    const followPromise=["fan","player"].includes(currentProfile.account_type)
+    const followPromise=currentProfile.account_type==="player"
       ? supabase.from("follow_relationships").select("target_id,target_type").eq("follower_id",currentUser.id).eq("target_type","player").limit(100)
       : Promise.resolve({data:[]});
     const [connectionsResult,followsResult,feedResult]=await Promise.all([
@@ -80,7 +76,6 @@ export default function Feed(){
     }
     const now=Date.now();
     let rows=(feedResult.data||[]).filter((r:any)=>!archiveIds.has(r.id)).map((r:any)=>{const post={...r,shared_post:r.shared_post_id?sharedPostsById[r.shared_post_id]||null:null,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)} as Post;return {...post,ageLabel:ago(post.created_at,now),expiresLabel:`Expires in ${Math.max(0,Math.ceil((new Date(post.expires_at).getTime()-now)/3600000))}h`};});
-    if(currentProfile.account_type==="fan") rows=rows.filter(p=>followedPlayerIds.includes(p.author_id));
     if(currentProfile.account_type==="player") rows=rows.filter(p=>p.author_id===currentUser.id||connectedPlayerIds.includes(p.author_id)||followedPlayerIds.includes(p.author_id));
     setPosts(rows);
     if(!rows.length){setComments({});setChecks({});setMine({});return;}
@@ -105,8 +100,6 @@ export default function Feed(){
     ]);
     if(p?.account_type==="fan"){window.location.replace("/fan-feed");return;}
     setProfile(p);setSubscription(s);setShowCountry(Boolean(p?.current_country_public));
-    // Keep the player HoopFeed surface strictly player-only; fans have their own feed.
-    if(p?.account_type==="fan"){setLoading(false);router.replace("/fan-feed");return;}
     if(p?.account_type==="player"){const {data:activity}=await supabase.from("feed_posting_activity").select("activity_date").eq("user_id",u.id).order("activity_date",{ascending:false}).limit(370);setPostingStreak(calculatePostingStreak(activity||[]));}
     const memberActive=hasActiveMembershipAtLeast(s);
     setLoading(false);
@@ -191,12 +184,11 @@ export default function Feed(){
 
   if(loading)return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><HoopLoading label="Loading HoopFeed..." /><FeedLoadingSkeleton count={3} /></div></main></PageShell>;
   if(!user)return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">HOOPFEED</p><h1>Sign in to continue</h1><p className="muted">HoopFeed is for active Pro and Premium members.</p><Link href="/login" className="btn">Sign In</Link></section></div></main></PageShell>;
-  if(profile?.account_type==="fan")return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">HOOPFEED</p><h1>{t("fanFeed.title")}</h1><p className="muted">{t("fanFeed.separateSurface")}</p><Link href="/fan-feed" className="btn">{t("fanFeed.title")}</Link></section></div></main></PageShell>;
-  if(!access)return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link></header><section className="hero-card"><p className="eyebrow">HOOPFEED</p><h1>Daily Player Experiences</h1><p className="muted">Pro and Premium members can access HoopFeed. Players share basketball experiences; fans see posts from fans they follow.</p><div className="actions"><Link href="/membership" className="btn">Upgrade Membership</Link><Link href="/dashboard" className="btn dark">Back to Dashboard</Link></div></section></div></main></PageShell>;
+    if(!access)return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link></header><section className="hero-card"><p className="eyebrow">HOOPFEED</p><h1>Daily Player Experiences</h1><p className="muted">An active Pro or Premium membership is required to access player HoopFeed. Players share current basketball experiences here.</p><div className="actions"><Link href="/membership" className="btn">Upgrade Membership</Link><Link href="/dashboard" className="btn dark">Back to Dashboard</Link></div></section></div></main></PageShell>;
 
   return <PageShell><main className="page-shell hc-feed-page" onTouchStart={(event)=>{touchStartY.current=window.scrollY===0?(event.touches[0]?.clientY??null):null;}} onTouchEnd={(event)=>{const start=touchStartY.current;touchStartY.current=null;const end=event.changedTouches[0]?.clientY??0;if(start!==null&&end-start>80&&user&&profile&&!refreshing){void(async()=>{setRefreshing(true);await load(user,profile);setNow(Date.now());setRefreshing(false);})();}}}><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/players">Players</Link><Link href="/profile">Profile</Link></nav></header>
-    <section className="hero-card hc-feed-hero"><div><p className="eyebrow">HOOPFEED <span className="hc-feed-plan-tag">{subscription?.plan==="premium"?"PREMIUM":"PRO"} MEMBER</span></p><h1>HoopFeed</h1><p className="muted">{profile?.account_type==="fan"?"Follow players to see their latest basketball experiences. Only players can publish posts.":"Share your current-season basketball life with the players who follow you."}</p></div><p className="hc-feed-expiry-note">24-HOUR POSTS <span>Posts, photos, checks and comments expire with the post.</span></p></section>
+    <section className="hero-card hc-feed-hero"><div><p className="eyebrow">HOOPFEED <span className="hc-feed-plan-tag">{subscription?.plan==="premium"?"PREMIUM":"PRO"} MEMBER</span></p><h1>HoopFeed</h1><p className="muted">Share your current-season basketball life with the players who follow you.</p></div><p className="hc-feed-expiry-note">24-HOUR POSTS <span>Posts, photos, checks and comments expire with the post.</span></p></section>
 
     {profile?.account_type==="player" && <section className="dashboard-card hc-feed-composer" style={{marginTop:18}}><CourtLines variant="arc" className="hc-feed-composer__court" /><span className="card-kicker">SHARE TO HOOPFEED</span>{profile?.account_type==="player"&&<span className="hc-feed-streak" aria-label={postingStreak+" day HoopFeed posting streak"}><span aria-hidden="true">🔥</span> {postingStreak}-day streak</span>}
       <div className="hc-feed-composer__editor"><div className="hc-feed-composer__avatar" aria-hidden="true">{user?.user_metadata?.avatar_url?<img src={user.user_metadata.avatar_url} alt="" />:"HC"}</div><textarea ref={textareaRef} value={body} onChange={e=>{setBody(e.target.value);e.currentTarget.style.height="auto";e.currentTarget.style.height=Math.min(e.currentTarget.scrollHeight,220)+"px";}} rows={3} maxLength={2000} placeholder="What happened today? Practice, game day, travel, teammates, culture, wins, challenges…" /></div>
