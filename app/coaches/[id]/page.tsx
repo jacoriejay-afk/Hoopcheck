@@ -556,8 +556,6 @@ export default function CoachDetailPage() {
             >
               {t("writeAReview")}
             </Link>
-          ) : accountType === "player" ? (
-            <Link href="/membership" className="btn">Become A Member To Review</Link>
           ) : null}
 
           <Link
