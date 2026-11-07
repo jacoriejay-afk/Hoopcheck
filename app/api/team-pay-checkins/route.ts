@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { hasActiveMembershipAtLeast } from "../../../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
 
 export const dynamic = "force-dynamic";
 const statuses = ["on_time", "late", "missing"] as const;
@@ -39,9 +39,13 @@ export async function GET(request: Request) {
     const { auth, db } = clients();
     const { data: authData, error: authError } = await auth.auth.getUser(token);
     if (authError || !authData.user) return NextResponse.json({ error: "Sign in to view team pay history." }, { status: 401 });
-    const { data: viewer, error: viewerError } = await db.from("profiles").select("account_type").eq("id", authData.user.id).maybeSingle();
+    const [{ data: viewer, error: viewerError }, { data: viewerSubscription }] = await Promise.all([
+      db.from("profiles").select("account_type").eq("id", authData.user.id).maybeSingle(),
+      db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", authData.user.id).maybeSingle(),
+    ]);
     if (viewerError) throw viewerError;
-    if (!viewer?.account_type || viewer.account_type === "fan") {
+    const entitlements = getHoopCheckEntitlements({ accountType: viewer?.account_type, subscription: viewerSubscription });
+    if (!entitlements.canViewTeamPayHistory) {
       return NextResponse.json({ error: "Team pay history is not available for this account." }, { status: 403 });
     }
     const months = lastTwelveMonths();
@@ -87,8 +91,13 @@ export async function POST(request: Request) {
       db.from("profiles").select("account_type,player_verified").eq("id", user.id).maybeSingle(),
       db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
     ]);
-    if (profileError || profile?.account_type !== "player" || profile.player_verified !== true) return NextResponse.json({ error: "Only verified players can submit a check-in." }, { status: 403 });
-    if (subscriptionError || !hasActiveMembershipAtLeast(subscription)) {
+    if (profileError) return NextResponse.json({ error: "Unable to verify your player account." }, { status: 500 });
+    const entitlements = getHoopCheckEntitlements({
+      accountType: profile?.account_type,
+      subscription,
+      playerVerified: profile?.player_verified === true,
+    });
+    if (subscriptionError || !entitlements.canSubmitPayCheckIn) {
       return NextResponse.json({ error: "An active Pro or Premium membership is required to submit a pay check-in." }, { status: 403 });
     }
     const { data: eligible, error: eligibilityError } = await db.rpc("can_user_review_team", { p_user_id: user.id, p_team_id: teamId });
