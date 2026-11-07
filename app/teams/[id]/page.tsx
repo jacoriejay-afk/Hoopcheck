@@ -14,7 +14,7 @@ import FanTeamPosts from "../../../components/FanTeamPosts";
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
-import { hasActiveMembershipAtLeast } from "../../../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
 import { submitReviewReport } from "../../../lib/review-reports";
 import HoopLoading from "../../../components/HoopLoading";
 import { VerifiedBadge } from "../../../components/HoopCheckUI";
@@ -301,7 +301,7 @@ export default function TeamDetailPage() {
         supabase
           .from("subscriptions")
           .select(
-            "plan, status, current_period_end"
+            "plan, status, access_status, current_period_end"
           )
           .eq(
             "user_id",
@@ -319,37 +319,13 @@ export default function TeamDetailPage() {
       setAccountType(profileResult.data?.account_type || "");
       setMembershipPlan(subscription?.plan || "");
 
-      const currentPeriodEnd =
-        subscription?.current_period_end
-          ? new Date(
-              subscription.current_period_end
-            )
-          : null;
-
-      const subscriptionIsActive =
-        (
-          subscription?.status ===
-            "active" ||
-          subscription?.status ===
-            "trialing"
-        ) &&
-        (
-          !currentPeriodEnd ||
-          currentPeriodEnd >
-            new Date()
-        );
-
-      const isAdmin =
-        adminResult.data === true;
-
-      const fanHasPaidPlan =
-        profileResult.data?.account_type !== "fan" ||
-        hasActiveMembershipAtLeast(subscription);
-      const access =
-        (subscriptionIsActive && fanHasPaidPlan) ||
-        isAdmin;
-
-      setHasAccess(access);
+      const isAdmin = adminResult.data === true;
+      const entitlements = getHoopCheckEntitlements({
+        accountType: profileResult.data?.account_type,
+        subscription,
+        isAdmin,
+      });
+      setHasAccess(entitlements.hasPaidMembership);
 
       const response = await fetch(`/api/review-access?entityType=team&entityId=${encodeURIComponent(id)}`, {
         headers: { Authorization: `Bearer ${session?.access_token || ""}` },
@@ -361,8 +337,7 @@ export default function TeamDetailPage() {
       const fullRead = reviewPayload?.canReadFull === true;
       setCanReadFullReviews(fullRead);
       setCanWriteReviews(reviewPayload?.canWrite === true);
-      const canReadAnything = tier !== "free";
-      setHasAccess(canReadAnything);
+      setHasAccess(entitlements.hasPaidMembership);
       setReviewLoading(fullRead);
       const summary = reviewPayload?.summary;
       if (summary) {
@@ -761,7 +736,7 @@ export default function TeamDetailPage() {
       {team && <><TeamOfficialUpdates teamId={team.id} /><FanTeamPosts teamId={team.id} /></>}
 
       {accountType === "player" && (
-        <section className="hero hc-team-write-review"><div className="eyebrow">{t("shareYourExperience")}</div><h2>{t("writeAReviewTitle")}</h2><p className="muted">{t("helpNextPlayer")}</p><Link href={hasAccess ? `/teams/${team.id}/review` : "/membership"} className="btn">{hasAccess ? t("writeAReview") : t("unlockReviews")}</Link></section>
+        {accountType === "player" ? <section className="hero hc-team-write-review"><div className="eyebrow">{t("shareYourExperience")}</div><h2>{t("writeAReviewTitle")}</h2><p className="muted">{t("helpNextPlayer")}</p><Link href={canWriteReviews ? `/teams/${team.id}/review` : "/membership"} className="btn">{canWriteReviews ? t("writeAReview") : t("unlockReviews")}</Link></section> : null}
       )}
 
       {reportReviewId && (
