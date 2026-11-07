@@ -540,6 +540,7 @@ try {
         await page.locator("main.hc-team-fan-group-page .hc-team-fan-group-composer textarea").waitFor({ state: "visible", timeout: 10000 });
         const targetLabel = (await page.locator("main.hc-team-fan-group-page .hc-team-group-posting-target").innerText()).trim();
         if (!targetLabel.includes("Posting to") || !targetLabel.includes(teamFixture.name) || !targetLabel.includes("Fan Group")) errors.push("fan-feed: picker did not open the locked club group composer: " + targetLabel);
+        await page.locator("main.hc-team-fan-group-page .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
         const emptyCopy = (await page.locator("main.hc-team-fan-group-page .hc-feed-empty").innerText()).trim();
         const expectedEmptyTitle = "No posts yet — be the first to post for " + teamFixture.name + ".";
         if (!emptyCopy.includes(expectedEmptyTitle)) errors.push("fan-feed: club-specific EMPTY-1 headline is missing: " + emptyCopy);
