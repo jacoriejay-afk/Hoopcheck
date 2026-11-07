@@ -5,6 +5,7 @@ import {
   useState,
 } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
+import "../hoopcheck-reference-team-list.css";
 
 import Link from "next/link";
 import DirectoryLayout from "../../components/DirectoryLayout";
