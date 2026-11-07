@@ -87,6 +87,9 @@ if (!fanFeedPage.includes('ft("feedExplainer")') ||
 if (fanFeedPage.includes('from("fan_feed_posts")') ||
     !fanFeedPage.includes('from("team_fan_group_posts")') ||
     !fanFeedPage.includes('from("team_fan_group_members")') ||
+    !fanFeedPage.includes('basketballSide === "womens"') ||
+    !fanFeedPage.includes("FanBasketballSideSwitch") ||
+    fanFeedPage.includes('from("feed_posts")') ||
     !fanFeedPage.includes('fetch("/api/fan-groups"') ||
     !bottomNav.includes('accountType === "fan" ? "FAN HQ" : "HoopFeed"') ||
     !fanGroupPage.includes("Posting to {teamName} fans")) {
