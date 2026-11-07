@@ -29,11 +29,11 @@ export default function NotificationsPage(){
   }
   if(loading)return <main className="page-shell hc-notifications-page"><div className="page-container"><HoopLoading label="Loading notifications..." /></div></main>;
   return <main className="page-shell hc-notifications-page"><div className="page-container">
-    <section className="hero-card" style={{marginTop:20}}><p className="eyebrow">NOTIFICATIONS</p><h1>Alerts</h1><p className="muted">Only teams, coaches, and leagues you manually follow can send you review, rating, or update alerts.</p><button className="btn dark" type="button" onClick={markAll}>Mark all as read</button></section>
+    <section className="hero-card" style={{marginTop:20}}><p className="eyebrow">NOTIFICATIONS</p><h1>Alerts</h1><p className="muted">Get updates from followed profiles and new published reviews on clubs you manage.</p><button className="btn dark" type="button" onClick={markAll}>Mark all as read</button></section>
     <section style={{marginTop:24,display:"grid",gap:10}}>
       {items.length ? items.map(n => {
         const path = n.target_type === "team" ? "teams" : n.target_type === "coach" ? "coaches" : n.target_type === "game" ? "fan-live?gameId=" + n.target_id : "leagues";
-        const href = n.target_type === "game" ? "/" + path : "/" + path + "/" + n.target_id;
+        const href = n.target_type === "game" ? "/" + path : "/" + path + "/" + n.target_id + (n.target_type === "team" && n.notification_type === "review" ? "#reviews" : "");
         const meta: Record<string, { label: string; icon: "message-square" | "star" | "external-link" | "shield-check" | "users" | "whistle" | "bell" }> = {
           review: { label: "NEW REVIEW", icon: "message-square" },
           rating: { label: "NEW RATING", icon: "star" },
