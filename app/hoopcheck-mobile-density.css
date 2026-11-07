@@ -1,0 +1,273 @@
+/* HoopCheck mobile content-density system.
+   Shared responsive rules: compact spacing, clearer scanning, and more useful content per viewport.
+   Desktop styles are intentionally unchanged. */
+:root {
+  --hc-mobile-gutter: 12px;
+  --hc-mobile-section-gap: 16px;
+  --hc-mobile-card-pad: 12px;
+}
+
+@media (max-width: 700px) {
+  html { scroll-padding-top: 68px; }
+  body { overflow-x: clip; }
+
+  /* Shared page frame */
+  html body main.page-shell,
+  html body main.hc-directory-page,
+  html body main.hc-global-search-page,
+  html body main.hc-team-directory-page,
+  html body main.hc-coaches-directory-page,
+  html body main.hc-leagues-directory-page,
+  html body main.hc-player-directory-page,
+  html body main.hc-womens-directory-page,
+  html body main.hc-entity-profile-page {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 14px var(--hc-mobile-gutter) calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+    margin-inline: auto;
+  }
+
+  html .site-header-global.hc-template-header {
+    min-height: 56px;
+    padding-block: 7px !important;
+    padding-inline: 12px;
+  }
+  html .site-header-global .site-header-brand :where(img, svg) { max-height: 34px; }
+  html .hc-template-header .hc-mobile-menu-toggle {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Type hierarchy: compact, but keep body copy readable and controls tappable. */
+  main :where(h1) {
+    font-size: clamp(1.75rem, 7vw, 2.35rem);
+    line-height: 1.02;
+    margin-block: 4px 8px;
+  }
+  main :where(h2) {
+    font-size: clamp(1.2rem, 5vw, 1.55rem);
+    line-height: 1.08;
+  }
+  main :where(h3) { font-size: 1.02rem; line-height: 1.15; }
+  main :where(p) { line-height: 1.45; }
+  main :where(.eyebrow, .muted, .meta, .subtle) { line-height: 1.35; }
+
+  /* Reduce empty vertical space without hiding content. */
+  main.page-shell :where(.hero, .page-hero, .section, .panel, .card, .dashboard-card),
+  main.hc-directory-page :where(.section, .panel, .card) {
+    margin-block: 10px;
+  }
+  main.page-shell :where(.card, .panel, .dashboard-card, .quick-card, .settings-card, .profile-card, .review-card) {
+    padding: var(--hc-mobile-card-pad);
+    border-radius: 12px;
+  }
+  main.page-shell :where(.section-heading, .section-header) {
+    gap: 8px;
+    margin-block: 8px 10px;
+  }
+
+  /* Dashboard: bring identity, stats and shortcuts into a tighter first screen. */
+  html main.hc-dashboard-shell { padding-top: 12px !important; }
+  .hc-dashboard-shell .hc-dashboard-welcome { margin: 0 0 10px; }
+  .hc-dashboard-shell .hc-dashboard-hero-description { margin: 4px 0 10px; font-size: 13px; }
+  .hc-dashboard-shell .hc-dashboard-profile-block {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 12px;
+    margin: 8px 0 10px;
+  }
+  /* The identity wrapper contains both avatar and copy. Keep it in the flexible
+     first grid column so the name and membership badge never collapse vertically. */
+  .hc-dashboard-shell .hc-dashboard-profile-identity {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+  }
+  .hc-dashboard-shell .hc-dashboard-avatar {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+  }
+  .hc-dashboard-shell .hc-dashboard-profile-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .hc-dashboard-shell .hc-dashboard-profile-label,
+  .hc-dashboard-shell .hc-dashboard-username,
+  .hc-dashboard-shell .hc-dashboard-membership-badge {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+  .hc-dashboard-shell .hc-dashboard-username {
+    display: block;
+    font-size: 15px;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+  .hc-dashboard-shell .hc-dashboard-membership-badge { font-size: 9px; }
+  .hc-dashboard-shell .hc-dashboard-edit-profile {
+    min-height: 36px;
+    padding: 7px 9px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  .hc-dashboard-shell .hc-dashboard-stat-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    width: 100%;
+    min-width: 0;
+    gap: 7px;
+    margin: 10px 0 14px;
+  }
+  .hc-dashboard-shell .hc-dashboard-stat-card {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 9px 8px;
+    border-radius: 10px;
+  }
+  .hc-dashboard-shell .hc-dashboard-stat-label { font-size: 9px; line-height: 1.2; }
+  .hc-dashboard-shell .hc-dashboard-stat-value { font-size: clamp(15px, 4vw, 19px); line-height: 1.05; overflow-wrap: anywhere; }
+  .hc-dashboard-shell .hc-dashboard-stat-note { font-size: 9px; line-height: 1.25; }
+
+  .hc-mobile-dashboard { display: grid; gap: 12px; margin-top: 10px; }
+  .hc-mobile-search { margin: 0 !important; }
+  .hc-mobile-section { min-width: 0; margin: 0; }
+  .hc-mobile-section-heading { margin: 0 0 8px; gap: 8px; }
+  .hc-mobile-section-heading h2 { margin: 2px 0 0; font-size: 19px; }
+  .hc-mobile-eyebrow { margin: 0; font-size: 9px; letter-spacing: .1em; }
+  .hc-mobile-quick-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .hc-mobile-quick-card {
+    min-width: 0;
+    min-height: 66px;
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 14px;
+    align-items: center;
+    gap: 7px;
+    padding: 9px;
+    border-radius: 10px;
+  }
+  .hc-mobile-icon, .hc-mobile-category-icon {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+  }
+  .hc-mobile-card-copy { min-width: 0; }
+  .hc-mobile-card-copy strong { display: block; font-size: 10px; line-height: 1.2; overflow-wrap: anywhere; }
+  .hc-mobile-card-copy small { display: block; margin-top: 3px; font-size: 9px; line-height: 1.25; }
+  .hc-mobile-chevron, .hc-mobile-row-arrow { justify-self: end; }
+  .hc-mobile-category-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .hc-mobile-category-row {
+    min-width: 0;
+    min-height: 58px;
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) 12px;
+    align-items: center;
+    gap: 7px;
+    padding: 8px;
+    border-radius: 9px;
+  }
+  .hc-mobile-category-row .hc-mobile-card-copy small { display: none; }
+  .hc-mobile-category-row .hc-mobile-card-copy strong { font-size: 10px; }
+  .hc-mobile-category-icon { width: 30px; height: 30px; }
+  .hc-mobile-browse { margin-top: 2px; }
+
+  /* Directory landing page: show category tiles in a compact two-column scan. */
+  main.hc-directory-page { gap: 10px; }
+  .hc-directory-intro { margin: 0 0 8px; }
+  .hc-directory-intro .hc-directory-kicker { margin: 0 0 5px; font-size: 10px; }
+  .hc-directory-intro h1 { margin: 0 0 7px; }
+  .hc-directory-intro > p:last-child { margin: 0; font-size: 13px; line-height: 1.4; }
+  .hc-directory-search { margin: 8px 0 !important; }
+  .hc-directory-filters {
+    display: flex;
+    gap: 6px;
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 2px 0 7px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .hc-directory-filters::-webkit-scrollbar { display: none; }
+  .hc-directory-filter { flex: 0 0 auto; min-height: 34px; padding: 7px 10px; font-size: 10px; }
+  .hc-directory-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .hc-directory-row {
+    min-width: 0;
+    min-height: 74px;
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) 10px;
+    align-items: center;
+    gap: 7px;
+    padding: 9px;
+    border-radius: 10px;
+  }
+  .hc-directory-emblem { width: 30px; height: 30px; display: grid; place-items: center; }
+  .hc-directory-copy { min-width: 0; }
+  .hc-directory-copy strong { display: block; font-size: 10px; line-height: 1.2; overflow-wrap: anywhere; }
+  .hc-directory-copy small { display: none; }
+  .hc-directory-arrow { font-size: 15px; }
+
+  /* Search and filter bars: allow horizontal browsing rather than tall wrapping stacks. */
+  main.hc-global-search-page :where(.search-filters, .search-filter-row, .filter-row, .filter-chips, .hc-filter-row) {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 7px;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-block: 4px 8px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  main.hc-global-search-page :where(.search-filters, .search-filter-row, .filter-row, .filter-chips, .hc-filter-row) > * { flex: 0 0 auto; }
+  main :where(input, select, textarea) { max-width: 100%; min-width: 0; }
+  main :where(button, .btn, input, select) { min-height: 40px; }
+  main :where(textarea) { min-height: 88px; }
+
+  /* Keep dense information readable: scroll wide tables within their own region. */
+  main :where(.table-wrap, .table-responsive, .overflow-x-auto, [data-table-scroll]) {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  main table { min-width: 520px; }
+  main :where(.admin-stat-grid, .admin-stats, .rating-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  main :where(.admin-panel, .moderation-section, .moderation-card, .admin-review-card, .admin-report-card) {
+    padding: 12px;
+    margin-block: 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  .hc-dashboard-shell .hc-dashboard-profile-block { grid-template-columns: minmax(0, 1fr); }
+  .hc-dashboard-shell .hc-dashboard-avatar { width: 38px; height: 38px; flex-basis: 38px; }
+  .hc-dashboard-shell .hc-dashboard-edit-profile { grid-column: 1; justify-self: start; }
+  .hc-mobile-quick-card { grid-template-columns: 28px minmax(0, 1fr) 12px; padding: 8px 7px; }
+  .hc-mobile-icon { width: 28px; height: 28px; }
+  .hc-directory-list, .hc-mobile-category-list { gap: 6px; }
+  .hc-directory-row { grid-template-columns: 26px minmax(0, 1fr) 9px; padding: 7px; }
+  .hc-directory-emblem { width: 26px; height: 26px; }
+}
