@@ -163,6 +163,7 @@ export default function CoachDetailPage() {
   const [accountType, setAccountType] = useState<string>("");
   const [reviewTier, setReviewTier] = useState<"free" | "pro" | "premium" | "member">("free");
   const [canReadFullReviews, setCanReadFullReviews] = useState(false);
+  const [canWriteReviews, setCanWriteReviews] = useState(false);
 
   const [loading, setLoading] =
     useState(true);
@@ -320,6 +321,7 @@ export default function CoachDetailPage() {
       setReviewTier(tier);
       const fullRead = reviewPayload?.canReadFull === true;
       setCanReadFullReviews(fullRead);
+      setCanWriteReviews(reviewPayload?.canWrite === true);
       setHasAccess(tier !== "free");
       setReviewLoading(fullRead);
       const summary = reviewPayload?.summary;
@@ -556,7 +558,7 @@ export default function CoachDetailPage() {
           <div className="hc-entity-trust-score"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedReviews"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /></div>
         ) : null}
 
-        <div className="entity-actions"><WatchButton targetType="coach" targetId={coach.id} targetName={coach.name} />{accountType === "player" ? <Link href={`/coaches/${coach.id}/review`} className="btn">Write a Review</Link> : null}</div>
+        <div className="entity-actions"><WatchButton targetType="coach" targetId={coach.id} targetName={coach.name} />{canWriteReviews ? <Link href={`/coaches/${coach.id}/review`} className="btn">Write a Review</Link> : null}</div>
         <ClaimProfileButton entityType="coach" entityId={coach.id} entityName={coach.name} />
 
         <p>
@@ -736,7 +738,7 @@ export default function CoachDetailPage() {
                 coach.
               </p>
 
-              {accountType === "player" && <Link href={`/coaches/${coach.id}/review`} className="btn">Add Your Experience</Link>}
+              {canWriteReviews && <Link href={`/coaches/${coach.id}/review`} className="btn">Add Your Experience</Link>}
             </div>
           </section>
 
@@ -779,7 +781,7 @@ export default function CoachDetailPage() {
                   this coach.
                 </p>
 
-                {accountType === "player" && <Link href={`/coaches/${coach.id}/review`} className="btn">{t("writeAReview")}</Link>}
+                {canWriteReviews && <Link href={`/coaches/${coach.id}/review`} className="btn">{t("writeAReview")}</Link>}
               </div>
             ) : (
               <div
