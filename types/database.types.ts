@@ -636,250 +636,6 @@ export type Database = {
           },
         ]
       }
-      fan_connection_requests: {
-        Row: {
-          created_at: string
-          fan_id: string
-          id: string
-          message: string | null
-          requester_id: string
-          responded_at: string | null
-          status: string
-        }
-        Insert: {
-          created_at?: string
-          fan_id: string
-          id?: string
-          message?: string | null
-          requester_id: string
-          responded_at?: string | null
-          status?: string
-        }
-        Update: {
-          created_at?: string
-          fan_id?: string
-          id?: string
-          message?: string | null
-          requester_id?: string
-          responded_at?: string | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fan_connection_requests_fan_id_fkey"
-            columns: ["fan_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fan_connection_requests_requester_id_fkey"
-            columns: ["requester_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fan_feed_archives: {
-        Row: {
-          created_at: string
-          post_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          post_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          post_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fan_feed_archives_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "fan_feed_posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fan_feed_archives_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fan_feed_checks: {
-        Row: {
-          created_at: string
-          post_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          post_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          post_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fan_feed_checks_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "fan_feed_posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fan_feed_checks_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fan_feed_comments: {
-        Row: {
-          author_id: string
-          body: string
-          created_at: string
-          id: string
-          post_id: string
-        }
-        Insert: {
-          author_id: string
-          body: string
-          created_at?: string
-          id?: string
-          post_id: string
-        }
-        Update: {
-          author_id?: string
-          body?: string
-          created_at?: string
-          id?: string
-          post_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fan_feed_comments_author_id_fkey"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fan_feed_comments_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "fan_feed_posts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fan_feed_likes: {
-        Row: {
-          created_at: string
-          post_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          post_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          post_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fan_feed_likes_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "fan_feed_posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fan_feed_likes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fan_feed_posts: {
-        Row: {
-          author_id: string
-          body: string
-          created_at: string
-          expires_at: string
-          id: string
-          image_url: string | null
-          status: string
-          team_id: string | null
-          video_url: string | null
-          womens_team_id: string | null
-        }
-        Insert: {
-          author_id: string
-          body?: string
-          created_at?: string
-          expires_at?: string
-          id?: string
-          image_url?: string | null
-          status?: string
-          team_id?: string | null
-          video_url?: string | null
-          womens_team_id?: string | null
-        }
-        Update: {
-          author_id?: string
-          body?: string
-          created_at?: string
-          expires_at?: string
-          id?: string
-          image_url?: string | null
-          status?: string
-          team_id?: string | null
-          video_url?: string | null
-          womens_team_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fan_feed_posts_author_id_fkey"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fan_feed_posts_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fan_feed_posts_womens_team_id_fkey"
-            columns: ["womens_team_id"]
-            isOneToOne: false
-            referencedRelation: "womens_teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       fan_live_chat_messages: {
         Row: {
           body: string
@@ -908,143 +664,6 @@ export type Database = {
             columns: ["game_id"]
             isOneToOne: false
             referencedRelation: "fan_live_games"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fan_live_chat_presence: {
-        Row: {
-          game_id: string
-          last_seen_at: string
-          user_id: string
-        }
-        Insert: {
-          game_id: string
-          last_seen_at?: string
-          user_id: string
-        }
-        Update: {
-          game_id?: string
-          last_seen_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fan_live_chat_presence_game_id_fkey"
-            columns: ["game_id"]
-            isOneToOne: false
-            referencedRelation: "fan_live_games"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fan_live_chat_presence_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fan_live_chat_reports: {
-        Row: {
-          created_at: string
-          details: string | null
-          game_id: string
-          id: string
-          message_id: string
-          reason: string
-          reported_user_id: string
-          reporter_id: string
-          status: string
-        }
-        Insert: {
-          created_at?: string
-          details?: string | null
-          game_id: string
-          id?: string
-          message_id: string
-          reason: string
-          reported_user_id: string
-          reporter_id: string
-          status?: string
-        }
-        Update: {
-          created_at?: string
-          details?: string | null
-          game_id?: string
-          id?: string
-          message_id?: string
-          reason?: string
-          reported_user_id?: string
-          reporter_id?: string
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fan_live_chat_reports_game_id_fkey"
-            columns: ["game_id"]
-            isOneToOne: false
-            referencedRelation: "fan_live_games"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fan_live_chat_reports_message_id_fkey"
-            columns: ["message_id"]
-            isOneToOne: false
-            referencedRelation: "fan_live_chat_messages"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fan_live_chat_reports_reported_user_id_fkey"
-            columns: ["reported_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fan_live_chat_reports_reporter_id_fkey"
-            columns: ["reporter_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fan_live_chat_user_controls: {
-        Row: {
-          is_blocked: boolean
-          is_muted: boolean
-          target_user_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          is_blocked?: boolean
-          is_muted?: boolean
-          target_user_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          is_blocked?: boolean
-          is_muted?: boolean
-          target_user_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fan_live_chat_user_controls_target_user_id_fkey"
-            columns: ["target_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fan_live_chat_user_controls_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1202,39 +821,6 @@ export type Database = {
           },
         ]
       }
-      feed_post_archives: {
-        Row: {
-          created_at: string
-          post_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          post_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          post_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "feed_post_archives_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "feed_posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "feed_post_archives_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       feed_post_checks: {
         Row: {
           created_at: string
@@ -1341,10 +927,8 @@ export type Database = {
           id: string
           image_url: string | null
           location_country: string | null
-          shared_post_id: string | null
           status: string
           topic_tag: string | null
-          video_url: string | null
         }
         Insert: {
           author_id: string
@@ -1358,10 +942,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           location_country?: string | null
-          shared_post_id?: string | null
           status?: string
           topic_tag?: string | null
-          video_url?: string | null
         }
         Update: {
           author_id?: string
@@ -1375,10 +957,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           location_country?: string | null
-          shared_post_id?: string | null
           status?: string
           topic_tag?: string | null
-          video_url?: string | null
         }
         Relationships: [
           {
@@ -1386,13 +966,6 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "feed_posts_shared_post_id_fkey"
-            columns: ["shared_post_id"]
-            isOneToOne: false
-            referencedRelation: "feed_posts"
             referencedColumns: ["id"]
           },
         ]
@@ -1434,41 +1007,6 @@ export type Database = {
             columns: ["follower_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      game_winner_picks: {
-        Row: {
-          created_at: string
-          game_id: string
-          id: string
-          picked_team_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          game_id: string
-          id?: string
-          picked_team_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          game_id?: string
-          id?: string
-          picked_team_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "game_winner_picks_game_id_fkey"
-            columns: ["game_id"]
-            isOneToOne: false
-            referencedRelation: "fan_live_games"
             referencedColumns: ["id"]
           },
         ]
@@ -2018,66 +1556,6 @@ export type Database = {
         }
         Relationships: []
       }
-      profile_claim_requests: {
-        Row: {
-          admin_note: string | null
-          created_at: string
-          entity_id: string
-          entity_type: string
-          id: string
-          organization_email: string | null
-          proof_document_path: string | null
-          requester_id: string
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string
-          verification_method: string
-        }
-        Insert: {
-          admin_note?: string | null
-          created_at?: string
-          entity_id: string
-          entity_type: string
-          id?: string
-          organization_email?: string | null
-          proof_document_path?: string | null
-          requester_id: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          verification_method: string
-        }
-        Update: {
-          admin_note?: string | null
-          created_at?: string
-          entity_id?: string
-          entity_type?: string
-          id?: string
-          organization_email?: string | null
-          proof_document_path?: string | null
-          requester_id?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          verification_method?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profile_claim_requests_requester_id_fkey"
-            columns: ["requester_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profile_claim_requests_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profile_reports: {
         Row: {
           created_at: string
@@ -2148,7 +1626,6 @@ export type Database = {
           first_name: string | null
           free_agent: boolean
           gender: string | null
-          height: string | null
           hometown: string | null
           id: string
           identity_verification_status: string
@@ -2165,7 +1642,6 @@ export type Database = {
           player_verified: boolean
           player_verified_at: string | null
           position: string | null
-          preferred_basketball_side: string | null
           preferred_language: string
           professional_experience: boolean
           profile_claimed: boolean
@@ -2209,7 +1685,6 @@ export type Database = {
           first_name?: string | null
           free_agent?: boolean
           gender?: string | null
-          height?: string | null
           hometown?: string | null
           id: string
           identity_verification_status?: string
@@ -2226,7 +1701,6 @@ export type Database = {
           player_verified?: boolean
           player_verified_at?: string | null
           position?: string | null
-          preferred_basketball_side?: string | null
           preferred_language?: string
           professional_experience?: boolean
           profile_claimed?: boolean
@@ -2270,7 +1744,6 @@ export type Database = {
           first_name?: string | null
           free_agent?: boolean
           gender?: string | null
-          height?: string | null
           hometown?: string | null
           id?: string
           identity_verification_status?: string
@@ -2287,7 +1760,6 @@ export type Database = {
           player_verified?: boolean
           player_verified_at?: string | null
           position?: string | null
-          preferred_basketball_side?: string | null
           preferred_language?: string
           professional_experience?: boolean
           profile_claimed?: boolean
@@ -2985,349 +2457,6 @@ export type Database = {
         }
         Relationships: []
       }
-      team_fan_group_comments: {
-        Row: {
-          author_id: string
-          body: string
-          created_at: string
-          id: string
-          post_id: string
-        }
-        Insert: {
-          author_id: string
-          body: string
-          created_at?: string
-          id?: string
-          post_id: string
-        }
-        Update: {
-          author_id?: string
-          body?: string
-          created_at?: string
-          id?: string
-          post_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_fan_group_comments_author_id_fkey"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_fan_group_comments_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "team_fan_group_posts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      team_fan_group_join_requests: {
-        Row: {
-          created_at: string
-          id: string
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string
-          team_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          team_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          team_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_fan_group_join_requests_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_fan_group_join_requests_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "team_fan_groups"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "team_fan_group_join_requests_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      team_fan_group_members: {
-        Row: {
-          joined_at: string
-          team_id: string
-          user_id: string
-        }
-        Insert: {
-          joined_at?: string
-          team_id: string
-          user_id: string
-        }
-        Update: {
-          joined_at?: string
-          team_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_fan_group_members_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "team_fan_groups"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "team_fan_group_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      team_fan_group_moderators: {
-        Row: {
-          created_at: string
-          id: string
-          moderator_type: string
-          team_id: string
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          moderator_type: string
-          team_id: string
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          moderator_type?: string
-          team_id?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_fan_group_moderators_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "team_fan_groups"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "team_fan_group_moderators_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      team_fan_group_posts: {
-        Row: {
-          author_id: string
-          body: string
-          created_at: string
-          id: string
-          image_url: string | null
-          is_pinned: boolean
-          status: string
-          team_id: string
-        }
-        Insert: {
-          author_id: string
-          body?: string
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          is_pinned?: boolean
-          status?: string
-          team_id: string
-        }
-        Update: {
-          author_id?: string
-          body?: string
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          is_pinned?: boolean
-          status?: string
-          team_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_fan_group_posts_author_id_fkey"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_fan_group_posts_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "team_fan_groups"
-            referencedColumns: ["team_id"]
-          },
-        ]
-      }
-      team_fan_group_reports: {
-        Row: {
-          created_at: string
-          id: string
-          post_id: string
-          reason: string
-          reporter_id: string
-          status: string
-          team_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          post_id: string
-          reason: string
-          reporter_id: string
-          status?: string
-          team_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          post_id?: string
-          reason?: string
-          reporter_id?: string
-          status?: string
-          team_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_fan_group_reports_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "team_fan_group_posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_fan_group_reports_reporter_id_fkey"
-            columns: ["reporter_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_fan_group_reports_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "team_fan_groups"
-            referencedColumns: ["team_id"]
-          },
-        ]
-      }
-      team_fan_groups: {
-        Row: {
-          created_at: string
-          group_name: string
-          join_mode: string
-          team_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          group_name: string
-          join_mode?: string
-          team_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          group_name?: string
-          join_mode?: string
-          team_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_fan_groups_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: true
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      team_fanfeed_posts: {
-        Row: {
-          author_id: string
-          body: string
-          created_at: string
-          id: string
-          image_url: string | null
-          status: string
-          team_id: string
-          updated_at: string
-        }
-        Insert: {
-          author_id: string
-          body: string
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          status?: string
-          team_id: string
-          updated_at?: string
-        }
-        Update: {
-          author_id?: string
-          body?: string
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          status?: string
-          team_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_fanfeed_posts_author_id_fkey"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_fanfeed_posts_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       team_league_memberships: {
         Row: {
           active: boolean
@@ -3369,41 +2498,6 @@ export type Database = {
           },
           {
             foreignKeyName: "team_league_memberships_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      team_pay_checkins: {
-        Row: {
-          created_at: string
-          id: string
-          pay_month: string
-          pay_status: string
-          player_id: string
-          team_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          pay_month: string
-          pay_status: string
-          player_id: string
-          team_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          pay_month?: string
-          pay_status?: string
-          player_id?: string
-          team_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_pay_checkins_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
@@ -3459,7 +2553,6 @@ export type Database = {
           last_synced_at?: string | null
           league_id?: string | null
           league_name?: string | null
-          logo_bg?: string
           logo_url?: string | null
           name?: string
           source?: string | null
@@ -3691,6 +2784,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_team_profile_claimed: { Args: { p_team_id: string; p_team_table?: string }; Returns: boolean }
+      set_claimed_team_logo: { Args: { p_logo_bg?: string; p_logo_url: string; p_team_id: string; p_team_table?: string }; Returns: undefined }
       admin_delete_directory_entry: {
         Args: { p_id: string; p_type: string }
         Returns: boolean
@@ -3789,7 +2884,6 @@ export type Database = {
         Args: { p_team_id: string; p_user_id: string }
         Returns: boolean
       }
-      can_view_fan_feed_post: { Args: { p_post_id: string }; Returns: boolean }
       can_view_player_feed_post: {
         Args: { p_author_id: string }
         Returns: boolean
@@ -3812,9 +2906,6 @@ export type Database = {
         Args: { p_key_hash: string }
         Returns: boolean
       }
-      current_user_has_live_game_membership: { Args: never; Returns: boolean }
-      fan_live_chat_room_open: { Args: { p_game_id: string }; Returns: boolean }
-      get_current_user_admin_role: { Args: never; Returns: string }
       get_fan_team_hub_posts: {
         Args: { p_team_id: string; p_womens_team_id?: string }
         Returns: {
@@ -3828,32 +2919,12 @@ export type Database = {
           image_url: string
         }[]
       }
+      get_current_user_admin_role: { Args: never; Returns: string }
       get_follow_count: {
         Args: { p_target_id: string; p_target_type: string }
         Returns: number
       }
       get_hoopcheck_kpis: { Args: never; Returns: Json }
-      get_public_follow_list: {
-        Args: {
-          p_mode: string
-          p_target_id?: string
-          p_target_type?: string
-          p_user_id?: string
-        }
-        Returns: {
-          account_type: string
-          avatar_url: string
-          display_name: string
-          id: string
-          player_verified: boolean
-          target_id: string
-          target_type: string
-        }[]
-      }
-      get_public_following_count: {
-        Args: { p_user_id: string }
-        Returns: number
-      }
       get_public_player_profile: {
         Args: { p_user_id: string }
         Returns: {
@@ -3900,33 +2971,6 @@ export type Database = {
           review_id: string
         }[]
       }
-      get_shared_team_followers: {
-        Args: { p_team_id: string }
-        Returns: {
-          display_name: string
-        }[]
-      }
-      get_social_suggestions: {
-        Args: never
-        Returns: {
-          avatar_url: string
-          detail: string
-          display_name: string
-          entity_id: string
-          entity_type: string
-          player_verified: boolean
-        }[]
-      }
-      get_team_fan_group_summary: {
-        Args: { p_team_id: string }
-        Returns: {
-          group_name: string
-          has_pending_request: boolean
-          is_member: boolean
-          join_mode: string
-          member_count: number
-        }[]
-      }
       get_womens_review_rating_summary: {
         Args: { p_team_id: string }
         Returns: {
@@ -3939,22 +2983,6 @@ export type Database = {
         Returns: Json
       }
       is_current_user_admin_or_moderator: { Args: never; Returns: boolean }
-      is_team_fan_group_member: {
-        Args: { p_team_id: string; p_user_id?: string }
-        Returns: boolean
-      }
-      is_team_fan_group_moderator: {
-        Args: { p_team_id: string; p_user_id?: string }
-        Returns: boolean
-      }
-      is_team_profile_claimed: {
-        Args: { p_team_id: string; p_team_table?: string }
-        Returns: boolean
-      }
-      is_username_available: {
-        Args: { candidate_username: string }
-        Returns: boolean
-      }
       moderate_player_verification: {
         Args: {
           p_request_id: string
@@ -3999,10 +3027,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      save_my_username: {
-        Args: { candidate_username: string }
-        Returns: undefined
-      }
       search_public_players: {
         Args: {
           p_country?: string
@@ -4024,15 +3048,6 @@ export type Database = {
           player_verified_at: string
           years_pro: number
         }[]
-      }
-      set_claimed_team_logo: {
-        Args: {
-          p_logo_bg?: string
-          p_logo_url: string
-          p_team_id: string
-          p_team_table?: string
-        }
-        Returns: undefined
       }
       touch_last_seen: { Args: never; Returns: undefined }
     }
