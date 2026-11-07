@@ -63,13 +63,17 @@ export default function WomensTeam(){
    followerCount={teamFollowerCount}
    onFollowerCountChange={setTeamFollowerCount}
  />
+ <nav className="hc-team-profile-nav" aria-label="Team profile sections">
+   <a href="#overview" aria-current="page">Overview</a>
+   <a href="#reviews">Reviews</a>
+ </nav>
  {canReview && <div className="entity-actions"><Link href={"/womens/" + team.id + "/review"} className="btn">Write a Review</Link></div>}
  <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} teamTable="womens_teams" onSaved={(logoUrl, logoBg) => setTeam((current:any) => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
  <section className="grid compact-grid">
     {canSeeRatings ? <Surface className="card"><span className="card-kicker">{t("rating")}</span><h2>{average===null?"—":average.toFixed(1)+"/5"}</h2><p className="muted">{formatNumber(ratingCount)+" "+(ratingCount===1?t("publishedReview"):t("publishedReviews"))}</p></Surface> : null}
     <Surface className="card"><span className="card-kicker">{t("league")}</span><h2>{team.league_name||t("professional")}</h2><p className="muted">{team.country||t("international")}</p></Surface>
   </section>
-  <Surface as="section" className="dashboard-card compact-section">
+  <Surface as="section" id="reviews" className="dashboard-card compact-section">
     {reviewTier === "pro" && !canViewReviews ? <><p className="eyebrow">{t("playerExperiences")}</p><h2>{t("ratingsReviews")}</h2><p className="hc-review-star-row">★★★★★ {average===null?"":average.toFixed(1)+"/5"}</p><p>Players and other eligible active members can access full reviews and ratings. Fan access depends on the active plan.</p><div className="hc-review-category-teaser">{["Communication","Professionalism","Development","Payment"].map(label=><div className="hc-review-category-row" key={label}><span>{label}</span><span className="hc-review-score-blur" aria-label="Score available with Fan Premium">★★★★★</span></div>)}</div><Link href="/membership" className="btn">Upgrade</Link></>
     : canViewReviews ? <><p className="eyebrow">{t("playerExperiences")}</p><h2>{t("ratingsReviews")}</h2>{reviews.map(r=><article className="compact-review" key={r.id}><div className="review-line"><strong>{r.title||t("playerExperience")}</strong><strong>{Number(r.overall_rating).toFixed(1)}/5</strong></div><p>{r.body}</p><small className="muted">{formatDate(r.created_at)}</small></article>)}{!reviews.length&&<p className="muted">{t("noPublishedReviewsYet")}</p>}</>
     : <ReviewMembershipGate
