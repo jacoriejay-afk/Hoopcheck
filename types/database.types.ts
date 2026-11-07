@@ -2906,6 +2906,19 @@ export type Database = {
         Args: { p_key_hash: string }
         Returns: boolean
       }
+      get_fan_team_hub_posts: {
+        Args: { p_team_id: string; p_womens_team_id?: string }
+        Returns: {
+          author_id: string
+          avatar_url: string
+          body: string
+          created_at: string
+          display_name: string
+          expires_at: string
+          id: string
+          image_url: string
+        }[]
+      }
       get_current_user_admin_role: { Args: never; Returns: string }
       get_follow_count: {
         Args: { p_target_id: string; p_target_type: string }

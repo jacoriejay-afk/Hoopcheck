@@ -33,7 +33,7 @@ const fanTeamHubLabels: Record<Language, FanTeamHubLabels> = {
 };
 
 
-export default function FanTeamPosts({ teamId }: { teamId:string }) {
+export default function FanTeamPosts({ teamId, teamType = "mens" }: { teamId:string; teamType?: "mens" | "womens" }) {
   const { language, formatDate, t } = useLanguage();
   const labels = fanTeamHubLabels[language] || fanTeamHubLabels.en;
   const ft = (key: Parameters<typeof fanFeedI18n>[0]) => fanFeedI18n(key, language);
@@ -43,17 +43,24 @@ export default function FanTeamPosts({ teamId }: { teamId:string }) {
     let active=true;
     const load=async()=>{
       const now=new Date().toISOString();
-      const [{data:postRows},{data:gameRows}]=await Promise.all([
-        supabase.rpc("get_fan_team_hub_posts", { p_team_id: teamId }),
-        supabase.from("fan_live_games").select("id,opponent_name,status,scheduled_at,started_at,home_score,away_score,period_label,league_name").eq("team_id",teamId).in("status",["scheduled","live","in_progress"]).order("scheduled_at",{ascending:true}).limit(10)
+      const [postResult, gameResult] = await Promise.all([
+        supabase.rpc("get_fan_team_hub_posts", {
+          p_team_id: teamId,
+          p_womens_team_id: teamType === "womens" ? teamId : undefined,
+        }),
+        teamType === "mens"
+          ? supabase.from("fan_live_games").select("id,opponent_name,status,scheduled_at,started_at,home_score,away_score,period_label,league_name").eq("team_id",teamId).in("status",["scheduled","live","in_progress"]).order("scheduled_at",{ascending:true}).limit(10)
+          : Promise.resolve({ data: [] as TeamGame[] }),
       ]);
+      const postRows = postResult.data;
+      const gameRows = gameResult.data;
       if(!active)return;
       setPosts((postRows||[]).map((p:any)=>({...p,profiles:{display_name:p.display_name,avatar_url:p.avatar_url}})) as TeamFanPost[]);
       setGames(((gameRows||[]) as TeamGame[]).filter(g=>["live","in_progress"].includes(g.status.toLowerCase())||Boolean(g.scheduled_at&&g.scheduled_at>=now)).slice(0,5));
     };
     void load(); const timer=window.setInterval(()=>void load(),30000);
     return () => { active=false; window.clearInterval(timer); };
-  },[teamId]);
+  },[teamId,teamType]);
   if(!posts.length&&!games.length) return null;
   return <section className="dashboard-card" style={{marginTop:20,padding:20}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}>
