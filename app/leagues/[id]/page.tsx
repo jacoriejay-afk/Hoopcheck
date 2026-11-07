@@ -597,12 +597,11 @@ export default function LeagueDetailPage() {
               are saying.
             </h2>
 
-            {canReadFullReviews ? (reviewLoading ? (
+            {canReadFullReviews ? (reviewLoading ?
               <p>
                 Loading reviews...
               </p>
-            ) : reviews.length ===
-              0 ? (
+            : reviews.length === 0 ? (
               <div className="card">
                 <h3>
                   {t("noApprovedReviewsYet")}
@@ -708,7 +707,7 @@ export default function LeagueDetailPage() {
                   )
                 )}
               </div>
-            )) : null}
+            ) : null}
           </section>
         </>
       )}
