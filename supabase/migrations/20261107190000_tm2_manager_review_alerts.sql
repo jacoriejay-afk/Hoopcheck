@@ -41,12 +41,7 @@ begin
     on pref.user_id=c.requester_id and pref.team_id=c.entity_id
   where c.entity_type='team' and c.entity_id=new.team_id and c.status='approved'
     and coalesce(pref.new_review,true)
-    and not exists (
-      select 1 from public.notifications n
-      where n.user_id=c.requester_id and n.target_type='team'
-        and n.target_id=new.team_id and n.notification_type='review'
-        and n.title='New review on your club' and n.created_at > now()-interval '2 seconds'
-    );
+;
   return new;
 end; $$;
 drop trigger if exists tm2_review_manager_alert on public.reviews;
