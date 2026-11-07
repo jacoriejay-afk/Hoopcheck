@@ -8,6 +8,7 @@ const fanFeedPage = readFileSync("app/fan-feed/page.tsx", "utf8");
 const fanFeedI18n = readFileSync("app/fan-feed/i18n.ts", "utf8");
 const bottomNav = readFileSync("components/BottomNav.tsx", "utf8");
 const fanGroupPage = readFileSync("app/team-hub/groups/[teamId]/page.tsx", "utf8");
+const womensTeamPage = readFileSync("app/womens/[id]/page.tsx", "utf8");
 const fanTeamPosts = readFileSync("components/FanTeamPosts.tsx", "utf8");
 const womensFanGroupMirror = readFileSync("supabase/migrations/20261107110000_womens_team_fan_group_mirrors.sql", "utf8");
 const themeAudit = readFileSync("app/hoopcheck-theme-audit.css", "utf8");
@@ -102,6 +103,8 @@ if (fanFeedPage.includes('from("fan_feed_posts")') ||
     !fanGroupPage.includes("Posting to {teamName} fans") ||
     !fanGroupPage.includes("No posts yet — be the first to post for {teamName}.") ||
     !fanGroupPage.includes("Be the first to post") ||
+    !womensTeamPage.includes("TeamFanGroupEntry teamId={team.id}") ||
+    !womensTeamPage.includes("FanTeamPosts teamId={team.id}") ||
     !fanTeamPosts.includes('from("team_fan_group_posts")') ||
     fanTeamPosts.includes('rpc("get_fan_team_hub_posts"') ||
     !fanTeamPosts.includes('from("team_fan_group_members")') ||
