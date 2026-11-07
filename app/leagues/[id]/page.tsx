@@ -552,7 +552,7 @@ export default function LeagueDetailPage() {
         )}
       </section>
 
-      {hasAccess ? (
+      {hasAccess && (
         <>
           <section className="grid">
             <div className="card">
