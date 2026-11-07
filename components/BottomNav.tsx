@@ -82,9 +82,10 @@ export default function BottomNav() {
   useEffect(() => {
     let active = true;
     if (!userId) { setAccountType(null); return; }
-    void supabase.from("profiles").select("account_type").eq("id", userId).maybeSingle().then(({ data }) => {
-      if (active) setAccountType(data?.account_type || null);
-    });
+    setAccountType(null);
+    void supabase.from("profiles").select("account_type").eq("id", userId).maybeSingle().then(({ data, error }) => {
+      if (active) setAccountType(error ? null : data?.account_type || null);
+    }).catch(() => { if (active) setAccountType(null); });
     return () => { active = false; };
   }, [userId]);
   const fanAccount = accountType === "fan";
