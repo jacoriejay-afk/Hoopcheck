@@ -42,6 +42,11 @@ export default function PlayerProfilePage() {
     async function load() {
       const {data:{session}}=await supabase.auth.getSession();
       const user=session?.user;
+      if(user){
+        const {data:viewerProfile,error:viewerError}=await supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle();
+        if(viewerError || viewerProfile?.account_type==="fan"){window.location.replace("/dashboard");return;}
+        setViewerType(viewerProfile?.account_type||"");
+      }
 
       const { data, error } = await supabase
         .rpc("get_public_player_profile", { p_user_id: params.id });
@@ -101,8 +106,6 @@ export default function PlayerProfilePage() {
             (!ownSubscription.current_period_end || new Date(ownSubscription.current_period_end).getTime() > Date.now())
           );
         }
-        const {data:p}=await supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle();
-        setViewerType(p?.account_type||"");
         if(user.id!==params.id && p?.account_type==="player"){
           const {data:r}=await supabase.from("player_contact_requests").select("id").eq("player_id",params.id).eq("requester_id",user.id).eq("status","accepted").maybeSingle();
           setConnectionAccepted(!!r);
