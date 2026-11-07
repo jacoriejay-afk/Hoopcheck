@@ -582,7 +582,7 @@ export default function LeagueDetailPage() {
                 <p>Approved player experiences currently available for this league.</p>
                 <Link href={`/leagues/${league.id}/review`} className="btn">Add Your Experience</Link>
               </div>
-            ) : null}
+            )) : null}
           </section>
 
           <section className="hero">
