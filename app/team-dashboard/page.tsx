@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
+import ClubRosterManager from "../../components/ClubRosterManager";
 
 type Team = { id: string; name: string; country: string | null; city: string | null };
 type Claim = { id: string; entity_id: string; status: "pending" | "approved" | "rejected"; created_at: string };
@@ -128,6 +129,7 @@ export default function TeamDashboardPage() {
       <p className="muted">Manage your claimed team profile and publish official updates for supporters.</p>
     </section>
     {message && <p className="hc-claim-message" role="status">{message}</p>}
+    {approvedCount > 0 && teamId && <ClubRosterManager key={teamId} teamId={teamId} userId={userId} />}
     {approvedCount > 0 && <>
       <section className="dashboard-card" aria-label="Club command center" style={{ marginTop: 12 }}>
         <p className="eyebrow">CLUB COMMAND CENTER</p>
