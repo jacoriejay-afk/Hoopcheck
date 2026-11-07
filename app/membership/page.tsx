@@ -267,6 +267,13 @@ function MembershipContent() {
             <span className="muted"> You can keep using your current access or choose a paid membership below.</span>
           </div>
         )}
+        {isActive && subscription?.stripe_subscription_id && (
+          <MembershipComparison
+            audience={accountType === "fan" ? "fan" : "player"}
+            currentTier={hasActiveMembershipAtLeast(subscription, "premium") ? "premium" : hasActiveMembershipAtLeast(subscription, "pro") ? "pro" : "free"}
+            billingTerm={billingInterval}
+          />
+        )}
         {isActive && subscription?.stripe_subscription_id ? (
           <div className="active-card" id="manage-subscription">
             <div className="eyebrow">CURRENT MEMBERSHIP</div>
