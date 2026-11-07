@@ -69,7 +69,7 @@ export default function FanLivePage() {
     ]);
     setAccountType(profile?.account_type || "");
     const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription, isAdmin: isAdmin === true });
-    const fanCanChat = accountType === "fan" && entitlements.canUseLiveGameChat;
+    const fanCanChat = profile?.account_type === "fan" && entitlements.canUseLiveGameChat;
     const playerCanChat = profile?.account_type === "player" && entitlements.canUseLiveGameChat;
     const moderatorCanChat = entitlements.canUseLiveGameChat && isAdmin === true;
     const playerCanPredict = profile?.account_type === "player";
@@ -233,14 +233,13 @@ export default function FanLivePage() {
 
   if(loading)return <main className="page-shell hc-live-room"><div className="page-container"><HoopLoading label="Loading Live Game Hub…" /></div></main>;
   if(!userId)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">LIVE GAME HUB</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in to access Live Game Hub features available to your account.</p><Link className="btn" href="/login">Sign in</Link></section></div></main>;
-  if(!allowed)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM MEMBERS</p><h1>MEMBERSHIP REQUIRED</h1><p className="muted">An active Pro or Premium membership is required to join game chats. Free players can still make game predictions.</p><Link className="btn" href="/membership">View Membership</Link></section></div></main>;
 
   return <main className="page-shell hc-live-room">
       <FanBasketballSideSwitch /><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/live-games">All Games</Link><Link href="/teams">Teams</Link></nav></header>
     <section className="hero-card hc-live-room-hero"><div><p className="eyebrow">HOOPCHECK · LIVE GAME HUB</p><h1>LIVE GAME CHAT<span>.</span></h1><p className="muted">Real-time conversation with members watching the same game.</p></div><div className="hc-live-presence-chip"><span className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"member":"members"} in room</div></section>
     {!allowed ? <section className="dashboard-card hc-live-empty-state">
-      {profile?.account_type === "fan" ? <><h2>Fan Pro or Premium required for Live Games</h2><p className="muted">Upgrade your fan membership to browse fixtures and join men's and women's game chats.</p><Link href="/membership" className="btn">View Fan Membership</Link></>
+      {accountType === "fan" ? <><h2>Fan Pro or Premium required for Live Games</h2><p className="muted">Upgrade your fan membership to browse fixtures and join men's and women's game chats.</p><Link href="/membership" className="btn">View Fan Membership</Link></>
         : !userId ? <><h2>Sign in to view Live Games</h2><Link href="/login" className="btn">Sign In</Link></>
         : <><h2>Live Games are available to players and fans</h2><p className="muted">An active Pro or Premium membership is required for the full Live Game Hub.</p><Link href="/membership" className="btn">View Membership</Link></>}
     </section> : !games.length?<section className="dashboard-card"><h2>No games available</h2><p className="muted">Check back when the game schedule is updated.</p><Link href="/live-games" className="btn">Browse Games</Link></section>:<section className="hc-live-room-grid">
