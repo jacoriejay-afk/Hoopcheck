@@ -553,6 +553,8 @@ try {
         await page.locator("main.hc-team-fan-group-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
         await page.locator("main.hc-team-fan-group-page .hc-team-fan-group-composer textarea").waitFor({ state: "visible", timeout: 15000 });
         await page.locator("main.hc-team-fan-group-page .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
+        const lockedTarget = (await page.locator("main.hc-team-fan-group-page .hc-team-group-posting-target").innerText()).trim();
+        if (!lockedTarget.includes("Posting to") || !lockedTarget.includes(teamFixture.name) || !lockedTarget.includes("Fan Group")) errors.push("team-hub group: composer does not explain its locked club/group destination: " + lockedTarget);
       }
       if (requestedPath === "/theme-card-audit") {
         const previews = await page.locator("main.hc-card-audit-page .hc-card-audit-preview").count();
