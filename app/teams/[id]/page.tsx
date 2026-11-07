@@ -586,7 +586,7 @@ export default function TeamDetailPage() {
   return (
     <main className="hc-entity-profile-page hc-team-entity-profile">
 
-<section className="hero hc-team-profile-hero hc-social-profile-header hc-team-branded-hero" style={{"--hc-team-hue": String([...team.id].reduce((n,c)=>n+c.charCodeAt(0),0)%360)} as React.CSSProperties} id="overview" aria-labelledby="hc-team-profile-title">
+<section className="hero hc-team-profile-hero hc-social-profile-header hc-team-branded-hero" data-team-city={team.city || team.country || ""} style={{"--hc-team-hue": String([...team.id].reduce((n,c)=>n+c.charCodeAt(0),0)%360)} as React.CSSProperties} id="overview" aria-labelledby="hc-team-profile-title">
         <div className="hc-team-profile-topline">
           <TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={88} className="hc-team-profile-logo" />
           <FollowButton targetType="team" targetId={team.id} variant="club" showCount={false} showNotifications={false} onCountChange={setTeamFollowerCount} />
