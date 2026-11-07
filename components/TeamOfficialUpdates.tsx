@@ -65,7 +65,7 @@ export default function TeamOfficialUpdates({ teamId }: { teamId?: string }) {
           {post.teams?.name || labels.fallback}
           <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: ".08em", color: "var(--orange)", border: "1px solid var(--orange)", borderRadius: 999, padding: "3px 7px" }}>{labels.official}</span>
         </Link>
-        {post.image_url && <img src={post.image_url} alt={"Official update from " + (post.teams?.name || "team")} loading="lazy" style={{ display: "block", width: "100%", maxHeight: 420, objectFit: "cover", borderRadius: 12, marginTop: 12 }} />}
+        {post.image_url && <img src={post.image_url} alt={labels.kicker + ": " + (post.teams?.name || labels.fallback)} loading="lazy" style={{ display: "block", width: "100%", maxHeight: 420, objectFit: "cover", borderRadius: 12, marginTop: 12 }} />}
         <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{post.body}</p>
         <small className="muted">{formatDate(post.created_at, { dateStyle: "medium", timeStyle: "short" })}</small>
       </article>)}
