@@ -153,3 +153,10 @@
 .hc-smooth-presign-reset{margin:8px 0 20px;padding:9px 14px;border:1px solid var(--hc-border,var(--border));border-radius:9px;background:transparent;color:var(--hc-text-primary,var(--ink));font:inherit;font-size:12px;font-weight:700;cursor:pointer;}
 .hc-smooth-presign-reset:disabled{opacity:.45;cursor:default;}
 .hc-smooth-presign-reset:focus-visible{outline:2px solid #ff5a1f;outline-offset:3px;}
+
+.hc-smooth-presign-dashboard-link{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:12px 0 18px;padding:14px 16px;border:1px solid var(--hc-border,var(--border));border-left:3px solid #ff5a1f;border-radius:12px;background:var(--hc-surface-raised,var(--paper));color:var(--hc-text-primary,var(--ink));text-decoration:none;}
+.hc-smooth-presign-dashboard-link>span{display:flex;flex-direction:column;gap:4px;min-width:0;}
+.hc-smooth-presign-dashboard-link small{font-size:10px;font-weight:800;letter-spacing:.08em;color:#ff5a1f;}
+.hc-smooth-presign-dashboard-link strong{font-size:17px;}
+.hc-smooth-presign-dashboard-link span span{font-size:12px;opacity:.8;line-height:1.4;}
+.hc-smooth-presign-dashboard-link:focus-visible{outline:2px solid #ff5a1f;outline-offset:3px;}
