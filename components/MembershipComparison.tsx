@@ -8,11 +8,11 @@ export default function MembershipComparison({ audience, currentTier, billingTer
   onSelect?: (tier: "pro" | "premium") => void; blockedFeature?: string;
 }) {
   const perks = blockedFeature ? PLAN_PERKS[audience].filter(p => p.label === blockedFeature) : PLAN_PERKS[audience];
-  return <section aria-label={audience === "fan" ? "Fan membership comparison" : "Player membership comparison"}>
+  return <section className="hc-membership-comparison" aria-label={audience === "fan" ? "Fan membership comparison" : "Player membership comparison"}>
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,220px),1fr))",gap:12}}>
-      {(["free","pro","premium"] as const).map(tier => <article key={tier} className="plan-card" style={{border:currentTier===tier?"2px solid var(--hc-orange, #ff5a1f)":undefined,padding:18}}>
+      {(["free","pro","premium"] as const).map(tier => <article key={tier} className={currentTier===tier ? "plan-card hc-membership-plan is-current" : "plan-card hc-membership-plan"} style={{border:currentTier===tier?"2px solid var(--hc-orange, #ff5a1f)":undefined,padding:18}}>
         <div className="eyebrow">{audience.toUpperCase()} MEMBERSHIP</div>
-        <h3>{tier[0].toUpperCase()+tier.slice(1)} {currentTier===tier && <small>· CURRENT</small>}</h3>
+        <h3>{tier[0].toUpperCase()+tier.slice(1)} {currentTier===tier && <small aria-label="Your current membership">· CURRENT</small>}</h3>
         <p className="price"><strong>{tier==="free"?"Free":PLAN_PRICES[tier][billingTerm]}</strong> {tier!=="free" && <span>{BILLING_LABELS[billingTerm]}</span>}</p>
         <ul style={{listStyle:"none",padding:0}}>
           {perks.map(perk => { const included=isAtLeastTier(tier,perk.minimum);const newlyIncluded=included&&!isAtLeastTier(currentTier,perk.minimum);

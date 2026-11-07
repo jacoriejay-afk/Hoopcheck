@@ -44,7 +44,7 @@ export default function CategoryTile({
   return (
     <Link
       href={href}
-      className={`hc-category-tile ${className}`.trim()}
+      className={`hc-category-tile hc-smooth-card hc-smooth-press ${className}`.trim()}
       data-category={category}
       style={{ "--category-color": color } as CSSProperties}
     >

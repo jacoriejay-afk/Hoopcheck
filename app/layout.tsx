@@ -27,6 +27,7 @@ import "./hoopcheck-ia1-home.css";
 import "./hoopcheck-brand-navigation.css";
 import "./hoopcheck-reference-identity.css";
 import "./hoopcheck-pastel-profiles.css";
+import "./hoopcheck-smooth-experience.css";
 import OfflineRuntime from "../components/OfflineRuntime";
 import ThemeProvider from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
@@ -45,6 +46,7 @@ import "./hoopcheck-layout-system.css";
 import "./hoopcheck-desk-fix-2.css";
 import "./hoopcheck-desk-3.css";
 import "./hoopcheck-hub-empty-state-pairing.css";
+import "./hoopcheck-preview-mobile-hotfix.css";
 import { SITE_URL } from "../lib/site-url";
 
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });

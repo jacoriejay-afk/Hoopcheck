@@ -34,9 +34,9 @@ export default function TeamDirectoryRow({
   const { t } = useLanguage();
   const hasTrustScore = typeof trustScore === "number" && Number.isFinite(trustScore);
   return (
-    <Surface className={"hc-team-directory-row hc-scout-card hc-team-directory-row--" + kind}>
+    <Surface className={"hc-team-directory-row hc-scout-card hc-smooth-card hc-dossier-card hc-team-directory-row--" + kind}>
       <Link href={href} className="hc-team-directory-row__main" aria-label={t("openTeamProfile") + ": " + name}>
-        <span className="hc-scout-card__identity">
+        <span className="hc-scout-card__identity"><span className="hc-dossier-card__kicker">CLUB DOSSIER · {kind === "womens" ? "WOMEN" : "MEN"}</span>
           <TeamLogo name={name} logoUrl={logoUrl} logoBg={logoBg} size={48} />
           <span className="hc-scout-card__identity-copy">
             <h2 title={name}>{name}</h2>

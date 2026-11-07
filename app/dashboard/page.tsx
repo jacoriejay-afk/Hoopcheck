@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
+import HomePulse from "../../components/HomePulse";
 import SearchBar from "../../components/SearchBar";
 import { useLanguage } from "../../components/LanguageProvider";
 import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
@@ -41,13 +42,16 @@ export default function DashboardPage() {
   const [teams,setTeams] = useState<Team[]>([]);
   const [reviews,setReviews] = useState<Review[]>([]);
   const [feedPost,setFeedPost] = useState<FeedPost|null>(null);
-  const [liveCounts,setLiveCounts] = useState({live:0,upcoming:0});
+  const [liveCounts,setLiveCounts] = useState<{live:number|null;upcoming:number|null}>({live:null,upcoming:null});
   const [hasFeedAccess,setHasFeedAccess] = useState(false);
   const [loading,setLoading] = useState(true);
+  const [loadError,setLoadError] = useState(false);
+  const [reloadKey,setReloadKey] = useState(0);
 
   useEffect(() => {
     let mounted = true;
     async function loadHome() {
+      if(mounted){setLoading(true);setLoadError(false);}
       const {data:{session}} = await withTimeout<any>(getCachedSession(),7000,{data:{session:null},error:new Error("session-timeout")});
       const user = session?.user;
       if (!user) { if(mounted) router.replace("/login?next=/dashboard"); return; }
@@ -94,29 +98,32 @@ export default function DashboardPage() {
       }
 
       if (p?.account_type === "fan" && activeMember) {
-        const {data:games} = await supabase.from("fan_live_games").select("status,scheduled_at").in("status",["live","scheduled"]).order("scheduled_at",{ascending:true}).limit(200);
+        const {data:games,error:gamesError} = await supabase.from("fan_live_games").select("status,scheduled_at").in("status",["live","scheduled"]).order("scheduled_at",{ascending:true}).limit(200);
         const now = Date.now();
-        if (mounted) setLiveCounts({live:(games||[]).filter((g:any)=>g.status==="live").length,upcoming:(games||[]).filter((g:any)=>g.status==="scheduled" && (!g.scheduled_at || new Date(g.scheduled_at).getTime()>=now)).length});
+        if (mounted && !gamesError) setLiveCounts({live:(games||[]).filter((g:any)=>g.status==="live").length,upcoming:(games||[]).filter((g:any)=>g.status==="scheduled" && (!g.scheduled_at || new Date(g.scheduled_at).getTime()>=now)).length});
       }
       if (mounted) setLoading(false);
     }
-    loadHome().catch((error)=>{console.error("Unable to load HoopCheck home:",error);if(mounted)setLoading(false);});
+    loadHome().catch((error)=>{console.error("Unable to load HoopCheck home:",error);if(mounted){setLoadError(true);setLoading(false);}});
     return ()=>{mounted=false;};
-  },[router,basketballSide]);
+  },[router,basketballSide,reloadKey]);
 
   const displayName = profile?.display_name || [profile?.first_name,profile?.last_name].filter(Boolean).join(" ") || email.split("@")[0] || (profile?.account_type === "fan" ? t("fan") : "Player");
   const completion = calculateProfileCompletion(profile).percentage;
 
   if(loading) return <main className="page-shell dashboard-page"><div className="page-container"><HoopLoading label={t("loadingDashboard")}/></div></main>;
 
+  if(loadError)return <main className="page-shell dashboard-page"><div className="page-container"><div role="alert" className="hc-smooth-inbox-error"><strong>Dashboard unavailable.</strong> Please try again. <button type="button" onClick={()=>setReloadKey(v=>v+1)}>Retry dashboard</button></div></div></main>;
+
   if(profile?.account_type==="fan") return (
     <main className="page-shell hc-ia-home"><div className="page-container">
       <header className="hc-ia-welcome"><p className="eyebrow">{t("home.fanEyebrow")}</p><h1>{t("home.fanTitle")}<span>.</span></h1><p className="muted">{t("home.fanDescription")}</p><div className="hc-ia-identity"><span className="hc-ia-avatar">{displayName.charAt(0).toUpperCase()}</span><span><small>{t("home.signedIn")}</small><strong>{displayName}</strong></span></div></header>
+      <HomePulse live={liveCounts.live} upcoming={liveCounts.upcoming} followedClubs={teams.length} fan/>
       <section className="hc-ia-section"><h2>{t("home.fanSide")}</h2><div className="hc-ia-fan-grid">
         <Link href="/team-hub" className="hc-ia-door"><CategoryIconTile category="teams" size="sm"/><span><strong>{t("home.teamHub")}</strong><small>{t("home.teamHubDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
         <Link href="/fan-feed" className="hc-ia-door"><CategoryIconTile category="reviews" size="sm"/><span><strong>{t("home.fanFeed")}</strong><small>{t("home.fanFeedDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
         <Link href="/fans" className="hc-ia-door"><CategoryIconTile category="reviews" icon="users" size="sm"/><span><strong>{t("home.findFan")}</strong><small>{t("home.findFanDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-        <Link href="/live-games" className="hc-ia-door"><CategoryIconTile category="leagues" size="sm"/><span><strong>{t("home.liveGames")}</strong><small>{liveCounts.live} live · {liveCounts.upcoming} upcoming</small></span><HoopIcon name="chevron-right" size={18}/></Link>
+        <Link href="/fan-live" className="hc-ia-door"><CategoryIconTile category="leagues" size="sm"/><span><strong>{t("home.liveGames")}</strong><small>{liveCounts.live===null?"Games hub":`${liveCounts.live} live · ${liveCounts.upcoming ?? "—"} upcoming`}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
       </div></section>
       <Link href="/account" className="hc-ia-account-link">{t("home.accountSettings")} <HoopIcon name="arrow-right" size={16}/></Link>
     </div></main>
@@ -135,7 +142,10 @@ export default function DashboardPage() {
 
         {completion < 100 && <Link href="/account#edit-profile" className="hc-ia-completion"><span><strong>{t("home.completeProfile")}</strong><small>{t("home.profileCompletion").replace("{percent}", String(completion))}</small></span><span>{t("home.continue")} <HoopIcon name="arrow-right" size={16}/></span></Link>}
 
-        <Link href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>{t("home.liveGames")}</strong><small>{t("home.liveDescription")}</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></Link>
+        <HomePulse live={null} upcoming={null} followedClubs={teams.length} recentReviews={reviews.length}/>
+        <Link href="/live-games" className="hc-ia-live-strip"><span className={liveCounts.live!==null && liveCounts.live>0 ? "hc-ia-live-dot" : "hc-ia-live-dot hc-ia-live-dot--inactive"} aria-hidden="true"/><span><strong>{t("home.liveGames")}</strong><small>{t("home.liveDescription")}</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></Link>
+
+        {profile?.account_type==="player" && <Link href="/pre-sign" className="hc-smooth-presign-dashboard-link hc-smooth-card"><span><small>PLAYER INTELLIGENCE</small><strong>Pre-Sign Check</strong><span>Six checks to research a club before you commit to a contract.</span></span><HoopIcon name="arrow-right" size={18}/></Link>}
 
         <section className="hc-ia-section">
           <div className="hc-ia-section-heading"><div><p className="eyebrow">{t("home.shortcuts")}</p><h2>{t("home.quickAccess")}</h2></div><Link href="/directory">{t("home.exploreAll")} <HoopIcon name="arrow-right" size={15}/></Link></div>
