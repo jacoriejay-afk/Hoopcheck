@@ -148,7 +148,6 @@ export default function LeagueDetailPage() {
     useState(false);
   const [accountType, setAccountType] = useState<string>("");
   const [canReadFullReviews, setCanReadFullReviews] = useState(false);
-  const [reviewTier, setReviewTier] = useState<"free" | "pro" | "premium">("free");
 
   const [loading, setLoading] =
     useState(true);
@@ -272,26 +271,6 @@ export default function LeagueDetailPage() {
       const subscription =
         subscriptionResult.data;
 
-      const currentPeriodEnd =
-        subscription?.current_period_end
-          ? new Date(
-              subscription.current_period_end
-            )
-          : null;
-
-      const subscriptionIsActive =
-        (
-          subscription?.status ===
-            "active" ||
-          subscription?.status ===
-            "trialing"
-        ) &&
-        (
-          !currentPeriodEnd ||
-          currentPeriodEnd >
-            new Date()
-        );
-
       const isAdmin =
         adminResult.data === true;
 
@@ -302,7 +281,6 @@ export default function LeagueDetailPage() {
       });
       const access = entitlements.hasPaidMembership || isAdmin;
       setCanReadFullReviews(entitlements.canReadFullReviews);
-      setReviewTier(entitlements.tier);
       setHasAccess(access);
 
       const { data: summaryData, error: summaryError } = access
@@ -478,7 +456,7 @@ export default function LeagueDetailPage() {
             ),
           0
         ) / reviews.length
-      : 0;
+      : (publicSummary.overall_rating ?? 0);
 
   const communication =
     reviews.length > 0
