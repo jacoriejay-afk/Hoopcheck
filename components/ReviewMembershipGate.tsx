@@ -5,7 +5,7 @@ type ReviewMembershipGateProps = {
   description?: string;
   actionLabel?: string;
   accountType?: string;
-  tier?: "free" | "pro" | "premium" | "member";
+  tier?: "free" | "pro" | "premium" | "member" | "player";
 };
 
 export default function ReviewMembershipGate({
