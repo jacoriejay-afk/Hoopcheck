@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { isAtLeastTier } from "../lib/membership-tier";
+import { useLanguage } from "./LanguageProvider";
 
 export type BasketballSide = "mens" | "womens";
 const STORAGE_KEY = "hoopcheck:fan-basketball-side";
@@ -28,6 +29,10 @@ export function useFanBasketballSide() {
 }
 
 export default function FanBasketballSideSwitch({ lockedHint = false }: { lockedHint?: boolean }) {
+  const { t } = useLanguage();
+  const mensLabel = t("mensTeams");
+  const womensLabel = t("womensTeams");
+  const sideLabel = `${mensLabel} / ${womensLabel}`;
   const [side, setSide] = useState<BasketballSide>("mens");
   const pathname = usePathname();
   const router = useRouter();
@@ -96,10 +101,10 @@ export default function FanBasketballSideSwitch({ lockedHint = false }: { locked
   if (!canSwitch) return lockedHint ? <div className="hc-fan-side-locked" role="note">🔒 Available on Fan Pro · <a href="/membership">Upgrade</a></div> : null;
 
   return (
-    <div className="hc-fan-side-switch-wrap" aria-label="Basketball side">
-      <div className="hc-fan-side-switch" role="group" aria-label="Choose basketball side">
-        <button type="button" aria-pressed={side === "mens"} className={side === "mens" ? "is-active is-mens" : ""} onClick={() => void choose("mens")}>MEN&apos;S</button>
-        <button type="button" aria-pressed={side === "womens"} className={side === "womens" ? "is-active is-womens" : ""} onClick={() => void choose("womens")}>WOMEN&apos;S</button>
+    <div className="hc-fan-side-switch-wrap" aria-label={sideLabel}>
+      <div className="hc-fan-side-switch" role="group" aria-label={sideLabel}>
+        <button type="button" aria-pressed={side === "mens"} className={side === "mens" ? "is-active is-mens" : ""} onClick={() => void choose("mens")}>{mensLabel}</button>
+        <button type="button" aria-pressed={side === "womens"} className={side === "womens" ? "is-active is-womens" : ""} onClick={() => void choose("womens")}>{womensLabel}</button>
       </div>
     </div>
   );
