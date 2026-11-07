@@ -26,3 +26,13 @@
  .hc-member-profile-page .hc-member-profile-actions .btn { min-width:0; font-size:12px !important; line-height:1.25; padding:10px !important; }
  .hc-member-profile-page .hc-member-profile-actions .hc-profile-public-button { color:#fff !important; }
 }
+
+/* Distinct, generated visual fallback for each club, not an official crest. */
+.hc-team-entity-profile .hc-team-branded-hero {
+ position:relative; isolation:isolate; overflow:hidden;
+ background:linear-gradient(110deg,rgba(9,9,12,.94),rgba(9,9,12,.78)),radial-gradient(ellipse at 83% 16%,hsl(var(--hc-team-hue) 67% 37%),transparent 65%),#141414 !important;
+ color:#f7f7f5 !important;
+}
+.hc-team-entity-profile .hc-team-branded-hero::before { content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.22;background:repeating-linear-gradient(135deg,transparent 0 46px,hsla(var(--hc-team-hue),85%,65%,.36) 47px 49px,transparent 50px 94px),radial-gradient(circle at 78% 42%,transparent 0 60px,rgba(255,255,255,.18) 61px 63px,transparent 64px 105px,rgba(255,255,255,.15) 106px 108px,transparent 109px); }
+.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-kicker { color:#ff8a54 !important; }
+.hc-team-entity-profile .hc-team-branded-hero h1,.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-meta { color:#f7f7f5 !important; }
