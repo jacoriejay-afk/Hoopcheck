@@ -81,7 +81,7 @@ export async function GET(request: Request) {
     const { data: rows, error } = await reviewQuery;
     if (error) throw error;
 
-    const reviews = (rows || []) as ReviewRow[];
+    const reviews = (rows || []) as unknown as ReviewRow[];
     const authorIds = Array.from(new Set(reviews.map(row => row.author_id).filter(Boolean)));
     const verifiedByAuthor: Record<string, boolean> = {};
     if (authorIds.length) {
