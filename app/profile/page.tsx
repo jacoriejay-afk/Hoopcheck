@@ -8,6 +8,7 @@ import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Surface from "../../components/Surface";
+import HoopPassport from "../../components/HoopPassport";
 import { useLanguage } from "../../components/LanguageProvider";
 import { calculateProfileCompletion } from "../../lib/profile-completion";
 
@@ -126,6 +127,7 @@ export default function ProfilePage() {
 
         </section>
 
+        <HoopPassport name={name} accountType={p.account_type||"member"} username={p.username} verified={Boolean(p.player_verified||p.coach_verified)} country={p.current_country} position={p.account_type==="player"?p.position:null} team={p.account_type==="player"?p.current_team:null}/>
         <section className="hc-profile-overview" aria-label={t("profileOverview")}>
           {profileCompletion < 100 && <div className="hc-profile-completion">
             <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href={"/account#profile-editor-field-" + nextFieldAnchor}>Complete profile <span aria-hidden="true">→</span></Link></div>
