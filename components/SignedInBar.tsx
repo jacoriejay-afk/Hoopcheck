@@ -20,7 +20,7 @@ export default function SignedInBar(){
       <Link href="/dashboard" onClick={()=>setMenuOpen(false)}>Dashboard</Link>
       <Link href="/search" onClick={()=>setMenuOpen(false)}>Search</Link>
       <Link href="/teams" onClick={()=>setMenuOpen(false)}>Teams</Link>
-      {accountType !== "fan" && <Link href="/players" onClick={()=>setMenuOpen(false)}>Players</Link>}
+      {accountType !== "" && accountType !== "fan" && <Link href="/players" onClick={()=>setMenuOpen(false)}>Players</Link>}
       <Link href="/leagues" onClick={()=>setMenuOpen(false)}>Leagues</Link>
       <Link href={accountType === "fan" ? "/fan-feed" : "/feed"} onClick={()=>setMenuOpen(false)}>{accountType === "fan" ? "Fan HoopFeed" : "Community Feed"}</Link>
       <Link href={profileHref} onClick={()=>setMenuOpen(false)}>Profile</Link>
