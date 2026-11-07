@@ -87,8 +87,7 @@ export default function BottomNav() {
     });
     return () => { active = false; };
   }, [userId]);
-  const [fanAccount, setFanAccount] = useState(false);
-  useEffect(() => { let alive = true; if (!signedIn) { setFanAccount(false); return; } void supabase.auth.getUser().then(async ({ data }) => { if (!data.user) return; const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", data.user.id).maybeSingle(); if (alive) setFanAccount(profile?.account_type === "fan"); }); return () => { alive = false; }; }, [signedIn]);
+  const fanAccount = accountType === "fan";
 
   if (!signedIn || pathname.startsWith("/admin")) return null;
 
