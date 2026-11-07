@@ -21,7 +21,7 @@ export default function NotificationsPage(){
   useEffect(()=>{
     let active=true;
     async function loadAlerts(){
-      setLoading(true);setErrorMessage("");setLoadFailed(false);
+      setLoading(true);setErrorMessage("");setLoadFailed(false);setItems([]);
       try{
         const {data:{session},error:sessionError}=await supabase.auth.getSession();
         if(!active)return;
@@ -41,7 +41,7 @@ export default function NotificationsPage(){
     return ()=>{active=false;};
   },[retryKey]);
   async function markAll(){
-    if(marking)return;
+    if(marking||loadFailed)return;
     setMarking(true);setErrorMessage("");
     try{
       const {data:{session},error:sessionError}=await supabase.auth.getSession();
