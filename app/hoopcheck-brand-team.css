@@ -56,8 +56,7 @@ html.theme-light .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profil
   background: rgba(255,255,255,.06);
 }
 .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-logo {
-  background: #fff;
-  border: 1px solid #d9d9d9;
+  border: 1px solid rgba(255,255,255,.18);
   border-radius: 14px;
 }
 .hc-team-entity-profile > .hc-team-profile-nav {
