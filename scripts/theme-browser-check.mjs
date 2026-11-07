@@ -338,7 +338,7 @@ try {
       else if (url.pathname.includes("/rest/v1/profiles")) {
         const fanSurfaceRoute = activeRoutePath === "/fan-feed" || activeRoutePath === "/team-hub" || activeRoutePath.startsWith("/team-hub/groups/") || activeRoutePath.startsWith("/womens/");
         const accountTypeQuery = (url.searchParams.get("select") || "").includes("account_type") && (url.searchParams.get("id") || "").startsWith("eq.");
-        const fanProfile = { ...profile, account_type: "fan" };
+        const fanProfile = { ...profile, account_type: "fan", preferred_basketball_side: "mens" };
         data = accountTypeQuery ? (fanSurfaceRoute ? fanProfile : profile) : single ? profile : [];
       }
       else if (url.pathname.includes("/rest/v1/subscriptions")) {
