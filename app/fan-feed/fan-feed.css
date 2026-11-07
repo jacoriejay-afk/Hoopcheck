@@ -70,8 +70,12 @@
 .hc-fan-feed-page .hc-fan-feed-target strong{font-size:13px}
 .hc-fan-feed-page .hc-fan-feed-group-label{display:flex;align-items:center;gap:8px;margin:-5px 0 12px 52px;font-size:11px}
 .hc-fan-feed-page .hc-fan-feed-group-label span{font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--gray-500)}
-.hc-fan-feed-page .hc-fan-feed-group-label strong{padding:5px 9px;border:1px solid var(--hc-border);border-radius:999px;background:var(--hc-surface-raised);color:var(--hc-foreground)}
+.hc-fan-feed-page .hc-fan-feed-group-label a{padding:5px 9px;border:1px solid var(--hc-border);border-radius:999px;background:var(--hc-surface-raised);color:var(--hc-foreground)}
 .hc-team-fan-group-page .hc-team-group-posting-target{display:grid;gap:4px;margin-bottom:10px}
 .hc-team-fan-group-page .hc-team-group-posting-target strong{font-size:13px}
 .hc-team-fan-group-page .hc-team-group-posting-target small{color:var(--gray-500);font-size:11px}
 @media(max-width:600px){.hc-fan-feed-page .hc-fan-feed-post-prompt{align-items:stretch}.hc-fan-feed-page .hc-fan-feed-post-prompt .btn{width:100%}.hc-fan-feed-page .hc-fan-feed-group-label{margin-left:0}}
+
+.hc-fan-feed-page .hc-fan-feed-group-label a{display:inline-flex;align-items:center;text-decoration:none;font-size:11px;font-weight:850;padding:5px 9px;border:1px solid var(--hc-border);border-radius:999px;background:var(--hc-surface-raised);color:var(--hc-foreground)}
+.hc-fan-feed-page .hc-fan-feed-join-required{display:grid;gap:10px;padding:15px;border:1px solid var(--hc-border);border-radius:12px;background:var(--hc-surface-raised);color:var(--hc-foreground)}
+.hc-fan-feed-page .hc-fan-feed-join-required .btn{justify-self:start}
