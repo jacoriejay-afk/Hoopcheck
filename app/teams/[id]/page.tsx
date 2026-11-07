@@ -579,17 +579,7 @@ export default function TeamDetailPage() {
         </div>
         <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
         {canReadFullReviews && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">LATEST PLAYER REVIEW</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || t("playerExperience")}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
-      {!canReadFullReviews && reviewTier === "free" && Boolean(accountType) ? (
-        <ReviewMembershipGate
-          title="Player reviews require an eligible membership"
-          description="Sign in with an eligible active membership to view full player reviews and ratings. Players and other eligible members keep their existing access."
-          actionLabel="Upgrade"
-          accountType={accountType}
-          tier={reviewTier}
-        />
-      ) : (
-        <>
-          <section className="hero" id="reviews">
+      <section className="hero" id="reviews">
             {canReadFullReviews ? (
               <Surface as="div" className="hc-entity-trust-score hc-team-reviews-trust-strip"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /><div className="hc-team-score-categories" aria-label="Category ratings">{([{label:"Communication",value:publicSummary.communication_rating},{label:"Professionalism",value:publicSummary.professionalism_rating},{label:"Development",value:publicSummary.development_rating},{label:"Payment",value:publicSummary.payment_rating}] as const).filter(item => item.value !== null).map(item => <span key={item.label}><small>{item.label}</small><strong>{Number(item.value).toFixed(1)}</strong></span>)}</div></Surface>
             ) : null}
@@ -601,14 +591,14 @@ export default function TeamDetailPage() {
               {membershipPlan === "premium" && accountType === "fan" ? t("teamRatingsAtGlance") : t("whatPlayersAreSaying")}
             </h2>
 
-            {reviewTier === "pro" && accountType === "fan" ? (
-              <div className="card hc-fan-review-teaser">
-                <div className="hc-fan-upgrade-banner"><strong>You're seeing the outline — Fan Premium unlocks every review and rating</strong><Link href="/membership" className="btn">Upgrade</Link></div>
-                <h3>Overall player rating</h3>
-                <div aria-label={publicSummary.overall_rating == null ? "Overall rating unavailable" : `Overall rating ${publicSummary.overall_rating.toFixed(1)} out of 5`} className="hc-review-star-row"><span aria-hidden="true">★★★★★</span>{publicSummary.overall_rating == null ? <span>—</span> : <strong>{publicSummary.overall_rating.toFixed(1)}/5</strong>}</div>
-                <h3>Category breakdown</h3>
-                <div className="hc-review-category-teaser">{["Communication","Professionalism","Development","Payment","Pay on time","Housing","Medical support","Coaching quality","Facilities","Playing time honesty"].map(label => <div key={label} className="hc-review-category-row"><span>{label}</span><span className="hc-review-score-blur" aria-label="Score available with Fan Premium">★★★★★</span></div>)}</div>
-              </div>
+            {!canReadFullReviews ? (
+              <ReviewMembershipGate
+                title="Player reviews require an eligible membership"
+                description="Sign in with an eligible active membership to view full player reviews and ratings."
+                actionLabel="Upgrade"
+                accountType={accountType}
+                tier={reviewTier}
+              />
             ) : reviewLoading ? (
               <p>
                 {t("loadingReviews")}
@@ -724,8 +714,6 @@ export default function TeamDetailPage() {
               </div>
             )}
           </section>
-        </>
-      )}
 
       <TeamPlayersHistory teamId={team.id} />
       <section className="hero" id="roster-board">
