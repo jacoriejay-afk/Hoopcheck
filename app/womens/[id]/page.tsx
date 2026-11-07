@@ -9,6 +9,8 @@ import HoopLoading from "../../../components/HoopLoading";
 import ClaimedTeamLogoEditor from "../../../components/ClaimedTeamLogoEditor";
 import TeamProfileHero from "../../../components/TeamProfileHero";
 import ReviewMembershipGate from "../../../components/ReviewMembershipGate";
+import TeamFanGroupEntry from "../../../components/TeamFanGroupEntry";
+import FanTeamPosts from "../../../components/FanTeamPosts";
 
 export default function WomensTeam(){
  const {formatDate,formatNumber,t}=useLanguage();
@@ -81,6 +83,7 @@ export default function WomensTeam(){
    <a href="#overview" aria-current="page">Overview</a>
    <a href="#reviews">Reviews</a>
  </nav>
+ <TeamFanGroupEntry teamId={team.id} />
  {canReview && <div className="entity-actions"><Link href={"/womens/" + team.id + "/review"} className="btn">Write a Review</Link></div>}
  <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} teamTable="womens_teams" onSaved={(logoUrl, logoBg) => setTeam((current:any) => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
  <section className="grid compact-grid">
@@ -105,5 +108,6 @@ export default function WomensTeam(){
       </>
     )}
   </Surface>
+  <FanTeamPosts teamId={team.id} />
   <div className="bottom-back"><button type="button" className="btn dark" onClick={()=>window.history.back()}>← {t("back")}</button></div></div></main>;
 }
