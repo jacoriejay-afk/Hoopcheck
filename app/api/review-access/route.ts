@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { calculateReviewSummary } from "../../../lib/review-summary";
+import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
 
 export const dynamic = "force-dynamic";
 
@@ -29,41 +30,44 @@ export async function GET(request: Request) {
     const db = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
     let accountType = "";
-    let plan = "";
-    let active = false;
+    let profile: { account_type?: string; basketball_type?: string | null; player_verified?: boolean; selected_womens_team_id?: string | null } | null = null;
+    let subscription: { plan?: string; status?: string; access_status?: string | null; current_period_end?: string | null } | null = null;
     let isAdmin = false;
     if (user) {
-      const [{ data: profile }, { data: subscription }] = await Promise.all([
-        db.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
-        db.from("subscriptions").select("plan,status,current_period_end").eq("user_id", user.id).maybeSingle(),
+      const [profileResult, subscriptionResult] = await Promise.all([
+        db.from("profiles").select("account_type,basketball_type,player_verified,selected_womens_team_id").eq("id", user.id).maybeSingle(),
+        db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
       ]);
+      profile = profileResult.data;
+      subscription = subscriptionResult.data;
       accountType = profile?.account_type || "";
-      plan = subscription?.plan || "";
-      active = ["active", "trialing"].includes(subscription?.status || "") &&
-        (!subscription?.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now());
-      const { data: admin } = await authClient.auth.getUser(bearer);
-      if (admin.user) {
-        const scoped = createClient(supabaseUrl, anonKey, {
-          global: { headers: { Authorization: "Bearer " + bearer } },
-          auth: { autoRefreshToken: false, persistSession: false },
-        });
-        const { data } = await scoped.rpc("is_current_user_admin_or_moderator");
-        isAdmin = data === true;
-      }
+      const scoped = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: "Bearer " + bearer } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data } = await scoped.rpc("is_current_user_admin_or_moderator");
+      isAdmin = data === true;
     }
 
+    const entitlements = getHoopCheckEntitlements({ accountType, subscription, isAdmin });
+    // Preserve the established paid-member review access for coaches, agents and club admins.
     const tier = isAdmin ? "premium" :
-      accountType === "player" ? "player" :
-      accountType === "fan" && active && plan === "premium" ? "premium" :
-      accountType === "fan" && active && plan === "pro" ? "pro" :
-      accountType !== "fan" && accountType !== "" && active ? "member" : "free";
-    const fullRead = ["premium", "player", "member"].includes(tier);
+      accountType && accountType !== "fan" && accountType !== "player" && entitlements.hasPaidMembership ? "member" :
+      entitlements.tier;
+    const fullRead = entitlements.canReadFullReviews;
+    const canWrite = entitlements.canWriteReviews && (
+      entityType !== "womens-team" ||
+      (profile?.basketball_type === "womens" && profile.player_verified === true &&
+        profile.selected_womens_team_id === entityId)
+    );
+
     const targetColumn = entityType === "team" ? "team_id" : entityType === "coach" ? "coach_id" : "womens_team_id";
     const table = entityType === "womens-team" ? "womens_team_reviews" : "reviews";
 
     const response: Record<string, unknown> = {
       tier,
-      canWrite: accountType === "player" && entityType !== "womens-team",
+      canWrite,
+      canReadFull: fullRead,
       categories: ["Communication", "Professionalism", "Development", "Payment", "Pay on time", "Housing", "Medical support", "Coaching quality", "Facilities", "Playing time honesty"],
       summary: null,
       reviews: [],
