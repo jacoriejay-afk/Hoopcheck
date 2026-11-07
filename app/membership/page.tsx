@@ -248,8 +248,7 @@ function MembershipContent() {
           Decide smarter.
         </h1>
         <p>
-          Unlock full coach, team, and league ratings and reviews from the players
-          who have already been there.
+          {accountType === "fan" ? "Follow the teams you care about and stay close to every game." : "Unlock full coach, team, and league ratings and reviews from the players who have already been there."}
         </p>
         <div className="hero-links">
           <Link href="/search">Global Research Search →</Link>
@@ -310,11 +309,9 @@ function MembershipContent() {
             <div className="section-heading">
               <div className="eyebrow">CHOOSE YOUR ACCESS</div>
               <h2>
-                Built for players
-                <br />
-                making serious decisions.
+                {accountType === "fan" ? <>Built for fans<br />who follow every move.</> : <>Built for players<br />making serious decisions.</>}
               </h2>
-              <p>Start with the level of research access that fits you.</p>
+              <p>{accountType === "fan" ? "Choose the fan access that fits how you follow basketball." : "Start with the level of research access that fits you."}</p>
             </div>
 
             {accountType === "player" && (
@@ -357,15 +354,10 @@ function MembershipContent() {
                   </div>
                 </div>
                 <p className="plan-description">
-                  Full access to the core HoopCheck research experience.
+                  {accountType === "fan" ? "The essentials for following your teams and connecting with other fans." : "Full access to the core HoopCheck research experience."}
                 </p>
                 <ul>
-                  <li>Full coach ratings and reviews</li>
-                  <li>Full team ratings and reviews</li>
-                  <li>Full league ratings and reviews</li>
-                  <li>Coach research</li>
-                  <li>Team research</li>
-                  <li>League research</li>
+                  {accountType === "fan" ? <><li>Follow all teams</li><li>Fan HoopFeed and team updates</li><li>Live game chats</li><li>Game alerts and team activity</li></> : <><li>Full coach ratings and reviews</li><li>Full team ratings and reviews</li><li>Full league ratings and reviews</li><li>Coach research</li><li>Team research</li><li>League research</li></>}
                 </ul>
                 <button
                   className="btn plan-button"
@@ -389,16 +381,10 @@ function MembershipContent() {
                   </div>
                 </div>
                 <p className="plan-description">
-                  Everything in Pro plus expanded research capabilities.
+                  {accountType === "fan" ? "Everything in Fan Pro, plus full team ratings and reviews." : "Everything in Pro plus expanded research capabilities."}
                 </p>
                 <ul>
-                  <li>Everything in Pro</li>
-                  <li>Advanced research tools</li>
-                  <li>Expanded coach insights</li>
-                  <li>Expanded team insights</li>
-                  <li>Expanded league insights</li>
-                  <li>Premium discovery features</li>
-                  <li>Priority access to new features</li>
+                  {accountType === "fan" ? <><li>Everything in Fan Pro</li><li>Full team ratings and reviews</li><li>Expanded team insights</li><li>Premium fan discovery features</li><li>Priority access to new fan features</li></> : <><li>Everything in Pro</li><li>Advanced research tools</li><li>Expanded coach insights</li><li>Expanded team insights</li><li>Expanded league insights</li><li>Premium discovery features</li><li>Priority access to new features</li></>}
                 </ul>
                 <button
                   className="btn plan-button"
@@ -434,13 +420,10 @@ function MembershipContent() {
       <section className="hero bottom-cta">
         <div className="eyebrow">KNOW BEFORE YOU GO</div>
         <h2>
-          Your next contract
-          <br />
-          deserves research.
+          {accountType === "fan" ? <>Your next game<br />deserves a closer look.</> : <>Your next contract<br />deserves research.</>}
         </h2>
         <p>
-          Don't rely on one conversation. Research the people, teams, and leagues
-          that could shape your career.
+          {accountType === "fan" ? "Follow your teams, catch live conversations, and make every game more engaging." : "Do not rely on one conversation. Research the people, teams, and leagues that could shape your career."}
         </p>
         <div className="actions">
           <Link href="/search" className="btn">
