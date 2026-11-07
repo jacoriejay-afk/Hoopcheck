@@ -12,15 +12,18 @@ import ReviewMembershipGate from "../../../components/ReviewMembershipGate";
 
 export default function WomensTeam(){
  const {formatDate,formatNumber,t}=useLanguage();
- const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [accountType,setAccountType]=useState(""); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [teamFollowerCount,setTeamFollowerCount]=useState(0);
+ const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [accountType,setAccountType]=useState(""); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [teamFollowerCount,setTeamFollowerCount]=useState(0); const [trustScoreData,setTrustScoreData]=useState<any>(null);
  useEffect(() => {
    let active = true;
    (async () => {
-     const { data: teamData, error: teamError } = await supabase.from("womens_teams")
-       .select("id,name,country,city,league_id,league_name,logo_url,logo_bg").eq("id", id).maybeSingle();
+     const [{ data: teamData, error: teamError }, { count: followerCount }] = await Promise.all([
+       supabase.from("womens_teams").select("id,name,country,city,league_id,league_name,logo_url,logo_bg").eq("id", id).maybeSingle(),
+       supabase.from("follow_relationships").select("id", { count: "exact", head: true }).eq("target_type", "team").eq("target_id", id),
+     ]);
      if (teamError) console.error("Unable to load women’s team profile:", teamError);
      if (!active) return;
      setTeam(teamData || null);
+     setTeamFollowerCount(followerCount || 0);
      const { data: { session } } = await supabase.auth.getSession();
      if (session?.user) {
        const response = await fetch(`/api/review-access?entityType=womens-team&entityId=${encodeURIComponent(id)}`, {
@@ -35,6 +38,15 @@ export default function WomensTeam(){
        setCanSeeRatings(tier !== "free");
        setCanViewReviews(fullRead);
        setCanReview(payload?.canWrite === true);
+       if (fullRead) {
+         const trustResponse = await fetch(`/api/trust-score?entityType=womens-team&entityId=${encodeURIComponent(id)}`, {
+           headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store",
+         });
+         const trustPayload = trustResponse.ok ? await trustResponse.json() : null;
+         if (active) setTrustScoreData(trustPayload);
+       } else {
+         setTrustScoreData(null);
+       }
        const summary = payload?.summary;
        if (summary) {
          setRatingCount(Number(summary.review_count || 0));
@@ -42,7 +54,7 @@ export default function WomensTeam(){
        }
        setReviews(fullRead && Array.isArray(payload?.reviews) ? payload.reviews : []);
      } else {
-       setCanSeeRatings(false); setCanViewReviews(false); setCanReview(false); setReviewTier("free"); setAccountType(""); setReviews([]);
+       setCanSeeRatings(false); setCanViewReviews(false); setCanReview(false); setReviewTier("free"); setAccountType(""); setTrustScoreData(null); setReviews([]);
      }
      if (active) setLoading(false);
    })().catch(error => { console.error("Unable to load women’s team review access:", error); if (active) setLoading(false); });
@@ -62,6 +74,7 @@ export default function WomensTeam(){
    logoBg={team.logo_bg}
    reviewCount={ratingCount}
    followerCount={teamFollowerCount}
+   trustScore={trustScoreData ? { score: trustScoreData.score ?? null, explanation: trustScoreData.explanation || "Trust Score", reviewCount: trustScoreData.reviewCount ?? ratingCount, verifiedReviewCount: trustScoreData.verifiedReviewCount ?? 0 } : null}
    onFollowerCountChange={setTeamFollowerCount}
  />
  <nav className="hc-team-profile-nav" aria-label="Team profile sections">
