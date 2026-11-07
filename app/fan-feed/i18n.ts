@@ -173,6 +173,33 @@ export function fanFeedRefreshLabel(language: Language, isRefreshing: boolean): 
   return isRefreshing ? labels.refreshing : "↻ " + labels.refresh;
 }
 
+
+const refreshErrorCopy: Record<Language, string> = {
+  en: "Could not refresh the feed. Please try again.",
+  es: "No se pudo actualizar el feed. Inténtalo de nuevo.",
+  fr: "Impossible d’actualiser le fil. Réessayez.",
+  de: "Der Feed konnte nicht aktualisiert werden. Bitte versuche es erneut.",
+  tr: "Akış yenilenemedi. Lütfen tekrar deneyin.",
+  pt: "Não foi possível atualizar o feed. Tente novamente.",
+  it: "Impossibile aggiornare il feed. Riprova.",
+  el: "Δεν ήταν δυνατή η ανανέωση της ροής. Δοκιμάστε ξανά.",
+  ar: "تعذر تحديث الموجز. يُرجى المحاولة مرة أخرى.",
+  ru: "Не удалось обновить ленту. Попробуйте ещё раз.",
+  az: "Lenti yeniləmək mümkün olmadı. Yenidən cəhd edin.",
+  pl: "Nie udało się odświeżyć kanału. Spróbuj ponownie.",
+  zh: "动态刷新失败，请重试。",
+  ja: "フィードを更新できませんでした。もう一度お試しください。",
+  sr: "Nije moguće osvežiti feed. Pokušajte ponovo.",
+  fi: "Syötteen päivitys epäonnistui. Yritä uudelleen.",
+  he: "לא ניתן לרענן את הפיד. נסו שוב.",
+  lt: "Nepavyko atnaujinti srauto. Bandykite dar kartą.",
+  uk: "Не вдалося оновити стрічку. Спробуйте ще раз.",
+};
+
+export function fanFeedRefreshError(language: Language): string {
+  return refreshErrorCopy[language] || refreshErrorCopy.en;
+}
+
 function withTeam(template: string, teamName: string) {
   return template.replaceAll("{team}", teamName);
 }
