@@ -160,3 +160,6 @@
 .hc-smooth-presign-dashboard-link strong{font-size:17px;}
 .hc-smooth-presign-dashboard-link span span{font-size:12px;opacity:.8;line-height:1.4;}
 .hc-smooth-presign-dashboard-link:focus-visible{outline:2px solid #ff5a1f;outline-offset:3px;}
+
+.hc-smooth-inbox-error button{margin-left:8px;border:1px solid currentColor;border-radius:7px;background:transparent;color:inherit;padding:5px 9px;font:inherit;font-weight:700;cursor:pointer;}
+.hc-smooth-inbox-error button:focus-visible{outline:2px solid #ff5a1f;outline-offset:3px;}
