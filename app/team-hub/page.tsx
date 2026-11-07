@@ -43,13 +43,15 @@ export default function TeamHubPage(){
       const ids=(follows||[]).map((x:any)=>x.target_id).filter(Boolean);
       if(!ids.length){setTeams([]);setGames([]);setLoading(false);return;}
       const teamQuery = basketballSide==="womens"
-        ? await supabase.from("womens_teams").select("id,name,logo_url,logo_bg,league_name,country,city").in("id",ids).order("name",{ascending:true})
-        : await supabase.from("teams").select("id,name,logo_url,logo_bg,league_name,country,city").in("id",ids).eq("basketball_type","mens").order("name",{ascending:true});
+        ? await supabase.from("womens_teams").select("id,name,logo_url,logo_bg,league_name,country,city").in("id",ids).eq("active",true).order("name",{ascending:true})
+        : await supabase.from("teams").select("id,name,logo_url,logo_bg,league_name,country,city").in("id",ids).eq("basketball_type","mens").eq("active",true).order("name",{ascending:true});
       if(!current())return;
       if(teamQuery.error)throw teamQuery.error;
       setTeams((teamQuery.data||[]) as Team[]);
-      if(basketballSide==="mens"){
-        const {data:gameRows,error:gameError}=await supabase.from("fan_live_games").select("id,team_id,opponent_name,status,scheduled_at,home_score,away_score,period_label,league_name").in("team_id",ids).in("status",["scheduled","live","in_progress"]).order("scheduled_at",{ascending:true}).limit(100);
+      const followedTeamIds=(teamQuery.data||[]).map((team:any)=>team.id);
+      setMessage("");
+      if(basketballSide==="mens" && followedTeamIds.length){
+        const {data:gameRows,error:gameError}=await supabase.from("fan_live_games").select("id,team_id,opponent_name,status,scheduled_at,home_score,away_score,period_label,league_name").in("team_id",followedTeamIds).in("status",["scheduled","live","in_progress"]).order("scheduled_at",{ascending:true}).limit(100);
         if(!current())return;
         if(gameError)throw gameError;
         const now=Date.now();
