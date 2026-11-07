@@ -113,12 +113,7 @@ export default function DashboardPage() {
   if(profile?.account_type==="fan") return (
     <main className="page-shell hc-ia-home"><div className="page-container">
       <header className="hc-ia-welcome"><p className="eyebrow">{t("home.fanEyebrow")}</p><h1>{t("home.fanTitle")}<span>.</span></h1><p className="muted">{t("home.fanDescription")}</p><div className="hc-ia-identity"><span className="hc-ia-avatar">{displayName.charAt(0).toUpperCase()}</span><span><small>{t("home.signedIn")}</small><strong>{displayName}</strong></span></div></header>
-      <section className="hc-ia-section"><h2>{t("home.fanSide")}</h2><div className="hc-ia-fan-grid">
-        <Link href="/team-hub" className="hc-ia-door"><CategoryIconTile category="teams" size="sm"/><span><strong>{t("home.teamHub")}</strong><small>{t("home.teamHubDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-        <Link href="/fan-feed" className="hc-ia-door"><CategoryIconTile category="reviews" size="sm"/><span><strong>Fan HQ feed</strong><small>Fan and team community conversations</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-        <Link href="/fans" className="hc-ia-door"><CategoryIconTile category="players" size="sm"/><span><strong>{t("home.findFan")}</strong><small>{t("home.findFanDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-        <Link href="/live-games" className="hc-ia-door"><CategoryIconTile category="leagues" size="sm"/><span><strong>{t("home.liveGames")}</strong><small>{liveCounts.live} live · {liveCounts.upcoming} upcoming</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-      </div></section>
+      <Link href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>{t("home.liveGames")}</strong><small>{liveCounts.live} live · {liveCounts.upcoming} upcoming</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></Link>
       {teams.length > 0 && <section className="hc-ia-section hc-ia-your-clubs">
         <div className="hc-ia-section-heading"><div><p className="eyebrow">YOUR CLUBS</p><h2>Teams you follow</h2></div><Link href="/team-hub">Open Team Hub <HoopIcon name="arrow-right" size={15}/></Link></div>
         <div className="hc-ia-fan-grid">{teams.slice(0,4).map(team => <Link key={team.id} href={`/teams/${team.id}`} className="hc-ia-door"><TeamLogo name={team.name} size={40} className="hc-live-team-logo"/><span><strong>{team.name}</strong><small>{[team.league_name,team.country].filter(Boolean).join(" · ") || "Basketball club"}</small></span><HoopIcon name="chevron-right" size={18}/></Link>)}</div>
