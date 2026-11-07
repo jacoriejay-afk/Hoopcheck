@@ -635,7 +635,7 @@ export default function CoachDetailPage() {
       </section>
 
       {!canReadFullReviews && reviewTier === "free" && Boolean(accountType) ? (
-        <ReviewMembershipGate title="Player reviews require an eligible membership" actionLabel="Upgrade" />
+        <ReviewMembershipGate title="Player reviews require an eligible membership" actionLabel="Upgrade" accountType={accountType} tier={reviewTier} />
       ) : reviewTier === "pro" && accountType === "fan" ? (
         <section className="hero hc-fan-review-teaser">
           <h2>Player ratings and reviews</h2>
