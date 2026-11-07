@@ -118,7 +118,7 @@ function SearchContent() {
   const [isFanAccount, setIsFanAccount] = useState(false);
   const [roleReady, setRoleReady] = useState(false);
   const [suggestions, setSuggestions] = useState<SocialSuggestion[]>([]);
-  useEffect(() => { let active = true; void (async () => { try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const [{ data }, { data: graphSuggestions }] = await Promise.all([supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(), supabase.rpc("get_social_suggestions")]); if (!active) return; const fan = data?.account_type === "fan"; setIsFanAccount(fan); setSuggestions(((graphSuggestions || []) as SocialSuggestion[]).filter(item => !fan || item.entity_type === "team")); } catch (error) { console.error("Unable to load search role context:", error); } finally { if (active) setRoleReady(true); } })(); return () => { active = false; }; }, []);
+  useEffect(() => { let active = true; void (async () => { try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const [{ data }, { data: graphSuggestions }] = await Promise.all([supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(), supabase.rpc("get_social_suggestions")]); if (!active) return; const fan = !data || data.account_type === "fan"; setIsFanAccount(fan); setSuggestions(((graphSuggestions || []) as SocialSuggestion[]).filter(item => !fan || item.entity_type === "team")); } catch (error) { console.error("Unable to load search role context:", error); if (active) setIsFanAccount(true); } finally { if (active) setRoleReady(true); } })(); return () => { active = false; }; }, []);
 
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -271,7 +271,7 @@ function SearchContent() {
     ...leagues.map((x) => x.country),
   ].filter(Boolean) as string[])).sort(), [players, coaches, teams, womensTeams, leagues]);
 
-  const visiblePlayers = !isFanAccount && (typeFilter === "all" || typeFilter === "players")
+  const visiblePlayers = roleReady && !isFanAccount && (typeFilter === "all" || typeFilter === "players")
     ? players.filter((x) => !countryFilter || x.country === countryFilter || x.current_country === countryFilter)
     : [];
   const visibleCoaches = typeFilter === "all" || typeFilter === "coaches"
@@ -287,7 +287,7 @@ function SearchContent() {
     ? leagues.filter((x) => !countryFilter || x.country === countryFilter)
     : [];
 
-  const totalResults = (isFanAccount ? 0 : visiblePlayers.length) + visibleCoaches.length + visibleTeams.length + visibleWomensTeams.length + visibleLeagues.length;
+  const totalResults = (roleReady && !isFanAccount ? visiblePlayers.length : 0) + visibleCoaches.length + visibleTeams.length + visibleWomensTeams.length + visibleLeagues.length;
 
   return (
     <main className="search-page hc-global-search-page">
@@ -298,7 +298,7 @@ function SearchContent() {
         <Link href="/womens">{t("womensTeams")}</Link>
         <Link href="/coaches">{t("coaches")}</Link>
         <Link href="/leagues">{t("leagues")}</Link>
-        {!isFanAccount && <Link href="/players">{t("players")}</Link>}
+        {roleReady && !isFanAccount && <Link href="/players">{t("players")}</Link>}
         <Link href="/search">{t("globalSearch")}</Link>
         </nav>
       {roleReady && !isFanAccount && <Surface as="section" className="dashboard-card hc-player-connect-surface" style={{ margin: "0 0 18px", padding: "16px" }}>
@@ -326,15 +326,15 @@ function SearchContent() {
       <section className="search-hero">
         <div className="eyebrow">{t("globalResearch")}</div>
         <h1>{t("searchBasketballWorld")}</h1>
-        <p>{isFanAccount ? t("searchBasketballWorld") : t("findBasketballPeople")}</p>
+        <p>{!roleReady || isFanAccount ? t("searchBasketballWorld") : t("findBasketballPeople")}</p>
 
         <SearchBar
           className="search-form"
           name="q"
           value={searchInput}
           onChange={setSearchInput}
-          placeholder={isFanAccount ? t("searchBasketballWorld") : t("searchPeoplePlaceholder")}
-          ariaLabel={isFanAccount ? t("searchBasketballWorld") : t("searchPeoplePlaceholder")}
+          placeholder={!roleReady || isFanAccount ? t("searchBasketballWorld") : t("searchPeoplePlaceholder")}
+          ariaLabel={!roleReady || isFanAccount ? t("searchBasketballWorld") : t("searchPeoplePlaceholder")}
         />
       </section>
 
@@ -350,7 +350,7 @@ function SearchContent() {
 
           {!error && (
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 24 }}>
-              {(isFanAccount ? (["all", "coaches", "mens-teams", "womens-teams", "leagues"] as const) : (["all", "players", "coaches", "mens-teams", "womens-teams", "leagues"] as const)).map((type) => (
+              {(roleReady && !isFanAccount ? (["all", "players", "coaches", "mens-teams", "womens-teams", "leagues"] as const) : (["all", "coaches", "mens-teams", "womens-teams", "leagues"] as const)).map((type) => (
                 <button
                   key={type}
                   type="button"
@@ -463,7 +463,7 @@ function SearchContent() {
           <div className="eyebrow">{t("startResearching")}</div>
           <h2>{t("searchBeforeSign")}</h2>
           <div className="quick-links">
-            <Link href="/coaches" className="quick-card"><span>01</span><strong>{t("browseCoaches")}</strong><small>{isFanAccount ? t("researchCoach") : t("researchPlayerExperiences")}</small></Link>
+            <Link href="/coaches" className="quick-card"><span>01</span><strong>{t("browseCoaches")}</strong><small>{!roleReady || isFanAccount ? t("researchCoach") : t("researchPlayerExperiences")}</small></Link>
             <Link href="/teams" className="quick-card"><span>02</span><strong>{t("browseTeams")}</strong><small>{t("exploreProfessionalOrganizations")}</small></Link>
             <Link href="/leagues" className="quick-card"><span>03</span><strong>{t("browseLeagues")}</strong><small>{t("exploreLeaguesWorldwide")}</small></Link>
           </div>
