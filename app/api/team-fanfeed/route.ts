@@ -44,6 +44,8 @@ export async function POST(request: Request) {
     const { data: userData, error: userError } = await db.auth.getUser(token);
     const user = userData?.user;
     if (userError || !user) return NextResponse.json({ allowed: false, message: "Your session is invalid." }, { status: 401 });
+    const { data: profile, error: profileError } = await db.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
+    if (profileError || !profile || profile.account_type === "fan") return NextResponse.json({ allowed: false, message: "This action is not available to fan accounts." }, { status: 403 });
 
     const form = await request.formData();
     const teamId = String(form.get("team_id") || "");
