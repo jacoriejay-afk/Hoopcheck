@@ -29,11 +29,12 @@ export default function FanTeamPosts({ teamId }: { teamId:string }) {
       const viewer=userResult.user;
       let postRows:any[]=[];
       if(viewer){
-        const [{data:profile},{data:member}]=await Promise.all([
+        const [{data:profile},{data:member},{data:moderator}]=await Promise.all([
           supabase.from("profiles").select("account_type").eq("id",viewer.id).maybeSingle(),
-          supabase.from("team_fan_group_members").select("team_id").eq("team_id",teamId).eq("user_id",viewer.id).maybeSingle()
+          supabase.from("team_fan_group_members").select("team_id").eq("team_id",teamId).eq("user_id",viewer.id).maybeSingle(),
+          supabase.from("team_fan_group_moderators").select("team_id").eq("team_id",teamId).eq("user_id",viewer.id).maybeSingle()
         ]);
-        if(profile?.account_type==="fan" && member){
+        if(profile?.account_type==="fan" && (member || moderator)){
           const {data:rows}=await supabase.from("team_fan_group_posts")
             .select("id,team_id,author_id,body,image_url,is_pinned,created_at,profiles:profiles!team_fan_group_posts_author_id_fkey(display_name,avatar_url)")
             .eq("team_id",teamId).eq("status","published").order("is_pinned",{ascending:false}).order("created_at",{ascending:false}).limit(3);
