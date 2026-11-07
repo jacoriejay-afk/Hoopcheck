@@ -8,6 +8,7 @@ import Surface from "../../../components/Surface";
 import HoopLoading from "../../../components/HoopLoading";
 import ClaimedTeamLogoEditor from "../../../components/ClaimedTeamLogoEditor";
 import TeamProfileHero from "../../../components/TeamProfileHero";
+import ReviewMembershipGate from "../../../components/ReviewMembershipGate";
 
 export default function WomensTeam(){
  const {formatDate,formatNumber,t}=useLanguage();
@@ -70,7 +71,11 @@ export default function WomensTeam(){
   <Surface as="section" className="dashboard-card compact-section">
     {reviewTier === "pro" && !canViewReviews ? <><p className="eyebrow">{t("playerExperiences")}</p><h2>{t("ratingsReviews")}</h2><p className="hc-review-star-row">★★★★★ {average===null?"":average.toFixed(1)+"/5"}</p><p>Players and other eligible active members can access full reviews and ratings. Fan access depends on the active plan.</p><div className="hc-review-category-teaser">{["Communication","Professionalism","Development","Payment"].map(label=><div className="hc-review-category-row" key={label}><span>{label}</span><span className="hc-review-score-blur" aria-label="Score available with Fan Premium">★★★★★</span></div>)}</div><Link href="/membership" className="btn">Upgrade</Link></>
     : canViewReviews ? <><p className="eyebrow">{t("playerExperiences")}</p><h2>{t("ratingsReviews")}</h2>{reviews.map(r=><article className="compact-review" key={r.id}><div className="review-line"><strong>{r.title||t("playerExperience")}</strong><strong>{Number(r.overall_rating).toFixed(1)}/5</strong></div><p>{r.body}</p><small className="muted">{formatDate(r.created_at)}</small></article>)}{!reviews.length&&<p className="muted">{t("noPublishedReviewsYet")}</p>}</>
-    : <><p className="eyebrow">{t("membership")}</p><h2>Full player reviews require an eligible membership</h2><p>Players and other eligible active members can access full reviews. Fan access depends on the active plan.</p><Link href="/membership" className="btn">Upgrade</Link></>}
+    : <ReviewMembershipGate
+      title="Full player reviews require an eligible membership"
+      description="Players and other eligible active members can access full reviews. Fan access depends on the active plan."
+      actionLabel="Upgrade"
+    />}
   </Surface>
   <div className="bottom-back"><button type="button" className="btn dark" onClick={()=>window.history.back()}>← {t("back")}</button></div></div></main>;
 }
