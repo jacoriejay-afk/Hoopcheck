@@ -68,32 +68,6 @@ export async function GET(request: Request) {
       const scores = Object.fromEntries(ids.map(id => [id, hidden]));
       return NextResponse.json(singularId && ids.length === 1 ? hidden : { scores }, { headers: { "Cache-Control": "private, no-store" } });
     }
-    const db = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
-        const [{ data: profile }, { data: subscription }] = await Promise.all([
-          db.from("profiles").select("account_type").eq("id", authData.user.id).maybeSingle(),
-          db.from("subscriptions").select("plan,status,current_period_end").eq("user_id", authData.user.id).maybeSingle(),
-        ]);
-        const active = ["active", "trialing"].includes(subscription?.status || "") &&
-          (!subscription?.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now());
-        if (profile?.account_type === "player") tier = "player";
-        else if (profile?.account_type === "fan" && active && subscription?.plan === "premium") tier = "premium";
-        else if (profile?.account_type === "fan" && active && subscription?.plan === "pro") tier = "pro";
-        else if (profile?.account_type && profile.account_type !== "fan" && active) tier = "member";
-        const scoped = createClient(supabaseUrl, anonKey, {
-          global: { headers: { Authorization: "Bearer " + bearer } },
-          auth: { autoRefreshToken: false, persistSession: false },
-        });
-        const { data: admin } = await scoped.rpc("is_current_user_admin_or_moderator");
-        if (admin === true) tier = "premium";
-      }
-    }
-    if (tier === "free" || tier === "pro") {
-      const hidden = tier === "free"
-        ? { tier, locked: true, score: null, reviewCount: null, verifiedReviewCount: null, explanation: null, averageRating: null }
-        : { tier, locked: false, score: null, reviewCount: null, verifiedReviewCount: null, explanation: null, averageRating: null };
-      const scores = Object.fromEntries(ids.map(id => [id, hidden]));
-      return NextResponse.json(singularId && ids.length === 1 ? hidden : { scores }, { headers: { "Cache-Control": "private, no-store" } });
-    }
     const db = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
