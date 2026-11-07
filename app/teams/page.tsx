@@ -51,7 +51,6 @@ export default function TeamsPage() {
   const [mapCoordinates, setMapCoordinates] = useState<Record<string, { latitude: number | null; longitude: number | null }>>({});
 
   const [loading, setLoading] = useState(true);
-  const [isPlayerAccount, setIsPlayerAccount] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
@@ -79,16 +78,7 @@ export default function TeamsPage() {
     return CONTINENT_COUNTRIES[selected]?.includes(value || "") ?? false;
   }
 
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) { if (active) setIsPlayerAccount(false); return; }
-      const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", session.user.id).maybeSingle();
-      if (active) setIsPlayerAccount(profile?.account_type === "player");
-    })().catch(() => { if (active) setIsPlayerAccount(false); });
-    return () => { active = false; };
-  }, []);
+
 
   useEffect(() => {
     let active = true;
@@ -365,7 +355,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           teams.map((team) => (
-            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} followerCount={followerCounts[team.id] ?? null} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={isPlayerAccount ? "player" : trustScores[team.id]?.tier} logoUrl={team.logo_url} logoBg={team.logo_bg} />
+            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} followerCount={followerCounts[team.id] ?? null} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={trustScores[team.id]?.tier || "free"} logoUrl={team.logo_url} logoBg={team.logo_bg} />
           ))
         )}
       </section>
