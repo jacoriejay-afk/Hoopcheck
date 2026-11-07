@@ -61,17 +61,19 @@ export default function FanLivePage() {
     const user=session?.user;
     if(!user){setUserId(null);setAllowed(false);setGames([]);setLoading(false);return;}
     setUserId(user.id);
-    const [{data:profile},{data:subscription}] = await Promise.all([
+    const [{data:profile},{data:subscription},{data:isAdmin}] = await Promise.all([
       supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle(),
-      supabase.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id",user.id).maybeSingle()
+      supabase.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id",user.id).maybeSingle(),
+      supabase.rpc("is_current_user_admin_or_moderator")
     ]);
-    const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription });
+    const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription, isAdmin: isAdmin === true });
     const fanCanChat = profile?.account_type === "fan" && entitlements.canUseLiveGameChat;
     const playerCanChat = profile?.account_type === "player" && entitlements.canUseLiveGameChat;
+    const moderatorCanChat = entitlements.canUseLiveGameChat && isAdmin === true;
     const playerCanPredict = profile?.account_type === "player";
-    setChatEnabled(Boolean(fanCanChat || playerCanChat));
-    setAllowed(Boolean(fanCanChat || playerCanChat || playerCanPredict));
-    if (!fanCanChat && !playerCanChat && !playerCanPredict) {
+    setChatEnabled(Boolean(fanCanChat || playerCanChat || moderatorCanChat));
+    setAllowed(Boolean(fanCanChat || playerCanChat || moderatorCanChat || playerCanPredict));
+    if (!fanCanChat && !playerCanChat && !moderatorCanChat && !playerCanPredict) {
       setGames([]); setSelected(null); setLoading(false); return;
     }
     const gameResult = profile?.account_type === "player" && !playerCanChat
