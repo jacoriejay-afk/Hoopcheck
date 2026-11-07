@@ -53,7 +53,7 @@ export async function GET(request: Request) {
     }
 
     const tier = isAdmin ? "premium" :
-      accountType === "player" ? "player" :
+      accountType === "player" && active && ["pro", "premium"].includes(plan) ? "player" :
       accountType === "fan" && active && plan === "premium" ? "premium" :
       accountType === "fan" && active && plan === "pro" ? "pro" :
       accountType !== "fan" && accountType !== "" && active ? "member" : "free";
@@ -63,7 +63,7 @@ export async function GET(request: Request) {
 
     const response: Record<string, unknown> = {
       tier,
-      canWrite: accountType === "player" && entityType !== "womens-team",
+      canWrite: accountType === "player" && active && ["pro", "premium"].includes(plan) && entityType !== "womens-team",
       categories: ["Communication", "Professionalism", "Development", "Payment", "Pay on time", "Housing", "Medical support", "Coaching quality", "Facilities", "Playing time honesty"],
       summary: null,
       reviews: [],
