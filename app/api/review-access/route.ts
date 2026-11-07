@@ -36,12 +36,13 @@ export async function GET(request: Request) {
     if (user) {
       const [{ data: profile }, { data: subscription }] = await Promise.all([
         db.from("profiles").select("account_type,player_verified").eq("id", user.id).maybeSingle(),
-        db.from("subscriptions").select("plan,status,current_period_end").eq("user_id", user.id).maybeSingle(),
+        db.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id", user.id).maybeSingle(),
       ]);
       accountType = profile?.account_type || "";
       playerVerified = profile?.player_verified === true;
       plan = subscription?.plan || "";
-      active = ["active", "trialing"].includes(subscription?.status || "") &&
+      active = (["active", "trialing"].includes(subscription?.status || "") ||
+        ["pro", "premium"].includes(subscription?.access_status || "")) &&
         (!subscription?.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now());
       const { data: admin } = await authClient.auth.getUser(bearer);
       if (admin.user) {
