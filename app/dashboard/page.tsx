@@ -143,7 +143,7 @@ export default function DashboardPage() {
         {completion < 100 && <Link href="/account#edit-profile" className="hc-ia-completion"><span><strong>{t("home.completeProfile")}</strong><small>{t("home.profileCompletion").replace("{percent}", String(completion))}</small></span><span>{t("home.continue")} <HoopIcon name="arrow-right" size={16}/></span></Link>}
 
         <HomePulse live={null} upcoming={null} followedClubs={teams.length} recentReviews={reviews.length}/>
-        <Link href="/live-games" className="hc-ia-live-strip">{liveCounts.live!==null && liveCounts.live>0 && <span className="hc-ia-live-dot"/>}<span><strong>{t("home.liveGames")}</strong><small>{t("home.liveDescription")}</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></Link>
+        <Link href="/live-games" className="hc-ia-live-strip"><span className={liveCounts.live!==null && liveCounts.live>0 ? "hc-ia-live-dot" : "hc-ia-live-dot hc-ia-live-dot--inactive"} aria-hidden="true"/><span><strong>{t("home.liveGames")}</strong><small>{t("home.liveDescription")}</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></Link>
 
         {profile?.account_type==="player" && <Link href="/pre-sign" className="hc-smooth-presign-dashboard-link hc-smooth-card"><span><small>PLAYER INTELLIGENCE</small><strong>Pre-Sign Check</strong><span>Six checks to research a club before you commit to a contract.</span></span><HoopIcon name="arrow-right" size={18}/></Link>}
 
