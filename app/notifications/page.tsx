@@ -13,26 +13,35 @@ type Notice={id:string;target_type:"team"|"coach"|"league"|"game";target_id:stri
 export default function NotificationsPage(){
   const [items,setItems]=useState<Notice[]>([]);
   const [loading,setLoading]=useState(true);
+  const [errorMessage,setErrorMessage]=useState("");
+  const [marking,setMarking]=useState(false);
   const [filter,setFilter]=useState<"all"|"games"|"clubs"|"reviews"|"unread">("all");
   useEffect(()=>{(async()=>{
     const {data:{session}}=await supabase.auth.getSession();
     const user=session?.user;
     if(!user){window.location.href="/login";return;}
-    const {data}=await supabase.from("notifications").select("id,target_type,target_id,notification_type,title,body,read_at,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(100);
-    setItems(data||[]);setLoading(false);
+    const {data,error}=await supabase.from("notifications").select("id,target_type,target_id,notification_type,title,body,read_at,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(100);
+    if(error)setErrorMessage("Alerts could not be loaded. Please try again.");
+    else setItems(data||[]);
+    setLoading(false);
   })()},[]);
   async function markAll(){
     const {data:{session}}=await supabase.auth.getSession();
     const user=session?.user;
     if(!user)return;
+    if(marking)return;
+    setMarking(true);setErrorMessage("");
     const now=new Date().toISOString();
-    await supabase.from("notifications").update({read_at:now}).eq("user_id",user.id).is("read_at",null);
-    setItems(v=>v.map(n=>({...n,read_at:n.read_at||now})));
+    const {error}=await supabase.from("notifications").update({read_at:now}).eq("user_id",user.id).is("read_at",null);
+    if(error)setErrorMessage("Could not mark alerts as read. Please retry.");
+    else setItems(v=>v.map(n=>({...n,read_at:n.read_at||now})));
+    setMarking(false);
   }
   const filtered=items.filter(n=>filter==="all" || (filter==="unread"&&!n.read_at) || (filter==="games"&&n.target_type==="game") || (filter==="clubs"&&n.target_type!=="game"&&!["review","rating","trust_score","pay_warning"].includes(n.notification_type)) || (filter==="reviews"&&["review","rating","trust_score","pay_warning"].includes(n.notification_type)));
   if(loading)return <main className="page-shell hc-notifications-page"><div className="page-container"><HoopLoading label="Loading notifications..." /></div></main>;
   return <main className="page-shell hc-notifications-page"><div className="page-container">
-    <section className="hero-card" style={{marginTop:20}}><p className="eyebrow">NOTIFICATIONS</p><h1>Alerts</h1><p className="muted">Only teams, coaches, and leagues you manually follow can send you review, rating, or update alerts.</p><button className="btn dark" type="button" onClick={markAll}>Mark all as read</button></section>
+    <section className="hero-card" style={{marginTop:20}}><p className="eyebrow">NOTIFICATIONS</p><h1>Alerts</h1><p className="muted">Only teams, coaches, and leagues you manually follow can send you review, rating, or update alerts.</p><button className="btn dark" type="button" onClick={markAll} disabled={marking||!items.some(n=>!n.read_at)}>{marking?"Updating…":"Mark all as read"}</button></section>
+    {errorMessage&&<p role="alert" className="hc-smooth-inbox-error">{errorMessage}</p>}
     <ActivityWire items={items}/>
     <nav className="hc-smooth-inbox-tabs" aria-label="Filter alerts">{([["all","All"],["unread","Unread"],["games","Games"],["clubs","Clubs"],["reviews","Reviews"]] as const).map(([key,label])=><button key={key} type="button" aria-pressed={filter===key} className={filter===key?"is-active":""} onClick={()=>setFilter(key)}>{label}<span>{items.filter(n=>key==="all" || (key==="unread"&&!n.read_at) || (key==="games"&&n.target_type==="game") || (key==="clubs"&&n.target_type!=="game"&&!["review","rating","trust_score","pay_warning"].includes(n.notification_type)) || (key==="reviews"&&["review","rating","trust_score","pay_warning"].includes(n.notification_type))).length}</span></button>)}</nav>
     <section style={{marginTop:12,display:"grid",gap:10}}>
