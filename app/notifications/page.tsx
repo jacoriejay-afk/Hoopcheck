@@ -84,6 +84,6 @@ export default function NotificationsPage(){
           {n.target_type !== "game" && <div className="hc-alert-card__controls"><WatchButton targetType={n.target_type} targetId={n.target_id} targetName={n.title} /></div>}
         </article>;
       }) : <div className="card"><h2>{items.length ? "Nothing in this category" : "No notifications yet"}</h2><p className="muted">{items.length ? "Choose another filter to see more alerts." : "Follow a team and choose the alerts you want to receive."}</p>{!items.length&&<Link href="/teams" className="btn">Find Teams</Link>}</div>}
-    </section>
+    </section>}
   </div></main>;
 }
