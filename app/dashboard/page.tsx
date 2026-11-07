@@ -7,7 +7,7 @@ import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
 import { useLanguage } from "../../components/LanguageProvider";
-import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import { CategoryIconTile, HoopIcon } from "../../components/HoopCheckUI";
 import { calculateProfileCompletion } from "../../lib/profile-completion";
@@ -61,7 +61,7 @@ export default function DashboardPage() {
       ]);
       if (!mounted) return;
       setProfile(p as Profile|null);
-      const activeMember = hasActiveMembershipAtLeast(subscription);
+      const activeMember = getHoopCheckEntitlements({ accountType: p?.account_type, subscription }).hasPaidMembership;
       const followedIds = (follows||[]).map((row:any)=>row.target_id).filter(Boolean);
 
       if (followedIds.length) {
