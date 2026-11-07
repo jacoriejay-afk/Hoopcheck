@@ -1,0 +1,50 @@
+/* Smooth Experience v1: restrained, accessible motion and stable interactions.
+   Uses existing surface tokens; never overrides theme text/background colors. */
+:root {
+  --hc-ease-fluid: cubic-bezier(.22,1,.36,1);
+  --hc-motion-tap: 120ms;
+  --hc-motion-nav: 190ms;
+  --hc-motion-card: 220ms;
+  --hc-motion-sheet: 280ms;
+}
+@media (hover:hover) and (pointer:fine) {
+  .hc-smooth-card {
+    transition: transform var(--hc-motion-card) var(--hc-ease-fluid), box-shadow var(--hc-motion-card) var(--hc-ease-fluid);
+  }
+  .hc-smooth-card:hover { transform: translateY(-2px); }
+}
+.hc-smooth-card { contain: layout style; }
+.hc-smooth-card:focus-within { outline: 2px solid var(--brand-orange); outline-offset: 2px; }
+.hc-smooth-press {
+  transition: transform var(--hc-motion-tap) ease, opacity var(--hc-motion-tap) ease;
+  touch-action: manipulation;
+}
+.hc-smooth-press:active:not(:disabled) { transform: scale(.985); }
+.hc-smooth-press:disabled { cursor: not-allowed; opacity: .6; }
+.hc-smooth-reveal { animation: hc-smooth-enter var(--hc-motion-card) var(--hc-ease-fluid) both; }
+@keyframes hc-smooth-enter {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.hc-smooth-skeleton {
+  background: var(--hc-surface-raised, var(--gray-100));
+  border-radius: 10px;
+  min-height: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.hc-smooth-skeleton::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg,transparent,rgba(127,127,127,.09),transparent);
+  transform: translateX(-100%);
+  animation: hc-smooth-shimmer 1.6s ease-in-out infinite;
+}
+@keyframes hc-smooth-shimmer { to { transform: translateX(100%); } }
+.hc-smooth-score { transform-origin: center; animation: hc-score-enter 600ms var(--hc-ease-fluid) both; }
+@keyframes hc-score-enter { from { opacity: .5; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion:reduce) {
+  .hc-smooth-card,.hc-smooth-press { transition: none !important; }
+  .hc-smooth-card:hover,.hc-smooth-press:active { transform: none !important; }
+  .hc-smooth-reveal,.hc-smooth-score,.hc-smooth-skeleton::after { animation: none !important; }
+  .hc-smooth-reveal,.hc-smooth-score { opacity: 1 !important; transform: none !important; }
+}
