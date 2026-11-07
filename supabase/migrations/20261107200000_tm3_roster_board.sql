@@ -74,8 +74,20 @@ begin
  end if;
  if tg_op='UPDATE' then
    if new.team_id is distinct from old.team_id or new.player_id is distinct from old.player_id
-      or new.dispute_status is distinct from old.dispute_status then
+      then
      raise exception 'Roster ownership, linked player and dispute status are protected';
+   end if;
+   if new.dispute_status is distinct from old.dispute_status then
+     -- Only the linked player may open a dispute. Resolution is reserved
+     -- for a separate audited moderator operation.
+     if new.dispute_status <> 'pending' or old.player_id is distinct from auth.uid()
+        or new.player_name is distinct from old.player_name
+        or new.position is distinct from old.position
+        or new.jersey_number is distinct from old.jersey_number
+        or new.season is distinct from old.season
+        or new.status is distinct from old.status then
+       raise exception 'Dispute status is protected';
+     end if;
    end if;
  end if;
  new.updated_by := auth.uid();
@@ -123,6 +135,8 @@ begin
  insert into public.club_roster_disputes(entry_id,team_id,player_id,reason)
  values(v_entry.id,v_entry.team_id,auth.uid(),trim(p_reason)) returning id into v_id;
  -- Direct field update here bypasses the authenticated column grant.
+ -- The security-definer function can update protected columns, but the
+ -- guard trigger still verifies the linked player's identity.
  update public.club_roster_entries set dispute_status='pending' where id=v_entry.id;
  return v_id;
 end $$;
