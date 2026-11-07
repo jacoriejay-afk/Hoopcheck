@@ -68,7 +68,7 @@
  text-align:right; font-family:Impact,'Arial Narrow',sans-serif; font-weight:900;
  font-size:clamp(38px,10vw,100px); line-height:.95; letter-spacing:-.045em;
  color:rgba(255,255,255,.065); text-transform:uppercase; overflow-wrap:anywhere;
- pointer-events:none; z-index:-1;
+ pointer-events:none; z-index:0;
 }
 @media(max-width:600px){
  .hc-team-entity-profile .hc-team-branded-hero::after { top:33%; right:10px; font-size:clamp(36px,12vw,68px); max-width:60%; }
