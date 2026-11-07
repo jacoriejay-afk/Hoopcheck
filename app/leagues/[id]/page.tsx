@@ -10,7 +10,6 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
-import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
 import ReviewMembershipGate from "../../../components/ReviewMembershipGate";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { submitReviewReport } from "../../../lib/review-reports";
@@ -148,6 +147,8 @@ export default function LeagueDetailPage() {
     useState(false);
   const [accountType, setAccountType] = useState<string>("");
   const [canReadFullReviews, setCanReadFullReviews] = useState(false);
+  const [canWriteReviews, setCanWriteReviews] = useState(false);
+  const [reviewTier, setReviewTier] = useState<"free" | "pro" | "premium" | "member">("free");
 
   const [loading, setLoading] =
     useState(true);
@@ -236,118 +237,52 @@ export default function LeagueDetailPage() {
 
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
-
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      const [
-        profileResult,
-        subscriptionResult,
-        adminResult,
-      ] = await Promise.all([
-        supabase
-          .from("profiles")
+      if (user) {
+        const { data: profile } = await supabase.from("profiles")
           .select("account_type")
           .eq("id", user.id)
-          .maybeSingle(),
-        supabase
-          .from("subscriptions")
-          .select(
-            "plan, status, access_status, current_period_end"
-          )
-          .eq(
-            "user_id",
-            user.id
-          )
-          .maybeSingle(),
-
-        supabase.rpc(
-          "is_current_user_admin_or_moderator"
-        ),
-      ]);
-
-      const subscription =
-        subscriptionResult.data;
-
-      const isAdmin =
-        adminResult.data === true;
-
-      const entitlements = getHoopCheckEntitlements({
-        accountType: profileResult.data?.account_type,
-        subscription,
-        isAdmin,
-      });
-      const access = entitlements.hasPaidMembership || isAdmin;
-      setCanReadFullReviews(entitlements.canReadFullReviews);
-      setHasAccess(access);
-
-      const { data: summaryData, error: summaryError } = access
-        ? await supabase.rpc("get_public_review_summary", {
-            p_entity_type: "league",
-            p_entity_id: id,
-          })
-        : { data: null, error: null };
-
-      if (access && !summaryError && summaryData?.[0]) {
-        setPublicSummary({
-          review_count: Number(summaryData[0].review_count || 0),
-          overall_rating: summaryData[0].overall_rating == null ? null : Number(summaryData[0].overall_rating),
-          communication_rating: summaryData[0].communication_rating == null ? null : Number(summaryData[0].communication_rating),
-          professionalism_rating: summaryData[0].professionalism_rating == null ? null : Number(summaryData[0].professionalism_rating),
-          development_rating: summaryData[0].development_rating == null ? null : Number(summaryData[0].development_rating),
-          payment_rating: summaryData[0].payment_rating == null ? null : Number(summaryData[0].payment_rating),
-        });
-      } else if (summaryError) {
-        console.error("Public review summary error:", summaryError);
+          .maybeSingle();
+        setAccountType(profile?.account_type || "");
+      } else {
+        setAccountType("");
       }
 
-      if (entitlements.canReadFullReviews) {
+      const accessResponse = await fetch(`/api/review-access?entityType=league&entityId=${encodeURIComponent(id)}`, {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+        cache: "no-store",
+      });
+      const accessPayload = accessResponse.ok ? await accessResponse.json() : null;
+      const tier = (accessPayload?.tier || "free") as typeof reviewTier;
+      const fullRead = accessPayload?.canReadFull === true;
+      setReviewTier(tier);
+      setHasAccess(tier !== "free");
+      setCanReadFullReviews(fullRead);
+      setCanWriteReviews(accessPayload?.canWrite === true);
+
+      const summary = accessPayload?.summary;
+      if (summary) {
+        setPublicSummary({
+          review_count: Number(summary.review_count || 0),
+          overall_rating: summary.overall_rating == null ? null : Number(summary.overall_rating),
+          communication_rating: summary.communication_rating == null ? null : Number(summary.communication_rating),
+          professionalism_rating: summary.professionalism_rating == null ? null : Number(summary.professionalism_rating),
+          development_rating: summary.development_rating == null ? null : Number(summary.development_rating),
+          payment_rating: summary.payment_rating == null ? null : Number(summary.payment_rating),
+        });
+      }
+
+      if (fullRead && Array.isArray(accessPayload?.reviews)) {
         setReviewLoading(true);
-
-        const {
-          data: reviewData,
-          error: reviewError,
-        } = await supabase
-          .from("reviews")
-          .select(
-            `
-              id,
-              overall_rating,
-              communication_rating,
-              professionalism_rating,
-              development_rating,
-              payment_rating,
-              title,
-              body,
-              created_at,
-              is_anonymous
-            `
-          )
-          .eq(
-            "league_id",
-            id
-          )
-          .eq(
-            "status",
-            "approved"
-          )
-          .order(
-            "created_at",
-            {
-              ascending: false,
-            }
-          );
-
-        if (!reviewError && reviewData) {
-          const reviewIds = reviewData.map((review) => review.id);
-          const { data: verificationData } = await supabase.rpc("get_review_verification", { p_review_ids: reviewIds });
-          const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map((item) => [item.review_id, Boolean(item.player_verified)]));
-          setReviews(reviewData.map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
-        }
-
+        const reviewData = accessPayload.reviews as Review[];
+        const reviewIds = reviewData.map(review => review.id);
+        const { data: verificationData } = reviewIds.length
+          ? await supabase.rpc("get_review_verification", { p_review_ids: reviewIds })
+          : { data: [] };
+        const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map(item => [item.review_id, Boolean(item.player_verified)]));
+        setReviews(reviewData.map(review => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
         setReviewLoading(false);
+      } else {
+        setReviews([]);
       }
 
       setLoading(false);
