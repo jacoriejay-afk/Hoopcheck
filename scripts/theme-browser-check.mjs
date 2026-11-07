@@ -569,6 +569,9 @@ try {
         const groupEmpty = (await page.locator("main.hc-team-fan-group-page .hc-feed-empty").innerText()).trim();
         if (!groupEmpty.includes("No posts yet — be the first to post for " + teamFixture.name + ".")) errors.push("team-hub group: real club-specific empty state is missing");
         if (!groupEmpty.includes("Be the first to post")) errors.push("team-hub group: empty-state composer action is missing");
+        await page.locator("main.hc-team-fan-group-page .hc-feed-empty button").click();
+        const composerFocused = await page.locator("#fan-group-post-body").evaluate(element => element === document.activeElement);
+        if (!composerFocused) errors.push("team-hub group: empty-state action did not focus the locked group composer");
       }
       if (requestedPath === "/theme-card-audit") {
         const previews = await page.locator("main.hc-card-audit-page .hc-card-audit-preview").count();
