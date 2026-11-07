@@ -67,9 +67,24 @@ export async function GET(request: Request) {
     const targetColumn = entityType === "team" ? "team_id" : entityType === "coach" ? "coach_id" : "womens_team_id";
     const table = entityType === "womens-team" ? "womens_team_reviews" : "reviews";
 
+    let canWrite = accountType === "player" && playerVerified && !!user?.email_confirmed_at &&
+      active && ["pro", "premium"].includes(plan) && entityType !== "womens-team";
+    if (canWrite && entityType === "team" && user) {
+      const scoped = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: "Bearer " + bearer } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data: eligible, error: eligibilityError } = await scoped.rpc("can_user_review_team", {
+        p_user_id: user.id,
+        p_team_id: entityId,
+      });
+      if (eligibilityError) throw eligibilityError;
+      canWrite = eligible === true;
+    }
+
     const response: Record<string, unknown> = {
       tier,
-      canWrite: accountType === "player" && playerVerified && !!user?.email_confirmed_at && active && ["pro", "premium"].includes(plan) && entityType !== "womens-team",
+      canWrite,
       categories: ["Communication", "Professionalism", "Development", "Payment", "Pay on time", "Housing", "Medical support", "Coaching quality", "Facilities", "Playing time honesty"],
       summary: null,
       reviews: [],
