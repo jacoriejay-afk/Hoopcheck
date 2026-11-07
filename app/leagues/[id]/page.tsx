@@ -597,7 +597,7 @@ export default function LeagueDetailPage() {
               are saying.
             </h2>
 
-            {canReadFullReviews && (reviewLoading ? (
+            {canReadFullReviews ? (reviewLoading ? (
               <p>
                 Loading reviews...
               </p>
@@ -708,7 +708,7 @@ export default function LeagueDetailPage() {
                   )
                 )}
               </div>
-            )}
+            ) : null}
           </section>
         </>
       )}
