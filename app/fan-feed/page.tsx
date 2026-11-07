@@ -13,7 +13,7 @@ import TeamOfficialUpdates from "../../components/TeamOfficialUpdates";
 import { useLanguage } from "../../components/LanguageProvider";
 import "./fan-feed.css";
 import "../hoopfeed-shared.css";
-import { fanFeedI18n, fanFeedTeamComposerPlaceholder, fanFeedTeamSubtitle, fanFeedTeamEmptyTitle, fanFeedTeamEmptyBody, fanFeedRefreshLabel } from "./i18n";
+import { fanFeedI18n, fanFeedTeamComposerPlaceholder, fanFeedTeamSubtitle, fanFeedTeamEmptyTitle, fanFeedTeamEmptyBody, fanFeedRefreshLabel, fanFeedRefreshError } from "./i18n";
 
 type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
 type Profile = { id: string; display_name: string | null; avatar_url: string | null; account_type: string };
@@ -123,6 +123,18 @@ export default function FanFeedPage() {
     return () => { alive = false; };
   }, [load]);
 
+  async function refreshFeed() {
+    if (!user || refreshing) return;
+    setRefreshing(true);
+    try {
+      await load(user.id);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : fanFeedRefreshError(language));
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
   async function publish() {
     if (!user || profile?.account_type !== "fan" || !teamId || (!body.trim() && !photo && !video) || posting) return;
     setPosting(true); setMessage(ft("moderating"));
@@ -209,7 +221,7 @@ export default function FanFeedPage() {
   if (!user) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("title")}</h1><p>{ft("signIn")}</p><Link className="btn" href="/login">{t("signIn")}</Link></section></div></main></PageShell>;
   if (profile?.account_type !== "fan") return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("fansOnly")}</h1></section></div></main></PageShell>;
   if (!membershipActive) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("membershipRequired")}</h1><p>{ft("membershipDescription")}</p><Link className="btn" href="/membership">{t("membership")}</Link></section></div></main></PageShell>;
-  return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page" onTouchStart={event => { touchStartY.current = window.scrollY === 0 ? (event.touches[0]?.clientY ?? null) : null; }} onTouchEnd={event => { const start = touchStartY.current; touchStartY.current = null; const end = event.changedTouches[0]?.clientY ?? 0; if (start !== null && end - start > 80 && user && !refreshing) { void (async () => { setRefreshing(true); await load(user.id); setRefreshing(false); })(); } }}>
+  return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page" onTouchStart={event => { touchStartY.current = window.scrollY === 0 ? (event.touches[0]?.clientY ?? null) : null; }} onTouchEnd={event => { const start = touchStartY.current; touchStartY.current = null; const end = event.changedTouches[0]?.clientY ?? 0; if (start !== null && end - start > 80 && user && !refreshing) void refreshFeed(); }}>
       <FanBasketballSideSwitch /><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/fans">{ft("discoverFans")}</Link><Link href="/team-hub">{ft("teamHub")}</Link><Link href="/teams">{ft("teams")}</Link></nav></header>
     <section className="hero-card hc-feed-hero"><div><p className="eyebrow">{selectedTeam ? `${selectedTeam.name.toUpperCase()} · FAN HQ` : ft("kicker")}</p><h1>{selectedTeam?.name || ft("title")}</h1><p className="muted">{selectedTeam ? fanFeedTeamSubtitle(selectedTeam.name, language) : ft("subtitle")}</p></div><p className="hc-feed-expiry-note">{ft("teamFirst")}<span>{ft("fanOnlyNote")}</span></p></section>
@@ -225,7 +237,7 @@ export default function FanFeedPage() {
       {message && <p className="hc-feed-message" role="status">{message}</p>}
       {!teams.length && <p className="muted">{ft("followTeamFirst")} <Link href="/teams">{ft("teams")}</Link></p>}
     </section>
-    <div className="hc-feed-refresh-row"><button type="button" className="hc-feed-refresh" disabled={refreshing} onClick={async () => { if (!user) return; setRefreshing(true); await load(user.id); setRefreshing(false); }}>{fanFeedRefreshLabel(language, refreshing)}</button></div>
+    <div className="hc-feed-refresh-row"><button type="button" className="hc-feed-refresh" disabled={refreshing} onClick={() => void refreshFeed()}>{fanFeedRefreshLabel(language, refreshing)}</button></div>
     <section className="hc-feed-stream" aria-label={ft("recentPosts")}>{visiblePosts.length ? visiblePosts.map(post => <FeedPostCard key={post.id}>
       <header className="hc-feed-post-header"><FeedAuthorRow><Link href={"/fans/" + post.author_id} aria-label={ft("viewFanProfile")}><FeedStoryRing expiresAt={post.expires_at} now={now}>{post.profiles?.avatar_url ? <img src={post.profiles.avatar_url} alt="" className="hc-feed-post-avatar" /> : <div className="hc-feed-post-avatar hc-feed-post-avatar-fallback">HC</div>}</FeedStoryRing></Link><div className="hc-feed-post-author__meta"><Link href={"/fans/" + post.author_id}><strong>{post.profiles?.display_name || ft("fan")}</strong></Link><small>{formatDate(post.created_at, { dateStyle: "medium", timeStyle: "short" })} · <FeedTimeRemaining expiresAt={post.expires_at} now={now} /></small></div></FeedAuthorRow>{post.teams && <Link className="hc-feed-post-topic" href={"/teams/" + post.team_id}><TeamLogo name={post.teams.name} logoUrl={post.teams.logo_url} logoBg={post.teams.logo_bg} size={28} />{post.teams.name}</Link>}</header>
       <FeedMediaArea>{post.body.trim() && <p style={{ whiteSpace: "pre-wrap" }}>{post.body}</p>}{post.image_url && <img src={post.image_url} alt={ft("postPhoto")} className="hc-feed-post-image" />}{post.video_url && <video src={post.video_url} controls playsInline preload="metadata" className="hc-feed-post-image" aria-label={ft("videoPostLabel")} />}</FeedMediaArea>
