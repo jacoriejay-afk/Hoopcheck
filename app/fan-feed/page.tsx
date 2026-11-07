@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { PageShell } from "../../components/LayoutSystem";
 import { FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptyState, FeedLoadingSkeleton } from "../../components/HoopFeedShared";
@@ -12,7 +13,7 @@ import TeamLogo from "../../components/TeamLogo";
 import { useLanguage } from "../../components/LanguageProvider";
 import "./fan-feed.css";
 import "../hoopfeed-shared.css";
-import { fanFeedI18n, fanFeedTeamComposerPlaceholder } from "./i18n";
+import { fanFeedI18n } from "./i18n";
 
 type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null; group_name?: string | null; is_member?: boolean };
 type Profile = { id: string; display_name: string | null; avatar_url: string | null; account_type: string };
@@ -21,6 +22,7 @@ type GroupComment = { id: string; post_id: string; author_id: string; body: stri
 
 export default function FanFeedPage() {
   const { t, language, formatDate } = useLanguage();
+  const router = useRouter();
   const ft = (key: Parameters<typeof fanFeedI18n>[0]) => {
     const sharedTranslation = t(key);
     return fanFeedI18n(key, language, sharedTranslation === key ? undefined : sharedTranslation);
@@ -30,25 +32,20 @@ export default function FanFeedPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [posts, setPosts] = useState<FanPost[]>([]);
   const [following, setFollowing] = useState<Set<string>>(new Set());
-  const [body, setBody] = useState("");
   const [teamId, setTeamId] = useState("");
   const [composerTeamId, setComposerTeamId] = useState("");
   const [composerOpen, setComposerOpen] = useState(false);
   const [teamSearch, setTeamSearch] = useState("");
-  const [photo, setPhoto] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState("");
   const [comments, setComments] = useState<Record<string, GroupComment[]>>({});
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [membershipActive, setMembershipActive] = useState(false);
-  const [posting, setPosting] = useState(false);
   const [message, setMessage] = useState("");
   const basketballSide = useFanBasketballSide();
   const selectedTeam = teams.find(team => team.id === teamId) || null;
   const composerTeam = teams.find(team => team.id === composerTeamId) || null;
   const filteredTeams = teams.filter(team => team.name.toLowerCase().includes(teamSearch.trim().toLowerCase()));
-  const teamComposerPlaceholder = composerTeam ? fanFeedTeamComposerPlaceholder(composerTeam.name, language) : ft("composerPlaceholder");
 
   const load = useCallback(async (uid: string) => {
     const [{ data: follows }, { data: teamFollows }] = await Promise.all([
@@ -117,22 +114,6 @@ export default function FanFeedPage() {
     })();
     return () => { alive = false; };
   }, [load]);
-
-  async function publish() {
-    if (!user || profile?.account_type !== "fan" || !composerTeamId || !composerTeam?.is_member || (!body.trim() && !photo) || posting) return;
-    setPosting(true); setMessage(ft("moderating"));
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const form = new FormData(); form.append("action", "create_post"); form.append("team_id", composerTeamId); form.append("body", body.trim());
-      if (photo) form.append("image", photo);
-      const response = await fetch("/api/fan-groups", { method: "POST", headers: { Authorization: "Bearer " + session?.access_token }, body: form });
-      const result = await response.json();
-      if (!response.ok || result.ok !== true) throw new Error(result.message || ft("publishFailed"));
-      setBody(""); setPhoto(null); setPhotoPreview(""); setComposerOpen(false); setComposerTeamId(""); setTeamSearch(""); setMessage(ft("published"));
-      await load(user.id);
-    } catch (e: any) { setMessage(e?.message || ft("publishFailed")); }
-    finally { setPosting(false); }
-  }
 
   async function sharePost(post: FanPost) {
     const url = `${window.location.origin}/team-hub/groups/${encodeURIComponent(post.team_id)}`;
