@@ -13,7 +13,7 @@ import TeamOfficialUpdates from "../../components/TeamOfficialUpdates";
 import { useLanguage } from "../../components/LanguageProvider";
 import "./fan-feed.css";
 import "../hoopfeed-shared.css";
-import { fanFeedI18n, fanFeedTeamComposerPlaceholder, fanFeedTeamSubtitle } from "./i18n";
+import { fanFeedI18n, fanFeedTeamComposerPlaceholder } from "./i18n";
 
 type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null; group_name?: string | null };
 type Profile = { id: string; display_name: string | null; avatar_url: string | null; account_type: string };
