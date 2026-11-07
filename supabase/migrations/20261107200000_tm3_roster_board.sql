@@ -89,6 +89,12 @@ begin
        raise exception 'Dispute status is protected';
      end if;
    end if;
+   if new.dispute_status is distinct from old.dispute_status then
+     new.club_confirmed_at := old.club_confirmed_at;
+     new.updated_by := old.updated_by;
+     new.updated_at := old.updated_at;
+     return new;
+   end if;
  end if;
  new.updated_by := auth.uid();
  if new.updated_by is null then raise exception 'Authenticated manager required'; end if;
