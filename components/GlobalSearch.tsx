@@ -20,7 +20,7 @@ export default function GlobalSearch({ compact = false }: { compact?: boolean })
       value={value}
       onChange={setValue}
       onSubmit={submit}
-      placeholder="Search players, coaches, teams, or leagues"
+      placeholder="Search teams, coaches, leagues, or reviews"
       ariaLabel="Global search"
     />
   );
