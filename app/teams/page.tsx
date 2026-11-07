@@ -366,7 +366,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           teams.map((team) => (
-            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} followerCount={followerCounts[team.id] ?? null} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={isPlayerAccount ? "player" : trustScores[team.id]?.tier} logoUrl={team.logo_url} logoBg={team.logo_bg} />
+            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} followerCount={followerCounts[team.id] ?? null} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={isPlayerAccount ? "player" : trustScores[team.id]?.tier} fanView={isFanAccount} logoUrl={team.logo_url} logoBg={team.logo_bg} />
           ))
         )}
       </section>
