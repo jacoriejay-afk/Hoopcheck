@@ -102,3 +102,12 @@
 .hc-membership-comparison .hc-membership-plan .eyebrow { color:#ff8a54 !important; }
 .hc-membership-comparison .hc-membership-plan li { color:#e5e5e5 !important; }
 .hc-membership-comparison .hc-membership-plan button:focus-visible { outline:3px solid #ff8a54;outline-offset:3px; }
+
+/* Player dossier: genuine profile data, consistent arena-inspired dark hero. */
+.hc-player-dossier-hero { position:relative;isolation:isolate;overflow:hidden;background:radial-gradient(ellipse at 92% 12%,rgba(255,90,31,.22),transparent 55%),linear-gradient(145deg,#181818,#080808) !important;color:#f7f7f5 !important;border:1px solid #3b3b3b !important;border-radius:18px; }
+.hc-player-dossier-hero::before { content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:repeating-linear-gradient(135deg,transparent 0 46px,rgba(255,90,31,.08) 47px 49px,transparent 50px 96px); }
+.hc-player-dossier-hero h1,.hc-player-dossier-hero .hc-social-stats strong { color:#f7f7f5 !important; }
+.hc-player-dossier-hero .muted,.hc-player-dossier-hero .hc-social-stats small,.hc-player-dossier-hero .hc-social-profile-bio { color:#c6c6c6 !important; }
+.hc-player-dossier-hero .hc-social-stats a { color:#f7f7f5 !important; }
+.hc-player-dossier-hero .hc-social-profile-actions :is(a,button):focus-visible { outline:3px solid #ff8a54;outline-offset:3px; }
+@media(max-width:600px){.hc-player-dossier-hero {padding:16px !important}.hc-player-dossier-hero h1 {font-size:clamp(24px,7vw,36px) !important;overflow-wrap:anywhere;}}
