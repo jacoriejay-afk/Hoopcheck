@@ -130,7 +130,7 @@ export default function FanFeedPage() {
       }
     })();
     return () => { alive = false; };
-  }, [load]);
+  }, [load, language]);
 
   async function refreshFeed() {
     if (!user || refreshing) return;
