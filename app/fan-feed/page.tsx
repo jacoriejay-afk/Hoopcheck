@@ -45,6 +45,7 @@ export default function FanFeedPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState(0);
   const touchStartY = useRef<number | null>(null);
+  const loadSequence = useRef(0);
   const [membershipActive, setMembershipActive] = useState(false);
   const [posting, setPosting] = useState(false);
   const [message, setMessage] = useState("");
@@ -56,13 +57,17 @@ export default function FanFeedPage() {
     : ft("composerPlaceholder");
 
   const load = useCallback(async (uid: string) => {
+    const requestId = ++loadSequence.current;
+    const isCurrentRequest = () => requestId === loadSequence.current;
     const [{ data: follows }, { data: teamFollows }] = await Promise.all([
       supabase.from("follow_relationships").select("target_id,target_type").eq("follower_id", uid).eq("target_type", "fan"),
       supabase.from("follow_relationships").select("target_id,target_type").eq("follower_id", uid).eq("target_type", "team"),
     ]);
+    if (!isCurrentRequest()) return;
     const fanIds = (follows || []).map((x: any) => x.target_id);
     const teamIds = (teamFollows || []).map((x: any) => x.target_id);
     const { data: sideTeams } = await supabase.from("teams").select("id").eq("basketball_type", basketballSide === "womens" ? "womens" : "mens");
+    if (!isCurrentRequest()) return;
     const sideTeamIds = new Set((sideTeams || []).map((x: any) => x.id));
     const scopedTeamIds = teamIds.filter((id: string) => sideTeamIds.has(id));
     setFollowing(new Set(fanIds));
@@ -75,8 +80,10 @@ export default function FanFeedPage() {
       .select("id,author_id,team_id,body,image_url,video_url,created_at,expires_at,profiles!fan_feed_posts_author_id_fkey(id,display_name,avatar_url,account_type),teams(id,name,logo_url,logo_bg),fan_feed_checks(user_id),fan_feed_comments(id)")
       .gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(100);
     const { data, error } = await query;
+    if (!isCurrentRequest()) return;
     if (error) { setMessage(error.message); return; }
     const { data: archiveRows } = await supabase.from("fan_feed_archives").select("post_id").eq("user_id", uid);
+    if (!isCurrentRequest()) return;
     const archivedIds = new Set((archiveRows || []).map((r: any) => r.post_id));
     setArchived(archivedIds);
     const rows = (data || []).filter((p: any) => !archivedIds.has(p.id) && sideTeamIds.has(p.team_id) && (fanIds.includes(p.author_id) || scopedTeamIds.includes(p.team_id)))
@@ -86,6 +93,7 @@ export default function FanFeedPage() {
     const ids = rows.map((p: any) => p.id);
     if (ids.length) {
       const { data: commentRows } = await supabase.from("fan_feed_comments").select("id,post_id,author_id,body,created_at,profiles(display_name,avatar_url)").in("post_id", ids).order("created_at", { ascending: true });
+      if (!isCurrentRequest()) return;
       const grouped: Record<string, any[]> = {};
       (commentRows || []).forEach((c: any) => { (grouped[c.post_id] ||= []).push({ ...c, profiles: Array.isArray(c.profiles) ? c.profiles[0] : c.profiles }); });
       setComments(grouped);
