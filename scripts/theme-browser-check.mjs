@@ -517,30 +517,35 @@ try {
       const errors = [];
       if (requestedPath === "/fan-feed") {
         await page.locator("main.hc-fan-feed-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
-        await page.waitForFunction((teamName) => document.querySelector("main.hc-fan-feed-page .hc-feed-hero h1")?.textContent?.trim() === teamName, teamFixture.name, { timeout: 15000 });
-        await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").waitFor({ state: "visible", timeout: 15000 });
-        await page.waitForFunction((teamName) => document.querySelector("main.hc-fan-feed-page .hc-feed-composer textarea")?.getAttribute("placeholder")?.includes(teamName), teamFixture.name, { timeout: 15000 });
-        await page.locator("main.hc-fan-feed-page .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
         const teamHeading = (await page.locator("main.hc-fan-feed-page .hc-feed-hero h1").innerText()).trim();
-        const teamSubtitle = (await page.locator("main.hc-fan-feed-page .hc-feed-hero .muted").innerText()).trim();
         const fanHqEyebrow = (await page.locator("main.hc-fan-feed-page .hc-feed-hero .eyebrow").innerText()).trim();
-        const composerPlaceholder = await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").getAttribute("placeholder");
-        if (teamHeading !== teamFixture.name) errors.push("fan-feed: hero is not wired to the selected team's real name: " + teamHeading);
-        if (!teamSubtitle.includes(teamFixture.name)) errors.push("fan-feed: hero subtitle is missing the selected team's real name: " + teamSubtitle);
-        if (!fanHqEyebrow.includes("FAN HQ")) errors.push("fan-feed: real Fan HQ eyebrow is missing: " + fanHqEyebrow);
-        if (!composerPlaceholder?.includes(teamFixture.name)) errors.push("fan-feed: composer placeholder is not team-specific: " + composerPlaceholder);
+        const explainer = (await page.locator("main.hc-fan-feed-page .hc-fan-feed-explainer").innerText()).trim();
+        if (teamHeading !== "Fan HQ") errors.push("fan-feed: screen title must be Fan HQ: " + teamHeading);
+        if (!fanHqEyebrow.includes("FAN HQ") || /KICKER/.test(fanHqEyebrow)) errors.push("fan-feed: real Fan HQ eyebrow is missing: " + fanHqEyebrow);
+        const expectedExplainer = testLanguage === "es" ? "Publicaciones de los grupos de fans de los clubes que sigues." : "Posts from the fan groups of the clubs you follow.";
+        if (explainer !== expectedExplainer) errors.push("fan-feed: plain-language purpose line is missing: " + explainer);
+        const postPrompt = page.locator("main.hc-fan-feed-page .hc-fan-feed-post-prompt");
+        await postPrompt.waitFor({ state: "visible", timeout: 15000 });
+        if (await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").count()) errors.push("fan-feed: standalone feed must not show a composer before club selection");
+        await postPrompt.getByRole("button").click();
+        const picker = page.locator("main.hc-fan-feed-page .hc-fan-feed-team-picker");
+        await picker.waitFor({ state: "visible", timeout: 10000 });
+        const pickerSearch = page.locator("main.hc-fan-feed-page .hc-feed-team-search");
+        await pickerSearch.fill("Ego");
+        const followedClub = picker.getByRole("option").filter({ hasText: teamFixture.name });
+        await followedClub.waitFor({ state: "visible", timeout: 10000 });
+        await followedClub.click();
+        const composer = page.locator("main.hc-fan-feed-page .hc-feed-composer textarea");
+        await composer.waitFor({ state: "visible", timeout: 10000 });
+        const composerPlaceholder = await composer.getAttribute("placeholder");
+        if (!composerPlaceholder?.includes(teamFixture.name)) errors.push("fan-feed: locked composer placeholder is not club-specific: " + composerPlaceholder);
+        const targetLabel = (await page.locator("main.hc-fan-feed-page .hc-fan-feed-target").innerText()).trim();
+        if (!targetLabel.includes("Posting to") || !targetLabel.includes(teamFixture.name)) errors.push("fan-feed: composer target is not locked and labelled: " + targetLabel);
+        await page.locator("main.hc-fan-feed-page .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
         const emptyCopy = (await page.locator("main.hc-fan-feed-page .hc-feed-empty").innerText()).trim();
-        const expectedEmptyTitle = testLanguage === "es" ? "Tu feed de fans empieza aquí." : "Your fan feed starts here.";
-        const expectedEmptyBody = testLanguage === "es"
-          ? "Sigue equipos y fans para ver publicaciones y conversaciones."
-          : "Follow teams and fans to see team-tagged posts and conversations.";
-        if (!emptyCopy.includes(expectedEmptyTitle) || !emptyCopy.includes(expectedEmptyBody)) errors.push("fan-feed: EMPTY-1 headline/body copy is missing or not translated");
-        const discoverFans = page.locator('main.hc-fan-feed-page .hc-feed-empty a[href="/fans"]');
-        if (await discoverFans.count() !== 1) errors.push("fan-feed: EMPTY-1 Discover Fans action is missing");
-        const expectedDiscoverFans = testLanguage === "es" ? "Descubrir fans" : "Discover fans";
-        if ((await discoverFans.innerText().catch(() => "")).trim() !== expectedDiscoverFans) errors.push("fan-feed: EMPTY-1 Discover Fans action label is incorrect");
-        const audienceNote = (await page.locator("main.hc-fan-feed-page .hc-feed-expiry-note").innerText()).trim();
-        if (!audienceNote || !audienceNote.includes("24") || /KICKER|TITLE|Subtitle|TEAM FIRST|Fan Only Note/.test(audienceNote)) errors.push("fan-feed: audience note is missing or still scaffolded: " + audienceNote);
+        const expectedEmptyTitle = testLanguage === "es" ? "Aún no hay publicaciones: sé el primero en publicar para " + teamFixture.name + "." : "No posts yet — be the first to post for " + teamFixture.name + ".";
+        if (!emptyCopy.includes(expectedEmptyTitle)) errors.push("fan-feed: club-specific EMPTY-1 headline is missing: " + emptyCopy);
+        if (!emptyCopy.includes(testLanguage === "es" ? "Sé el primero en publicar" : "Be the first to post")) errors.push("fan-feed: EMPTY-1 post action is missing");
       }
       if (requestedPath.startsWith("/team-hub/groups/")) {
         await page.locator("main.hc-team-fan-group-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
