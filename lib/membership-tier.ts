@@ -18,6 +18,9 @@ export type HoopCheckEntitlements = {
   canUseProPassport: boolean;
   canUsePayOnTimeIndex: boolean;
   canUseAskPlayer: boolean;
+  canConnectWithFans: boolean;
+  canSwitchBasketballSide: boolean;
+  canStartCoachIdentityVerification: boolean;
   canViewTeamPayHistory: boolean;
   canSubmitPayCheckIn: boolean;
   canUseFanGroups: boolean;
@@ -107,6 +110,9 @@ export function getHoopCheckEntitlements(args: {
       (isPlayer && isAtLeastTier(tier, "premium")),
     canUsePayOnTimeIndex: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) || (otherMember && active),
     canUseAskPlayer: (isPlayer || role === "scout" || role === "agent") && isAtLeastTier(tier, "pro"),
+    canConnectWithFans: isFan && isAtLeastTier(tier, "pro"),
+    canSwitchBasketballSide: isFan && isAtLeastTier(tier, "pro"),
+    canStartCoachIdentityVerification: role === "coach" && isAtLeastTier(tier, "pro"),
     canViewTeamPayHistory: Boolean(role) && !isFan,
     canSubmitPayCheckIn: isPlayer && args.playerVerified === true && isAtLeastTier(tier, "pro"),
     canUseFanGroups: isFan,
