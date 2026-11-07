@@ -55,7 +55,10 @@ export default function FanFeedPage() {
     ]);
     const fanIds = (follows || []).map((x: any) => x.target_id);
     const teamIds = (teamFollows || []).map((x: any) => x.target_id);
-    const { data: sideTeams } = await supabase.from("teams").select("id").eq("basketball_type", basketballSide === "womens" ? "womens" : "mens");
+    const sideTeamQuery = basketballSide === "womens"
+      ? supabase.from("womens_teams").select("id").eq("active", true)
+      : supabase.from("teams").select("id").eq("basketball_type", "mens").eq("active", true);
+    const { data: sideTeams } = await sideTeamQuery;
     const sideTeamIds = new Set((sideTeams || []).map((x: any) => x.id));
     const scopedTeamIds = teamIds.filter((id: string) => sideTeamIds.has(id));
     setFollowing(new Set(fanIds));
