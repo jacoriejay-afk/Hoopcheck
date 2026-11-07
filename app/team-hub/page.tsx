@@ -15,7 +15,7 @@ type Team = { id:string; name:string; logo_url:string|null; logo_bg?:"transparen
 type Game = { id:string; team_id:string; opponent_name:string; status:string; scheduled_at:string|null; home_score:number|null; away_score:number|null; period_label:string|null; league_name:string|null };
 
 export default function TeamHubPage(){
-  const { language, formatDate } = useLanguage();
+  const { language, formatDate, t } = useLanguage();
   const labels = teamHubCopy(language);
   const basketballSide = useFanBasketballSide();
   const [loading,setLoading]=useState(true);
@@ -83,7 +83,7 @@ export default function TeamHubPage(){
         <div style={{display:"flex",alignItems:"center",gap:14}}><TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={52} className="hc-live-team-logo" /><div style={{minWidth:0,flex:1}}><h2 style={{margin:"0 0 4px"}}>{team.name}</h2><p className="muted" style={{margin:0}}>{[team.league_name,team.city,team.country].filter(Boolean).join(" · ")||labels.basketballTeam}</p></div><Link className="btn" href={teamHref}>{labels.teamPage}</Link></div>
         {basketballSide==="mens"&&<TeamFanGroupEntry teamId={team.id}/>}
         <div style={{marginTop:16}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}><h3 style={{margin:0}}>{labels.nextGames}</h3><Link href={teamHref} style={{color:"var(--orange)",fontWeight:900}}>{labels.teamUpdates} →</Link></div>
-        {basketballSide==="womens"?<p className="muted" style={{marginBottom:0}}>{labels.womensScheduleUnavailable}</p>:!teamGames.length?<p className="muted" style={{marginBottom:0}}>{labels.noGames}</p>:<div style={{display:"grid",gap:8,marginTop:10}}>{teamGames.map(game=><div key={game.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,padding:"12px",border:"1px solid var(--border)",borderRadius:12}}><div><strong>{["live","in_progress"].includes(game.status.toLowerCase())?"● "+labels.liveNow:labels.versus+" "+game.opponent_name}</strong><p className="muted" style={{fontSize:12,margin:"4px 0 0"}}>{game.league_name||team.league_name||"Basketball"}{game.scheduled_at?" · "+formatDate(game.scheduled_at,{dateStyle:"medium",timeStyle:"short"}):""}{game.period_label?" · "+game.period_label:""}</p></div><strong style={{whiteSpace:"nowrap"}}>{game.home_score!=null&&game.away_score!=null?String(game.home_score)+" – "+String(game.away_score):labels.upNext}</strong></div>)}</div>}</div>
+        {basketballSide==="womens"?<p className="muted" style={{marginBottom:0}}>{labels.womensScheduleUnavailable}</p>:!teamGames.length?<p className="muted" style={{marginBottom:0}}>{labels.noGames}</p>:<div style={{display:"grid",gap:8,marginTop:10}}>{teamGames.map(game=><div key={game.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,padding:"12px",border:"1px solid var(--border)",borderRadius:12}}><div><strong>{["live","in_progress"].includes(game.status.toLowerCase())?"● "+labels.liveNow:labels.versus+" "+game.opponent_name}</strong><p className="muted" style={{fontSize:12,margin:"4px 0 0"}}>{game.league_name||team.league_name||t("basketball")}{game.scheduled_at?" · "+formatDate(game.scheduled_at,{dateStyle:"medium",timeStyle:"short"}):""}{game.period_label?" · "+game.period_label:""}</p></div><strong style={{whiteSpace:"nowrap"}}>{game.home_score!=null&&game.away_score!=null?String(game.home_score)+" – "+String(game.away_score):labels.upNext}</strong></div>)}</div>}</div>
       </article>;
     })}</section>
   </div></main>;
