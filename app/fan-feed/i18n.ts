@@ -200,6 +200,37 @@ export function fanFeedRefreshError(language: Language): string {
   return refreshErrorCopy[language] || refreshErrorCopy.en;
 }
 
+
+const expiryCopy: Record<Language, { expired: string; minutes: string; hours: string }> = {
+  en: { expired: "Expired", minutes: "m left", hours: "h left" },
+  es: { expired: "Caducado", minutes: " min restantes", hours: " h restantes" },
+  fr: { expired: "Expiré", minutes: " min restantes", hours: " h restantes" },
+  de: { expired: "Abgelaufen", minutes: " Min. übrig", hours: " Std. übrig" },
+  tr: { expired: "Süresi doldu", minutes: " dk kaldı", hours: " sa kaldı" },
+  pt: { expired: "Expirado", minutes: " min restantes", hours: " h restantes" },
+  it: { expired: "Scaduto", minutes: " min rimanenti", hours: " h rimanenti" },
+  el: { expired: "Έληξε", minutes: " λεπ. απομένουν", hours: " ώρ. απομένουν" },
+  ar: { expired: "انتهت المدة", minutes: " د متبقية", hours: " س متبقية" },
+  ru: { expired: "Истекло", minutes: " мин. осталось", hours: " ч осталось" },
+  az: { expired: "Vaxtı bitib", minutes: " dəq. qalıb", hours: " saat qalıb" },
+  pl: { expired: "Wygasło", minutes: " min pozostało", hours: " godz. pozostało" },
+  zh: { expired: "已过期", minutes: "分钟后到期", hours: "小时后到期" },
+  ja: { expired: "期限切れ", minutes: "分残り", hours: "時間残り" },
+  sr: { expired: "Isteklo", minutes: " min preostalo", hours: " h preostalo" },
+  fi: { expired: "Vanhentunut", minutes: " min jäljellä", hours: " h jäljellä" },
+  he: { expired: "פג תוקף", minutes: " דק׳ נותרו", hours: " שע׳ נותרו" },
+  lt: { expired: "Baigėsi", minutes: " min. liko", hours: " val. liko" },
+  uk: { expired: "Термін минув", minutes: " хв залишилося", hours: " год залишилося" },
+};
+
+export function fanFeedExpiryLabel(expiresAt: string, now: number, language: Language): string {
+  const remaining = Math.max(0, Math.ceil((new Date(expiresAt).getTime() - now) / 60000));
+  const labels = expiryCopy[language] || expiryCopy.en;
+  if (remaining <= 0) return labels.expired;
+  if (remaining < 60) return remaining + labels.minutes;
+  return Math.ceil(remaining / 60) + labels.hours;
+}
+
 function withTeam(template: string, teamName: string) {
   return template.replaceAll("{team}", teamName);
 }
