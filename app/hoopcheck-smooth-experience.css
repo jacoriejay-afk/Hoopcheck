@@ -81,3 +81,11 @@
 .hc-trust-details {display:block;max-width:40ch;line-height:1.5;margin-top:5px;}
 .hc-trust-score__dial svg circle[stroke="#FF5A1F"] {transition:stroke-dashoffset 600ms var(--hc-ease-fluid);}
 @media(prefers-reduced-motion:reduce){.hc-trust-score__dial svg circle[stroke="#FF5A1F"]{transition:none;}}
+
+/* Inbox: dense horizontal filters, stable tap targets, accessible selected state. */
+.hc-smooth-inbox-tabs {display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin;padding:12px 0 4px;overscroll-behavior-inline:contain;}
+.hc-smooth-inbox-tabs button {display:inline-flex;gap:8px;align-items:center;justify-content:center;min-height:42px;white-space:nowrap;padding:9px 13px;border-radius:999px;border:1px solid var(--hc-border,var(--border));background:var(--hc-surface-raised,var(--paper));color:var(--hc-text-primary,var(--ink));font-size:13px;font-weight:700;cursor:pointer;transition:background var(--hc-motion-tap) ease,border-color var(--hc-motion-tap) ease;}
+.hc-smooth-inbox-tabs button span {font-variant-numeric:tabular-nums;opacity:.7;font-size:11px;}
+.hc-smooth-inbox-tabs button.is-active {border-color:var(--brand-orange);box-shadow:inset 0 0 0 1px var(--brand-orange);}
+.hc-smooth-inbox-tabs button:focus-visible {outline:2px solid var(--brand-orange);outline-offset:2px;}
+@media(prefers-reduced-motion:reduce){.hc-smooth-inbox-tabs button{transition:none;}}
