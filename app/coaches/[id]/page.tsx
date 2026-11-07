@@ -18,6 +18,7 @@ import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
 import WatchButton from "../../../components/WatchButton";
 import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import TrustScoreDial from "../../../components/TrustScoreDial";
+import ReviewMembershipGate from "../../../components/ReviewMembershipGate";
 import ClaimProfileButton from "../../../components/ClaimProfileButton";
 import OfficialReviewResponse from "../../../components/OfficialReviewResponse";
 
@@ -160,7 +161,8 @@ export default function CoachDetailPage() {
   const [hasAccess, setHasAccess] =
     useState(false);
   const [accountType, setAccountType] = useState<string>("");
-  const [reviewTier, setReviewTier] = useState<"free" | "pro" | "premium" | "player" | "member">("free");
+  const [reviewTier, setReviewTier] = useState<"free" | "pro" | "premium" | "member">("free");
+  const [canReadFullReviews, setCanReadFullReviews] = useState(false);
 
   const [loading, setLoading] =
     useState(true);
@@ -314,9 +316,10 @@ export default function CoachDetailPage() {
         cache: "no-store",
       });
       const reviewPayload = response.ok ? await response.json() : null;
-      const tier = profile?.account_type === "player" ? "player" : ((reviewPayload?.tier || "free") as typeof reviewTier);
+      const tier = (reviewPayload?.tier || "free") as typeof reviewTier;
       setReviewTier(tier);
-      const fullRead = ["premium", "player", "member"].includes(tier);
+      const fullRead = reviewPayload?.canReadFull === true;
+      setCanReadFullReviews(fullRead);
       setHasAccess(tier !== "free");
       setReviewLoading(fullRead);
       const summary = reviewPayload?.summary;
@@ -549,9 +552,9 @@ export default function CoachDetailPage() {
         <h1>
           {coach.name}
         </h1>
-        {reviewTier === "pro" ? (
+        {reviewTier === "pro" && accountType === "fan" ? (
           <div className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow">Trust Score</span><h2>Premium</h2><Link href="/membership" className="btn">Upgrade</Link></div>
-        ) : ["premium", "player", "member"].includes(reviewTier) ? (
+        ) : canReadFullReviews ? (
           <div className="hc-entity-trust-score"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedReviews"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /></div>
         ) : (
           <div className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow">Full player reviews require an eligible membership</span><Link href="/membership" className="btn">Upgrade</Link></div>
@@ -657,9 +660,9 @@ export default function CoachDetailPage() {
         </div>
       </section>
 
-      {!hasAccess && reviewTier === "free" && accountType !== "player" ? (
-        <section className="hero"><div className="card hc-membership-locked-state"><h2>Player reviews require an eligible membership</h2><Link href="/membership" className="btn">Upgrade</Link></div></section>
-      ) : reviewTier === "pro" ? (
+      {!canReadFullReviews && reviewTier === "free" && Boolean(accountType) ? (
+        <ReviewMembershipGate title="Player reviews require an eligible membership" actionLabel="Upgrade" />
+      ) : reviewTier === "pro" && accountType === "fan" ? (
         <section className="hero hc-fan-review-teaser">
           <h2>Player ratings and reviews</h2>
           <h3>Overall rating</h3>
