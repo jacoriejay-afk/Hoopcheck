@@ -12,7 +12,7 @@ import ReviewMembershipGate from "../../../components/ReviewMembershipGate";
 
 export default function WomensTeam(){
  const {formatDate,formatNumber,t}=useLanguage();
- const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [teamFollowerCount,setTeamFollowerCount]=useState(0);
+ const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [accountType,setAccountType]=useState(""); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [teamFollowerCount,setTeamFollowerCount]=useState(0);
  useEffect(() => {
    let active = true;
    (async () => {
@@ -30,6 +30,7 @@ export default function WomensTeam(){
        const tier = (payload?.tier || "free") as typeof reviewTier;
        if (!active) return;
        setReviewTier(tier);
+       setAccountType(payload?.accountType || "");
        const fullRead = payload?.canReadFull === true;
        setCanSeeRatings(tier !== "free");
        setCanViewReviews(fullRead);
@@ -41,7 +42,7 @@ export default function WomensTeam(){
        }
        setReviews(fullRead && Array.isArray(payload?.reviews) ? payload.reviews : []);
      } else {
-       setCanSeeRatings(false); setCanViewReviews(false); setCanReview(false); setReviewTier("free"); setReviews([]);
+       setCanSeeRatings(false); setCanViewReviews(false); setCanReview(false); setReviewTier("free"); setAccountType(""); setReviews([]);
      }
      if (active) setLoading(false);
    })().catch(error => { console.error("Unable to load women’s team review access:", error); if (active) setLoading(false); });
@@ -80,6 +81,8 @@ export default function WomensTeam(){
       title="Full player reviews require an eligible membership"
       description="Players and other eligible active members can access full reviews. Fan access depends on the active plan."
       actionLabel="Upgrade"
+      accountType={accountType}
+      tier={reviewTier}
     />}
   </Surface>
   <div className="bottom-back"><button type="button" className="btn dark" onClick={()=>window.history.back()}>← {t("back")}</button></div></div></main>;
