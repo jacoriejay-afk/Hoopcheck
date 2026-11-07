@@ -422,7 +422,7 @@ function SearchContent() {
               <div className="group-heading"><span>03</span><h3>{t("mensTeams")}</h3></div>
               <div className="result-grid">
                 {visibleTeams.map((team) => (
-                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" logoUrl={team.logo_url} logoBg={team.logo_bg} />
+                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" fanView={isFanAccount} logoUrl={team.logo_url} logoBg={team.logo_bg} />
                 ))}
               </div>
             </section>
@@ -433,7 +433,7 @@ function SearchContent() {
               <div className="group-heading"><span>04</span><h3>{t("womensTeams")}</h3></div>
               <div className="result-grid">
                 {visibleWomensTeams.map((team) => (
-                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" logoUrl={team.logo_url} logoBg={team.logo_bg} />
+                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" fanView={isFanAccount} logoUrl={team.logo_url} logoBg={team.logo_bg} />
                 ))}
               </div>
             </section>
