@@ -34,10 +34,13 @@ export async function GET(request: Request) {
     let isAdmin = false;
     let playerVerified = false;
     if (user) {
-      const [{ data: profile }, { data: subscription }] = await Promise.all([
+      const [{ data: profile, error: profileError }, { data: subscription, error: subscriptionError }] = await Promise.all([
         db.from("profiles").select("account_type,player_verified").eq("id", user.id).maybeSingle(),
         db.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id", user.id).maybeSingle(),
       ]);
+      if (profileError || subscriptionError) {
+        throw profileError || subscriptionError;
+      }
       accountType = profile?.account_type || "";
       playerVerified = profile?.player_verified === true;
       plan = subscription?.plan || "";
