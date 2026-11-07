@@ -722,6 +722,16 @@ export default function LeagueDetailPage() {
         </>
       )}
 
+      {!hasAccess ? (
+        <section className="hero">
+          <ReviewMembershipGate
+            title="Full league reviews require an eligible membership"
+            description="Player Pro and Premium members and eligible non-fan members can read full league reviews. Fan accounts need Premium for full review details."
+            actionLabel="View Membership"
+          />
+        </section>
+      ) : null}
+
       {reportReviewId && (
         <div
           className="report-overlay"
