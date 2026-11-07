@@ -359,7 +359,7 @@ function MembershipContent() {
                 </div>
                 <p className="plan-description">
                   {accountType === "fan"
-                    ? "Follow your teams, join Fan HoopFeed and live game chats, connect with other fans and compare teams."
+                    ? "Join Fan HoopFeed and live game chats, connect with other fans and compare teams."
                     : "Full access to the core HoopCheck research experience."}
                 </p>
                 <ul>
@@ -368,7 +368,6 @@ function MembershipContent() {
                     <li>Fan network and connection requests</li>
                     <li>Live Game Hub and Chat</li>
                     <li>Team comparison and team alerts</li>
-                    <li>Fan Groups and Team Hub</li>
                   </> : <>
                     <li>Full coach ratings and reviews</li>
                     <li>Full team ratings and reviews</li>
