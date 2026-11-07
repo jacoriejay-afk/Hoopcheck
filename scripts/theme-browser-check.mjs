@@ -541,7 +541,8 @@ try {
         const composerPlaceholder = await composer.getAttribute("placeholder");
         if (!composerPlaceholder?.includes(teamFixture.name)) errors.push("fan-feed: locked composer placeholder is not club-specific: " + composerPlaceholder);
         const targetLabel = (await page.locator("main.hc-fan-feed-page .hc-fan-feed-target").innerText()).trim();
-        if (!targetLabel.includes("Posting to") || !targetLabel.includes(teamFixture.name)) errors.push("fan-feed: composer target is not locked and labelled: " + targetLabel);
+        const expectedPostingLabel = testLanguage === "es" ? "Publicando para" : "Posting to";
+        if (!targetLabel.includes(expectedPostingLabel) || !targetLabel.includes(teamFixture.name)) errors.push("fan-feed: composer target is not locked and labelled: " + targetLabel);
         await page.locator("main.hc-fan-feed-page .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
         const emptyCopy = (await page.locator("main.hc-fan-feed-page .hc-feed-empty").innerText()).trim();
         const expectedEmptyTitle = testLanguage === "es" ? "Aún no hay publicaciones: sé el primero en publicar para " + teamFixture.name + "." : "No posts yet — be the first to post for " + teamFixture.name + ".";
