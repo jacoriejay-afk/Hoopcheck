@@ -24,8 +24,10 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
         supabase.from("team_fan_group_moderators").select("user_id,moderator_type").eq("team_id", teamId),
         supabase.rpc("is_current_user_admin_or_moderator")
       ]);
-      setIsFan(getHoopCheckEntitlements({ accountType: profile?.account_type }).canUseFanGroups);
-      setIsModerator(Boolean((moderators || []).some((m: any) => m.user_id === user.id) ||
+      const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, isAdmin: platformAdmin === true });
+      setIsFan(entitlements.canUseFanGroups);
+      setIsModerator(Boolean(entitlements.canModerateFanGroups ||
+        (moderators || []).some((m: any) => m.user_id === user.id) ||
         ((moderators || []).some((m: any) => m.moderator_type === "platform") && platformAdmin === true)));
     } else {
       setIsFan(false);
