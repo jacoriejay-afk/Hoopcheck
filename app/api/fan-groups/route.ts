@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
+import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
 
 export const runtime = "nodejs";
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
@@ -66,6 +67,7 @@ export async function POST(request: Request) {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(teamId))
       return NextResponse.json({ ok: false, message: "Choose a valid team." }, { status: 400 });
     const { data: profile } = await db.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
+    const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type });
     const { data: group } = await db.from("team_fan_groups").select("team_id,group_name,join_mode").eq("team_id", teamId).maybeSingle();
     if (!group) return NextResponse.json({ ok: false, message: "This team's Fan Group is not available." }, { status: 404 });
 
@@ -77,7 +79,7 @@ export async function POST(request: Request) {
     const isMember = Boolean(membership);
 
     if (action === "join") {
-      if (profile?.account_type !== "fan") return NextResponse.json({ ok: false, message: "Only fan accounts can join team fan groups." }, { status: 403 });
+      if (!entitlements.canUseFanGroups) return NextResponse.json({ ok: false, message: "Only fan accounts can join team fan groups." }, { status: 403 });
       if (isMember) return NextResponse.json({ ok: true, joined: true });
       if (group.join_mode === "open") {
         const { error } = await db.from("team_fan_group_members").upsert({ team_id: teamId, user_id: user.id }, { onConflict: "team_id,user_id" });
