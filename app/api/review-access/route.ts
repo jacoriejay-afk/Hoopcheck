@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const entityType = url.searchParams.get("entityType");
   const entityId = url.searchParams.get("entityId");
-  if (!["team", "coach", "womens-team"].includes(entityType || "") || !entityId || !/^[0-9a-f-]{36}$/i.test(entityId)) {
+  if (!["team", "coach", "womens-team", "league"].includes(entityType || "") || !entityId || !/^[0-9a-f-]{36}$/i.test(entityId)) {
     return NextResponse.json({ error: "Provide a valid review target." }, { status: 400 });
   }
 
@@ -60,7 +60,7 @@ export async function GET(request: Request) {
       (profile?.basketball_type === "womens" && profile.selected_womens_team_id === entityId)
     );
 
-    const targetColumn = entityType === "team" ? "team_id" : entityType === "coach" ? "coach_id" : "womens_team_id";
+    const targetColumn = entityType === "team" ? "team_id" : entityType === "coach" ? "coach_id" : entityType === "league" ? "league_id" : "womens_team_id";
     const table = entityType === "womens-team" ? "womens_team_reviews" : "reviews";
 
     const response: Record<string, unknown> = {
