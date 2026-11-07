@@ -32,8 +32,13 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [postingStreak, setPostingStreak] = useState(0);
+  const [loadError, setLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setLoadError(false);
     (async () => {
       const { data: { session } } = await getCachedSession();
       const user = session?.user;
@@ -42,6 +47,7 @@ export default function ProfilePage() {
         return;
       }
 
+      if (!active) return;
       setEmail(user.email || "");
       const result = await Promise.race([
         supabase
@@ -49,16 +55,20 @@ export default function ProfilePage() {
           .select("id,display_name,username,first_name,last_name,account_type,bio,position,years_pro,current_country,current_team,player_verified,coach_verified,avatar_url,avatar_moderation_status,basketball_type,free_agent,hometown,nationality,interests,favorite_leagues,profile_visibility")
           .eq("id", user.id)
           .maybeSingle(),
-        new Promise<any>((resolve) => setTimeout(() => resolve({ data: null }), 2500)),
+        new Promise<any>((resolve) => setTimeout(() => resolve({ data: null, error: new Error("Profile request timed out") }), 8000)),
       ]);
+      if (!active) return;
+      if (result.error) { setLoadError(true); setLoading(false); return; }
       setP(result.data);
       if (result.data?.account_type === "player") {
         const { data: activity } = await supabase.from("feed_posting_activity").select("activity_date").eq("user_id", user.id).order("activity_date", { ascending: false }).limit(370);
+        if (!active) return;
         setPostingStreak(calculatePostingStreak(activity || []));
       }
       setLoading(false);
-    })();
-  }, []);
+    })().catch(() => { if (active) { setLoadError(true); setLoading(false); } });
+    return () => { active = false; };
+  }, [retryKey]);
 
   if (loading) {
     return (
@@ -76,7 +86,8 @@ export default function ProfilePage() {
         <div className="page-container">
           <section className="hero-card">
             <h1>{t("profileUnavailable")}</h1>
-            <Link href="/account" className="btn">{t("editAccount")}</Link>
+            {loadError ? <p role="alert">Your profile could not be loaded. Please try again.</p> : null}
+            {loadError ? <button type="button" className="btn" onClick={() => setRetryKey(v => v + 1)}>Retry profile</button> : <Link href="/account" className="btn">{t("editAccount")}</Link>}
           </section>
         </div>
       </main>
