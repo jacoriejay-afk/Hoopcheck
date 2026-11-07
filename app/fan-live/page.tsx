@@ -11,7 +11,7 @@ import "./fan-live.css";
 import "../game-predictions.css";
 import GameWinnerPrediction from "../../components/GameWinnerPrediction";
 import TeamLogo from "../../components/TeamLogo";
-import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 
 type Game = { id:string; team_id:string; opponent_team_id:string|null; opponent_name:string; status:string; home_score:number|null; away_score:number|null; started_at:string|null; ends_at:string|null; scheduled_at:string|null; league_name:string|null; country:string|null; period_label:string|null };
 type Team = { id:string; name:string; logo_url?:string|null; logo_bg?:"transparent"|"light"|"dark"|null };
@@ -65,9 +65,9 @@ export default function FanLivePage() {
       supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle(),
       supabase.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id",user.id).maybeSingle()
     ]);
-    const paidMember = hasActiveMembershipAtLeast(subscription);
-    const fanCanChat = profile?.account_type === "fan" && paidMember;
-    const playerCanChat = profile?.account_type === "player" && paidMember;
+    const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription });
+    const fanCanChat = profile?.account_type === "fan" && entitlements.canUseLiveGameChat;
+    const playerCanChat = profile?.account_type === "player" && entitlements.canUseLiveGameChat;
     const playerCanPredict = profile?.account_type === "player";
     setChatEnabled(Boolean(fanCanChat || playerCanChat));
     setAllowed(Boolean(fanCanChat || playerCanChat || playerCanPredict));
@@ -82,15 +82,27 @@ export default function FanLivePage() {
     if(gameResult.error) setMessage("Game updates are temporarily unavailable. Reconnecting…");
     const rawGames=(gameResult.data||[]) as Game[];
     const candidateIds=Array.from(new Set(rawGames.flatMap(g=>[g.team_id,g.opponent_team_id].filter((x):x is string=>Boolean(x)))));
-    const {data:sideRows}=candidateIds.length?await supabase.from("teams").select("id").in("id",candidateIds).eq("basketball_type",basketballSide==="womens"?"womens":"mens"):{data:[] as {id:string}[]};
-    const sideIds=new Set((sideRows||[]).map((row:any)=>row.id));
-    const next=rawGames.filter(g=>sideIds.has(g.team_id));
+    const [{data:sideRows},{data:womensSideRows}]=await Promise.all([
+      candidateIds.length
+        ? supabase.from("teams").select("id").in("id",candidateIds).eq("basketball_type",basketballSide==="womens"?"womens":"mens")
+        : Promise.resolve({data:[] as {id:string}[]}),
+      basketballSide==="womens" && candidateIds.length
+        ? supabase.from("womens_teams").select("id").in("id",candidateIds)
+        : Promise.resolve({data:[] as {id:string}[]}),
+    ]);
+    const sideIds=new Set([...(sideRows||[]),...(womensSideRows||[])].map((row:any)=>row.id));
+    // A fixture belongs to the selected basketball side whether that side is stored
+    // as the home team or the opponent; do not silently drop away-team women's games.
+    const next=rawGames.filter(g=>sideIds.has(g.team_id)||sideIds.has(g.opponent_team_id||""));
     setGames(next);
     setMutedUsers(new Set((controls||[]).filter((x:any)=>x.is_muted).map((x:any)=>x.target_user_id)));
     setBlockedUsers(new Set((controls||[]).filter((x:any)=>x.is_blocked).map((x:any)=>x.target_user_id)));
     const ids=Array.from(new Set(next.flatMap(g=>[g.team_id,g.opponent_team_id].filter((x):x is string=>Boolean(x)))));
-    const {data:teamRows}=ids.length?await supabase.from("teams").select("id,name,logo_url,logo_bg").in("id",ids):{data:[] as Team[]};
-    setTeams(Object.fromEntries((teamRows||[]).map((t:Team)=>[t.id,t])));
+    const [{data:teamRows},{data:womensTeamRows}]=await Promise.all([
+      ids.length?supabase.from("teams").select("id,name,logo_url,logo_bg").in("id",ids):Promise.resolve({data:[] as Team[]}),
+      basketballSide==="womens" && ids.length?supabase.from("womens_teams").select("id,name,logo_url,logo_bg").in("id",ids):Promise.resolve({data:[] as Team[]}),
+    ]);
+    setTeams(Object.fromEntries([...(teamRows||[]),...(womensTeamRows||[])].map((t:Team)=>[t.id,t])));
     const requested=typeof window!=="undefined"?new URLSearchParams(window.location.search).get("gameId"):null;
     setSelected(current=>(current&&next.find(g=>g.id===current.id))||next.find(g=>g.id===requested)||next.find(g=>g.status==="live")||next[0]||null);
     setClock(new Date()); setLoading(false);
