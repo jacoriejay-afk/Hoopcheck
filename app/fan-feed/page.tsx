@@ -203,7 +203,7 @@ export default function FanFeedPage() {
       <FanBasketballSideSwitch /><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/fans">{ft("discoverFans")}</Link><Link href="/team-hub">{ft("teamHub")}</Link><Link href="/teams">{ft("teams")}</Link></nav></header>
     <section className="hero-card hc-feed-hero"><div><p className="eyebrow">{selectedTeam ? `${selectedTeam.name.toUpperCase()} · FAN HQ` : ft("kicker")}</p><h1>{selectedTeam?.name || ft("title")}</h1><p className="muted">{selectedTeam ? fanFeedTeamSubtitle(selectedTeam.name, language) : ft("subtitle")}</p></div><p className="hc-feed-expiry-note">{ft("teamFirst")}<span>{ft("fanOnlyNote")}</span></p></section>
-    <TeamOfficialUpdates />
+    {selectedTeam ? <TeamOfficialUpdates teamId={selectedTeam.id} /> : null}
     <section className="dashboard-card hc-feed-composer" style={{ marginTop: 18 }}>
       <span className="card-kicker">{ft("postForTeam")}</span>
       <div className="hc-feed-composer__editor"><div className="hc-feed-composer__avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : "HC"}</div><textarea value={body} maxLength={500} rows={3} onChange={e => setBody(e.target.value)} placeholder={teamComposerPlaceholder} /></div>
