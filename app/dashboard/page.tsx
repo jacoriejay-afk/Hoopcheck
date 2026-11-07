@@ -42,7 +42,7 @@ export default function DashboardPage() {
   const [teams,setTeams] = useState<Team[]>([]);
   const [reviews,setReviews] = useState<Review[]>([]);
   const [feedPost,setFeedPost] = useState<FeedPost|null>(null);
-  const [liveCounts,setLiveCounts] = useState({live:0,upcoming:0});
+  const [liveCounts,setLiveCounts] = useState<{live:number|null;upcoming:number|null}>({live:null,upcoming:null});
   const [hasFeedAccess,setHasFeedAccess] = useState(false);
   const [loading,setLoading] = useState(true);
 
@@ -118,7 +118,7 @@ export default function DashboardPage() {
         <Link href="/team-hub" className="hc-ia-door"><CategoryIconTile category="teams" size="sm"/><span><strong>{t("home.teamHub")}</strong><small>{t("home.teamHubDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
         <Link href="/fan-feed" className="hc-ia-door"><CategoryIconTile category="reviews" size="sm"/><span><strong>{t("home.fanFeed")}</strong><small>{t("home.fanFeedDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
         <Link href="/fans" className="hc-ia-door"><CategoryIconTile category="reviews" icon="users" size="sm"/><span><strong>{t("home.findFan")}</strong><small>{t("home.findFanDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-        <Link href="/live-games" className="hc-ia-door"><CategoryIconTile category="leagues" size="sm"/><span><strong>{t("home.liveGames")}</strong><small>{liveCounts.live} live · {liveCounts.upcoming} upcoming</small></span><HoopIcon name="chevron-right" size={18}/></Link>
+        <Link href="/live-games" className="hc-ia-door"><CategoryIconTile category="leagues" size="sm"/><span><strong>{t("home.liveGames")}</strong><small>{liveCounts.live===null?"Games hub":`${liveCounts.live} live · ${liveCounts.upcoming ?? "—"} upcoming`}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
       </div></section>
       <Link href="/account" className="hc-ia-account-link">{t("home.accountSettings")} <HoopIcon name="arrow-right" size={16}/></Link>
     </div></main>
@@ -138,7 +138,7 @@ export default function DashboardPage() {
         {completion < 100 && <Link href="/account#edit-profile" className="hc-ia-completion"><span><strong>{t("home.completeProfile")}</strong><small>{t("home.profileCompletion").replace("{percent}", String(completion))}</small></span><span>{t("home.continue")} <HoopIcon name="arrow-right" size={16}/></span></Link>}
 
         <HomePulse live={null} upcoming={null} followedClubs={teams.length} recentReviews={reviews.length}/>
-        <Link href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>{t("home.liveGames")}</strong><small>{t("home.liveDescription")}</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></Link>
+        <Link href="/live-games" className="hc-ia-live-strip">{liveCounts.live!==null && liveCounts.live>0 && <span className="hc-ia-live-dot"/>}<span><strong>{t("home.liveGames")}</strong><small>{t("home.liveDescription")}</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></Link>
 
         <section className="hc-ia-section">
           <div className="hc-ia-section-heading"><div><p className="eyebrow">{t("home.shortcuts")}</p><h2>{t("home.quickAccess")}</h2></div><Link href="/directory">{t("home.exploreAll")} <HoopIcon name="arrow-right" size={15}/></Link></div>
