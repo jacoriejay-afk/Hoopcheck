@@ -49,13 +49,13 @@ export async function GET(request: Request) {
       isAdmin = data === true;
     }
 
-    const entitlements = getHoopCheckEntitlements({ accountType, subscription, isAdmin });
+    const entitlements = getHoopCheckEntitlements({ accountType, subscription, isAdmin, playerVerified: profile?.player_verified === true });
     // Preserve the established paid-member review access for coaches, agents and club admins.
     const tier = isAdmin ? "premium" :
       accountType && accountType !== "fan" && accountType !== "player" && entitlements.hasPaidMembership ? "member" :
       entitlements.tier;
     const fullRead = entitlements.canReadFullReviews;
-    const canWrite = entitlements.canWriteReviews && profile?.player_verified === true && (
+    const canWrite = entitlements.canWriteReviews && (
       entityType !== "womens-team" ||
       (profile?.basketball_type === "womens" && profile.selected_womens_team_id === entityId)
     );
