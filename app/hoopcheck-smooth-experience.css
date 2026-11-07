@@ -68,3 +68,10 @@
 .hc-smooth-presign-note {font-size:12px;line-height:1.5;opacity:.7;margin-top:20px;}
 @media(max-width:540px){.hc-smooth-presign-item {grid-template-columns:24px minmax(0,1fr);gap:10px;padding:14px;}.hc-smooth-presign-check {grid-column:2;}}
 @media(prefers-reduced-motion:reduce){.hc-smooth-presign-meter span{transition:none;}}
+
+.hc-smooth-presign-link {display:flex;align-items:center;gap:12px;padding:15px 16px;margin:12px 0;background:var(--hc-surface-raised,var(--paper));border:1px solid var(--hc-border,var(--border));border-left:3px solid var(--brand-orange);border-radius:12px;color:var(--hc-text-primary,var(--ink));}
+.hc-smooth-presign-link strong {font-size:13px;letter-spacing:.035em;white-space:nowrap;}
+.hc-smooth-presign-link span {font-size:12px;opacity:.8;flex:1;}
+.hc-smooth-presign-link svg {flex:none;color:var(--brand-orange);}
+.hc-smooth-presign-link:focus-visible {outline:2px solid var(--brand-orange);outline-offset:2px;}
+@media(max-width:420px){.hc-smooth-presign-link {flex-wrap:wrap;}.hc-smooth-presign-link span{flex-basis:100%;order:3;}}
