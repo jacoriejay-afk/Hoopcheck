@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import "../hoopcheck-brand-directory.css";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import SearchBar from "../../components/SearchBar";

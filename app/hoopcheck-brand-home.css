@@ -1,0 +1,114 @@
+/* HoopCheck brand makeover — signed-out homepage only.
+   Keep all product permissions, routes and content unchanged. */
+.hc-ia-public-home {
+  --hc-brand-orange: #ff5a1f;
+  --hc-brand-ink: #0a0a0a;
+  --hc-brand-paper: #f7f7f5;
+}
+.hc-ia-public-home .hc-ia-welcome {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(24px, 5vw, 52px);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 12px;
+  background: radial-gradient(circle at 90% 68%,rgba(255,90,31,.24),transparent 35%),linear-gradient(120deg,#090909 0%,#181818 65%,#080808 100%);
+  color: #f7f7f5;
+}
+.hc-ia-public-home .hc-ia-welcome::before {
+  content: "";
+  position: absolute;
+  right: -10%;
+  top: -45%;
+  width: 36%;
+  height: 160%;
+  border-left: 9px solid var(--hc-brand-orange);
+  transform: rotate(38deg);
+  opacity: .95;
+  pointer-events: none;
+  z-index: -1;
+}
+.hc-ia-public-home .hc-ia-welcome h1 {
+  max-width: 750px;
+  color: #fff;
+  font-weight: 950;
+  letter-spacing: -.035em;
+  line-height: .99;
+  text-wrap: balance;
+}
+.hc-ia-public-home .hc-ia-welcome h1 span,
+.hc-ia-public-home .hc-ia-welcome .eyebrow { color: var(--hc-brand-orange); }
+.hc-ia-public-home .hc-ia-welcome .muted { color: #e3e3e3; max-width: 540px; }
+.hc-ia-public-home .hc-home-cta {
+  background: var(--hc-brand-orange);
+  color: #0a0a0a;
+  border-color: var(--hc-brand-orange);
+  box-shadow: none;
+}
+.hc-ia-public-home .hc-home-signin { color: #fff; }
+.hc-ia-public-home .hc-ia-section-heading h2 {
+  font-weight: 950;
+  letter-spacing: -.02em;
+  text-transform: uppercase;
+}
+.hc-ia-public-home .hc-home-category-grid {
+  display: grid;
+  grid-template-columns: repeat(7,minmax(0,1fr));
+  gap: 12px;
+}
+.hc-ia-public-home .hc-home-category-tile {
+  min-width: 0;
+  border-radius: 10px;
+  transition: transform .15s ease,border-color .15s ease;
+}
+.hc-ia-public-home .hc-home-category-tile:hover { transform: translateY(-2px); border-color: var(--hc-brand-orange); }
+.hc-ia-public-home a:focus-visible { outline: 3px solid var(--hc-brand-orange); outline-offset: 3px; }
+@media (max-width: 900px) {
+  .hc-ia-public-home .hc-home-category-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 700px) {
+  .hc-ia-public-home .hc-ia-welcome { padding: 23px 17px; border-radius: 10px; }
+  .hc-ia-public-home .hc-ia-welcome h1 { font-size: clamp(30px,9vw,48px); }
+  .hc-ia-public-home .hc-ia-welcome::before { right: -24%; opacity: .65; }
+  .hc-ia-public-home .hc-home-category-grid { gap: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-ia-public-home .hc-home-category-tile { transition: none; }
+}
+
+/* Desktop hero follows the same visual language as the mobile brand hero. */
+.hc-ia-public-home .hc-d3-hero {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(125deg,#0a0a0a 0%,#171717 65%,#0a0a0a 100%);
+  color: #f7f7f5;
+  overflow: hidden;
+}
+.hc-ia-public-home .hc-d3-hero::before {
+  content: "";
+  position: absolute;
+  right: 12%;
+  top: -24%;
+  width: 14px;
+  height: 150%;
+  transform: rotate(39deg);
+  background: #ff5a1f;
+  opacity: .9;
+  pointer-events: none;
+}
+.hc-ia-public-home .hc-d3-hero__copy h1 {
+  color: #fff;
+  font-weight: 950;
+  letter-spacing: -.04em;
+  line-height: 1.02;
+}
+.hc-ia-public-home .hc-d3-hero__copy h1 em { color: #ff5a1f; font-style: normal; }
+.hc-ia-public-home .hc-d3-hero__sub { color: #e0e0e0; }
+.hc-ia-public-home .hc-d3-hero .hc-home-cta {
+  background: #ff5a1f;
+  border-color: #ff5a1f;
+  color: #0a0a0a;
+}
+@media (max-width: 900px) and (min-width: 701px) {
+  .hc-ia-public-home .hc-home-category-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
+}

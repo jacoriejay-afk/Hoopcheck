@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import "./hoopcheck-brand-home.css";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getCachedSession } from "../lib/supabase";
@@ -15,7 +16,9 @@ const categories:{label:string;subtitle:string;href:string;category:CategoryTile
  {label:"Women’s Teams",subtitle:"Explore women’s basketball",href:"/womens",category:"womens"},
  {label:"Coaches",subtitle:"Check coaching reputations",href:"/coaches",category:"coaches"},
  {label:"Leagues",subtitle:"Compare competitions",href:"/leagues",category:"leagues"},
- {label:"Players",subtitle:"Discover basketball players",href:"/players",category:"players"}
+ {label:"Players",subtitle:"Discover basketball players",href:"/players",category:"players"},
+ {label:"Reviews",subtitle:"Real feedback from basketball players",href:"/reviews",category:"reviews"},
+ {label:"Alerts",subtitle:"Follow important updates",href:"/notifications",category:"alerts"}
 ];
 
 export default function Home(){
