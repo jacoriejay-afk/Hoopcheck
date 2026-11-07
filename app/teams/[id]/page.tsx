@@ -191,6 +191,7 @@ export default function TeamDetailPage() {
   const [teamFollowerCount, setTeamFollowerCount] = useState(0);
   const [reviewTier, setReviewTier] = useState<"free" | "pro" | "premium" | "member">("free");
   const [canReadFullReviews, setCanReadFullReviews] = useState(false);
+  const [canWriteReviews, setCanWriteReviews] = useState(false);
 
   const [loading, setLoading] =
     useState(true);
@@ -359,6 +360,7 @@ export default function TeamDetailPage() {
       setReviewTier(tier);
       const fullRead = reviewPayload?.canReadFull === true;
       setCanReadFullReviews(fullRead);
+      setCanWriteReviews(reviewPayload?.canWrite === true);
       const canReadAnything = tier !== "free";
       setHasAccess(canReadAnything);
       setReviewLoading(fullRead);
@@ -595,7 +597,7 @@ export default function TeamDetailPage() {
       <TeamFanGroupEntry teamId={team.id} />
 
       {knownPlayerFollowers.length > 0 && <p className="hc-team-social-proof">Followed by players you follow: <strong>{knownPlayerFollowers.join(", ")}</strong></p>}
-        <div className="entity-actions">{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}<ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} /><Link href="/team-dashboard" className="btn dark">Team Portal</Link></div>
+        <div className="entity-actions">{canWriteReviews ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}<ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} /><Link href="/team-dashboard" className="btn dark">Team Portal</Link></div>
         <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
         {canReadFullReviews && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">LATEST PLAYER REVIEW</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || t("playerExperience")}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
       {!canReadFullReviews && reviewTier === "free" && Boolean(accountType) ? (
@@ -641,7 +643,7 @@ export default function TeamDetailPage() {
                   {t("firstPlayersShare")}
                 </p>
 
-                {accountType === "player" && <Link
+                {canWriteReviews && <Link
                   href={`/teams/${team.id}/review`}
                   className="btn"
                 >
