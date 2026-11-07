@@ -50,3 +50,81 @@ html:is(.theme-dark,.theme-light) :where(.hc-smooth-pulse__item strong,.hc-socia
 @media(prefers-reduced-motion:reduce) {
  html:is(.theme-dark,.theme-light) :where(.card,.dashboard-card,.result-card,.quick-card,.bottom-nav a) {transition:none!important;}
 }
+
+/* Contrast contract: match foreground to its actual surface in both themes.
+   Keep branded dark heroes opt-in rather than globally whitening text. */
+html:is(.theme-light,.theme-dark) {
+ --hc-scoreboard-on-dark:#f7f7f5;
+ --hc-scoreboard-on-dark-muted:#d0d0d0;
+ --hc-scoreboard-dark:#0b0b0b;
+}
+html.theme-light {
+ --hc-scoreboard-card-fg:#171717;
+ --hc-scoreboard-card-muted:#535353;
+ --hc-scoreboard-card-bg:#fff;
+ --hc-scoreboard-accent:#a83a0b;
+}
+html.theme-dark {
+ --hc-scoreboard-card-fg:#f7f7f5;
+ --hc-scoreboard-card-muted:#c5c5c5;
+ --hc-scoreboard-card-bg:#141414;
+ --hc-scoreboard-accent:#ff8a54;
+}
+html:is(.theme-light,.theme-dark) main :where(
+ .hc-smooth-pulse__item,.hc-smooth-wire,.hc-smooth-presign-dashboard-link,
+ .hc-profile-info-card,.hc-review-card,.hc-team-facts-card,.hc-team-directory-row,
+ .hc-feed-composer,.hc-feed-ticket,.hc-feed-empty,.hc-feed-comments-panel,
+ .hc-feed-game-fields,.live-game-chat-card,.live-chat-card,.chat-panel
+) {
+ background:var(--hc-scoreboard-card-bg)!important;
+ color:var(--hc-scoreboard-card-fg)!important;
+ border-color:var(--hc-border)!important;
+}
+html:is(.theme-light,.theme-dark) main :where(
+ .hc-smooth-pulse__item,.hc-smooth-wire,.hc-smooth-presign-dashboard-link,
+ .hc-profile-info-card,.hc-review-card,.hc-team-facts-card,.hc-team-directory-row,
+ .hc-feed-composer,.hc-feed-ticket,.hc-feed-empty,.hc-feed-comments-panel,
+ .hc-feed-game-fields,.live-game-chat-card,.live-chat-card,.chat-panel
+) :where(h1,h2,h3,h4,h5,h6,strong,p,li,label,a:not(.btn)) {color:inherit!important;}
+html:is(.theme-light,.theme-dark) main :where(
+ .hc-smooth-pulse__item,.hc-smooth-wire,.hc-profile-info-card,.hc-review-card,
+ .hc-team-facts-card,.hc-feed-composer,.hc-feed-ticket,.hc-feed-empty
+) :where(.muted,.subtle,.meta,small) {color:var(--hc-scoreboard-card-muted)!important;}
+/* Branded hero exceptions: the dark background is intentional even in light mode. */
+html:is(.theme-light,.theme-dark) main :where(
+ .hc-player-dossier-hero,.hc-team-branded-hero,.hc-member-profile-page .hero-card.compact-hero,
+ .hc-smooth-passport
+) {
+ background-color:var(--hc-scoreboard-dark)!important;
+ color:var(--hc-scoreboard-on-dark)!important;
+}
+html:is(.theme-light,.theme-dark) main :where(
+ .hc-player-dossier-hero,.hc-team-branded-hero,.hc-member-profile-page .hero-card.compact-hero,
+ .hc-smooth-passport
+) :where(h1,h2,h3,h4,h5,h6,strong,p,li,label,a:not(.btn)) {color:var(--hc-scoreboard-on-dark)!important;}
+html:is(.theme-light,.theme-dark) main :where(
+ .hc-player-dossier-hero,.hc-team-branded-hero,.hc-member-profile-page .hero-card.compact-hero,
+ .hc-smooth-passport
+) :where(.muted,.subtle,.meta,small) {color:var(--hc-scoreboard-on-dark-muted)!important;}
+/* Explicitly restore the black-on-white membership ladder in light mode. */
+html.theme-light .hc-membership-comparison .hc-membership-plan {
+ background:#fff!important;color:#171717!important;border-color:#c9c9c4!important;
+}
+html.theme-light .hc-membership-comparison .hc-membership-plan.is-current {
+ background:#fff1e8!important;border-color:#b83d0a!important;
+}
+html.theme-light .hc-membership-comparison .hc-membership-plan :where(h3,.price,li,strong) {color:#171717!important;}
+html.theme-light .hc-membership-comparison .hc-membership-plan :where(.eyebrow,small) {color:#67331c!important;}
+html.theme-light .hc-member-profile-page :where(.hc-profile-membership-link,.hc-profile-quick-link) {
+ background:#fff!important;color:#171717!important;border-color:#bdbdb7!important;
+}
+html.theme-light .hc-member-profile-page :where(.hc-profile-membership-link,.hc-profile-quick-link) svg {color:#b83d0a!important;}
+/* Dark theme keeps the same controls on true dark backgrounds. */
+html.theme-dark .hc-member-profile-page :where(.hc-profile-membership-link,.hc-profile-quick-link) {
+ background:#111!important;color:#f7f7f5!important;border-color:#5c5c5c!important;
+}
+html.theme-dark .hc-membership-comparison .hc-membership-plan :where(h3,.price,li,strong) {color:#f7f7f5!important;}
+/* Disabled and placeholder content must still be legible. */
+html.theme-dark main :where(input,textarea)::placeholder {color:#b9b9b9;opacity:1;}
+html.theme-light main :where(input,textarea)::placeholder {color:#595959;opacity:1;}
+html:is(.theme-dark,.theme-light) main :where(button:disabled,[aria-disabled="true"]) {opacity:.65;}
