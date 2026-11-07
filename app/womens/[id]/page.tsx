@@ -4,16 +4,15 @@ import {useParams} from "next/navigation";
 import Link from "next/link";
 import {supabase} from "../../../lib/supabase";
 import {useLanguage} from "../../../components/LanguageProvider";
-import FollowButton from "../../../components/FollowButton";
 import Surface from "../../../components/Surface";
 import HoopLoading from "../../../components/HoopLoading";
-import TeamLogo from "../../../components/TeamLogo";
 import ClaimedTeamLogoEditor from "../../../components/ClaimedTeamLogoEditor";
 import TeamPlayersHistory from "../../../components/TeamPlayersHistory";
+import TeamProfileHero from "../../../components/TeamProfileHero";
 
 export default function WomensTeam(){
  const {formatDate,formatNumber,t}=useLanguage();
- const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [knownPlayerFollowers,setKnownPlayerFollowers]=useState<string[]>([]);
+ const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [knownPlayerFollowers,setKnownPlayerFollowers]=useState<string[]>([]); const [teamFollowerCount,setTeamFollowerCount]=useState(0);
  useEffect(() => {
    let active = true;
    (async () => {
@@ -56,7 +55,19 @@ export default function WomensTeam(){
  if(!team)return <main className="page-shell hc-womens-profile-page"><div className="page-container"><Surface as="section" className="hero-card"><h1>{t("womenTeamNotFound")}</h1><Link href="/womens" className="btn">{t("backToWomensBasketball")}</Link></Surface></div></main>;
  const average=ratingAverage;
  return <main className="page-shell hc-womens-profile-page"><div className="page-container">
- <Surface as="section" className="hero-card hc-social-profile-header"><div className="hc-social-profile-top hc-team-social-top"><div className="hc-team-profile-heading hc-team-profile-heading--club"><TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={72} className="hc-team-profile-logo"/><div className="hc-team-profile-heading__copy"><p className="hc-team-profile-kicker">HOOPCHECK CLUB PROFILE</p><h1>{team.name}</h1><p className="hc-team-profile-meta">{team.country||t("international")}{team.city?" · "+team.city:""} · {team.league_name||t("professional")}</p></div></div><div className="hc-social-stats hc-team-social-stats"><span><strong>{ratingCount}</strong><small>Reviews</small></span><span><strong>—</strong><small>Trust Score</small></span><FollowButton targetType="team" targetId={team.id} variant="club" showNotifications={false}/></div></div>{knownPlayerFollowers.length>0&&<p className="hc-team-social-proof">Followed by players you follow: <strong>{knownPlayerFollowers.join(", ")}</strong></p>}<div className="actions">{canReview&&<Link href={"/womens/"+team.id+"/review"} className="btn">{t("writeAReview")}</Link>}</div><ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} teamTable="womens_teams" onSaved={(logoUrl, logoBg) => setTeam((current:any) => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} /></Surface>
+ <TeamProfileHero
+   teamId={team.id}
+   name={team.name}
+   country={team.country || t("international")}
+   city={team.city}
+   leagueName={team.league_name || t("professional")}
+   logoUrl={team.logo_url}
+   logoBg={team.logo_bg}
+   reviewCount={ratingCount}
+   followerCount={teamFollowerCount}
+   onFollowerCountChange={setTeamFollowerCount}
+ />
+ <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} teamTable="womens_teams" onSaved={(logoUrl, logoBg) => setTeam((current:any) => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
  <section className="grid compact-grid">
     {canSeeRatings ? <Surface className="card"><span className="card-kicker">{t("rating")}</span><h2>{average===null?"—":average.toFixed(1)+"/5"}</h2><p className="muted">{formatNumber(ratingCount)+" "+(ratingCount===1?t("publishedReview"):t("publishedReviews"))}</p></Surface> : null}
     <Surface className="card"><span className="card-kicker">{t("league")}</span><h2>{team.league_name||t("professional")}</h2><p className="muted">{team.country||t("international")}</p></Surface>
