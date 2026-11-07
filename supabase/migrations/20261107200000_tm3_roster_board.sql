@@ -15,7 +15,9 @@ create table if not exists public.club_roster_entries (
 );
 create index if not exists club_roster_entries_team_idx on public.club_roster_entries(team_id,status);
 alter table public.club_roster_entries enable row level security;
-grant select,insert on public.club_roster_entries to authenticated;
+grant select on public.club_roster_entries to authenticated;
+-- Managers can add name-only entries; profile linking needs a verified consent flow.
+grant insert (team_id,player_name,position,jersey_number,season,status,updated_by) on public.club_roster_entries to authenticated;
 -- The authenticated role cannot directly mutate dispute status.
 -- Managers may edit club-confirmed fields, but never identity, club ownership or dispute state.
 grant update (player_name,position,jersey_number,season,status,club_confirmed_at,updated_at,updated_by) on public.club_roster_entries to authenticated;
@@ -67,6 +69,9 @@ create or replace function public.guard_club_roster_edit()
 returns trigger language plpgsql set search_path=public
 as $$
 begin
+ if tg_op='INSERT' and new.player_id is not null then
+   raise exception 'Profile linking requires verified player consent';
+ end if;
  if tg_op='UPDATE' then
    if new.team_id is distinct from old.team_id or new.player_id is distinct from old.player_id
       or new.dispute_status is distinct from old.dispute_status then
