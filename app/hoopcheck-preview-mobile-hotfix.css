@@ -13,3 +13,16 @@
 .hc-member-profile-page .hero-card.compact-hero .hc-profile-email { color:#595561 !important; opacity:1 !important; }
 .hc-member-profile-page .hero-card.compact-hero .hc-member-profile-avatar { background:#ece8e5 !important; color:#25232c !important; }
 .hc-member-profile-page .hero-card.compact-hero .hc-profile-edit-button { color:#161616 !important; }
+
+/* Keep member identity readable and compact at iPhone widths. */
+@media(max-width:600px){
+ .hc-member-profile-page .hero-card.compact-hero { padding:18px 16px !important; border-radius:18px !important; gap:12px !important; }
+ .hc-member-profile-page .hc-member-profile-avatar { width:84px !important; height:84px !important; outline-width:2px !important; border-width:3px !important; }
+ .hc-member-profile-page .hc-member-profile-identity { gap:12px !important; }
+ .hc-member-profile-page .hc-member-profile-copy h1 { font-size:clamp(24px,7vw,32px) !important; line-height:1.1 !important; margin:4px 0 !important; }
+ .hc-member-profile-page .hc-member-profile-copy .eyebrow { color:#625c62 !important; }
+ .hc-member-profile-page .hc-member-profile-actions { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px !important; }
+ .hc-member-profile-page .hc-member-profile-actions > :only-child { grid-column:1/-1; }
+ .hc-member-profile-page .hc-member-profile-actions .btn { min-width:0; font-size:12px !important; line-height:1.25; padding:10px !important; }
+ .hc-member-profile-page .hc-member-profile-actions .hc-profile-public-button { color:#fff !important; }
+}
