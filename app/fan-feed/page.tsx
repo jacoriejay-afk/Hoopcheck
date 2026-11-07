@@ -62,10 +62,13 @@ export default function FanFeedPage() {
     const followedTeams = (teamQuery.data || []) as Team[];
     const { data: groupRows } = scopedTeamIds.length ? await supabase.from("team_fan_groups").select("team_id,group_name").in("team_id", scopedTeamIds) : { data: [] as { team_id: string; group_name: string }[] };
     const groupNames = new Map((groupRows || []).map((group: any) => [group.team_id, group.group_name]));
-    const { data: memberRows } = scopedTeamIds.length
-      ? await supabase.from("team_fan_group_members").select("team_id").eq("user_id", uid).in("team_id", scopedTeamIds)
-      : { data: [] as { team_id: string }[] };
-    const memberTeamIds = (memberRows || []).map((row: any) => row.team_id);
+    const [{ data: memberRows }, { data: moderatorRows }] = scopedTeamIds.length
+      ? await Promise.all([
+          supabase.from("team_fan_group_members").select("team_id").eq("user_id", uid).in("team_id", scopedTeamIds),
+          supabase.from("team_fan_group_moderators").select("team_id").eq("user_id", uid).in("team_id", scopedTeamIds),
+        ])
+      : [{ data: [] as { team_id: string }[] }, { data: [] as { team_id: string }[] }];
+    const memberTeamIds = Array.from(new Set([...(memberRows || []), ...(moderatorRows || [])].map((row: any) => row.team_id)));
     const memberSet = new Set(memberTeamIds);
     const teamsWithGroups = followedTeams.map(team => ({ ...team, group_name: groupNames.get(team.id) || team.name + " Fan Group", is_member: memberSet.has(team.id) }));
     setTeams(teamsWithGroups);
