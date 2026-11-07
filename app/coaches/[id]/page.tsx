@@ -664,7 +664,6 @@ export default function CoachDetailPage() {
             </>
           ) : null}
         </section>
-      )}
 
           <section className="hero">
             <div className="eyebrow">
