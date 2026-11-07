@@ -149,7 +149,7 @@ export default function ProfilePage() {
             <Link href="/account" className="hc-profile-quick-link"><HoopIcon name="settings" size={22} /><span>Settings</span></Link>
             <Link href="/notifications" className="hc-profile-quick-link"><HoopIcon name="bell" size={22} /><span>Alerts</span></Link>
             <Link href="/search" className="hc-profile-quick-link"><HoopIcon name="search" size={22} /><span>Search</span></Link>
-            <Link href={p.account_type === "fan" ? "/fan-hq" : "/pre-sign"} className="hc-profile-quick-link"><HoopIcon name={p.account_type === "fan" ? "users" : "clipboard-check"} size={22} /><span>{p.account_type === "fan" ? "Fan HQ" : "Pre-Sign"}</span></Link>
+            <Link href={p.account_type === "fan" ? "/fan-feed" : "/pre-sign"} className="hc-profile-quick-link"><HoopIcon name={p.account_type === "fan" ? "users" : "clipboard-check"} size={22} /><span>{p.account_type === "fan" ? "Fan HQ" : "Pre-Sign"}</span></Link>
           </div>
         </nav>
 
