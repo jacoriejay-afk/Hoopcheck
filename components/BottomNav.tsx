@@ -107,7 +107,7 @@ export default function BottomNav() {
             aria-current={active ? "page" : undefined}
           >
             <span className="hc-lm2f-tab-icon"><TabIcon label={label} /></span>
-            <span className="hc-lm2f-tab-label">{translationKey === "hoopFeed" ? "HoopFeed" : t(translationKey)}</span>
+            <span className="hc-lm2f-tab-label">{translationKey === "hoopFeed" ? (fanAccount ? "FAN HQ" : "HOOPFEED") : t(translationKey)}</span>
             {active && <span className="hc-lm2f-active-indicator" aria-hidden="true" />}
           </Link>
         );
