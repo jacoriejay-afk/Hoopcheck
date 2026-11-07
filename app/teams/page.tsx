@@ -396,7 +396,7 @@ export default function TeamsPage() {
 
       <section className="hero">
         <div className="eyebrow">
-          Player Intelligence
+          Team Insight
         </div>
 
         <h2>
@@ -408,9 +408,7 @@ export default function TeamsPage() {
         </h2>
 
         <p>
-          Research the organization, understand
-          player experiences, and make your next
-          move with more information.
+          Research the organization, explore first-hand feedback, and make your next move with more information.
         </p>
 
         <div className="actions">
