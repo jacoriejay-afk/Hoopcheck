@@ -42,7 +42,7 @@ export default function AdminTeamFanFeedPage() {
       return;
     }
     if (response.status === 403) {
-      window.location.href = "/dashboard";
+      window.location.assign("/dashboard");
       return;
     }
     if (!response.ok) {
