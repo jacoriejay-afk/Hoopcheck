@@ -719,6 +719,8 @@ export default function LeagueDetailPage() {
             title="Full league reviews require an eligible membership"
             description="Player Pro and Premium members and eligible non-fan members can read full league reviews. Fan accounts need Premium for full review details."
             actionLabel="View Membership"
+            accountType={accountType}
+            tier={reviewTier}
           />
         </section>
       ) : null}
