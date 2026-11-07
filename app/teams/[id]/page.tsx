@@ -25,6 +25,7 @@ import TeamRosterSpots from "../../../components/TeamRosterSpots";
 import OfficialReviewResponse from "../../../components/OfficialReviewResponse";
 import TeamPayTimeline from "../../../components/TeamPayTimeline";
 import TeamProfileHero from "../../../components/TeamProfileHero";
+import ReviewMembershipGate from "../../../components/ReviewMembershipGate";
 import ClaimedTeamLogoEditor from "../../../components/ClaimedTeamLogoEditor";
 import ClaimProfileButton from "../../../components/ClaimProfileButton";
 import TeamOfficialUpdates from "../../../components/TeamOfficialUpdates";
@@ -597,14 +598,11 @@ export default function TeamDetailPage() {
         <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
         {canReadFullReviews && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">LATEST PLAYER REVIEW</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || t("playerExperience")}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
       {!canReadFullReviews && reviewTier === "free" && Boolean(accountType) ? (
-        <section className="hero">
-          <Surface className="card hc-team-membership-surface">
-            <div className="eyebrow">{t("membershipRequired")}</div>
-            <h2>Player reviews require an eligible membership</h2>
-            <p>Sign in with an eligible active membership to view full player reviews and ratings. Players and other eligible members keep their existing access.</p>
-            <div className="actions"><Link href="/membership" className="btn">Upgrade</Link><Link href="/login" className="btn dark">{t("logIn")}</Link></div>
-          </Surface>
-        </section>
+        <ReviewMembershipGate
+          title="Player reviews require an eligible membership"
+          description="Sign in with an eligible active membership to view full player reviews and ratings. Players and other eligible members keep their existing access."
+          actionLabel="Upgrade"
+        />
       ) : (
         <>
           <section className="hero" id="reviews">
