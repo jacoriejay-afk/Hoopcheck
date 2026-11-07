@@ -52,6 +52,7 @@ export default function TeamsPage() {
 
   const [loading, setLoading] = useState(true);
   const [isPlayerAccount, setIsPlayerAccount] = useState(false);
+  const [isFanAccount, setIsFanAccount] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
@@ -83,9 +84,9 @@ export default function TeamsPage() {
     let active = true;
     void (async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) { if (active) setIsPlayerAccount(false); return; }
+      if (!session?.user) { if (active) { setIsPlayerAccount(false); setIsFanAccount(false); } return; }
       const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", session.user.id).maybeSingle();
-      if (active) setIsPlayerAccount(profile?.account_type === "player");
+      if (active) { setIsPlayerAccount(profile?.account_type === "player"); setIsFanAccount(profile?.account_type === "fan"); }
     })().catch(() => { if (active) setIsPlayerAccount(false); });
     return () => { active = false; };
   }, []);
@@ -396,34 +397,30 @@ export default function TeamsPage() {
 
       <section className="hero">
         <div className="eyebrow">
-          Team Insight
+          {isFanAccount ? "FAN TEAM DIRECTORY" : "Player Intelligence"}
         </div>
 
         <h2>
-          The contract
-          <br />
-          is only part
-          <br />
-          of the decision.
+          {isFanAccount ? <>Every team.<br />A clearer picture.</> : <>The contract<br />is only part<br />of the decision.</>}
         </h2>
 
         <p>
-          Research the organization, explore first-hand feedback, and make your next move with more information.
+          {isFanAccount ? "Explore clubs, follow the teams you care about, and keep up with their latest updates." : "Research the organization, understand player experiences, and make your next move with more information."}
         </p>
 
         <div className="actions">
           <Link
-            href="/signup"
+            href={isFanAccount ? "/fan-feed" : "/signup"}
             className="btn"
           >
-            Create Free Account
+            {isFanAccount ? "Explore Fan HoopFeed" : "Create Free Account"}
           </Link>
 
           <Link
             href="/membership"
             className="btn dark"
           >
-            Unlock Full Access
+            {isFanAccount ? "Fan Membership" : "Unlock Full Access"}
           </Link>
         </div>
       </section>
