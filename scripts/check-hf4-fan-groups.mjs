@@ -8,6 +8,7 @@ const migration = read("supabase/migrations/20261106170000_team_fan_groups.sql")
 const groupApi = read("app/api/fan-groups/route.ts");
 const groupPage = read("app/team-hub/groups/[teamId]/page.tsx");
 const entry = read("components/TeamFanGroupEntry.tsx");
+const womensTeamPage = read("app/womens/[id]/page.tsx");
 
 const checks = [
   ["HoopFeed composer uses existing 2,000-character server limit", /maxLength=\{2000\}/.test(feed) && /\{body\.length\}\/2000/.test(feed)],
@@ -20,7 +21,7 @@ const checks = [
   ["Group API implements join, approvals, member and moderator controls", ["join","review_request","set_join_mode","remove_member","appoint_co_moderator","pin_post","remove_post","report_post"].every(x => groupApi.includes('action === "' + x + '"'))],
   ["Group posts support permanent text/photo content and comments", /team_fan_group_posts/.test(migration) && /team_fan_group_comments/.test(migration) && /action === "comment"/.test(groupApi)],
   ["Fan-only group route and moderator panel are present", /profile\?\.account_type !== "fan"/.test(groupPage) && /Moderator panel/.test(groupPage)],
-  ["Team page and Team Hub have fan group entry component", /TeamFanGroupEntry/.test(entry) && /TeamFanGroupEntry/.test(read("app/teams/[id]/page.tsx")) && /TeamFanGroupEntry/.test(read("app/team-hub/page.tsx"))],
+  ["Men’s and women’s team profiles and Team Hub share the Fan Group entry", /TeamFanGroupEntry/.test(entry) && /TeamFanGroupEntry/.test(read("app/teams/[id]/page.tsx")) && /TeamFanGroupEntry/.test(womensTeamPage) && /TeamFanGroupEntry/.test(read("app/team-hub/page.tsx"))],
 ];
 
 let failed = false;
