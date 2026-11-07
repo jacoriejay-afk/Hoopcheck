@@ -37,13 +37,13 @@ export default function Logo({
         strokeLinejoin="miter"
         {...props}
       >
-        <path d="M50 5 88 27v46L50 95 12 73V27Z" strokeWidth="5.2" />
+        <path d="M50 5 88 27v35L97 51 78 82 50 96 12 74V27Z" strokeWidth="5.2" />
         <circle cx="49" cy="49" r="25" strokeWidth="3.4" />
-        <path d="M24 49h50M49 24c-10 9-10 41 0 50M49 24c10 9 10 41 0 50M31 31c13 8 23 26 36 36M67 31C54 39 44 57 31 67" strokeWidth="2.8" />
+        <path d="M25 46c15-13 34-13 49-4M27 32c12 17 26 15 44 5M50 24c-13 19-14 41-3 50M49 24c-4 18-2 39 10 49M26 58c14-15 30-12 47 8" strokeWidth="2.8" />
         <path
           className="hc-logo__check"
-          d="m48 59 13 11 32-40"
-          stroke="#FF5A1F"
+          d="m47 60 14 11 34-42"
+          stroke="currentColor"
           strokeWidth="7"
           strokeLinecap="square"
           strokeLinejoin="miter"
