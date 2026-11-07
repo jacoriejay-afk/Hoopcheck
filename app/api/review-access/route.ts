@@ -32,12 +32,14 @@ export async function GET(request: Request) {
     let plan = "";
     let active = false;
     let isAdmin = false;
+    let playerVerified = false;
     if (user) {
       const [{ data: profile }, { data: subscription }] = await Promise.all([
-        db.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
+        db.from("profiles").select("account_type,player_verified").eq("id", user.id).maybeSingle(),
         db.from("subscriptions").select("plan,status,current_period_end").eq("user_id", user.id).maybeSingle(),
       ]);
       accountType = profile?.account_type || "";
+      playerVerified = profile?.player_verified === true;
       plan = subscription?.plan || "";
       active = ["active", "trialing"].includes(subscription?.status || "") &&
         (!subscription?.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now());
@@ -63,7 +65,7 @@ export async function GET(request: Request) {
 
     const response: Record<string, unknown> = {
       tier,
-      canWrite: accountType === "player" && active && ["pro", "premium"].includes(plan) && entityType !== "womens-team",
+      canWrite: accountType === "player" && playerVerified && !!user?.email_confirmed_at && active && ["pro", "premium"].includes(plan) && entityType !== "womens-team",
       categories: ["Communication", "Professionalism", "Development", "Payment", "Pay on time", "Housing", "Medical support", "Coaching quality", "Facilities", "Playing time honesty"],
       summary: null,
       reviews: [],
