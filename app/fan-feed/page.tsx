@@ -32,6 +32,7 @@ export default function FanFeedPage() {
   const [following, setFollowing] = useState<Set<string>>(new Set());
   const [body, setBody] = useState("");
   const [teamId, setTeamId] = useState("");
+  const [composerTeamId, setComposerTeamId] = useState("");
   const [composerOpen, setComposerOpen] = useState(false);
   const [teamSearch, setTeamSearch] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
@@ -45,8 +46,9 @@ export default function FanFeedPage() {
   const [message, setMessage] = useState("");
   const basketballSide = useFanBasketballSide();
   const selectedTeam = teams.find(team => team.id === teamId) || null;
+  const composerTeam = teams.find(team => team.id === composerTeamId) || null;
   const filteredTeams = teams.filter(team => team.name.toLowerCase().includes(teamSearch.trim().toLowerCase()));
-  const teamComposerPlaceholder = selectedTeam ? fanFeedTeamComposerPlaceholder(selectedTeam.name, language) : ft("composerPlaceholder");
+  const teamComposerPlaceholder = composerTeam ? fanFeedTeamComposerPlaceholder(composerTeam.name, language) : ft("composerPlaceholder");
 
   const load = useCallback(async (uid: string) => {
     const [{ data: follows }, { data: teamFollows }] = await Promise.all([
@@ -117,16 +119,16 @@ export default function FanFeedPage() {
   }, [load]);
 
   async function publish() {
-    if (!user || profile?.account_type !== "fan" || !teamId || !selectedTeam?.is_member || (!body.trim() && !photo) || posting) return;
+    if (!user || profile?.account_type !== "fan" || !composerTeamId || !composerTeam?.is_member || (!body.trim() && !photo) || posting) return;
     setPosting(true); setMessage(ft("moderating"));
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const form = new FormData(); form.append("action", "create_post"); form.append("team_id", teamId); form.append("body", body.trim());
+      const form = new FormData(); form.append("action", "create_post"); form.append("team_id", composerTeamId); form.append("body", body.trim());
       if (photo) form.append("image", photo);
       const response = await fetch("/api/fan-groups", { method: "POST", headers: { Authorization: "Bearer " + session?.access_token }, body: form });
       const result = await response.json();
       if (!response.ok || result.ok !== true) throw new Error(result.message || ft("publishFailed"));
-      setBody(""); setPhoto(null); setPhotoPreview(""); setComposerOpen(false); setTeamSearch(""); setMessage(ft("published"));
+      setBody(""); setPhoto(null); setPhotoPreview(""); setComposerOpen(false); setComposerTeamId(""); setTeamSearch(""); setMessage(ft("published"));
       await load(user.id);
     } catch (e: any) { setMessage(e?.message || ft("publishFailed")); }
     finally { setPosting(false); }
@@ -178,11 +180,11 @@ export default function FanFeedPage() {
       <section className="hero-card hc-feed-hero"><div><p className="eyebrow">{ft("kicker")}</p><h1>{ft("title")}</h1><p className="muted">{ft("subtitle")}</p></div></section>
       <section className="hc-fan-feed-explainer" aria-label={ft("feedExplainer")}>{ft("feedExplainer")}</section>
       <section className="hc-fan-feed-post-entry" aria-label={ft("postForTeam")}>
-        {!composerOpen ? <div className="dashboard-card hc-feed-composer hc-fan-feed-post-prompt"><div><strong>{ft("postPromptTitle")}</strong><p className="muted">{ft("postPromptBody")}</p></div><button type="button" className="btn hc-feed-post-button" disabled={!teams.length} onClick={() => { setTeamSearch(""); setTeamId(""); setComposerOpen(true); }}>{ft("post")}</button>{!teams.length && <p className="muted">{ft("followTeamFirst")} <Link href="/teams">{ft("teams")}</Link></p>}</div> : <section className="dashboard-card hc-feed-composer">
-          <div className="hc-fan-feed-composer-heading"><div><span className="card-kicker">{ft("postForTeam")}</span><h2>{ft("chooseTeam")}</h2></div><button type="button" className="hc-feed-action-pill" onClick={() => { setComposerOpen(false); setTeamId(""); }}>{ft("cancel")}</button></div>
-          {!selectedTeam ? <><input className="hc-feed-team-search" type="search" value={teamSearch} onChange={e => setTeamSearch(e.target.value)} placeholder={ft("searchFollowedTeams")} aria-label={ft("searchFollowedTeams")} /><div className="hc-fan-feed-team-picker" role="listbox" aria-label={ft("followedTeams")}>{filteredTeams.map(team => <button type="button" role="option" aria-selected={false} key={team.id} onClick={() => { setTeamId(team.id); setTeamSearch(""); }}><TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={30}/><span><strong>{team.name}</strong><small>{team.group_name} · {team.is_member ? ft("joined") : ft("joinRequired")}</small></span><span aria-hidden="true">›</span></button>)}{!filteredTeams.length && <p className="muted">{ft("noFollowedTeamsMatch")}</p>}</div></>
-          : !selectedTeam.is_member ? <div className="hc-fan-feed-join-required"><strong>{ft("joinBeforePosting").replace("{team}", selectedTeam.name)}</strong><p className="muted">{ft("groupMembersOnly")}</p><Link className="btn" href={"/team-hub/groups/" + selectedTeam.id}>{ft("openJoinGroup")}</Link></div>
-          : <><div className="hc-fan-feed-target"><TeamLogo name={selectedTeam.name} logoUrl={selectedTeam.logo_url} logoBg={selectedTeam.logo_bg} size={30}/><span><small>{ft("postingTo")}</small><strong>{selectedTeam.name} {ft("fans")}</strong><small>{selectedTeam.group_name}</small></span><button type="button" className="hc-feed-action-pill" onClick={() => { setTeamId(""); setBody(""); }}>{ft("change")}</button></div>
+        {!composerOpen ? <div className="dashboard-card hc-feed-composer hc-fan-feed-post-prompt"><div><strong>{ft("postPromptTitle")}</strong><p className="muted">{ft("postPromptBody")}</p></div><button type="button" className="btn hc-feed-post-button" disabled={!teams.length} onClick={() => { setTeamSearch(""); setComposerTeamId(""); setComposerOpen(true); }}>{ft("post")}</button>{!teams.length && <p className="muted">{ft("followTeamFirst")} <Link href="/teams">{ft("teams")}</Link></p>}</div> : <section className="dashboard-card hc-feed-composer">
+          <div className="hc-fan-feed-composer-heading"><div><span className="card-kicker">{ft("postForTeam")}</span><h2>{ft("chooseTeam")}</h2></div><button type="button" className="hc-feed-action-pill" onClick={() => { setComposerOpen(false); setComposerTeamId(""); }}>{ft("cancel")}</button></div>
+          {!composerTeam ? <><input className="hc-feed-team-search" type="search" value={teamSearch} onChange={e => setTeamSearch(e.target.value)} placeholder={ft("searchFollowedTeams")} aria-label={ft("searchFollowedTeams")} /><div className="hc-fan-feed-team-picker" role="listbox" aria-label={ft("followedTeams")}>{filteredTeams.map(team => <button type="button" role="option" aria-selected={false} key={team.id} onClick={() => { setComposerTeamId(team.id); setTeamSearch(""); }}><TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={30}/><span><strong>{team.name}</strong><small>{team.group_name} · {team.is_member ? ft("joined") : ft("joinRequired")}</small></span><span aria-hidden="true">›</span></button>)}{!filteredTeams.length && <p className="muted">{ft("noFollowedTeamsMatch")}</p>}</div></>
+          : !composerTeam.is_member ? <div className="hc-fan-feed-join-required"><strong>{ft("joinBeforePosting").replace("{team}", composerTeam.name)}</strong><p className="muted">{ft("groupMembersOnly")}</p><Link className="btn" href={"/team-hub/groups/" + composerTeam.id}>{ft("openJoinGroup")}</Link></div>
+          : <><div className="hc-fan-feed-target"><TeamLogo name={composerTeam.name} logoUrl={composerTeam.logo_url} logoBg={composerTeam.logo_bg} size={30}/><span><small>{ft("postingTo")}</small><strong>{composerTeam.name} {ft("fans")}</strong><small>{composerTeam.group_name}</small></span><button type="button" className="hc-feed-action-pill" onClick={() => { setComposerTeamId(""); setBody(""); }}>{ft("change")}</button></div>
             <div className="hc-feed-composer__editor"><div className="hc-feed-composer__avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : "HC"}</div><textarea value={body} maxLength={2000} rows={3} onChange={e => setBody(e.target.value)} placeholder={teamComposerPlaceholder}/></div>
             <div className="hc-feed-composer__footer"><label className="hc-feed-photo-button" htmlFor="fan-feed-photo">{ft("addPhoto")}</label><input id="fan-feed-photo" className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={e => { const file=e.target.files?.[0]; if(!file)return; if(file.size>4*1024*1024 || !["image/jpeg","image/png","image/webp"].includes(file.type)){setMessage(ft("photoLimit"));return;} setPhoto(file);setPhotoPreview(URL.createObjectURL(file)); }}/><span className="hc-feed-counter">{body.length}/2000</span><button className="btn hc-feed-post-button" disabled={posting || (!body.trim() && !photo)} onClick={() => void publish()}>{posting ? ft("posting") : ft("post")}</button></div>
             {photoPreview && <div style={{marginTop:12}}><img src={photoPreview} alt={ft("photoPreview")} style={{width:"100%",maxHeight:360,objectFit:"cover",borderRadius:16}}/><button type="button" className="btn dark" onClick={() => {setPhoto(null);setPhotoPreview("");}}>{ft("removePhoto")}</button></div>}</>}
@@ -196,7 +198,7 @@ export default function FanFeedPage() {
         <FeedActionRow><button type="button" className="hc-feed-action-pill" onClick={() => setOpenComments(prev => ({...prev,[post.id]:!prev[post.id]}))}>{ft("comment")} · {(comments[post.id] || []).length}</button><button type="button" className="hc-feed-action-pill" onClick={() => void sharePost(post)}>{ft("share")}</button><button type="button" className="hc-feed-action-pill" onClick={() => { const reason=window.prompt(ft("reportPrompt")); if(reason) void reportPost(post,reason); }}>{ft("report")}</button>{post.is_pinned && <span className="hc-feed-expires">{ft("pinned")}</span>}</FeedActionRow>
         {openComments[post.id] && <div className="hc-feed-comments-panel"><strong>{ft("comments")}</strong>{(comments[post.id] || []).map(comment => <div key={comment.id}><strong>{comment.profiles?.display_name || ft("fan")}</strong><p>{comment.body}</p></div>)}<div className="hc-feed-composer__footer"><input value={drafts[post.id] || ""} maxLength={1000} onChange={e => setDrafts(prev => ({...prev,[post.id]:e.target.value}))} placeholder={ft("commentPlaceholder")}/><button className="btn" disabled={!drafts[post.id]?.trim()} onClick={() => void addComment(post)}>{ft("send")}</button></div></div>}
         <footer><Link className="hc-feed-action-pill" href={"/team-hub/groups/" + post.team_id}>{ft("openGroup")}</Link><button type="button" className="hc-feed-action-pill" disabled={post.author_id===user.id || following.has(post.author_id)} onClick={() => void followFan(post.author_id)}>{following.has(post.author_id) ? ft("following") : ft("followFan")}</button></footer>
-      </FeedPostCard>) : <FeedEmptyState><span className="eyebrow">{ft("emptyKicker")}</span>{selectedTeam?.is_member ? <><h2>{ft("emptyClubTitle").replace("{team}",selectedTeam.name)}</h2><p className="muted">{ft("emptyClubBody").replace("{team}",selectedTeam.name)}</p><button type="button" className="btn" onClick={() => {setTeamId(selectedTeam.id);setComposerOpen(true);}}>{ft("beFirstToPost")}</button></> : selectedTeam ? <><h2>{ft("joinBeforeReading").replace("{team}",selectedTeam.name)}</h2><p className="muted">{ft("groupMembersOnly")}</p><Link className="btn" href={"/team-hub/groups/" + selectedTeam.id}>{ft("openJoinGroup")}</Link></> : <><h2>{ft("emptyTitle")}</h2><p className="muted">{ft("emptyBody")}</p><Link className="btn" href="/teams">{ft("followClubs")}</Link></>}</FeedEmptyState>}</section>
+      </FeedPostCard>) : <FeedEmptyState><span className="eyebrow">{ft("emptyKicker")}</span>{selectedTeam?.is_member ? <><h2>{ft("emptyClubTitle").replace("{team}",selectedTeam.name)}</h2><p className="muted">{ft("emptyClubBody").replace("{team}",selectedTeam.name)}</p><button type="button" className="btn" onClick={() => {setComposerTeamId(selectedTeam.id);setComposerOpen(true);}}>{ft("beFirstToPost")}</button></> : selectedTeam ? <><h2>{ft("joinBeforeReading").replace("{team}",selectedTeam.name)}</h2><p className="muted">{ft("groupMembersOnly")}</p><Link className="btn" href={"/team-hub/groups/" + selectedTeam.id}>{ft("openJoinGroup")}</Link></> : <><h2>{ft("emptyTitle")}</h2><p className="muted">{ft("emptyBody")}</p><Link className="btn" href="/teams">{ft("followClubs")}</Link></>}</FeedEmptyState>}</section>
       {message && <p className="hc-feed-message" role="status">{message}</p>}
     </div>
   </main></PageShell>;
