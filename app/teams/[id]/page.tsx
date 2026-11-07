@@ -603,7 +603,7 @@ export default function TeamDetailPage() {
       {accountType !== "fan" && knownPlayerFollowers.length > 0 && <p className="hc-team-social-proof">Followed by players you follow: <strong>{knownPlayerFollowers.join(", ")}</strong></p>}
         <div className="entity-actions">{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}<ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} />{["coach","manager","admin"].includes(accountType) && <Link href="/team-dashboard" className="btn dark">Team Portal</Link>}</div>
         {accountType !== "fan" && <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />}
-        {["premium", "player", "member"].includes(reviewTier) && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">{accountType === "fan" ? "LATEST TEAM REVIEW" : "LATEST PLAYER REVIEW"}</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || t("playerExperience")}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
+        {["premium", "player", "member"].includes(reviewTier) && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">{accountType === "fan" ? "LATEST TEAM REVIEW" : "LATEST PLAYER REVIEW"}</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || (accountType === "fan" ? "Team review" : t("playerExperience"))}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
       {!hasAccess && reviewTier === "free" && accountType !== "player" ? (
         <section className="hero">
           <Surface className="card hc-team-membership-surface">
@@ -692,7 +692,7 @@ export default function TeamDetailPage() {
                       >
                         <div>
                           <div className="eyebrow">
-                            {accountType === "fan" ? (review.is_anonymous ? "Anonymous review" : "Verified review") : (review.is_anonymous ? t("anonymousPlayerReview") : t("playerReview"))}
+                            {accountType === "fan" ? (review.is_anonymous ? "Anonymous review" : "Team review") : (review.is_anonymous ? t("anonymousPlayerReview") : t("playerReview"))}
                           </div>
                           <div style={{ marginTop: "6px", fontSize: "12px", fontWeight: 800, color: "var(--orange)" }}>
                             {accountType === "fan" ? "Season" : t("seasonPlayed")} {review.player_season || t("seasonNotRecorded")}
