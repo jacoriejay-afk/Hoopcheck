@@ -56,7 +56,7 @@ export async function GET(request: Request) {
       accountType === "player" && active && ["pro", "premium"].includes(plan) ? "player" :
       accountType === "fan" && active && plan === "premium" ? "premium" :
       accountType === "fan" && active && plan === "pro" ? "pro" :
-      accountType !== "fan" && accountType !== "" && active ? "member" : "free";
+      accountType !== "fan" && accountType !== "player" && accountType !== "" && active && ["pro", "premium"].includes(plan) ? "member" : "free";
     const fullRead = ["premium", "player", "member"].includes(tier);
     const targetColumn = entityType === "team" ? "team_id" : entityType === "coach" ? "coach_id" : "womens_team_id";
     const table = entityType === "womens-team" ? "womens_team_reviews" : "reviews";
