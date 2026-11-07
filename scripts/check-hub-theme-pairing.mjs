@@ -9,6 +9,8 @@ const fanFeedI18n = readFileSync("app/fan-feed/i18n.ts", "utf8");
 const bottomNav = readFileSync("components/BottomNav.tsx", "utf8");
 const fanGroupPage = readFileSync("app/team-hub/groups/[teamId]/page.tsx", "utf8");
 const womensTeamPage = readFileSync("app/womens/[id]/page.tsx", "utf8");
+const teamPicker = readFileSync("components/TeamLeaguePicker.tsx", "utf8");
+const onboardingTeams = readFileSync("app/onboarding/teams/page.tsx", "utf8");
 const fanTeamPosts = readFileSync("components/FanTeamPosts.tsx", "utf8");
 const womensFanGroupMirror = readFileSync("supabase/migrations/20261107110000_womens_team_fan_group_mirrors.sql", "utf8");
 const themeAudit = readFileSync("app/hoopcheck-theme-audit.css", "utf8");
@@ -94,6 +96,8 @@ if (fanFeedPage.includes('from("fan_feed_posts")') ||
     !fanFeedPage.includes('from("womens_teams")') ||
     !womensFanGroupMirror.includes("womens_teams_sync_fan_group_mirror") ||
     !womensFanGroupMirror.includes("womens_teams_mirror") ||
+    !teamPicker.includes('activeGender==="womens"?["womens_teams"]') ||
+    !onboardingTeams.includes('from("womens_teams")') ||
     !fanFeedPage.includes('basketballSide === "womens"') ||
     !fanFeedPage.includes("FanBasketballSideSwitch") ||
     fanFeedPage.includes('from("fan_feed_posts")') ||
