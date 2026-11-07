@@ -597,13 +597,7 @@ export default function LeagueDetailPage() {
               are saying.
             </h2>
 
-            {!canReadFullReviews ? (
-              <ReviewMembershipGate
-                title="Full league reviews require an eligible membership"
-                description="Player Pro and Premium members and eligible non-fan members can read full league reviews. Fan accounts need Premium for full review details."
-                actionLabel="View Membership"
-              />
-            ) : reviewLoading ? (
+            {canReadFullReviews && (reviewLoading ? (
               <p>
                 Loading reviews...
               </p>
@@ -717,12 +711,12 @@ export default function LeagueDetailPage() {
                   )
                 )}
               </div>
-            )}
+            ) : null)}
           </section>
         </>
       )}
 
-      {!hasAccess ? (
+      {!canReadFullReviews ? (
         <section className="hero">
           <ReviewMembershipGate
             title="Full league reviews require an eligible membership"
