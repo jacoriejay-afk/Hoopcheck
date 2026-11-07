@@ -48,7 +48,8 @@ export default function FansPage() {
   }, []);
 
   if (loading) return <main className="page-shell hc-fans-directory-page"><div className="page-container"><HoopLoading label={copy.loading} /></div></main>;
-  const filtered = fans.filter(f => (f.display_name || f.username || "").toLowerCase().includes(q.toLowerCase()));
+  const term = q.trim().toLowerCase();
+  const filtered = fans.filter(f => [f.display_name, f.username].filter(Boolean).join(" ").toLowerCase().includes(term));
   return <main className="page-shell hc-fans-directory-page"><div className="page-container">
     <section className="hero-card">
       <p className="eyebrow">{copy.network}</p>
