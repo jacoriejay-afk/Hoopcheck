@@ -87,15 +87,13 @@ export default function BottomNav() {
     });
     return () => { active = false; };
   }, [userId]);
-  const [fanAccount, setFanAccount] = useState(false);
-  useEffect(() => { let alive = true; if (!signedIn) { setFanAccount(false); return; } void supabase.auth.getUser().then(async ({ data }) => { if (!data.user) return; const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", data.user.id).maybeSingle(); if (alive) setFanAccount(profile?.account_type === "fan"); }); return () => { alive = false; }; }, [signedIn]);
 
   if (!signedIn || pathname.startsWith("/admin")) return null;
 
   return (
     <nav className="bottom-nav hc-bottom-tab-bar hc-mobile-tabbar-repair hc-lm2f-bottom-nav" aria-label="Mobile navigation">
       {items.map(([href, translationKey, label]) => {
-        const destination = href === "/feed" && fanAccount ? "/fan-feed" : href;
+        const destination = href === "/feed" && accountType === "fan" ? "/fan-feed" : href;
         const active = destination === "/"
           ? pathname === "/" || pathname === "/dashboard"
           : pathname === destination || pathname.startsWith(destination + "/");
@@ -107,7 +105,7 @@ export default function BottomNav() {
             aria-current={active ? "page" : undefined}
           >
             <span className="hc-lm2f-tab-icon"><TabIcon label={label} /></span>
-            <span className="hc-lm2f-tab-label">{translationKey === "hoopFeed" ? "HoopFeed" : t(translationKey)}</span>
+            <span className="hc-lm2f-tab-label">{translationKey === "hoopFeed" ? (accountType === "fan" ? "FAN HQ" : "HoopFeed") : t(translationKey)}</span>
             {active && <span className="hc-lm2f-active-indicator" aria-hidden="true" />}
           </Link>
         );

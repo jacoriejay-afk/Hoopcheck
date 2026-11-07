@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
+import { getHoopCheckEntitlements } from "../lib/membership-tier";
 
 type Summary = { group_name: string; member_count: number; join_mode: "open" | "approval"; is_member: boolean; has_pending_request: boolean };
 
@@ -23,8 +24,10 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
         supabase.from("team_fan_group_moderators").select("user_id,moderator_type").eq("team_id", teamId),
         supabase.rpc("is_current_user_admin_or_moderator")
       ]);
-      setIsFan(profile?.account_type === "fan");
-      setIsModerator(Boolean((moderators || []).some((m: any) => m.user_id === user.id) ||
+      const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, isAdmin: platformAdmin === true });
+      setIsFan(entitlements.canUseFanGroups);
+      setIsModerator(Boolean(entitlements.canModerateFanGroups ||
+        (moderators || []).some((m: any) => m.user_id === user.id) ||
         ((moderators || []).some((m: any) => m.moderator_type === "platform") && platformAdmin === true)));
     } else {
       setIsFan(false);

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { getHoopCheckEntitlements } from "../lib/membership-tier";
 
 type MonthAggregate = { month: string; total: number; on_time: number; late: number; missing: number };
 const options = [
@@ -20,7 +21,15 @@ export default function TeamPayTimeline({ teamId }: { teamId: string }) {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const refresh = useCallback(async () => {
-    const response = await fetch("/api/team-pay-checkins?teamId=" + encodeURIComponent(teamId), { cache: "no-store" });
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      setMonths([]);
+      return;
+    }
+    const response = await fetch("/api/team-pay-checkins?teamId=" + encodeURIComponent(teamId), {
+      headers: { Authorization: "Bearer " + session.access_token },
+      cache: "no-store",
+    });
     const payload = response.ok ? await response.json() : { months: [] };
     setMonths(Array.isArray(payload.months) ? payload.months : []);
   }, [teamId]);
@@ -29,8 +38,16 @@ export default function TeamPayTimeline({ teamId }: { teamId: string }) {
     void (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const { data: profile } = await supabase.from("profiles").select("account_type,player_verified").eq("id", session.user.id).maybeSingle();
-      if (profile?.account_type !== "player" || profile.player_verified !== true) return;
+      const [{ data: profile }, { data: subscription }] = await Promise.all([
+        supabase.from("profiles").select("account_type,player_verified").eq("id", session.user.id).maybeSingle(),
+        supabase.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id", session.user.id).maybeSingle(),
+      ]);
+      const entitlements = getHoopCheckEntitlements({
+        accountType: profile?.account_type,
+        subscription,
+        playerVerified: profile?.player_verified === true,
+      });
+      if (!entitlements.canSubmitPayCheckIn) return;
       const { data: eligible } = await supabase.rpc("can_user_review_team", { p_user_id: session.user.id, p_team_id: teamId });
       if (eligible === true) {
         setCanSubmit(true);

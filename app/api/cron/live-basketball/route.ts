@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 
     // Name matching gives the integration a useful default before manual aliases
     // are configured. Explicit provider-ID mappings always take precedence.
-    const { data: teams, error: teamsError } = await db.from("teams").select("id,name");
+    const { data: teams, error: teamsError } = await db.from("teams").select("id,name").or("source.is.null,source.neq.womens_teams_mirror");
     if (teamsError) throw teamsError;
     const normalize = (name: string) => name.toLocaleLowerCase("en-US").replace(/\b(basketball club|basketball|bc|club|team)\b/g, " ").replace(/[^a-z0-9]/g, "");
     const internalTeamByName = new Map<string, string>();

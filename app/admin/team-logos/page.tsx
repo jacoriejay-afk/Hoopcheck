@@ -30,7 +30,7 @@ export default function AdminTeamLogosPage() {
       return;
     }
     const [{ data: mens, error: mensError }, { data: womens, error: womensError }] = await Promise.all([
-      supabase.from("teams").select("id,name,country,logo_url,logo_bg,basketball_type").order("name").limit(2000),
+      supabase.from("teams").select("id,name,country,logo_url,logo_bg,basketball_type").or("source.is.null,source.neq.womens_teams_mirror").order("name").limit(2000),
       supabase.from("womens_teams").select("id,name,country,logo_url,logo_bg").order("name").limit(1000),
     ]);
     const error = mensError || womensError;

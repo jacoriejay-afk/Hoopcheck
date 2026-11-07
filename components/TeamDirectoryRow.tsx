@@ -24,11 +24,12 @@ type TeamDirectoryRowProps = {
   logoUrl?: string | null;
   logoBg?: "transparent" | "light" | "dark" | null;
   trustTier?: "free" | "pro" | "premium" | "player" | "member" | "unknown";
+  viewerRole?: string;
 };
 
 export default function TeamDirectoryRow({
   id, name, city, country, leagueName, href, kind = "mens", showFollow = true,
-  trustScore = null, trustReviewCount = null, trustVerifiedReviewCount = 0, followerCount = null, trustExplanation = "", logoUrl = null, logoBg = "transparent", trustTier = "unknown",
+  trustScore = null, trustReviewCount = null, trustVerifiedReviewCount = 0, followerCount = null, trustExplanation = "", logoUrl = null, logoBg = "transparent", trustTier = "unknown", viewerRole = "",
 }: TeamDirectoryRowProps) {
   const { t } = useLanguage();
   const hasTrustScore = typeof trustScore === "number" && Number.isFinite(trustScore);
@@ -45,8 +46,8 @@ export default function TeamDirectoryRow({
         </span>
       </Link>
       <div className="hc-scout-card__stats" aria-label={t("teamReviewStatistics")}>
-        {trustTier === "free" ? <div className="hc-directory-locked"><strong>Full player reviews require an eligible membership</strong><Link href="/membership" className="btn">Upgrade</Link></div>
-        : trustTier === "pro" ? <div className="hc-directory-locked"><strong>Trust Score</strong><small>Full Trust Score details require Fan Premium</small><Link href="/membership" className="btn">Upgrade</Link></div>
+        {trustTier === "free" ? <div className="hc-directory-locked"><strong>{viewerRole === "fan" ? "Fan Premium unlocks full reviews and Trust Score" : viewerRole === "player" ? "Player Pro or Premium membership unlocks full review details" : viewerRole ? "An active membership is required to view Trust Score details" : "Sign in to view Trust Score details"}</strong><Link href={viewerRole ? "/membership" : "/login"} className="btn">{viewerRole === "fan" ? "View Fan Premium" : viewerRole ? "View Membership" : "Sign In"}</Link></div>
+        : trustTier === "pro" ? <div className="hc-directory-locked"><strong>Trust Score</strong><small>Full Trust Score details require Fan Premium</small><Link href="/membership" className="btn">Upgrade to Fan Premium</Link></div>
         : <><div className="hc-d3-mobile-trust"><div className="hc-scout-card__stat"><strong>{hasTrustScore ? Math.round(trustScore) : "—"}</strong><small>Trust Score</small></div><div className="hc-scout-card__stat"><strong>{trustReviewCount == null ? "—" : trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div></div><div className="hc-d3-desktop-trust"><TrustScoreDial score={hasTrustScore ? trustScore : null} explanation={trustExplanation || "Not enough player reviews to calculate a Trust Score yet."} reviewCount={trustReviewCount ?? 0} verifiedReviewCount={trustVerifiedReviewCount} size="mini"/><div className="hc-scout-card__stat"><strong>{trustReviewCount == null ? "—" : trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div><div className="hc-scout-card__stat"><strong>{followerCount == null ? "—" : followerCount}</strong><small>FOLLOWERS</small></div></div></>}
       </div>
       <footer className="hc-scout-card__ticket">

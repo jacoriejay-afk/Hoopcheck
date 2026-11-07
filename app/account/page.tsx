@@ -12,11 +12,13 @@ import { useTheme } from "../../components/ThemeProvider";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
 import { calculateProfileCompletion } from "../../lib/profile-completion";
 import TeamLeaguePicker from "../../components/TeamLeaguePicker";
+import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 
 type Subscription = {
   plan: "pro" | "premium" | null;
   status: string | null;
   current_period_end: string | null;
+  access_status?: string | null;
   cancel_at_period_end: boolean | null;
 };
 
@@ -121,7 +123,7 @@ export default function AccountPage() {
       setUserId(user.id);
       const [{ data: profileData }, { data: subscriptionData }, { data: adminRoleData }] = await Promise.all([
         supabase.from("profiles").select("account_type,basketball_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,favorite_teams,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note").eq("id", user.id).maybeSingle(),
-        supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
+        supabase.from("subscriptions").select("plan,status,access_status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
         supabase.rpc("get_current_user_admin_role"),
       ]);
       const nextProfile: Profile = profileData
@@ -380,6 +382,8 @@ export default function AccountPage() {
 
   if (loading) return <main className="page-shell hc-account-page"><div className="page-container"><HoopLoading label={t("loadingAccount")} /></div></main>;
 
+  const entitlements = getHoopCheckEntitlements({ accountType: profile.account_type, subscription });
+
   return (
     <main className="page-shell hc-account-page"><div className="page-container">
       <header className="hc-account-settings-header">
@@ -517,7 +521,7 @@ export default function AccountPage() {
           <p className="eyebrow">{t("membership")}</p><h2>{subscription?.plan === "premium" ? "HoopCheck " + t("premium") : subscription?.plan === "pro" ? "HoopCheck " + t("pro") : t("free") + " " + t("membership")}</h2><p className="muted">{t("status")}: {t(subscription?.status ?? "inactive")}</p>
           {subscription?.current_period_end && <p className="muted">{t("currentPeriodEnds")} {new Date(subscription.current_period_end).toLocaleDateString()}</p>}
           {subscription?.cancel_at_period_end && <p className="muted">Cancellation is scheduled at the end of the current period.</p>}
-          {subscription?.plan === "premium" && <div className="card" style={{marginTop:16,border:"1px solid var(--orange)"}}><p className="eyebrow">{t("premiumPlayerFeature")}</p><h3 style={{marginBottom:8}}><HoopIcon name="basketball" size={20} /> {t("getRecruitedComingSoon")}</h3><p className="muted">{t("recruitingFeatureDescription")}</p><p className="muted" style={{fontSize:12,marginBottom:0}}>{t("recruitingNetworkDescription")}</p></div>}
+          {entitlements.canUseRecruitingNetwork && <div className="card" style={{marginTop:16,border:"1px solid var(--orange)"}}><p className="eyebrow">{t("premiumPlayerFeature")}</p><h3 style={{marginBottom:8}}><HoopIcon name="basketball" size={20} /> {t("getRecruitedComingSoon")}</h3><p className="muted">{t("recruitingFeatureDescription")}</p><p className="muted" style={{fontSize:12,marginBottom:0}}>{t("recruitingNetworkDescription")}</p></div>}
           <div className="account-actions hc-account-membership-actions" style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:12}}><Link href="/membership#manage-subscription" className="btn">{t("manageSubscription")}</Link>{subscription?.plan && subscription.status === "active" && !subscription.cancel_at_period_end && <Link href="/membership#manage-subscription" className="btn dark">{t("upgradeSubscription")}</Link>}</div>
         </div>
       </section>

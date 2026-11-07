@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { isAtLeastTier } from "../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../lib/membership-tier";
 import { useLanguage, type Language } from "./LanguageProvider";
 
 type RequestRow={id:string;requester_id:string;fan_id:string;message:string|null;status:string;created_at:string};
@@ -30,17 +30,18 @@ const copy: Record<Language, Record<string,string>> = {
 export default function FanConnectionButton({fanId}:{fanId:string}){
   const {language}=useLanguage();
   const c=copy[language]||copy.en;
-  const [userId,setUserId]=useState(""); const [allowed,setAllowed]=useState(false); const [request,setRequest]=useState<RequestRow|null>(null);
+  const [userId,setUserId]=useState(""); const [accountType,setAccountType]=useState(""); const [allowed,setAllowed]=useState(false); const [request,setRequest]=useState<RequestRow|null>(null);
   const [message,setMessage]=useState(""); const [info,setInfo]=useState(""); const [busy,setBusy]=useState(false);
   async function load(){
     const {data:{user}}=await supabase.auth.getUser(); if(!user)return;
     setUserId(user.id);
     const [{data:p},{data:s},{data:r}]=await Promise.all([
       supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle(),
-      supabase.from("subscriptions").select("plan,status").eq("user_id",user.id).maybeSingle(),
+      supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",user.id).maybeSingle(),
       supabase.from("fan_connection_requests").select("id,requester_id,fan_id,message,status,created_at").or(`requester_id.eq.${user.id},fan_id.eq.${user.id}`).eq("fan_id",fanId).maybeSingle()
     ]);
-    setAllowed(p?.account_type==="fan" && isAtLeastTier(s?.plan, "pro") && ["active","trialing"].includes(s?.status||""));
+    setAccountType(p?.account_type || "");
+    setAllowed(getHoopCheckEntitlements({ accountType: p?.account_type, subscription: s }).canConnectWithFans);
     setRequest((r||null) as RequestRow|null);
   }
   useEffect(()=>{void load()},[fanId]);
@@ -56,6 +57,7 @@ export default function FanConnectionButton({fanId}:{fanId:string}){
     if(error)setInfo(error.message); else {setInfo(status==="accepted"?c.accepted:c.declined);await load();}
     setBusy(false);
   }
+  if(!userId || accountType !== "fan")return null;
   if(!allowed)return <div className="contact-gate"><strong>{c.gate}</strong><p className="muted">{c.upgrade}</p></div>;
   if(userId===fanId)return null;
   if(request?.status==="pending" && request.fan_id===userId)return <div className="contact-gate"><strong>{c.received}</strong><p className="muted">{request.message||c.another}</p><div className="actions"><button className="btn" onClick={()=>void respond("accepted")} disabled={busy}>{c.accept}</button><button className="btn dark" onClick={()=>void respond("rejected")} disabled={busy}>{c.decline}</button></div>{info&&<p className="muted">{info}</p>}</div>;
