@@ -84,6 +84,7 @@ export default function FanFeedPage() {
     if (!scopedTeamIds.length) { setPosts([]); setComments({}); setLiked(new Set()); return; }
     const query = supabase.from("fan_feed_posts")
       .select("id,author_id,team_id,womens_team_id,body,image_url,video_url,created_at,expires_at,profiles!fan_feed_posts_author_id_fkey(id,display_name,avatar_url,account_type),teams(id,name,logo_url,logo_bg),womens_teams(id,name,logo_url,logo_bg),fan_feed_checks(user_id),fan_feed_comments(id)")
+      .in(basketballSide === "womens" ? "womens_team_id" : "team_id", scopedTeamIds)
       .gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(100);
     const { data, error } = await query;
     if (!isCurrentRequest()) return;
