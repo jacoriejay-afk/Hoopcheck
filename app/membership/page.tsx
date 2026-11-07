@@ -248,8 +248,11 @@ function MembershipContent() {
           Decide smarter.
         </h1>
         <p>
-          Unlock full coach, team, and league ratings and reviews from the players
-          who have already been there.
+          {accountType === "fan"
+            ? "Follow your teams, join live game chats, connect with fans and unlock deeper team insights."
+            : accountType === "player"
+              ? "Research teams, coaches and leagues with first-hand reviews from players who have already been there."
+              : "Access deeper basketball research, professional reviews and organization insights."}
         </p>
         <div className="hero-links">
           <Link href="/search">Global Research Search →</Link>
@@ -270,7 +273,7 @@ function MembershipContent() {
           <div className="active-card" id="manage-subscription">
             <div className="eyebrow">CURRENT MEMBERSHIP</div>
             <h2>
-              HoopCheck {subscription.plan === "premium" ? "Premium" : "Pro"}
+              HoopCheck {accountType === "fan" ? (subscription.plan === "premium" ? "Fan Premium" : "Fan Pro") : (subscription.plan === "premium" ? "Premium" : "Pro")}
             </h2>
             <p>
               Status: <strong>{subscription.status}</strong>
@@ -310,9 +313,7 @@ function MembershipContent() {
             <div className="section-heading">
               <div className="eyebrow">CHOOSE YOUR ACCESS</div>
               <h2>
-                Built for players
-                <br />
-                making serious decisions.
+                {accountType === "fan" ? <>Built for fans who follow the game.</> : accountType === "player" ? <>Built for players<br />making serious decisions.</> : <>Built for basketball professionals.</>}
               </h2>
               <p>Start with the level of research access that fits you.</p>
             </div>
@@ -348,8 +349,8 @@ function MembershipContent() {
               <div className="plan-card">
                 <div className="plan-top">
                   <div>
-                    <div className="eyebrow">HOOPCHECK PRO</div>
-                    <h3>Pro</h3>
+                    <div className="eyebrow">{accountType === "fan" ? "HOOPCHECK FAN PRO" : "HOOPCHECK PRO"}</div>
+                    <h3>{accountType === "fan" ? "Fan Pro" : "Pro"}</h3>
                   </div>
                   <div className="price">
                     <strong>{billingInterval==="month" ? "\$4.99" : billingInterval==="6_month" ? "\$25.45" : "\$53.89"}</strong>
@@ -357,22 +358,32 @@ function MembershipContent() {
                   </div>
                 </div>
                 <p className="plan-description">
-                  Full access to the core HoopCheck research experience.
+                  {accountType === "fan"
+                    ? "Follow your teams, join Fan HoopFeed and live game chats, connect with other fans and compare teams."
+                    : "Full access to the core HoopCheck research experience."}
                 </p>
                 <ul>
-                  <li>Full coach ratings and reviews</li>
-                  <li>Full team ratings and reviews</li>
-                  <li>Full league ratings and reviews</li>
-                  <li>Coach research</li>
-                  <li>Team research</li>
-                  <li>League research</li>
+                  {accountType === "fan" ? <>
+                    <li>Fan HoopFeed reading and posting</li>
+                    <li>Fan network and connection requests</li>
+                    <li>Live Game Hub and Chat</li>
+                    <li>Team comparison and team alerts</li>
+                    <li>Fan Groups and Team Hub</li>
+                  </> : <>
+                    <li>Full coach ratings and reviews</li>
+                    <li>Full team ratings and reviews</li>
+                    <li>Full league ratings and reviews</li>
+                    <li>Coach research</li>
+                    <li>Team research</li>
+                    <li>League research</li>
+                  </>}
                 </ul>
                 <button
                   className="btn plan-button"
                   onClick={() => startCheckout("pro")}
                   disabled={checkoutLoading !== null || loading}
                 >
-                  {checkoutLoading === `pro-${billingInterval}` ? "Opening Checkout..." : `Get Pro — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}
+                  {checkoutLoading === `pro-${billingInterval}` ? "Opening Checkout..." : `Get ${accountType === "fan" ? "Fan Pro" : "Pro"} — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}
                 </button>
               </div>
 
@@ -380,8 +391,8 @@ function MembershipContent() {
                 <div className="featured-badge">MORE ACCESS</div>
                 <div className="plan-top">
                   <div>
-                    <div className="eyebrow">HOOPCHECK PREMIUM</div>
-                    <h3>Premium</h3>
+                    <div className="eyebrow">{accountType === "fan" ? "HOOPCHECK FAN PREMIUM" : "HOOPCHECK PREMIUM"}</div>
+                    <h3>{accountType === "fan" ? "Fan Premium" : "Premium"}</h3>
                   </div>
                   <div className="price">
                     <strong>{billingInterval==="month" ? "\$9.99" : billingInterval==="6_month" ? "\$50.95" : "\$107.89"}</strong>
@@ -389,23 +400,34 @@ function MembershipContent() {
                   </div>
                 </div>
                 <p className="plan-description">
-                  Everything in Pro plus expanded research capabilities.
+                  {accountType === "fan"
+                    ? "Everything in Fan Pro, plus complete access to player-written reviews and Trust Score details."
+                    : "Everything in Pro plus expanded research capabilities."}
                 </p>
                 <ul>
-                  <li>Everything in Pro</li>
-                  <li>Advanced research tools</li>
-                  <li>Expanded coach insights</li>
-                  <li>Expanded team insights</li>
-                  <li>Expanded league insights</li>
-                  <li>Premium discovery features</li>
-                  <li>Priority access to new features</li>
+                  {accountType === "fan" ? <>
+                    <li>Everything in Fan Pro</li>
+                    <li>Full coach, team and league review details</li>
+                    <li>Full Trust Score details</li>
+                    <li>Expanded team insights</li>
+                    <li>Premium discovery features</li>
+                    <li>Priority access to new features</li>
+                  </> : <>
+                    <li>Everything in Pro</li>
+                    <li>Advanced research tools</li>
+                    <li>Expanded coach insights</li>
+                    <li>Expanded team insights</li>
+                    <li>Expanded league insights</li>
+                    <li>Premium discovery features</li>
+                    <li>Priority access to new features</li>
+                  </>}
                 </ul>
                 <button
                   className="btn plan-button"
                   onClick={() => startCheckout("premium")}
                   disabled={checkoutLoading !== null || loading}
                 >
-                  {checkoutLoading === `premium-${billingInterval}` ? "Opening Checkout..." : `Get Premium — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}
+                  {checkoutLoading === `premium-${billingInterval}` ? "Opening Checkout..." : `Get ${accountType === "fan" ? "Fan Premium" : "Premium"} — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}
                 </button>
               </div>
             </div>
