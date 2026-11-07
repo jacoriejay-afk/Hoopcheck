@@ -15,7 +15,7 @@ import "./fan-feed.css";
 import "../hoopfeed-shared.css";
 import { fanFeedI18n, fanFeedTeamComposerPlaceholder } from "./i18n";
 
-type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null; group_name?: string | null };
+type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null; group_name?: string | null; is_member?: boolean };
 type Profile = { id: string; display_name: string | null; avatar_url: string | null; account_type: string };
 type FanPost = { id: string; author_id: string; team_id: string; body: string; image_url: string | null; image_src?: string | null; is_pinned: boolean; created_at: string; profiles?: Profile | null; teams?: Team | null };
 type GroupComment = { id: string; post_id: string; author_id: string; body: string; created_at: string; profiles?: { display_name: string | null; avatar_url?: string | null } | null };
@@ -118,80 +118,40 @@ export default function FanFeedPage() {
   }, [load]);
 
   async function publish() {
-    if (!user || profile?.account_type !== "fan" || !teamId || (!body.trim() && !photo && !video) || posting) return;
+    if (!user || profile?.account_type !== "fan" || !teamId || !selectedTeam?.is_member || (!body.trim() && !photo) || posting) return;
     setPosting(true); setMessage(ft("moderating"));
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const form = new FormData(); form.append("team_id", teamId); form.append("text", body.trim());
+      const form = new FormData(); form.append("action", "create_post"); form.append("team_id", teamId); form.append("body", body.trim());
       if (photo) form.append("image", photo);
-      if (video) {
-        const ext = video.type === "video/webm" ? "webm" : video.type === "video/quicktime" ? "mov" : "mp4";
-        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-        const { error: uploadError } = await supabase.storage.from("feed-videos").upload(path, video, { contentType: video.type, cacheControl: "31536000", upsert: false });
-        if (uploadError) throw new Error("Video upload failed. Please try again.");
-        form.append("video_path", path); form.append("video_type", video.type);
-      }
-      const response = await fetch("/api/fan-feed/moderate", { method: "POST", headers: { Authorization: "Bearer " + session?.access_token }, body: form });
+      const response = await fetch("/api/fan-groups", { method: "POST", headers: { Authorization: "Bearer " + session?.access_token }, body: form });
       const result = await response.json();
-      if (!response.ok || result.allowed !== true) throw new Error(result.message || ft("publishFailed"));
-      setBody(""); setPhoto(null); setPhotoPreview(""); setVideo(null); setVideoPreview(""); setMessage(ft("published"));
+      if (!response.ok || result.ok !== true) throw new Error(result.message || ft("publishFailed"));
+      setBody(""); setPhoto(null); setPhotoPreview(""); setComposerOpen(false); setTeamSearch(""); setMessage(ft("published"));
       await load(user.id);
     } catch (e: any) { setMessage(e?.message || ft("publishFailed")); }
     finally { setPosting(false); }
   }
 
-  async function toggleCheck(post: FanPost) {
-    if (!user) return;
-    if (liked.has(post.id)) {
-      const { error } = await supabase.from("fan_feed_checks").delete().eq("post_id", post.id).eq("user_id", user.id);
-      if (error) { setMessage(error.message); return; }
-      setLiked(prev => { const next = new Set(prev); next.delete(post.id); return next; });
-    } else {
-      // Idempotent write: repeated taps or stale feed state must not surface a
-      // duplicate-key error for the (post_id, user_id) primary key.
-      const { error } = await supabase.from("fan_feed_checks")
-        .upsert({ post_id: post.id, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
-      if (error) { setMessage(error.message); return; }
-      setLiked(prev => new Set(prev).add(post.id));
-    }
-  }
-
-  async function archivePost(post: FanPost) {
-    if (!user || post.author_id !== user.id) return;
-    const { error } = await supabase.from("fan_feed_archives").upsert({ user_id: user.id, post_id: post.id }, { onConflict: "user_id,post_id" });
-    if (error) { setMessage(error.message); return; }
-    setArchived(prev => new Set(prev).add(post.id));
-    setPosts(prev => prev.filter(p => p.id !== post.id));
-    setMessage(ft("archiveSuccess"));
-  }
-
-  async function deletePost(post: FanPost) {
-    if (!user || post.author_id !== user.id || !window.confirm(ft("deleteConfirm"))) return;
-    const { error } = await supabase.from("fan_feed_posts").delete().eq("id", post.id).eq("author_id", user.id);
-    if (error) { setMessage(error.message); return; }
-    setPosts(prev => prev.filter(p => p.id !== post.id));
-    setMessage(ft("deleteSuccess"));
-  }
-
   async function sharePost(post: FanPost) {
-    const url = `${window.location.origin}/fan-feed?post=${encodeURIComponent(post.id)}`;
+    const url = `${window.location.origin}/team-hub/groups/${encodeURIComponent(post.team_id)}`;
     try {
       if (navigator.share) await navigator.share({ title: ft("shareTitle"), text: post.body.slice(0, 160), url });
       else { await navigator.clipboard.writeText(url); setMessage(ft("linkCopied")); }
     } catch (error: any) { if (error?.name !== "AbortError") setMessage(ft("shareFailed")); }
   }
 
-  async function addComment(postId: string) {
-    const text = (drafts[postId] || "").trim();
+  async function addComment(post: FanPost) {
+    const text = (drafts[post.id] || "").trim();
     if (!user || !text) return;
     const { data: { session } } = await supabase.auth.getSession();
-    const response = await fetch("/api/fan-feed/moderate", { method: "POST", headers: { Authorization: "Bearer " + session?.access_token, "Content-Type": "application/json" }, body: JSON.stringify({ kind: "comment", post_id: postId, text }) });
+    const form = new FormData(); form.append("action", "comment"); form.append("team_id", post.team_id); form.append("post_id", post.id); form.append("body", text);
+    const response = await fetch("/api/fan-groups", { method: "POST", headers: { Authorization: "Bearer " + session?.access_token }, body: form });
     const result = await response.json();
-    if (!response.ok || !result.allowed) { setMessage(result.message || ft("commentFailed")); return; }
-    setDrafts(prev => ({ ...prev, [postId]: "" }));
+    if (!response.ok || result.ok !== true) { setMessage(result.message || ft("commentFailed")); return; }
+    setDrafts(prev => ({ ...prev, [post.id]: "" }));
     await load(user.id);
   }
-
   async function followFan(targetId: string) {
     if (!user || targetId === user.id) return;
     const { error } = await supabase.from("follow_relationships").upsert({ follower_id: user.id, target_id: targetId, target_type: "fan" }, { onConflict: "follower_id,target_type,target_id" });
