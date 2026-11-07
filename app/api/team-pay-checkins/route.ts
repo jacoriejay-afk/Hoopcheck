@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { hasActiveMembershipAtLeast } from "../../../lib/membership-tier";
 
 export const dynamic = "force-dynamic";
 const statuses = ["on_time", "late", "missing"] as const;
@@ -82,8 +83,14 @@ export async function POST(request: Request) {
     const { data: authData, error: authError } = await auth.auth.getUser(token);
     const user = authData.user;
     if (authError || !user || !user.email_confirmed_at) return NextResponse.json({ error: "A confirmed player account is required." }, { status: 401 });
-    const { data: profile, error: profileError } = await db.from("profiles").select("account_type,player_verified").eq("id", user.id).maybeSingle();
+    const [{ data: profile, error: profileError }, { data: subscription, error: subscriptionError }] = await Promise.all([
+      db.from("profiles").select("account_type,player_verified").eq("id", user.id).maybeSingle(),
+      db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
+    ]);
     if (profileError || profile?.account_type !== "player" || profile.player_verified !== true) return NextResponse.json({ error: "Only verified players can submit a check-in." }, { status: 403 });
+    if (subscriptionError || !hasActiveMembershipAtLeast(subscription)) {
+      return NextResponse.json({ error: "An active Pro or Premium membership is required to submit a pay check-in." }, { status: 403 });
+    }
     const { data: eligible, error: eligibilityError } = await db.rpc("can_user_review_team", { p_user_id: user.id, p_team_id: teamId });
     if (eligibilityError || eligible !== true) return NextResponse.json({ error: "Only players who played for this team can submit a check-in." }, { status: 403 });
     const { error } = await db.from("team_pay_checkins").insert({ team_id: teamId, player_id: user.id, pay_month: month, pay_status: status });
