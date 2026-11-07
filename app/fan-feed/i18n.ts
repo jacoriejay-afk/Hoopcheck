@@ -258,6 +258,19 @@ export function fanFeedLoadError(language: Language): string {
   return loadErrorCopy[language] || loadErrorCopy.en;
 }
 
+
+const removeVideoCopy: Record<Language, string> = {
+  en: "Remove video", es: "Quitar vídeo", fr: "Retirer la vidéo", de: "Video entfernen",
+  tr: "Videoyu kaldır", pt: "Remover vídeo", it: "Rimuovi video", el: "Αφαίρεση βίντεο",
+  ar: "إزالة الفيديو", ru: "Удалить видео", az: "Videonu sil", pl: "Usuń wideo",
+  zh: "移除视频", ja: "動画を削除", sr: "Ukloni video", fi: "Poista video",
+  he: "הסרת סרטון", lt: "Pašalinti vaizdo įrašą", uk: "Видалити відео",
+};
+
+export function fanFeedRemoveVideoLabel(language: Language): string {
+  return removeVideoCopy[language] || removeVideoCopy.en;
+}
+
 function withTeam(template: string, teamName: string) {
   return template.replaceAll("{team}", teamName);
 }
