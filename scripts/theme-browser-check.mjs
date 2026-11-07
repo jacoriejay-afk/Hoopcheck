@@ -693,7 +693,7 @@ try {
       if (result.pageWrapper && result.pageWrapper !== expectedPage) errors.push("main background mismatch");
       if (result.navigationError) errors.push("navigation error");
       if (result.scaffoldMatches?.length) errors.push("rendered scaffold strings: " + result.scaffoldMatches.join(", "));
-      const isFanRoute = requestedPath === "/fan-feed" || requestedPath === "/team-hub" || requestedPath.startsWith("/team-hub/groups/");
+      const isFanRoute = requestedPath === "/fan-feed" || requestedPath === "/team-hub" || requestedPath.startsWith("/team-hub/groups/") || requestedPath.startsWith("/womens/");
       if (isFanRoute) {
         const fanScaffoldCount = result.scaffoldMatches?.length || 0;
         console.log("FAN_ROUTE_SCAFFOLD_HITS=" + fanScaffoldCount + " route=" + requestedPath);
