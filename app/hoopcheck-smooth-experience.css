@@ -149,3 +149,7 @@
 .hc-smooth-wire__empty a{color:var(--brand-orange);font-weight:700;}
 
 .hc-smooth-inbox-error{margin:12px 0;padding:10px 12px;border:1px solid #d75a43;border-radius:10px;color:var(--hc-text-primary,var(--ink));font-size:13px;line-height:1.45;}
+
+.hc-smooth-presign-reset{margin:8px 0 20px;padding:9px 14px;border:1px solid var(--hc-border,var(--border));border-radius:9px;background:transparent;color:var(--hc-text-primary,var(--ink));font:inherit;font-size:12px;font-weight:700;cursor:pointer;}
+.hc-smooth-presign-reset:disabled{opacity:.45;cursor:default;}
+.hc-smooth-presign-reset:focus-visible{outline:2px solid #ff5a1f;outline-offset:3px;}
