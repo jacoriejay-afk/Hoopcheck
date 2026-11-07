@@ -348,6 +348,12 @@ try {
       else if (url.pathname.includes("/rest/v1/fan_live_games")) {
         data = activeRoutePath === "/live-games" && liveGameFixtureMode === "populated" ? liveGameFixtures : [];
       }
+      else if (url.pathname.includes("/rest/v1/womens_teams")) {
+        const idFilter = url.searchParams.get("id") || "";
+        if (idFilter.startsWith("eq.")) data = single ? teamFixture : [teamFixture];
+        else if (idFilter.startsWith("in.")) data = [teamFixture];
+        else data = [teamFixture];
+      }
       else if (url.pathname.includes("/rest/v1/teams")) {
         const idFilter = url.searchParams.get("id") || "";
         if (idFilter.startsWith("eq.")) {
