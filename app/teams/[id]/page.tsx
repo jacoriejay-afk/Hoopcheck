@@ -9,6 +9,7 @@ type ReviewVerification = {
 };
 
 import Link from "next/link";
+import "../../hoopcheck-brand-team.css";
 import FanTeamPosts from "../../../components/FanTeamPosts";
 
 import { useParams } from "next/navigation";
