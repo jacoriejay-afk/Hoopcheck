@@ -23,7 +23,7 @@ html.theme-dark main :where(.card,.dashboard-card,.result-card,.quick-card,.sett
  background:#141414!important;border-color:#414141!important;color:#f7f7f5!important;
 }
 html.theme-light main :where(.card,.dashboard-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card) {
- background:#fff!important;border-color:#d2d2cc!important;color:#171717!important;
+ background:var(--hc-surface-raised)!important;border-color:#d2d2cc!important;color:#171717!important;
 }
 /* Brand hierarchy: orange accents, black header, visible active navigation. */
 html:is(.theme-dark,.theme-light) :where(.topbar,.nav,.site-header) {border-bottom:2px solid #ff5a1f;}
@@ -39,7 +39,7 @@ html.theme-light main :where(.eyebrow,.card-kicker) {color:#a83a0b;}
 /* Buttons and input affordances remain legible in either color scheme. */
 html:is(.theme-dark,.theme-light) main :where(button,input,select,textarea,a.btn) {min-width:0;}
 html.theme-dark main :where(input,select,textarea) {background:#171717!important;color:#f7f7f5!important;border-color:#666!important;}
-html.theme-light main :where(input,select,textarea) {background:#fff!important;color:#171717!important;border-color:#aaa!important;}
+html.theme-light main :where(input,select,textarea) {background:var(--hc-surface-raised)!important;color:#171717!important;border-color:#aaa!important;}
 html:is(.theme-dark,.theme-light) :where(a,button,input,select,textarea):focus-visible {
  outline:3px solid #ff8a54!important;outline-offset:3px;
 }
@@ -108,7 +108,7 @@ html:is(.theme-light,.theme-dark) main :where(
 ) :where(.muted,.subtle,.meta,small) {color:var(--hc-scoreboard-on-dark-muted)!important;}
 /* Explicitly restore the black-on-white membership ladder in light mode. */
 html.theme-light .hc-membership-comparison .hc-membership-plan {
- background:#fff!important;color:#171717!important;border-color:#c9c9c4!important;
+ background:var(--hc-surface-raised)!important;color:#171717!important;border-color:#c9c9c4!important;
 }
 html.theme-light .hc-membership-comparison .hc-membership-plan.is-current {
  background:#fff1e8!important;border-color:#b83d0a!important;
@@ -116,7 +116,7 @@ html.theme-light .hc-membership-comparison .hc-membership-plan.is-current {
 html.theme-light .hc-membership-comparison .hc-membership-plan :where(h3,.price,li,strong) {color:#171717!important;}
 html.theme-light .hc-membership-comparison .hc-membership-plan :where(.eyebrow,small) {color:#67331c!important;}
 html.theme-light .hc-member-profile-page :where(.hc-profile-membership-link,.hc-profile-quick-link) {
- background:#fff!important;color:#171717!important;border-color:#bdbdb7!important;
+ background:var(--hc-surface-raised)!important;color:#171717!important;border-color:#bdbdb7!important;
 }
 html.theme-light .hc-member-profile-page :where(.hc-profile-membership-link,.hc-profile-quick-link) svg {color:#b83d0a!important;}
 /* Dark theme keeps the same controls on true dark backgrounds. */
