@@ -735,9 +735,7 @@ export default function TeamDetailPage() {
 
       {team && <><TeamOfficialUpdates teamId={team.id} /><FanTeamPosts teamId={team.id} /></>}
 
-      {accountType === "player" && (
-        {accountType === "player" ? <section className="hero hc-team-write-review"><div className="eyebrow">{t("shareYourExperience")}</div><h2>{t("writeAReviewTitle")}</h2><p className="muted">{t("helpNextPlayer")}</p><Link href={canWriteReviews ? `/teams/${team.id}/review` : "/membership"} className="btn">{canWriteReviews ? t("writeAReview") : t("unlockReviews")}</Link></section> : null}
-      )}
+      {accountType === "player" ? <section className="hero hc-team-write-review"><div className="eyebrow">{t("shareYourExperience")}</div><h2>{t("writeAReviewTitle")}</h2><p className="muted">{t("helpNextPlayer")}</p><Link href={canWriteReviews ? `/teams/${team.id}/review` : "/membership"} className="btn">{canWriteReviews ? t("writeAReview") : t("unlockReviews")}</Link></section> : null}
 
       {reportReviewId && (
         <div
