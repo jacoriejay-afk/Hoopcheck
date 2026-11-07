@@ -419,7 +419,7 @@ export default function AccountPage() {
         </SettingsGroup>
         <SettingsGroup title={t("privacySection")}>
           <SettingsToggle icon="map-pin" label={t("showCountryOnFeed")} checked={countryPublic} onChange={changeCountryVisibility} />
-          <div className="hc-setting-row"><SettingsGlyph name="eye"/><div className="hc-setting-copy"><strong>{t("whoCanSeeProfile")}</strong><small>{settingsVisibility === "public" ? t("public") : t("playersOnly")}</small></div><select aria-label={t("whoCanSeeProfile")} className="hc-setting-select" value={settingsVisibility} onChange={e=>changeVisibility(e.target.value as "public"|"players_only")}><option value="public">{t("public")}</option><option value="players_only">{t("playersOnly")}</option></select></div>
+          {profile.account_type !== "fan" && <div className="hc-setting-row"><SettingsGlyph name="eye"/><div className="hc-setting-copy"><strong>{t("whoCanSeeProfile")}</strong><small>{settingsVisibility === "public" ? t("public") : t("playersOnly")}</small></div><select aria-label={t("whoCanSeeProfile")} className="hc-setting-select" value={settingsVisibility} onChange={e=>changeVisibility(e.target.value as "public"|"players_only")}><option value="public">{t("public")}</option><option value="players_only">{t("playersOnly")}</option></select></div>}
         </SettingsGroup>
         <SettingsGroup title={t("supportSection")}>
           <SettingsRow icon="help" label={t("helpFaq")} value={t("getAnswers")} href="/support" />
