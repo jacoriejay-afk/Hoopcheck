@@ -22,7 +22,8 @@ export default function ConnectionsPage(){
     const targetId=params.get("id");
     if(mode==="followers"&&!targetId)setListError("A profile or team is required to view followers.");
     else{
-     const targetType = params.get("type") || (profileResult.data?.account_type === "fan" ? "fan" : "player");\n     const {data:rows,error}=await supabase.rpc("get_public_follow_list",{p_mode:mode,p_target_type:mode==="followers"?targetType:null,p_target_id:mode==="followers"?targetId:null,p_user_id:mode==="following"?(params.get("id")||currentUser?.id):null});
+     const targetType = params.get("type") || (profileResult.data?.account_type === "fan" ? "fan" : "player");
+     const {data:rows,error}=await supabase.rpc("get_public_follow_list",{p_mode:mode,p_target_type:mode==="followers"?targetType:null,p_target_id:mode==="followers"?targetId:null,p_user_id:mode==="following"?(params.get("id")||currentUser?.id):null});
      if(error)setListError("Connections could not be loaded. Please try again.");
      else setRows(((rows||[]) as FollowRow[]).filter(row => profileResult.data?.account_type !== "fan" || ["fan","team"].includes(row.target_type)));
     }
