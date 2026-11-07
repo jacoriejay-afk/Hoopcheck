@@ -7,12 +7,11 @@ import {useLanguage} from "../../../components/LanguageProvider";
 import Surface from "../../../components/Surface";
 import HoopLoading from "../../../components/HoopLoading";
 import ClaimedTeamLogoEditor from "../../../components/ClaimedTeamLogoEditor";
-import TeamPlayersHistory from "../../../components/TeamPlayersHistory";
 import TeamProfileHero from "../../../components/TeamProfileHero";
 
 export default function WomensTeam(){
  const {formatDate,formatNumber,t}=useLanguage();
- const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [knownPlayerFollowers,setKnownPlayerFollowers]=useState<string[]>([]); const [teamFollowerCount,setTeamFollowerCount]=useState(0);
+ const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [teamFollowerCount,setTeamFollowerCount]=useState(0);
  useEffect(() => {
    let active = true;
    (async () => {
@@ -23,10 +22,6 @@ export default function WomensTeam(){
      setTeam(teamData || null);
      const { data: { session } } = await supabase.auth.getSession();
      if (session?.user) {
-       const { data: profile } = await supabase.from("profiles")
-         .select("account_type,basketball_type,player_verified,selected_womens_team_id").eq("id", session.user.id).maybeSingle();
-       const { data: sharedProfiles } = await supabase.rpc("get_shared_team_followers", { p_team_id: id });
-       setKnownPlayerFollowers((sharedProfiles || []).map((row:any)=>row.display_name).filter(Boolean));
        const response = await fetch(`/api/review-access?entityType=womens-team&entityId=${encodeURIComponent(id)}`, {
          headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store",
        });
