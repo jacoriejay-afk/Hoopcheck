@@ -111,3 +111,13 @@
 .hc-player-dossier-hero .hc-social-stats a { color:#f7f7f5 !important; }
 .hc-player-dossier-hero .hc-social-profile-actions :is(a,button):focus-visible { outline:3px solid #ff8a54;outline-offset:3px; }
 @media(max-width:600px){.hc-player-dossier-hero {padding:16px !important}.hc-player-dossier-hero h1 {font-size:clamp(24px,7vw,36px) !important;overflow-wrap:anywhere;}}
+
+/* Keep player identity and profile controls above decorative dossier art. */
+.hc-player-dossier-hero .hc-social-profile-top,
+.hc-player-dossier-hero .hc-social-profile-main,
+.hc-player-dossier-hero .hc-social-profile-actions { position:relative;z-index:1;min-width:0; }
+.hc-player-dossier-hero .player-profile-avatar { background:#202020 !important;color:#f7f7f5 !important;border-color:#ff5a1f !important; }
+.hc-player-dossier-hero .hc-social-stats { min-width:0; }
+.hc-player-dossier-hero .hc-social-stats > * { min-width:0; }
+.hc-player-dossier-hero .hc-social-stats strong { font-variant-numeric:tabular-nums; }
+@media(max-width:600px){ .hc-player-dossier-hero .hc-social-profile-actions { display:flex;flex-wrap:wrap;gap:8px; } .hc-player-dossier-hero .hc-social-profile-actions > * { max-width:100%; } }
