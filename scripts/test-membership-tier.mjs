@@ -132,4 +132,31 @@ const unverified = getHoopCheckEntitlements({
 assert.equal(unverified.canWriteReviews, false, "unverified players cannot write reviews");
 assert.equal(unverified.canSubmitPayCheckIn, false, "unverified player cannot submit pay check-ins");
 
+
+const read = (relative) => readFileSync(new URL(relative, import.meta.url), "utf8");
+const menProfile = read("../app/teams/[id]/page.tsx");
+const womenProfile = read("../app/womens/[id]/page.tsx");
+const coachProfile = read("../app/coaches/[id]/page.tsx");
+const leagueProfile = read("../app/leagues/[id]/page.tsx");
+const liveChat = read("../app/fan-live/page.tsx");
+const liveHub = read("../app/live-games/page.tsx");
+const payApi = read("../app/api/team-pay-checkins/route.ts");
+const trustApi = read("../app/api/trust-score/route.ts");
+
+for (const [label, page] of [["men's team", menProfile], ["women's team", womenProfile]]) {
+  assert.match(page, /import TeamProfileHero/, label + " must use the shared team hero");
+  assert.equal((page.match(/<ReviewMembershipGate/g) || []).length, 1, label + " must render exactly one shared review gate");
+}
+for (const [label, page] of [["coach", coachProfile], ["league", leagueProfile]]) {
+  assert.equal((page.match(/<ReviewMembershipGate/g) || []).length, 1, label + " must render exactly one shared review gate");
+}
+assert.match(menProfile, /accountType !== "fan"/, "fan profiles must not render the team Pay tab");
+assert.match(menProfile, /accountType\) \? <Link href="\/team-dashboard"/, "Team Portal must be role-gated");
+assert.match(payApi, /entitlements\.canViewTeamPayHistory/, "payment-history API must enforce the shared role entitlement");
+assert.match(liveChat, /from\("womens_teams"\)/, "Live Game Chat must resolve women's teams");
+assert.match(liveChat, /opponent_team_id/, "Live Game Chat must resolve both fixture sides");
+assert.match(liveChat, /canUseLiveGameChat/, "Live Game Chat must use the shared chat entitlement");
+assert.match(liveHub, /womens_teams/, "Live Game Hub must include women's teams");
+assert.match(trustApi, /row\.womens_team_id/, "women's Trust Score must aggregate women's reviews");
+
 console.log("VERIFY-1 entitlement matrix: " + cases.length + " role/tier cells and edge cases passed (" + keys.length + " entitlements).");
