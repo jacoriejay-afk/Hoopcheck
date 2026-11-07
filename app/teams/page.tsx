@@ -53,6 +53,7 @@ export default function TeamsPage() {
   const [loading, setLoading] = useState(true);
   const [isPlayerAccount, setIsPlayerAccount] = useState(false);
   const [isFanAccount, setIsFanAccount] = useState(false);
+  const [roleReady, setRoleReady] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
@@ -84,9 +85,9 @@ export default function TeamsPage() {
     let active = true;
     void (async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) { if (active) { setIsPlayerAccount(false); setIsFanAccount(false); } return; }
+      if (!session?.user) { if (active) { setIsPlayerAccount(false); setIsFanAccount(false); setRoleReady(true); } return; }
       const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", session.user.id).maybeSingle();
-      if (active) { setIsPlayerAccount(profile?.account_type === "player"); setIsFanAccount(profile?.account_type === "fan"); }
+      if (active) { setIsPlayerAccount(profile?.account_type === "player"); setIsFanAccount(profile?.account_type === "fan"); setRoleReady(true); }
     })().catch(() => { if (active) { setIsPlayerAccount(false); setIsFanAccount(false); } });
     return () => { active = false; };
   }, []);
@@ -366,7 +367,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           teams.map((team) => (
-            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} followerCount={followerCounts[team.id] ?? null} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={isPlayerAccount ? "player" : trustScores[team.id]?.tier} logoUrl={team.logo_url} logoBg={team.logo_bg} />
+            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} followerCount={followerCounts[team.id] ?? null} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={isPlayerAccount ? "player" : trustScores[team.id]?.tier} fanView={!roleReady || isFanAccount} logoUrl={team.logo_url} logoBg={team.logo_bg} />
           ))
         )}
       </section>
