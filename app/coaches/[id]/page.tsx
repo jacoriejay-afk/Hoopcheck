@@ -447,7 +447,7 @@ export default function CoachDetailPage() {
             ),
           0
         ) / reviews.length
-      : 0;
+      : (publicSummary.overall_rating ?? 0);
 
   const communication =
     reviews.length > 0
@@ -634,102 +634,38 @@ export default function CoachDetailPage() {
         </div>
       </section>
 
-      {!canReadFullReviews && reviewTier === "free" && Boolean(accountType) ? (
-        <ReviewMembershipGate title="Player reviews require an eligible membership" actionLabel="Upgrade" accountType={accountType} tier={reviewTier} />
-      ) : reviewTier === "pro" && accountType === "fan" ? (
-        <section className="hero hc-fan-review-teaser">
-          <h2>Player ratings and reviews</h2>
-          <h3>Overall rating</h3>
-          <div className="hc-review-star-row"><span aria-hidden="true">★★★★★</span><strong>{publicSummary.overall_rating == null ? "—" : publicSummary.overall_rating.toFixed(1)+"/5"}</strong></div>
-          <h3>Coach breakdown</h3>
-          <div className="hc-review-category-teaser">{["Communication","Professionalism","Development","Payment"].map(label=><div className="hc-review-category-row" key={label}><span>{label}</span><span className="hc-review-score-blur" aria-label="Score available with Fan Premium">★★★★★</span></div>)}</div>
-          <p>Fan Pro shows the outline. Upgrade to Fan Premium for every review and rating.</p><Link href="/membership" className="btn">Upgrade</Link>
-        </section>
-      ) : (
-        <>
-          <section className="grid">
-            <div className="card">
-              <div className="eyebrow">
-                Overall Rating
-              </div>
-
-              <h2
-                style={{
-                  fontSize: "58px",
-                  color:
-                    "var(--orange)",
-                  marginBottom:
-                    "4px",
-                }}
-              >
-                {average.toFixed(1)}
-              </h2>
-
-              <p>
-                Based on{" "}
-                {reviews.length}{" "}
-                approved{" "}
-                {reviews.length === 1
-                  ? "review"
-                  : "reviews"}
-                .
-              </p>
-            </div>
-
-            <div className="card" style={{ position: "relative", overflow: "hidden" }}>
-              <div className="eyebrow">Coach Breakdown</div>
-              {hasAccess ? (reviews.length === 0 ? <p>{t("noApprovedReviewsYet")}</p> : <>
+      {hasAccess && (
+        <section className="grid">
+          <div className="card">
+            <div className="eyebrow">Overall Rating</div>
+            <h2 style={{ fontSize: "58px", color: "var(--orange)", marginBottom: "4px" }}>
+              {average.toFixed(1)}
+            </h2>
+            <p>Overall community rating</p>
+          </div>
+          {canReadFullReviews ? (
+            <>
+              <div className="card">
+                <div className="eyebrow">Coach Breakdown</div>
+                {reviews.length === 0 ? <p>{t("noApprovedReviewsYet")}</p> : <>
                   <RatingBar label="Communication" value={communication} />
                   <RatingBar label="Professionalism" value={professionalism} />
                   <RatingBar label="Development" value={development} />
                   <RatingBar label="Payment" value={payment} />
-                </>) : (
-                <div style={{ padding: "24px 0" }}>
-                  <div style={{ filter: "blur(7px)", opacity: 0.35, pointerEvents: "none" }}>
-                    <div style={{ height: 16, width: "75%", background: "#555", borderRadius: 8, marginBottom: 14 }} />
-                    <div style={{ height: 16, width: "60%", background: "#555", borderRadius: 8, marginBottom: 14 }} />
-                    <div style={{ height: 16, width: "68%", background: "#555", borderRadius: 8 }} />
-                  </div>
-                  <div style={{ marginTop: -58, textAlign: "center", position: "relative" }}>
-                    <strong>Ratings locked</strong>
-                    <p className="muted">Create a free account, then unlock full ratings with membership.</p>
-                    <div className="actions"><Link href="/signup" className="btn">Create Free Account</Link><Link href="/membership" className="btn dark">Unlock Ratings</Link></div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="card">
-              <div className="eyebrow">
-                Player Feedback
+                </>}
               </div>
-
-              <h2>
-                {reviews.length}
-              </h2>
-
-              <p>
-                Approved player experiences
-                currently available for this
-                coach.
-              </p>
-
-              {canWriteReviews && <Link href={`/coaches/${coach.id}/review`} className="btn">Add Your Experience</Link>}
-            </div>
-          </section>
+              <div className="card">
+                <div className="eyebrow">Player Feedback</div>
+                <h2>{reviews.length}</h2>
+                <p>Approved player experiences currently available for this coach.</p>
+                {canWriteReviews ? <Link href={"/coaches/" + coach.id + "/review"} className="btn">Add Your Experience</Link> : null}
+              </div>
+            </>
+          ) : null}
+        </section>
+      )}
 
           <section className="hero">
-            {!hasAccess && (
-              <div className="card" style={{ marginBottom: 24, borderColor: "rgba(255,106,0,.45)" }}>
-                <div className="eyebrow">Members Only</div>
-                <h3>Player reviews are locked</h3>
-                <p>Sign in and choose a membership to unlock player reviews.</p>
-                <div className="actions">
-                  <Link href="/signup" className="btn">Create Free Account</Link>
-                  <Link href="/login" className="btn dark">Log In</Link>
-                </div>
-              </div>
-            )}
             <div className="eyebrow">
               Approved Reviews
             </div>
@@ -740,7 +676,14 @@ export default function CoachDetailPage() {
               are saying.
             </h2>
 
-            {reviewLoading ? (
+            {!canReadFullReviews ? (
+              <ReviewMembershipGate
+                title="Player reviews require an eligible membership"
+                actionLabel="Upgrade"
+                accountType={accountType}
+                tier={reviewTier}
+              />
+            ) : reviewLoading ? (
               <p>
                 Loading reviews...
               </p>
