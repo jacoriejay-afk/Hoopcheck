@@ -5,22 +5,13 @@
 .hc-ia-live-strip > span:last-child { min-width:0; }
 .hc-ia-live-dot--inactive { visibility:hidden; box-shadow:none; }
 @media(max-width:480px) { .hc-ia-live-strip { gap:10px !important; padding:14px !important; } .hc-ia-live-strip > span:last-child { font-size:12px; } }
-/* The pastel member card must keep dark ink even in the global dark theme. */
-.hc-member-profile-page .hero-card.compact-hero { color:#25232c !important; }
-.hc-member-profile-page .hero-card.compact-hero .eyebrow,
-.hc-member-profile-page .hero-card.compact-hero h1,
-.hc-member-profile-page .hero-card.compact-hero h1 span { color:#25232c !important; opacity:1 !important; }
-.hc-member-profile-page .hero-card.compact-hero .hc-profile-email { color:#595561 !important; opacity:1 !important; }
-.hc-member-profile-page .hero-card.compact-hero .hc-member-profile-avatar { background:#ece8e5 !important; color:#25232c !important; }
-.hc-member-profile-page .hero-card.compact-hero .hc-profile-edit-button { color:#161616 !important; }
-
 /* Keep member identity readable and compact at iPhone widths. */
 @media(max-width:600px){
  .hc-member-profile-page .hero-card.compact-hero { padding:18px 16px !important; border-radius:18px !important; gap:12px !important; }
  .hc-member-profile-page .hc-member-profile-avatar { width:84px !important; height:84px !important; outline-width:2px !important; border-width:3px !important; }
  .hc-member-profile-page .hc-member-profile-identity { gap:12px !important; }
  .hc-member-profile-page .hc-member-profile-copy h1 { font-size:clamp(24px,7vw,32px) !important; line-height:1.1 !important; margin:4px 0 !important; }
- .hc-member-profile-page .hc-member-profile-copy .eyebrow { color:#625c62 !important; }
+ .hc-member-profile-page .hc-member-profile-copy .eyebrow { color:#ff8a54 !important; }
  .hc-member-profile-page .hc-member-profile-actions { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px !important; }
  .hc-member-profile-page .hc-member-profile-actions > :only-child { grid-column:1/-1; }
  .hc-member-profile-page .hc-member-profile-actions .btn { min-width:0; font-size:12px !important; line-height:1.25; padding:10px !important; }
@@ -46,3 +37,18 @@
 .hc-member-profile-page .hero-card.compact-hero .hc-member-profile-avatar { background:#202020 !important; color:#f7f7f5 !important; border-color:#101010 !important; outline-color:#ff5a1f !important; }
 .hc-member-profile-page .hero-card.compact-hero .hc-profile-edit-button { background:#ff5a1f !important; color:#0a0a0a !important; }
 .hc-member-profile-page .hero-card.compact-hero .hc-profile-public-button { background:#111 !important; border:1px solid #ff5a1f !important; color:#f7f7f5 !important; }
+
+/* Keep branded club art subordinate to readable data and actions. */
+.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-topline,
+.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-kicker,
+.hc-team-entity-profile .hc-team-branded-hero h1,
+.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-meta,
+.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-stats { position:relative; z-index:1; }
+.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-stat { background:rgba(15,15,15,.86) !important; }
+.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-stat strong,
+.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-stat small { color:#f7f7f5 !important; }
+@media(max-width:600px){
+ .hc-team-entity-profile .hc-team-branded-hero { padding:16px !important; }
+ .hc-team-entity-profile .hc-team-branded-hero h1 { font-size:clamp(25px,7.5vw,36px) !important; line-height:1.12 !important; overflow-wrap:break-word !important; }
+ .hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-stats { min-width:0; }
+}
