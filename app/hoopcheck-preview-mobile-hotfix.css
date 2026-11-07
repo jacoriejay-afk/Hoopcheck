@@ -73,3 +73,13 @@
 @media(max-width:600px){
  .hc-team-entity-profile .hc-team-branded-hero::after { top:33%; right:10px; font-size:clamp(36px,12vw,68px); max-width:60%; }
 }
+
+/* Honor keyboard navigation and prevent oversized watermark from capturing taps. */
+.hc-team-entity-profile .hc-team-branded-hero :is(a,button):focus-visible,
+.hc-member-profile-page .hero-card.compact-hero :is(a,button):focus-visible {
+ outline:3px solid #ff8a54 !important; outline-offset:3px !important;
+}
+@media(prefers-reduced-motion:reduce){
+ .hc-team-entity-profile .hc-team-branded-hero *,
+ .hc-member-profile-page .hero-card.compact-hero * { animation-duration:.01ms !important; transition-duration:.01ms !important; }
+}
