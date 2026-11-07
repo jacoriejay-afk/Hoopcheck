@@ -17,7 +17,7 @@ import { fanFeedI18n, fanFeedTeamComposerPlaceholder, fanFeedTeamSubtitle, fanFe
 
 type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
 type Profile = { id: string; display_name: string | null; avatar_url: string | null; account_type: string };
-type FanPost = { id: string; author_id: string; team_id: string; body: string; image_url: string | null; video_url?: string | null; created_at: string; expires_at: string; profiles?: Profile | null; teams?: Team | null; fan_feed_checks?: { user_id: string }[]; fan_feed_comments?: { id: string }[] };
+type FanPost = { id: string; author_id: string; team_id: string; womens_team_id?: string | null; team_href?: string; body: string; image_url: string | null; video_url?: string | null; created_at: string; expires_at: string; profiles?: Profile | null; teams?: Team | null; womens_teams?: Team | null; fan_feed_checks?: { user_id: string }[]; fan_feed_comments?: { id: string }[] };
 
 export default function FanFeedPage() {
   const { t, language, formatDate } = useLanguage();
@@ -66,19 +66,23 @@ export default function FanFeedPage() {
     if (!isCurrentRequest()) return;
     const fanIds = (follows || []).map((x: any) => x.target_id);
     const teamIds = (teamFollows || []).map((x: any) => x.target_id);
-    const { data: sideTeams } = await supabase.from("teams").select("id").eq("basketball_type", basketballSide === "womens" ? "womens" : "mens");
+    const { data: sideTeams } = basketballSide === "womens"
+      ? await supabase.from("womens_teams").select("id").eq("active", true)
+      : await supabase.from("teams").select("id").eq("basketball_type", "mens").eq("active", true);
     if (!isCurrentRequest()) return;
     const sideTeamIds = new Set((sideTeams || []).map((x: any) => x.id));
     const scopedTeamIds = teamIds.filter((id: string) => sideTeamIds.has(id));
     setFollowing(new Set(fanIds));
-    const teamQuery = await supabase.from("teams").select("id,name,logo_url,logo_bg").in("id", scopedTeamIds.length ? scopedTeamIds : ["00000000-0000-0000-0000-000000000000"]);
+    const teamQuery = basketballSide === "womens"
+      ? await supabase.from("womens_teams").select("id,name,logo_url,logo_bg").in("id", scopedTeamIds.length ? scopedTeamIds : ["00000000-0000-0000-0000-000000000000"])
+      : await supabase.from("teams").select("id,name,logo_url,logo_bg").in("id", scopedTeamIds.length ? scopedTeamIds : ["00000000-0000-0000-0000-000000000000"]);
     if (!isCurrentRequest()) return;
     const followedTeams = (teamQuery.data || []) as Team[];
     setTeams(followedTeams);
     setTeamId(current => followedTeams.some(team => team.id === current) ? current : followedTeams[0]?.id || "");
     if (!fanIds.length && !sideTeamIds.size) { setPosts([]); return; }
     const query = supabase.from("fan_feed_posts")
-      .select("id,author_id,team_id,body,image_url,video_url,created_at,expires_at,profiles!fan_feed_posts_author_id_fkey(id,display_name,avatar_url,account_type),teams(id,name,logo_url,logo_bg),fan_feed_checks(user_id),fan_feed_comments(id)")
+      .select("id,author_id,team_id,womens_team_id,body,image_url,video_url,created_at,expires_at,profiles!fan_feed_posts_author_id_fkey(id,display_name,avatar_url,account_type),teams(id,name,logo_url,logo_bg),womens_teams(id,name,logo_url,logo_bg),fan_feed_checks(user_id),fan_feed_comments(id)")
       .gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(100);
     const { data, error } = await query;
     if (!isCurrentRequest()) return;
@@ -87,8 +91,15 @@ export default function FanFeedPage() {
     if (!isCurrentRequest()) return;
     const archivedIds = new Set((archiveRows || []).map((r: any) => r.post_id));
     setArchived(archivedIds);
-    const rows = (data || []).filter((p: any) => !archivedIds.has(p.id) && sideTeamIds.has(p.team_id) && (fanIds.includes(p.author_id) || scopedTeamIds.includes(p.team_id)))
-      .map((p: any) => ({ ...p, checks: p.fan_feed_checks || [], profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles, teams: Array.isArray(p.teams) ? p.teams[0] : p.teams }));
+    const rows = (data || []).filter((p: any) => {
+      const targetTeamId = p.womens_team_id || p.team_id;
+      return !archivedIds.has(p.id) && Boolean(targetTeamId) && sideTeamIds.has(targetTeamId) && (fanIds.includes(p.author_id) || scopedTeamIds.includes(targetTeamId));
+    }).map((p: any) => {
+      const mensTeam = Array.isArray(p.teams) ? p.teams[0] : p.teams;
+      const womensTeam = Array.isArray(p.womens_teams) ? p.womens_teams[0] : p.womens_teams;
+      const targetTeamId = p.womens_team_id || p.team_id;
+      return { ...p, team_id: targetTeamId, team_href: p.womens_team_id ? `/womens/${targetTeamId}` : `/teams/${targetTeamId}`, checks: p.fan_feed_checks || [], profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles, teams: mensTeam || womensTeam };
+    });
     setPosts(rows.map((p: any) => ({ ...p, checks: p.fan_feed_checks || [] })) as FanPost[]);
     setLiked(new Set(rows.filter((p: any) => (p.fan_feed_checks || []).some((l: any) => l.user_id === uid)).map((p: any) => p.id)));
     const ids = rows.map((p: any) => p.id);
@@ -149,7 +160,7 @@ export default function FanFeedPage() {
     setPosting(true); setMessage(ft("moderating"));
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const form = new FormData(); form.append("team_id", teamId); form.append("text", body.trim());
+      const form = new FormData(); form.append("team_id", teamId); form.append("team_type", basketballSide); form.append("text", body.trim());
       if (photo) form.append("image", photo);
       if (video) {
         const ext = video.type === "video/webm" ? "webm" : video.type === "video/quicktime" ? "mov" : "mp4";
@@ -248,7 +259,7 @@ export default function FanFeedPage() {
     </section>
     <div className="hc-feed-refresh-row"><button type="button" className="hc-feed-refresh" disabled={refreshing} onClick={() => void refreshFeed()}>{fanFeedRefreshLabel(language, refreshing)}</button></div>
     <section className="hc-feed-stream" aria-label={ft("recentPosts")}>{visiblePosts.length ? visiblePosts.map(post => <FeedPostCard key={post.id}>
-      <header className="hc-feed-post-header"><FeedAuthorRow><Link href={"/fans/" + post.author_id} aria-label={ft("viewFanProfile")}><FeedStoryRing expiresAt={post.expires_at} now={now}>{post.profiles?.avatar_url ? <img src={post.profiles.avatar_url} alt="" className="hc-feed-post-avatar" /> : <div className="hc-feed-post-avatar hc-feed-post-avatar-fallback">HC</div>}</FeedStoryRing></Link><div className="hc-feed-post-author__meta"><Link href={"/fans/" + post.author_id}><strong>{post.profiles?.display_name || ft("fan")}</strong></Link><small>{formatDate(post.created_at, { dateStyle: "medium", timeStyle: "short" })} · {fanFeedExpiryLabel(post.expires_at, now, language)}</small></div></FeedAuthorRow>{post.teams && <Link className="hc-feed-post-topic" href={"/teams/" + post.team_id}><TeamLogo name={post.teams.name} logoUrl={post.teams.logo_url} logoBg={post.teams.logo_bg} size={28} />{post.teams.name}</Link>}</header>
+      <header className="hc-feed-post-header"><FeedAuthorRow><Link href={"/fans/" + post.author_id} aria-label={ft("viewFanProfile")}><FeedStoryRing expiresAt={post.expires_at} now={now}>{post.profiles?.avatar_url ? <img src={post.profiles.avatar_url} alt="" className="hc-feed-post-avatar" /> : <div className="hc-feed-post-avatar hc-feed-post-avatar-fallback">HC</div>}</FeedStoryRing></Link><div className="hc-feed-post-author__meta"><Link href={"/fans/" + post.author_id}><strong>{post.profiles?.display_name || ft("fan")}</strong></Link><small>{formatDate(post.created_at, { dateStyle: "medium", timeStyle: "short" })} · {fanFeedExpiryLabel(post.expires_at, now, language)}</small></div></FeedAuthorRow>{post.teams && <Link className="hc-feed-post-topic" href={post.team_href || (basketballSide === "womens" ? "/womens/" : "/teams/") + post.team_id}><TeamLogo name={post.teams.name} logoUrl={post.teams.logo_url} logoBg={post.teams.logo_bg} size={28} />{post.teams.name}</Link>}</header>
       <FeedMediaArea>{post.body.trim() && <p style={{ whiteSpace: "pre-wrap" }}>{post.body}</p>}{post.image_url && <img src={post.image_url} alt={ft("postPhoto")} className="hc-feed-post-image" />}{post.video_url && <video src={post.video_url} controls playsInline preload="metadata" className="hc-feed-post-image" aria-label={ft("videoPostLabel")} />}</FeedMediaArea>
       <FeedActionRow><button type="button" className={"hc-feed-action-pill" + (liked.has(post.id) ? " is-active" : "")} onClick={() => void toggleCheck(post)}>{liked.has(post.id) ? "✓ " + ft("checked") : "＋ " + ft("check")} · {(post.fan_feed_checks || []).length}</button><button type="button" className="hc-feed-action-pill" onClick={() => setOpenComments(prev => ({ ...prev, [post.id]: !prev[post.id] }))}>{ft("comment")} · {(comments[post.id] || []).length}</button><button type="button" className="hc-feed-action-pill" onClick={() => void sharePost(post)}>{ft("share")}</button>{post.author_id === user.id && <><button type="button" className="hc-feed-action-pill" onClick={() => void archivePost(post)}>{ft("archive")}</button><button type="button" className="hc-feed-action-pill" onClick={() => void deletePost(post)}>{ft("delete")}</button></>}<span className="hc-feed-expires">{ft("expires")} {formatDate(post.expires_at, { timeStyle: "short" })}</span></FeedActionRow>
       {openComments[post.id] && <div className="hc-feed-comments-panel"><strong>{ft("comments")}</strong>{(comments[post.id] || []).map(c => <div key={c.id}><strong>{c.profiles?.display_name || ft("fan")}</strong><p>{c.body}</p></div>)}<div className="hc-feed-composer__footer"><input value={drafts[post.id] || ""} maxLength={500} onChange={e => setDrafts(prev => ({ ...prev, [post.id]: e.target.value }))} placeholder={ft("commentPlaceholder")} /><button className="btn" onClick={() => void addComment(post.id)}>{ft("send")}</button></div></div>}
