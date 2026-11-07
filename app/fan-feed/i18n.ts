@@ -114,6 +114,37 @@ const teamSurfaceCopy: Partial<Record<Language, { subtitle: string; composer: st
   ar: { subtitle: "مركز مشجعي {team}. تواصل مع المشجعين وشارك أخبار الفريق.", composer: "انشر لجماهير {team}…" },
 };
 
+
+const teamEmptyCopy: Partial<Record<Language, { title: string; body: string }>> = {
+  en: { title: "No fan posts for {team} yet", body: "Start the conversation by sharing the first update with this team's supporters." },
+  es: { title: "Aún no hay publicaciones de fans de {team}", body: "Inicia la conversación compartiendo la primera novedad con los seguidores de este equipo." },
+  fr: { title: "Pas encore de publication de fans pour {team}", body: "Lancez la conversation en partageant la première actualité avec les supporters de cette équipe." },
+  de: { title: "Noch keine Fan-Beiträge für {team}", body: "Starte das Gespräch und teile das erste Update mit den Fans dieses Teams." },
+  tr: { title: "{team} için henüz hayran paylaşımı yok", body: "Bu takımın taraftarlarıyla ilk güncellemeyi paylaşarak sohbeti başlatın." },
+  pt: { title: "Ainda não há publicações de fãs para {team}", body: "Comece a conversa partilhando a primeira novidade com os adeptos desta equipa." },
+  it: { title: "Ancora nessun post dei fan per {team}", body: "Inizia la conversazione condividendo il primo aggiornamento con i tifosi di questa squadra." },
+  el: { title: "Δεν υπάρχουν ακόμη αναρτήσεις φιλάθλων για την {team}", body: "Ξεκινήστε τη συζήτηση μοιράζοντας την πρώτη ενημέρωση με τους φιλάθλους της ομάδας." },
+  ar: { title: "لا توجد منشورات جماهيرية لـ {team} بعد", body: "ابدأ المحادثة بمشاركة أول تحديث مع مشجعي هذا الفريق." },
+  ru: { title: "Пока нет публикаций болельщиков {team}", body: "Начните общение — поделитесь первой новостью с болельщиками этой команды." },
+  az: { title: "{team} üçün hələ fan paylaşımı yoxdur", body: "Bu komandanın azarkeşləri ilə ilk yeniliyi paylaşaraq söhbətə başlayın." },
+  pl: { title: "Brak wpisów fanów o drużynie {team}", body: "Rozpocznij rozmowę, udostępniając pierwszą aktualizację kibicom tej drużyny." },
+  zh: { title: "{team} 暂无球迷动态", body: "分享第一条球队动态，与这支球队的球迷开启交流。" },
+  ja: { title: "{team}のファン投稿はまだありません", body: "最初のチーム情報を共有して、ファンとの会話を始めましょう。" },
+  sr: { title: "Još nema objava navijača za {team}", body: "Započni razgovor tako što ćeš podeliti prvu novost sa navijačima ovog tima." },
+  fi: { title: "Joukkueella {team} ei ole vielä fanijulkaisuja", body: "Aloita keskustelu jakamalla ensimmäinen päivitys joukkueen kannattajille." },
+  he: { title: "עדיין אין פוסטים של אוהדים עבור {team}", body: "התחילו את השיחה בשיתוף העדכון הראשון עם אוהדי הקבוצה." },
+  lt: { title: "Komanda {team} dar neturi gerbėjų įrašų", body: "Pradėkite pokalbį pasidalydami pirmąja naujiena su šios komandos gerbėjais." },
+  uk: { title: "Для команди {team} ще немає дописів уболівальників", body: "Почніть спілкування — поділіться першою новиною з уболівальниками цієї команди." },
+};
+
+export function fanFeedTeamEmptyTitle(teamName: string, language: Language): string {
+  return withTeam(teamEmptyCopy[language]?.title || teamEmptyCopy.en!.title, teamName);
+}
+
+export function fanFeedTeamEmptyBody(teamName: string, language: Language): string {
+  return withTeam(teamEmptyCopy[language]?.body || teamEmptyCopy.en!.body, teamName);
+}
+
 function withTeam(template: string, teamName: string) {
   return template.replaceAll("{team}", teamName);
 }
