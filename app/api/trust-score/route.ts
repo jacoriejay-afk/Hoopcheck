@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { calculateTrustScore, type TrustScoreReview } from "../../../lib/trust-score";
+import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
 
 export const dynamic = "force-dynamic";
 
@@ -35,12 +36,36 @@ export async function GET(request: Request) {
   try {
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
-    let tier = "free";
+    let accountType = "";
+    let subscription: { plan?: string; status?: string; access_status?: string | null; current_period_end?: string | null } | null = null;
+    let isAdmin = false;
     if (bearer && anonKey) {
       const authClient = createClient(supabaseUrl, anonKey, { auth: { autoRefreshToken: false, persistSession: false } });
       const { data: authData } = await authClient.auth.getUser(bearer);
       if (authData.user) {
         const db = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
+        const [{ data: profile }, { data: subscriptionData }] = await Promise.all([
+          db.from("profiles").select("account_type").eq("id", authData.user.id).maybeSingle(),
+          db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", authData.user.id).maybeSingle(),
+        ]);
+        accountType = profile?.account_type || "";
+        subscription = subscriptionData;
+        const scoped = createClient(supabaseUrl, anonKey, {
+          global: { headers: { Authorization: "Bearer " + bearer } },
+          auth: { autoRefreshToken: false, persistSession: false },
+        });
+        const { data: admin } = await scoped.rpc("is_current_user_admin_or_moderator");
+        isAdmin = admin === true;
+      }
+    }
+    const entitlements = getHoopCheckEntitlements({ accountType, subscription, isAdmin });
+    const tier = entitlements.tier;
+    if (!entitlements.canViewTrustScore) {
+      const hidden = { tier, locked: true, score: null, reviewCount: null, verifiedReviewCount: null, explanation: null, averageRating: null };
+      const scores = Object.fromEntries(ids.map(id => [id, hidden]));
+      return NextResponse.json(singularId && ids.length === 1 ? hidden : { scores }, { headers: { "Cache-Control": "private, no-store" } });
+    }
+    const db = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
         const [{ data: profile }, { data: subscription }] = await Promise.all([
           db.from("profiles").select("account_type").eq("id", authData.user.id).maybeSingle(),
           db.from("subscriptions").select("plan,status,current_period_end").eq("user_id", authData.user.id).maybeSingle(),
