@@ -10,7 +10,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
-import { hasActiveMembershipAtLeast } from "../../../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
+import ReviewMembershipGate from "../../../components/ReviewMembershipGate";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { submitReviewReport } from "../../../lib/review-reports";
 import HoopLoading from "../../../components/HoopLoading";
@@ -146,6 +147,8 @@ export default function LeagueDetailPage() {
   const [hasAccess, setHasAccess] =
     useState(false);
   const [accountType, setAccountType] = useState<string>("");
+  const [canReadFullReviews, setCanReadFullReviews] = useState(false);
+  const [reviewTier, setReviewTier] = useState<"free" | "pro" | "premium">("free");
 
   const [loading, setLoading] =
     useState(true);
@@ -253,7 +256,7 @@ export default function LeagueDetailPage() {
         supabase
           .from("subscriptions")
           .select(
-            "plan, status, current_period_end"
+            "plan, status, access_status, current_period_end"
           )
           .eq(
             "user_id",
@@ -292,13 +295,14 @@ export default function LeagueDetailPage() {
       const isAdmin =
         adminResult.data === true;
 
-      const fanHasPaidPlan =
-        profileResult.data?.account_type !== "fan" ||
-        hasActiveMembershipAtLeast(subscription);
-      const access =
-        (subscriptionIsActive && fanHasPaidPlan) ||
-        isAdmin;
-
+      const entitlements = getHoopCheckEntitlements({
+        accountType: profileResult.data?.account_type,
+        subscription,
+        isAdmin,
+      });
+      const access = entitlements.hasPaidMembership || isAdmin;
+      setCanReadFullReviews(entitlements.canReadFullReviews);
+      setReviewTier(entitlements.tier);
       setHasAccess(access);
 
       const { data: summaryData, error: summaryError } = access
@@ -321,7 +325,7 @@ export default function LeagueDetailPage() {
         console.error("Public review summary error:", summaryError);
       }
 
-      if (access) {
+      if (entitlements.canReadFullReviews) {
         setReviewLoading(true);
 
         const {
@@ -640,17 +644,6 @@ export default function LeagueDetailPage() {
         )}
       </section>
 
-      {!hasAccess && (
-        <section className="grid">
-          <div className="card rating-locked-card">
-            <div className="eyebrow">Community Rating</div>
-            <h2>Overall rating locked</h2>
-            <p>Sign in and choose a membership to unlock ratings and reviews.</p>
-            <div className="actions"><Link href="/signup" className="btn">Create Free Account</Link><Link href="/membership" className="btn dark">Unlock Ratings</Link></div>
-          </div>
-        </section>
-      )}
-
       {!hasAccess ? (
         <section className="hero">
           <div className="card">
@@ -786,7 +779,13 @@ export default function LeagueDetailPage() {
               are saying.
             </h2>
 
-            {reviewLoading ? (
+            {!canReadFullReviews ? (
+              <ReviewMembershipGate
+                title="Full league reviews require an eligible membership"
+                description="Player Pro and Premium members and eligible non-fan members can read full league reviews. Fan accounts need Premium for full review details."
+                actionLabel="View Membership"
+              />
+            ) : reviewLoading ? (
               <p>
                 Loading reviews...
               </p>
