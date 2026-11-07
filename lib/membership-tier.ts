@@ -86,10 +86,8 @@ export function getHoopCheckEntitlements(args: {
       (isFan && isAtLeastTier(tier, "premium")) || (otherMember && active),
     canViewTrustScore: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) || (isFan && isAtLeastTier(tier, "premium")) || (otherMember && active),
     canWriteReviews: isPlayer && isAtLeastTier(tier, "pro"),
-    canUseLiveGameHub: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) ||
-      (isFan && isAtLeastTier(tier, "premium")),
-    canUseLiveGameChat: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) ||
-      (isFan && isAtLeastTier(tier, "premium")),
+    canUseLiveGameHub: isAdmin || ((isPlayer || isFan) && isAtLeastTier(tier, "pro")),
+    canUseLiveGameChat: isAdmin || ((isPlayer || isFan) && isAtLeastTier(tier, "pro")),
     canCompare: isAdmin || ((isPlayer || isFan) && isAtLeastTier(tier, "pro")) || (otherMember && active),
     canUseContractCheck: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) || (otherMember && active),
     canUseProPassport: isAdmin || (role === "agent" && isAtLeastTier(tier, "pro")) ||
