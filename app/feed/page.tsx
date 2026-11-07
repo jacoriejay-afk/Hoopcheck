@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { PageShell } from "../../components/LayoutSystem";
 import { FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptyState, FeedLoadingSkeleton, FeedStoryRing, FeedTimeRemaining } from "../../components/HoopFeedShared";
-import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import CourtLines from "../../components/CourtLines";
@@ -52,7 +52,7 @@ export default function Feed(){
   const [msg,setMsg]=useState(""); const [refreshing,setRefreshing]=useState(false); const [postingStreak,setPostingStreak]=useState(0); const [loading,setLoading]=useState(true); const [posting,setPosting]=useState(false); const [now,setNow]=useState(0); const textareaRef = useRef<HTMLTextAreaElement|null>(null); const touchStartY = useRef<number|null>(null);
   const visiblePosts = (topicFilter==="All" ? posts : posts.filter(p=>p.topic_tag===topicFilter)).slice().sort((a,b)=>feedSort==="Latest" ? new Date(b.created_at).getTime()-new Date(a.created_at).getTime() : new Date(a.expires_at).getTime()-new Date(b.expires_at).getTime());
 
-  const access=["player","fan","scout","agent"].includes(profile?.account_type||"") && hasActiveMembershipAtLeast(subscription);
+  const access=getHoopCheckEntitlements({accountType:profile?.account_type,subscription}).canReadHoopFeed;
 
   async function load(currentUser:any, currentProfile:Profile){
     const connectionPromise=currentProfile.account_type==="player"
@@ -108,7 +108,7 @@ export default function Feed(){
     // Keep the player HoopFeed surface strictly player-only; fans have their own feed.
     if(p?.account_type==="fan"){setLoading(false);router.replace("/fan-feed");return;}
     if(p?.account_type==="player"){const {data:activity}=await supabase.from("feed_posting_activity").select("activity_date").eq("user_id",u.id).order("activity_date",{ascending:false}).limit(370);setPostingStreak(calculatePostingStreak(activity||[]));}
-    const memberActive=hasActiveMembershipAtLeast(s);
+    const memberActive=getHoopCheckEntitlements({accountType:p?.account_type,subscription:s}).canReadHoopFeed;
     setLoading(false);
     if(p&&memberActive)void load(u,p);
   })();},[]);
