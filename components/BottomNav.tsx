@@ -85,7 +85,7 @@ export default function BottomNav() {
     setAccountType(null);
     void supabase.from("profiles").select("account_type").eq("id", userId).maybeSingle().then(({ data, error }) => {
       if (active) setAccountType(error ? null : data?.account_type || null);
-    }).catch(() => { if (active) setAccountType(null); });
+    });
     return () => { active = false; };
   }, [userId]);
   const fanAccount = accountType === "fan";
