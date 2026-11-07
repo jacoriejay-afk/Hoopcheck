@@ -10,6 +10,7 @@ import PlayerContactButton from "../../../components/PlayerContactButton";
 import PlayerProfilePanel from "../../../components/PlayerProfilePanel";
 import { HoopIcon, VerifiedBadge } from "../../../components/HoopCheckUI";
 import PlayerJourney from "../../../components/PlayerJourney";
+import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
 
 type Player = {
   id: string;
@@ -94,12 +95,12 @@ export default function PlayerProfilePage() {
       if(user){
         setIsOwnProfile(user.id===params.id);
         if (user.id === params.id) {
-          const { data: ownSubscription } = await supabase.from("subscriptions").select("plan,status,current_period_end").eq("user_id", user.id).maybeSingle();
-          setCanManageJourney(
-            ownSubscription?.plan === "premium" &&
-            (ownSubscription.status === "active" || ownSubscription.status === "trialing") &&
-            (!ownSubscription.current_period_end || new Date(ownSubscription.current_period_end).getTime() > Date.now())
-          );
+          const [{ data: ownProfile }, { data: ownSubscription }] = await Promise.all([
+            supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
+            supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
+          ]);
+          const entitlements = getHoopCheckEntitlements({ accountType: ownProfile?.account_type, subscription: ownSubscription });
+          setCanManageJourney(entitlements.canUseProPassport);
         }
         const {data:p}=await supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle();
         setViewerType(p?.account_type||"");
