@@ -185,6 +185,7 @@ export default function TeamDetailPage() {
   const [hasAccess, setHasAccess] =
     useState(false);
   const [accountType, setAccountType] = useState<string>("");
+  const [hasApprovedTeamClaim, setHasApprovedTeamClaim] = useState(false);
   const [membershipPlan, setMembershipPlan] = useState<string>("");
   const [knownPlayerFollowers, setKnownPlayerFollowers] = useState<string[]>([]);
   const [teamReviewCount, setTeamReviewCount] = useState(0);
@@ -289,6 +290,7 @@ export default function TeamDetailPage() {
         profileResult,
         subscriptionResult,
         adminResult,
+        claimResult,
       ] = await Promise.all([
         supabase
           .from("profiles")
@@ -310,11 +312,14 @@ export default function TeamDetailPage() {
         supabase.rpc(
           "is_current_user_admin_or_moderator"
         ),
+
+        supabase.from("profile_claim_requests").select("id").eq("requester_id", user.id).eq("entity_type", "team").eq("entity_id", id).eq("status", "approved").limit(1),
       ]);
 
       const subscription =
         subscriptionResult.data;
       setAccountType(profileResult.data?.account_type || "");
+      setHasApprovedTeamClaim(Boolean(claimResult.data?.length));
       setMembershipPlan(subscription?.plan || "");
 
       const currentPeriodEnd =
@@ -601,16 +606,16 @@ export default function TeamDetailPage() {
       <TeamFanGroupEntry teamId={team.id} />
 
       {knownPlayerFollowers.length > 0 && <p className="hc-team-social-proof">Followed by players you follow: <strong>{knownPlayerFollowers.join(", ")}</strong></p>}
-        <div className="entity-actions">{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}<ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} /><Link href="/team-dashboard" className="btn dark">Team Portal</Link></div>
+        <div className="entity-actions">{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}{accountType === "coach" && !hasApprovedTeamClaim ? <ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} /> : null}{hasApprovedTeamClaim ? <Link href="/team-dashboard" className="btn dark">Team Portal</Link> : null}</div>
         <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
         {["premium", "player", "member"].includes(reviewTier) && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">LATEST PLAYER REVIEW</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || t("playerExperience")}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
       {!hasAccess && reviewTier === "free" && accountType !== "player" ? (
         <section className="hero">
           <Surface className="card hc-team-membership-surface">
             <div className="eyebrow">{t("membershipRequired")}</div>
-            <h2>Player reviews require an eligible membership</h2>
-            <p>Sign in with an eligible active membership to view full player reviews and ratings. Players and other eligible members keep their existing access.</p>
-            <div className="actions"><Link href="/membership" className="btn">Upgrade</Link><Link href="/login" className="btn dark">{t("logIn")}</Link></div>
+            <h2>{accountType === "fan" ? "Unlock player reviews with Fan Premium" : "Player reviews require an eligible membership"}</h2>
+            <p>{accountType === "fan" ? "Upgrade to Fan Premium to read player-written team reviews, ratings and verified experiences." : "Sign in with an eligible active membership to view full player reviews and ratings. Players and other eligible members keep their existing access."}</p>
+            <div className="actions"><Link href="/membership" className="btn">{accountType === "fan" ? "View Fan plans" : "Upgrade"}</Link>{!accountType && <Link href="/login" className="btn dark">{t("logIn")}</Link>}</div>
           </Surface>
         </section>
       ) : (
