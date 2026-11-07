@@ -61,7 +61,7 @@ export default function DashboardPage() {
       ]);
       if (!mounted) return;
       setProfile(p as Profile|null);
-      const activeMember = getHoopCheckEntitlements({ accountType: p?.account_type, subscription }).hasPaidMembership;
+      const entitlements = getHoopCheckEntitlements({ accountType: p?.account_type, subscription });
       const followedIds = (follows||[]).map((row:any)=>row.target_id).filter(Boolean);
 
       if (followedIds.length) {
@@ -80,7 +80,7 @@ export default function DashboardPage() {
         setReviews([]);
       }
 
-      const canUsePlayerFeed = p?.account_type === "player" && activeMember;
+      const canUsePlayerFeed = entitlements.canReadHoopFeed;
       setHasFeedAccess(canUsePlayerFeed);
       if (canUsePlayerFeed) {
         const [{data:followedPlayers},{data:connections},{data:posts}] = await Promise.all([
@@ -93,7 +93,7 @@ export default function DashboardPage() {
         if (mounted && latest) setFeedPost(latest as FeedPost);
       }
 
-      if (p?.account_type === "fan" && activeMember) {
+      if (entitlements.canUseLiveGameHub && p?.account_type === "fan") {
         const {data:games} = await supabase.from("fan_live_games").select("status,scheduled_at").in("status",["live","scheduled"]).order("scheduled_at",{ascending:true}).limit(200);
         const now = Date.now();
         if (mounted) setLiveCounts({live:(games||[]).filter((g:any)=>g.status==="live").length,upcoming:(games||[]).filter((g:any)=>g.status==="scheduled" && (!g.scheduled_at || new Date(g.scheduled_at).getTime()>=now)).length});
