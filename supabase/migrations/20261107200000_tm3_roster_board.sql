@@ -127,6 +127,11 @@ using (player_id=(select auth.uid()));
 create policy "club manager sees roster disputes" on public.club_roster_disputes for select to authenticated
 using (exists (select 1 from public.profile_claim_requests c where c.entity_type='team' and c.entity_id=team_id and c.requester_id=(select auth.uid()) and c.status='approved'));
 
+create policy "moderators read roster disputes" on public.club_roster_disputes for select to authenticated
+using (private.is_admin_or_moderator());
+create policy "moderators read roster audit" on public.club_roster_change_log for select to authenticated
+using (private.is_admin_or_moderator());
+
 -- A dispute can be filed only by the profile directly linked to the entry.
 -- Unlinked name-only entries require identity verification by moderation.
 create or replace function public.dispute_my_club_roster_entry(p_entry_id uuid,p_reason text)
