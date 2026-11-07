@@ -143,6 +143,16 @@ export default function ProfilePage() {
         </section>
 
         <HoopPassport name={name} accountType={p.account_type||"member"} username={p.username} verified={Boolean(p.player_verified||p.coach_verified)} country={p.current_country} position={p.account_type==="player"?p.position:null} team={p.account_type==="player"?p.current_team:null}/>
+        <nav className="hc-profile-action-hub" aria-label="Profile quick links">
+          <Link href="/membership" className="hc-profile-membership-link"><HoopIcon name="crown" size={20} /><span>Membership &amp; Perks</span><HoopIcon name="chevron-right" size={18} /></Link>
+          <div className="hc-profile-quick-grid">
+            <Link href="/account" className="hc-profile-quick-link"><HoopIcon name="settings" size={22} /><span>Settings</span></Link>
+            <Link href="/notifications" className="hc-profile-quick-link"><HoopIcon name="bell" size={22} /><span>Alerts</span></Link>
+            <Link href="/search" className="hc-profile-quick-link"><HoopIcon name="search" size={22} /><span>Search</span></Link>
+            <Link href={p.account_type === "fan" ? "/fan-hq" : "/pre-sign"} className="hc-profile-quick-link"><HoopIcon name={p.account_type === "fan" ? "users" : "clipboard-check"} size={22} /><span>{p.account_type === "fan" ? "Fan HQ" : "Pre-Sign"}</span></Link>
+          </div>
+        </nav>
+
         <section className="hc-profile-overview" aria-label={t("profileOverview")}>
           <div className="grid compact-grid">
             <Surface className="card hc-profile-info-card">
