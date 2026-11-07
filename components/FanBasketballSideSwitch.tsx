@@ -10,6 +10,29 @@ export type BasketballSide = "mens" | "womens";
 const STORAGE_KEY = "hoopcheck:fan-basketball-side";
 const SIDE_EVENT = "hoopcheck:fan-basketball-side-change";
 
+const lockedHintCopy: Record<"en" | "es" | "fr" | "de" | "tr" | "pt" | "it" | "el" | "ar" | "ru" | "az" | "pl" | "zh" | "ja" | "sr" | "fi" | "he" | "lt" | "uk", { message: string; action: string }> = {
+  en: { message: "Available with Fan Pro", action: "Upgrade" },
+  es: { message: "Disponible con Fan Pro", action: "Mejorar plan" },
+  fr: { message: "Disponible avec Fan Pro", action: "Passer à l’offre supérieure" },
+  de: { message: "Mit Fan Pro verfügbar", action: "Upgrade" },
+  tr: { message: "Fan Pro ile kullanılabilir", action: "Yükselt" },
+  pt: { message: "Disponível no Fan Pro", action: "Fazer upgrade" },
+  it: { message: "Disponibile con Fan Pro", action: "Passa al piano superiore" },
+  el: { message: "Διαθέσιμο με Fan Pro", action: "Αναβάθμιση" },
+  ar: { message: "متاح مع Fan Pro", action: "ترقية" },
+  ru: { message: "Доступно с Fan Pro", action: "Улучшить план" },
+  az: { message: "Fan Pro ilə əlçatandır", action: "Planı yüksəlt" },
+  pl: { message: "Dostępne w Fan Pro", action: "Ulepsz plan" },
+  zh: { message: "Fan Pro 会员可用", action: "升级" },
+  ja: { message: "Fan Proで利用できます", action: "アップグレード" },
+  sr: { message: "Dostupno uz Fan Pro", action: "Nadogradi" },
+  fi: { message: "Käytettävissä Fan Pro -jäsenyydellä", action: "Päivitä" },
+  he: { message: "זמין במסגרת Fan Pro", action: "שדרוג" },
+  lt: { message: "Prieinama su Fan Pro", action: "Atnaujinti planą" },
+  uk: { message: "Доступно з Fan Pro", action: "Оновити план" },
+};
+
+
 export function useFanBasketballSide() {
   const [side, setSideState] = useState<BasketballSide>("mens");
   useEffect(() => {
@@ -29,7 +52,7 @@ export function useFanBasketballSide() {
 }
 
 export default function FanBasketballSideSwitch({ lockedHint = false }: { lockedHint?: boolean }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const mensLabel = t("mensTeams");
   const womensLabel = t("womensTeams");
   const sideLabel = `${mensLabel} / ${womensLabel}`;
@@ -98,7 +121,7 @@ export default function FanBasketballSideSwitch({ lockedHint = false }: { locked
   }, [canSwitch, pathname, router]);
 
   if (!ready || !isFan) return null;
-  if (!canSwitch) return lockedHint ? <div className="hc-fan-side-locked" role="note">🔒 Available on Fan Pro · <a href="/membership">Upgrade</a></div> : null;
+  if (!canSwitch) { const copy = lockedHintCopy[language] || lockedHintCopy.en; return lockedHint ? <div className="hc-fan-side-locked" role="note">🔒 {copy.message} · <a href="/membership">{copy.action}</a></div> : null; }
 
   return (
     <div className="hc-fan-side-switch-wrap" aria-label={sideLabel}>
