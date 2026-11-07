@@ -64,7 +64,7 @@ export default function Feed(){
     ]);
     const connectedPlayerIds=(connectionsResult.data||[]).flatMap((x:any)=>x.requester_id===currentUser.id?[x.player_id]:[x.requester_id]).filter(Boolean);
     const followedPlayerIds=(followsResult.data||[]).filter((x:any)=>x.target_type==="player").map((x:any)=>x.target_id).filter(Boolean);
-    if(feedResult.error){setMsg(feedResult.error.message);return;}
+    if(feedResult.error){console.error("HoopFeed posts query failed",feedResult.error);setMsg("HoopFeed could not load posts. Please refresh and try again.");return;}
     const {data:archiveRows}=await supabase.from("feed_post_archives").select("post_id").eq("user_id",currentUser.id);
     const archiveIds=new Set((archiveRows||[]).map((r:any)=>r.post_id));
     const sharedIds=[...new Set((feedResult.data||[]).map((r:any)=>r.shared_post_id).filter(Boolean))] as string[];
