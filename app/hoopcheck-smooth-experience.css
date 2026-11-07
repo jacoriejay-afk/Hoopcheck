@@ -89,3 +89,12 @@
 .hc-smooth-inbox-tabs button.is-active {border-color:var(--brand-orange);box-shadow:inset 0 0 0 1px var(--brand-orange);}
 .hc-smooth-inbox-tabs button:focus-visible {outline:2px solid var(--brand-orange);outline-offset:2px;}
 @media(prefers-reduced-motion:reduce){.hc-smooth-inbox-tabs button{transition:none;}}
+
+/* Dossier cards: retain existing row layout and tier gating; add editorial identity. */
+.hc-dossier-card {position:relative;overflow:hidden;border-radius:14px;}
+.hc-dossier-card .hc-team-directory-row__main {position:relative;display:block;}
+.hc-dossier-card__kicker {display:block;grid-column:1/-1;flex-basis:100%;width:100%;font-size:10px;font-weight:800;letter-spacing:.12em;line-height:1.4;color:var(--brand-orange);margin-bottom:6px;}
+.hc-dossier-card .hc-scout-card__identity {flex-wrap:wrap;}
+.hc-dossier-card .hc-scout-card__identity-copy h2 {letter-spacing:-.025em;text-wrap:balance;}
+.hc-dossier-card .hc-scout-card__stats {border-top:1px solid var(--hc-border,var(--border));}
+@media(max-width:420px){.hc-dossier-card__kicker{font-size:9px;}}
