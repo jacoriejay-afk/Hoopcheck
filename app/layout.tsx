@@ -47,6 +47,7 @@ import "./hoopcheck-desk-fix-2.css";
 import "./hoopcheck-desk-3.css";
 import "./hoopcheck-hub-empty-state-pairing.css";
 import "./hoopcheck-preview-mobile-hotfix.css";
+import "./hoopcheck-global-scoreboard.css";
 import { SITE_URL } from "../lib/site-url";
 
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
