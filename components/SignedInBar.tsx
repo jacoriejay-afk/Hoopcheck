@@ -20,9 +20,9 @@ export default function SignedInBar(){
       <Link href="/dashboard" onClick={()=>setMenuOpen(false)}>Dashboard</Link>
       <Link href="/search" onClick={()=>setMenuOpen(false)}>Search</Link>
       <Link href="/teams" onClick={()=>setMenuOpen(false)}>Teams</Link>
-      {accountType !== "" && accountType !== "fan" && <Link href="/players" onClick={()=>setMenuOpen(false)}>Players</Link>}
+      <Link href="/womens" onClick={()=>setMenuOpen(false)}>Women’s Teams</Link>
       <Link href="/leagues" onClick={()=>setMenuOpen(false)}>Leagues</Link>
-      <Link href={accountType === "fan" ? "/fan-feed" : "/feed"} onClick={()=>setMenuOpen(false)}>{accountType === "fan" ? "Fan HoopFeed" : "Community Feed"}</Link>
+      {accountType === "fan" ? <><Link href="/fans" onClick={()=>setMenuOpen(false)}>Fans</Link><Link href="/team-hub" onClick={()=>setMenuOpen(false)}>Team Hub</Link><Link href="/fan-feed" onClick={()=>setMenuOpen(false)}>Fan HoopFeed</Link></> : <><Link href="/players" onClick={()=>setMenuOpen(false)}>Players</Link><Link href="/feed" onClick={()=>setMenuOpen(false)}>Community Feed</Link></>}
       <Link href={profileHref} onClick={()=>setMenuOpen(false)}>Profile</Link>
       <Link href="/settings" onClick={()=>setMenuOpen(false)}>Settings</Link>
       <Link href="/support" onClick={()=>setMenuOpen(false)}>Help & Support</Link>
