@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "./LanguageProvider";
 
 type TrustScoreDialProps = {
@@ -28,10 +28,11 @@ export default function TrustScoreDial({
   const offset = circumference * (1 - safeScore / 100);
   const [animated, setAnimated] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setAnimated(false);
     if (score === null || window.matchMedia("(prefers-reduced-motion: reduce)").matches || !window.matchMedia("(min-width: 1024px)").matches) { setAnimated(true); return; }
-    const node = document.getElementById(`hc-trust-${size}-${safeScore}-${reviewCount}`);
+    const node = rootRef.current;
     if (!node || typeof IntersectionObserver === "undefined") { setAnimated(true); return; }
     const observer = new IntersectionObserver(entries => { if (entries.some(entry => entry.isIntersecting)) { setAnimated(true); observer.disconnect(); } }, { threshold: .25 });
     observer.observe(node);
@@ -39,7 +40,7 @@ export default function TrustScoreDial({
   }, [score, size, safeScore, reviewCount]);
 
   return (
-    <div id={`hc-trust-${size}-${safeScore}-${reviewCount}`} className={`hc-trust-score hc-trust-score--${size}`}>
+    <div ref={rootRef} className={`hc-trust-score hc-trust-score--${size}`}>
       <div className="hc-trust-score__dial" style={{ width: dimension, height: dimension }}>
         <svg viewBox={`0 0 ${dimension} ${dimension}`} width={dimension} height={dimension} aria-hidden="true">
           <circle cx={dimension / 2} cy={dimension / 2} r={radius} fill="none" stroke="currentColor" strokeOpacity=".12" strokeWidth={stroke} />
