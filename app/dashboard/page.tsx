@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
+import HomePulse from "../../components/HomePulse";
 import SearchBar from "../../components/SearchBar";
 import { useLanguage } from "../../components/LanguageProvider";
 import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
@@ -135,6 +136,7 @@ export default function DashboardPage() {
 
         {completion < 100 && <Link href="/account#edit-profile" className="hc-ia-completion"><span><strong>{t("home.completeProfile")}</strong><small>{t("home.profileCompletion").replace("{percent}", String(completion))}</small></span><span>{t("home.continue")} <HoopIcon name="arrow-right" size={16}/></span></Link>}
 
+        <HomePulse live={liveCounts.live} upcoming={liveCounts.upcoming} followedClubs={teams.length} recentReviews={reviews.length} fan={profile?.account_type==="fan"}/>
         <Link href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>{t("home.liveGames")}</strong><small>{t("home.liveDescription")}</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></Link>
 
         <section className="hc-ia-section">
