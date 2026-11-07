@@ -145,6 +145,34 @@ export function fanFeedTeamEmptyBody(teamName: string, language: Language): stri
   return withTeam(teamEmptyCopy[language]?.body || teamEmptyCopy.en!.body, teamName);
 }
 
+
+const refreshCopy: Record<Language, { refresh: string; refreshing: string }> = {
+  en: { refresh: "Refresh", refreshing: "Refreshing…" },
+  es: { refresh: "Actualizar", refreshing: "Actualizando…" },
+  fr: { refresh: "Actualiser", refreshing: "Actualisation…" },
+  de: { refresh: "Aktualisieren", refreshing: "Wird aktualisiert…" },
+  tr: { refresh: "Yenile", refreshing: "Yenileniyor…" },
+  pt: { refresh: "Atualizar", refreshing: "A atualizar…" },
+  it: { refresh: "Aggiorna", refreshing: "Aggiornamento…" },
+  el: { refresh: "Ανανέωση", refreshing: "Γίνεται ανανέωση…" },
+  ar: { refresh: "تحديث", refreshing: "جارٍ التحديث…" },
+  ru: { refresh: "Обновить", refreshing: "Обновление…" },
+  az: { refresh: "Yenilə", refreshing: "Yenilənir…" },
+  pl: { refresh: "Odśwież", refreshing: "Odświeżanie…" },
+  zh: { refresh: "刷新", refreshing: "正在刷新…" },
+  ja: { refresh: "更新", refreshing: "更新中…" },
+  sr: { refresh: "Osveži", refreshing: "Osvežavanje…" },
+  fi: { refresh: "Päivitä", refreshing: "Päivitetään…" },
+  he: { refresh: "רענון", refreshing: "מרענן…" },
+  lt: { refresh: "Atnaujinti", refreshing: "Atnaujinama…" },
+  uk: { refresh: "Оновити", refreshing: "Оновлення…" },
+};
+
+export function fanFeedRefreshLabel(language: Language, isRefreshing: boolean): string {
+  const labels = refreshCopy[language] || refreshCopy.en;
+  return isRefreshing ? labels.refreshing : "↻ " + labels.refresh;
+}
+
 function withTeam(template: string, teamName: string) {
   return template.replaceAll("{team}", teamName);
 }
