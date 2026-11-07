@@ -133,8 +133,8 @@ export default function ProfilePage() {
           </div>}
           <div className="grid compact-grid">
             <Surface className="card hc-profile-info-card">
-              <span className="card-kicker">{t("basketball")}</span>
-              <h2>{p.basketball_type === "womens" ? t("womensBasketball") : t("mensBasketball")}</h2>
+              <span className="card-kicker">{p.account_type === "fan" ? t("account") : t("basketball")}</span>
+              <h2>{p.account_type === "fan" ? t("fan") : p.basketball_type === "womens" ? t("womensBasketball") : p.basketball_type === "mens" ? t("mensBasketball") : t("basketball")}</h2>
               <p className="muted">{t(p.account_type)}</p>
             </Surface>
             {p.account_type === "player" && (
