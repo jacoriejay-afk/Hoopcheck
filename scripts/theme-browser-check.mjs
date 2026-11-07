@@ -410,6 +410,33 @@ try {
       } catch (error) {
         navigationError = error instanceof Error ? error.message : String(error);
       }
+      if (requestedPath === "/profile") {
+        // LM-2F regression: inspect real computed mobile geometry in both themes
+        // and both supported test languages, not just the presence of SVG markup.
+        const tabbar = page.locator("nav.hc-lm2f-bottom-nav");
+        await tabbar.waitFor({ state: "visible", timeout: 15000 });
+        const tabs = tabbar.locator("a.hc-lm2f-tab");
+        assert.equal(await tabs.count(), 5, "LM-2F: expected five mobile tabs");
+        const geometry = await tabs.evaluateAll((links) => links.map((link) => {
+          const icon = link.querySelector(".hc-lm2f-tab-icon");
+          const svg = link.querySelector("svg.hc-lm2f-tab-svg");
+          const label = link.querySelector(".hc-lm2f-tab-label");
+          const rect = (element) => { const r = element?.getBoundingClientRect(); return r ? { width: r.width, height: r.height, x: r.x, y: r.y } : null; };
+          return { tab: rect(link), icon: rect(icon), svg: rect(svg), label: label?.textContent?.trim(), href: link.getAttribute("href"), stroke: svg ? getComputedStyle(svg).stroke : null };
+        })));
+        for (const [index, tab] of geometry.entries()) {
+          assert.ok(tab.tab?.width >= 48 && tab.tab?.height >= 44, `LM-2F tab ${index}: undersized tap target ${JSON.stringify(tab)}`);
+          assert.ok(tab.icon?.width >= 23 && tab.icon?.height >= 23, `LM-2F tab ${index}: collapsed icon wrapper ${JSON.stringify(tab)}`);
+          assert.ok(tab.svg?.width >= 23 && tab.svg?.height >= 23, `LM-2F tab ${index}: collapsed SVG ${JSON.stringify(tab)}`);
+          assert.ok(tab.label?.length, `LM-2F tab ${index}: missing label`);
+          assert.ok(tab.stroke && tab.stroke !== "none", `LM-2F tab ${index}: missing SVG stroke`);
+        }
+        const alertsTab = tabs.nth(3);
+        await alertsTab.click();
+        await page.waitForURL(/\/notifications(?:\/?|\?.*)$/, { timeout: 15000 });
+        await page.goto(baseURL + requestedPath, { waitUntil: "domcontentloaded", timeout: 20000 });
+        console.log("LM2F_MOBILE_GEOMETRY", JSON.stringify({ theme, language: testLanguage, geometry }));
+      }
       if (requestedPath === "/account") {
         const expectedAccountHeading = testLanguage === "es" ? "PREFERENCIAS DE LA CUENTA" : "ACCOUNT PREFERENCES";
         await page.waitForFunction((expected) => document.body.innerText.toLocaleUpperCase().includes(expected), expectedAccountHeading, { timeout: 15000 });
