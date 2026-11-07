@@ -515,15 +515,18 @@ try {
       if (requestedPath === "/fan-feed") {
         // Fan HQ is a mixed feed; selecting a club changes the composer, not the hero.
         await page.locator("main.hc-fan-feed-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
-        await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator("main.hc-fan-feed-page .hc-feed-composer").waitFor({ state: "visible", timeout: 15000 });
         const teamHeading = (await page.locator("main.hc-fan-feed-page .hc-feed-hero h1").innerText()).trim();
         const teamSubtitle = (await page.locator("main.hc-fan-feed-page .hc-feed-hero .muted").innerText()).trim();
         const fanHqEyebrow = (await page.locator("main.hc-fan-feed-page .hc-feed-hero .eyebrow").innerText()).trim();
-        const composerPlaceholder = await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").getAttribute("placeholder");
+        const composer = page.locator("main.hc-fan-feed-page .hc-feed-composer");
+        const composerPlaceholder = await composer.locator("textarea").count() ? await composer.locator("textarea").getAttribute("placeholder") : null;
+        const chooseClub = composer.getByRole("button", { name: "Choose a followed club to post" });
+        if (!composerPlaceholder && await chooseClub.count() !== 1) errors.push("fan-feed: missing both selected-club composer and club chooser");
         if (teamHeading !== "Fan HQ") errors.push("fan-feed: mixed-feed hero title is incorrect: " + teamHeading);
         if (!teamSubtitle.includes("clubs you follow")) errors.push("fan-feed: mixed-feed description is missing: " + teamSubtitle);
         if (!fanHqEyebrow.includes("FAN HQ")) errors.push("fan-feed: real Fan HQ eyebrow is missing: " + fanHqEyebrow);
-        if (!composerPlaceholder?.trim()) errors.push("fan-feed: composer placeholder is missing");
+        if (composerPlaceholder !== null && !composerPlaceholder.trim()) errors.push("fan-feed: composer placeholder is empty");
         const audienceNote = (await page.locator("main.hc-fan-feed-page .hc-feed-expiry-note").innerText()).trim();
         if (!audienceNote || !audienceNote.includes("24") || /KICKER|TITLE|Subtitle|TEAM FIRST|Fan Only Note/.test(audienceNote)) errors.push("fan-feed: audience note is missing or still scaffolded: " + audienceNote);
         const emptyState = page.locator("main.hc-fan-feed-page .hc-feed-empty");
