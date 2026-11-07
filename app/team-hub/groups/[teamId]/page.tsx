@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { supabase } from "../../../../lib/supabase";
 import { PageShell } from "../../../../components/LayoutSystem";
 import HoopLoading from "../../../../components/HoopLoading";
+import { useLanguage } from "../../../../components/LanguageProvider";
 import "../../../../app/hoopfeed-shared.css";
 
 type Summary = { group_name: string; member_count: number; join_mode: "open" | "approval"; is_member: boolean; has_pending_request: boolean };
@@ -16,6 +17,7 @@ type Member = { user_id: string; joined_at: string; moderator_type?: string | nu
 export default function TeamFanGroupPage() {
   const params = useParams();
   const router = useRouter();
+  const { formatNumber, formatDate } = useLanguage();
   const teamId = String(params.teamId || "");
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
@@ -50,9 +52,9 @@ export default function TeamFanGroupPage() {
     const { data: platformAdmin } = await supabase.rpc("is_current_user_admin_or_moderator");
     const moderator = Boolean((moderators || []).some((m: any) => m.user_id === currentUser.id) ||
       ((moderators || []).some((m: any) => m.moderator_type === "platform") && platformAdmin === true));
-    if (profile?.account_type !== "fan" && !moderator) { router.replace("/teams/" + teamId); return; }
+    if (profile?.account_type !== "fan" && !moderator) { router.replace("/dashboard"); return; }
     setIsModerator(moderator);
-    if (row?.is_member) {
+    if (row?.is_member || moderator) {
       const { data: postRows } = await supabase.from("team_fan_group_posts")
         .select("id,team_id,author_id,body,image_url,is_pinned,created_at,profiles:profiles!team_fan_group_posts_author_id_fkey(display_name,avatar_url)")
         .eq("team_id", teamId).eq("status", "published").order("is_pinned", { ascending: false }).order("created_at", { ascending: false });
@@ -124,16 +126,16 @@ export default function TeamFanGroupPage() {
 
   return <PageShell><main className="page-shell hc-feed-page hc-team-fan-group-page"><div className="page-container">
     <header className="topbar"><Link href="/team-hub" className="brand">TEAM HUB</Link><nav className="topnav"><Link href={"/teams/" + teamId}>Team page</Link><Link href="/team-hub">Your teams</Link></nav></header>
-    <section className="hero-card hc-feed-hero"><p className="eyebrow">FAN HQ · OFFICIAL COMMUNITY</p><h1>{summary.group_name}</h1><p className="muted">{teamName} supporters, together in one official fan space.</p><p className="hc-feed-expiry-note">{Number(summary.member_count || 0).toLocaleString()} MEMBERS <span>Group posts stay here permanently.</span></p></section>
-    {!summary.is_member && <section className="dashboard-card hc-feed-shared-card hc-team-fan-group-locked"><h2>Join to see the conversation</h2><p className="muted">The group is visible to everyone, but posts and comments are private to members.</p>{summary.join_mode === "open" ? <button className="btn" disabled={busy} onClick={() => void act("join")}>Join Fan Group</button> : <button className="btn" disabled={busy || summary.has_pending_request} onClick={() => void act("join")}>{summary.has_pending_request ? "Request Pending" : "Request to Join"}</button>}</section>}
-    {summary.is_member && <>
-      {isFan && <section className="dashboard-card hc-feed-composer hc-team-fan-group-composer"><span className="card-kicker">POST TO THE GROUP</span><textarea value={draft} maxLength={2000} rows={3} onChange={e => setDraft(e.target.value)} placeholder="Share something with the fans…" /><div className="hc-feed-composer__footer"><label className="hc-feed-photo-button">Photo<input type="file" accept="image/jpeg,image/png,image/webp" className="visually-hidden" onChange={e => setPhoto(e.target.files?.[0] || null)} /></label><span className="hc-feed-counter">{draft.length}/2000</span><button className="btn hc-feed-post-button" disabled={busy || (!draft.trim() && !photo)} onClick={() => void publish()}>{busy ? "Posting…" : "Post"}</button></div>{photo && <p className="muted">{photo.name} · <button type="button" onClick={() => setPhoto(null)}>Remove</button></p>}</section>}
+    <section className="hero-card hc-feed-hero"><p className="eyebrow">FAN HQ · OFFICIAL COMMUNITY</p><h1>{summary.group_name}</h1><p className="muted">{teamName} supporters, together in one official fan space.</p><p className="hc-feed-expiry-note">{formatNumber(Number(summary.member_count || 0))} MEMBERS <span>Group posts stay here permanently.</span></p></section>
+    {!summary.is_member && !isModerator && isFan && <section className="dashboard-card hc-feed-shared-card hc-team-fan-group-locked"><h2>Join to see the conversation</h2><p className="muted">The group is visible to everyone, but posts and comments are private to members.</p>{summary.join_mode === "open" ? <button className="btn" disabled={busy} onClick={() => void act("join")}>Join Fan Group</button> : <button className="btn" disabled={busy || summary.has_pending_request} onClick={() => void act("join")}>{summary.has_pending_request ? "Request Pending" : "Request to Join"}</button>}</section>}
+    {(summary.is_member || isModerator) && <>
+      {isFan && summary.is_member && <section className="dashboard-card hc-feed-composer hc-team-fan-group-composer"><span className="card-kicker">POST TO THE GROUP</span><textarea value={draft} maxLength={2000} rows={3} onChange={e => setDraft(e.target.value)} placeholder="Share something with the fans…" /><div className="hc-feed-composer__footer"><label className="hc-feed-photo-button">Photo<input type="file" accept="image/jpeg,image/png,image/webp" className="visually-hidden" onChange={e => setPhoto(e.target.files?.[0] || null)} /></label><span className="hc-feed-counter">{draft.length}/2000</span><button className="btn hc-feed-post-button" disabled={busy || (!draft.trim() && !photo)} onClick={() => void publish()}>{busy ? "Posting…" : "Post"}</button></div>{photo && <p className="muted">{photo.name} · <button type="button" onClick={() => setPhoto(null)}>Remove</button></p>}</section>}
       <section className="hc-feed-stream" aria-label="Fan Group posts">{posts.length ? posts.map(post => <article key={post.id} className="dashboard-card hc-feed-shared-card hc-team-fan-group-post">
-        <header className="hc-feed-post-header"><div className="hc-feed-shared-author"><div className="hc-feed-post-author__meta"><strong>{post.profiles?.display_name || "Fan"}</strong><small>{new Date(post.created_at).toLocaleString()}</small></div></div>{post.is_pinned && <span className="hc-feed-post-topic">PINNED</span>}</header>
+        <header className="hc-feed-post-header"><div className="hc-feed-shared-author"><div className="hc-feed-post-author__meta"><strong>{post.profiles?.display_name || "Fan"}</strong><small>{formatDate(post.created_at,{dateStyle:"medium",timeStyle:"short"})}</small></div></div>{post.is_pinned && <span className="hc-feed-post-topic">PINNED</span>}</header>
         {post.body && <div className="hc-feed-post-body"><p>{post.body}</p></div>}
         {post.image_src && <img src={post.image_src} alt="Fan Group post" className="hc-feed-post-image"/>}
-        <div className="hc-team-fan-group-post-actions">{isFan && <button type="button" className="hc-feed-action-pill" onClick={() => { const reason = window.prompt("Why are you reporting this post?"); if (reason) void act("report_post", { post_id: post.id, reason }); }}>Report</button>}{isModerator && <><button type="button" className="hc-feed-action-pill" onClick={() => void act("pin_post", { post_id: post.id })}>Pin</button><button type="button" className="hc-feed-action-pill" onClick={() => void act("remove_post", { post_id: post.id })}>Remove</button></>}</div>
-        <div className="hc-team-fan-group-comments">{(comments[post.id] || []).map(c => <p key={c.id}><strong>{c.profiles?.display_name || "Fan"}:</strong> {c.body}</p>)}{isFan && <div><input value={commentDrafts[post.id] || ""} maxLength={1000} onChange={e => setCommentDrafts(old => ({ ...old, [post.id]: e.target.value }))} placeholder="Write a comment…" /><button className="btn" disabled={busy || !commentDrafts[post.id]?.trim()} onClick={() => void comment(post.id)}>Send</button></div>}</div>
+        <div className="hc-team-fan-group-post-actions">{isFan && summary.is_member && <button type="button" className="hc-feed-action-pill" onClick={() => { const reason = window.prompt("Why are you reporting this post?"); if (reason) void act("report_post", { post_id: post.id, reason }); }}>Report</button>}{isModerator && <><button type="button" className="hc-feed-action-pill" onClick={() => void act("pin_post", { post_id: post.id })}>Pin</button><button type="button" className="hc-feed-action-pill" onClick={() => void act("remove_post", { post_id: post.id })}>Remove</button></>}</div>
+        <div className="hc-team-fan-group-comments">{(comments[post.id] || []).map(c => <p key={c.id}><strong>{c.profiles?.display_name || "Fan"}:</strong> {c.body}</p>)}{isFan && summary.is_member && <div><input value={commentDrafts[post.id] || ""} maxLength={1000} onChange={e => setCommentDrafts(old => ({ ...old, [post.id]: e.target.value }))} placeholder="Write a comment…" /><button className="btn" disabled={busy || !commentDrafts[post.id]?.trim()} onClick={() => void comment(post.id)}>Send</button></div>}</div>
       </article>) : <section className="dashboard-card hc-feed-empty hc-feed-shared-empty"><h2>Start the conversation</h2><p className="muted">No one has posted in this Fan Group yet.</p></section>}</section>
     </>}
     {isModerator && <section className="dashboard-card hc-feed-shared-card hc-team-fan-group-moderator"><div className="hc-team-fan-group-mod-head"><div><p className="eyebrow">MODERATION</p><h2>Moderator panel</h2></div><label>Membership <select value={summary.join_mode} onChange={e => void act("set_join_mode", { join_mode: e.target.value })}><option value="open">Open join</option><option value="approval">Approval required</option></select></label></div>
