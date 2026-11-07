@@ -73,15 +73,12 @@ export async function GET(request: Request) {
     const db = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const targetColumn = entityType === "team" ? "team_id" : entityType === "coach" ? "coach_id" : "womens_team_id";
-    const reviewTable = entityType === "womens-team" ? "womens_team_reviews" : "reviews";
-    const reviewColumns = entityType === "womens-team"
-      ? "id,womens_team_id,overall_rating,created_at,author_id"
-      : "id,team_id,coach_id,overall_rating,created_at,author_id";
-    const { data: rows, error } = await db.from(reviewTable)
-      .select(reviewColumns)
-      .eq("status", "approved")
-      .in(targetColumn, ids);
+    const reviewQuery = entityType === "womens-team"
+      ? db.from("womens_team_reviews").select("id,womens_team_id,overall_rating,created_at,author_id").eq("status", "approved").in("womens_team_id", ids)
+      : entityType === "team"
+        ? db.from("reviews").select("id,team_id,coach_id,overall_rating,created_at,author_id").eq("status", "approved").in("team_id", ids)
+        : db.from("reviews").select("id,team_id,coach_id,overall_rating,created_at,author_id").eq("status", "approved").in("coach_id", ids);
+    const { data: rows, error } = await reviewQuery;
     if (error) throw error;
 
     const reviews = (rows || []) as ReviewRow[];
