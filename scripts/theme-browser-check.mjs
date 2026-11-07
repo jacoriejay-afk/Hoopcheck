@@ -536,7 +536,7 @@ try {
         if (explainer !== expectedExplainer) errors.push("fan-feed: plain-language purpose line is missing: " + explainer);
         const womensToggle = page.getByRole("button", { name: "WOMEN'S" });
         await womensToggle.click();
-        await page.waitForFunction(() => document.querySelector('.hc-fan-side-switch button[aria-pressed="true"]')?.textContent?.trim() === "WOMEN'S", { timeout: 10000 });
+        await page.waitForFunction(() => document.querySelector('.hc-fan-side-switch button[aria-pressed="true"]')?.textContent?.trim() === "WOMEN'S", null, { timeout: 10000 });
         const postPrompt = page.locator("main.hc-fan-feed-page .hc-fan-feed-post-prompt");
         await postPrompt.waitFor({ state: "visible", timeout: 15000 });
         if (await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").count()) errors.push("fan-feed: standalone feed must not show a composer before club selection");
