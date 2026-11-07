@@ -38,16 +38,19 @@ export default function NotificationsPage(){
     return ()=>{active=false;};
   },[]);
   async function markAll(){
-    const {data:{session}}=await supabase.auth.getSession();
-    const user=session?.user;
-    if(!user)return;
     if(marking)return;
     setMarking(true);setErrorMessage("");
-    const now=new Date().toISOString();
-    const {error}=await supabase.from("notifications").update({read_at:now}).eq("user_id",user.id).is("read_at",null);
-    if(error)setErrorMessage("Could not mark alerts as read. Please retry.");
-    else setItems(v=>v.map(n=>({...n,read_at:n.read_at||now})));
-    setMarking(false);
+    try{
+      const {data:{session},error:sessionError}=await supabase.auth.getSession();
+      if(sessionError)throw sessionError;
+      const user=session?.user;
+      if(!user){setErrorMessage("Your session has expired. Please sign in again.");return;}
+      const now=new Date().toISOString();
+      const {error}=await supabase.from("notifications").update({read_at:now}).eq("user_id",user.id).is("read_at",null);
+      if(error)throw error;
+      setItems(v=>v.map(n=>({...n,read_at:n.read_at||now})));
+    }catch(error){console.error("Unable to mark HoopCheck alerts as read:",error);setErrorMessage("Could not mark alerts as read. Please retry.");}
+    finally{setMarking(false);}
   }
   const filtered=items.filter(n=>filter==="all" || (filter==="unread"&&!n.read_at) || (filter==="games"&&n.target_type==="game") || (filter==="clubs"&&n.target_type!=="game"&&!["review","rating","trust_score","pay_warning"].includes(n.notification_type)) || (filter==="reviews"&&["review","rating","trust_score","pay_warning"].includes(n.notification_type)));
   if(loading)return <main className="page-shell hc-notifications-page"><div className="page-container"><HoopLoading label="Loading notifications..." /></div></main>;
