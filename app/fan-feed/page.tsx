@@ -53,7 +53,7 @@ export default function FanFeedPage() {
   const [message, setMessage] = useState("");
   const basketballSide = useFanBasketballSide();
   const selectedTeam = teams.find(team => team.id === teamId) || null;
-  const visiblePosts = selectedTeam ? posts.filter(post => post.team_id === selectedTeam.id) : posts;
+  const visiblePosts = posts; // Fan HQ is always a mixed feed of followed clubs.
   const teamComposerPlaceholder = selectedTeam
     ? fanFeedTeamComposerPlaceholder(selectedTeam.name, language)
     : ft("composerPlaceholder");
@@ -246,8 +246,8 @@ export default function FanFeedPage() {
   return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page" onTouchStart={event => { touchStartY.current = window.scrollY === 0 ? (event.touches[0]?.clientY ?? null) : null; }} onTouchEnd={event => { const start = touchStartY.current; touchStartY.current = null; const end = event.changedTouches[0]?.clientY ?? 0; if (start !== null && end - start > 80 && user && !refreshing) void refreshFeed(); }}>
       <FanBasketballSideSwitch /><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/fans">{ft("discoverFans")}</Link><Link href="/team-hub">{ft("teamHub")}</Link><Link href="/teams">{ft("teams")}</Link></nav></header>
-    <section className="hero-card hc-feed-hero"><div><p className="eyebrow">FAN HQ · CLUB COMMUNITIES</p><h1>{selectedTeam?.name || "Fan HQ"}</h1><p className="muted">{selectedTeam ? fanFeedTeamSubtitle(selectedTeam.name, language) : "Posts from the fan groups of clubs you follow."}</p></div><p className="hc-feed-expiry-note">Fan groups only<span>Club posts expire after 24 hours · no player HoopFeed posts</span></p></section>
-    {selectedTeam ? <TeamOfficialUpdates teamId={selectedTeam.id} /> : null}
+    <section className="hero-card hc-feed-hero"><div><p className="eyebrow">FAN HQ · CLUB COMMUNITIES</p><h1>Fan HQ</h1><p className="muted">Posts from the fan groups of clubs you follow.</p></div><p className="hc-feed-expiry-note">Fan groups only<span>Club posts expire after 24 hours · no player HoopFeed posts</span></p></section>
+
     <section className="dashboard-card hc-feed-composer" style={{ marginTop: 18 }}>
       <span className="card-kicker">{selectedTeam ? `Posting to ${selectedTeam.name} fans` : "Post to a followed club"}</span>
       {!selectedTeam && <button type="button" className="btn" onClick={() => setChoosingClub(true)}>Choose a followed club to post</button>}
