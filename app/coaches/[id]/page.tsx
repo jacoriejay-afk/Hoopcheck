@@ -552,13 +552,9 @@ export default function CoachDetailPage() {
         <h1>
           {coach.name}
         </h1>
-        {reviewTier === "pro" && accountType === "fan" ? (
-          <div className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow">Trust Score</span><h2>Premium</h2><Link href="/membership" className="btn">Upgrade</Link></div>
-        ) : canReadFullReviews ? (
+        {canReadFullReviews ? (
           <div className="hc-entity-trust-score"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedReviews"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /></div>
-        ) : (
-          <div className="hc-entity-trust-score hc-membership-locked-score"><span className="eyebrow">Full player reviews require an eligible membership</span><Link href="/membership" className="btn">Upgrade</Link></div>
-        )}
+        ) : null}
 
         <div className="entity-actions"><WatchButton targetType="coach" targetId={coach.id} targetName={coach.name} />{accountType === "player" ? <Link href={`/coaches/${coach.id}/review`} className="btn">Write a Review</Link> : null}</div>
         <ClaimProfileButton entityType="coach" entityId={coach.id} entityName={coach.name} />
