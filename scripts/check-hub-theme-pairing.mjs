@@ -107,6 +107,7 @@ if (fanFeedPage.includes('from("fan_feed_posts")') ||
     fanFeedPage.includes("hc-feed-composer__editor") ||
     !bottomNav.includes('accountType === "fan" ? "FAN HQ" : "HoopFeed"') ||
     !fanGroupPage.includes("Posting to {teamName} fans") ||
+    !fanGroupPage.includes("isFan && summary?.is_member && <section") ||
     !fanGroupPage.includes("No posts yet — be the first to post for {teamName}.") ||
     !fanGroupPage.includes("Be the first to post") ||
     !womensTeamPage.includes("TeamFanGroupEntry teamId={team.id}") ||
