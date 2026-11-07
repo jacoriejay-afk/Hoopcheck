@@ -364,6 +364,9 @@ try {
         const isFanTeamFollow = activeRoutePath === "/fan-feed" && url.searchParams.get("target_type") === "eq.team";
         data = isFanTeamFollow ? [{ target_id: teamFixture.id, target_type: "team" }] : single ? null : [];
       }
+      else if (url.pathname.includes("/rest/v1/team_fan_groups")) data = [{ team_id: teamFixture.id, group_name: teamFixture.name + " Fans" }];
+      else if (url.pathname.includes("/rest/v1/fan_feed_posts")) data = [];
+      else if (url.pathname.includes("/rest/v1/fan_feed_archives")) data = [];
       else if (url.pathname.includes("/rest/v1/rpc/get_team_fan_group_summary")) {
         data = activeRoutePath.startsWith("/team-hub/groups/") ? [{
           group_name: teamFixture.name + " Fan Group",
