@@ -1642,3 +1642,59 @@ html main.hc-team-entity-profile .hc-team-reviews-trust-strip :where(p,small,.mu
     min-width: 0;
   }
 }
+
+/* Shared club hero: identical information hierarchy for men's and women's profiles. */
+.hc-womens-profile-page .hc-team-profile-hero {
+  width: 100%;
+  min-width: 0;
+  background: var(--hc-surface-raised, var(--hc-paper-strong, #fff));
+  color: var(--hc-foreground, #0a0a0a);
+  border: 1px solid var(--hc-border, rgba(128,128,128,.25));
+}
+.hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+.hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-kicker {
+  color: var(--hc-orange, #ff5a1f);
+}
+.hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-meta,
+.hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-stat small {
+  color: var(--hc-foreground-muted, #666);
+}
+.hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  min-width: 0;
+  border-top: 1px solid var(--hc-border, rgba(128,128,128,.25));
+}
+.hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-stat {
+  min-width: 0;
+  overflow-wrap: normal;
+}
+.hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-stat + .hc-team-profile-stat {
+  border-left: 1px solid var(--hc-border, rgba(128,128,128,.25));
+}
+.hc-womens-profile-page .hc-team-profile-hero :where(h1,.hc-team-profile-meta) {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: normal;
+  white-space: normal;
+}
+@media (max-width: 520px) {
+  .hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-stat {
+    padding-inline: 8px;
+  }
+  .hc-womens-profile-page .hc-team-profile-hero h1 {
+    font-size: clamp(1.55rem, 7vw, 2.25rem);
+    line-height: 1.04;
+    letter-spacing: -0.035em;
+  }
+}
