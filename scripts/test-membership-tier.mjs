@@ -142,6 +142,9 @@ const liveChat = read("../app/fan-live/page.tsx");
 const liveHub = read("../app/live-games/page.tsx");
 const payApi = read("../app/api/team-pay-checkins/route.ts");
 const trustApi = read("../app/api/trust-score/route.ts");
+const membershipPage = read("../app/membership/page.tsx");
+const accountPage = read("../app/account/page.tsx");
+const fanConnection = read("../components/FanConnectionButton.tsx");
 
 for (const [label, page] of [["men's team", menProfile], ["women's team", womenProfile]]) {
   assert.match(page, /import TeamProfileHero/, label + " must use the shared team hero");
@@ -159,5 +162,10 @@ assert.match(liveChat, /opponent_team_id/, "Live Game Chat must resolve both fix
 assert.match(liveChat, /canUseLiveGameChat/, "Live Game Chat must use the shared chat entitlement");
 assert.match(liveHub, /womens_teams/, "Live Game Hub must include women's teams");
 assert.match(trustApi, /row\.womens_team_id/, "women's Trust Score must aggregate women's reviews");
+assert.match(membershipPage, /Built for fans who follow the game/, "Fan membership page must not use player upsell copy");
+assert.match(membershipPage, /HOOPCHECK FAN PRO/, "Fan Pro plan must be role-labelled");
+assert.match(membershipPage, /HOOPCHECK FAN PREMIUM/, "Fan Premium plan must be role-labelled");
+assert.match(accountPage, /entitlements\.canUseRecruitingNetwork/, "Premium recruiting upsell must be player-only");
+assert.match(fanConnection, /accountType !== "fan"/, "fan connection gates must be hidden from non-fans");
 
 console.log("VERIFY-1 entitlement matrix: " + cases.length + " role/tier cells and edge cases passed (" + keys.length + " entitlements).");
