@@ -64,6 +64,7 @@ export async function GET(request: Request) {
     const table = entityType === "womens-team" ? "womens_team_reviews" : "reviews";
 
     const response: Record<string, unknown> = {
+      accountType,
       tier,
       canWrite,
       canReadFull: fullRead,
