@@ -658,7 +658,7 @@ export default function CoachDetailPage() {
       </section>
 
       {!hasAccess && reviewTier === "free" && accountType !== "player" ? (
-        <section className="hero"><div className="card hc-membership-locked-state"><h2>Player reviews require an eligible membership</h2><Link href="/membership" className="btn">Upgrade</Link></div></section>
+        <section className="hero"><div className="card hc-membership-locked-state"><h2>{accountType === "fan" ? "Full coach reviews are available with Fan Premium" : "Coach reviews require an eligible membership"}</h2><Link href="/membership" className="btn">{accountType === "fan" ? "View Fan Premium" : "View Membership"}</Link></div></section>
       ) : reviewTier === "pro" ? (
         <section className="hero hc-fan-review-teaser">
           <h2>Coach ratings and reviews</h2>
@@ -724,7 +724,7 @@ export default function CoachDetailPage() {
 
             <div className="card">
               <div className="eyebrow">
-                Player Feedback
+                {accountType === "fan" ? "COACH FEEDBACK" : "Player Feedback"}
               </div>
 
               <h2>
@@ -756,9 +756,7 @@ export default function CoachDetailPage() {
             </div>
 
             <h2>
-              What players
-              <br />
-              are saying.
+              {accountType === "fan" ? "What the community is saying." : <>What players<br/>are saying.</>}
             </h2>
 
             {reviewLoading ? (
@@ -773,9 +771,7 @@ export default function CoachDetailPage() {
                 </h3>
 
                 <p>
-                  Be one of the first players
-                  to share an experience with
-                  this coach.
+                  {accountType === "fan" ? "No coach reviews have been published yet." : "Be one of the first players to share an experience with this coach."}
                 </p>
 
                 {accountType === "player" && <Link href={`/coaches/${coach.id}/review`} className="btn">{t("writeAReview")}</Link>}
@@ -812,7 +808,7 @@ export default function CoachDetailPage() {
                           </div>
 
                           <h3>
-                            {review.title || "Player experience"}
+                            {review.title || (accountType === "fan" ? "Coach review" : "Player experience")}
                           </h3>
                           {review.player_verified && (
                             <div className="hc-review-verified"><VerifiedBadge label={accountType === "fan" ? "Verified review" : "Verified player"} /><span>{accountType === "fan" ? "Verified review" : "Verified Player"}</span></div>
