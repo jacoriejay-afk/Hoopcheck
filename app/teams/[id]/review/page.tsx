@@ -253,7 +253,7 @@ export default function TeamReviewPage() {
         setAlreadyReviewed(true);
       }
 
-      setIsPaid(hasValidSubscription);
+      setIsPaid(isAdmin || entitlements.canWriteReviews);
 
       setLoading(false);
     }
