@@ -16,6 +16,7 @@ export type HoopCheckEntitlements = {
   canCompare: boolean;
   canUseContractCheck: boolean;
   canUseProPassport: boolean;
+  canUseRecruitingNetwork: boolean;
   canUsePayOnTimeIndex: boolean;
   canUseAskPlayer: boolean;
   canConnectWithFans: boolean;
@@ -108,6 +109,7 @@ export function getHoopCheckEntitlements(args: {
     canUseContractCheck: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) || (otherMember && active),
     canUseProPassport: isAdmin || (role === "agent" && isAtLeastTier(tier, "pro")) ||
       (isPlayer && isAtLeastTier(tier, "premium")),
+    canUseRecruitingNetwork: isPlayer && isAtLeastTier(tier, "premium"),
     canUsePayOnTimeIndex: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) || (otherMember && active),
     canUseAskPlayer: (isPlayer || role === "scout" || role === "agent") && isAtLeastTier(tier, "pro"),
     canConnectWithFans: isFan && isAtLeastTier(tier, "pro"),
