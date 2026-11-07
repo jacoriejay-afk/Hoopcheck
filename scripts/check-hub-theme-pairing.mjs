@@ -6,6 +6,8 @@ const auditPage = readFileSync("app/theme-card-audit/page.tsx", "utf8");
 const browserCheck = readFileSync("scripts/theme-browser-check.mjs", "utf8");
 const fanFeedPage = readFileSync("app/fan-feed/page.tsx", "utf8");
 const fanFeedI18n = readFileSync("app/fan-feed/i18n.ts", "utf8");
+const bottomNav = readFileSync("components/BottomNav.tsx", "utf8");
+const fanGroupPage = readFileSync("app/team-hub/groups/[teamId]/page.tsx", "utf8");
 const themeAudit = readFileSync("app/hoopcheck-theme-audit.css", "utf8");
 const failures = [];
 
@@ -80,6 +82,15 @@ if (!fanFeedPage.includes('ft("feedExplainer")') ||
     !fanFeedPage.includes("hc-fan-feed-group-label") ||
     !fanFeedI18n.includes('"feedExplainer": "Posts from the fan groups of the clubs you follow."')) {
   failures.push("Fan HQ is missing its plain-language purpose, followed-club picker, locked composer, or group context.");
+}
+
+if (fanFeedPage.includes('from("fan_feed_posts")') ||
+    !fanFeedPage.includes('from("team_fan_group_posts")') ||
+    !fanFeedPage.includes('from("team_fan_group_members")') ||
+    !fanFeedPage.includes('fetch("/api/fan-groups"') ||
+    !bottomNav.includes('accountType === "fan" ? "FAN HQ" : "HoopFeed"') ||
+    !fanGroupPage.includes("Posting to {teamName} fans")) {
+  failures.push("Fan HQ must use member-visible club Fan Group posts and the shared locked group composer; fans must see FAN HQ in bottom navigation.");
 }
 
 const importLine = 'import "./hoopcheck-hub-empty-state-pairing.css";';
