@@ -423,7 +423,7 @@ try {
           const label = link.querySelector(".hc-lm2f-tab-label");
           const rect = (element) => { const r = element?.getBoundingClientRect(); return r ? { width: r.width, height: r.height, x: r.x, y: r.y } : null; };
           return { tab: rect(link), icon: rect(icon), svg: rect(svg), label: label?.textContent?.trim(), href: link.getAttribute("href"), stroke: svg ? getComputedStyle(svg).stroke : null };
-        })));
+        }));
         for (const [index, tab] of geometry.entries()) {
           assert.ok(tab.tab?.width >= 48 && tab.tab?.height >= 44, `LM-2F tab ${index}: undersized tap target ${JSON.stringify(tab)}`);
           assert.ok(tab.icon?.width >= 23 && tab.icon?.height >= 23, `LM-2F tab ${index}: collapsed icon wrapper ${JSON.stringify(tab)}`);
