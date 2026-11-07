@@ -542,6 +542,10 @@ try {
         if (!fanHqEyebrow.includes("FAN HQ") || /KICKER/.test(fanHqEyebrow)) errors.push("fan-feed: real Fan HQ eyebrow is missing: " + fanHqEyebrow);
         const expectedExplainer = testLanguage === "es" ? "Publicaciones de los grupos de fans de los clubes que sigues." : "Posts from the fan groups of the clubs you follow.";
         if (explainer !== expectedExplainer) errors.push("fan-feed: plain-language purpose line is missing: " + explainer);
+        await page.locator("main.hc-fan-feed-page .hc-feed-stream .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
+        const fanFeedEmpty = (await page.locator("main.hc-fan-feed-page .hc-feed-stream .hc-feed-empty").innerText()).trim();
+        if (!fanFeedEmpty.includes("No posts yet — be the first to post for " + teamFixture.name + ".")) errors.push("fan-feed: real club-specific timeline empty state is missing: " + fanFeedEmpty);
+        if (!fanFeedEmpty.includes("Be the first to post")) errors.push("fan-feed: timeline empty state action is missing");
         const womensToggle = page.getByRole("button", { name: "WOMEN'S" });
         await womensToggle.click();
         await page.waitForFunction(() => document.querySelector('.hc-fan-side-switch button[aria-pressed="true"]')?.textContent?.trim() === "WOMEN'S", null, { timeout: 10000 });
