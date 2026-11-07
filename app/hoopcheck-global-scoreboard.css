@@ -128,3 +128,39 @@ html.theme-dark .hc-membership-comparison .hc-membership-plan :where(h3,.price,l
 html.theme-dark main :where(input,textarea)::placeholder {color:#b9b9b9;opacity:1;}
 html.theme-light main :where(input,textarea)::placeholder {color:#595959;opacity:1;}
 html:is(.theme-dark,.theme-light) main :where(button:disabled,[aria-disabled="true"]) {opacity:.65;}
+
+/* Account / Hoop Passport: foregrounds must remain visible over authored dark art.
+   Target actual account surfaces rather than forcing all dark/light cards alike. */
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero,
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hc-smooth-passport {
+ color:#f7f7f5!important;
+ --hc-foreground:#f7f7f5;
+ --hc-foreground-muted:#c9c9c9;
+ --ink:#f7f7f5;
+}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero :is(
+ h1,h2,h3,p,span,strong,small,label,.hc-member-profile-copy,.hc-member-profile-copy *,
+ .hc-profile-completion-copy,.hc-profile-completion-copy *
+),
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hc-smooth-passport :is(
+ h1,h2,h3,p,span,strong,small,label,a:not(.btn)
+) {color:#f7f7f5!important;opacity:1!important;-webkit-text-fill-color:currentColor!important;}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero :is(
+ .hc-profile-email,.hc-profile-completion-copy span
+) {color:#c9c9c9!important;}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero .hc-member-profile-avatar {
+ color:#f7f7f5!important;-webkit-text-fill-color:#f7f7f5!important;
+ background:#252525!important;
+}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero .hc-profile-edit-button,
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hc-smooth-passport .hc-smooth-passport__monogram {
+ color:#101010!important;-webkit-text-fill-color:#101010!important;
+}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero .hc-profile-completion {
+ background:#181818!important;color:#f7f7f5!important;border-color:#4d4d4d!important;
+}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hc-smooth-passport a:not(.btn) {color:#ff9b70!important;}
+/* Brand header: HOOP must not disappear against the black masthead. */
+html:is(.theme-light,.theme-dark) :where(.site-header,.topbar) :where(.brand,.logo,.brand-name) {
+ color:#f7f7f5;
+}
