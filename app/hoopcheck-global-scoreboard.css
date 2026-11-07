@@ -1,14 +1,14 @@
 /* HoopCheck global scoreboard skin: shared presentation only; never fabricate stats or entitlements. */
 html.theme-dark {
- --hc-page-bg:#050505;--hc-surface:#101010;--hc-surface-raised:#141414;
- --hc-surface-soft:#1c1c1c;--hc-foreground:#f7f7f5;--hc-foreground-muted:#bdbdbd;
+ --hc-page-bg:#0a0a0a;--hc-surface:#101010;--hc-surface-raised:#171717;
+ --hc-surface-soft:#1b1b1b;--hc-foreground:#f7f7f5;--hc-foreground-muted:#bdbdbd;
  --hc-border:#414141;--hc-input-bg:#141414;--hc-input-fg:#f7f7f5;
  --hc-nav-bg:rgba(0,0,0,.98);--hc-nav-fg:#f7f7f5;--hc-orange:#ff5a1f;
- --paper:#050505;--ink:#f7f7f5;--border:#414141;
+ --paper:#0a0a0a;--ink:#f7f7f5;--border:#414141;
 }
 html.theme-light {
- --hc-page-bg:#f7f7f5;--hc-surface:#fff;--hc-surface-raised:#fff;
- --hc-surface-soft:#f1f1ed;--hc-foreground:#171717;--hc-foreground-muted:#535353;
+ --hc-page-bg:#f4f4f1;--hc-surface:#fff;--hc-surface-raised:#fff;
+ --hc-surface-soft:#f8f8f6;--hc-foreground:#171717;--hc-foreground-muted:#535353;
  --hc-border:#d2d2cc;--hc-input-bg:#fff;--hc-input-fg:#171717;
  --hc-nav-bg:rgba(0,0,0,.98);--hc-nav-fg:#f7f7f5;--hc-orange:#e84c14;
 }
@@ -20,7 +20,7 @@ html:is(.theme-dark,.theme-light) main :where(.card,.dashboard-card,.result-card
  border-width:1px;border-style:solid;
 }
 html.theme-dark main :where(.card,.dashboard-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card) {
- background:#141414!important;border-color:#414141!important;color:#f7f7f5!important;
+ background:var(--hc-surface-raised)!important;border-color:#414141!important;color:#f7f7f5!important;
 }
 html.theme-light main :where(.card,.dashboard-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card) {
  background:var(--hc-surface-raised)!important;border-color:#d2d2cc!important;color:#171717!important;
@@ -28,7 +28,7 @@ html.theme-light main :where(.card,.dashboard-card,.result-card,.quick-card,.set
 /* Brand hierarchy: orange accents, black header, visible active navigation. */
 html:is(.theme-dark,.theme-light) :where(.topbar,.nav,.site-header) {border-bottom:2px solid #ff5a1f;}
 html:is(.theme-dark,.theme-light) :where(.bottom-nav) {border-top:2px solid #ff5a1f!important;}
-html.theme-dark :where(.bottom-nav) {background:#050505!important;}
+html.theme-dark :where(.bottom-nav) {background:var(--hc-page-bg)!important;}
 html:is(.theme-dark,.theme-light) :where(.bottom-nav a.active,.bottom-nav a[aria-current="page"]) {color:#ff5a1f!important;}
 html:is(.theme-dark,.theme-light) :where(.bottom-nav a.active svg,.bottom-nav a[aria-current="page"] svg) {color:#ff5a1f!important;stroke:currentColor;}
 html:is(.theme-dark,.theme-light) main :where(.eyebrow,.card-kicker) {
@@ -67,7 +67,7 @@ html.theme-light {
 html.theme-dark {
  --hc-scoreboard-card-fg:#f7f7f5;
  --hc-scoreboard-card-muted:#c5c5c5;
- --hc-scoreboard-card-bg:#141414;
+ --hc-scoreboard-card-bg:var(--hc-surface-raised);
  --hc-scoreboard-accent:#ff8a54;
 }
 html:is(.theme-light,.theme-dark) main :where(
