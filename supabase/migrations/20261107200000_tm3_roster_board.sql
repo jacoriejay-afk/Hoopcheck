@@ -16,6 +16,7 @@ create table if not exists public.club_roster_entries (
 create index if not exists club_roster_entries_team_idx on public.club_roster_entries(team_id,status);
 alter table public.club_roster_entries enable row level security;
 grant select,insert on public.club_roster_entries to authenticated;
+-- The authenticated role cannot directly mutate dispute status.
 -- Managers may edit club-confirmed fields, but never identity, club ownership or dispute state.
 grant update (player_name,position,jersey_number,season,status,club_confirmed_at,updated_at,updated_by) on public.club_roster_entries to authenticated;
 grant select on public.club_roster_entries to anon;
@@ -81,3 +82,44 @@ end $$;
 drop trigger if exists club_roster_guard on public.club_roster_entries;
 create trigger club_roster_guard before insert or update on public.club_roster_entries
 for each row execute function public.guard_club_roster_edit();
+
+-- Player disputes are handled by a narrow RPC, not a broad UPDATE grant.
+create table if not exists public.club_roster_disputes (
+ id uuid primary key default gen_random_uuid(),
+ entry_id uuid not null references public.club_roster_entries(id) on delete cascade,
+ team_id uuid not null references public.teams(id),
+ player_id uuid not null references public.profiles(id),
+ reason text not null check (char_length(trim(reason)) between 10 and 1000),
+ status text not null default 'pending' check (status in ('pending','resolved','rejected')),
+ created_at timestamptz not null default now(),
+ resolved_at timestamptz,
+ resolved_by uuid references public.profiles(id)
+);
+create unique index if not exists club_roster_one_open_dispute on public.club_roster_disputes(entry_id) where status='pending';
+alter table public.club_roster_disputes enable row level security;
+grant select on public.club_roster_disputes to authenticated;
+create policy "player sees own roster dispute" on public.club_roster_disputes for select to authenticated
+using (player_id=(select auth.uid()));
+create policy "club manager sees roster disputes" on public.club_roster_disputes for select to authenticated
+using (exists (select 1 from public.profile_claim_requests c where c.entity_type='team' and c.entity_id=team_id and c.requester_id=(select auth.uid()) and c.status='approved'));
+
+-- A dispute can be filed only by the profile directly linked to the entry.
+-- Unlinked name-only entries require identity verification by moderation.
+create or replace function public.dispute_my_club_roster_entry(p_entry_id uuid,p_reason text)
+returns uuid language plpgsql security definer set search_path=public
+as $$
+declare v_entry public.club_roster_entries%rowtype; v_id uuid;
+begin
+ if auth.uid() is null then raise exception 'Sign in required'; end if;
+ if char_length(trim(coalesce(p_reason,''))) not between 10 and 1000 then raise exception 'Reason must be 10-1000 characters'; end if;
+ select * into v_entry from public.club_roster_entries where id=p_entry_id for update;
+ if not found or v_entry.player_id is distinct from auth.uid() then raise exception 'Roster entry not linked to your profile'; end if;
+ if v_entry.dispute_status='pending' then raise exception 'Entry already disputed'; end if;
+ insert into public.club_roster_disputes(entry_id,team_id,player_id,reason)
+ values(v_entry.id,v_entry.team_id,auth.uid(),trim(p_reason)) returning id into v_id;
+ -- Direct field update here bypasses the authenticated column grant.
+ update public.club_roster_entries set dispute_status='pending' where id=v_entry.id;
+ return v_id;
+end $$;
+revoke all on function public.dispute_my_club_roster_entry(uuid,text) from public,anon;
+grant execute on function public.dispute_my_club_roster_entry(uuid,text) to authenticated;
