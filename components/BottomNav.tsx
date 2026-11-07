@@ -94,7 +94,7 @@ export default function BottomNav() {
   return (
     <nav className="bottom-nav hc-bottom-tab-bar hc-mobile-tabbar-repair hc-lm2f-bottom-nav" aria-label="Mobile navigation">
       {items.map(([href, translationKey, label]) => {
-        const destination = href === "/feed" && fanAccount ? "/fan-feed" : href;
+        const destination = href === "/feed" ? (accountType === null ? "/dashboard" : fanAccount ? "/fan-feed" : "/feed") : href;
         const active = destination === "/"
           ? pathname === "/" || pathname === "/dashboard"
           : pathname === destination || pathname.startsWith(destination + "/");
@@ -106,7 +106,7 @@ export default function BottomNav() {
             aria-current={active ? "page" : undefined}
           >
             <span className="hc-lm2f-tab-icon"><TabIcon label={label} /></span>
-            <span className="hc-lm2f-tab-label">{translationKey === "hoopFeed" ? (fanAccount ? "FAN HQ" : "HOOPFEED") : t(translationKey)}</span>
+            <span className="hc-lm2f-tab-label">{translationKey === "hoopFeed" ? (accountType === null ? "FEED" : fanAccount ? "FAN HQ" : "HOOPFEED") : t(translationKey)}</span>
             {active && <span className="hc-lm2f-active-indicator" aria-hidden="true" />}
           </Link>
         );
