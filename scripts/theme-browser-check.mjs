@@ -167,7 +167,11 @@ try {
         else if (url.pathname.includes("/rest/v1/feed_post_comments")) data = [];
         else if (url.pathname.includes("/rest/v1/feed_post_checks")) data = [];
         else if (url.pathname.includes("/rest/v1/reviews")) data = [];
-        else if (url.pathname.includes("/rest/v1/teams")) { const requestedId = (url.searchParams.get("id") || "").replace(/^eq\./, ""); data = requestedId ? [requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture] : [teamFixture, fallbackTeamFixture]; }
+        else if (url.pathname.includes("/rest/v1/womens_teams")) {
+        const idFilter = url.searchParams.get("id") || "";
+        data = idFilter.startsWith("eq.") ? (single ? teamFixture : [teamFixture]) : [teamFixture];
+      }
+      else if (url.pathname.includes("/rest/v1/teams")) { const requestedId = (url.searchParams.get("id") || "").replace(/^eq\./, ""); data = requestedId ? [requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture] : [teamFixture, fallbackTeamFixture]; }
         else if (url.pathname.includes("/rest/v1/coaches")) data = [coachFixture];
         else if (url.pathname.includes("/rest/v1/leagues")) data = [leagueFixture];
         await route.fulfill({
@@ -255,7 +259,7 @@ try {
 
   const mainRoutes = [
     "/", "/dashboard", "/feed", "/account", "/settings", "/profile", "/search", "/search?q=Baku",
-    "/teams", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2", "/teams/a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f0", "/admin/team-logos", "/coaches", "/coaches/11111111-1111-4111-8111-111111111111", "/leagues", "/players", "/womens", "/directory",
+    "/teams", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2", "/teams/a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f0", "/womens/" + teamFixture.id, "/admin/team-logos", "/coaches", "/coaches/11111111-1111-4111-8111-111111111111", "/leagues", "/players", "/womens", "/directory",
     "/reviews", "/membership", "/notifications", "/support", "/verification",
     "/privacy-center", "/privacy", "/terms", "/community-guidelines", "/login",
     "/signup", "/onboarding", "/fan-live", "/fan-feed", "/team-hub",
@@ -332,7 +336,7 @@ try {
       const single = request.headers()["accept"]?.includes("vnd.pgrst.object");
       if (url.pathname === "/auth/v1/user") data = user;
       else if (url.pathname.includes("/rest/v1/profiles")) {
-        const fanSurfaceRoute = activeRoutePath === "/fan-feed" || activeRoutePath === "/team-hub" || activeRoutePath.startsWith("/team-hub/groups/");
+        const fanSurfaceRoute = activeRoutePath === "/fan-feed" || activeRoutePath === "/team-hub" || activeRoutePath.startsWith("/team-hub/groups/") || activeRoutePath.startsWith("/womens/");
         const accountTypeQuery = (url.searchParams.get("select") || "").includes("account_type") && (url.searchParams.get("id") || "").startsWith("eq.");
         const fanProfile = { ...profile, account_type: "fan" };
         data = accountTypeQuery ? (fanSurfaceRoute ? fanProfile : profile) : single ? profile : [];
@@ -516,6 +520,11 @@ try {
       }, { requestedPath, navigationError });
       const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
       const errors = [];
+      if (requestedPath.startsWith("/womens/")) {
+        await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").waitFor({ state: "visible", timeout: 15000 });
+        const fanGroupEntry = (await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").innerText()).trim();
+        if (!fanGroupEntry.includes("Fan Group") || !fanGroupEntry.includes("Joined")) errors.push("women team profile: Fan Group entry is missing or not joined: " + fanGroupEntry);
+      }
       if (requestedPath === "/fan-feed") {
         await page.locator("main.hc-fan-feed-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
         const teamHeading = (await page.locator("main.hc-fan-feed-page .hc-feed-hero h1").innerText()).trim();
