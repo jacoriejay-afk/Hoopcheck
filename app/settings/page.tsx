@@ -46,7 +46,7 @@ export default function SettingsPage() {
       const [{ data: profile }, { data: prefs }, { data: teamsData }, { data: affiliationsData }] = await Promise.all([
         supabase.from("profiles").select("theme_preference,preferred_language,account_type").eq("id", user.id).maybeSingle(),
         supabase.from("user_preferences").select("notifications_enabled").eq("user_id", user.id).maybeSingle(),
-        supabase.from("teams").select("id,name,country,league_name").eq("active", true).order("name").limit(1000),
+        supabase.from("teams").select("id,name,country,league_name").or("basketball_type.eq.mens,source.eq.womens_teams_mirror").eq("active", true).order("name").limit(1000),
         supabase.from("player_team_affiliations").select("id,team_id,relationship,verified").eq("user_id", user.id),
       ]);
       if (!active) return;
