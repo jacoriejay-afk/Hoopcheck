@@ -151,7 +151,8 @@ for (const [label, page] of [["coach", coachProfile], ["league", leagueProfile]]
   assert.equal((page.match(/<ReviewMembershipGate/g) || []).length, 1, label + " must render exactly one shared review gate");
 }
 assert.match(menProfile, /accountType !== "fan"/, "fan profiles must not render the team Pay tab");
-assert.match(menProfile, /accountType\) \? <Link href="\/team-dashboard"/, "Team Portal must be role-gated");
+assert.match(menProfile, /\["coach", "manager", "club_admin", "admin"\]\.includes\(accountType\)/, "Team Portal must be role-gated");
+assert.match(menProfile, /href="\/team-dashboard"/, "Team Portal link must remain present for managers");
 assert.match(payApi, /entitlements\.canViewTeamPayHistory/, "payment-history API must enforce the shared role entitlement");
 assert.match(liveChat, /from\("womens_teams"\)/, "Live Game Chat must resolve women's teams");
 assert.match(liveChat, /opponent_team_id/, "Live Game Chat must resolve both fixture sides");
