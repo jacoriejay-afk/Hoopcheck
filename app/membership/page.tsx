@@ -14,6 +14,7 @@ type BillingInterval = "month" | "6_month" | "year";
 type Subscription = {
   plan: Plan;
   status: string;
+  access_status?: string | null;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   stripe_subscription_id: string | null;
@@ -58,7 +59,7 @@ function MembershipContent() {
 
     const { data, error } = await supabase
       .from("subscriptions")
-      .select("plan, status, current_period_end, cancel_at_period_end, stripe_subscription_id")
+      .select("plan, status, access_status, current_period_end, cancel_at_period_end, stripe_subscription_id")
       .eq("user_id", user.id)
       .maybeSingle();
 
