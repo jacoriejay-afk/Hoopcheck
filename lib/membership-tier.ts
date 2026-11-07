@@ -18,6 +18,9 @@ export type HoopCheckEntitlements = {
   canUseProPassport: boolean;
   canUsePayOnTimeIndex: boolean;
   canViewTeamPayHistory: boolean;
+  canSubmitPayCheckIn: boolean;
+  canUseFanGroups: boolean;
+  canModerateFanGroups: boolean;
 };
 
 
@@ -73,6 +76,7 @@ export function getHoopCheckEntitlements(args: {
   accountType: HoopCheckAccountType | null | undefined;
   subscription?: ActiveMembership | null;
   isAdmin?: boolean;
+  playerVerified?: boolean;
   now?: number;
 }): HoopCheckEntitlements {
   const role = args.accountType || "";
@@ -102,5 +106,8 @@ export function getHoopCheckEntitlements(args: {
       (isPlayer && isAtLeastTier(tier, "premium")),
     canUsePayOnTimeIndex: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) || (otherMember && active),
     canViewTeamPayHistory: Boolean(role) && !isFan,
+    canSubmitPayCheckIn: isPlayer && args.playerVerified === true && isAtLeastTier(tier, "pro"),
+    canUseFanGroups: isFan,
+    canModerateFanGroups: isAdmin || role === "club_admin",
   };
 }
