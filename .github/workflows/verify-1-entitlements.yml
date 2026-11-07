@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "lib/membership-tier.ts"
+      - "app/**"
+      - "components/**"
       - "scripts/test-membership-tier.mjs"
       - "package.json"
       - "package-lock.json"
