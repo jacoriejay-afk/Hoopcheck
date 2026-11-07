@@ -46,7 +46,7 @@ export default function PlayersPage() {
         if (!user) { if (active) setRoleReady(true); return; }
         const { data: profile, error } = await supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
         if (!active) return;
-        if (error || profile?.account_type === "fan") { window.location.replace("/dashboard"); return; }
+        if (error || !profile || profile.account_type === "fan") { window.location.replace("/dashboard"); return; }
         setRoleReady(true);
       } catch {
         if (active) window.location.replace("/dashboard");
