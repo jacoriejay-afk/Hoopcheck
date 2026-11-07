@@ -45,10 +45,13 @@ export default function DashboardPage() {
   const [liveCounts,setLiveCounts] = useState<{live:number|null;upcoming:number|null}>({live:null,upcoming:null});
   const [hasFeedAccess,setHasFeedAccess] = useState(false);
   const [loading,setLoading] = useState(true);
+  const [loadError,setLoadError] = useState(false);
+  const [reloadKey,setReloadKey] = useState(0);
 
   useEffect(() => {
     let mounted = true;
     async function loadHome() {
+      if(mounted){setLoading(true);setLoadError(false);}
       const {data:{session}} = await withTimeout<any>(getCachedSession(),7000,{data:{session:null},error:new Error("session-timeout")});
       const user = session?.user;
       if (!user) { if(mounted) router.replace("/login?next=/dashboard"); return; }
@@ -101,14 +104,16 @@ export default function DashboardPage() {
       }
       if (mounted) setLoading(false);
     }
-    loadHome().catch((error)=>{console.error("Unable to load HoopCheck home:",error);if(mounted)setLoading(false);});
+    loadHome().catch((error)=>{console.error("Unable to load HoopCheck home:",error);if(mounted){setLoadError(true);setLoading(false);}});
     return ()=>{mounted=false;};
-  },[router,basketballSide]);
+  },[router,basketballSide,reloadKey]);
 
   const displayName = profile?.display_name || [profile?.first_name,profile?.last_name].filter(Boolean).join(" ") || email.split("@")[0] || (profile?.account_type === "fan" ? t("fan") : "Player");
   const completion = calculateProfileCompletion(profile).percentage;
 
   if(loading) return <main className="page-shell dashboard-page"><div className="page-container"><HoopLoading label={t("loadingDashboard")}/></div></main>;
+
+  if(loadError)return <main className="page-shell dashboard-page"><div className="page-container"><div role="alert" className="hc-smooth-inbox-error"><strong>Dashboard unavailable.</strong> Please try again. <button type="button" onClick={()=>setReloadKey(v=>v+1)}>Retry dashboard</button></div></div></main>;
 
   if(profile?.account_type==="fan") return (
     <main className="page-shell hc-ia-home"><div className="page-container">
