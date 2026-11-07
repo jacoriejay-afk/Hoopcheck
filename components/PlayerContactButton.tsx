@@ -3,7 +3,7 @@
 import Link from "next/link"; // Used by compact sign-in and upgrade actions.
 import { useEffect, useState } from "react";
 import { getCachedSession, supabase } from "../lib/supabase";
-import { isAtLeastTier } from "../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../lib/membership-tier";
 
 type RequestRow = { id:string; requester_id:string; player_id:string; message:string|null; status:string; created_at:string; };
 type MessageRow = { id:string; request_id:string; sender_id:string; body:string; created_at:string; };
@@ -11,7 +11,7 @@ type MessageRow = { id:string; request_id:string; sender_id:string; body:string;
 export default function PlayerContactButton({ playerId, compact = false }: { playerId:string; compact?: boolean }) {
   const [userId,setUserId]=useState("");
   const [accountType,setAccountType]=useState("");
-  const [premium,setPremium]=useState(false);
+  const [canAsk,setCanAsk]=useState(false);
   const [request,setRequest]=useState<RequestRow|null>(null);
   const [message,setMessage]=useState("");
   const [draft,setDraft]=useState("");
@@ -26,11 +26,15 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
     setUserId(user.id);
     const [profileResult,subscriptionResult,requestResult]=await Promise.all([
       supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle(),
-      supabase.from("subscriptions").select("plan,status").eq("user_id",user.id).maybeSingle(),
+      supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",user.id).maybeSingle(),
       supabase.from("player_contact_requests").select("id,requester_id,player_id,message,status,created_at").or(`requester_id.eq.${user.id},player_id.eq.${user.id}`).eq("player_id",playerId).maybeSingle()
     ]);
     setAccountType(profileResult.data?.account_type||"");
-    setPremium(isAtLeastTier(subscriptionResult.data?.plan, "pro") && (subscriptionResult.data?.status==="active" || subscriptionResult.data?.status==="trialing"));
+    const entitlements = getHoopCheckEntitlements({
+      accountType: profileResult.data?.account_type,
+      subscription: subscriptionResult.data,
+    });
+    setCanAsk(entitlements.canUseAskPlayer);
     const r=requestResult.data as RequestRow|null;
     setRequest(r);
     if(r?.status==="accepted"){
@@ -93,10 +97,10 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
     if (request?.status === "pending" && request.player_id === userId) {
       return <span className="contact-gate hc-contact-request-gate" style={{ display: "inline-flex", alignItems: "center", margin: 0, padding: "8px 12px" }}><strong>Request waiting</strong></span>;
     }
-    if (accountType === "player" && !premium) {
+    if (accountType === "player" && !canAsk) {
       return <Link href="/membership" className="btn">Upgrade to Add</Link>;
     }
-    if ((accountType === "player" || accountType === "scout" || accountType === "agent") && premium) {
+    if ((accountType === "player" || accountType === "scout" || accountType === "agent") && canAsk) {
       return <button className="btn" onClick={() => void sendRequest()} disabled={busy}>{busy ? "Adding..." : "Add Player"}</button>;
     }
     return null;
