@@ -55,7 +55,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
     let active = true;
     void Promise.all([
       supabase.from("player_career_stops").select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public").eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true}),
-      supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(500),
+      supabase.from("teams").select("id,name,country,league_name").or("basketball_type.eq.mens,source.eq.womens_teams_mirror").eq("active",true).order("name").limit(500),
     ]).then(([stopResult,teamResult]) => {
       if(!active) return;
       if(!stopResult.error) setStops((stopResult.data||[]) as CareerStop[]);
