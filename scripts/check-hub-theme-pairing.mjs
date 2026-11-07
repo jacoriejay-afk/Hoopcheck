@@ -88,6 +88,7 @@ if (!fanFeedPage.includes('ft("feedExplainer")') ||
 if (fanFeedPage.includes('from("fan_feed_posts")') ||
     !fanFeedPage.includes('from("team_fan_group_posts")') ||
     !fanFeedPage.includes('from("team_fan_group_members")') ||
+    !fanFeedPage.includes('from("team_fan_group_moderators")') ||
     !fanFeedPage.includes('basketballSide === "womens"') ||
     !fanFeedPage.includes("FanBasketballSideSwitch") ||
     fanFeedPage.includes('from("fan_feed_posts")') ||
@@ -99,7 +100,8 @@ if (fanFeedPage.includes('from("fan_feed_posts")') ||
     !fanGroupPage.includes("Be the first to post") ||
     !fanTeamPosts.includes('from("team_fan_group_posts")') ||
     fanTeamPosts.includes('rpc("get_fan_team_hub_posts"') ||
-    !fanTeamPosts.includes('from("team_fan_group_members")')) {
+    !fanTeamPosts.includes('from("team_fan_group_members")') ||
+    !fanTeamPosts.includes('from("team_fan_group_moderators")')) {
   failures.push("Fan HQ must use member-visible club Fan Group posts and the shared locked group composer; fans must see FAN HQ in bottom navigation.");
 }
 
