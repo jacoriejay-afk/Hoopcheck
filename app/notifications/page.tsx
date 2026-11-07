@@ -34,7 +34,7 @@ export default function NotificationsPage(){
         setItems(data||[]);
       }catch(error){
         console.error("Unable to load HoopCheck alerts:",error);
-        if(active){setErrorMessage("Alerts could not be loaded. Please try again.");setLoadFailed(true);}
+        if(active){setItems([]);setErrorMessage("Alerts could not be loaded. Please try again.");setLoadFailed(true);}
       }finally{if(active)setLoading(false);}
     }
     void loadAlerts();
