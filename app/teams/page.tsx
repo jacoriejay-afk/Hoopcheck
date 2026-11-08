@@ -8,7 +8,6 @@ import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import "../hoopcheck-reference-team-list.css";
 
 import Link from "next/link";
-import DirectoryLayout from "../../components/DirectoryLayout";
 
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
@@ -289,13 +288,12 @@ export default function TeamsPage() {
   return (
     <main className="hc-team-directory-page hc-directory-refresh">
       <FanBasketballSideSwitch lockedHint />
-      <DirectoryLayout current="teams" />
-      <div className="hc-directory-quicklinks"><a href="#team-results">Browse teams</a><a href="#request-team">Request a team</a></div>
+      <div className="hc-directory-compact-head"><h1>{t("mensTeams")}</h1><a href="#request-team">{t("directoryRequest")}</a></div>
 
       <section className="hero">
         <Surface as="div" className="research-search">
           <div className="search-label">{t("directoryTitle")}</div>
-          <SearchBar value={query} onChange={(value) => { setQuery(value); setPage(0); }} placeholder={t("searchPeoplePlaceholder")} ariaLabel={t("directoryTitle")} onSubmit={(value) => { setQuery(value); setPage(0); }} />
+          <SearchBar value={query} onChange={(value) => { setQuery(value); setPage(0); }} placeholder="Search teams, countries or leagues" ariaLabel={t("directoryTitle")} onSubmit={(value) => { setQuery(value); setPage(0); }} />
           <div className="team-filter-row">
             <select value={continent} onChange={(e) => { setContinent(e.target.value); setCountry(""); setPage(0); }} aria-label={t("filterTeamsByContinent")}>
               <option value="">{t("allContinents")}</option>
