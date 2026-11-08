@@ -52,9 +52,27 @@ export default function DashboardPage() {
     let mounted = true;
     async function loadHome() {
       if(mounted){setLoading(true);setLoadError(false);}
-      const {data:{session}} = await withTimeout<any>(getCachedSession(),7000,{data:{session:null},error:new Error("session-timeout")});
-      const user = session?.user;
-      if (!user) { if(mounted) router.replace("/login?next=/dashboard"); return; }
+      // A slow session lookup is not proof that the user signed out.
+      // Recheck the browser auth state before redirecting to login.
+      let sessionResult = await withTimeout<any>(
+        getCachedSession(), 7000,
+        { data: { session: null }, error: new Error("session-timeout") }
+      );
+      if (sessionResult.error || !sessionResult.data?.session) {
+        sessionResult = await withTimeout<any>(
+          supabase.auth.getSession(), 10000,
+          { data: { session: null }, error: new Error("session-timeout") }
+        );
+      }
+      if (!mounted) return;
+      if (sessionResult.error) {
+        console.error("Dashboard session check failed:", sessionResult.error);
+        setLoadError(true);
+        setLoading(false);
+        return;
+      }
+      const user = sessionResult.data?.session?.user;
+      if (!user) { router.replace("/login?returnTo=/dashboard"); return; }
       if (!mounted) return;
       setEmail(user.email||"");
 
