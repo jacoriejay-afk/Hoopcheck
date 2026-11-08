@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import Logo from "../../components/Logo";
 import { supabase } from "../../lib/supabase";
@@ -12,6 +12,11 @@ export default function LoginPage() {
   const [messageIsSuccess, setMessageIsSuccess] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [returnTo, setReturnTo] = useState("");
+  useEffect(() => {
+    const candidate = new URLSearchParams(window.location.search).get("returnTo") || "";
+    if (candidate.startsWith("/") && !candidate.startsWith("//") && !candidate.includes("\\\\") && !candidate.includes("\\") && !candidate.startsWith("/login")) setReturnTo(candidate);
+  }, []);
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,7 +59,7 @@ export default function LoginPage() {
       setMessage("Login successful! Your account is working. Opening your HoopCheck workspace…");
       setMessageIsSuccess(true);
       window.setTimeout(() => {
-        window.location.replace(needsOnboarding ? "/onboarding" : "/dashboard");
+        window.location.replace(needsOnboarding ? (returnTo ? "/onboarding?returnTo=" + encodeURIComponent(returnTo) : "/onboarding") : (returnTo || "/dashboard"));
       }, 900);
     } catch (error) {
       console.error("Login failed:", error);
