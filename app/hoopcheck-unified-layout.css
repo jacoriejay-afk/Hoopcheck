@@ -1,0 +1,98 @@
+/* Unified visual contract. Imported after the legacy styles so every route shares
+   consistent mobile gutters, panel borders, radii and vertical rhythm. */
+:root { --hc-unified-radius:16px; --hc-unified-gap:12px; }
+.hc-global-page-shell .hc-route-transition { min-width:0; width:100%; }
+.hc-global-page-shell .hc-route-transition > main { box-sizing:border-box; margin-block-start:0!important; }
+.hc-global-page-shell .hc-route-transition > main.page-shell { padding-block-start:12px!important; }
+.hc-global-page-shell .hc-route-transition > main :where(.hero,.hero-card,.dashboard-card,.card,.hc-layout-card,.hc-layout-group,.hc-settings-group) { box-shadow:none!important; }
+.hc-global-page-shell .hc-route-transition > main :where(.hero-card,.dashboard-card,.card,.hc-layout-card,.hc-layout-group,.hc-settings-group) {
+  border-radius:var(--hc-unified-radius)!important;
+  border-width:1px!important;
+  border-style:solid!important;
+  border-color:var(--hc-border,var(--border,#dedede))!important;
+  max-width:100%;
+  min-width:0;
+}
+.hc-global-page-shell .hc-route-transition > main :where(.hero-card,.dashboard-card,.card,.hc-layout-card,.hc-layout-group,.hc-settings-group)
+  :where(.hero-card,.dashboard-card,.card,.hc-layout-card,.hc-layout-group,.hc-settings-group,.research-search) {
+  border:0!important; box-shadow:none!important; background:transparent!important; border-radius:0!important;
+  margin-inline:0!important;
+}
+.hc-global-page-shell .hc-route-transition > main :where(.hero,.hero-card,.dashboard-card,.hc-layout-card,.hc-layout-group,.hc-settings-group) + :where(.hero,.hero-card,.dashboard-card,.hc-layout-card,.hc-layout-group,.hc-settings-group) {
+  margin-block-start:var(--hc-unified-gap)!important;
+}
+.hc-global-page-shell .hc-route-transition > main :where(input,textarea,select,button,a) { max-width:100%; }
+html.theme-light .hc-global-page-shell .hc-route-transition > main { --hc-unified-panel:#fff; }
+html.theme-dark .hc-global-page-shell .hc-route-transition > main { --hc-unified-panel:#171717; }
+@media(max-width:767px) {
+  .hc-global-page-shell .hc-route-transition > main { padding-block-start:8px!important; }
+  .hc-global-page-shell .hc-route-transition > main.page-shell { padding-block-start:8px!important; }
+  .hc-global-page-shell .hc-route-transition > main :where(.hero,.hero-card,.dashboard-card,.hc-layout-card,.hc-layout-group) { margin-block-end:0!important; }
+  .hc-global-page-shell .hc-route-transition > main .page-container > * + * { margin-block-start:var(--hc-unified-gap)!important; }
+  .hc-global-page-shell .hc-route-transition > main :where(.grid,.hc-feed-stream) { gap:var(--hc-unified-gap)!important; }
+  .hc-global-page-shell .hc-route-transition > main :where(.hero-card,.dashboard-card,.card,.hc-layout-card,.hc-layout-group,.hc-settings-group) { border-radius:14px!important; }
+}
+/* Team directory: one filter panel, not a card inside a card with a court overlay. */
+.hc-global-page-shell main.hc-directory-refresh > .hero:has(.research-search) {
+  padding:0!important;margin:0 0 10px!important;border:0!important;
+  background:transparent!important;min-height:0!important;
+}
+.hc-global-page-shell main.hc-directory-refresh > .hero:has(.research-search)::before,
+.hc-global-page-shell main.hc-directory-refresh > .hero:has(.research-search)::after,
+.hc-global-page-shell main.hc-directory-refresh .research-search::before,
+.hc-global-page-shell main.hc-directory-refresh .research-search::after { display:none!important;content:none!important; }
+.hc-global-page-shell main.hc-directory-refresh .research-search {
+  padding:12px!important;margin:0!important;
+  border:1px solid var(--hc-border,var(--border,#ddd))!important;
+  border-radius:14px!important;
+  background:var(--hc-unified-panel)!important;
+  box-shadow:none!important;
+}
+.hc-global-page-shell main.hc-directory-refresh .research-search .hc-searchbar {
+  display:flex!important;align-items:center!important;gap:8px!important;
+  padding:0!important;margin:0 0 10px!important;
+  border:0!important;border-radius:0!important;background:transparent!important;
+  box-shadow:none!important;
+}
+.hc-global-page-shell main.hc-directory-refresh .research-search .hc-searchbar__input {
+  min-width:0!important;flex:1!important;width:100%!important;
+  min-height:44px!important;border:1px solid var(--hc-border,#ccc)!important;
+  border-radius:10px!important;padding:10px 12px!important;
+  background:var(--hc-unified-panel)!important;
+  color:var(--hc-foreground,inherit)!important;
+}
+.hc-global-page-shell main.hc-directory-refresh .research-search .hc-searchbar__icon { position:static!important;flex:0 0 20px!important;width:20px!important;height:20px!important; }
+.hc-global-page-shell main.hc-directory-refresh .research-search .hc-searchbar__submit {display:none!important}
+.hc-global-page-shell main.hc-directory-refresh .research-search .team-filter-row {
+  margin:0!important;padding:0!important;display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;border:0!important;background:transparent!important;box-shadow:none!important;
+}
+.hc-global-page-shell main.hc-directory-refresh .research-search .team-filter-row select {
+  width:100%!important;min-width:0!important;min-height:42px!important;
+  border:1px solid var(--hc-border,#ccc)!important;border-radius:10px!important;
+  background:var(--hc-unified-panel)!important;color:var(--hc-foreground,inherit)!important;
+  font-size:13px!important;padding:8px!important;
+}
+.hc-global-page-shell main.hc-directory-refresh .hc-directory-summary {
+  margin:6px 0!important;padding:6px 4px!important;
+  border:0!important;background:transparent!important;box-shadow:none!important;
+}
+.hc-global-page-shell main.hc-directory-refresh .hc-directory-view-toggle {
+  margin:0 0 8px!important;padding:0!important;border:0!important;background:transparent!important;
+}
+.hc-global-page-shell main.hc-directory-refresh .hc-team-directory-list {padding:0!important;margin:0!important}
+.hc-global-page-shell main.hc-directory-refresh .hc-directory-compact-head h1 {
+  font-size:clamp(22px,5vw,30px)!important;line-height:1.15!important;
+}
+.hc-global-page-shell main.hc-directory-refresh .hc-directory-compact-head a {font-size:12px!important}
+@media(max-width:767px) {
+  .hc-global-page-shell main.hc-directory-refresh .hc-directory-compact-head {padding:0!important;margin:4px 0 10px!important}
+  .hc-global-page-shell main.hc-directory-refresh > .hc-fan-side-switch-wrap {margin:0 0 10px!important}
+  .hc-global-page-shell main.hc-directory-refresh .research-search {padding:12px!important}
+  .hc-global-page-shell main.hc-directory-refresh .research-search .hc-searchbar__input {font-size:15px!important}
+  .hc-global-page-shell main.hc-directory-refresh .hc-team-directory-list {gap:8px!important}
+}
+/* Account completion anchors remain visible beneath sticky UI. */
+.hc-account-page [id^="profile-editor-field-"],
+.hc-account-page #profile-editor { scroll-margin-top:110px; }
