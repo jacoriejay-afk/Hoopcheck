@@ -100,18 +100,17 @@ export default function LoginPage() {
   return (
     <main className="hc-auth-page">
 <section className="hero hc-auth-hero" style={{ paddingBottom: "30px" }}>
-        <div className="eyebrow">PLAYER ACCESS</div>
+        <div className="eyebrow">HOOPCHECK ACCOUNT ACCESS</div>
         <h1>Welcome back.</h1>
         <p>
-          Log in to research coaches, teams, leagues, and player experiences
-          around the world.
+          Sign in to your HoopCheck account to explore teams, coaches, leagues, player experiences, and fan communities around the world.
         </p>
       </section>
 
       <section className="hc-auth-form-section" style={{ maxWidth: "520px", margin: "0 auto", padding: "20px 6% 100px" }}>
         <div className="form hc-auth-card">
           <Link href="/" className="hc-auth-logo" aria-label="HoopCheck home"><Logo variant="full" size={44} /></Link>
-          <div className="eyebrow">Player Login</div>
+          <div className="eyebrow">Account Login</div>
           <h2 style={{ fontSize: "30px", letterSpacing: "-1px", marginTop: 0 }}>
             Sign in to HoopCheck
           </h2>
@@ -160,7 +159,7 @@ export default function LoginPage() {
         <div className="card">
           <div className="eyebrow">HoopCheck</div>
           <h2>Research before<br />you commit.</h2>
-          <p>Your next overseas opportunity can change your career. Get more information before you sign.</p>
+          <p>Explore basketball communities and make informed decisions, whether you’re a player, fan, coach, or club representative.</p>
           <div className="actions">
             <Link href="/signup" className="btn">Create Free Account</Link>
           </div>
