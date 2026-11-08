@@ -123,7 +123,8 @@ export default function SignupPage() {
             <div><label htmlFor="first-name">First Name</label><input id="first-name" value={firstName} onChange={e=>setFirstName(e.target.value)} autoComplete="given-name" required /></div>
             <div><label htmlFor="last-name">Last Name</label><input id="last-name" value={lastName} onChange={e=>setLastName(e.target.value)} autoComplete="family-name" required /></div>
           </div>
-          <label htmlFor="username">Username</label><input id="username" value={username} onChange={e=>setUsername(e.target.value.replace(/\s+/g,"").toLowerCase())} autoComplete="username" inputMode="text" placeholder="yourname" required />
+          <label htmlFor="username">Username</label><input id="username" name="username" value={username} onChange={e=>setUsername(e.target.value.replace(/\s+/g,"").toLowerCase())} autoComplete="username" autoCapitalize="none" spellCheck={false} inputMode="text" placeholder="yourname" minLength={3} maxLength={20} pattern="[a-zA-Z0-9_]{3,20}" aria-invalid={Boolean(username && !/^[a-zA-Z0-9_]{3,20}$/.test(username))} aria-describedby="username-help" required />
+          <p id="username-help" className="muted" role={username && !/^[a-zA-Z0-9_]{3,20}$/.test(username) ? "alert" : undefined}>{username && !/^[a-zA-Z0-9_]{3,20}$/.test(username) ? "Username must be 3–20 characters using only letters, numbers, or underscores." : "3–20 characters · letters, numbers, and underscores only."}</p>
 
           {isPlayer ? <>
             <div className="signup-two-col">
