@@ -304,3 +304,70 @@ html body .hc-global-page-shell main.page-shell { padding-block-start:12px !impo
     padding-inline: 16px !important;
   }
 }
+
+
+/* PROFILE-UNIFY: shared visual rhythm across men's clubs, women's clubs,
+   coaches and leagues. This is presentation-only: keep distinct content,
+   account gates, follow/watch controls and review permissions intact. */
+:where(main.hc-team-entity-profile,main.hc-coach-entity-profile,main.hc-league-entity-profile,main.hc-womens-profile-page) {
+  --hc-profile-radius:16px;
+  --hc-profile-gap:clamp(12px,1.7vw,20px);
+  min-width:0;
+}
+:where(main.hc-team-entity-profile,main.hc-coach-entity-profile,main.hc-league-entity-profile) > :where(section,article,nav,div),
+main.hc-womens-profile-page > .page-container > :where(section,article,nav,div) {
+  box-sizing:border-box;
+  min-width:0;
+  max-width:100%;
+}
+:where(main.hc-team-entity-profile,main.hc-coach-entity-profile,main.hc-league-entity-profile) > .hero:first-of-type,
+main.hc-womens-profile-page .hero-card.hc-social-profile-header {
+  border-radius:var(--hc-profile-radius) !important;
+  border:1px solid var(--hc-border,#444) !important;
+  border-top:3px solid var(--hc-orange,#ff5a1f) !important;
+  box-shadow:none !important;
+  padding:clamp(18px,2.5vw,30px) !important;
+  min-width:0;
+}
+:where(main.hc-team-entity-profile,main.hc-coach-entity-profile,main.hc-league-entity-profile) > .hero:first-of-type h1,
+main.hc-womens-profile-page .hero-card.hc-social-profile-header h1 {
+  font-size:clamp(25px,3.2vw,42px) !important;
+  line-height:1.14 !important;
+  letter-spacing:-.025em;
+  overflow-wrap:anywhere;
+}
+:where(main.hc-team-entity-profile,main.hc-coach-entity-profile,main.hc-league-entity-profile) > :where(.hero,.card),
+main.hc-womens-profile-page .page-container > :where(.hero-card,.card) {
+  border-radius:var(--hc-profile-radius);
+  box-shadow:none;
+}
+:where(main.hc-team-entity-profile,main.hc-coach-entity-profile,main.hc-league-entity-profile) :where(.entity-actions,.actions),
+main.hc-womens-profile-page :where(.entity-actions,.actions) {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:10px;
+}
+:where(main.hc-team-entity-profile,main.hc-coach-entity-profile,main.hc-league-entity-profile) :where(.hc-profile-directory-switcher,.hc-team-profile-nav),
+main.hc-womens-profile-page .hc-profile-directory-switcher {
+  max-width:100%;
+  min-width:0;
+  overflow-x:auto;
+  scrollbar-width:thin;
+}
+html.theme-dark :where(main.hc-coach-entity-profile,main.hc-league-entity-profile) > .hero:first-of-type,
+html.theme-dark main.hc-womens-profile-page .hero-card.hc-social-profile-header {
+  color:var(--hc-foreground,#f7f7f5);
+  border-color:var(--hc-border,#444) !important;
+}
+html.theme-light :where(main.hc-coach-entity-profile,main.hc-league-entity-profile) > .hero:first-of-type,
+html.theme-light main.hc-womens-profile-page .hero-card.hc-social-profile-header {
+  color:var(--hc-foreground,#171717);
+  border-color:var(--hc-border,#dedede) !important;
+}
+@media(max-width:700px) {
+  :where(main.hc-team-entity-profile,main.hc-coach-entity-profile,main.hc-league-entity-profile) > .hero:first-of-type,
+  main.hc-womens-profile-page .hero-card.hc-social-profile-header {
+    padding:18px 14px !important;
+  }
+}
