@@ -18,7 +18,7 @@ export default function ChooseUsernamePage() {
   useEffect(() => {
     let active = true;
     const requestedNext = new URLSearchParams(window.location.search).get("next") || "/dashboard";
-    setSafeNext(requestedNext.startsWith("/") && !requestedNext.startsWith("//") ? requestedNext : "/dashboard");
+    setSafeNext(requestedNext.startsWith("/") && !requestedNext.startsWith("//") && !requestedNext.includes("\\") && !requestedNext.startsWith("/login") ? requestedNext : "/dashboard");
     void supabase.auth.getUser().then(({ data }) => {
       if (!active) return;
       if (!data.user) router.replace("/login");
