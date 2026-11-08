@@ -95,6 +95,7 @@ export default function DashboardPage() {
 
       // Show the dashboard immediately; the remaining panels are best-effort enhancements.
       setLoading(false);
+      try {
       if (followedIds.length) {
         const teamResult = basketballSide === "womens"
           ? await supabase.from("womens_teams").select("id,name,country,league_name").in("id",followedIds).limit(100)
@@ -129,9 +130,12 @@ export default function DashboardPage() {
         const now = Date.now();
         if (mounted && !gamesError) setLiveCounts({live:(games||[]).filter((g:any)=>g.status==="live").length,upcoming:(games||[]).filter((g:any)=>g.status==="scheduled" && (!g.scheduled_at || new Date(g.scheduled_at).getTime()>=now)).length});
       }
+      } catch (error) {
+        console.error("Optional dashboard panels failed:", error);
+      }
       if (mounted) setLoading(false);
     }
-    loadHome().catch((error)=>{console.error("Unable to load HoopCheck home:",error);if(mounted){setLoadError(false);setLoading(false);}});
+    loadHome().catch((error)=>{console.error("Unable to load HoopCheck home:",error);if(mounted){setLoadError(true);setLoading(false);}});
     return ()=>{mounted=false;};
   },[router,basketballSide,reloadKey]);
 
