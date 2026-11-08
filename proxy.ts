@@ -68,6 +68,9 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/teams/:id/review",
+    "/coaches/:id/review",
+    "/leagues/:id/review",
     "/dashboard/:path*",
     "/settings/:path*",
     "/profile/:path*",
