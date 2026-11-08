@@ -36,6 +36,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [isFan, setIsFan] = useState(false);
   const [isModerator, setIsModerator] = useState(false);
+  const [actualMember, setActualMember] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const load = useCallback(async () => {
@@ -44,17 +45,20 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
       supabase.rpc("get_team_fan_group_summary", { p_team_id: teamId })
     ]);
     if (user) {
-      const [{ data: profile }, { data: moderators }, { data: platformAdmin }] = await Promise.all([
+      const [{ data: profile }, { data: moderators }, { data: platformAdmin }, { data: membership }] = await Promise.all([
         supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
         supabase.from("team_fan_group_moderators").select("user_id,moderator_type").eq("team_id", teamId),
-        supabase.rpc("is_current_user_admin_or_moderator")
+        supabase.rpc("is_current_user_admin_or_moderator"),
+        supabase.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle()
       ]);
+      setActualMember(Boolean(membership));
       setIsFan(profile?.account_type === "fan");
       setIsModerator(Boolean((moderators || []).some((m: any) => m.user_id === user.id) ||
         ((moderators || []).some((m: any) => m.moderator_type === "platform") && platformAdmin === true)));
     } else {
       setIsFan(false);
       setIsModerator(false);
+      setActualMember(false);
     }
     const row = Array.isArray(rows) ? rows[0] : rows;
     setSummary(row || null);
@@ -80,7 +84,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
         return;
       }
       await load();
-      setMessage(result.requested ? labels.requestSent : labels.joinedMessage);
+      setMessage(labels.joinedMessage);
     } catch {
       setMessage(labels.failed);
     } finally {
@@ -89,10 +93,13 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
   }
   if ((!isFan && !isModerator) || !summary) return null;
   return <section className="hc-team-fan-group-entry">
-    <div><p className="eyebrow">{labels.kicker}</p><h2>{summary.group_name}</h2><p className="muted">{formatNumber(Number(summary.member_count || 0))} {labels.members} · {summary.join_mode === "open" ? labels.open : labels.approval}</p></div>
-    {isModerator ? <Link className="btn" href={"/team-hub/groups/" + teamId}>{labels.moderatorOpen}</Link> : isFan && (summary.is_member
-      ? <Link className="btn" href={"/team-hub/groups/" + teamId}>{labels.joinedOpen}</Link>
-      : <button className="btn" type="button" disabled={busy || summary.has_pending_request} onClick={() => void join()}>{busy ? labels.wait : summary.has_pending_request ? labels.pending : labels.join}</button>)}
+    <div><p className="eyebrow">{labels.kicker}</p><h2>{summary.group_name}</h2><p className="muted">{formatNumber(Number(summary.member_count || 0))} {labels.members} · {labels.open}</p></div>
+    <div className="hc-fan-group-actions">
+      {isFan && (actualMember
+        ? <Link className="btn" href={"/team-hub/groups/" + teamId}>{labels.joinedOpen}</Link>
+        : <button className="btn" type="button" disabled={busy} onClick={() => void join()}>{busy ? labels.wait : labels.join}</button>)}
+      {isModerator && <Link className="btn hc-fan-group-moderator-link" href={"/team-hub/groups/" + teamId}>{labels.moderatorOpen}</Link>}
+    </div>
     {message && <p className="hc-feed-message" role="status">{message}</p>}
   </section>;
 }
