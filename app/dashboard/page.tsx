@@ -46,27 +46,39 @@ export default function DashboardPage() {
   const [hasFeedAccess,setHasFeedAccess] = useState(false);
   const [loading,setLoading] = useState(true);
   const [loadError,setLoadError] = useState(false);
+  const [authErrorDetail,setAuthErrorDetail] = useState("");
   const [reloadKey,setReloadKey] = useState(0);
 
   useEffect(() => {
     let mounted = true;
     async function loadHome() {
-      if(mounted){setLoading(true);setLoadError(false);}
-      // A slow session lookup is not proof that the user signed out.
-      // Recheck the browser auth state before redirecting to login.
-      let sessionResult = await withTimeout<any>(
-        getCachedSession(), 7000,
-        { data: { session: null }, error: new Error("session-timeout") }
-      );
-      if (sessionResult.error || !sessionResult.data?.session) {
-        sessionResult = await withTimeout<any>(
-          supabase.auth.getSession(), 10000,
-          { data: { session: null }, error: new Error("session-timeout") }
-        );
+      if(mounted){setLoading(true);setLoadError(false);setAuthErrorDetail("");}
+      // Capture auth events as well as session reads. Some browsers can stall a
+      // getSession call during token refresh even after SIGNED_IN has fired.
+      let resolveAuthEvent: (session: any) => void = () => {};
+      const authEvent = new Promise<any>((resolve) => { resolveAuthEvent = resolve; });
+      const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+        if (session?.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED")) {
+          resolveAuthEvent({ data: { session }, error: null });
+        }
+      });
+      const timeoutResult = { data: { session: null }, error: new Error("session-timeout") };
+      let sessionResult: any;
+      try {
+        sessionResult = await Promise.race([
+          Promise.resolve(getCachedSession()).then(result => result?.data?.session ? result : authEvent),
+          authEvent,
+          new Promise(resolve => setTimeout(() => resolve(timeoutResult), 12000))
+        ]);
+      } catch (error) {
+        sessionResult = { data: { session: null }, error };
+      } finally {
+        authListener.subscription.unsubscribe();
       }
       if (!mounted) return;
       if (sessionResult.error) {
         console.error("Dashboard session check failed:", sessionResult.error);
+        setAuthErrorDetail(sessionResult.error?.message === "session-timeout" ? "Your browser did not finish restoring the login session." : "The authentication session could not be restored.");
         setLoadError(true);
         setLoading(false);
         return;
@@ -144,7 +156,7 @@ export default function DashboardPage() {
 
   if(loading) return <main className="page-shell dashboard-page"><div className="page-container"><HoopLoading label={t("loadingDashboard")}/></div></main>;
 
-  if(loadError)return <main className="page-shell dashboard-page"><div className="page-container"><div role="alert" className="hc-smooth-inbox-error"><strong>Dashboard unavailable.</strong> Please try again. <button type="button" onClick={()=>setReloadKey(v=>v+1)}>Retry dashboard</button></div></div></main>;
+  if(loadError)return <main className="page-shell dashboard-page"><div className="page-container"><div role="alert" className="hc-smooth-inbox-error"><strong>Dashboard unavailable.</strong> {authErrorDetail || "Please try again."}  <button type="button" onClick={()=>setReloadKey(v=>v+1)}>Retry dashboard</button></div></div></main>;
 
   if(profile?.account_type==="fan") return (
     <main className="page-shell hc-ia-home hc-dashboard-compact"><div className="page-container">
