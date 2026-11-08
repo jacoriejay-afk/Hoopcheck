@@ -17,7 +17,7 @@ export default function MembershipComparison({ audience, currentTier, billingTer
         <p className="price"><strong>{tier==="free"?"Free":PLAN_PRICES[tier][billingTerm]}</strong> {tier!=="free" && <span>{BILLING_LABELS[billingTerm]}</span>}</p>
         {tier === "premium" && <p className="hc-plan-difference" style={{fontWeight:700,fontSize:13}}>{premiumExclusive.length ? "Includes Pro features, plus Premium benefits below" : "Includes all Pro features · Premium-only benefits not yet configured"}</p>}
         <ul style={{listStyle:"none",padding:0}}>
-          {(tier === "premium" && !blockedFeature ? perks.filter(p => p.minimum === "premium") : perks).map(perk => { const included=isAtLeastTier(tier,perk.minimum);const newlyIncluded=included&&!isAtLeastTier(currentTier,perk.minimum);
+          {perks.map(perk => { const included=isAtLeastTier(tier,perk.minimum);const newlyIncluded=included&&!isAtLeastTier(currentTier,perk.minimum);
             return <li key={perk.label} style={{display:"flex",gap:8,padding:"9px 0",borderBottom:"1px solid var(--hc-border, #7773)",fontWeight:newlyIncluded?700:400}}>
               <span aria-label={included?"Included":"Not included"}>{included?"✓":"—"}</span><span>{perk.label}</span>
             </li>;
