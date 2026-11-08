@@ -212,7 +212,7 @@ html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile
   font-weight:800;
 }
 html.theme-light .hc-team-entity-profile .hc-team-profile-overview-grid > * {
-  background:#fff;
+  background:var(--hc-surface,#fafafa);
   color:#171717;
   border-color:#dedbd5;
 }
