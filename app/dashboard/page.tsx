@@ -116,7 +116,7 @@ export default function DashboardPage() {
   if(loadError)return <main className="page-shell dashboard-page"><div className="page-container"><div role="alert" className="hc-smooth-inbox-error"><strong>Dashboard unavailable.</strong> Please try again. <button type="button" onClick={()=>setReloadKey(v=>v+1)}>Retry dashboard</button></div></div></main>;
 
   if(profile?.account_type==="fan") return (
-    <main className="page-shell hc-ia-home"><div className="page-container">
+    <main className="page-shell hc-ia-home hc-dashboard-compact"><div className="page-container">
       <header className="hc-ia-welcome"><p className="eyebrow">{t("home.fanEyebrow")}</p><h1>{t("home.fanTitle")}<span>.</span></h1><p className="muted">{t("home.fanDescription")}</p><div className="hc-ia-identity"><span className="hc-ia-avatar">{displayName.charAt(0).toUpperCase()}</span><span><small>{t("home.signedIn")}</small><strong>{displayName}</strong></span></div></header>
       <HomePulse live={liveCounts.live} upcoming={liveCounts.upcoming} followedClubs={teams.length} fan/>
       <section className="hc-ia-section"><h2>{t("home.fanSide")}</h2><div className="hc-ia-fan-grid">
