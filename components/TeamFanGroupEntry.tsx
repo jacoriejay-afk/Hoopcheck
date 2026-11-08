@@ -83,6 +83,8 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
         setMessage(typeof result.message === "string" && result.message ? result.message : labels.failed);
         return;
       }
+      setActualMember(true);
+      setSummary(current => current ? { ...current, is_member: true, member_count: Math.max(1, Number(current.member_count || 0) + (actualMember ? 0 : 1)) } : current);
       await load();
       setMessage(labels.joinedMessage);
     } catch {
@@ -104,6 +106,8 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
       const response = await fetch("/api/fan-groups", { method: "POST", headers: { Authorization: "Bearer " + session.access_token }, body: form });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.ok) { setMessage(result.message || "Could not leave this group."); return; }
+      setActualMember(false);
+      setSummary(current => current ? { ...current, is_member: false, member_count: Math.max(0, Number(current.member_count || 0) - 1) } : current);
       await load();
       setMessage("You left the Fan Group. You can rejoin anytime.");
     } catch { setMessage("Could not leave this group. Please try again."); }
