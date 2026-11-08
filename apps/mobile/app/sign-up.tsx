@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
+import UsernameField, { type UsernameFieldHandle } from "../components/UsernameField";
 
 const TERMS_VERSION = "2026-10-01";
 const ACCOUNT_TYPES = [
   { value: "player", label: "Player" },
   { value: "coach", label: "Coach" },
+  { value: "manager", label: "Team Manager / Club" },
   { value: "scout", label: "Scout" },
   { value: "agent", label: "Agent" },
   { value: "fan", label: "Fan" },
@@ -34,6 +36,7 @@ export default function SignUpScreen() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
+  const usernameFieldRef = useRef<UsernameFieldHandle>(null);
   const [birthdate, setBirthdate] = useState("");
   const [gender, setGender] = useState("");
   const [position, setPosition] = useState("");
@@ -48,7 +51,8 @@ export default function SignUpScreen() {
     setErrorMessage("");
     if (supabaseConfigurationError) { setErrorMessage(supabaseConfigurationError); return; }
     if (firstName.trim().length < 2 || lastName.trim().length < 2) { setErrorMessage("Enter your first and last name."); return; }
-    if (!/^[a-zA-Z0-9_]{3,20}$/.test(username.trim())) { setErrorMessage("Username must be 3–20 characters using letters, numbers, or underscores."); return; }
+    const usernameCheck = await usernameFieldRef.current?.validate();
+    if (!usernameCheck?.valid) { setErrorMessage("Username: " + (usernameCheck?.message || "Choose an available username.")); usernameFieldRef.current?.focus(); return; }
     if (!validBirthdate(birthdate)) { setErrorMessage("Enter a valid birthdate in YYYY-MM-DD format."); return; }
     if (ageAtDate(birthdate) < 18) { setErrorMessage("You must be 18 or older to create a HoopCheck account."); return; }
     if (!["male", "female", "non_binary", "prefer_not_to_say"].includes(gender)) { setErrorMessage("Select a gender option."); return; }
@@ -116,8 +120,7 @@ export default function SignUpScreen() {
           <TextInput value={firstName} onChangeText={setFirstName} autoComplete="given-name" style={styles.input} placeholder="First name" />
           <Text style={styles.label}>Last name</Text>
           <TextInput value={lastName} onChangeText={setLastName} autoComplete="family-name" style={styles.input} placeholder="Last name" />
-          <Text style={styles.label}>Username</Text>
-          <TextInput value={username} onChangeText={(v) => setUsername(v.replace(/\s+/g, "").toLowerCase())} autoCapitalize="none" autoComplete="username" style={styles.input} placeholder="3–20 letters, numbers or underscores" />
+          <UsernameField ref={usernameFieldRef} value={username} onChange={setUsername} disabled={busy} />
           <Text style={styles.label}>Birthdate (YYYY-MM-DD)</Text>
           <TextInput value={birthdate} onChangeText={setBirthdate} keyboardType="numbers-and-punctuation" placeholder="1990-04-23" style={styles.input} maxLength={10} />
           <Text style={styles.hint}>Your birthdate is used to enforce HoopCheck’s 18+ account requirement.</Text>
