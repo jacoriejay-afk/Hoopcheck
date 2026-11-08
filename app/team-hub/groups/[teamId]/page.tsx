@@ -100,7 +100,18 @@ export default function TeamFanGroupPage() {
       const response = await fetch("/api/fan-groups", { method: "POST", headers: { Authorization: "Bearer " + session.access_token }, body: form });
       const result = await response.json().catch(() => ({}));
       setMessage(result.message || (response.ok && result.ok ? action === "join" ? "You joined the Fan Group." : action === "leave" ? "You left the Fan Group." : "Saved." : "That action could not be completed."));
-      if (response.ok && result.ok) await load();
+      if (response.ok && result.ok) {
+        if (action === "join" || action === "leave") {
+          const joined = action === "join";
+          setSummary(current => current ? {
+            ...current,
+            is_member: joined,
+            member_count: Math.max(0, Number(current.member_count || 0) + (joined ? (current.is_member ? 0 : 1) : (current.is_member ? -1 : 0)))
+          } : current);
+          if (!joined) { setPosts([]); setComments({}); }
+        }
+        await load();
+      }
       return result;
     } catch {
       setMessage("Connection failed. Please try again.");
