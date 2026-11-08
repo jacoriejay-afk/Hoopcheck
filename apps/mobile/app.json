@@ -22,10 +22,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.example.hoopcheck"
+      "bundleIdentifier": "online.hoopcheck.ios"
     },
     "android": {
-      "package": "com.example.hoopcheck"
+      "package": "online.hoopcheck.app"
     }
   }
 }
