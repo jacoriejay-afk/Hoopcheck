@@ -51,7 +51,7 @@ export default function CompleteProfilePage() {
 
   const loadProfile = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.replace("/login?next=/complete-profile"); setLoading(false); return; }
+    if (!user) { router.replace("/login?returnTo=/complete-profile"); setLoading(false); return; }
     setUserId(user.id);
     const { data, error: loadError } = await supabase.from("profiles")
       .select("id,account_type,display_name,username,avatar_url,position,current_team,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
@@ -128,16 +128,19 @@ export default function CompleteProfilePage() {
     if (!profile || completion.percentage !== 100 || saving) return;
     setSaving(true);
     setError("");
-    const { data, error: updateError } = await supabase.from("profiles").update({ profile_visibility: "public" })
-      .eq("id", userId).select("id,account_type,display_name,username,avatar_url,position,current_team,current_country,favorite_leagues,height,bio,hometown,profile_visibility").maybeSingle();
-    if (updateError || !data) {
-      setError(updateError?.message || "Your profile could not be made public. Please try again.");
+    try {
+      const { data, error: updateError } = await supabase.from("profiles").update({ profile_visibility: "public" })
+        .eq("id", userId).select("id,account_type,display_name,username,avatar_url,position,current_team,current_country,favorite_leagues,height,bio,hometown,profile_visibility").maybeSingle();
+      if (updateError) throw updateError;
+      if (!data) throw new Error("Your profile could not be made public. Please try again.");
+      setProfile(data as PlayerRecord);
+      router.push("/players/" + encodeURIComponent(userId));
+    } catch (cause) {
+      console.error("Publishing player profile failed:", cause);
+      setError(cause instanceof Error ? cause.message : "Your profile could not be made public. Please try again.");
+    } finally {
       setSaving(false);
-      return;
     }
-    setProfile(data as PlayerRecord);
-    setSaving(false);
-    router.push("/players/" + encodeURIComponent(userId));
   }
 
   if (loading) return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading your profile checklist..." /></div></main>;
