@@ -135,7 +135,7 @@ export default function ProfilePage() {
             ))}
           </div>
           {profileCompletion < 100 && <div className="hc-profile-completion">
-            <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href={"/account#profile-editor-field-" + nextFieldAnchor}>Complete profile <span aria-hidden="true">→</span></Link></div>
+            <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href={p?.account_type === "player" ? "/complete-profile" : "/account#profile-editor-field-" + nextFieldAnchor}>Complete profile <span aria-hidden="true">→</span></Link></div>
             <div className="hc-profile-completion-track" role="progressbar" aria-label={t("profileCompleteness")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}><span style={{width: profileCompletion + "%"}} /></div>
           </div>}
           {p.account_type === "player" && postingStreak > 0 && <div className="hc-profile-streak-row"><span className="hc-feed-streak" aria-label={postingStreak + " day HoopFeed posting streak"}><span aria-hidden="true">🔥</span> {postingStreak}-day streak</span></div>}
