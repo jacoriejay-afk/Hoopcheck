@@ -22,7 +22,7 @@ returns void
 language plpgsql
 security invoker
 set search_path = public, pg_temp
-as $
+as $$
 declare
   normalized_username text := lower(btrim(candidate_username));
   current_user_id uuid := auth.uid();
