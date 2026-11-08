@@ -76,16 +76,26 @@ export default function DashboardPage() {
       if (!mounted) return;
       setEmail(user.email||"");
 
-      const [{data:p},{data:subscription},{data:follows}] = await Promise.all([
+      const [profileResult, subscriptionResult, followsResult] = await Promise.allSettled([
         supabase.from("profiles").select("display_name,first_name,last_name,bio,position,current_team,nationality,hometown,avatar_url,interests,favorite_leagues,player_verified,account_type").eq("id",user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",user.id).maybeSingle(),
         supabase.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").order("created_at",{ascending:false}).limit(100)
       ]);
       if (!mounted) return;
+      // Optional dashboard data must never turn a valid login into an unavailable dashboard.
+      const p = profileResult.status === "fulfilled" ? profileResult.value.data : null;
+      const subscription = subscriptionResult.status === "fulfilled" ? subscriptionResult.value.data : null;
+      const follows = followsResult.status === "fulfilled" ? followsResult.value.data : null;
+      if (profileResult.status === "rejected") console.error("Dashboard profile request failed:", profileResult.reason);
+      if (subscriptionResult.status === "rejected") console.error("Dashboard subscription request failed:", subscriptionResult.reason);
+      if (followsResult.status === "rejected") console.error("Dashboard follows request failed:", followsResult.reason);
       setProfile(p as Profile|null);
       const activeMember = hasActiveMembershipAtLeast(subscription);
       const followedIds = (follows||[]).map((row:any)=>row.target_id).filter(Boolean);
 
+      // Show the dashboard immediately; the remaining panels are best-effort enhancements.
+      setLoading(false);
+      try {
       if (followedIds.length) {
         const teamResult = basketballSide === "womens"
           ? await supabase.from("womens_teams").select("id,name,country,league_name").in("id",followedIds).limit(100)
@@ -119,6 +129,9 @@ export default function DashboardPage() {
         const {data:games,error:gamesError} = await supabase.from("fan_live_games").select("status,scheduled_at").in("status",["live","scheduled"]).order("scheduled_at",{ascending:true}).limit(200);
         const now = Date.now();
         if (mounted && !gamesError) setLiveCounts({live:(games||[]).filter((g:any)=>g.status==="live").length,upcoming:(games||[]).filter((g:any)=>g.status==="scheduled" && (!g.scheduled_at || new Date(g.scheduled_at).getTime()>=now)).length});
+      }
+      } catch (error) {
+        console.error("Optional dashboard panels failed:", error);
       }
       if (mounted) setLoading(false);
     }
