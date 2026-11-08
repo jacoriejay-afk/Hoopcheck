@@ -79,12 +79,17 @@ export default function BottomNav() {
   const { signedIn, userId } = useAuthState();
   const { t } = useLanguage();
   const [accountType, setAccountType] = useState<string | null>(null);
+  const [accountTypeLoading, setAccountTypeLoading] = useState(true);
   useEffect(() => {
     let active = true;
-    if (!userId) { setAccountType(null); return; }
+    if (!userId) { setAccountType(null); setAccountTypeLoading(false); return; }
+    setAccountTypeLoading(true);
     setAccountType(null);
     void supabase.from("profiles").select("account_type").eq("id", userId).maybeSingle().then(({ data, error }) => {
-      if (active) setAccountType(error ? null : data?.account_type || null);
+      if (active) {
+        setAccountType(error ? null : data?.account_type || null);
+        setAccountTypeLoading(false);
+      }
     });
     return () => { active = false; };
   }, [userId]);
@@ -96,6 +101,7 @@ export default function BottomNav() {
     <nav className="bottom-nav hc-bottom-tab-bar hc-mobile-tabbar-repair hc-lm2f-bottom-nav" aria-label="Mobile navigation">
       {items.map(([href, translationKey, label]) => {
         const destination = href === "/feed" ? (accountType === null ? "/dashboard" : fanAccount ? "/fan-feed" : "/feed") : href;
+        const feedResolving = href === "/feed" && accountTypeLoading;
         const active = destination === "/"
           ? pathname === "/" || pathname === "/dashboard"
           : pathname === destination || pathname.startsWith(destination + "/");
@@ -105,6 +111,8 @@ export default function BottomNav() {
             href={destination}
             className={active ? "hc-lm2f-tab hc-smooth-press active" : "hc-lm2f-tab hc-smooth-press"}
             aria-current={active ? "page" : undefined}
+            aria-disabled={feedResolving ? true : undefined}
+            onClick={feedResolving ? (event) => event.preventDefault() : undefined}
           >
             <span className="hc-lm2f-tab-icon"><TabIcon label={label} /></span>
             <span className="hc-lm2f-tab-label">{translationKey === "hoopFeed" ? (accountType === null ? "FEED" : fanAccount ? "FAN HQ" : "HOOPFEED") : t(translationKey)}</span>
