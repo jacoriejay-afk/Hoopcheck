@@ -95,18 +95,23 @@ export default function TeamFanGroupPage() {
   async function act(action: string, values: Record<string, string> = {}, image?: File | null) {
     if (!user) return;
     setBusy(true); setMessage("");
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) { setMessage("Your session expired. Please sign in again."); setBusy(false); return; }
-    const form = new FormData();
-    form.append("action", action); form.append("team_id", teamId);
-    Object.entries(values).forEach(([key, value]) => form.append(key, value));
-    if (image) form.append("image", image);
-    const response = await fetch("/api/fan-groups", { method: "POST", headers: { Authorization: "Bearer " + session.access_token }, body: form });
-    const result = await response.json().catch(() => ({}));
-    setMessage(result.message || (result.ok ? "Saved." : "That action could not be completed."));
-    if (response.ok && result.ok) await load();
-    setBusy(false);
-    return result;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) { setMessage("Your session expired. Please sign in again."); return; }
+      const form = new FormData();
+      form.append("action", action); form.append("team_id", teamId);
+      Object.entries(values).forEach(([key, value]) => form.append(key, value));
+      if (image) form.append("image", image);
+      const response = await fetch("/api/fan-groups", { method: "POST", headers: { Authorization: "Bearer " + session.access_token }, body: form });
+      const result = await response.json().catch(() => ({}));
+      setMessage(result.message || (response.ok && result.ok ? action === "join" ? "You joined the Fan Group." : "Saved." : "That action could not be completed."));
+      if (response.ok && result.ok) await load();
+      return result;
+    } catch {
+      setMessage("Connection failed. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function publish() {
@@ -127,7 +132,7 @@ export default function TeamFanGroupPage() {
   return <PageShell><main className="page-shell hc-feed-page hc-team-fan-group-page"><div className="page-container">
     <header className="topbar"><Link href="/team-hub" className="brand">TEAM HUB</Link><nav className="topnav"><Link href={"/teams/" + teamId}>Team page</Link><Link href="/team-hub">Your teams</Link></nav></header>
     <section className="hero-card hc-feed-hero"><p className="eyebrow">FAN HQ · OFFICIAL COMMUNITY</p><h1>{summary.group_name}</h1><p className="muted">{teamName} supporters, together in one official fan space.</p><p className="hc-feed-expiry-note">{formatNumber(Number(summary.member_count || 0))} MEMBERS <span>Group posts stay here permanently.</span></p></section>
-    {!summary.is_member && !isModerator && isFan && <section className="dashboard-card hc-feed-shared-card hc-team-fan-group-locked"><h2>Join to see the conversation</h2><p className="muted">The group is visible to everyone, but posts and comments are private to members.</p>{summary.join_mode === "open" ? <button className="btn" disabled={busy} onClick={() => void act("join")}>Join Fan Group</button> : <button className="btn" disabled={busy || summary.has_pending_request} onClick={() => void act("join")}>{summary.has_pending_request ? "Request Pending" : "Request to Join"}</button>}</section>}
+    {!summary.is_member && !isModerator && isFan && <section className="dashboard-card hc-feed-shared-card hc-team-fan-group-locked"><h2>Join to see the conversation</h2><p className="muted">The group is visible to everyone, but posts and comments are private to members.</p><button className="btn" disabled={busy} onClick={() => void act("join")}>{busy ? "Joining…" : "Join Fan Group"}</button></section>}
     {(summary.is_member || isModerator) && <>
       {isFan && summary.is_member && <section className="dashboard-card hc-feed-composer hc-team-fan-group-composer"><span className="card-kicker">POST TO THE GROUP</span><textarea value={draft} maxLength={2000} rows={3} onChange={e => setDraft(e.target.value)} placeholder="Share something with the fans…" /><div className="hc-feed-composer__footer"><label className="hc-feed-photo-button">Photo<input type="file" accept="image/jpeg,image/png,image/webp" className="visually-hidden" onChange={e => setPhoto(e.target.files?.[0] || null)} /></label><span className="hc-feed-counter">{draft.length}/2000</span><button className="btn hc-feed-post-button" disabled={busy || (!draft.trim() && !photo)} onClick={() => void publish()}>{busy ? "Posting…" : "Post"}</button></div>{photo && <p className="muted">{photo.name} · <button type="button" onClick={() => setPhoto(null)}>Remove</button></p>}</section>}
       <section className="hc-feed-stream" aria-label="Fan Group posts">{posts.length ? posts.map(post => <article key={post.id} className="dashboard-card hc-feed-shared-card hc-team-fan-group-post">
