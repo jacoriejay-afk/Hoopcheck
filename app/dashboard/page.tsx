@@ -30,8 +30,8 @@ type Team = { id:string; name:string; country:string|null; league_name:string|nu
 type Review = { id:string; team_id:string; title:string|null; body:string; overall_rating:number; created_at:string };
 type FeedPost = { id:string; body:string; created_at:string; expires_at:string; author_id:string; profiles?:{display_name:string|null}[]|null };
 
-const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000, fallback?: T) =>
-  Promise.race([Promise.resolve(promise), new Promise<T>((resolve) => setTimeout(() => resolve(fallback as T), ms))]);
+const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000): Promise<T | null> =>
+  Promise.race([Promise.resolve(promise), new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -95,9 +95,9 @@ export default function DashboardPage() {
       ] as const);
       if (!mounted) return;
       // Optional dashboard data must never turn a valid login into an unavailable dashboard.
-      const p = profileResult.status === "fulfilled" ? profileResult.value.data : null;
-      const subscription = subscriptionResult.status === "fulfilled" ? subscriptionResult.value.data : null;
-      const follows = followsResult.status === "fulfilled" ? followsResult.value.data : null;
+      const p = profileResult.status === "fulfilled" ? profileResult.value?.data ?? null : null;
+      const subscription = subscriptionResult.status === "fulfilled" ? subscriptionResult.value?.data ?? null : null;
+      const follows = followsResult.status === "fulfilled" ? followsResult.value?.data ?? null : null;
       if (profileResult.status === "rejected") console.error("Dashboard profile request failed:", profileResult.reason);
       if (subscriptionResult.status === "rejected") console.error("Dashboard subscription request failed:", subscriptionResult.reason);
       if (followsResult.status === "rejected") console.error("Dashboard follows request failed:", followsResult.reason);
