@@ -1,0 +1,29 @@
+/* Consolidated SP-1 / UX-1 mobile rhythm. Avoid global main resets:
+   header and bottom-nav components own safe-area reservations. */
+:root {
+  --hc-page-rhythm: 16px;
+  --hc-card-rhythm: 12px;
+  --hc-card-inset: 14px;
+}
+:where(.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) > .page-container:first-child {
+  margin-block-start: 0;
+}
+:where(.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) .page-container > :first-child {
+  margin-block-start: 0;
+}
+:where(.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) :where(.grid,.hc-dashboard-grid,.hc-mobile-quick-grid,.hc-live-hub-grid,.hc-feed-stream) {
+  gap: var(--hc-card-rhythm);
+}
+:where(.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) :where(.dashboard-card,.quick-card,.settings-card,.profile-card,.review-card,.hc-alert-card) {
+  box-sizing: border-box;
+  min-height: 0;
+  padding: var(--hc-card-inset);
+}
+:where(.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) :where(.section-heading,.hc-mobile-section-heading) {
+  margin-block-end: 8px;
+}
+@media (max-width: 767px) {
+  :where(.hc-dashboard-shell,.hc-account-page,.hc-search-page,.hc-team-entity-profile,.hc-womens-profile-page,.player-profile-page,.hc-fan-feed-page,.hc-live-hub-page,.hc-team-hub-page) :where(button,a.btn,[role="button"],summary) {
+    min-height: 44px;
+  }
+}
