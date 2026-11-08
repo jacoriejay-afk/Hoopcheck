@@ -73,7 +73,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
   if ((!isFan && !isModerator) || !summary) return null;
   return <section className="hc-team-fan-group-entry">
     <div><p className="eyebrow">{labels.kicker}</p><h2>{summary.group_name}</h2><p className="muted">{formatNumber(Number(summary.member_count || 0))} {labels.members} · {summary.join_mode === "open" ? labels.open : labels.approval}</p></div>
-    {isModerator && !isFan ? <Link className="btn" href={"/team-hub/groups/" + teamId}>{labels.moderatorOpen}</Link> : isFan && (summary.is_member
+    {isModerator ? <Link className="btn" href={"/team-hub/groups/" + teamId}>{labels.moderatorOpen}</Link> : isFan && (summary.is_member
       ? <Link className="btn" href={"/team-hub/groups/" + teamId}>{labels.joinedOpen}</Link>
       : <button className="btn" type="button" disabled={busy || summary.has_pending_request} onClick={() => void join()}>{busy ? labels.wait : summary.has_pending_request ? labels.pending : labels.join}</button>)}
     {message && <p className="hc-feed-message" role="status">{message}</p>}
