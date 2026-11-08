@@ -52,7 +52,6 @@ export default function LoginPage() {
       // document reload can force Safari to rehydrate auth cookies before the
       // dashboard sees the freshly authenticated session.
       router.replace(destination);
-      router.refresh();
     } catch (error) {
       console.error("Login failed:", error);
       setMessage(error instanceof Error ? error.message : "Unable to sign in right now. Please try again.");
