@@ -245,3 +245,28 @@ html.theme-dark .hc-team-entity-profile .hc-team-profile-overview-grid > * {
     grid-template-columns:minmax(0,1fr);
   }
 }
+
+
+/* TEAM-GRID-HOTFIX: the legacy 1024px two-column profile grid reserved
+   implicit rows for the old hero/sidebar. The new overview sections are
+   direct children, so that old grid created enormous empty tracks and
+   stranded review cards in the right rail. Keep the new profile in
+   document flow; only the explicit overview grid uses columns. */
+@media (min-width:1024px) {
+  main.hc-team-entity-profile.hc-entity-profile-page {
+    display:block !important;
+    grid-template-columns:none !important;
+    width:100%;
+    min-width:0;
+  }
+  main.hc-team-entity-profile > :where(section,nav,article,div) {
+    grid-column:auto !important;
+    grid-row:auto !important;
+    max-width:100%;
+    min-width:0;
+  }
+  main.hc-team-entity-profile > .hero.hc-team-write-review {
+    width:100%;
+    max-width:100%;
+  }
+}
