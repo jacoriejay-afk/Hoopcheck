@@ -30,8 +30,8 @@ type Team = { id:string; name:string; country:string|null; league_name:string|nu
 type Review = { id:string; team_id:string; title:string|null; body:string; overall_rating:number; created_at:string };
 type FeedPost = { id:string; body:string; created_at:string; expires_at:string; author_id:string; profiles?:{display_name:string|null}[]|null };
 
-const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000, fallback?: T) =>
-  Promise.race([Promise.resolve(promise), new Promise<T>((resolve) => setTimeout(() => resolve(fallback as T), ms))]);
+const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000): Promise<T | null> =>
+  Promise.race([Promise.resolve(promise), new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -89,15 +89,15 @@ export default function DashboardPage() {
       setEmail(user.email||"");
 
       const [profileResult, subscriptionResult, followsResult] = await Promise.allSettled([
-        supabase.from("profiles").select("display_name,first_name,last_name,bio,position,current_team,nationality,hometown,avatar_url,interests,favorite_leagues,player_verified,account_type").eq("id",user.id).maybeSingle(),
-        supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",user.id).maybeSingle(),
-        supabase.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").order("created_at",{ascending:false}).limit(100)
-      ]);
+        withTimeout(supabase.from("profiles").select("display_name,first_name,last_name,bio,position,current_team,nationality,hometown,avatar_url,interests,favorite_leagues,player_verified,account_type").eq("id",user.id).maybeSingle(), 8000),
+        withTimeout(supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",user.id).maybeSingle(), 8000),
+        withTimeout(supabase.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").order("created_at",{ascending:false}).limit(100), 8000)
+      ] as const);
       if (!mounted) return;
       // Optional dashboard data must never turn a valid login into an unavailable dashboard.
-      const p = profileResult.status === "fulfilled" ? profileResult.value.data : null;
-      const subscription = subscriptionResult.status === "fulfilled" ? subscriptionResult.value.data : null;
-      const follows = followsResult.status === "fulfilled" ? followsResult.value.data : null;
+      const p = profileResult.status === "fulfilled" ? profileResult.value?.data ?? null : null;
+      const subscription = subscriptionResult.status === "fulfilled" ? subscriptionResult.value?.data ?? null : null;
+      const follows = followsResult.status === "fulfilled" ? followsResult.value?.data ?? null : null;
       if (profileResult.status === "rejected") console.error("Dashboard profile request failed:", profileResult.reason);
       if (subscriptionResult.status === "rejected") console.error("Dashboard subscription request failed:", subscriptionResult.reason);
       if (followsResult.status === "rejected") console.error("Dashboard follows request failed:", followsResult.reason);
