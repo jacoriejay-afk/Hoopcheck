@@ -88,6 +88,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, joined: true });
     }
 
+    if (action === "leave") {
+      if (profile?.account_type !== "fan") return NextResponse.json({ ok: false, message: "Only fan accounts can leave Fan Groups." }, { status: 403 });
+      if (!isMember) return NextResponse.json({ ok: true, left: true });
+      const { error } = await db.from("team_fan_group_members").delete().eq("team_id", teamId).eq("user_id", user.id);
+      if (error) throw error;
+      // Leaving a group also relinquishes any fan co-moderator appointment.
+      const { error: moderatorError } = await db.from("team_fan_group_moderators").delete().eq("team_id", teamId).eq("user_id", user.id).eq("moderator_type", "fan_co_moderator");
+      if (moderatorError) throw moderatorError;
+      return NextResponse.json({ ok: true, left: true });
+    }
+
     if (action === "create_post" || action === "comment") {
       if (profile?.account_type !== "fan" || !isMember) return NextResponse.json({ ok: false, message: "Join this Fan Group to post and comment." }, { status: 403 });
       const text = String(form.get("body") || "").trim();
