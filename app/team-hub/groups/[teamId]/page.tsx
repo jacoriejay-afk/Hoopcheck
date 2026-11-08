@@ -99,7 +99,7 @@ export default function TeamFanGroupPage() {
       if (image) form.append("image", image);
       const response = await fetch("/api/fan-groups", { method: "POST", headers: { Authorization: "Bearer " + session.access_token }, body: form });
       const result = await response.json().catch(() => ({}));
-      setMessage(result.message || (response.ok && result.ok ? action === "join" ? "You joined the Fan Group." : "Saved." : "That action could not be completed."));
+      setMessage(result.message || (response.ok && result.ok ? action === "join" ? "You joined the Fan Group." : action === "leave" ? "You left the Fan Group." : "Saved." : "That action could not be completed."));
       if (response.ok && result.ok) await load();
       return result;
     } catch {
@@ -127,6 +127,7 @@ export default function TeamFanGroupPage() {
   return <PageShell><main className="page-shell hc-feed-page hc-team-fan-group-page"><div className="page-container">
     <header className="topbar"><Link href="/team-hub" className="brand">TEAM HUB</Link><nav className="topnav"><Link href={"/teams/" + teamId}>Team page</Link><Link href="/team-hub">Your teams</Link></nav></header>
     <section className="hero-card hc-feed-hero"><p className="eyebrow">FAN HQ · OFFICIAL COMMUNITY</p><h1>{summary.group_name}</h1><p className="muted">{teamName} supporters, together in one official fan space.</p><p className="hc-feed-expiry-note">{formatNumber(Number(summary.member_count || 0))} MEMBERS <span>Group posts stay here permanently.</span></p></section>
+    {isFan && summary.is_member && <div className="hc-fan-group-membership-actions"><button type="button" className="hc-feed-action-pill" disabled={busy} onClick={() => { if (window.confirm("Leave this Fan Group? You can join again anytime.")) void act("leave"); }}>Leave Group</button></div>}
     {!summary.is_member && !isModerator && isFan && <section className="dashboard-card hc-feed-shared-card hc-team-fan-group-locked"><h2>Join to see the conversation</h2><p className="muted">The group is visible to everyone, but posts and comments are private to members.</p><button className="btn" disabled={busy} onClick={() => void act("join")}>{busy ? "Joining…" : "Join Fan Group"}</button></section>}
     {(summary.is_member || isModerator) && <>
       {isFan && summary.is_member && <section className="dashboard-card hc-feed-composer hc-team-fan-group-composer"><span className="card-kicker">POST TO THE GROUP</span><textarea value={draft} maxLength={2000} rows={3} onChange={e => setDraft(e.target.value)} placeholder="Share something with the fans…" /><div className="hc-feed-composer__footer"><label className="hc-feed-photo-button">Photo<input type="file" accept="image/jpeg,image/png,image/webp" className="visually-hidden" onChange={e => setPhoto(e.target.files?.[0] || null)} /></label><span className="hc-feed-counter">{draft.length}/2000</span><button className="btn hc-feed-post-button" disabled={busy || (!draft.trim() && !photo)} onClick={() => void publish()}>{busy ? "Posting…" : "Post"}</button></div>{photo && <p className="muted">{photo.name} · <button type="button" onClick={() => setPhoto(null)}>Remove</button></p>}</section>}

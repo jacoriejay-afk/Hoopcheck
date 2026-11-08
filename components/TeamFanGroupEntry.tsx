@@ -91,12 +91,30 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
       setBusy(false);
     }
   }
+  async function leave() {
+    if (!window.confirm("Leave this Fan Group? You can join again anytime.")) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) { setMessage(labels.signIn); return; }
+      const form = new FormData();
+      form.append("action", "leave");
+      form.append("team_id", teamId);
+      const response = await fetch("/api/fan-groups", { method: "POST", headers: { Authorization: "Bearer " + session.access_token }, body: form });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok) { setMessage(result.message || "Could not leave this group."); return; }
+      await load();
+      setMessage("You left the Fan Group. You can rejoin anytime.");
+    } catch { setMessage("Could not leave this group. Please try again."); }
+    finally { setBusy(false); }
+  }
   if ((!isFan && !isModerator) || !summary) return null;
   return <section className="hc-team-fan-group-entry">
     <div><p className="eyebrow">{labels.kicker}</p><h2>{summary.group_name}</h2><p className="muted">{formatNumber(Number(summary.member_count || 0))} {labels.members} · {labels.open}</p></div>
     <div className="hc-fan-group-actions">
       {isFan && (actualMember
-        ? <Link className="btn" href={"/team-hub/groups/" + teamId}>{labels.joinedOpen}</Link>
+        ? <><Link className="btn" href={"/team-hub/groups/" + teamId}>{labels.joinedOpen}</Link><button type="button" className="btn hc-fan-group-leave" disabled={busy} onClick={() => void leave()}>{busy ? labels.wait : "Leave Group"}</button></>
         : <button className="btn" type="button" disabled={busy} onClick={() => void join()}>{busy ? labels.wait : labels.join}</button>)}
       {isModerator && <Link className="btn hc-fan-group-moderator-link" href={"/team-hub/groups/" + teamId}>{labels.moderatorOpen}</Link>}
     </div>
