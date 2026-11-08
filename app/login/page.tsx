@@ -2,10 +2,12 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Logo from "../../components/Logo";
 import { supabase } from "../../lib/supabase";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -46,7 +48,11 @@ export default function LoginPage() {
       const destination = returnTo || "/dashboard";
       setMessage("Login successful! Opening HoopCheck…");
       setMessageIsSuccess(true);
-      window.location.replace(destination);
+      // Keep the authenticated Supabase client alive across navigation. A full
+      // document reload can force Safari to rehydrate auth cookies before the
+      // dashboard sees the freshly authenticated session.
+      router.replace(destination);
+      router.refresh();
     } catch (error) {
       console.error("Login failed:", error);
       setMessage(error instanceof Error ? error.message : "Unable to sign in right now. Please try again.");
