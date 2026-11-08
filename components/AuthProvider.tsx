@@ -15,8 +15,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     let mounted = true;
-    getCachedSession().then(({ data }) => {
+    void getCachedSession().then(({ data }) => {
       if (mounted) setUserId(data.session?.user?.id ?? null);
+    }).catch((error) => {
+      console.error("Unable to restore authentication session:", error);
+      // Keep the last known auth state until a subsequent auth event.
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (mounted) setUserId(session?.user?.id ?? null);
