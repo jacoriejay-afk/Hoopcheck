@@ -27,8 +27,19 @@ export const PROFILE_COMPLETION_FIELDS = [
 const hasValue = (value: unknown) => value !== null && value !== undefined && String(value).trim().length > 0;
 
 export function calculateProfileCompletion(profile: ProfileCompletionSource | null | undefined) {
-  const fields = PROFILE_COMPLETION_FIELDS.map(field => ({ ...field, complete: hasValue(profile?.[field.key]) }));
-  const percentage = Math.round(fields.reduce((sum, field) => sum + (field.complete ? field.weight : 0), 0));
+  // Only include fields the account editor actually exposes for this role.
+  // A fan should never be asked to upload a player-only avatar; players
+  // should never be asked for scout-only league interests.
+  const role = profile?.account_type || "player";
+  const applicable = PROFILE_COMPLETION_FIELDS.filter(field => {
+    if (field.key === "avatar_url") return role === "player";
+    if (field.key === "interests") return ["fan", "coach", "scout", "agent"].includes(role);
+    if (field.key === "favorite_leagues") return ["scout", "agent"].includes(role);
+    return true;
+  });
+  const fields = applicable.map(field => ({ ...field, complete: hasValue(profile?.[field.key]) }));
+  const totalWeight = fields.reduce((sum, field) => sum + field.weight, 0);
+  const percentage = totalWeight ? Math.round(100 * fields.reduce((sum, field) => sum + (field.complete ? field.weight : 0), 0) / totalWeight) : 100;
   const nextMissing = fields.find(field => !field.complete) ?? null;
   return { percentage, fields, nextMissing };
 }
