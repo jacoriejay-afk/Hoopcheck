@@ -27,42 +27,26 @@ export default function LoginPage() {
 
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
-        password,
-      });
-
-      if (error) throw error;
-      if (!data.user) {
-        setMessage("Login could not be completed. Please try again.");
-        return;
+      // A stalled auth request must never leave the submit button spinning forever.
+      // Redirect only after Supabase confirms an authenticated user.
+      const authResult = await Promise.race([
+        supabase.auth.signInWithPassword({ email: normalizedEmail, password }),
+        new Promise<never>((_, reject) => {
+          window.setTimeout(() => reject(new Error("Login is taking too long. Please check your connection and try again.")), 15000);
+        }),
+      ]);
+      if (authResult.error) throw authResult.error;
+      if (!authResult.data.user || !authResult.data.session) {
+        throw new Error("Login could not be completed. Please try again.");
       }
 
-      // A missing profile row or a temporary profile query failure should not
-      // strand a valid user on the login screen after authentication succeeds.
-      let profile: { display_name?: string | null; position?: string | null; years_pro?: number | null; username?: string | null } | null = null;
-      try {
-        const result = await supabase
-          .from("profiles")
-          .select("display_name,position,years_pro,username")
-          .eq("id", data.user.id)
-          .maybeSingle();
-        profile = result.data;
-      } catch (profileError) {
-        console.error("Could not load profile after login:", profileError);
-      }
-
-      const needsOnboarding =
-        !profile?.display_name ||
-        (!profile?.position && profile?.years_pro == null);
-
-      const destination = needsOnboarding ? (returnTo ? "/onboarding?returnTo=" + encodeURIComponent(returnTo) : "/onboarding") : (returnTo || "/dashboard");
-      const needsUsername = Boolean(profile && !profile.username?.trim());
-      setMessage("Login successful! Your account is working. Opening your HoopCheck workspace…");
+      // Account type and onboarding requirements are handled by the workspace.
+      // Do not block a successful login on a separate profiles query or
+      // apply player-only fields to fans, coaches, agents and club managers.
+      const destination = returnTo || "/dashboard";
+      setMessage("Login successful! Opening HoopCheck…");
       setMessageIsSuccess(true);
-      window.setTimeout(() => {
-        window.location.replace(needsUsername ? "/choose-username?next=" + encodeURIComponent(destination) : destination);
-      }, 900);
+      window.location.replace(destination);
     } catch (error) {
       console.error("Login failed:", error);
       setMessage(error instanceof Error ? error.message : "Unable to sign in right now. Please try again.");
