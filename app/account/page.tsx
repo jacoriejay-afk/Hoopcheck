@@ -257,7 +257,8 @@ export default function AccountPage() {
       if (!data) throw new Error("Your profile was not updated. Please refresh and sign in again.");
       setProfile((current) => ({ ...current, ...updates }));
       setDisplayName(name);
-      setProfileMessage(t("profileUpdated"));\n      // The shared completion indicator now reflects the saved values immediately.
+      setProfileMessage(t("profileUpdated"));
+      // The shared completion indicator now reflects the saved values immediately.
     } catch (error) {
       setProfileMessage(error instanceof Error ? error.message : t("saveSettingFailed"));
     } finally {
