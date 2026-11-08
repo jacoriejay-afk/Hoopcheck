@@ -4102,3 +4102,22 @@ html.theme-dark .hc-team-profile-hero .hc-team-social-stats :where(strong,small)
   .hc-team-fan-group-entry .hc-fan-group-actions { width:100%; }
   .hc-team-fan-group-entry .hc-fan-group-actions > * { flex:1 1 100%; text-align:center; }
 }
+
+
+/* Header wordmark must remain legible on the black navigation bar. */
+.site-header-global .site-header-brand .hc-logo__icon {
+  color:#f5f5f5 !important;
+  stroke:#f5f5f5 !important;
+}
+.site-header-global .site-header-brand .hc-logo__check {
+  color:#ff6a00 !important;
+  stroke:#ff6a00 !important;
+}
+.site-header-global .site-header-brand .hc-logo__hoop {
+  color:#f5f5f5 !important;
+  -webkit-text-fill-color:#f5f5f5 !important;
+}
+.site-header-global .site-header-brand .hc-logo__check-word {
+  color:#ff6a00 !important;
+  -webkit-text-fill-color:#ff6a00 !important;
+}

@@ -72,3 +72,40 @@ html.theme-light .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profil
   .hc-team-entity-profile > .hc-team-profile-nav { overflow-x: auto; scrollbar-width: none; }
   .hc-team-entity-profile > .hc-team-profile-nav a { white-space: nowrap; }
 }
+
+
+/* Compact club profile: readable stats and less nested card chrome. */
+.hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header {
+  border-radius: 20px;
+  box-shadow: none;
+  padding: clamp(20px, 4vw, 32px);
+}
+.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(255,255,255,.2);
+}
+.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat {
+  background: #242424 !important;
+  border: 0 !important;
+  min-width: 0;
+  padding: 12px 5px;
+  text-align: center;
+}
+.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat strong,
+.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat small,
+html.theme-light .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat strong,
+html.theme-light .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat small {
+  color: #fff !important;
+}
+.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat small {
+  opacity: .82;
+}
+@media(max-width:700px) {
+  .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header { padding: 20px 16px; }
+  .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-topline { margin-bottom: 12px; }
+  .hc-team-entity-profile > .hc-team-profile-hero h1 { font-size: clamp(27px, 7vw, 38px); }
+}
