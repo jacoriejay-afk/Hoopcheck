@@ -61,14 +61,31 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
   }, [teamId]);
   useEffect(() => { void load(); }, [load]);
   async function join() {
-    setBusy(true); setMessage("");
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) { setMessage(labels.signIn); setBusy(false); return; }
-    const form = new FormData(); form.append("action", "join"); form.append("team_id", teamId);
-    const response = await fetch("/api/fan-groups", { method: "POST", headers: { Authorization: "Bearer " + session.access_token }, body: form });
-    const result = await response.json().catch(() => ({}));
-    setMessage(result.requested ? labels.requestSent : result.ok ? labels.joinedMessage : labels.failed);
-    await load(); setBusy(false);
+    setBusy(true);
+    setMessage("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) { setMessage(labels.signIn); return; }
+      const form = new FormData();
+      form.append("action", "join");
+      form.append("team_id", teamId);
+      const response = await fetch("/api/fan-groups", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + session.access_token },
+        body: form
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok) {
+        setMessage(typeof result.message === "string" && result.message ? result.message : labels.failed);
+        return;
+      }
+      await load();
+      setMessage(result.requested ? labels.requestSent : labels.joinedMessage);
+    } catch {
+      setMessage(labels.failed);
+    } finally {
+      setBusy(false);
+    }
   }
   if ((!isFan && !isModerator) || !summary) return null;
   return <section className="hc-team-fan-group-entry">
