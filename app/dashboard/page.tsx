@@ -92,7 +92,7 @@ export default function DashboardPage() {
         supabase.from("profiles").select("display_name,first_name,last_name,bio,position,current_team,nationality,hometown,avatar_url,interests,favorite_leagues,player_verified,account_type").eq("id",user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",user.id).maybeSingle(),
         supabase.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").order("created_at",{ascending:false}).limit(100)
-      ]);
+      ].map(request => withTimeout(Promise.resolve(request), 8000, { data: null, error: new Error("dashboard-data-timeout") })));
       if (!mounted) return;
       // Optional dashboard data must never turn a valid login into an unavailable dashboard.
       const p = profileResult.status === "fulfilled" ? profileResult.value.data : null;
