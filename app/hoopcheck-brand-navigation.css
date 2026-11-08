@@ -124,3 +124,60 @@ html body header.site-header-global button:focus-visible {
   html body header.site-header-global .hc-header-more-panel a:hover,
   html body header.site-header-global .hc-header-more-panel a:focus-visible { background: #252525; }
 }
+
+/* Brand lockup: HOOPCHECK wordmark first, basketball-check emblem on the right.
+   Scope to site header only so footer, loading, and standalone logos stay intact. */
+html body header.site-header-global .site-header-brand .hc-logo--full {
+  display: inline-flex !important;
+  flex-direction: row-reverse !important;
+  align-items: center !important;
+  gap: clamp(5px, .6vw, 10px) !important;
+  width: max-content;
+  max-width: 100%;
+  color: #f7f7f5 !important;
+}
+html body header.site-header-global .site-header-brand .hc-logo__wordmark,
+html body header.site-header-global .site-header-brand .hc-logo__hoop,
+html body header.site-header-global .site-header-brand .hc-logo__check-word {
+  color: #f7f7f5 !important;
+  -webkit-text-fill-color: #f7f7f5 !important;
+}
+html body header.site-header-global .site-header-brand .hc-logo__icon,
+html body header.site-header-global .site-header-brand .hc-logo__icon .hc-logo__check {
+  color: #f7f7f5 !important;
+  stroke: #f7f7f5 !important;
+}
+html body header.site-header-global .site-header-brand .hc-logo__icon {
+  width: clamp(25px, 2.6vw, 36px) !important;
+  height: clamp(25px, 2.6vw, 36px) !important;
+}
+html body header.site-header-global .site-header-brand .hc-logo__wordmark {
+  font-size: clamp(17px, 1.65vw, 25px) !important;
+  letter-spacing: -.045em !important;
+}
+@media (max-width: 700px) {
+  html body header.site-header-global .site-header-brand .hc-logo__wordmark {
+    font-size: clamp(15px, 4.5vw, 20px) !important;
+  }
+  html body header.site-header-global .site-header-brand .hc-logo__icon {
+    width: 28px !important;
+    height: 28px !important;
+  }
+}
+
+/* Official HoopCheck™ mark, tucked above the wordmark's final letter. */
+html body header.site-header-global .site-header-brand .hc-logo__wordmark::after {
+  content: "™";
+  display: inline-block;
+  align-self: flex-start;
+  position: relative;
+  top: -.28em;
+  margin-left: 2px;
+  color: #f7f7f5;
+  -webkit-text-fill-color: #f7f7f5;
+  font-family: Arial, sans-serif;
+  font-size: .43em;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+}
