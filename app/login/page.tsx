@@ -100,7 +100,7 @@ export default function LoginPage() {
   return (
     <main className="hc-auth-page">
 <section className="hero hc-auth-hero" style={{ paddingBottom: "30px" }}>
-        <div className="eyebrow">HOOPCHECK ACCOUNT ACCESS</div>
+        <div className="eyebrow">WELCOME BACK</div>
         <h1>Welcome back.</h1>
         <p>
           Sign in to your HoopCheck account to explore teams, coaches, leagues, player experiences, and fan communities around the world.
@@ -110,7 +110,7 @@ export default function LoginPage() {
       <section className="hc-auth-form-section" style={{ maxWidth: "520px", margin: "0 auto", padding: "20px 6% 100px" }}>
         <div className="form hc-auth-card">
           <Link href="/" className="hc-auth-logo" aria-label="HoopCheck home"><Logo variant="full" size={44} /></Link>
-          <div className="eyebrow">Account Login</div>
+          <div className="eyebrow">Login</div>
           <h2 style={{ fontSize: "30px", letterSpacing: "-1px", marginTop: 0 }}>
             Sign in to HoopCheck
           </h2>
