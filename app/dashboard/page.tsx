@@ -76,16 +76,25 @@ export default function DashboardPage() {
       if (!mounted) return;
       setEmail(user.email||"");
 
-      const [{data:p},{data:subscription},{data:follows}] = await Promise.all([
+      const [profileResult, subscriptionResult, followsResult] = await Promise.allSettled([
         supabase.from("profiles").select("display_name,first_name,last_name,bio,position,current_team,nationality,hometown,avatar_url,interests,favorite_leagues,player_verified,account_type").eq("id",user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",user.id).maybeSingle(),
         supabase.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").order("created_at",{ascending:false}).limit(100)
       ]);
       if (!mounted) return;
+      // Optional dashboard data must never turn a valid login into an unavailable dashboard.
+      const p = profileResult.status === "fulfilled" ? profileResult.value.data : null;
+      const subscription = subscriptionResult.status === "fulfilled" ? subscriptionResult.value.data : null;
+      const follows = followsResult.status === "fulfilled" ? followsResult.value.data : null;
+      if (profileResult.status === "rejected") console.error("Dashboard profile request failed:", profileResult.reason);
+      if (subscriptionResult.status === "rejected") console.error("Dashboard subscription request failed:", subscriptionResult.reason);
+      if (followsResult.status === "rejected") console.error("Dashboard follows request failed:", followsResult.reason);
       setProfile(p as Profile|null);
       const activeMember = hasActiveMembershipAtLeast(subscription);
       const followedIds = (follows||[]).map((row:any)=>row.target_id).filter(Boolean);
 
+      // Show the dashboard immediately; the remaining panels are best-effort enhancements.
+      setLoading(false);
       if (followedIds.length) {
         const teamResult = basketballSide === "womens"
           ? await supabase.from("womens_teams").select("id,name,country,league_name").in("id",followedIds).limit(100)
@@ -122,7 +131,7 @@ export default function DashboardPage() {
       }
       if (mounted) setLoading(false);
     }
-    loadHome().catch((error)=>{console.error("Unable to load HoopCheck home:",error);if(mounted){setLoadError(true);setLoading(false);}});
+    loadHome().catch((error)=>{console.error("Unable to load HoopCheck home:",error);if(mounted){setLoadError(false);setLoading(false);}});
     return ()=>{mounted=false;};
   },[router,basketballSide,reloadKey]);
 
