@@ -164,3 +164,20 @@ html body header.site-header-global .site-header-brand .hc-logo__wordmark {
     height: 28px !important;
   }
 }
+
+/* Official HoopCheck™ mark, tucked above the wordmark's final letter. */
+html body header.site-header-global .site-header-brand .hc-logo__wordmark::after {
+  content: "™";
+  display: inline-block;
+  align-self: flex-start;
+  position: relative;
+  top: -.28em;
+  margin-left: 2px;
+  color: #f7f7f5;
+  -webkit-text-fill-color: #f7f7f5;
+  font-family: Arial, sans-serif;
+  font-size: .43em;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+}
