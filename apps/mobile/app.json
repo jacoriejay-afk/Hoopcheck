@@ -26,6 +26,7 @@
     },
     "android": {
       "package": "online.hoopcheck.app"
-    }
+    },
+    "owner": "Jayycorrie"
   }
 }
