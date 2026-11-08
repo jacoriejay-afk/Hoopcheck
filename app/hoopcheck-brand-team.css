@@ -1,142 +1,116 @@
-/* Team-profile brand pass. Scoped to real team hero; preserves actions, reviews and role gates. */
-.hc-team-entity-profile {
-  --hc-team-brand-orange: #ff5a1f;
-}
+/* Team profile visual contract: one hero surface, no nested metric cards.
+   Keep role gates, actions, and content behavior in their existing components. */
+.hc-team-entity-profile { --hc-team-brand-orange:#ff5a1f; }
 .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  padding: clamp(18px,3vw,34px);
-  border-radius: 12px;
-  border: 1px solid #292929;
-  background: linear-gradient(125deg,#080808 0%,#171717 65%,#0a0a0a 100%);
-  color: #f7f7f5;
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  padding:clamp(18px,2.8vw,30px);
+  border:1px solid var(--hc-border,#dedede) !important;
+  border-top:3px solid var(--hc-team-brand-orange) !important;
+  border-radius:16px !important;
+  box-shadow:none !important;
+  background:linear-gradient(145deg,#fffaf4,#fff 70%,#f4f0e9) !important;
+  color:#171717 !important;
 }
 .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header::before {
-  content: "";
-  position: absolute;
-  top: -60px;
-  right: 12%;
-  height: 280px;
-  width: 9px;
-  transform: rotate(42deg);
-  background: #ff5a1f;
-  opacity: .9;
-  pointer-events: none;
-  z-index: -1;
-}
-html.theme-light .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header,
-html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header {
-  background: linear-gradient(125deg,#080808,#191919 68%,#0a0a0a);
-  color: #f7f7f5;
+  content:none !important;
 }
 .hc-team-entity-profile > .hc-team-profile-hero h1 {
-  color: #fff;
-  font-size: clamp(26px,4vw,48px);
-  font-weight: 950;
-  line-height: 1.08;
-  letter-spacing: -.025em;
-  overflow-wrap: anywhere;
+  color:#171717 !important;
+  font-size:clamp(26px,3.4vw,42px);
+  font-weight:950;
+  line-height:1.12;
+  letter-spacing:-.03em;
+  overflow-wrap:anywhere;
 }
 .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-kicker {
-  color: #ff5a1f;
-  font-weight: 900;
-  letter-spacing: .1em;
+  color:#b63b0c !important;
+  font-weight:900;
+  letter-spacing:.08em;
 }
-.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-meta,
-html.theme-light .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-meta {
-  color: #e3e3e3;
-}
-.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat strong,
-.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat small {
-  color: #f7f7f5;
-}
-.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat {
-  border-color: #444;
-  background: rgba(255,255,255,.06);
+.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-meta {
+  color:#525252 !important;
 }
 .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-logo {
-  border: 1px solid rgba(255,255,255,.18);
-  border-radius: 14px;
-}
-.hc-team-entity-profile > .hc-team-profile-nav {
-  border-bottom: 1px solid var(--hc-border,#d8d8d8);
-  gap: 12px;
-}
-.hc-team-entity-profile > .hc-team-profile-nav a[aria-current="page"] {
-  border-bottom: 3px solid #ff5a1f;
-}
-@media(max-width:700px) {
-  .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header { padding: 18px 14px; border-radius: 10px; }
-  .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-logo { max-width: 76px; max-height: 76px; }
-  .hc-team-entity-profile > .hc-team-profile-nav { overflow-x: auto; scrollbar-width: none; }
-  .hc-team-entity-profile > .hc-team-profile-nav a { white-space: nowrap; }
-}
-
-
-/* Compact club profile: readable stats and less nested card chrome. */
-.hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header {
-  border-radius: 20px;
-  box-shadow: none;
-  padding: clamp(20px, 4vw, 32px);
+  border:1px solid #d6d1ca;
+  border-radius:14px;
 }
 .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1px;
-  overflow: hidden;
-  border-radius: 12px;
-  background: rgba(255,255,255,.2);
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:0 !important;
+  padding-top:12px;
+  border-top:1px solid #d9d4cc !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  overflow:visible;
 }
 .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat {
-  background: #242424 !important;
-  border: 0 !important;
-  min-width: 0;
-  padding: 12px 5px;
-  text-align: center;
+  min-width:0;
+  padding:10px 6px;
+  text-align:center;
+  border:0 !important;
+  border-right:1px solid #d9d4cc !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
 }
-.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat strong,
-.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat small,
-html.theme-light .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat strong,
-html.theme-light .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat small {
-  color: #fff !important;
+.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat:last-child {
+  border-right:0 !important;
+}
+.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat strong {
+  color:#171717 !important;
 }
 .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat small {
-  opacity: .82;
+  color:#555 !important;
+  opacity:1 !important;
+}
+.hc-team-entity-profile > .hc-team-profile-nav {
+  gap:12px;
+  border-bottom:1px solid var(--hc-border,#d8d8d8);
+}
+.hc-team-entity-profile > .hc-team-profile-nav a[aria-current="page"] {
+  border-bottom:3px solid var(--hc-team-brand-orange);
+}
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header {
+  background:linear-gradient(145deg,#171717,#24211f) !important;
+  border-color:#444 !important;
+  color:#f7f7f5 !important;
+}
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero h1,
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat strong {
+  color:#f7f7f5 !important;
+}
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-meta,
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat small {
+  color:#d4d4d4 !important;
+}
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stats {
+  border-top-color:#555 !important;
+}
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat {
+  border-right-color:#555 !important;
+}
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-logo {
+  border-color:#555;
+}
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-kicker {
+  color:#ff885e !important;
 }
 @media(max-width:700px) {
-  .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header { padding: 20px 16px; }
-  .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-topline { margin-bottom: 12px; }
-  .hc-team-entity-profile > .hc-team-profile-hero h1 { font-size: clamp(27px, 7vw, 38px); }
+  .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header {
+    padding:18px 14px !important;
+  }
+  .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-logo {
+    max-width:76px;
+    max-height:76px;
+  }
+  .hc-team-entity-profile > .hc-team-profile-nav {
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .hc-team-entity-profile > .hc-team-profile-nav a {
+    white-space:nowrap;
+  }
 }
-
-/* Club profile v2: editorial light/dark design with no dark-on-dark metric cards. */
-.hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header,
-html.theme-light .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header {
-  background:linear-gradient(150deg,#fffaf4 0%,#fff 64%,#f3eee7 100%)!important;
-  color:#171717!important;
-  border:0!important;border-top:5px solid #ff5a1f!important;
-  border-radius:8px!important;
-  box-shadow:0 6px 26px rgba(0,0,0,.06)!important;
-}
-.hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header::before {width:140px;height:140px;top:-70px;right:-65px;transform:rotate(25deg);background:#ff5a1f;opacity:.09}
-.hc-team-entity-profile > .hc-team-profile-hero h1,
-html.theme-light .hc-team-entity-profile > .hc-team-profile-hero h1 {color:#171717!important;letter-spacing:-.035em}
-.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-meta,
-html.theme-light .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-meta {color:#525252!important}
-.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stats {background:transparent!important;gap:0!important;border-top:1px solid #d9d4cc!important;border-radius:0!important;padding-top:12px}
-.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat,
-html.theme-light .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat {background:transparent!important;border:0!important;border-right:1px solid #dedbd4!important;border-radius:0!important;box-shadow:none!important}
-.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat:last-child {border-right:0!important}
-.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat strong,
-html.theme-light .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat strong {color:#171717!important}
-.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat small,
-html.theme-light .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat small {color:#5b5b5b!important;opacity:1!important}
-html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header {background:linear-gradient(145deg,#171717,#24211f)!important;color:#fff!important;border-top-color:#ff5a1f!important}
-html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero h1,
-html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat strong {color:#fff!important}
-html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-meta,
-html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat small {color:#d4d4d4!important}
-html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stats {border-top-color:#555!important}
-html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat {background:transparent!important;border-right-color:#555!important}
-@media(max-width:700px) {.hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header {padding:20px 16px!important}}
