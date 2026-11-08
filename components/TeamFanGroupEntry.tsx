@@ -40,17 +40,20 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const load = useCallback(async () => {
-    const [{ data: { user } }, { data: rows }] = await Promise.all([
+    const [{ data: { user }, error: authError }, { data: rows, error: summaryError }] = await Promise.all([
       supabase.auth.getUser(),
       supabase.rpc("get_team_fan_group_summary", { p_team_id: teamId })
     ]);
+    if (authError || summaryError) throw authError || summaryError;
     if (user) {
-      const [{ data: profile }, { data: moderators }, { data: platformAdmin }, { data: membership }] = await Promise.all([
+      const [{ data: profile, error: profileError }, { data: moderators, error: moderatorsError }, { data: platformAdmin, error: adminError }, { data: membership, error: membershipError }] = await Promise.all([
         supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
         supabase.from("team_fan_group_moderators").select("user_id,moderator_type").eq("team_id", teamId),
         supabase.rpc("is_current_user_admin_or_moderator"),
         supabase.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle()
       ]);
+      // Never overwrite an optimistic join/leave with a failed or incomplete refresh.
+      if (profileError || moderatorsError || adminError || membershipError) throw profileError || moderatorsError || adminError || membershipError;
       setActualMember(Boolean(membership));
       setIsFan(profile?.account_type === "fan");
       setIsModerator(Boolean((moderators || []).some((m: any) => m.user_id === user.id) ||
@@ -63,7 +66,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
     const row = Array.isArray(rows) ? rows[0] : rows;
     setSummary(row || null);
   }, [teamId]);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void load().catch(() => setMessage(labels.failed)); }, [load, labels.failed]);
   async function join() {
     setBusy(true);
     setMessage("");
@@ -85,7 +88,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
       }
       setActualMember(true);
       setSummary(current => current ? { ...current, is_member: true, member_count: Math.max(1, Number(current.member_count || 0) + (actualMember ? 0 : 1)) } : current);
-      await load();
+      try { await load(); } catch { /* API confirmed join; retain optimistic state until next refresh. */ }
       setMessage(labels.joinedMessage);
     } catch {
       setMessage(labels.failed);
@@ -108,7 +111,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
       if (!response.ok || !result.ok) { setMessage(result.message || "Could not leave this group."); return; }
       setActualMember(false);
       setSummary(current => current ? { ...current, is_member: false, member_count: Math.max(0, Number(current.member_count || 0) - 1) } : current);
-      await load();
+      try { await load(); } catch { /* API confirmed leave; retain optimistic state until next refresh. */ }
       setMessage("You left the Fan Group. You can rejoin anytime.");
     } catch { setMessage("Could not leave this group. Please try again."); }
     finally { setBusy(false); }
