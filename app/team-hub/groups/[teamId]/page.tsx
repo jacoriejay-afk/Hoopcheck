@@ -38,22 +38,23 @@ export default function TeamFanGroupPage() {
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     setUser(currentUser);
     if (!currentUser) { setLoading(false); return; }
-    const [{ data: profile }, { data: team }, { data: summaryRows }, { data: moderators }] = await Promise.all([
+    const [{ data: profile }, { data: team }, { data: summaryRows }, { data: moderators }, { data: ownMembership, error: ownMembershipError }] = await Promise.all([
       supabase.from("profiles").select("account_type").eq("id", currentUser.id).maybeSingle(),
       supabase.from("teams").select("name").eq("id", teamId).maybeSingle(),
       supabase.rpc("get_team_fan_group_summary", { p_team_id: teamId }),
-      supabase.from("team_fan_group_moderators").select("user_id,moderator_type").eq("team_id", teamId)
+      supabase.from("team_fan_group_moderators").select("user_id,moderator_type").eq("team_id", teamId),
+      supabase.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", currentUser.id).maybeSingle()
     ]);
     setTeamName(team?.name || "Team");
     setIsFan(profile?.account_type === "fan");
     const row = Array.isArray(summaryRows) ? summaryRows[0] : summaryRows;
-    setSummary(row || null);
+    setSummary(row ? { ...row, is_member: ownMembershipError ? Boolean(row.is_member) : Boolean(ownMembership), member_count: Math.max(Number(row.member_count || 0), ownMembership ? 1 : 0) } : null);
     const { data: platformAdmin } = await supabase.rpc("is_current_user_admin_or_moderator");
     const moderator = Boolean((moderators || []).some((m: any) => m.user_id === currentUser.id) ||
       ((moderators || []).some((m: any) => m.moderator_type === "platform") && platformAdmin === true));
     if (profile?.account_type !== "fan" && !moderator) { router.replace("/dashboard"); return; }
     setIsModerator(moderator);
-    if (row?.is_member || moderator) {
+    if ((ownMembershipError ? row?.is_member : Boolean(ownMembership)) || moderator) {
       const { data: postRows } = await supabase.from("team_fan_group_posts")
         .select("id,team_id,author_id,body,image_url,is_pinned,created_at,profiles:profiles!team_fan_group_posts_author_id_fkey(display_name,avatar_url)")
         .eq("team_id", teamId).eq("status", "published").order("is_pinned", { ascending: false }).order("created_at", { ascending: false });
