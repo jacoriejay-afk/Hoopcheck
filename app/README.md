@@ -54,10 +54,10 @@ Production checkout:
 
 * Pro: $4.99/month
 * Premium: $9.99/month
-* Pro 6 months: $25.45
-* Premium 6 months: $50.95
-* Pro yearly: $53.89
-* Premium yearly: $107.89
+* Pro 6 months: $26.95 (10% off)
+* Premium 6 months: $53.95 (10% off)
+* Pro yearly: $50.90 (15% off)
+* Premium yearly: $101.90 (15% off)
 
 Production site:
 
