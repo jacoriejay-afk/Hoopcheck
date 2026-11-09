@@ -48,6 +48,7 @@ import { PageShell } from "../components/LayoutSystem";
 import "./hoopcheck-layout-system.css";
 import "./hoopcheck-desk-fix-2.css";
 import "./hoopcheck-desk-3.css";
+import "./hoopcheck-land-1.css";
 import "./hoopcheck-card-pairing.css";
 import "./hoopcheck-hub-empty-state-pairing.css";
 import "./hoopcheck-preview-mobile-hotfix.css";

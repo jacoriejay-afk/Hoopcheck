@@ -71,7 +71,6 @@ export default function HomeDirectoryStats() {
   }, []);
 
   if (!stats.length) return null;
-
   return (
     <section ref={root} className="hc-home-directory-stats" aria-label="Live directory totals">
       {stats.map(stat => (

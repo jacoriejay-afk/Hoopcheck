@@ -47,8 +47,7 @@ export default function GlobalBackButton() {
     router.push(getFallbackPath(pathname));
   }, [pathname, router]);
 
-  // The public landing page is a navigation root, not a detail view.
-  if (pathname === "/") return null;
+  if (pathname === "/" || pathname === "/login" || pathname === "/signup" || pathname.startsWith("/signup/")) return null;
 
   return (
     <div className="global-back-wrap">
