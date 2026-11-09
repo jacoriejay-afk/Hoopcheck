@@ -20,6 +20,7 @@ type TeamProfileHeroProps = {
     reviewCount?: number;
     verifiedReviewCount?: number;
   } | null;
+  className?: string;
   onFollowerCountChange?: (count: number) => void;
 };
 
@@ -34,10 +35,11 @@ export default function TeamProfileHero({
   reviewCount,
   followerCount,
   trustScore,
+  className = "",
   onFollowerCountChange,
 }: TeamProfileHeroProps) {
   return (
-    <section className="hero hc-team-profile-hero hc-social-profile-header" id="overview" aria-labelledby="hc-team-profile-title">
+    <section className={`hero hc-team-profile-hero hc-social-profile-header ${className}`.trim()} id="overview" aria-labelledby="hc-team-profile-title">
       <div className="hc-team-profile-topline">
         <TeamLogo name={name} logoUrl={logoUrl} logoBg={logoBg} size={88} className="hc-team-profile-logo" />
         <FollowButton targetType="team" targetId={teamId} variant="club" showCount={false} showNotifications={false} onCountChange={onFollowerCountChange} />

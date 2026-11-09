@@ -67,6 +67,7 @@ export default function WomensTeam(){
  const average=ratingAverage;
  return <main className="page-shell hc-womens-profile-page"><div className="page-container">
  <TeamProfileHero
+   className="hc-womens-branded-hero"
    teamId={team.id}
    name={team.name}
    country={team.country || t("international")}
