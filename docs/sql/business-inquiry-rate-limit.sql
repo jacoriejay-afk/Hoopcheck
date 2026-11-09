@@ -1,5 +1,8 @@
 -- Atomic, database-backed throttling and insertion.
 -- Run after public-business-inquiries.sql. Service-role only.
+-- Restrict function execution to the server role; revoke default PUBLIC grants
+-- in the same transaction as function creation.
+begin;
 create or replace function public.submit_business_inquiry(
   p_name text, p_email text, p_type text, p_message text
 ) returns boolean
@@ -32,3 +35,4 @@ end;
 $$;
 revoke all on function public.submit_business_inquiry(text,text,text,text) from public, anon, authenticated;
 grant execute on function public.submit_business_inquiry(text,text,text,text) to service_role;
+commit;
