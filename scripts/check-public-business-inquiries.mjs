@@ -40,3 +40,14 @@ test("database keeps anonymous grants revoked and limits submissions", () => {
   assert.match(throttle, /if v_count >= 3 then return false/i);
   assert.match(throttle, /grant execute on function public.submit_business_inquiry\(text,text,text,text\) to service_role/i);
 });
+
+test("CAPTCHA failures are explained to visitors", () => {
+  assert.match(form, /Verification expired\. Please complete the security check again\./);
+  assert.match(form, /Security verification could not load\. Please retry the check\./);
+  assert.match(form, /Security verification is unavailable\. Please refresh and try again\./);
+});
+test("API rejects non-JSON media types", () => {
+  assert.match(api, /JSON content type required\./);
+  assert.match(api, /application\\\/json/);
+  assert.match(api, /status, headers: responseHeaders/);
+});
