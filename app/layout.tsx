@@ -23,6 +23,7 @@ import "./hoopcheck-motion.css";
 import "./hoopcheck-mobile-tabbar-repair.css";
 import "./hoopcheck-lm2e-account-layout.css";
 import "./hoopcheck-lm2f-bottom-nav.css";
+import "./hoopcheck-sp1-spacing.css";
 import "./hoopcheck-lg1-logo-contrast.css";
 import "./hoopcheck-ia1-home.css";
 import "./hoopcheck-brand-navigation.css";
