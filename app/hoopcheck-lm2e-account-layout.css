@@ -141,7 +141,7 @@
 /* Keep the profile action's established inverse treatment in both themes. */
 html.theme-light .hc-dashboard-shell .hc-dashboard-edit-profile,
 html.theme-light .hc-dashboard-shell .hc-dashboard-edit-profile:visited {
-  background: #FFFFFF !important;
+  background: var(--hc-surface-raised, #F7F7F5) !important;
   color: #000000 !important;
   -webkit-text-fill-color: #000000 !important;
   border-color: var(--hc-border, #D8D8D2) !important;
