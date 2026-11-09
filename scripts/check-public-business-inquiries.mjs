@@ -14,6 +14,8 @@ test("public endpoint is explicitly server gated", () => {
 });
 test("guest form is hidden unless explicitly enabled", () => {
   assert.match(page, /NEXT_PUBLIC_BUSINESS_INQUIRIES_ENABLED === "true"/);
+  assert.match(page, /guestInquiriesEnabled && !signedIn && <PublicBusinessInquiry \/>/);
+  assert.match(page, /\(!guestInquiriesEnabled \|\| signedIn\) && <section/);
 });
 test("CAPTCHA and origin checks precede privileged database call", () => {
   assert.ok(api.indexOf("TURNSTILE_SECRET_KEY") < api.indexOf('admin.rpc("submit_business_inquiry"'));
