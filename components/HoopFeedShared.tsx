@@ -47,7 +47,7 @@ export function FeedTimeRemaining({ expiresAt, now }: { expiresAt: string; now: 
   const minutes = Math.max(0, Math.ceil((new Date(expiresAt).getTime() - now) / 60000));
   if (minutes <= 0) return <>Expired</>;
   if (minutes < 60) return <>{minutes}m left</>;
-  return <>{Math.ceil(minutes / 60)}h left</>;
+  return <>{Math.min(24, Math.ceil(minutes / 60))}h left</>;
 }
 
 export function FeedDiscoveryHeader({ audience }: { audience: "player" | "fan" }) {
