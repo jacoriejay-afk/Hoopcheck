@@ -1,0 +1,173 @@
+/* LM-2F: replace the mobile tab-bar rendering contract, not another icon-size patch.
+   All icons are inline SVG nodes owned by BottomNav; no external icon resources. */
+@media (max-width: 767px) {
+  html body nav.hc-lm2f-bottom-nav {
+    position: fixed !important;
+    inset-inline: 0 !important;
+    inset-block-end: 0 !important;
+    top: auto !important;
+    z-index: 2147483647 !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(64px, 1fr)) !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+    width: 100% !important;
+    min-width: 320px !important;
+    max-width: 100% !important;
+    min-height: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 5px 0 calc(5px + env(safe-area-inset-bottom, 0px)) !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    background: var(--hc-nav-bg, #0A0A0A) !important;
+    border: 0 !important;
+    border-top: 1px solid var(--hc-border, #444) !important;
+    border-radius: 0 !important;
+    box-shadow: 0 -4px 18px rgba(0,0,0,.18) !important;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    isolation: isolate !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab,
+  html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab:link,
+  html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab:visited {
+    position: relative !important;
+    display: flex !important;
+    flex: 0 0 auto !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    justify-self: stretch !important;
+    min-width: 64px !important;
+    width: 100% !important;
+    min-height: 54px !important;
+    height: 54px !important;
+    max-height: 54px !important;
+    margin: 0 !important;
+    padding: 4px 2px !important;
+    gap: 3px !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    background: transparent !important;
+    color: var(--hc-foreground, #F7F7F5) !important;
+    -webkit-text-fill-color: currentColor !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    text-decoration: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active {
+    color: #FF5A1F !important;
+    -webkit-text-fill-color: #FF5A1F !important;
+    background: transparent !important;
+  }
+
+  html body nav.hc-lm2f-bottom-nav .hc-lm2f-tab-icon {
+    display: grid !important;
+    place-items: center !important;
+    flex: 0 0 24px !important;
+    width: 24px !important;
+    min-width: 24px !important;
+    max-width: 24px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    max-height: 24px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 0 !important;
+    color: inherit !important;
+    overflow: visible !important;
+  }
+
+  html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab .hc-lm2f-tab-icon > svg {
+    display: block !important;
+    flex: 0 0 24px !important;
+    width: 24px !important;
+    min-width: 24px !important;
+    max-width: 24px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    max-height: 24px !important;
+    box-sizing: border-box !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.8 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    color: inherit !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    overflow: visible !important;
+  }
+
+  html body nav.hc-lm2f-bottom-nav .hc-lm2f-tab-label {
+    display: block !important;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: inherit !important;
+    -webkit-text-fill-color: currentColor !important;
+    font: 600 9px/1.15 Inter, Arial, sans-serif !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active::before,
+  html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  /* The active marker is a real child of the active tab, never a bar pseudo-element. */
+  html body nav.hc-lm2f-bottom-nav .hc-lm2f-active-indicator {
+    position: absolute !important;
+    inset-inline: 22% !important;
+    inset-block-start: 0 !important;
+    display: block !important;
+    width: auto !important;
+    height: 3px !important;
+    min-height: 3px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 0 3px 3px !important;
+    background: #FF5A1F !important;
+    pointer-events: none !important;
+  }
+
+  html.theme-light body nav.hc-lm2f-bottom-nav {
+    background: var(--hc-nav-bg, #F7F7F5) !important;
+    border-top-color: var(--hc-border, #D8D8D2) !important;
+  }
+  html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab,
+  html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab:link,
+  html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab:visited {
+    color: var(--hc-foreground, #22221F) !important;
+    -webkit-text-fill-color: currentColor !important;
+  }
+  html.theme-dark body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab,
+  html.theme-dark body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab:link,
+  html.theme-dark body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab:visited {
+    color: var(--hc-foreground, #F7F7F5) !important;
+    -webkit-text-fill-color: currentColor !important;
+  }
+  html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active,
+  html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active,
+  html.theme-dark body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active {
+    color: #FF5A1F !important;
+    -webkit-text-fill-color: #FF5A1F !important;
+  }
+}

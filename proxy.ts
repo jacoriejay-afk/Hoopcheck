@@ -33,8 +33,10 @@ export async function proxy(request: NextRequest) {
 
   if (!data?.claims) {
     const url = request.nextUrl.clone();
+    const returnTo = request.nextUrl.pathname + request.nextUrl.search;
     url.pathname = "/login";
     url.search = "";
+    url.searchParams.set("returnTo", returnTo);
     return NextResponse.redirect(url);
   }
 
@@ -45,7 +47,7 @@ export async function proxy(request: NextRequest) {
       supabase.from("user_preferences").select("language").eq("user_id", userId).maybeSingle(),
     ]);
     const language = profile?.preferred_language || preferences?.language;
-    const supported = ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar"];
+    const supported = ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar", "ru", "az", "pl", "zh", "ja", "sr", "fi", "he", "lt", "uk"];
     if (typeof language === "string" && supported.includes(language) && request.cookies.get("hoopcheck-language")?.value !== language) {
       const responseCookies = supabaseResponse.cookies.getAll();
       request.cookies.set("hoopcheck-language", language);
@@ -66,11 +68,9 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/search/:path*",
-    "/players/:path*",
-    "/coaches/:path*",
-    "/teams/:path*",
-    "/leagues/:path*",
+    "/teams/:id/review",
+    "/coaches/:id/review",
+    "/leagues/:id/review",
     "/dashboard/:path*",
     "/settings/:path*",
     "/profile/:path*",

@@ -30,7 +30,13 @@ export async function syncNormalizedDirectory(
   if(r.leagueExternalId){const q=await supabase.from("leagues").select("id").eq("source_id",sourceId).eq("external_id",clean(r.leagueExternalId)).limit(1).maybeSingle();if(q.error)throw q.error;leagueId=q.data?.id??null;}
   let existing:any=null;
   if(clean(r.externalId)){const q=await supabase.from("teams").select("id").eq("source_id",sourceId).eq("external_id",clean(r.externalId)).limit(1).maybeSingle();if(q.error)throw q.error;existing=q.data;}
-  if(!existing){const q=await supabase.from("teams").select("id").ilike("name",name).eq("country",clean(r.country)).limit(1).maybeSingle();if(q.error&&q.error.code!=="PGRST116")throw q.error;existing=q.data;}
+  if(!existing){
+    let q= supabase.from("teams").select("id,name,city,basketball_type").ilike("name",name).eq("country",clean(r.country)).eq("basketball_type","mens").limit(1);
+    q=clean(r.city)?q.eq("city",clean(r.city)):q.is("city",null);
+    const match=await q.maybeSingle();
+    if(match.error&&match.error.code!=="PGRST116")throw match.error;
+    existing=match.data;
+  }
   const payload:any={name,country:clean(r.country),city:clean(r.city),league_id:leagueId,league_name:clean(r.leagueName),external_id:clean(r.externalId),source_id:sourceId,last_synced_at:new Date().toISOString(),active:true};
   if(existing){const q=await supabase.from("teams").update(payload).eq("id",existing.id).select("id").single();if(q.error)throw q.error;teamIds.set(normalizedKey(name,r.country),existing.id);result.updated++;await supabase.from("directory_change_log").insert({entity_type:"team",entity_id:existing.id,source_id:sourceId,action:"updated"});}
   else{const q=await supabase.from("teams").insert(payload).select("id").single();if(q.error)throw q.error;teamIds.set(normalizedKey(name,r.country),q.data.id);result.created++;await supabase.from("directory_change_log").insert({entity_type:"team",entity_id:q.data.id,source_id:sourceId,action:"created"});}

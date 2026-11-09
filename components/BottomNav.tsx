@@ -15,24 +15,63 @@ const items = [
   ["/profile", "account", "Account"],
 ] as const;
 
-function NavIcon({ label }: { label: (typeof items)[number][2] }) {
-  const common = {
+type TabLabel = (typeof items)[number][2];
+
+/* These icons are deliberately self-contained inline SVGs. They do not depend
+   on icon fonts, external sprites, CSS masks, or runtime-fetched assets. */
+function TabIcon({ label }: { label: TabLabel }) {
+  const svgProps = {
+    width: 24,
+    height: 24,
+    viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
     strokeWidth: 1.8,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
+    focusable: false,
+    "aria-hidden": true as const,
+    className: "hc-lm2f-tab-svg",
   };
 
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" {...common}>
-      {label === "Home" && <><path d="m3 10 9-7 9 7" /><path d="M5.5 9v11h13V9M9.5 20v-6h5v6" /></>}
-      {label === "HoopFeed" && <><circle cx="12" cy="12" r="9" /><path d="M3.5 9h17M3.5 15h17M12 3c3 3 4.5 6 4.5 9S15 18 12 21M12 3C9 6 7.5 9 7.5 12S9 18 12 21" /></>}
-      {label === "Search" && <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5" /></>}
-      {label === "Alerts" && <><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M10 21h4" /></>}
-      {label === "Account" && <><circle cx="12" cy="7.5" r="3.5" /><path d="M4.5 21c.4-4.4 3-6.7 7.5-6.7s7.1 2.3 7.5 6.7Z" /></>}
-    </svg>
-  );
+  switch (label) {
+    case "Home":
+      return (
+        <svg {...svgProps}>
+          <path d="m3 10 9-7 9 7" />
+          <path d="M5.5 9v11h13V9M9.5 20v-6h5v6" />
+        </svg>
+      );
+    case "HoopFeed":
+      return (
+        <svg {...svgProps}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3.5 9h17M3.5 15h17" />
+          <path d="M12 3c3 3 4.5 6 4.5 9S15 18 12 21M12 3C9 6 7.5 9 7.5 12S9 18 12 21" />
+        </svg>
+      );
+    case "Search":
+      return (
+        <svg {...svgProps}>
+          <circle cx="10.5" cy="10.5" r="6.5" />
+          <path d="m15.5 15.5 5 5" />
+        </svg>
+      );
+    case "Alerts":
+      return (
+        <svg {...svgProps}>
+          <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+          <path d="M10 21h4" />
+        </svg>
+      );
+    case "Account":
+      return (
+        <svg {...svgProps}>
+          <circle cx="12" cy="7.5" r="3.5" />
+          <path d="M4.5 21c.4-4.4 3-6.7 7.5-6.7s7.1 2.3 7.5 6.7Z" />
+        </svg>
+      );
+  }
 }
 
 export default function BottomNav() {
@@ -40,30 +79,44 @@ export default function BottomNav() {
   const { signedIn, userId } = useAuthState();
   const { t } = useLanguage();
   const [accountType, setAccountType] = useState<string | null>(null);
+  const [accountTypeLoading, setAccountTypeLoading] = useState(true);
   useEffect(() => {
     let active = true;
-    if (!userId) { setAccountType(null); return; }
-    void supabase.from("profiles").select("account_type").eq("id", userId).maybeSingle().then(({ data }) => {
-      if (active) setAccountType(data?.account_type || null);
+    if (!userId) { setAccountType(null); setAccountTypeLoading(false); return; }
+    setAccountTypeLoading(true);
+    setAccountType(null);
+    void supabase.from("profiles").select("account_type").eq("id", userId).maybeSingle().then(({ data, error }) => {
+      if (active) {
+        setAccountType(error ? null : data?.account_type || null);
+        setAccountTypeLoading(false);
+      }
     });
     return () => { active = false; };
   }, [userId]);
-  const [fanAccount, setFanAccount] = useState(false);
-  useEffect(() => { let alive = true; if (!signedIn) { setFanAccount(false); return; } void supabase.auth.getUser().then(async ({ data }) => { if (!data.user) return; const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", data.user.id).maybeSingle(); if (alive) setFanAccount(profile?.account_type === "fan"); }); return () => { alive = false; }; }, [signedIn]);
+  const fanAccount = accountType === "fan";
 
   if (!signedIn || pathname.startsWith("/admin")) return null;
 
   return (
-    <nav className="bottom-nav hc-bottom-tab-bar" aria-label="Mobile navigation">
+    <nav className="bottom-nav hc-bottom-tab-bar hc-mobile-tabbar-repair hc-lm2f-bottom-nav" aria-label="Mobile navigation">
       {items.map(([href, translationKey, label]) => {
-        const destination = href === "/feed" && fanAccount ? "/fan-feed" : href;
+        const destination = href === "/feed" ? (accountType === null ? "/dashboard" : fanAccount ? "/fan-feed" : "/feed") : href;
+        const feedResolving = href === "/feed" && accountTypeLoading;
         const active = destination === "/"
           ? pathname === "/" || pathname === "/dashboard"
           : pathname === destination || pathname.startsWith(destination + "/");
         return (
-          <Link key={href} href={destination} className={active ? "active" : ""} aria-current={active ? "page" : undefined}>
-            <span className="bottom-nav-icon"><NavIcon label={label} /></span>
-            <span className="bottom-nav-label">{translationKey === "hoopFeed" ? "HoopFeed" : t(translationKey)}</span>
+          <Link
+            key={href}
+            href={destination}
+            className={active ? "hc-lm2f-tab hc-smooth-press active" : "hc-lm2f-tab hc-smooth-press"}
+            aria-current={active ? "page" : undefined}
+            aria-disabled={feedResolving ? true : undefined}
+            onClick={feedResolving ? (event) => event.preventDefault() : undefined}
+          >
+            <span className="hc-lm2f-tab-icon"><TabIcon label={label} /></span>
+            <span className="hc-lm2f-tab-label">{translationKey === "hoopFeed" ? (accountType === null ? "FEED" : fanAccount ? "FAN HQ" : "HOOPFEED") : t(translationKey)}</span>
+            {active && <span className="hc-lm2f-active-indicator" aria-hidden="true" />}
           </Link>
         );
       })}

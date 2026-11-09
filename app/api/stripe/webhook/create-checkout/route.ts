@@ -167,6 +167,19 @@ export async function POST(
       );
     }
 
+    // Enforce the coach/manager Premium-only rule on the server, not only in the UI.
+    const { data: checkoutProfile, error: checkoutProfileError } = await supabase
+      .from("profiles")
+      .select("account_type")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (checkoutProfileError || !checkoutProfile) {
+      return NextResponse.json({ error: "Unable to verify your HoopCheck account type." }, { status: 403 });
+    }
+    if (["coach", "manager"].includes(checkoutProfile.account_type) && plan !== "premium") {
+      return NextResponse.json({ error: "Coach and Team Manager accounts require HoopCheck Premium." }, { status: 403 });
+    }
+
     const submittedPromoCode =
       typeof body.promoCode === "string" ? body.promoCode.trim() : "";
     if (submittedPromoCode && (submittedPromoCode.length > 64 || !/^[a-zA-Z0-9_-]+$/.test(submittedPromoCode))) {
@@ -282,8 +295,8 @@ export async function POST(
 
     const intervalKey = interval === "month" ? "monthly" : interval === "6_month" ? "6_month" : "year";
     const amountKey = plan === "pro"
-      ? (interval === "month" ? "499" : interval === "6_month" ? "2545" : "5389")
-      : (interval === "month" ? "999" : interval === "6_month" ? "5095" : "10789");
+      ? (interval === "month" ? "499" : interval === "6_month" ? "2695" : "5090")
+      : (interval === "month" ? "999" : interval === "6_month" ? "5395" : "10190");
     const lookupKey = `hoopcheck_${plan}_${intervalKey}_${amountKey}_2026`;
     const priceList = await stripe.prices.list({lookup_keys:[lookupKey],active:true,limit:1});
     const priceId = priceList.data[0]?.id;

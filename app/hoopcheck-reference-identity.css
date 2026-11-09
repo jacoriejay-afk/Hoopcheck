@@ -1,0 +1,21 @@
+/* Reference identity: monochrome hex basketball-check mark, sharp wordmark,
+   black athletic header, off-white content, orange action accents. */
+html body .hc-logo { display:inline-flex; align-items:center; gap:8px; color:inherit; max-width:100%; }
+html body .hc-logo__icon { flex:none; color:inherit; overflow:visible; }
+html body .hc-logo__wordmark {
+  display:inline-flex; align-items:baseline; flex-wrap:nowrap;
+  font-family:var(--font-display),Impact,"Arial Narrow",sans-serif;
+  font-weight:900; font-stretch:condensed; letter-spacing:-.055em;
+  line-height:1; text-transform:uppercase;
+}
+html body .hc-logo__hoop,
+html body .hc-logo__check-word { color:inherit !important; -webkit-text-fill-color:currentColor !important; }
+html body .site-header-global .hc-logo { color:#f7f7f5 !important; }
+html body .site-header-global .hc-logo__icon { color:#f7f7f5 !important; }
+html body .site-header-global .hc-logo__wordmark { color:#f7f7f5 !important; }
+html body .site-footer .hc-logo { color:#f7f7f5; }
+html body .hc-home-redesign .hc-logo__check { stroke:currentColor; }
+@media(max-width:420px) {
+  html body .site-header-global .hc-logo { gap:5px; }
+  html body .site-header-global .hc-logo__wordmark { font-size:clamp(14px,4vw,22px); letter-spacing:-.065em; }
+}

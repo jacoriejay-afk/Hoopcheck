@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { calculateReviewSummary } from "../../../lib/review-summary";
 
 export const dynamic = "force-dynamic";
 
@@ -31,14 +32,20 @@ export async function GET(request: Request) {
     let plan = "";
     let active = false;
     let isAdmin = false;
+    let playerVerified = false;
     if (user) {
-      const [{ data: profile }, { data: subscription }] = await Promise.all([
-        db.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
-        db.from("subscriptions").select("plan,status,current_period_end").eq("user_id", user.id).maybeSingle(),
+      const [{ data: profile, error: profileError }, { data: subscription, error: subscriptionError }] = await Promise.all([
+        db.from("profiles").select("account_type,player_verified").eq("id", user.id).maybeSingle(),
+        db.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id", user.id).maybeSingle(),
       ]);
+      if (profileError || subscriptionError) {
+        throw profileError || subscriptionError;
+      }
       accountType = profile?.account_type || "";
+      playerVerified = profile?.player_verified === true;
       plan = subscription?.plan || "";
-      active = ["active", "trialing"].includes(subscription?.status || "") &&
+      active = (["active", "trialing"].includes(subscription?.status || "") ||
+        ["pro", "premium"].includes(subscription?.access_status || "")) &&
         (!subscription?.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now());
       const { data: admin } = await authClient.auth.getUser(bearer);
       if (admin.user) {
@@ -52,17 +59,32 @@ export async function GET(request: Request) {
     }
 
     const tier = isAdmin ? "premium" :
-      accountType === "player" ? "player" :
+      accountType === "player" && active && ["pro", "premium"].includes(plan) ? "player" :
       accountType === "fan" && active && plan === "premium" ? "premium" :
       accountType === "fan" && active && plan === "pro" ? "pro" :
-      accountType !== "fan" && accountType !== "" && active ? "member" : "free";
+      accountType !== "fan" && accountType !== "player" && accountType !== "" && active && ["pro", "premium"].includes(plan) ? "member" : "free";
     const fullRead = ["premium", "player", "member"].includes(tier);
     const targetColumn = entityType === "team" ? "team_id" : entityType === "coach" ? "coach_id" : "womens_team_id";
     const table = entityType === "womens-team" ? "womens_team_reviews" : "reviews";
 
+    let canWrite = accountType === "player" && playerVerified && !!user?.email_confirmed_at &&
+      active && ["pro", "premium"].includes(plan) && entityType !== "womens-team";
+    if (canWrite && entityType === "team" && user) {
+      const scoped = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: "Bearer " + bearer } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data: eligible, error: eligibilityError } = await scoped.rpc("can_user_review_team", {
+        p_user_id: user.id,
+        p_team_id: entityId,
+      });
+      if (eligibilityError) throw eligibilityError;
+      canWrite = eligible === true;
+    }
+
     const response: Record<string, unknown> = {
       tier,
-      canWrite: accountType === "player" && entityType !== "womens-team",
+      canWrite,
       categories: ["Communication", "Professionalism", "Development", "Payment", "Pay on time", "Housing", "Medical support", "Coaching quality", "Facilities", "Playing time honesty"],
       summary: null,
       reviews: [],
@@ -78,18 +100,14 @@ export async function GET(request: Request) {
       .order("created_at", { ascending: false });
     if (rowsError) throw rowsError;
     const rows = (rawRows || []) as unknown as Array<Record<string, unknown>>;
-    const avg = (key: string) => {
-      const values = rows.map((row: Record<string, unknown>) => Number(row[key]))
-        .filter((value: number) => Number.isFinite(value) && value >= 1 && value <= 5);
-      return values.length ? Math.round(values.reduce((sum: number, value: number) => sum + value, 0) / values.length * 100) / 100 : null;
-    };
+    const summary = calculateReviewSummary(rows, fullRead && entityType !== "womens-team");
     response.summary = {
-      overall_rating: avg("overall_rating"),
-      review_count: fullRead ? rows.length : undefined,
-      communication_rating: fullRead && entityType !== "womens-team" ? avg("communication_rating") : undefined,
-      professionalism_rating: fullRead && entityType !== "womens-team" ? avg("professionalism_rating") : undefined,
-      development_rating: fullRead && entityType !== "womens-team" ? avg("development_rating") : undefined,
-      payment_rating: fullRead && entityType !== "womens-team" ? avg("payment_rating") : undefined,
+      overall_rating: summary.overall_rating,
+      review_count: fullRead ? summary.review_count : undefined,
+      communication_rating: fullRead && entityType !== "womens-team" ? summary.communication_rating : undefined,
+      professionalism_rating: fullRead && entityType !== "womens-team" ? summary.professionalism_rating : undefined,
+      development_rating: fullRead && entityType !== "womens-team" ? summary.development_rating : undefined,
+      payment_rating: fullRead && entityType !== "womens-team" ? summary.payment_rating : undefined,
     };
     if (fullRead) response.reviews = rows;
 
