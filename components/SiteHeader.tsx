@@ -27,7 +27,10 @@ export default function SiteHeader() {
         <div className="hc-header-desktop-links">
           {links.filter(item=>[roleHome.href,"/search","/directory","/live-games","/fan-live"].includes(item.href)).map(item=><Link key={item.href} href={item.href} className={active(item.href)?"is-active":""}>{item.label}</Link>)}
           <details className="hc-header-more"><summary>More <span aria-hidden="true">▾</span></summary><div className="hc-header-more-panel">
-            {links.filter(item=>![roleHome.href,"/search","/directory","/live-games","/fan-live"].includes(item.href)&& (item.href!=="/players"||!signedIn||(accountType!==""&&accountType!=="fan"))).map(item=><Link key={item.href} href={item.href} className={active(item.href)?"is-active":""}>{item.label}</Link>)}
+            {links.filter(item=>![roleHome.href,"/search","/directory","/live-games","/fan-live"].includes(item.href)&& (item.href!=="/players"||!signedIn||(accountType!==""&&accountType!=="fan"))).map(item=><Link key={item.href} href={item.href} className={active(item.href)?"is-active":""} onClick={(event)=>{
+              const menu=event.currentTarget.closest("details");
+              if(menu) menu.open=false;
+            }}>{item.label}</Link>)}
           </div></details>
         </div>
       </div>

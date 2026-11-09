@@ -414,6 +414,7 @@ export default function AccountPage() {
         </div>
         <div className="hc-account-identity-actions">
           <a href={profile.account_type === "player" ? "/complete-profile" : "#profile-editor"} className="btn">{t("editProfile")}</a>
+          {profile.account_type === "player" && <Link href="/profile#player-passport" className="btn dark">Player Passport</Link>}
           {profile.account_type === "player" && settingsVisibility === "public" ? <Link href={userId ? `/players/${encodeURIComponent(userId)}` : "/profile"} className="btn dark">{t("profilePublic")}</Link> : null}
         </div>
       </header>

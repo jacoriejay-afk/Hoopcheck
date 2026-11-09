@@ -77,6 +77,9 @@ jobs:
           npm run start -- --hostname 127.0.0.1 > /tmp/hoopcheck-next.log 2>&1 &
           echo $! > /tmp/hoopcheck-next.pid
 
+      - name: Verify signed-in audit regressions
+        run: node scripts/check-signed-in-audit-browser.mjs
+
       - name: Verify men’s and women’s team discovery
         run: node scripts/check-team-discovery-browser.mjs
 

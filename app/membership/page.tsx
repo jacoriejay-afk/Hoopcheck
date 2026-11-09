@@ -238,6 +238,9 @@ function MembershipContent() {
     }
   }
 
+  const currentTier = hasActiveMembershipAtLeast(subscription, "premium") ? "premium"
+    : hasActiveMembershipAtLeast(subscription, "pro") ? "pro" : "free";
+  const currentPlan = `${accountType === "fan" ? "Fan " : ""}${currentTier === "premium" ? "Premium" : "Pro"}`;
   const isActive =
     subscription?.status === "active" || subscription?.status === "trialing";
   const premiumOnlyAccount = accountType === "coach" || accountType === "manager";
@@ -267,16 +270,18 @@ function MembershipContent() {
       {error && <div className="status error">{error}</div>}
 
       <section className="membership-section">
-        {isActive && subscription && !subscription.stripe_subscription_id && (
-          <div className="dashboard-card" style={{ marginBottom: 16 }}>
-            <strong>Complimentary HoopCheck access is active.</strong>
-            <span className="muted"> You can keep using your current access or choose a paid membership below.</span>
-          </div>
+        {currentTier !== "free" && !subscription?.stripe_subscription_id && (
+          <section className="active-card" id="manage-subscription" aria-labelledby="complimentary-membership">
+            <div className="eyebrow">Current membership</div>
+            <h2 id="complimentary-membership">HoopCheck {currentPlan}</h2>
+            <p>Complimentary access is active. There is no Stripe subscription to manage.</p>
+            <p className="muted">Paid plans below are optional.</p>
+          </section>
         )}
         {isActive && subscription?.stripe_subscription_id && (
           <MembershipComparison
             audience={accountType === "fan" ? "fan" : "player"}
-            currentTier={hasActiveMembershipAtLeast(subscription, "premium") ? "premium" : hasActiveMembershipAtLeast(subscription, "pro") ? "pro" : "free"}
+            currentTier={currentTier}
             billingTerm={billingInterval}
             premiumOnly={premiumOnlyAccount}
           />
