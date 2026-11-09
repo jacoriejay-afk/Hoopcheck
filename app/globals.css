@@ -4029,7 +4029,7 @@ html.theme-dark .hc-team-entity-profile :where(.hero,.card,.dashboard-card) :whe
 .signup-form .hc-username-feedback:empty { display:none; }
 .signup-form .hc-username-feedback.is-available { color:#16834a; }
 html.theme-dark .signup-form .hc-username-field > input { background:#171717; color:#F7F7F5; border-color:#555; }
-html.theme-light .signup-form .hc-username-field > input { background:#fff; color:#171717; border-color:#bdb3a5; }
+html.theme-light .signup-form .hc-username-field > input { background:var(--hc-input-bg); color:#171717; border-color:#bdb3a5; }
 html.theme-dark .signup-form .hc-username-field > label { color:#F7F7F5; }
 html.theme-light .signup-form .hc-username-field > label { color:#171717; }
 
