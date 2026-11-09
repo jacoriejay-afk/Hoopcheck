@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../../components/HoopLoading";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -61,4 +62,4 @@ function Complete(){
   <section className="dashboard-card" style={{marginTop:18}}><p className="eyebrow">READY</p><button className="btn" onClick={save} disabled={saving}>{saving?"Saving...":"Save My Experience"}</button><p className="muted" style={{marginTop:10}}>You can change preferences later from your profile and settings.</p></section>
  </div></main>;
 }
-export default function SignupComplete(){return <Suspense fallback={<main className="page-shell"><div className="page-container"><div className="dashboard-card">Loading your personalized setup...</div></div></main>}><Complete/></Suspense>;}
+export default function SignupComplete(){return <Suspense fallback={<main className="page-shell"><div className="page-container"><HoopLoading label="Loading your personalized setup..." /></div></main>}><Complete/></Suspense>;}

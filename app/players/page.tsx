@@ -149,7 +149,7 @@ export default function PlayersPage() {
           </div>
         ) : loading ? (
           <div className="dashboard-card" style={{ marginTop: 18 }}>
-            <HoopLoading label="Searching usernames..." />
+            <HoopLoading variant="inline" label="Searching usernames..." />
           </div>
         ) : searchError ? (
           <div className="dashboard-card" style={{ marginTop: 18 }} role="alert">

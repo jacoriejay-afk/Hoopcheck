@@ -73,7 +73,7 @@ return (
     {(query || country) && <button type="button" className="hc-directory-reset" onClick={() => { setQuery(""); setCountry(""); }}>Clear filters</button>}
   </section>
   <section className="grid hc-team-directory-list">
-    {loading ? (<div className="card"><HoopLoading label="Scanning professional leagues..." /></div>) : leagues.length === 0 ? (
+    {loading ? (<div className="card"><HoopLoading variant="inline" label="Scanning professional leagues..." /></div>) : leagues.length === 0 ? (
       <div className="card">
         <div className="eyebrow">
           Coming Soon

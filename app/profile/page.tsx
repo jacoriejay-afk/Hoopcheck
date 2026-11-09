@@ -11,6 +11,7 @@ import Surface from "../../components/Surface";
 import HoopPassport from "../../components/HoopPassport";
 import { useLanguage } from "../../components/LanguageProvider";
 import { calculateProfileCompletion } from "../../lib/profile-completion";
+import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
 
 function calculatePostingStreak(rows: { activity_date: string }[]) {
   const dates = new Set(rows.map(row => String(row.activity_date).slice(0, 10)));
@@ -52,7 +53,7 @@ export default function ProfilePage() {
       const result = await Promise.race([
         supabase
           .from("profiles")
-          .select("id,display_name,username,first_name,last_name,account_type,bio,position,years_pro,current_country,current_team,player_verified,coach_verified,avatar_url,avatar_moderation_status,basketball_type,free_agent,hometown,nationality,interests,favorite_leagues,profile_visibility")
+          .select("id,display_name,username,first_name,last_name,account_type,bio,position,years_pro,current_country,current_team,height,player_verified,coach_verified,avatar_url,avatar_moderation_status,basketball_type,free_agent,hometown,nationality,interests,favorite_leagues,profile_visibility")
           .eq("id", user.id)
           .maybeSingle(),
         new Promise<any>((resolve) => setTimeout(() => resolve({ data: null, error: new Error("Profile request timed out") }), 8000)),
@@ -123,7 +124,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="hc-member-profile-actions">
-            <Link href="/account#profile-editor" className="btn hc-profile-edit-button">{t("editProfile")}</Link>
+            <Link href="/account#profile-editor" className="btn hc-profile-edit-button">{t("editProfile")}</Link>{p.account_type === "player" && <Link href="/account#team-review-checklist" className="btn dark">Team review checklist</Link>}
             {p.account_type === "player" && (p.profile_visibility === "public" ? (
               <Link href={"/players/" + encodeURIComponent(p.id)} className="btn dark hc-profile-public-button">
                 <span className="hc-profile-public-full">{t("profilePublic")}</span><span className="hc-profile-public-short">{t("profilePublic")}</span><HoopIcon name="arrow-up-right" size={16} />
@@ -134,8 +135,8 @@ export default function ProfilePage() {
               </Link>
             ))}
           </div>
-          {profileCompletion < 100 && <div className="hc-profile-completion">
-            <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href={p?.account_type === "player" ? "/complete-profile" : "/account#profile-editor-field-" + nextFieldAnchor}>Complete profile <span aria-hidden="true">→</span></Link></div>
+          {p.account_type === "player" ? <PlayerProfileCompletionCard profile={p} onPublished={() => setP((current: any) => ({ ...current, profile_visibility: "public" }))} /> : profileCompletion < 100 && <div className="hc-profile-completion">
+            <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href={"/account#profile-editor-field-" + nextFieldAnchor}>Complete profile <span aria-hidden="true">→</span></Link></div>
             <div className="hc-profile-completion-track" role="progressbar" aria-label={t("profileCompleteness")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}><span style={{width: profileCompletion + "%"}} /></div>
           </div>}
           {p.account_type === "player" && postingStreak > 0 && <div className="hc-profile-streak-row"><span className="hc-feed-streak" aria-label={postingStreak + " day HoopFeed posting streak"}><span aria-hidden="true">🔥</span> {postingStreak}-day streak</span></div>}

@@ -287,35 +287,12 @@ export default function TeamDetailPage() {
         return;
       }
 
-      const [
-        profileResult,
-        subscriptionResult,
-        adminResult,
-      ] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("account_type")
-          .eq("id", user.id)
-          .maybeSingle(),
-
-        supabase
-          .from("subscriptions")
-          .select(
-            "plan, status, current_period_end"
-          )
-          .eq(
-            "user_id",
-            user.id
-          )
-          .maybeSingle(),
-
-        supabase.rpc(
-          "is_current_user_admin_or_moderator"
-        ),
+      const [profileResult, subscriptionResult] = await Promise.all([
+        supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
+        supabase.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id", user.id).maybeSingle(),
       ]);
 
-      const subscription =
-        subscriptionResult.data;
+      const subscription = subscriptionResult.data;
       setAccountType(profileResult.data?.account_type || "");
       // Team Portal belongs to the approved representative of THIS club, not every manager.
       const { data: approvedTeamClaim } = await supabase
@@ -327,46 +304,16 @@ export default function TeamDetailPage() {
         .eq("status", "approved")
         .maybeSingle();
       setHasApprovedTeamClaim(Boolean(approvedTeamClaim));
-      setMembershipPlan(subscription?.plan || "");
-
-      const currentPeriodEnd =
-        subscription?.current_period_end
-          ? new Date(
-              subscription.current_period_end
-            )
-          : null;
-
-      const subscriptionIsActive =
-        (
-          subscription?.status ===
-            "active" ||
-          subscription?.status ===
-            "trialing"
-        ) &&
-        (
-          !currentPeriodEnd ||
-          currentPeriodEnd >
-            new Date()
-        );
-
-      const isAdmin =
-        adminResult.data === true;
-
-      const fanHasPaidPlan =
-        profileResult.data?.account_type !== "fan" ||
-        hasActiveMembershipAtLeast(subscription);
-      const access =
-        (subscriptionIsActive && fanHasPaidPlan) ||
-        isAdmin;
-
-      setHasAccess(access);
+      setMembershipPlan(hasActiveMembershipAtLeast(subscription) ? (subscription?.plan || "") : "");
 
       const response = await fetch(`/api/review-access?entityType=team&entityId=${encodeURIComponent(id)}`, {
         headers: { Authorization: `Bearer ${session?.access_token || ""}` },
         cache: "no-store",
       });
       const reviewPayload = response.ok ? await response.json() : null;
-      const tier = profileResult.data?.account_type === "player" ? "player" : ((reviewPayload?.tier || "free") as typeof reviewTier);
+      // The server entitlement response is authoritative; do not override it
+      // with account role or a second client-side membership calculation.
+      const tier = (reviewPayload?.tier || "free") as typeof reviewTier;
       setReviewTier(tier);
       const fullRead = ["premium", "player", "member"].includes(tier);
       const canReadAnything = tier !== "free";
@@ -587,6 +534,7 @@ export default function TeamDetailPage() {
     <main className="hc-entity-profile-page hc-team-entity-profile">
 
 <section className="hero hc-team-profile-hero hc-social-profile-header hc-team-branded-hero" data-team-city={team.city || team.country || ""} style={{"--hc-team-hue": String([...team.name.toLowerCase()].reduce((n,c)=>(Math.imul(n,31)+c.charCodeAt(0))>>>0,7)%360)} as React.CSSProperties} id="overview" aria-labelledby="hc-team-profile-title">
+        <span className="hc-team-art-label">Men’s basketball · AI arena artwork</span>
         <div className="hc-team-profile-identity">
           <TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={112} className="hc-team-profile-logo" />
           <div className="hc-team-profile-details">

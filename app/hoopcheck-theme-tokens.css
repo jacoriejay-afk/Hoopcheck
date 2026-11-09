@@ -1,6 +1,37 @@
 /* Single source of truth for HoopCheck's light/dark semantic theme tokens.
    Imported last so legacy page and desktop-breakpoint styles cannot override them. */
 :root {
+  --hc-card-surface: var(--hc-surface-raised);
+  --hc-card-border: var(--hc-border);
+  --hc-on-card: var(--hc-foreground);
+  --hc-on-card-muted: var(--hc-foreground-muted);
+  --hc-button-primary-surface: #FF5A1F;
+  --hc-button-primary-foreground: #111111;
+  --hc-button-primary-bg: var(--hc-button-primary-surface);
+  --hc-button-primary-fg: var(--hc-button-primary-foreground);
+  --hc-button-outline-surface: var(--hc-surface-raised);
+  --hc-button-outline-foreground: var(--hc-foreground);
+  --hc-button-outline-bg: var(--hc-button-outline-surface);
+  --hc-button-outline-fg: var(--hc-button-outline-foreground);
+  --hc-brand-tile-bg: #FF5A1F;
+  --hc-brand-tile-fg: #17110E;
+  --hc-brand-tile-border: #17110E;
+  --hc-empty-surface: var(--hc-surface-soft);
+  --hc-empty-foreground: var(--hc-foreground);
+  --hc-hero-surface: var(--hc-surface-raised);
+  --hc-on-hero: var(--hc-foreground);
+  --hc-hero-muted: var(--hc-foreground-muted);
+  --hc-hero-border: var(--hc-border);
+  --hc-tab-bg: #F7F7F5;
+  --hc-tab-fg: #22221F;
+  --hc-nav-active-bg: #EAEAE5;
+  --hc-nav-active-fg: #B83E14;
+  --hc-chip-surface: #F1F1ED;
+  --hc-chip-foreground: #4C4C46;
+  --hc-live-chip-surface: #FFF0E9;
+  --hc-live-chip-foreground: #8F3215;
+  --hc-accent-text: #B83E14;
+
   --hc-page-bg: #F4F4F1;
   --hc-surface: #FFFFFF;
   --hc-surface-raised: #FFFFFF;
@@ -34,6 +65,37 @@
   color-scheme: light;
 }
 html.theme-light {
+  --hc-card-surface: var(--hc-surface-raised);
+  --hc-card-border: var(--hc-border);
+  --hc-on-card: var(--hc-foreground);
+  --hc-on-card-muted: var(--hc-foreground-muted);
+  --hc-button-primary-surface: #FF5A1F;
+  --hc-button-primary-foreground: #111111;
+  --hc-button-primary-bg: var(--hc-button-primary-surface);
+  --hc-button-primary-fg: var(--hc-button-primary-foreground);
+  --hc-button-outline-surface: var(--hc-surface-raised);
+  --hc-button-outline-foreground: var(--hc-foreground);
+  --hc-button-outline-bg: var(--hc-button-outline-surface);
+  --hc-button-outline-fg: var(--hc-button-outline-foreground);
+  --hc-brand-tile-bg: #FF5A1F;
+  --hc-brand-tile-fg: #17110E;
+  --hc-brand-tile-border: #17110E;
+  --hc-empty-surface: var(--hc-surface-soft);
+  --hc-empty-foreground: var(--hc-foreground);
+  --hc-hero-surface: var(--hc-surface-raised);
+  --hc-on-hero: var(--hc-foreground);
+  --hc-hero-muted: var(--hc-foreground-muted);
+  --hc-hero-border: var(--hc-border);
+  --hc-tab-bg: #F7F7F5;
+  --hc-tab-fg: #22221F;
+  --hc-nav-active-bg: #EAEAE5;
+  --hc-nav-active-fg: #B83E14;
+  --hc-chip-surface: #F1F1ED;
+  --hc-chip-foreground: #4C4C46;
+  --hc-live-chip-surface: #FFF0E9;
+  --hc-live-chip-foreground: #8F3215;
+  --hc-accent-text: #B83E14;
+
   color-scheme: light;
   --hc-page-bg: #F4F4F1;
   --hc-surface: #FFFFFF;
@@ -60,6 +122,37 @@ html.theme-light {
   --hc-orange: #FF5A1F;
 }
 html.theme-dark {
+  --hc-card-surface: var(--hc-surface-raised);
+  --hc-card-border: var(--hc-border);
+  --hc-on-card: var(--hc-foreground);
+  --hc-on-card-muted: var(--hc-foreground-muted);
+  --hc-button-primary-surface: #FF5A1F;
+  --hc-button-primary-foreground: #111111;
+  --hc-button-primary-bg: var(--hc-button-primary-surface);
+  --hc-button-primary-fg: var(--hc-button-primary-foreground);
+  --hc-button-outline-surface: var(--hc-surface-raised);
+  --hc-button-outline-foreground: var(--hc-foreground);
+  --hc-button-outline-bg: var(--hc-button-outline-surface);
+  --hc-button-outline-fg: var(--hc-button-outline-foreground);
+  --hc-brand-tile-bg: #FF5A1F;
+  --hc-brand-tile-fg: #17110E;
+  --hc-brand-tile-border: #17110E;
+  --hc-empty-surface: var(--hc-surface-soft);
+  --hc-empty-foreground: var(--hc-foreground);
+  --hc-hero-surface: var(--hc-surface-raised);
+  --hc-on-hero: var(--hc-foreground);
+  --hc-hero-muted: var(--hc-foreground-muted);
+  --hc-hero-border: var(--hc-border);
+  --hc-tab-bg: #0A0A0A;
+  --hc-tab-fg: #F7F7F5;
+  --hc-nav-active-bg: #242421;
+  --hc-nav-active-fg: #FF8A5C;
+  --hc-chip-surface: #242424;
+  --hc-chip-foreground: #E7E7E1;
+  --hc-live-chip-surface: #3A2119;
+  --hc-live-chip-foreground: #FFB18F;
+  --hc-accent-text: #FF8A5C;
+
   color-scheme: dark;
   --hc-page-bg: #0A0A0A;
   --hc-surface: #111111;

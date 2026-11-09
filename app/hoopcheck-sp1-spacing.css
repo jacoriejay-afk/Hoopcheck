@@ -1,0 +1,117 @@
+/* SP-1 — one page-spacing contract.
+   Imported after every legacy stylesheet so old hero spacers and safe-area offsets
+   cannot push first content down. The global header alone owns the top safe-area inset. */
+:root {
+  --hc-space-page: 16px;
+  --hc-space-card: 12px;
+  --hc-space-card-inner: 16px;
+  --hc-space-section-title: 8px;
+  --hc-space-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Do not reserve the status-bar inset twice: SiteHeader owns it. */
+html body {
+  padding-block-start: 0 !important;
+}
+html body main {
+  box-sizing: border-box !important;
+  padding-block-start: var(--hc-space-page) !important;
+  padding-inline: var(--hc-space-page) !important;
+}
+
+/* Eliminate top-only margins/padding on the first page wrapper and its first
+   content block. This catches page-container, hero, card and detail-page shells
+   without changing the order or contents of any screen. */
+html body main > :first-child {
+  margin-block-start: 0 !important;
+}
+html body main > .page-container:first-child,
+html body main > .page-content:first-child,
+html body main > .page-shell:first-child,
+html body main > .hc-dashboard-shell:first-child,
+html body main > .hc-entity-profile-page:first-child,
+html body main > .hc-womens-profile-page:first-child {
+  padding-block-start: 0 !important;
+}
+html body main > .hero:first-child,
+html body main > .hero-card:first-child,
+html body main > section:first-child,
+html body main > article:first-child,
+html body main > .page-container > :first-child,
+html body main > .page-content > :first-child {
+  margin-block-start: 0 !important;
+}
+
+/* Page containers must not reintroduce an invisible top spacer. */
+html body main > .page-container,
+html body main > .page-content,
+html body main .hc-dashboard-shell > .page-container {
+  margin-block-start: 0 !important;
+  padding-block-start: 0 !important;
+  min-height: 0 !important;
+}
+
+/* Detail-page hero wrappers previously inherited the 110px marketing-hero
+   padding. Keep their content, but use the shared page inset instead. */
+html body main.hc-entity-profile-page > .hero:first-child,
+html body main.hc-entity-profile-page > .hero-card:first-child,
+html body main.hc-team-entity-profile > .hero:first-child,
+html body main.hc-entity-profile-page > .page-container > .hero:first-child {
+  padding-block-start: 0 !important;
+  margin-block-start: 0 !important;
+}
+
+/* Account's inline max(24px, safe-area) and the older LM-2E max(safe-area + 16px)
+   are both overridden here. The header has already accounted for the device inset. */
+html body main.hc-dashboard-shell,
+html body main.page-shell.hc-dashboard-shell,
+html body main.dashboard-page {
+  padding-block-start: var(--hc-space-page) !important;
+}
+html body main.hc-dashboard-shell > .page-container {
+  padding-block-start: 0 !important;
+}
+html body main.hc-dashboard-shell .hc-dashboard-welcome {
+  margin-block-start: 0 !important;
+}
+html body main.hc-dashboard-shell .hc-dashboard-profile-block,
+html body main.hc-dashboard-shell .hc-dashboard-stat-card {
+  padding: var(--hc-space-card-inner) !important;
+}
+
+/* Shared card rhythm and content-sized surfaces. */
+html body main :where(.grid, .feature-grid, .hc-dashboard-grid, .hc-mobile-quick-grid,
+  .hc-alert-list, .hc-profile-review-list, .hc-mobile-quick-access) {
+  gap: var(--hc-space-card) !important;
+}
+html body main :where(.card, .panel, .dashboard-card, .quick-card, .settings-card,
+  .profile-card, .review-card, .hero-card, .hc-alert-card, .hc-mobile-quick-card) {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: var(--hc-space-card-inner) !important;
+}
+html body main :where(.section-heading, .hc-mobile-section-heading) {
+  margin-block-end: var(--hc-space-section-title) !important;
+}
+html body main :where(.section-heading, .hc-mobile-section-heading) + :where(.grid, .feature-grid, .hc-dashboard-grid, .hc-mobile-quick-grid) {
+  margin-block-start: 0 !important;
+}
+
+/* Keep the bottom navigation reservation; it is unrelated to top spacing. */
+@media (max-width: 767px) {
+  html body main:not(.hc-template-home) {
+    padding-block-end: calc(78px + var(--hc-space-safe-bottom)) !important;
+  }
+  html body main {
+    padding-inline: max(var(--hc-space-page), env(safe-area-inset-left, 0px)) !important;
+  }
+  html body main.hc-entity-profile-page > .hero:first-child,
+  html body main.hc-entity-profile-page > .hero-card:first-child,
+  html body main.hc-team-entity-profile > .hero:first-child,
+  html body main.hc-entity-profile-page > .page-container > .hero:first-child {
+    padding-block-start: var(--hc-space-page) !important;
+  }
+  html body main :where(.grid, .feature-grid, .hc-dashboard-grid, .hc-mobile-quick-grid) {
+    gap: var(--hc-space-card) !important;
+  }
+}

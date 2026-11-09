@@ -125,6 +125,23 @@ Start the production server:
 
 npm start
 
+### Theme audit baseline
+
+`npm run audit:theme-pairs`, `npm run check:card-theme-pairing`, and
+`npm run check:hub-theme-pairing` check the paired-token and component
+contracts. `scripts/theme-browser-check.mjs` also records route diagnostics;
+its route sweep reports failures without making all of them blocking.
+
+On main at `82d75acc`, the sweep already reports white-on-orange button
+contrast, light-on-light text in some surfaces, and Live Games checks that
+expect older token colors than the later scoreboard stylesheet supplies.
+Its contrast scan does not account for background images or gradients, so
+the intentionally dark illustrated team hero can be reported against the
+light page behind it. The Fan HQ checks also expect mixed-case text despite
+the current uppercase heading, and the empty state depends on fixture loading.
+These diagnostics need separate follow-up; they are not proof that the
+paired-token audit covers every rendered route.
+
 Deployment
 
 HoopCheck is connected to GitHub and Vercel.
@@ -163,4 +180,3 @@ Hoopcheck/
 └── tsconfig.json
 
 Built for basketball players.
-

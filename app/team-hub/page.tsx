@@ -72,7 +72,7 @@ export default function TeamHubPage(){
   if(loading)return <main className="page-shell hc-fan-feed-page"><div className="page-container"><HoopLoading label={labels.loading}/></div></main>;
   const directoryHref=basketballSide==="womens"?"/womens":"/teams";
   return <main className="page-shell hc-fan-feed-page"><div className="page-container">
-    <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href={directoryHref}>{labels.discover}</Link><Link href="/fan-feed">{labels.fanFeed}</Link></nav></header>
+    <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href={directoryHref}>{labels.discover}</Link><Link href="/fan-feed">{language === "en" ? "Fan HQ feed" : labels.fanFeed}</Link></nav></header>
     <section className="hero-card hc-feed-hero"><div><p className="eyebrow">{labels.kicker}</p><h1>{labels.title}</h1><p className="muted">{labels.description}</p><div style={{marginTop:12}}><FanBasketballSideSwitch /></div></div><p className="hc-feed-expiry-note">{labels.yourTeams}<span>{labels.refreshNote}</span></p></section>
     {!signedIn&&<section className="dashboard-card hc-feed-empty"><h2>{labels.signInTitle}</h2><p>{labels.signInBody}</p><Link className="btn" href="/login">{labels.signIn}</Link></section>}
     {signedIn&&<PlayersIFollow />}
