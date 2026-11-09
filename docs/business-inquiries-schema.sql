@@ -1,0 +1,18 @@
+-- DESIGN REFERENCE ONLY. Do not apply to production.
+-- HoopCheck already uses public.sponsor_inquiries with authenticated INSERT RLS.
+-- Creating a second business_inquiries table would fragment the inbox.
+-- The existing table and its policy were verified by read-only inspection on 2026-11-09.
+--
+-- Before introducing new columns or types, inventory all existing writers/readers,
+-- and prepare a backward-compatible migration on public.sponsor_inquiries.
+-- Proposed additions, NOT executed:
+--   status text not null default 'new'
+--   reviewed_at timestamptz
+--   reviewer_id uuid
+--   contact_consent_at timestamptz
+--   structured_category text
+--
+-- Existing types sponsor/donate/inquire must continue to work.
+-- Keep ordinary authenticated users INSERT-only through RLS.
+-- Privileged access must use verified admin authorization and a server-only path.
+-- Do not expose service role credentials to the browser.
