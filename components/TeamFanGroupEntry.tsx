@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import { getHoopCheckEntitlements } from "../lib/membership-tier";
+import { useLanguage, type Language } from "./LanguageProvider";
 
 type Summary = { group_name: string; member_count: number; join_mode: "open" | "approval"; is_member: boolean; has_pending_request: boolean };
 type FanGroupCopy={kicker:string;members:string;open:string;approval:string;moderatorOpen:string;joinedOpen:string;wait:string;pending:string;join:string;signIn:string;requestSent:string;joinedMessage:string;failed:string;leave:string};
@@ -46,7 +47,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
     ]);
     if (authError || summaryError) throw authError || summaryError;
 
-    let nextActualMember = false;
+    const nextActualMember = false;
     if (user) {
       const [{ data: profile, error: profileError }, { data: moderators, error: moderatorsError }, { data: platformAdmin, error: adminError }, { data: membership, error: membershipError }] = await Promise.all([
         supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),

@@ -388,30 +388,30 @@ export default function TeamsPage() {
 
       <section className="hero">
         <div className="eyebrow">
-          {isFanAccount ? "FAN TEAM DIRECTORY" : "Player Intelligence"}
+          {viewerRole === "fan" ? "FAN TEAM DIRECTORY" : "Player Intelligence"}
         </div>
 
         <h2>
-          {isFanAccount ? <>Every team.<br />A clearer picture.</> : <>The contract<br />is only part<br />of the decision.</>}
+          {viewerRole === "fan" ? <>Every team.<br />A clearer picture.</> : <>The contract<br />is only part<br />of the decision.</>}
         </h2>
 
         <p>
-          {isFanAccount ? "Explore clubs, follow the teams you care about, and keep up with their latest updates." : "Research the organization, understand player experiences, and make your next move with more information."}
+          {viewerRole === "fan" ? "Explore clubs, follow the teams you care about, and keep up with their latest updates." : "Research the organization, understand player experiences, and make your next move with more information."}
         </p>
 
         <div className="actions">
           <Link
-            href={isFanAccount ? "/fan-feed" : "/signup"}
+            href={viewerRole === "fan" ? "/fan-feed" : "/signup"}
             className="btn"
           >
-            {isFanAccount ? "Explore Fan HoopFeed" : "Create Free Account"}
+            {viewerRole === "fan" ? "Explore Fan HoopFeed" : "Create Free Account"}
           </Link>
 
           <Link
             href="/membership"
             className="btn dark"
           >
-            {isFanAccount ? "Fan Membership" : "Unlock Full Access"}
+            {viewerRole === "fan" ? "Fan Membership" : "Unlock Full Access"}
           </Link>
         </div>
       </section>

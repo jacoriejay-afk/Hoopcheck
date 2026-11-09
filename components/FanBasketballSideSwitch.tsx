@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { getHoopCheckEntitlements } from "../lib/membership-tier";
+import { useLanguage } from "./LanguageProvider";
 
 export type BasketballSide = "mens" | "womens";
 const STORAGE_KEY = "hoopcheck:fan-basketball-side";

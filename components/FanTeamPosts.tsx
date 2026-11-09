@@ -50,8 +50,6 @@ export default function FanTeamPosts({ teamId, teamType = "mens" }: { teamId:str
         supabase.from("team_fan_groups").select("group_name").eq("team_id",teamId).maybeSingle(),
         supabase.auth.getUser()
       ]);
-      const postRows = postResult.data;
-      const gameRows = gameResult.data;
       if(!active)return;
       setGroupName(group?.group_name || "Fan Group");
       const viewer=userResult.user;

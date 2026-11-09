@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
@@ -15,7 +15,7 @@ import TeamLogo from "../../components/TeamLogo";
 import { useLanguage } from "../../components/LanguageProvider";
 import "./fan-feed.css";
 import "../hoopfeed-shared.css";
-import { fanFeedI18n } from "./i18n";
+import { fanFeedI18n, fanFeedLoadError, fanFeedRefreshError } from "./i18n";
 
 type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null; basketball_type?: "mens" | "womens" | null; group_name?: string | null; is_member?: boolean };
 type Profile = { id: string; display_name: string | null; avatar_url: string | null; account_type: string };
@@ -42,8 +42,10 @@ export default function FanFeedPage() {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [membershipActive, setMembershipActive] = useState(false);
   const [message, setMessage] = useState("");
+  const loadSequence = useRef(0);
   const basketballSide = useFanBasketballSide();
   const selectedTeam = teams.find(team => team.id === teamId) || null;
   const composerTeam = teams.find(team => team.id === composerTeamId) || null;

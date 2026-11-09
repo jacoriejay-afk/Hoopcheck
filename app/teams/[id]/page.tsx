@@ -746,6 +746,7 @@ export default function TeamDetailPage() {
         <h2>Payment history</h2>
         <TeamPayTimeline teamId={team.id} />
       </section>}
+      </>}
 
       {team && <><TeamOfficialUpdates teamId={team.id} /><FanTeamPosts teamId={team.id} /></>}
 

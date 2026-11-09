@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { hasActiveMembershipAtLeast } from "../../../lib/membership-tier";
 import { calculateReviewSummary } from "../../../lib/review-summary";
 import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
 
@@ -34,7 +33,6 @@ export async function GET(request: Request) {
     let profile: { account_type?: string; basketball_type?: string | null; player_verified?: boolean; selected_womens_team_id?: string | null } | null = null;
     let subscription: { plan?: string; status?: string; access_status?: string | null; current_period_end?: string | null } | null = null;
     let isAdmin = false;
-    let playerVerified = false;
     if (user) {
       const [profileResult, subscriptionResult] = await Promise.all([
         db.from("profiles").select("account_type,basketball_type,player_verified,selected_womens_team_id").eq("id", user.id).maybeSingle(),
@@ -57,7 +55,7 @@ export async function GET(request: Request) {
       accountType && accountType !== "fan" && accountType !== "player" && entitlements.hasPaidMembership ? "member" :
       entitlements.tier;
     const fullRead = entitlements.canReadFullReviews;
-    const canWrite = entitlements.canWriteReviews && (
+    let canWrite = entitlements.canWriteReviews && (
       entityType !== "womens-team" ||
       (profile?.basketball_type === "womens" && profile.selected_womens_team_id === entityId)
     );
@@ -65,8 +63,6 @@ export async function GET(request: Request) {
     const targetColumn = entityType === "team" ? "team_id" : entityType === "coach" ? "coach_id" : entityType === "league" ? "league_id" : "womens_team_id";
     const table = entityType === "womens-team" ? "womens_team_reviews" : "reviews";
 
-    let canWrite = accountType === "player" && playerVerified && !!user?.email_confirmed_at &&
-      active && ["pro", "premium"].includes(plan) && entityType !== "womens-team";
     if (canWrite && entityType === "team" && user) {
       const scoped = createClient(supabaseUrl, anonKey, {
         global: { headers: { Authorization: "Bearer " + bearer } },

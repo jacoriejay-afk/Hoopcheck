@@ -146,7 +146,7 @@ export default function DashboardPage() {
       }
 
       if (entitlements.canUseLiveGameHub && p?.account_type === "fan") {
-        const {data:games} = await supabase.from("fan_live_games").select("status,scheduled_at").in("status",["live","scheduled"]).order("scheduled_at",{ascending:true}).limit(200);
+        const {data:games,error:gamesError} = await supabase.from("fan_live_games").select("status,scheduled_at").in("status",["live","scheduled"]).order("scheduled_at",{ascending:true}).limit(200);
         const now = Date.now();
         if (mounted && !gamesError) setLiveCounts({live:(games||[]).filter((g:any)=>g.status==="live").length,upcoming:(games||[]).filter((g:any)=>g.status==="scheduled" && (!g.scheduled_at || new Date(g.scheduled_at).getTime()>=now)).length});
       }

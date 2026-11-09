@@ -100,6 +100,7 @@ export default function BottomNav() {
     <nav className="bottom-nav hc-bottom-tab-bar hc-mobile-tabbar-repair hc-lm2f-bottom-nav" aria-label="Mobile navigation">
       {items.map(([href, translationKey, label]) => {
         const destination = href === "/feed" && accountType === "fan" ? "/fan-feed" : href;
+        const feedResolving = href === "/feed" && accountTypeLoading;
         const active = destination === "/"
           ? pathname === "/" || pathname === "/dashboard"
           : pathname === destination || pathname.startsWith(destination + "/");

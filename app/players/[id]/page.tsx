@@ -10,7 +10,9 @@ import PlayerContactButton from "../../../components/PlayerContactButton";
 import PlayerProfilePanel from "../../../components/PlayerProfilePanel";
 import { HoopIcon, VerifiedBadge } from "../../../components/HoopCheckUI";
 import PlayerJourney from "../../../components/PlayerJourney";
+import PlayerProfileCompletionCard from "../../../components/PlayerProfileCompletionCard";
 import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
+import type { PlayerProfileCompletionRecord } from "../../../lib/player-profile-completion";
 
 type Player = {
   id: string;
