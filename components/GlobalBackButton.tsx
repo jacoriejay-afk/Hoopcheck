@@ -16,6 +16,8 @@ function getFallbackPath(pathname: string): string {
   if (pathname.startsWith("/fans/")) return "/fans";
   if (pathname.startsWith("/reviews/")) return "/reviews";
   if (pathname.startsWith("/profile/")) return "/profile";
+  // Avoid sending a direct-entry admin/users page back to itself.
+  if (pathname === "/admin/users" || pathname === "/admin/users/") return "/dashboard";
   // There is no /admin landing route; use a real, permission-checked admin page.
   if (pathname.startsWith("/admin/")) return "/admin/users";
   if (pathname.startsWith("/search/")) return "/search";
