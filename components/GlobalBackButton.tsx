@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { trackNavigationHistory } from "../lib/navigation-history";
 
 function getFallbackPath(pathname: string): string {
   if (pathname === "/") return "/dashboard";
@@ -27,19 +28,24 @@ function getFallbackPath(pathname: string): string {
 }
 
 /**
- * Universal back control. Next App Router's history index distinguishes an
+ * Universal back control. An app-owned history marker distinguishes an
  * in-app navigation from a direct entry; direct entries use a valid local
  * parent route rather than relying on an unrelated browser-history entry.
  */
 export default function GlobalBackButton() {
   const router = useRouter();
   const pathname = usePathname();
+  const navigation = useRef<ReturnType<typeof trackNavigationHistory> | null>(null);
+  useEffect(() => {
+    const tracker = trackNavigationHistory(window);
+    navigation.current = tracker;
+    return () => { tracker.dispose(); navigation.current = null; };
+  }, []);
 
   const goBack = useCallback(() => {
     if (typeof window === "undefined") return;
 
-    const historyIndex = window.history.state?.idx;
-    if (typeof historyIndex === "number" && historyIndex > 0) {
+    if (navigation.current?.canGoBack()) {
       router.back();
       return;
     }

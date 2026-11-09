@@ -1,0 +1,655 @@
+[
+  {
+    "number": 367,
+    "title": "ROLE-HQ/LIVE: baseline audit and implementation checklist (#366)",
+    "draft": true,
+    "mergeable": true,
+    "head": "feature/role-hq-live-audit-366",
+    "sha": "4ebaf68907ab7a8e958476270748e4db7966d06e",
+    "checks": [
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42611297948
+      },
+      {
+        "name": "VERIFY-1 entitlement matrix",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42611297720
+      },
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42611297739
+      }
+    ],
+    "body": "Documents inspected existing role dashboards, fan live chat, game predictions and feed entry points. **Audit only; no feature fix or production activation yet.** Closes neither issue nor verification requirements. Related #366.",
+    "local_merge_exit": 0,
+    "conflicts": []
+  },
+  {
+    "number": 365,
+    "title": "Add HoopCheck\u2122 business partnerships landing page",
+    "draft": true,
+    "mergeable": false,
+    "head": "feature/business-partnership-center-20261109",
+    "sha": "8d88e9ee38f0826a84bfe3c6093befdcd52b2db8",
+    "checks": [
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42576091870
+      },
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42576091814
+      }
+    ],
+    "body": "Adds /business with responsive sections for sponsorships, private investor inquiries, strategic partnerships, and athlete ambassadors. No invented pricing, investor terms, contact addresses, or live form submission. Follow-up: verified inquiry backend, admin workflow, sponsor media kit, legal review of investment language, and navigation integration. Not yet deployed.",
+    "local_merge_exit": 0,
+    "conflicts": []
+  },
+  {
+    "number": 364,
+    "title": "AUTH: Expire stalled Supabase session-cache promises",
+    "draft": false,
+    "mergeable": false,
+    "head": "fix/auth-session-cache-expiry-20261109",
+    "sha": "2bfbad2722ffeb779a458b5ddeab35859dce852a",
+    "checks": [
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42573533209
+      },
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42573533265
+      }
+    ],
+    "body": "The shared `getCachedSession()` memoizes a pending Supabase `getSession()` promise and only clears it on resolution, rejection, or an auth event. If a Safari refresh/read hangs without an event, the dashboard's 12-second timeout shows recovery UI but Retry reuses the same unresolved promise. Expire cached reads after 12 seconds so subsequent retry can issue a fresh read; keep auth event invalidation and existing authorization behavior. This does not claim to solve underlying Supabase lock stalls. Await CI and launch gate.",
+    "local_merge_exit": 0,
+    "conflicts": []
+  },
+  {
+    "number": 363,
+    "title": "Compact team directory cards and add country flags",
+    "draft": false,
+    "mergeable": false,
+    "head": "fix/team-directory-compact-country-flags-20261109",
+    "sha": "701e26843372335fd0d21929e72a9b696298a832",
+    "checks": [
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42576649858
+      },
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42576649650
+      }
+    ],
+    "body": "## Changes\n- Add a reusable country-to-flag resolver with safe fallback for unknown country values.\n- Display country flag and country/city in the shared TeamDirectoryRow identity.\n- Remove repeated CLUB DOSSIER kicker and shorten membership gate text to reduce card height.\n- Keep existing role-based membership logic, trust statistics, team links, and follow controls.\n\n## Follow-up\n- Audit global CSS card spacing and duplicate records.\n- Apply country flags consistently to club profiles and other surfaces.\n- Run build and mobile/desktop visual regression checks before merge.\n\nNote: illustrative mockups are not data sources; do not copy invented ratings or badges.",
+    "local_merge_exit": 1,
+    "conflicts": [
+      "CONFLICT (content): Merge conflict in app/teams/[id]/page.tsx",
+      "CONFLICT (content): Merge conflict in app/teams/page.tsx",
+      "CONFLICT (content): Merge conflict in app/womens/[id]/page.tsx",
+      "CONFLICT (content): Merge conflict in components/TeamDirectoryRow.tsx"
+    ]
+  },
+  {
+    "number": 361,
+    "title": "WIP: Secure public business inquiry endpoint",
+    "draft": true,
+    "mergeable": false,
+    "head": "feat/public-partnership-inquiries-20261109",
+    "sha": "8be58e94ec74840dd2df834a0b991cf3e694a952",
+    "checks": [
+      {
+        "name": "VERIFY-1 entitlement matrix",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42610859631
+      },
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42610859540
+      },
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42610860041
+      }
+    ],
+    "body": "Stage a fail-closed Turnstile-verified API, private Supabase schema, and rollout checklist. **Not ready to merge**: requires public form widget, durable rate limiting, production secrets, schema review, and tests. Existing production form unchanged.",
+    "local_merge_exit": 0,
+    "conflicts": []
+  },
+  {
+    "number": 288,
+    "title": "TM-3 foundation: club roster records and change audit",
+    "draft": true,
+    "mergeable": false,
+    "head": "feat/tm3-roster-board-foundation",
+    "sha": "babed3b0f3e2b5d1765c53c5e668afc8163229e2",
+    "checks": [
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42382219607
+      },
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42382219597
+      }
+    ],
+    "body": "Initial schema-only groundwork for TM-3. Adds roster entries scoped by approved team claims and append-only audit records. Not production ready: needs column-level protection against manager edits to dispute status, manager UI, player dispute submission, moderation/revert, Wire/FOL-1 integration, integration tests and proof. Do not merge until those are implemented and verified.",
+    "local_merge_exit": 0,
+    "conflicts": []
+  },
+  {
+    "number": 287,
+    "title": "TM-2 phase 1: approved-club review notifications and secure preferences",
+    "draft": true,
+    "mergeable": false,
+    "head": "feat/tm2-manager-review-alerts",
+    "sha": "ad86b15f74afd73120c0387699f993acbf27da92",
+    "checks": [
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42583150330
+      },
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42583150335
+      }
+    ],
+    "body": "Adds RLS-protected per-club manager notification preferences (new_review defaults ON, join_batch OFF) and database trigger for approved published team reviews, scoped to approved claimants only. This is backend groundwork, not full TM-2: reply-specific deep links, preferences UI, moderation events, hourly join batching, weekly digest, push and production proof remain outstanding. Requires migration validation and CI before merge.",
+    "local_merge_exit": 0,
+    "conflicts": []
+  },
+  {
+    "number": 209,
+    "title": "[DRAFT] Safety, account deletion, verification, public career pages and language",
+    "draft": true,
+    "mergeable": false,
+    "head": "feat/safety-deletion-verification-public-career-language",
+    "sha": "0ca470ac80612cba195032ad742e3408675cc6d3",
+    "checks": [
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42261800823
+      },
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42261800894
+      }
+    ],
+    "body": "## Status: NOT READY TO MERGE\n\nThis draft tracks the in-progress SAFE-1 / DEL-1 / VER-1 / PROPASS-1 / LANG-1 work.\n\n### Latest safety change\n- Replaced the legacy destructive `POST /api/account/delete` handler on this branch with a fail-closed 409 response. It no longer cancels Stripe, removes storage, or deletes Auth users. This is a temporary safeguard only; it is not the completed 30-day deletion lifecycle.\n\n### Current branch contents\n- Language-provider improvements: locale registry validation, browser-language fallback for signed-out users, account preference precedence and readable fallback.\n- DEL-1 implementation notes, 30-day deletion-request ledger migration (not applied to Supabase), and live production foreign-key audit.\n- Cross-workstream implementation gap audit.\n\n### Blocking acceptance criteria\n- [ ] DEL-1: password re-verification, 30-day request/cancel lifecycle, sign-in cancellation, write restrictions, safe finalizer, review anonymization, retention of subscriptions/moderation history, tests.\n- [ ] SAFE-1: unified reporting across all requested content, blocking and mutual interaction enforcement, consistent moderation hold pipeline, admin queue/actions/audit/notifications.\n- [ ] VER-1: player-only single-proof flow, private evidence access review, approve/reject reasons, notifications, resubmission and suspension behavior.\n- [ ] PROPASS-1: default-off public career page, strict public-field allowlist, disabled-page 404 and share card.\n- [ ] LANG-1: complete key coverage and locale formatting/runtime tests on all target UI surfaces.\n- [ ] Run lint, typecheck, build, migrations/RLS tests, API tests and end-to-end tests.\n\nDo not merge or deploy this branch as a completed release until every blocking item is implemented and verified. The deletion migration remains unapplied and no production data has been modified.",
+    "local_merge_exit": 0,
+    "conflicts": []
+  },
+  {
+    "number": 208,
+    "title": "LAND-1 \u2014 Clean up signed-out landing and auth pages",
+    "draft": true,
+    "mergeable": false,
+    "head": "fix/land-1-signed-out-layout",
+    "sha": "77c3962bd54bfa6b004bb81883ac577f574903c4",
+    "checks": [
+      {
+        "name": "VERIFY-1 entitlement matrix",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42604546039
+      },
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42604546003
+      },
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42604546040
+      }
+    ],
+    "body": "## LAND-1\n\n- Align signed-out homepage header, desktop hero, ticker, and content to one centered max-width/gutter.\n- Remove the global floating Back control from homepage and auth entry routes.\n- Normalize homepage account CTAs and remove offset shadows.\n- Keep directory doors theme-aware and render them only when their real directory count is available; show the count with the icon/title/link.\n- Replace the login marketing layout with a single centered auth card, password visibility toggle, field-level errors, reset flow, and signup link.\n- Keep the existing signup workflow, username field, and searchable TeamLeaguePicker; align the signup shell and card rhythm.\n\nNo database or entitlement changes. Preview/build verification remains pending.",
+    "local_merge_exit": 0,
+    "conflicts": []
+  },
+  {
+    "number": 207,
+    "title": "FOL-1: Fan career tracking isolated from HoopFeed",
+    "draft": true,
+    "mergeable": false,
+    "head": "feat/fol1-fan-career-tracking",
+    "sha": "1a33af703655ffb70bc4038ea56ebbf931800df9",
+    "checks": [
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42606297906
+      },
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42606297946
+      },
+      {
+        "name": "VERIFY-1 entitlement matrix",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42606297926
+      }
+    ],
+    "body": "## Summary\n- Adds a dedicated `fan_player_career_follows` relationship, separate from `follow_relationships`.\n- Restricts career follows to fan accounts and player targets with RLS.\n- Sends existing-system notifications when a followed player's directory `current_team` changes; unfollowing immediately stops future alerts.\n- Adds a fan-only career follow control on player profiles and a Players I Follow list in Team Hub.\n- Routes player career-change notifications to player profiles.\n- Adds a static regression check asserting the new relationship is not referenced by HoopFeed UI/API/policies.\n\n## Verification status\n- Static source boundary check added (`npm run check:fol1-feed-boundary`).\n- Database migration has not yet been applied to a test or production Supabase database.\n- Real two-account follow/team-change/unfollow proof and the requested mobile/two-theme screenshots remain outstanding.\n- No production deployment requested or performed in this PR.",
+    "local_merge_exit": 0,
+    "conflicts": []
+  },
+  {
+    "number": 194,
+    "title": "AUDIT-4: Align signed-in feature states and membership plan UI",
+    "draft": true,
+    "mergeable": false,
+    "head": "fix/audit-4-signed-in-honesty",
+    "sha": "891953d0172cc832fc553d7af178295e4b273568",
+    "checks": [
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42608861993
+      },
+      {
+        "name": "VERIFY-1 entitlement matrix",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42608861992
+      },
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42608861995
+      }
+    ],
+    "body": "## AUDIT-4 \u2014 signed-in honesty\n\n- Centralizes session readiness and active membership tier in `AuthProvider`; shared feature links wait for the current plan before showing lock state.\n- Adds a reusable entitlement-aware `FeatureLink` and applies it to dashboard HoopFeed and Live Games previews, global navigation, Connections, and the legacy signed-in feed menu. Locked links keep their existing route and visible preview content while showing the lowest unlocking tier (Pro).\n- Reworks `FollowButton` to read authentication state from `AuthProvider`, eliminating per-card signed-out inference and hiding the sign-in prompt until the shared session is resolved.\n- Shows the Free / Pro / Premium ladder together on `/membership`, marks the active plan, disables the current-plan action, and shows Included for lower tiers rather than offering a downward upgrade.\n\nNo prices, database records, routes, backend gates, or product entitlements were changed.\n\n## Validation\n\n- Verify the build and run a signed-in Free / Pro / Premium matrix before merge.\n- Confirm no signed-in follow card displays the sign-in prompt, and Premium never receives a Pro-level lock.",
+    "local_merge_exit": 0,
+    "conflicts": []
+  },
+  {
+    "number": 193,
+    "title": "DESK-2: Redesign HoopCheck desktop presentation",
+    "draft": true,
+    "mergeable": false,
+    "head": "feat/desk-2-desktop-product-redesign",
+    "sha": "c0e0dd67e24b63d96a9f4b5d25c8d16e9063ea7b",
+    "checks": [
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 41680369967
+      },
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 41680370048
+      }
+    ],
+    "body": "## DESK-2 desktop redesign\n\n- Adds a desktop-only 1024px+ visual system with a 1200px content canvas, desktop rhythm, and theme-aware surfaces.\n- Rebuilds the public homepage desktop composition with live directory totals, category-scoped search links, live/upcoming game rail, team directory preview using current Trust Scores and approved review counts, how-it-works band, and existing monthly membership prices.\n- Adds desktop directory sidebar layout and a wider table-like Live Games presentation.\n- Preserves the original mobile homepage order and hides the new desktop-only content below 1024px.\n\nNo data mutations, route changes, membership entitlement changes, tier changes, or price changes are included.\n\n## Validation still required\n\n- Verify the Vercel preview build and inspect 1024px, 1280px, and 1920px screenshots in both themes.\n- Confirm all directory templates and team detail right-rail behavior against live pages before merge.",
+    "local_merge_exit": 1,
+    "conflicts": [
+      "CONFLICT (content): Merge conflict in app/HomeClient.tsx",
+      "CONFLICT (content): Merge conflict in app/layout.tsx"
+    ]
+  },
+  {
+    "number": 191,
+    "title": "Fix desktop header collisions and establish shared desktop layout",
+    "draft": false,
+    "mergeable": false,
+    "head": "fix/desktop-layout-system",
+    "sha": "fce159d3eccccadf35ace4fb9fc68faa254fa41a",
+    "checks": [
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42567349738
+      },
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 42567349771
+      }
+    ],
+    "body": "## Summary\n- Replace the overlapping absolute-positioned desktop header layout with a shared three-group flex header at 64px.\n- Keep the desktop header hidden below 1024px; leave the mobile bottom navigation component untouched.\n- Add a shared desktop content frame, spacing/grid rules, and theme-token-aware dropdown surface.\n- Add a Playwright DOM overlap/screenshot audit script (`npm run audit:desktop-overlap`) that requires real route paths via `ROUTES_JSON`.\n\n## Root-cause diagnosis\nThe previous `app/hoopcheck-preview-system.css` rules positioned `.hc-header-nav` absolutely with `inset: 0` and `width: 100%`, while `.hc-header-actions` was separately absolutely positioned at the right edge. The nav therefore occupied the same horizontal rectangle as both the logo and action controls; `pointer-events` did not reserve layout space. The brand was raised with `z-index: 2`, masking rather than correcting the collision. The header also inherited multiple competing responsive header rules from older CSS layers.\n\n## Verification limits\nThe overlap audit requires an authenticated/seeded deployment and the actual detail-page slugs. It has been added but has not yet been run against all requested routes/viewports. Screenshots and a zero-intersection claim will only be reported after the browser audit executes successfully.",
+    "local_merge_exit": 1,
+    "conflicts": [
+      "CONFLICT (content): Merge conflict in components/SiteHeader.tsx",
+      "CONFLICT (content): Merge conflict in package.json"
+    ]
+  },
+  {
+    "number": 168,
+    "title": "BRAND-1: unify HoopCheck hexagon and scoreboard design system",
+    "draft": true,
+    "mergeable": false,
+    "head": "feat/brand-1-hexagon-design-system",
+    "sha": "7e16fd2d9f727c98c257b7d64c69280f0771cddc",
+    "checks": [
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "failure",
+        "id": 41399418979
+      },
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "failure",
+        "id": 41399419046
+      }
+    ],
+    "body": "## BRAND-1 \u2014 HoopCheck-owned visual system\n\n### Implemented\n- Reuses the existing HoopCheck SVG/TP-1 team logo assets and deterministic team fallback palette; team logo frames and initials fallback now use the same six-sided hexagon crop.\n- Applies the hexagon shape language to existing avatar wrappers, team logo frames, category icon tiles, and compact status badges without changing card layout or content.\n- Promotes the existing Graduate font to scoreboard numerals and keeps Inter as the readable body font. Eyebrows use tracked uppercase styling.\n- Adds a shared `TrustScoreRing` device. Team and coach Trust Score dials use one 900ms reveal timeline for ring sweep, count-up, and red/orange/green score band. The ring respects `prefers-reduced-motion`.\n- Uses the existing `CourtLines` component in the Home and player HoopFeed hero sections, keeps the existing court-line empty-state art faint, and hides decorative court dividers outside hero/empty-state contexts.\n- Updates player-facing empty-state/loading copy and the player HoopFeed header to state the real followers-only and 24-hour expiry rules. Review and HoopFeed success confirmations use the ANIM-1 checkmark draw.\n\n### Product boundaries\n- No role, review permission, feed visibility, expiry, route, or data behavior was changed.\n- I could not find a Pre-Sign Check route/component or a dedicated Trust Score share-card component in the current repository. The new reusable `TrustScoreRing` is ready for those surfaces, but I have not invented either feature or claimed they are wired.\n- No third-party visual assets or new UI dependencies were added.\n\n### Verification\n- CI build/lint and the existing checks are running on this draft. Visual screenshots and cross-route checks still need review before marking ready.\n- No production merge or deployment is included.",
+    "local_merge_exit": 1,
+    "conflicts": [
+      "CONFLICT (content): Merge conflict in app/HomeClient.tsx",
+      "CONFLICT (content): Merge conflict in app/feed/page.tsx",
+      "CONFLICT (content): Merge conflict in app/layout.tsx",
+      "CONFLICT (content): Merge conflict in app/teams/[id]/review/page.tsx",
+      "CONFLICT (content): Merge conflict in components/TeamLogo.tsx",
+      "CONFLICT (content): Merge conflict in components/TrustScoreDial.tsx"
+    ]
+  },
+  {
+    "number": 167,
+    "title": "PERF-1: route skeletons, image optimization and Lighthouse reporting",
+    "draft": true,
+    "mergeable": false,
+    "head": "perf/perf-1-loading-images-lighthouse",
+    "sha": "68faaf2da71fccf41c570e4620903557967eaa46",
+    "checks": [
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "failure",
+        "id": 41398557698
+      },
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "failure",
+        "id": 41398557727
+      }
+    ],
+    "body": "## PERF-1 progress\n\nThis PR adds targeted improvements and a reproducible before/after measurement pipeline. It does **not** claim all performance targets are already met.\n\n### Included\n- Adds page-shaped loading fallbacks for Search, Teams, Team Detail and Dashboard. The global fallback remains unchanged so it does not show a misleading Home skeleton on unrelated routes.\n- Enables Next.js AVIF/WebP optimization for the Home hero image by removing `unoptimized` and allowing the exact Unsplash host.\n- Makes Follow, Review Like and HoopFeed Check actions optimistic, with rollback on request failure.\n- Adds an independent CI performance comparison job that builds both the PR base revision and candidate revision, records the Next build route-size table, and runs three mobile Lighthouse passes each for Home, Search and a representative Team Detail route. It reports the 90 Performance / 2.5s LCP / 0.1 CLS targets as warnings and uploads both result sets.\n\n### Still outstanding before PERF-1 can be called complete\n- Home is a static client-rendered page; it does not fetch page data. The global route fallback remains the existing loader. Route-specific loading shapes are added for the data-heavy directory and account screens listed above, not every route in the app.\n- App Router already provides route-level splitting. The before/after build output must be reviewed to identify shared-chunk weight and any genuinely removable one-feature dependency.\n- Team/avatar/poster URLs have multiple origins and several are raw `<img>` elements. Full modernization requires an origin inventory, correct per-box sizing, and browser verification; this PR only optimizes the known Home hero asset.\n- Search queries are limited and the team directory already uses range-based pagination. Team Detail currently receives and renders the full approved review array, and Live Games can load up to 500 games. Safe review pagination/virtualization still needs a paginated review UI and a defined live-game window without hiding data.\n- Repeat-visit data caching, prefetch policy, font network transfer/weight traces, and scroll-jank profiling still need verification. Next.js Link prefetch is already used for normal internal links.\n- Before/after metrics will be added after the independent CI comparison finishes. No score is claimed yet.\n\nThe existing main CI currently has unrelated baseline failures (hardcoded-surface audit and an ESLint error in `app/admin/team-fanfeed/page.tsx`); the performance job is independent and does not bypass or weaken those gates.\n\nNo production merge or deployment is included.",
+    "local_merge_exit": 1,
+    "conflicts": [
+      "CONFLICT (content): Merge conflict in app/HomeClient.tsx",
+      "CONFLICT (content): Merge conflict in app/dashboard/loading.tsx",
+      "CONFLICT (content): Merge conflict in app/feed/page.tsx",
+      "CONFLICT (content): Merge conflict in app/search/loading.tsx",
+      "CONFLICT (content): Merge conflict in app/teams/loading.tsx",
+      "CONFLICT (content): Merge conflict in components/FollowButton.tsx",
+      "CONFLICT (content): Merge conflict in next.config.ts"
+    ]
+  },
+  {
+    "number": 166,
+    "title": "UX-1: Compact app-wide card and screen density",
+    "draft": true,
+    "mergeable": false,
+    "head": "feat/ux-1-compact-density",
+    "sha": "e6c883ee6f706a0b5f8d1ec4c826b2d02625048a",
+    "checks": [
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "failure",
+        "id": 41397223140
+      },
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "failure",
+        "id": 41397223015
+      }
+    ],
+    "body": "## UX-1 \u2014 Compact density pass\n\n### Scope\nLayout and spacing only. No data, routes, permissions, review logic, or feature behavior is changed.\n\n### Included\n- Adds a final-loaded, route-scoped density stylesheet for Home, Search, Account, Dashboard, Team/Player profiles, Fan HQ/Team Hub, and Live Games.\n- Standardizes primary card padding to 14px and card/section spacing to 12px.\n- Removes fixed/minimum heights from targeted content cards so they size to their content.\n- Keeps dashboard statistic pairs in a two-column mobile grid.\n- Reduces Dashboard and Account heading scale and tightens first-screen spacing.\n- Tightens Fan HQ and Live Games hero/card density.\n- Preserves a 44px minimum for interactive controls and summary rows.\n- Uses existing theme tokens and black/off-white/orange brand styling.\n\n### Not yet complete / validation required\n- This first pass does not yet convert every long secondary Account/About/settings section into a collapsed disclosure row, nor does it restructure every scattered location/league/account-type fact into a single grouped list card. Those require page-level markup changes after confirming the exact component groupings.\n- Team/player stat grid class coverage must be checked against the live pages.\n- Visual review and interaction checks are still required on standard phone widths and desktop, in both light and dark themes.\n\n### Explicitly preserved\nNo data/query mutations, route changes, feature changes, membership/review permission changes, or interactive behavior changes are intended.",
+    "local_merge_exit": 1,
+    "conflicts": [
+      "CONFLICT (content): Merge conflict in app/layout.tsx"
+    ]
+  },
+  {
+    "number": 126,
+    "title": "Build shared reduced-motion animation system",
+    "draft": true,
+    "mergeable": false,
+    "head": "feat/shared-motion-system",
+    "sha": "ebe2007b0c783c14cb729948de52038ae1fb4a66",
+    "checks": [
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 40714782064
+      },
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 40714781813
+      }
+    ],
+    "body": "## Summary\nIntroduces one shared motion system in `components/HoopMotion.tsx` and `app/hoopcheck-motion.css`, with common timing/easing tokens and OS reduced-motion support.\n\n- **Trust Score:** count-up reveal, ring fill on first view, score-band color transitions (red below 40, orange 40\u201369, green 70+).\n- **HoopCheck check mark:** shared draw-on confirmation for review submission, profile verification, claim submission, and admin claim approval.\n- **Home counters:** animated teams/leagues totals loaded from the existing active directory tables.\n- **Pull-to-refresh:** shared basketball indicator on the team directory, refreshing its current query without adding a new data source.\n- **Main tabs:** shared swoosh transition on route changes between tab destinations.\n- **Loading:** reusable player-card shimmer skeletons on team directory and team profile pages.\n- **Accessibility:** honors `prefers-reduced-motion`; disables the swoosh/shimmer and reduces animation/transition durations.\n\nA gated `/motion-preview` route is available only when `HOOPCHECK_MOTION_TEST_MODE=true`; CI uses it to exercise the shared components and capture proof without exposing a production demo route.\n\n## Validation\nLatest commit: `ebe2007b0c783c14cb729948de52038ae1fb4a66`\n- HoopCheck CI: **passed** (lint, shared-motion regression checks, production build, browser checks).\n- HoopCheck Launch Test (Final Gate): **passed**.\n- Browser proof runs the six shared motion primitives in both light and dark themes and tests reduced-motion suppression.\n- [Light/dark screenshots and screen recordings](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/40714781813/artifacts/12828665502)\n\n## Scope and release safety\nChanges are isolated to shared motion utilities/styles, Home, Trust Score, team directory/profile loading, confirmation surfaces, main navigation, and a CI-gated preview route. No database schema, billing, basketball rules, or entitlement behavior changed.\nDraft PR only; **not merged or deployed**.",
+    "local_merge_exit": 1,
+    "conflicts": [
+      "CONFLICT (content): Merge conflict in app/HomeClient.tsx",
+      "CONFLICT (content): Merge conflict in app/admin/claims/page.tsx",
+      "CONFLICT (content): Merge conflict in app/coaches/page.tsx",
+      "CONFLICT (add/add): Merge conflict in app/hoopcheck-motion.css",
+      "CONFLICT (content): Merge conflict in app/leagues/page.tsx",
+      "CONFLICT (content): Merge conflict in app/teams/[id]/page.tsx",
+      "CONFLICT (content): Merge conflict in app/teams/[id]/review/page.tsx",
+      "CONFLICT (content): Merge conflict in app/teams/page.tsx",
+      "CONFLICT (content): Merge conflict in app/verification/page.tsx",
+      "CONFLICT (content): Merge conflict in app/womens/page.tsx",
+      "CONFLICT (content): Merge conflict in components/BottomNav.tsx",
+      "CONFLICT (content): Merge conflict in components/ClaimProfileButton.tsx",
+      "CONFLICT (content): Merge conflict in components/TrustScoreDial.tsx",
+      "CONFLICT (content): Merge conflict in package.json"
+    ]
+  },
+  {
+    "number": 125,
+    "title": "Reorganize Live Games hub by country",
+    "draft": true,
+    "mergeable": false,
+    "head": "feat/live-games-country-hub",
+    "sha": "0d3d862475a3abafb4bb0f9b42f3c2983d488a0e",
+    "checks": [
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 40709128577
+      },
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 40709128725
+      }
+    ],
+    "body": "## Summary\nReorganizes only the Live Games hub screen into country-first browsing.\n\n- Country sections show a flag, country name, live count, and upcoming count.\n- Live Now appears first within each country, and live/upcoming/recent games are grouped by league within that country.\n- Search matches country names as well as teams and leagues.\n- Adds a jump-to-country index and top anchor.\n- Keeps the existing Men's/Women's switch and the page's current fan membership/access gate; game records remain filtered by the selected basketball side.\n- Preserves each game's Remind Me action and the existing chat availability helper; the hub join action follows the helper's open window, including 30 minutes before tip-off.\n- The existing `/fan-live` screen's read-only-after-full-time behavior was left untouched.\n- Adds a browser regression script with three country fixtures and light/dark screenshot artifacts.\n\n## Validation\nLatest commit: `0d3d862475a3abafb4bb0f9b42f3c2983d488a0e`\n- HoopCheck CI: passed, including production build and the country-hub browser test.\n- HoopCheck Launch Test (Final Gate): passed.\n- Browser test asserts three countries (Azerbaijan live, Spain upcoming, Lithuania upcoming), Women's toggle selected, live and upcoming league grouping, country-name filtering, and Remind Me controls.\n- Light/dark screenshot artifact: https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/40709128577/artifacts/12824694138\n\n## Scope\nOnly `app/live-games/page.tsx` and `app/live-games/live-games-chat.css` affect the product screen. A dedicated browser-check script and CI screenshot artifact step were added. No other screen, database schema, game/chat API, reminder persistence, or production settings were changed.\n\n## Release safety\n- Draft PR only; not merged or deployed.\n- No production database migration or production settings were changed.",
+    "local_merge_exit": 1,
+    "conflicts": [
+      "CONFLICT (content): Merge conflict in app/live-games/page.tsx"
+    ]
+  },
+  {
+    "number": 124,
+    "title": "Document safe Apple IAP implementation contract",
+    "draft": true,
+    "mergeable": false,
+    "head": "feat/apple-iap-foundation",
+    "sha": "4876a86678df39b50f11466d9880a9a5a18de1e0",
+    "checks": [
+      {
+        "name": "Apple IAP primitive checks",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 40703068197
+      },
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 40703068147
+      },
+      {
+        "name": "Mobile App Checks",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 40703068153
+      },
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 40703068413
+      }
+    ],
+    "body": "## Summary\nBuilds a staged, isolated foundation for HoopCheck's Apple auto-renewable subscriptions while preserving the live Stripe billing path.\n\n- Adds an additive, unapplied Supabase migration for server-only Apple account-token, transaction, subscription, and notification-ledger tables.\n- Adds server-issued `appAccountToken` mapping and fail-closed ownership / entitlement-candidate helpers.\n- Adds product/environment allowlisting and notification orchestration with duplicate handling and retry behavior.\n- Adds an adapter for Apple's `SignedDataVerifier` interface, plus mock-based adapter contract tests.\n- Prevents caching of authenticated Apple account-token API responses with `Cache-Control: private, no-store, max-age=0`.\n- Adds a static security-contract test for the account-token endpoint and runs it in CI.\n- Adds `docs/apple-iap-release-runbook.md` with Apple account setup, server config, notification, mobile integration, verification gates, and rollback checklist.\n- Keeps Pro $4.99/month and Premium $9.99/month; does not overwrite Stripe-owned subscription columns.\n\n## Validation\n- Latest previously reported CI on commit `285e74fc3e54fe2cd3953286d546641cb8711bfb`: Apple IAP regression tests, launch-test, mobile typecheck, and main build all passed.\n- The new runbook documentation commit is `4876a86678df39b50f11466d9880a9a5a18de1e0`; checks for this new commit must complete before treating the branch as green.\n\nThese are repository checks only. Static route assertions and mock tests do not prove live Supabase integration, real Apple signature verification, transaction reconciliation, StoreKit purchase/restore, or an iOS native cloud build.\n\n## Remaining release blockers\n- Apple app record and subscription products have not been created; permanent bundle ID and exact product IDs are still required.\n- The official `@apple/app-store-server-library` package is not yet installed and wired into a production route.\n- Server notification persistence/reconciliation must bind verified transactions to HoopCheck users and update Apple-owned entitlement records idempotently.\n- Native StoreKit purchase and restore flows, a cloud iOS development build, and sandbox-device testing remain incomplete.\n- The additive migration has not been applied to any database; full entitlement/RLS audit remains required before release.\n\n## Release safety\n- Draft PR only; not merged or deployed.\n- No production database migration or production billing settings were changed.\n- No Stripe entitlements or prices were changed; existing Stripe memberships must continue to be honored.\n- Apple purchase UI remains disabled until the remaining release blockers are completed and verified.",
+    "local_merge_exit": 1,
+    "conflicts": [
+      "CONFLICT (content): Merge conflict in apps/mobile/app/_layout.tsx",
+      "CONFLICT (content): Merge conflict in package.json"
+    ]
+  },
+  {
+    "number": 123,
+    "title": "WIP: Capacitor native shell and Apple subscription rollout",
+    "draft": true,
+    "mergeable": false,
+    "head": "feat/capacitor-native-shell",
+    "sha": "10b7ab94321ebdfcc98b214e4e1e859f9b4f6c09",
+    "checks": [
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 40615246607
+      },
+      {
+        "name": "Native shell branch checks",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 40615246636
+      },
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 40615246626
+      }
+    ],
+    "body": "## Scope\nInitial native-shell configuration and a concrete implementation/acceptance plan for iOS/Android, push deep links, universal/app links, and Apple auto-renewable subscriptions.\n\n## Important status\nThis is intentionally a draft. It does not yet implement native plugins, purchase UI, App Store Server verification, push delivery, or platform builds. The current Next.js app is server-rendered, so the selected remote-shell strategy and Capacitor build pipeline must be validated before adding native platforms. No prices or tier definitions are changed.\n\n## Subscription requirements captured\n- Pro $4.99/month and Premium $9.99/month, one subscription group.\n- Preserve existing tier features and active Stripe/web entitlements.\n- Server-side StoreKit transaction verification and App Store Server Notifications V2.\n- Restore purchases and lifecycle/device acceptance tests.\n\n## Blockers for end-to-end proof\nApple Developer/App Store Connect access, final Team ID and bundle signing, APNs credentials, Firebase/FCM configuration, verified Android signing fingerprint, and signed iOS/Android builds on real devices.",
+    "local_merge_exit": 1,
+    "conflicts": [
+      "CONFLICT (content): Merge conflict in app/players/[id]/page.tsx",
+      "CONFLICT (content): Merge conflict in app/teams/[id]/page.tsx",
+      "CONFLICT (content): Merge conflict in package.json"
+    ]
+  },
+  {
+    "number": 122,
+    "title": "feat(trust-safety): add reporting, blocking, deletion, and legal safeguards",
+    "draft": true,
+    "mergeable": false,
+    "head": "feat/trust-safety-app-store",
+    "sha": "3558821b4400dd6153cc1a75577e6d4c3c15d0c2",
+    "checks": [
+      {
+        "name": "HoopCheck Launch Test (Final Gate)",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 40542809550
+      },
+      {
+        "name": "HoopCheck CI",
+        "status": "completed",
+        "conclusion": "success",
+        "id": 40542809484
+      }
+    ],
+    "body": "## Summary\nAdds trust-and-safety foundations for HoopCheck while keeping the work on a separate branch and leaving production unchanged.\n\n## Included\n- Unified content-report queue and API for reviews, player HoopFeed posts, fan HoopFeed posts, and live-game chat messages; stores reporter, content owner, content snapshot, reason, status, and timestamps.\n- Report actions on the main reviews feed, player/fan HoopFeed posts, and live chat. Existing team/league review-report actions now also create unified moderation queue records.\n- Admin content moderation queue at /admin/content-reports with reviewing/resolved/dismissed actions.\n- User block table/API and Block action on player and fan profiles; filters blocked authors from player/fan directories, main reviews, team/league/coach review displays, both HoopFeeds and their comments, and live-game chat.\n- Settings legal links and a destructive Delete Account flow requiring the user to type DELETE; uses the existing server-side deletion path that handles subscription/storage cleanup before auth-user deletion.\n- Terms zero-tolerance objectionable-content clause and Privacy explanation of safety reports/blocking. Signup already linked Terms, Privacy, and Community Guidelines.\n- Test-account acceptance steps in docs/trust-safety-acceptance-evidence.md.\n\n## Validation still required\n- Apply the new Supabase migration to a non-production preview database before exercising the new tables.\n- CI build/lint and route checks must pass.\n- Real test-account screenshots/recording have not been captured yet. The acceptance guide lists the exact steps; no fake screenshots are included.\n- Review account deletion cascade behavior against the deployed schema before production rollout.\n\nDo not merge/deploy until the migration, CI, test-account evidence, and deletion cascade are verified.",
+    "local_merge_exit": 1,
+    "conflicts": [
+      "CONFLICT (content): Merge conflict in app/api/account/delete/route.ts",
+      "CONFLICT (content): Merge conflict in app/api/review-access/route.ts",
+      "CONFLICT (content): Merge conflict in app/fan-feed/page.tsx",
+      "CONFLICT (content): Merge conflict in app/fan-live/page.tsx",
+      "CONFLICT (content): Merge conflict in app/fans/[id]/page.tsx",
+      "CONFLICT (content): Merge conflict in app/fans/page.tsx",
+      "CONFLICT (content): Merge conflict in app/feed/page.tsx",
+      "CONFLICT (content): Merge conflict in app/leagues/[id]/page.tsx",
+      "CONFLICT (content): Merge conflict in app/players/[id]/page.tsx",
+      "CONFLICT (content): Merge conflict in app/search/page.tsx",
+      "CONFLICT (content): Merge conflict in components/FanTeamPosts.tsx",
+      "CONFLICT (content): Merge conflict in components/PlayerContactButton.tsx"
+    ]
+  },
+  {
+    "number": 119,
+    "title": "Bootstrap Capacitor iOS shell for HoopCheck",
+    "draft": true,
+    "mergeable": false,
+    "head": "feat/capacitor-ios-shell",
+    "sha": "8a6c3f094ac4932dc9287e5866c06534892daa60",
+    "checks": [],
+    "body": "## Summary\n- Add Capacitor configuration and package dependencies for a native iOS shell.\n- Add a root-mounted native deep-link bridge using Capacitor App events.\n- Add a reusable native share-sheet button and expose it on public team, women's team, coach, league, agent, and player profile routes.\n- Document push-notification architecture, Xcode setup, and App Store release gates.\n\n## Implemented in this PR\n- `capacitor.config.ts`\n- `components/NativeAppBridge.tsx` mounted from `app/layout.tsx`\n- `components/NativeShareButton.tsx` with safe-area-aware floating placement\n- Capacitor package dependencies and `cap:sync` / `cap:ios` scripts\n- `docs/ios-app-shell.md`\n\n## Important limitations\nThis is still a bootstrap and has not been built or tested on Xcode/iPhone. The PR does not generate the iOS project, configure Apple Associated Domains/AASA, implement push token registration or backend APNs delivery. The existing Next.js app uses server functionality, so static export must not be enabled without an architecture audit. A remote-only wrapper may still fail App Review Guideline 4.2; native value must be tested and demonstrated before submission.\n\n## Required next steps\n1. Confirm the branch's GitHub Actions checks pass; Vercel deployment checks are not release proof.\n2. On a Mac with Xcode, generate and configure the iOS target and signing (not possible from an iPhone-only workflow).\n3. Configure universal links and test cold/warm launch routing on a physical device.\n4. Verify native share on each profile route and validate player/agent route patterns.\n5. Implement opt-in push registration and secure backend delivery.\n6. Validate auth, account deletion, privacy disclosures, and compliant membership billing.\n7. Test through TestFlight; do not merge/deploy or submit publicly until checks pass and owner approves.",
+    "local_merge_exit": 1,
+    "conflicts": [
+      "CONFLICT (content): Merge conflict in app/layout.tsx",
+      "CONFLICT (content): Merge conflict in package.json"
+    ]
+  }
+]

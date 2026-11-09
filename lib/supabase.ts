@@ -14,6 +14,8 @@ export const supabase = createBrowserClient(supabaseUrl, supabaseKey, {
 });
 
 let sessionPromise: ReturnType<typeof supabase.auth.getSession> | null = null;
+let sessionPromiseStartedAt = 0;
+const SESSION_CACHE_MAX_AGE_MS = 12000;
 let sessionListenerStarted = false;
 
 function startSessionCache() {
@@ -26,9 +28,14 @@ function startSessionCache() {
 
 export function getCachedSession() {
   startSessionCache();
+  // A stalled read must not poison the dashboard's subsequent Retry action.
+  if (sessionPromise && Date.now() - sessionPromiseStartedAt >= SESSION_CACHE_MAX_AGE_MS) {
+    sessionPromise = null;
+  }
   if (!sessionPromise) {
     const pending = supabase.auth.getSession();
     sessionPromise = pending;
+    sessionPromiseStartedAt = Date.now();
     // A failed session read must not poison subsequent auth checks.
     void pending.then(({ error }) => {
       if (error && sessionPromise === pending) sessionPromise = null;

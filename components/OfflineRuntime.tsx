@@ -31,6 +31,7 @@ export default function OfflineRuntime() {
 
     let active = true;
     let refreshing = false;
+    let hadController = Boolean(navigator.serviceWorker.controller);
     const register = async () => {
       try {
         const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
@@ -51,6 +52,9 @@ export default function OfflineRuntime() {
     };
     void register();
     const onControllerChange = () => {
+      // First install can claim the already-current page without reloading it.
+      // Reload only when a worker replaces one that controlled this document.
+      if (!hadController) { hadController = true; return; }
       if (refreshing) return;
       refreshing = true;
       window.location.reload();

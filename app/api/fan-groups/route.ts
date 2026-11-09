@@ -19,7 +19,7 @@ async function moderate(text: string, image: File | null) {
   if (text.trim()) input.push({ type: "text", text });
   if (image) {
     if (!["image/jpeg", "image/png", "image/webp"].includes(image.type) || image.size > MAX_IMAGE_BYTES)
-      return { allowed: false, status: 400, message: "Choose a JPG, PNG, or WebP image up to 8 MB." };
+      return { allowed: false, status: 400, message: "Choose a JPG, PNG, or WebP image up to 4 MB." };
     const bytes = Buffer.from(await image.arrayBuffer());
     input.push({ type: "image_url", image_url: { url: "data:" + image.type + ";base64," + bytes.toString("base64") } });
   }
@@ -71,10 +71,16 @@ export async function POST(request: Request) {
     const { data: group } = await db.from("team_fan_groups").select("team_id,group_name,join_mode").eq("team_id", teamId).maybeSingle();
     if (!group) return NextResponse.json({ ok: false, message: "This team's Fan Group is not available." }, { status: 404 });
 
-    const { data: explicitMod } = await db.from("team_fan_group_moderators").select("id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle();
-    const { data: platformMod } = await db.from("team_fan_group_moderators").select("id").eq("team_id", teamId).eq("moderator_type", "platform").maybeSingle();
-    const { data: isPlatformAdmin } = await db.rpc("is_current_user_admin_or_moderator");
-    const isModerator = Boolean(entitlements.canModerateFanGroups || explicitMod || (platformMod && (profile?.account_type === "admin" || isPlatformAdmin)));
+    // Use the same per-group authority as RLS, under the verified caller's JWT.
+    // The service client has no auth.uid(); a global role alone is insufficient.
+    const publicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!publicKey) throw new Error("Missing public Supabase configuration.");
+    const caller = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, publicKey, {
+      global: { headers: { Authorization: "Bearer " + token } },
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { data: moderatorAllowed, error: moderatorError } = await caller.rpc("is_team_fan_group_moderator", { p_team_id: teamId });
+    const isModerator = !moderatorError && moderatorAllowed === true;
     const { data: membership } = await db.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle();
     const isMember = Boolean(membership);
 
