@@ -28,12 +28,11 @@ export default function Sponsor() {
     setSaving(true);
     setSent("");
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { data: { user }, error: sessionError } = await supabase.auth.getUser();
       if (sessionError) {
         setSent("We couldn't verify your session. Please try again.");
         return;
       }
-      const user = session?.user;
       if (!user) {
         setSent("Please sign in before submitting. Your draft is still here.");
         return;
