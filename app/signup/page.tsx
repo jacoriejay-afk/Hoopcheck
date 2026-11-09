@@ -1,17 +1,17 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
+import UsernameField, { type UsernameFieldHandle } from "../../components/UsernameField";
 import Link from "next/link";
 import Logo from "../../components/Logo";
 import { useRouter } from "next/navigation";
 import { HoopIcon, type HoopIconName } from "../../components/HoopCheckUI";
-import { getCachedSession, supabase } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
-import UsernameField, { type UsernameFieldHandle } from "../../components/UsernameField";
+import TeamLeaguePicker from "../../components/TeamLeaguePicker";
 
 const TERMS_VERSION = "2026-10-01";
 type AccountType = "player" | "coach" | "manager" | "scout" | "agent" | "fan";
-type Team = { id:string; name:string; country:string|null; league_name:string|null };
 
 const ACCOUNT_TYPES: {value:AccountType; title:string; description:string; icon:HoopIconName}[] = [
   {value:"player",title:"Player",description:"Professional basketball player: build a verified career profile, research before signing, review teams you played for, and connect with the basketball industry.",icon:"basketball"},
@@ -29,40 +29,19 @@ export default function SignupPage() {
   const [firstName,setFirstName]=useState(""); const [lastName,setLastName]=useState("");
   const [username,setUsername]=useState(""); const usernameFieldRef=useRef<UsernameFieldHandle>(null); const [position,setPosition]=useState("PG");
   const [yearsPro,setYearsPro]=useState("0"); const [professionalExperience,setProfessionalExperience]=useState(false);
-  const [formerTeams,setFormerTeams]=useState<string[]>([]); const [favoriteTeamId,setFavoriteTeamId]=useState("");
-  const [teams,setTeams]=useState<Team[]>([]);
-  const [teamCountry,setTeamCountry]=useState(""); const [teamLeague,setTeamLeague]=useState("");
+  const [formerTeams,setFormerTeams]=useState<string[]>([]); const [favoriteTeamName,setFavoriteTeamName]=useState("");
   const [email,setEmail]=useState(""); const [password,setPassword]=useState(""); const [confirmPassword,setConfirmPassword]=useState("");
   const [birthMonth,setBirthMonth]=useState(""); const [birthDay,setBirthDay]=useState(""); const [birthYear,setBirthYear]=useState(""); const [gender,setGender]=useState(""); const [agreedToTerms,setAgreedToTerms]=useState(false);
   const [loading,setLoading]=useState(false); const [error,setError]=useState("");
 
-  useEffect(()=>{
-    if(!accountType)return;
-    let mounted=true;
-    void (async()=>{
-      try {
-        const {data,error}=await supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(300);
-        if(error) throw error;
-        if(mounted)setTeams(data||[]);
-      } catch(loadError) {
-        console.error("Could not load teams for signup:",loadError);
-        if(mounted)setTeams([]);
-      }
-    })();
-    return()=>{mounted=false};
-  },[accountType]);
-
   const isPlayer = accountType === "player";
-  const teamCountries=Array.from(new Set(teams.map(t=>t.country).filter(Boolean) as string[])).sort();
-  const teamLeagues=Array.from(new Set(teams.filter(t=>!teamCountry||t.country===teamCountry).map(t=>t.league_name).filter(Boolean) as string[])).sort();
-  const filteredTeams=teams.filter(t=>(!teamCountry||t.country===teamCountry)&&(!teamLeague||t.league_name===teamLeague));
 
   async function handleSignup(event:FormEvent){
     event.preventDefault(); setLoading(true); setError("");
     if(!accountType){setError("Choose an account type first.");setLoading(false);return;}
     if(firstName.trim().length<2||lastName.trim().length<2){setError("Please enter your first and last name.");setLoading(false);return;}
     const usernameCheck=await usernameFieldRef.current?.validate();
-    if(!usernameCheck?.valid){const message=usernameCheck?.message||"Use 3–20 characters: letters, numbers, or underscores.";setError("Username: "+message);usernameFieldRef.current?.focus();setLoading(false);return;}
+    if(!usernameCheck?.valid){setError("Username: "+(usernameCheck?.message||"Please check your username."));usernameFieldRef.current?.focus();setLoading(false);return;}
     if(password.length<6){setError("Password must be at least 6 characters.");setLoading(false);return;}
     if(password!==confirmPassword){setError("Passwords do not match.");setLoading(false);return;}
     if(!birthMonth||!birthDay||!birthYear){setError("Birthdate is required.");setLoading(false);return;}
@@ -74,7 +53,6 @@ export default function SignupPage() {
     if(!agreedToTerms){setError("Please agree to the Terms of Service and acknowledge the Privacy Policy.");setLoading(false);return;}
 
     try {
-    const favoriteTeamName=teams.find(t=>t.id===favoriteTeamId)?.name||"";
     const {data,error}=await supabase.auth.signUp({
       email:email.trim().toLowerCase(), password,
       options:{data:{
@@ -155,24 +133,17 @@ export default function SignupPage() {
               <div><label>Years as a professional</label><select value={yearsPro} onChange={e=>setYearsPro(e.target.value)}>{Array.from({length:26},(_,i)=><option key={i} value={i}>{i===0?"0 years":`${i} ${i===1?"year":"years"}`}</option>)}</select></div>
             </div>
             <label>Professional experience</label><select value={professionalExperience?"yes":"no"} onChange={e=>setProfessionalExperience(e.target.value==="yes")}><option value="yes">Yes — I have played professionally</option><option value="no">No — not yet</option></select>
-            <label>Former / current professional team</label>
-            <select multiple size={5} value={formerTeams} onChange={e=>setFormerTeams(Array.from(e.target.selectedOptions).map(o=>o.value).slice(0,8))}>
-              {filteredTeams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?" — "+t.country:""}{t.league_name?" · "+t.league_name:""}</option>)}
-            </select>
+            <TeamLeaguePicker mode="team" label="Former / current professional teams" multiple values={formerTeams} onChangeMany={setFormerTeams} basketballType={gender==="female"?"womens":"mens"} placeholder="Search and add teams" />
             <p className="form-hint">Select the teams you have played for. These are saved for verification and review eligibility.</p>
           </> : <div className="non-player-preferences">
             <div className="signup-step-label">BASKETBALL TO FOLLOW</div>
-            <div className="signup-two-col fan-team-filters"><div><label htmlFor="fan-team-country">Country</label><select id="fan-team-country" value={teamCountry} onChange={e=>{setTeamCountry(e.target.value);setTeamLeague("");setFavoriteTeamId("");}}><option value="">All countries</option>{teamCountries.map(x=><option key={x} value={x}>{x}</option>)}</select></div><div><label htmlFor="fan-team-league">League</label><select id="fan-team-league" value={teamLeague} onChange={e=>{setTeamLeague(e.target.value);setFavoriteTeamId("");}}><option value="">All leagues</option>{teamLeagues.map(x=><option key={x} value={x}>{x}</option>)}</select></div></div><label htmlFor="favorite-team">Choose a team to follow</label>
-            <select id="favorite-team" value={favoriteTeamId} onChange={e=>setFavoriteTeamId(e.target.value)}>
-              <option value="">Select a team</option>
-              {teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?" — "+t.country:""}{t.league_name?" · "+t.league_name:""}</option>)}
-            </select>
+            <TeamLeaguePicker mode="team" label="Choose a team to follow" value={favoriteTeamName} returnValue="name" onChange={setFavoriteTeamName} basketballType={null} placeholder="Search teams by name, city or country" />
             <p className="form-hint">No player-position, years-pro, or former-team questions for {accountType}s. You can follow more teams after signup.</p>
           </div>}
 
           <div className="signup-two-col">
             <div><label htmlFor="birth-month">Birthdate</label><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1.2fr",gap:8}}><select id="birth-month" value={birthMonth} onChange={e=>setBirthMonth(e.target.value)} required><option value="">Month</option>{Array.from({length:12},(_,i)=><option key={i+1} value={String(i+1)}>{new Date(2000,i,1).toLocaleString("en-US",{month:"long"})}</option>)}</select><select id="birth-day" value={birthDay} onChange={e=>setBirthDay(e.target.value)} required><option value="">Day</option>{Array.from({length:31},(_,i)=><option key={i+1} value={String(i+1)}>{i+1}</option>)}</select><select id="birth-year" value={birthYear} onChange={e=>setBirthYear(e.target.value)} required><option value="">Year</option>{Array.from({length:new Date().getFullYear()-1900+1},(_,i)=>new Date().getFullYear()-i).map(y=><option key={y} value={y}>{y}</option>)}</select></div></div>
-            <div><label htmlFor="gender">Gender</label><select id="gender" value={gender} onChange={e=>setGender(e.target.value)} required><option value="">Select gender</option><option value="male">Male</option><option value="female">Female</option><option value="non_binary">Non-binary</option><option value="prefer_not_to_say">Prefer not to say</option></select></div>
+            <div><label htmlFor="gender">Gender</label><select id="gender" value={gender} onChange={e=>{const next=e.target.value;const categoryChanged=(gender==="female")!==(next==="female");setGender(next);if(isPlayer&&categoryChanged)setFormerTeams([]);}} required><option value="">Select gender</option><option value="male">Male</option><option value="female">Female</option><option value="non_binary">Non-binary</option><option value="prefer_not_to_say">Prefer not to say</option></select></div>
           </div>
           <label htmlFor="email">Email</label><input id="email" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" required />
           <div className="signup-two-col">

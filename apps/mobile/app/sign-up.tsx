@@ -52,7 +52,7 @@ export default function SignUpScreen() {
     if (supabaseConfigurationError) { setErrorMessage(supabaseConfigurationError); return; }
     if (firstName.trim().length < 2 || lastName.trim().length < 2) { setErrorMessage("Enter your first and last name."); return; }
     const usernameCheck = await usernameFieldRef.current?.validate();
-    if (!usernameCheck?.valid) { setErrorMessage("Username: " + (usernameCheck?.message || "Use 3–20 characters: letters, numbers, or underscores.")); usernameFieldRef.current?.focus(); return; }
+    if (!usernameCheck?.valid) { setErrorMessage("Username: " + (usernameCheck?.message || "Choose an available username.")); usernameFieldRef.current?.focus(); return; }
     if (!validBirthdate(birthdate)) { setErrorMessage("Enter a valid birthdate in YYYY-MM-DD format."); return; }
     if (ageAtDate(birthdate) < 18) { setErrorMessage("You must be 18 or older to create a HoopCheck account."); return; }
     if (!["male", "female", "non_binary", "prefer_not_to_say"].includes(gender)) { setErrorMessage("Select a gender option."); return; }

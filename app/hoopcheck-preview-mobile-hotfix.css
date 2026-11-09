@@ -1,0 +1,123 @@
+/* Mobile visual fixes validated against owner preview screenshots. */
+.hc-ia-live-strip { grid-template-columns: 12px minmax(0,1fr) auto !important; min-width:0; }
+.hc-ia-live-strip > span:nth-child(2) { min-width:0; overflow-wrap:normal; word-break:normal; }
+.hc-ia-live-strip > span:nth-child(2) strong, .hc-ia-live-strip > span:nth-child(2) small { display:block; white-space:normal; word-break:normal; overflow-wrap:break-word; }
+.hc-ia-live-strip > span:last-child { min-width:0; }
+.hc-ia-live-dot--inactive { visibility:hidden; box-shadow:none; }
+@media(max-width:480px) { .hc-ia-live-strip { gap:10px !important; padding:14px !important; } .hc-ia-live-strip > span:last-child { font-size:12px; } }
+/* Keep member identity readable and compact at iPhone widths. */
+@media(max-width:600px){
+ .hc-member-profile-page .hero-card.compact-hero { padding:18px 16px !important; border-radius:18px !important; gap:12px !important; }
+ .hc-member-profile-page .hc-member-profile-avatar { width:84px !important; height:84px !important; outline-width:2px !important; border-width:3px !important; }
+ .hc-member-profile-page .hc-member-profile-identity { gap:12px !important; }
+ .hc-member-profile-page .hc-member-profile-copy h1 { font-size:clamp(24px,7vw,32px) !important; line-height:1.1 !important; margin:4px 0 !important; }
+ .hc-member-profile-page .hc-member-profile-copy .eyebrow { color:#ff8a54 !important; }
+ .hc-member-profile-page .hc-member-profile-actions { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px !important; }
+ .hc-member-profile-page .hc-member-profile-actions > :only-child { grid-column:1/-1; }
+ .hc-member-profile-page .hc-member-profile-actions .btn { min-width:0; font-size:12px !important; line-height:1.25; padding:10px !important; }
+ .hc-member-profile-page .hc-member-profile-actions .hc-profile-public-button { color:#fff !important; }
+}
+
+/* Distinct, generated visual fallback for each club, not an official crest. */
+.hc-team-entity-profile .hc-team-branded-hero {
+ position:relative; isolation:isolate; overflow:hidden;
+ background:linear-gradient(110deg,rgba(9,9,12,.94),rgba(9,9,12,.78)),radial-gradient(ellipse at 83% 16%,hsl(var(--hc-team-hue) 67% 37%),transparent 65%),#141414 !important;
+ color:#f7f7f5 !important;
+}
+.hc-team-entity-profile .hc-team-branded-hero::before { content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.22;background:repeating-linear-gradient(135deg,transparent 0 46px,hsla(var(--hc-team-hue),85%,65%,.36) 47px 49px,transparent 50px 94px),radial-gradient(circle at 78% 42%,transparent 0 60px,rgba(255,255,255,.18) 61px 63px,transparent 64px 105px,rgba(255,255,255,.15) 106px 108px,transparent 109px); }
+.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-kicker { color:#ff8a54 !important; }
+.hc-team-entity-profile .hc-team-branded-hero h1,.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-meta { color:#f7f7f5 !important; }
+
+/* Owner-approved dark identity card: no cream or white surfaces. */
+.hc-member-profile-page .hero-card.compact-hero { background:linear-gradient(145deg,#141414,#080808) !important; border:1px solid #363636 !important; color:#f7f7f5 !important; box-shadow:none !important; }
+.hc-member-profile-page .hero-card.compact-hero .eyebrow,
+.hc-member-profile-page .hero-card.compact-hero h1,
+.hc-member-profile-page .hero-card.compact-hero h1 span { color:#f7f7f5 !important; opacity:1 !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-email { color:#bdbdbd !important; opacity:1 !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-member-profile-avatar { background:#202020 !important; color:#f7f7f5 !important; border-color:#101010 !important; outline-color:#ff5a1f !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-edit-button { background:#ff5a1f !important; color:#0a0a0a !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-public-button { background:#111 !important; border:1px solid #ff5a1f !important; color:#f7f7f5 !important; }
+
+/* Keep branded club art subordinate to readable data and actions. */
+.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-topline,
+.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-kicker,
+.hc-team-entity-profile .hc-team-branded-hero h1,
+.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-meta,
+.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-stats { position:relative; z-index:1; }
+.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-stat { background:rgba(15,15,15,.86) !important; }
+.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-stat strong,
+.hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-stat small { color:#f7f7f5 !important; }
+@media(max-width:600px){
+ .hc-team-entity-profile .hc-team-branded-hero { padding:16px !important; }
+ .hc-team-entity-profile .hc-team-branded-hero h1 { font-size:clamp(25px,7.5vw,36px) !important; line-height:1.12 !important; overflow-wrap:break-word !important; }
+ .hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-stats { min-width:0; }
+}
+
+/* Compact completion strip uses actual profile completeness and next missing field. */
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-completion { margin:4px 0 0 !important; padding:12px !important; background:#161616 !important; border:1px solid #383838 !important; border-radius:12px !important; color:#f7f7f5 !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-completion-copy { color:#f7f7f5 !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-completion-copy strong { color:#f7f7f5 !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-completion-copy span { color:#bdbdbd !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-completion-copy a { color:#ff8a54 !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-completion-track { background:#333 !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-completion-track > span { background:#ff5a1f !important; }
+
+/* City-marked arena treatment: unique club palette with grounded city label. */
+.hc-team-entity-profile .hc-team-branded-hero::after {
+ content:attr(data-team-city); position:absolute; right:12px; top:28%; max-width:55%;
+ text-align:right; font-family:Impact,'Arial Narrow',sans-serif; font-weight:900;
+ font-size:clamp(38px,10vw,100px); line-height:.95; letter-spacing:-.045em;
+ color:rgba(255,255,255,.065); text-transform:uppercase; overflow-wrap:anywhere;
+ pointer-events:none; z-index:0;
+}
+@media(max-width:600px){
+ .hc-team-entity-profile .hc-team-branded-hero::after { top:33%; right:10px; font-size:clamp(36px,12vw,68px); max-width:60%; }
+}
+
+/* Honor keyboard navigation and prevent oversized watermark from capturing taps. */
+.hc-team-entity-profile .hc-team-branded-hero :is(a,button):focus-visible,
+.hc-member-profile-page .hero-card.compact-hero :is(a,button):focus-visible {
+ outline:3px solid #ff8a54 !important; outline-offset:3px !important;
+}
+@media(prefers-reduced-motion:reduce){
+ .hc-team-entity-profile .hc-team-branded-hero *,
+ .hc-member-profile-page .hero-card.compact-hero * { animation-duration:.01ms !important; transition-duration:.01ms !important; }
+}
+
+/* Compact, role-aware account shortcuts matching the approved dark layout. */
+.hc-member-profile-page .hc-profile-action-hub { display:grid;gap:12px;margin:12px 0 18px; }
+.hc-member-profile-page .hc-profile-membership-link { display:flex;align-items:center;gap:12px;min-height:48px;padding:12px 14px;border:1px solid #535353;border-radius:14px;background:#101010;color:#f7f7f5;text-decoration:none;font-weight:800; }
+.hc-member-profile-page .hc-profile-membership-link svg:first-child { color:#ff5a1f; }
+.hc-member-profile-page .hc-profile-membership-link svg:last-child { margin-left:auto; }
+.hc-member-profile-page .hc-profile-quick-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px; }
+.hc-member-profile-page .hc-profile-quick-link { display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-width:0;min-height:86px;padding:10px 4px;border:1px solid #ff5a1f;border-radius:14px;background:#101010;color:#f7f7f5;text-decoration:none;text-align:center;font-size:12px;font-weight:700; }
+.hc-member-profile-page .hc-profile-quick-link svg { color:#ff5a1f; }
+.hc-member-profile-page .hc-profile-action-hub a:focus-visible { outline:3px solid #ff8a54;outline-offset:3px; }
+@media(max-width:340px){ .hc-member-profile-page .hc-profile-quick-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+/* Membership comparison: visual parity with the black/orange account and dossier. */
+.hc-membership-comparison .hc-membership-plan { background:linear-gradient(150deg,#181818,#0b0b0b) !important;color:#f7f7f5 !important;border:1px solid #424242;border-radius:16px;min-width:0; }
+.hc-membership-comparison .hc-membership-plan.is-current { border:2px solid #ff5a1f !important;background:linear-gradient(155deg,#2c170f,#0b0b0b) !important; }
+.hc-membership-comparison .hc-membership-plan h3,.hc-membership-comparison .hc-membership-plan .price { color:#f7f7f5 !important; }
+.hc-membership-comparison .hc-membership-plan .eyebrow { color:#ff8a54 !important; }
+.hc-membership-comparison .hc-membership-plan li { color:#e5e5e5 !important; }
+.hc-membership-comparison .hc-membership-plan button:focus-visible { outline:3px solid #ff8a54;outline-offset:3px; }
+
+/* Player dossier: genuine profile data, consistent arena-inspired dark hero. */
+.hc-player-dossier-hero { position:relative;isolation:isolate;overflow:hidden;background:radial-gradient(ellipse at 92% 12%,rgba(255,90,31,.22),transparent 55%),linear-gradient(145deg,#181818,#080808) !important;color:#f7f7f5 !important;border:1px solid #3b3b3b !important;border-radius:18px; }
+.hc-player-dossier-hero::before { content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:repeating-linear-gradient(135deg,transparent 0 46px,rgba(255,90,31,.08) 47px 49px,transparent 50px 96px); }
+.hc-player-dossier-hero h1,.hc-player-dossier-hero .hc-social-stats strong { color:#f7f7f5 !important; }
+.hc-player-dossier-hero .muted,.hc-player-dossier-hero .hc-social-stats small,.hc-player-dossier-hero .hc-social-profile-bio { color:#c6c6c6 !important; }
+.hc-player-dossier-hero .hc-social-stats a { color:#f7f7f5 !important; }
+.hc-player-dossier-hero .hc-social-profile-actions :is(a,button):focus-visible { outline:3px solid #ff8a54;outline-offset:3px; }
+@media(max-width:600px){.hc-player-dossier-hero {padding:16px !important}.hc-player-dossier-hero h1 {font-size:clamp(24px,7vw,36px) !important;overflow-wrap:anywhere;}}
+
+/* Keep player identity and profile controls above decorative dossier art. */
+.hc-player-dossier-hero .hc-social-profile-top,
+.hc-player-dossier-hero .hc-social-profile-main,
+.hc-player-dossier-hero .hc-social-profile-actions { position:relative;z-index:1;min-width:0; }
+.hc-player-dossier-hero .player-profile-avatar { background:#202020 !important;color:#f7f7f5 !important;border-color:#ff5a1f !important; }
+.hc-player-dossier-hero .hc-social-stats { min-width:0; }
+.hc-player-dossier-hero .hc-social-stats > * { min-width:0; }
+.hc-player-dossier-hero .hc-social-stats strong { font-variant-numeric:tabular-nums; }
+@media(max-width:600px){ .hc-player-dossier-hero .hc-social-profile-actions { display:flex;flex-wrap:wrap;gap:8px; } .hc-player-dossier-hero .hc-social-profile-actions > * { max-width:100%; } }

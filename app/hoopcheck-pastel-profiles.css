@@ -1,0 +1,200 @@
+/* Soft pastel social identity. Shared by member, player, coach and team profiles.
+   Preserve actual profile data, entitlements and actions; do not fabricate posts. */
+.hc-member-profile-page,
+.player-profile-page,
+.hc-coach-entity-profile,
+.hc-team-entity-profile {
+  --social-cream:#fffaf7; --social-ink:#25232c; --social-muted:#696775;
+  --social-pink:#f8d9e8; --social-lavender:#ebe3ff; --social-mint:#d9f4e9;
+  --social-border:#eee5ed;
+}
+.hc-member-profile-page .page-container,
+.player-profile-page .page-container {max-width:960px;margin-inline:auto;}
+.hc-member-profile-page .hero-card.compact-hero,
+.player-profile-page .player-profile-hero,
+.hc-coach-entity-profile .hc-coach-profile-hero,
+.hc-team-entity-profile .hc-team-profile-hero {
+  background:var(--social-cream) !important;
+  color:var(--social-ink) !important;
+  border:1px solid var(--social-border) !important;
+  border-radius:28px !important;
+  box-shadow:0 10px 35px rgba(82,57,78,.07) !important;
+  padding:clamp(20px,4vw,38px) !important;
+}
+.hc-member-profile-page .hc-member-profile-identity,
+.player-profile-page .hc-social-profile-top {
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;
+}
+.hc-member-profile-page .hc-member-profile-avatar-wrap,
+.player-profile-page .hc-social-avatar-frame {margin-inline:auto;}
+.hc-member-profile-page .hc-member-profile-avatar,
+.player-profile-page .player-profile-avatar {
+  width:clamp(112px,22vw,154px) !important;
+  height:clamp(112px,22vw,154px) !important;
+  border-radius:50% !important;
+  border:5px solid #fff !important;
+  outline:4px solid #f5b8d3 !important;
+  box-shadow:0 6px 22px rgba(130,80,110,.16);
+  overflow:hidden;
+}
+.hc-member-profile-page .hc-member-profile-avatar img,
+.player-profile-page .player-profile-avatar img {width:100%;height:100%;object-fit:cover;}
+.hc-member-profile-page .hc-member-profile-copy,
+.player-profile-page .hc-social-profile-main {width:100%;text-align:center;min-width:0;}
+.hc-member-profile-page .hc-member-profile-copy h1,
+.player-profile-page .player-profile-heading h1 {
+  color:var(--social-ink) !important;
+  font-family:Inter,system-ui,sans-serif !important;
+  font-weight:800 !important;
+  font-size:clamp(23px,5vw,32px) !important;
+  letter-spacing:-.035em;
+  overflow-wrap:anywhere;
+}
+.hc-member-profile-page .hc-member-profile-copy .muted,
+.player-profile-page .player-profile-heading .muted {color:var(--social-muted) !important;}
+.hc-member-profile-page .hc-member-profile-actions,
+.player-profile-page .hc-social-profile-actions {
+  display:flex;flex-wrap:wrap;justify-content:center;gap:10px;
+  width:100%;margin-top:16px;
+}
+.hc-member-profile-page .hc-member-profile-actions .btn,
+.player-profile-page .hc-social-profile-actions .btn {
+  min-height:44px;border-radius:16px !important;
+  background:#f2d7e9 !important;color:#302239 !important;
+  border:1px solid #ebc8e1 !important;font-weight:750;
+}
+.hc-member-profile-page .hc-member-profile-actions .btn:first-child,
+.player-profile-page .hc-social-profile-actions .btn:first-child {
+  background:#ed85b9 !important;color:#221620 !important;border-color:#ed85b9 !important;
+}
+.player-profile-page .hc-social-stats {
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  width:min(100%,520px);margin:14px auto;gap:8px;
+}
+.player-profile-page .hc-social-stats > * {
+  background:var(--social-cream) !important;border:1px solid var(--social-border) !important;
+  border-radius:16px !important;padding:12px 6px !important;
+  color:var(--social-ink) !important;text-align:center;
+}
+.player-profile-page .hc-social-stats strong {display:block;font-size:clamp(17px,4vw,24px);color:var(--social-ink) !important;}
+.player-profile-page .hc-social-stats small {display:block;color:var(--social-muted) !important;}
+.hc-member-profile-page .hc-profile-overview .grid {gap:10px;}
+.hc-member-profile-page .hc-profile-info-card {
+  border-radius:18px !important;background:var(--social-cream) !important;
+  border:1px solid var(--social-border) !important;color:var(--social-ink) !important;
+}
+.hc-member-profile-page .hc-profile-info-card:nth-child(3n+1){border-top:4px solid #f3b7d5 !important;}
+.hc-member-profile-page .hc-profile-info-card:nth-child(3n+2){border-top:4px solid #cbbaf5 !important;}
+.hc-member-profile-page .hc-profile-info-card:nth-child(3n){border-top:4px solid #a7dfc8 !important;}
+.hc-member-profile-page .hc-profile-info-card h2 {color:var(--social-ink) !important;}
+.hc-member-profile-page .hc-profile-info-card .muted {color:var(--social-muted) !important;}
+@media(max-width:600px){
+ .hc-member-profile-page .hero-card.compact-hero,
+ .player-profile-page .player-profile-hero {border-radius:24px !important;padding:20px 14px !important;}
+ .hc-member-profile-page .hc-member-profile-actions > *,
+ .player-profile-page .hc-social-profile-actions > * {flex:1 1 120px;max-width:260px;}
+}
+@media(prefers-reduced-motion:reduce){
+ .hc-member-profile-page .hero-card.compact-hero,
+ .player-profile-page .player-profile-hero {scroll-behavior:auto;}
+}
+
+.hc-member-profile-page .hc-pastel-posts {
+  margin:18px 0;padding:18px;background:#fffaf7;color:#25232c;
+  border:1px solid #eee5ed;border-radius:22px;
+}
+.hc-member-profile-page .hc-pastel-posts__heading {display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:14px;}
+.hc-member-profile-page .hc-pastel-posts__heading h2 {margin:0;color:#25232c;font:800 21px Inter,system-ui,sans-serif;}
+.hc-member-profile-page .hc-pastel-posts__heading span {color:#696775;font-size:12px;}
+.hc-member-profile-page .hc-pastel-posts__grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+.hc-member-profile-page .hc-pastel-posts__tile {
+  position:relative;aspect-ratio:1;min-width:0;overflow:hidden;
+  border-radius:12px;background:#ebe3ff;color:#25232c;
+}
+.hc-member-profile-page .hc-pastel-posts__tile:nth-child(3n+2){background:#f8d9e8;}
+.hc-member-profile-page .hc-pastel-posts__tile:nth-child(3n){background:#d9f4e9;}
+.hc-member-profile-page .hc-pastel-posts__tile img,
+.hc-member-profile-page .hc-pastel-posts__tile video {width:100%;height:100%;object-fit:cover;}
+.hc-member-profile-page .hc-pastel-posts__tile p {padding:10px;font-size:clamp(10px,2.4vw,14px);line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:7;}
+.hc-member-profile-page .hc-pastel-posts__video-mark {position:absolute;top:8px;right:8px;color:white;text-shadow:0 1px 3px #000;font-size:16px;}
+.hc-member-profile-page .hc-pastel-posts__empty {color:#696775;margin:0;padding:20px 8px;text-align:center;}
+@media(max-width:600px){.hc-member-profile-page .hc-pastel-posts {padding:12px;border-radius:18px;}.hc-member-profile-page .hc-pastel-posts__grid{gap:4px;}.hc-member-profile-page .hc-pastel-posts__tile{border-radius:8px;}}
+
+/* Public social profile: readable biography and a genuine research-first coach hero. */
+.player-profile-page .hc-social-profile-bio {
+  max-width:56ch;margin:12px auto 0;color:#514c5b !important;
+  font-size:14px;line-height:1.6;text-align:center;white-space:pre-wrap;overflow-wrap:anywhere;
+}
+.hc-coach-entity-profile > section.hero:first-of-type {
+  border:1px solid #eee5ed !important;border-radius:26px !important;
+  background:#fffaf7 !important;color:#25232c !important;
+  padding:clamp(20px,4vw,38px) !important;
+  box-shadow:0 10px 35px rgba(82,57,78,.07);
+}
+.hc-coach-entity-profile > section.hero:first-of-type h1 {
+  color:#25232c !important;font:800 clamp(25px,5vw,38px)/1.2 Inter,system-ui,sans-serif !important;
+  letter-spacing:-.035em;overflow-wrap:anywhere;
+}
+.hc-coach-entity-profile > section.hero:first-of-type .eyebrow {color:#a04576 !important;}
+.hc-coach-entity-profile > section.hero:first-of-type .hc-entity-trust-score {
+  border-radius:18px !important;max-width:100%;overflow-wrap:anywhere;
+}
+.hc-coach-entity-profile > section.hero:first-of-type .hc-membership-locked-score {
+  background:#ebe3ff !important;color:#25232c !important;
+}
+.hc-coach-entity-profile > section.hero:first-of-type .hc-membership-locked-score h2,
+.hc-coach-entity-profile > section.hero:first-of-type .hc-membership-locked-score .eyebrow {
+  color:#25232c !important;
+}
+@media(max-width:600px) {
+  .hc-coach-entity-profile > section.hero:first-of-type {padding:20px 14px !important;border-radius:22px !important;}
+}
+
+/* Women's clubs use the same social identity as men's clubs, without changing access gates. */
+.hc-womens-profile-page {
+  --social-cream:#fffaf7;--social-ink:#25232c;--social-muted:#696775;
+  --social-pink:#f8d9e8;--social-lavender:#ebe3ff;--social-border:#eee5ed;
+}
+.hc-womens-profile-page .page-container {max-width:960px;margin-inline:auto;}
+.hc-womens-profile-page .hc-social-profile-header {
+  background:var(--social-cream) !important;color:var(--social-ink) !important;
+  border:1px solid var(--social-border) !important;border-radius:28px !important;
+  box-shadow:0 10px 35px rgba(82,57,78,.07) !important;
+  padding:clamp(20px,4vw,38px) !important;
+}
+.hc-womens-profile-page .hc-team-social-top,
+.hc-womens-profile-page .hc-team-profile-heading--club {
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;
+}
+.hc-womens-profile-page .hc-team-profile-heading__copy {min-width:0;max-width:100%;}
+.hc-womens-profile-page .hc-team-profile-heading__copy h1 {
+  color:var(--social-ink) !important;font:800 clamp(23px,5vw,32px)/1.2 Inter,system-ui,sans-serif !important;
+  letter-spacing:-.035em;overflow-wrap:anywhere;
+}
+.hc-womens-profile-page .hc-team-profile-kicker {color:#a04576 !important;}
+.hc-womens-profile-page .hc-team-profile-meta,
+.hc-womens-profile-page .hc-team-social-proof {color:var(--social-muted) !important;}
+.hc-womens-profile-page .hc-team-profile-logo {
+  width:clamp(112px,22vw,154px) !important;height:clamp(112px,22vw,154px) !important;
+  border-radius:50% !important;outline:4px solid #f5b8d3;
+  background:var(--social-lavender) !important;overflow:hidden;
+}
+.hc-womens-profile-page .hc-team-social-stats {
+  display:flex;justify-content:center;align-items:center;flex-wrap:wrap;
+  gap:12px;width:100%;
+}
+.hc-womens-profile-page .hc-team-social-stats > span {
+  min-width:90px;display:flex;flex-direction:column;align-items:center;
+  border-radius:16px;background:var(--social-lavender) !important;
+  color:var(--social-ink) !important;padding:12px 16px;
+}
+.hc-womens-profile-page .hc-team-social-stats strong,
+.hc-womens-profile-page .hc-team-social-stats small {color:var(--social-ink) !important;}
+.hc-womens-profile-page .hc-social-profile-header > .actions {
+  display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:16px;
+}
+.hc-womens-profile-page .hc-social-profile-header .btn {border-radius:16px !important;min-height:44px;}
+@media(max-width:600px){
+ .hc-womens-profile-page .hc-social-profile-header {padding:20px 14px !important;border-radius:22px !important;}
+ .hc-womens-profile-page .hc-team-social-stats > span {min-width:76px;padding:10px;}
+}
