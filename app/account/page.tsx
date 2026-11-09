@@ -13,6 +13,7 @@ import { useLanguage, type Language } from "../../components/LanguageProvider";
 import { calculateProfileCompletion } from "../../lib/profile-completion";
 import PlayerReviewChecklist from "../../components/PlayerReviewChecklist";
 import TeamLeaguePicker from "../../components/TeamLeaguePicker";
+import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
 
 type Subscription = {
   plan: "pro" | "premium" | null;
@@ -35,6 +36,9 @@ type Profile = {
   current_country_public: boolean;
   current_team: string | null;
   height?: string | null;
+  hometown?: string | null;
+  favorite_leagues?: string | null;
+  free_agent?: boolean | null;
   selected_team_id?: string | null;
   selected_womens_team_id?: string | null;
   favorite_teams?: string | null;
@@ -379,6 +383,7 @@ export default function AccountPage() {
     setSettingsVisibility(next);
     const ok = await saveSetting({ profile_visibility: next }, t("profileVisibilitySaved"));
     if (!ok) setSettingsVisibility(next === "public" ? "players_only" : "public");
+    else setProfile(current => ({ ...current, profile_visibility: next }));
   }
 
   async function changeCountryVisibility(checked: boolean) {
@@ -410,7 +415,7 @@ export default function AccountPage() {
           {profile.account_type === "player" && settingsVisibility === "public" ? <Link href={userId ? `/players/${encodeURIComponent(userId)}` : "/profile"} className="btn dark">{t("profilePublic")}</Link> : null}
         </div>
       </header>
-      {(() => { const completion = calculateProfileCompletion({ ...profile, display_name: displayName, bio, avatar_url: avatarUrl, hometown, nationality, interests, favorite_leagues: favoriteLeagues }); const next = completion.nextMissing; return completion.percentage < 100 && next ? <section className="dashboard-card hc-account-profile-completion" style={{marginTop:12}}><strong>Profile {completion.percentage}% complete</strong><p className="muted">Add your {next.label} next.</p><a className="btn" href={"/account#" + (next.key === "avatar_url" ? "profile-editor-field-avatar_url" : "profile-editor-field-" + next.key)}>{next.key === "avatar_url" ? "Add photo" : "Complete profile"}</a></section> : null; })()}
+      {profile.account_type === "player" ? <PlayerProfileCompletionCard key={JSON.stringify(profile)} profile={{ ...profile, id: userId }} onPublished={() => { setSettingsVisibility("public"); setProfile(current => ({ ...current, profile_visibility: "public" })); }} /> : (() => { const completion = calculateProfileCompletion({ ...profile, display_name: displayName, bio, avatar_url: avatarUrl, hometown, nationality, interests, favorite_leagues: favoriteLeagues }); const next = completion.nextMissing; return completion.percentage < 100 && next ? <section className="dashboard-card hc-account-profile-completion" style={{marginTop:12}}><strong>Profile {completion.percentage}% complete</strong><p className="muted">Add your {next.label} next.</p><a className="btn" href={"/account#" + (next.key === "avatar_url" ? "profile-editor-field-avatar_url" : "profile-editor-field-" + next.key)}>{next.key === "avatar_url" ? "Add photo" : "Complete profile"}</a></section> : null; })()}
       {(profile as any).moderation_status === "warned" || (profile as any).moderation_status === "flagged" ? <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{(profile as any).moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{(profile as any).moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section> : null}
       {adminRole && <section className="dashboard-card" style={{marginBottom:16}}><p className="eyebrow">{adminRole.toUpperCase()}</p><h2>{t("adminControlCenter")}</h2><div className="account-actions" style={{display:"flex",gap:10,flexWrap:"wrap"}}><Link href="/admin/directory" className="btn">{t("openAdminPanel")}</Link><Link href="/admin/reviews" className="btn dark">{t("manageReviews")}</Link><Link href="/admin/rights" className="btn dark">{t("rightsCoverage")}</Link></div></section>}
       <section id="account-settings" className="hc-settings" aria-label={t("accountSettings")}>

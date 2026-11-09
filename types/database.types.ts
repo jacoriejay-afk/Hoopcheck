@@ -1605,6 +1605,7 @@ export type Database = {
           avatar_moderation_note: string | null
           avatar_moderation_status: string
           avatar_url: string | null
+          height: string | null
           basketball_type: string
           bio: string | null
           birthdate: string | null
@@ -1664,6 +1665,7 @@ export type Database = {
           avatar_moderation_note?: string | null
           avatar_moderation_status?: string
           avatar_url?: string | null
+          height?: string | null
           basketball_type?: string
           bio?: string | null
           birthdate?: string | null
@@ -1723,6 +1725,7 @@ export type Database = {
           avatar_moderation_note?: string | null
           avatar_moderation_status?: string
           avatar_url?: string | null
+          height?: string | null
           basketball_type?: string
           bio?: string | null
           birthdate?: string | null
