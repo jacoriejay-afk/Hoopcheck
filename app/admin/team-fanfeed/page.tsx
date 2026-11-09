@@ -29,7 +29,7 @@ export default function AdminTeamFanFeedPage() {
     setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
-      window.location.href = "/login";
+      window.location.assign("/login");
       return;
     }
     const response = await fetch("/api/admin/team-fanfeed", {
@@ -38,11 +38,11 @@ export default function AdminTeamFanFeedPage() {
     });
     const payload = await response.json().catch(() => ({}));
     if (response.status === 401) {
-      window.location.href = "/login";
+      window.location.assign("/login");
       return;
     }
     if (response.status === 403) {
-      window.location.href = "/dashboard";
+      window.location.assign("/dashboard");
       return;
     }
     if (!response.ok) {
@@ -63,7 +63,7 @@ export default function AdminTeamFanFeedPage() {
     setMessage("");
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
-      window.location.href = "/login";
+      window.location.assign("/login");
       return;
     }
     const response = await fetch("/api/admin/team-fanfeed", {

@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../../components/HoopLoading";
 import { useEffect, useState } from "react";
 import Logo from "../../../components/Logo";
 import Link from "next/link";
@@ -52,7 +53,7 @@ export default function VerificationAdminPage(){
    setSaving(null);
  }
  const visible=rows.filter(x=>filter==="all"||x.status===filter);
- if(loading)return <main className="page-shell admin-light-shell"><div className="page-container"><p>Loading verification center...</p></div></main>;
+ if(loading)return <main className="page-shell admin-light-shell"><HoopLoading label="Loading HoopCheck…" /></main>;
  if(!authorized)return <main className="page-shell"><div className="page-container"><h1>Access denied</h1><Link href="/dashboard" className="btn">Back to Dashboard</Link></div></main>;
  return <main className="page-shell"><div className="page-container">
   <header className="topbar"><Link href="/" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/admin">Admin</Link><Link href="/account">Account</Link></nav></header>

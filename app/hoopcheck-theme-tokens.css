@@ -7,6 +7,17 @@
   --hc-surface-soft: #F8F8F6;
   --hc-foreground: #151515;
   --hc-foreground-muted: #666661;
+  /* CARD-1: legacy card variables must follow the selected theme. */
+  --hc-on-surface: var(--hc-foreground);
+  --hc-on-surface-muted: var(--hc-foreground-muted);
+  --hc-on-surface-raised: var(--hc-foreground);
+  --hc-on-surface-raised-muted: var(--hc-foreground-muted);
+  --hc-on-surface-soft: var(--hc-foreground);
+  --hc-card: var(--hc-surface-raised);
+  --hc-text: var(--hc-foreground);
+  --hc-ink: var(--hc-foreground);
+  --hc-paper: var(--hc-page-bg);
+  --hc-paper-strong: var(--hc-surface-raised);
   --hc-border: #E4E4E0;
   --hc-input-bg: #FFFFFF;
   --hc-input-fg: #151515;
@@ -30,6 +41,17 @@ html.theme-light {
   --hc-surface-soft: #F8F8F6;
   --hc-foreground: #151515;
   --hc-foreground-muted: #666661;
+  /* CARD-1: legacy card variables must follow the selected theme. */
+  --hc-on-surface: var(--hc-foreground);
+  --hc-on-surface-muted: var(--hc-foreground-muted);
+  --hc-on-surface-raised: var(--hc-foreground);
+  --hc-on-surface-raised-muted: var(--hc-foreground-muted);
+  --hc-on-surface-soft: var(--hc-foreground);
+  --hc-card: var(--hc-surface-raised);
+  --hc-text: var(--hc-foreground);
+  --hc-ink: var(--hc-foreground);
+  --hc-paper: var(--hc-page-bg);
+  --hc-paper-strong: var(--hc-surface-raised);
   --hc-border: #E4E4E0;
   --hc-input-bg: #FFFFFF;
   --hc-input-fg: #151515;
@@ -45,6 +67,17 @@ html.theme-dark {
   --hc-surface-soft: #1B1B1B;
   --hc-foreground: #F5F5F0;
   --hc-foreground-muted: #B8B8B3;
+  /* CARD-1: legacy card variables must follow the selected theme. */
+  --hc-on-surface: var(--hc-foreground);
+  --hc-on-surface-muted: var(--hc-foreground-muted);
+  --hc-on-surface-raised: var(--hc-foreground);
+  --hc-on-surface-raised-muted: var(--hc-foreground-muted);
+  --hc-on-surface-soft: var(--hc-foreground);
+  --hc-card: var(--hc-surface-raised);
+  --hc-text: var(--hc-foreground);
+  --hc-ink: var(--hc-foreground);
+  --hc-paper: var(--hc-page-bg);
+  --hc-paper-strong: var(--hc-surface-raised);
   --hc-border: #333333;
   --hc-input-bg: #171717;
   --hc-input-fg: #F5F5F0;
@@ -221,4 +254,26 @@ html.theme-dark main.admin-directory-shell :where(div,section,article,aside,head
 html.theme-dark main.admin-directory-shell :where(div,section,article,aside)[style*="background"] {
   background-color: var(--hc-surface-raised) !important;
   border-color: var(--hc-border) !important;
+}
+
+
+/* HOME-1: directory statistic cards use a paired surface/ink contract in both themes.
+   This selector is intentionally in the canonical token layer, not the page stylesheet. */
+html.theme-light main .hc-home-directory-stat {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-dark main .hc-home-directory-stat {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html.theme-light main .hc-home-directory-stat strong,
+html.theme-dark main .hc-home-directory-stat strong {
+  color: var(--hc-foreground) !important;
+}
+html.theme-light main .hc-home-directory-stat span,
+html.theme-dark main .hc-home-directory-stat span {
+  color: var(--hc-foreground-muted) !important;
 }

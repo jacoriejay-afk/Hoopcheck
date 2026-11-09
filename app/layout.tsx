@@ -20,6 +20,16 @@ import "./hoopcheck-root-cause.css";
 import "./hoopcheck-mobile-density.css";
 import "./hoopcheck-lm2d-contrast.css";
 import "./hoopcheck-motion.css";
+import "./hoopcheck-mobile-tabbar-repair.css";
+import "./hoopcheck-lm2e-account-layout.css";
+import "./hoopcheck-lm2f-bottom-nav.css";
+import "./hoopcheck-lg1-logo-contrast.css";
+import "./hoopcheck-ia1-home.css";
+import "./hoopcheck-brand-navigation.css";
+import "./hoopcheck-reference-identity.css";
+import "./hoopcheck-pastel-profiles.css";
+import "./hoopcheck-smooth-experience.css";
+import OfflineRuntime from "../components/OfflineRuntime";
 import ThemeProvider from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
 import MobileAuth from "../components/MobileAuth";
@@ -32,6 +42,18 @@ import SiteHeader from "../components/SiteHeader";
 import Logo from "../components/Logo";
 import CourtLines from "../components/CourtLines";
 import PageTransition from "../components/PageTransition";
+import { PageShell } from "../components/LayoutSystem";
+import "./hoopcheck-layout-system.css";
+import "./hoopcheck-desk-fix-2.css";
+import "./hoopcheck-desk-3.css";
+import "./hoopcheck-card-pairing.css";
+import "./hoopcheck-hub-empty-state-pairing.css";
+import "./hoopcheck-preview-mobile-hotfix.css";
+import "./hoopcheck-global-scoreboard.css";
+import "./hoopcheck-unified-layout.css";
+import "./hoopcheck-spacing-density-consolidated.css";
+import "./hoopcheck-membership-refresh.css";
+import "./hoopcheck-flow.css";
 import { SITE_URL } from "../lib/site-url";
 
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
@@ -69,7 +91,7 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "HoopCheck", statusBarStyle: "black-translucent" },
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml", sizes: "any" }],
-    apple: [{ url: "/hoopcheck-app-icon.svg" }],
+    apple: [{ url: "/icons/hoopcheck-180.png", sizes: "180x180", type: "image/png" }],
   },
 };
 
@@ -104,11 +126,12 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
   return (
     <html lang={initialLanguage} dir={initialLanguage === "ar" ? "rtl" : "ltr"} className={`${displayFont.variable} ${sansFont.variable} ${initialTheme === "dark" ? "theme-dark" : "theme-light"}`} suppressHydrationWarning>
-      <head><Script id="hoopcheck-theme-init" strategy="beforeInteractive">{`(function(){try{var root=document.documentElement;var m=document.cookie.match(/(?:^|;\\s*)hoopcheck-theme=([^;]+)/);var cookie=m?decodeURIComponent(m[1]):null;var stored=localStorage.getItem("hoopcheck-theme");var pref=stored||cookie||"${initialTheme}";if(pref==="dynamic")pref="dark";if(pref!=="dark"&&pref!=="light"&&pref!=="system")pref="system";var dark=pref==="dark"||(pref==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);root.classList.toggle("theme-dark",dark);root.classList.toggle("theme-light",!dark);root.style.colorScheme=dark?"dark":"light";if(stored!==pref)localStorage.setItem("hoopcheck-theme",pref);if(cookie!==pref)document.cookie="hoopcheck-theme="+encodeURIComponent(pref)+"; Path=/; Max-Age=31536000; SameSite=Lax";}catch(e){}})();`}</Script></head>
+      <head><Script id="hoopcheck-theme-init" strategy="beforeInteractive">{ `(function(){try{var root=document.documentElement;var m=document.cookie.match(/(?:^|;\\s*)hoopcheck-theme=([^;]+)/);var cookie=m?decodeURIComponent(m[1]):null;var stored=localStorage.getItem("hoopcheck-theme");var pref=stored||cookie||"${initialTheme}";if(pref==="dynamic")pref="dark";if(pref!=="dark"&&pref!=="light"&&pref!=="system")pref="system";var dark=pref==="dark"||(pref==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);root.classList.toggle("theme-dark",dark);root.classList.toggle("theme-light",!dark);root.style.colorScheme=dark?"dark":"light";if(stored!==pref)localStorage.setItem("hoopcheck-theme",pref);if(cookie!==pref)document.cookie="hoopcheck-theme="+encodeURIComponent(pref)+"; Path=/; Max-Age=31536000; SameSite=Lax";}catch(e){}})();` }</Script></head>
       <body className={sansFont.className}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c") }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c") }} />
         <ProtectionLayer />
+        <OfflineRuntime />
         <ThemeProvider initialTheme={initialTheme}>
           <AuthProvider>
             <LanguageProvider initialLanguage={initialLanguage}>
@@ -116,8 +139,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <SiteHeader />
               <MobileAuth />
               <BottomNav />
-              <GlobalBackButton />
-              <PageTransition>{children}</PageTransition>
+              <PageShell><GlobalBackButton /><PageTransition>{children}</PageTransition></PageShell>
             </LanguageProvider>
           </AuthProvider>
         </ThemeProvider>
@@ -150,7 +172,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             </div>
           </div>
           <div className="footer-bottom">
-            <span>© {new Date().getFullYear()} HoopCheck. All rights reserved.</span>
+            <span>© {new Date().getFullYear()} HoopCheck. All rights reserved.</span>
             <span>Built for basketball players.</span>
           </div>
         </footer>
