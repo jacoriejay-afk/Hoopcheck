@@ -71,10 +71,10 @@ export default function TeamHubPage(){
   if(loading)return <main className="page-shell hc-fan-feed-page"><div className="page-container"><HoopLoading label={labels.loading}/></div></main>;
   const directoryHref=basketballSide==="womens"?"/womens":"/teams";
   return <main className="page-shell hc-fan-feed-page"><div className="page-container">
-    <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href={directoryHref}>{labels.discover}</Link><Link href="/fan-feed">{language === "en" ? "Fan HQ feed" : labels.fanFeed}</Link></nav></header>
-    <section className="hero-card hc-feed-hero"><div><p className="eyebrow">{labels.kicker}</p><h1>{labels.title}</h1><p className="muted">{labels.description}</p><div style={{marginTop:12}}><FanBasketballSideSwitch /></div></div><p className="hc-feed-expiry-note">{labels.yourTeams}<span>{labels.refreshNote}</span></p></section>
-    {!signedIn&&<section className="dashboard-card hc-feed-empty"><h2>{labels.signInTitle}</h2><p>{labels.signInBody}</p><Link className="btn" href="/login">{labels.signIn}</Link></section>}
-    {signedIn&&!teams.length&&<section className="dashboard-card hc-feed-empty"><p className="eyebrow">{labels.startFollowing}</p><h2>{labels.emptyTitle}</h2><p>{labels.emptyBody}</p><Link className="btn" href={directoryHref}>{labels.findTeams}</Link></section>}
+    <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/teams">Discover teams</Link><Link href="/fan-feed">Fan HQ</Link></nav></header>
+    <section className="hero-card hc-feed-hero"><div><p className="eyebrow">FAN HQ · PERSONAL DASHBOARD</p><h1>Your Team Hub</h1><p className="muted">Your favorite teams, upcoming matchups, live scores and the latest fan conversations—all in one place.</p></div><p className="hc-feed-expiry-note">YOUR TEAMS<span>Scores and schedules refresh automatically.</span></p></section>
+    {!signedIn&&<section className="dashboard-card hc-feed-empty"><h2>Sign in to see your teams</h2><p>Follow your favorite teams to build your personalized Team Hub.</p><Link className="btn" href="/login">Sign in</Link></section>}
+    {signedIn&&!teams.length&&<section className="dashboard-card hc-feed-empty"><p className="eyebrow">START FOLLOWING</p><h2>Your Team Hub starts here.</h2><p>Follow teams to see upcoming games, live scores and team-tagged fan updates.</p><Link className="btn" href="/teams">Find teams</Link></section>}
     {!!message&&<p className="hc-feed-message" role="status">{message}</p>}
     <section style={{display:"grid",gap:16,marginTop:18}}>{teams.map(team=>{
       const teamGames=games.filter(g=>g.team_id===team.id).slice(0,3);

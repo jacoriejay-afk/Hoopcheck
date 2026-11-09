@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import { isAtLeastTier } from "../../../../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../../../../lib/membership-tier";
 
 
 function stripeIdentityModeConfigured() {
@@ -44,9 +44,9 @@ export async function POST(req:Request){
   if(!profile || !["player","coach"].includes(profile.account_type || ""))
     return NextResponse.json({error:"Only player and coach accounts can start identity verification."},{status:403});
   if(profile.account_type==="coach"){
-    const {data:sub}=await supabase.from("subscriptions").select("plan,status,current_period_end").eq("user_id",user.id).maybeSingle();
-    const active=(sub?.status==="active"||sub?.status==="trialing") && (sub?.current_period_end==null || new Date(sub.current_period_end)>new Date());
-    if(!active || !isAtLeastTier(sub?.plan, "pro")) return NextResponse.json({error:"Coach identity verification is available to active Pro and Premium coaches."},{status:403});
+    const {data:sub}=await supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",user.id).maybeSingle();
+    const entitlements = getHoopCheckEntitlements({ accountType: profile.account_type, subscription: sub });
+    if(!entitlements.canStartCoachIdentityVerification) return NextResponse.json({error:"Coach identity verification is available to active Pro and Premium coaches."},{status:403});
   }
   if(profile.identity_verification_status==="verified")
     return NextResponse.json({error:`This ${profile.account_type} is already identity verified.`},{status:409});

@@ -167,7 +167,11 @@ try {
         else if (url.pathname.includes("/rest/v1/feed_post_comments")) data = [];
         else if (url.pathname.includes("/rest/v1/feed_post_checks")) data = [];
         else if (url.pathname.includes("/rest/v1/reviews")) data = [];
-        else if (url.pathname.includes("/rest/v1/teams")) { const requestedId = (url.searchParams.get("id") || "").replace(/^eq\./, ""); data = requestedId ? [requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture] : [teamFixture, fallbackTeamFixture]; }
+        else if (url.pathname.includes("/rest/v1/womens_teams")) {
+        const idFilter = url.searchParams.get("id") || "";
+        data = idFilter.startsWith("eq.") ? (single ? teamFixture : [teamFixture]) : [teamFixture];
+      }
+      else if (url.pathname.includes("/rest/v1/teams")) { const requestedId = (url.searchParams.get("id") || "").replace(/^eq\./, ""); data = requestedId ? [requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture] : [teamFixture, fallbackTeamFixture]; }
         else if (url.pathname.includes("/rest/v1/coaches")) data = [coachFixture];
         else if (url.pathname.includes("/rest/v1/leagues")) data = [leagueFixture];
         await route.fulfill({
@@ -285,7 +289,7 @@ try {
 
   const mainRoutes = [
     "/", "/dashboard", "/feed", "/account", "/settings", "/profile", "/search", "/search?q=Baku",
-    "/teams", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2", "/teams/a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f0", "/admin/team-logos", "/coaches", "/coaches/11111111-1111-4111-8111-111111111111", "/leagues", "/players", "/womens", "/directory",
+    "/teams", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2", "/teams/a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f0", "/womens/" + teamFixture.id, "/admin/team-logos", "/coaches", "/coaches/11111111-1111-4111-8111-111111111111", "/leagues", "/players", "/womens", "/directory",
     "/reviews", "/membership", "/notifications", "/support", "/verification",
     "/privacy-center", "/privacy", "/terms", "/community-guidelines", "/login",
     "/signup", "/onboarding", "/fan-live", "/fan-feed", "/team-hub",
@@ -362,9 +366,9 @@ try {
       const single = request.headers()["accept"]?.includes("vnd.pgrst.object");
       if (url.pathname === "/auth/v1/user") data = user;
       else if (url.pathname.includes("/rest/v1/profiles")) {
-        const fanSurfaceRoute = activeRoutePath === "/fan-feed" || activeRoutePath.startsWith("/team-hub/groups/");
+        const fanSurfaceRoute = activeRoutePath === "/fan-feed" || activeRoutePath === "/team-hub" || activeRoutePath.startsWith("/team-hub/groups/") || activeRoutePath.startsWith("/womens/");
         const accountTypeQuery = (url.searchParams.get("select") || "").includes("account_type") && (url.searchParams.get("id") || "").startsWith("eq.");
-        const fanProfile = { ...profile, account_type: "fan" };
+        const fanProfile = { ...profile, account_type: "fan", preferred_basketball_side: "mens" };
         data = accountTypeQuery ? (fanSurfaceRoute ? fanProfile : profile) : single ? profile : [];
       }
       else if (url.pathname.includes("/rest/v1/subscriptions")) {
@@ -373,6 +377,12 @@ try {
       }
       else if (url.pathname.includes("/rest/v1/fan_live_games")) {
         data = activeRoutePath === "/live-games" && liveGameFixtureMode === "populated" ? liveGameFixtures : [];
+      }
+      else if (url.pathname.includes("/rest/v1/womens_teams")) {
+        const idFilter = url.searchParams.get("id") || "";
+        if (idFilter.startsWith("eq.")) data = single ? teamFixture : [teamFixture];
+        else if (idFilter.startsWith("in.")) data = [teamFixture];
+        else data = [teamFixture];
       }
       else if (url.pathname.includes("/rest/v1/teams")) {
         const idFilter = url.searchParams.get("id") || "";
@@ -394,15 +404,20 @@ try {
         const isFanTeamFollow = activeRoutePath === "/fan-feed" && url.searchParams.get("target_type") === "eq.team";
         data = isFanTeamFollow ? [{ target_id: teamFixture.id, target_type: "team" }] : single ? null : [];
       }
-      else if (url.pathname.includes("/rest/v1/team_fan_group_members")) data = activeRoutePath.startsWith("/team-hub/groups/") ? { user_id: user.id } : null;
+      else if (url.pathname.includes("/rest/v1/team_fan_groups")) data = single ? { team_id: teamFixture.id, group_name: teamFixture.name + " Fan Group" } : [{ team_id: teamFixture.id, group_name: teamFixture.name + " Fan Group" }];
+      else if (url.pathname.includes("/rest/v1/team_fan_group_members")) data = single ? { team_id: teamFixture.id, user_id: userId } : [{ team_id: teamFixture.id, user_id: userId }];
+      else if (url.pathname.includes("/rest/v1/team_fan_group_moderators")) data = single ? null : [];
+      else if (url.pathname.includes("/rest/v1/team_fan_group_posts")) data = [];
+      else if (url.pathname.includes("/rest/v1/team_fan_group_comments")) data = [];
       else if (url.pathname.includes("/rest/v1/rpc/get_team_fan_group_summary")) {
-        data = activeRoutePath.startsWith("/team-hub/groups/") ? [{
+        const summary = {
           group_name: teamFixture.name + " Fan Group",
           member_count: 12,
           join_mode: "open",
           is_member: true,
           has_pending_request: false,
-        }] : [];
+        };
+        data = single ? summary : [summary];
       }
       else if (url.pathname.includes("/rest/v1/rpc/get_follow_count")) data = 0;
       else if (url.pathname.includes("/rest/v1/rpc/get_review_verification")) data = [];
@@ -543,34 +558,63 @@ try {
       }, { requestedPath, navigationError });
       const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
       const errors = [];
+      if (requestedPath.startsWith("/womens/")) {
+        await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").waitFor({ state: "visible", timeout: 15000 });
+        const fanGroupEntry = (await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").innerText()).trim();
+        if (!fanGroupEntry.includes("Fan Group") || !fanGroupEntry.includes("Joined")) errors.push("women team profile: Fan Group entry is missing or not joined: " + fanGroupEntry);
+      }
       if (requestedPath === "/fan-feed") {
-        // Fan HQ keeps a compact mixed-feed title; selecting a club changes the composer.
-        await page.locator("main.hc-fan-feed-page .hc-feed-compact-header").waitFor({ state: "visible", timeout: 15000 });
-        await page.locator("main.hc-fan-feed-page .hc-feed-composer").waitFor({ state: "visible", timeout: 15000 });
-        const teamHeading = (await page.locator("main.hc-fan-feed-page .hc-feed-compact-header h1").innerText()).trim();
-        const compactCaption = (await page.locator("main.hc-fan-feed-page .hc-feed-compact-header .hc-feed-live-label").innerText()).trim();
-        const headerBounds = await page.locator("main.hc-fan-feed-page .hc-feed-compact-header").boundingBox();
-        const composer = page.locator("main.hc-fan-feed-page .hc-feed-composer");
-        const composerPlaceholder = await composer.locator("textarea").count() ? await composer.locator("textarea").getAttribute("placeholder") : null;
-        const chooseClub = composer.getByRole("button", { name: "Choose a followed club to post" });
-        if (!composerPlaceholder && await chooseClub.count() !== 1) errors.push("fan-feed: missing both selected-club composer and club chooser");
-        if (teamHeading !== "Fan HQ") errors.push("fan-feed: mixed-feed hero title is incorrect: " + teamHeading);
-        if (!compactCaption.includes("club communities")) errors.push("fan-feed: mixed-feed caption is missing: " + compactCaption);
-        if (!headerBounds || headerBounds.height >= 110) errors.push("fan-feed: compact header exceeds its height budget");
-        if (composerPlaceholder !== null && !composerPlaceholder.trim()) errors.push("fan-feed: composer placeholder is empty");
-        const audienceNote = compactCaption;
-        if (!audienceNote || !audienceNote.includes("24") || /KICKER|TITLE|Subtitle|TEAM FIRST|Fan Only Note/.test(audienceNote)) errors.push("fan-feed: audience note is missing or still scaffolded: " + audienceNote);
-        const emptyState = page.locator("main.hc-fan-feed-page .hc-feed-empty");
-        if (await emptyState.count()) {
-          const emptyCopy = (await emptyState.innerText()).trim();
-          if (!emptyCopy.includes("No fan posts yet")) errors.push("fan-feed: empty state headline is missing");
-          if (!emptyCopy.includes("Follow a club") && !emptyCopy.includes("No recent posts")) errors.push("fan-feed: empty state body is missing");
-        }
+        await page.locator("main.hc-fan-feed-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
+        const teamHeading = (await page.locator("main.hc-fan-feed-page .hc-feed-hero h1").innerText()).trim();
+        const fanHqEyebrow = (await page.locator("main.hc-fan-feed-page .hc-feed-hero .eyebrow").innerText()).trim();
+        const explainer = (await page.locator("main.hc-fan-feed-page .hc-fan-feed-explainer").innerText()).trim();
+        if (teamHeading !== "Fan HQ") errors.push("fan-feed: screen title must be Fan HQ: " + teamHeading);
+        if (!fanHqEyebrow.includes("FAN HQ") || /KICKER/.test(fanHqEyebrow)) errors.push("fan-feed: real Fan HQ eyebrow is missing: " + fanHqEyebrow);
+        const expectedExplainer = testLanguage === "es" ? "Publicaciones de los grupos de fans de los clubes que sigues." : "Posts from the fan groups of the clubs you follow.";
+        if (explainer !== expectedExplainer) errors.push("fan-feed: plain-language purpose line is missing: " + explainer);
+        await page.locator("main.hc-fan-feed-page .hc-feed-stream .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
+        const fanFeedEmpty = (await page.locator("main.hc-fan-feed-page .hc-feed-stream .hc-feed-empty").innerText()).trim();
+        if (!fanFeedEmpty.includes("No posts yet — be the first to post for " + teamFixture.name + ".")) errors.push("fan-feed: real club-specific timeline empty state is missing: " + fanFeedEmpty);
+        if (!fanFeedEmpty.includes("Be the first to post")) errors.push("fan-feed: timeline empty state action is missing");
+        const womensToggle = page.locator(".hc-fan-side-switch button").nth(1);
+        await womensToggle.click();
+        await page.waitForFunction(() => document.querySelectorAll('.hc-fan-side-switch button[aria-pressed="true"]').length === 1 &&
+          document.querySelectorAll(".hc-fan-side-switch button")[1]?.getAttribute("aria-pressed") === "true", null, { timeout: 10000 });
+        const postPrompt = page.locator("main.hc-fan-feed-page .hc-fan-feed-post-prompt");
+        await postPrompt.waitFor({ state: "visible", timeout: 15000 });
+        if (await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").count()) errors.push("fan-feed: standalone feed must not show a composer before club selection");
+        await postPrompt.getByRole("button").click();
+        const picker = page.locator("main.hc-fan-feed-page .hc-fan-feed-team-picker");
+        await picker.waitFor({ state: "visible", timeout: 10000 });
+        const pickerSearch = page.locator("main.hc-fan-feed-page .hc-feed-team-search");
+        await pickerSearch.fill("Ego");
+        const followedClub = picker.getByRole("option").filter({ hasText: teamFixture.name });
+        await followedClub.waitFor({ state: "visible", timeout: 10000 });
+        const followedClubCount = await picker.getByRole("option").count();
+        if (followedClubCount !== 1) errors.push("fan-feed: picker must contain only the followed club list, found " + followedClubCount + " options");
+        await followedClub.click();
+        await page.waitForURL("**/team-hub/groups/" + teamFixture.id, { timeout: 10000 });
+        await page.locator("main.hc-team-fan-group-page .hc-team-fan-group-composer textarea").waitFor({ state: "visible", timeout: 10000 });
+        const targetLabel = (await page.locator("main.hc-team-fan-group-page .hc-team-group-posting-target").innerText()).trim();
+        if (!targetLabel.includes("Posting to") || !targetLabel.includes(teamFixture.name) || !targetLabel.includes("Fan Group")) errors.push("fan-feed: picker did not open the locked club group composer: " + targetLabel);
+        await page.locator("main.hc-team-fan-group-page .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
+        const emptyCopy = (await page.locator("main.hc-team-fan-group-page .hc-feed-empty").innerText()).trim();
+        const expectedEmptyTitle = "No posts yet — be the first to post for " + teamFixture.name + ".";
+        if (!emptyCopy.includes(expectedEmptyTitle)) errors.push("fan-feed: club-specific EMPTY-1 headline is missing: " + emptyCopy);
+        if (!emptyCopy.includes("Be the first to post")) errors.push("fan-feed: EMPTY-1 post action is missing");
       }
       if (requestedPath.startsWith("/team-hub/groups/")) {
         await page.locator("main.hc-team-fan-group-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
         await page.locator("main.hc-team-fan-group-page .hc-team-fan-group-composer textarea").waitFor({ state: "visible", timeout: 15000 });
         await page.locator("main.hc-team-fan-group-page .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
+        const lockedTarget = (await page.locator("main.hc-team-fan-group-page .hc-team-group-posting-target").innerText()).trim();
+        if (!lockedTarget.includes("Posting to") || !lockedTarget.includes(teamFixture.name) || !lockedTarget.includes("Fan Group")) errors.push("team-hub group: composer does not explain its locked club/group destination: " + lockedTarget);
+        const groupEmpty = (await page.locator("main.hc-team-fan-group-page .hc-feed-empty").innerText()).trim();
+        if (!groupEmpty.includes("No posts yet — be the first to post for " + teamFixture.name + ".")) errors.push("team-hub group: real club-specific empty state is missing");
+        if (!groupEmpty.includes("Be the first to post")) errors.push("team-hub group: empty-state composer action is missing");
+        await page.locator("main.hc-team-fan-group-page .hc-feed-empty button").click();
+        const composerFocused = await page.locator("#fan-group-post-body").evaluate(element => element === document.activeElement);
+        if (!composerFocused) errors.push("team-hub group: empty-state action did not focus the locked group composer");
       }
       if (requestedPath === "/theme-card-audit") {
         const previews = await page.locator("main.hc-card-audit-page .hc-card-audit-preview").count();
@@ -706,6 +750,12 @@ try {
       if (result.pageWrapper && result.pageWrapper !== expectedPage) errors.push("main background mismatch");
       if (result.navigationError) errors.push("navigation error");
       if (result.scaffoldMatches?.length) errors.push("rendered scaffold strings: " + result.scaffoldMatches.join(", "));
+      const isFanRoute = requestedPath === "/fan-feed" || requestedPath === "/team-hub" || requestedPath.startsWith("/team-hub/groups/") || requestedPath.startsWith("/womens/");
+      if (isFanRoute) {
+        const fanScaffoldCount = result.scaffoldMatches?.length || 0;
+        console.log("FAN_ROUTE_SCAFFOLD_HITS=" + fanScaffoldCount + " route=" + requestedPath);
+        if (fanScaffoldCount) errors.push("fan route scaffold hits: " + requestedPath + " -> " + result.scaffoldMatches.join(", "));
+      }
       if (result.bodyTopPadding < result.safeAreaTop - 1) errors.push("top safe-area padding missing");
       if (result.headerTop !== null && result.headerTop < result.safeAreaTop - 1) errors.push("header overlaps the status-bar safe area");
       if (result.mainTop !== null && result.mainTop < result.safeAreaTop - 1) errors.push("main content overlaps the status-bar safe area");

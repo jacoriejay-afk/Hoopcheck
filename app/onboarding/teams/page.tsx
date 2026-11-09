@@ -29,12 +29,13 @@ export default function TeamOnboardingPage() {
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){router.replace("/login?next=/onboarding/teams");return;}
     if(!alive)return; setUserId(user.id);
-    const [{data:profile},{data:teamRows},{data:follows}] = await Promise.all([
+    const [{data:profile},{data:mensRows},{data:womensRows},{data:follows}] = await Promise.all([
       supabase.from("profiles").select("account_type,basketball_type").eq("id",user.id).maybeSingle(),
-      supabase.from("teams").select("id,name,country,city,league_name,logo_url,logo_bg").eq("active",true).order("name").limit(1500),
+      supabase.from("teams").select("id,name,country,city,league_name,logo_url,logo_bg").eq("basketball_type","mens").eq("active",true).order("name").limit(1500),
+      supabase.from("womens_teams").select("id,name,country,city,league_name,logo_url,logo_bg").eq("active",true).order("name").limit(1000),
       supabase.from("follow_relationships").select("target_id,target_type").eq("follower_id",user.id).eq("target_type","team")
     ]);
-    if(!alive)return; setAccountType(profile?.account_type||"fan"); setBasketballType(profile?.basketball_type==="womens"?"womens":profile?.basketball_type==="mens"?"mens":null); setTeams((teamRows||[]) as Team[]);
+    if(!alive)return; setAccountType(profile?.account_type||"fan"); setBasketballType(profile?.basketball_type==="womens"?"womens":profile?.basketball_type==="mens"?"mens":null); setTeams([...(mensRows||[]),...(womensRows||[])] as Team[]);
     setFollowed((follows||[]).map((x:Follow)=>x.target_id)); setLoading(false);
   })(); return ()=>{alive=false}; },[router]);
 
@@ -73,8 +74,11 @@ export default function TeamOnboardingPage() {
     for(const id of added){
       let team:Team|null|undefined=teams.find(item=>item.id===id);
       if(!team){
-        const {data}=await supabase.from("teams").select("id,name,country,city,league_name,logo_url,logo_bg").eq("id",id).maybeSingle();
-        team=data as Team|null;
+        const [{data:mensTeam},{data:womensTeam}]=await Promise.all([
+          supabase.from("teams").select("id,name,country,city,league_name,logo_url,logo_bg").eq("id",id).maybeSingle(),
+          supabase.from("womens_teams").select("id,name,country,city,league_name,logo_url,logo_bg").eq("id",id).maybeSingle()
+        ]);
+        team=(womensTeam||mensTeam) as Team|null;
       }
       if(!team)continue;
       await saveFollow(team,step===2);

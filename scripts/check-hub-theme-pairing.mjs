@@ -7,6 +7,13 @@ const browserCheck = readFileSync("scripts/theme-browser-check.mjs", "utf8");
 const fanFeedPage = readFileSync("app/fan-feed/page.tsx", "utf8");
 const sharedFeed = readFileSync("components/HoopFeedShared.tsx", "utf8");
 const fanFeedI18n = readFileSync("app/fan-feed/i18n.ts", "utf8");
+const bottomNav = readFileSync("components/BottomNav.tsx", "utf8");
+const fanGroupPage = readFileSync("app/team-hub/groups/[teamId]/page.tsx", "utf8");
+const womensTeamPage = readFileSync("app/womens/[id]/page.tsx", "utf8");
+const teamPicker = readFileSync("components/TeamLeaguePicker.tsx", "utf8");
+const onboardingTeams = readFileSync("app/onboarding/teams/page.tsx", "utf8");
+const fanTeamPosts = readFileSync("components/FanTeamPosts.tsx", "utf8");
+const womensFanGroupMirror = readFileSync("supabase/migrations/20261107110000_womens_team_fan_group_mirrors.sql", "utf8");
 const themeAudit = readFileSync("app/hoopcheck-theme-audit.css", "utf8");
 const failures = [];
 
@@ -75,12 +82,42 @@ for (const term of scaffoldTerms) {
 for (const route of ['"/fan-feed"', '"/team-hub/groups/"', '"/live-games"', '"/theme-card-audit"']) {
   if (!browserCheck.includes(route)) failures.push("Browser route coverage missing: " + route);
 }
-if (!fanFeedPage.includes('FeedDiscoveryHeader audience="fan"') ||
-    !sharedFeed.includes('audience === "fan" ? "Fan HQ" : "HoopFeed"') ||
-    !fanFeedPage.includes("selectedTeam.name} fans") ||
-    !fanFeedPage.includes("fanFeedTeamComposerPlaceholder") ||
-    !fanFeedI18n.includes('composer: "Post to {team} fans…"')) {
-  failures.push("Fan HQ must have a stable mixed-feed title and a club-specific composer.");
+if (!fanFeedPage.includes('ft("feedExplainer")') ||
+    !fanFeedPage.includes("filteredTeams.map") ||
+    !fanFeedPage.includes('ft("searchFollowedTeams")') ||
+    !fanFeedPage.includes("hc-fan-feed-group-label") ||
+    !fanFeedPage.includes("post.teams.name") ||
+    !fanFeedPage.includes("post.teams.group_name") ||
+    !fanFeedI18n.includes('"feedExplainer": "Posts from the fan groups of the clubs you follow."')) {
+  failures.push("Fan HQ is missing its plain-language purpose, followed-club picker, locked group destination, or group context.");
+}
+
+if (fanFeedPage.includes('from("fan_feed_posts")') ||
+    !fanFeedPage.includes('from("team_fan_group_posts")') ||
+    !fanFeedPage.includes('from("team_fan_group_members")') ||
+    !fanFeedPage.includes('from("team_fan_group_moderators")') ||
+    !fanFeedPage.includes('from("womens_teams")') ||
+    !womensFanGroupMirror.includes("womens_teams_sync_fan_group_mirror") ||
+    !womensFanGroupMirror.includes("womens_teams_mirror") ||
+    !teamPicker.includes('activeGender==="womens"?["womens_teams"]') ||
+    !onboardingTeams.includes('from("womens_teams")') ||
+    !fanFeedPage.includes('basketballSide === "womens"') ||
+    !fanFeedPage.includes("FanBasketballSideSwitch") ||
+    fanFeedPage.includes('from("fan_feed_posts")') ||
+    !fanFeedPage.includes('router.push("/team-hub/groups/" + team.id)') ||
+    fanFeedPage.includes("hc-feed-composer__editor") ||
+    !bottomNav.includes('accountType === "fan" ? "FAN HQ" : "HoopFeed"') ||
+    !fanGroupPage.includes("Posting to {teamName} fans") ||
+    !fanGroupPage.includes("isFan && summary?.is_member && <section") ||
+    !fanGroupPage.includes("No posts yet — be the first to post for {teamName}.") ||
+    !fanGroupPage.includes("Be the first to post") ||
+    !womensTeamPage.includes("TeamFanGroupEntry teamId={team.id}") ||
+    !womensTeamPage.includes("FanTeamPosts teamId={team.id}") ||
+    !fanTeamPosts.includes('from("team_fan_group_posts")') ||
+    fanTeamPosts.includes('rpc("get_fan_team_hub_posts"') ||
+    !fanTeamPosts.includes('from("team_fan_group_members")') ||
+    !fanTeamPosts.includes('from("team_fan_group_moderators")')) {
+  failures.push("Fan HQ must use member-visible club Fan Group posts and the shared locked group composer; fans must see FAN HQ in bottom navigation.");
 }
 
 const importLine = 'import "./hoopcheck-hub-empty-state-pairing.css";';

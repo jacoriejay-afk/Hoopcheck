@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { hasActiveMembershipAtLeast } from "../../../../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../../../../lib/membership-tier";
 
 export const runtime = "nodejs";
 
@@ -177,9 +177,9 @@ export async function POST(request: Request) {
       const scoresValid = (scoreFor === null && scoreAgainst === null) || (Number.isInteger(scoreFor) && Number.isInteger(scoreAgainst) && scoreFor! >= 0 && scoreFor! <= 300 && scoreAgainst! >= 0 && scoreAgainst! <= 300);
       if (!gameDayTeam || !gameDayOpponent || !scoresValid) return NextResponse.json({ allowed: false, message: "Add both teams and enter both final scores, or leave both scores blank until after the game." }, { status: 400 });
     }
-    const { data: sub } = await db.from("subscriptions").select("plan,status,access_status").eq("user_id", user.id).maybeSingle();
-    const activeAccess = ["player","fan"].includes(profile?.account_type || "") && hasActiveMembershipAtLeast(sub);
-    if (!activeAccess) return NextResponse.json({ allowed: false, message: "Active Pro or Premium player access is required." }, { status: 403 });
+    const { data: sub } = await db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle();
+    const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription: sub });
+    if (!entitlements.canWriteHoopFeed) return NextResponse.json({ allowed: false, message: "Active Pro or Premium player access is required." }, { status: 403 });
 
     // Re-share only live, approved posts the player is permitted to view.
     // The source has already passed moderation; new user-authored content still uses moderate().
