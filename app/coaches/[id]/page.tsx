@@ -10,7 +10,6 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
-import { hasActiveMembershipAtLeast } from "../../../lib/membership-tier";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { submitReviewReport } from "../../../lib/review-reports";
 import HoopLoading from "../../../components/HoopLoading";
@@ -252,61 +251,7 @@ export default function CoachDetailPage() {
       const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
       setAccountType(profile?.account_type || "");
 
-      const {
-        data: subscription,
-      } = await supabase
-        .from("subscriptions")
-        .select(
-          "plan, status, current_period_end"
-        )
-        .eq(
-          "user_id",
-          user.id
-        )
-        .maybeSingle();
 
-      const {
-        data: adminResult,
-        error: adminError,
-      } = await supabase.rpc(
-        "is_current_user_admin_or_moderator"
-      );
-
-      if (adminError) {
-        console.error(
-          "Admin check error:",
-          adminError
-        );
-      }
-
-      const currentPeriodEnd =
-        subscription?.current_period_end
-          ? new Date(
-              subscription.current_period_end
-            )
-          : null;
-
-      const subscriptionIsActive =
-        (
-          subscription?.status ===
-            "active" ||
-          subscription?.status ===
-            "trialing"
-        ) &&
-        (
-          !currentPeriodEnd ||
-          currentPeriodEnd >
-            new Date()
-        );
-
-      const fanHasPaidPlan =
-        profile?.account_type !== "fan" ||
-        hasActiveMembershipAtLeast(subscription);
-      const access =
-        (subscriptionIsActive && fanHasPaidPlan) ||
-        Boolean(adminResult);
-
-      setHasAccess(access);
 
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       const response = await fetch(`/api/review-access?entityType=coach&entityId=${encodeURIComponent(id)}`, {
@@ -314,7 +259,7 @@ export default function CoachDetailPage() {
         cache: "no-store",
       });
       const reviewPayload = response.ok ? await response.json() : null;
-      const tier = profile?.account_type === "player" ? "player" : ((reviewPayload?.tier || "free") as typeof reviewTier);
+      const tier = (reviewPayload?.tier || "free") as typeof reviewTier;
       setReviewTier(tier);
       const fullRead = ["premium", "player", "member"].includes(tier);
       setHasAccess(tier !== "free");

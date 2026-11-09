@@ -1589,3 +1589,15 @@ html main.hc-team-entity-profile .hc-team-reviews-trust-strip :where(h1,h2,h3,st
 html main.hc-team-entity-profile .hc-team-reviews-trust-strip :where(p,small,.muted) {
   color: var(--hc-foreground-muted) !important;
 }
+
+/* Preserve the brand fallback while keeping crest marks legible on orange. */
+html.theme-light main.hc-team-entity-profile .hc-team-profile-logo.hc-team-logo--fallback {
+  background: #FF5A1F !important;
+  color: #0A0A0A !important;
+}
+html.theme-light main.hc-team-entity-profile .hc-team-profile-logo.hc-team-logo--fallback .hc-team-logo__crest path {
+  stroke: #0A0A0A !important;
+}
+html.theme-light main.hc-team-entity-profile .hc-team-profile-logo.hc-team-logo--fallback .hc-team-logo__crest text {
+  fill: #0A0A0A !important;
+}
