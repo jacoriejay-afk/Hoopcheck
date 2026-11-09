@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!secret || !supabaseUrl || !serviceKey) return json("Public inquiries are temporarily unavailable.", 503);
 
-  if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json"))
+  if (!/^application\/json(?:\s*;|\s*$)/i.test(request.headers.get("content-type") || ""))
     return json("JSON content type required.", 415);
   const rawLength = request.headers.get("content-length");
   if (rawLength !== null && (!/^\d+$/.test(rawLength) || !Number.isSafeInteger(Number(rawLength))))
