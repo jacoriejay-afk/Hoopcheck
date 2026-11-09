@@ -36,6 +36,8 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
   const [saving,setSaving] = useState(false);
   const [message,setMessage] = useState("");
   const [teamId,setTeamId] = useState("");
+  const [teamSearch,setTeamSearch] = useState("");
+  const [careerStatus,setCareerStatus] = useState<"current"|"former">("former");
   const [teamName,setTeamName] = useState("");
   const [leagueName,setLeagueName] = useState("");
   const [country,setCountry] = useState("");
@@ -65,6 +67,9 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
     return ()=>{active=false;};
   },[playerId]);
 
+  const countryPassport = Array.from(new Set(stops.filter(stop => isOwnProfile || stop.is_public).map(stop => stop.country.trim()).filter(Boolean))).sort();
+  const matchingTeams = teams.filter(team => `${team.name} ${team.country||""} ${team.league_name||""}`.toLowerCase().includes(teamSearch.trim().toLowerCase()));
+
   function chooseTeam(value:string) {
     setTeamId(value);
     const selected = teams.find(team=>team.id===value);
@@ -91,7 +96,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
     if(error) setMessage(error.message.includes("row-level security") ? "My Journey requires an active Premium Player membership." : "Couldn't save this career stop. Please try again.");
     else {
       setTeamId("");setTeamName("");setLeagueName("");setCountry("");setSeasons("");setPosition("");setIsPublic(false);
-      setMessage("Career stop added.");await load();
+      setMessage("Career stop added. Your passport countries are updated from your career history. Review eligibility is checked separately.");await load();
     }
     setSaving(false);
   }
@@ -113,6 +118,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
 
   return <section className="hc-journey-section">
     <div className="hc-journey-heading"><div><p className="eyebrow">CAREER PASSPORT</p><h2>My Journey<span>.</span></h2><p>Every stop tells part of the story.</p></div><span className="hc-journey-stamp">PLAYER<br/>HISTORY</span></div>
+    {!loading && countryPassport.length > 0 && <div className="hc-journey-countries" aria-label="Countries played in"><strong>COUNTRIES PLAYED IN · {countryPassport.length}</strong><div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:8}}>{countryPassport.map(name=><span key={name} className="hc-journey-country" style={{padding:"6px 10px",border:"1px solid var(--hc-border, #777)",borderRadius:10}}>{FLAGS[name]||"🌍"} {name}</span>)}</div></div>}
     {loading ? <p className="muted">Loading career stops…</p> : stops.length ? <div className="hc-journey-timeline">
       {stops.map((stop,index) => <article className="hc-journey-stop" key={stop.id}>
         <div className="hc-journey-stop__rail"><span className="hc-journey-stop__dot">{String(index+1).padStart(2,"0")}</span>{index<stops.length-1&&<span className="hc-journey-stop__line"/>}</div>
@@ -120,7 +126,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
           <div className="hc-journey-stop__top"><span className="hc-journey-stop__flag" aria-label={stop.country}>{FLAGS[stop.country]||"🌍"}</span><span className="hc-journey-stop__season">{stop.seasons}</span>{stop.is_public&&<span className="hc-journey-public">PUBLIC</span>}</div>
           <div className="hc-journey-stop__team"><span className="hc-journey-stop__crest">{monogram(stop.team_name)}</span><div><h3>{stop.team_name}</h3><p>{stop.league_name||"League not listed"} · {stop.country}</p>{stop.position&&<small>Position · {stop.position}</small>}</div></div>
           <div className="hc-journey-stop__footer">
-            {stop.team_id ? <Link href={`/teams/${stop.team_id}`}>View team profile →</Link> : <span className="muted">Team not linked to directory</span>}
+            {stop.team_id ? <><Link href={`/teams/${stop.team_id}`}>View team profile →</Link>{isOwnProfile&&<Link href={`/reviews/new?team=${encodeURIComponent(stop.team_id)}`}>Check review eligibility →</Link>}</> : <span className="muted">Team not linked to directory — request a listing to review</span>}
             {isOwnProfile&&canManage&&<div><button type="button" onClick={()=>void toggleVisibility(stop)}>{stop.is_public?"Make private":"Make public"}</button><button type="button" onClick={()=>void removeStop(stop)}>Remove</button></div>}
           </div>
         </div>
@@ -129,7 +135,10 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
     {isOwnProfile&&!canManage&&<div className="hc-journey-upgrade"><strong>Premium Players · My Journey</strong><p>Add career stops and create your professional basketball passport. Public sharing is always optional.</p><Link href="/membership" className="btn">Unlock My Journey</Link></div>}
     {isOwnProfile&&canManage&&<form className="hc-journey-form" onSubmit={addStop}>
       <p className="eyebrow">ADD CAREER STOP</p>
-      <label>Match a HoopCheck team <select value={teamId} onChange={event=>chooseTeam(event.target.value)}><option value="">Not listed / enter team below</option>{teams.map(team=><option key={team.id} value={team.id}>{team.name}{team.country?` · ${team.country}`:""}</option>)}</select></label>
+      <label>Current or former team <select value={careerStatus} onChange={event=>setCareerStatus(event.target.value as "current"|"former")}><option value="current">Current team</option><option value="former">Former team</option></select></label>
+      <label>Search teams by name, country or league <input value={teamSearch} onChange={event=>setTeamSearch(event.target.value)} placeholder="Search the team directory" /></label>
+      <label>Match a HoopCheck team <select value={teamId} onChange={event=>chooseTeam(event.target.value)}><option value="">Not listed / enter team below</option>{matchingTeams.map(team=><option key={team.id} value={team.id}>{team.name}{team.country?` · ${team.country}`:""}</option>)}</select></label>
+      <p className="muted">Select a team to fill in its country and league. {careerStatus==="current"?"Enter the current season below.":"Enter the season(s) you previously played."} Adding a team does not automatically verify eligibility to publish a review.</p>
       <label>Team name <input value={teamName} onChange={event=>setTeamName(event.target.value)} maxLength={160} required placeholder="Team or club name"/></label>
       <label>League <input value={leagueName} onChange={event=>setLeagueName(event.target.value)} maxLength={160} placeholder="League name"/></label>
       <div className="hc-journey-form__row"><label>Country <input value={country} onChange={event=>setCountry(event.target.value)} maxLength={100} required placeholder="Country"/></label><label>Seasons <input value={seasons} onChange={event=>setSeasons(event.target.value)} maxLength={80} required placeholder="2024–25"/></label></div>
