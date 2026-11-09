@@ -77,6 +77,9 @@ jobs:
           npm run start -- --hostname 127.0.0.1 > /tmp/hoopcheck-next.log 2>&1 &
           echo $! > /tmp/hoopcheck-next.pid
 
+      - name: Verify initial service worker installation preserves forms
+        run: node scripts/check-runtime-install-browser.mjs
+
       - name: Verify signed-in audit regressions
         run: node scripts/check-signed-in-audit-browser.mjs
 
