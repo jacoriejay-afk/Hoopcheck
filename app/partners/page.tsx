@@ -16,10 +16,12 @@ export default function Sponsor() {
 
   async function submit() {
     if (saving) return;
-    if (website) return;
+    if (website) { setSent("Your inquiry could not be submitted."); return; }
     if (!consent) { setSent("Please confirm you agree to be contacted about your inquiry."); return; }
     const cleanMessage = message.trim();
-    if (cleanMessage.length < 10 || cleanMessage.length > 3000) {
+    const categoryPrefix = type === "sponsor" || type === "donate" || type === "inquire" ? "" : `[Category: ${type}]\n`;
+    const storedMessage = `${categoryPrefix}${cleanMessage}`;
+    if (cleanMessage.length < 10 || storedMessage.length > 3000) {
       setSent("Please enter between 10 and 3,000 characters so we can understand your inquiry.");
       return;
     }
@@ -39,7 +41,7 @@ export default function Sponsor() {
       const { error } = await supabase.from("sponsor_inquiries").insert({
         user_id: user.id,
         type: type === "sponsor" || type === "donate" ? type : "inquire",
-        message: type === "sponsor" || type === "donate" || type === "inquire" ? cleanMessage : `[Category: ${type}]\n${cleanMessage}`,
+        message: storedMessage,
       });
       if (error) {
         setSent("Your inquiry couldn't be submitted. Please try again.");
