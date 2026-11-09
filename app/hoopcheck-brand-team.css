@@ -343,3 +343,41 @@ html body .hc-team-branded-hero .hc-team-profile-stat {border-color:#ffffff38 !i
   .hc-team-entity-profile > .hc-team-profile-hero {margin-top:0;}
   .hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-stats {grid-template-columns:repeat(3,minmax(0,1fr));}
 }
+
+/* League and coach profiles share the team profile's surface contract. */
+.hc-league-entity-profile, .hc-coach-entity-profile {
+  --hc-directory-accent:#ff5a1f;
+  color:var(--hc-foreground,var(--text,#171717));
+}
+.hc-league-entity-profile > .hero,
+.hc-coach-entity-profile > .hero {
+  border:1px solid var(--hc-border,#dedede);
+  border-radius:16px;
+  box-shadow:none;
+  background:var(--hc-surface-raised,var(--card,#fff));
+  color:var(--hc-foreground,var(--text,#171717));
+  padding:clamp(18px,2.8vw,30px);
+  margin-block:0 16px;
+}
+.hc-league-entity-profile > .hero:first-of-type,
+.hc-coach-entity-profile > .hero:first-of-type {
+  border-top:3px solid var(--hc-directory-accent);
+}
+.hc-league-entity-profile > .hero h1,
+.hc-coach-entity-profile > .hero h1 {
+  font-size:clamp(26px,3.4vw,42px);
+  line-height:1.12;
+  letter-spacing:-.03em;
+  overflow-wrap:anywhere;
+  color:var(--hc-foreground,var(--text,#171717));
+}
+.hc-league-entity-profile > .hero p,
+.hc-coach-entity-profile > .hero p {
+  color:var(--hc-foreground-muted,var(--muted,#555));
+}
+.hc-league-entity-profile .grid,
+.hc-coach-entity-profile .grid {gap:clamp(12px,2vw,18px);}
+@media(max-width:600px) {
+  .hc-league-entity-profile > .hero,
+  .hc-coach-entity-profile > .hero {padding:18px;margin-block:0 12px;}
+}
