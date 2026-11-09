@@ -40,7 +40,7 @@ export default function BusinessPartnershipsPage() {
       </div>
       <section className="mt-8 rounded-2xl border border-current/20 p-6 sm:p-8">
         <h2 className="text-2xl font-bold">Start a conversation</h2>
-        <p className="mt-3 max-w-3xl leading-7 opacity-80">An existing inquiry form is available for signed-in HoopCheck™ members. It currently accepts sponsor, support, and general business inquiries. Dedicated investor and ambassador workflows are still in development. No sponsorship inventory, investment terms, or ambassador compensation is guaranteed by this page.</p>
+        <p className="mt-3 max-w-3xl leading-7 opacity-80">An existing inquiry form is available for signed-in HoopCheck™ members. It now includes introductory sponsor, investor, ambassador, and strategic partnership inquiry categories through the existing signed-in form. Dedicated secure investor document workflows are still in development. No sponsorship inventory, investment terms, or ambassador compensation is guaranteed by this page.</p>
         <Link href="/partners" className="mt-6 inline-flex rounded-full bg-orange-500 px-5 py-3 font-bold text-black hover:bg-orange-400">Open existing inquiry form</Link>
       </section>
     </main>
