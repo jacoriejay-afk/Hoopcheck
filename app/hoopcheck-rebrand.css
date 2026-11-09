@@ -1845,6 +1845,8 @@ main:has(.hc-review-form) > .hero-card:first-child .muted { color: #c4c4c0; }
   letter-spacing: .035em;
 }
 .hc-review-form .checkbox-row { align-items: flex-start; gap: 10px; }
+.hc-review-rules-ack { display:flex; align-items:flex-start; gap:10px; margin-top:10px; }
+.hc-review-rules-ack input { flex:0 0 18px; width:18px; height:18px; min-height:0; margin:2px 0 0; }
 .hc-account-page .account-profile-form,
 .hc-support-page .signup-form {
   gap: 16px;

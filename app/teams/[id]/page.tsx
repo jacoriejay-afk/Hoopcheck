@@ -198,8 +198,8 @@ export default function TeamDetailPage() {
   const [loading, setLoading] =
     useState(true);
 
-  const [reviewLoading, setReviewLoading] =
-    useState(false);
+  const [reviewLoading, setReviewLoading] = useState(true);
+  const [reviewLoadError, setReviewLoadError] = useState(false);
 
   const [reportReviewId, setReportReviewId] =
     useState<string | null>(null);
@@ -214,6 +214,14 @@ export default function TeamDetailPage() {
     useState("");
 
   useEffect(() => {
+    let active = true;
+    setReviewLoading(true);
+    setReviewLoadError(false);
+    setReviewTier("free");
+    setHasAccess(false);
+    setCanReadFullReviews(false);
+    setCanWriteReviews(false);
+
     async function loadTeam() {
       if (!id) {
         setLoading(false);
@@ -231,6 +239,7 @@ export default function TeamDetailPage() {
         .eq("id", id)
         .maybeSingle();
 
+      if (!active) return;
       if (
         teamError ||
         !teamData
@@ -277,7 +286,9 @@ export default function TeamDetailPage() {
         setCoaches(coachesResult.data);
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (!active) return;
+      if (sessionError) throw sessionError;
       const user = session?.user;
 
       if (user) {
@@ -285,7 +296,7 @@ export default function TeamDetailPage() {
         setKnownPlayerFollowers((sharedProfiles || []).map((row: any) => row.display_name).filter(Boolean));
       }
       if (!user) {
-        setLoading(false);
+        setReviewLoading(false);
         return;
       }
 
@@ -316,6 +327,7 @@ export default function TeamDetailPage() {
         ),
       ]);
 
+      if (!active) return;
       const subscription = subscriptionResult.data;
       setAccountType(profileResult.data?.account_type || "");
       setMembershipPlan(subscription?.plan || "");
@@ -332,14 +344,15 @@ export default function TeamDetailPage() {
         headers: { Authorization: `Bearer ${session?.access_token || ""}` },
         cache: "no-store",
       });
-      const reviewPayload = response.ok ? await response.json() : null;
-      const tier = (reviewPayload?.tier || "free") as typeof reviewTier;
+      if (!response.ok) throw new Error("Review access could not be loaded.");
+      const reviewPayload = await response.json();
+      if (!active) return;
+      const tier = (reviewPayload.tier || "free") as typeof reviewTier;
       setReviewTier(tier);
       const fullRead = reviewPayload?.canReadFull === true;
       setCanReadFullReviews(fullRead);
       setCanWriteReviews(reviewPayload?.canWrite === true);
-      setHasAccess(entitlements.hasPaidMembership);
-      setReviewLoading(fullRead);
+
       const summary = reviewPayload?.summary;
       if (summary) {
         setPublicSummary({
@@ -357,6 +370,7 @@ export default function TeamDetailPage() {
         const { data: verificationData } = reviewIds.length
           ? await supabase.rpc("get_review_verification", { p_review_ids: reviewIds })
           : { data: [] };
+        if (!active) return;
         const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map((item) => [item.review_id, Boolean(item.player_verified)]));
         setReviews(reviewData.map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
       } else {
@@ -367,7 +381,13 @@ export default function TeamDetailPage() {
       setLoading(false);
     }
 
-    loadTeam();
+    void loadTeam().catch(() => {
+      if (!active) return;
+      setReviewLoadError(true);
+      setReviewLoading(false);
+      setLoading(false);
+    });
+    return () => { active = false; };
   }, [id]);
 
   useEffect(() => {
@@ -610,7 +630,14 @@ export default function TeamDetailPage() {
               {accountType === "fan" ? t("teamRatingsAtGlance") : t("whatPlayersAreSaying")}
             </h2>
 
-            {!canReadFullReviews ? (
+            {reviewLoading ? (
+              <p role="status">{t("loadingReviews")}</p>
+            ) : reviewLoadError ? (
+              <div role="alert">
+                <p>Reviews could not be loaded. Try again in a moment.</p>
+                <button type="button" className="btn" onClick={() => window.location.reload()}>Retry reviews</button>
+              </div>
+            ) : !canReadFullReviews ? (
               <ReviewMembershipGate
                 title="Player reviews require an eligible membership"
                 description="Sign in with an eligible active membership to view full player reviews and ratings."
@@ -618,10 +645,6 @@ export default function TeamDetailPage() {
                 accountType={accountType}
                 tier={reviewTier}
               />
-            ) : reviewLoading ? (
-              <p>
-                {t("loadingReviews")}
-              </p>
             ) : reviews.length ===
               0 ? (
               <div className="card">
@@ -750,7 +773,16 @@ export default function TeamDetailPage() {
 
       {team && <><TeamOfficialUpdates teamId={team.id} /><FanTeamPosts teamId={team.id} /></>}
 
-      {accountType === "player" ? <section className="hero hc-team-write-review"><div className="eyebrow">{t("shareYourExperience")}</div><h2>{t("writeAReviewTitle")}</h2><p className="muted">{t("helpNextPlayer")}</p><Link href={canWriteReviews ? `/teams/${team.id}/review` : "/membership"} className="btn">{canWriteReviews ? t("writeAReview") : t("unlockReviews")}</Link></section> : null}
+      {accountType === "player" && !reviewLoading && !reviewLoadError && (
+        <section className="hero hc-team-write-review">
+          <div className="eyebrow">{t("shareYourExperience")}</div>
+          <h2>{t("writeAReviewTitle")}</h2>
+          <p className="muted">{t("helpNextPlayer")}</p>
+          {canWriteReviews ? <Link href={`/teams/${team.id}/review`} className="btn">{t("writeAReview")}</Link>
+            : hasAccess ? <Link href="/account#team-review-checklist" className="btn">Check review eligibility</Link>
+            : <Link href="/membership" className="btn">{t("unlockReviews")}</Link>}
+        </section>
+      )}
 
       {reportReviewId && (
         <div

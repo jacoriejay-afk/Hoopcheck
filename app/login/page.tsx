@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Logo from "../../components/Logo";
@@ -15,14 +15,19 @@ export default function LoginPage() {
   const [resetLoading, setResetLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [returnTo, setReturnTo] = useState("");
+  const navigationFallback = useRef<number | null>(null);
   useEffect(() => {
     const candidate = new URLSearchParams(window.location.search).get("returnTo") || "";
     if (candidate.startsWith("/") && !candidate.startsWith("//") && !candidate.includes("\\\\") && !candidate.includes("\\") && !candidate.startsWith("/login")) setReturnTo(candidate);
   }, []);
 
+  useEffect(() => () => {
+    if (navigationFallback.current !== null) window.clearTimeout(navigationFallback.current);
+  }, []);
+
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (loading) return;
+    if (loading || messageIsSuccess) return;
     setLoading(true);
     setMessage("");
     setMessageIsSuccess(false);
@@ -48,9 +53,11 @@ export default function LoginPage() {
       const destination = returnTo || "/dashboard";
       setMessage("Login successful! Opening HoopCheck…");
       setMessageIsSuccess(true);
-      // Keep the authenticated Supabase client alive across navigation. A full
-      // document reload can force Safari to rehydrate auth cookies before the
-      // dashboard sees the freshly authenticated session.
+      // Prefer client navigation. If it stalls on the login screen, request
+      // the destination again with the session cookies set by Supabase.
+      navigationFallback.current = window.setTimeout(() => {
+        if (window.location.pathname === "/login") window.location.replace(destination);
+      }, 2000);
       router.replace(destination);
     } catch (error) {
       console.error("Login failed:", error);
@@ -118,9 +125,9 @@ export default function LoginPage() {
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Your password" autoComplete="current-password" required />
 
-            <button type="submit" className="btn" disabled={loading}
+            <button type="submit" className="btn" disabled={loading || messageIsSuccess}
               style={{ width: "100%", marginTop: 8 }}>
-              {loading ? "Logging In..." : "Log In"}
+              {messageIsSuccess ? "Opening HoopCheck…" : loading ? "Logging In..." : "Log In"}
             </button>
           </form>
 
