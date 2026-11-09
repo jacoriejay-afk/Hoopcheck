@@ -74,8 +74,10 @@ try {
   assert.equal(await reviewLink.count(),0,'Inactive membership does not unlock reviews');
   subscription={...subscription,status:'active'};
   await page.goto(`${baseURL}/feed`);await page.locator('.hc-feed-composer').waitFor();
-  const header=await page.locator('.hc-feed-compact-header').boundingBox(),composer=await page.locator('.hc-feed-composer').boundingBox();
-  assert.ok(header.height<110,'Feed heading is compact');assert.ok(composer.y<320,'Composer is near the top');
+  const header=await page.locator('.hc-community-hero').boundingBox(),composer=await page.locator('.hc-feed-composer').boundingBox();
+  assert.ok(header && header.height<230,'Community heading is compact');assert.ok(composer && composer.y<480,'Composer is near the top');
+  assert.equal(await page.locator('.hc-community-tabs button').count(),4,'Community tabs are visible');
+  assert.equal(await page.locator('.hc-community-hero').count(),1,'Single community heading');
   assert.equal(await page.locator('.hc-feed-hero').count(),0,'No duplicate feed hero');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,'No horizontal overflow');
   console.log(`PASS ${gender} ${width}px: editable profile, team dropdown, privacy preservation, review eligibility, compact feed`);
