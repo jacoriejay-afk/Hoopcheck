@@ -83,6 +83,9 @@ jobs:
       - name: Verify profile editing and team review checklist
         run: node scripts/check-profile-editor-browser.mjs
 
+      - name: Verify public membership prices, header icon, and club crests
+        run: node scripts/check-public-audit-browser.mjs
+
       - name: Verify player profile completion
         run: node scripts/check-player-completion-browser.mjs
 

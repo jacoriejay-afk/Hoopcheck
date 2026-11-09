@@ -3,6 +3,7 @@
 import FollowButton from "./FollowButton";
 import TeamLogo from "./TeamLogo";
 import TrustScoreDial from "./TrustScoreDial";
+import { countryFlag } from "../lib/countryFlag";
 
 type TeamProfileHeroProps = {
   teamId: string;
@@ -38,6 +39,8 @@ export default function TeamProfileHero({
   className = "",
   onFollowerCountChange,
 }: TeamProfileHeroProps) {
+  const flag = countryFlag(country);
+
   return (
     <section className={`hero hc-team-profile-hero hc-social-profile-header ${className}`.trim()} id="overview" aria-labelledby="hc-team-profile-title">
       <div className="hc-team-profile-topline">
@@ -47,7 +50,7 @@ export default function TeamProfileHero({
       <p className="hc-team-profile-kicker">HOOPCHECK CLUB PROFILE</p>
       <h1 id="hc-team-profile-title">{name}</h1>
       <p className="hc-team-profile-meta" title={[country, city, leagueName].filter(Boolean).join(" · ")}>
-        <span>{country || "Country not listed"}</span>
+        <span>{flag && <span aria-hidden="true">{flag} </span>}{country || "Country not listed"}</span>
         {city ? <span className="hc-team-profile-meta__city"> · {city}</span> : null}
         {leagueName ? <span className="hc-team-profile-meta__league"> · {leagueName}</span> : null}
       </p>
