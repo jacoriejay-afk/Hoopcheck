@@ -152,7 +152,7 @@ export default function TeamFanGroupPage() {
       </article>) : <section className="dashboard-card hc-feed-empty hc-feed-shared-empty"><h2>Start the conversation</h2><p className="muted">No one has posted in this Fan Group yet.</p></section>}</section>
     </>}
     {isModerator && <section className="dashboard-card hc-feed-shared-card hc-team-fan-group-moderator"><div className="hc-team-fan-group-mod-head"><div><p className="eyebrow">MODERATION</p><h2>Moderator panel</h2></div><span className="muted">Membership: Open to all fans</span></div>
-      
+
       <div><h3>Members ({members.length})</h3>{members.map(m => <div className="hc-team-fan-group-member-row" key={m.user_id}><span>{m.display_name || "Fan"}{m.moderator_type ? " · " + m.moderator_type.replaceAll("_", " ") : ""}</span>{!m.moderator_type && <button className="hc-feed-action-pill" onClick={() => void act("appoint_co_moderator", { user_id: m.user_id })}>Make co-moderator</button>}{m.moderator_type === "fan_co_moderator" && <button className="hc-feed-action-pill" onClick={() => void act("remove_co_moderator", { user_id: m.user_id })}>Remove moderator</button>}<button className="hc-feed-action-pill" onClick={() => void act("remove_member", { user_id: m.user_id })}>Remove member</button></div>)}</div>
     </section>}
     {message && <p className="hc-feed-message" role="status">{message}</p>}
