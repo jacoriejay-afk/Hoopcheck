@@ -1,25 +1,33 @@
 # Business Partnerships Center — release checklist
 
 ## Implemented in draft PR #365
-- /business overview with links to category pages
-- /sponsors proposed pilot packages
-- /investors informational page with no securities offer
-- /ambassadors collaboration overview
-- proposed private database schema in docs/business-inquiries-schema.sql
+- /business, /sponsors, /investors and /ambassadors information pages
+- /partners expanded authenticated inquiry form using EXISTING public.sponsor_inquiries
+- /admin/business read-only administrator inbox (not deployed)
+- Admin-only navigation to business inbox
+- Consent checkbox and Privacy Policy link
+- Draft per-account database rate limiter (NOT applied)
 
-## Blockers before production
-1. Review existing navigation, accessibility, responsive layout and theme contrast.
-2. Add secure POST endpoint with schema validation, bot protection and per-IP rate limiting. Never expose service-role credentials to browsers.
-3. Apply reviewed schema to a safe environment, confirm RLS prevents anonymous SELECT and INSERT, and verify privileged server insertion.
-4. Add consent checkbox, privacy notice and retention/deletion policy.
-5. Add admin-only inbox using existing verified authorization model; never use user-editable metadata for role checks.
-6. Add notification delivery and test failures/retries.
-7. Confirm Stripe invoicing workflow only after sponsor contracts and deliverables are approved.
-8. Verify actual audience metrics before publishing sponsor media kit; obtain legal review before any investment offering.
-9. Run lint/build/tests, check route access and mobile layout, resolve conflicts, merge and verify deployment.
+## Production database state — 2026-11-09
+- Existing sponsor_inquiries table retained; no duplicate table created.
+- Existing authenticated INSERT RLS policy remains.
+- **Applied migration:** business_inquiries_admin_read_policy.
+- Verified policy: SELECT for authenticated users only when
+  public.get_current_user_admin_role() = 'admin'.
+- Schema and policy inspection succeeded; live session-based authorization tests remain pending.
+- Rate-limit trigger is **NOT** installed. Existing form is still directly client-to-Supabase.
 
-## Safety and commercial rules
-- Sponsorships do not affect reviews or trust ratings.
-- Public investor page is not an offering or solicitation.
-- Do not claim an inquiry form is live before backend and abuse protection are verified.
-- No guaranteed returns, ownership, or commission without a signed agreement.
+## Release blockers
+1. Test the SELECT policy using genuine admin, moderator and regular member sessions.
+2. Review, test and deploy database-enforced rate limiting; check parallel inserts and rolling windows.
+3. Validate signed-in inquiry submission, consent, error states and category persistence.
+4. Check accessibility, mobile layouts and dark/light themes.
+5. Wait for final SHA CI and launch tests to pass.
+6. Merge only after checks pass; smoke-test production routes and account access.
+7. Plan notification workflow, retention/deletion rules, and sponsor invoicing separately.
+
+## Safety
+- Sponsorships cannot change reviews or trust scores.
+- Investor page is informational, not an offer to sell securities.
+- No sponsor payments or ambassador commissions are collected by these pages.
+- Never place service-role keys in browser code.
