@@ -9,6 +9,7 @@ type ReviewVerification = {
 };
 
 import Link from "next/link";
+import "../../hoopcheck-brand-team.css";
 import FanTeamPosts from "../../../components/FanTeamPosts";
 
 import { useParams } from "next/navigation";
@@ -185,6 +186,7 @@ export default function TeamDetailPage() {
   const [hasAccess, setHasAccess] =
     useState(false);
   const [accountType, setAccountType] = useState<string>("");
+  const [hasApprovedTeamClaim, setHasApprovedTeamClaim] = useState(false);
   const [membershipPlan, setMembershipPlan] = useState<string>("");
   const [knownPlayerFollowers, setKnownPlayerFollowers] = useState<string[]>([]);
   const [teamReviewCount, setTeamReviewCount] = useState(0);
@@ -314,8 +316,7 @@ export default function TeamDetailPage() {
         ),
       ]);
 
-      const subscription =
-        subscriptionResult.data;
+      const subscription = subscriptionResult.data;
       setAccountType(profileResult.data?.account_type || "");
       setMembershipPlan(subscription?.plan || "");
 
@@ -569,7 +570,25 @@ export default function TeamDetailPage() {
       <nav className="hc-team-profile-nav" aria-label="Team profile sections">
         <a href="#overview" aria-current="page">Overview</a><a href="#reviews">Reviews</a><a href="#players">Players</a><a href="#roster-board">Roster Board</a>{accountType && accountType !== "fan" ? <a href="#pay-transparency">Pay Transparency</a> : null}
       </nav>
-      <TeamFanGroupEntry teamId={team.id} />
+      <div className="hc-team-profile-overview-grid">
+        <section className="hc-team-profile-about" aria-labelledby="hc-team-about-title">
+          <p className="hc-team-profile-kicker">CLUB OVERVIEW</p>
+          <h2 id="hc-team-about-title">About {team.name}</h2>
+          <p>{team.name} is a basketball club{team.city ? ` based in ${team.city}` : team.country ? ` based in ${team.country}` : ""}{league?.name || team.league_name ? `, competing in ${league?.name || team.league_name}` : ""}.</p>
+          <dl className="hc-team-profile-facts">
+            <div><dt>League</dt><dd>{league?.name || team.league_name || "Not listed"}</dd></div>
+            <div><dt>Location</dt><dd>{[team.city,team.country].filter(Boolean).join(", ") || "Not listed"}</dd></div>
+          </dl>
+        </section>
+        <div id="fan-hq" className="hc-team-profile-community"><TeamFanGroupEntry teamId={team.id} /></div>
+        <section className="hc-team-profile-snapshot" aria-labelledby="hc-team-snapshot-title">
+          <p className="hc-team-profile-kicker">PLAYER EXPERIENCE</p>
+          <h2 id="hc-team-snapshot-title">Trust Snapshot</h2>
+          <p className="hc-team-profile-snapshot-note">{teamReviewCount > 0 ? `${teamReviewCount} published team reviews` : "No published reviews yet"}</p>
+          {hasAccess && trustScoreData?.score != null ? <TrustScoreDial score={trustScoreData.score} explanation={trustScoreData.explanation || t("trustScoreUnavailable")} reviewCount={trustScoreData.reviewCount} verifiedReviewCount={trustScoreData.verifiedReviewCount} /> : <p className="hc-team-profile-snapshot-note">{accountType === "fan" ? "Full trust details require an eligible Fan membership." : "Trust details are available with an eligible membership."}</p>}
+          <a href="#reviews" className="hc-team-profile-inline-link">Explore team reviews</a>
+        </section>
+      </div>
 
       {knownPlayerFollowers.length > 0 && <p className="hc-team-social-proof">Followed by players you follow: <strong>{knownPlayerFollowers.join(", ")}</strong></p>}
         <div className="entity-actions">
@@ -584,11 +603,11 @@ export default function TeamDetailPage() {
               <Surface as="div" className="hc-entity-trust-score hc-team-reviews-trust-strip"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /><div className="hc-team-score-categories" aria-label="Category ratings">{([{label:"Communication",value:publicSummary.communication_rating},{label:"Professionalism",value:publicSummary.professionalism_rating},{label:"Development",value:publicSummary.development_rating},{label:"Payment",value:publicSummary.payment_rating}] as const).filter(item => item.value !== null).map(item => <span key={item.label}><small>{item.label}</small><strong>{Number(item.value).toFixed(1)}</strong></span>)}</div></Surface>
             ) : null}
             <div className="eyebrow">
-              {membershipPlan === "premium" && accountType === "fan" ? t("playerRatings") : t("approvedReviewsHeading")}
+              {accountType === "fan" ? "TEAM REVIEWS" : t("approvedReviewsHeading")}
             </div>
 
             <h2>
-              {membershipPlan === "premium" && accountType === "fan" ? t("teamRatingsAtGlance") : t("whatPlayersAreSaying")}
+              {accountType === "fan" ? t("teamRatingsAtGlance") : t("whatPlayersAreSaying")}
             </h2>
 
             {!canReadFullReviews ? (
@@ -611,7 +630,7 @@ export default function TeamDetailPage() {
                 </h3>
 
                 <p>
-                  {t("firstPlayersShare")}
+                  {accountType === "fan" ? "No team reviews have been published yet." : t("firstPlayersShare")}
                 </p>
 
                 {canWriteReviews && <Link
@@ -649,17 +668,17 @@ export default function TeamDetailPage() {
                       >
                         <div>
                           <div className="eyebrow">
-                            {review.is_anonymous ? t("anonymousPlayerReview") : t("playerReview")}
+                            {accountType === "fan" ? (review.is_anonymous ? "Anonymous review" : "Team review") : (review.is_anonymous ? t("anonymousPlayerReview") : t("playerReview"))}
                           </div>
                           <div style={{ marginTop: "6px", fontSize: "12px", fontWeight: 800, color: "var(--orange)" }}>
-                            {t("seasonPlayed")} {review.player_season || t("seasonNotRecorded")}
+                            {accountType === "fan" ? "Season" : t("seasonPlayed")} {review.player_season || t("seasonNotRecorded")}
                           </div>
 
                           <h3>
-                            {review.title || t("playerExperience")}
+                            {review.title || (accountType === "fan" ? "Team review" : t("playerExperience"))}
                           </h3>
                           {review.player_verified && (
-                            <div className="hc-review-verified"><VerifiedBadge label={t("verifiedPlayer")} /><span>{t("verifiedPlayer")}</span></div>
+                            <div className="hc-review-verified"><VerifiedBadge label={accountType === "fan" ? "Verified review" : t("verifiedPlayer")} /><span>{accountType === "fan" ? "Verified review" : t("verifiedPlayer")}</span></div>
                           )}
                         </div>
 
@@ -715,6 +734,7 @@ export default function TeamDetailPage() {
             )}
           </section>
 
+      {accountType !== "fan" && <>
       <TeamPlayersHistory teamId={team.id} />
       <section className="hero" id="roster-board">
         <div className="eyebrow">ROSTER BOARD</div>

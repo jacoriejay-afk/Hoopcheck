@@ -51,23 +51,23 @@ export async function POST(request:Request) {
       return NextResponse.json({allowed:false,message:"Active Pro or Premium membership is required."},{status:403});
 
     const isJson=request.headers.get("content-type")?.includes("application/json");
-    let kind="post", postId="", text="", teamId="", image:File|null=null, videoPath="", videoType="";
+    let kind="post", postId="", text="", teamId="", teamType="mens", image:File|null=null, videoPath="", videoType="";
     if(isJson) {
       const payload=await request.json();
       kind=String(payload.kind||"comment"); postId=String(payload.post_id||""); text=String(payload.text||"").trim();
     } else {
-      const form=await request.formData(); teamId=String(form.get("team_id")||""); text=String(form.get("text")||"").trim();
+      const form=await request.formData(); teamId=String(form.get("team_id")||""); teamType=String(form.get("team_type")||"mens"); text=String(form.get("text")||"").trim();
       const v=form.get("image"); image=v instanceof File&&v.size?v:null;
       videoPath=String(form.get("video_path")||""); videoType=String(form.get("video_type")||"");
     }
     if(text.length>500) return NextResponse.json({allowed:false,message:"Text must be 500 characters or fewer."},{status:413});
     if(kind==="comment") {
       if(!postId||!text) return NextResponse.json({allowed:false,message:"Write a comment first."},{status:400});
-      const {data:post}=await db.from("fan_feed_posts").select("id,author_id,team_id,status,expires_at").eq("id",postId).maybeSingle();
+      const {data:post}=await db.from("fan_feed_posts").select("id,author_id,team_id,womens_team_id,status,expires_at").eq("id",postId).maybeSingle();
       if(!post||post.status!=="approved"||new Date(post.expires_at).getTime()<=Date.now()) return NextResponse.json({allowed:false,message:"This fan post is no longer available."},{status:404});
       const [{data:follow},{data:teamFollow}]=await Promise.all([
         db.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","fan").eq("target_id",post.author_id).maybeSingle(),
-        db.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").eq("target_id",post.team_id).maybeSingle()
+        db.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").eq("target_id",post.womens_team_id || post.team_id).maybeSingle()
       ]);
       if(post.author_id!==user.id&&!follow&&!teamFollow) return NextResponse.json({allowed:false,message:"You cannot comment on a post outside your fan feed."},{status:403});
       const mod=await moderate(text,null); if(!mod.allowed) return NextResponse.json({allowed:false,message:mod.message},{status:mod.status});
@@ -75,7 +75,11 @@ export async function POST(request:Request) {
       if(error) return NextResponse.json({allowed:false,message:"Your comment could not be published."},{status:400});
       return NextResponse.json({allowed:true});
     }
-    if(!teamId||(!text&&!image&&!videoPath)) return NextResponse.json({allowed:false,message:"Choose a followed team and add text or a photo."},{status:400});
+    if(!teamId||(!text&&!image&&!videoPath)||!["mens","womens"].includes(teamType)) return NextResponse.json({allowed:false,message:"Choose a followed team and add text or a photo."},{status:400});
+    const teamLookup = teamType === "womens"
+      ? await db.from("womens_teams").select("id").eq("id",teamId).eq("active",true).maybeSingle()
+      : await db.from("teams").select("id").eq("id",teamId).eq("active",true).maybeSingle();
+    if(!teamLookup.data) return NextResponse.json({allowed:false,message:"The selected team is unavailable."},{status:404});
     const {data:teamFollow}=await db.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").eq("target_id",teamId).maybeSingle();
     if(!teamFollow) return NextResponse.json({allowed:false,message:"You can only post for teams you follow."},{status:403});
     if(image&&(!IMAGE_TYPES.has(image.type)||image.size>8*1024*1024)) return NextResponse.json({allowed:false,message:"Use a JPG, PNG, or WebP photo no larger than 8 MB."},{status:400});
@@ -91,7 +95,7 @@ export async function POST(request:Request) {
       image_url=db.storage.from("feed-images").getPublicUrl(path).data.publicUrl;
     }
     if(videoPath) video_url=db.storage.from("feed-videos").getPublicUrl(videoPath).data.publicUrl;
-    const {error}=await db.from("fan_feed_posts").insert({author_id:user.id,team_id:teamId,body:text,image_url,video_url,status:"approved",expires_at:new Date(Date.now()+86400000).toISOString()});
+    const {error}=await db.from("fan_feed_posts").insert({author_id:user.id,team_id:teamType === "mens" ? teamId : null,womens_team_id:teamType === "womens" ? teamId : null,body:text,image_url,video_url,status:"approved",expires_at:new Date(Date.now()+86400000).toISOString()});
     if(error) return NextResponse.json({allowed:false,message:"Your post could not be published."},{status:400});
     return NextResponse.json({allowed:true});
   } catch(error) {

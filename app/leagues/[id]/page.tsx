@@ -465,7 +465,7 @@ export default function LeagueDetailPage() {
         <Link href="/womens">Women’s Teams</Link>
         <Link href="/coaches">Coaches</Link>
         <Link href="/leagues">Leagues</Link>
-        <Link href="/players">Players</Link>
+        {accountType !== "fan" && <Link href="/players">Players</Link>}
         <Link href="/search">Global Search</Link>
       </nav>
 <section className="hero">
@@ -592,9 +592,7 @@ export default function LeagueDetailPage() {
             </div>
 
             <h2>
-              What players
-              <br />
-              are saying.
+              {accountType === "fan" ? "What the community is saying." : <>What players<br/>are saying.</>}
             </h2>
 
             {canReadFullReviews ? (reviewLoading ?
@@ -608,9 +606,7 @@ export default function LeagueDetailPage() {
                 </h3>
 
                 <p>
-                  Be one of the first players
-                  to share an experience with
-                  this league.
+                  {accountType === "fan" ? "No league reviews have been published yet." : "Be one of the first players to share an experience with this league."}
                 </p>
 
                 {canWriteReviews ? (
@@ -645,14 +641,14 @@ export default function LeagueDetailPage() {
                       >
                         <div>
                           <div className="eyebrow">
-                            {review.is_anonymous ? "Anonymous Player Review" : "Player Review"}
+                            {accountType === "fan" ? (review.is_anonymous ? "Anonymous review" : "League review") : (review.is_anonymous ? "Anonymous Player Review" : "Player Review")}
                           </div>
 
                           <h3>
-                            {review.title || "Player experience"}
+                            {review.title || (accountType === "fan" ? "League review" : "Player experience")}
                           </h3>
                           {review.player_verified && (
-                            <div className="hc-review-verified"><VerifiedBadge label="Verified player" /><span>Verified Player</span></div>
+                            <div className="hc-review-verified"><VerifiedBadge label={accountType === "fan" ? "Verified review" : "Verified player"} /><span>{accountType === "fan" ? "Verified review" : "Verified Player"}</span></div>
                           )}
                         </div>
 

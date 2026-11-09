@@ -1,17 +1,24 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Logo from "../../components/Logo";
 import { supabase } from "../../lib/supabase";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [messageIsSuccess, setMessageIsSuccess] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [returnTo, setReturnTo] = useState("");
+  useEffect(() => {
+    const candidate = new URLSearchParams(window.location.search).get("returnTo") || "";
+    if (candidate.startsWith("/") && !candidate.startsWith("//") && !candidate.includes("\\\\") && !candidate.includes("\\") && !candidate.startsWith("/login")) setReturnTo(candidate);
+  }, []);
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -22,40 +29,29 @@ export default function LoginPage() {
 
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
-        password,
-      });
-
-      if (error) throw error;
-      if (!data.user) {
-        setMessage("Login could not be completed. Please try again.");
-        return;
+      // A stalled auth request must never leave the submit button spinning forever.
+      // Redirect only after Supabase confirms an authenticated user.
+      const authResult = await Promise.race([
+        supabase.auth.signInWithPassword({ email: normalizedEmail, password }),
+        new Promise<never>((_, reject) => {
+          window.setTimeout(() => reject(new Error("Login is taking too long. Please check your connection and try again.")), 15000);
+        }),
+      ]);
+      if (authResult.error) throw authResult.error;
+      if (!authResult.data.user || !authResult.data.session) {
+        throw new Error("Login could not be completed. Please try again.");
       }
 
-      // A missing profile row or a temporary profile query failure should not
-      // strand a valid user on the login screen after authentication succeeds.
-      let profile: { display_name?: string | null; position?: string | null; years_pro?: number | null } | null = null;
-      try {
-        const result = await supabase
-          .from("profiles")
-          .select("display_name,position,years_pro")
-          .eq("id", data.user.id)
-          .maybeSingle();
-        profile = result.data;
-      } catch (profileError) {
-        console.error("Could not load profile after login:", profileError);
-      }
-
-      const needsOnboarding =
-        !profile?.display_name ||
-        (!profile?.position && profile?.years_pro == null);
-
-      setMessage("Login successful! Your account is working. Opening your HoopCheck workspace…");
+      // Account type and onboarding requirements are handled by the workspace.
+      // Do not block a successful login on a separate profiles query or
+      // apply player-only fields to fans, coaches, agents and club managers.
+      const destination = returnTo || "/dashboard";
+      setMessage("Login successful! Opening HoopCheck…");
       setMessageIsSuccess(true);
-      window.setTimeout(() => {
-        window.location.replace(needsOnboarding ? "/onboarding" : "/dashboard");
-      }, 900);
+      // Keep the authenticated Supabase client alive across navigation. A full
+      // document reload can force Safari to rehydrate auth cookies before the
+      // dashboard sees the freshly authenticated session.
+      router.replace(destination);
     } catch (error) {
       console.error("Login failed:", error);
       setMessage(error instanceof Error ? error.message : "Unable to sign in right now. Please try again.");
@@ -93,18 +89,17 @@ export default function LoginPage() {
   return (
     <main className="hc-auth-page">
 <section className="hero hc-auth-hero" style={{ paddingBottom: "30px" }}>
-        <div className="eyebrow">PLAYER ACCESS</div>
+        <div className="eyebrow">WELCOME BACK</div>
         <h1>Welcome back.</h1>
         <p>
-          Log in to research coaches, teams, leagues, and player experiences
-          around the world.
+          Sign in to your HoopCheck account to explore teams, coaches, leagues, player experiences, and fan communities around the world.
         </p>
       </section>
 
       <section className="hc-auth-form-section" style={{ maxWidth: "520px", margin: "0 auto", padding: "20px 6% 100px" }}>
         <div className="form hc-auth-card">
           <Link href="/" className="hc-auth-logo" aria-label="HoopCheck home"><Logo variant="full" size={44} /></Link>
-          <div className="eyebrow">Player Login</div>
+          <div className="eyebrow">Login</div>
           <h2 style={{ fontSize: "30px", letterSpacing: "-1px", marginTop: 0 }}>
             Sign in to HoopCheck
           </h2>
@@ -153,7 +148,7 @@ export default function LoginPage() {
         <div className="card">
           <div className="eyebrow">HoopCheck</div>
           <h2>Research before<br />you commit.</h2>
-          <p>Your next overseas opportunity can change your career. Get more information before you sign.</p>
+          <p>Explore basketball communities and make informed decisions, whether you’re a player, fan, coach, or club representative.</p>
           <div className="actions">
             <Link href="/signup" className="btn">Create Free Account</Link>
           </div>

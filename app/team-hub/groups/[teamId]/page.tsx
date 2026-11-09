@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { supabase } from "../../../../lib/supabase";
 import { PageShell } from "../../../../components/LayoutSystem";
 import HoopLoading from "../../../../components/HoopLoading";
+import { useLanguage } from "../../../../components/LanguageProvider";
 import "../../../../app/hoopfeed-shared.css";
 
 type Summary = { group_name: string; member_count: number; join_mode: "open" | "approval"; is_member: boolean; has_pending_request: boolean };
@@ -17,6 +18,7 @@ type Member = { user_id: string; joined_at: string; moderator_type?: string | nu
 export default function TeamFanGroupPage() {
   const params = useParams();
   const router = useRouter();
+  const { formatNumber, formatDate } = useLanguage();
   const teamId = String(params.teamId || "");
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
@@ -28,7 +30,6 @@ export default function TeamFanGroupPage() {
   const [posts, setPosts] = useState<GroupPost[]>([]);
   const [comments, setComments] = useState<Record<string, GroupComment[]>>({});
   const [members, setMembers] = useState<Member[]>([]);
-  const [requests, setRequests] = useState<any[]>([]);
   const [draft, setDraft] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
@@ -40,23 +41,24 @@ export default function TeamFanGroupPage() {
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     setUser(currentUser);
     if (!currentUser) { setLoading(false); return; }
-    const [{ data: profile }, { data: team }, { data: summaryRows }, { data: moderators }] = await Promise.all([
+    const [{ data: profile }, { data: team }, { data: summaryRows }, { data: moderators }, { data: ownMembership, error: ownMembershipError }] = await Promise.all([
       supabase.from("profiles").select("account_type").eq("id", currentUser.id).maybeSingle(),
       supabase.from("teams").select("name,basketball_type").eq("id", teamId).maybeSingle(),
       supabase.rpc("get_team_fan_group_summary", { p_team_id: teamId }),
-      supabase.from("team_fan_group_moderators").select("user_id,moderator_type").eq("team_id", teamId)
+      supabase.from("team_fan_group_moderators").select("user_id,moderator_type").eq("team_id", teamId),
+      supabase.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", currentUser.id).maybeSingle()
     ]);
     setTeamName(team?.name || "Team");
     setTeamBasketballSide(team?.basketball_type === "womens" ? "womens" : "mens");
     setIsFan(profile?.account_type === "fan");
     const row = Array.isArray(summaryRows) ? summaryRows[0] : summaryRows;
-    setSummary(row || null);
+    setSummary(row ? { ...row, is_member: ownMembershipError ? Boolean(row.is_member) : Boolean(ownMembership), member_count: Math.max(Number(row.member_count || 0), ownMembership ? 1 : 0) } : null);
     const { data: platformAdmin } = await supabase.rpc("is_current_user_admin_or_moderator");
     const moderator = Boolean((moderators || []).some((m: any) => m.user_id === currentUser.id) ||
       ((moderators || []).some((m: any) => m.moderator_type === "platform") && platformAdmin === true));
     if (profile?.account_type !== "fan" && !moderator) { router.replace((team?.basketball_type === "womens" ? "/womens/" : "/teams/") + teamId); return; }
     setIsModerator(moderator);
-    if (row?.is_member) {
+    if ((ownMembershipError ? row?.is_member : Boolean(ownMembership)) || moderator) {
       const { data: postRows } = await supabase.from("team_fan_group_posts")
         .select("id,team_id,author_id,body,image_url,is_pinned,created_at,profiles:profiles!team_fan_group_posts_author_id_fkey(display_name,avatar_url)")
         .eq("team_id", teamId).eq("status", "published").order("is_pinned", { ascending: false }).order("created_at", { ascending: false });
@@ -78,16 +80,12 @@ export default function TeamFanGroupPage() {
       } else { setComments({}); }
     } else { setPosts([]); setComments({}); }
     if (moderator) {
-      const [{ data: memberRows }, { data: requestRows }] = await Promise.all([
-        supabase.from("team_fan_group_members").select("user_id,joined_at").eq("team_id", teamId).order("joined_at", { ascending: true }),
-        supabase.from("team_fan_group_join_requests").select("id,user_id,created_at").eq("team_id", teamId).eq("status", "pending").order("created_at", { ascending: true })
-      ]);
-      const ids = [...new Set([...(memberRows || []).map((m: any) => m.user_id), ...(requestRows || []).map((r: any) => r.user_id)])];
+      const { data: memberRows } = await supabase.from("team_fan_group_members").select("user_id,joined_at").eq("team_id", teamId).order("joined_at", { ascending: true });
+      const ids = [...new Set((memberRows || []).map((m: any) => m.user_id))];
       const { data: profiles } = ids.length ? await supabase.from("profiles").select("id,display_name").in("id", ids) : { data: [] as any[] };
       const names = Object.fromEntries((profiles || []).map((p: any) => [p.id, p.display_name]));
       const modMap = Object.fromEntries((moderators || []).map((m: any) => [m.user_id, m.moderator_type]));
       setMembers((memberRows || []).map((m: any) => ({ ...m, display_name: names[m.user_id], moderator_type: modMap[m.user_id] || null })));
-      setRequests((requestRows || []).map((r: any) => ({ ...r, display_name: names[r.user_id] })));
     }
     setLoading(false);
   }, [teamId, router]);
@@ -97,18 +95,34 @@ export default function TeamFanGroupPage() {
   async function act(action: string, values: Record<string, string> = {}, image?: File | null) {
     if (!user) return;
     setBusy(true); setMessage("");
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) { setMessage("Your session expired. Please sign in again."); setBusy(false); return; }
-    const form = new FormData();
-    form.append("action", action); form.append("team_id", teamId);
-    Object.entries(values).forEach(([key, value]) => form.append(key, value));
-    if (image) form.append("image", image);
-    const response = await fetch("/api/fan-groups", { method: "POST", headers: { Authorization: "Bearer " + session.access_token }, body: form });
-    const result = await response.json().catch(() => ({}));
-    setMessage(result.message || (result.ok ? "Saved." : "That action could not be completed."));
-    if (response.ok && result.ok) await load();
-    setBusy(false);
-    return result;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) { setMessage("Your session expired. Please sign in again."); return; }
+      const form = new FormData();
+      form.append("action", action); form.append("team_id", teamId);
+      Object.entries(values).forEach(([key, value]) => form.append(key, value));
+      if (image) form.append("image", image);
+      const response = await fetch("/api/fan-groups", { method: "POST", headers: { Authorization: "Bearer " + session.access_token }, body: form });
+      const result = await response.json().catch(() => ({}));
+      setMessage(result.message || (response.ok && result.ok ? action === "join" ? "You joined the Fan Group." : action === "leave" ? "You left the Fan Group." : "Saved." : "That action could not be completed."));
+      if (response.ok && result.ok) {
+        if (action === "join" || action === "leave") {
+          const joined = action === "join";
+          setSummary(current => current ? {
+            ...current,
+            is_member: joined,
+            member_count: Math.max(0, Number(current.member_count || 0) + (joined ? (current.is_member ? 0 : 1) : (current.is_member ? -1 : 0)))
+          } : current);
+          if (!joined) { setPosts([]); setComments({}); }
+        }
+        await load();
+      }
+      return result;
+    } catch {
+      setMessage("Connection failed. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function publish() {
@@ -140,8 +154,8 @@ export default function TeamFanGroupPage() {
         <div className="hc-team-fan-group-comments">{(comments[post.id] || []).map(c => <p key={c.id}><strong>{c.profiles?.display_name || "Fan"}:</strong> {c.body}</p>)}{isFan && <div><input value={commentDrafts[post.id] || ""} maxLength={1000} onChange={e => setCommentDrafts(old => ({ ...old, [post.id]: e.target.value }))} placeholder="Write a comment…" /><button className="btn" disabled={busy || !commentDrafts[post.id]?.trim()} onClick={() => void comment(post.id)}>Send</button></div>}</div>
       </article>) : <section className="dashboard-card hc-feed-empty hc-feed-shared-empty"><span className="eyebrow">CLUB FAN GROUPS</span><h2>No posts yet — be the first to post for {teamName}.</h2><p className="muted">This group is waiting for its first post. Start the conversation with {teamName} fans.</p>{isFan && <button type="button" className="btn" onClick={() => document.getElementById("fan-group-post-body")?.focus()}>Be the first to post</button>}</section>}</section>
     </>}
-    {isModerator && <section className="dashboard-card hc-feed-shared-card hc-team-fan-group-moderator"><div className="hc-team-fan-group-mod-head"><div><p className="eyebrow">MODERATION</p><h2>Moderator panel</h2></div><label>Membership <select value={summary.join_mode} onChange={e => void act("set_join_mode", { join_mode: e.target.value })}><option value="open">Open join</option><option value="approval">Approval required</option></select></label></div>
-      {summary.join_mode === "approval" && <div><h3>Join requests ({requests.length})</h3>{requests.map(r => <div className="hc-team-fan-group-member-row" key={r.id}><span>{r.display_name || "Fan"}</span><button className="btn" onClick={() => void act("review_request", { request_id: r.id, decision: "approved" })}>Approve</button><button className="hc-feed-action-pill" onClick={() => void act("review_request", { request_id: r.id, decision: "rejected" })}>Reject</button></div>)}</div>}
+    {isModerator && <section className="dashboard-card hc-feed-shared-card hc-team-fan-group-moderator"><div className="hc-team-fan-group-mod-head"><div><p className="eyebrow">MODERATION</p><h2>Moderator panel</h2></div><span className="muted">Membership: Open to all fans</span></div>
+
       <div><h3>Members ({members.length})</h3>{members.map(m => <div className="hc-team-fan-group-member-row" key={m.user_id}><span>{m.display_name || "Fan"}{m.moderator_type ? " · " + m.moderator_type.replaceAll("_", " ") : ""}</span>{!m.moderator_type && <button className="hc-feed-action-pill" onClick={() => void act("appoint_co_moderator", { user_id: m.user_id })}>Make co-moderator</button>}{m.moderator_type === "fan_co_moderator" && <button className="hc-feed-action-pill" onClick={() => void act("remove_co_moderator", { user_id: m.user_id })}>Remove moderator</button>}<button className="hc-feed-action-pill" onClick={() => void act("remove_member", { user_id: m.user_id })}>Remove member</button></div>)}</div>
     </section>}
     {message && <p className="hc-feed-message" role="status">{message}</p>}

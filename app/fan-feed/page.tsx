@@ -7,6 +7,7 @@ import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import HoopLoading from "../../components/HoopLoading";
 import { PageShell } from "../../components/LayoutSystem";
 import { FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptyState, FeedLoadingSkeleton } from "../../components/HoopFeedShared";
 import { getHoopCheckEntitlements } from "../../lib/membership-tier";
@@ -49,10 +50,13 @@ export default function FanFeedPage() {
   const filteredTeams = teams.filter(team => team.name.toLowerCase().includes(teamSearch.trim().toLowerCase()));
 
   const load = useCallback(async (uid: string) => {
+    const requestId = ++loadSequence.current;
+    const isCurrentRequest = () => requestId === loadSequence.current;
     const [{ data: follows }, { data: teamFollows }] = await Promise.all([
       supabase.from("follow_relationships").select("target_id,target_type").eq("follower_id", uid).eq("target_type", "fan"),
       supabase.from("follow_relationships").select("target_id,target_type").eq("follower_id", uid).eq("target_type", "team"),
     ]);
+    if (!isCurrentRequest()) return;
     const fanIds = (follows || []).map((x: any) => x.target_id);
     const teamIds = (teamFollows || []).map((x: any) => x.target_id);
     const sideTeamQuery = basketballSide === "womens"
@@ -62,7 +66,10 @@ export default function FanFeedPage() {
     const sideTeamIds = new Set((sideTeams || []).map((x: any) => x.id));
     const scopedTeamIds = teamIds.filter((id: string) => sideTeamIds.has(id));
     setFollowing(new Set(fanIds));
-    const teamQuery = await supabase.from("teams").select("id,name,logo_url,logo_bg").in("id", scopedTeamIds.length ? scopedTeamIds : ["00000000-0000-0000-0000-000000000000"]);
+    const teamQuery = basketballSide === "womens"
+      ? await supabase.from("womens_teams").select("id,name,logo_url,logo_bg").in("id", scopedTeamIds.length ? scopedTeamIds : ["00000000-0000-0000-0000-000000000000"])
+      : await supabase.from("teams").select("id,name,logo_url,logo_bg").in("id", scopedTeamIds.length ? scopedTeamIds : ["00000000-0000-0000-0000-000000000000"]);
+    if (!isCurrentRequest()) return;
     const followedTeams = (teamQuery.data || []) as Team[];
     const { data: groupRows } = scopedTeamIds.length ? await supabase.from("team_fan_groups").select("team_id,group_name").in("team_id", scopedTeamIds) : { data: [] as { team_id: string; group_name: string }[] };
     const groupNames = new Map((groupRows || []).map((group: any) => [group.team_id, group.group_name]));
@@ -105,7 +112,8 @@ export default function FanFeedPage() {
   useEffect(() => {
     let alive = true;
     void (async () => {
-      const { data: { user: u } } = await supabase.auth.getUser();
+      try {
+        const { data: { user: u } } = await supabase.auth.getUser();
       if (!u) { if (alive) setLoading(false); return; }
       const [{ data: p }, { data: s }] = await Promise.all([
         supabase.from("profiles").select("id,display_name,avatar_url,account_type").eq("id", u.id).maybeSingle(),
@@ -118,9 +126,27 @@ export default function FanFeedPage() {
       setMembershipActive(active);
       if (!active) { setLoading(false); return; }
       await load(u.id); if (alive) setLoading(false);
+      } catch (error) {
+        if (alive) {
+          setMessage(error instanceof Error ? error.message : fanFeedLoadError(language));
+          setLoading(false);
+        }
+      }
     })();
     return () => { alive = false; };
-  }, [load]);
+  }, [load, language]);
+
+  async function refreshFeed() {
+    if (!user || refreshing) return;
+    setRefreshing(true);
+    try {
+      await load(user.id);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : fanFeedRefreshError(language));
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   async function sharePost(post: FanPost) {
     const url = `${window.location.origin}/team-hub/groups/${encodeURIComponent(post.team_id)}`;
@@ -157,9 +183,9 @@ export default function FanFeedPage() {
     else { setFollowing(prev => new Set(prev).add(targetId)); setMessage(ft("following")); }
   }
 
-  if (loading) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><FeedLoadingSkeleton count={3} /></div></main></PageShell>;
+  if (loading) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><HoopLoading label="Loading Fan HQ…" /></div></main></PageShell>;
   if (!user) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("title")}</h1><p>{ft("signIn")}</p><Link className="btn" href="/login">{t("signIn")}</Link></section></div></main></PageShell>;
-  if (profile?.account_type !== "fan") return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("fansOnly")}</h1><p>{ft("separateSurface")}</p><Link className="btn" href="/login">{ft("playerFeed")}</Link></section></div></main></PageShell>;
+  if (profile?.account_type !== "fan") return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("fansOnly")}</h1></section></div></main></PageShell>;
   if (!membershipActive) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("membershipRequired")}</h1><p>{ft("membershipDescription")}</p><Link className="btn" href="/membership">{t("membership")}</Link></section></div></main></PageShell>;
   return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page">
     <FanBasketballSideSwitch />

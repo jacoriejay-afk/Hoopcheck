@@ -521,7 +521,7 @@ export default function CoachDetailPage() {
         <Link href="/womens">Women’s Teams</Link>
         <Link href="/coaches">Coaches</Link>
         <Link href="/leagues">Leagues</Link>
-        <Link href="/players">Players</Link>
+        {accountType !== "fan" && <Link href="/players">Players</Link>}
         <Link href="/search">Global Search</Link>
       </nav>
 <section className="hero">
@@ -671,9 +671,7 @@ export default function CoachDetailPage() {
             </div>
 
             <h2>
-              What players
-              <br />
-              are saying.
+              {accountType === "fan" ? "What the community is saying." : <>What players<br/>are saying.</>}
             </h2>
 
             {!canReadFullReviews ? (
@@ -695,9 +693,7 @@ export default function CoachDetailPage() {
                 </h3>
 
                 <p>
-                  Be one of the first players
-                  to share an experience with
-                  this coach.
+                  {accountType === "fan" ? "No coach reviews have been published yet." : "Be one of the first players to share an experience with this coach."}
                 </p>
 
                 {canWriteReviews && <Link href={`/coaches/${coach.id}/review`} className="btn">{t("writeAReview")}</Link>}
@@ -730,14 +726,14 @@ export default function CoachDetailPage() {
                       >
                         <div>
                           <div className="eyebrow">
-                            {review.is_anonymous ? "Anonymous Player Review" : "Player Review"}
+                            {accountType === "fan" ? (review.is_anonymous ? "Anonymous review" : "Coach review") : (review.is_anonymous ? "Anonymous Player Review" : "Player Review")}
                           </div>
 
                           <h3>
-                            {review.title || "Player experience"}
+                            {review.title || (accountType === "fan" ? "Coach review" : "Player experience")}
                           </h3>
                           {review.player_verified && (
-                            <div className="hc-review-verified"><VerifiedBadge label="Verified player" /><span>Verified Player</span></div>
+                            <div className="hc-review-verified"><VerifiedBadge label={accountType === "fan" ? "Verified review" : "Verified player"} /><span>{accountType === "fan" ? "Verified review" : "Verified Player"}</span></div>
                           )}
                         </div>
 

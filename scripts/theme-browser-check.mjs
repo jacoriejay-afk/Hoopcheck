@@ -199,6 +199,11 @@ try {
       // Give client-side auth redirects a brief chance to complete after the
       // dashboard's initial loading shell becomes visible.
       await page.waitForTimeout(750);
+      await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
+      if (routeName === "dashboard") {
+        await page.locator(".hc-ia-identity").waitFor({ state: "visible", timeout: 30000 });
+        await page.locator(".hc-ia-door").first().waitFor({ state: "visible", timeout: 30000 });
+      }
       const computed = await page.evaluate(({ wrapperSelector, routeName }) => {
         const color = (selector) => {
           const element = document.querySelector(selector);
@@ -210,8 +215,17 @@ try {
           body: color("body"),
           pageWrapper: color(wrapperSelector),
           composer: routeName === "feed" ? color(".hc-feed-composer") : null,
+          discoveryHeading: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-discovery h1")).color : null,
+          composerBorder: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-composer")).borderTopWidth : null,
           topicChip: routeName === "feed" ? color(".hc-feed-topic-chip") : null,
           filterChip: routeName === "feed" ? color(".hc-feed-filter-chip:not(.is-active)") : null,
+          homePairs: routeName === "dashboard" ? [".hc-ia-identity", ".hc-ia-live-strip", ".hc-ia-door"].map((selector) => {
+            const element = document.querySelector(selector);
+            if (!element) return { selector, missing: true };
+            const style = getComputedStyle(element);
+            const title = element.querySelector("strong");
+            return { selector, background: style.backgroundColor, color: style.color, title: title && getComputedStyle(title).color };
+          }) : [],
           whiteSurfaceOffenders: Array.from(document.querySelectorAll("main *, .global-back-button"))
             .filter((element) => {
               const style = getComputedStyle(element);
@@ -230,12 +244,28 @@ try {
 
       assert.equal(computed.themeClass, theme, `${routeName}: expected html theme class ${theme}, got ${computed.themeClass}`);
       const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
-      const expectedCard = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
       const expectedChip = theme === "dark" ? "rgb(27, 27, 27)" : "rgb(248, 248, 246)";
       assert.equal(computed.body, expectedPage, `${routeName}/${theme}: body background mismatch`);
       assert.equal(computed.pageWrapper, expectedPage, `${routeName}/${theme}: page wrapper background mismatch`);
+      if (routeName === "dashboard") {
+        const surface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
+        for (const pair of computed.homePairs) {
+          assert.equal(pair.background, surface, `dashboard/${theme}: ${pair.selector} surface: ${JSON.stringify(pair)}`);
+          const contrast = (foreground, background) => {
+            const luminance = (color) => color.match(/\d+/g).slice(0, 3).map(Number)
+              .map(value => value / 255)
+              .map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4)
+              .reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
+            const levels = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+            return (levels[0] + 0.05) / (levels[1] + 0.05);
+          };
+          assert.ok(pair.title && contrast(pair.title, pair.background) >= 4.5, `dashboard/${theme}: ${pair.selector} title contrast: ${JSON.stringify(pair)}`);
+        }
+      }
       if (routeName === "feed") {
-        assert.equal(computed.composer, expectedCard, `feed/${theme}: composer background mismatch`);
+        assert.equal(computed.composer, "rgba(0, 0, 0, 0)", `feed/${theme}: composer uses open content flow`);
+        assert.equal(computed.discoveryHeading, theme === "dark" ? "rgb(247, 247, 245)" : "rgb(23, 23, 23)", `feed/${theme}: compact heading remains readable`);
+        assert.equal(computed.composerBorder, "0px", `feed/${theme}: decorative composer frame removed`);
         assert.equal(computed.topicChip, expectedChip, `feed/${theme}: topic chip background mismatch`);
         assert.equal(computed.filterChip, expectedChip, `feed/${theme}: filter chip background mismatch`);
       }
@@ -417,11 +447,11 @@ try {
         await page.goto(baseURL + requestedPath, { waitUntil: "domcontentloaded", timeout: 20000 });
         await page.waitForTimeout(300);
         if (requestedPath === "/live-games") {
-          await page.locator("main.hc-live-hub-page").waitFor({ state: "visible", timeout: 15000 });
+          await page.locator("main.hc-live-hub-page .hc-live-hub-hero").waitFor({ state: "visible", timeout: 15000 });
         }
         if (requestedPath === "/theme-card-audit") {
-          await page.locator("main.hc-card-audit-page .hc-card-audit-preview[data-theme-preview='light']").waitFor({ state: "visible", timeout: 15000 });
-          await page.locator("main.hc-card-audit-page .hc-card-audit-preview[data-theme-preview='dark']").waitFor({ state: "visible", timeout: 15000 });
+          await page.locator("main.hc-card-audit-page .hc-card-audit-preview[data-theme-preview='light']").first().waitFor({ state: "visible", timeout: 15000 });
+          await page.locator("main.hc-card-audit-page .hc-card-audit-preview[data-theme-preview='dark']").first().waitFor({ state: "visible", timeout: 15000 });
         }
       } catch (error) {
         navigationError = error instanceof Error ? error.message : String(error);
@@ -587,12 +617,21 @@ try {
       }
       if (requestedPath === "/theme-card-audit") {
         const previews = await page.locator("main.hc-card-audit-page .hc-card-audit-preview").count();
-        if (previews !== 2) errors.push("theme-card-audit: expected side-by-side light and dark specimens; got " + previews);
+        if (previews !== 4) errors.push("theme-card-audit: expected light and dark card and live hub specimens; got " + previews);
         for (const themePreview of ["light", "dark"]) {
           const preview = page.locator(".hc-card-audit-preview[data-theme-preview='" + themePreview + "']");
+          assert.equal(await preview.count(), 2, `theme-card-audit: expected both ${themePreview} specimens`);
           for (const selector of [".hc-live-empty", ".hc-live-empty__icon", ".hc-live-section-heading h2 span", ".hc-live-hub-filters", ".hc-live-hub-card"]) {
             if (await preview.locator(selector).count() === 0) errors.push("theme-card-audit/" + themePreview + ": missing " + selector);
           }
+          const chip = await preview.locator(".hc-live-state").evaluate((element) => {
+            const style = getComputedStyle(element);
+            return { background: style.backgroundColor, color: style.color };
+          });
+          const expected = themePreview === "dark"
+            ? { background: "rgb(27, 27, 27)", color: "rgb(245, 245, 240)" }
+            : { background: "rgb(248, 248, 246)", color: "rgb(21, 21, 21)" };
+          assert.deepEqual(chip, expected, `theme-card-audit: ${themePreview} status chip must use its preview's paired tokens`);
         }
       }
       if (requestedPath === "/live-games") {

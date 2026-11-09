@@ -79,11 +79,17 @@ export default function BottomNav() {
   const { signedIn, userId } = useAuthState();
   const { t } = useLanguage();
   const [accountType, setAccountType] = useState<string | null>(null);
+  const [accountTypeLoading, setAccountTypeLoading] = useState(true);
   useEffect(() => {
     let active = true;
-    if (!userId) { setAccountType(null); return; }
-    void supabase.from("profiles").select("account_type").eq("id", userId).maybeSingle().then(({ data }) => {
-      if (active) setAccountType(data?.account_type || null);
+    if (!userId) { setAccountType(null); setAccountTypeLoading(false); return; }
+    setAccountTypeLoading(true);
+    setAccountType(null);
+    void supabase.from("profiles").select("account_type").eq("id", userId).maybeSingle().then(({ data, error }) => {
+      if (active) {
+        setAccountType(error ? null : data?.account_type || null);
+        setAccountTypeLoading(false);
+      }
     });
     return () => { active = false; };
   }, [userId]);
@@ -101,8 +107,10 @@ export default function BottomNav() {
           <Link
             key={href}
             href={destination}
-            className={active ? "hc-lm2f-tab active" : "hc-lm2f-tab"}
+            className={active ? "hc-lm2f-tab hc-smooth-press active" : "hc-lm2f-tab hc-smooth-press"}
             aria-current={active ? "page" : undefined}
+            aria-disabled={feedResolving ? true : undefined}
+            onClick={feedResolving ? (event) => event.preventDefault() : undefined}
           >
             <span className="hc-lm2f-tab-icon"><TabIcon label={label} /></span>
             <span className="hc-lm2f-tab-label">{translationKey === "hoopFeed" ? (accountType === "fan" ? "FAN HQ" : "HoopFeed") : t(translationKey)}</span>

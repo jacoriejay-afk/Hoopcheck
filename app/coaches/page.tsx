@@ -88,7 +88,7 @@ export default function CoachesPage() {
 
       <section className="hc-coach-directory-tools" aria-label="Search coaches">
         <label htmlFor="coach-directory-search">Find a coach</label>
-        <SearchBar inputId="coach-directory-search" value={query} onChange={setQuery} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search coaches" onSubmit={setQuery} />
+        <SearchBar inputId="coach-directory-search" value={query} onChange={setQuery} placeholder="Search coaches, teams, or leagues" ariaLabel="Search coaches" onSubmit={setQuery} />
         <div className="hc-coach-directory-summary" aria-live="polite">
           {loading ? "Searching coaching profiles…" : `${filteredCoaches.length.toLocaleString()} coach${filteredCoaches.length === 1 ? "" : "es"}`}
           {query && <button type="button" className="hc-directory-reset" onClick={() => setQuery("")}>Clear filters</button>}
@@ -96,7 +96,7 @@ export default function CoachesPage() {
       </section>
 
       <section className="grid hc-team-directory-list">
-        {loading ? (<div className="card"><HoopLoading label="Scanning coaching profiles..." /></div>) : coaches.length === 0 ? (
+        {loading ? (<div className="card"><HoopLoading variant="inline" label="Scanning coaching profiles..." /></div>) : coaches.length === 0 ? (
           <div className="card hc-coach-empty">
             <CourtLines variant="circle" className="hc-court-empty-art" />
             <div className="eyebrow hc-court-section-kicker">Coming Soon</div>
@@ -139,7 +139,7 @@ export default function CoachesPage() {
 
       <section className="hero">
         <div className="eyebrow">
-          Player Intelligence
+          Coach Insight
         </div>
 
         <h2>
@@ -149,9 +149,7 @@ export default function CoachesPage() {
         </h2>
 
         <p>
-          See what professional players have
-          experienced before you make your
-          next move.
+          Learn from first-hand coaching experiences before you choose your next coach.
         </p>
 
         <div className="actions">

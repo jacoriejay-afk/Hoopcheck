@@ -161,7 +161,7 @@ export default function LiveGamesPage() {
     if (filter === "live" && !(availability.state === "LIVE" && availability.phase !== "post-game")) return false;
     if (filter === "my-teams" && !followedIds.some(id => id === game.team_id || id === game.opponent_team_id)) return false;
     const search = query.trim().toLocaleLowerCase();
-    if (search && ![home?.name, away?.name, game.opponent_name, leagueName].some(value => value?.toLocaleLowerCase().includes(search))) return false;
+    if (search && ![home?.name, away?.name, game.opponent_name, leagueName, game.country, home?.country, away?.country].some(value => value?.toLocaleLowerCase().includes(search))) return false;
     return true;
   }), [prepared, leagueFilter, filter, followedIds, query, teams]);
 
@@ -271,7 +271,7 @@ export default function LiveGamesPage() {
         )}
       </div>
       <div className="hc-live-hub-filter-tools">
-        <SearchBar value={query} onChange={setQuery} onSubmit={() => {}} placeholder="Search teams or leagues…" ariaLabel="Search games by team or league" buttonLabel="Search" className="hc-live-hub-search" />
+        <SearchBar value={query} onChange={setQuery} onSubmit={() => {}} placeholder="Search country, team, or league…" ariaLabel="Search games by country, team, or league" buttonLabel="Search" className="hc-live-hub-search" />
         <label className="hc-live-league-select"><span>League</span><select value={leagueFilter} onChange={event => setLeagueFilter(event.target.value)}><option value="">All leagues</option>{leagues.map(league => <option key={league} value={league}>{league}</option>)}</select></label>
       </div>
     </section>

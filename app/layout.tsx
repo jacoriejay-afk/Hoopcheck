@@ -17,13 +17,20 @@ import "./hoopcheck-directory-card-fixes.css";
 import "./hoopcheck-theme-audit.css";
 import "./hoopcheck-lm2-contract.css";
 import "./hoopcheck-root-cause.css";
+import "./hoopcheck-mobile-density.css";
 import "./hoopcheck-lm2d-contrast.css";
 import "./hoopcheck-motion.css";
 import "./hoopcheck-mobile-tabbar-repair.css";
 import "./hoopcheck-lm2e-account-layout.css";
 import "./hoopcheck-lm2f-bottom-nav.css";
+import "./hoopcheck-sp1-spacing.css";
 import "./hoopcheck-lg1-logo-contrast.css";
+import "./hoopcheck-ux2b-profile-completion.css";
 import "./hoopcheck-ia1-home.css";
+import "./hoopcheck-brand-navigation.css";
+import "./hoopcheck-reference-identity.css";
+import "./hoopcheck-pastel-profiles.css";
+import "./hoopcheck-smooth-experience.css";
 import OfflineRuntime from "../components/OfflineRuntime";
 import ThemeProvider from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
@@ -41,7 +48,14 @@ import { PageShell } from "../components/LayoutSystem";
 import "./hoopcheck-layout-system.css";
 import "./hoopcheck-desk-fix-2.css";
 import "./hoopcheck-desk-3.css";
+import "./hoopcheck-card-pairing.css";
 import "./hoopcheck-hub-empty-state-pairing.css";
+import "./hoopcheck-preview-mobile-hotfix.css";
+import "./hoopcheck-global-scoreboard.css";
+import "./hoopcheck-unified-layout.css";
+import "./hoopcheck-spacing-density-consolidated.css";
+import "./hoopcheck-membership-refresh.css";
+import "./hoopcheck-flow.css";
 import { SITE_URL } from "../lib/site-url";
 
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
@@ -141,6 +155,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <div className="footer-links">
               <div>
                 <strong>HoopCheck</strong>
+                <Link href="/about">About Us</Link>
+                <Link href="/founder">Our Founder</Link>
+                <Link href="/company">Company</Link>
+                <Link href="/partners">Partnerships</Link>
                 <span className="muted">Account required for member access.</span>
                 <Link href="/membership">Membership</Link>
               </div>

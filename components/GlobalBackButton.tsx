@@ -6,6 +6,10 @@ import { usePathname, useRouter } from "next/navigation";
 function getFallbackPath(pathname: string): string {
   if (pathname === "/") return "/dashboard";
   if (pathname === "/dashboard") return "/";
+  // Signed-out authentication pages must never fall back to a protected dashboard.
+  if (pathname === "/login" || pathname.startsWith("/login/") || pathname === "/signup" || pathname.startsWith("/signup/") || pathname === "/forgot-password" || pathname === "/reset-password") return "/";
+  if (pathname.startsWith("/team-hub/groups/")) return "/team-hub";
+  if (pathname.startsWith("/team-hub/")) return "/team-hub";
   if (pathname.startsWith("/teams/")) return "/teams";
   if (pathname.startsWith("/players/")) return "/players";
   if (pathname.startsWith("/coaches/")) return "/coaches";
@@ -14,6 +18,8 @@ function getFallbackPath(pathname: string): string {
   if (pathname.startsWith("/fans/")) return "/fans";
   if (pathname.startsWith("/reviews/")) return "/reviews";
   if (pathname.startsWith("/profile/")) return "/profile";
+  // Avoid sending a direct-entry admin/users page back to itself.
+  if (pathname === "/admin/users" || pathname === "/admin/users/") return "/dashboard";
   // There is no /admin landing route; use a real, permission-checked admin page.
   if (pathname.startsWith("/admin/")) return "/admin/users";
   if (pathname.startsWith("/search/")) return "/search";
@@ -40,6 +46,9 @@ export default function GlobalBackButton() {
 
     router.push(getFallbackPath(pathname));
   }, [pathname, router]);
+
+  // The public landing page is a navigation root, not a detail view.
+  if (pathname === "/") return null;
 
   return (
     <div className="global-back-wrap">

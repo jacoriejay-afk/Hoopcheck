@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../../../components/HoopLoading";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../../../lib/supabase";
@@ -95,7 +96,7 @@ export default function RelationshipsPage() {
         <div style={{display:"flex",gap:8,marginTop:15}}><button onClick={save} style={button(true)}>Save</button><button onClick={reset} style={button(false)}>Cancel</button></div>
       </section>}
       {message && <div style={{padding:11,background:"#151515",border:"1px solid #333",borderRadius:8,marginBottom:14}}>{message}</div>}
-      {loading ? <p style={{color:"#888"}}>Loading relationships...</p> : <div style={{display:"grid",gap:9}}>
+      {loading ? <HoopLoading variant="inline" label="Loading relationships..." /> : <div style={{display:"grid",gap:9}}>
         {tab==="coach" ? coachRows.map(r=><Row key={r.id} title={(r.coach?.name||"Unknown coach")+" → "+(r.team?.name||"Unknown team")} meta={[r.role,r.season,!r.active&&"ARCHIVED"].filter(Boolean).join(" • ")} onEdit={()=>{setEditing(r.id);setForm({coach_id:r.coach_id,team_id:r.team_id,role:r.role||"",season:r.season||"",active:String(r.active)})}} onArchive={()=>archive(r.id)} active={r.active}/>) :
         leagueRows.map(r=><Row key={r.id} title={(r.team?.name||"Unknown team")+" → "+(r.league?.name||"Unknown league")} meta={[r.season,r.start_date&&("from "+r.start_date),r.end_date&&("to "+r.end_date),!r.active&&"ARCHIVED"].filter(Boolean).join(" • ")} onEdit={()=>{setEditing(r.id);setForm({team_id:r.team_id,league_id:r.league_id,season:r.season||"",start_date:r.start_date||"",end_date:r.end_date||"",active:String(r.active)})}} onArchive={()=>archive(r.id)} active={r.active}/>)}
         {!((tab==="coach"?coachRows:leagueRows).length) && <div style={{padding:30,textAlign:"center",color:"#777",border:"1px dashed #333",borderRadius:10}}>No relationships yet.</div>}

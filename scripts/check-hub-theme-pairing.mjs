@@ -5,6 +5,7 @@ const layout = readFileSync("app/layout.tsx", "utf8");
 const auditPage = readFileSync("app/theme-card-audit/page.tsx", "utf8");
 const browserCheck = readFileSync("scripts/theme-browser-check.mjs", "utf8");
 const fanFeedPage = readFileSync("app/fan-feed/page.tsx", "utf8");
+const sharedFeed = readFileSync("components/HoopFeedShared.tsx", "utf8");
 const fanFeedI18n = readFileSync("app/fan-feed/i18n.ts", "utf8");
 const bottomNav = readFileSync("components/BottomNav.tsx", "utf8");
 const fanGroupPage = readFileSync("app/team-hub/groups/[teamId]/page.tsx", "utf8");
