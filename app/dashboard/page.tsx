@@ -66,7 +66,7 @@ export default function DashboardPage() {
       let resolveAuthEvent: (session: any) => void = () => {};
       const authEvent = new Promise<any>((resolve) => { resolveAuthEvent = resolve; });
       const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-        if (session?.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED")) {
+        if (event === "INITIAL_SESSION" || (session?.user && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED"))) {
           resolveAuthEvent({ data: { session }, error: null });
         }
       });
