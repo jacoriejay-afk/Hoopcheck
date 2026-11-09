@@ -165,6 +165,9 @@
 @media (max-width: 1023px) {
   .site-header-global.hc-desktop-header { display: none !important; }
 }
+@media (min-width: 1024px) {
+  .site-header-global.hc-mobile-header { display: none !important; }
+}
 @media (min-width: 1280px) {
   .hc-global-page-shell .hc-template-home .hc-template-explore,
   .hc-global-page-shell .hc-template-home .hc-home-explore,

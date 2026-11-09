@@ -16,6 +16,7 @@ export default function SiteHeader() {
   const pathname = usePathname();
   const { signedIn, userId } = useAuthState();
   const { t } = useLanguage();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [accountType, setAccountType] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -35,7 +36,29 @@ export default function SiteHeader() {
   }, [userId]);
 
   if (pathname.startsWith("/admin")) return null;
+  const closeMenu = () => setMenuOpen(false);
   const active = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const links = [
+    { href: "/dashboard", label: "Home" },
+    { href: "/search", label: "Search" },
+    { href: "/directory", label: "Explore" },
+    { href: "/teams", label: "Men’s Teams" },
+    { href: "/womens", label: "Women’s Teams" },
+    { href: "/coaches", label: "Coaches" },
+    { href: "/leagues", label: "Leagues" },
+    { href: "/players", label: "Players" },
+    { href: "/reviews", label: "Reviews" },
+    { href: "/live-games", label: "Live Games" },
+    { href: accountType === "fan" ? "/fan-feed" : "/feed", label: "HoopFeed" },
+    ...(signedIn ? [
+      ...(accountType === "fan" ? [{ href: "/team-hub", label: "Team Hub" }, { href: "/fans", label: "Find Fan" }] : []),
+      ...(accountType === "player" || accountType === "scout" || accountType === "agent" ? [{ href: "/connections", label: "Connections" }] : []),
+      ...(accountType === "coach" ? [{ href: "/coach-placement", label: "Coach Placement" }] : []),
+      { href: "/notifications", label: "Alerts" },
+      { href: "/account", label: "Account" },
+      ...(isAdmin ? [{ href: "/admin/directory", label: "Admin" }] : []),
+    ] : [{ href: "/notifications", label: "Alerts" }]),
+  ];
   const primary = [
     { href: "/dashboard", label: "Home" },
     { href: "/teams", label: "Men’s Teams" },
@@ -43,7 +66,7 @@ export default function SiteHeader() {
     { href: "/leagues", label: "Leagues" },
     { href: "/live-games", label: "Live Games" },
   ];
-  const explore = [
+  const explore: { href: string; label: string; compact?: boolean }[] = [
     { href: "/coaches", label: "Coaches", compact: true },
     { href: "/players", label: "Players", compact: true },
     { href: "/search", label: "Search" },
@@ -57,28 +80,50 @@ export default function SiteHeader() {
   ];
 
   return (
-    <header className="site-header-global hc-template-header hc-desktop-header">
-      <Link href={signedIn ? "/dashboard" : "/"} className="site-header-brand" aria-label="HoopCheck home">
-        <Logo variant="full" size={32} />
-      </Link>
-      <nav className="hc-header-nav" aria-label="Primary navigation">
-        <div className="hc-header-links">
-          {primary.map(item => <Link key={item.href} href={item.href} className={active(item.href) ? "is-active" : ""}>{item.label}</Link>)}
-          <Link href="/coaches" className={`hc-compact-nav-link ${active("/coaches") ? "is-active" : ""}`}>Coaches</Link>
-          <Link href="/players" className={`hc-compact-nav-link ${active("/players") ? "is-active" : ""}`}>Players</Link>
-          <details className="hc-explore-menu">
-            <summary className={explore.some(item => active(item.href)) ? "is-active" : ""}>Explore <span aria-hidden="true">⌄</span></summary>
-            <div className="hc-explore-dropdown">
-              {explore.map(item => <Link key={item.href} href={item.href} className={`${item.compact ? "hc-wide-only-explore" : ""} ${active(item.href) ? "is-active" : ""}`}>{item.label}</Link>)}
+    <>
+      <header className="site-header-global hc-template-header hc-mobile-header">
+        <Link href={signedIn ? "/dashboard" : "/"} className="site-header-brand" aria-label="HoopCheck home">
+          <Logo variant="full" size={42} title="HoopCheck™" />
+        </Link>
+        <button type="button" className="hc-mobile-menu-toggle" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><span /><span /><span /></button>
+        <nav className={menuOpen ? "hc-header-nav is-open" : "hc-header-nav"} aria-label="Primary navigation">
+          <div className="hc-header-links">
+            <div className="hc-header-mobile-links">
+              {links.filter(item => item.href !== "/players" || !signedIn || (accountType !== "" && accountType !== "fan")).map(item => <Link key={item.href} href={item.href} className={active(item.href) ? "is-active" : ""} onClick={closeMenu}>{item.label}</Link>)}
             </div>
-          </details>
+            <div className="hc-header-desktop-links">
+              {links.filter(item => ["/dashboard", "/search", "/directory", "/live-games"].includes(item.href)).map(item => <Link key={item.href} href={item.href} className={active(item.href) ? "is-active" : ""}>{item.label}</Link>)}
+              <details className="hc-header-more"><summary>More <span aria-hidden="true">▾</span></summary><div className="hc-header-more-panel">
+                {links.filter(item => !["/dashboard", "/search", "/directory", "/live-games"].includes(item.href) && (item.href !== "/players" || !signedIn || (accountType !== "" && accountType !== "fan"))).map(item => <Link key={item.href} href={item.href} className={active(item.href) ? "is-active" : ""}>{item.label}</Link>)}
+              </div></details>
+            </div>
+          </div>
+          <div className="hc-header-actions"><Link href="/search" className="hc-header-icon" aria-label={t("search")} onClick={closeMenu}><SearchIcon /></Link>{!signedIn && <Link href="/login" className="hc-signin-button" onClick={closeMenu}>SIGN IN <span aria-hidden="true">↗</span></Link>}<Link href={signedIn ? "/account" : "/login"} className="hc-header-icon" aria-label={signedIn ? "Account" : "Sign in"} onClick={closeMenu}><UserIcon /></Link></div>
+        </nav>
+      </header>
+      <header className="site-header-global hc-template-header hc-desktop-header">
+        <Link href={signedIn ? "/dashboard" : "/"} className="site-header-brand" aria-label="HoopCheck home">
+          <Logo variant="full" size={32} title="HoopCheck™" />
+        </Link>
+        <nav className="hc-header-nav" aria-label="Primary navigation">
+          <div className="hc-header-links">
+            {primary.map(item => <Link key={item.href} href={item.href} className={active(item.href) ? "is-active" : ""}>{item.label}</Link>)}
+            <Link href="/coaches" className={`hc-compact-nav-link ${active("/coaches") ? "is-active" : ""}`}>Coaches</Link>
+            <Link href="/players" className={`hc-compact-nav-link ${active("/players") ? "is-active" : ""}`}>Players</Link>
+            <details className="hc-explore-menu">
+              <summary className={explore.some(item => active(item.href)) ? "is-active" : ""}>Explore <span aria-hidden="true">⌄</span></summary>
+              <div className="hc-explore-dropdown">
+                {explore.map(item => <Link key={item.href} href={item.href} className={`${item.compact ? "hc-wide-only-explore" : ""} ${active(item.href) ? "is-active" : ""}`}>{item.label}</Link>)}
+              </div>
+            </details>
+          </div>
+        </nav>
+        <div className="hc-header-actions">
+          <Link href="/search" className="hc-header-icon" aria-label={t("search")}><SearchIcon /></Link>
+          <Link href="/notifications" className="hc-header-icon" aria-label="Alerts"><BellIcon /></Link>
+          {signedIn ? <Link href="/account" className="hc-header-icon hc-account-action" aria-label="Account"><UserIcon /></Link> : <Link href="/login" className="hc-signin-button">SIGN IN</Link>}
         </div>
-      </nav>
-      <div className="hc-header-actions">
-        <Link href="/search" className="hc-header-icon" aria-label={t("search")}><SearchIcon /></Link>
-        <Link href="/notifications" className="hc-header-icon" aria-label="Alerts"><BellIcon /></Link>
-        {signedIn ? <Link href="/account" className="hc-header-icon hc-account-action" aria-label="Account"><UserIcon /></Link> : <Link href="/login" className="hc-signin-button">SIGN IN</Link>}
-      </div>
-    </header>
+      </header>
+    </>
   );
 }

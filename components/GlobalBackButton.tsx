@@ -42,6 +42,7 @@ export default function GlobalBackButton() {
   }, [pathname, router]);
 
   return (
+    <div className="global-back-wrap">
     <button
       type="button"
       className="global-back-button"
@@ -50,5 +51,6 @@ export default function GlobalBackButton() {
     >
       <span aria-hidden="true">←</span> Back
     </button>
+    </div>
   );
 }
