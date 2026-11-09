@@ -514,3 +514,13 @@ html body .hc-feed-page .hc-feed-shared-card .hc-feed-delete { color: var(--hc-f
     margin-left: auto;
   }
 }
+
+/* HF-5 hero contrast lock: the hero is always dark, so its text colours are
+   fixed values that must beat global theme heading/foreground rules. */
+.hc-feed-page .hf5-hero { color: #f7f7f5 !important; }
+.hc-feed-page .hf5-hero__title { color: #ffffff !important; }
+.hc-feed-page .hf5-hero__title span { color: #ff5a1f !important; }
+.hc-feed-page .hf5-hero__tag { color: #d8d8d3 !important; }
+.hc-feed-page .hf5-hero__stat strong { color: #ffffff !important; }
+.hc-feed-page .hf5-hero__stat small { color: #b9b9b2 !important; }
+.hc-feed-page .hf5-hero__plan { color: #ff8a3d !important; }
