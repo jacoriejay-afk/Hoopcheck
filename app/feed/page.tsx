@@ -12,12 +12,13 @@ import CourtLines from "../../components/CourtLines";
 import "../hoopfeed-shared.css";
 
 type MiniProfile = { display_name: string | null; avatar_url: string | null; account_type?: string | null; current_country?: string | null; current_country_public?: boolean; current_team?: string | null };
-type Post = { id:string; shared_post_id?:string|null; shared_post?:{author_id:string;profiles?:{display_name:string|null}|null}|null; body:string; image_url:string|null; video_url?:string|null; location_country:string|null; topic_tag?:TopicTag|null; game_day_team?:string|null; game_day_opponent?:string|null; game_day_score_for?:number|null; game_day_score_against?:number|null; created_at:string; expires_at:string; author_id:string; ageLabel?:string; profiles?:MiniProfile|null };
+type Post = { id:string; shared_post_id?:string|null; shared_post?:{author_id:string;profiles?:{display_name:string|null}|null}|null; body:string; image_url:string|null; image_urls?:string[]|null; video_url?:string|null; post_kind?:string|null; poll_options?:string[]|null; is_pinned?:boolean|null; pinned_at?:string|null; location_country:string|null; topic_tag?:TopicTag|null; game_day_team?:string|null; game_day_opponent?:string|null; game_day_score_for?:number|null; game_day_score_against?:number|null; created_at:string; expires_at:string; author_id:string; ageLabel?:string; profiles?:MiniProfile|null };
+type VoteState = { counts:number[]; total:number; mine:number|null };
 type TopicTag = "Practice" | "Game Day" | "Travel" | "Teammates" | "Culture" | "Win" | "Challenge";
 const TOPIC_TAGS: TopicTag[] = ["Practice","Game Day","Travel","Teammates","Culture","Win","Challenge"];
 const topicClass = (tag: TopicTag) => tag.toLowerCase().replace(/\s+/g, "-");
-type TypeFilter = "All Posts" | "Discussion" | "News" | "Media" | "Polls" | "Game Day";
-const TYPE_FILTERS: TypeFilter[] = ["All Posts","Discussion","News","Media","Polls","Game Day"];
+type TypeFilter = "All Posts" | "Discussion" | "News" | "Media" | "Polls" | "Game Day" | "Saved";
+const TYPE_FILTERS: TypeFilter[] = ["All Posts","Discussion","News","Media","Polls","Game Day","Saved"];
 const ROLE_PILLS: Record<string,{label:string}> = { player:{label:"Player"}, team:{label:"Team"}, coach:{label:"Coach"}, fan:{label:"Fan"}, agent:{label:"Agent"}, scout:{label:"Scout"}, manager:{label:"Manager"} };
 const formatCount = (n:number) => n>=1000 ? (Math.round(n/100)/10).toString().replace(/\.0$/,"")+"K" : String(n);
 function calculatePostingStreak(rows: { activity_date: string }[]) {
@@ -47,22 +48,31 @@ export default function Feed(){
   const [mine,setMine]=useState<Record<string,boolean>>({});
   const [drafts,setDrafts]=useState<Record<string,string>>({});
   const [open,setOpen]=useState<Record<string,boolean>>({});
-  const [body,setBody]=useState(""); const [topicTag,setTopicTag]=useState<TopicTag|null>(null); const [gameTeam,setGameTeam]=useState(""); const [gameOpponent,setGameOpponent]=useState(""); const [scoreFor,setScoreFor]=useState(""); const [scoreAgainst,setScoreAgainst]=useState(""); const [topicFilter,setTopicFilter]=useState<"All"|TopicTag>("All"); const [typeFilter,setTypeFilter]=useState<TypeFilter>("All Posts"); const [photo,setPhoto]=useState<File|null>(null); const [preview,setPreview]=useState(""); const [video,setVideo]=useState<File|null>(null); const [videoPreview,setVideoPreview]=useState(""); const [showCountry,setShowCountry]=useState(false);
+  const [body,setBody]=useState(""); const [topicTag,setTopicTag]=useState<TopicTag|null>(null); const [gameTeam,setGameTeam]=useState(""); const [gameOpponent,setGameOpponent]=useState(""); const [scoreFor,setScoreFor]=useState(""); const [scoreAgainst,setScoreAgainst]=useState(""); const [topicFilter,setTopicFilter]=useState<"All"|TopicTag>("All"); const [typeFilter,setTypeFilter]=useState<TypeFilter>("All Posts"); const [photos,setPhotos]=useState<File[]>([]); const [previews,setPreviews]=useState<string[]>([]); const [composerMode,setComposerMode]=useState<"post"|"poll"|"news">("post"); const [pollDraft,setPollDraft]=useState<string[]>(["",""]); const [votes,setVotes]=useState<Record<string,VoteState>>({}); const [savedMap,setSavedMap]=useState<Record<string,boolean>>({}); const [carouselIdx,setCarouselIdx]=useState<Record<string,number>>({}); const [video,setVideo]=useState<File|null>(null); const [videoPreview,setVideoPreview]=useState(""); const [showCountry,setShowCountry]=useState(false);
   const [user,setUser]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [subscription,setSubscription]=useState<Subscription|null>(null); const [memberCount,setMemberCount]=useState<number|null>(null);
   const [msg,setMsg]=useState(""); const [refreshing,setRefreshing]=useState(false); const [postingStreak,setPostingStreak]=useState(0); const [loading,setLoading]=useState(true); const [posting,setPosting]=useState(false); const [now,setNow]=useState(0); const textareaRef = useRef<HTMLTextAreaElement|null>(null); const touchStartY = useRef<number|null>(null);
   const visiblePosts = posts.filter(p=>{
-    if(typeFilter==="Discussion"&&(p.image_url||p.video_url))return false;
-    if(typeFilter==="Media"&&!p.image_url&&!p.video_url)return false;
-    if(typeFilter==="News"||typeFilter==="Polls")return false;
+    const hasMedia=Boolean(p.image_url||(p.image_urls&&p.image_urls.length)||p.video_url);
+    if(typeFilter==="Discussion"&&(hasMedia||p.post_kind==="poll"||p.post_kind==="news"))return false;
+    if(typeFilter==="Media"&&!hasMedia)return false;
+    if(typeFilter==="News"&&p.post_kind!=="news")return false;
+    if(typeFilter==="Polls"&&p.post_kind!=="poll")return false;
     if(typeFilter==="Game Day"&&p.topic_tag!=="Game Day")return false;
+    if(typeFilter==="Saved"&&!savedMap[p.id])return false;
     if(topicFilter!=="All"&&p.topic_tag!==topicFilter)return false;
     return true;
-  }).slice().sort((a,b)=>new Date(b.created_at).getTime()-new Date(a.created_at).getTime());
+  }).slice().sort((a,b)=>{
+    const ap=a.is_pinned?1:0; const bp=b.is_pinned?1:0;
+    if(ap!==bp)return bp-ap;
+    if(ap&&bp)return new Date(b.pinned_at||b.created_at).getTime()-new Date(a.pinned_at||a.created_at).getTime();
+    return new Date(b.created_at).getTime()-new Date(a.created_at).getTime();
+  });
 
   const access=getHoopCheckEntitlements({accountType:profile?.account_type,subscription}).canReadHoopFeed;
+  const isAdmin=(profile?.account_type||"").toLowerCase()==="admin";
 
   async function load(currentUser:any){
-    const feedResult=await supabase.from("feed_posts").select("id,shared_post_id,body,image_url,video_url,location_country,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,created_at,expires_at,author_id,profiles:profiles!feed_posts_author_id_fkey(display_name,avatar_url,account_type,current_country,current_country_public,current_team)")
+    const feedResult=await supabase.from("feed_posts").select("id,shared_post_id,body,image_url,image_urls,video_url,post_kind,poll_options,is_pinned,pinned_at,location_country,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,created_at,expires_at,author_id,profiles:profiles!feed_posts_author_id_fkey(display_name,avatar_url,account_type,current_country,current_country_public,current_team)")
       .eq("status","approved").order("created_at",{ascending:false}).limit(30);
     if(feedResult.error){console.error("HoopFeed posts query failed",feedResult.error);setMsg("HoopFeed could not load posts. Please refresh and try again.");return;}
     const {data:archiveRows}=await supabase.from("feed_post_archives").select("post_id").eq("user_id",currentUser.id);
@@ -77,16 +87,23 @@ export default function Feed(){
     const nowTs=Date.now();
     const rows=(feedResult.data||[]).filter((r:any)=>!archiveIds.has(r.id)).map((r:any)=>{const post={...r,shared_post:r.shared_post_id?sharedPostsById[r.shared_post_id]||null:null,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)} as Post;return {...post,ageLabel:ago(post.created_at,nowTs)};});
     setPosts(rows);
-    if(!rows.length){setComments({});setChecks({});setMine({});return;}
+    if(!rows.length){setComments({});setChecks({});setMine({});setVotes({});setSavedMap({});return;}
     const ids=rows.map(p=>p.id);
     void Promise.all([
       supabase.from("feed_post_comments").select("id,post_id,body,created_at,author_id,profiles:profiles!feed_post_comments_author_id_fkey(display_name,avatar_url)").in("post_id",ids).order("created_at",{ascending:true}),
-      supabase.from("feed_post_checks").select("post_id,user_id").in("post_id",ids)
-    ]).then(([commentsResult,checksResult])=>{
+      supabase.from("feed_post_checks").select("post_id,user_id").in("post_id",ids),
+      supabase.from("feed_poll_votes").select("post_id,user_id,option_index").in("post_id",ids),
+      supabase.from("feed_post_bookmarks").select("post_id").eq("user_id",currentUser.id).in("post_id",ids)
+    ]).then(([commentsResult,checksResult,votesResult,bookmarksResult])=>{
       const cg:Record<string,Comment[]>={};const cc:Record<string,number>={};const cm:Record<string,boolean>={};
       (commentsResult.data||[]).forEach((r:any)=>{(cg[r.post_id]??=[]).push({...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)});});
       (checksResult.data||[]).forEach((r:any)=>{cc[r.post_id]=(cc[r.post_id]||0)+1;if(r.user_id===currentUser.id)cm[r.post_id]=true;});
-      setComments(cg);setChecks(cc);setMine(cm);
+      const vs:Record<string,VoteState>={};
+      rows.forEach(p=>{if(p.post_kind==="poll"&&Array.isArray(p.poll_options))vs[p.id]={counts:p.poll_options.map(()=>0),total:0,mine:null};});
+      (votesResult.data||[]).forEach((r:any)=>{const v=vs[r.post_id];if(!v)return;if(typeof r.option_index==="number"&&v.counts[r.option_index]!==undefined){v.counts[r.option_index]+=1;v.total+=1;}if(r.user_id===currentUser.id)v.mine=r.option_index;});
+      const sm:Record<string,boolean>={};
+      (bookmarksResult.data||[]).forEach((r:any)=>{sm[r.post_id]=true;});
+      setComments(cg);setChecks(cc);setMine(cm);setVotes(vs);setSavedMap(sm);
     });
   }
 
@@ -106,6 +123,7 @@ export default function Feed(){
   })();},[]);
 
   async function choosePhoto(f:File){
+    if(photos.length>=4){setMsg("Up to 4 photos per post.");return;}
     if(!f.type.startsWith("image/")){setMsg("Choose a JPG, PNG, or WebP image.");return;}
     if(f.size>8*1024*1024){setMsg("Feed photos must be 8MB or smaller.");return;}
     try{
@@ -114,13 +132,54 @@ export default function Feed(){
         img.onload=()=>{URL.revokeObjectURL(url);const max=1600;const scale=Math.min(1,max/Math.max(img.width,img.height));const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));const ctx=canvas.getContext("2d");if(!ctx){reject(new Error("Photo processing failed."));return;}ctx.drawImage(img,0,0,canvas.width,canvas.height);canvas.toBlob(blob=>{if(!blob){reject(new Error("Photo processing failed."));return;}resolve(new File([blob],"hoopfeed.jpg",{type:"image/jpeg"}));},"image/jpeg",0.82);};
         img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("Photo could not be read."));}; img.src=url;
       });
-      if(preview)URL.revokeObjectURL(preview);setPhoto(compressed);setPreview(URL.createObjectURL(compressed));setMsg("");
+      setPhotos(x=>[...x,compressed]);setPreviews(x=>[...x,URL.createObjectURL(compressed)]);setMsg("");
     }catch(e:any){setMsg(e?.message||"Photo processing failed.");}
   }
-  function clearPhoto(){if(preview)URL.revokeObjectURL(preview);setPhoto(null);setPreview("");}
+  function removePhoto(i:number){setPreviews(x=>{const u=x[i];if(u)URL.revokeObjectURL(u);return x.filter((_,j)=>j!==i);});setPhotos(x=>x.filter((_,j)=>j!==i));}
+  function clearPhotos(){previews.forEach(u=>URL.revokeObjectURL(u));setPhotos([]);setPreviews([]);}
+
+  async function apiAction(fields:Record<string,string>):Promise<{ok:boolean;message?:string}>{
+    try{
+      const {data:{session}}=await supabase.auth.getSession();
+      if(!session?.access_token)return {ok:false,message:"Your session expired. Please sign in again."};
+      const form=new FormData();
+      Object.entries(fields).forEach(([k,v])=>form.append(k,v));
+      const response=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
+      const result=await response.json().catch(()=>({}));
+      if(!response.ok||result.allowed!==true)return {ok:false,message:result.message};
+      return {ok:true};
+    }catch(e){console.error("HoopFeed action failed",e);return {ok:false};}
+  }
+
+  async function vote(p:Post,optionIndex:number){
+    if(!user||!access)return;
+    const prev=votes[p.id];
+    setVotes(x=>{const cur=x[p.id]||{counts:(p.poll_options||[]).map(()=>0),total:0,mine:null};const counts=cur.counts.slice();let total=cur.total;if(cur.mine!==null&&counts[cur.mine]!==undefined){counts[cur.mine]=Math.max(0,counts[cur.mine]-1);total=Math.max(0,total-1);}counts[optionIndex]=(counts[optionIndex]||0)+1;total+=1;return {...x,[p.id]:{counts,total,mine:optionIndex}};});
+    const r=await apiAction({kind:"vote",post_id:p.id,option_index:String(optionIndex)});
+    if(!r.ok){if(prev)setVotes(x=>({...x,[p.id]:prev}));setMsg(r.message||"That vote didn't go through. Please try again.");}
+  }
+
+  async function toggleSave(p:Post){
+    if(!user||!access)return;
+    const next=!savedMap[p.id];
+    setSavedMap(x=>({...x,[p.id]:next}));
+    const r=await apiAction({kind:"bookmark",post_id:p.id,saved:next?"true":"false"});
+    if(!r.ok){setSavedMap(x=>({...x,[p.id]:!next}));setMsg(r.message||"Couldn't update your saved posts. Please try again.");}
+  }
+
+  async function togglePin(p:Post){
+    if(!user||!isAdmin)return;
+    const r=await apiAction({kind:"pin",post_id:p.id,pinned:p.is_pinned?"false":"true"});
+    if(!r.ok){setMsg(r.message||"Couldn't update the pin. Please try again.");return;}
+    setMsg(p.is_pinned?"Post unpinned.":"Post pinned to the top of HoopFeed.");
+    await load(user);
+  }
 
   async function post(){
-    if(!user||!access||(!body.trim()&&!photo&&!video)||posting)return;
+    const pollOptionsClean=pollDraft.map(o=>o.trim()).filter(Boolean);
+    if(!user||!access||posting)return;
+    if(composerMode==="poll"&&(!body.trim()||pollOptionsClean.length<2))return;
+    if(composerMode!=="poll"&&!body.trim()&&!photos.length&&!video)return;
     setPosting(true);setMsg("Checking your post for safety...");
     try{
       const {data:{session}}=await supabase.auth.getSession();
@@ -129,14 +188,16 @@ export default function Feed(){
       form.append("kind","post");
       form.append("text",body.trim());
       form.append("share_country", showCountry ? "true" : "false");
+      form.append("post_kind",composerMode==="poll"?"poll":composerMode==="news"?"news":"discussion");
+      if(composerMode==="poll")form.append("poll_options",JSON.stringify(pollOptionsClean));
       if(topicTag)form.append("topic_tag",topicTag);
       if(topicTag==="Game Day"){form.append("game_day_team",gameTeam.trim());form.append("game_day_opponent",gameOpponent.trim());if(scoreFor!==""&&scoreAgainst!==""){form.append("game_day_score_for",scoreFor);form.append("game_day_score_against",scoreAgainst);}}
-      if(photo)form.append("image",photo);
+      photos.forEach(f=>form.append("images",f));
       if(video){const ext=video.type==="video/webm"?"webm":video.type==="video/quicktime"?"mov":"mp4";const path=`${user.id}/${crypto.randomUUID()}.${ext}`;const {error:uploadError}=await supabase.storage.from("feed-videos").upload(path,video,{contentType:video.type,cacheControl:"31536000",upsert:false});if(uploadError)throw new Error("Video upload failed. Please try again.");form.append("video_path",path);form.append("video_type",video.type);}
       const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
       const result=await moderation.json().catch(()=>({}));
       if(!moderation.ok||result.allowed!==true){setMsg(result.message||"This post could not be published because it did not pass HoopFeed safety checks.");setPosting(false);return;}
-      setBody("");setVideo(null);setVideoPreview("");setTopicTag(null);setGameTeam("");setGameOpponent("");setScoreFor("");setScoreAgainst("");setShowCountry(Boolean(profile?.current_country_public));clearPhoto();setMsg("Posted to HoopFeed. AI safety checks passed.");await load(user);
+      setBody("");setVideo(null);setVideoPreview("");setTopicTag(null);setGameTeam("");setGameOpponent("");setScoreFor("");setScoreAgainst("");setShowCountry(Boolean(profile?.current_country_public));clearPhotos();setPollDraft(["",""]);setComposerMode("post");setMsg(composerMode==="poll"?"Poll posted to HoopFeed. AI safety checks passed.":"Posted to HoopFeed. AI safety checks passed.");await load(user);
     }catch(e:any){console.error("HoopFeed post failed",e);setMsg(e?.message==="Video upload failed. Please try again."?e.message:"Posting failed. Please try again.");}
     setPosting(false);
   }
@@ -179,7 +240,7 @@ export default function Feed(){
     }catch(e:any){console.error("HoopFeed comment failed",e);setMsg("That comment couldn't be posted. Please try again.");}
   }
 
-  async function del(p:Post){if(!user||p.author_id!==user.id)return;if(!confirm("Delete this HoopFeed post?"))return;const {error}=await supabase.from("feed_posts").delete().eq("id",p.id);if(error){console.error("HoopFeed delete failed",error);setMsg("That post couldn't be deleted. Please try again.");return;}if(p.image_url){const marker="/storage/v1/object/public/feed-images/";const i=p.image_url.indexOf(marker);if(i>=0)await supabase.storage.from("feed-images").remove([p.image_url.slice(i+marker.length)]);}if(p.video_url){const marker="/storage/v1/object/public/feed-videos/";const i=p.video_url.indexOf(marker);if(i>=0)await supabase.storage.from("feed-videos").remove([p.video_url.slice(i+marker.length)]);}await load(user);}
+  async function del(p:Post){if(!user||p.author_id!==user.id)return;if(!confirm("Delete this HoopFeed post?"))return;const {error}=await supabase.from("feed_posts").delete().eq("id",p.id);if(error){console.error("HoopFeed delete failed",error);setMsg("That post couldn't be deleted. Please try again.");return;}{const marker="/storage/v1/object/public/feed-images/";const urls=[...((p.image_urls&&p.image_urls.length)?p.image_urls:[]),...(p.image_url?[p.image_url]:[])];const paths=urls.map(u=>{const i=u.indexOf(marker);return i>=0?u.slice(i+marker.length):"";}).filter(Boolean);if(paths.length)await supabase.storage.from("feed-images").remove(paths);}if(p.video_url){const marker="/storage/v1/object/public/feed-videos/";const i=p.video_url.indexOf(marker);if(i>=0)await supabase.storage.from("feed-videos").remove([p.video_url.slice(i+marker.length)]);}await load(user);}
 
   const hero=<section className="hf5-hero"><div className="hf5-hero__bg" aria-hidden="true" /><div className="hf5-hero__inner"><h1 className="hf5-hero__title">Hoop<span>Feed</span></h1><p className="hf5-hero__tag">The global basketball community.</p><div className="hf5-hero__stats">{memberCount!==null&&<div className="hf5-hero__stat"><strong>{formatCount(memberCount)}</strong><small>Members</small></div>}<div className="hf5-hero__stat"><strong>Global</strong><small>Players • Fans • Teams</small></div>{user&&access&&<span className="hf5-hero__plan">{subscription?.plan==="premium"?"PREMIUM":"PRO"} MEMBER</span>}</div></div></section>;
 
@@ -194,20 +255,23 @@ export default function Feed(){
     <div className="hf5-type-row" role="group" aria-label="Filter HoopFeed by post type">{TYPE_FILTERS.map(t=><button type="button" key={t} className={"hf5-type-chip"+(typeFilter===t?" is-active":"")} aria-pressed={typeFilter===t} onClick={()=>setTypeFilter(t)}>{t}</button>)}</div>
 
     <section className="dashboard-card hc-feed-composer" style={{marginTop:14}}><CourtLines variant="arc" className="hc-feed-composer__court" /><span className="card-kicker">SHARE TO HOOPFEED</span><span className="hc-feed-streak" aria-label={postingStreak+" day HoopFeed posting streak"}><span aria-hidden="true">🔥</span> {postingStreak}-day streak</span>
-      <div className="hc-feed-composer__editor"><div className="hc-feed-composer__avatar" aria-hidden="true">{user?.user_metadata?.avatar_url?<img src={user.user_metadata.avatar_url} alt="" />:"HC"}</div><textarea ref={textareaRef} value={body} onChange={e=>{setBody(e.target.value);e.currentTarget.style.height="auto";e.currentTarget.style.height=Math.min(e.currentTarget.scrollHeight,220)+"px";}} rows={3} maxLength={2000} placeholder="Start a post... (ask, share, discuss, update)" /></div>
+      <div className="hf5-mode-row" role="group" aria-label="Choose what to create">{([["post","Post"],["poll","Poll"]] as const).map(([m,label])=><button type="button" key={m} className={"hf5-type-chip"+(composerMode===m?" is-active":"")} aria-pressed={composerMode===m} onClick={()=>setComposerMode(m)}>{label}</button>)}{isAdmin&&<button type="button" className={"hf5-type-chip"+(composerMode==="news"?" is-active":"")} aria-pressed={composerMode==="news"} onClick={()=>setComposerMode("news")}>News (official)</button>}</div>
+      <div className="hc-feed-composer__editor"><div className="hc-feed-composer__avatar" aria-hidden="true">{user?.user_metadata?.avatar_url?<img src={user.user_metadata.avatar_url} alt="" />:"HC"}</div><textarea ref={textareaRef} value={body} onChange={e=>{setBody(e.target.value);e.currentTarget.style.height="auto";e.currentTarget.style.height=Math.min(e.currentTarget.scrollHeight,220)+"px";}} rows={3} maxLength={2000} placeholder={composerMode==="poll"?"Ask the community a question...":composerMode==="news"?"Write the official update...":"Start a post... (ask, share, discuss, update)"} /></div>
+      {composerMode==="poll"&&<div className="hf5-poll-editor" aria-label="Poll options">{pollDraft.map((opt,i)=><div key={i} className="hf5-poll-editor__row"><input value={opt} onChange={e=>setPollDraft(x=>x.map((o,j)=>j===i?e.target.value:o))} maxLength={60} placeholder={"Option "+(i+1)} aria-label={"Poll option "+(i+1)} />{pollDraft.length>2&&<button type="button" className="hf5-poll-editor__remove" onClick={()=>setPollDraft(x=>x.filter((_,j)=>j!==i))} aria-label={"Remove option "+(i+1)}>✕</button>}</div>)}{pollDraft.length<4&&<button type="button" className="btn dark" onClick={()=>setPollDraft(x=>[...x,""])}>+ Add option</button>}<small className="muted">Polls are text only — 2 to 4 options. Members can change their vote.</small></div>}
       <div className="hc-feed-topic-picker" aria-label="Choose a topic"><span className="hc-feed-topic-label">TOPIC</span><div className="hc-feed-topic-chips">{TOPIC_TAGS.map(tag=><button type="button" key={tag} className={"hc-feed-topic-chip hc-feed-topic--"+topicClass(tag)+(topicTag===tag?" is-selected":"")} aria-pressed={topicTag===tag} onClick={()=>setTopicTag(current=>current===tag?null:tag)}>{tag}</button>)}</div></div>{topicTag==="Game Day"&&<div className="hc-feed-game-fields"><label>Your team<input value={gameTeam} onChange={e=>setGameTeam(e.target.value)} maxLength={80} placeholder="Your team" required /></label><label>Opponent<input value={gameOpponent} onChange={e=>setGameOpponent(e.target.value)} maxLength={80} placeholder="Opponent" required /></label><div className="hc-feed-score-fields"><span>Final score (optional until after the game)</span><div><input inputMode="numeric" type="number" min="0" max="300" aria-label="Your team final score" value={scoreFor} onChange={e=>setScoreFor(e.target.value)} placeholder="0" /><b>—</b><input inputMode="numeric" type="number" min="0" max="300" aria-label="Opponent final score" value={scoreAgainst} onChange={e=>setScoreAgainst(e.target.value)} placeholder="0" /></div></div></div>}
-      <div className="hc-feed-composer__footer"><label className="hc-feed-photo-button" htmlFor="hoopfeed-photo"><HoopIcon name="image" size={16}/> Photo</label><input id="hoopfeed-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f)choosePhoto(f)}} className="visually-hidden" /><label className="hc-feed-photo-button" htmlFor="hoopfeed-video">Add video</label><input id="hoopfeed-video" className="visually-hidden" type="file" accept="video/mp4,video/webm,video/quicktime" onChange={e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>50*1024*1024||!["video/mp4","video/webm","video/quicktime"].includes(f.type)){setMsg("Use MP4, WebM, or MOV up to 50 MB.");return;}setVideo(f);setVideoPreview(URL.createObjectURL(f));clearPhoto();}} /><label className="hc-feed-country-optin"><input type="checkbox" checked={showCountry} disabled={!profile?.current_country_public} onChange={event=>setShowCountry(event.target.checked)} /><span className="hc-feed-switch" aria-hidden="true"/><span className="hc-feed-country-copy"><strong>Show my country on this post</strong><small>— only your country is shown, never your city or precise location.</small></span></label><span className="hc-feed-counter" aria-live="polite">{body.length}/2000</span><button className="btn hc-feed-post-button" onClick={post} disabled={posting||(!body.trim()&&!photo)||(Boolean(video)&&!body.trim())||(topicTag==="Game Day"&&(!gameTeam.trim()||!gameOpponent.trim()||(scoreFor==="")!==(scoreAgainst==="")))}>{posting?"Posting…":"POST"}</button></div>
-      {preview&&<div style={{marginTop:12}}><img src={preview} alt="Post preview" style={{width:"100%",maxHeight:360,objectFit:"cover",borderRadius:16,display:"block"}}/><button type="button" className="btn dark" style={{marginTop:8}} onClick={clearPhoto}>Remove Photo</button></div>}{videoPreview&&<div style={{marginTop:12}}><video src={videoPreview} controls playsInline style={{width:"100%",maxHeight:360,borderRadius:16}}/><button type="button" className="btn dark" style={{marginTop:8}} onClick={()=>{setVideo(null);setVideoPreview("");}}>Remove video</button><small>Video uploads require a caption for safety review.</small></div>}
+      <div className="hc-feed-composer__footer">{composerMode!=="poll"&&<><label className="hc-feed-photo-button" htmlFor="hoopfeed-photo"><HoopIcon name="image" size={16}/> Photo{photos.length?` (${photos.length}/4)`:""}</label><input id="hoopfeed-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f)choosePhoto(f);e.target.value="";}} className="visually-hidden" /><label className="hc-feed-photo-button" htmlFor="hoopfeed-video">Add video</label><input id="hoopfeed-video" className="visually-hidden" type="file" accept="video/mp4,video/webm,video/quicktime" onChange={e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>50*1024*1024||!["video/mp4","video/webm","video/quicktime"].includes(f.type)){setMsg("Use MP4, WebM, or MOV up to 50 MB.");return;}setVideo(f);setVideoPreview(URL.createObjectURL(f));clearPhotos();}} /></>}<label className="hc-feed-country-optin"><input type="checkbox" checked={showCountry} disabled={!profile?.current_country_public} onChange={event=>setShowCountry(event.target.checked)} /><span className="hc-feed-switch" aria-hidden="true"/><span className="hc-feed-country-copy"><strong>Show my country on this post</strong><small>— only your country is shown, never your city or precise location.</small></span></label><span className="hc-feed-counter" aria-live="polite">{body.length}/2000</span><button className="btn hc-feed-post-button" onClick={post} disabled={posting||(composerMode==="poll"?(!body.trim()||pollDraft.map(o=>o.trim()).filter(Boolean).length<2):(!body.trim()&&!photos.length&&!video)||(Boolean(video)&&!body.trim())||(topicTag==="Game Day"&&(!gameTeam.trim()||!gameOpponent.trim()||(scoreFor==="")!==(scoreAgainst===""))))}>{posting?"Posting…":composerMode==="poll"?"POST POLL":"POST"}</button></div>
+      {previews.length>0&&<div className="hf5-photo-grid" style={{marginTop:12}}>{previews.map((src,i)=><div key={i} className="hf5-photo-grid__item"><img src={src} alt={"Photo "+(i+1)+" preview"} /><button type="button" className="hf5-photo-grid__remove" onClick={()=>removePhoto(i)} aria-label={"Remove photo "+(i+1)}>✕</button></div>)}</div>}{videoPreview&&<div style={{marginTop:12}}><video src={videoPreview} controls playsInline style={{width:"100%",maxHeight:360,borderRadius:16}}/><button type="button" className="btn dark" style={{marginTop:8}} onClick={()=>{setVideo(null);setVideoPreview("");}}>Remove video</button><small>Video uploads require a caption for safety review.</small></div>}
       <div className="hc-feed-composer__actions">{msg&&<p className="hc-feed-message" role="status" aria-live="polite">{msg}</p>}</div>
     </section>
 
     <div className="hc-feed-filter-bar" aria-label="Filter HoopFeed by topic"><button type="button" className="hc-feed-refresh" disabled={refreshing} onClick={async()=>{if(!user||!profile)return;setRefreshing(true);await load(user);setNow(Date.now());setRefreshing(false);}}>{refreshing?"Refreshing…":"↻ Refresh"}</button><div className="hc-feed-filter-scroll">{(["All",...TOPIC_TAGS] as ("All"|TopicTag)[]).map(tag=><button type="button" key={tag} className={"hc-feed-filter-chip"+(topicFilter===tag?" is-active":"")+(tag!=="All"?" hc-feed-topic--"+topicClass(tag):"")} aria-pressed={topicFilter===tag} onClick={()=>setTopicFilter(tag)}>{tag}</button>)}</div><span className="hc-feed-result-count">{visiblePosts.length} {visiblePosts.length===1?"POST":"POSTS"}</span></div>
     <section className="hc-feed-stream" aria-label="Recent HoopFeed posts">{visiblePosts.length?visiblePosts.map(p=>{const cs=comments[p.id]||[];const roleKey=(p.profiles?.account_type||"").toLowerCase();const rolePill=ROLE_PILLS[roleKey];return <FeedPostCard key={p.id} onDoubleClick={()=>void toggleCheck(p)}>
-      <header className="hc-feed-post-header"><FeedAuthorRow>{p.profiles?.avatar_url?<img src={p.profiles.avatar_url} alt="" className="hc-feed-post-avatar hf5-avatar"/>:<span className="player-avatar-fallback hc-feed-post-avatar hf5-avatar">HC</span>}<div className="hc-feed-post-author__meta"><div className="hc-feed-post-author__line"><strong>{p.shared_post_id?"Shared by "+(p.profiles?.display_name||"HoopCheck Member"):(p.profiles?.display_name||"HoopCheck Member")}</strong><span className="hc-feed-verified" aria-label="HoopCheck member">✓</span>{rolePill&&<span className={"hf5-pill hf5-pill--"+roleKey}>{rolePill.label}</span>}<small>· {p.ageLabel}</small></div>{p.profiles?.current_team&&<span className="hc-feed-jersey-tag">{p.profiles.current_team}</span>}{p.shared_post?.profiles?.display_name&&<small className="muted">Originally shared from {p.shared_post.profiles.display_name}</small>}{p.location_country&&p.profiles?.current_country_public!==false&&<div className="muted hc-feed-location"><HoopIcon name="map-pin" size={14} /> Country: {p.location_country}</div>}</div></FeedAuthorRow></header>
-      {p.topic_tag&&TOPIC_TAGS.includes(p.topic_tag)&&<span className={"hc-feed-post-topic hc-feed-topic--"+topicClass(p.topic_tag)}>{p.topic_tag}</span>}{p.topic_tag==="Game Day"&&p.game_day_team&&p.game_day_opponent&&<div className="hc-feed-game-score"><span>{p.game_day_team}</span>{p.game_day_score_for!=null&&p.game_day_score_against!=null?<strong>{p.game_day_score_for} <i>—</i> {p.game_day_score_against}</strong>:<strong className="hc-feed-game-vs">VS</strong>}<span>{p.game_day_opponent}</span></div>}{p.body.trim()&&<div className="hc-feed-post-body"><p>{p.body}</p></div>}<FeedMediaArea>{p.image_url&&<img src={p.image_url} alt="HoopFeed post" className={"hc-feed-post-image"+(checkBursts[p.id]?" hc-feed-photo-check-burst":"")}/>}{p.video_url&&<video src={p.video_url} controls playsInline preload="metadata" className="hc-feed-post-image" aria-label="HoopFeed video"/>}</FeedMediaArea>
-      <FeedActionRow><button type="button" className={"hc-feed-action-pill hf5-check"+(mine[p.id]?" is-active":"")+(checkBursts[p.id]?" hc-feed-check-burst":"")} aria-label="Check this post" title="Check" onClick={()=>void toggleCheck(p)}><span className="hf5-up" aria-hidden="true">↑</span> {checks[p.id]||0}{checkBursts[p.id]&&<span className="hc-feed-check-pop" aria-hidden="true">✓</span>}</button><button type="button" className="hc-feed-action-pill" onClick={()=>setOpen(x=>({...x,[p.id]:!x[p.id]}))}>💬 {cs.length} {cs.length===1?"Comment":"Comments"}</button><button type="button" className="hc-feed-action-pill" disabled={posting} onClick={()=>void sharePost(p)}>Share</button>{p.author_id===user?.id&&<button type="button" className="hc-feed-action-pill" onClick={()=>void del(p)}>Delete</button>}</FeedActionRow>
+      {p.is_pinned&&<div className="hf5-pinbar"><span>📌 Pinned by HoopCheck</span></div>}
+      <header className="hc-feed-post-header"><FeedAuthorRow>{p.profiles?.avatar_url?<img src={p.profiles.avatar_url} alt="" className="hc-feed-post-avatar hf5-avatar"/>:<span className="player-avatar-fallback hc-feed-post-avatar hf5-avatar">HC</span>}<div className="hc-feed-post-author__meta"><div className="hc-feed-post-author__line"><strong>{p.shared_post_id?"Shared by "+(p.profiles?.display_name||"HoopCheck Member"):(p.profiles?.display_name||"HoopCheck Member")}</strong><span className="hc-feed-verified" aria-label="HoopCheck member">✓</span>{rolePill&&<span className={"hf5-pill hf5-pill--"+roleKey}>{rolePill.label}</span>}{p.post_kind==="news"&&<span className="hf5-pill hf5-pill--news">News</span>}{p.post_kind==="poll"&&<span className="hf5-pill hf5-pill--poll">Poll</span>}<small>· {p.ageLabel}</small></div>{p.profiles?.current_team&&<span className="hc-feed-jersey-tag">{p.profiles.current_team}</span>}{p.shared_post?.profiles?.display_name&&<small className="muted">Originally shared from {p.shared_post.profiles.display_name}</small>}{p.location_country&&p.profiles?.current_country_public!==false&&<div className="muted hc-feed-location"><HoopIcon name="map-pin" size={14} /> Country: {p.location_country}</div>}</div></FeedAuthorRow></header>
+      {p.topic_tag&&TOPIC_TAGS.includes(p.topic_tag)&&<span className={"hc-feed-post-topic hc-feed-topic--"+topicClass(p.topic_tag)}>{p.topic_tag}</span>}{p.topic_tag==="Game Day"&&p.game_day_team&&p.game_day_opponent&&<div className="hc-feed-game-score"><span>{p.game_day_team}</span>{p.game_day_score_for!=null&&p.game_day_score_against!=null?<strong>{p.game_day_score_for} <i>—</i> {p.game_day_score_against}</strong>:<strong className="hc-feed-game-vs">VS</strong>}<span>{p.game_day_opponent}</span></div>}{p.body.trim()&&<div className="hc-feed-post-body"><p>{p.body}</p></div>}{p.post_kind==="poll"&&Array.isArray(p.poll_options)&&p.poll_options.length>0&&(()=>{const v=votes[p.id]||{counts:p.poll_options.map(()=>0),total:0,mine:null};const voted=v.mine!==null;return <div className="hf5-poll" role="group" aria-label="Poll">{p.poll_options.map((opt,oi)=>{const pct=v.total?Math.round((v.counts[oi]||0)/v.total*100):0;return voted?<div key={oi} className={"hf5-poll__result"+(v.mine===oi?" is-mine":"")}><button type="button" className="hf5-poll__bar-button" onClick={()=>void vote(p,oi)} aria-label={"Vote for "+opt}><span className="hf5-poll__fill" style={{width:pct+"%"}} /><span className="hf5-poll__label">{opt}{v.mine===oi?" ✓":""}</span><span className="hf5-poll__pct">{pct}%</span></button></div>:<button key={oi} type="button" className="hf5-poll__option" onClick={()=>void vote(p,oi)}>{opt}</button>;})}<small className="muted">{v.total} {v.total===1?"vote":"votes"}{voted?" · Tap another option to change your vote":""}</small></div>;})()}<FeedMediaArea>{(()=>{const imgs=(p.image_urls&&p.image_urls.length?p.image_urls:(p.image_url?[p.image_url]:[])) as string[];if(p.video_url||!imgs.length)return null;if(imgs.length===1)return <img src={imgs[0]} alt="HoopFeed post" className={"hc-feed-post-image"+(checkBursts[p.id]?" hc-feed-photo-check-burst":"")}/>;const idx=Math.min(carouselIdx[p.id]||0,imgs.length-1);return <div className="hf5-carousel"><img src={imgs[idx]} alt={"HoopFeed post photo "+(idx+1)+" of "+imgs.length} className={"hc-feed-post-image"+(checkBursts[p.id]?" hc-feed-photo-check-burst":"")} /><span className="hf5-carousel__count">{idx+1}/{imgs.length}</span>{idx>0&&<button type="button" className="hf5-carousel__nav hf5-carousel__nav--prev" aria-label="Previous photo" onClick={()=>setCarouselIdx(x=>({...x,[p.id]:idx-1}))}>‹</button>}{idx<imgs.length-1&&<button type="button" className="hf5-carousel__nav hf5-carousel__nav--next" aria-label="Next photo" onClick={()=>setCarouselIdx(x=>({...x,[p.id]:idx+1}))}>›</button>}<div className="hf5-carousel__dots">{imgs.map((_,di)=><span key={di} className={"hf5-carousel__dot"+(di===idx?" is-active":"")} />)}</div></div>;})()}{p.video_url&&<video src={p.video_url} controls playsInline preload="metadata" className="hc-feed-post-image" aria-label="HoopFeed video"/>}</FeedMediaArea>
+      <FeedActionRow><button type="button" className={"hc-feed-action-pill hf5-check"+(mine[p.id]?" is-active":"")+(checkBursts[p.id]?" hc-feed-check-burst":"")} aria-label="Check this post" title="Check" onClick={()=>void toggleCheck(p)}><span className="hf5-up" aria-hidden="true">↑</span> {checks[p.id]||0}{checkBursts[p.id]&&<span className="hc-feed-check-pop" aria-hidden="true">✓</span>}</button><button type="button" className="hc-feed-action-pill" onClick={()=>setOpen(x=>({...x,[p.id]:!x[p.id]}))}>💬 {cs.length} {cs.length===1?"Comment":"Comments"}</button><button type="button" className="hc-feed-action-pill" disabled={posting} onClick={()=>void sharePost(p)}>Share</button><button type="button" className={"hc-feed-action-pill"+(savedMap[p.id]?" is-active":"")} onClick={()=>void toggleSave(p)}>{savedMap[p.id]?"🔖 Saved":"🔖 Save"}</button>{isAdmin&&<button type="button" className="hc-feed-action-pill" onClick={()=>void togglePin(p)}>{p.is_pinned?"📌 Unpin":"📌 Pin"}</button>}{p.author_id===user?.id&&<button type="button" className="hc-feed-action-pill" onClick={()=>void del(p)}>Delete</button>}</FeedActionRow>
       {open[p.id]&&<><button type="button" className="hc-feed-comments-backdrop" aria-label="Close comments" onClick={()=>setOpen(x=>({...x,[p.id]:false}))}/><div className="hc-feed-comments-panel" role="dialog" aria-modal="true" aria-label="Comments" style={{marginTop:14,borderTop:"1px solid var(--border)",paddingTop:14}}><div className="hc-feed-comments-sheet-head"><strong>COMMENTS</strong><button type="button" onClick={()=>setOpen(x=>({...x,[p.id]:false}))}>Close</button></div><div style={{display:"grid",gap:10}}>{cs.map(c=><div key={c.id} style={{display:"flex",gap:10}}>{c.profiles?.avatar_url?<img src={c.profiles.avatar_url} alt="" style={{width:34,height:34,borderRadius:"50%",objectFit:"cover"}}/>:<div className="player-avatar-fallback" style={{width:34,height:34,minWidth:34}}>HC</div>}<div><strong>{c.profiles?.display_name||"Member"}</strong><div style={{whiteSpace:"pre-wrap"}}>{c.body}</div><small className="muted">{ago(c.created_at,now)}</small></div></div>)}{!cs.length&&<p className="muted">No comments yet.</p>}</div><div style={{display:"flex",gap:8,marginTop:12}}><input value={drafts[p.id]||""} onChange={e=>setDrafts(x=>({...x,[p.id]:e.target.value}))} maxLength={1000} placeholder="Add a comment..." /><button type="button" className="btn" disabled={!drafts[p.id]?.trim()} onClick={()=>void comment(p.id)}>Send</button></div></div></>}
-    </FeedPostCard>}) : posts.length===0 ? <FeedEmptyState><span className="eyebrow">THE FEED IS QUIET</span><h2>No posts yet — be the first to start the conversation</h2><p className="muted">HoopFeed is one community for players, fans, teams, coaches and agents. Share what is happening in your basketball world.</p><Link href="/players" className="btn">Find Players</Link></FeedEmptyState> : <FeedEmptyState><span className="eyebrow">NOTHING HERE YET</span><h2>{typeFilter==="Polls"?"Polls are coming to HoopFeed soon":typeFilter==="News"?"No news posts yet":"No posts match this filter"}</h2><p className="muted">Try another filter or return to the full feed.</p><button type="button" className="btn" onClick={()=>{setTypeFilter("All Posts");setTopicFilter("All");}}>Show All Posts</button></FeedEmptyState>}
+    </FeedPostCard>}) : posts.length===0 ? <FeedEmptyState><span className="eyebrow">THE FEED IS QUIET</span><h2>No posts yet — be the first to start the conversation</h2><p className="muted">HoopFeed is one community for players, fans, teams, coaches and agents. Share what is happening in your basketball world.</p><Link href="/players" className="btn">Find Players</Link></FeedEmptyState> : <FeedEmptyState><span className="eyebrow">NOTHING HERE YET</span><h2>{typeFilter==="Polls"?"No polls yet — start one from the composer":typeFilter==="News"?"No news posts yet":typeFilter==="Saved"?"Nothing saved yet — tap Save on any post":"No posts match this filter"}</h2><p className="muted">Try another filter or return to the full feed.</p><button type="button" className="btn" onClick={()=>{setTypeFilter("All Posts");setTopicFilter("All");}}>Show All Posts</button></FeedEmptyState>}
   </section>
   </div></main></PageShell>;
 }
