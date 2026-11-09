@@ -33,8 +33,8 @@ export default function PublicBusinessInquiry() {
     widget.current = window.turnstile.render(mount.current, {
       sitekey: siteKey,
       callback: setToken,
-      "expired-callback": () => setToken(""),
-      "error-callback": () => setToken(""),
+      "expired-callback": () => { setToken(""); setStatus("Verification expired. Please complete the security check again."); },
+      "error-callback": () => { setToken(""); setStatus("Security verification could not load. Please retry the check."); },
     });
     return () => {
       if (widget.current && window.turnstile) window.turnstile.remove(widget.current);
@@ -93,7 +93,7 @@ export default function PublicBusinessInquiry() {
           <input id="business-website" name="website" ref={honeypot} tabIndex={-1} autoComplete="off" />
         </div>
         <div ref={mount} aria-label="Spam protection verification" />
-        <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" strategy="afterInteractive" onReady={() => setLoaded(true)} />
+        <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" strategy="afterInteractive" onReady={() => setLoaded(true)} onError={() => setStatus("Security verification is unavailable. Please refresh and try again.")} />
         <button className="btn" type="submit" disabled={sending || !token} aria-disabled={sending || !token}>{sending ? "Sending…" : "Send business inquiry"}</button>
         {status && <p role="status" className="muted">{status}</p>}
       </form>
