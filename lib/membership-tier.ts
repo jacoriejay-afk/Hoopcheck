@@ -28,8 +28,6 @@ export type HoopCheckEntitlements = {
   canModerateFanGroups: boolean;
 };
 
-
-
 const TIER_RANK: Record<MembershipTier, number> = {
   free: 0,
   pro: 1,
@@ -62,11 +60,6 @@ export function hasActiveMembershipAtLeast(
   return true;
 }
 
-/**
- * The single role + subscription entitlement resolver used by pages and APIs.
- * Premium inherits every Pro entitlement because all plan checks are minimum-tier
- * comparisons; account-role rules remain separate from subscription level.
- */
 export function getActiveMembershipTier(
   subscription: ActiveMembership | null | undefined,
   now = Date.now(),
@@ -94,8 +87,8 @@ export function getHoopCheckEntitlements(args: {
   return {
     tier,
     hasPaidMembership: active,
-    canReadHoopFeed: active && ["player", "scout", "agent"].includes(role),
-    canWriteHoopFeed: isPlayer && isAtLeastTier(tier, "pro"),
+    canReadHoopFeed: active && (isAdmin || Boolean(role)),
+    canWriteHoopFeed: (isAdmin || Boolean(role)) && isAtLeastTier(tier, "pro"),
     canReadFanFeed: isFan && isAtLeastTier(tier, "pro"),
     canWriteFanFeed: isFan && isAtLeastTier(tier, "pro"),
     canReadFullReviews: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) ||
