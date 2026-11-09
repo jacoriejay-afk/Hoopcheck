@@ -9,7 +9,8 @@ const json = (message: string, status: number) => NextResponse.json({ message },
 
 export async function POST(request: NextRequest) {
   // Fail closed until both CAPTCHA and server-side storage are configured.
-  if (process.env.BUSINESS_INQUIRIES_API_ENABLED !== "true")
+  if (process.env.BUSINESS_INQUIRIES_API_ENABLED !== "true" ||
+      process.env.BUSINESS_INQUIRIES_EDGE_RATE_LIMIT_VERIFIED !== "true")
     return json("Public inquiries are temporarily unavailable.", 503);
   const origin = request.headers.get("origin");
   const allowedOrigin = process.env.BUSINESS_INQUIRIES_ALLOWED_ORIGIN;
