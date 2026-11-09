@@ -36,20 +36,31 @@ export default function Womens() {
   useEffect(() => {
     let mounted = true;
     async function load() {
-      const [teamResult, leagueResult] = await Promise.all([
-        supabase.from("womens_teams")
-          .select("id,name,country,city,league_id,league_name,logo_url,logo_bg")
-          .eq("active", true).order("name").order("id"),
-        supabase.from("womens_leagues")
+      try {
+        // Page through the directory rather than silently truncating at the API row limit.
+        const allTeams: WomensTeam[] = [];
+        for (let offset = 0; offset < 10000; offset += 500) {
+          const result = await supabase.from("womens_teams")
+            .select("id,name,country,city,league_id,league_name,logo_url,logo_bg")
+            .eq("active", true).order("name").order("id")
+            .range(offset, offset + 499);
+          if (result.error) throw result.error;
+          if (!mounted) return;
+          allTeams.push(...((result.data || []) as WomensTeam[]));
+          if (!result.data || result.data.length < 500) break;
+        }
+        const leagueResult = await supabase.from("womens_leagues")
           .select("id,name,country,level")
-          .eq("active", true).order("name"),
-      ]);
-      if (!mounted) return;
-      if (teamResult.error) console.error("Unable to load women's teams:", teamResult.error);
-      if (leagueResult.error) console.error("Unable to load women's leagues:", leagueResult.error);
-      setTeams(Array.from(new Map(((teamResult.data || []) as WomensTeam[]).map((team) => [team.id, team])).values()));
-      setLeagues(leagueResult.data || []);
-      setLoading(false);
+          .eq("active", true).order("name");
+        if (!mounted) return;
+        if (leagueResult.error) console.error("Unable to load women's leagues:", leagueResult.error);
+        setTeams(Array.from(new Map(allTeams.map((team) => [team.id, team])).values()));
+        setLeagues(leagueResult.data || []);
+      } catch (error) {
+        console.error("Unable to load women's directory:", error);
+      } finally {
+        if (mounted) setLoading(false);
+      }
     }
     void load();
     return () => { mounted = false; };
