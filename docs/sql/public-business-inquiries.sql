@@ -8,6 +8,9 @@ create table if not exists public.public_business_inquiries (
   message text not null check (char_length(message) between 10 and 3000),
   created_at timestamptz not null default now()
 );
+-- Supports the rolling 24-hour per-email rate limit without scanning all inquiries.
+create index if not exists public_business_inquiries_email_created_idx
+  on public.public_business_inquiries (lower(email), created_at desc);
 alter table public.public_business_inquiries enable row level security;
 revoke all on public.public_business_inquiries from anon, authenticated;
 -- No public policies. Access via protected server-side service role only.
