@@ -18,6 +18,9 @@ begin
     raise exception 'Authentication required for business inquiries' using errcode = '42501';
   end if;
 
+  -- Do not trust a caller-supplied timestamp to evade the rolling window.
+  new.created_at := pg_catalog.now();
+
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(new.user_id::text, 48102));
 
   select
