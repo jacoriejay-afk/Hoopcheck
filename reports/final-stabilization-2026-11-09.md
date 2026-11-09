@@ -16,7 +16,7 @@ No pricing or schema changes are included.
 
 ## Validation
 
-Build, TypeScript, bundle audit, hub theme pairing, five stabilization tests, the existing entitlement matrix and four plan tests pass locally. Lint passes with 144 existing warnings. Production dependency audit returns no vulnerabilities.
+Build, TypeScript, bundle audit, hub theme pairing, six stabilization tests, the existing entitlement matrix and four plan tests pass locally. Lint passes with 144 existing warnings. Production dependency audit returns no vulnerabilities.
 
 Real App Router Back/Forward, direct-entry fallback, company overflow and reduced motion pass at 390px/1440px in both themes. Seven role fixtures pass mobile DOM checks for five visible 24px SVGs and feed destinations in both themes. Administrator fixtures show included Premium without purchase choices. Team discovery and profile editing pass mobile/desktop checks. The loader reduced-motion assertion now waits for the media-query style update before checking the same exact value. Player-completion browser flow passes.
 
@@ -90,4 +90,8 @@ No deployment success is claimed in this source report. Verify exact-commit CI a
 The existing full theme/browser sweep returned failure records while exiting zero. It reports contrast problems, Fan HQ scaffold copy, and stale/mismatched UI acceptance contracts. The script now exits nonzero for any failed/missing route result, so CI cannot present these findings as a successful gate. Do not merge or deploy this patch until those failures are resolved and the final exact commit passes. The targeted checks above do not override this broader failure.
 
 During this audit, upstream main independently merged #367 and #368. Those commits were integrated into this branch without conflicts; the 22-PR inventory is a timestamped starting snapshot, not a claim that #367 remains open. The incorporated upstream code still needs the complete real-account role/action acceptance matrix.
+
+Extended validation also corrected the Fan HQ translation fallback (real English copy now precedes humanized unknown shared keys) and replaced legacy primary-button white/orange overrides with the existing accessible semantic token pair. The later fan-route sweep reports zero scaffold hits on the checked routes. Six executable regression tests cover these changes. The remaining broad theme failures still block release.
+
+New PR #369 appeared during the audit. Its returned entitlement, launch and CI runs pass at its inspected head. The diff also modifies search-filter synchronization in addition to the advertised feed CSS/expiry work. Hold it for current-base screenshot and filter-navigation acceptance; no merge is performed here. PR #370 is this draft stabilization branch.
 

@@ -1867,9 +1867,9 @@ main:not(.hc-rebrand):not(.hc-template-home) > section:not(.hero):not(.hc-team-r
 .hc-dashboard-shell a.btn,
 .hc-dashboard-shell button,
 main:not(.hc-rebrand):not(.hc-template-home) :where(.btn,button[type="submit"],.button-primary,.btn-primary) {
-  color: #fff !important;
-  background: #e64a00 !important;
-  border-color: #e64a00 !important;
+  color: var(--hc-button-primary-foreground) !important;
+  background: var(--hc-button-primary-surface) !important;
+  border-color: var(--hc-button-primary-surface) !important;
 }
 .hc-dashboard-shell .btn.dark,
 main:not(.hc-rebrand):not(.hc-template-home) :where(.btn.dark,.button-dark) {
@@ -2001,9 +2001,9 @@ main.auth-page-shell .signup-form :where(input,select,textarea)::placeholder {
 }
 main.auth-page-shell .signup-form .btn,
 main.auth-page-shell .signup-form button[type="submit"] {
-  color: #fff !important;
-  background: #e64a00 !important;
-  border-color: #e64a00 !important;
+  color: var(--hc-button-primary-foreground) !important;
+  background: var(--hc-button-primary-surface) !important;
+  border-color: var(--hc-button-primary-surface) !important;
 }
 main.auth-page-shell .signup-form .checkbox-row,
 main.auth-page-shell .signup-form .checkbox-row span {

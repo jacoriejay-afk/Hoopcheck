@@ -139,6 +139,14 @@ test("review API grants administrative Premium server-side without trusting user
   }
 });
 
+test("Fan HQ uses real copy rather than humanized missing shared translation keys", () => {
+  const { fanFeedI18n } = load("app/fan-feed/i18n.ts");
+  assert.equal(fanFeedI18n("feedExplainer", "en", "Feed Explainer"), "Posts from the fan groups of the clubs you follow.");
+  assert.equal(fanFeedI18n("emptyClubTitle", "en", "Empty Club Title"), "No posts yet — be the first to post for {team}.");
+  assert.equal(fanFeedI18n("emptyKicker", "en", "EMPTY KICKER"), "CLUB FAN GROUPS");
+  assert.equal(fanFeedI18n("feedExplainer", "es", "Feed Explainer"), "Publicaciones de los grupos de fans de los clubes que sigues.");
+});
+
 test("Fan Group API requires caller-scoped group authorization, including for admin labels", async () => {
   const teamId = "11111111-1111-4111-8111-111111111111";
   const previous = { ...process.env };

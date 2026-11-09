@@ -68,12 +68,29 @@ try {
     const destination = role === "fan" ? "/fan-feed" : "/feed";
     await nav.locator(`a[href="${destination}"]`).click();
     await page.waitForURL(baseURL + destination);
+    if (role === "fan") {
+      await page.locator(".hc-fan-feed-explainer").waitFor();
+      assert.equal((await page.locator(".hc-fan-feed-explainer").textContent()).trim(), "Posts from the fan groups of the clubs you follow.");
+    }
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2), false);
     await page.screenshot({ path: `${artifacts}/nav-${role}-${theme}.png`, fullPage: true });
     if (role === "admin") {
       await page.goto(baseURL + "/membership");
       await page.getByRole("heading", { name: "Administrative Premium access is included." }).waitFor();
       assert.equal(await page.getByText("CHOOSE YOUR ACCESS", { exact: true }).count(), 0);
+      const contrast = await page.locator('.dashboard-card a.btn').evaluate(el => {
+        const luminance = color => {
+          const channels = color.match(/[\d.]+/g).slice(0, 3).map(Number).map(value => {
+            const s = value / 255;
+            return s <= .04045 ? s / 12.92 : ((s + .055) / 1.055) ** 2.4;
+          });
+          return channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
+        };
+        const style = getComputedStyle(el);
+        const ink = luminance(style.color), surface = luminance(style.backgroundColor);
+        return (Math.max(ink, surface) + .05) / (Math.min(ink, surface) + .05);
+      });
+      assert.ok(contrast >= 4.5, `Primary control contrast ${contrast}`);
       await page.screenshot({ path: `${artifacts}/membership-admin-${theme}.png`, fullPage: true });
     }
     console.log(`PASS 390px ${role} ${theme}: 5 visible 24px SVG icons, role feed tap, no horizontal overflow (synthetic session)`);
