@@ -854,6 +854,9 @@ try {
   }
   console.log("THEME_COMPONENT_INVENTORY=" + JSON.stringify(themeComponentInventory, null, 2));
   console.log("THEME_ROUTE_SWEEP=" + JSON.stringify(routeSweepResults, null, 2));
+  const failedRoutes = routeSweepResults.filter(result => result.status !== "PASS");
+  console.log("THEME_ROUTE_FAILURE_COUNT=" + failedRoutes.length);
+  if (failedRoutes.length) process.exitCode = 1;
 
 } finally {
   await browser.close();

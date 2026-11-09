@@ -85,3 +85,9 @@ PR #165 was already merged; current inline SVG navigation is covered by the adde
 
 No deployment success is claimed in this source report. Verify exact-commit CI and post-deployment smoke evidence separately. Operational diagnostics are kept local and excluded from this public repository.
 
+## Release hold discovered during extended validation
+
+The existing full theme/browser sweep returned failure records while exiting zero. It reports contrast problems, Fan HQ scaffold copy, and stale/mismatched UI acceptance contracts. The script now exits nonzero for any failed/missing route result, so CI cannot present these findings as a successful gate. Do not merge or deploy this patch until those failures are resolved and the final exact commit passes. The targeted checks above do not override this broader failure.
+
+During this audit, upstream main independently merged #367 and #368. Those commits were integrated into this branch without conflicts; the 22-PR inventory is a timestamped starting snapshot, not a claim that #367 remains open. The incorporated upstream code still needs the complete real-account role/action acceptance matrix.
+
