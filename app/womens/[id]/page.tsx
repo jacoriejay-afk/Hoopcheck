@@ -64,12 +64,12 @@ export default function WomensTeam(){
    })().catch(error => { console.error("Unable to load women’s team review access:", error); if (active) setLoading(false); });
    return () => { active = false; };
  }, [id]);
- if(loading)return <main className="page-shell hc-womens-profile-page"><div className="page-container"><HoopLoading label={t("loadingWomensTeam")} /></div></main>;
+ if(loading)return <main className="page-shell hc-womens-profile-page hc-team-entity-profile"><div className="page-container"><HoopLoading label={t("loadingWomensTeam")} /></div></main>;
  if(!team)return <main className="page-shell hc-womens-profile-page"><div className="page-container"><Surface as="section" className="hero-card"><h1>{t("womenTeamNotFound")}</h1><Link href="/womens" className="btn">{t("backToWomensBasketball")}</Link></Surface></div></main>;
  const average=ratingAverage;
  return <main className="page-shell hc-womens-profile-page"><div className="page-container">
  <TeamProfileHero
-   className="hc-womens-branded-hero"
+   className="hc-womens-branded-hero hc-team-profile-hero"
    teamId={team.id}
    name={team.name}
    country={`${countryFlag(team.country) ? countryFlag(team.country) + " " : ""}${team.country || t("international")}`}
