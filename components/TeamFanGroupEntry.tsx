@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
+import { getHoopCheckEntitlements } from "../lib/membership-tier";
 import { useLanguage, type Language } from "./LanguageProvider";
 
 type Summary = { group_name: string; member_count: number; join_mode: "open" | "approval"; is_member: boolean; has_pending_request: boolean };
@@ -46,7 +47,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
     ]);
     if (authError || summaryError) throw authError || summaryError;
 
-    let nextActualMember = false;
+    const nextActualMember = false;
     if (user) {
       const [{ data: profile, error: profileError }, { data: moderators, error: moderatorsError }, { data: platformAdmin, error: adminError }, { data: membership, error: membershipError }] = await Promise.all([
         supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
@@ -54,11 +55,10 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
         supabase.rpc("is_current_user_admin_or_moderator"),
         supabase.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle()
       ]);
-      if (profileError || moderatorsError || adminError || membershipError) throw profileError || moderatorsError || adminError || membershipError;
-      nextActualMember = Boolean(membership);
-      setActualMember(nextActualMember);
-      setIsFan(profile?.account_type === "fan");
-      setIsModerator(Boolean((moderators || []).some((m: any) => m.user_id === user.id) ||
+      const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, isAdmin: platformAdmin === true });
+      setIsFan(entitlements.canUseFanGroups);
+      setIsModerator(Boolean(entitlements.canModerateFanGroups ||
+        (moderators || []).some((m: any) => m.user_id === user.id) ||
         ((moderators || []).some((m: any) => m.moderator_type === "platform") && platformAdmin === true)));
     } else {
       setIsFan(false);

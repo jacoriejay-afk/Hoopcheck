@@ -30,7 +30,7 @@ function Manager(){
  const base=kind==="coaches"?"coaches":kind.startsWith("teams")?"teams":"leagues"; const gender=kind.endsWith("womens")?"womens":"mens";
  async function load(){setLoading(true);const [{data:c},{data:t},{data:l}]=await Promise.all([
   supabase.from("coaches").select("id,name,country,city,current_team_id,active").order("name").limit(1000),
-  supabase.from("teams").select("id,name,country,city,league_id,league_name,logo_url,logo_bg,active,basketball_type").order("name").limit(1000),
+  supabase.from("teams").select("id,name,country,city,league_id,league_name,logo_url,logo_bg,active,basketball_type").or("source.is.null,source.neq.womens_teams_mirror").order("name").limit(1000),
   supabase.from("leagues").select("id,name,country,level,season,active,basketball_type").order("name").limit(1000)
  ]);setCoaches(c||[]);setTeams(t||[]);setLeagues(l||[]);setLoading(false);}
  useEffect(()=>{void load()},[]);

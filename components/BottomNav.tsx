@@ -93,14 +93,13 @@ export default function BottomNav() {
     });
     return () => { active = false; };
   }, [userId]);
-  const fanAccount = accountType === "fan";
 
   if (!signedIn || pathname.startsWith("/admin")) return null;
 
   return (
     <nav className="bottom-nav hc-bottom-tab-bar hc-mobile-tabbar-repair hc-lm2f-bottom-nav" aria-label="Mobile navigation">
       {items.map(([href, translationKey, label]) => {
-        const destination = href === "/feed" ? (accountType === null ? "/dashboard" : fanAccount ? "/fan-feed" : "/feed") : href;
+        const destination = href === "/feed" && accountType === "fan" ? "/fan-feed" : href;
         const feedResolving = href === "/feed" && accountTypeLoading;
         const active = destination === "/"
           ? pathname === "/" || pathname === "/dashboard"
@@ -115,7 +114,7 @@ export default function BottomNav() {
             onClick={feedResolving ? (event) => event.preventDefault() : undefined}
           >
             <span className="hc-lm2f-tab-icon"><TabIcon label={label} /></span>
-            <span className="hc-lm2f-tab-label">{translationKey === "hoopFeed" ? (accountType === null ? "FEED" : fanAccount ? "FAN HQ" : "HOOPFEED") : t(translationKey)}</span>
+            <span className="hc-lm2f-tab-label">{translationKey === "hoopFeed" ? (accountType === "fan" ? "FAN HQ" : "HoopFeed") : t(translationKey)}</span>
             {active && <span className="hc-lm2f-active-indicator" aria-hidden="true" />}
           </Link>
         );

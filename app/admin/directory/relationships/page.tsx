@@ -30,7 +30,7 @@ export default function RelationshipsPage() {
     setLoading(true);
     const [c,t,l,a,m] = await Promise.all([
       supabase.from("coaches").select("id,name").eq("active",true).order("name"),
-      supabase.from("teams").select("id,name").eq("active",true).order("name"),
+      supabase.from("teams").select("id,name").or("source.is.null,source.neq.womens_teams_mirror").eq("active",true).order("name"),
       supabase.from("leagues").select("id,name").eq("active",true).order("name"),
       supabase.from("coach_team_assignments").select("id,coach_id,team_id,role,season,active").order("created_at",{ascending:false}),
       supabase.from("team_league_memberships").select("id,team_id,league_id,season,start_date,end_date,active").order("created_at",{ascending:false}),

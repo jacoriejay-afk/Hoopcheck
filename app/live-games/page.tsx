@@ -12,7 +12,7 @@ import { getGameAvailability, formatViewerLocalTime } from "../../lib/game-avail
 import { HoopIcon } from "../../components/HoopCheckUI";
 import TeamLogo from "../../components/TeamLogo";
 import "./live-games-chat.css";
-import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 
 type Game = {
   id: string;
@@ -75,7 +75,8 @@ export default function LiveGamesPage() {
       supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
       supabase.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id", user.id).maybeSingle(),
     ]);
-    const isAllowed = ["fan", "player"].includes(profile?.account_type || "") && hasActiveMembershipAtLeast(subscription);
+    const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription });
+    const isAllowed = entitlements.canUseLiveGameHub;
     setAllowed(isAllowed);
     if (!isAllowed) { setGames([]); setLoading(false); return; }
 
@@ -90,9 +91,16 @@ export default function LiveGamesPage() {
     if (gamesResult.error) setMessage("Game schedules are temporarily unavailable. Please refresh in a moment.");
     const rawGames = (gamesResult.data || []) as Game[];
     const candidateIds = Array.from(new Set(rawGames.flatMap(game => [game.team_id, game.opponent_team_id].filter((id): id is string => Boolean(id)))));
-    const { data: sideRows } = candidateIds.length ? await supabase.from("teams").select("id").in("id", candidateIds).eq("basketball_type", basketballSide === "womens" ? "womens" : "mens") : { data: [] as {id:string}[] };
-    const sideIds = new Set((sideRows || []).map((row:any) => row.id));
-    const nextGames = rawGames.filter(game => sideIds.has(game.team_id));
+    const [{ data: sideRows }, { data: womensSideRows }] = await Promise.all([
+      candidateIds.length
+        ? supabase.from("teams").select("id").in("id", candidateIds).eq("basketball_type", basketballSide === "womens" ? "womens" : "mens")
+        : Promise.resolve({ data: [] as {id:string}[] }),
+      basketballSide === "womens" && candidateIds.length
+        ? supabase.from("womens_teams").select("id").in("id", candidateIds)
+        : Promise.resolve({ data: [] as {id:string}[] }),
+    ]);
+    const sideIds = new Set([...(sideRows || []), ...(womensSideRows || [])].map((row:any) => row.id));
+    const nextGames = rawGames.filter(game => sideIds.has(game.team_id) || sideIds.has(game.opponent_team_id || ""));
     const follows = (followsResult.data || []).map((row: {target_id:string}) => row.target_id);
     setFollowedIds(follows);
     setGames(nextGames);
@@ -100,8 +108,13 @@ export default function LiveGamesPage() {
 
     const ids = Array.from(new Set(nextGames.flatMap(game => [game.team_id, game.opponent_team_id].filter((id): id is string => Boolean(id)))));
     if (ids.length) {
-      const { data: teamRows } = await supabase.from("teams").select("id,name,logo_url,logo_bg,country,league_name").in("id", ids);
-      setTeams(Object.fromEntries((teamRows || []).map((team: Team) => [team.id, team])));
+      const [{ data: teamRows }, { data: womensTeamRows }] = await Promise.all([
+        supabase.from("teams").select("id,name,logo_url,logo_bg,country,league_name").in("id", ids),
+        basketballSide === "womens"
+          ? supabase.from("womens_teams").select("id,name,logo_url,logo_bg,country,league_name").in("id", ids)
+          : Promise.resolve({ data: [] as Team[] }),
+      ]);
+      setTeams(Object.fromEntries([...(teamRows || []), ...(womensTeamRows || [])].map((team: Team) => [team.id, team])));
     } else setTeams({});
 
     const freshAfter = new Date(Date.now() - 75_000).toISOString();
@@ -223,7 +236,7 @@ export default function LiveGamesPage() {
           </div>
         </div>
         <div className="hc-live-card__meta">
-          {isLive && <span><HoopIcon name="users" size={15} /> {presenceCounts[game.id] || 0} {presenceCounts[game.id] === 1 ? "fan chatting" : "fans chatting"}</span>}
+          {isLive && <span><HoopIcon name="users" size={15} /> {presenceCounts[game.id] || 0} {presenceCounts[game.id] === 1 ? "member chatting" : "members chatting"}</span>}
           {isUpcoming && <span><HoopIcon name="calendar" size={15} /> {formatViewerLocalTime(tip)}</span>}
           {isRecent && <span><HoopIcon name="check" size={15} /> Chat closed</span>}
           {variant === "postgame" && <span><HoopIcon name="message-square" size={15} /> Post-game chat remains open</span>}
