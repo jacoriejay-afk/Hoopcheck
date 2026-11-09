@@ -1266,9 +1266,12 @@ html.theme-dark .hc-team-entity-profile .hc-team-profile-hero {
   background:var(--hc-brand-tile-bg)!important;
   border:1px solid var(--hc-brand-tile-border)!important;
 }
-.hc-team-profile-topline .hc-team-logo--fallback .hc-team-logo__crest path,
-.hc-team-profile-topline .hc-team-logo--fallback .hc-team-logo__crest text {
+.hc-team-profile-topline .hc-team-logo--fallback .hc-team-logo__crest path {
   stroke:var(--hc-brand-tile-fg)!important;
+  fill:none!important;
+}
+.hc-team-profile-topline .hc-team-logo--fallback .hc-team-logo__crest text {
+  stroke:none!important;
   fill:var(--hc-brand-tile-fg)!important;
 }
 .hc-team-entity-profile .hc-team-profile-hero > .hc-team-profile-kicker {
