@@ -28,6 +28,7 @@ type Player = {
 
 export default function PlayersPage() {
   const [players, setPlayers] = useState<Player[]>([]);
+  const [roleReady, setRoleReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
@@ -37,6 +38,23 @@ export default function PlayersPage() {
   const [retryCount, setRetryCount] = useState(0);
   const size = 24;
 
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { if (active) setRoleReady(true); return; }
+        const { data: profile, error } = await supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
+        if (!active) return;
+        if (error || !profile || profile.account_type === "fan") { window.location.replace("/dashboard"); return; }
+        setRoleReady(true);
+      } catch {
+        if (active) window.location.replace("/dashboard");
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
   const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000, fallback?: T) =>
     Promise.race([
       Promise.resolve(promise),
@@ -45,6 +63,7 @@ export default function PlayersPage() {
 
   useEffect(() => {
     let mounted = true;
+    if (!roleReady) return;
     const username = query.trim();
 
     if (!username) {
@@ -94,7 +113,9 @@ export default function PlayersPage() {
       mounted = false;
       window.clearTimeout(timer);
     };
-  }, [query, country, page, retryCount]);
+  }, [query, country, page, retryCount, roleReady]);
+
+  if (!roleReady) return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading directory…"/></div></main>;
 
   return (
     <main className="page-shell hc-player-directory-page">
@@ -128,7 +149,7 @@ export default function PlayersPage() {
           </div>
         ) : loading ? (
           <div className="dashboard-card" style={{ marginTop: 18 }}>
-            <HoopLoading label="Searching usernames..." />
+            <HoopLoading variant="inline" label="Searching usernames..." />
           </div>
         ) : searchError ? (
           <div className="dashboard-card" style={{ marginTop: 18 }} role="alert">

@@ -114,6 +114,163 @@ const teamSurfaceCopy: Partial<Record<Language, { subtitle: string; composer: st
   ar: { subtitle: "مركز مشجعي {team}. تواصل مع المشجعين وشارك أخبار الفريق.", composer: "انشر لجماهير {team}…" },
 };
 
+
+const teamEmptyCopy: Partial<Record<Language, { title: string; body: string }>> = {
+  en: { title: "No fan posts for {team} yet", body: "Start the conversation by sharing the first update with this team's supporters." },
+  es: { title: "Aún no hay publicaciones de fans de {team}", body: "Inicia la conversación compartiendo la primera novedad con los seguidores de este equipo." },
+  fr: { title: "Pas encore de publication de fans pour {team}", body: "Lancez la conversation en partageant la première actualité avec les supporters de cette équipe." },
+  de: { title: "Noch keine Fan-Beiträge für {team}", body: "Starte das Gespräch und teile das erste Update mit den Fans dieses Teams." },
+  tr: { title: "{team} için henüz hayran paylaşımı yok", body: "Bu takımın taraftarlarıyla ilk güncellemeyi paylaşarak sohbeti başlatın." },
+  pt: { title: "Ainda não há publicações de fãs para {team}", body: "Comece a conversa partilhando a primeira novidade com os adeptos desta equipa." },
+  it: { title: "Ancora nessun post dei fan per {team}", body: "Inizia la conversazione condividendo il primo aggiornamento con i tifosi di questa squadra." },
+  el: { title: "Δεν υπάρχουν ακόμη αναρτήσεις φιλάθλων για την {team}", body: "Ξεκινήστε τη συζήτηση μοιράζοντας την πρώτη ενημέρωση με τους φιλάθλους της ομάδας." },
+  ar: { title: "لا توجد منشورات جماهيرية لـ {team} بعد", body: "ابدأ المحادثة بمشاركة أول تحديث مع مشجعي هذا الفريق." },
+  ru: { title: "Пока нет публикаций болельщиков {team}", body: "Начните общение — поделитесь первой новостью с болельщиками этой команды." },
+  az: { title: "{team} üçün hələ fan paylaşımı yoxdur", body: "Bu komandanın azarkeşləri ilə ilk yeniliyi paylaşaraq söhbətə başlayın." },
+  pl: { title: "Brak wpisów fanów o drużynie {team}", body: "Rozpocznij rozmowę, udostępniając pierwszą aktualizację kibicom tej drużyny." },
+  zh: { title: "{team} 暂无球迷动态", body: "分享第一条球队动态，与这支球队的球迷开启交流。" },
+  ja: { title: "{team}のファン投稿はまだありません", body: "最初のチーム情報を共有して、ファンとの会話を始めましょう。" },
+  sr: { title: "Još nema objava navijača za {team}", body: "Započni razgovor tako što ćeš podeliti prvu novost sa navijačima ovog tima." },
+  fi: { title: "Joukkueella {team} ei ole vielä fanijulkaisuja", body: "Aloita keskustelu jakamalla ensimmäinen päivitys joukkueen kannattajille." },
+  he: { title: "עדיין אין פוסטים של אוהדים עבור {team}", body: "התחילו את השיחה בשיתוף העדכון הראשון עם אוהדי הקבוצה." },
+  lt: { title: "Komanda {team} dar neturi gerbėjų įrašų", body: "Pradėkite pokalbį pasidalydami pirmąja naujiena su šios komandos gerbėjais." },
+  uk: { title: "Для команди {team} ще немає дописів уболівальників", body: "Почніть спілкування — поділіться першою новиною з уболівальниками цієї команди." },
+};
+
+export function fanFeedTeamEmptyTitle(teamName: string, language: Language): string {
+  return withTeam(teamEmptyCopy[language]?.title || teamEmptyCopy.en!.title, teamName);
+}
+
+export function fanFeedTeamEmptyBody(teamName: string, language: Language): string {
+  return withTeam(teamEmptyCopy[language]?.body || teamEmptyCopy.en!.body, teamName);
+}
+
+
+const refreshCopy: Record<Language, { refresh: string; refreshing: string }> = {
+  en: { refresh: "Refresh", refreshing: "Refreshing…" },
+  es: { refresh: "Actualizar", refreshing: "Actualizando…" },
+  fr: { refresh: "Actualiser", refreshing: "Actualisation…" },
+  de: { refresh: "Aktualisieren", refreshing: "Wird aktualisiert…" },
+  tr: { refresh: "Yenile", refreshing: "Yenileniyor…" },
+  pt: { refresh: "Atualizar", refreshing: "A atualizar…" },
+  it: { refresh: "Aggiorna", refreshing: "Aggiornamento…" },
+  el: { refresh: "Ανανέωση", refreshing: "Γίνεται ανανέωση…" },
+  ar: { refresh: "تحديث", refreshing: "جارٍ التحديث…" },
+  ru: { refresh: "Обновить", refreshing: "Обновление…" },
+  az: { refresh: "Yenilə", refreshing: "Yenilənir…" },
+  pl: { refresh: "Odśwież", refreshing: "Odświeżanie…" },
+  zh: { refresh: "刷新", refreshing: "正在刷新…" },
+  ja: { refresh: "更新", refreshing: "更新中…" },
+  sr: { refresh: "Osveži", refreshing: "Osvežavanje…" },
+  fi: { refresh: "Päivitä", refreshing: "Päivitetään…" },
+  he: { refresh: "רענון", refreshing: "מרענן…" },
+  lt: { refresh: "Atnaujinti", refreshing: "Atnaujinama…" },
+  uk: { refresh: "Оновити", refreshing: "Оновлення…" },
+};
+
+export function fanFeedRefreshLabel(language: Language, isRefreshing: boolean): string {
+  const labels = refreshCopy[language] || refreshCopy.en;
+  return isRefreshing ? labels.refreshing : "↻ " + labels.refresh;
+}
+
+
+const refreshErrorCopy: Record<Language, string> = {
+  en: "Could not refresh the feed. Please try again.",
+  es: "No se pudo actualizar el feed. Inténtalo de nuevo.",
+  fr: "Impossible d’actualiser le fil. Réessayez.",
+  de: "Der Feed konnte nicht aktualisiert werden. Bitte versuche es erneut.",
+  tr: "Akış yenilenemedi. Lütfen tekrar deneyin.",
+  pt: "Não foi possível atualizar o feed. Tente novamente.",
+  it: "Impossibile aggiornare il feed. Riprova.",
+  el: "Δεν ήταν δυνατή η ανανέωση της ροής. Δοκιμάστε ξανά.",
+  ar: "تعذر تحديث الموجز. يُرجى المحاولة مرة أخرى.",
+  ru: "Не удалось обновить ленту. Попробуйте ещё раз.",
+  az: "Lenti yeniləmək mümkün olmadı. Yenidən cəhd edin.",
+  pl: "Nie udało się odświeżyć kanału. Spróbuj ponownie.",
+  zh: "动态刷新失败，请重试。",
+  ja: "フィードを更新できませんでした。もう一度お試しください。",
+  sr: "Nije moguće osvežiti feed. Pokušajte ponovo.",
+  fi: "Syötteen päivitys epäonnistui. Yritä uudelleen.",
+  he: "לא ניתן לרענן את הפיד. נסו שוב.",
+  lt: "Nepavyko atnaujinti srauto. Bandykite dar kartą.",
+  uk: "Не вдалося оновити стрічку. Спробуйте ще раз.",
+};
+
+export function fanFeedRefreshError(language: Language): string {
+  return refreshErrorCopy[language] || refreshErrorCopy.en;
+}
+
+
+const expiryCopy: Record<Language, { expired: string; minutes: string; hours: string }> = {
+  en: { expired: "Expired", minutes: "m left", hours: "h left" },
+  es: { expired: "Caducado", minutes: " min restantes", hours: " h restantes" },
+  fr: { expired: "Expiré", minutes: " min restantes", hours: " h restantes" },
+  de: { expired: "Abgelaufen", minutes: " Min. übrig", hours: " Std. übrig" },
+  tr: { expired: "Süresi doldu", minutes: " dk kaldı", hours: " sa kaldı" },
+  pt: { expired: "Expirado", minutes: " min restantes", hours: " h restantes" },
+  it: { expired: "Scaduto", minutes: " min rimanenti", hours: " h rimanenti" },
+  el: { expired: "Έληξε", minutes: " λεπ. απομένουν", hours: " ώρ. απομένουν" },
+  ar: { expired: "انتهت المدة", minutes: " د متبقية", hours: " س متبقية" },
+  ru: { expired: "Истекло", minutes: " мин. осталось", hours: " ч осталось" },
+  az: { expired: "Vaxtı bitib", minutes: " dəq. qalıb", hours: " saat qalıb" },
+  pl: { expired: "Wygasło", minutes: " min pozostało", hours: " godz. pozostało" },
+  zh: { expired: "已过期", minutes: "分钟后到期", hours: "小时后到期" },
+  ja: { expired: "期限切れ", minutes: "分残り", hours: "時間残り" },
+  sr: { expired: "Isteklo", minutes: " min preostalo", hours: " h preostalo" },
+  fi: { expired: "Vanhentunut", minutes: " min jäljellä", hours: " h jäljellä" },
+  he: { expired: "פג תוקף", minutes: " דק׳ נותרו", hours: " שע׳ נותרו" },
+  lt: { expired: "Baigėsi", minutes: " min. liko", hours: " val. liko" },
+  uk: { expired: "Термін минув", minutes: " хв залишилося", hours: " год залишилося" },
+};
+
+export function fanFeedExpiryLabel(expiresAt: string, now: number, language: Language): string {
+  const remaining = Math.max(0, Math.ceil((new Date(expiresAt).getTime() - now) / 60000));
+  const labels = expiryCopy[language] || expiryCopy.en;
+  if (remaining <= 0) return labels.expired;
+  if (remaining < 60) return remaining + labels.minutes;
+  return Math.ceil(remaining / 60) + labels.hours;
+}
+
+
+const loadErrorCopy: Record<Language, string> = {
+  en: "Could not load the fan feed. Please try again.",
+  es: "No se pudo cargar el feed de fans. Inténtalo de nuevo.",
+  fr: "Impossible de charger le fil des fans. Réessayez.",
+  de: "Der Fan-Feed konnte nicht geladen werden. Bitte versuche es erneut.",
+  tr: "Fan akışı yüklenemedi. Lütfen tekrar deneyin.",
+  pt: "Não foi possível carregar o feed de fãs. Tente novamente.",
+  it: "Impossibile caricare il feed dei fan. Riprova.",
+  el: "Δεν ήταν δυνατή η φόρτωση της ροής φιλάθλων. Δοκιμάστε ξανά.",
+  ar: "تعذر تحميل موجز المشجعين. يُرجى المحاولة مرة أخرى.",
+  ru: "Не удалось загрузить ленту фанатов. Попробуйте ещё раз.",
+  az: "Fan lentini yükləmək mümkün olmadı. Yenidən cəhd edin.",
+  pl: "Nie udało się załadować kanału fanów. Spróbuj ponownie.",
+  zh: "无法加载粉丝动态，请重试。",
+  ja: "ファンフィードを読み込めませんでした。もう一度お試しください。",
+  sr: "Nije moguće učitati feed navijača. Pokušajte ponovo.",
+  fi: "Fanisyötettä ei voitu ladata. Yritä uudelleen.",
+  he: "לא ניתן לטעון את פיד האוהדים. נסו שוב.",
+  lt: "Nepavyko įkelti fanų srauto. Bandykite dar kartą.",
+  uk: "Не вдалося завантажити стрічку фанатів. Спробуйте ще раз.",
+};
+
+export function fanFeedLoadError(language: Language): string {
+  return loadErrorCopy[language] || loadErrorCopy.en;
+}
+
+
+const removeVideoCopy: Record<Language, string> = {
+  en: "Remove video", es: "Quitar vídeo", fr: "Retirer la vidéo", de: "Video entfernen",
+  tr: "Videoyu kaldır", pt: "Remover vídeo", it: "Rimuovi video", el: "Αφαίρεση βίντεο",
+  ar: "إزالة الفيديو", ru: "Удалить видео", az: "Videonu sil", pl: "Usuń wideo",
+  zh: "移除视频", ja: "動画を削除", sr: "Ukloni video", fi: "Poista video",
+  he: "הסרת סרטון", lt: "Pašalinti vaizdo įrašą", uk: "Видалити відео",
+};
+
+export function fanFeedRemoveVideoLabel(language: Language): string {
+  return removeVideoCopy[language] || removeVideoCopy.en;
+}
+
 function withTeam(template: string, teamName: string) {
   return template.replaceAll("{team}", teamName);
 }

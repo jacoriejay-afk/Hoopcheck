@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../components/HoopLoading";
 import {useEffect,useState} from "react";
 import {useRouter} from "next/navigation";
 import Link from "next/link";
@@ -15,9 +16,9 @@ export default function OnboardingPage(){
  const [position,setPosition]=useState("PG"); const [yearsPro,setYearsPro]=useState("0");
  const [country,setCountry]=useState(""); const [favoriteTeamName,setFavoriteTeamName]=useState("");
  const [basketballType,setBasketballType]=useState<"mens"|"womens">("mens");
- const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [message,setMessage]=useState("");
+ const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [message,setMessage]=useState(""); const [returnTo,setReturnTo]=useState("");
 
- useEffect(()=>{(async()=>{
+ useEffect(()=>{const candidate=new URLSearchParams(window.location.search).get("returnTo")||"";if(candidate.startsWith("/")&&!candidate.startsWith("//")&&!candidate.includes("\\")&&!candidate.startsWith("/login"))setReturnTo(candidate);(async()=>{
   const {data:{session}}=await supabase.auth.getSession();
   if(!session?.user){router.replace("/login");return;}
   const {data:p}=await supabase.from("profiles").select("display_name,account_type,bio,position,years_pro,country,basketball_type,favorite_teams").eq("id",session.user.id).maybeSingle();
@@ -35,11 +36,11 @@ export default function OnboardingPage(){
   const updates:any={display_name:displayName.trim().slice(0,80)||null,bio:bio.trim().slice(0,500)||null,favorite_teams:favorite,basketball_type:basketballType};
   if(accountType==="player"){updates.position=position;updates.years_pro=Number(yearsPro);updates.country=country||null;}
   const {error}=await supabase.from("profiles").update(updates).eq("id",user.id);
-  if(error)setMessage(error.message);else{setMessage("Profile setup saved.");setTimeout(()=>router.push("/dashboard"),500);}
+  if(error)setMessage(error.message);else{setMessage("Profile setup saved.");setTimeout(()=>router.push(returnTo||"/dashboard"),500);}
   setSaving(false);
  }
 
- if(loading)return <main className="page-shell"><div className="page-container"><p>Loading profile setup...</p></div></main>;
+ if(loading)return <main className="page-shell"><HoopLoading label="Loading HoopCheck…" /></main>;
  const label={player:"Player",coach:"Coach",scout:"Scout",agent:"Agent",fan:"Fan"}[accountType];
  const nonPlayer=accountType!=="player";
  return <main className="page-shell hc-onboarding-page"><div className="page-container signup-complete-shell">

@@ -91,16 +91,8 @@ main.hc-player-directory-page > *, main.hc-womens-directory-page > *, main.hc-en
   .hc-shared-directory-hero { padding: 32px; }
   .hc-shared-directory-tiles { padding: 18px; }
 }
-@media (min-width:1024px) {
-  .hc-team-entity-profile { display: grid; grid-template-columns: minmax(0,1fr) 320px; align-items: start; column-gap: 28px; row-gap: 20px; }
-  .hc-team-entity-profile > .hero:first-of-type { grid-column: 1 / -1; grid-template-columns: minmax(0,1fr) 320px; align-items: start; gap: 18px 28px; }
-  .hc-team-entity-profile > .hero:first-of-type > .hc-team-profile-heading,
-  .hc-team-entity-profile > .hero:first-of-type > .hc-entity-trust-score,
-  .hc-team-entity-profile > .hero:first-of-type > .entity-actions { grid-column: 1; }
-  .hc-team-entity-profile > .hero:first-of-type > .team-roster-spots { grid-column: 2; grid-row: 1 / span 4; align-self: start; }
-  .hc-team-entity-profile > .hero:not(:first-of-type) { grid-column: 1; }
-  .hc-team-entity-profile > .hero.hc-team-write-review { grid-column: 2; grid-row: 3; align-self: start; }
-}
+/* Desktop team sections follow the profile's document flow. The explicit
+   overview grid owns its own columns; no outer implicit sidebar rows. */
 @media (min-width:1200px) {
   :where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page,.hc-womens-directory-page) .grid {
     grid-template-columns: repeat(3,minmax(0,1fr)); gap: 20px;
@@ -137,9 +129,6 @@ main.hc-player-directory-page > *, main.hc-womens-directory-page > *, main.hc-en
 .hc-team-facts-card dl > div { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 10px 0; border-top: 1px solid var(--hc-border,#deded8); }
 .hc-team-facts-card dt { color: var(--hc-foreground-muted,#686868); font-size: 12px; font-weight: 700; }
 .hc-team-facts-card dd { margin: 0; max-width: 65%; text-align: right; font-size: 12px; font-weight: 800; overflow-wrap: anywhere; }
-@media (min-width:1024px) {
-  .hc-team-entity-profile > .hero:first-of-type > .hc-team-facts-card { grid-column: 2; grid-row: 5; }
-}
 @media (max-width:1023px) {
   .hc-team-facts-card { width: 100%; }
 }

@@ -5,6 +5,7 @@ const layout = readFileSync("app/layout.tsx", "utf8");
 const auditPage = readFileSync("app/theme-card-audit/page.tsx", "utf8");
 const browserCheck = readFileSync("scripts/theme-browser-check.mjs", "utf8");
 const fanFeedPage = readFileSync("app/fan-feed/page.tsx", "utf8");
+const sharedFeed = readFileSync("components/HoopFeedShared.tsx", "utf8");
 const fanFeedI18n = readFileSync("app/fan-feed/i18n.ts", "utf8");
 const themeAudit = readFileSync("app/hoopcheck-theme-audit.css", "utf8");
 const failures = [];
@@ -74,10 +75,12 @@ for (const term of scaffoldTerms) {
 for (const route of ['"/fan-feed"', '"/team-hub/groups/"', '"/live-games"', '"/theme-card-audit"']) {
   if (!browserCheck.includes(route)) failures.push("Browser route coverage missing: " + route);
 }
-if (!fanFeedPage.includes("selectedTeam?.name") ||
+if (!fanFeedPage.includes('FeedDiscoveryHeader audience="fan"') ||
+    !sharedFeed.includes('audience === "fan" ? "Fan HQ" : "HoopFeed"') ||
+    !fanFeedPage.includes("selectedTeam.name} fans") ||
     !fanFeedPage.includes("fanFeedTeamComposerPlaceholder") ||
     !fanFeedI18n.includes('composer: "Post to {team} fans…"')) {
-  failures.push("Fan team feed hero/composer are not wired to the selected team's real name.");
+  failures.push("Fan HQ must have a stable mixed-feed title and a club-specific composer.");
 }
 
 const importLine = 'import "./hoopcheck-hub-empty-state-pairing.css";';

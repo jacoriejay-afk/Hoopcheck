@@ -5,9 +5,9 @@ import {
   useState,
 } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
+import "../hoopcheck-reference-team-list.css";
 
 import Link from "next/link";
-import DirectoryLayout from "../../components/DirectoryLayout";
 
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
@@ -18,7 +18,7 @@ import dynamic from "next/dynamic";
 
 const TeamMap = dynamic(() => import("../../components/TeamMap"), {
   ssr: false,
-  loading: () => <div className="card" aria-live="polite">Loading team map…</div>,
+  loading: () => <HoopLoading variant="inline" label="Loading team map…" />,
 });
 import Surface from "../../components/Surface";
 import { useLanguage } from "../../components/LanguageProvider";
@@ -52,6 +52,8 @@ export default function TeamsPage() {
 
   const [loading, setLoading] = useState(true);
   const [isPlayerAccount, setIsPlayerAccount] = useState(false);
+  const [isFanAccount, setIsFanAccount] = useState(false);
+  const [roleReady, setRoleReady] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
@@ -83,10 +85,10 @@ export default function TeamsPage() {
     let active = true;
     void (async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) { if (active) setIsPlayerAccount(false); return; }
+      if (!session?.user) { if (active) { setIsPlayerAccount(false); setIsFanAccount(false); setRoleReady(true); } return; }
       const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", session.user.id).maybeSingle();
-      if (active) setIsPlayerAccount(profile?.account_type === "player");
-    })().catch(() => { if (active) setIsPlayerAccount(false); });
+      if (active) { setIsPlayerAccount(profile?.account_type === "player"); setIsFanAccount(profile?.account_type === "fan"); setRoleReady(true); }
+    })().catch(() => { if (active) { setIsPlayerAccount(false); setIsFanAccount(false); } });
     return () => { active = false; };
   }, []);
 
@@ -284,14 +286,14 @@ export default function TeamsPage() {
   }, [viewMode, query, country, continent, league, division, leagueOptions]);
 
   return (
-    <main className="hc-team-directory-page">
+    <main className="hc-team-directory-page hc-directory-refresh">
       <FanBasketballSideSwitch lockedHint />
-      <DirectoryLayout current="teams" />
+      <div className="hc-directory-compact-head"><h1>{t("mensTeams")}</h1><a href="#request-team">{t("directoryRequest")}</a></div>
 
       <section className="hero">
         <Surface as="div" className="research-search">
           <div className="search-label">{t("directoryTitle")}</div>
-          <SearchBar value={query} onChange={(value) => { setQuery(value); setPage(0); }} placeholder={t("searchPeoplePlaceholder")} ariaLabel={t("directoryTitle")} onSubmit={(value) => { setQuery(value); setPage(0); }} />
+          <SearchBar value={query} onChange={(value) => { setQuery(value); setPage(0); }} placeholder="Search teams, countries or leagues" ariaLabel={t("directoryTitle")} onSubmit={(value) => { setQuery(value); setPage(0); }} />
           <div className="team-filter-row">
             <select value={continent} onChange={(e) => { setContinent(e.target.value); setCountry(""); setPage(0); }} aria-label={t("filterTeamsByContinent")}>
               <option value="">{t("allContinents")}</option>
@@ -313,9 +315,9 @@ export default function TeamsPage() {
         </Surface>
       </section>
 
-      <section className="hero" style={{paddingTop:0}}><Surface as="div" className="dashboard-card" style={{border:"1px solid var(--orange)"}}><div className="eyebrow">{t("directoryRequest")}</div><h2>{t("dontSeeYourTeam")}</h2><p className="muted">{t("requestTeamDescription")}</p><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10}}><input value={requestName} onChange={e=>setRequestName(e.target.value)} placeholder={t("teamName")} /><input value={requestCountry} onChange={e=>setRequestCountry(e.target.value)} placeholder={t("country")} /><input value={requestCity} onChange={e=>setRequestCity(e.target.value)} placeholder={t("cityOptional")} /><input value={requestLeague} onChange={e=>setRequestLeague(e.target.value)} placeholder={t("leagueOptional")} /></div><button className="btn" style={{marginTop:12}} disabled={requestSubmitting} onClick={async()=>{setRequestMessage("");if(!requestName.trim()||!requestCountry.trim()){setRequestMessage(t("teamNameCountryRequired"));return;}const {data:{user}}=await supabase.auth.getUser();if(!user){window.location.href="/login";return;}setRequestSubmitting(true);const {error}=await supabase.from("directory_team_requests").insert({requester_id:user.id,team_name:requestName.trim().slice(0,160),country:requestCountry.trim().slice(0,80),city:requestCity.trim().slice(0,100)||null,league_name:requestLeague.trim().slice(0,160)||null});if(error)setRequestMessage(error.message);else{setRequestMessage(t("requestSubmitted"));setRequestName("");setRequestCity("");setRequestLeague("");}setRequestSubmitting(false);}}>{requestSubmitting?t("submitting"):t("requestTeamAddition")}</button>{requestMessage&&<p className="muted" role="status">{requestMessage}</p>}</Surface></section>
 
-      <div className="hc-directory-summary" aria-live="polite">
+
+      <div id="team-results" className="hc-directory-summary" aria-live="polite">
         <span>{loading ? t("searchingTeams") : `${totalCount.toLocaleString()} ${totalCount === 1 ? t("teamCountSingular") : t("teamCountPlural")}`}</span>
         {(query.trim() || country || continent || league || division) && (
           <button type="button" className="hc-directory-reset" onClick={() => { setQuery(""); setCountry(""); setContinent(""); setLeague(""); setDivision(""); setPage(0); }}>
@@ -341,7 +343,7 @@ export default function TeamsPage() {
       )}
       {viewMode === "list" && (
       <section className="grid hc-team-directory-list" aria-busy={loading}>
-        {loading && teams.length === 0 ? (<div className="card"><HoopLoading label="Scanning professional teams..." /></div>) : teams.length === 0 ? (
+        {loading && teams.length === 0 ? (<div className="card"><HoopLoading variant="inline" label="Scanning professional teams..." /></div>) : teams.length === 0 ? (
           <div className="card hc-team-empty">
             <CourtLines variant="arc" className="hc-court-empty-art" />
             <div className="eyebrow hc-court-section-kicker">
@@ -365,7 +367,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           teams.map((team) => (
-            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} followerCount={followerCounts[team.id] ?? null} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={isPlayerAccount ? "player" : trustScores[team.id]?.tier} logoUrl={team.logo_url} logoBg={team.logo_bg} />
+            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} followerCount={followerCounts[team.id] ?? null} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={isPlayerAccount ? "player" : trustScores[team.id]?.tier} fanView={!roleReady || isFanAccount} logoUrl={team.logo_url} logoBg={team.logo_bg} />
           ))
         )}
       </section>
@@ -396,39 +398,35 @@ export default function TeamsPage() {
 
       <section className="hero">
         <div className="eyebrow">
-          Player Intelligence
+          {isFanAccount ? "FAN TEAM DIRECTORY" : "Player Intelligence"}
         </div>
 
         <h2>
-          The contract
-          <br />
-          is only part
-          <br />
-          of the decision.
+          {isFanAccount ? <>Every team.<br />A clearer picture.</> : <>The contract<br />is only part<br />of the decision.</>}
         </h2>
 
         <p>
-          Research the organization, understand
-          player experiences, and make your next
-          move with more information.
+          {isFanAccount ? "Explore clubs, follow the teams you care about, and keep up with their latest updates." : "Research the organization, understand player experiences, and make your next move with more information."}
         </p>
 
         <div className="actions">
           <Link
-            href="/signup"
+            href={isFanAccount ? "/fan-feed" : "/signup"}
             className="btn"
           >
-            Create Free Account
+            {isFanAccount ? "Explore Fan HoopFeed" : "Create Free Account"}
           </Link>
 
           <Link
             href="/membership"
             className="btn dark"
           >
-            Unlock Full Access
+            {isFanAccount ? "Fan Membership" : "Unlock Full Access"}
           </Link>
         </div>
       </section>
+      <section className="hc-directory-request-section" id="request-team"><Surface as="div" className="dashboard-card" style={{border:"1px solid var(--orange)"}}><div className="eyebrow">{t("directoryRequest")}</div><h2>{t("dontSeeYourTeam")}</h2><p className="muted">{t("requestTeamDescription")}</p><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10}}><input value={requestName} onChange={e=>setRequestName(e.target.value)} placeholder={t("teamName")} /><input value={requestCountry} onChange={e=>setRequestCountry(e.target.value)} placeholder={t("country")} /><input value={requestCity} onChange={e=>setRequestCity(e.target.value)} placeholder={t("cityOptional")} /><input value={requestLeague} onChange={e=>setRequestLeague(e.target.value)} placeholder={t("leagueOptional")} /></div><button className="btn" style={{marginTop:12}} disabled={requestSubmitting} onClick={async()=>{setRequestMessage("");if(!requestName.trim()||!requestCountry.trim()){setRequestMessage(t("teamNameCountryRequired"));return;}const {data:{user}}=await supabase.auth.getUser();if(!user){window.location.href="/login";return;}setRequestSubmitting(true);const {error}=await supabase.from("directory_team_requests").insert({requester_id:user.id,team_name:requestName.trim().slice(0,160),country:requestCountry.trim().slice(0,80),city:requestCity.trim().slice(0,100)||null,league_name:requestLeague.trim().slice(0,160)||null});if(error)setRequestMessage(error.message);else{setRequestMessage(t("requestSubmitted"));setRequestName("");setRequestCity("");setRequestLeague("");}setRequestSubmitting(false);}}>{requestSubmitting?t("submitting"):t("requestTeamAddition")}</button>{requestMessage&&<p className="muted" role="status">{requestMessage}</p>}</Surface></section>
+
 </main>
   );
 }

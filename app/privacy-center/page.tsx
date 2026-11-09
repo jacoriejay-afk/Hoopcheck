@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../components/HoopLoading";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
@@ -114,7 +115,7 @@ export default function PrivacyCenterPage() {
         <button className="btn" onClick={submit} disabled={submitting}>{submitting ? "Submitting..." : "Submit privacy request"}</button>
 
         <h2 style={{marginTop:36}}>Your requests</h2>
-        {loading ? <p>Loading...</p> : requests.length === 0 ? <p className="muted">You have not submitted a privacy request.</p> :
+        {loading ? <HoopLoading variant="inline" label="Loading..." /> : requests.length === 0 ? <p className="muted">You have not submitted a privacy request.</p> :
           <div>{requests.map(r=><div key={r.id} className="dashboard-card" style={{marginBottom:10}}>
             <strong>{labels[r.request_type as RequestType] ?? r.request_type}</strong>
             <div className="muted">{new Date(r.created_at).toLocaleString()} · Status: {r.status.replaceAll("_"," ")}</div>

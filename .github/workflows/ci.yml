@@ -66,6 +66,12 @@ jobs:
           npm run start -- --hostname 127.0.0.1 > /tmp/hoopcheck-next.log 2>&1 &
           echo $! > /tmp/hoopcheck-next.pid
 
+      - name: Verify men’s and women’s team discovery
+        run: node scripts/check-team-discovery-browser.mjs
+
+      - name: Verify profile editing and team review checklist
+        run: node scripts/check-profile-editor-browser.mjs
+
       - name: Verify canonical sitemap and robots host
         run: node scripts/domain-url-check.mjs
 
