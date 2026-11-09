@@ -1,3 +1,4 @@
+import { countryFlag } from "../../../lib/countryFlag";
 "use client";
 
 import { useEffect, useState } from "react";
@@ -541,7 +542,7 @@ export default function TeamDetailPage() {
             <p className="hc-team-profile-kicker">HOOPCHECK™ CLUB PROFILE</p>
             <h1 id="hc-team-profile-title" className={team.name.length > 28 ? "is-long-name" : ""}>{team.name}</h1>
             <p className="hc-team-profile-meta" title={[team.country || t("countryNotListed"), team.city, league?.name || team.league_name].filter(Boolean).join(" · ")}>
-              <span>{team.city || team.country || t("countryNotListed")}</span>
+              <span>{countryFlag(team.country) && <span role="img" aria-label={`${team.country} flag`}>{countryFlag(team.country)} </span>}{team.city || team.country || t("countryNotListed")}</span>
               {team.city && team.country ? <span> · {team.country}</span> : null}
               {(league?.name || team.league_name) ? <span> · {league?.name || team.league_name}</span> : null}
             </p>
@@ -570,7 +571,7 @@ export default function TeamDetailPage() {
           <p>{team.name} is a basketball club{team.city ? ` based in ${team.city}` : team.country ? ` based in ${team.country}` : ""}{league?.name || team.league_name ? `, competing in ${league?.name || team.league_name}` : ""}.</p>
           <dl className="hc-team-profile-facts">
             <div><dt>League</dt><dd>{league?.name || team.league_name || "Not listed"}</dd></div>
-            <div><dt>Location</dt><dd>{[team.city,team.country].filter(Boolean).join(", ") || "Not listed"}</dd></div>
+            <div><dt>Location</dt><dd>{countryFlag(team.country) ? `${countryFlag(team.country)} ` : ""}{[team.city,team.country].filter(Boolean).join(", ") || "Not listed"}</dd></div>
           </dl>
         </section>
         <div id="fan-hq" className="hc-team-profile-community"><TeamFanGroupEntry teamId={team.id} /></div>
