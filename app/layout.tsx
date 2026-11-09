@@ -25,6 +25,7 @@ import "./hoopcheck-lm2e-account-layout.css";
 import "./hoopcheck-lm2f-bottom-nav.css";
 import "./hoopcheck-sp1-spacing.css";
 import "./hoopcheck-lg1-logo-contrast.css";
+import "./hoopcheck-ux2b-profile-completion.css";
 import "./hoopcheck-ia1-home.css";
 import "./hoopcheck-brand-navigation.css";
 import "./hoopcheck-reference-identity.css";

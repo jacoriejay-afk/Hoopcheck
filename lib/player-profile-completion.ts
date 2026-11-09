@@ -4,6 +4,7 @@ export type PlayerProfileCompletionRecord = {
   avatar_url?: string | null;
   position?: string | null;
   current_team?: string | null;
+  free_agent?: boolean | null;
   current_country?: string | null;
   favorite_leagues?: string | null;
   height?: string | null;
@@ -33,7 +34,7 @@ export function getPlayerProfileCompletion(profile: PlayerProfileCompletionRecor
   const checks: Record<(typeof PLAYER_PROFILE_COMPLETION_FIELDS)[number]["key"], boolean> = {
     photo: hasValue(profile.avatar_url),
     position: hasValue(profile.position),
-    current_team: hasValue(profile.current_team),
+    current_team: profile.free_agent === true || hasValue(profile.current_team),
     league_country: hasValue(profile.current_country) || hasValue(profile.favorite_leagues),
     height: hasValue(profile.height),
     bio: hasValue(profile.bio),

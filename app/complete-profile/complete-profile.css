@@ -13,6 +13,7 @@
 .hc-ux2b-check-trigger:focus-visible{outline:2px solid #ff5a1f;outline-offset:-2px}
 .hc-ux2b-editor{padding:12px 14px;display:grid;gap:10px;background:transparent}
 .hc-ux2b-editor input,.hc-ux2b-editor select,.hc-ux2b-editor textarea{width:100%;min-height:44px;padding:10px;border:1px solid var(--hc-border,#ccc);border-radius:10px;background:var(--hc-surface-raised,var(--surface,#fff));color:var(--hc-foreground,inherit)}
+.hc-ux2b-editor input[type="checkbox"]{width:auto;min-height:0;margin-right:8px}
 .hc-ux2b-editor-actions{display:flex;gap:8px;flex-wrap:wrap}
 .hc-ux2b-error{color:#dc2626}.hc-ux2b-notice{color:#17834b}
 @media(max-width:700px){.hc-ux2b-header{align-items:flex-start}.hc-ux2b-page .page-container{gap:10px}.hc-ux2b-progress-card{padding:14px}}
