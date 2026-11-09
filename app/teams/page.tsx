@@ -159,7 +159,7 @@ export default function TeamsPage() {
           } else {
             setTeams(Array.from(new Map(((data || []) as Team[]).map((team) => [team.id, team])).values()));
             setTotalCount(count ?? ((page * pageSize) + (data?.length ?? 0)));
-            setHasMore((data?.length ?? 0) === pageSize);
+            setHasMore(count != null ? (page + 1) * pageSize < count : (data?.length ?? 0) === pageSize);
           }
         } catch (error) {
           console.error("Unexpected team directory failure:", error);
