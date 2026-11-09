@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import PublicBusinessInquiry from "../../components/PublicBusinessInquiry";
 import { useAuthState } from "../../components/AuthProvider";
 import { supabase } from "../../lib/supabase";
 
@@ -60,6 +61,7 @@ export default function Sponsor() {
             Interested in sponsoring the basketball community, supporting HoopCheck, or discussing a partnership?
           </p>
         </section>
+        {process.env.NEXT_PUBLIC_BUSINESS_INQUIRIES_ENABLED === "true" && <PublicBusinessInquiry />}
         <section className="dashboard-card" style={{ marginTop: 18, display: "grid", gap: 12 }}>
           {!signedIn && <p role="status" className="muted">A HoopCheck account is currently required to send an inquiry. <Link href="/login?next=/partners">Log in</Link> or <Link href="/signup">create an account</Link> before writing your message.</p>}
           <select value={type} onChange={(event) => setType(event.target.value)}>
