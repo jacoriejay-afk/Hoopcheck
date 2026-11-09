@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
+import Link from "next/link";
 
 type TurnstileAPI = {
   render: (element: HTMLElement, options: { sitekey: string; callback: (token: string) => void; "expired-callback": () => void; "error-callback": () => void }) => string;
@@ -73,7 +74,7 @@ export default function PublicBusinessInquiry() {
   return (
     <section className="dashboard-card" style={{ marginTop: 18 }}>
       <h2>Contact HoopCheck™ business</h2>
-      <p className="muted">Sponsors and partners can contact us without creating an account. We use your details only to respond to your inquiry.</p>
+      <p className="muted">Sponsors and partners can contact us without creating an account. We use your contact details to review and respond to your inquiry. Read our <Link href="/privacy">Privacy Policy</Link> before submitting.</p>
       <form onSubmit={(event) => void submit(event)} style={{ display: "grid", gap: 12 }}>
         <label htmlFor="business-name">Your name</label>
         <input id="business-name" required minLength={2} maxLength={120} autoComplete="name" value={name} onChange={event => setName(event.target.value)} />
