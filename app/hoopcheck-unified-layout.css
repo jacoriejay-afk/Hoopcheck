@@ -30,7 +30,7 @@ html.theme-dark .hc-global-page-shell .hc-route-transition > main { --hc-unified
   .hc-global-page-shell .hc-route-transition > main :where(.hero,.hero-card,.dashboard-card,.hc-layout-card,.hc-layout-group) { margin-block-end:0!important; }
   .hc-global-page-shell .hc-route-transition > main .page-container > * + * { margin-block-start:var(--hc-unified-gap)!important; }
   .hc-global-page-shell .hc-route-transition > main :where(.grid,.hc-feed-stream) { gap:var(--hc-unified-gap)!important; }
-  .hc-global-page-shell .hc-route-transition > main :where(.hero-card,.dashboard-card,.card,.hc-layout-card,.hc-layout-group,.hc-settings-group) { border-radius:14px!important; }
+  .hc-global-page-shell .hc-route-transition > main :where(.hero-card,.dashboard-card,.card,.hc-layout-card,.hc-layout-group,.hc-settings-group) { border-radius:var(--hc-radius-control)!important; }
 }
 /* Team directory: one filter panel, not a card inside a card with a court overlay. */
 .hc-global-page-shell main.hc-directory-refresh > .hero:has(.research-search) {
@@ -44,7 +44,7 @@ html.theme-dark .hc-global-page-shell .hc-route-transition > main { --hc-unified
 .hc-global-page-shell main.hc-directory-refresh .research-search {
   padding:12px!important;margin:0!important;
   border:1px solid var(--hc-border,var(--border,#ddd))!important;
-  border-radius:14px!important;
+  border-radius:var(--hc-radius-control)!important;
   background:var(--hc-unified-panel)!important;
   box-shadow:none!important;
 }
@@ -57,7 +57,7 @@ html.theme-dark .hc-global-page-shell .hc-route-transition > main { --hc-unified
 .hc-global-page-shell main.hc-directory-refresh .research-search .hc-searchbar__input {
   min-width:0!important;flex:1!important;width:100%!important;
   min-height:44px!important;border:1px solid var(--hc-border,#ccc)!important;
-  border-radius:10px!important;padding:10px 12px!important;
+  border-radius:var(--hc-radius-control)!important;padding:10px 12px!important;
   background:var(--hc-unified-panel)!important;
   color:var(--hc-foreground,inherit)!important;
 }
@@ -70,7 +70,7 @@ html.theme-dark .hc-global-page-shell .hc-route-transition > main { --hc-unified
 }
 .hc-global-page-shell main.hc-directory-refresh .research-search .team-filter-row select {
   width:100%!important;min-width:0!important;min-height:42px!important;
-  border:1px solid var(--hc-border,#ccc)!important;border-radius:10px!important;
+  border:1px solid var(--hc-border,#ccc)!important;border-radius:var(--hc-radius-control)!important;
   background:var(--hc-unified-panel)!important;color:var(--hc-foreground,inherit)!important;
   font-size:13px!important;padding:8px!important;
 }
