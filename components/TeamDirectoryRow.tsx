@@ -36,7 +36,7 @@ export default function TeamDirectoryRow({
   const flag = countryFlag(country);
   const hasTrustScore = typeof trustScore === "number" && Number.isFinite(trustScore);
   return (
-    <Surface className={"hc-team-directory-row hc-scout-card hc-smooth-card hc-dossier-card hc-team-directory-row--" + kind}>
+    <Surface className={"hc-team-directory-row hc-scout-card hc-smooth-card hc-team-directory-row--" + kind}>
       <Link href={href} className="hc-team-directory-row__main" aria-label={t("openTeamProfile") + ": " + name}>
         <span className="hc-scout-card__identity">
           <TeamLogo name={name} logoUrl={logoUrl} logoBg={logoBg} size={48} />
