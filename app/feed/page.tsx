@@ -4,11 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { PageShell } from "../../components/LayoutSystem";
-import { FeedDiscoveryHeader, FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptyState, FeedLoadingSkeleton, FeedStoryRing, FeedTimeRemaining } from "../../components/HoopFeedShared";
+import { FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptyState, FeedLoadingSkeleton, FeedStoryRing, FeedTimeRemaining } from "../../components/HoopFeedShared";
 import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon } from "../../components/HoopCheckUI";
-import CourtLines from "../../components/CourtLines";
 import "../hoopfeed-shared.css";
 
 type MiniProfile = { display_name: string | null; avatar_url: string | null; current_country?: string | null; current_country_public?: boolean; current_team?: string | null };
