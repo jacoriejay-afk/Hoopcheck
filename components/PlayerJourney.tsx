@@ -111,7 +111,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
           <div className="hc-journey-stop__top"><span className="hc-journey-stop__flag" aria-label={stop.country}>{FLAGS[stop.country]||"🌍"}</span><span className="hc-journey-stop__season">{stop.seasons}</span>{stop.is_public&&<span className="hc-journey-public">PUBLIC</span>}</div>
           <div className="hc-journey-stop__team"><span className="hc-journey-stop__crest">{monogram(stop.team_name)}</span><div><h3>{stop.team_name}</h3><p>{stop.league_name||"League not listed"} · {stop.country}</p>{stop.position&&<small>Position · {stop.position}</small>}</div></div>
           <div className="hc-journey-stop__footer">
-            {stop.team_id ? <><Link href={`/teams/${stop.team_id}`}>View team profile →</Link>{isOwnProfile&&<Link href={`/reviews?team=${encodeURIComponent(stop.team_id)}`}>Check review eligibility →</Link>}</> : <span className="muted">Team not linked to directory — request a listing to review</span>}
+            {stop.team_id ? <><Link href={`/teams/${stop.team_id}`}>View team profile →</Link>{isOwnProfile&&<Link href={`/teams/${stop.team_id}/review`}>Check review eligibility →</Link>}</> : <span className="muted">Team not linked to directory — request a listing to review</span>}
             {isOwnProfile&&canManage&&<div><button type="button" onClick={()=>void toggleVisibility(stop)}>{stop.is_public?"Make private":"Make public"}</button><button type="button" onClick={()=>void removeStop(stop)}>Remove</button></div>}
           </div>
         </div>
