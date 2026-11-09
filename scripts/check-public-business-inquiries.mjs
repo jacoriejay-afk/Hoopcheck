@@ -7,6 +7,8 @@ const form = readFileSync("components/PublicBusinessInquiry.tsx", "utf8");
 const page = readFileSync("app/partners/page.tsx", "utf8");
 const schema = readFileSync("docs/sql/public-business-inquiries.sql", "utf8");
 const throttle = readFileSync("docs/sql/business-inquiry-rate-limit.sql", "utf8");
+const inbox = readFileSync("app/admin/business-inquiries/page.tsx", "utf8");
+const inboxSql = readFileSync("docs/sql/admin-business-inquiry-inbox.sql", "utf8");
 
 test("public endpoint is explicitly server gated", () => {
   assert.match(api, /BUSINESS_INQUIRIES_API_ENABLED/);
@@ -50,4 +52,14 @@ test("API rejects non-JSON media types", () => {
   assert.match(api, /JSON content type required\./);
   assert.match(api, /application\\\/json/);
   assert.match(api, /status, headers: responseHeaders/);
+});
+
+test("guest inbox relies on admin-gated RPC rather than direct table reads", () => {
+  assert.match(inbox, /admin_list_public_business_inquiries/);
+  assert.doesNotMatch(inbox, /from\(["']public_business_inquiries["']\)/);
+  assert.match(inboxSql, /auth\.uid\(\) is null or not exists/);
+  assert.match(inboxSql, /ar\.role/);
+  assert.match(inboxSql, /'admin'/);
+  assert.match(inboxSql, /revoke all on function public\.admin_list_public_business_inquiries/);
+  assert.match(inboxSql, /grant execute on function public\.admin_list_public_business_inquiries\(integer\) to authenticated/);
 });
