@@ -11,6 +11,7 @@ const throttle = readFileSync("docs/sql/business-inquiry-rate-limit.sql", "utf8"
 test("public endpoint is explicitly server gated", () => {
   assert.match(api, /BUSINESS_INQUIRIES_API_ENABLED/);
   assert.match(api, /!== "true"/);
+  assert.match(api, /"Cache-Control": "no-store, private"/);
 });
 test("guest form is hidden unless explicitly enabled", () => {
   assert.match(page, /NEXT_PUBLIC_BUSINESS_INQUIRIES_ENABLED === "true"/);
@@ -28,6 +29,10 @@ test("guest form sends actual honeypot and verification token", () => {
   assert.match(api, /body.website !== ""/);
 });
 test("database keeps anonymous grants revoked and limits submissions", () => {
+  assert.match(schema, /^begin;/m);
+  assert.match(schema, /^commit;/m);
+  assert.match(throttle, /^begin;/m);
+  assert.match(throttle, /^commit;/m);
   assert.match(schema, /enable row level security/i);
   assert.match(schema, /revoke all on public.public_business_inquiries from anon, authenticated/i);
   assert.match(throttle, /if v_count >= 3 then return false/i);
