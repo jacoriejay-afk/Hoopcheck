@@ -42,12 +42,19 @@ try {
         assert.deepEqual(await page.locator('.plan-card .price strong').allTextContents(), [pro, premium]);
       }
 
-      if (width === 390) await page.getByRole('button', { name: 'Open menu' }).click();
-      const icon = page.locator('.hc-signin-button svg');
-      await icon.waitFor();
-      const iconBox = await icon.boundingBox();
-      assert.ok(iconBox.width > 0 && iconBox.height > 0);
-      assert.equal(await icon.getAttribute('aria-hidden'), 'true');
+      if (width === 390) {
+        await page.getByRole('button', { name: 'Open menu' }).click();
+        const mobileSignIn = page.getByRole('navigation', { name: 'Primary navigation' })
+          .getByRole('link', { name: 'Sign in', exact: true });
+        await mobileSignIn.waitFor();
+        assert.equal(await mobileSignIn.getAttribute('href'), '/login');
+      } else {
+        const icon = page.locator('.hc-signin-button svg');
+        await icon.waitFor();
+        const iconBox = await icon.boundingBox();
+        assert.ok(iconBox.width > 0 && iconBox.height > 0);
+        assert.equal(await icon.getAttribute('aria-hidden'), 'true');
+      }
       for (const prefix of ['teams', 'womens']) {
         await page.goto(site + '/' + prefix + '/' + id);
         const crest = page.locator('.hc-team-profile-topline .hc-team-logo__crest');
@@ -58,11 +65,10 @@ try {
         assert.match(await page.locator('.hc-team-profile-meta').textContent(), /🇦🇿 Azerbaijan/);
         assert.equal(await page.locator('html').evaluate(el => el.classList.contains('theme-' + (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))), true);
       }
-      console.log('PASS ' + width + 'px ' + theme + ': six prices, sign-in SVG, both club flags and fallback crests');
+      console.log('PASS ' + width + 'px ' + theme + ': six prices, sign-in navigation, both club flags and fallback crests');
       await context.close();
     }
   }
-
 } finally {
   await browser.close();
 }
