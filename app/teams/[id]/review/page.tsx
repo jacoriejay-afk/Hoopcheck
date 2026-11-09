@@ -548,13 +548,14 @@ export default function TeamReviewPage() {
             <li>One review per player for each team. Reviews may be moderated before publication.</li>
             <li>You may choose to publish anonymously, but HoopCheck may retain verification information for moderation and trust.</li>
           </ul>
-          <label className="checkbox-row" style={{ marginTop: 10 }}>
-            <input type="checkbox" required />
+          <label className="hc-review-rules-ack">
+            <input type="checkbox" form="hc-team-review-form" required />
             <span>I have read and agree to these review rules.</span>
           </label>
         </div>
 
         <form
+          id="hc-team-review-form"
           className="hc-review-form"
           onSubmit={handleSubmit}
           style={{

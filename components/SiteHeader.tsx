@@ -7,6 +7,7 @@ import { useAuthState } from "./AuthProvider";
 import { useLanguage } from "./LanguageProvider";
 import { supabase } from "../lib/supabase";
 import Logo from "./Logo";
+import { HoopIcon } from "./HoopCheckUI";
 
 function SearchIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.4" /><path d="m16 16 4.5 4.5" /></svg>; }
 function UserIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5" /><path d="M4.5 21c.4-4.4 3-6.7 7.5-6.7s7.1 2.3 7.5 6.7Z" /></svg>; }
@@ -27,11 +28,14 @@ export default function SiteHeader() {
         <div className="hc-header-desktop-links">
           {links.filter(item=>[roleHome.href,"/search","/directory","/live-games","/fan-live"].includes(item.href)).map(item=><Link key={item.href} href={item.href} className={active(item.href)?"is-active":""}>{item.label}</Link>)}
           <details className="hc-header-more"><summary>More <span aria-hidden="true">▾</span></summary><div className="hc-header-more-panel">
-            {links.filter(item=>![roleHome.href,"/search","/directory","/live-games","/fan-live"].includes(item.href)&& (item.href!=="/players"||!signedIn||(accountType!==""&&accountType!=="fan"))).map(item=><Link key={item.href} href={item.href} className={active(item.href)?"is-active":""}>{item.label}</Link>)}
+            {links.filter(item=>![roleHome.href,"/search","/directory","/live-games","/fan-live"].includes(item.href)&& (item.href!=="/players"||!signedIn||(accountType!==""&&accountType!=="fan"))).map(item=><Link key={item.href} href={item.href} className={active(item.href)?"is-active":""} onClick={(event)=>{
+              const menu=event.currentTarget.closest("details");
+              if(menu) menu.open=false;
+            }}>{item.label}</Link>)}
           </div></details>
         </div>
       </div>
-      <div className="hc-header-actions"><Link href="/search" className="hc-header-icon" aria-label={t("search")} onClick={closeMenu}><SearchIcon/></Link>{!signedIn&&<Link href="/login" className="hc-signin-button" onClick={closeMenu}>SIGN IN <span aria-hidden="true">↗</span></Link>}<Link href={signedIn?"/account":"/login"} className="hc-header-icon" aria-label={signedIn?"Account":"Sign in"} onClick={closeMenu}><UserIcon/></Link></div>
+      <div className="hc-header-actions"><Link href="/search" className="hc-header-icon" aria-label={t("search")} onClick={closeMenu}><SearchIcon/></Link>{!signedIn&&<Link href="/login" className="hc-signin-button" onClick={closeMenu}>SIGN IN <HoopIcon name="arrow-up-right" size={14}/></Link>}<Link href={signedIn?"/account":"/login"} className="hc-header-icon" aria-label={signedIn?"Account":"Sign in"} onClick={closeMenu}><UserIcon/></Link></div>
     </nav>
   </header>;
 }
