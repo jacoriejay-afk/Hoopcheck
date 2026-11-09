@@ -155,6 +155,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <div className="footer-links">
               <div>
                 <strong>HoopCheck</strong>
+                <Link href="/about">About Us</Link>
+                <Link href="/founder">Our Founder</Link>
+                <Link href="/company">Company</Link>
+                <Link href="/partners">Partnerships</Link>
                 <span className="muted">Account required for member access.</span>
                 <Link href="/membership">Membership</Link>
               </div>
