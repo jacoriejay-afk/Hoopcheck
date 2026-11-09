@@ -143,7 +143,7 @@ export default function ProfilePage() {
 
         </section>
 
-        <HoopPassport name={name} accountType={p.account_type||"member"} username={p.username} verified={Boolean(p.player_verified||p.coach_verified)} country={p.current_country} position={p.account_type==="player"?p.position:null} team={p.account_type==="player"?p.current_team:null}/>
+        <HoopPassport playerId={p.id} name={name} accountType={p.account_type||"member"} username={p.username} verified={Boolean(p.player_verified||p.coach_verified)} country={p.current_country} position={p.account_type==="player"?p.position:null} team={p.account_type==="player"?p.current_team:null}/>
         <nav className="hc-profile-action-hub" aria-label="Profile quick links">
           <Link href="/membership" className="hc-profile-membership-link"><HoopIcon name="star" size={20} /><span>Membership &amp; Perks</span><HoopIcon name="chevron-right" size={18} /></Link>
           <div className="hc-profile-quick-grid">
