@@ -12,6 +12,8 @@ test("public endpoint is explicitly server gated", () => {
   assert.match(api, /BUSINESS_INQUIRIES_API_ENABLED/);
   assert.match(api, /!== "true"/);
   assert.match(api, /"Cache-Control": "no-store, private"/);
+  assert.match(api, /Number\.isSafeInteger\(Number\(rawLength\)\)/);
+  assert.match(api, /total > 12000/);
 });
 test("guest form is hidden unless explicitly enabled", () => {
   assert.match(page, /NEXT_PUBLIC_BUSINESS_INQUIRIES_ENABLED === "true"/);
