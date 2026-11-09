@@ -28,6 +28,8 @@ function MembershipContent() {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [billingInterval, setBillingInterval] = useState<BillingInterval>("month");
   const [accountType, setAccountType] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [membershipLoadError, setMembershipLoadError] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [portalLoading, setPortalLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
@@ -38,10 +40,14 @@ function MembershipContent() {
   async function loadSubscription() {
     setLoading(true);
     setError("");
+    setIsAdmin(false);
+    setMembershipLoadError(false);
 
+    try {
     const {
-      data: { user },
+      data: { user }, error: authError,
     } = await supabase.auth.getUser();
+    if (authError && authError.name !== "AuthSessionMissingError") throw authError;
 
     if (!user) {
       setSubscription(null);
@@ -50,12 +56,15 @@ function MembershipContent() {
       return;
     }
 
-    const { data: profile } = await supabase
+    const [profileResult, adminRole] = await Promise.all([supabase
       .from("profiles")
       .select("account_type")
       .eq("id", user.id)
-      .maybeSingle();
+      .maybeSingle(), supabase.rpc("is_current_user_admin_or_moderator")]);
+    if (profileResult.error || adminRole.error) throw profileResult.error || adminRole.error;
+    const profile = profileResult.data;
     setAccountType(profile?.account_type ?? null);
+    setIsAdmin(!adminRole.error && adminRole.data === true);
 
     const { data, error } = await supabase
       .from("subscriptions")
@@ -64,13 +73,17 @@ function MembershipContent() {
       .maybeSingle();
 
     if (error) {
-      console.error("Error loading subscription:", error);
-      setError("We couldn't load your membership status.");
+      throw error;
     } else {
       setSubscription(data as Subscription | null);
     }
 
-    setLoading(false);
+    } catch (loadError) {
+      console.error("Unable to verify membership:", loadError);
+      setMembershipLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -238,9 +251,13 @@ function MembershipContent() {
     }
   }
 
-  const isActive =
-    subscription?.status === "active" || subscription?.status === "trialing";
+  const isActive = hasActiveMembershipAtLeast(subscription, "pro");
   const premiumOnlyAccount = accountType === "coach" || accountType === "manager";
+
+  if (loading || membershipLoadError) return <main className="hc-membership-page"><section className="dashboard-card" aria-busy={loading} role={membershipLoadError ? "alert" : "status"}>
+    <h1>{membershipLoadError ? "Membership unavailable" : "Checking your membership…"}</h1>
+    {membershipLoadError && <><p>We could not verify your current access. Please retry before purchasing a membership.</p><button className="btn" onClick={() => void loadSubscription()}>Retry membership</button></>}
+  </section></main>;
 
   return (
     <main className="hc-membership-page">
@@ -267,13 +284,13 @@ function MembershipContent() {
       {error && <div className="status error">{error}</div>}
 
       <section className="membership-section">
-        {isActive && subscription && !subscription.stripe_subscription_id && (
+        {!isAdmin && isActive && subscription && !subscription.stripe_subscription_id && (
           <div className="dashboard-card" style={{ marginBottom: 16 }}>
             <strong>Complimentary HoopCheck access is active.</strong>
             <span className="muted"> You can keep using your current access or choose a paid membership below.</span>
           </div>
         )}
-        {isActive && subscription?.stripe_subscription_id && (
+        {!isAdmin && isActive && subscription?.stripe_subscription_id && (
           <MembershipComparison
             audience={accountType === "fan" ? "fan" : "player"}
             currentTier={hasActiveMembershipAtLeast(subscription, "premium") ? "premium" : hasActiveMembershipAtLeast(subscription, "pro") ? "pro" : "free"}
@@ -319,6 +336,12 @@ function MembershipContent() {
               Billing is managed securely through Stripe. You can manage eligible
               subscription settings through the billing portal.
             </div>
+          </div>
+        ) : isAdmin ? (
+          <div className="dashboard-card" role="status">
+            <h2>Administrative Premium access is included.</h2>
+            <p className="muted">Your verified administrative role already unlocks Premium features. No membership purchase is required.</p>
+            <Link href="/dashboard" className="btn">Go to Dashboard</Link>
           </div>
         ) : (
           <>

@@ -49,6 +49,10 @@ try {
       assert.ok(bounds && Math.abs(bounds.y + bounds.height / 2 - 450) < 120, 'HoopCheck loader is vertically centered in available content');
       await loader.getByRole('img', { name: 'HoopCheck', exact: true }).waitFor();
       await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.waitForFunction(() => {
+        const orbit = document.querySelector('.hc-brand-loader--screen .hc-brand-loader__orbit i');
+        return orbit && getComputedStyle(orbit).animationName === 'none';
+      });
       assert.equal(await loader.locator('.hc-brand-loader__orbit i').first().evaluate(el => getComputedStyle(el).animationName), 'none', 'Reduced motion stops the loader animation');
       await page.emulateMedia({ reducedMotion: 'no-preference' });
       releaseTeam();
