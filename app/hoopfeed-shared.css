@@ -435,3 +435,49 @@ html body .hc-feed-page .hc-feed-shared-card .hc-feed-delete { color: var(--hc-f
   html body .hc-feed-page .hc-feed-shared-card .hc-feed-post-actions { gap: 6px; }
   html body .hc-feed-page .hc-feed-shared-card .hc-feed-action-pill { min-height: 38px; padding-inline: 10px; }
 }
+
+/* Screenshot regression: reserve a dedicated mobile header slot for the full wordmark. */
+@media (max-width: 700px) {
+  html body .site-header-global.hc-template-header {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    min-width: 0;
+    padding-inline: 12px !important;
+  }
+  html body .site-header-global .site-header-brand {
+    display: flex !important;
+    flex: 0 1 auto !important;
+    width: auto !important;
+    max-width: calc(100% - 60px) !important;
+    min-width: 0 !important;
+    overflow: hidden;
+  }
+  html body .site-header-global .site-header-brand .hc-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    min-width: 0;
+  }
+  html body .site-header-global .site-header-brand .hc-logo__wordmark {
+    min-width: 0;
+    max-width: 100%;
+    white-space: nowrap;
+    font-size: clamp(17px, 5vw, 25px) !important;
+    letter-spacing: 0 !important;
+  }
+  html body .site-header-global .site-header-brand .hc-logo__icon {
+    flex: 0 0 30px;
+    width: 30px !important;
+    height: 30px !important;
+  }
+  html body .site-header-global .hc-mobile-menu-toggle {
+    position: relative;
+    z-index: 3;
+    flex: 0 0 40px !important;
+    margin-left: auto;
+  }
+}
