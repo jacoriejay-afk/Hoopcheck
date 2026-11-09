@@ -394,37 +394,6 @@ export default function TeamsPage() {
         </div>
       )}
 
-      <CourtLines variant="circle" className="hc-court-divider-art" />
-
-      <section className="hero">
-        <div className="eyebrow">
-          {isFanAccount ? "FAN TEAM DIRECTORY" : "Player Intelligence"}
-        </div>
-
-        <h2>
-          {isFanAccount ? <>Every team.<br />A clearer picture.</> : <>The contract<br />is only part<br />of the decision.</>}
-        </h2>
-
-        <p>
-          {isFanAccount ? "Explore clubs, follow the teams you care about, and keep up with their latest updates." : "Research the organization, understand player experiences, and make your next move with more information."}
-        </p>
-
-        <div className="actions">
-          <Link
-            href={isFanAccount ? "/fan-feed" : "/signup"}
-            className="btn"
-          >
-            {isFanAccount ? "Explore Fan HoopFeed" : "Create Free Account"}
-          </Link>
-
-          <Link
-            href="/membership"
-            className="btn dark"
-          >
-            {isFanAccount ? "Fan Membership" : "Unlock Full Access"}
-          </Link>
-        </div>
-      </section>
       <section className="hc-directory-request-section" id="request-team"><Surface as="div" className="dashboard-card" style={{border:"1px solid var(--orange)"}}><div className="eyebrow">{t("directoryRequest")}</div><h2>{t("dontSeeYourTeam")}</h2><p className="muted">{t("requestTeamDescription")}</p><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10}}><input value={requestName} onChange={e=>setRequestName(e.target.value)} placeholder={t("teamName")} /><input value={requestCountry} onChange={e=>setRequestCountry(e.target.value)} placeholder={t("country")} /><input value={requestCity} onChange={e=>setRequestCity(e.target.value)} placeholder={t("cityOptional")} /><input value={requestLeague} onChange={e=>setRequestLeague(e.target.value)} placeholder={t("leagueOptional")} /></div><button className="btn" style={{marginTop:12}} disabled={requestSubmitting} onClick={async()=>{setRequestMessage("");if(!requestName.trim()||!requestCountry.trim()){setRequestMessage(t("teamNameCountryRequired"));return;}const {data:{user}}=await supabase.auth.getUser();if(!user){window.location.href="/login";return;}setRequestSubmitting(true);const {error}=await supabase.from("directory_team_requests").insert({requester_id:user.id,team_name:requestName.trim().slice(0,160),country:requestCountry.trim().slice(0,80),city:requestCity.trim().slice(0,100)||null,league_name:requestLeague.trim().slice(0,160)||null});if(error)setRequestMessage(error.message);else{setRequestMessage(t("requestSubmitted"));setRequestName("");setRequestCity("");setRequestLeague("");}setRequestSubmitting(false);}}>{requestSubmitting?t("submitting"):t("requestTeamAddition")}</button>{requestMessage&&<p className="muted" role="status">{requestMessage}</p>}</Surface></section>
 
 </main>
