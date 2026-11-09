@@ -54,10 +54,11 @@ export async function POST(request: NextRequest) {
     const admin = createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { error } = await admin.from("public_business_inquiries").insert({
-      name, email, type, message,
+    const { data, error } = await admin.rpc("submit_business_inquiry", {
+      p_name: name, p_email: email, p_type: type, p_message: message,
     });
     if (error) return json("Could not save your inquiry. Please try again.", 503);
+    if (data !== true) return json("Too many inquiries from this email. Please try again tomorrow.", 429);
     return NextResponse.json({ message: "Thanks! Your inquiry has been received." }, { status: 201 });
   } catch {
     return json("Submission unavailable. Please try again later.", 503);
