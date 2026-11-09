@@ -1,3 +1,4 @@
+import { countryFlag } from "../lib/countryFlag";
 import Link from "next/link";
 import FollowButton from "./FollowButton";
 import { HoopIcon } from "./HoopCheckUI";
@@ -36,13 +37,13 @@ export default function TeamDirectoryRow({
   const resolvedViewerRole = fanView ? "fan" : viewerRole;
   const hasTrustScore = typeof trustScore === "number" && Number.isFinite(trustScore);
   return (
-    <Surface className={"hc-team-directory-row hc-scout-card hc-smooth-card hc-dossier-card hc-team-directory-row--" + kind}>
+    <Surface className={"hc-team-directory-row hc-scout-card hc-smooth-card hc-team-directory-row--" + kind}>
       <Link href={href} className="hc-team-directory-row__main" aria-label={t("openTeamProfile") + ": " + name}>
         <span className="hc-scout-card__identity"><span className="hc-dossier-card__kicker">CLUB DOSSIER · {kind === "womens" ? "WOMEN" : "MEN"}</span>
           <TeamLogo name={name} logoUrl={logoUrl} logoBg={logoBg} size={48} />
           <span className="hc-scout-card__identity-copy">
             <h2 title={name}>{name}</h2>
-            <p>{city || "City not listed"}</p><span className="hc-scout-card__details"><small>{leagueName || "League not listed"}</small><small>{country || "Country not listed"}</small></span>
+            <p>{city || "City not listed"}</p><span className="hc-scout-card__details"><small>{leagueName || "League not listed"}</small><small>{countryFlag(country) ? `${countryFlag(country)} ` : ""}{country || "Country not listed"}</small></span>
           </span>
           <span className="hc-team-directory-row__arrow" aria-hidden="true"><HoopIcon name="chevron-right" size={18} /></span>
         </span>
