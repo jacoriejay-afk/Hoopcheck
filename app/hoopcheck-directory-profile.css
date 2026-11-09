@@ -338,6 +338,19 @@ html.theme-dark .hc-feed-page :where(h1,h2,h3,h4,p,span,label,small,strong,li),
 html.theme-light .hc-feed-page :where(h1,h2,h3,h4,p,span,label,small,strong,li) {
   color: var(--hc-foreground) !important;
 }
+/* HF-5 hero exception: the HoopFeed hero is always dark; its text must not follow the theme foreground. */
+html.theme-light .hc-feed-page .hf5-hero .hf5-hero__title,
+html.theme-dark .hc-feed-page .hf5-hero .hf5-hero__title { color: #ffffff !important; }
+html.theme-light .hc-feed-page .hf5-hero .hf5-hero__title span,
+html.theme-dark .hc-feed-page .hf5-hero .hf5-hero__title span { color: #ff5a1f !important; }
+html.theme-light .hc-feed-page .hf5-hero .hf5-hero__tag,
+html.theme-dark .hc-feed-page .hf5-hero .hf5-hero__tag { color: #d8d8d3 !important; }
+html.theme-light .hc-feed-page .hf5-hero .hf5-hero__stat strong,
+html.theme-dark .hc-feed-page .hf5-hero .hf5-hero__stat strong { color: #ffffff !important; }
+html.theme-light .hc-feed-page .hf5-hero .hf5-hero__stat small,
+html.theme-dark .hc-feed-page .hf5-hero .hf5-hero__stat small { color: #b9b9b2 !important; }
+html.theme-light .hc-feed-page .hf5-hero .hf5-hero__plan,
+html.theme-dark .hc-feed-page .hf5-hero .hf5-hero__plan { color: #ff8a3d !important; }
 html.theme-dark .hc-feed-page :where(.eyebrow,.card-kicker,.hc-feed-topic-label),
 html.theme-light .hc-feed-page :where(.eyebrow,.card-kicker,.hc-feed-topic-label) {
   color: var(--hc-orange) !important;
