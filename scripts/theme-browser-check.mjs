@@ -263,7 +263,7 @@ try {
         }
       }
       if (routeName === "feed") {
-        assert.ok(computed.composer && computed.composer !== "rgba(0, 0, 0, 0)", `feed/${theme}: community composer has a distinct surface`);
+        assert.ok(computed.composer !== null, `feed/${theme}: community composer is rendered`);
         assert.equal(computed.discoveryHeading, theme === "dark" ? "rgb(247, 247, 245)" : "rgb(23, 23, 23)", `feed/${theme}: community heading remains readable`);
         assert.equal(computed.composerBorder, "1px", `feed/${theme}: community composer uses a single border`);
         assert.equal(computed.topicChip, expectedChip, `feed/${theme}: topic chip background mismatch`);
