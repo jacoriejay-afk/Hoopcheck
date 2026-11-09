@@ -148,7 +148,7 @@ export default function LiveGamesPage() {
     if (filter === "live" && !(availability.state === "LIVE" && availability.phase !== "post-game")) return false;
     if (filter === "my-teams" && !followedIds.some(id => id === game.team_id || id === game.opponent_team_id)) return false;
     const search = query.trim().toLocaleLowerCase();
-    if (search && ![home?.name, away?.name, game.opponent_name, leagueName].some(value => value?.toLocaleLowerCase().includes(search))) return false;
+    if (search && ![home?.name, away?.name, game.opponent_name, leagueName, game.country, home?.country, away?.country].some(value => value?.toLocaleLowerCase().includes(search))) return false;
     return true;
   }), [prepared, leagueFilter, filter, followedIds, query, teams]);
 
@@ -242,7 +242,7 @@ export default function LiveGamesPage() {
 
   if (loading) return <main className="page-shell hc-live-hub-page"><div className="page-container"><HoopLoading label="Loading Live Games..." /></div></main>;
   if (!userId) return <main className="page-shell hc-live-hub-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">LIVE GAME HUB</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in to discover live and upcoming games and join game conversations.</p><Link href="/login" className="btn">Sign in</Link></section></div></main>;
-  if (!allowed) return <main className="page-shell hc-live-hub-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM MEMBERS</p><h1>LIVE GAME CHAT</h1><p className="muted">Watch together. Follow live and upcoming games, and join the conversation.</p><p className="muted">An active Pro or Premium membership is required to open the Live Game Hub and join game chats.</p><Link href="/membership" className="btn">Explore Membership</Link></section></div></main>;
+  if (!allowed) return <main className="page-shell hc-live-hub-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM MEMBERS</p><h1>MEMBERSHIP REQUIRED</h1><p className="muted">Watch together. Follow live and upcoming games, and join the conversation.</p><p className="muted">An active Pro or Premium membership is required to open the Live Game Hub and join game chats.</p><Link href="/membership" className="btn">Explore Membership</Link></section></div></main>;
 
   return <main className="page-shell hc-live-hub-page">
       <FanBasketballSideSwitch /><div className="page-container">
@@ -258,7 +258,7 @@ export default function LiveGamesPage() {
         )}
       </div>
       <div className="hc-live-hub-filter-tools">
-        <SearchBar value={query} onChange={setQuery} onSubmit={() => {}} placeholder="Search teams or leagues…" ariaLabel="Search games by team or league" buttonLabel="Search" className="hc-live-hub-search" />
+        <SearchBar value={query} onChange={setQuery} onSubmit={() => {}} placeholder="Search country, team, or league…" ariaLabel="Search games by country, team, or league" buttonLabel="Search" className="hc-live-hub-search" />
         <label className="hc-live-league-select"><span>League</span><select value={leagueFilter} onChange={event => setLeagueFilter(event.target.value)}><option value="">All leagues</option>{leagues.map(league => <option key={league} value={league}>{league}</option>)}</select></label>
       </div>
     </section>

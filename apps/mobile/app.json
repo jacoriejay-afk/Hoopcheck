@@ -22,10 +22,16 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.example.hoopcheck"
+      "bundleIdentifier": "online.hoopcheck.ios"
     },
     "android": {
-      "package": "com.example.hoopcheck"
+      "package": "online.hoopcheck.app"
+    },
+    "owner": "Jayycorrie",
+    "extra": {
+      "eas": {
+        "projectId": "62f822cb-ab9a-42ba-8456-007d2822ef70"
+      }
     }
   }
 }

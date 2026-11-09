@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../../../components/HoopLoading";
 import {
   FormEvent,
   useEffect,
@@ -410,17 +411,7 @@ export default function CoachReviewPage() {
 
   if (loading) {
     return (
-      <main>
-<section className="hero">
-          <div className="eyebrow">
-            HoopCheck
-          </div>
-
-          <h1>
-            Loading review form...
-          </h1>
-        </section>
-      </main>
+      <main><HoopLoading label="Loading HoopCheck…" /></main>
     );
   }
 
