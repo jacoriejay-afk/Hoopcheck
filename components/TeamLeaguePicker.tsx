@@ -203,7 +203,7 @@ export default function TeamLeaguePicker({
             :!debouncedQuery&&!country&&!league?<p className="hc-shared-picker-state">Search by name or use the country and league filters to browse.</p>
             :debouncedQuery.length===1?<p className="hc-shared-picker-state">Type at least 2 characters to search.</p>
             :filtered.length?filtered.map(item=><button type="button" key={item.id} className={"hc-shared-picker-row"+(selectedItems.some(selected=>selected.id===item.id)?" is-selected":"")} onClick={()=>choose(item)}><span className="hc-shared-picker-row-main"><strong>{item.name}</strong><small>{[item.city,item.country,item.leagues.slice(0,1).join(""),item.leagues.length>1?"+"+(item.leagues.length-1)+" more leagues":""].filter(Boolean).join(" · ")||"Basketball directory"}</small></span><span className="hc-shared-picker-row-check">{selectedItems.some(selected=>selected.id===item.id)?"✓":"+"}</span></button>)
-            :<p className="hc-shared-picker-state">No "+mode+" matches '"+(debouncedQuery||league||country)+"' — try the spelling, or browse by country and league.</p>}
+            :<p className="hc-shared-picker-state">No {mode} matches “{debouncedQuery || league || country}” — try the spelling, or browse by country and league.</p>}
         </div>
         <footer className="hc-shared-picker-footer"><button type="button" className="btn dark" onClick={()=>setOpen(false)}>Close</button></footer>
       </section>

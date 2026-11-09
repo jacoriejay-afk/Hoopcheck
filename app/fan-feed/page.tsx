@@ -246,8 +246,8 @@ export default function FanFeedPage() {
   if (!membershipActive) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("membershipRequired")}</h1><p>{ft("membershipDescription")}</p><Link className="btn" href="/membership">{t("membership")}</Link></section></div></main></PageShell>;
   return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page" onTouchStart={event => { touchStartY.current = window.scrollY === 0 ? (event.touches[0]?.clientY ?? null) : null; }} onTouchEnd={event => { const start = touchStartY.current; touchStartY.current = null; const end = event.changedTouches[0]?.clientY ?? 0; if (start !== null && end - start > 80 && user && !refreshing) void refreshFeed(); }}>
       <FanBasketballSideSwitch /><div className="page-container"><FeedDiscoveryHeader audience="fan" />
-    <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/fans">{ft("discoverFans")}</Link><Link href="/team-hub">{ft("teamHub")}</Link><Link href="/teams">{ft("teams")}</Link></nav></header>
-    <section className="hero-card hc-feed-hero"><div><p className="eyebrow">FAN HQ · CLUB COMMUNITIES</p><h1>Fan HQ</h1><p className="muted">Fan posts about the clubs you follow.</p></div><p className="hc-feed-expiry-note">Fans only<span>Posts expire after 24 hours · separate from player HoopFeed</span></p></section>
+
+
 
     <section className="dashboard-card hc-feed-composer" style={{ marginTop: 18 }}>
       <span className="card-kicker">{selectedTeam ? `Posting to ${selectedTeam.name} fans` : "Post to a followed club"}</span>

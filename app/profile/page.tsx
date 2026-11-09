@@ -123,7 +123,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="hc-member-profile-actions">
-            <Link href="/account#profile-editor" className="btn hc-profile-edit-button">{t("editProfile")}</Link>
+            <Link href="/account#profile-editor" className="btn hc-profile-edit-button">{t("editProfile")}</Link>{p.account_type === "player" && <Link href="/account#team-review-checklist" className="btn dark">Team review checklist</Link>}
             {p.account_type === "player" && (p.profile_visibility === "public" ? (
               <Link href={"/players/" + encodeURIComponent(p.id)} className="btn dark hc-profile-public-button">
                 <span className="hc-profile-public-full">{t("profilePublic")}</span><span className="hc-profile-public-short">{t("profilePublic")}</span><HoopIcon name="arrow-up-right" size={16} />
