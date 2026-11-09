@@ -161,8 +161,7 @@ export async function POST(request: Request) {
     }
 
     const { data: profile } = await db.from("profiles").select("account_type,current_country,current_country_public").eq("id", user.id).maybeSingle();
-    if ((kind === "post" || kind === "share") && profile?.account_type !== "player") return NextResponse.json({ allowed: false, message: "Only player accounts can publish or share to HoopFeed." }, { status: 403 });
-    if (kind === "comment" && profile?.account_type !== "player") return NextResponse.json({ allowed: false, message: "Only players can comment on HoopFeed posts." }, { status: 403 });
+    if (!profile) return NextResponse.json({ allowed: false, message: "Your account profile could not be found." }, { status: 403 });
     const submittedTopicTag = String(form.get("topic_tag") || "").trim();
     const gameDayTeam = String(form.get("game_day_team") || "").trim().slice(0, 80);
     const gameDayOpponent = String(form.get("game_day_opponent") || "").trim().slice(0, 80);
@@ -170,8 +169,8 @@ export async function POST(request: Request) {
     const scoreAgainstRaw = String(form.get("game_day_score_against") || "").trim();
     const scoreFor = scoreForRaw === "" ? null : Number(scoreForRaw);
     const scoreAgainst = scoreAgainstRaw === "" ? null : Number(scoreAgainstRaw);
-    if (kind === "post" && submittedTopicTag && (profile?.account_type !== "player" || !ALLOWED_TOPIC_TAGS.has(submittedTopicTag))) {
-      return NextResponse.json({ allowed: false, message: "Choose a valid HoopFeed topic as a player." }, { status: 400 });
+    if (kind === "post" && submittedTopicTag && !ALLOWED_TOPIC_TAGS.has(submittedTopicTag)) {
+      return NextResponse.json({ allowed: false, message: "Choose a valid HoopFeed topic." }, { status: 400 });
     }
     if (kind === "post" && submittedTopicTag === "Game Day") {
       const scoresValid = (scoreFor === null && scoreAgainst === null) || (Number.isInteger(scoreFor) && Number.isInteger(scoreAgainst) && scoreFor! >= 0 && scoreFor! <= 300 && scoreAgainst! >= 0 && scoreAgainst! <= 300);
@@ -179,9 +178,9 @@ export async function POST(request: Request) {
     }
     const { data: sub } = await db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle();
     const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription: sub });
-    if (!entitlements.canWriteHoopFeed) return NextResponse.json({ allowed: false, message: "Active Pro or Premium player access is required." }, { status: 403 });
+    if (!entitlements.canWriteHoopFeed) return NextResponse.json({ allowed: false, message: "An active Pro or Premium membership is required to use HoopFeed." }, { status: 403 });
 
-    // Re-share only live, approved posts the player is permitted to view.
+    // Re-share any approved community post.
     // The source has already passed moderation; new user-authored content still uses moderate().
     if (kind === "share") {
       const sourceId = String(form.get("post_id") || "").trim();
@@ -193,26 +192,11 @@ export async function POST(request: Request) {
         console.error("HoopFeed share source lookup failed", { sourceId, code: sourceError.code });
         return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 500 });
       }
-      if (!source || source.status !== "approved" || !source.expires_at || new Date(source.expires_at).getTime() <= Date.now()) {
-        return NextResponse.json({ allowed: false, message: "This post has expired and can't be shared." }, { status: 404 });
-      }
-      if (source.author_id !== user.id) {
-        const [{ data: sourceAuthor }, { data: follow }, { data: connection }] = await Promise.all([
-          db.from("profiles").select("account_type").eq("id", source.author_id).maybeSingle(),
-          db.from("follow_relationships").select("follower_id").eq("follower_id", user.id).eq("target_type", "player").eq("target_id", source.author_id).maybeSingle(),
-          db.from("player_contact_requests").select("id,requester_id,player_id")
-            .eq("status", "accepted")
-            .or(`and(requester_id.eq.${user.id},player_id.eq.${source.author_id}),and(requester_id.eq.${source.author_id},player_id.eq.${user.id})`)
-            .limit(1).maybeSingle()
-        ]);
-        // Match the same visibility rules used by the feed loader: players may see posts
-        // from players they follow or have an accepted contact connection with.
-        if ((!follow && !connection) || sourceAuthor?.account_type !== "player") {
-          return NextResponse.json({ allowed: false, message: "You can only share posts you're allowed to view." }, { status: 403 });
-        }
+      if (!source || source.status !== "approved") {
+        return NextResponse.json({ allowed: false, message: "This post is no longer available and can't be shared." }, { status: 404 });
       }
       const sharedAt = new Date();
-      const expiresAt = new Date(sharedAt.getTime() + 24 * 60 * 60 * 1000);
+      const expiresAt = new Date("2100-01-01T00:00:00.000Z");
       const { data: shared, error: shareError } = await db.from("feed_posts").insert({
         author_id: user.id, body: source.body, image_url: source.image_url, video_url: source.video_url,
         topic_tag: source.topic_tag, game_day_team: source.game_day_team,
@@ -235,16 +219,8 @@ export async function POST(request: Request) {
       const postId = String(form.get("post_id") || "");
       if (!postId) return NextResponse.json({ allowed: false, message: "Post not found." }, { status: 400 });
       const { data: post } = await db.from("feed_posts").select("id,author_id,expires_at,status").eq("id",postId).maybeSingle();
-      if (!post || post.status !== "approved" || new Date(post.expires_at).getTime() <= Date.now()) {
+      if (!post || post.status !== "approved") {
         return NextResponse.json({ allowed: false, message: "This HoopFeed post is no longer available." }, { status: 404 });
-      }
-      const { data: author } = await db.from("profiles").select("account_type,current_country").eq("id",post.author_id).maybeSingle();
-      const sameCountry = !!profile?.current_country && !!author?.current_country && profile.current_country.toLowerCase() === author.current_country.toLowerCase();
-      const followType = author?.account_type === "fan" ? "fan" : "player";
-      const { data: follow } = await db.from("follow_relationships").select("follower_id").eq("follower_id",user.id).eq("target_type",followType).eq("target_id",post.author_id).maybeSingle();
-      const allowedFollow = author?.account_type === "fan" ? !!follow : author?.account_type === "player" && sameCountry && !!follow;
-      if (post.author_id !== user.id && !allowedFollow) {
-        return NextResponse.json({ allowed: false, message: "You are not eligible to interact with this HoopFeed post." }, { status: 403 });
       }
       const { error } = await db.from("feed_post_comments").insert({ post_id:postId,author_id:user.id,body:text });
       if (error) return NextResponse.json({ allowed:false,message:"We couldn't publish your comment. Please try again." },{status:400});
@@ -265,13 +241,13 @@ export async function POST(request: Request) {
     const submittedCountry = String(form.get("post_country") || "").trim().slice(0, 100);
     const { error } = await db.from("feed_posts").insert({
       author_id:user.id, body:text || " ", image_url, video_url,
-      topic_tag: profile?.account_type === "player" && submittedTopicTag ? submittedTopicTag : null,
-      game_day_team: profile?.account_type === "player" && submittedTopicTag === "Game Day" ? gameDayTeam : null,
-      game_day_opponent: profile?.account_type === "player" && submittedTopicTag === "Game Day" ? gameDayOpponent : null,
-      game_day_score_for: profile?.account_type === "player" && submittedTopicTag === "Game Day" ? scoreFor : null,
-      game_day_score_against: profile?.account_type === "player" && submittedTopicTag === "Game Day" ? scoreAgainst : null,
+      topic_tag: submittedTopicTag ? submittedTopicTag : null,
+      game_day_team: submittedTopicTag === "Game Day" ? gameDayTeam : null,
+      game_day_opponent: submittedTopicTag === "Game Day" ? gameDayOpponent : null,
+      game_day_score_for: submittedTopicTag === "Game Day" ? scoreFor : null,
+      game_day_score_against: submittedTopicTag === "Game Day" ? scoreAgainst : null,
       location_country:shareCountry && profile?.current_country_public !== false ? (submittedCountry || profile?.current_country || null) : null,
-      status:"approved", expires_at:new Date(Date.now()+86400000).toISOString()
+      status:"approved", expires_at:new Date("2100-01-01T00:00:00.000Z").toISOString()
     });
     if (error) return NextResponse.json({ allowed:false,message:"We couldn't publish your post. Please try again." },{status:400});
     const activityDate = new Date().toISOString().slice(0, 10);
