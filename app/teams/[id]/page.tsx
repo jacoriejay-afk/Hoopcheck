@@ -1,5 +1,6 @@
-import { countryFlag } from "../../../lib/countryFlag";
 "use client";
+
+import { countryFlag } from "../../../lib/countryFlag";
 
 import { useEffect, useState } from "react";
 import { useLanguage } from "../../../components/LanguageProvider";
