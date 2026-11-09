@@ -17,7 +17,7 @@ try {
   let profile={id:uid,account_type:'player',basketball_type:gender,display_name:'QA Player',first_name:'QA',last_name:'Player',position:'SG',years_pro:4,current_team:null,current_country:'Old country',height:null,profile_visibility:'players_only',player_verified:false,selected_team_id:null,selected_womens_team_id:null,free_agent:false,avatar_moderation_status:'approved',professional_experience:true,bio:'A player profile',preferred_language:'en',theme_preference:'light',current_country_public:false};
   const team={id:tid,name:`${gender==='mens'?'Men':'Women'} QA Club`,country:'QA Country',city:'QA City',league_name:'QA League',basketball_type:gender,active:true,created_at:'2020-01-01T00:00:00Z'};
   let subscription={plan:'pro',status:'active',access_status:'active',current_period_end:null};
-  let eligible=false,patches=[];
+  let eligible=false,patches=[],authAvailable=false;
   const context=await browser.newContext({viewport:{width,height:900}});
   await context.addCookies([{name:'sb-ci-auth-token',value:'base64-'+Buffer.from(JSON.stringify(session)).toString('base64url'),url:baseURL}]);
   await context.addInitScript(session=>{localStorage.setItem('sb-ci-auth-token',JSON.stringify(session));localStorage.setItem('hoopcheck-theme','light');localStorage.setItem('hoopcheck-language','en');},session);
@@ -27,7 +27,10 @@ try {
    const headers={'access-control-allow-origin':baseURL,'access-control-allow-methods':'GET,POST,PATCH,OPTIONS','access-control-allow-headers':req.headers()['access-control-request-headers']||'*','cache-control':'no-store'};
    if(req.method()==='OPTIONS') return route.fulfill({status:204,headers});
    let data=[];
-   if(url.pathname==='/auth/v1/user') data=user;
+   if(url.pathname==='/auth/v1/user'){
+    if(!authAvailable) return route.fulfill({status:503,headers,contentType:'application/json',body:'{}'});
+    data=user;
+   }
    else if(url.pathname.endsWith('/profiles')){
     if(req.method()==='PATCH'){const patch=req.postDataJSON();patches.push(patch);profile={...profile,...patch};data={id:uid};}
     else data=profile;
@@ -41,7 +44,13 @@ try {
    await route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify(data)});
   });
   await page.goto(`${baseURL}/account`);
+  await page.getByRole('heading',{name:'Account unavailable'}).waitFor();
+  assert.equal(new URL(page.url()).pathname,'/account','A transient auth failure preserves the account route');
+  assert.equal(await page.locator('#profile-editor').count(),0,'Account fields stay hidden while auth is unverified');
+  authAvailable=true;
+  await page.getByRole('button',{name:'Retry account'}).click();
   await page.locator('#profile-editor').waitFor();
+  assert.equal(await page.getByRole('switch',{name:'Dark mode'}).count(),1,'The appearance switch has an accessible name');
   await page.locator('#position').selectOption('PG');
   await page.locator('#player-height').fill('193 cm');
   await page.locator('#current-team .hc-shared-picker-trigger').click();
@@ -78,7 +87,12 @@ try {
   assert.ok(header.height>0,'HoopFeed community hero is visible');assert.ok(composer.y>header.y,'Composer follows the community hero');
   assert.equal(await page.locator('.hf5-hero').count(),1,'Exactly one community hero');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,'No horizontal overflow');
-  console.log(`PASS ${gender} ${width}px: editable profile, team dropdown, privacy preservation, review eligibility, compact feed`);
+  console.log(`PASS ${gender} ${width}px: account retry, accessible appearance switch, editable profile, team dropdown, privacy preservation, review eligibility, compact feed`);
   await context.close();
  }
+ const anonymous = await browser.newPage();
+ await anonymous.goto(`${baseURL}/account?origin=audit#profile-editor`);
+ await anonymous.waitForURL(url => url.pathname === '/login');
+ assert.equal(new URL(anonymous.url()).searchParams.get('returnTo'), '/account?origin=audit#profile-editor');
+ console.log('PASS absent session redirects to Sign In and preserves the complete Account destination');
 } finally {await browser.close();}
