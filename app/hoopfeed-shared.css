@@ -542,7 +542,7 @@ main.hc-feed-page .hf5-hero { color: #f7f7f5 !important; }
 .hc-feed-page .hf5-carousel__nav--next { right: 8px; }
 .hc-feed-page .hf5-carousel__dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
 .hc-feed-page .hf5-carousel__dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.45); }
-.hc-feed-page .hf5-carousel__dot.is-active { background: #ffffff; }
+.hc-feed-page .hf5-carousel__dot.is-active { background: var(--hc-orange, #ff5a1f); }
 .hc-feed-page .hf5-poll { display: grid; gap: 8px; margin-top: 10px; }
 .hc-feed-page .hf5-poll__option { width: 100%; text-align: left; border: 1px solid var(--hc-border); background: var(--hc-surface-raised); color: var(--hc-foreground); border-radius: 12px; padding: 10px 12px; font-weight: 600; cursor: pointer; }
 .hc-feed-page .hf5-poll__result { position: relative; }
