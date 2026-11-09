@@ -3,8 +3,8 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { getCachedSession, supabase } from "../lib/supabase";
 
-type AuthState = { userId: string | null; signedIn: boolean };
-const AuthContext = createContext<AuthState>({ userId: null, signedIn: false });
+type AuthState = { userId: string | null; signedIn: boolean; accountType: string | null; roleLoading: boolean; isAdmin: boolean };
+const AuthContext = createContext<AuthState>({ userId: null, signedIn: false, accountType: null, roleLoading: false, isAdmin: false });
 
 export function useAuthState() {
   return useContext(AuthContext);
@@ -12,6 +12,22 @@ export function useAuthState() {
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
+  const [identity, setIdentity] = useState<{ userId: string; accountType: string | null; isAdmin: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    void Promise.allSettled([
+      supabase.from("profiles").select("account_type").eq("id", userId).maybeSingle(),
+      supabase.rpc("get_current_user_admin_role"),
+    ]).then(([profile, role]) => {
+      if (!active) return;
+      const accountType = profile.status === "fulfilled" && !profile.value.error ? profile.value.data?.account_type ?? null : null;
+      const adminRole = role.status === "fulfilled" && !role.value.error ? role.value.data : null;
+      setIdentity({ userId, accountType, isAdmin: adminRole === "admin" || adminRole === "moderator" });
+    });
+    return () => { active = false; };
+  }, [userId]);
 
   useEffect(() => {
     let mounted = true;
@@ -25,7 +41,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       authEventSeen = true;
-      if (mounted) setUserId(session?.user?.id ?? null);
+      if (mounted) {
+        setUserId(session?.user?.id ?? null);
+        if (!session?.user) setIdentity(null);
+      }
     });
     return () => {
       mounted = false;
@@ -33,5 +52,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     };
   }, []);
 
-  return <AuthContext.Provider value={{ userId, signedIn: Boolean(userId) }}>{children}</AuthContext.Provider>;
+  const currentIdentity = identity?.userId === userId ? identity : null;
+  return <AuthContext.Provider value={{ userId, signedIn: Boolean(userId), accountType: currentIdentity?.accountType ?? null, roleLoading: Boolean(userId) && !currentIdentity, isAdmin: currentIdentity?.isAdmin ?? false }}>{children}</AuthContext.Provider>;
 }

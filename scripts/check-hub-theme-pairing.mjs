@@ -7,6 +7,7 @@ const browserCheck = readFileSync("scripts/theme-browser-check.mjs", "utf8");
 const fanFeedPage = readFileSync("app/fan-feed/page.tsx", "utf8");
 const sharedFeed = readFileSync("components/HoopFeedShared.tsx", "utf8");
 const fanFeedI18n = readFileSync("app/fan-feed/i18n.ts", "utf8");
+const navigation = readFileSync("lib/navigation.ts", "utf8");
 const bottomNav = readFileSync("components/BottomNav.tsx", "utf8");
 const fanGroupPage = readFileSync("app/team-hub/groups/[teamId]/page.tsx", "utf8");
 const womensTeamPage = readFileSync("app/womens/[id]/page.tsx", "utf8");
@@ -106,7 +107,7 @@ if (fanFeedPage.includes('from("fan_feed_posts")') ||
     fanFeedPage.includes('from("fan_feed_posts")') ||
     !fanFeedPage.includes('router.push("/team-hub/groups/" + team.id)') ||
     fanFeedPage.includes("hc-feed-composer__editor") ||
-    !bottomNav.includes('accountType === "fan" ? "FAN HQ" : "HoopFeed"') ||
+    (!bottomNav.includes("getRoleNavigation") || !navigation.includes("href: '/fan-feed', label: 'Fan Feed'")) ||
     !fanGroupPage.includes("Posting to {teamName} fans") ||
     !fanGroupPage.includes("isFan && summary?.is_member && <section") ||
     !fanGroupPage.includes("No posts yet — be the first to post for {teamName}.") ||
@@ -117,7 +118,7 @@ if (fanFeedPage.includes('from("fan_feed_posts")') ||
     fanTeamPosts.includes('rpc("get_fan_team_hub_posts"') ||
     !fanTeamPosts.includes('from("team_fan_group_members")') ||
     !fanTeamPosts.includes('from("team_fan_group_moderators")')) {
-  failures.push("Fan HQ must use member-visible club Fan Group posts and the shared locked group composer; fans must see FAN HQ in bottom navigation.");
+  failures.push("Fan HQ must use member-visible club Fan Group posts and the shared locked group composer; fans must see their role-specific Fan Feed in bottom navigation.");
 }
 
 const importLine = 'import "./hoopcheck-hub-empty-state-pairing.css";';

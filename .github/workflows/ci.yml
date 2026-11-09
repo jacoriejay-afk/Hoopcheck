@@ -61,6 +61,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Check role navigation isolation
+        run: |
+          node scripts/test-navigation.mjs
+          node scripts/test-fan-feed-copy.mjs
+
       - name: Production build
         run: npm run build
 
@@ -76,6 +81,12 @@ jobs:
 
       - name: Verify men’s and women’s team discovery
         run: node scripts/check-team-discovery-browser.mjs
+
+      - name: Verify shared role navigation and UX
+        env:
+          CHROMIUM_EXECUTABLE_PATH: /usr/bin/google-chrome
+          UX_ARTIFACTS_DIR: artifacts/global-ux
+        run: node scripts/check-global-ux-browser.mjs
 
       - name: Verify profile editing and team review checklist
         run: node scripts/check-profile-editor-browser.mjs
@@ -114,4 +125,12 @@ jobs:
         with:
           name: hoopcheck-theme-screenshots
           path: artifacts/theme-check/**/*.png
+          if-no-files-found: warn
+
+      - name: Upload global UX screenshots and results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hoopcheck-global-ux
+          path: artifacts/global-ux/**
           if-no-files-found: warn

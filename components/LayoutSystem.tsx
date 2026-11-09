@@ -4,8 +4,8 @@ import Link from "next/link";
 type BaseProps = { children: ReactNode; className?: string };
 
 /** Global content frame. Page content remains responsible for its own semantics. */
-export function PageShell({ children, className = "" }: BaseProps) {
-  return <div className={`hc-global-page-shell ${className}`.trim()}>{children}</div>;
+export function PageShell({ children, className = "", id }: BaseProps & { id?: string }) {
+  return <div id={id} tabIndex={id ? -1 : undefined} className={`hc-global-page-shell ${className}`.trim()}>{children}</div>;
 }
 
 export function Card({ children, className = "", ...props }: BaseProps & HTMLAttributes<HTMLElement>) {
