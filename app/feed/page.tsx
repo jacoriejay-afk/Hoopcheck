@@ -49,7 +49,7 @@ export default function Feed(){
   const [drafts,setDrafts]=useState<Record<string,string>>({});
   const [open,setOpen]=useState<Record<string,boolean>>({});
   const [body,setBody]=useState(""); const [topicTag,setTopicTag]=useState<TopicTag|null>(null); const [gameTeam,setGameTeam]=useState(""); const [gameOpponent,setGameOpponent]=useState(""); const [scoreFor,setScoreFor]=useState(""); const [scoreAgainst,setScoreAgainst]=useState(""); const [topicFilter,setTopicFilter]=useState<"All"|TopicTag>("All"); const [typeFilter,setTypeFilter]=useState<TypeFilter>("All Posts"); const [photos,setPhotos]=useState<File[]>([]); const [previews,setPreviews]=useState<string[]>([]); const [composerMode,setComposerMode]=useState<"post"|"poll"|"news">("post"); const [pollDraft,setPollDraft]=useState<string[]>(["",""]); const [votes,setVotes]=useState<Record<string,VoteState>>({}); const [savedMap,setSavedMap]=useState<Record<string,boolean>>({}); const [carouselIdx,setCarouselIdx]=useState<Record<string,number>>({}); const [video,setVideo]=useState<File|null>(null); const [videoPreview,setVideoPreview]=useState(""); const [showCountry,setShowCountry]=useState(false);
-  const [user,setUser]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [subscription,setSubscription]=useState<Subscription|null>(null); const [memberCount,setMemberCount]=useState<number|null>(null);
+  const [user,setUser]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [adminRole,setAdminRole]=useState<string|null>(null); const [subscription,setSubscription]=useState<Subscription|null>(null); const [memberCount,setMemberCount]=useState<number|null>(null);
   const [msg,setMsg]=useState(""); const [refreshing,setRefreshing]=useState(false); const [postingStreak,setPostingStreak]=useState(0); const [loading,setLoading]=useState(true); const [posting,setPosting]=useState(false); const [now,setNow]=useState(0); const textareaRef = useRef<HTMLTextAreaElement|null>(null); const touchStartY = useRef<number|null>(null);
   const visiblePosts = posts.filter(p=>{
     const hasMedia=Boolean(p.image_url||(p.image_urls&&p.image_urls.length)||p.video_url);
@@ -69,7 +69,7 @@ export default function Feed(){
   });
 
   const access=getHoopCheckEntitlements({accountType:profile?.account_type,subscription}).canReadHoopFeed;
-  const isAdmin=(profile?.account_type||"").toLowerCase()==="admin";
+  const isAdmin=adminRole==="admin";
 
   async function load(currentUser:any){
     const feedResult=await supabase.from("feed_posts").select("id,shared_post_id,body,image_url,image_urls,video_url,post_kind,poll_options,is_pinned,pinned_at,location_country,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,created_at,expires_at,author_id,profiles:profiles!feed_posts_author_id_fkey(display_name,avatar_url,account_type,current_country,current_country_public,current_team)")
@@ -115,6 +115,7 @@ export default function Feed(){
       supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",u.id).maybeSingle()
     ]);
     setProfile(p);setSubscription(s);setShowCountry(Boolean(p?.current_country_public));
+    void supabase.rpc("get_current_user_admin_role").then(({data})=>{setAdminRole(data==="admin"||data==="moderator"?data:null);});
     const {data:activity}=await supabase.from("feed_posting_activity").select("activity_date").eq("user_id",u.id).order("activity_date",{ascending:false}).limit(370);setPostingStreak(calculatePostingStreak(activity||[]));
     void supabase.from("profiles").select("id",{count:"exact",head:true}).then(({count})=>{if(typeof count==="number")setMemberCount(count);});
     const memberActive=getHoopCheckEntitlements({accountType:p?.account_type,subscription:s}).canReadHoopFeed;
