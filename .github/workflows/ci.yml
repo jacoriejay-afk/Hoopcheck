@@ -47,6 +47,8 @@ jobs:
       - name: Audit hardcoded white surfaces (blocking)
         run: npm run audit:surfaces
 
+      - name: Audit paired theme surfaces and contrast (blocking)
+        run: npm run audit:theme-pairs
       - name: Check HoopFeed text posts and team fan group invariants
         run: npm run check:hf4-fan-groups
 
