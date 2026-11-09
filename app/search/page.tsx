@@ -250,15 +250,15 @@ function SearchContent() {
     }, 250);
     return () => window.clearTimeout(timer);
   }, [searchInput, query, router]);
+  // Sync explicit URL filters without resetting a category the visitor just selected
+  // while their account role (or basketball-side preference) is still loading.
   useEffect(() => {
     if (!roleReady) return;
-    if (isFanAccount) {
-      setTypeFilter(initialType === "coaches" || initialType === "mens-teams" || initialType === "womens-teams" || initialType === "leagues" ? initialType : "all");
-      return;
+    if (initialType === "players" && isFanAccount) { setTypeFilter("all"); return; }
+    if (initialType === "players" || initialType === "coaches" || initialType === "mens-teams" || initialType === "womens-teams" || initialType === "leagues") {
+      setTypeFilter(initialType);
     }
-    if (initialType === "players" || initialType === "coaches" || initialType === "mens-teams" || initialType === "womens-teams" || initialType === "leagues") setTypeFilter(initialType);
-    else setTypeFilter("all");
-  }, [initialType, isFanAccount, roleReady, basketballSide]);
+  }, [initialType, isFanAccount, roleReady]);
 
   const countries = useMemo(() => Array.from(new Set([
     ...players.map((x) => x.country),
