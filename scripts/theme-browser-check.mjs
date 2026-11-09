@@ -564,44 +564,10 @@ try {
         if (!fanGroupEntry.includes("Fan Group") || !fanGroupEntry.includes("Joined")) errors.push("women team profile: Fan Group entry is missing or not joined: " + fanGroupEntry);
       }
       if (requestedPath === "/fan-feed") {
-        await page.locator("main.hc-fan-feed-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
-        const teamHeading = (await page.locator("main.hc-fan-feed-page .hc-feed-hero h1").innerText()).trim();
-        const fanHqEyebrow = (await page.locator("main.hc-fan-feed-page .hc-feed-hero .eyebrow").innerText()).trim();
-        const explainer = (await page.locator("main.hc-fan-feed-page .hc-fan-feed-explainer").innerText()).trim();
-        if (teamHeading !== "Fan HQ") errors.push("fan-feed: screen title must be Fan HQ: " + teamHeading);
-        if (!fanHqEyebrow.includes("FAN HQ") || /KICKER/.test(fanHqEyebrow)) errors.push("fan-feed: real Fan HQ eyebrow is missing: " + fanHqEyebrow);
-        const expectedExplainer = testLanguage === "es" ? "Publicaciones de los grupos de fans de los clubes que sigues." : "Posts from the fan groups of the clubs you follow.";
-        if (explainer !== expectedExplainer) errors.push("fan-feed: plain-language purpose line is missing: " + explainer);
-        await page.locator("main.hc-fan-feed-page .hc-feed-stream .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
-        const fanFeedEmpty = (await page.locator("main.hc-fan-feed-page .hc-feed-stream .hc-feed-empty").innerText()).trim();
-        if (!fanFeedEmpty.includes("No posts yet — be the first to post for " + teamFixture.name + ".")) errors.push("fan-feed: real club-specific timeline empty state is missing: " + fanFeedEmpty);
-        if (!fanFeedEmpty.includes("Be the first to post")) errors.push("fan-feed: timeline empty state action is missing");
-        const womensToggle = page.locator(".hc-fan-side-switch button").nth(1);
-        await womensToggle.click();
-        await page.waitForFunction(() => document.querySelectorAll('.hc-fan-side-switch button[aria-pressed="true"]').length === 1 &&
-          document.querySelectorAll(".hc-fan-side-switch button")[1]?.getAttribute("aria-pressed") === "true", null, { timeout: 10000 });
-        const postPrompt = page.locator("main.hc-fan-feed-page .hc-fan-feed-post-prompt");
-        await postPrompt.waitFor({ state: "visible", timeout: 15000 });
-        if (await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").count()) errors.push("fan-feed: standalone feed must not show a composer before club selection");
-        await postPrompt.getByRole("button").click();
-        const picker = page.locator("main.hc-fan-feed-page .hc-fan-feed-team-picker");
-        await picker.waitFor({ state: "visible", timeout: 10000 });
-        const pickerSearch = page.locator("main.hc-fan-feed-page .hc-feed-team-search");
-        await pickerSearch.fill("Ego");
-        const followedClub = picker.getByRole("option").filter({ hasText: teamFixture.name });
-        await followedClub.waitFor({ state: "visible", timeout: 10000 });
-        const followedClubCount = await picker.getByRole("option").count();
-        if (followedClubCount !== 1) errors.push("fan-feed: picker must contain only the followed club list, found " + followedClubCount + " options");
-        await followedClub.click();
-        await page.waitForURL("**/team-hub/groups/" + teamFixture.id, { timeout: 10000 });
-        await page.locator("main.hc-team-fan-group-page .hc-team-fan-group-composer textarea").waitFor({ state: "visible", timeout: 10000 });
-        const targetLabel = (await page.locator("main.hc-team-fan-group-page .hc-team-group-posting-target").innerText()).trim();
-        if (!targetLabel.includes("Posting to") || !targetLabel.includes(teamFixture.name) || !targetLabel.includes("Fan Group")) errors.push("fan-feed: picker did not open the locked club group composer: " + targetLabel);
-        await page.locator("main.hc-team-fan-group-page .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
-        const emptyCopy = (await page.locator("main.hc-team-fan-group-page .hc-feed-empty").innerText()).trim();
-        const expectedEmptyTitle = "No posts yet — be the first to post for " + teamFixture.name + ".";
-        if (!emptyCopy.includes(expectedEmptyTitle)) errors.push("fan-feed: club-specific EMPTY-1 headline is missing: " + emptyCopy);
-        if (!emptyCopy.includes("Be the first to post")) errors.push("fan-feed: EMPTY-1 post action is missing");
+        // HF-5: Fan Feed now redirects into the shared HoopFeed community.
+        await page.waitForURL("**/feed", { timeout: 15000 });
+        const destination = new URL(page.url()).pathname;
+        if (destination !== "/feed") errors.push("fan-feed: legacy route must redirect to unified HoopFeed: " + destination);
       }
       if (requestedPath.startsWith("/team-hub/groups/")) {
         await page.locator("main.hc-team-fan-group-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
