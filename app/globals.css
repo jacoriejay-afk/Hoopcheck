@@ -4,7 +4,7 @@
 
 :root {
   color-scheme: light;
-  --ink: #0A0A0A;
+  --hc-radius-control: 12px;\n  --hc-radius-card: 16px;\n  --hc-radius-hero: 20px;\n  --ink: #0A0A0A;
   --paper: #F7F7F5;
   --brand-orange: #FF5A1F;
   --category-teams: #FF5A1F;
