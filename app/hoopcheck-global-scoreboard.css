@@ -1,0 +1,166 @@
+/* HoopCheck global scoreboard skin: shared presentation only; never fabricate stats or entitlements. */
+html.theme-dark {
+ --hc-page-bg:#0a0a0a;--hc-surface:#101010;--hc-surface-raised:#171717;
+ --hc-surface-soft:#1b1b1b;--hc-foreground:#f7f7f5;--hc-foreground-muted:#bdbdbd;
+ --hc-border:#414141;--hc-input-bg:#141414;--hc-input-fg:#f7f7f5;
+ --hc-nav-bg:rgba(0,0,0,.98);--hc-nav-fg:#f7f7f5;--hc-orange:#ff5a1f;
+ --paper:#0a0a0a;--ink:#f7f7f5;--border:#414141;
+}
+html.theme-light {
+ --hc-page-bg:#f4f4f1;--hc-surface:#fff;--hc-surface-raised:#fff;
+ --hc-surface-soft:#f8f8f6;--hc-foreground:#171717;--hc-foreground-muted:#535353;
+ --hc-border:#d2d2cc;--hc-input-bg:#fff;--hc-input-fg:#171717;
+ --hc-nav-bg:rgba(0,0,0,.98);--hc-nav-fg:#f7f7f5;--hc-orange:#e84c14;
+}
+/* Consistent dense scoreboard geometry on both themes. */
+html:is(.theme-dark,.theme-light) main :where(.card,.dashboard-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,.hc-smooth-wire,.hc-smooth-pulse__item,.hc-smooth-presign-dashboard-link) {
+ border-radius:12px;box-shadow:none;min-width:0;
+}
+html:is(.theme-dark,.theme-light) main :where(.card,.dashboard-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card) {
+ border-width:1px;border-style:solid;
+}
+html.theme-dark main :where(.card,.dashboard-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card) {
+ background:var(--hc-surface-raised)!important;border-color:#414141!important;color:#f7f7f5!important;
+}
+html.theme-light main :where(.card,.dashboard-card,.result-card,.quick-card,.settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card) {
+ background:var(--hc-surface-raised)!important;border-color:#d2d2cc!important;color:#171717!important;
+}
+/* Brand hierarchy: orange accents, black header, visible active navigation. */
+html:is(.theme-dark,.theme-light) :where(.topbar,.nav,.site-header) {border-bottom:2px solid #ff5a1f;}
+html:is(.theme-dark,.theme-light) :where(.bottom-nav) {border-top:2px solid #ff5a1f!important;}
+html.theme-dark :where(.bottom-nav) {background:var(--hc-page-bg)!important;}
+html:is(.theme-dark,.theme-light) :where(.bottom-nav a.active,.bottom-nav a[aria-current="page"]) {color:#ff5a1f!important;}
+html:is(.theme-dark,.theme-light) :where(.bottom-nav a.active svg,.bottom-nav a[aria-current="page"] svg) {color:#ff5a1f!important;stroke:currentColor;}
+html:is(.theme-dark,.theme-light) main :where(.eyebrow,.card-kicker) {
+ font-size:11px;letter-spacing:.075em;font-weight:800;
+}
+html.theme-dark main :where(.eyebrow,.card-kicker) {color:#ff8a54;}
+html.theme-light main :where(.eyebrow,.card-kicker) {color:#a83a0b;}
+/* Buttons and input affordances remain legible in either color scheme. */
+html:is(.theme-dark,.theme-light) main :where(button,input,select,textarea,a.btn) {min-width:0;}
+html.theme-dark main :where(input,select,textarea) {background:#171717!important;color:#f7f7f5!important;border-color:#666!important;}
+html.theme-light main :where(input,select,textarea) {background:var(--hc-surface-raised)!important;color:#171717!important;border-color:#aaa!important;}
+html:is(.theme-dark,.theme-light) :where(a,button,input,select,textarea):focus-visible {
+ outline:3px solid #ff8a54!important;outline-offset:3px;
+}
+html:is(.theme-dark,.theme-light) :where(.hc-smooth-pulse__item strong,.hc-social-stats strong) {font-variant-numeric:tabular-nums;}
+@media(max-width:600px) {
+ html:is(.theme-dark,.theme-light) main :where(.card,.dashboard-card,.result-card,.quick-card,.settings-card) {padding:clamp(10px,3vw,16px);}
+}
+@media(prefers-reduced-motion:reduce) {
+ html:is(.theme-dark,.theme-light) :where(.card,.dashboard-card,.result-card,.quick-card,.bottom-nav a) {transition:none!important;}
+}
+
+/* Contrast contract: match foreground to its actual surface in both themes.
+   Keep branded dark heroes opt-in rather than globally whitening text. */
+html:is(.theme-light,.theme-dark) {
+ --hc-scoreboard-on-dark:#f7f7f5;
+ --hc-scoreboard-on-dark-muted:#d0d0d0;
+ --hc-scoreboard-dark:#0b0b0b;
+}
+html.theme-light {
+ --hc-scoreboard-card-fg:#171717;
+ --hc-scoreboard-card-muted:#535353;
+ --hc-scoreboard-card-bg:#fff;
+ --hc-scoreboard-accent:#a83a0b;
+}
+html.theme-dark {
+ --hc-scoreboard-card-fg:#f7f7f5;
+ --hc-scoreboard-card-muted:#c5c5c5;
+ --hc-scoreboard-card-bg:var(--hc-surface-raised);
+ --hc-scoreboard-accent:#ff8a54;
+}
+html:is(.theme-light,.theme-dark) main :where(
+ .hc-smooth-pulse__item,.hc-smooth-wire,.hc-smooth-presign-dashboard-link,
+ .hc-profile-info-card,.hc-review-card,.hc-team-facts-card,.hc-team-directory-row,
+ .hc-feed-composer,.hc-feed-ticket,.hc-feed-empty,.hc-feed-comments-panel,
+ .hc-feed-game-fields,.live-game-chat-card,.live-chat-card,.chat-panel
+) {
+ background:var(--hc-scoreboard-card-bg)!important;
+ color:var(--hc-scoreboard-card-fg)!important;
+ border-color:var(--hc-border)!important;
+}
+html:is(.theme-light,.theme-dark) main :where(
+ .hc-smooth-pulse__item,.hc-smooth-wire,.hc-smooth-presign-dashboard-link,
+ .hc-profile-info-card,.hc-review-card,.hc-team-facts-card,.hc-team-directory-row,
+ .hc-feed-composer,.hc-feed-ticket,.hc-feed-empty,.hc-feed-comments-panel,
+ .hc-feed-game-fields,.live-game-chat-card,.live-chat-card,.chat-panel
+) :where(h1,h2,h3,h4,h5,h6,strong,p,li,label,a:not(.btn)) {color:inherit!important;}
+html:is(.theme-light,.theme-dark) main :where(
+ .hc-smooth-pulse__item,.hc-smooth-wire,.hc-profile-info-card,.hc-review-card,
+ .hc-team-facts-card,.hc-feed-composer,.hc-feed-ticket,.hc-feed-empty
+) :where(.muted,.subtle,.meta,small) {color:var(--hc-scoreboard-card-muted)!important;}
+/* Branded hero exceptions: the dark background is intentional even in light mode. */
+html:is(.theme-light,.theme-dark) main :where(
+ .hc-player-dossier-hero,.hc-team-branded-hero,.hc-member-profile-page .hero-card.compact-hero,
+ .hc-smooth-passport
+) {
+ background-color:var(--hc-scoreboard-dark)!important;
+ color:var(--hc-scoreboard-on-dark)!important;
+}
+html:is(.theme-light,.theme-dark) main :where(
+ .hc-player-dossier-hero,.hc-team-branded-hero,.hc-member-profile-page .hero-card.compact-hero,
+ .hc-smooth-passport
+) :where(h1,h2,h3,h4,h5,h6,strong,p,li,label,a:not(.btn)) {color:var(--hc-scoreboard-on-dark)!important;}
+html:is(.theme-light,.theme-dark) main :where(
+ .hc-player-dossier-hero,.hc-team-branded-hero,.hc-member-profile-page .hero-card.compact-hero,
+ .hc-smooth-passport
+) :where(.muted,.subtle,.meta,small) {color:var(--hc-scoreboard-on-dark-muted)!important;}
+/* Explicitly restore the black-on-white membership ladder in light mode. */
+html.theme-light .hc-membership-comparison .hc-membership-plan {
+ background:var(--hc-surface-raised)!important;color:#171717!important;border-color:#c9c9c4!important;
+}
+html.theme-light .hc-membership-comparison .hc-membership-plan.is-current {
+ background:#fff1e8!important;border-color:#b83d0a!important;
+}
+html.theme-light .hc-membership-comparison .hc-membership-plan :where(h3,.price,li,strong) {color:#171717!important;}
+html.theme-light .hc-membership-comparison .hc-membership-plan :where(.eyebrow,small) {color:#67331c!important;}
+html.theme-light .hc-member-profile-page :where(.hc-profile-membership-link,.hc-profile-quick-link) {
+ background:var(--hc-surface-raised)!important;color:#171717!important;border-color:#bdbdb7!important;
+}
+html.theme-light .hc-member-profile-page :where(.hc-profile-membership-link,.hc-profile-quick-link) svg {color:#b83d0a!important;}
+/* Dark theme keeps the same controls on true dark backgrounds. */
+html.theme-dark .hc-member-profile-page :where(.hc-profile-membership-link,.hc-profile-quick-link) {
+ background:#111!important;color:#f7f7f5!important;border-color:#5c5c5c!important;
+}
+html.theme-dark .hc-membership-comparison .hc-membership-plan :where(h3,.price,li,strong) {color:#f7f7f5!important;}
+/* Disabled and placeholder content must still be legible. */
+html.theme-dark main :where(input,textarea)::placeholder {color:#b9b9b9;opacity:1;}
+html.theme-light main :where(input,textarea)::placeholder {color:#595959;opacity:1;}
+html:is(.theme-dark,.theme-light) main :where(button:disabled,[aria-disabled="true"]) {opacity:.65;}
+
+/* Account / Hoop Passport: foregrounds must remain visible over authored dark art.
+   Target actual account surfaces rather than forcing all dark/light cards alike. */
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero,
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hc-smooth-passport {
+ color:#f7f7f5!important;
+ --hc-foreground:#f7f7f5;
+ --hc-foreground-muted:#c9c9c9;
+ --ink:#f7f7f5;
+}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero :is(
+ h1,h2,h3,p,span,strong,small,label,.hc-member-profile-copy,.hc-member-profile-copy *,
+ .hc-profile-completion-copy,.hc-profile-completion-copy *
+),
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hc-smooth-passport :is(
+ h1,h2,h3,p,span,strong,small,label,a:not(.btn)
+) {color:#f7f7f5!important;opacity:1!important;-webkit-text-fill-color:currentColor!important;}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero :is(
+ .hc-profile-email,.hc-profile-completion-copy span
+) {color:#c9c9c9!important;}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero .hc-member-profile-avatar {
+ color:#f7f7f5!important;-webkit-text-fill-color:#f7f7f5!important;
+ background:#252525!important;
+}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero .hc-profile-edit-button,
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hc-smooth-passport .hc-smooth-passport__monogram {
+ color:#101010!important;-webkit-text-fill-color:#101010!important;
+}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero .hc-profile-completion {
+ background:#181818!important;color:#f7f7f5!important;border-color:#4d4d4d!important;
+}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hc-smooth-passport a:not(.btn) {color:#ff9b70!important;}
+/* Brand header: HOOP must not disappear against the black masthead. */
+html:is(.theme-light,.theme-dark) :where(.site-header,.topbar) :where(.brand,.logo,.brand-name) {
+ color:#f7f7f5;
+}

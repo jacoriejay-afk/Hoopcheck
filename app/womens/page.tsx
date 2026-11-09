@@ -2,6 +2,7 @@
 
 import { supabase } from "../../lib/supabase";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
+import "../hoopcheck-reference-team-list.css";
 import { useEffect, useMemo, useState } from "react";
 import DirectoryLayout from "../../components/DirectoryLayout";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";

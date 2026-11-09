@@ -24,6 +24,11 @@ import "./hoopcheck-lm2e-account-layout.css";
 import "./hoopcheck-lm2f-bottom-nav.css";
 import "./hoopcheck-lg1-logo-contrast.css";
 import "./hoopcheck-ia1-home.css";
+import "./hoopcheck-brand-navigation.css";
+import "./hoopcheck-reference-identity.css";
+import "./hoopcheck-pastel-profiles.css";
+import "./hoopcheck-smooth-experience.css";
+import OfflineRuntime from "../components/OfflineRuntime";
 import ThemeProvider from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
 import MobileAuth from "../components/MobileAuth";
@@ -40,6 +45,11 @@ import { PageShell } from "../components/LayoutSystem";
 import "./hoopcheck-layout-system.css";
 import "./hoopcheck-desk-fix-2.css";
 import "./hoopcheck-desk-3.css";
+import "./hoopcheck-hub-empty-state-pairing.css";
+import "./hoopcheck-preview-mobile-hotfix.css";
+import "./hoopcheck-global-scoreboard.css";
+import "./hoopcheck-unified-layout.css";
+import "./hoopcheck-spacing-density-consolidated.css";
 import { SITE_URL } from "../lib/site-url";
 
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
@@ -117,6 +127,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c") }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c") }} />
         <ProtectionLayer />
+        <OfflineRuntime />
         <ThemeProvider initialTheme={initialTheme}>
           <AuthProvider>
             <LanguageProvider initialLanguage={initialLanguage}>

@@ -22,17 +22,36 @@ function Complete(){
  const [resendLoading,setResendLoading]=useState(false); const [authMessage,setAuthMessage]=useState("");
  const [accountType,setAccountType]=useState<AccountType>("player"); const [basketballType,setBasketballType]=useState<"mens"|"womens">("mens"); const [womenPlayer,setWomenPlayer]=useState(false);
  const [favoriteTeamName,setFavoriteTeamName]=useState("");
- const [goal,setGoal]=useState(""); const [preferences,setPreferences]=useState(""); const [saved,setSaved]=useState(false); const [saving,setSaving]=useState(false);
+ const [goal,setGoal]=useState(""); const [preferences,setPreferences]=useState(""); const [saved,setSaved]=useState(false); const [saving,setSaving]=useState(false); const [saveError,setSaveError]=useState("");
 
  useEffect(()=>{let mounted=true;void(async()=>{try{const {data:{user}}=await supabase.auth.getUser();if(!mounted)return;if(!user){setAuthChecked(true);return;}setHasAuthenticatedUser(true);const metadata=(user.user_metadata?.account_type||"player") as AccountType;setAccountType(metadata);const femalePlayer=metadata==="player"&&(user.user_metadata?.gender==="female"||user.user_metadata?.basketball_type==="womens");setWomenPlayer(femalePlayer);setBasketballType(femalePlayer?"womens":(user.user_metadata?.basketball_type==="womens"?"womens":"mens"));setGoal(metadata==="player"?"research":metadata==="fan"?"follow_teams":"research");}catch(error){console.error("Signup completion setup failed:",error);}finally{if(mounted)setAuthChecked(true);}})();return()=>{mounted=false};},[]);
 
  async function resendConfirmation(){if(!email){setAuthMessage("Enter the email address you used to sign up, then try logging in or creating your account again.");return;}setResendLoading(true);setAuthMessage("");try{const {error}=await supabase.auth.resend({type:"signup",email});if(error)throw error;setAuthMessage("If this email needs confirmation, a fresh confirmation link has been sent. Check your inbox and spam folder.");}catch(error){setAuthMessage(error instanceof Error?error.message:"We couldn't resend the confirmation email. Please try again.");}finally{setResendLoading(false);}}
  const copy=roleCopy[accountType];
- async function save(){setSaving(true);const {data:{user}}=await supabase.auth.getUser();if(!user){router.push("/login");return;}const {error}=await supabase.from("profiles").update({account_type:accountType,basketball_type:accountType==="fan"||accountType==="player"?basketballType:null,favorite_teams:favoriteTeamName||null,experience_goal:goal,research_preferences:preferences.trim().slice(0,1000)||null}).eq("id",user.id);if(error){setSaving(false);return;}localStorage.setItem("hoopcheck_profile_setup","complete");setSaved(true);setSaving(false);router.replace("/onboarding/teams");}
+ async function save(){
+  if(saving)return;
+  setSaving(true);
+  setSaveError("");
+  try{
+   const {data:{user},error:authError}=await supabase.auth.getUser();
+   if(authError)throw authError;
+   if(!user){router.push("/login?returnTo=/signup/complete");return;}
+   const {data,error}=await supabase.from("profiles").update({account_type:accountType,basketball_type:accountType==="fan"||accountType==="player"?basketballType:null,favorite_teams:favoriteTeamName||null,experience_goal:goal,research_preferences:preferences.trim().slice(0,1000)||null}).eq("id",user.id).select("id").maybeSingle();
+   if(error)throw error;
+   if(!data)throw new Error("Your profile could not be updated. Please try again.");
+   localStorage.setItem("hoopcheck_profile_setup","complete");
+   setSaved(true);
+   router.replace("/onboarding/teams");
+  }catch(error){
+   console.error("Signup profile completion failed:",error);
+   setSaveError(error instanceof Error?error.message:"Your changes could not be saved. Please try again.");
+  }finally{setSaving(false);}
+ }
  if(!authChecked)return <main className="page-shell"><div className="page-container"><section className="hero-card"><p className="eyebrow">WELCOME TO HOOPCHECK</p><h1>Checking your account…</h1><p className="muted">We’re verifying your sign-in before continuing.</p></section></div></main>;
  if(!hasAuthenticatedUser)return <main className="page-shell"><div className="page-container"><section className="hero-card"><p className="eyebrow">ONE LAST STEP</p><h1>Check your email to finish signup.</h1><p className="muted">We received your signup request{email?<> for <strong>{email}</strong></>:null}. If email confirmation is enabled, open the confirmation link we sent you. Then return to HoopCheck and log in with the same email and password. If you don’t see the email, check spam or request another link below.</p><div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:18}}><button className="btn" onClick={resendConfirmation} disabled={resendLoading}>{resendLoading?"Sending…":"Resend Confirmation Email"}</button><Link href="/login" className="btn dark">Go to Login</Link><Link href="/signup" className="btn dark">Back to Sign Up</Link></div>{authMessage&&<p className="muted" role="status" aria-live="polite" style={{marginTop:16}}>{authMessage}</p>}<p className="muted" style={{marginTop:18}}>Already signed up with this email? Try logging in or use “Forgot password?” to recover access. You won’t be considered signed in until HoopCheck accepts your login.</p></section></div></main>;
  if(saved)return <main className="page-shell"><div className="page-container"><section className="hero-card"><p className="eyebrow">WELCOME TO HOOPCHECK</p><h1>Your experience is ready.</h1><p className="muted">Your {copy.title.toLowerCase()} has been personalized.</p><div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:18}}><Link href="/onboarding/teams" className="btn">Continue to team setup</Link><Link href="/teams" className="btn dark">Explore Teams</Link></div></section></div></main>;
  return <main className="page-shell"><div className="page-container signup-complete-shell">
+  {saveError&&<p role="alert" className="hc-ux2b-error">{saveError}</p>}
   <section className="hero-card"><p className="eyebrow">WELCOME TO HOOPCHECK</p><h1>Let’s personalize your experience.</h1><p className="muted">Your account is created as a <strong>{copy.title.replace(" Experience","")}</strong>{email && <> for {email}</>}. Here is what HoopCheck will prioritize for you.</p></section>
   <section className="dashboard-card" style={{marginTop:12}}><p className="eyebrow">YOUR ACCOUNT</p><h2>{copy.title}</h2><p className="muted">{copy.description}</p><div className="grid" style={{padding:"14px 0 0"}}>{copy.goals.map((g,i)=><article className="card" key={g}><span className="card-kicker">0{i+1}</span><h3>{g}</h3></article>)}</div></section>
   {(accountType==="player"||accountType==="fan")&&<section className="dashboard-card" style={{marginTop:12}}><p className="eyebrow">BASKETBALL</p><h2>{womenPlayer?"Women’s HoopCheck":"Choose your basketball experience"}</h2>{womenPlayer?<p className="muted">Your female Player account is automatically placed in the Women’s HoopCheck category.</p>:<div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10}}><button type="button" className={basketballType==="mens"?"btn":"btn dark"} onClick={()=>{setBasketballType("mens");setFavoriteTeamName("");}}>Men’s Basketball</button><button type="button" className={basketballType==="womens"?"btn":"btn dark"} onClick={()=>{setBasketballType("womens");setFavoriteTeamName("");}}>Women’s Basketball</button></div>}</section>}

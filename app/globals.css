@@ -3978,12 +3978,12 @@ main :where(input,select,textarea) { max-width:100%; min-width:0; }
 
 /* HERO-1 — Live Game Hub uses the same active-theme surface/foreground pair as cards. */
 .hc-live-hub-hero {
-  background: var(--hc-card, var(--hc-surface-raised, #fff)) !important;
+  background: var(--hc-surface-raised, #fff) !important;
   color: var(--hc-foreground, #0a0a0a) !important;
   border-color: var(--hc-border, rgba(128,128,128,.24)) !important;
 }
 html.theme-dark .hc-live-hub-hero {
-  background: var(--hc-card, var(--hc-surface-raised, #171717)) !important;
+  background: var(--hc-surface-raised, #171717) !important;
   color: var(--hc-foreground, #f7f7f5) !important;
 }
 .hc-live-hub-hero :where(h1,h2,h3,strong) {
@@ -4065,3 +4065,59 @@ html.theme-dark .hc-shared-picker-dialog{--hc-surface-raised:#171717;--hc-surfac
 }
 
 .hc-shared-picker-filters.is-league-picker{grid-template-columns:1fr}
+
+
+/* Team profile: keep stats readable in light mode and maintain dark mode contrast. */
+.hc-team-profile-hero .hc-team-social-stats,
+.hc-team-profile-hero .hc-team-social-stats > *,
+.hc-team-profile-hero .hc-team-social-stats strong,
+.hc-team-profile-hero .hc-team-social-stats small {
+  color: var(--hc-foreground, #171717) !important;
+}
+.hc-team-profile-hero .hc-team-social-stats small {
+  color: var(--hc-foreground-muted, #575757) !important;
+}
+html.theme-light .hc-team-profile-hero .hc-team-social-stats > * {
+  background: #f4f3f0 !important;
+  border-color: #d6d4cf !important;
+}
+html.theme-dark .hc-team-profile-hero .hc-team-social-stats > * {
+  background: #242424 !important;
+  border-color: #505050 !important;
+}
+html.theme-dark .hc-team-profile-hero .hc-team-social-stats :where(strong,small) {
+  color: #f4f4f4 !important;
+}
+.hc-fan-group-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.hc-team-fan-group-entry .hc-fan-group-actions .btn {
+  min-height:44px; color:#171717 !important; background:#ff6a00 !important;
+  border:1px solid #d94c00 !important; text-decoration:none;
+}
+.hc-team-fan-group-entry .hc-fan-group-actions .hc-fan-group-moderator-link {
+  color:var(--hc-foreground, #171717) !important;
+  background:var(--hc-surface-soft, #efefef) !important;
+  border-color:var(--hc-border, #ccc) !important;
+}
+@media(max-width:600px) {
+  .hc-team-fan-group-entry .hc-fan-group-actions { width:100%; }
+  .hc-team-fan-group-entry .hc-fan-group-actions > * { flex:1 1 100%; text-align:center; }
+}
+
+
+/* Header wordmark must remain legible on the black navigation bar. */
+.site-header-global .site-header-brand .hc-logo__icon {
+  color:#f5f5f5 !important;
+  stroke:#f5f5f5 !important;
+}
+.site-header-global .site-header-brand .hc-logo__check {
+  color:#ff6a00 !important;
+  stroke:#ff6a00 !important;
+}
+.site-header-global .site-header-brand .hc-logo__hoop {
+  color:#f5f5f5 !important;
+  -webkit-text-fill-color:#f5f5f5 !important;
+}
+.site-header-global .site-header-brand .hc-logo__check-word {
+  color:#ff6a00 !important;
+  -webkit-text-fill-color:#ff6a00 !important;
+}
