@@ -1,0 +1,60 @@
+/* UX-2B: completion flow and always-visible avatar initials. */
+.hc-profile-avatar {
+  display:inline-flex!important;
+  flex:0 0 auto;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:hidden;
+  border-radius:50%;
+  background:#0A0A0A!important;
+  color:#F7F7F5!important;
+  border:1px solid #0A0A0A;
+  font-weight:900;
+  line-height:1;
+  font-size:clamp(16px, 2.5vw, 22px);
+  -webkit-text-fill-color:#F7F7F5!important;
+}
+.hc-profile-avatar > img { display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit; }
+.hc-profile-avatar__initial { display:flex!important;align-items:center;justify-content:center;width:100%;height:100%;color:inherit!important;-webkit-text-fill-color:currentColor!important;opacity:1!important;visibility:visible!important; }
+html.theme-dark .hc-profile-avatar { background:#F7F7F5!important;color:#0A0A0A!important;border-color:#F7F7F5;-webkit-text-fill-color:#0A0A0A!important; }
+.hc-ux2b-completion-card,.hc-ux2b-progress-card,.hc-ux2b-checklist,.hc-ux2b-complete-state {
+  margin:16px 0;padding:16px;border:1px solid var(--border);border-radius:14px;background:var(--surface-2);color:var(--page-text);
+}
+.hc-ux2b-completion-heading,.hc-ux2b-progress-top,.hc-ux2b-completion-actions,.hc-ux2b-completion-continue,.hc-ux2b-editor-actions {
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+}
+.hc-ux2b-completion-heading strong,.hc-ux2b-progress-top strong { display:block;font-size:18px; }
+.hc-ux2b-completion-heading p { margin:5px 0 0; }
+.hc-ux2b-completion-percent { font-size:28px;font-weight:950;color:var(--orange); }
+.hc-ux2b-progress { height:9px;margin:12px 0;background:var(--surface-3);border-radius:999px;overflow:hidden; }
+.hc-ux2b-progress > span { display:block;height:100%;background:var(--orange);border-radius:inherit;transition:width .22s ease; }
+.hc-ux2b-completion-continue { color:var(--page-text);text-decoration:none;font-weight:850;padding-top:12px; }
+.hc-ux2b-completion-continue > span { display:inline-flex;align-items:center;gap:6px;color:var(--orange); }
+.hc-ux2b-page { padding-bottom:calc(90px + env(safe-area-inset-bottom,0px)); }
+.hc-ux2b-back { display:inline-flex;margin:0 0 16px;color:var(--orange);font-weight:850;text-decoration:none; }
+.hc-ux2b-header { display:flex;align-items:center;gap:14px;margin-bottom:18px; }
+.hc-ux2b-header h1 { margin:2px 0 4px;font-size:clamp(25px,5vw,36px); }
+.hc-ux2b-header p { margin:0; }
+.hc-ux2b-checklist { display:grid;gap:0;padding:4px 14px; }
+.hc-ux2b-check-row + .hc-ux2b-check-row { border-top:1px solid var(--border); }
+.hc-ux2b-check-trigger { display:flex;width:100%;align-items:center;gap:12px;padding:15px 0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer; }
+.hc-ux2b-check-trigger > span:nth-child(2) { display:grid;gap:3px;flex:1; }
+.hc-ux2b-check-trigger small { color:var(--muted);font-size:12px; }
+.hc-ux2b-check-number { display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;border-radius:50%;background:var(--surface-3);font-weight:900; }
+.hc-ux2b-check-row.is-done .hc-ux2b-check-number { background:#FF5A1F;color:#0A0A0A; }
+.hc-ux2b-editor { display:grid;gap:10px;padding:0 0 16px 42px; }
+.hc-ux2b-editor p { margin:0; }
+.hc-ux2b-editor input,.hc-ux2b-editor textarea { width:100%;min-height:46px;padding:12px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--page-text);font:inherit; }
+.hc-ux2b-editor textarea { min-height:110px;resize:vertical; }
+.hc-ux2b-file { display:flex;align-items:center;min-height:48px;padding:10px 12px;border:1px dashed var(--border);border-radius:9px;cursor:pointer; }
+.hc-ux2b-file input { position:absolute;width:1px;height:1px;opacity:0; }
+.hc-ux2b-error,.hc-ux2b-notice { margin:12px 0;padding:12px 14px;border-radius:9px; }
+.hc-ux2b-error { border:1px solid #D84A4A;background:rgba(216,74,74,.1);color:#D84A4A; }
+.hc-ux2b-notice { border:1px solid #249B63;background:rgba(36,155,99,.1);color:#249B63; }
+.hc-ux2b-complete-state { display:grid;gap:10px; }
+.hc-ux2b-complete-state h2 { margin:0; }
+@media(max-width:600px) {
+  .hc-ux2b-header { align-items:flex-start; }
+  .hc-ux2b-editor { padding-left:0; }
+}
+@media(prefers-reduced-motion:reduce) { .hc-ux2b-progress > span { transition:none; } }

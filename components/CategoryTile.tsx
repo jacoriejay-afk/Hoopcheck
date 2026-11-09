@@ -32,19 +32,21 @@ export default function CategoryTile({
   category,
   href,
   description,
+  count,
   className = "",
 }: {
   label: string;
   category: CategoryTileKind;
   href: string;
   description?: string;
+  count?: number;
   className?: string;
 }) {
   const color = categoryColors[category];
   return (
     <Link
       href={href}
-      className={`hc-category-tile ${className}`.trim()}
+      className={`hc-category-tile hc-smooth-card hc-smooth-press ${className}`.trim()}
       data-category={category}
       style={{ "--category-color": color } as CSSProperties}
     >
@@ -54,7 +56,8 @@ export default function CategoryTile({
         </span>
       </span>
       <span className="hc-category-tile__label">{label}</span>
-      {description ? <span className="hc-category-tile__description">{description}</span> : null}\n      {count != null ? <span className="hc-category-tile__count">{count.toLocaleString()} LISTED</span> : null}
+      {description ? <span className="hc-category-tile__description">{description}</span> : null}
+      {count != null ? <span className="hc-category-tile__count">{count.toLocaleString()} LISTED</span> : null}
       <span className="hc-category-tile__arrow" aria-hidden="true">
         <HoopIcon name="arrow-right" size={16} />
       </span>

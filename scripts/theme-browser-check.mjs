@@ -148,6 +148,7 @@ try {
           "access-control-allow-credentials": "true",
           "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS",
           "access-control-allow-headers": "authorization,apikey,content-type,prefer,accept,range,x-client-info",
+        "cache-control": "no-store",
         };
         if (request.method() === "OPTIONS") {
           await route.fulfill({ status: 204, headers: cors, body: "" });
@@ -188,6 +189,17 @@ try {
         await page.locator(".hc-feed-filter-chip").first().waitFor({ state: "visible", timeout: 30000 });
       }
 
+      // Auth/profile hydration can redirect /dashboard after its loading shell first
+      // appears. Wait for that navigation to settle before reading computed styles.
+      await page.waitForLoadState("domcontentloaded").catch(() => {});
+      // Give client-side auth redirects a brief chance to complete after the
+      // dashboard's initial loading shell becomes visible.
+      await page.waitForTimeout(750);
+      await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
+      if (routeName === "dashboard") {
+        await page.locator(".hc-ia-identity").waitFor({ state: "visible", timeout: 30000 });
+        await page.locator(".hc-ia-door").first().waitFor({ state: "visible", timeout: 30000 });
+      }
       const computed = await page.evaluate(({ wrapperSelector, routeName }) => {
         const color = (selector) => {
           const element = document.querySelector(selector);
@@ -199,8 +211,17 @@ try {
           body: color("body"),
           pageWrapper: color(wrapperSelector),
           composer: routeName === "feed" ? color(".hc-feed-composer") : null,
+          discoveryHeading: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-discovery h1")).color : null,
+          composerBorder: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-composer")).borderTopWidth : null,
           topicChip: routeName === "feed" ? color(".hc-feed-topic-chip") : null,
           filterChip: routeName === "feed" ? color(".hc-feed-filter-chip:not(.is-active)") : null,
+          homePairs: routeName === "dashboard" ? [".hc-ia-identity", ".hc-ia-live-strip", ".hc-ia-door"].map((selector) => {
+            const element = document.querySelector(selector);
+            if (!element) return { selector, missing: true };
+            const style = getComputedStyle(element);
+            const title = element.querySelector("strong");
+            return { selector, background: style.backgroundColor, color: style.color, title: title && getComputedStyle(title).color };
+          }) : [],
           whiteSurfaceOffenders: Array.from(document.querySelectorAll("main *, .global-back-button"))
             .filter((element) => {
               const style = getComputedStyle(element);
@@ -219,12 +240,28 @@ try {
 
       assert.equal(computed.themeClass, theme, `${routeName}: expected html theme class ${theme}, got ${computed.themeClass}`);
       const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
-      const expectedCard = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
       const expectedChip = theme === "dark" ? "rgb(27, 27, 27)" : "rgb(248, 248, 246)";
       assert.equal(computed.body, expectedPage, `${routeName}/${theme}: body background mismatch`);
       assert.equal(computed.pageWrapper, expectedPage, `${routeName}/${theme}: page wrapper background mismatch`);
+      if (routeName === "dashboard") {
+        const surface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
+        for (const pair of computed.homePairs) {
+          assert.equal(pair.background, surface, `dashboard/${theme}: ${pair.selector} surface: ${JSON.stringify(pair)}`);
+          const contrast = (foreground, background) => {
+            const luminance = (color) => color.match(/\d+/g).slice(0, 3).map(Number)
+              .map(value => value / 255)
+              .map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4)
+              .reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
+            const levels = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+            return (levels[0] + 0.05) / (levels[1] + 0.05);
+          };
+          assert.ok(pair.title && contrast(pair.title, pair.background) >= 4.5, `dashboard/${theme}: ${pair.selector} title contrast: ${JSON.stringify(pair)}`);
+        }
+      }
       if (routeName === "feed") {
-        assert.equal(computed.composer, expectedCard, `feed/${theme}: composer background mismatch`);
+        assert.equal(computed.composer, "rgba(0, 0, 0, 0)", `feed/${theme}: composer uses open content flow`);
+        assert.equal(computed.discoveryHeading, theme === "dark" ? "rgb(247, 247, 245)" : "rgb(23, 23, 23)", `feed/${theme}: compact heading remains readable`);
+        assert.equal(computed.composerBorder, "0px", `feed/${theme}: decorative composer frame removed`);
         assert.equal(computed.topicChip, expectedChip, `feed/${theme}: topic chip background mismatch`);
         assert.equal(computed.filterChip, expectedChip, `feed/${theme}: filter chip background mismatch`);
       }
@@ -251,7 +288,20 @@ try {
     "/teams", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2", "/teams/a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f0", "/admin/team-logos", "/coaches", "/coaches/11111111-1111-4111-8111-111111111111", "/leagues", "/players", "/womens", "/directory",
     "/reviews", "/membership", "/notifications", "/support", "/verification",
     "/privacy-center", "/privacy", "/terms", "/community-guidelines", "/login",
-    "/signup", "/onboarding", "/fan-live", "/live-games", "/partners", "/copyright",
+    "/signup", "/onboarding", "/fan-live", "/fan-feed", "/team-hub",
+    "/team-hub/groups/" + teamFixture.id, "/live-games", "/theme-card-audit", "/partners", "/copyright",
+  ];
+  const themeComponentInventory = [
+    { route: "/live-games", selector: ".hc-live-hub-hero", surface: "Hub hero surface/foreground pair" },
+    { route: "/live-games", selector: ".hc-live-empty", surface: "Live and upcoming empty-state card" },
+    { route: "/live-games", selector: ".hc-live-empty__icon", surface: "Empty-state icon chip" },
+    { route: "/live-games", selector: ".hc-live-section-heading h2 span", surface: "Live/upcoming/recent count badge (including zero)" },
+    { route: "/live-games", selector: ".hc-live-recent-empty", surface: "Recently Finished dashed empty state" },
+    { route: "/live-games", selector: ".hc-live-hub-filters", surface: "Hub filter card; regression sentinel" },
+    { route: "/live-games", selector: ".hc-live-hub-card", surface: "Populated game card; regression sentinel" },
+    { route: "/live-games", selector: ".hc-live-card__crest", surface: "Game-card team logo chip" },
+    { route: "/live-games", selector: ".hc-live-join", surface: "Live chat entry" },
+    { route: "/live-games", selector: ".hc-live-card__meta", surface: "Game-card metadata" },
   ];
   const routeSweepResults = [];
   for (const theme of ["dark", "light"]) {
@@ -263,6 +313,31 @@ try {
       { name: "sb-ci-auth-token", value: encodedSession, url: baseURL },
     ]);
     const page = await context.newPage();
+    let activeRoutePath = "";
+    let liveGameFixtureMode = "empty";
+    const fixtureNow = Date.now();
+    const liveGameFixtures = [
+      {
+        id: "33333333-3333-4333-8333-333333333331", team_id: teamFixture.id, opponent_team_id: fallbackTeamFixture.id,
+        opponent_name: fallbackTeamFixture.name, status: "live", home_score: 52, away_score: 48,
+        started_at: new Date(fixtureNow - 20 * 60_000).toISOString(), ends_at: new Date(fixtureNow + 35 * 60_000).toISOString(),
+        scheduled_at: new Date(fixtureNow - 20 * 60_000).toISOString(), league_id: leagueFixture.id,
+        league_name: "QA League", country: "Azerbaijan", period_label: "Q3",
+      },
+      {
+        id: "33333333-3333-4333-8333-333333333332", team_id: teamFixture.id, opponent_team_id: fallbackTeamFixture.id,
+        opponent_name: fallbackTeamFixture.name, status: "scheduled", home_score: null, away_score: null,
+        started_at: null, ends_at: null, scheduled_at: new Date(fixtureNow + 2 * 60 * 60_000).toISOString(),
+        league_id: leagueFixture.id, league_name: "QA League", country: "Azerbaijan", period_label: null,
+      },
+      {
+        id: "33333333-3333-4333-8333-333333333333", team_id: teamFixture.id, opponent_team_id: fallbackTeamFixture.id,
+        opponent_name: fallbackTeamFixture.name, status: "final", home_score: 80, away_score: 74,
+        started_at: new Date(fixtureNow - 2 * 60 * 60_000).toISOString(), ends_at: new Date(fixtureNow - 60 * 60_000).toISOString(),
+        scheduled_at: new Date(fixtureNow - 2 * 60 * 60_000).toISOString(), league_id: leagueFixture.id,
+        league_name: "QA League", country: "Azerbaijan", period_label: null,
+      },
+    ];
     await page.addInitScript(({ themePreference, authSession, language }) => {
       localStorage.setItem("hoopcheck-theme", themePreference);
       localStorage.setItem("hoopcheck-language", language);
@@ -286,15 +361,49 @@ try {
       let data = [];
       const single = request.headers()["accept"]?.includes("vnd.pgrst.object");
       if (url.pathname === "/auth/v1/user") data = user;
-      else if (url.pathname.includes("/rest/v1/profiles")) data = single ? profile : [];
-      else if (url.pathname.includes("/rest/v1/subscriptions")) data = single ? subscription : [];
-      else if (url.pathname.includes("/rest/v1/teams")) { const requestedId = (url.searchParams.get("id") || "").replace(/^eq\./, ""); data = requestedId ? (requestedId === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture) : [teamFixture, fallbackTeamFixture]; }
+      else if (url.pathname.includes("/rest/v1/profiles")) {
+        const fanSurfaceRoute = activeRoutePath === "/fan-feed" || activeRoutePath.startsWith("/team-hub/groups/");
+        const accountTypeQuery = (url.searchParams.get("select") || "").includes("account_type") && (url.searchParams.get("id") || "").startsWith("eq.");
+        const fanProfile = { ...profile, account_type: "fan" };
+        data = accountTypeQuery ? (fanSurfaceRoute ? fanProfile : profile) : single ? profile : [];
+      }
+      else if (url.pathname.includes("/rest/v1/subscriptions")) {
+        const subscriptionQuery = (url.searchParams.get("select") || "").includes("plan") && (url.searchParams.get("user_id") || "").startsWith("eq.");
+        data = subscriptionQuery ? subscription : single ? subscription : [];
+      }
+      else if (url.pathname.includes("/rest/v1/fan_live_games")) {
+        data = activeRoutePath === "/live-games" && liveGameFixtureMode === "populated" ? liveGameFixtures : [];
+      }
+      else if (url.pathname.includes("/rest/v1/teams")) {
+        const idFilter = url.searchParams.get("id") || "";
+        if (idFilter.startsWith("eq.")) {
+          const id = idFilter.slice(3);
+          const row = id === fallbackTeamFixture.id ? fallbackTeamFixture : teamFixture;
+          data = single ? row : [row];
+        } else if (idFilter.startsWith("in.")) {
+          const ids = idFilter.slice(3).replace(/^\(|\)$/g, "").split(",");
+          data = [teamFixture, fallbackTeamFixture].filter(row => ids.includes(row.id));
+        } else data = [teamFixture, fallbackTeamFixture];
+      }
       else if (url.pathname.includes("/rest/v1/leagues")) data = single ? leagueFixture : [leagueFixture];
       else if (url.pathname.includes("/rest/v1/coaches")) data = single ? coachFixture : [coachFixture];
       else if (url.pathname.includes("/rest/v1/team_league_memberships")) data = [];
       else if (url.pathname.includes("/rest/v1/reviews")) data = [];
       else if (url.pathname.includes("/rest/v1/team_roster_spots")) data = [];
-      else if (url.pathname.includes("/rest/v1/follow_relationships")) data = single ? null : [];
+      else if (url.pathname.includes("/rest/v1/follow_relationships")) {
+        const isFanTeamFollow = activeRoutePath === "/fan-feed" && url.searchParams.get("target_type") === "eq.team";
+        data = isFanTeamFollow ? [{ target_id: teamFixture.id, target_type: "team" }] : single ? null : [];
+      }
+      else if (url.pathname.includes("/rest/v1/team_fan_group_members")) data = activeRoutePath.startsWith("/team-hub/groups/") ? { user_id: user.id } : null;
+      else if (url.pathname.includes("/rest/v1/rpc/get_team_fan_group_summary")) {
+        data = activeRoutePath.startsWith("/team-hub/groups/") ? [{
+          group_name: teamFixture.name + " Fan Group",
+          member_count: 12,
+          join_mode: "open",
+          is_member: true,
+          has_pending_request: false,
+        }] : [];
+      }
       else if (url.pathname.includes("/rest/v1/rpc/get_follow_count")) data = 0;
       else if (url.pathname.includes("/rest/v1/rpc/get_review_verification")) data = [];
       else if (url.pathname.includes("/rest/v1/rpc/is_current_user_admin_or_moderator")) data = true;
@@ -318,9 +427,17 @@ try {
 
     for (const requestedPath of mainRoutes) {
       let navigationError = null;
+      activeRoutePath = requestedPath;
       try {
         await page.goto(baseURL + requestedPath, { waitUntil: "domcontentloaded", timeout: 20000 });
         await page.waitForTimeout(300);
+        if (requestedPath === "/live-games") {
+          await page.locator("main.hc-live-hub-page .hc-live-hub-hero").waitFor({ state: "visible", timeout: 15000 });
+        }
+        if (requestedPath === "/theme-card-audit") {
+          await page.locator("main.hc-card-audit-page .hc-card-audit-preview[data-theme-preview='light']").first().waitFor({ state: "visible", timeout: 15000 });
+          await page.locator("main.hc-card-audit-page .hc-card-audit-preview[data-theme-preview='dark']").first().waitFor({ state: "visible", timeout: 15000 });
+        }
       } catch (error) {
         navigationError = error instanceof Error ? error.message : String(error);
       }
@@ -334,8 +451,16 @@ try {
       }
       const result = await page.evaluate(({ requestedPath, navigationError }) => {
         const main = document.querySelector("main");
+        const routeRoot = document.body;
         const color = (element) => element ? getComputedStyle(element).backgroundColor : null;
+        const scaffoldTerms = ["KICKER", "TITLE", "Subtitle", "TEAM FIRST", "Fan Only Note", "Composer Placeholder", "EMPTY TITLE", "EMPTY KICKER", "Empty Body", "Lorem", "TODO", "Placeholder"];
+        const renderedCopy = routeRoot?.innerText || "";
+        const renderedAttributes = Array.from(routeRoot?.querySelectorAll("*") || []).flatMap((element) =>
+          ["placeholder", "aria-label", "title", "alt"].map((name) => element.getAttribute(name) || "")
+        ).join("\\n");
+        const scaffoldMatches = scaffoldTerms.filter((term) => renderedCopy.includes(term) || renderedAttributes.includes(term));
         return {
+          scaffoldMatches,
           requestedPath,
           resolvedPath: location.pathname,
           themeClass: document.documentElement.classList.contains("theme-dark") ? "dark" :
@@ -366,7 +491,7 @@ try {
               const style = getComputedStyle(element);
               const rect = element.getBoundingClientRect();
               const cls = typeof element.className === "string" ? element.className : "";
-              if (/(logo|avatar|photo|portrait|image)/i.test(cls)) return false;
+              if (/(logo|avatar|photo|portrait|image)/i.test(cls) || element.closest(".hc-card-audit-preview")) return false;
               return style.backgroundColor === "rgb(255, 255, 255)" && rect.width > 16 && rect.height > 12 &&
                 style.display !== "none" && style.visibility !== "hidden";
             })
@@ -418,10 +543,169 @@ try {
       }, { requestedPath, navigationError });
       const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
       const errors = [];
+      if (requestedPath === "/fan-feed") {
+        // Fan HQ keeps a compact mixed-feed title; selecting a club changes the composer.
+        await page.locator("main.hc-fan-feed-page .hc-feed-compact-header").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator("main.hc-fan-feed-page .hc-feed-composer").waitFor({ state: "visible", timeout: 15000 });
+        const teamHeading = (await page.locator("main.hc-fan-feed-page .hc-feed-compact-header h1").innerText()).trim();
+        const compactCaption = (await page.locator("main.hc-fan-feed-page .hc-feed-compact-header .hc-feed-live-label").innerText()).trim();
+        const headerBounds = await page.locator("main.hc-fan-feed-page .hc-feed-compact-header").boundingBox();
+        const composer = page.locator("main.hc-fan-feed-page .hc-feed-composer");
+        const composerPlaceholder = await composer.locator("textarea").count() ? await composer.locator("textarea").getAttribute("placeholder") : null;
+        const chooseClub = composer.getByRole("button", { name: "Choose a followed club to post" });
+        if (!composerPlaceholder && await chooseClub.count() !== 1) errors.push("fan-feed: missing both selected-club composer and club chooser");
+        if (teamHeading !== "Fan HQ") errors.push("fan-feed: mixed-feed hero title is incorrect: " + teamHeading);
+        if (!compactCaption.includes("club communities")) errors.push("fan-feed: mixed-feed caption is missing: " + compactCaption);
+        if (!headerBounds || headerBounds.height >= 110) errors.push("fan-feed: compact header exceeds its height budget");
+        if (composerPlaceholder !== null && !composerPlaceholder.trim()) errors.push("fan-feed: composer placeholder is empty");
+        const audienceNote = compactCaption;
+        if (!audienceNote || !audienceNote.includes("24") || /KICKER|TITLE|Subtitle|TEAM FIRST|Fan Only Note/.test(audienceNote)) errors.push("fan-feed: audience note is missing or still scaffolded: " + audienceNote);
+        const emptyState = page.locator("main.hc-fan-feed-page .hc-feed-empty");
+        if (await emptyState.count()) {
+          const emptyCopy = (await emptyState.innerText()).trim();
+          if (!emptyCopy.includes("No fan posts yet")) errors.push("fan-feed: empty state headline is missing");
+          if (!emptyCopy.includes("Follow a club") && !emptyCopy.includes("No recent posts")) errors.push("fan-feed: empty state body is missing");
+        }
+      }
+      if (requestedPath.startsWith("/team-hub/groups/")) {
+        await page.locator("main.hc-team-fan-group-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator("main.hc-team-fan-group-page .hc-team-fan-group-composer textarea").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator("main.hc-team-fan-group-page .hc-feed-empty").waitFor({ state: "visible", timeout: 15000 });
+      }
+      if (requestedPath === "/theme-card-audit") {
+        const previews = await page.locator("main.hc-card-audit-page .hc-card-audit-preview").count();
+        if (previews !== 4) errors.push("theme-card-audit: expected light and dark card and live hub specimens; got " + previews);
+        for (const themePreview of ["light", "dark"]) {
+          const preview = page.locator(".hc-card-audit-preview[data-theme-preview='" + themePreview + "']");
+          assert.equal(await preview.count(), 2, `theme-card-audit: expected both ${themePreview} specimens`);
+          for (const selector of [".hc-live-empty", ".hc-live-empty__icon", ".hc-live-section-heading h2 span", ".hc-live-hub-filters", ".hc-live-hub-card"]) {
+            if (await preview.locator(selector).count() === 0) errors.push("theme-card-audit/" + themePreview + ": missing " + selector);
+          }
+          const chip = await preview.locator(".hc-live-state").evaluate((element) => {
+            const style = getComputedStyle(element);
+            return { background: style.backgroundColor, color: style.color };
+          });
+          const expected = themePreview === "dark"
+            ? { background: "rgb(27, 27, 27)", color: "rgb(245, 245, 240)" }
+            : { background: "rgb(248, 248, 246)", color: "rgb(21, 21, 21)" };
+          assert.deepEqual(chip, expected, `theme-card-audit: ${themePreview} status chip must use its preview's paired tokens`);
+        }
+      }
+      if (requestedPath === "/live-games") {
+        const audit = await page.evaluate(() => {
+          const read = (value) => {
+            const element = typeof value === "string" ? document.querySelector(value) : value;
+            if (!element) return null;
+            const style = getComputedStyle(element);
+            return { background: style.backgroundColor, color: style.color, text: (element.textContent || "").trim() };
+          };
+          return {
+            emptyCards: Array.from(document.querySelectorAll(".hc-live-empty")).map((element) => {
+              const heading = element.querySelector("h3");
+              const body = element.querySelector("p");
+              const icon = element.querySelector(".hc-live-empty__icon");
+              const style = (node) => node ? getComputedStyle(node) : null;
+              return {
+                background: style(element).backgroundColor,
+                color: style(element).color,
+                headingColor: style(heading)?.color || null,
+                bodyColor: style(body)?.color || null,
+                iconBackground: style(icon)?.backgroundColor || null,
+                iconColor: style(icon)?.color || null,
+              };
+            }),
+            countBadges: Array.from(document.querySelectorAll(".hc-live-section-heading h2 span")).map(read),
+            filterCard: read(".hc-live-hub-filters"),
+            recentEmpty: (() => {
+              const element = document.querySelector(".hc-live-recent-empty");
+              if (!element) return null;
+              const style = getComputedStyle(element);
+              return { background: style.backgroundColor, color: style.color, borderStyle: style.borderStyle };
+            })(),
+            populatedGameCards: document.querySelectorAll(".hc-live-hub-card").length,
+          };
+        });
+        const raised = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
+        const soft = theme === "dark" ? "rgb(27, 27, 27)" : "rgb(248, 248, 246)";
+        const foreground = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
+        const muted = theme === "dark" ? "rgb(184, 184, 179)" : "rgb(102, 102, 97)";
+        const accent = "rgb(255, 90, 31)";
+        if (audit.emptyCards.length !== 2) errors.push("live-games: expected two empty-state cards; got " + audit.emptyCards.length);
+        for (const [index, card] of audit.emptyCards.entries()) {
+          if (card.background !== raised || card.color !== foreground || card.headingColor !== foreground || card.bodyColor !== muted) {
+            errors.push("live-games: empty card " + index + " has unpaired surface/foreground tokens: " + JSON.stringify(card));
+          }
+          if (card.iconBackground !== soft || card.iconColor !== accent) {
+            errors.push("live-games: empty card icon chip lost its paired tint: " + JSON.stringify(card));
+          }
+        }
+        if (audit.countBadges.length !== 3) errors.push("live-games: expected three section count badges; got " + audit.countBadges.length);
+        for (const [index, badge] of audit.countBadges.entries()) {
+          if (badge.text !== "0" || badge.background !== soft || badge.color !== foreground) {
+            errors.push("live-games: count badge " + index + " is blank or has an unpaired theme: " + JSON.stringify(badge));
+          }
+        }
+        if (audit.filterCard?.background !== raised) errors.push("live-games: filter card surface regressed: " + JSON.stringify(audit.filterCard));
+        if (audit.recentEmpty?.borderStyle !== "dashed" || audit.recentEmpty?.color !== muted) errors.push("live-games: Recently Finished empty state lost its readable dashed treatment: " + JSON.stringify(audit.recentEmpty));
+        if (audit.populatedGameCards !== 0) errors.push("live-games: empty-fixture test unexpectedly rendered game cards");
+        result.liveHubPairing = audit;
+
+        liveGameFixtureMode = "populated";
+        await page.reload({ waitUntil: "domcontentloaded", timeout: 20000 });
+        await page.locator("main.hc-live-hub-page").waitFor({ state: "visible", timeout: 15000 });
+        await page.waitForFunction(() => document.querySelectorAll("main.hc-live-hub-page .hc-live-hub-card").length >= 3, null, { timeout: 15000 });
+        const populatedAudit = await page.evaluate(() => {
+          const read = (value) => {
+            const element = typeof value === "string" ? document.querySelector(value) : value;
+            if (!element) return null;
+            const style = getComputedStyle(element);
+            return { background: style.backgroundColor, color: style.color, text: (element.textContent || "").trim() };
+          };
+          return {
+            cards: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-hub-card")).map(read),
+            counts: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-section-heading h2 span")).map(read),
+            filter: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-filters")),
+            hero: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero")),
+            heroTitle: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero h1")),
+            heroEyebrow: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero .eyebrow")),
+            heroSubtitle: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero > div:first-child > p:last-child")),
+            crests: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-card__crest")).map(read),
+            mutedLabels: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-card__league, main.hc-live-hub-page .hc-live-card__meta, main.hc-live-hub-page .hc-live-card__muted, main.hc-live-hub-page .hc-live-card__vs, main.hc-live-hub-page .hc-live-card__middle small")).map(read),
+            liveChatEntry: read(document.querySelector("main.hc-live-hub-page .hc-live-join")),
+            liveChatLinks: document.querySelectorAll('main.hc-live-hub-page a[href^="/fan-live?gameId="]').length,
+            renderedText: document.querySelector("main.hc-live-hub-page")?.innerText || "",
+          };
+        });
+        if (populatedAudit.cards.length !== 3) errors.push("live-games: populated fixture did not render three real GameCard rows");
+        for (const [index, card] of populatedAudit.cards.entries()) {
+          if (card.background !== raised || card.color !== foreground) errors.push("live-games: populated GameCard " + index + " has an unpaired theme: " + JSON.stringify(card));
+        }
+        if (populatedAudit.counts.length !== 3 || populatedAudit.counts.some(badge => badge.text !== "1" || badge.background !== soft || badge.color !== foreground)) {
+          errors.push("live-games: populated section badges are not visibly paired: " + JSON.stringify(populatedAudit.counts));
+        }
+        if (populatedAudit.filter?.background !== raised || populatedAudit.filter?.color !== foreground) errors.push("live-games: populated filter card surface/foreground regressed");
+        if (populatedAudit.hero?.background !== raised || populatedAudit.hero?.color !== foreground || populatedAudit.heroTitle?.color !== foreground ||
+            populatedAudit.heroEyebrow?.color !== accent || populatedAudit.heroSubtitle?.color !== muted) {
+          errors.push("live-games: hero dark-surface/light-ink pairing regressed: " + JSON.stringify({hero:populatedAudit.hero, title:populatedAudit.heroTitle, eyebrow:populatedAudit.heroEyebrow, subtitle:populatedAudit.heroSubtitle}));
+        }
+        if (populatedAudit.crests.length !== 6 || populatedAudit.crests.some(crest => crest.background !== soft || crest.color !== foreground)) {
+          errors.push("live-games: team logo chips lost their paired surface/foreground tokens: " + JSON.stringify(populatedAudit.crests));
+        }
+        if (populatedAudit.mutedLabels.some(label => label.color !== muted)) errors.push("live-games: populated card metadata is not using readable muted foreground: " + JSON.stringify(populatedAudit.mutedLabels));
+        if (populatedAudit.liveChatLinks < 1 || populatedAudit.liveChatEntry?.background !== "rgb(255, 90, 31)" || populatedAudit.liveChatEntry?.color !== "rgb(17, 17, 17)") {
+          errors.push("live-games: live chat entry is missing or its text/surface pair is unreadable: " + JSON.stringify(populatedAudit.liveChatEntry));
+        }
+        if (["KICKER", "TITLE", "Subtitle", "TEAM FIRST", "Fan Only Note", "Composer Placeholder", "EMPTY TITLE", "EMPTY KICKER", "Empty Body", "Lorem", "TODO", "Placeholder"].some(term => populatedAudit.renderedText.includes(term))) {
+          errors.push("live-games: populated route rendered scaffold text");
+        }
+        result.liveHubPopulated = populatedAudit;
+        liveGameFixtureMode = "empty";
+      }
       if (result.themeClass !== theme) errors.push("html theme class mismatch");
       if (result.body !== expectedPage) errors.push("body background mismatch");
       if (result.pageWrapper && result.pageWrapper !== expectedPage) errors.push("main background mismatch");
       if (result.navigationError) errors.push("navigation error");
+      if (result.scaffoldMatches?.length) errors.push("rendered scaffold strings: " + result.scaffoldMatches.join(", "));
       if (result.bodyTopPadding < result.safeAreaTop - 1) errors.push("top safe-area padding missing");
       if (result.headerTop !== null && result.headerTop < result.safeAreaTop - 1) errors.push("header overlaps the status-bar safe area");
       if (result.mainTop !== null && result.mainTop < result.safeAreaTop - 1) errors.push("main content overlaps the status-bar safe area");
@@ -518,6 +802,7 @@ try {
     }
     await context.close();
   }
+  console.log("THEME_COMPONENT_INVENTORY=" + JSON.stringify(themeComponentInventory, null, 2));
   console.log("THEME_ROUTE_SWEEP=" + JSON.stringify(routeSweepResults, null, 2));
 
 } finally {

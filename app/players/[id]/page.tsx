@@ -10,6 +10,8 @@ import PlayerContactButton from "../../../components/PlayerContactButton";
 import PlayerProfilePanel from "../../../components/PlayerProfilePanel";
 import { HoopIcon, VerifiedBadge } from "../../../components/HoopCheckUI";
 import PlayerJourney from "../../../components/PlayerJourney";
+import PlayerProfileCompletionCard from "../../../components/PlayerProfileCompletionCard";
+import type { PlayerProfileCompletionRecord } from "../../../lib/player-profile-completion";
 
 type Player = {
   id: string;
@@ -32,6 +34,7 @@ export default function PlayerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [reportMessage, setReportMessage] = useState("");
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [ownCompletionProfile, setOwnCompletionProfile] = useState<PlayerProfileCompletionRecord | null>(null);
   const [countryPublic, setCountryPublic] = useState(false);
   const [canManageJourney, setCanManageJourney] = useState(false);
   const [viewerType, setViewerType] = useState("");
@@ -42,6 +45,13 @@ export default function PlayerProfilePage() {
     async function load() {
       const {data:{session}}=await supabase.auth.getSession();
       const user=session?.user;
+      let currentViewerType = "";
+      if(user){
+        const {data:viewerProfile,error:viewerError}=await supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle();
+        if(viewerError || !viewerProfile || viewerProfile.account_type==="fan"){window.location.replace("/dashboard");return;}
+        currentViewerType = viewerProfile.account_type || "";
+        setViewerType(currentViewerType);
+      }
 
       const { data, error } = await supabase
         .rpc("get_public_player_profile", { p_user_id: params.id });
@@ -94,6 +104,8 @@ export default function PlayerProfilePage() {
       if(user){
         setIsOwnProfile(user.id===params.id);
         if (user.id === params.id) {
+          const { data: completionProfile } = await supabase.from("profiles").select("id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility").eq("id", user.id).maybeSingle();
+          setOwnCompletionProfile(completionProfile);
           const { data: ownSubscription } = await supabase.from("subscriptions").select("plan,status,current_period_end").eq("user_id", user.id).maybeSingle();
           setCanManageJourney(
             ownSubscription?.plan === "premium" &&
@@ -101,9 +113,7 @@ export default function PlayerProfilePage() {
             (!ownSubscription.current_period_end || new Date(ownSubscription.current_period_end).getTime() > Date.now())
           );
         }
-        const {data:p}=await supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle();
-        setViewerType(p?.account_type||"");
-        if(user.id!==params.id && p?.account_type==="player"){
+        if(user.id!==params.id && currentViewerType==="player"){
           const {data:r}=await supabase.from("player_contact_requests").select("id").eq("player_id",params.id).eq("requester_id",user.id).eq("status","accepted").maybeSingle();
           setConnectionAccepted(!!r);
         }
@@ -160,7 +170,7 @@ export default function PlayerProfilePage() {
           </nav>
         </header>
 
-        <section className="player-profile-hero hc-player-profile-hero hc-social-profile-header">
+        <section className="player-profile-hero hc-player-profile-hero hc-social-profile-header hc-player-dossier-hero">
           <div className="hc-social-profile-top">
             <div className="hc-social-avatar-frame"><div className="player-profile-avatar">{player.avatar_url ? <img src={player.avatar_url} alt="" /> : (player.display_name?.trim()?.charAt(0)?.toUpperCase() || "P")}</div></div>
             <div className="hc-social-profile-main">
@@ -173,11 +183,12 @@ export default function PlayerProfilePage() {
                 <h1>{player.display_name || "HoopCheck Player"} {player.player_verified && <VerifiedBadge label="Verified professional player" />}</h1>
                 <p className="muted">{[player.player_position, player.current_team, player.current_country || player.country].filter(Boolean).join(" · ") || (player.player_verified ? "Verified professional player" : "HoopCheck player")}</p>
               </div>
+              {player.bio && (isOwnProfile || viewerType !== "player" || connectionAccepted) && <p className="hc-social-profile-bio">{player.bio}</p>}
               <div className="hc-social-profile-actions">{isOwnProfile ? <Link href="/account#profile-editor" className="btn">Edit Profile</Link> : <FollowButton targetType="player" targetId={player.id} showCount={false} showNotifications={false} />}<PlayerContactButton playerId={player.id} /></div>
             </div>
           </div>
         </section>
-        {isOwnProfile && <section className="hc-player-profile-completion" aria-label="Complete your player profile"><div><span className="card-kicker">YOUR PLAYER PROFILE</span><h2>Make your profile work for you</h2><p className="muted">Add your playing position, years as a pro, current team, location and bio so teams, coaches and other players can understand your basketball background.</p></div><Link href="/account#profile-editor" className="btn">Complete player profile <HoopIcon name="arrow-right" size={16} /></Link></section>}
+        {isOwnProfile && ownCompletionProfile && <PlayerProfileCompletionCard profile={ownCompletionProfile} />}
 
         {viewerType==="player" && !isOwnProfile && !connectionAccepted ? (
           <section className="dashboard-card" style={{marginTop:14}}>

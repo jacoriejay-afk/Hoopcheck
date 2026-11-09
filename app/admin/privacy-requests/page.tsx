@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../../components/HoopLoading";
 import { useEffect, useState } from "react";
 import Logo from "../../../components/Logo";
 import Link from "next/link";
@@ -187,7 +188,7 @@ export default function AdminPrivacyRequestsPage() {
         {error && <div className="message error" role="alert" style={{ marginTop: 16 }}>{error}</div>}
 
         <section style={{ display: "grid", gap: 14, marginTop: 20 }}>
-          {loading ? <div className="dashboard-card">Loading privacy requests…</div> : rows.length === 0 ? (
+          {loading ? <HoopLoading variant="inline" label="Loading privacy requests…" /> : rows.length === 0 ? (
             <div className="dashboard-card"><h2>No requests found.</h2><p className="muted">Requests will appear here when members submit them.</p></div>
           ) : rows.map((row) => {
             const draft = drafts[row.id] ?? { status: row.status, admin_notes: row.admin_notes ?? "" };

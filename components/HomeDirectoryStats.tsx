@@ -3,13 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type Stat = { label: string; value: number | null };
-const roundDown = (value: number) => value <= 0 ? null : value < 10 ? value : value < 100 ? Math.floor(value / 5) * 5 : value < 1000 ? Math.floor(value / 10) * 10 : Math.floor(value / 100) * 100;
+type Stat = { label: string; value: number };
+const roundDown = (value: number) =>
+  value <= 0 ? null : value < 10 ? value : value < 100 ? Math.floor(value / 5) * 5 : value < 1000 ? Math.floor(value / 10) * 10 : Math.floor(value / 100) * 100;
 
 export default function HomeDirectoryStats() {
   const [stats, setStats] = useState<Stat[]>([]);
   const [progress, setProgress] = useState(1);
   const root = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (!stats.length) return;
     const desktop = window.matchMedia("(min-width: 1024px)").matches;
@@ -22,7 +24,11 @@ export default function HomeDirectoryStats() {
       if (!entries.some(entry => entry.isIntersecting)) return;
       observer.disconnect();
       const start = performance.now();
-      const tick = (now: number) => { const next = Math.min(1, (now - start) / 720); setProgress(next); if (next < 1) requestAnimationFrame(tick); };
+      const tick = (now: number) => {
+        const next = Math.min(1, (now - start) / 720);
+        setProgress(next);
+        if (next < 1) requestAnimationFrame(tick);
+      };
       requestAnimationFrame(tick);
     }, { threshold: 0.25 });
     observer.observe(node);
@@ -51,16 +57,28 @@ export default function HomeDirectoryStats() {
         { label: "Leagues", count: leagues.count },
         { label: "Agents", count: agents.count },
       ];
-      setStats(results.map(item => ({ label: item.label, value: item.count == null ? null : roundDown(item.count) })));
-    }).catch(() => { if (active) setStats([]); });
+      // Never create a card shell for an unavailable or empty directory count.
+      // A signed-out visitor may receive null counts because of public query/RLS
+      // behavior; in that case the entire stats section is omitted.
+      setStats(results.flatMap(item => {
+        const value = item.count == null ? null : roundDown(item.count);
+        return value == null ? [] : [{ label: item.label, value }];
+      }));
+    }).catch(() => {
+      if (active) setStats([]);
+    });
     return () => { active = false; };
   }, []);
 
   if (!stats.length) return null;
-  return <section ref={root} className="hc-home-directory-stats" aria-label="Live directory totals">
-    {stats.map(stat => <div className="hc-home-directory-stat" key={stat.label}>
-      <strong>{stat.value == null ? "—" : `${Math.floor(stat.value * progress).toLocaleString()}+`}</strong>
-      <span>{stat.label}</span>
-    </div>)}
-  </section>;
+  return (
+    <section ref={root} className="hc-home-directory-stats" aria-label="Live directory totals">
+      {stats.map(stat => (
+        <div className="hc-home-directory-stat" key={stat.label}>
+          <strong>{Math.floor(stat.value * progress).toLocaleString()}+</strong>
+          <span>{stat.label}</span>
+        </div>
+      ))}
+    </section>
+  );
 }
