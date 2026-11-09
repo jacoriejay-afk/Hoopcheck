@@ -3,8 +3,8 @@
 .hc-global-page-shell .page-shell { box-sizing:border-box; width:100%; padding:12px 16px calc(104px + env(safe-area-inset-bottom)) !important; }
 .hc-global-page-shell .page-shell > .page-container { width:100%; max-width:1200px; margin:0 auto; padding:0; }
 .hc-global-page-shell .page-shell > .page-container > * + * { margin-top:12px; }
-.hc-layout-card,.hc-layout-group { width:100%; min-width:0; border:1px solid var(--hc-border,var(--border)); border-radius:16px; background:var(--hc-card,var(--surface,#fff)); padding:16px; box-shadow:none; }
-.theme-dark .hc-layout-card,.theme-dark .hc-layout-group { background:var(--hc-card,#151515); border-color:rgba(255,255,255,.10); }
+.hc-layout-card,.hc-layout-group { width:100%; min-width:0; border:1px solid var(--hc-border,var(--border)); border-radius:16px; background:var(--hc-surface-raised,var(--surface,#fff)); color:var(--hc-foreground,var(--ink,#0a0a0a)); padding:16px; box-shadow:none; }
+.theme-dark .hc-layout-card,.theme-dark .hc-layout-group { background:var(--hc-surface-raised,#151515); color:var(--hc-foreground,#f5f5f0); border-color:var(--hc-border,rgba(255,255,255,.10)); }
 .hc-layout-group { padding:0; overflow:hidden; }
 .hc-layout-group-title { margin:0; padding:0 16px 9px; color:var(--brand-orange,#FF5A1F); font-size:11px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
 .hc-layout-group-body { width:100%; }
@@ -182,4 +182,192 @@ html body .hc-global-page-shell main.page-shell { padding-block-start:12px !impo
 @media (max-width: 560px) {
   .hc-team-profile-nav { display:flex; flex-wrap:nowrap; gap:16px; }
   .hc-team-profile-nav a { white-space:nowrap; min-width:max-content; padding-inline:12px; }
+}
+
+/* AC-3 Account: compact, measured mobile-first settings shell. */
+.hc-account-page.page-shell { padding:12px 16px calc(104px + env(safe-area-inset-bottom)) !important; }
+.hc-account-page > .page-container { width:100%; max-width:960px; margin:0 auto; padding:0; }
+.hc-account-page > .page-container > * + * { margin-top:12px; }
+.hc-account-page .hc-account-settings-header { gap:10px; padding:14px; }
+.hc-account-page .hc-account-settings-avatar { display:grid; place-items:center; background:var(--brand-orange,#FF5A1F); color:#0A0A0A; border:1px solid rgba(10,10,10,.12); font-size:17px; font-weight:900; }
+.hc-account-page .hc-account-settings-avatar img { display:block; width:100%; height:100%; object-fit:cover; }
+.hc-account-page .hc-account-visibility-status { display:flex; align-items:center; gap:6px; margin-top:6px !important; font-size:11px !important; }
+.hc-account-page .hc-account-visibility-status > span { width:7px; height:7px; flex:0 0 7px; border-radius:50%; background:var(--brand-orange,#FF5A1F); }
+.hc-account-page .hc-account-identity-actions { margin-left:0; }
+.hc-account-page .hc-settings { gap:12px; }
+.hc-account-page .hc-settings-group { border-radius:14px; }
+.hc-account-page .hc-setting-row { min-height:48px; padding:9px 14px; }
+.hc-account-page .hc-account-profile-completion { margin-top:12px !important; }
+@media (min-width:768px) { .hc-account-page.page-shell { padding-top:12px !important; } }
+@media (max-width:480px) { .hc-account-page .hc-account-settings-header { padding:12px; } .hc-account-page .hc-account-settings-avatar { width:48px; height:48px; flex-basis:48px; } .hc-account-page .hc-account-settings-identity { align-items:flex-start; } .hc-account-page .hc-account-identity-actions .btn { flex:1 1 auto; } }
+
+
+
+/* FIT-1: one mobile geometry contract for every route inside the global PageShell.
+   Some pages place utility controls before .page-container, so target the container
+   anywhere below the page shell rather than only as a direct child. */
+@media (max-width: 767px) {
+  .hc-global-page-shell main.page-shell {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin-inline: 0 !important;
+    padding-inline: 16px !important;
+  }
+
+  .hc-global-page-shell main.page-shell .page-container {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 1200px !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+  }
+
+  /* Feed previously replaced the shell gutter with a second 12px inner gutter.
+     Keep the same 16px shell edges as every other mobile surface. */
+  .hc-global-page-shell main.hc-feed-page {
+    padding-inline: 16px !important;
+  }
+
+  .hc-global-page-shell main.page-shell :where(.hero-card, .dashboard-card, .hc-layout-card,
+    .hc-layout-group, .hc-live-hub-section, .hc-live-hub-filters, .hc-live-hub-hero,
+    .hc-live-hub-grid, .hc-feed-stream, .hc-feed-shared-card) {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .hc-global-page-shell main.page-shell :where(.grid, .hc-live-hub-grid, .hc-feed-stream) {
+    width: 100%;
+    margin-inline: 0;
+  }
+}
+
+
+/* FIT-1 coverage for the homepage and directory/profile routes, which use
+   their own main element instead of the .page-shell class. */
+@media (max-width: 767px) {
+  .hc-global-page-shell main.hc-template-home > .page-container {
+    box-sizing: border-box !important;
+    width: calc(100% - 32px) !important;
+    max-width: 1280px !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+  }
+
+  .hc-global-page-shell main.hc-template-home :where(.hc-template-explore, .hc-template-directory) {
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+  }
+
+  .hc-global-page-shell main.hc-team-directory-page,
+  .hc-global-page-shell main.hc-coaches-directory-page,
+  .hc-global-page-shell main.hc-leagues-directory-page,
+  .hc-global-page-shell main.hc-player-directory-page,
+  .hc-global-page-shell main.hc-womens-directory-page,
+  .hc-global-page-shell main.hc-entity-profile-page,
+  .hc-global-page-shell main.hc-womens-profile-page {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 1200px !important;
+    margin-inline: auto !important;
+    padding-inline: 16px !important;
+  }
+
+  .hc-global-page-shell main.hc-team-directory-page .page-container,
+  .hc-global-page-shell main.hc-coaches-directory-page .page-container,
+  .hc-global-page-shell main.hc-leagues-directory-page .page-container,
+  .hc-global-page-shell main.hc-player-directory-page .page-container,
+  .hc-global-page-shell main.hc-womens-directory-page .page-container,
+  .hc-global-page-shell main.hc-entity-profile-page .page-container,
+  .hc-global-page-shell main.hc-womens-profile-page .page-container {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+  }
+}
+
+
+/* Search is a full-width custom main surface (not a .page-shell); give it
+   the same single 16px mobile gutter instead of its legacy 10px inset. */
+@media (max-width: 767px) {
+  .hc-global-page-shell main.hc-global-search-page {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin-inline: 0 !important;
+    padding-inline: 16px !important;
+  }
+}
+
+
+/* PROFILE-UNIFY: shared visual rhythm across men's clubs, women's clubs,
+   coaches and leagues. This is presentation-only: keep distinct content,
+   account gates, follow/watch controls and review permissions intact. */
+:where(main.hc-team-entity-profile,main.hc-coach-entity-profile,main.hc-league-entity-profile,main.hc-womens-profile-page) {
+  --hc-profile-radius:16px;
+  --hc-profile-gap:clamp(12px,1.7vw,20px);
+  min-width:0;
+}
+:where(main.hc-team-entity-profile,main.hc-coach-entity-profile,main.hc-league-entity-profile) > :where(section,article,nav,div),
+main.hc-womens-profile-page > .page-container > :where(section,article,nav,div) {
+  box-sizing:border-box;
+  min-width:0;
+  max-width:100%;
+}
+:where(main.hc-team-entity-profile,main.hc-coach-entity-profile,main.hc-league-entity-profile) > .hero:first-of-type,
+main.hc-womens-profile-page .hero-card.hc-social-profile-header {
+  border-radius:var(--hc-profile-radius) !important;
+  border:1px solid var(--hc-border,#444) !important;
+  border-top:3px solid var(--hc-orange,#ff5a1f) !important;
+  box-shadow:none !important;
+  padding:clamp(18px,2.5vw,30px) !important;
+  min-width:0;
+}
+:where(main.hc-team-entity-profile,main.hc-coach-entity-profile,main.hc-league-entity-profile) > .hero:first-of-type h1,
+main.hc-womens-profile-page .hero-card.hc-social-profile-header h1 {
+  font-size:clamp(25px,3.2vw,42px) !important;
+  line-height:1.14 !important;
+  letter-spacing:-.025em;
+  overflow-wrap:anywhere;
+}
+:where(main.hc-team-entity-profile,main.hc-coach-entity-profile,main.hc-league-entity-profile) > :where(.hero,.card),
+main.hc-womens-profile-page .page-container > :where(.hero-card,.card) {
+  border-radius:var(--hc-profile-radius);
+  box-shadow:none;
+}
+:where(main.hc-team-entity-profile,main.hc-coach-entity-profile,main.hc-league-entity-profile) :where(.entity-actions,.actions),
+main.hc-womens-profile-page :where(.entity-actions,.actions) {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:10px;
+}
+:where(main.hc-team-entity-profile,main.hc-coach-entity-profile,main.hc-league-entity-profile) :where(.hc-profile-directory-switcher,.hc-team-profile-nav),
+main.hc-womens-profile-page .hc-profile-directory-switcher {
+  max-width:100%;
+  min-width:0;
+  overflow-x:auto;
+  scrollbar-width:thin;
+}
+html.theme-dark :where(main.hc-coach-entity-profile,main.hc-league-entity-profile) > .hero:first-of-type,
+html.theme-dark main.hc-womens-profile-page .hero-card.hc-social-profile-header {
+  color:var(--hc-foreground,#f7f7f5);
+  border-color:var(--hc-border,#444) !important;
+}
+html.theme-light :where(main.hc-coach-entity-profile,main.hc-league-entity-profile) > .hero:first-of-type,
+html.theme-light main.hc-womens-profile-page .hero-card.hc-social-profile-header {
+  color:var(--hc-foreground,#171717);
+  border-color:var(--hc-border,#dedede) !important;
+}
+@media(max-width:700px) {
+  :where(main.hc-team-entity-profile,main.hc-coach-entity-profile,main.hc-league-entity-profile) > .hero:first-of-type,
+  main.hc-womens-profile-page .hero-card.hc-social-profile-header {
+    padding:18px 14px !important;
+  }
 }

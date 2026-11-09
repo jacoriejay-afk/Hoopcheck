@@ -6,15 +6,14 @@ import HoopLoading from "../../components/HoopLoading";
 import { VerifiedBadge } from "../../components/HoopCheckUI";
 import { supabase } from "../../lib/supabase";
 import { isAtLeastTier } from "../../lib/membership-tier";
+import TeamLeaguePicker from "../../components/TeamLeaguePicker";
 
 export default function VerificationPage() {
   const [accountType,setAccountType]=useState<"player"|"coach">("player");
   const [team,setTeam]=useState("");
   const [teamId,setTeamId]=useState("");
   const [basketballType,setBasketballType]=useState<"mens"|"womens">("mens");
-  const [womensTeams,setWomensTeams]=useState<{id:string;name:string;country:string|null}[]>([]);
   const [womensTeamId,setWomensTeamId]=useState("");
-  const [teams,setTeams]=useState<{id:string;name:string;country:string|null;league_name:string|null}[]>([]);
   const [country,setCountry]=useState("");
   const [league,setLeague]=useState("");
   const [note,setNote]=useState("");
@@ -38,8 +37,6 @@ export default function VerificationPage() {
       const identityBody=await identityRes.json().catch(()=>({}));
       if(identityRes.ok && identityBody.status){setIdentityStatus(identityBody.status);}
     }
-    const {data:teamData}=await supabase.from("teams").select("id,name,country,league_name").eq("active",true).order("name").limit(500);
-    setTeams(teamData||[]); const {data:wt}=await supabase.from("womens_teams").select("id,name,country").eq("active",true).order("name"); setWomensTeams(wt||[]);
     if(profile?.account_type==="player"){ const {data}=await supabase.from("player_verification_requests").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle(); setStatus(data?.status ?? null); } else { setStatus(profile?.coach_verified ? "approved" : null); } setLoading(false);
   })()},[]);
 
@@ -97,7 +94,7 @@ export default function VerificationPage() {
         {identityStatus==="failed" && <p className="muted">The identity check needs to be completed again. Start a new secure check.</p>}
        </div>
        {accountType==="player" && <form onSubmit={submit} style={{display:"grid",gap:12}}> 
-        <label>Basketball type<select value={basketballType} onChange={e=>setBasketballType(e.target.value as "mens"|"womens")}><option value="mens">Men’s Basketball</option><option value="womens">Women’s Basketball</option></select></label><label>Current team{basketballType==="mens"?<select value={teamId} onChange={e=>{const id=e.target.value;setTeamId(id);const t=teams.find(x=>x.id===id);setTeam(t?.name||"");}}><option value="">Select current team</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?` — ${t.country}`:""}</option>)}</select>:<select value={womensTeamId} onChange={e=>{const id=e.target.value;setWomensTeamId(id);const t=womensTeams.find(x=>x.id===id);setTeam(t?.name||"");}}><option value="">Select women’s team</option>{womensTeams.map(t=><option key={t.id} value={t.id}>{t.name}{t.country?` — ${t.country}`:""}</option>)}</select>}</label>
+        <label>Basketball type<select value={basketballType} onChange={e=>{const next=e.target.value as "mens"|"womens";setBasketballType(next);setTeamId("");setWomensTeamId("");setTeam("");setCountry("");setLeague("");}}><option value="mens">Men’s Basketball</option><option value="womens">Women’s Basketball</option></select></label><TeamLeaguePicker mode="team" directorySource={basketballType==="womens"?"womens_teams":"teams"} label="Current team" value={basketballType==="mens"?teamId:womensTeamId} basketballType={basketballType} onChange={id=>basketballType==="mens"?setTeamId(id):setWomensTeamId(id)} onSelectItem={item=>{setTeam(item.name);setCountry(item.country);setLeague(item.league_name);}} placeholder="Search current team" />
         <label>Current country<input value={country} onChange={e=>setCountry(e.target.value)} maxLength={80} placeholder="Country"/></label>
         <label>League<input value={league} onChange={e=>setLeague(e.target.value)} maxLength={120} placeholder="League"/></label>
         <label>Proof / public basketball link<input value={evidenceUrl} onChange={e=>setEvidenceUrl(e.target.value)} maxLength={500} placeholder="Team roster, league profile, agency, or personal site"/><small className="muted">Provide a public proof link, upload a document below, or both.</small></label>

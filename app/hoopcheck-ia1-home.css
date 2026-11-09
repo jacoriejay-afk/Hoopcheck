@@ -41,3 +41,95 @@
 .hc-ia-feed-card small { color:var(--hc-on-card-muted); font-size:11px; }
 .hc-ia-account-link { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 2px; color:var(--hc-on-card-muted); font-size:12px; font-weight:700; text-decoration:none; }
 @media(max-width:640px){.hc-ia-door-grid,.hc-ia-fan-grid{grid-template-columns:1fr}.hc-ia-home .page-container{width:calc(100% - 28px)}.hc-ia-live-strip{padding:12px}.hc-ia-live-strip>span:last-child{font-size:11px}}
+
+
+/* Dark-mode surface contract: the IA-1 dashboard cards must not retain legacy
+   hard-coded white backgrounds. Keep these semantic surfaces paired with the
+   active theme tokens, including nested labels and icons. */
+html.theme-dark main.hc-ia-home :is(
+  .hc-ia-identity,
+  .hc-ia-completion,
+  .hc-ia-live-strip,
+  .hc-ia-door,
+  .hc-ia-follow-list,
+  .hc-ia-feed-card
+) {
+  background-color: var(--hc-surface-raised, #171717) !important;
+  color: var(--hc-foreground, #F5F5F0) !important;
+  border-color: var(--hc-border, #333333) !important;
+}
+html.theme-dark main.hc-ia-home :is(
+  .hc-ia-identity,
+  .hc-ia-completion,
+  .hc-ia-live-strip,
+  .hc-ia-door,
+  .hc-ia-follow-list,
+  .hc-ia-feed-card
+) :where(strong, span, p, small, a, svg) {
+  color: inherit;
+}
+html.theme-dark main.hc-ia-home :is(
+  .hc-ia-identity small,
+  .hc-ia-completion small,
+  .hc-ia-live-strip small,
+  .hc-ia-door small,
+  .hc-ia-follow-list small,
+  .hc-ia-feed-card small,
+  .hc-ia-door > svg:last-child,
+  .hc-ia-follow-list svg
+) {
+  color: var(--hc-foreground-muted, #B8B8B3) !important;
+}
+html.theme-dark main.hc-ia-home .hc-ia-avatar {
+  background-color: var(--hc-surface-soft, #1B1B1B) !important;
+  color: var(--hc-foreground, #F5F5F0) !important;
+}
+
+
+/* Signed-in dashboard density pass: one quiet surface language, readable type,
+   and no oversized gap between the global header and the first action. */
+main.hc-dashboard-compact {
+  padding-block-start: 8px !important;
+}
+main.hc-dashboard-compact > .page-container {
+  gap: 12px;
+}
+main.hc-dashboard-compact .hc-ia-welcome {
+  gap: 7px;
+}
+main.hc-dashboard-compact .hc-ia-welcome h1 {
+  max-width: 740px;
+  font-size: clamp(28px, 3.5vw, 42px);
+  line-height: 1.06;
+}
+main.hc-dashboard-compact .hc-ia-welcome .muted {
+  line-height: 1.45;
+}
+main.hc-dashboard-compact .hc-ia-section {
+  gap: 10px;
+}
+main.hc-dashboard-compact :is(.hc-ia-completion,.hc-ia-live-strip,.hc-ia-door,.hc-ia-feed-card,.hc-ia-follow-list) {
+  border: 1px solid var(--hc-border) !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+}
+main.hc-dashboard-compact .hc-ia-completion {
+  padding: 12px 14px;
+}
+main.hc-dashboard-compact :is(.hc-ia-completion,.hc-ia-live-strip) strong {
+  font-size: 13px;
+}
+main.hc-dashboard-compact :is(.hc-ia-completion,.hc-ia-live-strip,.hc-ia-door,.hc-ia-feed-card) small {
+  line-height: 1.45;
+}
+main.hc-dashboard-compact .hc-ia-door-grid,
+main.hc-dashboard-compact .hc-ia-fan-grid {
+  gap: 10px;
+}
+main.hc-dashboard-compact .hc-ia-door {
+  min-height: 64px;
+}
+@media (max-width: 767px) {
+  main.hc-dashboard-compact > .page-container { gap: 12px; }
+  main.hc-dashboard-compact .hc-ia-welcome h1 { font-size: clamp(27px, 8vw, 36px); }
+}

@@ -7,6 +7,7 @@ import HoopLoading from "../../components/HoopLoading";
 
 type Team = { id: string; name: string; country: string | null; city: string | null };
 type Claim = { id: string; entity_id: string; status: "pending" | "approved" | "rejected"; created_at: string };
+type GroupPulse = { memberCount: number | null; pendingRequests: number | null; openReports: number | null; latestPost: string | null };
 type Post = { id: string; team_id: string; author_id: string; body: string; image_url: string | null; created_at: string; status: string };
 
 export default function TeamDashboardPage() {
@@ -15,6 +16,7 @@ export default function TeamDashboardPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [teamId, setTeamId] = useState("");
+  const [groupPulse, setGroupPulse] = useState<GroupPulse | null>(null);
   const [body, setBody] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,13 +47,39 @@ export default function TeamDashboardPage() {
     void (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { window.location.href = "/login"; return; }
+      const { data: profile, error: profileError } = await supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
       if (!active) return;
+      if (profileError || !profile || !["coach", "manager", "admin"].includes(profile.account_type)) { window.location.replace("/dashboard"); return; }
       setUserId(user.id);
       await load(user.id);
       if (active) setLoading(false);
     })();
     return () => { active = false; };
   }, [load]);
+
+  useEffect(() => {
+    let active = true;
+    setGroupPulse(null);
+    if (!teamId || !userId || !teams.some(team => team.id === teamId)) return;
+    void (async () => {
+      // Read only the selected, approved club; RLS protects moderation data.
+      const [group, requests, reports, latest] = await Promise.all([
+        supabase.rpc("get_team_fan_group_summary", { p_team_id: teamId }),
+        supabase.from("team_fan_group_join_requests").select("id", { count: "exact", head: true }).eq("team_id", teamId).eq("status", "pending"),
+        supabase.from("team_fan_group_reports").select("id", { count: "exact", head: true }).eq("team_id", teamId).eq("status", "open"),
+        supabase.from("team_fan_group_posts").select("body").eq("team_id", teamId).eq("status", "published").order("created_at", { ascending: false }).limit(1),
+      ]);
+      if (!active) return;
+      const summary = Array.isArray(group.data) ? group.data[0] : null;
+      setGroupPulse({
+        memberCount: group.error ? null : Number(summary?.member_count ?? 0),
+        pendingRequests: requests.error ? null : requests.count ?? 0,
+        openReports: reports.error ? null : reports.count ?? 0,
+        latestPost: latest.error ? null : latest.data?.[0]?.body ?? null,
+      });
+    })();
+    return () => { active = false; };
+  }, [teamId, userId, teams]);
 
   async function publish() {
     if (!userId || !teamId || !body.trim() || posting) return;
@@ -100,6 +128,35 @@ export default function TeamDashboardPage() {
       <p className="muted">Manage your claimed team profile and publish official updates for supporters.</p>
     </section>
     {message && <p className="hc-claim-message" role="status">{message}</p>}
+    {approvedCount > 0 && <>
+      <section className="dashboard-card" aria-label="Club command center" style={{ marginTop: 12 }}>
+        <p className="eyebrow">CLUB COMMAND CENTER</p>
+        <h2>What needs you</h2>
+        {teams.length > 1 && <label className="hc-claim-field">Your club
+          <select value={teamId} onChange={event => setTeamId(event.target.value)}>
+            {teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
+          </select>
+        </label>}
+        <p className="muted">{teams.find(team => team.id === teamId)?.name} · Verified club representative</p>
+        {groupPulse && <div className="hc-team-profile-stats">
+          {groupPulse.memberCount !== null && <div className="hc-team-profile-stat"><strong>{groupPulse.memberCount}</strong><small>Fan group members</small></div>}
+          {groupPulse.pendingRequests !== null && <div className="hc-team-profile-stat"><strong>{groupPulse.pendingRequests}</strong><small>Join requests</small></div>}
+          {groupPulse.openReports !== null && <div className="hc-team-profile-stat"><strong>{groupPulse.openReports}</strong><small>Open reports</small></div>}
+        </div>}
+        {groupPulse && ((groupPulse.pendingRequests ?? 0) > 0 || (groupPulse.openReports ?? 0) > 0) ?
+          <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
+            {(groupPulse.openReports ?? 0) > 0 && <Link className="btn" href={"/team-hub/groups/" + teamId}>{groupPulse.openReports} reported group post{groupPulse.openReports === 1 ? "" : "s"} · Review now</Link>}
+            {(groupPulse.pendingRequests ?? 0) > 0 && <Link className="btn" href={"/team-hub/groups/" + teamId}>{groupPulse.pendingRequests} pending join request{groupPulse.pendingRequests === 1 ? "" : "s"} · Review now</Link>}
+          </div> :
+          <p className="muted">{groupPulse ? "No outstanding fan-group moderation tasks." : "Loading club activity…"}</p>}
+        {groupPulse?.latestPost && <div style={{ marginTop: 12 }}><h3>Latest fan-group post</h3><p>{groupPulse.latestPost}</p></div>}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
+          <Link href={"/team-hub/groups/" + teamId} className="btn">Open fan group</Link>
+          <Link href={"/teams/" + teamId + "#reviews"} className="btn dark">Read club reviews</Link>
+        </div>
+      </section>
+    </>}
+
     {!approvedCount ? <section className="dashboard-card" style={{ marginTop: 18 }}>
       <h2>{pendingCount ? "Your claim is under review" : "Represent a basketball team?"}</h2>
       <p className="muted">{pendingCount ? "HoopCheck is reviewing your organization evidence. Team publishing unlocks after approval." : "Find your club in the directory and submit an official team profile claim. Once approved, you can publish official FanFeed updates."}</p>
@@ -122,7 +179,7 @@ export default function TeamDashboardPage() {
         <div className="section-heading"><div><p className="eyebrow">YOUR ORGANIZATIONS</p><h2>Claimed team profiles</h2></div></div>
         <div style={{ display: "grid", gap: 12 }}>{teams.map(team => <article className="dashboard-card" key={team.id} style={{ padding: 18 }}>
           <h3>{team.name}</h3><p className="muted">{[team.city, team.country].filter(Boolean).join(", ")}</p>
-          <Link href={"/teams/" + team.id} className="btn">View public profile</Link>
+          <div className="actions"><Link href={"/teams/" + team.id} className="btn">View public profile</Link><Link href={"/team-hub/groups/" + team.id} className="btn dark">Moderate fan group</Link><Link href={"/teams/" + team.id + "#reviews"} className="btn">View team reviews</Link></div>
         </article>)}</div>
       </section>
       <section style={{ marginTop: 22 }}>

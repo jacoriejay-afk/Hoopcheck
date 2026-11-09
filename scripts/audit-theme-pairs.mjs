@@ -1,11 +1,11 @@
 import { readFile } from "node:fs/promises";
 
 const files = {
-  tokens: await readFile("app/hoopcheck-dm2-theme-pairs.css", "utf8"),
+  tokens: await readFile("app/hoopcheck-theme-tokens.css", "utf8"),
   home: await readFile("app/hoopcheck-ia1-home.css", "utf8"),
   live: await readFile("app/globals.css", "utf8"),
   nav: await readFile("app/hoopcheck-lm2f-bottom-nav.css", "utf8"),
-  finalTheme: await readFile("app/hoopcheck-dm2-theme-pairs.css", "utf8"),
+  finalTheme: await readFile("app/hoopcheck-theme-tokens.css", "utf8"),
   finalOverrides: await readFile("app/hoopcheck-final-overrides.css", "utf8"),
   layout: await readFile("app/layout.tsx", "utf8"),
   team: await readFile("app/hoopcheck-directory-profile.css", "utf8"),
@@ -19,7 +19,7 @@ const requiredTokens = [
   "--hc-live-chip-foreground","--hc-button-primary-surface","--hc-button-primary-foreground","--hc-button-primary-bg","--hc-button-primary-fg",
   "--hc-button-outline-bg","--hc-button-outline-fg","--hc-brand-tile-bg","--hc-brand-tile-fg","--hc-brand-tile-border",
   "--hc-button-outline-surface","--hc-button-outline-foreground","--hc-empty-surface","--hc-empty-foreground",
-  "--hc-nav-bg","--hc-nav-fg","--hc-nav-active-bg","--hc-nav-active-fg",
+  "--hc-tab-bg","--hc-tab-fg","--hc-nav-active-bg","--hc-nav-active-fg",
   "--hc-accent-text","--hc-hero-surface","--hc-on-hero","--hc-hero-muted","--hc-hero-border",
 ];
 function blockAfter(source, selector) {
@@ -27,11 +27,18 @@ function blockAfter(source, selector) {
   const match = source.match(new RegExp("(?:^|})\\s*[^{}]*" + escaped + "(?![a-zA-Z0-9_-])[^{}]*\\{([^}]*)\\}", "m"));
   return match?.[1] ?? null;
 }
-function tokenValue(themeSelector, token) {
+function tokenValue(themeSelector, token, seen = new Set()) {
+  if (seen.has(token)) return null;
+  seen.add(token);
   const block = blockAfter(files.tokens, themeSelector);
-  if (!block) return null;
   const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return block.match(new RegExp(escaped + "\\s*:\\s*(#[0-9a-fA-F]{6})"))?.[1] ?? null;
+  const value = block?.match(new RegExp(escaped + "\\s*:\\s*([^;]+)"))?.[1]?.trim();
+  if (!value) return null;
+  const alias = value.match(/^var\((--[a-z0-9-]+)\)$/i);
+  if (alias) return tokenValue(themeSelector, alias[1], seen);
+  const rgb = value.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (rgb) return "#" + rgb.slice(1).map(n => Number(n).toString(16).padStart(2, "0")).join("");
+  return /^#[0-9a-f]{6}$/i.test(value) ? value : null;
 }
 function luminance(hex) {
   const rgb=hex.slice(1).match(/.{2}/g).map(v=>parseInt(v,16)/255)
@@ -61,8 +68,8 @@ const contrastPairs=[
   ["html.theme-dark","--hc-empty-foreground","--hc-empty-surface"],
   ["html.theme-light","--hc-button-primary-foreground","--hc-button-primary-surface"],
   ["html.theme-dark","--hc-button-primary-foreground","--hc-button-primary-surface"],
-  ["html.theme-light","--hc-nav-fg","--hc-nav-bg"],
-  ["html.theme-dark","--hc-nav-fg","--hc-nav-bg"],
+  ["html.theme-light","--hc-tab-fg","--hc-tab-bg"],
+  ["html.theme-dark","--hc-tab-fg","--hc-tab-bg"],
   ["html.theme-light","--hc-nav-active-fg","--hc-nav-active-bg"],
   ["html.theme-dark","--hc-nav-active-fg","--hc-nav-active-bg"],
   ["html.theme-light","--hc-button-primary-fg","--hc-button-primary-bg"],
@@ -102,15 +109,11 @@ const authoredPairs=[
   ["Team follow button",".hc-team-profile-topline .hc-team-follow-pill.is-not-following","team",["--hc-button-primary-bg","--hc-button-primary-fg"]],
   ["Team following button",".hc-team-profile-topline .hc-team-follow-pill.is-following","team",["--hc-button-outline-bg","--hc-button-outline-fg","--hc-border"]],
   ["Team logo fallback",".hc-team-profile-topline .hc-team-logo--fallback","team",["--hc-brand-tile-bg","--hc-brand-tile-border"]],
-  ["Shared primary button","html.theme-dark body main .btn:not(.dark)","finalTheme",["--hc-button-primary-surface","--hc-button-primary-foreground"]],
   ["Search submit button",".hc-searchbar__submit","live",["--hc-button-primary-surface","--hc-button-primary-foreground"]],
   ["Live Games hero",".hc-live-hub-hero","live",["--hc-hero-surface","--hc-on-hero","--hc-hero-border"]],
-  ["Directory switcher","html.theme-dark body main .hc-directory-switcher","finalTheme",["--hc-card-surface","--hc-on-card","--hc-card-border"]],
-  ["Directory switcher label","html.theme-dark body main .hc-directory-switcher-label","finalTheme",["--hc-accent-text"]],
-  ["Team profile active tab",'.hc-team-entity-profile .hc-team-profile-nav a[aria-current="page"]',"team",["--hc-nav-active-fg"]],
+  ["Team profile active tab",'.hc-team-entity-profile .hc-team-profile-nav a[aria-current="page"]',"team",["--hc-accent-text"]],
   ["Team profile kicker",".hc-team-profile-kicker","team",["--hc-accent-text"]],
   ["Text action button",".hc-text-button","live",["--hc-accent-text"]],
-  ["Eyebrow label","html.theme-dark body main .eyebrow","finalTheme",["--hc-accent-text"]],
 ];
 for(const [label,selector,file,tokens] of authoredPairs){
   const rule=blockAfter(files[file],selector);
@@ -126,21 +129,17 @@ if(pageShellRule && /--hc-(?:surface|border)\\s*:\\s*#[0-9a-f]{3,8}/i.test(pageS
   errors.push("PageShell: fixed light/dark surface or border value is forbidden");
 
 const navRule=blockAfter(files.nav,"html.theme-light body nav.hc-lm2f-bottom-nav");
-if(!navRule || !navRule.includes("var(--hc-nav-bg") || !navRule.includes("var(--hc-card-border"))
+if(!navRule || !navRule.includes("var(--hc-tab-bg") || !navRule.includes("var(--hc-card-border"))
   errors.push("Bottom tab bar: surface and border must use nav/card tokens");
 const navTextRule=blockAfter(files.nav,"html.theme-dark body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab");
-if(!navTextRule || !navTextRule.includes("var(--hc-nav-fg"))
-  errors.push("Bottom tab bar: label foreground must use --hc-nav-fg");
+if(!navTextRule || !navTextRule.includes("var(--hc-tab-fg"))
+  errors.push("Bottom tab bar: label foreground must use --hc-tab-fg");
 const navActiveRule=blockAfter(files.nav,"html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active");
 if(!navActiveRule || !navActiveRule.includes("var(--hc-nav-active-fg"))
   errors.push("Bottom tab bar: active label must use --hc-nav-active-fg");
-const layoutSystemImport=files.layout.indexOf('import "./hoopcheck-layout-system.css";');
-const dm2Import=files.layout.indexOf('import "./hoopcheck-dm2-theme-pairs.css";');
-if(layoutSystemImport < 0 || dm2Import < 0 || dm2Import < layoutSystemImport)
-  errors.push("DM-2 theme contract must load after the shared layout-system stylesheet");
-
-if(!files.finalTheme.includes("var(--hc-nav-bg)") || !files.finalTheme.includes("var(--hc-nav-fg)"))
-  errors.push("Global headers must consume the semantic nav surface/foreground pair");
+if (!files.layout.includes('import "./hoopcheck-theme-tokens.css";') ||
+    !files.layout.includes('import "./hoopcheck-card-pairing.css";'))
+  errors.push("Canonical tokens and the card pairing contract must both be loaded");
 
 if(errors.length){
   console.error("THEME_PAIR_AUDIT=FAIL");

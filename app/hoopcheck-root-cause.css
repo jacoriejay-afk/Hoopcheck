@@ -16,10 +16,10 @@ html .site-header-global,
 html .site-header-global.hc-template-header {
   top: var(--hc-safe-area-top) !important;
   padding-block-start: 10px !important;
-  background: var(--hc-nav-bg) !important;
-  color: var(--hc-nav-fg) !important;
+  background: var(--hc-tab-bg) !important;
+  color: var(--hc-tab-fg) !important;
 }
-html .site-header-global :where(a, button, span, svg) { color: var(--hc-nav-fg); }
+html .site-header-global :where(a, button, span, svg) { color: var(--hc-tab-fg); }
 html :where(.hc-dashboard-shell .hc-dashboard-edit-profile, .hc-dashboard-shell .hc-dashboard-edit-profile:visited) {
   background: var(--hc-control-bg, var(--hc-surface-raised)) !important;
   color: var(--hc-control-fg, var(--hc-foreground)) !important;
@@ -45,8 +45,8 @@ html :where(.quick-access-count, .quick-card-count, .count-badge, .hc-count-badg
   stroke: currentColor !important;
 }
 html .hc-template-header .hc-mobile-menu-toggle {
-  background: var(--hc-nav-bg) !important;
-  color: var(--hc-nav-fg) !important;
+  background: var(--hc-tab-bg) !important;
+  color: var(--hc-tab-fg) !important;
   border-color: var(--hc-border) !important;
 }
 html .hc-template-header .hc-mobile-menu-toggle span { background: currentColor !important; }
@@ -333,16 +333,16 @@ html.theme-dark main:not(.hc-template-home) :where(input,textarea,select)::place
 @media (max-width: 767px) {
   html .bottom-nav.hc-bottom-tab-bar,
   html nav.bottom-nav.hc-bottom-tab-bar {
-    background: var(--hc-nav-bg) !important;
-    background-color: var(--hc-nav-bg) !important;
+    background: var(--hc-tab-bg) !important;
+    background-color: var(--hc-tab-bg) !important;
     opacity: 1 !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
   html .hc-bottom-tab-bar > a {
-    background: var(--hc-nav-bg) !important;
+    background: var(--hc-tab-bg) !important;
     opacity: 1 !important;
-    color: var(--hc-nav-fg) !important;
+    color: var(--hc-tab-fg) !important;
   }
   html .hc-bottom-tab-bar > a :where(span, svg, path) { opacity: 1 !important; }
   html .hc-bottom-tab-bar > a.active {
@@ -352,8 +352,8 @@ html.theme-dark main:not(.hc-template-home) :where(input,textarea,select)::place
   }
   html.theme-light .bottom-nav.hc-bottom-tab-bar,
   html.theme-light nav.bottom-nav.hc-bottom-tab-bar,
-  html.theme-light .hc-bottom-tab-bar > a { background: var(--hc-nav-bg) !important; }
-  html.theme-light .hc-bottom-tab-bar > a { color: var(--hc-nav-fg) !important; }
+  html.theme-light .hc-bottom-tab-bar > a { background: var(--hc-tab-bg) !important; }
+  html.theme-light .hc-bottom-tab-bar > a { color: var(--hc-tab-fg) !important; }
   html.theme-light .hc-bottom-tab-bar > a.active { background: var(--hc-nav-active-bg) !important; color: var(--hc-nav-active-fg) !important; }
 }
 
@@ -375,8 +375,8 @@ html.theme-dark main:not(.hc-template-home) :where(input,textarea,select)::place
     overflow: hidden !important;
     isolation: isolate !important;
     z-index: 2147483000 !important;
-    background: var(--hc-nav-bg) !important;
-    background-color: var(--hc-nav-bg) !important;
+    background: var(--hc-tab-bg) !important;
+    background-color: var(--hc-tab-bg) !important;
     background-image: none !important;
     opacity: 1 !important;
     visibility: visible !important;
@@ -404,14 +404,14 @@ html.theme-dark main:not(.hc-template-home) :where(input,textarea,select)::place
     gap: 4px !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
-    background: var(--hc-nav-bg) !important;
-    background-color: var(--hc-nav-bg) !important;
+    background: var(--hc-tab-bg) !important;
+    background-color: var(--hc-tab-bg) !important;
     background-image: none !important;
-    color: var(--hc-nav-fg) !important;
+    color: var(--hc-tab-fg) !important;
     opacity: 1 !important;
     visibility: visible !important;
     text-decoration: none !important;
-    -webkit-text-fill-color: var(--hc-nav-fg) !important;
+    -webkit-text-fill-color: var(--hc-tab-fg) !important;
   }
   html body nav.bottom-nav.hc-bottom-tab-bar > a.active {
     background: var(--hc-nav-active-bg) !important;
@@ -440,17 +440,17 @@ html.theme-dark main:not(.hc-template-home) :where(input,textarea,select)::place
     white-space: nowrap !important;
   }
   html.theme-light body nav.bottom-nav.hc-bottom-tab-bar {
-    background: var(--hc-nav-bg) !important;
-    background-color: var(--hc-nav-bg) !important;
+    background: var(--hc-tab-bg) !important;
+    background-color: var(--hc-tab-bg) !important;
     border-top-color: var(--hc-card-border) !important;
   }
   html.theme-light body nav.bottom-nav.hc-bottom-tab-bar > a,
   html.theme-light body nav.bottom-nav.hc-bottom-tab-bar > a:link,
   html.theme-light body nav.bottom-nav.hc-bottom-tab-bar > a:visited {
-    background: var(--hc-nav-bg) !important;
-    background-color: var(--hc-nav-bg) !important;
-    color: var(--hc-nav-fg) !important;
-    -webkit-text-fill-color: var(--hc-nav-fg) !important;
+    background: var(--hc-tab-bg) !important;
+    background-color: var(--hc-tab-bg) !important;
+    color: var(--hc-tab-fg) !important;
+    -webkit-text-fill-color: var(--hc-tab-fg) !important;
   }
   html.theme-light body nav.bottom-nav.hc-bottom-tab-bar > a.active {
     background: var(--hc-nav-active-bg) !important;
