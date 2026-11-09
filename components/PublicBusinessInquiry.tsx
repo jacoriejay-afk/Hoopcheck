@@ -42,7 +42,7 @@ export default function PublicBusinessInquiry() {
     };
   }, [loaded]);
 
-  if (!siteKey) return null;
+  if (!siteKey) return <p role="status">Business inquiries are temporarily unavailable. Please use the existing contact options.</p>;
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -75,7 +75,7 @@ export default function PublicBusinessInquiry() {
     <section className="dashboard-card" style={{ marginTop: 18 }}>
       <h2>Contact HoopCheck™ business</h2>
       <p className="muted">Sponsors and partners can contact us without creating an account. We use your contact details to review and respond to your inquiry. Read our <Link href="/privacy">Privacy Policy</Link> before submitting.</p>
-      <form onSubmit={(event) => void submit(event)} style={{ display: "grid", gap: 12 }}>
+      <form onSubmit={(event) => void submit(event)} style={{ display: "grid", gap: 12 }} aria-busy={sending}>
         <label htmlFor="business-name">Your name</label>
         <input id="business-name" required minLength={2} maxLength={120} autoComplete="name" value={name} onChange={event => setName(event.target.value)} />
         <label htmlFor="business-email">Email</label>
@@ -92,9 +92,9 @@ export default function PublicBusinessInquiry() {
           <label htmlFor="business-website">Leave this field blank</label>
           <input id="business-website" name="website" ref={honeypot} tabIndex={-1} autoComplete="off" />
         </div>
-        <div ref={mount} />
+        <div ref={mount} aria-label="Spam protection verification" />
         <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" strategy="afterInteractive" onReady={() => setLoaded(true)} />
-        <button className="btn" type="submit" disabled={sending || !token}>{sending ? "Sending…" : "Send business inquiry"}</button>
+        <button className="btn" type="submit" disabled={sending || !token} aria-disabled={sending || !token}>{sending ? "Sending…" : "Send business inquiry"}</button>
         {status && <p role="status" className="muted">{status}</p>}
       </form>
     </section>
