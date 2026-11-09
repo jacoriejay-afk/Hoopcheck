@@ -6,7 +6,7 @@
 - /admin/business read-only administrator inbox (not deployed)
 - Admin-only navigation to business inbox
 - Consent checkbox and Privacy Policy link
-- Draft per-account database rate limiter (NOT applied)
+- Per-account database rate limiter installed in production; functional account testing pending
 
 ## Production database state — 2026-11-09
 - Existing sponsor_inquiries table retained; no duplicate table created.
@@ -15,11 +15,11 @@
 - Verified policy: SELECT for authenticated users only when
   public.get_current_user_admin_role() = 'admin'.
 - Schema and policy inspection succeeded; live session-based authorization tests remain pending.
-- Rate-limit trigger is **NOT** installed. Existing form is still directly client-to-Supabase.
+- **Applied migration:** business_inquiry_submission_throttle. Verified trigger sponsor_inquiries_submission_limit is installed. Functional authenticated and concurrent-submission tests remain pending. Existing form remains directly client-to-Supabase.
 
 ## Release blockers
 1. Test the SELECT policy using genuine admin, moderator and regular member sessions.
-2. Review, test and deploy database-enforced rate limiting; check parallel inserts and rolling windows.
+2. Test installed database-enforced rate limiting with authenticated users; check parallel inserts and rolling windows.
 3. Validate signed-in inquiry submission, consent, error states and category persistence.
 4. Check accessibility, mobile layouts and dark/light themes.
 5. Wait for final SHA CI and launch tests to pass.
