@@ -6,6 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 function getFallbackPath(pathname: string): string {
   if (pathname === "/") return "/dashboard";
   if (pathname === "/dashboard") return "/";
+  // Signed-out authentication pages must never fall back to a protected dashboard.
+  if (pathname === "/login" || pathname.startsWith("/login/") || pathname === "/signup" || pathname.startsWith("/signup/") || pathname === "/forgot-password" || pathname === "/reset-password") return "/";
   if (pathname.startsWith("/team-hub/groups/")) return "/team-hub";
   if (pathname.startsWith("/team-hub/")) return "/team-hub";
   if (pathname.startsWith("/teams/")) return "/teams";
