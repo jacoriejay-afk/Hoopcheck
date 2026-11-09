@@ -165,7 +165,7 @@ export default function PlayerProfilePage() {
           </nav>
         </header>
 
-        <section className="player-profile-hero hc-player-profile-hero hc-social-profile-header">
+        <section className="player-profile-hero hc-player-profile-hero hc-social-profile-header hc-player-dossier-hero">
           <div className="hc-social-profile-top">
             <div className="hc-social-avatar-frame"><div className="player-profile-avatar">{player.avatar_url ? <img src={player.avatar_url} alt="" /> : (player.display_name?.trim()?.charAt(0)?.toUpperCase() || "P")}</div></div>
             <div className="hc-social-profile-main">
@@ -178,6 +178,7 @@ export default function PlayerProfilePage() {
                 <h1>{player.display_name || "HoopCheck Player"} {player.player_verified && <VerifiedBadge label="Verified professional player" />}</h1>
                 <p className="muted">{[player.player_position, player.current_team, player.current_country || player.country].filter(Boolean).join(" · ") || (player.player_verified ? "Verified professional player" : "HoopCheck player")}</p>
               </div>
+              {player.bio && (isOwnProfile || viewerType !== "player" || connectionAccepted) && <p className="hc-social-profile-bio">{player.bio}</p>}
               <div className="hc-social-profile-actions">{isOwnProfile ? <Link href="/account#profile-editor" className="btn">Edit Profile</Link> : <FollowButton targetType="player" targetId={player.id} showCount={false} showNotifications={false} />}<PlayerContactButton playerId={player.id} /></div>
             </div>
           </div>

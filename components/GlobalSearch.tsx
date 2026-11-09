@@ -20,7 +20,7 @@ export default function GlobalSearch({ compact = false, fanView = false }: { com
       value={value}
       onChange={setValue}
       onSubmit={submit}
-      placeholder="Search teams, coaches, leagues, or reviews"
+      placeholder={fanView ? "Search teams, coaches, or leagues" : "Search players, coaches, teams, or leagues"}
       ariaLabel="Global search"
     />
   );

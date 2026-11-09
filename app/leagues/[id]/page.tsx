@@ -778,9 +778,7 @@ export default function LeagueDetailPage() {
             </h2>
 
             {reviewLoading ? (
-              <p>
-                Loading reviews...
-              </p>
+              <HoopLoading variant="inline" label="Loading reviews..." />
             ) : reviews.length ===
               0 ? (
               <div className="card">

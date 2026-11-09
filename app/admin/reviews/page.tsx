@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../../components/HoopLoading";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import SearchBar from "../../../components/SearchBar";
@@ -496,14 +497,7 @@ export default function AdminReviewsPage() {
 
   if (loading) {
     return (
-      <main className="page-shell review-moderation-center admin-light-shell">
-        <div className="container">
-          <div className="admin-panel">
-            <p className="eyebrow">HOOPCHECK ADMIN</p>
-            <h1>Loading moderation center…</h1>
-          </div>
-        </div>
-      </main>
+      <main className="page-shell review-moderation-center admin-light-shell"><HoopLoading label="Loading HoopCheck…" /></main>
     );
   }
 
@@ -919,7 +913,7 @@ export default function AdminReviewsPage() {
             <div style={{ marginTop: "24px" }}>
               <p className="eyebrow">MODERATION HISTORY</p>
               {eventsLoading ? (
-                <p className="muted">Loading audit history…</p>
+                <HoopLoading variant="inline" label="Loading audit history…" />
               ) : moderationEvents.length === 0 ? (
                 <p className="muted">No moderation actions recorded yet.</p>
               ) : (

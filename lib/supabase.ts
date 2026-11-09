@@ -26,6 +26,15 @@ function startSessionCache() {
 
 export function getCachedSession() {
   startSessionCache();
-  if (!sessionPromise) sessionPromise = supabase.auth.getSession();
+  if (!sessionPromise) {
+    const pending = supabase.auth.getSession();
+    sessionPromise = pending;
+    // A failed session read must not poison subsequent auth checks.
+    void pending.then(({ error }) => {
+      if (error && sessionPromise === pending) sessionPromise = null;
+    }, () => {
+      if (sessionPromise === pending) sessionPromise = null;
+    });
+  }
   return sessionPromise;
 }
