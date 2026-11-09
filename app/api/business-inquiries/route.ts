@@ -13,12 +13,34 @@ export async function POST(request: NextRequest) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!secret || !supabaseUrl || !serviceKey) return json("Public inquiries are temporarily unavailable.", 503);
 
+  if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json"))
+    return json("JSON content type required.", 415);
   const length = Number(request.headers.get("content-length") || 0);
   if (length > 12000) return json("Request too large.", 413);
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json();
+    // Enforce a real byte limit even if Content-Length is absent or inaccurate.
+    const reader = request.body?.getReader();
+    if (!reader) return json("Invalid request.", 400);
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > 12000) {
+        await reader.cancel();
+        return json("Request too large.", 413);
+      }
+      chunks.push(value);
+    }
+    const bytes = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
+    const parsed: unknown = JSON.parse(new TextDecoder().decode(bytes));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return json("Invalid request.", 400);
+    body = parsed as Record<string, unknown>;
   } catch {
     return json("Invalid request.", 400);
   }
@@ -39,7 +61,6 @@ export async function POST(request: NextRequest) {
       body: new URLSearchParams({
         secret,
         response: token,
-        remoteip: request.headers.get("x-real-ip") || "",
       }),
       cache: "no-store",
       signal: AbortSignal.timeout(7000),
