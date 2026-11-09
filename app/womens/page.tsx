@@ -39,7 +39,7 @@ export default function Womens() {
       const [teamResult, leagueResult] = await Promise.all([
         supabase.from("womens_teams")
           .select("id,name,country,city,league_id,league_name,logo_url,logo_bg")
-          .eq("active", true).order("name"),
+          .eq("active", true).order("name").order("id"),
         supabase.from("womens_leagues")
           .select("id,name,country,level")
           .eq("active", true).order("name"),
@@ -47,7 +47,7 @@ export default function Womens() {
       if (!mounted) return;
       if (teamResult.error) console.error("Unable to load women's teams:", teamResult.error);
       if (leagueResult.error) console.error("Unable to load women's leagues:", leagueResult.error);
-      setTeams(teamResult.data || []);
+      setTeams(Array.from(new Map(((teamResult.data || []) as WomensTeam[]).map((team) => [team.id, team])).values()));
       setLeagues(leagueResult.data || []);
       setLoading(false);
     }
