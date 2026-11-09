@@ -51,7 +51,7 @@ export default function PublicBusinessInquiry() {
       const response = await fetch("/api/business-inquiries", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, email, type, message, turnstileToken: token }),
+        body: JSON.stringify({ name, email, type, message, website: "", turnstileToken: token }),
       });
       const result = await response.json() as { message?: string };
       setStatus(result.message || (response.ok ? "Inquiry received." : "Submission failed."));
@@ -86,6 +86,10 @@ export default function PublicBusinessInquiry() {
         </select>
         <label htmlFor="business-message">Message</label>
         <textarea id="business-message" required minLength={10} maxLength={3000} rows={6} value={message} onChange={event => setMessage(event.target.value)} />
+        <div aria-hidden="true" style={{ position: "absolute", left: "-10000px", width: 1, height: 1, overflow: "hidden" }}>
+          <label htmlFor="business-website">Leave this field blank</label>
+          <input id="business-website" name="website" tabIndex={-1} autoComplete="off" />
+        </div>
         <div ref={mount} />
         <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" strategy="afterInteractive" onReady={() => setLoaded(true)} />
         <button className="btn" type="submit" disabled={sending || !token}>{sending ? "Sending…" : "Send business inquiry"}</button>
