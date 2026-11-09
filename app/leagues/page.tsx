@@ -63,7 +63,7 @@ return (
 
   <section className="hc-league-filter" aria-label="Filter leagues">
     <label htmlFor="league-search">Find a league</label>
-    <SearchBar inputId="league-search" value={query} onChange={setQuery} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search leagues" onSubmit={setQuery} />
+    <SearchBar inputId="league-search" value={query} onChange={setQuery} placeholder="Search leagues, teams, or countries" ariaLabel="Search leagues" onSubmit={setQuery} />
     <label htmlFor="league-country">League country</label>
     <select id="league-country" value={country} onChange={(e) => setCountry(e.target.value)}>
       <option value="">All countries</option>
@@ -73,7 +73,7 @@ return (
     {(query || country) && <button type="button" className="hc-directory-reset" onClick={() => { setQuery(""); setCountry(""); }}>Clear filters</button>}
   </section>
   <section className="grid hc-team-directory-list">
-    {loading ? (<div className="card"><HoopLoading label="Scanning professional leagues..." /></div>) : leagues.length === 0 ? (
+    {loading ? (<div className="card"><HoopLoading variant="inline" label="Scanning professional leagues..." /></div>) : leagues.length === 0 ? (
       <div className="card">
         <div className="eyebrow">
           Coming Soon
@@ -130,7 +130,7 @@ return (
   </section>
   <section className="hero">
     <div className="eyebrow">
-      Player Intelligence
+      League Insight
     </div>
     <h2>
       Every league
@@ -138,8 +138,7 @@ return (
       has a story.
     </h2>
     <p>
-      Learn from the players who have already played
-      there before deciding where your career goes next.
+      Explore first-hand experiences from people who have competed in these leagues before making your next move.
     </p>
     <div className="actions">
       <Link href="/signup" className="btn">

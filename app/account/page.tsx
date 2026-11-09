@@ -10,6 +10,10 @@ import Surface from "../../components/Surface";
 import { GroupCard, Row } from "../../components/LayoutSystem";
 import { useTheme } from "../../components/ThemeProvider";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
+import { calculateProfileCompletion } from "../../lib/profile-completion";
+import PlayerReviewChecklist from "../../components/PlayerReviewChecklist";
+import TeamLeaguePicker from "../../components/TeamLeaguePicker";
+import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
 
 type Subscription = {
   plan: "pro" | "premium" | null;
@@ -20,6 +24,7 @@ type Subscription = {
 
 type Profile = {
   account_type: "player"|"coach"|"scout"|"agent"|"fan";
+  basketball_type?: "mens"|"womens"|null;
   display_name: string | null;
   first_name: string | null;
   last_name: string | null;
@@ -30,6 +35,13 @@ type Profile = {
   current_country: string | null;
   current_country_public: boolean;
   current_team: string | null;
+  height?: string | null;
+  hometown?: string | null;
+  favorite_leagues?: string | null;
+  free_agent?: boolean | null;
+  selected_team_id?: string | null;
+  selected_womens_team_id?: string | null;
+  favorite_teams?: string | null;
   profile_visibility: "public" | "private" | "players_only";
   player_verified: boolean; coach_verified?: boolean; coach_profile_id?: string | null; experience_summary?: string | null;
   profile_claimed: boolean;
@@ -44,7 +56,7 @@ type Target = { id: string; name: string };
 const emptyProfile: Profile = {
   account_type: "player",
   display_name: null, first_name: null, last_name: null, professional_experience: false,
-  bio: null, position: null, years_pro: null, current_country: null, current_country_public: true, current_team: null,
+  bio: null, position: null, years_pro: null, current_country: null, current_country_public: true, current_team: null, favorite_teams: null,
   profile_visibility: "public", player_verified: false, profile_claimed: true,
   avatar_url: null, avatar_moderation_status: "approved"
 };
@@ -80,16 +92,20 @@ export default function AccountPage() {
   const [currentCountry, setCurrentCountry] = useState("");
   const [countryPublic, setCountryPublic] = useState(false);
   const [currentTeam, setCurrentTeam] = useState("");
+  const [height, setHeight] = useState("");
+  const [reviewTeamId, setReviewTeamId] = useState("");
+  const [emailConfirmed, setEmailConfirmed] = useState(false);
+  const [favoriteTeam, setFavoriteTeam] = useState("");
   const [hometown, setHometown] = useState("");
   const [nationality, setNationality] = useState("");
   const [interests, setInterests] = useState("");
   const [favoriteLeagues, setFavoriteLeagues] = useState("");
   const [coachingExperience, setCoachingExperience] = useState("");
-  const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [freeAgent, setFreeAgent] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarStatus, setAvatarStatus] = useState<"pending"|"approved"|"rejected">("approved");
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -113,12 +129,14 @@ export default function AccountPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { window.location.href = "/login"; return; }
       setEmail(user.email ?? "");
+      setEmailConfirmed(Boolean(user.email_confirmed_at));
       setUserId(user.id);
-      const [{ data: profileData }, { data: subscriptionData }, { data: adminRoleData }] = await Promise.all([
-        supabase.from("profiles").select("account_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note").eq("id", user.id).maybeSingle(),
+      const [{ data: profileData, error: profileError }, { data: subscriptionData }, { data: adminRoleData }] = await Promise.all([
+        supabase.from("profiles").select("account_type,basketball_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,height,selected_team_id,selected_womens_team_id,favorite_teams,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,hometown,nationality,interests,favorite_leagues,free_agent,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
         supabase.rpc("get_current_user_admin_role"),
       ]);
+      if (profileError || !profileData) throw new Error("Your profile could not be loaded. Refresh and try again.");
       const nextProfile: Profile = profileData
         ? { ...emptyProfile, ...profileData }
         : emptyProfile;
@@ -129,14 +147,17 @@ export default function AccountPage() {
       setYearsPro(nextProfile.years_pro?.toString() ?? "");
       setCurrentCountry(nextProfile.current_country ?? "");
       setCountryPublic(Boolean(nextProfile.current_country_public));
-      setCurrentTeam(nextProfile.current_team ?? "");
+      setCurrentTeam((nextProfile as any).free_agent ? "" : nextProfile.current_team ?? "");
+      setHeight(nextProfile.height ?? "");
+      setReviewTeamId((nextProfile.basketball_type === "womens" ? nextProfile.selected_womens_team_id : nextProfile.selected_team_id) || "");
+      setFavoriteTeam(nextProfile.favorite_teams ?? "");
       setHometown((nextProfile as any).hometown ?? "");
       setNationality((nextProfile as any).nationality ?? "");
       setFreeAgent(Boolean((nextProfile as any).free_agent));
       setInterests((nextProfile as any).interests ?? "");
       setFavoriteLeagues((nextProfile as any).favorite_leagues ?? "");
       setCoachingExperience((nextProfile as any).experience_summary ?? "");
-      setVisibility(nextProfile.profile_visibility === "private" ? "private" : "public");
+      setSettingsVisibility(nextProfile.profile_visibility === "public" ? "public" : "players_only");
       setAvatarUrl(nextProfile.avatar_url ?? "");
       setAvatarStatus(nextProfile.avatar_moderation_status ?? "approved");
       setSubscription(subscriptionData ?? null);
@@ -161,7 +182,7 @@ export default function AccountPage() {
       for (const x of [...(c.data ?? []), ...(t.data ?? []), ...(l.data ?? [])]) map[x.id] = x;
       setTargets(map); setLoading(false);
     }
-    load();
+    void load().catch(error => { setLoadError(error instanceof Error ? error.message : "Unable to load your profile."); setLoading(false); });
   }, []);
 
   function chooseAvatar(file: File) {
@@ -205,11 +226,12 @@ export default function AccountPage() {
 
     const { data } = supabase.storage.from("profile-avatars").getPublicUrl(path);
     const pendingUrl = data.publicUrl + "?v=" + Date.now();
-    const { error } = await supabase.from("profiles").update({ avatar_url: pendingUrl, avatar_moderation_status: "approved" }).eq("id", user.id);
+    const { error } = await supabase.from("profiles").update({ avatar_url: pendingUrl }).eq("id", user.id);
     if (error) { setProfileMessage(error.message); return; }
 
     setAvatarUrl(pendingUrl);
-    setAvatarStatus("approved");
+    setProfile(current => ({ ...current, avatar_url: pendingUrl }));
+    setAvatarStatus(profile.avatar_moderation_status);
     setCropFile(null);
     setCropPreview("");
     setProfileMessage(t("photoUploaded"));
@@ -225,16 +247,18 @@ export default function AccountPage() {
       const updates: Record<string, unknown> = {
         display_name: name || null,
         bio: bio.trim().slice(0, 500) || null,
+        ...(profile.account_type === "player" ? { position: position.trim() || null } : {}),
+        ...(profile.account_type === "player" ? { height: height.trim().slice(0, 24) || null } : {}),
+        ...(profile.account_type === "player" ? { current_country: currentCountry.trim() || null } : {}),
+        ...(profile.account_type === "player" ? { current_team: !freeAgent ? currentTeam.trim() || null : null } : {}),
+        favorite_teams: favoriteTeam.trim().slice(0,500) || null,
         hometown: hometown.trim().slice(0, 120) || null,
         nationality: nationality.trim().slice(0, 80) || null,
         interests: interests.trim().slice(0, 500) || null,
         favorite_leagues: favoriteLeagues.trim().slice(0, 500) || null,
         experience_summary: profile.account_type === "coach" ? coachingExperience.trim().slice(0, 1000) || null : profile.experience_summary ?? null,
-        profile_visibility: ["scout", "agent", "fan"].includes(profile.account_type)
-          ? settingsVisibility
-          : visibility === "private" ? "players_only" : "public",
-        free_agent: profile.account_type === "player" ? freeAgent : false,
-        current_country_public: profile.account_type === "player" ? countryPublic : false,
+        profile_visibility: settingsVisibility,
+        ...(profile.account_type === "player" ? { free_agent: freeAgent, current_country_public: countryPublic } : {}),
       };
       const { data, error } = await supabase.from("profiles")
         .update(updates)
@@ -246,6 +270,7 @@ export default function AccountPage() {
       setProfile((current) => ({ ...current, ...updates }));
       setDisplayName(name);
       setProfileMessage(t("profileUpdated"));
+      // The shared completion indicator now reflects the saved values immediately.
     } catch (error) {
       setProfileMessage(error instanceof Error ? error.message : t("saveSettingFailed"));
     } finally {
@@ -358,6 +383,7 @@ export default function AccountPage() {
     setSettingsVisibility(next);
     const ok = await saveSetting({ profile_visibility: next }, t("profileVisibilitySaved"));
     if (!ok) setSettingsVisibility(next === "public" ? "players_only" : "public");
+    else setProfile(current => ({ ...current, profile_visibility: next }));
   }
 
   async function changeCountryVisibility(checked: boolean) {
@@ -368,6 +394,8 @@ export default function AccountPage() {
 
   if (loading) return <main className="page-shell hc-account-page"><div className="page-container"><HoopLoading label={t("loadingAccount")} /></div></main>;
 
+  if (loadError) return <main className="page-shell hc-account-page"><p role="alert">{loadError}</p><button className="btn" onClick={() => window.location.reload()}>Retry profile</button></main>;
+
   return (
     <main className="page-shell hc-account-page"><div className="page-container">
       <header className="hc-account-settings-header">
@@ -375,18 +403,19 @@ export default function AccountPage() {
         <h1>{t("accountPreferences")}</h1>
         <div className="hc-account-settings-identity">
           <span className="hc-account-settings-avatar" aria-hidden="true">
-            {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{(displayName || email || "H").trim().charAt(0).toUpperCase()}</span>}
+            {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{(displayName || email || "H").trim().split(/\s+/).slice(0,2).map(part => part[0]).join("").toUpperCase()}</span>}
           </span>
           <div className="hc-account-settings-identity-copy">
             <div className="hc-account-identity-title"><strong>{displayName || t("yourAccount")}</strong><span className="hc-account-membership-pill">{subscription?.plan === "premium" ? "Premium" : subscription?.plan === "pro" ? t("pro") : t("freePlan")}</span></div>
-            <p>{email || t("emailNotSet")}</p>
+            <p>{email || t("emailNotSet")}</p><p className="hc-account-visibility-status"><span aria-hidden="true" />{profile.account_type === "fan" ? "Fan profile privacy is enabled" : settingsVisibility === "public" ? "Profile visible to everyone" : "Profile visible to players only"}</p>
           </div>
         </div>
         <div className="hc-account-identity-actions">
-          <a href="#profile-editor" className="btn">{t("editProfile")}</a>
+          <a href={profile.account_type === "player" ? "/complete-profile" : "#profile-editor"} className="btn">{t("editProfile")}</a>
           {profile.account_type === "player" && settingsVisibility === "public" ? <Link href={userId ? `/players/${encodeURIComponent(userId)}` : "/profile"} className="btn dark">{t("profilePublic")}</Link> : null}
         </div>
       </header>
+      {profile.account_type === "player" ? <PlayerProfileCompletionCard key={JSON.stringify(profile)} profile={{ ...profile, id: userId }} onPublished={() => { setSettingsVisibility("public"); setProfile(current => ({ ...current, profile_visibility: "public" })); }} /> : (() => { const completion = calculateProfileCompletion({ ...profile, display_name: displayName, bio, avatar_url: avatarUrl, hometown, nationality, interests, favorite_leagues: favoriteLeagues }); const next = completion.nextMissing; return completion.percentage < 100 && next ? <section className="dashboard-card hc-account-profile-completion" style={{marginTop:12}}><strong>Profile {completion.percentage}% complete</strong><p className="muted">Add your {next.label} next.</p><a className="btn" href={"/account#" + (next.key === "avatar_url" ? "profile-editor-field-avatar_url" : "profile-editor-field-" + next.key)}>{next.key === "avatar_url" ? "Add photo" : "Complete profile"}</a></section> : null; })()}
       {(profile as any).moderation_status === "warned" || (profile as any).moderation_status === "flagged" ? <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{(profile as any).moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{(profile as any).moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section> : null}
       {adminRole && <section className="dashboard-card" style={{marginBottom:16}}><p className="eyebrow">{adminRole.toUpperCase()}</p><h2>{t("adminControlCenter")}</h2><div className="account-actions" style={{display:"flex",gap:10,flexWrap:"wrap"}}><Link href="/admin/directory" className="btn">{t("openAdminPanel")}</Link><Link href="/admin/reviews" className="btn dark">{t("manageReviews")}</Link><Link href="/admin/rights" className="btn dark">{t("rightsCoverage")}</Link></div></section>}
       <section id="account-settings" className="hc-settings" aria-label={t("accountSettings")}>
@@ -407,7 +436,7 @@ export default function AccountPage() {
         </SettingsGroup>
         <SettingsGroup title={t("privacySection")}>
           <SettingsToggle icon="map-pin" label={t("showCountryOnFeed")} checked={countryPublic} onChange={changeCountryVisibility} />
-          <div className="hc-setting-row"><SettingsGlyph name="eye"/><div className="hc-setting-copy"><strong>{t("whoCanSeeProfile")}</strong><small>{settingsVisibility === "public" ? t("public") : t("playersOnly")}</small></div><select aria-label={t("whoCanSeeProfile")} className="hc-setting-select" value={settingsVisibility} onChange={e=>changeVisibility(e.target.value as "public"|"players_only")}><option value="public">{t("public")}</option><option value="players_only">{t("playersOnly")}</option></select></div>
+          {profile.account_type !== "fan" && <div className="hc-setting-row"><SettingsGlyph name="eye"/><div className="hc-setting-copy"><strong>{t("whoCanSeeProfile")}</strong><small>{settingsVisibility === "public" ? t("public") : t("playersOnly")}</small></div><select aria-label={t("whoCanSeeProfile")} className="hc-setting-select" value={settingsVisibility} onChange={e=>changeVisibility(e.target.value as "public"|"players_only")}><option value="public">{t("public")}</option><option value="players_only">{t("playersOnly")}</option></select></div>}
         </SettingsGroup>
         <SettingsGroup title={t("supportSection")}>
           <SettingsRow icon="help" label={t("helpFaq")} value={t("getAnswers")} href="/support" />
@@ -428,7 +457,7 @@ export default function AccountPage() {
           <p className="eyebrow">{t("profileSection")}</p>
           {profile.account_type === "player" && <>
             {avatarUrl && <img src={avatarUrl} alt={t("profileSection")} style={{width:112,height:112,borderRadius:"50%",objectFit:"cover",border:"3px solid var(--orange)",display:"block"}} />}
-            <label htmlFor="avatar-upload" className="muted">{t("playerProfilePicture")}</label>
+            <label id="profile-editor-field-avatar_url" htmlFor="avatar-upload" className="muted">{t("playerProfilePicture")}</label>
             <input id="avatar-upload" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f) chooseAvatar(f)}} />
             <p className="muted" style={{fontSize:12}}>{avatarStatus==="pending" ? t("pendingModeration") : avatarStatus==="rejected" ? t("photoRejected") : t("approvedEligiblePublic")}</p>
             {cropPreview && <div className="dashboard-card" style={{marginTop:12}}>
@@ -449,17 +478,17 @@ export default function AccountPage() {
             <label className="muted">{t("firstName")}</label><input value={profile.first_name ?? ""} readOnly />
             <label className="muted">{t("lastName")}</label><input value={profile.last_name ?? ""} readOnly />
             <p className="muted" style={{fontSize:12}}>{t("nameLocked")}</p>
-            <label htmlFor="display-name" className="muted">{t("displayName")}</label><input id="display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder={t("displayNamePlaceholder")} />
+            <label htmlFor="profile-editor-field-display_name" className="muted">{t("displayName")}</label><input id="profile-editor-field-display_name" name="display_name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} placeholder={t("displayNamePlaceholder")} />
             {profile.account_type === "player" && <label htmlFor="position" className="muted">{t("position")}</label>}
-            {profile.account_type === "player" && <input id="position" value={position} readOnly aria-describedby="player-identity-locked" />}
+            {profile.account_type === "player" && <select id="position" value={position} onChange={event => setPosition(event.target.value)} disabled={savingProfile}><option value="">Choose position</option>{position && !["PG","SG","SF","PF","C"].includes(position) && <option value={position}>{position}</option>}{["PG","SG","SF","PF","C"].map(value => <option key={value} value={value}>{value}</option>)}</select>}
             {profile.account_type === "player" && <label htmlFor="years-pro" className="muted">{t("yearsAsPro")}</label>}
-            {profile.account_type === "player" && <p id="player-identity-locked" className="muted" style={{fontSize:11,margin:0}}>Position, professional years, and current team details are protected and must be changed through HoopCheck verification.</p>}
-            {profile.account_type === "player" && <input id="years-pro" type="number" value={yearsPro} readOnly aria-describedby="player-identity-locked" /> }
+            {profile.account_type === "player" && <p id="player-identity-locked" className="muted" style={{fontSize:11,margin:0}}>Professional years and verified team affiliations are managed through verification. Your position, height, current country, and self-reported team can be edited here.</p>}
+            {profile.account_type === "player" && <><input id="years-pro" type="number" value={yearsPro} readOnly aria-describedby="player-identity-locked" /><Link href="/support">Request a verified information update →</Link><label htmlFor="player-height">Height</label><input id="player-height" value={height} onChange={event => setHeight(event.target.value)} maxLength={24} placeholder="e.g. 193 cm or 6′4″" /></> }
             {profile.account_type === "coach" && <><label htmlFor="coaching-experience" className="muted">{t("coachingExperience")}</label><textarea id="coaching-experience" value={coachingExperience} onChange={e=>setCoachingExperience(e.target.value)} maxLength={1000} rows={4} placeholder={t("coachingExperiencePlaceholder")} /><label htmlFor="coach-specialties" className="muted">{t("coachingSpecialties")}</label><textarea id="coach-specialties" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("coachingSpecialtiesPlaceholder")} /></>}
-            <label htmlFor="hometown">{t("hometown")}</label><input id="hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder={t("cityStateRegion")} />
-            <label htmlFor="nationality">{t("nationality")}</label>
-            <select id="nationality" value={nationality} onChange={e=>setNationality(e.target.value)} disabled={savingProfile}>
-              <option value="">{t("selectNationality")}</option>
+            <label htmlFor="profile-editor-field-hometown">{t("hometown")}</label><input id="profile-editor-field-hometown" value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder={t("cityStateRegion")} />
+            <label htmlFor="profile-editor-field-nationality">{t("nationality")}</label>
+            <select id="profile-editor-field-nationality" value={nationality} onChange={e=>setNationality(e.target.value)} disabled={savingProfile}>
+              <option value="">{t("selectNationality")}</option>{nationality && <option value={nationality}>{nationality} (current)</option>}
               <optgroup label={t("africa")}>
                 {["Algeria","Angola","Benin","Botswana","Burkina Faso","Burundi","Cameroon","Cape Verde","Central African Republic","Chad","Comoros","Côte d’Ivoire","Democratic Republic of the Congo","Djibouti","Egypt","Equatorial Guinea","Eritrea","Eswatini","Ethiopia","Gabon","Gambia","Ghana","Guinea","Guinea-Bissau","Kenya","Lesotho","Liberia","Libya","Madagascar","Malawi","Mali","Mauritania","Mauritius","Morocco","Mozambique","Namibia","Niger","Nigeria","Republic of the Congo","Rwanda","São Tomé and Príncipe","Senegal","Seychelles","Sierra Leone","Somalia","South Africa","South Sudan","Sudan","Tanzania","Togo","Tunisia","Uganda","Zambia","Zimbabwe"].map(x=><option key={x} value={x}>{x}</option>)}
               </optgroup>
@@ -480,40 +509,45 @@ export default function AccountPage() {
               </optgroup>
             </select>
                         {profile.account_type === "player" && <>
-              <label htmlFor="current-country" className="muted">{t("currentCountry")}</label><input id="current-country" value={currentCountry} readOnly aria-describedby="player-identity-locked" />
-              <label htmlFor="current-team" className="muted">{t("currentTeam")}</label><input id="current-team" value={currentTeam} readOnly aria-describedby="player-identity-locked" />
+              <label htmlFor="current-country" className="muted">{t("currentCountry")}</label><input id="current-country" value={currentCountry} onChange={event => setCurrentCountry(event.target.value)} maxLength={80} />
+              <div id="current-team"><TeamLeaguePicker mode="team" label="Current team" returnValue="name" value={currentTeam} onChange={setCurrentTeam} basketballType={profile.basketball_type || "mens"} directorySource={profile.basketball_type === "womens" ? "womens_teams" : "teams"} disabled={savingProfile || freeAgent} onSelectItem={item => { if (item.id) { setReviewTeamId(item.id); setCurrentCountry(item.country); } }} placeholder={freeAgent ? "Free agent — no current team" : "Search and select your current team"} /></div><small className="muted">This updates your profile information. Verified affiliation and review eligibility are handled separately.</small>
             </>}
-            <label htmlFor="bio" className="muted">{t("playerBio")}</label><textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder={t("playerBioPlaceholder")} />
-                        {profile.account_type === "player" && <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>setFreeAgent(e.target.checked)}/><span>{t("showFreeAgent")}</span></label>}
+            <TeamLeaguePicker mode="team" multiple returnValue="name" label="Favorite teams" directorySource={profile.basketball_type === "womens" ? "womens_teams" : profile.basketball_type === "mens" ? "teams" : "both"} values={favoriteTeam.split(",").map(item=>item.trim()).filter(Boolean)} onChangeMany={items=>setFavoriteTeam(items.join(", ").slice(0,500))} basketballType={profile.basketball_type||null} placeholder="Search and add favorite teams" />
+            <label htmlFor="profile-editor-field-bio" className="muted">{profile.account_type === "fan" ? "About me" : profile.account_type === "coach" ? t("coachInformation") : t("playerBio")}</label><textarea id="profile-editor-field-bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={500} rows={4} placeholder={profile.account_type === "fan" ? "Tell other fans a little about yourself." : t("playerBioPlaceholder")} />
+                        {profile.account_type === "player" && <label className="checkbox-row"><input type="checkbox" checked={freeAgent} onChange={e=>{setFreeAgent(e.target.checked);if(e.target.checked)setCurrentTeam("");}}/><span>{t("showFreeAgent")}</span></label>}
             {["scout","agent"].includes(profile.account_type) && <>
-              <label htmlFor="interests" className="muted">{t("basketballInterests")}</label><textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("scoutAgentInterestsPlaceholder")} />
-              <label htmlFor="favorite-leagues" className="muted">{t("leaguesOfInterest")}</label><textarea id="favorite-leagues" value={favoriteLeagues} onChange={e=>setFavoriteLeagues(e.target.value)} maxLength={500} rows={3} placeholder={t("leaguesMarketsPlaceholder")} />
+              <label htmlFor="profile-editor-field-interests" className="muted">{t("basketballInterests")}</label><textarea id="profile-editor-field-interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("scoutAgentInterestsPlaceholder")} />
+              <div id="profile-editor-field-favorite_leagues"><TeamLeaguePicker mode="league" multiple returnValue="name" label={t("leaguesOfInterest")} values={favoriteLeagues.split(",").map(item=>item.trim()).filter(Boolean)} onChangeMany={items=>setFavoriteLeagues(items.join(", ").slice(0,500))} basketballType={profile.basketball_type||null} directorySource={profile.basketball_type==="womens"?"womens_teams":"teams"} placeholder="Search and add leagues" /></div>
             </>}
-            {profile.account_type === "fan" && <label htmlFor="interests" className="muted">{t("basketballInterests")}</label>}
-            {profile.account_type === "fan" && <textarea id="interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("fanInterestsPlaceholder")} />}
-            {["scout","agent","fan"].includes(profile.account_type) ? <div className="card"><strong><HoopIcon name="lock" size={16} /> {t("privateProfile")}</strong><p className="muted">{t("privateProfileDescription")}</p></div> : <><label htmlFor="visibility" className="muted">{t("profileVisibility")}</label><select id="visibility" value={visibility} onChange={e => setVisibility(e.target.value as "public" | "private")}><option value="public">{t("public")}</option><option value="private">{t("private")}</option></select></>}
+            {profile.account_type === "fan" && <label htmlFor="profile-editor-field-interests" className="muted">{t("basketballInterests")}</label>}
+            {profile.account_type === "fan" && <textarea id="profile-editor-field-interests" value={interests} onChange={e=>setInterests(e.target.value)} maxLength={500} rows={3} placeholder={t("fanInterestsPlaceholder")} />}
+            {["scout","agent","fan"].includes(profile.account_type) ? <div className="card"><strong><HoopIcon name="lock" size={16} /> {t("privateProfile")}</strong><p className="muted">{t("privateProfileDescription")}</p></div> : <><label htmlFor="visibility" className="muted">{t("profileVisibility")}</label><select id="visibility" value={settingsVisibility} onChange={e => setSettingsVisibility(e.target.value as "public" | "players_only")}><option value="public">{t("public")}</option><option value="players_only">{t("playersOnly")}</option></select></>}
             <p className="muted">{t("emailLabel")} {email}</p>
-            <div className="card" style={{marginTop:4}}><strong>{profile.profile_claimed ? <><VerifiedBadge label={t("profileClaimed")} /> Profile claimed</> : t("claimPlayerProfile")}</strong><p className="muted">{profile.profile_claimed ? t("profileConnected") : t("claimProfileDescription")}</p></div>
+            {profile.account_type === "player" && <div className="card" style={{marginTop:4}}><strong>{profile.profile_claimed ? <><VerifiedBadge label={t("profileClaimed")} /> Profile claimed</> : t("claimPlayerProfile")}</strong><p className="muted">{profile.profile_claimed ? t("profileConnected") : t("claimProfileDescription")}</p></div>}
             {profile.account_type === "player" && <div className="card" style={{marginTop:8}}><strong>{profile.player_verified ? <><VerifiedBadge label={t("verifiedPlayer")} /> {t("verifiedPlayer")}</> : t("playerVerification")}</strong><p className="muted">{profile.player_verified ? t("playerBadgeActive") : t("applyVerificationBadge")}</p>{!profile.player_verified && <Link href="/verification" className="btn dark">{t("requestVerification")}</Link>}</div>}
             {profile.account_type === "coach" && <div className="card" style={{marginTop:8,border:"1px solid var(--orange)"}}><strong>{profile.coach_verified ? <><VerifiedBadge label={t("verifiedProfessional")} /> Verified Coach</> : t("coachVerification")}</strong><p className="muted">{profile.coach_verified ? t("coachIdentityVerified") : t("coachVerifyInstructions")}</p>{!profile.coach_verified && <Link href="/verification" className="btn dark">{t("verifyCoach")}</Link>}{profile.coach_verified && <Link href="/dashboard" className="btn dark">{t("requestTeamPlacement")}</Link>}</div>}
             <button className="btn" type="submit" disabled={savingProfile}>{savingProfile ? t("saving") : t("saveProfile")}</button>
             {profileMessage && <p className="muted">{profileMessage}</p>}
           </Surface>
+          {profile.account_type === "player" && <PlayerReviewChecklist userId={userId} basketballType={profile.basketball_type || "mens"} teamId={reviewTeamId} onTeamChange={setReviewTeamId} emailConfirmed={emailConfirmed} isAdmin={!!adminRole} />}
         </div>
         <div className="dashboard-card">
           <p className="eyebrow">{t("membership")}</p><h2>{subscription?.plan === "premium" ? "HoopCheck " + t("premium") : subscription?.plan === "pro" ? "HoopCheck " + t("pro") : t("free") + " " + t("membership")}</h2><p className="muted">{t("status")}: {t(subscription?.status ?? "inactive")}</p>
           {subscription?.current_period_end && <p className="muted">{t("currentPeriodEnds")} {new Date(subscription.current_period_end).toLocaleDateString()}</p>}
           {subscription?.cancel_at_period_end && <p className="muted">Cancellation is scheduled at the end of the current period.</p>}
-          {subscription?.plan === "premium" && <div className="card" style={{marginTop:16,border:"1px solid var(--orange)"}}><p className="eyebrow">{t("premiumPlayerFeature")}</p><h3 style={{marginBottom:8}}><HoopIcon name="basketball" size={20} /> {t("getRecruitedComingSoon")}</h3><p className="muted">{t("recruitingFeatureDescription")}</p><p className="muted" style={{fontSize:12,marginBottom:0}}>{t("recruitingNetworkDescription")}</p></div>}
+          {profile.account_type === "player" && subscription?.plan === "premium" && <div className="card" style={{marginTop:16,border:"1px solid var(--orange)"}}><p className="eyebrow">{t("premiumPlayerFeature")}</p><h3 style={{marginBottom:8}}><HoopIcon name="basketball" size={20} /> {t("getRecruitedComingSoon")}</h3><p className="muted">{t("recruitingFeatureDescription")}</p><p className="muted" style={{fontSize:12,marginBottom:0}}>{t("recruitingNetworkDescription")}</p></div>}
           <div className="account-actions hc-account-membership-actions" style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:12}}><Link href="/membership#manage-subscription" className="btn">{t("manageSubscription")}</Link>{subscription?.plan && subscription.status === "active" && !subscription.cancel_at_period_end && <Link href="/membership#manage-subscription" className="btn dark">{t("upgradeSubscription")}</Link>}</div>
         </div>
       </section>
       <section className="dashboard-card" style={{marginTop:24}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,flexWrap:"wrap"}}><div><p className="eyebrow">{t("privacy")}</p><h2>{t("managePersonalData")}</h2><p className="muted">{t("privacyRequestDescription")}</p></div><Link href="/privacy-center" className="btn">{t("privacyRequestCenter")}</Link></div></section>
 
-      <section className="dashboard-card hc-account-public-profile" style={{marginTop:24}}><div className="hc-account-section-copy"><p className="eyebrow">{t("publicProfile")}</p><h2>{t("seeHowPlayersSeeYou")}</h2><p className="muted">{settingsVisibility === "public" ? t("previewPublicProfile") : t("profileNotPublicDescription")}</p></div><div className="actions hc-account-public-actions">{profile.account_type === "player" && (settingsVisibility === "public" ? <Link href={userId ? `/players/${encodeURIComponent(userId)}` : "/profile"} className="btn">{t("profilePublic")} <HoopIcon name="arrow-up-right" size={16} /></Link> : <a href="#profile-editor" className="btn">{t("editVisibility")}</a>)}<a href="#profile-editor" className="btn dark">{t("editProfile")}</a></div></section>\n\n      <section id="edit-profile" style={{marginTop:32}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,marginBottom:18}}><div><p className="eyebrow">{t("reviewHistory")}</p><h2>{t("myReviews")}</h2></div><Link href="/search" className="btn">{t("findAnother")}</Link></div>
+      <section className="dashboard-card hc-account-public-profile" style={{marginTop:24}}><div className="hc-account-section-copy"><p className="eyebrow">{t("publicProfile")}</p><h2>{profile.account_type === "fan" ? "Your fan profile" : t("seeHowPlayersSeeYou")}</h2><p className="muted">{profile.account_type === "fan" ? "Manage your profile details and how your fan account is presented." : settingsVisibility === "public" ? t("previewPublicProfile") : t("profileNotPublicDescription")}</p></div><div className="actions hc-account-public-actions">{profile.account_type === "player" && (settingsVisibility === "public" ? <Link href={userId ? `/players/${encodeURIComponent(userId)}` : "/profile"} className="btn">{t("profilePublic")} <HoopIcon name="arrow-up-right" size={16} /></Link> : <a href="#profile-editor" className="btn">{t("editVisibility")}</a>)}<a href="#profile-editor" className="btn dark">{t("editProfile")}</a></div></section>\n\n      {profile.account_type !== "fan" && (
+      <section id="edit-profile" style={{marginTop:32}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,marginBottom:18}}><div><p className="eyebrow">{t("reviewHistory")}</p><h2>{t("myReviews")}</h2></div><Link href="/search" className="btn">{t("findAnother")}</Link></div>
       {!reviews.length ? <div className="dashboard-card"><h2>{t("noReviewsYet")}</h2><p>{t("shareExperience")}</p></div> :
         <div style={{display:"grid",gap:16}}>{reviews.map(review => { const targetId=review.coach_id??review.team_id??review.league_id??""; const target=targets[targetId]; const href=review.coach_id?"/coaches/"+targetId:review.team_id?"/teams/"+targetId:"/leagues/"+targetId; return <article key={review.id} className="dashboard-card"><div style={{display:"flex",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}><div><span className="card-kicker">{review.coach_id?t("coach").toUpperCase():review.team_id?t("team").toUpperCase():t("leagues").toUpperCase()}</span><h2>{target?.name??t("directoryEntry")}</h2></div><strong>{t(review.status).toUpperCase()}</strong></div>{review.title&&<h3>{review.title}</h3>}<p>{review.body}</p><p className="muted">{t("overall")}: {review.overall_rating}/5 · {new Date(review.created_at).toLocaleDateString()}</p><Link href={href} className="btn dark">{t("viewProfile")}</Link></article>; })}</div>}
       </section>
+
+      )}
     </div></main>
   );
 }

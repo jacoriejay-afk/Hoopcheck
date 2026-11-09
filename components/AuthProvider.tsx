@@ -41,15 +41,18 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     let mounted = true;
-    getCachedSession().then(({ data }) => {
-      if (mounted) {
+    let authEventSeen = false;
+    void getCachedSession().then(({ data }) => {
+      if (mounted && !authEventSeen) {
         setUserId(data.session?.user?.id ?? null);
         setReady(true);
       }
-    }).catch(() => {
-      if (mounted) setReady(true);
+    }).catch((error) => {
+      console.error("Unable to restore authentication session:", error);
+      if (mounted && !authEventSeen) setReady(true);
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      authEventSeen = true;
       if (mounted) {
         setUserId(session?.user?.id ?? null);
         setReady(true);
@@ -80,7 +83,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       const active = hasActiveMembershipAtLeast(data, "pro");
       setMembershipActive(active);
       setMembershipTier(active && (data?.plan === "premium" || data?.plan === "pro") ? data.plan : "free");
-    } catch {
+    } catch (error) {
+      console.error("Unable to load membership status:", error);
       setMembershipActive(false);
       setMembershipTier("free");
       setMembershipError(true);

@@ -43,6 +43,7 @@ export default function FanLivePage() {
   const [allowed,setAllowed]=useState(false);
   const [chatEnabled,setChatEnabled]=useState(false);
   const [userId,setUserId]=useState<string|null>(null);
+  const [accountType,setAccountType]=useState<string|null>(null);
   const [sending,setSending]=useState(false);
   const [message,setMessage]=useState("");
   const [presenceCount,setPresenceCount]=useState(0);
@@ -59,12 +60,13 @@ export default function FanLivePage() {
     if(showLoader) setLoading(true);
     const {data:{session}}=await supabase.auth.getSession();
     const user=session?.user;
-    if(!user){setUserId(null);setAllowed(false);setGames([]);setLoading(false);return;}
+    if(!user){setUserId(null);setAccountType(null);setAllowed(false);setGames([]);setLoading(false);return;}
     setUserId(user.id);
     const [{data:profile},{data:subscription}] = await Promise.all([
       supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle(),
       supabase.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id",user.id).maybeSingle()
     ]);
+    setAccountType(profile?.account_type || null);
     const paidMember = hasActiveMembershipAtLeast(subscription);
     const fanCanChat = profile?.account_type === "fan" && paidMember;
     const playerCanChat = profile?.account_type === "player" && paidMember;
@@ -217,7 +219,7 @@ export default function FanLivePage() {
 
   if(loading)return <main className="page-shell hc-live-room"><div className="page-container"><HoopLoading label="Loading Live Game Hub…" /></div></main>;
   if(!userId)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">LIVE GAME HUB</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in to access Live Game Hub features available to your account.</p><Link className="btn" href="/login">Sign in</Link></section></div></main>;
-  if(!allowed)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM MEMBERS</p><h1>LIVE GAME CHAT</h1><p className="muted">An active Pro or Premium membership is required to join game chats. Free players can still make game predictions.</p><Link className="btn" href="/membership">View Membership</Link></section></div></main>;
+  if(!allowed)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">{accountType === "fan" ? "FAN PRO & FAN PREMIUM" : "PRO & PREMIUM MEMBERS"}</p><h1>MEMBERSHIP REQUIRED</h1><p className="muted">{accountType === "fan" ? "An active Fan Pro or Fan Premium membership is required to join live game chats." : "An active Pro or Premium membership is required to join Live Game Hub chats."}</p><Link className="btn" href="/membership">View Membership</Link></section></div></main>;
 
   return <main className="page-shell hc-live-room">
       <FanBasketballSideSwitch /><div className="page-container">

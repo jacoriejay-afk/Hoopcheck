@@ -31,6 +31,7 @@ export default function DirectoryImportPage(){
   const [fileName,setFileName]=useState("");
   const [message,setMessage]=useState("");
   const [busy,setBusy]=useState(false);
+  const [duplicateOverride,setDuplicateOverride]=useState(false);
   const [jobs,setJobs]=useState<any[]>([]);
 
   async function loadJobs(){
@@ -76,9 +77,26 @@ export default function DirectoryImportPage(){
         if(existing.data){result=await supabase.from("leagues").update({level:String(row.level||"").trim()||null,season:String(row.season||"").trim()||null,active:true}).eq("id",existing.data.id); updated++;}
         else {result=await supabase.from("leagues").insert({name,country,level:String(row.level||"").trim()||null,season:String(row.season||"").trim()||null,active:true}); inserted++;}
       } else if(kind==="teams"){
-        const existing=await supabase.from("teams").select("id").eq("name",name).eq("country",country).maybeSingle();
-        const payload={name,country,city:String(row.city||"").trim()||null,league_name:String(row.league_name||"").trim()||null,active:true};
-        if(existing.data){result=await supabase.from("teams").update(payload).eq("id",existing.data.id);updated++;} else {result=await supabase.from("teams").insert(payload);inserted++;}
+        const city=String(row.city||"").trim()||null;
+        const category=String(row.basketball_type||"mens").trim().toLowerCase()==="womens"?"womens":"mens";
+        const normalize=(value:string)=>value.normalize("NFKD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
+        const [mensMatches,womensMatches]=await Promise.all([
+          (city ? supabase.from("teams").select("id,name,city,basketball_type").eq("city",city) : supabase.from("teams").select("id,name,city,basketball_type").is("city",null)),
+          supabase.from("womens_teams").select("id,name,city"),
+        ]);
+        if(mensMatches.error||womensMatches.error){errors++;continue;}
+        const duplicate=[
+          ...(mensMatches.data||[]).filter(t=>normalize(t.name)===normalize(name)&&normalize(t.city||"")===normalize(city||"")&&(t.basketball_type||"mens")===category),
+          ...(womensMatches.data||[]).filter(t=>normalize(t.name)===normalize(name)&&normalize(t.city||"")===normalize(city||"")&&category==="womens"),
+        ][0];
+        if(duplicate&&!duplicateOverride){skipped++;continue;}
+        const payload={name,country,city,league_name:String(row.league_name||"").trim()||null,active:true,basketball_type:category};
+        if(category==="womens"){
+          result=await supabase.from("womens_teams").insert({name,country,city,league_name:payload.league_name,active:true});
+        }else{
+          result=await supabase.from("teams").insert(payload);
+        }
+        if(!result.error)inserted++;
       } else {
         const existing=await supabase.from("coaches").select("id").eq("name",name).eq("country",country).maybeSingle();
         const payload={name,country,city:String(row.city||"").trim()||null,active:true};
@@ -87,7 +105,7 @@ export default function DirectoryImportPage(){
       if(result?.error){errors++; if(result.error.code==="23505") skipped++;}
     }
     await supabase.from("directory_import_jobs").update({inserted_rows:inserted,updated_rows:updated,skipped_rows:skipped,error_rows:errors}).eq("id",job.data.id);
-    setMessage(`Import complete: ${inserted} inserted, ${updated} updated, ${errors} errors.`);
+    setMessage(`Import complete: ${inserted} inserted, ${updated} updated, ${skipped} possible duplicates skipped, ${errors} errors.${kind==="teams"&&!duplicateOverride&&skipped?" Review matching team records or enable the explicit override to import them.":""}`);
     setBusy(false); await loadJobs();
   }
 
@@ -97,7 +115,7 @@ export default function DirectoryImportPage(){
     <section style={{background:"#FFFFFF",border:"1px solid #E2E2DE",borderRadius:12,padding:20}}>
       <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}><input type="file" accept=".csv,text/csv" onChange={async e=>{const f=e.target.files?.[0];if(f){setFileName(f.name);setCsv(await f.text())}}}/><button onClick={()=>setCsv(templates[kind])} style={{padding:"10px 12px"}}>Load Template</button></div>
       <textarea value={csv} onChange={e=>setCsv(e.target.value)} placeholder={templates[kind]} style={{width:"100%",minHeight:220,marginTop:15,background:"#080808",color:"#fff",border:"1px solid #333",borderRadius:8,padding:12,boxSizing:"border-box",fontFamily:"monospace"}}/>
-      <p style={{color:"#888"}}>{rows.length} rows detected • {valid.length} valid</p>
+      <p style={{color:"#888"}}>{rows.length} rows detected • {valid.length} valid</p>\n      {kind==="teams"&&<label style={{display:"flex",gap:9,alignItems:"center",margin:"12px 0",color:"#9b4a00"}}><input type="checkbox" checked={duplicateOverride} onChange={e=>setDuplicateOverride(e.target.checked)}/> Explicitly override duplicate warnings and import another matching team record</label>}
       <button disabled={busy} onClick={importRows} style={{padding:"12px 18px",border:0,borderRadius:8,background:"#ff6a00",fontWeight:900}}>{busy?"Importing...":"Import CSV"}</button>
       {message&&<p style={{marginTop:15}}>{message}</p>}
     </section>
