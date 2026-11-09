@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../components/HoopLoading";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase";
@@ -237,7 +238,7 @@ export default function ReviewsAnalyticsPage() {
         </div>
 
         {loading ? (
-          <div className="hc-review-state">Loading published reviews…</div>
+          <HoopLoading variant="inline" label="Loading published reviews…" />
         ) : errorMessage ? (
           <div className="hc-review-state">{errorMessage}</div>
         ) : visibleItems.length === 0 ? (

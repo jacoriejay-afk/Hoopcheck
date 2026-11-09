@@ -20,6 +20,7 @@ export const PLAN_PERKS: Record<MembershipAudience, readonly { label: string; mi
     { label: "Full coach ratings and reviews", minimum: "pro" },
     { label: "Full team ratings and reviews", minimum: "pro" },
     { label: "Full league ratings and reviews", minimum: "pro" },
+    { label: "Player HoopFeed: posts, photos, and community", minimum: "pro" },
     { label: "Coach research", minimum: "pro" },
     { label: "Team research", minimum: "pro" },
     { label: "League research", minimum: "pro" },

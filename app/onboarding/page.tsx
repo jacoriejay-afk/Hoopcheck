@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../components/HoopLoading";
 import {useEffect,useState} from "react";
 import {useRouter} from "next/navigation";
 import Link from "next/link";
@@ -39,7 +40,7 @@ export default function OnboardingPage(){
   setSaving(false);
  }
 
- if(loading)return <main className="page-shell"><div className="page-container"><p>Loading profile setup...</p></div></main>;
+ if(loading)return <main className="page-shell"><HoopLoading label="Loading HoopCheck…" /></main>;
  const label={player:"Player",coach:"Coach",scout:"Scout",agent:"Agent",fan:"Fan"}[accountType];
  const nonPlayer=accountType!=="player";
  return <main className="page-shell hc-onboarding-page"><div className="page-container signup-complete-shell">

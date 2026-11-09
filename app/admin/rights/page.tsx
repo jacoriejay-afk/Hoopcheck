@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../../components/HoopLoading";
 import Link from "next/link";
 import SearchBar from "../../../components/SearchBar";
 import { useEffect, useMemo, useState } from "react";
@@ -194,7 +195,7 @@ export default function RightsCenterPage() {
           </div>
 
           {loading ? (
-            <div style={styles.empty}>Loading rights registry...</div>
+            <HoopLoading variant="inline" label="Loading rights registry..." />
           ) : filteredRows.length === 0 ? (
             <div style={styles.empty}>No registry records match this filter.</div>
           ) : (

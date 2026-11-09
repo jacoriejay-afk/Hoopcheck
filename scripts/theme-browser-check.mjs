@@ -195,6 +195,7 @@ try {
       // Give client-side auth redirects a brief chance to complete after the
       // dashboard's initial loading shell becomes visible.
       await page.waitForTimeout(750);
+      await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
       const computed = await page.evaluate(({ wrapperSelector, routeName }) => {
         const color = (selector) => {
           const element = document.querySelector(selector);
@@ -206,6 +207,8 @@ try {
           body: color("body"),
           pageWrapper: color(wrapperSelector),
           composer: routeName === "feed" ? color(".hc-feed-composer") : null,
+          discoveryHeading: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-discovery h2")).color : null,
+          composerBorder: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-composer")).borderTopWidth : null,
           topicChip: routeName === "feed" ? color(".hc-feed-topic-chip") : null,
           filterChip: routeName === "feed" ? color(".hc-feed-filter-chip:not(.is-active)") : null,
           whiteSurfaceOffenders: Array.from(document.querySelectorAll("main *, .global-back-button"))
@@ -226,12 +229,13 @@ try {
 
       assert.equal(computed.themeClass, theme, `${routeName}: expected html theme class ${theme}, got ${computed.themeClass}`);
       const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
-      const expectedCard = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
       const expectedChip = theme === "dark" ? "rgb(27, 27, 27)" : "rgb(248, 248, 246)";
       assert.equal(computed.body, expectedPage, `${routeName}/${theme}: body background mismatch`);
       assert.equal(computed.pageWrapper, expectedPage, `${routeName}/${theme}: page wrapper background mismatch`);
       if (routeName === "feed") {
-        assert.equal(computed.composer, expectedCard, `feed/${theme}: composer background mismatch`);
+        assert.equal(computed.composer, "rgba(0, 0, 0, 0)", `feed/${theme}: composer uses open content flow`);
+        assert.equal(computed.discoveryHeading, "rgb(247, 247, 245)", `feed/${theme}: artwork banner text remains readable`);
+        assert.equal(computed.composerBorder, "0px", `feed/${theme}: decorative composer frame removed`);
         assert.equal(computed.topicChip, expectedChip, `feed/${theme}: topic chip background mismatch`);
         assert.equal(computed.filterChip, expectedChip, `feed/${theme}: filter chip background mismatch`);
       }
