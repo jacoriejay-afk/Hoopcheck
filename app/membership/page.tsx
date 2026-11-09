@@ -240,6 +240,7 @@ function MembershipContent() {
 
   const isActive =
     subscription?.status === "active" || subscription?.status === "trialing";
+  const premiumOnlyAccount = accountType === "coach" || accountType === "manager";
 
   return (
     <main className="hc-membership-page">
@@ -319,7 +320,7 @@ function MembershipContent() {
             <div className="section-heading">
               <div className="eyebrow">CHOOSE YOUR ACCESS</div>
               <h2>
-                {accountType === "fan" ? <>Built for fans<br />who follow every move.</> : <>Built for players<br />making serious decisions.</>}
+                {premiumOnlyAccount ? <>Built for coaches and team managers<br />making serious decisions.</> : accountType === "fan" ? <>Built for fans<br />who follow every move.</> : <>Built for players<br />making serious decisions.</>}
               </h2>
               <p>{accountType === "fan" ? "Choose the fan access that fits how you follow basketball." : "Start with the level of research access that fits you."}</p>
             </div>
@@ -351,7 +352,7 @@ function MembershipContent() {
               <button type="button" aria-pressed={billingInterval==="6_month"} className={billingInterval==="6_month" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("6_month")}><span>6 months</span><small>Save 10%</small></button>
               <button type="button" aria-pressed={billingInterval==="year"} className={billingInterval==="year" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 15%</small></button>
             </div>
-            <MembershipComparison audience={accountType === "fan" ? "fan" : "player"} currentTier={hasActiveMembershipAtLeast(subscription, "premium") ? "premium" : hasActiveMembershipAtLeast(subscription, "pro") ? "pro" : "free"} billingTerm={billingInterval} onSelect={tier => void startCheckout(tier)} />
+            <MembershipComparison audience={accountType === "fan" ? "fan" : "player"} currentTier={hasActiveMembershipAtLeast(subscription, "premium") ? "premium" : hasActiveMembershipAtLeast(subscription, "pro") ? "pro" : "free"} billingTerm={billingInterval} premiumOnly={premiumOnlyAccount} purchaseDisabled={loading || checkoutLoading !== null} onSelect={tier => void startCheckout(tier)} />
             <p className="hc-promo-hint">Have a promo code? Enter it on the secure Stripe Checkout page before you pay.</p>\n            <div className="subscription-legal">
               <p>
                 By purchasing a HoopCheck membership, you agree to our{" "}

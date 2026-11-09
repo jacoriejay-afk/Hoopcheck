@@ -50,6 +50,12 @@ jobs:
       - name: Check HoopFeed text posts and team fan group invariants
         run: npm run check:hf4-fan-groups
 
+      - name: Check player profile completion
+        run: node scripts/check-player-profile-completion.mjs
+
+      - name: Check membership plan selection
+        run: node --test scripts/check-membership-plans.cjs
+
       - name: Lint
         run: npm run lint
 
@@ -71,6 +77,9 @@ jobs:
 
       - name: Verify profile editing and team review checklist
         run: node scripts/check-profile-editor-browser.mjs
+
+      - name: Verify player profile completion
+        run: node scripts/check-player-completion-browser.mjs
 
       - name: Verify canonical sitemap and robots host
         run: node scripts/domain-url-check.mjs
