@@ -88,7 +88,7 @@ export default function TeamsPage() {
       if (!session?.user) { if (active) { setIsPlayerAccount(false); setIsFanAccount(false); setRoleReady(true); } return; }
       const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", session.user.id).maybeSingle();
       if (active) { setIsPlayerAccount(profile?.account_type === "player"); setIsFanAccount(profile?.account_type === "fan"); setRoleReady(true); }
-    })().catch(() => { if (active) { setIsPlayerAccount(false); setIsFanAccount(false); } });
+    })().catch(() => { if (active) { setIsPlayerAccount(false); setIsFanAccount(false); setRoleReady(true); } });
     return () => { active = false; };
   }, []);
 
@@ -261,7 +261,7 @@ export default function TeamsPage() {
       }
       if (!active) return;
       setMapTeams(Array.from(new Map(all.map((team) => [team.id, team])).values()));
-      const ids = all.map(team => team.id).filter(Boolean);
+      const ids = Array.from(new Set(all.map(team => team.id).filter(Boolean)));
       const summaries: Record<string, TrustSummary> = {};
       for (let offset = 0; offset < ids.length; offset += 100) {
         const batch = ids.slice(offset, offset + 100);
