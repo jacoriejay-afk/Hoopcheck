@@ -9,6 +9,8 @@ import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Surface from "../../components/Surface";
 import HoopPassport from "../../components/HoopPassport";
+import PlayerJourney from "../../components/PlayerJourney";
+import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 import { useLanguage } from "../../components/LanguageProvider";
 import { calculateProfileCompletion } from "../../lib/profile-completion";
 import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
@@ -33,6 +35,7 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [postingStreak, setPostingStreak] = useState(0);
+  const [canManageJourney, setCanManageJourney] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
@@ -62,9 +65,13 @@ export default function ProfilePage() {
       if (result.error) { setLoadError(true); setLoading(false); return; }
       setP(result.data);
       if (result.data?.account_type === "player") {
-        const { data: activity } = await supabase.from("feed_posting_activity").select("activity_date").eq("user_id", user.id).order("activity_date", { ascending: false }).limit(370);
+        const [{ data: activity }, { data: subscription }] = await Promise.all([
+          supabase.from("feed_posting_activity").select("activity_date").eq("user_id", user.id).order("activity_date", { ascending: false }).limit(370),
+          supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
+        ]);
         if (!active) return;
         setPostingStreak(calculatePostingStreak(activity || []));
+        setCanManageJourney(getHoopCheckEntitlements({ accountType: "player", subscription }).canUseProPassport);
       }
       setLoading(false);
     })().catch(() => { if (active) { setLoadError(true); setLoading(false); } });
@@ -153,6 +160,10 @@ export default function ProfilePage() {
             <Link href={p.account_type === "fan" ? "/fan-feed" : "/pre-sign"} className="hc-profile-quick-link"><HoopIcon name={p.account_type === "fan" ? "users" : "clipboard-check"} size={22} /><span>{p.account_type === "fan" ? "Fan HQ" : "Pre-Sign"}</span></Link>
           </div>
         </nav>
+
+        {p.account_type === "player" && <div id="player-passport">
+          <PlayerJourney playerId={p.id} isOwnProfile canManage={canManageJourney} />
+        </div>}
 
         <section className="hc-profile-overview" aria-label={t("profileOverview")}>
           <div className="grid compact-grid">

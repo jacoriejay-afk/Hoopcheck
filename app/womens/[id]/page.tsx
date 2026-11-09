@@ -1,6 +1,5 @@
 "use client";
 import {useEffect,useState} from "react";
-import { countryFlag } from "../../../lib/countryFlag";
 import {useParams} from "next/navigation";
 import Link from "next/link";
 import {supabase} from "../../../lib/supabase";
@@ -72,7 +71,7 @@ export default function WomensTeam(){
    className="hc-womens-branded-hero"
    teamId={team.id}
    name={team.name}
-   country={`${countryFlag(team.country) ? countryFlag(team.country) + " " : ""}${team.country || t("international")}`}
+   country={team.country || t("international")}
    city={team.city}
    leagueName={team.league_name || t("professional")}
    logoUrl={team.logo_url}

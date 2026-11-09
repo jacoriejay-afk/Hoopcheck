@@ -5,11 +5,12 @@ import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
 import MembershipComparison from "../../components/MembershipComparison";
 import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
+import { BILLING_LABELS, PLAN_PRICES, type BillingTerm } from "../../lib/plan-comparison";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
 type Plan = "pro" | "premium";
-type BillingInterval = "month" | "6_month" | "year";
+type BillingInterval = BillingTerm;
 
 type Subscription = {
   plan: Plan;
@@ -238,6 +239,9 @@ function MembershipContent() {
     }
   }
 
+  const currentTier = hasActiveMembershipAtLeast(subscription, "premium") ? "premium"
+    : hasActiveMembershipAtLeast(subscription, "pro") ? "pro" : "free";
+  const currentPlan = `${accountType === "fan" ? "Fan " : ""}${currentTier === "premium" ? "Premium" : "Pro"}`;
   const isActive =
     subscription?.status === "active" || subscription?.status === "trialing";
   const premiumOnlyAccount = accountType === "coach" || accountType === "manager";
@@ -267,16 +271,18 @@ function MembershipContent() {
       {error && <div className="status error">{error}</div>}
 
       <section className="membership-section">
-        {isActive && subscription && !subscription.stripe_subscription_id && (
-          <div className="dashboard-card" style={{ marginBottom: 16 }}>
-            <strong>Complimentary HoopCheck access is active.</strong>
-            <span className="muted"> You can keep using your current access or choose a paid membership below.</span>
-          </div>
+        {currentTier !== "free" && !subscription?.stripe_subscription_id && (
+          <section className="active-card" id="manage-subscription" aria-labelledby="complimentary-membership">
+            <div className="eyebrow">Current membership</div>
+            <h2 id="complimentary-membership">HoopCheck {currentPlan}</h2>
+            <p>Complimentary access is active. There is no Stripe subscription to manage.</p>
+            <p className="muted">Paid plans below are optional.</p>
+          </section>
         )}
         {isActive && subscription?.stripe_subscription_id && (
           <MembershipComparison
             audience={accountType === "fan" ? "fan" : "player"}
-            currentTier={hasActiveMembershipAtLeast(subscription, "premium") ? "premium" : hasActiveMembershipAtLeast(subscription, "pro") ? "pro" : "free"}
+            currentTier={currentTier}
             billingTerm={billingInterval}
             premiumOnly={premiumOnlyAccount}
           />
@@ -365,8 +371,8 @@ function MembershipContent() {
                     <h3>{accountType === "fan" ? "Fan Pro" : "Pro"}</h3>
                   </div>
                   <div className="price">
-                    <strong>{billingInterval==="month" ? "\$4.99" : billingInterval==="6_month" ? "\$25.45" : "\$53.89"}</strong>
-                    <span>{billingInterval==="month" ? "billed monthly" : billingInterval==="6_month" ? "billed every 6 months" : "billed annually"}</span>
+                    <strong>{PLAN_PRICES.pro[billingInterval]}</strong>
+                    <span>{BILLING_LABELS[billingInterval]}</span>
                   </div>
                 </div>
                 <p className="plan-description">
@@ -406,8 +412,8 @@ function MembershipContent() {
                     <h3>{accountType === "fan" ? "Fan Premium" : "Premium"}</h3>
                   </div>
                   <div className="price">
-                    <strong>{billingInterval==="month" ? "\$9.99" : billingInterval==="6_month" ? "\$50.95" : "\$107.89"}</strong>
-                    <span>{billingInterval==="month" ? "billed monthly" : billingInterval==="6_month" ? "billed every 6 months" : "billed annually"}</span>
+                    <strong>{PLAN_PRICES.premium[billingInterval]}</strong>
+                    <span>{BILLING_LABELS[billingInterval]}</span>
                   </div>
                 </div>
                 <p className="plan-description">

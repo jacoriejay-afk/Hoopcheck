@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { isAuthSessionMissingError } from "@supabase/supabase-js";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
@@ -74,7 +75,7 @@ function SettingsRow({icon,label,value,href,onClick,danger=false}:{icon:string;l
  return <Row icon={<SettingsGlyph name={icon}/>} label={<strong>{label}</strong>} value={value} href={href} onClick={onClick} className={"hc-setting-row"+(danger?" is-danger":"")}/>;
 }
 function SettingsToggle({icon,label,checked,onChange}:{icon:string;label:string;checked:boolean;onChange:(value:boolean)=>void}) {
- return <div className="hc-setting-row"><SettingsGlyph name={icon}/><span className="hc-setting-copy"><strong>{label}</strong></span><button type="button" role="switch" aria-checked={checked} className={"hc-switch"+(checked?" is-on":"")} onClick={()=>onChange(!checked)}><span/></button></div>;
+ return <div className="hc-setting-row"><SettingsGlyph name={icon}/><span className="hc-setting-copy"><strong>{label}</strong></span><button type="button" role="switch" aria-label={label} aria-checked={checked} className={"hc-switch"+(checked?" is-on":"")} onClick={()=>onChange(!checked)}><span/></button></div>;
 }
 
 export default function AccountPage() {
@@ -108,6 +109,7 @@ export default function AccountPage() {
   const [profileMessage, setProfileMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarStatus, setAvatarStatus] = useState<"pending"|"approved"|"rejected">("approved");
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -127,9 +129,21 @@ export default function AccountPage() {
   const [adminRole, setAdminRole] = useState<"admin"|"moderator"|null>(null);
 
   useEffect(() => {
+    let active = true;
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { window.location.href = "/login"; return; }
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (!active) return;
+      const sessionMissing = isAuthSessionMissingError(authError) ||
+        authError?.code === "session_not_found" || authError?.code === "refresh_token_not_found";
+      if (authError && !sessionMissing) {
+        throw new Error("We could not verify your sign-in. Try loading your account again.");
+      }
+      if (!user) {
+        const { pathname, search, hash } = window.location;
+        const params = new URLSearchParams({ returnTo: pathname + search + hash });
+        window.location.replace(`/login?${params}`);
+        return;
+      }
       setEmail(user.email ?? "");
       setEmailConfirmed(Boolean(user.email_confirmed_at));
       setUserId(user.id);
@@ -184,8 +198,13 @@ export default function AccountPage() {
       for (const x of [...(c.data ?? []), ...(t.data ?? []), ...(l.data ?? [])]) map[x.id] = x;
       setTargets(map); setLoading(false);
     }
-    void load().catch(error => { setLoadError(error instanceof Error ? error.message : "Unable to load your profile."); setLoading(false); });
-  }, []);
+    void load().catch(error => {
+      if (!active) return;
+      setLoadError(error instanceof Error ? error.message : "Unable to load your profile.");
+      setLoading(false);
+    });
+    return () => { active = false; };
+  }, [loadAttempt]);
 
   function chooseAvatar(file: File) {
     if (!file.type.startsWith("image/")) { setProfileMessage(t("chooseImageFile")); return; }
@@ -396,6 +415,20 @@ export default function AccountPage() {
 
   if (loading) return <main className="page-shell hc-account-page"><div className="page-container"><HoopLoading label={t("loadingAccount")} /></div></main>;
 
+  if (loadError) return (
+    <main className="page-shell hc-account-page"><div className="page-container">
+      <section className="state-card error" role="alert">
+        <h1>Account unavailable</h1>
+        <p>{loadError}</p>
+        <button type="button" className="btn" onClick={() => {
+          setLoadError("");
+          setLoading(true);
+          setLoadAttempt(attempt => attempt + 1);
+        }}>Retry account</button>
+      </section>
+    </div></main>
+  );
+
   const entitlements = getHoopCheckEntitlements({ accountType: profile.account_type, subscription });
 
   return (
@@ -414,6 +447,7 @@ export default function AccountPage() {
         </div>
         <div className="hc-account-identity-actions">
           <a href={profile.account_type === "player" ? "/complete-profile" : "#profile-editor"} className="btn">{t("editProfile")}</a>
+          {profile.account_type === "player" && <Link href="/profile#player-passport" className="btn dark">Player Passport</Link>}
           {profile.account_type === "player" && settingsVisibility === "public" ? <Link href={userId ? `/players/${encodeURIComponent(userId)}` : "/profile"} className="btn dark">{t("profilePublic")}</Link> : null}
         </div>
       </header>
@@ -428,7 +462,7 @@ export default function AccountPage() {
           <SettingsRow icon="crown" label={t("membershipLabel")} value={subscription?.plan === "premium" ? "Premium" : subscription?.plan === "pro" ? t("pro") : t("freePlan")} href="/membership" />
         </SettingsGroup>
         <SettingsGroup title={t("preferences")}>
-          <div className="hc-setting-row"><SettingsGlyph name="moon"/><div className="hc-setting-copy"><strong>{t("darkMode")}</strong><small>{themePreference === "system" ? t("followsDevice") : themePreference === "dark" ? t("on") : t("off")}</small></div><button type="button" role="switch" aria-checked={themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)} className={"hc-switch "+((themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)) ? "is-on" : "")} onClick={() => changeTheme((themePreference === "system" ? (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) : themePreference === "dark") ? "light" : "dark")}><span/></button></div>
+          <div className="hc-setting-row"><SettingsGlyph name="moon"/><div className="hc-setting-copy"><strong>{t("darkMode")}</strong><small>{themePreference === "system" ? t("followsDevice") : themePreference === "dark" ? t("on") : t("off")}</small></div><button type="button" role="switch" aria-label={t("darkMode")} aria-checked={themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)} className={"hc-switch "+((themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)) ? "is-on" : "")} onClick={() => changeTheme((themePreference === "system" ? (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) : themePreference === "dark") ? "light" : "dark")}><span/></button></div>
           {themePreference !== "system" && <div className="hc-setting-subrow"><button type="button" className="hc-text-button" onClick={() => changeTheme("system")}>{t("useDeviceSetting")}</button></div>}
           <div className="hc-setting-row"><SettingsGlyph name="globe"/><div className="hc-setting-copy"><strong>{t("language")}</strong><small>{t("chooseAppLanguage")}</small></div><select aria-label={t("language")} className="hc-setting-select" value={preferredLanguage} onChange={e=>changeLanguage(e.target.value)}><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option><option value="ru">Русский</option><option value="az">Azərbaycanca</option><option value="pl">Polski</option><option value="zh">中文</option><option value="ja">日本語</option><option value="sr">Српски</option><option value="fi">Suomi</option><option value="he">עברית</option><option value="lt">Lietuvių</option><option value="uk">Українська</option></select></div>
           <SettingsToggle icon="message" label={t("gameChatAlerts")} checked={notificationPreferences.game_chat_alerts} onChange={v=>changeNotification("game_chat_alerts",v)} />
