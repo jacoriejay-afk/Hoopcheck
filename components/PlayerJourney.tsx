@@ -16,6 +16,8 @@ type CareerStop = {
   position: string | null;
   stop_order: number;
   is_public: boolean;
+  team_source: "teams" | "womens_teams";
+  career_status: "current" | "former";
 };
 
 const FLAGS: Record<string,string> = {
@@ -46,7 +48,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
 
   async function load() {
     const {data,error} = await supabase.from("player_career_stops")
-      .select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public")
+      .select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public,team_source,career_status")
       .eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true});
     if(!error) setStops((data||[]) as CareerStop[]);
     setLoading(false);
@@ -55,7 +57,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
   useEffect(() => {
     let active = true;
     void Promise.all([
-      supabase.from("player_career_stops").select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public").eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true}),
+      supabase.from("player_career_stops").select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public,team_source,career_status").eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true}),
     ]).then(([stopResult]) => {
       if(!active) return;
       if(!stopResult.error) setStops((stopResult.data||[]) as CareerStop[]);
@@ -77,11 +79,11 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
     const {error} = await supabase.from("player_career_stops").insert({
       player_id:playerId,team_id:teamId ? teamId.split(":").at(-1) : null,team_name:name,league_name:leagueName.trim()||null,
       country:country.trim(),seasons:seasons.trim(),position:position.trim()||null,
-      stop_order:stops.length,is_public:isPublic
+      stop_order:stops.length,is_public:isPublic,team_source:teamSource,career_status:careerStatus
     });
     if(error) setMessage(error.message.includes("row-level security") ? "My Journey requires an active Premium Player membership." : "Couldn't save this career stop. Please try again.");
     else {
-      setTeamId("");setTeamName("");setLeagueName("");setCountry("");setSeasons("");setPosition("");setIsPublic(false);
+      setTeamId("");setTeamName("");setLeagueName("");setCountry("");setSeasons("");setPosition("");setIsPublic(false);setCareerStatus("former");
       setMessage("Career stop added. Your passport countries are updated from your career history. Review eligibility is checked separately.");await load();
     }
     setSaving(false);
@@ -109,10 +111,10 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
       {stops.map((stop,index) => <article className="hc-journey-stop" key={stop.id}>
         <div className="hc-journey-stop__rail"><span className="hc-journey-stop__dot">{String(index+1).padStart(2,"0")}</span>{index<stops.length-1&&<span className="hc-journey-stop__line"/>}</div>
         <div className="hc-journey-stop__card">
-          <div className="hc-journey-stop__top"><span className="hc-journey-stop__flag" aria-label={stop.country}>{FLAGS[stop.country]||"🌍"}</span><span className="hc-journey-stop__season">{stop.seasons}</span>{stop.is_public&&<span className="hc-journey-public">PUBLIC</span>}</div>
+          <div className="hc-journey-stop__top"><span className="hc-journey-stop__flag" aria-label={stop.country}>{FLAGS[stop.country]||"🌍"}</span><span className="hc-journey-stop__season">{stop.seasons} · {stop.career_status === "current" ? "Current team" : "Former team"}</span>{stop.is_public&&<span className="hc-journey-public">PUBLIC</span>}</div>
           <div className="hc-journey-stop__team"><span className="hc-journey-stop__crest">{monogram(stop.team_name)}</span><div><h3>{stop.team_name}</h3><p>{stop.league_name||"League not listed"} · {stop.country}</p>{stop.position&&<small>Position · {stop.position}</small>}</div></div>
           <div className="hc-journey-stop__footer">
-            {stop.team_id ? <><Link href={`/${stop.team_name && stop.team_id && stop.team_id.startsWith("womens_teams:") ? "womens" : "teams"}/${stop.team_id?.split(":").at(-1)}`}>View team profile →</Link>{isOwnProfile&&<Link href={`/${stop.team_id?.startsWith("womens_teams:") ? "womens" : "teams"}/${stop.team_id?.split(":").at(-1)}/review`}>Check review eligibility →</Link>}</> : <span className="muted">Team not linked to directory — request a listing to review</span>}
+            {stop.team_id ? <><Link href={`/${stop.team_source === "womens_teams" ? "womens" : "teams"}/${stop.team_id?.split(":").at(-1)}`}>View team profile →</Link>{isOwnProfile&&<Link href={`/${stop.team_source === "womens_teams" ? "womens" : "teams"}/${stop.team_id?.split(":").at(-1)}/review`}>Check review eligibility →</Link>}</> : <span className="muted">Team not linked to directory — request a listing to review</span>}
             {isOwnProfile&&canManage&&<div><button type="button" onClick={()=>void toggleVisibility(stop)}>{stop.is_public?"Make private":"Make public"}</button><button type="button" onClick={()=>void removeStop(stop)}>Remove</button></div>}
           </div>
         </div>
