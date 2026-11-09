@@ -21,8 +21,10 @@ export async function POST(request: NextRequest) {
 
   if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json"))
     return json("JSON content type required.", 415);
-  const length = Number(request.headers.get("content-length") || 0);
-  if (length > 12000) return json("Request too large.", 413);
+  const rawLength = request.headers.get("content-length");
+  if (rawLength !== null && (!/^\d+$/.test(rawLength) || !Number.isSafeInteger(Number(rawLength))))
+    return json("Invalid content length.", 400);
+  if (rawLength !== null && Number(rawLength) > 12000) return json("Request too large.", 413);
 
   let body: Record<string, unknown>;
   try {
