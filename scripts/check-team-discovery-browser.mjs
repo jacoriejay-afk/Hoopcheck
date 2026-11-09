@@ -44,9 +44,15 @@ try {
       await femaleLink.click();
       const loader = page.locator('.hc-brand-loader--screen');
       await loader.waitFor();
-      const bounds = await loader.boundingBox();
-      assert.ok(bounds && Math.abs(bounds.x + bounds.width / 2 - width / 2) < 8, 'HoopCheck loader is horizontally centered');
-      assert.ok(bounds && Math.abs(bounds.y + bounds.height / 2 - 450) < 120, 'HoopCheck loader is vertically centered in available content');
+      const bounds = await (await page.waitForFunction(() => {
+        const element = document.querySelector('.hc-brand-loader--screen');
+        if (!element) return false;
+        const rect = element.getBoundingClientRect();
+        if (!rect.width || !rect.height || getComputedStyle(element).visibility !== 'visible') return false;
+        return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+      }, null, { timeout: 5000 })).jsonValue();
+      assert.ok(Math.abs(bounds.x + bounds.width / 2 - width / 2) < 8, 'HoopCheck loader is horizontally centered');
+      assert.ok(Math.abs(bounds.y + bounds.height / 2 - 450) < 120, 'HoopCheck loader is vertically centered in available content');
       await loader.getByRole('img', { name: 'HoopCheck', exact: true }).waitFor();
       await page.emulateMedia({ reducedMotion: 'reduce' });
       assert.equal(await loader.locator('.hc-brand-loader__orbit i').first().evaluate(el => getComputedStyle(el).animationName), 'none', 'Reduced motion stops the loader animation');
