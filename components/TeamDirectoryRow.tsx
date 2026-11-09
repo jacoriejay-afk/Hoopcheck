@@ -14,6 +14,7 @@ type TeamDirectoryRowProps = {
   leagueName?: string | null;
   href: string;
   kind?: "mens" | "womens";
+  fanView?: boolean;
   showFollow?: boolean;
   trustScore?: number | null;
   trustReviewCount?: number | null;
@@ -24,14 +25,15 @@ type TeamDirectoryRowProps = {
   logoUrl?: string | null;
   logoBg?: "transparent" | "light" | "dark" | null;
   trustTier?: "free" | "pro" | "premium" | "player" | "member" | "unknown";
-  fanView?: boolean;
+  viewerRole?: string;
 };
 
 export default function TeamDirectoryRow({
-  id, name, city, country, leagueName, href, kind = "mens", showFollow = true,
-  trustScore = null, trustReviewCount = null, trustVerifiedReviewCount = 0, followerCount = null, trustExplanation = "", logoUrl = null, logoBg = "transparent", trustTier = "unknown", fanView = false,
+  id, name, city, country, leagueName, href, kind = "mens", showFollow = true, fanView = false,
+  trustScore = null, trustReviewCount = null, trustVerifiedReviewCount = 0, followerCount = null, trustExplanation = "", logoUrl = null, logoBg = "transparent", trustTier = "unknown", viewerRole = "",
 }: TeamDirectoryRowProps) {
   const { t } = useLanguage();
+  const resolvedViewerRole = fanView ? "fan" : viewerRole;
   const hasTrustScore = typeof trustScore === "number" && Number.isFinite(trustScore);
   return (
     <Surface className={"hc-team-directory-row hc-scout-card hc-smooth-card hc-dossier-card hc-team-directory-row--" + kind}>
@@ -46,9 +48,9 @@ export default function TeamDirectoryRow({
         </span>
       </Link>
       <div className="hc-scout-card__stats" aria-label={t("teamReviewStatistics")}>
-        {trustTier === "free" ? <div className="hc-directory-locked"><strong>{fanView ? "Full team reviews are available with Fan Premium" : "Full player reviews require an eligible membership"}</strong><Link href="/membership" className="btn">{fanView ? "View Fan Premium" : "View Membership"}</Link></div>
-        : trustTier === "pro" ? <div className="hc-directory-locked"><strong>Trust Score</strong><small>Full Trust Score details require Fan Premium</small><Link href="/membership" className="btn">View Fan Premium</Link></div>
-        : <><div className="hc-d3-mobile-trust"><div className="hc-scout-card__stat"><strong>{hasTrustScore ? Math.round(trustScore) : "—"}</strong><small>Trust Score</small></div><div className="hc-scout-card__stat"><strong>{trustReviewCount == null ? "—" : trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div></div><div className="hc-d3-desktop-trust"><TrustScoreDial score={hasTrustScore ? trustScore : null} explanation={trustExplanation || (fanView ? "Not enough team reviews to calculate a Trust Score yet." : "Not enough player reviews to calculate a Trust Score yet.")} reviewCount={trustReviewCount ?? 0} verifiedReviewCount={trustVerifiedReviewCount} size="mini"/><div className="hc-scout-card__stat"><strong>{trustReviewCount == null ? "—" : trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div><div className="hc-scout-card__stat"><strong>{followerCount == null ? "—" : followerCount}</strong><small>FOLLOWERS</small></div></div></>}
+        {trustTier === "free" ? <div className="hc-directory-locked"><strong>{resolvedViewerRole === "fan" ? "Fan Premium unlocks full reviews and Trust Score" : resolvedViewerRole === "player" ? "Player Pro or Premium membership unlocks full review details" : resolvedViewerRole ? "An active membership is required to view Trust Score details" : "Sign in to view Trust Score details"}</strong><Link href={resolvedViewerRole ? "/membership" : "/login"} className="btn">{resolvedViewerRole === "fan" ? "View Fan Premium" : resolvedViewerRole ? "View Membership" : "Sign In"}</Link></div>
+        : trustTier === "pro" ? <div className="hc-directory-locked"><strong>Trust Score</strong><small>Full Trust Score details require Fan Premium</small><Link href="/membership" className="btn">Upgrade to Fan Premium</Link></div>
+        : <><div className="hc-d3-mobile-trust"><div className="hc-scout-card__stat"><strong>{hasTrustScore ? Math.round(trustScore) : "—"}</strong><small>Trust Score</small></div><div className="hc-scout-card__stat"><strong>{trustReviewCount == null ? "—" : trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div></div><div className="hc-d3-desktop-trust"><TrustScoreDial score={hasTrustScore ? trustScore : null} explanation={trustExplanation || "Not enough player reviews to calculate a Trust Score yet."} reviewCount={trustReviewCount ?? 0} verifiedReviewCount={trustVerifiedReviewCount} size="mini"/><div className="hc-scout-card__stat"><strong>{trustReviewCount == null ? "—" : trustReviewCount}</strong><small>{trustReviewCount === 1 ? t("reviewSingular") : t("reviewPlural")}</small></div><div className="hc-scout-card__stat"><strong>{followerCount == null ? "—" : followerCount}</strong><small>FOLLOWERS</small></div></div></>}
       </div>
       <footer className="hc-scout-card__ticket">
         <Link href={href} className="hc-scout-card__report-link">{t("openTeamProfile")} <span aria-hidden="true">→</span></Link>

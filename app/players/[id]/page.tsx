@@ -11,6 +11,7 @@ import PlayerProfilePanel from "../../../components/PlayerProfilePanel";
 import { HoopIcon, VerifiedBadge } from "../../../components/HoopCheckUI";
 import PlayerJourney from "../../../components/PlayerJourney";
 import PlayerProfileCompletionCard from "../../../components/PlayerProfileCompletionCard";
+import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
 import type { PlayerProfileCompletionRecord } from "../../../lib/player-profile-completion";
 
 type Player = {
@@ -104,14 +105,13 @@ export default function PlayerProfilePage() {
       if(user){
         setIsOwnProfile(user.id===params.id);
         if (user.id === params.id) {
-          const { data: completionProfile } = await supabase.from("profiles").select("id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility").eq("id", user.id).maybeSingle();
-          setOwnCompletionProfile(completionProfile);
-          const { data: ownSubscription } = await supabase.from("subscriptions").select("plan,status,current_period_end").eq("user_id", user.id).maybeSingle();
-          setCanManageJourney(
-            ownSubscription?.plan === "premium" &&
-            (ownSubscription.status === "active" || ownSubscription.status === "trialing") &&
-            (!ownSubscription.current_period_end || new Date(ownSubscription.current_period_end).getTime() > Date.now())
-          );
+          const [{ data: ownProfile }, { data: ownSubscription }] = await Promise.all([
+            supabase.from("profiles").select("id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility").eq("id", user.id).maybeSingle(),
+            supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
+          ]);
+          setOwnCompletionProfile(ownProfile as PlayerProfileCompletionRecord | null);
+          const entitlements = getHoopCheckEntitlements({ accountType: ownProfile?.account_type, subscription: ownSubscription });
+          setCanManageJourney(entitlements.canUseProPassport);
         }
         if(user.id!==params.id && currentViewerType==="player"){
           const {data:r}=await supabase.from("player_contact_requests").select("id").eq("player_id",params.id).eq("requester_id",user.id).eq("status","accepted").maybeSingle();

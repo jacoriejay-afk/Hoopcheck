@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { hasActiveMembershipAtLeast } from "../../../../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../../../../lib/membership-tier";
 
 export const runtime = "nodejs";
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -45,8 +45,9 @@ export async function POST(request:Request) {
     if(userError||!user) return NextResponse.json({allowed:false,message:"Your session is invalid."},{status:401});
     const {data:profile}=await db.from("profiles").select("account_type").eq("id",user.id).maybeSingle();
     if(profile?.account_type!=="fan") return NextResponse.json({allowed:false,message:"Only fan accounts can use Fan HoopFeed."},{status:403});
-    const {data:sub}=await db.from("subscriptions").select("plan,status,access_status").eq("user_id",user.id).maybeSingle();
-    if(!hasActiveMembershipAtLeast(sub))
+    const {data:sub}=await db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",user.id).maybeSingle();
+    const entitlements=getHoopCheckEntitlements({accountType:profile?.account_type,subscription:sub});
+    if(!entitlements.canWriteFanFeed)
       return NextResponse.json({allowed:false,message:"Active Pro or Premium membership is required."},{status:403});
 
     const isJson=request.headers.get("content-type")?.includes("application/json");

@@ -51,9 +51,7 @@ export default function TeamsPage() {
   const [mapCoordinates, setMapCoordinates] = useState<Record<string, { latitude: number | null; longitude: number | null }>>({});
 
   const [loading, setLoading] = useState(true);
-  const [isPlayerAccount, setIsPlayerAccount] = useState(false);
-  const [isFanAccount, setIsFanAccount] = useState(false);
-  const [roleReady, setRoleReady] = useState(false);
+  const [viewerRole, setViewerRole] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
@@ -81,16 +79,7 @@ export default function TeamsPage() {
     return CONTINENT_COUNTRIES[selected]?.includes(value || "") ?? false;
   }
 
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) { if (active) { setIsPlayerAccount(false); setIsFanAccount(false); setRoleReady(true); } return; }
-      const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", session.user.id).maybeSingle();
-      if (active) { setIsPlayerAccount(profile?.account_type === "player"); setIsFanAccount(profile?.account_type === "fan"); setRoleReady(true); }
-    })().catch(() => { if (active) { setIsPlayerAccount(false); setIsFanAccount(false); } });
-    return () => { active = false; };
-  }, []);
+
 
   useEffect(() => {
     let active = true;
@@ -192,6 +181,7 @@ export default function TeamsPage() {
         headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}, cache: "no-store",
       });
       const payload = response.ok ? await response.json() : null;
+      if (active) setViewerRole(payload?.accountType || "");
       if (active && payload?.scores) setTrustScores(payload.scores as Record<string, TrustSummary>);
     })().catch(() => { if (active) setTrustScores({}); });
     return () => { active = false; };
@@ -367,7 +357,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           teams.map((team) => (
-            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} followerCount={followerCounts[team.id] ?? null} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={isPlayerAccount ? "player" : trustScores[team.id]?.tier} fanView={!roleReady || isFanAccount} logoUrl={team.logo_url} logoBg={team.logo_bg} />
+            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} followerCount={followerCounts[team.id] ?? null} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={trustScores[team.id]?.tier || "free"} viewerRole={viewerRole} logoUrl={team.logo_url} logoBg={team.logo_bg} />
           ))
         )}
       </section>
@@ -398,30 +388,30 @@ export default function TeamsPage() {
 
       <section className="hero">
         <div className="eyebrow">
-          {isFanAccount ? "FAN TEAM DIRECTORY" : "Player Intelligence"}
+          {viewerRole === "fan" ? "FAN TEAM DIRECTORY" : "Player Intelligence"}
         </div>
 
         <h2>
-          {isFanAccount ? <>Every team.<br />A clearer picture.</> : <>The contract<br />is only part<br />of the decision.</>}
+          {viewerRole === "fan" ? <>Every team.<br />A clearer picture.</> : <>The contract<br />is only part<br />of the decision.</>}
         </h2>
 
         <p>
-          {isFanAccount ? "Explore clubs, follow the teams you care about, and keep up with their latest updates." : "Research the organization, understand player experiences, and make your next move with more information."}
+          {viewerRole === "fan" ? "Explore clubs, follow the teams you care about, and keep up with their latest updates." : "Research the organization, understand player experiences, and make your next move with more information."}
         </p>
 
         <div className="actions">
           <Link
-            href={isFanAccount ? "/fan-feed" : "/signup"}
+            href={viewerRole === "fan" ? "/fan-feed" : "/signup"}
             className="btn"
           >
-            {isFanAccount ? "Explore Fan HoopFeed" : "Create Free Account"}
+            {viewerRole === "fan" ? "Explore Fan HoopFeed" : "Create Free Account"}
           </Link>
 
           <Link
             href="/membership"
             className="btn dark"
           >
-            {isFanAccount ? "Fan Membership" : "Unlock Full Access"}
+            {viewerRole === "fan" ? "Fan Membership" : "Unlock Full Access"}
           </Link>
         </div>
       </section>

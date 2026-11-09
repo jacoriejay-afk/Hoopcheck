@@ -5,7 +5,7 @@ import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
 import { VerifiedBadge } from "../../components/HoopCheckUI";
 import { supabase } from "../../lib/supabase";
-import { isAtLeastTier } from "../../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 import TeamLeaguePicker from "../../components/TeamLeaguePicker";
 
 export default function VerificationPage() {
@@ -30,7 +30,7 @@ export default function VerificationPage() {
   useEffect(()=>{(async()=>{
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){window.location.href="/login";return;}
-    const {data:profile}=await supabase.from("profiles").select("account_type,basketball_type,identity_verification_status,coach_verified,player_verified").eq("id",user.id).maybeSingle(); if(!["player","coach"].includes(profile?.account_type || "")){window.location.href="/account";return;} setAccountType(profile?.account_type as "player"|"coach"); if(profile?.account_type==="coach"){const {data:sub}=await supabase.from("subscriptions").select("plan,status,current_period_end").eq("user_id",user.id).maybeSingle();setCoachMembershipEligible(!!sub && isAtLeastTier(sub.plan, "pro") && ["active","trialing"].includes(sub.status||"") && (!sub.current_period_end || new Date(sub.current_period_end)>new Date()));} setBasketballType(profile?.basketball_type||"mens"); setIdentityStatus(profile?.identity_verification_status || "not_started");
+    const {data:profile}=await supabase.from("profiles").select("account_type,basketball_type,identity_verification_status,coach_verified,player_verified").eq("id",user.id).maybeSingle(); if(!["player","coach"].includes(profile?.account_type || "")){window.location.href="/account";return;} setAccountType(profile?.account_type as "player"|"coach"); if(profile?.account_type==="coach"){const {data:sub}=await supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",user.id).maybeSingle();setCoachMembershipEligible(getHoopCheckEntitlements({accountType:profile.account_type,subscription:sub}).canStartCoachIdentityVerification);} setBasketballType(profile?.basketball_type||"mens"); setIdentityStatus(profile?.identity_verification_status || "not_started");
     const {data:{session}}=await supabase.auth.getSession();
     if(session?.access_token){
       const identityRes=await fetch("/api/verification/identity",{headers:{Authorization:"Bearer "+session.access_token}});

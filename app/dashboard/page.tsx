@@ -8,7 +8,7 @@ import HoopLoading from "../../components/HoopLoading";
 import HomePulse from "../../components/HomePulse";
 import SearchBar from "../../components/SearchBar";
 import { useLanguage } from "../../components/LanguageProvider";
-import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import { CategoryIconTile, HoopIcon } from "../../components/HoopCheckUI";
 import FeatureLink from "../../components/FeatureLink";
@@ -111,7 +111,7 @@ export default function DashboardPage() {
       if (subscriptionResult.status === "rejected") console.error("Dashboard subscription request failed:", subscriptionResult.reason);
       if (followsResult.status === "rejected") console.error("Dashboard follows request failed:", followsResult.reason);
       setProfile(p as Profile|null);
-      const activeMember = hasActiveMembershipAtLeast(subscription);
+      const entitlements = getHoopCheckEntitlements({ accountType: p?.account_type, subscription });
       const followedIds = (follows||[]).map((row:any)=>row.target_id).filter(Boolean);
 
       // Show the dashboard immediately; the remaining panels are best-effort enhancements.
@@ -133,7 +133,7 @@ export default function DashboardPage() {
         setReviews([]);
       }
 
-      const canUsePlayerFeed = p?.account_type === "player" && activeMember;
+      const canUsePlayerFeed = entitlements.canReadHoopFeed;
       setHasFeedAccess(canUsePlayerFeed);
       if (canUsePlayerFeed) {
         const [{data:followedPlayers},{data:connections},{data:posts}] = await Promise.all([
@@ -146,7 +146,7 @@ export default function DashboardPage() {
         if (mounted && latest) setFeedPost(latest as FeedPost);
       }
 
-      if (p?.account_type === "fan" && activeMember) {
+      if (entitlements.canUseLiveGameHub && p?.account_type === "fan") {
         const {data:games,error:gamesError} = await supabase.from("fan_live_games").select("status,scheduled_at").in("status",["live","scheduled"]).order("scheduled_at",{ascending:true}).limit(200);
         const now = Date.now();
         if (mounted && !gamesError) setLiveCounts({live:(games||[]).filter((g:any)=>g.status==="live").length,upcoming:(games||[]).filter((g:any)=>g.status==="scheduled" && (!g.scheduled_at || new Date(g.scheduled_at).getTime()>=now)).length});

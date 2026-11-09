@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
 
 export const dynamic = "force-dynamic";
 const statuses = ["on_time", "late", "missing"] as const;
@@ -33,7 +34,20 @@ export async function GET(request: Request) {
   const teamId = url.searchParams.get("teamId") || "";
   if (!/^[0-9a-f-]{36}$/i.test(teamId)) return NextResponse.json({ error: "Provide a valid team." }, { status: 400 });
   try {
-    const { db } = clients();
+    const token = authorized(request);
+    if (!token) return NextResponse.json({ error: "Sign in to view team pay history." }, { status: 401 });
+    const { auth, db } = clients();
+    const { data: authData, error: authError } = await auth.auth.getUser(token);
+    if (authError || !authData.user) return NextResponse.json({ error: "Sign in to view team pay history." }, { status: 401 });
+    const [{ data: viewer, error: viewerError }, { data: viewerSubscription }] = await Promise.all([
+      db.from("profiles").select("account_type").eq("id", authData.user.id).maybeSingle(),
+      db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", authData.user.id).maybeSingle(),
+    ]);
+    if (viewerError) throw viewerError;
+    const entitlements = getHoopCheckEntitlements({ accountType: viewer?.account_type, subscription: viewerSubscription });
+    if (!entitlements.canViewTeamPayHistory) {
+      return NextResponse.json({ error: "Team pay history is not available for this account." }, { status: 403 });
+    }
     const months = lastTwelveMonths();
     const { data, error } = await db.from("team_pay_checkins").select("pay_month,pay_status").eq("team_id", teamId).gte("pay_month", months[0]).lte("pay_month", months[11]);
     if (error) throw error;
@@ -73,8 +87,19 @@ export async function POST(request: Request) {
     const { data: authData, error: authError } = await auth.auth.getUser(token);
     const user = authData.user;
     if (authError || !user || !user.email_confirmed_at) return NextResponse.json({ error: "A confirmed player account is required." }, { status: 401 });
-    const { data: profile, error: profileError } = await db.from("profiles").select("account_type,player_verified").eq("id", user.id).maybeSingle();
-    if (profileError || profile?.account_type !== "player" || profile.player_verified !== true) return NextResponse.json({ error: "Only verified players can submit a check-in." }, { status: 403 });
+    const [{ data: profile, error: profileError }, { data: subscription, error: subscriptionError }] = await Promise.all([
+      db.from("profiles").select("account_type,player_verified").eq("id", user.id).maybeSingle(),
+      db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
+    ]);
+    if (profileError) return NextResponse.json({ error: "Unable to verify your player account." }, { status: 500 });
+    const entitlements = getHoopCheckEntitlements({
+      accountType: profile?.account_type,
+      subscription,
+      playerVerified: profile?.player_verified === true,
+    });
+    if (subscriptionError || !entitlements.canSubmitPayCheckIn) {
+      return NextResponse.json({ error: "An active Pro or Premium membership is required to submit a pay check-in." }, { status: 403 });
+    }
     const { data: eligible, error: eligibilityError } = await db.rpc("can_user_review_team", { p_user_id: user.id, p_team_id: teamId });
     if (eligibilityError || eligible !== true) return NextResponse.json({ error: "Only players who played for this team can submit a check-in." }, { status: 403 });
     const { error } = await db.from("team_pay_checkins").insert({ team_id: teamId, player_id: user.id, pay_month: month, pay_status: status });

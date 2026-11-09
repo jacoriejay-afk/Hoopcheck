@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../lib/supabase";
-import { hasActiveMembershipAtLeast } from "../../../lib/membership-tier";
+import ReviewMembershipGate from "../../../components/ReviewMembershipGate";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { submitReviewReport } from "../../../lib/review-reports";
 import HoopLoading from "../../../components/HoopLoading";
@@ -146,6 +146,9 @@ export default function LeagueDetailPage() {
   const [hasAccess, setHasAccess] =
     useState(false);
   const [accountType, setAccountType] = useState<string>("");
+  const [canReadFullReviews, setCanReadFullReviews] = useState(false);
+  const [canWriteReviews, setCanWriteReviews] = useState(false);
+  const [reviewTier, setReviewTier] = useState<"free" | "pro" | "premium" | "member">("free");
 
   const [loading, setLoading] =
     useState(true);
@@ -234,138 +237,52 @@ export default function LeagueDetailPage() {
 
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
-
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      const [
-        profileResult,
-        subscriptionResult,
-        adminResult,
-      ] = await Promise.all([
-        supabase
-          .from("profiles")
+      if (user) {
+        const { data: profile } = await supabase.from("profiles")
           .select("account_type")
           .eq("id", user.id)
-          .maybeSingle(),
-        supabase
-          .from("subscriptions")
-          .select(
-            "plan, status, current_period_end"
-          )
-          .eq(
-            "user_id",
-            user.id
-          )
-          .maybeSingle(),
-
-        supabase.rpc(
-          "is_current_user_admin_or_moderator"
-        ),
-      ]);
-
-      const subscription =
-        subscriptionResult.data;
-
-      const currentPeriodEnd =
-        subscription?.current_period_end
-          ? new Date(
-              subscription.current_period_end
-            )
-          : null;
-
-      const subscriptionIsActive =
-        (
-          subscription?.status ===
-            "active" ||
-          subscription?.status ===
-            "trialing"
-        ) &&
-        (
-          !currentPeriodEnd ||
-          currentPeriodEnd >
-            new Date()
-        );
-
-      const isAdmin =
-        adminResult.data === true;
-
-      const fanHasPaidPlan =
-        profileResult.data?.account_type !== "fan" ||
-        hasActiveMembershipAtLeast(subscription);
-      const access =
-        (subscriptionIsActive && fanHasPaidPlan) ||
-        isAdmin;
-
-      setHasAccess(access);
-
-      const { data: summaryData, error: summaryError } = access
-        ? await supabase.rpc("get_public_review_summary", {
-            p_entity_type: "league",
-            p_entity_id: id,
-          })
-        : { data: null, error: null };
-
-      if (access && !summaryError && summaryData?.[0]) {
-        setPublicSummary({
-          review_count: Number(summaryData[0].review_count || 0),
-          overall_rating: summaryData[0].overall_rating == null ? null : Number(summaryData[0].overall_rating),
-          communication_rating: summaryData[0].communication_rating == null ? null : Number(summaryData[0].communication_rating),
-          professionalism_rating: summaryData[0].professionalism_rating == null ? null : Number(summaryData[0].professionalism_rating),
-          development_rating: summaryData[0].development_rating == null ? null : Number(summaryData[0].development_rating),
-          payment_rating: summaryData[0].payment_rating == null ? null : Number(summaryData[0].payment_rating),
-        });
-      } else if (summaryError) {
-        console.error("Public review summary error:", summaryError);
+          .maybeSingle();
+        setAccountType(profile?.account_type || "");
+      } else {
+        setAccountType("");
       }
 
-      if (access) {
+      const accessResponse = await fetch(`/api/review-access?entityType=league&entityId=${encodeURIComponent(id)}`, {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+        cache: "no-store",
+      });
+      const accessPayload = accessResponse.ok ? await accessResponse.json() : null;
+      const tier = (accessPayload?.tier || "free") as typeof reviewTier;
+      const fullRead = accessPayload?.canReadFull === true;
+      setReviewTier(tier);
+      setHasAccess(tier !== "free");
+      setCanReadFullReviews(fullRead);
+      setCanWriteReviews(accessPayload?.canWrite === true);
+
+      const summary = accessPayload?.summary;
+      if (summary) {
+        setPublicSummary({
+          review_count: Number(summary.review_count || 0),
+          overall_rating: summary.overall_rating == null ? null : Number(summary.overall_rating),
+          communication_rating: summary.communication_rating == null ? null : Number(summary.communication_rating),
+          professionalism_rating: summary.professionalism_rating == null ? null : Number(summary.professionalism_rating),
+          development_rating: summary.development_rating == null ? null : Number(summary.development_rating),
+          payment_rating: summary.payment_rating == null ? null : Number(summary.payment_rating),
+        });
+      }
+
+      if (fullRead && Array.isArray(accessPayload?.reviews)) {
         setReviewLoading(true);
-
-        const {
-          data: reviewData,
-          error: reviewError,
-        } = await supabase
-          .from("reviews")
-          .select(
-            `
-              id,
-              overall_rating,
-              communication_rating,
-              professionalism_rating,
-              development_rating,
-              payment_rating,
-              title,
-              body,
-              created_at,
-              is_anonymous
-            `
-          )
-          .eq(
-            "league_id",
-            id
-          )
-          .eq(
-            "status",
-            "approved"
-          )
-          .order(
-            "created_at",
-            {
-              ascending: false,
-            }
-          );
-
-        if (!reviewError && reviewData) {
-          const reviewIds = reviewData.map((review) => review.id);
-          const { data: verificationData } = await supabase.rpc("get_review_verification", { p_review_ids: reviewIds });
-          const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map((item) => [item.review_id, Boolean(item.player_verified)]));
-          setReviews(reviewData.map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
-        }
-
+        const reviewData = accessPayload.reviews as Review[];
+        const reviewIds = reviewData.map(review => review.id);
+        const { data: verificationData } = reviewIds.length
+          ? await supabase.rpc("get_review_verification", { p_review_ids: reviewIds })
+          : { data: [] };
+        const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map(item => [item.review_id, Boolean(item.player_verified)]));
+        setReviews(reviewData.map(review => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
         setReviewLoading(false);
+      } else {
+        setReviews([]);
       }
 
       setLoading(false);
@@ -474,7 +391,7 @@ export default function LeagueDetailPage() {
             ),
           0
         ) / reviews.length
-      : 0;
+      : (publicSummary.overall_rating ?? 0);
 
   const communication =
     reviews.length > 0
@@ -582,16 +499,11 @@ export default function LeagueDetailPage() {
         )}
 
         <div className="actions">
-          <Link
-            href={
-              accountType === "player" && hasAccess
-                ? `/leagues/${league.id}/review`
-                : accountType === "player" ? "/membership" : "/leagues"
-            }
-            className="btn"
-          >
-            {accountType === "player" ? (hasAccess ? t("writeAReview") : t("becomeMemberToReview")) : t("backToLeagues")}
-          </Link>
+          {accountType === "player" ? (
+            <Link href={canWriteReviews ? `/leagues/${league.id}/review` : "/membership"} className="btn">
+              {canWriteReviews ? t("writeAReview") : t("becomeMemberToReview")}
+            </Link>
+          ) : null}
 
           <Link
             href="/leagues"
@@ -640,135 +552,41 @@ export default function LeagueDetailPage() {
         )}
       </section>
 
-      {!hasAccess && (
-        <section className="grid">
-          <div className="card rating-locked-card">
-            <div className="eyebrow">Community Rating</div>
-            <h2>Overall rating locked</h2>
-            <p>Sign in and choose a membership to unlock ratings and reviews.</p>
-            <div className="actions"><Link href="/signup" className="btn">Create Free Account</Link><Link href="/membership" className="btn dark">Unlock Ratings</Link></div>
-          </div>
-        </section>
-      )}
-
-      {!hasAccess ? (
-        <section className="hero">
-          <div className="card">
-            <div className="eyebrow">
-              Members Only
-            </div>
-
-            <h2>
-              Know the league
-              before you commit.
-            </h2>
-
-            <p>
-              Research the league before your next move. Membership starts at $4.99/month and can be managed through Stripe anytime.
-            </p>
-
-            <div className="actions">
-              <Link
-                href="/membership"
-                className="btn"
-              >
-                View Membership
-              </Link>
-
-              <Link
-                href="/login"
-                className="btn dark"
-              >
-                Log In
-              </Link>
-            </div>
-          </div>
-        </section>
-      ) : (
+      {hasAccess && (
         <>
           <section className="grid">
             <div className="card">
-              <div className="eyebrow">
-                Overall Rating
-              </div>
-
-              <h2
-                style={{
-                  fontSize: "58px",
-                  color:
-                    "var(--orange)",
-                  marginBottom:
-                    "4px",
-                }}
-              >
+              <div className="eyebrow">Overall Rating</div>
+              <h2 style={{ fontSize: "58px", color: "var(--orange)", marginBottom: "4px" }}>
                 {average.toFixed(1)}
               </h2>
-
-              <p>
-                Based on{" "}
-                {reviews.length}{" "}
-                approved{" "}
-                {reviews.length === 1
-                  ? "review"
-                  : "reviews"}
-                .
-              </p>
+              <p>Overall community rating</p>
             </div>
 
-            <div className="card" style={{ position: "relative", overflow: "hidden" }}>
-              <div className="eyebrow">League Breakdown</div>
-              {hasAccess ? (
-                reviews.length === 0 ? <p>{t("noApprovedReviewsYet")}</p> : <>
+            {canReadFullReviews ? (
+              <div className="card">
+                <div className="eyebrow">League Breakdown</div>
+                {reviews.length === 0 ? <p>{t("noApprovedReviewsYet")}</p> : <>
                   <RatingBar label="Communication" value={communication} />
                   <RatingBar label="Professionalism" value={professionalism} />
                   <RatingBar label="Development" value={development} />
                   <RatingBar label="Payment" value={payment} />
-                </>
-              ) : (
-                <div style={{ padding: "24px 0" }}>
-                  <div style={{ filter: "blur(7px)", opacity: 0.35, pointerEvents: "none" }}>
-                    <div style={{ height: 16, width: "75%", background: "#555", borderRadius: 8, marginBottom: 14 }} />
-                    <div style={{ height: 16, width: "60%", background: "#555", borderRadius: 8, marginBottom: 14 }} />
-                    <div style={{ height: 16, width: "68%", background: "#555", borderRadius: 8 }} />
-                  </div>
-                  <div style={{ marginTop: -58, textAlign: "center", position: "relative" }}>
-                    <strong>Ratings locked</strong>
-                    <p className="muted">Create a free account, then unlock full ratings with membership.</p>
-                    <div className="actions"><Link href="/signup" className="btn">Create Free Account</Link><Link href="/membership" className="btn dark">Unlock Ratings</Link></div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="card">
-              <div className="eyebrow">
-                {accountType === "fan" ? "LEAGUE FEEDBACK" : "Player Feedback"}
+                </>}
               </div>
+            ) : null}
 
-              <h2>
-                {reviews.length}
-              </h2>
-
-              <p>
-                {accountType === "fan" ? "Approved league experiences currently available for this league." : "Approved player experiences currently available for this league."}
-              </p>
-
-              {accountType === "player" && <Link href={`/leagues/${league.id}/review`} className="btn">Add Your Experience</Link>}
-            </div>
+            {canWriteReviews ? (
+              <div className="card">
+                <div className="eyebrow">Player Feedback</div>
+                <h2>{reviews.length}</h2>
+                <p>Approved player experiences currently available for this league.</p>
+                <Link href={`/leagues/${league.id}/review`} className="btn">Add Your Experience</Link>
+              </div>
+            ) : null}
           </section>
 
           <section className="hero">
-            {!hasAccess && (
-              <div className="card" style={{ marginBottom: 24, borderColor: "rgba(255,106,0,.45)" }}>
-                <div className="eyebrow">Members Only</div>
-                <h3>{accountType === "fan" ? "Full league reviews require Fan Premium" : "League reviews are locked"}</h3>
-                <p>{accountType === "fan" ? "Upgrade to Fan Premium to read full league ratings and reviews." : "Sign in and choose an eligible membership to unlock league reviews."}</p>
-                <div className="actions">
-                  <Link href="/signup" className="btn">Create Free Account</Link>
-                  <Link href="/login" className="btn dark">Log In</Link>
-                </div>
-              </div>
-            )}
+
             <div className="eyebrow">
               Approved Reviews
             </div>
@@ -777,10 +595,11 @@ export default function LeagueDetailPage() {
               {accountType === "fan" ? "What the community is saying." : <>What players<br/>are saying.</>}
             </h2>
 
-            {reviewLoading ? (
-              <HoopLoading variant="inline" label="Loading reviews..." />
-            ) : reviews.length ===
-              0 ? (
+            {canReadFullReviews ? (reviewLoading ?
+              <p>
+                Loading reviews...
+              </p>
+            : reviews.length === 0 ? (
               <div className="card">
                 <h3>
                   {t("noApprovedReviewsYet")}
@@ -790,7 +609,9 @@ export default function LeagueDetailPage() {
                   {accountType === "fan" ? "No league reviews have been published yet." : "Be one of the first players to share an experience with this league."}
                 </p>
 
-                {accountType === "player" && <Link href={`/leagues/${league.id}/review`} className="btn">{t("writeAReview")}</Link>}
+                {canWriteReviews ? (
+                  <Link href={`/leagues/${league.id}/review`} className="btn">{t("writeAReview")}</Link>
+                ) : null}
               </div>
             ) : (
               <div
@@ -882,10 +703,22 @@ export default function LeagueDetailPage() {
                   )
                 )}
               </div>
-            )}
+            )) : null}
           </section>
         </>
       )}
+
+      {!canReadFullReviews ? (
+        <section className="hero">
+          <ReviewMembershipGate
+            title="Full league reviews require an eligible membership"
+            description="Player Pro and Premium members and eligible non-fan members can read full league reviews. Fan accounts need Premium for full review details."
+            actionLabel="View Membership"
+            accountType={accountType}
+            tier={reviewTier}
+          />
+        </section>
+      ) : null}
 
       {reportReviewId && (
         <div

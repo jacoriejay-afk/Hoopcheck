@@ -52,6 +52,30 @@
 @media(max-width:600px){.hc-fan-feed-page .page-container{width:calc(100% - 24px)}.hc-fan-feed-page .topbar{align-items:flex-start}.hc-fan-feed-page .topnav{gap:10px;font-size:10px}.hc-fan-feed-page .hc-feed-hero{display:block;padding:22px}.hc-fan-feed-page .hc-feed-expiry-note{margin-top:20px}.hc-fan-feed-page .hc-feed-composer,.hc-fan-feed-page .hc-feed-ticket{padding:15px}.hc-fan-feed-page .hc-feed-counter{margin-left:auto}.hc-fan-feed-page .hc-feed-post-topic{max-width:42%;font-size:10px;padding:7px 9px}}
 @media(prefers-color-scheme:dark){html[data-theme="dark"] .hc-fan-feed-page, [data-theme="dark"] .hc-fan-feed-page{background:var(--paper);color:var(--ink)}}
 
-.hc-fan-feed-page .hc-feed-post-avatar-fallback{display:grid;place-items:center;background:#111;color:var(--orange);font-weight:950}
+/* Fan HQ structure: make the audience, picker and locked club target explicit. */
+.hc-fan-feed-page .hc-fan-feed-explainer{margin:10px 0 16px;padding:12px 15px;border:1px solid var(--hc-border);border-radius:12px;background:var(--hc-surface-raised);color:var(--hc-foreground);font-size:13px;font-weight:700;line-height:1.5}
+.hc-fan-feed-page .hc-fan-feed-post-prompt{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.hc-fan-feed-page .hc-fan-feed-post-prompt>div{min-width:0;flex:1}
+.hc-fan-feed-page .hc-fan-feed-post-prompt p{margin:5px 0 0}
+.hc-fan-feed-page .hc-fan-feed-composer-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.hc-fan-feed-page .hc-fan-feed-composer-heading h2{margin:5px 0 0;font-size:18px}
+.hc-fan-feed-page .hc-feed-team-search{width:100%;min-height:46px;border:1px solid var(--hc-control-border);border-radius:11px;background:var(--hc-input-bg);color:var(--hc-input-fg);padding:0 13px}
+.hc-fan-feed-page .hc-fan-feed-team-picker{display:grid;gap:7px;margin-top:10px;max-height:300px;overflow:auto}
+.hc-fan-feed-page .hc-fan-feed-team-picker>button{display:flex;align-items:center;gap:11px;width:100%;min-width:0;text-align:left;padding:10px 12px;border:1px solid var(--hc-border);border-radius:11px;background:var(--hc-surface-raised);color:var(--hc-foreground);cursor:pointer}
+.hc-fan-feed-page .hc-fan-feed-team-picker>button>span:nth-child(2){display:grid;gap:3px;min-width:0;flex:1}
+.hc-fan-feed-page .hc-fan-feed-team-picker small{color:var(--gray-500);font-size:11px}
+.hc-fan-feed-page .hc-fan-feed-target{display:flex;align-items:center;gap:10px;padding:11px 12px;margin-bottom:12px;border:1px solid var(--hc-border);border-radius:11px;background:var(--hc-surface-raised);color:var(--hc-foreground)}
+.hc-fan-feed-page .hc-fan-feed-target>span{display:grid;gap:3px;flex:1;min-width:0}
+.hc-fan-feed-page .hc-fan-feed-target small{font-size:10px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.08em}
+.hc-fan-feed-page .hc-fan-feed-target strong{font-size:13px}
+.hc-fan-feed-page .hc-fan-feed-group-label{display:flex;align-items:center;gap:8px;margin:-5px 0 12px 52px;font-size:11px}
+.hc-fan-feed-page .hc-fan-feed-group-label span{font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--gray-500)}
+.hc-fan-feed-page .hc-fan-feed-group-label a{padding:5px 9px;border:1px solid var(--hc-border);border-radius:999px;background:var(--hc-surface-raised);color:var(--hc-foreground)}
+.hc-team-fan-group-page .hc-team-group-posting-target{display:grid;gap:4px;margin-bottom:10px}
+.hc-team-fan-group-page .hc-team-group-posting-target strong{font-size:13px}
+.hc-team-fan-group-page .hc-team-group-posting-target small{color:var(--gray-500);font-size:11px}
+@media(max-width:600px){.hc-fan-feed-page .hc-fan-feed-post-prompt{align-items:stretch}.hc-fan-feed-page .hc-fan-feed-post-prompt .btn{width:100%}.hc-fan-feed-page .hc-fan-feed-group-label{margin-left:0}}
 
-@media(max-width:600px){.hc-fan-feed-page .topbar{flex-wrap:wrap}.hc-fan-feed-page .topnav{flex-wrap:wrap;justify-content:flex-end}.hc-fan-feed-page .hc-feed-post-header{align-items:flex-start;flex-wrap:wrap}.hc-fan-feed-page .hc-feed-post-topic{max-width:100%}}
+.hc-fan-feed-page .hc-fan-feed-group-label a{display:inline-flex;align-items:center;text-decoration:none;font-size:11px;font-weight:850;padding:5px 9px;border:1px solid var(--hc-border);border-radius:999px;background:var(--hc-surface-raised);color:var(--hc-foreground)}
+.hc-fan-feed-page .hc-fan-feed-join-required{display:grid;gap:10px;padding:15px;border:1px solid var(--hc-border);border-radius:12px;background:var(--hc-surface-raised);color:var(--hc-foreground)}
+.hc-fan-feed-page .hc-fan-feed-join-required .btn{justify-self:start}

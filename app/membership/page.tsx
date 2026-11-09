@@ -258,7 +258,11 @@ function MembershipContent() {
           Decide smarter.
         </h1>
         <p>
-          {accountType === "fan" ? "Follow the teams you care about and stay close to every game." : "Unlock full coach, team, and league ratings and reviews from the players who have already been there."}
+          {accountType === "fan"
+            ? "Follow your teams, join live game chats, connect with fans and unlock deeper team insights."
+            : accountType === "player"
+              ? "Research teams, coaches and leagues with first-hand reviews from players who have already been there."
+              : "Access deeper basketball research, professional reviews and organization insights."}
         </p>
         <div className="hero-links">
           <Link href="/search">Global Research Search →</Link>
@@ -279,7 +283,7 @@ function MembershipContent() {
           <div className="active-card" id="manage-subscription">
             <div className="eyebrow">CURRENT MEMBERSHIP</div>
             <h2>
-              HoopCheck {subscription.plan === "premium" ? "Premium" : "Pro"}
+              HoopCheck {accountType === "fan" ? (subscription.plan === "premium" ? "Fan Premium" : "Fan Pro") : (subscription.plan === "premium" ? "Premium" : "Pro")}
             </h2>
             <p>
               Status: <strong>{subscription.status}</strong>
@@ -319,7 +323,7 @@ function MembershipContent() {
             <div className="section-heading">
               <div className="eyebrow">CHOOSE YOUR ACCESS</div>
               <h2>
-                {premiumOnlyAccount ? <>Built for coaches and team managers<br />making serious decisions.</> : accountType === "fan" ? <>Built for fans<br />who follow every move.</> : <>Built for players<br />making serious decisions.</>}
+                {accountType === "fan" ? <>Built for fans who follow the game.</> : accountType === "player" ? <>Built for players<br />making serious decisions.</> : <>Built for basketball professionals.</>}
               </h2>
               <p>{accountType === "fan" ? "Choose the fan access that fits how you follow basketball." : "Start with the level of research access that fits you."}</p>
             </div>
@@ -351,6 +355,7 @@ function MembershipContent() {
               <button type="button" aria-pressed={billingInterval==="6_month"} className={billingInterval==="6_month" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("6_month")}><span>6 months</span><small>Save 10%</small></button>
               <button type="button" aria-pressed={billingInterval==="year"} className={billingInterval==="year" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 15%</small></button>
             </div>
+            <div className="hc-membership-value"><span className="hc-membership-value__mark">★</span><div><strong>Best flexibility, better value.</strong><p>Choose monthly, 6-month, or annual billing. The total shown is the amount charged for the selected term.</p></div></div>
             {currentPlan === null ? (
               <p role="status">{subscriptionLoadFailed ? "Unable to verify your current plan." : "Checking your current plan…"}</p>
             ) : (
