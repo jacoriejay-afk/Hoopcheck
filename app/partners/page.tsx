@@ -67,7 +67,8 @@ export default function Sponsor() {
         </section>
         <section className="dashboard-card" style={{ marginTop: 18, display: "grid", gap: 12 }}>
           {!signedIn && <p role="status" className="muted">A HoopCheck account is currently required to send an inquiry. <Link href="/login?next=/partners">Log in</Link> or <Link href="/signup">create an account</Link> before writing your message.</p>}
-          <select value={type} onChange={(event) => setType(event.target.value)}>
+          <label htmlFor="partner-inquiry-type" className="font-semibold">Inquiry category</label>
+          <select id="partner-inquiry-type" value={type} onChange={(event) => setType(event.target.value)}>
             <option value="sponsor">Sponsor recommendation / partnership</option>
             <option value="donate">Donate / support</option>
             <option value="investor">Investor introduction</option>
@@ -75,7 +76,9 @@ export default function Sponsor() {
             <option value="strategic">Strategic partnership</option>
             <option value="inquire">General business inquiry</option>
           </select>
+          <label htmlFor="partner-inquiry-message" className="font-semibold">Tell us about your proposal</label>
           <textarea
+            id="partner-inquiry-message"
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             rows={7}
@@ -91,7 +94,7 @@ export default function Sponsor() {
             <span>I agree that HoopCheck™ may contact me about this inquiry. Do not include payment details or sensitive investor documents.</span>
           </label>
           <button className="btn" disabled={saving || !signedIn || !consent} onClick={() => void submit()}>{saving ? "Submitting..." : "Submit Inquiry"}</button>
-          {sent && <p className="muted">{sent}</p>}
+          {sent && <p role="status" aria-live="polite" className="muted">{sent}</p>}
         </section>
       </div>
     </main>
