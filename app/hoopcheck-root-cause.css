@@ -16,10 +16,10 @@ html .site-header-global,
 html .site-header-global.hc-template-header {
   top: var(--hc-safe-area-top) !important;
   padding-block-start: 10px !important;
-  background: var(--hc-tab-bg) !important;
-  color: var(--hc-tab-fg) !important;
+  background: var(--hc-nav-bg) !important;
+  color: var(--hc-nav-fg) !important;
 }
-html .site-header-global :where(a, button, span, svg) { color: var(--hc-tab-fg); }
+html .site-header-global :where(a, button, span, svg) { color: var(--hc-nav-fg); }
 html :where(.hc-dashboard-shell .hc-dashboard-edit-profile, .hc-dashboard-shell .hc-dashboard-edit-profile:visited) {
   background: var(--hc-control-bg, var(--hc-surface-raised)) !important;
   color: var(--hc-control-fg, var(--hc-foreground)) !important;
@@ -45,8 +45,8 @@ html :where(.quick-access-count, .quick-card-count, .count-badge, .hc-count-badg
   stroke: currentColor !important;
 }
 html .hc-template-header .hc-mobile-menu-toggle {
-  background: var(--hc-tab-bg) !important;
-  color: var(--hc-tab-fg) !important;
+  background: var(--hc-nav-bg) !important;
+  color: var(--hc-nav-fg) !important;
   border-color: var(--hc-border) !important;
 }
 html .hc-template-header .hc-mobile-menu-toggle span { background: currentColor !important; }
