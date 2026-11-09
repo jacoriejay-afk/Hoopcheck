@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../components/HoopLoading";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -49,7 +50,7 @@ export default function ChooseUsernamePage() {
     router.replace(safeNext);
   }
 
-  if (loading) return <main className="auth-page-shell"><section className="auth-card"><p>Checking your account…</p></section></main>;
+  if (loading) return <main className="auth-page-shell"><HoopLoading label="Loading HoopCheck…" /></main>;
 
   return (
     <main className="auth-page-shell">

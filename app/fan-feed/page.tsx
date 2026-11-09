@@ -5,8 +5,9 @@ import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import HoopLoading from "../../components/HoopLoading";
 import { PageShell } from "../../components/LayoutSystem";
-import { FeedDiscoveryHeader, FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptyState, FeedLoadingSkeleton, FeedStoryRing } from "../../components/HoopFeedShared";
+import { FeedDiscoveryHeader, FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptyState, FeedStoryRing } from "../../components/HoopFeedShared";
 import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
 import TeamLogo from "../../components/TeamLogo";
 import { useLanguage } from "../../components/LanguageProvider";
@@ -239,7 +240,7 @@ export default function FanFeedPage() {
     else { setFollowing(prev => new Set(prev).add(targetId)); setMessage(ft("following")); }
   }
 
-  if (loading) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><FeedLoadingSkeleton count={3} /></div></main></PageShell>;
+  if (loading) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><HoopLoading label="Loading Fan HQ…" /></div></main></PageShell>;
   if (!user) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("title")}</h1><p>{ft("signIn")}</p><Link className="btn" href="/login">{t("signIn")}</Link></section></div></main></PageShell>;
   if (profile?.account_type !== "fan") return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("fansOnly")}</h1></section></div></main></PageShell>;
   if (!membershipActive) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("membershipRequired")}</h1><p>{ft("membershipDescription")}</p><Link className="btn" href="/membership">{t("membership")}</Link></section></div></main></PageShell>;

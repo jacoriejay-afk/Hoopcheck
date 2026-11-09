@@ -11,13 +11,16 @@ for (let attempt = 0; attempt < 30; attempt += 1) {
 assert.ok(ready, 'Local production server became ready');
 const browser = await chromium.launch({ ...(process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : { channel: 'chrome' }), headless: true, args: ['--no-sandbox'] });
 const men = { id: '11111111-1111-4111-8111-111111111111', name: 'Discovery Men QA', city: 'Baku', country: 'Azerbaijan', league_name: 'QA League', basketball_type: 'mens', logo_url: null };
-const women = { ...men, id: '22222222-2222-4222-8222-222222222222', name: 'Discovery Women QA' };
+const women = { ...men, id: '22222222-2222-4222-8222-222222222222', name: 'Discovery Women QA International Basketball Club With A Long Team Name'  };
 try {
   for (const width of [390, 1440]) {
     for (const theme of ['light', 'dark']) {
       const context = await browser.newContext({ viewport: { width, height: 900 } });
       await context.addInitScript(theme => { localStorage.setItem('hoopcheck-theme', theme); localStorage.setItem('hoopcheck-language', 'en'); }, theme);
       let failCoaches = false;
+      let releaseTeam;
+      let holdTeam = false;
+      const teamGate = new Promise(resolve => { releaseTeam = resolve; });
       const page = await context.newPage();
       await page.route('https://ci.invalid/**', async route => {
         const req = route.request(), url = new URL(req.url());
@@ -25,7 +28,7 @@ try {
         if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
         if (url.pathname.includes('/coaches') && failCoaches) return route.fulfill({ status: 503, headers, contentType: 'application/json', body: JSON.stringify({ message: 'Fixture category failure' }) });
         let data = [];
-        if (url.pathname.includes('/womens_teams')) data = [women];
+        if (url.pathname.includes('/womens_teams')) { if (holdTeam) await teamGate; data = [women]; }
         else if (url.pathname.includes('/teams')) data = [men];
         const single = req.headers().accept?.includes('vnd.pgrst.object');
         await route.fulfill({ status: 200, headers, contentType: 'application/json', body: JSON.stringify(single ? data[0] || null : data) });
@@ -37,8 +40,21 @@ try {
       await page.getByRole('button', { name: 'Women’s Teams', exact: true }).click();
       await femaleLink.waitFor();
       await page.waitForFunction(() => !document.querySelector('.result-group a[href^="/teams/"]'));
+      holdTeam = true;
       await femaleLink.click();
+      const loader = page.locator('.hc-brand-loader--screen');
+      await loader.waitFor();
+      const bounds = await loader.boundingBox();
+      assert.ok(bounds && Math.abs(bounds.x + bounds.width / 2 - width / 2) < 8, 'HoopCheck loader is horizontally centered');
+      assert.ok(bounds && Math.abs(bounds.y + bounds.height / 2 - 450) < 120, 'HoopCheck loader is vertically centered in available content');
+      await loader.getByRole('img', { name: 'HoopCheck', exact: true }).waitFor();
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      assert.equal(await loader.locator('.hc-brand-loader__orbit i').first().evaluate(el => getComputedStyle(el).animationName), 'none', 'Reduced motion stops the loader animation');
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      releaseTeam();
+      holdTeam = false;
       await page.locator('.hc-womens-branded-hero').waitFor();
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2), false, 'Long team name fits the profile viewport');
       const art = await page.locator('.hc-womens-branded-hero').evaluate(el => getComputedStyle(el).backgroundImage);
       assert.ok(art.includes('basketball-arena-ai.webp'), 'Women’s team uses the AI arena background');
       const logo = await page.locator('.hc-team-profile-logo').first().boundingBox();
@@ -53,9 +69,10 @@ try {
       await page.waitForFunction(() => !document.querySelector('.result-group a[href^="/womens/"]'));
       await page.getByRole('button', { name: 'All', exact: true }).click();
       await femaleLink.waitFor();
+      assert.equal(await page.locator('.hc-team-directory-row').first().evaluate(el => getComputedStyle(el).borderTopWidth), '0px', 'Result content has no decorative frame');
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2);
       assert.equal(overflow, false, `Search does not overflow at ${width}px`);
-      console.log(`PASS ${width}px ${theme}: both team searches, women’s navigation, logo, AI art, partial failure recovery`);
+      console.log(`PASS ${width}px ${theme}: both team searches, women’s navigation, long names, frameless results, centered loader, reduced motion, AI art, partial failure recovery`);
       await context.close();
     }
   }

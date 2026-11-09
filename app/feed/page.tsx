@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { PageShell } from "../../components/LayoutSystem";
-import { FeedDiscoveryHeader, FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptyState, FeedLoadingSkeleton, FeedStoryRing, FeedTimeRemaining } from "../../components/HoopFeedShared";
+import { FeedDiscoveryHeader, FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptyState, FeedStoryRing, FeedTimeRemaining } from "../../components/HoopFeedShared";
 import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon } from "../../components/HoopCheckUI";
@@ -182,7 +182,7 @@ export default function Feed(){
 
   async function del(p:Post){if(!user||p.author_id!==user.id)return;if(!confirm("Delete this HoopFeed post?"))return;const {error}=await supabase.from("feed_posts").delete().eq("id",p.id);if(error){console.error("HoopFeed delete failed",error);setMsg("That post couldn't be deleted. Please try again.");return;}if(p.image_url){const marker="/storage/v1/object/public/feed-images/";const i=p.image_url.indexOf(marker);if(i>=0)await supabase.storage.from("feed-images").remove([p.image_url.slice(i+marker.length)]);}if(p.video_url){const marker="/storage/v1/object/public/feed-videos/";const i=p.video_url.indexOf(marker);if(i>=0)await supabase.storage.from("feed-videos").remove([p.video_url.slice(i+marker.length)]);}await load(user, profile!);}
 
-  if(loading)return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><HoopLoading label="Loading HoopFeed..." /><FeedLoadingSkeleton count={3} /></div></main></PageShell>;
+  if(loading)return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><HoopLoading label="Loading HoopFeed..." /></div></main></PageShell>;
   if(!user)return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">HOOPFEED</p><h1>Sign in to continue</h1><p className="muted">HoopFeed is for active Pro and Premium members.</p><Link href="/login" className="btn">Sign In</Link></section></div></main></PageShell>;
     if(!access)return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link></header><section className="hero-card"><p className="eyebrow">HOOPFEED</p><h1>Daily Player Experiences</h1><p className="muted">An active Pro or Premium membership is required to access player HoopFeed. Players share current basketball experiences here.</p><div className="actions"><Link href="/membership" className="btn">Upgrade Membership</Link><Link href="/dashboard" className="btn dark">Back to Dashboard</Link></div></section></div></main></PageShell>;
 

@@ -9,6 +9,7 @@ import { supabase } from "../../lib/supabase";
 import PlayerContactButton from "../../components/PlayerContactButton";
 import FollowButton from "../../components/FollowButton";
 import { VerifiedBadge } from "../../components/HoopCheckUI";
+import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import Surface from "../../components/Surface";
@@ -372,7 +373,7 @@ function SearchContent() {
             </div>
           )}
 
-          {loading && <div className="state-card"><p>{t("searchingHoopCheck")}</p></div>}
+          {loading && <HoopLoading variant="inline" label={t("searchingHoopCheck")} />}
           {error && <div className="state-card error"><p>{error}</p></div>}
 
           {!loading && !error && totalResults === 0 && (
@@ -477,7 +478,7 @@ function SearchContent() {
 export default function SearchPage() {
   const { t } = useLanguage();
   return (
-    <Suspense fallback={<main className="search-page hc-global-search-page"><section className="search-hero"><p className="eyebrow">{t("globalResearch")}</p><h1>{t("loading")}</h1><p>{t("preparingSearchResults")}</p></section></main>}>
+    <Suspense fallback={<HoopLoading label={t("preparingSearchResults")} />}>
       <SearchContent />
     </Suspense>
   );

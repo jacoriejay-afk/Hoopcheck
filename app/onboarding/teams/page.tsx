@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../../components/HoopLoading";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -94,7 +95,7 @@ export default function TeamOnboardingPage() {
   function skip(){void finish();}
   const selected = step===1?myTeams:watching;
   const title=step===1?"Which teams have you played for?":step===2?"Thinking about signing somewhere?":"Suggested for you";
-  if(loading)return <main className="page-shell"><div className="page-container"><section className="dashboard-card">Loading your team directory…</section></div></main>;
+  if(loading)return <main className="page-shell"><HoopLoading label="Loading HoopCheck…" /></main>;
 
   return <main className="page-shell hc-onboarding"><div className="page-container">
     <header className="hc-onboarding-header"><Link href="/dashboard" className="hc-onboarding-skip" onClick={e=>{e.preventDefault();skip();}}>Skip setup</Link><span className="eyebrow">PERSONALIZE HOOPCHECK</span><div className="hc-progress-label">Step {step} of 3</div><div className="hc-progress"><span style={{width:`${step/3*100}%`}}/></div></header>
