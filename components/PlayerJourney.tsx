@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
+import TeamLeaguePicker from "./TeamLeaguePicker";
 import { supabase } from "../lib/supabase";
 
 type CareerStop = {
@@ -16,7 +17,6 @@ type CareerStop = {
   stop_order: number;
   is_public: boolean;
 };
-type DirectoryTeam = { id: string; name: string; country: string | null; league_name: string | null };
 
 const FLAGS: Record<string,string> = {
   "United States":"🇺🇸",Canada:"🇨🇦",Mexico:"🇲🇽",Spain:"🇪🇸",France:"🇫🇷",Germany:"🇩🇪",Italy:"🇮🇹",
@@ -31,12 +31,10 @@ const monogram = (name:string) => name.split(/\s+/).filter(Boolean).slice(0,2).m
 
 export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { playerId:string; isOwnProfile:boolean; canManage:boolean }) {
   const [stops,setStops] = useState<CareerStop[]>([]);
-  const [teams,setTeams] = useState<DirectoryTeam[]>([]);
   const [loading,setLoading] = useState(true);
   const [saving,setSaving] = useState(false);
   const [message,setMessage] = useState("");
   const [teamId,setTeamId] = useState("");
-  const [teamSearch,setTeamSearch] = useState("");
   const [careerStatus,setCareerStatus] = useState<"current"|"former">("former");
   const [teamName,setTeamName] = useState("");
   const [leagueName,setLeagueName] = useState("");
@@ -57,28 +55,15 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
     let active = true;
     void Promise.all([
       supabase.from("player_career_stops").select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public").eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true}),
-      supabase.from("teams").select("id,name,country,league_name").or("basketball_type.eq.mens,source.eq.womens_teams_mirror").eq("active",true).order("name").limit(500),
-    ]).then(([stopResult,teamResult]) => {
+    ]).then(([stopResult]) => {
       if(!active) return;
       if(!stopResult.error) setStops((stopResult.data||[]) as CareerStop[]);
-      setTeams((teamResult.data||[]) as DirectoryTeam[]);
       setLoading(false);
     }).catch(()=>{ if(active) setLoading(false); });
     return ()=>{active=false;};
   },[playerId]);
 
   const countryPassport = Array.from(new Set(stops.filter(stop => isOwnProfile || stop.is_public).map(stop => stop.country.trim()).filter(Boolean))).sort();
-  const matchingTeams = teams.filter(team => `${team.name} ${team.country||""} ${team.league_name||""}`.toLowerCase().includes(teamSearch.trim().toLowerCase()));
-
-  function chooseTeam(value:string) {
-    setTeamId(value);
-    const selected = teams.find(team=>team.id===value);
-    if(selected) {
-      setTeamName(selected.name);
-      setLeagueName(selected.league_name||"");
-      if(selected.country) setCountry(selected.country);
-    }
-  }
 
   async function addStop(event:FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -136,8 +121,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
     {isOwnProfile&&canManage&&<form className="hc-journey-form" onSubmit={addStop}>
       <p className="eyebrow">ADD CAREER STOP</p>
       <label>Current or former team <select value={careerStatus} onChange={event=>setCareerStatus(event.target.value as "current"|"former")}><option value="current">Current team</option><option value="former">Former team</option></select></label>
-      <label>Search teams by name, country or league <input value={teamSearch} onChange={event=>setTeamSearch(event.target.value)} placeholder="Search the team directory" /></label>
-      <label>Match a HoopCheck team <select value={teamId} onChange={event=>chooseTeam(event.target.value)}><option value="">Not listed / enter team below</option>{matchingTeams.map(team=><option key={team.id} value={team.id}>{team.name}{team.country?` · ${team.country}`:""}</option>)}</select></label>
+      <TeamLeaguePicker mode="team" directorySource="both" allCategories label="Match a HoopCheck team" placeholder="Search current or former club" value={teamId} onChange={setTeamId} onSelectItem={item=>{setTeamId(item.id);setTeamName(item.name);setCountry(item.country);setLeagueName(item.league_name||"");}} />
       <p className="muted">Select a team to fill in its country and league. {careerStatus==="current"?"Enter the current season below.":"Enter the season(s) you previously played."} Adding a team does not automatically verify eligibility to publish a review.</p>
       <label>Team name <input value={teamName} onChange={event=>setTeamName(event.target.value)} maxLength={160} required placeholder="Team or club name"/></label>
       <label>League <input value={leagueName} onChange={event=>setLeagueName(event.target.value)} maxLength={160} placeholder="League name"/></label>
