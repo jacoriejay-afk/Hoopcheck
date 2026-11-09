@@ -143,6 +143,7 @@ const liveHub = read("../app/live-games/page.tsx");
 const payApi = read("../app/api/team-pay-checkins/route.ts");
 const trustApi = read("../app/api/trust-score/route.ts");
 const membershipPage = read("../app/membership/page.tsx");
+const membershipComparison = read("../components/MembershipComparison.tsx");
 const accountPage = read("../app/account/page.tsx");
 const fanConnection = read("../components/FanConnectionButton.tsx");
 
@@ -163,8 +164,9 @@ assert.match(liveChat, /canUseLiveGameChat/, "Live Game Chat must use the shared
 assert.match(liveHub, /womens_teams/, "Live Game Hub must include women's teams");
 assert.match(trustApi, /row\.womens_team_id/, "women's Trust Score must aggregate women's reviews");
 assert.match(membershipPage, /Built for fans who follow the game/, "Fan membership page must not use player upsell copy");
-assert.match(membershipPage, /HOOPCHECK FAN PRO/, "Fan Pro plan must be role-labelled");
-assert.match(membershipPage, /HOOPCHECK FAN PREMIUM/, "Fan Premium plan must be role-labelled");
+assert.match(membershipPage, /<MembershipComparison/, "Membership page must render the shared plan comparison");
+assert.ok(membershipComparison.includes('`HOOPCHECK FAN ${tier.toUpperCase()}`'), "Fan plans must be role-labelled");
+assert.ok(membershipComparison.includes('audience === "fan" ? "Fan " : ""'), "Fan plan names must include the audience");
 assert.match(accountPage, /entitlements\.canUseRecruitingNetwork/, "Premium recruiting upsell must be player-only");
 assert.match(fanConnection, /accountType !== "fan"/, "fan connection gates must be hidden from non-fans");
 
