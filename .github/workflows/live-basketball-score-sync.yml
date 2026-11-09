@@ -21,7 +21,7 @@ jobs:
     steps:
       - name: Trigger secured live-score sync endpoint
         env:
-          LIVE_SCORES_SYNC_URL: https://hoopcheck-nine.vercel.app/api/cron/live-basketball
+          LIVE_SCORES_SYNC_URL: https://hoopcheck.online/api/cron/live-basketball
           LIVE_SCORES_CRON_SECRET: ${{ secrets.LIVE_SCORES_CRON_SECRET }}
         run: |
           set -eu

@@ -116,7 +116,7 @@ export default function TeamsPage() {
             .select("id, name, country, league_name, league_id, city, logo_url, logo_bg", { count: "exact" })
             .eq("active", true)
             .eq("basketball_type", "mens")
-            .order("name");
+            .order("name").order("id");
 
           const term = query.trim();
           if (term) {
@@ -146,7 +146,7 @@ export default function TeamsPage() {
             setHasMore(false);
             setTotalCount(0);
           } else {
-            setTeams(data || []);
+            setTeams(Array.from(new Map(((data || []) as Team[]).map((team) => [team.id, team])).values()));
             setTotalCount(count ?? ((page * pageSize) + (data?.length ?? 0)));
             setHasMore((data?.length ?? 0) === pageSize);
           }
@@ -229,7 +229,7 @@ export default function TeamsPage() {
       for (let offset = 0; offset < 5000; offset += 500) {
         let request = supabase.from("teams")
           .select("id,name,country,league_name,league_id,city,logo_url,logo_bg")
-          .eq("active", true).order("name");
+          .eq("active", true).eq("basketball_type", "mens").order("name").order("id");
         const term = query.trim();
         if (term) {
           const escaped = term.replace(/[%_]/g, (match) => "\\" + match);

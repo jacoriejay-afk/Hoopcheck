@@ -46,6 +46,7 @@ export default function FanLivePage() {
   const [accountType,setAccountType]=useState("");
   const [sending,setSending]=useState(false);
   const [message,setMessage]=useState("");
+  const [gamesLoadError,setGamesLoadError]=useState(false);
   const [presenceCount,setPresenceCount]=useState(0);
   const [mutedUsers,setMutedUsers]=useState<Set<string>>(new Set());
   const [blockedUsers,setBlockedUsers]=useState<Set<string>>(new Set());
@@ -78,11 +79,14 @@ export default function FanLivePage() {
     if (!fanCanChat && !playerCanChat && !moderatorCanChat && !playerCanPredict) {
       setGames([]); setSelected(null); setLoading(false); return;
     }
+    // Keep the room list focused on current fixtures; historical provider rows are retained in the database for reconciliation.
+    const recentWindowStart = new Date(Date.now() - 7 * 24 * 60 * 60_000).toISOString();
     const gameResult = profile?.account_type === "player" && !playerCanChat
       ? await fetch("/api/game-predictions?mode=games", { headers: { Authorization: "Bearer " + (session?.access_token || "") }, cache: "no-store" })
           .then(async response => { const json = await response.json(); return { data: json.games || [], error: response.ok ? null : new Error("player-game-list-unavailable") }; })
-      : await supabase.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_name,country,period_label").in("status",["scheduled","live","final","cancelled","postponed","abandoned"]).order("scheduled_at",{ascending:true,nullsFirst:false}).limit(500);
+      : await supabase.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_name,country,period_label").in("status",["scheduled","live","final","cancelled","postponed","abandoned"]).gte("scheduled_at",recentWindowStart).order("scheduled_at",{ascending:true,nullsFirst:false}).limit(500);
     const {data:controls}=await supabase.from("fan_live_chat_user_controls").select("target_user_id,is_blocked,is_muted").eq("user_id",user.id);
+    setGamesLoadError(Boolean(gameResult.error));
     if(gameResult.error) setMessage("Game updates are temporarily unavailable. Reconnecting…");
     const rawGames=(gameResult.data||[]) as Game[];
     const candidateIds=Array.from(new Set(rawGames.flatMap(g=>[g.team_id,g.opponent_team_id].filter((x):x is string=>Boolean(x)))));
@@ -97,7 +101,17 @@ export default function FanLivePage() {
     const sideIds=new Set([...(sideRows||[]),...(womensSideRows||[])].map((row:any)=>row.id));
     // A fixture belongs to the selected basketball side whether that side is stored
     // as the home team or the opponent; do not silently drop away-team women's games.
-    const next=rawGames.filter(g=>sideIds.has(g.team_id)||sideIds.has(g.opponent_team_id||""));
+    const staleScheduledCutoff=Date.now()-4*60*60_000;
+    const next=rawGames.filter(g=>{
+      if(!sideIds.has(g.team_id)&&!sideIds.has(g.opponent_team_id||""))return false;
+      // A scheduled fixture several hours past tip-off is not evidence of a live game.
+      // Hide it until the provider confirms the result; never fabricate a final score.
+      if(g.status==="scheduled"&&g.scheduled_at){
+        const tipoff=Date.parse(g.scheduled_at);
+        if(Number.isFinite(tipoff)&&tipoff<staleScheduledCutoff)return false;
+      }
+      return true;
+    });
     setGames(next);
     setMutedUsers(new Set((controls||[]).filter((x:any)=>x.is_muted).map((x:any)=>x.target_user_id)));
     setBlockedUsers(new Set((controls||[]).filter((x:any)=>x.is_blocked).map((x:any)=>x.target_user_id)));
@@ -238,6 +252,7 @@ export default function FanLivePage() {
       <FanBasketballSideSwitch /><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/live-games">All Games</Link><Link href="/teams">Teams</Link></nav></header>
     <section className="hero-card hc-live-room-hero"><div><p className="eyebrow">HOOPCHECK · LIVE GAME HUB</p><h1>LIVE GAME CHAT<span>.</span></h1><p className="muted">Real-time conversation with members watching the same game.</p></div><div className="hc-live-presence-chip"><span className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"member":"members"} in room</div></section>
+    {allowed && gamesLoadError && <section className="dashboard-card" role="alert"><h2>Game list temporarily unavailable</h2><p className="muted">Your membership is recognized, but the game service could not load. Please retry rather than upgrading again.</p><button type="button" className="btn" onClick={()=>void load(true)}>Retry games</button></section>}
     {!allowed ? <section className="dashboard-card hc-live-empty-state">
       {accountType === "fan" ? <><h2>Fan Pro or Premium required for Live Games</h2><p className="muted">Upgrade your fan membership to browse fixtures and join men's and women's game chats.</p><Link href="/membership" className="btn">View Fan Membership</Link></>
         : !userId ? <><h2>Sign in to view Live Games</h2><Link href="/login" className="btn">Sign In</Link></>
