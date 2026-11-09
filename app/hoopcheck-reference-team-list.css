@@ -138,3 +138,36 @@
  .hc-directory-refresh .team-filter-row select {min-height:38px!important}
  .hc-directory-refresh .hc-team-directory-list {gap:7px!important}
 }
+
+
+/* Team directory density contract: no oversized gate or inherited dossier spacing. */
+.hc-team-directory-page .hc-team-directory-row,
+.hc-womens-directory-page .hc-team-directory-row {
+  align-content:start;
+  height:auto;
+  min-height:0;
+  border-radius:14px;
+  overflow:hidden;
+}
+.hc-team-directory-page .hc-team-directory-row .hc-scout-card__identity,
+.hc-womens-directory-page .hc-team-directory-row .hc-scout-card__identity { margin:0; padding:0; min-height:0; }
+.hc-team-directory-page .hc-team-directory-row .hc-scout-card__stats,
+.hc-womens-directory-page .hc-team-directory-row .hc-scout-card__stats { margin:0; padding:0; min-height:0; }
+.hc-team-directory-page .hc-team-directory-row .hc-directory-locked,
+.hc-womens-directory-page .hc-team-directory-row .hc-directory-locked {
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  margin:0; padding:6px 8px; min-height:0; border-radius:9px;
+  font-size:12px; line-height:1.35;
+}
+.hc-team-directory-page .hc-directory-locked small,
+.hc-womens-directory-page .hc-directory-locked small {font-size:12px;line-height:1.35;}
+.hc-team-directory-page .hc-directory-locked .btn,
+.hc-womens-directory-page .hc-directory-locked .btn {flex:none;min-height:32px;padding:6px 10px;font-size:11px;}
+.hc-team-directory-page .hc-team-directory-row__follow,
+.hc-womens-directory-page .hc-team-directory-row__follow {min-width:0;}
+@media(max-width:600px){
+ .hc-team-directory-page .hc-team-directory-row,
+ .hc-womens-directory-page .hc-team-directory-row {gap:8px;padding:12px;}
+ .hc-team-directory-page .hc-team-directory-row .hc-scout-card__ticket,
+ .hc-womens-directory-page .hc-team-directory-row .hc-scout-card__ticket {margin:0;}
+}
