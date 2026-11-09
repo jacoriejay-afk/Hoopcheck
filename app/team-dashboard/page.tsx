@@ -121,7 +121,7 @@ export default function TeamDashboardPage() {
   const pendingCount = claims.filter(c => c.status === "pending").length;
 
   return <main className="page-shell"><div className="page-container">
-    <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/teams">Teams</Link><Link href="/fan-feed">FanFeed</Link></nav></header>
+    <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/teams">Teams</Link><Link href="/dashboard">Dashboard</Link></nav></header>
     <section className="hero-card">
       <p className="eyebrow">HOOPCHECK · TEAM PARTNERSHIPS</p>
       <h1>Team Dashboard</h1>

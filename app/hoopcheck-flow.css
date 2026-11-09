@@ -1,6 +1,149 @@
-/* Open content flow: remove decorative frames while preserving functional controls. */
+/* Open lists stay frameless. Semantic cards retain the shared surface contract. */
+:root {
+  --hc-radius-card: 16px;
+  --hc-radius-control: 10px;
+  --hc-shadow-card: 0 2px 8px rgb(0 0 0 / 4%);
+}
+/* Final semantic control contract: pair legacy orange controls with dark ink. */
+html.theme-light body .hc-global-page-shell main :is(.btn,.hc-searchbar__submit,.hc-template-cta.hc-home-cta),
+html.theme-dark body .hc-global-page-shell main :is(.btn,.hc-searchbar__submit,.hc-template-cta.hc-home-cta) {
+  background:var(--hc-button-primary-bg) !important;
+  color:var(--hc-button-primary-fg) !important;
+  border-color:var(--hc-button-primary-bg) !important;
+}
+html.theme-light body .hc-global-page-shell main .btn.dark,
+html.theme-dark body .hc-global-page-shell main .btn.dark {
+  background:var(--hc-button-outline-bg) !important;
+  color:var(--hc-button-outline-fg) !important;
+  border-color:var(--hc-border) !important;
+}
+html body .hc-global-page-shell main .btn :is(span,small,strong) {color:inherit !important}
+html body .hc-global-page-shell main :is(.hc-directory-filter,.hc-review-filter,.theme-option,.hc-coach-directory-summary) {
+  background:var(--hc-surface-soft) !important;color:var(--hc-foreground) !important;border-color:var(--hc-border) !important;
+}
+html body .hc-global-page-shell main :is(.hc-directory-filter,.hc-review-filter)[aria-pressed="true"],
+html body .hc-global-page-shell main .theme-option.active {
+  background:var(--hc-button-primary-bg) !important;color:var(--hc-button-primary-fg) !important;
+  border-color:var(--hc-button-primary-bg) !important;
+}
+html body .hc-global-page-shell main .theme-option :is(strong,small) {color:inherit !important}
+html body .hc-global-page-shell main.hc-coach-entity-profile > section.hero {
+  background:var(--hc-surface-raised) !important;color:var(--hc-foreground) !important;
+}
+html body .hc-global-page-shell main.hc-coach-entity-profile > section.hero :is(h1,p,.eyebrow) {color:var(--hc-foreground) !important}
+html body .hc-global-page-shell main :is(.topnav,.nav) a {color:var(--hc-nav-fg) !important}
+html.theme-light body .hc-global-page-shell main :is(.eyebrow,.hc-team-profile-kicker) {color:var(--hc-accent-text) !important}
+html body .hc-global-page-shell main.hc-directory-page .hc-directory-intro {
+  background:var(--hc-surface-raised) !important;color:var(--hc-foreground) !important;
+}
+html body .hc-global-page-shell main.hc-directory-page .hc-directory-intro :is(h1,p) {color:var(--hc-foreground) !important}
+html body .hc-global-page-shell main .hc-directory-view-toggle button {
+  background:var(--hc-surface-soft) !important;color:var(--hc-foreground) !important;border-color:var(--hc-border) !important;
+}
+html body .hc-global-page-shell main .hc-directory-view-toggle button.is-active {
+  background:var(--hc-button-primary-bg) !important;color:var(--hc-button-primary-fg) !important;
+}
+html body .hc-global-page-shell main .legal-footer {
+  background:var(--hc-surface-raised) !important;color:var(--hc-foreground) !important;
+}
+html body .hc-global-page-shell main .legal-footer a {background:var(--hc-surface-soft) !important;color:var(--hc-foreground) !important}
+html body .hc-global-page-shell main .hc-pastel-posts {background:var(--hc-surface-raised) !important;color:var(--hc-foreground) !important}
+html body .hc-global-page-shell main .hc-pastel-posts :is(h2,span) {color:var(--hc-foreground) !important}
+html body .hc-global-page-shell main.hc-settings-page button.theme-option.active :is(strong,small) {color:var(--hc-button-primary-fg) !important}
+html body .hc-global-page-shell main .hc-billing-options button.hc-billing-option :is(span,small) {color:var(--hc-button-outline-fg) !important}
+html body .hc-global-page-shell main .hc-billing-options button.hc-billing-option.is-selected :is(span,small) {color:var(--hc-button-primary-fg) !important}
+html.theme-light body .hc-global-page-shell main.hc-ia-public-home :is(.hc-d3-hero,.hc-ia-welcome) {
+  background:var(--hc-surface-raised) !important;color:var(--hc-foreground) !important;
+}
+html.theme-light body .hc-global-page-shell main.hc-ia-public-home :is(.hc-d3-eyebrow,.hc-d3-hero__sub,.hc-home-signin,.hc-d3-map__label,.hc-ia-welcome .muted,.hc-ia-welcome h1 span) {color:var(--hc-foreground) !important}
+html.theme-light body .hc-global-page-shell main.hc-ia-public-home .hc-d3-hero h1 em {color:var(--hc-accent-text) !important}
+.sr-only {position:absolute !important;width:1px !important;height:1px !important;padding:0 !important;margin:-1px !important;overflow:hidden !important;clip:rect(0,0,0,0) !important;white-space:nowrap !important;border:0 !important}
 html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-directory-shell) :is(
-  .card,.dashboard-card,.hero-card,.hc-layout-card,.hc-layout-group,.plan-card,.state-card,
+  .card,.dashboard-card,.hc-layout-card,.hc-layout-group,.plan-card,.state-card
+) {
+  border:1px solid var(--hc-card-border) !important;
+  border-radius:var(--hc-radius-card) !important;
+  background:var(--hc-card-surface) !important;
+  color:var(--hc-on-card) !important;
+  box-shadow:var(--hc-shadow-card) !important;
+}
+/* Nested information rows share their parent's surface rather than another box. */
+html body .hc-global-page-shell main :is(.dashboard-card,.hc-layout-card,.hc-layout-group) .card {
+  border:0 !important;border-radius:0 !important;box-shadow:none !important;
+  background:transparent !important;padding-inline:0 !important;
+}
+.hc-skip-link {
+  position:fixed;inset-block-start:8px;inset-inline-start:8px;z-index:10000;
+  padding:12px 18px;background:var(--hc-button-primary-bg);color:var(--hc-button-primary-fg);
+  border-radius:var(--hc-radius-control);font-weight:700;transform:translateY(-160%);
+}
+.hc-skip-link:focus {transform:none}
+#hc-main-content {scroll-margin-top:84px}
+#hc-main-content:focus {outline:none}
+html body :is(a,button,input,select,textarea,summary,[tabindex]):focus-visible {
+  outline:3px solid var(--hc-focus-ring);outline-offset:3px;
+}
+.hc-global-page-shell main :is(input,textarea)::placeholder {color:var(--hc-foreground-muted);opacity:1}
+.hc-global-page-shell main :is(button,.btn):disabled {cursor:not-allowed}
+html body .site-footer {
+  background:var(--hc-surface-raised) !important;color:var(--hc-foreground) !important;
+  border-top:1px solid var(--hc-border);
+}
+html body .site-footer :is(.footer-links a,.footer-brand p,.footer-bottom,.muted) {
+  color:var(--hc-foreground-muted) !important;
+}
+html body .site-footer .footer-links strong {color:var(--hc-accent-text) !important}
+html body .site-footer .footer-links a:hover {color:var(--hc-foreground) !important}
+html body .site-footer .hc-court-footer-art {opacity:.12;pointer-events:none}
+html body .hc-global-page-shell main.hc-company-content {
+  width:min(100% - 32px,880px);margin-inline:auto;padding-block:28px 48px;
+  color:var(--hc-foreground);line-height:1.7;
+}
+html body .hc-company-content > h1 {font-size:clamp(26px,4vw,38px);line-height:1.2;margin:8px 0 20px}
+html body .hc-global-page-shell main.hc-company-content :is(section,section > div) {background:transparent !important}
+html body .hc-company-content h2 {font-size:22px;margin:28px 0 8px}
+html body .hc-company-content p {margin:0 0 16px;max-width:75ch}
+html body .hc-company-content > p:first-child {font-weight:700;color:var(--hc-accent-text)}
+html body .hc-company-content .hc-company-links {
+  display:flex;flex-wrap:wrap;gap:12px 24px;margin-top:28px;
+}
+html body .hc-company-content a {color:var(--hc-accent-text);text-decoration:underline;text-underline-offset:4px}
+html body .hc-company-content .hc-company-links a {display:inline-flex;align-items:center;min-height:44px}
+html body .hc-global-page-shell main :is(.dashboard-card,.hc-layout-card,.state-card) {
+  padding:clamp(14px,2vw,20px);
+}
+html body .hc-global-page-shell main .hc-layout-group {padding:0}
+html body .hc-global-page-shell main .hc-layout-group-title {padding:14px 16px 10px}
+html body .hc-global-page-shell main.hc-ia-home .hc-ia-section {
+  background:transparent !important;color:var(--hc-foreground) !important;
+  min-height:0;gap:12px;
+}
+html body .hc-global-page-shell main.hc-ia-home .hc-ia-section :is(h2,h3) {color:var(--hc-foreground) !important}
+html body .hc-global-page-shell main.hc-ia-home .hc-ia-section-heading .eyebrow {color:var(--hc-foreground-muted) !important}
+html body .hc-global-page-shell main.hc-ia-home .hc-ia-section > h2 {margin:0;font-size:20px}
+html body .hc-global-page-shell main.hc-ia-home .hc-ia-welcome h1 {font-size:clamp(28px,4vw,40px) !important;line-height:1.15}
+html body .hc-global-page-shell main.hc-ia-home .hc-ia-avatar {
+  background:var(--hc-surface-soft) !important;color:var(--hc-foreground) !important;border:1px solid var(--hc-border);
+}
+html body .hc-global-page-shell main.hc-ia-home :is(.hc-ux2b-completion-card,.hc-smooth-pulse__item,.hc-smooth-presign-dashboard-link,.hc-ia-feed-card) {
+  border-radius:var(--hc-radius-card) !important;box-shadow:none !important;
+}
+html body .hc-global-page-shell main.hc-feed-page section.dashboard-card.hc-feed-composer {
+  border:0 !important;border-radius:0 !important;box-shadow:none !important;background:transparent !important;
+}
+html body .hc-global-page-shell main .hc-category-icon-tile,
+html body .hc-global-page-shell main .hc-category-icon-tile svg {color:#252525 !important}
+html body .hc-global-page-shell main .hc-category-icon-tile svg {stroke:#252525 !important}
+html body header.site-header-global .hc-header-nav.is-open {
+  max-height:calc(100dvh - 72px);overflow-y:auto;overscroll-behavior:contain;
+}
+@media(min-width:701px) and (max-width:1000px) {
+  html body header.site-header-global .hc-header-desktop-links {gap:10px}
+  html body header.site-header-global .hc-header-desktop-links > a {font-size:11px}
+  html body header.site-header-global .hc-header-actions {gap:6px}
+  html body header.site-header-global .hc-header-actions > a[href="/search"] {display:none}
+}
+html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-directory-shell) :is(
   .result-card,.hc-team-directory-row,.hc-feed-shared-card,.hc-premium-intro,.hc-search-team-entry
 ):not(.hc-team-branded-hero):not(.hc-feed-discovery):not(.hc-smooth-passport) {
   border:0 !important;border-radius:0 !important;box-shadow:none !important;

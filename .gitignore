@@ -35,6 +35,7 @@ Thumbs.db
 .idea/
 
 # Testing / coverage
+artifacts/
 coverage/
 .nyc_output/
 

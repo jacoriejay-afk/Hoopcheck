@@ -15,7 +15,7 @@ const women = { ...men, id: '22222222-2222-4222-8222-222222222222', name: 'Disco
 try {
   for (const width of [390, 1440]) {
     for (const theme of ['light', 'dark']) {
-      const context = await browser.newContext({ viewport: { width, height: 900 } });
+      const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width, height: 900 } });
       await context.addInitScript(theme => { localStorage.setItem('hoopcheck-theme', theme); localStorage.setItem('hoopcheck-language', 'en'); }, theme);
       let failCoaches = false;
       let releaseTeam;
@@ -49,7 +49,7 @@ try {
       assert.ok(bounds && Math.abs(bounds.y + bounds.height / 2 - 450) < 120, 'HoopCheck loader is vertically centered in available content');
       await loader.getByRole('img', { name: 'HoopCheck', exact: true }).waitFor();
       await page.emulateMedia({ reducedMotion: 'reduce' });
-      assert.equal(await loader.locator('.hc-brand-loader__orbit i').first().evaluate(el => getComputedStyle(el).animationName), 'none', 'Reduced motion stops the loader animation');
+      await page.waitForFunction(() => { const orbit = document.querySelector('.hc-brand-loader--screen .hc-brand-loader__orbit i'); return orbit && getComputedStyle(orbit).animationName === 'none'; }, null, { timeout: 10000 });
       await page.emulateMedia({ reducedMotion: 'no-preference' });
       releaseTeam();
       holdTeam = false;

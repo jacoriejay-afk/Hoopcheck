@@ -144,7 +144,7 @@ export function HoopButton({
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary"; className?: string }) {
   return (
-    <button className={`hc-button hc-button--${variant} ${className}`.trim()} {...props}>
+    <button type="button" className={`hc-button hc-button--${variant} ${className}`.trim()} {...props}>
       {children}
     </button>
   );

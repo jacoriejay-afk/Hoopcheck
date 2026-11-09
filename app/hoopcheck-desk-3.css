@@ -29,10 +29,9 @@
   .hc-d3-membership-band{background:#f7f7f5;color:#111;padding:26px max(28px,calc((100vw - 1600px)/2))}
   .hc-d3-membership-band a{display:flex;align-items:center;justify-content:space-between;gap:20px;max-width:1600px;margin:auto;color:inherit;text-decoration:none;font-weight:900;letter-spacing:.1em}
   .hc-d3-membership-band a span:last-child{color:#ff5a1f}
-  .hc-ia-home>.page-container>.hc-ia-section{width:100vw;max-width:none;margin:30px calc(50% - 50vw) 0;padding:54px max(28px,calc((100vw - 1600px)/2));background:#f7f7f5;color:#111}
+  .hc-ia-home>.page-container>.hc-ia-section{width:100%;max-width:100%;margin:24px 0 0;padding:20px 0;background:transparent;color:var(--hc-foreground)}
   html.theme-light .hc-d3-live-band{background:#101b2b;color:#fff}
   html.theme-light .hc-d3-membership-band{background:var(--hc-surface);color:#111}
-  html.theme-light .hc-ia-home>.page-container>.hc-ia-section{background:#f1f1ee;color:#111}
   .hc-d3-ticker__item i{animation:hc-d3-live-pulse 1.6s ease-out 2}
   .hc-d3-ticker__track{animation-iteration-count:1}
 

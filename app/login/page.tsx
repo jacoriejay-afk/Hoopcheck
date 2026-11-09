@@ -133,7 +133,7 @@ export default function LoginPage() {
           )}
 
           <button type="button" onClick={handlePasswordReset} disabled={resetLoading}
-            style={{ background: "transparent", border: 0, color: "var(--orange)", padding: 0, marginTop: 14, cursor: resetLoading ? "default" : "pointer", fontWeight: 800 }}>
+            style={{ background: "transparent", border: 0, color: "var(--hc-accent-text)", padding: 0, marginTop: 14, cursor: resetLoading ? "default" : "pointer", fontWeight: 800 }}>
             {resetLoading ? "Sending reset link..." : "Forgot password?"}
           </button>
 

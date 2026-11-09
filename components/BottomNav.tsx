@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { getRoleNavigation } from "../lib/navigation";
 import { usePathname } from "next/navigation";
 import { useAuthState } from "./AuthProvider";
 import { useLanguage } from "./LanguageProvider";
@@ -76,34 +75,20 @@ function TabIcon({ label }: { label: TabLabel }) {
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const { signedIn, userId } = useAuthState();
+  const { signedIn, accountType, roleLoading } = useAuthState();
   const { t } = useLanguage();
-  const [accountType, setAccountType] = useState<string | null>(null);
-  const [accountTypeLoading, setAccountTypeLoading] = useState(true);
-  useEffect(() => {
-    let active = true;
-    if (!userId) { setAccountType(null); setAccountTypeLoading(false); return; }
-    setAccountTypeLoading(true);
-    setAccountType(null);
-    void supabase.from("profiles").select("account_type").eq("id", userId).maybeSingle().then(({ data, error }) => {
-      if (active) {
-        setAccountType(error ? null : data?.account_type || null);
-        setAccountTypeLoading(false);
-      }
-    });
-    return () => { active = false; };
-  }, [userId]);
+  const { workspace, feed } = getRoleNavigation(accountType, signedIn);
 
   if (!signedIn || pathname.startsWith("/admin")) return null;
 
   return (
     <nav className="bottom-nav hc-bottom-tab-bar hc-mobile-tabbar-repair hc-lm2f-bottom-nav" aria-label="Mobile navigation">
       {items.map(([href, translationKey, label]) => {
-        const destination = href === "/feed" && accountType === "fan" ? "/fan-feed" : href;
-        const feedResolving = href === "/feed" && accountTypeLoading;
-        const active = destination === "/"
+        const destination = href === "/feed" ? feed?.href ?? workspace.href : href === "/" ? "/dashboard" : href === "/profile" ? "/account" : href;
+        const feedResolving = href === "/feed" && roleLoading;
+        const active = href === "/"
           ? pathname === "/" || pathname === "/dashboard"
-          : pathname === destination || pathname.startsWith(destination + "/");
+          : pathname === destination || pathname.startsWith(destination + "/") || (href === "/profile" && pathname === "/profile");
         return (
           <Link
             key={href}
@@ -113,8 +98,8 @@ export default function BottomNav() {
             aria-disabled={feedResolving ? true : undefined}
             onClick={feedResolving ? (event) => event.preventDefault() : undefined}
           >
-            <span className="hc-lm2f-tab-icon"><TabIcon label={label} /></span>
-            <span className="hc-lm2f-tab-label">{translationKey === "hoopFeed" ? (accountType === "fan" ? "FAN HQ" : "HoopFeed") : t(translationKey)}</span>
+            <span className="hc-lm2f-tab-icon"><TabIcon label={href === "/feed" && !feed ? "Home" : label} /></span>
+            <span className="hc-lm2f-tab-label">{translationKey === "hoopFeed" ? (feed?.label ?? (roleLoading ? "Loading…" : workspace.label)) : t(translationKey)}</span>
             {active && <span className="hc-lm2f-active-indicator" aria-hidden="true" />}
           </Link>
         );

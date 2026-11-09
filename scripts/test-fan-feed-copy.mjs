@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import ts from 'typescript';
+const compiled=ts.transpileModule(readFileSync('app/fan-feed/i18n.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.ES2022,target:ts.ScriptTarget.ES2022}}).outputText;
+const {fanFeedI18n}=await import('data:text/javascript;base64,'+Buffer.from(compiled).toString('base64'));
+assert.equal(fanFeedI18n('feedExplainer','en','Feed Explainer'),'Posts from the fan groups of the clubs you follow.');
+assert.equal(fanFeedI18n('emptyClubTitle','en','Empty Club Title'),'No posts yet — be the first to post for {team}.');
+assert.notEqual(fanFeedI18n('searchFollowedTeams','en','Search Followed Teams'),'Search Followed Teams');
+assert.ok(fanFeedI18n('feedExplainer','es','Feed Explainer').length>20);
+console.log('PASS: authored fan-feed purpose, empty state and search labels beat humanized key fallbacks.');

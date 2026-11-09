@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCachedSession, supabase } from "../../lib/supabase";
@@ -12,6 +12,7 @@ import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import { CategoryIconTile, HoopIcon } from "../../components/HoopCheckUI";
 import { calculateProfileCompletion } from "../../lib/profile-completion";
+import { getRoleNavigation } from "../../lib/navigation";
 import TeamLogo from "../../components/TeamLogo";
 import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
 
@@ -199,7 +200,14 @@ export default function DashboardPage() {
           <div className="hc-ia-identity"><span className="hc-ia-avatar">{displayName.charAt(0).toUpperCase()}</span><span><small>SIGNED IN AS</small><strong>{displayName}</strong></span></div>
         </header>
 
-        {profile?.account_type === "player" ? <PlayerProfileCompletionCard profile={profile} /> : completion < 100 && <Link href="/account#edit-profile" className="hc-ia-completion"><span><strong>{t("home.completeProfile")}</strong><small>{t("home.profileCompletion").replace("{percent}", String(completion))}</small></span><span>{t("home.continue")} <HoopIcon name="arrow-right" size={16}/></span></Link>}
+        {profile?.account_type && <section className="hc-ia-section" aria-label="Your workspace tools">
+          <h2>Your tools</h2>
+          <div className="hc-ia-door-grid">
+            {[...(["agent", "scout", "manager", "admin"].includes(profile.account_type) ? [getRoleNavigation(profile.account_type, true).workspace] : []), ...getRoleNavigation(profile.account_type, true).tools.filter(tool => tool.href !== "/pre-sign")].map(tool => <Link key={tool.href} href={tool.href} className="hc-ia-door"><HoopIcon name="arrow-up-right" size={20}/><span><strong>{tool.label}</strong></span></Link>)}
+          </div>
+        </section>}
+
+        {profile?.account_type === "player" ? <PlayerProfileCompletionCard profile={profile} /> : completion < 100 && <Link href="/account#profile-editor" className="hc-ia-completion"><span><strong>{t("home.completeProfile")}</strong><small>{t("home.profileCompletion").replace("{percent}", String(completion))}</small></span><span>{t("home.continue")} <HoopIcon name="arrow-right" size={16}/></span></Link>}
 
         <HomePulse live={null} upcoming={null} followedClubs={teams.length} recentReviews={reviews.length}/>
         <Link href="/live-games" className="hc-ia-live-strip"><span className={liveCounts.live!==null && liveCounts.live>0 ? "hc-ia-live-dot" : "hc-ia-live-dot hc-ia-live-dot--inactive"} aria-hidden="true"/><span><strong>{t("home.liveGames")}</strong><small>{t("home.liveDescription")}</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></Link>
@@ -224,9 +232,9 @@ export default function DashboardPage() {
 
         {reviews.length>0 && <section className="hc-ia-section"><div className="hc-ia-section-heading"><div><p className="eyebrow">{t("home.experiences")}</p><h2>{t("home.recentReviews")}</h2></div></div><div className="hc-ia-follow-list">{reviews.slice(0,3).map(review=><Link key={review.id} href={(basketballSide==="womens"?"/womens/":"/teams/")+review.team_id}><span><strong>{review.title||t("home.playerReview")}</strong><small>{review.body.slice(0,110)}{review.body.length>110?"…":""} · {review.overall_rating}/5</small></span><HoopIcon name="chevron-right" size={17}/></Link>)}</div></section>}
 
-        <section className="hc-ia-section hc-ia-feed-teaser"><div className="hc-ia-section-heading"><div><p className="eyebrow">{t("home.playerNetwork")}</p><h2>{t("home.hoopFeed")}</h2></div><Link href="/feed">{t("home.openFeed")} <HoopIcon name="arrow-right" size={15}/></Link></div>
+        {["player", "agent", "scout"].includes(profile?.account_type || "") && <section className="hc-ia-section hc-ia-feed-teaser"><div className="hc-ia-section-heading"><div><p className="eyebrow">{t("home.playerNetwork")}</p><h2>{t("home.hoopFeed")}</h2></div><Link href="/feed">{t("home.openFeed")} <HoopIcon name="arrow-right" size={15}/></Link></div>
           {hasFeedAccess && feedPost ? <Link href="/feed" className="hc-ia-feed-card"><strong>{feedPost.profiles?.[0]?.display_name||t("home.playerFollow")}</strong><p>{feedPost.body.slice(0,180)}{feedPost.body.length>180?"…":""}</p><small>{t("home.latestPost")}</small></Link> : <Link href="/feed" className="hc-ia-feed-card"><strong>{t("home.openHoopFeed")}</strong><p>{t("home.feedDescription")}</p><small>{t("home.followersOnly")}</small></Link>}
-        </section>
+        </section>}
         <Link href="/account" className="hc-ia-account-link">{t("home.accountReviewsSettings")} <HoopIcon name="arrow-right" size={16}/></Link>
       </div>
     </main>
