@@ -512,3 +512,6 @@ html body .hc-feed-page .hc-feed-shared-card .hc-feed-delete { color: var(--hc-f
 .hc-community-stream .hc-feed-action-pill{display:inline-flex;align-items:center;justify-content:center;gap:5px}
 @media(max-width:600px){.hc-feed-page .hc-community-hero{padding:18px 4px 16px;align-items:start;flex-direction:column;gap:12px}.hc-community-meta{gap:10px}.hc-feed-page .hc-community-create{min-height:38px}.hc-community-tabs{margin-inline:-4px}.hc-community-tabs button{min-height:38px;padding-inline:12px}.hc-community-composer__heading{flex-direction:column;gap:3px}.hc-feed-page .hc-community-composer{padding:12px!important}.hc-community-stream .hc-feed-shared-actions{gap:6px}}
 @media(prefers-reduced-motion:reduce){.hc-community-tabs button,.hc-community-create{transition:none!important}}
+
+/* Keep the community composer divider visible despite legacy border-style resets. */
+html body .hc-feed-page section.hc-feed-composer.hc-community-composer{border-top:1px solid var(--hc-border)!important;border-top-style:solid!important;border-top-width:1px!important}
