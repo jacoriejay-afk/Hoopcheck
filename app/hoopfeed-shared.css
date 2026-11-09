@@ -528,3 +528,34 @@ main.hc-feed-page .hf5-hero { color: #f7f7f5 !important; }
 .hc-feed-page .hf5-hero .hf5-hero__stat strong { color: #ffffff !important; }
 .hc-feed-page .hf5-hero .hf5-hero__stat small { color: #b9b9b2 !important; }
 .hc-feed-page .hf5-hero .hf5-hero__plan { color: #ff8a3d !important; }
+
+/* HF-5 Stage 2: composer modes, polls, carousel, pins, save */
+.hc-feed-page .hf5-mode-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.hc-feed-page .hf5-pinbar { display: flex; align-items: center; gap: 8px; background: linear-gradient(90deg, #b34700, #ff5a1f); color: #ffffff !important; font-weight: 800; font-size: 13px; letter-spacing: .02em; border-radius: 12px; padding: 8px 12px; margin-bottom: 10px; }
+.hc-feed-page .hf5-pinbar span { color: #ffffff !important; }
+.hc-feed-page .hf5-pill--news { background: #ff5a1f; color: #fff; }
+.hc-feed-page .hf5-pill--poll { background: #6c3fd4; color: #fff; }
+.hc-feed-page .hf5-carousel { position: relative; }
+.hc-feed-page .hf5-carousel__count { position: absolute; top: 10px; right: 10px; background: rgba(10,10,10,.72); color: #ffffff !important; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 9px; }
+.hc-feed-page .hf5-carousel__nav { position: absolute; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(10,10,10,.55); color: #ffffff !important; font-size: 20px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.hc-feed-page .hf5-carousel__nav--prev { left: 8px; }
+.hc-feed-page .hf5-carousel__nav--next { right: 8px; }
+.hc-feed-page .hf5-carousel__dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
+.hc-feed-page .hf5-carousel__dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.45); }
+.hc-feed-page .hf5-carousel__dot.is-active { background: var(--hc-orange, #ff5a1f); }
+.hc-feed-page .hf5-poll { display: grid; gap: 8px; margin-top: 10px; }
+.hc-feed-page .hf5-poll__option { width: 100%; text-align: left; border: 1px solid var(--hc-border); background: var(--hc-surface-raised); color: var(--hc-foreground); border-radius: 12px; padding: 10px 12px; font-weight: 600; cursor: pointer; }
+.hc-feed-page .hf5-poll__result { position: relative; }
+.hc-feed-page .hf5-poll__bar-button { position: relative; overflow: hidden; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid var(--hc-border); background: var(--hc-surface-raised); color: var(--hc-foreground); border-radius: 12px; padding: 10px 12px; font-weight: 600; cursor: pointer; text-align: left; }
+.hc-feed-page .hf5-poll__result.is-mine .hf5-poll__bar-button { border-color: var(--hc-orange, #ff5a1f); }
+.hc-feed-page .hf5-poll__fill { position: absolute; top: 0; bottom: 0; left: 0; background: rgba(255,90,31,.22); z-index: 0; }
+.hc-feed-page .hf5-poll__label, .hc-feed-page .hf5-poll__pct { position: relative; z-index: 1; }
+.hc-feed-page .hf5-poll-editor { display: grid; gap: 8px; margin-top: 12px; }
+.hc-feed-page .hf5-poll-editor__row { display: flex; gap: 8px; align-items: center; }
+.hc-feed-page .hf5-poll-editor__row input { flex: 1 1 auto; min-width: 0; }
+.hc-feed-page .hf5-poll-editor__remove { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--hc-border); background: var(--hc-surface-raised); color: var(--hc-foreground); cursor: pointer; }
+.hc-feed-page .hf5-photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.hc-feed-page .hf5-photo-grid__item { position: relative; }
+.hc-feed-page .hf5-photo-grid__item img { width: 100%; height: 140px; object-fit: cover; border-radius: 12px; display: block; }
+.hc-feed-page .hf5-photo-grid__remove { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: rgba(10,10,10,.65); color: #ffffff !important; cursor: pointer; }
+.hc-feed-page .hc-feed-action-pill.is-active { border-color: var(--hc-orange, #ff5a1f); color: var(--hc-orange, #ff5a1f); }
