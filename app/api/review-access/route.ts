@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { hasActiveMembershipAtLeast } from "../../../lib/membership-tier";
 import { calculateReviewSummary } from "../../../lib/review-summary";
 
 export const dynamic = "force-dynamic";
@@ -44,9 +45,7 @@ export async function GET(request: Request) {
       accountType = profile?.account_type || "";
       playerVerified = profile?.player_verified === true;
       plan = subscription?.plan || "";
-      active = (["active", "trialing"].includes(subscription?.status || "") ||
-        ["pro", "premium"].includes(subscription?.access_status || "")) &&
-        (!subscription?.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now());
+      active = hasActiveMembershipAtLeast(subscription);
       const { data: admin } = await authClient.auth.getUser(bearer);
       if (admin.user) {
         const scoped = createClient(supabaseUrl, anonKey, {
@@ -62,7 +61,7 @@ export async function GET(request: Request) {
       accountType === "player" && active && ["pro", "premium"].includes(plan) ? "player" :
       accountType === "fan" && active && plan === "premium" ? "premium" :
       accountType === "fan" && active && plan === "pro" ? "pro" :
-      accountType !== "fan" && accountType !== "player" && accountType !== "" && active && ["pro", "premium"].includes(plan) ? "member" : "free";
+      accountType !== "fan" && accountType !== "player" && accountType !== "" && active ? "member" : "free";
     const fullRead = ["premium", "player", "member"].includes(tier);
     const targetColumn = entityType === "team" ? "team_id" : entityType === "coach" ? "coach_id" : "womens_team_id";
     const table = entityType === "womens-team" ? "womens_team_reviews" : "reviews";
