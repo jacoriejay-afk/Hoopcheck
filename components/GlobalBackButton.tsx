@@ -6,6 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 function getFallbackPath(pathname: string): string {
   if (pathname === "/") return "/dashboard";
   if (pathname === "/dashboard") return "/";
+  if (pathname.startsWith("/team-hub/groups/")) return "/team-hub";
+  if (pathname.startsWith("/team-hub/")) return "/team-hub";
   if (pathname.startsWith("/teams/")) return "/teams";
   if (pathname.startsWith("/players/")) return "/players";
   if (pathname.startsWith("/coaches/")) return "/coaches";
