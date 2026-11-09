@@ -1594,14 +1594,111 @@ html main.hc-team-entity-profile .hc-team-reviews-trust-strip :where(p,small,.mu
   color: var(--hc-foreground-muted) !important;
 }
 
-/* Preserve the brand fallback while keeping crest marks legible on orange. */
-html.theme-light main.hc-team-entity-profile .hc-team-profile-logo.hc-team-logo--fallback {
-  background: #FF5A1F !important;
-  color: #0A0A0A !important;
+
+/* VERIFY-1 — Keep men's and women's club heroes readable at phone widths. */
+.hc-womens-profile-page .hc-team-social-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
 }
-html.theme-light main.hc-team-entity-profile .hc-team-profile-logo.hc-team-logo--fallback .hc-team-logo__crest path {
-  stroke: #0A0A0A !important;
+.hc-womens-profile-page .hc-team-profile-heading {
+  display: flex;
+  flex: 1 1 100%;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
 }
-html.theme-light main.hc-team-entity-profile .hc-team-profile-logo.hc-team-logo--fallback .hc-team-logo__crest text {
-  fill: #0A0A0A !important;
+.hc-womens-profile-page .hc-team-profile-heading__copy {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.hc-womens-profile-page .hc-team-profile-heading__copy h1,
+.hc-team-entity-profile .hc-team-profile-hero > #hc-team-profile-title {
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: manual;
+}
+.hc-womens-profile-page .hc-team-social-stats {
+  display: flex;
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+}
+.hc-womens-profile-page .hc-team-profile-logo {
+  flex: 0 0 auto;
+}
+@media (max-width: 520px) {
+  .hc-womens-profile-page .hc-team-profile-heading__copy h1 {
+    font-size: clamp(1.55rem, 7vw, 2.25rem);
+    line-height: 1.04;
+    letter-spacing: -0.035em;
+  }
+  .hc-womens-profile-page .hc-team-social-stats > * {
+    min-width: 0;
+  }
+}
+
+/* Shared club hero: identical information hierarchy for men's and women's profiles. */
+.hc-womens-profile-page .hc-team-profile-hero {
+  width: 100%;
+  min-width: 0;
+  background: var(--hc-surface-raised, var(--hc-paper-strong, #fff));
+  color: var(--hc-foreground, #0a0a0a);
+  border: 1px solid var(--hc-border, rgba(128,128,128,.25));
+}
+.hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+.hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-kicker {
+  color: var(--hc-orange, #ff5a1f);
+}
+.hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-meta,
+.hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-stat small {
+  color: var(--hc-foreground-muted, #666);
+}
+.hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  min-width: 0;
+  border-top: 1px solid var(--hc-border, rgba(128,128,128,.25));
+}
+.hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-stat {
+  min-width: 0;
+  overflow-wrap: normal;
+}
+.hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-stat + .hc-team-profile-stat {
+  border-left: 1px solid var(--hc-border, rgba(128,128,128,.25));
+}
+.hc-womens-profile-page .hc-team-profile-hero :where(h1,.hc-team-profile-meta) {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: normal;
+  white-space: normal;
+}
+@media (max-width: 520px) {
+  .hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .hc-womens-profile-page .hc-team-profile-hero .hc-team-profile-stat {
+    padding-inline: 8px;
+  }
+  .hc-womens-profile-page .hc-team-profile-hero h1 {
+    font-size: clamp(1.55rem, 7vw, 2.25rem);
+    line-height: 1.04;
+    letter-spacing: -0.035em;
+  }
 }

@@ -1,0 +1,171 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import ts from "typescript";
+
+const source = readFileSync(new URL("../lib/membership-tier.ts", import.meta.url), "utf8");
+const compiled = ts.transpileModule(source, {
+  compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 },
+}).outputText;
+const moduleUrl = "data:text/javascript;base64," + Buffer.from(compiled).toString("base64");
+const { getHoopCheckEntitlements } = await import(moduleUrl);
+
+const active = (plan) => ({ plan, status: "active", access_status: "active" });
+const keys = [
+  "canReadHoopFeed", "canWriteHoopFeed", "canReadFanFeed", "canWriteFanFeed",
+  "canReadFullReviews", "canViewTrustScore", "canWriteReviews",
+  "canUseLiveGameHub", "canUseLiveGameChat", "canUseFanGroups",
+  "canModerateFanGroups", "canCompare", "canUseContractCheck",
+  "canUseProPassport", "canUsePayOnTimeIndex", "canViewTeamPayHistory",
+  "canSubmitPayCheckIn", "canUseAskPlayer", "canConnectWithFans",
+  "canSwitchBasketballSide", "canStartCoachIdentityVerification", "canUseRecruitingNetwork",
+];
+
+const cases = [
+  ["Player Free", { accountType: "player" }, {
+    canReadHoopFeed:false, canWriteHoopFeed:false, canReadFanFeed:false, canWriteFanFeed:false,
+    canReadFullReviews:false, canViewTrustScore:false, canWriteReviews:false,
+    canUseLiveGameHub:false, canUseLiveGameChat:false, canUseFanGroups:false,
+    canModerateFanGroups:false, canCompare:false, canUseContractCheck:false,
+    canUseProPassport:false, canUsePayOnTimeIndex:false, canViewTeamPayHistory:true,
+    canSubmitPayCheckIn:false, canUseAskPlayer:false,
+  }],
+  ["Player Pro", { accountType: "player", subscription: active("pro"), playerVerified:true }, {
+    canReadHoopFeed:true, canWriteHoopFeed:true, canReadFanFeed:false, canWriteFanFeed:false,
+    canReadFullReviews:true, canViewTrustScore:true, canWriteReviews:true,
+    canUseLiveGameHub:true, canUseLiveGameChat:true, canUseFanGroups:false,
+    canModerateFanGroups:false, canCompare:true, canUseContractCheck:true,
+    canUseProPassport:false, canUsePayOnTimeIndex:true, canViewTeamPayHistory:true,
+    canSubmitPayCheckIn:true, canUseAskPlayer:true,
+  }],
+  ["Player Premium", { accountType: "player", subscription: active("premium"), playerVerified:true }, {
+    canReadHoopFeed:true, canWriteHoopFeed:true, canReadFanFeed:false, canWriteFanFeed:false,
+    canReadFullReviews:true, canViewTrustScore:true, canWriteReviews:true,
+    canUseLiveGameHub:true, canUseLiveGameChat:true, canUseFanGroups:false,
+    canModerateFanGroups:false, canCompare:true, canUseContractCheck:true,
+    canUseProPassport:true, canUseRecruitingNetwork:true, canUsePayOnTimeIndex:true, canViewTeamPayHistory:true,
+    canSubmitPayCheckIn:true, canUseAskPlayer:true,
+  }],
+  ["Fan Free", { accountType: "fan" }, {
+    canReadHoopFeed:false, canWriteHoopFeed:false, canReadFanFeed:false, canWriteFanFeed:false,
+    canReadFullReviews:false, canViewTrustScore:false, canWriteReviews:false,
+    canUseLiveGameHub:false, canUseLiveGameChat:false, canUseFanGroups:true,
+    canModerateFanGroups:false, canCompare:false, canUseContractCheck:false,
+    canUseProPassport:false, canUsePayOnTimeIndex:false, canViewTeamPayHistory:false,
+    canSubmitPayCheckIn:false, canUseAskPlayer:false,
+  }],
+  ["Fan Pro", { accountType: "fan", subscription: active("pro") }, {
+    canReadHoopFeed:false, canWriteHoopFeed:false, canReadFanFeed:true, canWriteFanFeed:true,
+    canReadFullReviews:false, canViewTrustScore:false, canWriteReviews:false,
+    canUseLiveGameHub:true, canUseLiveGameChat:true, canUseFanGroups:true,
+    canModerateFanGroups:false, canCompare:true, canUseContractCheck:false,
+    canUseProPassport:false, canUsePayOnTimeIndex:false, canViewTeamPayHistory:false,
+    canSubmitPayCheckIn:false, canUseAskPlayer:false,
+    canConnectWithFans:true, canSwitchBasketballSide:true,
+  }],
+  ["Fan Premium", { accountType: "fan", subscription: active("premium") }, {
+    canReadHoopFeed:false, canWriteHoopFeed:false, canReadFanFeed:true, canWriteFanFeed:true,
+    canReadFullReviews:true, canViewTrustScore:true, canWriteReviews:false,
+    canUseLiveGameHub:true, canUseLiveGameChat:true, canUseFanGroups:true,
+    canModerateFanGroups:false, canCompare:true, canUseContractCheck:false,
+    canUseProPassport:false, canUsePayOnTimeIndex:false, canViewTeamPayHistory:false,
+    canSubmitPayCheckIn:false, canUseAskPlayer:false,
+    canConnectWithFans:true, canSwitchBasketballSide:true,
+  }],
+  ["Coach", { accountType: "coach", subscription: active("pro") }, {
+    canReadHoopFeed:false, canWriteHoopFeed:false, canReadFanFeed:false, canWriteFanFeed:false,
+    canReadFullReviews:true, canViewTrustScore:true, canWriteReviews:false,
+    canUseLiveGameHub:false, canUseLiveGameChat:false, canUseFanGroups:false,
+    canModerateFanGroups:false, canCompare:true, canUseContractCheck:true,
+    canUseProPassport:false, canUsePayOnTimeIndex:true, canViewTeamPayHistory:true,
+    canSubmitPayCheckIn:false, canUseAskPlayer:false,
+    canStartCoachIdentityVerification:true,
+  }],
+  ["Agent", { accountType: "agent", subscription: active("pro") }, {
+    canReadHoopFeed:true, canWriteHoopFeed:false, canReadFanFeed:false, canWriteFanFeed:false,
+    canReadFullReviews:true, canViewTrustScore:true, canWriteReviews:false,
+    canUseLiveGameHub:false, canUseLiveGameChat:false, canUseFanGroups:false,
+    canModerateFanGroups:false, canCompare:true, canUseContractCheck:true,
+    canUseProPassport:true, canUsePayOnTimeIndex:true, canViewTeamPayHistory:true,
+    canSubmitPayCheckIn:false, canUseAskPlayer:true,
+  }],
+  ["Club admin", { accountType: "club_admin", subscription: active("pro") }, {
+    canReadHoopFeed:false, canWriteHoopFeed:false, canReadFanFeed:false, canWriteFanFeed:false,
+    canReadFullReviews:true, canViewTrustScore:true, canWriteReviews:false,
+    canUseLiveGameHub:false, canUseLiveGameChat:false, canUseFanGroups:false,
+    canModerateFanGroups:true, canCompare:true, canUseContractCheck:true,
+    canUseProPassport:false, canUsePayOnTimeIndex:true, canViewTeamPayHistory:true,
+    canSubmitPayCheckIn:false, canUseAskPlayer:false,
+  }],
+  ["Signed out", { accountType: null }, {
+    canReadHoopFeed:false, canWriteHoopFeed:false, canReadFanFeed:false, canWriteFanFeed:false,
+    canReadFullReviews:false, canViewTrustScore:false, canWriteReviews:false,
+    canUseLiveGameHub:false, canUseLiveGameChat:false, canUseFanGroups:false,
+    canModerateFanGroups:false, canCompare:false, canUseContractCheck:false,
+    canUseProPassport:false, canUsePayOnTimeIndex:false, canViewTeamPayHistory:false,
+    canSubmitPayCheckIn:false, canUseAskPlayer:false,
+  }],
+];
+
+for (const [label, input, expected] of cases) {
+  const actual = getHoopCheckEntitlements(input);
+  for (const key of keys) assert.equal(actual[key], expected[key] ?? false, label + " → " + key);
+}
+
+const expired = getHoopCheckEntitlements({
+  accountType: "player",
+  subscription: { ...active("premium"), current_period_end: "2000-01-01T00:00:00.000Z" },
+  playerVerified: true,
+});
+assert.equal(expired.canReadFullReviews, false, "expired Premium must not retain Pro access");
+assert.equal(expired.canSubmitPayCheckIn, false, "expired Premium must not submit pay check-ins");
+
+const trialing = getHoopCheckEntitlements({
+  accountType: "player",
+  subscription: { plan: "premium", status: "trialing", access_status: "trialing" },
+  playerVerified: true,
+});
+assert.equal(trialing.canWriteReviews, true, "trialing Premium inherits Pro access");
+
+const unverified = getHoopCheckEntitlements({
+  accountType: "player", subscription: active("premium"), playerVerified: false,
+});
+assert.equal(unverified.canWriteReviews, false, "unverified players cannot write reviews");
+assert.equal(unverified.canSubmitPayCheckIn, false, "unverified player cannot submit pay check-ins");
+
+
+const read = (relative) => readFileSync(new URL(relative, import.meta.url), "utf8");
+const menProfile = read("../app/teams/[id]/page.tsx");
+const womenProfile = read("../app/womens/[id]/page.tsx");
+const coachProfile = read("../app/coaches/[id]/page.tsx");
+const leagueProfile = read("../app/leagues/[id]/page.tsx");
+const liveChat = read("../app/fan-live/page.tsx");
+const liveHub = read("../app/live-games/page.tsx");
+const payApi = read("../app/api/team-pay-checkins/route.ts");
+const trustApi = read("../app/api/trust-score/route.ts");
+const membershipPage = read("../app/membership/page.tsx");
+const accountPage = read("../app/account/page.tsx");
+const fanConnection = read("../components/FanConnectionButton.tsx");
+
+for (const [label, page] of [["men's team", menProfile], ["women's team", womenProfile]]) {
+  assert.match(page, /import TeamProfileHero/, label + " must use the shared team hero");
+  assert.equal((page.match(/<ReviewMembershipGate/g) || []).length, 1, label + " must render exactly one shared review gate");
+}
+for (const [label, page] of [["coach", coachProfile], ["league", leagueProfile]]) {
+  assert.equal((page.match(/<ReviewMembershipGate/g) || []).length, 1, label + " must render exactly one shared review gate");
+}
+assert.match(menProfile, /accountType !== "fan"/, "fan profiles must not render the team Pay tab");
+assert.match(menProfile, /\["coach", "manager", "club_admin", "admin"\]\.includes\(accountType\)/, "Team Portal must be role-gated");
+assert.match(menProfile, /href="\/team-dashboard"/, "Team Portal link must remain present for managers");
+assert.match(payApi, /entitlements\.canViewTeamPayHistory/, "payment-history API must enforce the shared role entitlement");
+assert.match(liveChat, /from\("womens_teams"\)/, "Live Game Chat must resolve women's teams");
+assert.match(liveChat, /opponent_team_id/, "Live Game Chat must resolve both fixture sides");
+assert.match(liveChat, /canUseLiveGameChat/, "Live Game Chat must use the shared chat entitlement");
+assert.match(liveHub, /womens_teams/, "Live Game Hub must include women's teams");
+assert.match(trustApi, /row\.womens_team_id/, "women's Trust Score must aggregate women's reviews");
+assert.match(membershipPage, /Built for fans who follow the game/, "Fan membership page must not use player upsell copy");
+assert.match(membershipPage, /HOOPCHECK FAN PRO/, "Fan Pro plan must be role-labelled");
+assert.match(membershipPage, /HOOPCHECK FAN PREMIUM/, "Fan Premium plan must be role-labelled");
+assert.match(accountPage, /entitlements\.canUseRecruitingNetwork/, "Premium recruiting upsell must be player-only");
+assert.match(fanConnection, /accountType !== "fan"/, "fan connection gates must be hidden from non-fans");
+
+console.log("VERIFY-1 entitlement matrix: " + cases.length + " role/tier cells and edge cases passed (" + keys.length + " entitlements).");

@@ -13,7 +13,8 @@
     "audit:bundle": "node scripts/audit-bundle.mjs",
     "check:hub-theme-pairing": "node scripts/check-hub-theme-pairing.mjs",
     "check:card-theme-pairing": "node scripts/check-card-theme-pairing.mjs",
-    "check:fol1-feed-boundary": "node scripts/check-fol1-feed-boundary.mjs"
+    "check:fol1-feed-boundary": "node scripts/check-fol1-feed-boundary.mjs",
+    "test:entitlements": "node scripts/test-membership-tier.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.7.0",

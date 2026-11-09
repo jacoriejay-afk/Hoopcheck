@@ -11,7 +11,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../../lib/supabase";
-import { isAtLeastTier } from "../../../../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../../../../lib/membership-tier";
 
 type Team = {
   id: string;
@@ -218,16 +218,13 @@ export default function TeamReviewPage() {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      const hasActiveSubscription =
-        (subscription?.status === "active" || subscription?.status === "trialing" ||
-          subscription?.access_status === "pro" || subscription?.access_status === "premium") &&
-        isAtLeastTier(subscription?.plan, "pro");
-      const hasValidSubscription =
-        hasActiveSubscription &&
-        (!subscription?.current_period_end ||
-          new Date(subscription.current_period_end) > new Date());
-
-      if (!isAdmin && !hasValidSubscription) {
+      const entitlements = getHoopCheckEntitlements({
+        accountType: profile?.account_type,
+        subscription,
+        isAdmin,
+        playerVerified: profile?.player_verified === true,
+      });
+      if (!isAdmin && !entitlements.canWriteReviews) {
         window.location.href = "/membership";
         return;
       }
@@ -259,7 +256,7 @@ export default function TeamReviewPage() {
         setAlreadyReviewed(true);
       }
 
-      setIsPaid(hasValidSubscription);
+      setIsPaid(isAdmin || entitlements.canWriteReviews);
 
       setLoading(false);
     }

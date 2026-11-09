@@ -4,33 +4,31 @@ import {useParams} from "next/navigation";
 import Link from "next/link";
 import {supabase} from "../../../lib/supabase";
 import {useLanguage} from "../../../components/LanguageProvider";
-import FollowButton from "../../../components/FollowButton";
 import Surface from "../../../components/Surface";
 import HoopLoading from "../../../components/HoopLoading";
-import "../../hoopcheck-brand-team.css";
-import TeamLogo from "../../../components/TeamLogo";
 import ClaimedTeamLogoEditor from "../../../components/ClaimedTeamLogoEditor";
-import TeamPlayersHistory from "../../../components/TeamPlayersHistory";
+import TeamProfileHero from "../../../components/TeamProfileHero";
+import "../../hoopcheck-brand-team.css";
+import ReviewMembershipGate from "../../../components/ReviewMembershipGate";
+import TeamFanGroupEntry from "../../../components/TeamFanGroupEntry";
 import FanTeamPosts from "../../../components/FanTeamPosts";
 
 export default function WomensTeam(){
  const {formatDate,formatNumber,t}=useLanguage();
- const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [knownPlayerFollowers,setKnownPlayerFollowers]=useState<string[]>([]); const [viewerAccountType,setViewerAccountType]=useState<string|null>(null);
+ const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [accountType,setAccountType]=useState(""); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [teamFollowerCount,setTeamFollowerCount]=useState(0); const [trustScoreData,setTrustScoreData]=useState<any>(null);
  useEffect(() => {
    let active = true;
    (async () => {
-     const { data: teamData, error: teamError } = await supabase.from("womens_teams")
-       .select("id,name,country,city,league_id,league_name,logo_url,logo_bg").eq("id", id).maybeSingle();
+     const [{ data: teamData, error: teamError }, { count: followerCount }] = await Promise.all([
+       supabase.from("womens_teams").select("id,name,country,city,league_id,league_name,logo_url,logo_bg").eq("id", id).maybeSingle(),
+       supabase.from("follow_relationships").select("id", { count: "exact", head: true }).eq("target_type", "team").eq("target_id", id),
+     ]);
      if (teamError) console.error("Unable to load women’s team profile:", teamError);
      if (!active) return;
      setTeam(teamData || null);
+     setTeamFollowerCount(followerCount || 0);
      const { data: { session } } = await supabase.auth.getSession();
      if (session?.user) {
-       const { data: profile } = await supabase.from("profiles")
-         .select("account_type,basketball_type,player_verified,selected_womens_team_id").eq("id", session.user.id).maybeSingle();
-       const { data: sharedProfiles } = await supabase.rpc("get_shared_team_followers", { p_team_id: id });
-       setKnownPlayerFollowers((sharedProfiles || []).map((row:any)=>row.display_name).filter(Boolean));
-       setViewerAccountType(profile?.account_type || null);
        const response = await fetch(`/api/review-access?entityType=womens-team&entityId=${encodeURIComponent(id)}`, {
          headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store",
        });
@@ -38,11 +36,20 @@ export default function WomensTeam(){
        const tier = (payload?.tier || "free") as typeof reviewTier;
        if (!active) return;
        setReviewTier(tier);
-       const fullRead = ["premium", "player", "member"].includes(tier);
+       setAccountType(payload?.accountType || "");
+       const fullRead = payload?.canReadFull === true;
        setCanSeeRatings(tier !== "free");
        setCanViewReviews(fullRead);
-       setCanReview(profile?.account_type === "player" && profile?.basketball_type === "womens" &&
-         Boolean(profile?.player_verified) && profile?.selected_womens_team_id === id);
+       setCanReview(payload?.canWrite === true);
+       if (fullRead) {
+         const trustResponse = await fetch(`/api/trust-score?entityType=womens-team&entityId=${encodeURIComponent(id)}`, {
+           headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store",
+         });
+         const trustPayload = trustResponse.ok ? await trustResponse.json() : null;
+         if (active) setTrustScoreData(trustPayload);
+       } else {
+         setTrustScoreData(null);
+       }
        const summary = payload?.summary;
        if (summary) {
          setRatingCount(Number(summary.review_count || 0));
@@ -50,7 +57,7 @@ export default function WomensTeam(){
        }
        setReviews(fullRead && Array.isArray(payload?.reviews) ? payload.reviews : []);
      } else {
-       setCanSeeRatings(false); setCanViewReviews(false); setCanReview(false); setReviewTier("free"); setReviews([]);
+       setCanSeeRatings(false); setCanViewReviews(false); setCanReview(false); setReviewTier("free"); setAccountType(""); setTrustScoreData(null); setReviews([]);
      }
      if (active) setLoading(false);
    })().catch(error => { console.error("Unable to load women’s team review access:", error); if (active) setLoading(false); });
@@ -60,74 +67,49 @@ export default function WomensTeam(){
  if(!team)return <main className="page-shell hc-womens-profile-page"><div className="page-container"><Surface as="section" className="hero-card"><h1>{t("womenTeamNotFound")}</h1><Link href="/womens" className="btn">{t("backToWomensBasketball")}</Link></Surface></div></main>;
  const average=ratingAverage;
  return <main className="page-shell hc-womens-profile-page"><div className="page-container">
- <nav className="hc-directory-switcher hc-profile-directory-switcher" aria-label="Browse HoopCheck directories">
-   <span className="hc-directory-switcher-label">EXPLORE HOOPCHECK</span>
-   <Link href="/teams">Men’s Teams</Link>
-   <Link href="/womens" aria-current="page">Women’s Teams</Link>
-   <Link href="/coaches">Coaches</Link>
-   <Link href="/leagues">Leagues</Link>
-   {viewerAccountType !== "fan" && <Link href="/players">Players</Link>}
-   <Link href="/search">Global Search</Link>
+ <TeamProfileHero
+   className="hc-womens-branded-hero"
+   teamId={team.id}
+   name={team.name}
+   country={team.country || t("international")}
+   city={team.city}
+   leagueName={team.league_name || t("professional")}
+   logoUrl={team.logo_url}
+   logoBg={team.logo_bg}
+   reviewCount={ratingCount}
+   followerCount={teamFollowerCount}
+   trustScore={trustScoreData ? { score: trustScoreData.score ?? null, explanation: trustScoreData.explanation || "Trust Score", reviewCount: trustScoreData.reviewCount ?? ratingCount, verifiedReviewCount: trustScoreData.verifiedReviewCount ?? 0 } : null}
+   onFollowerCountChange={setTeamFollowerCount}
+ />
+ <nav className="hc-team-profile-nav" aria-label="Team profile sections">
+   <a href="#overview" aria-current="page">Overview</a>
+   <a href="#reviews">Reviews</a>
  </nav>
- <Surface as="section" className="hero-card hc-social-profile-header hc-team-branded-hero hc-womens-branded-hero"><span className="hc-team-art-label">Women’s basketball · AI arena artwork</span><div className="hc-social-profile-top hc-team-social-top"><div className="hc-team-profile-heading hc-team-profile-heading--club"><TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={72} className="hc-team-profile-logo"/><div className="hc-team-profile-heading__copy"><p className="hc-team-profile-kicker">HOOPCHECK CLUB PROFILE</p><h1>{team.name}</h1><p className="hc-team-profile-meta">{team.country||t("international")}{team.city?" · "+team.city:""} · {team.league_name||t("professional")}</p></div></div><div className="hc-social-stats hc-team-social-stats"><span><strong>{ratingCount}</strong><small>Reviews</small></span><span><strong>—</strong><small>Trust Score</small></span><FollowButton targetType="team" targetId={team.id} variant="club" showNotifications={false}/></div></div>{viewerAccountType !== "fan" && knownPlayerFollowers.length>0&&<p className="hc-team-social-proof">Followed by players you follow: <strong>{knownPlayerFollowers.join(", ")}</strong></p>}<div className="actions">{canReview&&<Link href={"/womens/"+team.id+"/review"} className="btn">{t("writeAReview")}</Link>}</div>{viewerAccountType !== "fan" && <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} teamTable="womens_teams" onSaved={(logoUrl, logoBg) => setTeam((current:any) => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />}</Surface>
+ <TeamFanGroupEntry teamId={team.id} />
+ {canReview && <div className="entity-actions"><Link href={"/womens/" + team.id + "/review"} className="btn">Write a Review</Link></div>}
+ <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} teamTable="womens_teams" onSaved={(logoUrl, logoBg) => setTeam((current:any) => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
  <section className="grid compact-grid">
-    {viewerAccountType === "fan" ? (reviewTier === "premium" ? <Surface className="card"><span className="card-kicker">{t("rating")}</span><h2>{average===null?"—":average.toFixed(1)+"/5"}</h2><p className="muted">{formatNumber(ratingCount)+" "+(ratingCount===1?t("publishedReview"):t("publishedReviews"))}</p></Surface> : reviewTier === "pro" ? <Surface className="card hc-fan-review-teaser"><span className="card-kicker">{t("rating")}</span><h2 aria-label="Overall star rating">★★★★★</h2><p className="muted">Fan Premium unlocks full team reviews and ratings.</p><Link href="/membership" className="btn">Upgrade to Fan Premium</Link></Surface> : <Surface className="card hc-membership-locked-state"><span aria-hidden="true">🔒</span><h2>Team reviews are available with Fan Premium.</h2><Link href="/membership" className="btn">View Fan Premium</Link></Surface>) : ["premium","player","member"].includes(reviewTier) ? <Surface className="card"><span className="card-kicker">{t("rating")}</span><h2>{average===null?"—":average.toFixed(1)+"/5"}</h2><p className="muted">{formatNumber(ratingCount)+" "+(ratingCount===1?t("publishedReview"):t("publishedReviews"))}</p></Surface> : reviewTier === "pro" ? <Surface className="card hc-fan-review-teaser"><span className="card-kicker">{t("rating")}</span><h2 aria-label="Overall star rating">★★★★★</h2><p className="muted">Limited rating preview</p><Link href="/membership" className="btn">Upgrade</Link></Surface> : <Surface className="card hc-membership-locked-state"><span aria-hidden="true">🔒</span><h2>Full player reviews require an eligible membership</h2><Link href="/membership" className="btn">Upgrade</Link></Surface>}
+    {canSeeRatings ? <Surface className="card"><span className="card-kicker">{t("rating")}</span><h2>{average===null?"—":average.toFixed(1)+"/5"}</h2><p className="muted">{formatNumber(ratingCount)+" "+(ratingCount===1?t("publishedReview"):t("publishedReviews"))}</p></Surface> : null}
     <Surface className="card"><span className="card-kicker">{t("league")}</span><h2>{team.league_name||t("professional")}</h2><p className="muted">{team.country||t("international")}</p></Surface>
   </section>
-  <Surface as="section" className="dashboard-card compact-section">
-    {viewerAccountType === "fan" ? (
-      reviewTier === "premium" && canViewReviews ? (
-        <div>
-          <p className="eyebrow">TEAM REVIEWS</p>
-          <h2>Team reviews</h2>
-          {reviews.map(r => <article className="compact-review" key={r.id}>
-            <div className="review-line"><strong>{r.title || "Team review"}</strong><strong>{Number(r.overall_rating).toFixed(1)}/5</strong></div>
-            <p>{r.body}</p>
-            <small className="muted">{formatDate(r.created_at)}</small>
-          </article>)}
-          {!reviews.length && <p className="muted">{t("noPublishedReviewsYet")}</p>}
-        </div>
-      ) : (
-        <div>
-          <p className="eyebrow">{t("membership")}</p>
-          <h2>Team reviews are available with Fan Premium.</h2>
-          <p>Upgrade to read full team ratings and reviews.</p>
-          <Link href="/membership" className="btn">View Fan Premium</Link>
-        </div>
-      )
+  <Surface as="section" id="reviews" className="dashboard-card compact-section">
+    {!canViewReviews ? (
+      <ReviewMembershipGate
+        title="Full player reviews require an eligible membership"
+        description="Sign in with an eligible active membership to view full reviews and ratings."
+        actionLabel="Upgrade"
+        accountType={accountType}
+        tier={reviewTier}
+      />
     ) : (
-      reviewTier === "pro" ? (
-        <div>
-          <p className="eyebrow">{t("playerExperiences")}</p>
-          <h2>{t("ratingsReviews")}</h2>
-          <p className="hc-review-star-row">★★★★★ {average === null ? "" : average.toFixed(1) + "/5"}</p>
-          <p>Players and other eligible active members can access full reviews and ratings. Fan access depends on the active plan.</p>
-          <div className="hc-review-category-teaser">
-            {["Communication", "Professionalism", "Development", "Payment"].map(label => <div className="hc-review-category-row" key={label}><span>{label}</span><span className="hc-review-score-blur" aria-label="Score available with Fan Premium">★★★★★</span></div>)}
-          </div>
-          <Link href="/membership" className="btn">Upgrade</Link>
-        </div>
-      ) : canViewReviews ? (
-        <div>
-          <p className="eyebrow">{t("playerExperiences")}</p>
-          <h2>{t("ratingsReviews")}</h2>
-          {reviews.map(r => <article className="compact-review" key={r.id}>
-            <div className="review-line"><strong>{r.title || t("playerExperience")}</strong><strong>{Number(r.overall_rating).toFixed(1)}/5</strong></div>
-            <p>{r.body}</p>
-            <small className="muted">{formatDate(r.created_at)}</small>
-          </article>)}
-          {!reviews.length && <p className="muted">{t("noPublishedReviewsYet")}</p>}
-        </div>
-      ) : (
-        <div>
-          <p className="eyebrow">{t("membership")}</p>
-          <h2>Full player reviews require an eligible membership</h2>
-          <p>Players and other eligible active members can access full reviews. Fan access depends on the active plan.</p>
-          <Link href="/membership" className="btn">Upgrade</Link>
-        </div>
-      )
+      <>
+        <p className="eyebrow">{t("playerExperiences")}</p>
+        <h2>{t("ratingsReviews")}</h2>
+        {reviews.map(r=><article className="compact-review" key={r.id}><div className="review-line"><strong>{r.title||t("playerExperience")}</strong><strong>{Number(r.overall_rating).toFixed(1)}/5</strong></div><p>{r.body}</p><small className="muted">{formatDate(r.created_at)}</small></article>)}
+        {!reviews.length&&<p className="muted">{t("noPublishedReviewsYet")}</p>}
+      </>
     )}
   </Surface>
-  <FanTeamPosts teamId={team.id} teamType="womens" />
+  <FanTeamPosts teamId={team.id} />
   <div className="bottom-back"><button type="button" className="btn dark" onClick={()=>window.history.back()}>← {t("back")}</button></div></div></main>;
 }

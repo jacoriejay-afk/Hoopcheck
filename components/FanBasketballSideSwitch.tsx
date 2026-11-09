@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
-import { isAtLeastTier } from "../lib/membership-tier";
+import { getHoopCheckEntitlements } from "../lib/membership-tier";
 import { useLanguage } from "./LanguageProvider";
 
 export type BasketballSide = "mens" | "womens";
@@ -70,15 +70,13 @@ export default function FanBasketballSideSwitch({ lockedHint = false }: { locked
       if (!user) { if (alive) setReady(true); return; }
       const [{ data: profile }, { data: subscription }] = await Promise.all([
         supabase.from("profiles").select("account_type,preferred_basketball_side").eq("id", user.id).maybeSingle(),
-        supabase.from("subscriptions").select("plan,status,current_period_end").eq("user_id", user.id).maybeSingle(),
+        supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
       ]);
       if (!alive) return;
       const fan = profile?.account_type === "fan";
-      const active = ["active", "trialing"].includes(subscription?.status || "") &&
-        (!subscription?.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now());
-      const premiumTier = active && isAtLeastTier(subscription?.plan, "pro");
+      const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription });
       setIsFan(fan);
-      setCanSwitch(fan && premiumTier);
+      setCanSwitch(entitlements.canSwitchBasketballSide);
       let preferred = profile?.preferred_basketball_side as BasketballSide | null;
       if (preferred !== "mens" && preferred !== "womens") {
         const { data: follows } = await supabase.from("follow_relationships").select("target_type,target_id,created_at")
