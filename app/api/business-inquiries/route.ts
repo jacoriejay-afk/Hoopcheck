@@ -8,6 +8,8 @@ const json = (message: string, status: number) => NextResponse.json({ message },
 
 export async function POST(request: NextRequest) {
   // Fail closed until both CAPTCHA and server-side storage are configured.
+  if (process.env.BUSINESS_INQUIRIES_API_ENABLED !== "true")
+    return json("Public inquiries are temporarily unavailable.", 503);
   const secret = process.env.TURNSTILE_SECRET_KEY;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
