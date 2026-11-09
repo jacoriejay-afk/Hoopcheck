@@ -54,7 +54,7 @@ const cases = [
     canSubmitPayCheckIn:false, canUseAskPlayer:false,
   }],
   ["Fan Pro", { accountType: "fan", subscription: active("pro") }, {
-    canReadHoopFeed:false, canWriteHoopFeed:false, canReadFanFeed:true, canWriteFanFeed:true,
+    canReadHoopFeed:true, canWriteHoopFeed:true, canReadFanFeed:true, canWriteFanFeed:true,
     canReadFullReviews:false, canViewTrustScore:false, canWriteReviews:false,
     canUseLiveGameHub:true, canUseLiveGameChat:true, canUseFanGroups:true,
     canModerateFanGroups:false, canCompare:true, canUseContractCheck:false,
@@ -63,7 +63,7 @@ const cases = [
     canConnectWithFans:true, canSwitchBasketballSide:true,
   }],
   ["Fan Premium", { accountType: "fan", subscription: active("premium") }, {
-    canReadHoopFeed:false, canWriteHoopFeed:false, canReadFanFeed:true, canWriteFanFeed:true,
+    canReadHoopFeed:true, canWriteHoopFeed:true, canReadFanFeed:true, canWriteFanFeed:true,
     canReadFullReviews:true, canViewTrustScore:true, canWriteReviews:false,
     canUseLiveGameHub:true, canUseLiveGameChat:true, canUseFanGroups:true,
     canModerateFanGroups:false, canCompare:true, canUseContractCheck:false,
@@ -72,7 +72,7 @@ const cases = [
     canConnectWithFans:true, canSwitchBasketballSide:true,
   }],
   ["Coach", { accountType: "coach", subscription: active("pro") }, {
-    canReadHoopFeed:false, canWriteHoopFeed:false, canReadFanFeed:false, canWriteFanFeed:false,
+    canReadHoopFeed:true, canWriteHoopFeed:true, canReadFanFeed:false, canWriteFanFeed:false,
     canReadFullReviews:true, canViewTrustScore:true, canWriteReviews:false,
     canUseLiveGameHub:false, canUseLiveGameChat:false, canUseFanGroups:false,
     canModerateFanGroups:false, canCompare:true, canUseContractCheck:true,
@@ -81,7 +81,7 @@ const cases = [
     canStartCoachIdentityVerification:true,
   }],
   ["Agent", { accountType: "agent", subscription: active("pro") }, {
-    canReadHoopFeed:true, canWriteHoopFeed:false, canReadFanFeed:false, canWriteFanFeed:false,
+    canReadHoopFeed:true, canWriteHoopFeed:true, canReadFanFeed:false, canWriteFanFeed:false,
     canReadFullReviews:true, canViewTrustScore:true, canWriteReviews:false,
     canUseLiveGameHub:false, canUseLiveGameChat:false, canUseFanGroups:false,
     canModerateFanGroups:false, canCompare:true, canUseContractCheck:true,
@@ -89,7 +89,7 @@ const cases = [
     canSubmitPayCheckIn:false, canUseAskPlayer:true,
   }],
   ["Club admin", { accountType: "club_admin", subscription: active("pro") }, {
-    canReadHoopFeed:false, canWriteHoopFeed:false, canReadFanFeed:false, canWriteFanFeed:false,
+    canReadHoopFeed:true, canWriteHoopFeed:true, canReadFanFeed:false, canWriteFanFeed:false,
     canReadFullReviews:true, canViewTrustScore:true, canWriteReviews:false,
     canUseLiveGameHub:false, canUseLiveGameChat:false, canUseFanGroups:false,
     canModerateFanGroups:true, canCompare:true, canUseContractCheck:true,
