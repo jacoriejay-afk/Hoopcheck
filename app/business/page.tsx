@@ -7,10 +7,10 @@ export const metadata: Metadata = {
 };
 
 const opportunities = [
-  { id: "sponsors", title: "Sponsorships", eyebrow: "Brand visibility", description: "Reach basketball players and fans through clearly labeled, mutually approved campaigns. Packages and inventory are discussed individually.", points: ["Social media collaborations", "Sponsored content and placements, subject to availability", "Campaign reporting and transparent deliverables"] },
-  { id: "investors", title: "Investor inquiries", eyebrow: "Private discussion", description: "Request an introductory conversation about HoopCheck™ and its business plans. This page is not an offer to sell securities or a solicitation to invest.", points: ["Company overview and product roadmap", "Verified operating and financial information", "Legal review before any investment terms are offered"] },
-  { id: "strategic", title: "Strategic partnerships", eyebrow: "Build together", description: "Work with HoopCheck™ on basketball community development, athlete outreach, media, and commercial relationships.", points: ["Clubs, leagues and agencies", "Basketball media and service providers", "Joint campaigns and product feedback"] },
-  { id: "ambassadors", title: "Athlete ambassadors", eyebrow: "Player voices", description: "Help introduce HoopCheck™ to the basketball community through authentic, clearly disclosed promotions.", points: ["Custom campaign deliverables", "Referral arrangements when tracking is ready", "Independent and truthful player reviews"] },
+  { id: "sponsors", title: "Sponsorships", eyebrow: "Brand visibility", description: "Reach basketball players and fans through clearly labeled, mutually approved campaigns. Packages and inventory are discussed individually.", href: "/sponsors", points: ["Social media collaborations", "Sponsored content and placements, subject to availability", "Campaign reporting and transparent deliverables"] },
+  { id: "investors", title: "Investor inquiries", eyebrow: "Private discussion", description: "Request an introductory conversation about HoopCheck™ and its business plans. This page is not an offer to sell securities or a solicitation to invest.", href: "/investors", points: ["Company overview and product roadmap", "Verified operating and financial information", "Legal review before any investment terms are offered"] },
+  { id: "strategic", title: "Strategic partnerships", eyebrow: "Build together", description: "Work with HoopCheck™ on basketball community development, athlete outreach, media, and commercial relationships.", href: "/business", points: ["Clubs, leagues and agencies", "Basketball media and service providers", "Joint campaigns and product feedback"] },
+  { id: "ambassadors", title: "Athlete ambassadors", eyebrow: "Player voices", description: "Help introduce HoopCheck™ to the basketball community through authentic, clearly disclosed promotions.", href: "/ambassadors", points: ["Custom campaign deliverables", "Referral arrangements when tracking is ready", "Independent and truthful player reviews"] },
 ];
 
 export default function BusinessPartnershipsPage() {
@@ -34,6 +34,7 @@ export default function BusinessPartnershipsPage() {
             <ul className="mt-5 list-disc space-y-2 pl-5 text-sm leading-6 opacity-80">
               {item.points.map((point) => <li key={point}>{point}</li>)}
             </ul>
+            <Link href={item.href} className="mt-5 inline-flex rounded-full border border-orange-500 px-4 py-2 text-sm font-semibold text-orange-500 hover:bg-orange-500 hover:text-black">Learn more →</Link>
           </section>
         ))}
       </div>
