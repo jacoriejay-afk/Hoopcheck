@@ -94,7 +94,7 @@ export default function CoachesPage() {
       </section>
 
       <section className="grid hc-team-directory-list">
-        {loading ? (<div className="card"><HoopLoading label="Scanning coaching profiles..." /></div>) : coaches.length === 0 ? (
+        {loading ? (<div className="card"><HoopLoading variant="inline" label="Scanning coaching profiles..." /></div>) : coaches.length === 0 ? (
           <div className="card hc-coach-empty">
             <CourtLines variant="circle" className="hc-court-empty-art" />
             <div className="eyebrow hc-court-section-kicker">Coming Soon</div>

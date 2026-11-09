@@ -105,7 +105,7 @@ export default function Womens() {
           <button type="button" className={viewMode === "list" ? "is-active" : ""} onClick={() => setViewMode("list")}>☷ {t("list")}</button>
           <button type="button" className={viewMode === "map" ? "is-active" : ""} onClick={() => setViewMode("map")}>◎ {t("map")}</button>
         </div>
-        {loading ? <div className="hc-womens-loading"><HoopLoading label={t("loadingWomensTeams")} /></div> : viewMode === "map" ? (
+        {loading ? <div className="hc-womens-loading"><HoopLoading variant="inline" label={t("loadingWomensTeams")} /></div> : viewMode === "map" ? (
           <TeamMap profileBasePath="womens" teams={filtered.map(team => ({...team, latitude:null, longitude:null}))} />
         ) : filtered.length ? (
           <section className="hc-womens-team-list" aria-label={t("womensTeamResults")}>

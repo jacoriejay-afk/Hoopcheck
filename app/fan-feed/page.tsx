@@ -5,8 +5,9 @@ import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import HoopLoading from "../../components/HoopLoading";
 import { PageShell } from "../../components/LayoutSystem";
-import { FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptyState, FeedLoadingSkeleton, FeedStoryRing } from "../../components/HoopFeedShared";
+import { FeedDiscoveryHeader, FeedPostCard, FeedAuthorRow, FeedMediaArea, FeedActionRow, FeedEmptyState, FeedStoryRing } from "../../components/HoopFeedShared";
 import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
 import TeamLogo from "../../components/TeamLogo";
 import { useLanguage } from "../../components/LanguageProvider";
@@ -239,12 +240,12 @@ export default function FanFeedPage() {
     else { setFollowing(prev => new Set(prev).add(targetId)); setMessage(ft("following")); }
   }
 
-  if (loading) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><FeedLoadingSkeleton count={3} /></div></main></PageShell>;
+  if (loading) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><HoopLoading label="Loading Fan HQ…" /></div></main></PageShell>;
   if (!user) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("title")}</h1><p>{ft("signIn")}</p><Link className="btn" href="/login">{t("signIn")}</Link></section></div></main></PageShell>;
   if (profile?.account_type !== "fan") return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("fansOnly")}</h1></section></div></main></PageShell>;
   if (!membershipActive) return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page"><div className="page-container"><section className="hero-card"><h1>{ft("membershipRequired")}</h1><p>{ft("membershipDescription")}</p><Link className="btn" href="/membership">{t("membership")}</Link></section></div></main></PageShell>;
   return <PageShell><main className="page-shell hc-feed-page hc-fan-feed-page" onTouchStart={event => { touchStartY.current = window.scrollY === 0 ? (event.touches[0]?.clientY ?? null) : null; }} onTouchEnd={event => { const start = touchStartY.current; touchStartY.current = null; const end = event.changedTouches[0]?.clientY ?? 0; if (start !== null && end - start > 80 && user && !refreshing) void refreshFeed(); }}>
-      <FanBasketballSideSwitch /><div className="page-container">
+      <FanBasketballSideSwitch /><div className="page-container"><FeedDiscoveryHeader audience="fan" />
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/fans">{ft("discoverFans")}</Link><Link href="/team-hub">{ft("teamHub")}</Link><Link href="/teams">{ft("teams")}</Link></nav></header>
     <section className="hero-card hc-feed-hero"><div><p className="eyebrow">FAN HQ · CLUB COMMUNITIES</p><h1>Fan HQ</h1><p className="muted">Fan posts about the clubs you follow.</p></div><p className="hc-feed-expiry-note">Fans only<span>Posts expire after 24 hours · separate from player HoopFeed</span></p></section>
 

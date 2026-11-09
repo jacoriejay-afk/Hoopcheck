@@ -587,6 +587,7 @@ export default function TeamDetailPage() {
     <main className="hc-entity-profile-page hc-team-entity-profile">
 
 <section className="hero hc-team-profile-hero hc-social-profile-header hc-team-branded-hero" data-team-city={team.city || team.country || ""} style={{"--hc-team-hue": String([...team.name.toLowerCase()].reduce((n,c)=>(Math.imul(n,31)+c.charCodeAt(0))>>>0,7)%360)} as React.CSSProperties} id="overview" aria-labelledby="hc-team-profile-title">
+        <span className="hc-team-art-label">Men’s basketball · AI arena artwork</span>
         <div className="hc-team-profile-identity">
           <TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={112} className="hc-team-profile-logo" />
           <div className="hc-team-profile-details">
