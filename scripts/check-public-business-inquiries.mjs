@@ -12,6 +12,7 @@ const inboxSql = readFileSync("docs/sql/admin-business-inquiry-inbox.sql", "utf8
 
 test("public endpoint is explicitly server gated", () => {
   assert.match(api, /BUSINESS_INQUIRIES_API_ENABLED/);
+  assert.match(api, /BUSINESS_INQUIRIES_EDGE_RATE_LIMIT_VERIFIED !== "true"/);
   assert.match(api, /!== "true"/);
   assert.match(api, /"Cache-Control": "no-store, private"/);
   assert.match(api, /Number\.isSafeInteger\(Number\(rawLength\)\)/);
