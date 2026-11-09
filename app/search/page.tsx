@@ -138,7 +138,6 @@ function SearchContent() {
     let active = true;
 
     async function search() {
-      if (!roleReady) return;
       if (!query) {
         if (!active) return;
         setCoaches([]);
@@ -146,6 +145,8 @@ function SearchContent() {
         setWomensTeams([]);
         setLeagues([]);
         setPlayers([]);
+        setLoading(false);
+        setError("");
         return;
       }
 
@@ -153,8 +154,8 @@ function SearchContent() {
       setError("");
 
       try {
-        const searchTerm = `%${query}%`;
-        const wantsPlayers = !isFanAccount && (typeFilter === "all" || typeFilter === "players");
+        const searchTerm = `%${query.replace(/[,%()]/g, " ")}%`;
+        const wantsPlayers = roleReady && !isFanAccount && (typeFilter === "all" || typeFilter === "players");
         const wantsCoaches = typeFilter === "all" || typeFilter === "coaches";
         const wantsMensTeams = typeFilter === "all" || typeFilter === "mens-teams";
         const wantsWomensTeams = typeFilter === "all" || typeFilter === "womens-teams";
@@ -210,20 +211,16 @@ function SearchContent() {
         ]);
 
         if (!active) return;
-        if (playerResult.error) throw playerResult.error;
-        if (coachResult.error) throw coachResult.error;
-        if (teamResult.error) throw teamResult.error;
-        if (womensTeamResult.error) throw womensTeamResult.error;
-        if (leagueResult.error) throw leagueResult.error;
-
-
-        if (active) {
-          setPlayers((playerResult.data || []) as Player[]);
-          setCoaches(coachResult.data || []);
-          setTeams(teamResult.data || []);
-          setWomensTeams(womensTeamResult.data || []);
-          setLeagues(leagueResult.data || []);
+        const failures = [playerResult, coachResult, teamResult, womensTeamResult, leagueResult].filter(result => result.error);
+        if (failures.length) {
+          console.error("Some search categories failed:", failures.map(result => result.error));
+          setError("Some directories are temporarily unavailable. Available results are shown below; try another category or search again.");
         }
+        setPlayers((playerResult.error ? [] : playerResult.data || []) as Player[]);
+        setCoaches(coachResult.error ? [] : coachResult.data || []);
+        setTeams(teamResult.error ? [] : teamResult.data || []);
+        setWomensTeams(womensTeamResult.error ? [] : womensTeamResult.data || []);
+        setLeagues(leagueResult.error ? [] : leagueResult.data || []);
       } catch (err) {
         console.error(err);
         if (active) setError("Something went wrong while searching. Please try again.");
@@ -292,6 +289,10 @@ function SearchContent() {
   return (
     <main className="search-page hc-global-search-page">
       <FanBasketballSideSwitch />
+      <section className="hc-search-team-entry" aria-label="Search both basketball directories">
+        <div><p className="eyebrow">ONE GAME. BOTH DIRECTORIES.</p><h2>Find your next team</h2><p>Search men’s and women’s teams by name, city, country, or league.</p></div>
+        <div className="actions"><Link className="btn" href="/teams">Browse men’s teams ↗</Link><Link className="btn dark" href="/womens">Browse women’s teams ↗</Link></div>
+      </section>
       <nav className="hc-directory-switcher" aria-label={t("browseDirectoriesLabel")}>
         <span className="hc-directory-switcher-label">{t("browseDirectoriesLabel")}</span>
         <Link href="/teams">{t("mensTeams")}</Link>
@@ -348,7 +349,7 @@ function SearchContent() {
             {!loading && <div className="result-count">{totalResults} {t("resultCount")}</div>}
           </div>
 
-          {!error && (
+          {(
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 24 }}>
               {(roleReady && !isFanAccount ? (["all", "players", "coaches", "mens-teams", "womens-teams", "leagues"] as const) : (["all", "coaches", "mens-teams", "womens-teams", "leagues"] as const)).map((type) => (
                 <button
@@ -382,7 +383,7 @@ function SearchContent() {
             </div>
           )}
 
-          {!loading && !error && visiblePlayers.length > 0 && (
+          {!loading && visiblePlayers.length > 0 && (
             <section className="result-group">
               <div className="group-heading"><span>01</span><h3>{t("players")}</h3></div>
               <div className="result-grid">
@@ -401,7 +402,7 @@ function SearchContent() {
             </section>
           )}
 
-          {!loading && !error && visibleCoaches.length > 0 && (
+          {!loading && visibleCoaches.length > 0 && (
             <section className="result-group">
               <div className="group-heading"><span>02</span><h3>{t("coaches")}</h3></div>
               <div className="result-grid">
@@ -417,7 +418,7 @@ function SearchContent() {
             </section>
           )}
 
-          {!loading && !error && visibleTeams.length > 0 && (
+          {!loading && visibleTeams.length > 0 && (
             <section className="result-group">
               <div className="group-heading"><span>03</span><h3>{t("mensTeams")}</h3></div>
               <div className="result-grid">
@@ -428,7 +429,7 @@ function SearchContent() {
             </section>
           )}
 
-          {!loading && !error && visibleWomensTeams.length > 0 && (
+          {!loading && visibleWomensTeams.length > 0 && (
             <section className="result-group">
               <div className="group-heading"><span>04</span><h3>{t("womensTeams")}</h3></div>
               <div className="result-grid">
@@ -439,7 +440,7 @@ function SearchContent() {
             </section>
           )}
 
-          {!loading && !error && visibleLeagues.length > 0 && (
+          {!loading && visibleLeagues.length > 0 && (
             <section className="result-group">
               <div className="group-heading"><span>05</span><h3>{t("leagues")}</h3></div>
               <div className="result-grid">

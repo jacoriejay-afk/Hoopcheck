@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { HTMLAttributes, ReactNode } from "react";
 import { Card } from "./LayoutSystem";
 
@@ -47,4 +48,11 @@ export function FeedTimeRemaining({ expiresAt, now }: { expiresAt: string; now: 
   if (minutes <= 0) return <>Expired</>;
   if (minutes < 60) return <>{minutes}m left</>;
   return <>{Math.ceil(minutes / 60)}h left</>;
+}
+
+export function FeedDiscoveryHeader({ audience }: { audience: "player" | "fan" }) {
+  return <section className="hc-feed-discovery" aria-label="HoopFeed discovery">
+    <div><span className="hc-feed-live-label">THE BASKETBALL COMMUNITY</span><h2>Beyond the box score.</h2><p>{audience === "fan" ? "Your teams. Your community. Your courtside conversation." : "Real moments from practice, travel, and game day."}</p></div>
+    <nav aria-label="Explore basketball"><Link href="/search?type=mens-teams">Men’s teams ↗</Link><Link href="/search?type=womens-teams">Women’s teams ↗</Link><Link href="/membership">Membership & perks ↗</Link></nav>
+  </section>;
 }

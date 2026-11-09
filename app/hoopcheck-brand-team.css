@@ -270,3 +270,30 @@ html.theme-dark .hc-team-entity-profile .hc-team-profile-overview-grid > * {
     max-width:100%;
   }
 }
+
+/* Shared AI arena art; uploaded club logos remain the team's identity. */
+html body .hc-team-entity-profile > .hc-team-profile-hero.hc-team-branded-hero,
+html body .hc-womens-profile-page .hc-womens-branded-hero {
+  background:linear-gradient(90deg,rgba(7,12,24,.97),rgba(7,12,24,.78) 60%,rgba(7,12,24,.58)),url('/images/basketball-arena-ai.webp') center 58%/cover !important;
+  border-color:#485a78 !important;
+  border-top:3px solid #ff790b !important;
+  color:#f7f7f5 !important;
+  border-radius:18px !important;
+  overflow:hidden;
+  position:relative;
+}
+html body .hc-womens-profile-page .hc-womens-branded-hero {
+  background:linear-gradient(90deg,rgba(29,9,46,.96),rgba(29,9,46,.8) 60%,rgba(29,9,46,.58)),url('/images/basketball-arena-ai.webp') center 58%/cover !important;
+  border-color:#79548a !important;
+  border-top-color:#cf83fa !important;
+  padding:clamp(18px,2.8vw,30px) !important;
+}
+html body .hc-team-branded-hero :is(h1,.hc-team-profile-stat strong,.hc-social-stats strong) {color:#f7f7f5 !important}
+html body .hc-team-branded-hero :is(.hc-team-profile-meta,.hc-team-profile-stat small,.hc-social-stats small) {color:#e2e5ef !important}
+html body .hc-team-branded-hero .hc-team-profile-kicker {color:#ffb17a !important}
+html body .hc-womens-branded-hero .hc-team-profile-kicker {color:#e2b1ff !important}
+.hc-team-art-label {display:block;font-size:10px;font-weight:750;letter-spacing:.1em;text-transform:uppercase;color:#d2d9e9;margin-bottom:14px}
+html body .hc-team-branded-hero .hc-team-profile-logo {flex-shrink:0;min-width:64px;min-height:64px;box-shadow:0 8px 26px #0005}
+html body .hc-team-branded-hero .hc-team-profile-stats {border-color:#ffffff38 !important}
+html body .hc-team-branded-hero .hc-team-profile-stat {border-color:#ffffff38 !important}
+@media(max-width:700px){.hc-team-branded-hero .hc-team-social-top{flex-wrap:wrap;gap:18px}.hc-team-art-label{font-size:9px;letter-spacing:.05em}.hc-team-branded-hero .hc-team-profile-heading{min-width:0;width:100%}.hc-team-branded-hero .hc-team-profile-heading__copy{min-width:0}.hc-team-branded-hero h1{overflow-wrap:anywhere}}

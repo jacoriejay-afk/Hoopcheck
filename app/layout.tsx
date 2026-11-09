@@ -50,6 +50,7 @@ import "./hoopcheck-preview-mobile-hotfix.css";
 import "./hoopcheck-global-scoreboard.css";
 import "./hoopcheck-unified-layout.css";
 import "./hoopcheck-spacing-density-consolidated.css";
+import "./hoopcheck-membership-refresh.css";
 import { SITE_URL } from "../lib/site-url";
 
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
