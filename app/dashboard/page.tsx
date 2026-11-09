@@ -164,7 +164,7 @@ export default function DashboardPage() {
 
   if(loading) return <main className="page-shell dashboard-page"><div className="page-container"><HoopLoading label={t("loadingDashboard")}/></div></main>;
 
-  if(loadError)return <main className="page-shell dashboard-page"><div className="page-container"><div role="alert" className="hc-smooth-inbox-error"><strong>Dashboard unavailable.</strong> {authErrorDetail || "Please try again."}  <button type="button" onClick={()=>setReloadKey(v=>v+1)}>Retry dashboard</button></div></div></main>;
+  if(loadError)return <main className="page-shell dashboard-page"><div className="page-container"><div role="alert" className="hc-smooth-inbox-error"><strong>Dashboard unavailable.</strong> {authErrorDetail || "Please try again."} <div style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:16}}><button type="button" onClick={()=>setReloadKey(v=>v+1)}>Retry dashboard</button><Link href="/login?returnTo=/dashboard">Go to login</Link><Link href="/">Back to home</Link></div></div></div></main>;
 
   if(profile?.account_type==="fan") return (
     <main className="page-shell hc-ia-home hc-dashboard-compact"><div className="page-container">
