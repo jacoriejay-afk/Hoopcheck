@@ -53,3 +53,9 @@ The endpoint intentionally fails closed when configuration is absent. The databa
 - Production permissions verified: `anon` EXECUTE = false, `authenticated` EXECUTE = true (required to enter the function), `service_role` EXECUTE = true. The function checks `admin_roles` for an authenticated `admin` before returning any data. **Do not confuse authenticated EXECUTE with unrestricted read access.**
 - Remaining security verification: exercise RPC as a real non-admin and real admin, confirm expected 42501 rejection and successful admin read, and verify no guest data appears in non-admin pages or browser network responses.
 - Main CI and final checks must pass on the exact final SHA. The edge firewall rule is still missing; both guest feature flags remain off.
+
+## Mandatory edge-rate-limit activation guard
+
+The server requires BOTH `BUSINESS_INQUIRIES_API_ENABLED=true` and `BUSINESS_INQUIRIES_EDGE_RATE_LIMIT_VERIFIED=true`. This is a safety acknowledgement, **not** an IP rate limiter. Do not set the latter until an independent Vercel WAF (or equivalent trusted edge) rule is actually installed and tested for `POST /api/business-inquiries`.
+
+The Vercel firewall API currently reports `404 Seawall Config not found`. Do not replace the project's complete firewall configuration blindly. Check the Security dashboard, project/team entitlements, and existing managed rules before creating a configuration. Keep both flags off until an actual per-IP rule has been verified and a real Turnstile test passes.
