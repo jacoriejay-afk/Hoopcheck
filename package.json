@@ -11,7 +11,8 @@
     "check:hf4-fan-groups": "node scripts/check-hf4-fan-groups.mjs",
     "audit:bundle": "node scripts/audit-bundle.mjs",
     "check:hub-theme-pairing": "node scripts/check-hub-theme-pairing.mjs",
-    "check:card-theme-pairing": "node scripts/check-card-theme-pairing.mjs"
+    "check:card-theme-pairing": "node scripts/check-card-theme-pairing.mjs",
+    "audit:desktop-overlap": "node scripts/desktop-overlap-check.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.7.0",
