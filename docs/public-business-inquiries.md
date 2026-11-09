@@ -14,7 +14,7 @@ The endpoint intentionally fails closed when configuration is absent. The databa
 ## Release acceptance checklist
 
 - [ ] CI and Final Gate succeed for the exact merge candidate SHA. (Both passed at `eb23b7f`; rerun on final SHA.)
-- [ ] Database migrations run successfully in the intended environment; confirm no `anon` or `authenticated` access to the private table or RPC.
+- [x] Guest storage and submission RPC migrations applied to production; confirmed direct table grants and guest submission RPC privileges. Admin inbox migration also applied; anonymous EXECUTE denied. Full authenticated role testing remains pending.
 - [ ] Turnstile test keys and hostname validation work in preview; production secrets remain server-only.
 - [ ] Edge-level IP throttling is configured and tested before the endpoint is enabled.
 - [ ] Signed-out guest and signed-in member flows submit successfully without duplicate forms.
@@ -45,3 +45,11 @@ The endpoint intentionally fails closed when configuration is absent. The databa
 - Define an owner-approved export and deletion process that uses server-side service-role access only, never browser credentials or direct anonymous database grants. Avoid logging names, emails, messages, tokens or full IP addresses.
 - Add operational alerts for repeated 429/503 responses using aggregate counts without message content. Confirm notification destination before enabling alerts.
 - The Vercel project currently has preview SSO protection enabled. Production hostname is `hoopcheck.online`; preview hostname cannot be assumed to pass production Turnstile hostname validation. Plan a separate staging CAPTCHA configuration or a controlled production smoke test after the edge rule is verified.
+
+## Admin inbox implementation status (2026-11-09)
+
+- Admin UI: `/admin/business-inquiries`, linked from `/admin/users`. It calls `admin_list_public_business_inquiries` with a maximum of 50 results per request, displays the submitted contact and message, and provides manual refresh.
+- Admin read RPC source: `docs/sql/admin-business-inquiry-inbox.sql`; production migration `admin_business_inquiry_inbox` applied successfully.
+- Production permissions verified: `anon` EXECUTE = false, `authenticated` EXECUTE = true (required to enter the function), `service_role` EXECUTE = true. The function checks `admin_roles` for an authenticated `admin` before returning any data. **Do not confuse authenticated EXECUTE with unrestricted read access.**
+- Remaining security verification: exercise RPC as a real non-admin and real admin, confirm expected 42501 rejection and successful admin read, and verify no guest data appears in non-admin pages or browser network responses.
+- Main CI and final checks must pass on the exact final SHA. The edge firewall rule is still missing; both guest feature flags remain off.
