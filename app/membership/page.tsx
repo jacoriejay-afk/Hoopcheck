@@ -278,6 +278,7 @@ function MembershipContent() {
             audience={accountType === "fan" ? "fan" : "player"}
             currentTier={hasActiveMembershipAtLeast(subscription, "premium") ? "premium" : hasActiveMembershipAtLeast(subscription, "pro") ? "pro" : "free"}
             billingTerm={billingInterval}
+            premiumOnly={premiumOnlyAccount}
           />
         )}
         {isActive && subscription?.stripe_subscription_id ? (
