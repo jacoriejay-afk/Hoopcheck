@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../../../components/HoopLoading";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import SearchBar from "../../../../components/SearchBar";
@@ -335,13 +336,7 @@ export default function AdminCoachDirectoryPage() {
 
   if (loading) {
     return (
-      <main className="admin-light-shell min-h-screen px-6 py-12 text-[var(--hc-foreground)]">
-        <div className="mx-auto max-w-7xl">
-          <p className="text-[var(--hc-foreground)]/60">
-            Loading coach directory...
-          </p>
-        </div>
-      </main>
+      <main className="admin-light-shell min-h-screen px-6 py-12 text-[var(--hc-foreground)]"><HoopLoading label="Loading HoopCheck…" /></main>
     );
   }
 

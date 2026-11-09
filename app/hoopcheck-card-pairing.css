@@ -1,0 +1,302 @@
+/* CARD-1: one semantic surface/foreground contract, deliberately imported last.
+   Every card-like component below is theme-aware: its surface and foreground always
+   resolve from the same active theme pair. No card may combine --hc-card with a
+   theme-dependent foreground (or vice versa). */
+:root,
+html.theme-light,
+html.theme-dark {
+  --hc-on-surface: var(--hc-foreground);
+  --hc-on-surface-muted: var(--hc-foreground-muted);
+  --hc-on-surface-raised: var(--hc-foreground);
+  --hc-on-surface-raised-muted: var(--hc-foreground-muted);
+  --hc-on-surface-soft: var(--hc-foreground);
+  --hc-card: var(--hc-surface-raised);
+  --hc-text: var(--hc-foreground);
+  --hc-ink: var(--hc-foreground);
+  --hc-paper: var(--hc-page-bg);
+  --hc-paper-strong: var(--hc-surface-raised);
+  --hc-content-surface: var(--hc-surface-raised);
+  --hc-content-ink: var(--hc-foreground);
+  --hc-content-muted: var(--hc-foreground-muted);
+}
+
+/* Canonical component inventory. Keep this selector list in sync with the audit page. */
+:where(
+  .hc-surface,
+  [data-hc-surface="true"],
+  .hc-layout-card,
+  .hc-layout-group,
+  .hc-template-category,
+  .hc-category-tile,
+  .hc-ia-door,
+  .hc-live-hub-hero,
+  .hc-live-hub-card,
+  .hc-live-hub-filters,
+  .hc-ia-completion,
+  .hc-ia-live-strip,
+  .hc-team-profile-hero,
+  .hc-player-profile-hero,
+  .hc-player-profile-completion,
+  .hc-dossier-identity,
+  .hc-profile-panel,
+  .hc-account-settings-header,
+  .hc-account-page .dashboard-card,
+  .hc-settings-group,
+  .hc-review-card,
+  .hc-profile-review-list > *,
+  .hc-membership-page .membership-hero,
+  .hc-membership-page .plan-card,
+  .membership-hero,
+  .plan-card,
+  .hc-membership-value,
+  .hc-dashboard-stat-card,
+  .hc-dashboard-profile-block,
+  .hc-team-facts-card,
+  .hc-command-center,
+  .hc-command-tile,
+  .hc-feed-composer,
+  .hc-feed-ticket,
+  .hc-feed-empty,
+  .hc-team-row,
+  .hc-directory-result,
+  .hc-player-result,
+  .hc-coach-empty,
+  .hc-review-state,
+  .hc-modal,
+  .modal-panel,
+  .modal-content,
+  [role="dialog"],
+  dialog,
+  main :where(
+    .card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,
+    .settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,
+    .player-card,.state-card,.form-card,.auth-card,.hc-auth-card,.legal-card,
+    .admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,
+    .admin-report-card,.moderation-card,.hc-profile-info-card,.hc-team-logo-tile,
+    .hc-team-profile-logo,.hc-team-directory-row,.hc-scout-card__report,
+    .hc-scout-card__stats
+  )
+) {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-on-surface-raised) !important;
+  border-color: var(--hc-border) !important;
+  -webkit-text-fill-color: currentColor;
+}
+
+/* Text and icons inside a card inherit its paired foreground. Keep intentional brand,
+   status and action treatments (orange eyebrows, verified tags, and buttons) intact. */
+:where(
+  .hc-surface,
+  [data-hc-surface="true"],
+  .hc-layout-card,
+  .hc-layout-group,
+  .hc-template-category,
+  .hc-category-tile,
+  .hc-ia-door,
+  .hc-live-hub-hero,
+  .hc-live-hub-card,
+  .hc-live-hub-filters,
+  .hc-ia-completion,
+  .hc-ia-live-strip,
+  .hc-team-profile-hero,
+  .hc-player-profile-hero,
+  .hc-player-profile-completion,
+  .hc-dossier-identity,
+  .hc-profile-panel,
+  .hc-account-settings-header,
+  .hc-account-page .dashboard-card,
+  .hc-settings-group,
+  .hc-review-card,
+  .hc-profile-review-list > *,
+  .hc-membership-page .membership-hero,
+  .hc-membership-page .plan-card,
+  .membership-hero,
+  .plan-card,
+  .hc-membership-value,
+  .hc-dashboard-stat-card,
+  .hc-dashboard-profile-block,
+  .hc-team-facts-card,
+  .hc-command-center,
+  .hc-command-tile,
+  .hc-feed-composer,
+  .hc-feed-ticket,
+  .hc-feed-empty,
+  .hc-team-row,
+  .hc-directory-result,
+  .hc-player-result,
+  .hc-coach-empty,
+  .hc-review-state,
+  .hc-modal,
+  .modal-panel,
+  .modal-content,
+  [role="dialog"],
+  dialog,
+  main :where(
+    .card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,
+    .settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,
+    .player-card,.state-card,.form-card,.auth-card,.hc-auth-card,.legal-card,
+    .admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,
+    .admin-report-card,.moderation-card,.hc-profile-info-card,.hc-team-logo-tile,
+    .hc-team-profile-logo,.hc-team-directory-row,.hc-scout-card__report,
+    .hc-scout-card__stats
+  )
+) :where(
+  h1,h2,h3,h4,h5,h6,p,span,strong,small,label,li,dt,dd,legend,time,
+  a:not(.btn):not(.button-primary),svg
+):not(.eyebrow):not(.hc-profile-eyebrow):not(.hc-team-profile-kicker):not(.hc-dossier-tag-orange):not(.btn):not(.btn *):not(.button-primary):not(.button-primary *) {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+/* Muted copy is paired with the same surface, never with the page background. */
+:where(
+  .hc-surface,
+  [data-hc-surface="true"],
+  .hc-layout-card,
+  .hc-layout-group,
+  .hc-template-category,
+  .hc-category-tile,
+  .hc-ia-door,
+  .hc-live-hub-hero,
+  .hc-live-hub-card,
+  .hc-live-hub-filters,
+  .hc-ia-completion,
+  .hc-ia-live-strip,
+  .hc-team-profile-hero,
+  .hc-player-profile-hero,
+  .hc-player-profile-completion,
+  .hc-dossier-identity,
+  .hc-profile-panel,
+  .hc-account-settings-header,
+  .hc-account-page .dashboard-card,
+  .hc-settings-group,
+  .hc-review-card,
+  .hc-profile-review-list > *,
+  .hc-membership-page .membership-hero,
+  .hc-membership-page .plan-card,
+  .membership-hero,
+  .plan-card,
+  .hc-membership-value,
+  .hc-dashboard-stat-card,
+  .hc-dashboard-profile-block,
+  .hc-team-facts-card,
+  .hc-command-center,
+  .hc-command-tile,
+  .hc-feed-composer,
+  .hc-feed-ticket,
+  .hc-feed-empty,
+  .hc-team-row,
+  .hc-directory-result,
+  .hc-player-result,
+  .hc-coach-empty,
+  .hc-review-state,
+  .hc-modal,
+  .modal-panel,
+  .modal-content,
+  [role="dialog"],
+  dialog,
+  main :where(.card,.dashboard-card,.compact-card,.panel,.hero-card,.result-card,.quick-card,
+    .settings-card,.profile-card,.review-card,.team-card,.coach-card,.league-card,.player-card,
+    .state-card,.form-card,.auth-card,.hc-auth-card,.legal-card,.admin-panel,.admin-card,
+    .admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,.moderation-card)
+) :where(.muted,.text-muted,.description,.meta,.subtle,.hc-review-card__identity time,
+  .hc-dossier-username,.hc-dossier-team-grid span,.hc-dossier-overview-stats span,
+  .hc-dossier-overview-stats small,.hc-profile-bio,.hc-profile-record-count,
+  .hc-membership-page .plan-description,.hc-membership-page .plan-features) {
+  color: var(--hc-on-surface-raised-muted) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+/* Team hero and Live Game hero previously read --hc-card from a fixed white :root value.
+   The legacy alias now points to the active raised surface, and this explicit contract
+   prevents later page CSS from splitting the surface from its foreground. */
+html.theme-light body main :where(.hc-team-profile-hero,.hc-live-hub-hero,.hc-dossier-identity,.hc-profile-panel,.hc-membership-page .plan-card,.hc-membership-page .membership-hero,.hc-account-page .dashboard-card,.hc-account-settings-header,.hc-review-card,.hc-layout-card,.hc-layout-group,.hc-template-category,.hc-category-tile,.hc-ia-door) {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-on-surface-raised) !important;
+}
+html.theme-dark body main :where(.hc-team-profile-hero,.hc-live-hub-hero,.hc-dossier-identity,.hc-profile-panel,.hc-membership-page .plan-card,.hc-membership-page .membership-hero,.hc-account-page .dashboard-card,.hc-account-settings-header,.hc-review-card,.hc-layout-card,.hc-layout-group,.hc-template-category,.hc-category-tile,.hc-ia-door) {
+  background-color: var(--hc-surface-raised) !important;
+  color: var(--hc-on-surface-raised) !important;
+}
+
+/* Remove the old dark-theme highlight bars that were painted behind club hero text. */
+html.theme-dark body main.hc-entity-profile-page .hc-team-profile-hero :where(h1,p:not(.hc-team-profile-kicker),.hc-team-profile-meta) {
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--hc-on-surface-raised) !important;
+}
+html.theme-light body main.hc-entity-profile-page .hc-team-profile-hero :where(h1,p:not(.hc-team-profile-kicker),.hc-team-profile-meta) {
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--hc-on-surface-raised) !important;
+}
+
+/* Side-by-side visual review harness uses the exact same semantic pairings. */
+.hc-card-audit-preview {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--hc-border);
+  border-radius: 14px;
+  background: var(--hc-page-bg);
+  color: var(--hc-foreground);
+}
+.hc-card-audit-preview[data-theme-preview="light"] {
+  --hc-page-bg:#F4F4F1; --hc-surface:#FFFFFF; --hc-surface-raised:#FFFFFF;
+  --hc-surface-soft:#F8F8F6; --hc-foreground:#151515; --hc-foreground-muted:#666661;
+  --hc-border:#E4E4E0; --hc-on-surface-raised:#151515; --hc-on-surface-raised-muted:#666661;
+  --hc-card:#FFFFFF; --hc-text:#151515; --hc-ink:#151515; --hc-paper:#F4F4F1; --hc-paper-strong:#FFFFFF;
+}
+.hc-card-audit-preview[data-theme-preview="dark"] {
+  --hc-page-bg:#0A0A0A; --hc-surface:#111111; --hc-surface-raised:#171717;
+  --hc-surface-soft:#1B1B1B; --hc-foreground:#F5F5F0; --hc-foreground-muted:#B8B8B3;
+  --hc-border:#333333; --hc-on-surface-raised:#F5F5F0; --hc-on-surface-raised-muted:#B8B8B3;
+  --hc-card:#171717; --hc-text:#F5F5F0; --hc-ink:#F5F5F0; --hc-paper:#0A0A0A; --hc-paper-strong:#171717;
+}
+.hc-card-audit-page .hc-card-audit-preview :where(.hc-surface,.hc-layout-card,.hc-layout-group,.hc-template-category,.hc-category-tile,.hc-ia-door,.hc-live-hub-hero,.hc-live-hub-card,.hc-live-hub-filters,.hc-ia-completion,.hc-ia-live-strip,.hc-team-profile-hero,.hc-player-profile-hero,.hc-player-profile-completion,.hc-dossier-identity,.hc-profile-panel,.hc-review-card,.hc-membership-hero,.membership-hero,.plan-card,.dashboard-card,.hero-card,.modal-panel) {
+  background-color:var(--hc-surface-raised)!important;
+  color:var(--hc-on-surface-raised)!important;
+  border-color:var(--hc-border)!important;
+}
+.hc-card-audit-page .hc-card-audit-preview :where(h1,h2,h3,h4,p,span,strong,small,label,li,dt,dd,svg):not(.eyebrow):not(.hc-profile-eyebrow):not(.hc-team-profile-kicker) {
+  color:inherit!important;
+  -webkit-text-fill-color:currentColor!important;
+}
+.hc-card-audit-page .hc-card-audit-preview .muted { color:var(--hc-on-surface-raised-muted)!important; }
+.hc-card-audit-preview .hc-live-hub-hero,
+.hc-card-audit-preview .hc-team-profile-hero,
+.hc-card-audit-preview .hc-dossier-identity { padding:18px; border:1px solid var(--hc-border); border-radius:14px; }
+.hc-card-audit-preview .hc-live-hub-hero h1,
+.hc-card-audit-preview .hc-team-profile-hero h1,
+.hc-card-audit-preview .hc-dossier-name { color:inherit!important; }
+.hc-card-audit-preview .hc-card-audit-section { display:grid; gap:10px; margin:0 0 16px; }
+.hc-card-audit-preview .hc-card-audit-section > h2 { margin:0; font-size:13px; color:var(--hc-foreground)!important; }
+.hc-card-audit-preview .hc-card-audit-sample { padding:14px; border:1px solid var(--hc-border); border-radius:12px; background:var(--hc-surface-raised); color:var(--hc-on-surface-raised); }
+
+.hc-card-audit-page { width:100%; padding:24px 0 80px; }
+.hc-card-audit-heading { margin:0 auto 22px; max-width:1180px; }
+.hc-card-audit-heading h1 { margin:8px 0; }
+.hc-card-audit-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:16px; }
+.hc-card-audit-preview > * + * { margin-top:14px; }
+.hc-card-audit-preview .hc-card-audit-section > * + * { margin-top:10px; }
+.hc-card-audit-preview .hc-card-audit-sample { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.hc-card-audit-preview .hc-category-tile { display:grid; grid-template-columns:44px minmax(0,1fr); align-items:center; gap:8px 12px; padding:12px; border:1px solid var(--hc-border); border-radius:12px; text-decoration:none; }
+.hc-card-audit-preview .hc-category-tile__hex { grid-row:span 2; }
+.hc-card-audit-preview .hc-category-tile__label { font-weight:900; }
+.hc-card-audit-page .hc-card-audit-preview .hc-category-tile__description { font-size:12px; color:var(--hc-on-surface-raised-muted)!important; }
+.hc-card-audit-preview .hc-profile-panel { padding:16px; }
+.hc-card-audit-preview .hc-dossier-identity { display:grid; gap:14px; }
+.hc-card-audit-preview .hc-dossier-name { margin:0; }
+.hc-card-audit-preview .hc-dossier-tags { display:flex; flex-wrap:wrap; gap:6px; }
+.hc-card-audit-preview .hc-dossier-tag { padding:4px 7px; border:1px solid var(--hc-border); border-radius:99px; }
+.hc-card-audit-preview .hc-dossier-team-grid,.hc-card-audit-preview .hc-dossier-overview-stats { display:flex; flex-wrap:wrap; gap:14px; }
+.hc-card-audit-preview .hc-live-hub-hero { display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.hc-card-audit-preview .hc-live-hub-hero h1 { margin:8px 0; font-size:clamp(24px,3vw,34px); }
+.hc-card-audit-preview .hc-live-hub-hero p:last-child { max-width:46ch; }
+.hc-card-audit-preview .hc-review-card { padding:14px; }
+.hc-card-audit-preview .hc-layout-group { padding:14px; }
+.hc-card-audit-preview .hc-layout-group-body { display:grid; gap:8px; }
+.hc-card-audit-preview .plan-card { padding:16px; }
+@media(max-width:760px) {
+  .hc-card-audit-grid { grid-template-columns:minmax(0,1fr); }
+  .hc-card-audit-page { padding-top:16px; }
+}

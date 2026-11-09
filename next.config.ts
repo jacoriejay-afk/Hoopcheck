@@ -11,8 +11,23 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  images: {
+    formats: ["image/avif", "image/webp"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
+        pathname: "/storage/v1/object/**",
+      },
+    ],
+    minimumCacheTTL: 60 * 60 * 24,
+  },
   async redirects() {
-    return [{ source: "/pricing", destination: "/membership", permanent: true }];
+    return [
+      { source: "/pricing", destination: "/membership", permanent: true },
+      { source: "/alerts", destination: "/notifications", permanent: true },
+      { source: "/messages", destination: "/connections", permanent: true },
+    ];
   },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];

@@ -36,17 +36,31 @@ export default function PlayerProfilePage() {
   const [canManageJourney, setCanManageJourney] = useState(false);
   const [viewerType, setViewerType] = useState("");
   const [connectionAccepted, setConnectionAccepted] = useState(false);
+  const [socialCounts, setSocialCounts] = useState({ followers: 0, following: 0, reviews: 0 });
 
   useEffect(() => {
     async function load() {
       const {data:{session}}=await supabase.auth.getSession();
       const user=session?.user;
+      let currentViewerType = "";
+      if(user){
+        const {data:viewerProfile,error:viewerError}=await supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle();
+        if(viewerError || !viewerProfile || viewerProfile.account_type==="fan"){window.location.replace("/dashboard");return;}
+        currentViewerType = viewerProfile.account_type || "";
+        setViewerType(currentViewerType);
+      }
 
       const { data, error } = await supabase
         .rpc("get_public_player_profile", { p_user_id: params.id });
 
       if (!error && data?.[0]) {
         setPlayer(data[0]);
+        const [followersResult, followingResult, reviewsResult] = await Promise.all([
+          supabase.rpc("get_follow_count", { p_target_type: "player", p_target_id: params.id }),
+          supabase.rpc("get_public_following_count", { p_user_id: params.id }),
+          supabase.from("reviews").select("id", { count: "exact", head: true }).eq("author_id", params.id).eq("status", "approved"),
+        ]);
+        setSocialCounts({ followers: Number(followersResult.data || 0), following: Number(followingResult.data || 0), reviews: Number(reviewsResult.count || 0) });
         const { data: countryVisibility } = await supabase.rpc("is_player_country_public", { p_user_id: params.id });
         setCountryPublic(countryVisibility === true);
         setLoading(false);
@@ -60,6 +74,12 @@ export default function PlayerProfilePage() {
           .maybeSingle();
         if (own) {
           setCountryPublic(Boolean(own.current_country_public));
+          const [followersResult, followingResult, reviewsResult] = await Promise.all([
+            supabase.rpc("get_follow_count", { p_target_type: "player", p_target_id: params.id }),
+            supabase.rpc("get_public_following_count", { p_user_id: params.id }),
+            supabase.from("reviews").select("id", { count: "exact", head: true }).eq("author_id", params.id).eq("status", "approved"),
+          ]);
+          setSocialCounts({ followers: Number(followersResult.data || 0), following: Number(followingResult.data || 0), reviews: Number(reviewsResult.count || 0) });
           setPlayer({
             id: own.id,
             display_name: own.display_name,
@@ -88,9 +108,7 @@ export default function PlayerProfilePage() {
             (!ownSubscription.current_period_end || new Date(ownSubscription.current_period_end).getTime() > Date.now())
           );
         }
-        const {data:p}=await supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle();
-        setViewerType(p?.account_type||"");
-        if(user.id!==params.id && p?.account_type==="player"){
+        if(user.id!==params.id && currentViewerType==="player"){
           const {data:r}=await supabase.from("player_contact_requests").select("id").eq("player_id",params.id).eq("requester_id",user.id).eq("status","accepted").maybeSingle();
           setConnectionAccepted(!!r);
         }
@@ -147,33 +165,25 @@ export default function PlayerProfilePage() {
           </nav>
         </header>
 
-        {isOwnProfile && (
-          <section className="hc-player-profile-completion" aria-label="Complete your player profile">
-            <div>
-              <span className="card-kicker">YOUR PLAYER PROFILE</span>
-              <h2>Make your profile work for you</h2>
-              <p className="muted">Add your playing position, years as a pro, current team, location and bio so teams, coaches and other players can understand your basketball background.</p>
+        <section className="player-profile-hero hc-player-profile-hero hc-social-profile-header hc-player-dossier-hero">
+          <div className="hc-social-profile-top">
+            <div className="hc-social-avatar-frame"><div className="player-profile-avatar">{player.avatar_url ? <img src={player.avatar_url} alt="" /> : (player.display_name?.trim()?.charAt(0)?.toUpperCase() || "P")}</div></div>
+            <div className="hc-social-profile-main">
+              <div className="hc-social-stats">
+                <span><strong>{socialCounts.reviews}</strong><small>Reviews</small></span>
+                <Link href={"/connections?mode=followers&type=player&id=" + player.id}><strong>{socialCounts.followers}</strong><small>Followers</small></Link>
+                <Link href={"/connections?mode=following&id=" + player.id}><strong>{socialCounts.following}</strong><small>Following</small></Link>
+              </div>
+              <div className="player-profile-heading">
+                <h1>{player.display_name || "HoopCheck Player"} {player.player_verified && <VerifiedBadge label="Verified professional player" />}</h1>
+                <p className="muted">{[player.player_position, player.current_team, player.current_country || player.country].filter(Boolean).join(" · ") || (player.player_verified ? "Verified professional player" : "HoopCheck player")}</p>
+              </div>
+              {player.bio && (isOwnProfile || viewerType !== "player" || connectionAccepted) && <p className="hc-social-profile-bio">{player.bio}</p>}
+              <div className="hc-social-profile-actions">{isOwnProfile ? <Link href="/account#profile-editor" className="btn">Edit Profile</Link> : <FollowButton targetType="player" targetId={player.id} showCount={false} showNotifications={false} />}<PlayerContactButton playerId={player.id} /></div>
             </div>
-            <Link href="/account#profile-editor" className="btn">Complete player profile <HoopIcon name="arrow-right" size={16} /></Link>
-          </section>
-        )}
-
-        <section className="player-profile-hero hc-player-profile-hero">
-          <div className="player-profile-avatar">{player.avatar_url ? <img src={player.avatar_url} alt="" /> : (player.display_name?.trim()?.charAt(0)?.toUpperCase() || "P")}</div>
-          <div className="player-profile-heading">
-            <p className="eyebrow">PLAYER PROFILE</p>
-            <h1>
-              {player.display_name || "HoopCheck Player"}
-              {player.player_verified && (
-                <VerifiedBadge label="Verified professional player" />
-              )}
-            </h1>
-            <p className="muted">
-              {player.player_verified ? "Verified professional player" : "HoopCheck player"}
-            </p>
           </div>
-          <div style={{ marginTop: 14, display:"flex", gap:10, flexWrap:"wrap" }}><FollowButton targetType="player" targetId={player.id} /><PlayerContactButton playerId={player.id} /></div>
         </section>
+        {isOwnProfile && <section className="hc-player-profile-completion" aria-label="Complete your player profile"><div><span className="card-kicker">YOUR PLAYER PROFILE</span><h2>Make your profile work for you</h2><p className="muted">Add your playing position, years as a pro, current team, location and bio so teams, coaches and other players can understand your basketball background.</p></div><Link href="/account#profile-editor" className="btn">Complete player profile <HoopIcon name="arrow-right" size={16} /></Link></section>}
 
         {viewerType==="player" && !isOwnProfile && !connectionAccepted ? (
           <section className="dashboard-card" style={{marginTop:14}}>
