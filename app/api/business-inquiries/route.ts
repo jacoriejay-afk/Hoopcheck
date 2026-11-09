@@ -54,6 +54,8 @@ export async function POST(request: NextRequest) {
   const message = typeof body.message === "string" ? body.message.trim() : "";
   const type = typeof body.type === "string" ? body.type : "";
   const token = typeof body.turnstileToken === "string" ? body.turnstileToken : "";
+  // A filled honeypot is an automated submission; do not spend CAPTCHA verification calls.
+  if (body.website !== "") return json("Please check the inquiry details.", 400);
   if (name.length < 2 || name.length > 120 || email.length > 254 ||
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
       message.length < 10 || message.length > 3000 || !TYPES.has(type) ||
