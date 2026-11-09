@@ -35,6 +35,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
   const [saving,setSaving] = useState(false);
   const [message,setMessage] = useState("");
   const [teamId,setTeamId] = useState("");
+  const [teamSource,setTeamSource] = useState<"teams"|"womens_teams">("teams");
   const [careerStatus,setCareerStatus] = useState<"current"|"former">("former");
   const [teamName,setTeamName] = useState("");
   const [leagueName,setLeagueName] = useState("");
@@ -74,7 +75,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
     const {data:{user}} = await supabase.auth.getUser();
     if(!user || user.id!==playerId) { setMessage("Sign in to your own player account to update your journey."); setSaving(false); return; }
     const {error} = await supabase.from("player_career_stops").insert({
-      player_id:playerId,team_id:teamId||null,team_name:name,league_name:leagueName.trim()||null,
+      player_id:playerId,team_id:teamId ? teamId.split(":").at(-1) : null,team_name:name,league_name:leagueName.trim()||null,
       country:country.trim(),seasons:seasons.trim(),position:position.trim()||null,
       stop_order:stops.length,is_public:isPublic
     });
@@ -111,7 +112,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
           <div className="hc-journey-stop__top"><span className="hc-journey-stop__flag" aria-label={stop.country}>{FLAGS[stop.country]||"🌍"}</span><span className="hc-journey-stop__season">{stop.seasons}</span>{stop.is_public&&<span className="hc-journey-public">PUBLIC</span>}</div>
           <div className="hc-journey-stop__team"><span className="hc-journey-stop__crest">{monogram(stop.team_name)}</span><div><h3>{stop.team_name}</h3><p>{stop.league_name||"League not listed"} · {stop.country}</p>{stop.position&&<small>Position · {stop.position}</small>}</div></div>
           <div className="hc-journey-stop__footer">
-            {stop.team_id ? <><Link href={`/teams/${stop.team_id}`}>View team profile →</Link>{isOwnProfile&&<Link href={`/teams/${stop.team_id}/review`}>Check review eligibility →</Link>}</> : <span className="muted">Team not linked to directory — request a listing to review</span>}
+            {stop.team_id ? <><Link href={`/${stop.team_name && stop.team_id && stop.team_id.startsWith("womens_teams:") ? "womens" : "teams"}/${stop.team_id?.split(":").at(-1)}`}>View team profile →</Link>{isOwnProfile&&<Link href={`/${stop.team_id?.startsWith("womens_teams:") ? "womens" : "teams"}/${stop.team_id?.split(":").at(-1)}/review`}>Check review eligibility →</Link>}</> : <span className="muted">Team not linked to directory — request a listing to review</span>}
             {isOwnProfile&&canManage&&<div><button type="button" onClick={()=>void toggleVisibility(stop)}>{stop.is_public?"Make private":"Make public"}</button><button type="button" onClick={()=>void removeStop(stop)}>Remove</button></div>}
           </div>
         </div>
@@ -121,7 +122,8 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
     {isOwnProfile&&canManage&&<form className="hc-journey-form" onSubmit={addStop}>
       <p className="eyebrow">ADD CAREER STOP</p>
       <label>Current or former team <select value={careerStatus} onChange={event=>setCareerStatus(event.target.value as "current"|"former")}><option value="current">Current team</option><option value="former">Former team</option></select></label>
-      <TeamLeaguePicker mode="team" directorySource="both" allCategories label="Match a HoopCheck team" placeholder="Search current or former club" value={teamId} onChange={setTeamId} onSelectItem={item=>{setTeamId(item.id);setTeamName(item.name);setCountry(item.country);setLeagueName(item.league_name||"");}} />
+      <label>Directory <select value={teamSource} onChange={event=>{setTeamSource(event.target.value as "teams"|"womens_teams");setTeamId("");setTeamName("");setLeagueName("");setCountry("");}}><option value="teams">Men’s teams</option><option value="womens_teams">Women’s teams</option></select></label>
+      <TeamLeaguePicker mode="team" directorySource={teamSource} basketballType={teamSource==="womens_teams"?"womens":"mens"} label="Match a HoopCheck team" placeholder="Search current or former club" value={teamId} onChange={setTeamId} onSelectItem={item=>{setTeamId(item.id);setTeamName(item.name);setCountry(item.country);setLeagueName(item.league_name||"");}} />
       <p className="muted">Select a team to fill in its country and league. {careerStatus==="current"?"Enter the current season below.":"Enter the season(s) you previously played."} Adding a team does not automatically verify eligibility to publish a review.</p>
       <label>Team name <input value={teamName} onChange={event=>setTeamName(event.target.value)} maxLength={160} required placeholder="Team or club name"/></label>
       <label>League <input value={leagueName} onChange={event=>setLeagueName(event.target.value)} maxLength={160} placeholder="League name"/></label>
