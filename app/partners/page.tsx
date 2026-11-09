@@ -93,7 +93,7 @@ export default function Sponsor() {
           <input id="partner-website" name="website" value={website} onChange={event => setWebsite(event.target.value)} autoComplete="off" tabIndex={-1} aria-hidden="true" style={{position:"absolute",left:"-10000px",width:1,height:1}} />
           <label style={{display:"flex",gap:10,alignItems:"flex-start"}}>
             <input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} />
-            <span>I agree that HoopCheck™ may contact me about this inquiry. Do not include payment details or sensitive investor documents.</span>
+            <span>I agree that HoopCheck™ may contact me about this inquiry. See the <Link href="/privacy" className="underline">Privacy Policy</Link>. Do not include payment details or sensitive investor documents.</span>
           </label>
           <button className="btn" disabled={saving || !signedIn || !consent} onClick={() => void submit()}>{saving ? "Submitting..." : "Submit Inquiry"}</button>
           {sent && <p role="status" aria-live="polite" className="muted">{sent}</p>}
