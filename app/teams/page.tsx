@@ -127,7 +127,7 @@ export default function TeamsPage() {
             .select("id, name, country, league_name, league_id, city, logo_url, logo_bg", { count: "exact" })
             .eq("active", true)
             .eq("basketball_type", "mens")
-            .order("name");
+            .order("name").order("id");
 
           const term = query.trim();
           if (term) {
@@ -157,7 +157,7 @@ export default function TeamsPage() {
             setHasMore(false);
             setTotalCount(0);
           } else {
-            setTeams(data || []);
+            setTeams(Array.from(new Map(((data || []) as Team[]).map((team) => [team.id, team])).values()));
             setTotalCount(count ?? ((page * pageSize) + (data?.length ?? 0)));
             setHasMore((data?.length ?? 0) === pageSize);
           }
