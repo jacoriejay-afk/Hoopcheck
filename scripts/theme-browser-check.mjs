@@ -576,9 +576,10 @@ try {
         const fanFeedEmpty = (await page.locator("main.hc-fan-feed-page .hc-feed-stream .hc-feed-empty").innerText()).trim();
         if (!fanFeedEmpty.includes("No posts yet — be the first to post for " + teamFixture.name + ".")) errors.push("fan-feed: real club-specific timeline empty state is missing: " + fanFeedEmpty);
         if (!fanFeedEmpty.includes("Be the first to post")) errors.push("fan-feed: timeline empty state action is missing");
-        const womensToggle = page.getByRole("button", { name: "WOMEN'S" });
+        const womensToggle = page.locator(".hc-fan-side-switch button").nth(1);
         await womensToggle.click();
-        await page.waitForFunction(() => document.querySelector('.hc-fan-side-switch button[aria-pressed="true"]')?.textContent?.trim() === "WOMEN'S", null, { timeout: 10000 });
+        await page.waitForFunction(() => document.querySelectorAll('.hc-fan-side-switch button[aria-pressed="true"]').length === 1 &&
+          document.querySelectorAll(".hc-fan-side-switch button")[1]?.getAttribute("aria-pressed") === "true", null, { timeout: 10000 });
         const postPrompt = page.locator("main.hc-fan-feed-page .hc-fan-feed-post-prompt");
         await postPrompt.waitFor({ state: "visible", timeout: 15000 });
         if (await page.locator("main.hc-fan-feed-page .hc-feed-composer textarea").count()) errors.push("fan-feed: standalone feed must not show a composer before club selection");
