@@ -406,3 +406,32 @@ html body .hc-global-page-shell main.hc-feed-page {
 .hc-feed-page .hc-feed-filter-bar {max-width:820px;margin-inline:auto;gap:12px;padding-block:16px}
 .hc-feed-page .hc-feed-filter-scroll {scrollbar-width:thin}
 @media(max-width:700px){.hc-feed-page .hc-feed-discovery{grid-template-columns:1fr;padding:22px 18px;gap:20px;border-radius:16px}.hc-feed-discovery nav{display:flex;overflow-x:auto;gap:8px;padding-bottom:3px}.hc-feed-discovery nav a{white-space:nowrap;flex-shrink:0}.hc-feed-page .hc-feed-stream{gap:14px}.hc-feed-page .hc-feed-shared-card{border-radius:16px !important}.hc-feed-page .hc-feed-media-area > p{font-size:14px}.hc-feed-page .hc-feed-filter-bar{flex-wrap:wrap}}
+
+/* HF-MOBILE-1: compact, legible text-only posts on both color schemes. */
+html body .hc-feed-page .hc-feed-stream .hc-feed-shared-card {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 16px !important;
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+}
+html body .hc-feed-page .hc-feed-shared-card :is(.hc-feed-post-author__meta, .hc-feed-post-author__line, .hc-feed-post-author__line strong, .hc-feed-post-body, .hc-feed-post-body p) {
+  color: var(--hc-foreground) !important;
+  opacity: 1 !important;
+}
+html body .hc-feed-page .hc-feed-shared-card :is(.hc-feed-post-author__line small, .hc-feed-expires, .hc-feed-expiry-note, .hc-feed-location) {
+  color: var(--hc-foreground-muted) !important;
+  opacity: 1 !important;
+}
+html body .hc-feed-page .hc-feed-shared-card .hc-feed-post-body { margin-top: 10px !important; }
+html body .hc-feed-page .hc-feed-shared-card .hc-feed-post-body p { min-height: 0 !important; }
+html body .hc-feed-page .hc-feed-shared-card .hc-feed-media-area:empty { display: none !important; }
+html body .hc-feed-page .hc-feed-shared-card .hc-feed-post-actions { margin-top: 12px !important; }
+html body .hc-feed-page .hc-feed-shared-card .hc-feed-delete { color: var(--hc-foreground) !important; }
+@media (max-width: 700px) {
+  html body .hc-feed-page .hc-feed-stream .hc-feed-shared-card { padding: 14px !important; }
+  html body .hc-feed-page .hc-feed-shared-card .hc-feed-post-header { align-items: flex-start; }
+  html body .hc-feed-page .hc-feed-shared-card .hc-feed-post-author__meta { min-width: 0; overflow-wrap: anywhere; }
+  html body .hc-feed-page .hc-feed-shared-card .hc-feed-post-actions { gap: 6px; }
+  html body .hc-feed-page .hc-feed-shared-card .hc-feed-action-pill { min-height: 38px; padding-inline: 10px; }
+}
