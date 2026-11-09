@@ -99,3 +99,363 @@ html.theme-dark .hc-dashboard-shell :is(.quick-access-count, .quick-card-count, 
     box-sizing: border-box;
   }
 }
+
+
+/* Mobile header: keep it in the document flow at the actual top edge.
+   The previous body safe-area padding plus sticky top inset created a visible gap. */
+@media (max-width: 760px) {
+  body { padding-block-start: 0 !important; }
+  html .site-header-global,
+  html .site-header-global.hc-template-header {
+    position: sticky !important;
+    inset-block-start: 0 !important;
+    z-index: 1200 !important;
+    margin-block-start: 0 !important;
+    padding-block-start: calc(9px + env(safe-area-inset-top, 0px)) !important;
+    transform: none !important;
+    align-self: start;
+  }
+  html .site-header-global .hc-header-nav.is-open {
+    max-height: calc(100dvh - 76px - env(safe-area-inset-top, 0px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* Compact the marketing hero so content is visible without a long first scroll. */
+@media (max-width: 760px) {
+  .hc-template-home .hc-template-hero,
+  .hc-template-home .hc-home-hero {
+    min-height: 0 !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+    padding: 22px 16px 18px !important;
+  }
+  .hc-template-home .hc-template-hero-copy { max-width: 100%; }
+  .hc-template-home .hc-home-kicker,
+  .hc-template-home .hc-template-eyebrow {
+    font-size: 9px !important;
+    letter-spacing: .1em !important;
+  }
+  .hc-template-home .hc-template-hero h1 {
+    margin: 12px 0 10px !important;
+    font-size: clamp(34px, 9.4vw, 54px) !important;
+    line-height: .94 !important;
+  }
+  .hc-template-home .hc-template-hero-copy > p {
+    margin: 0 0 14px !important;
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+  .hc-template-home .hc-home-hero-art { display: none !important; }
+  .hc-template-home .hc-home-hero-actions { gap: 8px !important; flex-wrap: wrap; }
+  .hc-template-home .hc-home-cta,
+  .hc-template-home .hc-home-signin { min-height: 40px !important; }
+  .hc-template-home .hc-template-explore,
+  .hc-template-home .hc-home-explore,
+  .hc-template-home .hc-quick-access { padding-block: 18px !important; }
+}
+
+/* Last-mile semantic ink pass: make common content surfaces use the same
+   foreground/background pair in both themes, including nested labels and controls. */
+html.theme-light main:not(.hc-template-home) {
+  --hc-content-ink: #171717;
+  --hc-content-muted: #5F5F5A;
+  --hc-content-surface: #FFFFFF;
+  --hc-content-border: #D8D8D2;
+}
+html.theme-dark main:not(.hc-template-home) {
+  --hc-content-ink: #F5F5F0;
+  --hc-content-muted: #BDBDB7;
+  --hc-content-surface: #171717;
+  --hc-content-border: #414141;
+}
+html.theme-light main:not(.hc-template-home) :where(.card,.panel,.settings-card,.profile-card,.review-card,.quick-card,.form-card,.modal-content,.modal-panel,.hc-prediction,.hc-prediction-option) {
+  background-color: var(--hc-content-surface) !important;
+  border-color: var(--hc-content-border) !important;
+  color: var(--hc-content-ink) !important;
+}
+html.theme-dark main:not(.hc-template-home) :where(.card,.panel,.settings-card,.profile-card,.review-card,.quick-card,.form-card,.modal-content,.modal-panel,.hc-prediction,.hc-prediction-option) {
+  background-color: var(--hc-content-surface) !important;
+  border-color: var(--hc-content-border) !important;
+  color: var(--hc-content-ink) !important;
+}
+html.theme-light main:not(.hc-template-home) :where(.card,.panel,.settings-card,.profile-card,.review-card,.quick-card,.form-card,.modal-content,.modal-panel,.hc-prediction) :where(h1,h2,h3,h4,p,span,strong,small,label,li,dt,dd) { color: var(--hc-content-ink) !important; }
+html.theme-dark main:not(.hc-template-home) :where(.card,.panel,.settings-card,.profile-card,.review-card,.quick-card,.form-card,.modal-content,.modal-panel,.hc-prediction) :where(h1,h2,h3,h4,p,span,strong,small,label,li,dt,dd) { color: var(--hc-content-ink) !important; }
+html.theme-light main:not(.hc-template-home) :where(input,textarea,select) { background: var(--hc-surface) !important; color: #171717 !important; -webkit-text-fill-color: #171717 !important; }
+html.theme-dark main:not(.hc-template-home) :where(input,textarea,select) { background: #1B1B1B !important; color: #F5F5F0 !important; -webkit-text-fill-color: #F5F5F0 !important; }
+html.theme-light main:not(.hc-template-home) :where(input,textarea,select)::placeholder { color: #666660 !important; -webkit-text-fill-color: #666660 !important; }
+html.theme-dark main:not(.hc-template-home) :where(input,textarea,select)::placeholder { color: #BDBDB7 !important; -webkit-text-fill-color: #BDBDB7 !important; }
+
+/* Compact fan winner picks: fit naturally inside game cards and reduce scrolling. */
+.hc-prediction {
+  display: grid !important;
+  gap: 7px !important;
+  padding: 10px 12px !important;
+  margin: 8px 0 !important;
+  border-radius: 10px !important;
+  min-width: 0;
+}
+.hc-prediction-head { gap: 8px !important; align-items: center; }
+.hc-prediction-kicker { font-size: 9px !important; letter-spacing: .08em !important; }
+.hc-prediction-head h3 { margin: 2px 0 0 !important; font-size: 14px !important; line-height: 1.15 !important; }
+.hc-prediction-state { font-size: 9px !important; padding: 3px 7px !important; }
+.hc-prediction-hint { margin: 0 !important; font-size: 10px !important; line-height: 1.3 !important; }
+.hc-prediction-options { display: grid !important; grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 6px !important; }
+.hc-prediction-option { min-width: 0 !important; min-height: 0 !important; padding: 7px 8px !important; gap: 3px !important; border-radius: 7px !important; }
+.hc-prediction-option > span { font-size: 11px !important; line-height: 1.2 !important; overflow-wrap: anywhere; }
+.hc-prediction-option > strong { font-size: 8px !important; letter-spacing: .04em !important; }
+.hc-prediction-results { display: flex !important; flex-wrap: wrap; align-items: center; gap: 5px 10px !important; padding: 6px 8px !important; font-size: 10px !important; }
+.hc-prediction-notice { margin: 0 !important; font-size: 10px !important; }
+@media (max-width: 380px) {
+  .hc-prediction { padding: 8px !important; }
+  .hc-prediction-option { padding: 6px !important; }
+  .hc-prediction-option > span { font-size: 10px !important; }
+}
+
+
+/* Mobile viewport contract v2 — pin the tab bar to the device viewport, not the page flow. */
+@media (max-width: 767px) {
+  html, body { width: 100%; max-width: 100%; overflow-x: clip; }
+  body:has(.hc-bottom-tab-bar) {
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  html .bottom-nav.hc-bottom-tab-bar,
+  html nav.bottom-nav.hc-bottom-tab-bar {
+    position: fixed !important;
+    inset-inline: 0 !important;
+    inset-block-end: 0 !important;
+    z-index: 5000 !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    min-height: calc(62px + env(safe-area-inset-bottom, 0px)) !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+    border-radius: 0 !important;
+    background: rgba(10,10,10,.97) !important;
+    border-top: 1px solid rgba(255,255,255,.16) !important;
+    box-shadow: 0 -8px 24px rgba(0,0,0,.18) !important;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+  html .hc-bottom-tab-bar > a {
+    min-width: 0 !important;
+    min-height: 48px !important;
+    padding: 5px 2px !important;
+    gap: 3px !important;
+    justify-content: center !important;
+    overflow: hidden;
+  }
+  html .hc-bottom-tab-bar .bottom-nav-icon { min-height: 21px; }
+  html .hc-bottom-tab-bar .bottom-nav-label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 9px !important;
+    line-height: 1.1 !important;
+  }
+  html.theme-light .bottom-nav.hc-bottom-tab-bar { background: rgba(247,247,245,.98) !important; border-top-color: rgba(0,0,0,.14) !important; }
+  html.theme-light .hc-bottom-tab-bar > a { color: #454540 !important; }
+  html.theme-light .hc-bottom-tab-bar > a.active { color: #E64A16 !important; }
+
+  /* Keep the homepage message dominant without making the first screen a full-page poster. */
+  .hc-template-home.hc-home-redesign .hc-home-hero {
+    min-height: 0 !important;
+    padding: clamp(22px, 6vw, 34px) 16px 22px !important;
+    gap: 8px !important;
+  }
+  .hc-template-home.hc-home-redesign .hc-home-hero h1 {
+    max-width: 13ch !important;
+    margin: 10px 0 10px !important;
+    font-size: clamp(34px, 9.2vw, 48px) !important;
+    line-height: .94 !important;
+    letter-spacing: -.02em !important;
+    overflow-wrap: normal !important;
+  }
+  .hc-template-home.hc-home-redesign .hc-home-hero-copy > p {
+    max-width: 42ch;
+    font-size: 13px !important;
+    line-height: 1.45 !important;
+  }
+  .hc-template-home.hc-home-redesign .hc-home-hero-art { display: none !important; }
+  .hc-template-home.hc-home-redesign .hc-home-hero-actions { align-items: center; }
+  .hc-template-home.hc-home-redesign .hc-home-cta { min-height: 42px !important; padding-inline: 14px !important; }
+
+  /* Put useful dashboard and directory information on screen sooner. */
+  html body main:not(.hc-template-home) {
+    min-width: 0 !important;
+    padding-inline: max(12px, env(safe-area-inset-left, 0px)) !important;
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  html body main:not(.hc-template-home) :where(.hc-dashboard-shell, .hc-directory-page, .hc-team-directory-page, .hc-player-directory-page, .hc-coaches-directory-page, .hc-leagues-directory-page) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: auto !important;
+  }
+  html body main:not(.hc-template-home) :where(.hc-dashboard-shell, .hc-directory-page) { padding-top: 14px !important; }
+  html body main:not(.hc-template-home) :where(.grid, .feature-grid, .hc-dashboard-grid) {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+  html body main:not(.hc-template-home) :where(.card, .panel, .dashboard-card, .quick-card, .settings-card) {
+    min-width: 0;
+    padding: clamp(12px, 3.5vw, 17px) !important;
+  }
+  html body main:not(.hc-template-home) :where(h1, h2) { overflow-wrap: anywhere; }
+  html body main:not(.hc-template-home) :where(input, select, textarea, button) { max-width: 100%; }
+
+  /* Fan winner picks: one compact heading/status row, then two equal team choices. */
+  html body main .hc-prediction {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 7px !important;
+    padding: 10px !important;
+    margin-block: 8px !important;
+  }
+  html body main .hc-prediction-head { display: flex !important; justify-content: space-between !important; }
+  html body main .hc-prediction-options { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  html body main .hc-prediction-option { min-height: 54px !important; }
+}
+@media (max-width: 360px) {
+  html .hc-bottom-tab-bar .bottom-nav-label { font-size: 8px !important; }
+  .hc-template-home.hc-home-redesign .hc-home-hero h1 { font-size: 32px !important; }
+  html body main .hc-prediction-options { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+
+/* Opaque mobile navigation: no translucent/transparent tap targets over page content. */
+@media (max-width: 767px) {
+  html .bottom-nav.hc-bottom-tab-bar,
+  html nav.bottom-nav.hc-bottom-tab-bar {
+    background: #0A0A0A !important;
+    background-color: #0A0A0A !important;
+    opacity: 1 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  html .hc-bottom-tab-bar > a {
+    background: #0A0A0A !important;
+    opacity: 1 !important;
+    color: #F7F7F5 !important;
+  }
+  html .hc-bottom-tab-bar > a :where(span, svg, path) { opacity: 1 !important; }
+  html .hc-bottom-tab-bar > a.active {
+    background: #20201E !important;
+    color: #FF5A1F !important;
+    border-radius: 8px !important;
+  }
+  html.theme-light .bottom-nav.hc-bottom-tab-bar,
+  html.theme-light nav.bottom-nav.hc-bottom-tab-bar,
+  html.theme-light .hc-bottom-tab-bar > a { background: #F7F7F5 !important; }
+  html.theme-light .hc-bottom-tab-bar > a { color: #22221F !important; }
+  html.theme-light .hc-bottom-tab-bar > a.active { background: #EAEAE5 !important; color: #D94712 !important; }
+}
+
+
+/* Mobile tab bar hardening: paint the complete navigation surface and every
+   tap target independently so underlying page content cannot show through. */
+@media (max-width: 767px) {
+  html body nav.bottom-nav.hc-bottom-tab-bar {
+    position: fixed !important;
+    inset: auto 0 0 0 !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    min-height: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    isolation: isolate !important;
+    z-index: 2147483000 !important;
+    background: #0A0A0A !important;
+    background-color: #0A0A0A !important;
+    background-image: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    border-top: 1px solid #343434 !important;
+  }
+  html body nav.bottom-nav.hc-bottom-tab-bar::before,
+  html body nav.bottom-nav.hc-bottom-tab-bar::after {
+    content: none !important;
+    display: none !important;
+  }
+  html body nav.bottom-nav.hc-bottom-tab-bar > a,
+  html body nav.bottom-nav.hc-bottom-tab-bar > a:link,
+  html body nav.bottom-nav.hc-bottom-tab-bar > a:visited {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    min-height: 50px !important;
+    margin: 0 !important;
+    padding: 5px 1px !important;
+    gap: 4px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    background: #0A0A0A !important;
+    background-color: #0A0A0A !important;
+    background-image: none !important;
+    color: #F7F7F5 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    text-decoration: none !important;
+    -webkit-text-fill-color: #F7F7F5 !important;
+  }
+  html body nav.bottom-nav.hc-bottom-tab-bar > a.active {
+    background: #242421 !important;
+    background-color: #242421 !important;
+    color: #FF5A1F !important;
+    -webkit-text-fill-color: #FF5A1F !important;
+  }
+  html body nav.bottom-nav.hc-bottom-tab-bar > a > span,
+  html body nav.bottom-nav.hc-bottom-tab-bar > a > span *,
+  html body nav.bottom-nav.hc-bottom-tab-bar > a svg,
+  html body nav.bottom-nav.hc-bottom-tab-bar > a svg * {
+    color: inherit !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  html body nav.bottom-nav.hc-bottom-tab-bar .bottom-nav-label {
+    display: block !important;
+    max-width: 100% !important;
+    color: inherit !important;
+    -webkit-text-fill-color: currentColor !important;
+    font-size: 9px !important;
+    font-weight: 600 !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+  }
+  html.theme-light body nav.bottom-nav.hc-bottom-tab-bar {
+    background: #F7F7F5 !important;
+    background-color: #F7F7F5 !important;
+    border-top-color: #D4D4CE !important;
+  }
+  html.theme-light body nav.bottom-nav.hc-bottom-tab-bar > a,
+  html.theme-light body nav.bottom-nav.hc-bottom-tab-bar > a:link,
+  html.theme-light body nav.bottom-nav.hc-bottom-tab-bar > a:visited {
+    background: #F7F7F5 !important;
+    background-color: #F7F7F5 !important;
+    color: #22221F !important;
+    -webkit-text-fill-color: #22221F !important;
+  }
+  html.theme-light body nav.bottom-nav.hc-bottom-tab-bar > a.active {
+    background: #EAEAE5 !important;
+    background-color: #EAEAE5 !important;
+    color: #D94712 !important;
+    -webkit-text-fill-color: #D94712 !important;
+  }
+}

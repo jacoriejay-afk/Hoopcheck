@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../components/HoopLoading";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
@@ -26,15 +27,29 @@ export default function PrivacyCenterPage() {
 
   async function load() {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { window.location.href="/login"; return; }
-    setUserId(user.id);
-    const { data, error: requestError } = await supabase.from("privacy_requests")
-      .select("id,request_type,status,details,created_at,updated_at,completed_at")
-      .eq("requester_id",user.id).order("created_at",{ascending:false});
-    if (requestError) setError("We couldn't load your privacy requests.");
-    else setRequests(data ?? []);
-    setLoading(false);
+    setError("");
+
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        window.location.href = "/login";
+        return;
+      }
+
+      setUserId(user.id);
+      const { data, error: requestError } = await supabase.from("privacy_requests")
+        .select("id,request_type,status,details,created_at,updated_at,completed_at")
+        .eq("requester_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (requestError) throw requestError;
+      setRequests(data ?? []);
+    } catch (loadError) {
+      console.error("Unable to load privacy requests:", loadError);
+      setError("We couldn't load your privacy requests. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(()=>{ void load(); },[]);
@@ -100,7 +115,7 @@ export default function PrivacyCenterPage() {
         <button className="btn" onClick={submit} disabled={submitting}>{submitting ? "Submitting..." : "Submit privacy request"}</button>
 
         <h2 style={{marginTop:36}}>Your requests</h2>
-        {loading ? <p>Loading...</p> : requests.length === 0 ? <p className="muted">You have not submitted a privacy request.</p> :
+        {loading ? <HoopLoading variant="inline" label="Loading..." /> : requests.length === 0 ? <p className="muted">You have not submitted a privacy request.</p> :
           <div>{requests.map(r=><div key={r.id} className="dashboard-card" style={{marginBottom:10}}>
             <strong>{labels[r.request_type as RequestType] ?? r.request_type}</strong>
             <div className="muted">{new Date(r.created_at).toLocaleString()} · Status: {r.status.replaceAll("_"," ")}</div>

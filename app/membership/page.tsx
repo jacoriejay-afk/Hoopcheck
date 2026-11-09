@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
+import MembershipComparison from "../../components/MembershipComparison";
+import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
@@ -12,6 +14,7 @@ type BillingInterval = "month" | "6_month" | "year";
 type Subscription = {
   plan: Plan;
   status: string;
+  access_status?: string | null;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   stripe_subscription_id: string | null;
@@ -56,7 +59,7 @@ function MembershipContent() {
 
     const { data, error } = await supabase
       .from("subscriptions")
-      .select("plan, status, current_period_end, cancel_at_period_end, stripe_subscription_id")
+      .select("plan, status, access_status, current_period_end, cancel_at_period_end, stripe_subscription_id")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -249,8 +252,7 @@ function MembershipContent() {
           Decide smarter.
         </h1>
         <p>
-          Unlock full coach, team, and league ratings and reviews from the players
-          who have already been there.
+          {accountType === "fan" ? "Follow the teams you care about and stay close to every game." : "Unlock full coach, team, and league ratings and reviews from the players who have already been there."}
         </p>
         <div className="hero-links">
           <Link href="/search">Global Research Search →</Link>
@@ -266,6 +268,13 @@ function MembershipContent() {
             <strong>Complimentary HoopCheck access is active.</strong>
             <span className="muted"> You can keep using your current access or choose a paid membership below.</span>
           </div>
+        )}
+        {isActive && subscription?.stripe_subscription_id && (
+          <MembershipComparison
+            audience={accountType === "fan" ? "fan" : "player"}
+            currentTier={hasActiveMembershipAtLeast(subscription, "premium") ? "premium" : hasActiveMembershipAtLeast(subscription, "pro") ? "pro" : "free"}
+            billingTerm={billingInterval}
+          />
         )}
         {isActive && subscription?.stripe_subscription_id ? (
           <div className="active-card" id="manage-subscription">
@@ -311,11 +320,9 @@ function MembershipContent() {
             <div className="section-heading">
               <div className="eyebrow">CHOOSE YOUR ACCESS</div>
               <h2>
-                Built for players
-                <br />
-                making serious decisions.
+                {premiumOnlyAccount ? <>Built for coaches and team managers<br />making serious decisions.</> : accountType === "fan" ? <>Built for fans<br />who follow every move.</> : <>Built for players<br />making serious decisions.</>}
               </h2>
-              <p>Start with the level of research access that fits you.</p>
+              <p>{accountType === "fan" ? "Choose the fan access that fits how you follow basketball." : "Start with the level of research access that fits you."}</p>
             </div>
 
             {accountType === "player" && (
@@ -342,75 +349,10 @@ function MembershipContent() {
 
             <div className="hc-billing-options" role="group" aria-label="Choose billing term">
               <button type="button" aria-pressed={billingInterval==="month"} className={billingInterval==="month" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("month")}><span>Monthly</span><small>Flexible billing</small></button>
-              <button type="button" aria-pressed={billingInterval==="6_month"} className={billingInterval==="6_month" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("6_month")}><span>6 months</span><small>Save 15%</small></button>
-              <button type="button" aria-pressed={billingInterval==="year"} className={billingInterval==="year" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 10%</small></button>
+              <button type="button" aria-pressed={billingInterval==="6_month"} className={billingInterval==="6_month" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("6_month")}><span>6 months</span><small>Save 10%</small></button>
+              <button type="button" aria-pressed={billingInterval==="year"} className={billingInterval==="year" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 15%</small></button>
             </div>
-            <div className="hc-membership-value"><span className="hc-membership-value__mark">★</span><div><strong>Best flexibility, better value.</strong><p>Choose monthly, 6-month, or annual billing. The total shown is the amount charged for the selected term.</p></div></div><div className="plans">
-              {!premiumOnlyAccount && <div className="plan-card">
-                <div className="plan-top">
-                  <div>
-                    <div className="eyebrow">HOOPCHECK PRO</div>
-                    <h3>Pro</h3>
-                  </div>
-                  <div className="price">
-                    <strong>{billingInterval==="month" ? "\$4.99" : billingInterval==="6_month" ? "\$25.45" : "\$53.89"}</strong>
-                    <span>{billingInterval==="month" ? "billed monthly" : billingInterval==="6_month" ? "billed every 6 months" : "billed annually"}</span>
-                  </div>
-                </div>
-                <p className="plan-description">
-                  Full access to the core HoopCheck research experience.
-                </p>
-                <ul>
-                  <li>Full coach ratings and reviews</li>
-                  <li>Full team ratings and reviews</li>
-                  <li>Full league ratings and reviews</li>
-                  <li>Coach research</li>
-                  <li>Team research</li>
-                  <li>League research</li>
-                </ul>
-                <button
-                  className="btn plan-button"
-                  onClick={() => startCheckout("pro")}
-                  disabled={checkoutLoading !== null || loading}
-                >
-                  {checkoutLoading === `pro-${billingInterval}` ? "Opening Checkout..." : `Get Pro — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}
-                </button>
-              </div>}
-
-              <div className="plan-card featured">
-                <div className="featured-badge">{premiumOnlyAccount ? "REQUIRED PLAN" : "MORE ACCESS"}</div>
-                <div className="plan-top">
-                  <div>
-                    <div className="eyebrow">HOOPCHECK PREMIUM</div>
-                    <h3>Premium</h3>
-                  </div>
-                  <div className="price">
-                    <strong>{billingInterval==="month" ? "\$9.99" : billingInterval==="6_month" ? "\$50.95" : "\$107.89"}</strong>
-                    <span>{billingInterval==="month" ? "billed monthly" : billingInterval==="6_month" ? "billed every 6 months" : "billed annually"}</span>
-                  </div>
-                </div>
-                <p className="plan-description">
-                  {premiumOnlyAccount ? "The full HoopCheck research membership for coaches and team managers." : "Everything in Pro plus expanded research capabilities."}
-                </p>
-                <ul>
-                  <li>Everything in Pro</li>
-                  <li>Advanced research tools</li>
-                  <li>Expanded coach insights</li>
-                  <li>Expanded team insights</li>
-                  <li>Expanded league insights</li>
-                  <li>Premium discovery features</li>
-                  <li>Priority access to new features</li>
-                </ul>
-                <button
-                  className="btn plan-button"
-                  onClick={() => startCheckout("premium")}
-                  disabled={checkoutLoading !== null || loading}
-                >
-                  {checkoutLoading === `premium-${billingInterval}` ? "Opening Checkout..." : `Get Premium — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}
-                </button>
-              </div>
-            </div>
-
+            <MembershipComparison audience={accountType === "fan" ? "fan" : "player"} currentTier={hasActiveMembershipAtLeast(subscription, "premium") ? "premium" : hasActiveMembershipAtLeast(subscription, "pro") ? "pro" : "free"} billingTerm={billingInterval} premiumOnly={premiumOnlyAccount} purchaseDisabled={loading || checkoutLoading !== null} onSelect={tier => void startCheckout(tier)} />
             <p className="hc-promo-hint">Have a promo code? Enter it on the secure Stripe Checkout page before you pay.</p>\n            <div className="subscription-legal">
               <p>
                 By purchasing a HoopCheck membership, you agree to our{" "}
@@ -435,13 +377,10 @@ function MembershipContent() {
       <section className="hero bottom-cta">
         <div className="eyebrow">KNOW BEFORE YOU GO</div>
         <h2>
-          Your next contract
-          <br />
-          deserves research.
+          {accountType === "fan" ? <>Your next game<br />deserves a closer look.</> : <>Your next contract<br />deserves research.</>}
         </h2>
         <p>
-          Don't rely on one conversation. Research the people, teams, and leagues
-          that could shape your career.
+          {accountType === "fan" ? "Follow your teams, catch live conversations, and make every game more engaging." : "Do not rely on one conversation. Research the people, teams, and leagues that could shape your career."}
         </p>
         <div className="actions">
           <Link href="/search" className="btn">

@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { supabase } from "../lib/supabase";
 import { useLanguage } from "./LanguageProvider";
 
 type DirectoryKey = "teams" | "womens" | "coaches" | "leagues" | "players";
@@ -23,6 +25,18 @@ export default function DirectoryLayout({ current }: Props) {
     players: { title: "playersDirectoryTitle", description: "playersDirectoryDescription" },
   };
   const { t } = useLanguage();
+  const [showPlayers, setShowPlayers] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      const { data } = await supabase.from("profiles").select("account_type").eq("id", session.user.id).maybeSingle();
+      if (active) setShowPlayers(Boolean(data && data.account_type !== "fan"));
+    })();
+    return () => { active = false; };
+  }, []);
   return <>
     <section className="hc-shared-directory-hero">
       <p className="eyebrow">{t("directoryKicker")}</p>
@@ -32,7 +46,7 @@ export default function DirectoryLayout({ current }: Props) {
     <nav className="hc-shared-directory-tiles" aria-label={t("browseDirectories")}>
       <span className="hc-shared-directory-tiles-label">{t("browseDirectories")}</span>
       <div className="hc-shared-directory-tile-grid">
-        {destinations.map((item) => <Link key={item.key} href={item.href} aria-current={current === item.key ? "page" : undefined} className={current === item.key ? "is-current" : ""}>{t(item.labelKey)}</Link>)}
+        {destinations.filter((item) => item.key !== "players" || showPlayers).map((item) => <Link key={item.key} href={item.href} aria-current={current === item.key ? "page" : undefined} className={current === item.key ? "is-current" : ""}>{t(item.labelKey)}</Link>)}
       </div>
     </nav>
   </>;

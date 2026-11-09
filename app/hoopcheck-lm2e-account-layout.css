@@ -1,0 +1,198 @@
+/* LM-2E: deterministic account/dashboard layout and shared safe-area contract.
+   These rules intentionally replace conflicting legacy dashboard/nav sizing rules. */
+@media (max-width: 767px) {
+  /* Explicit geometry prevents SVGs inheriting zero/auto dimensions from legacy nav rules. */
+  html body nav.hc-mobile-tabbar-repair .bottom-nav-icon,
+  html body nav.hc-mobile-tabbar-repair .bottom-nav-icon svg {
+    display: block !important;
+    box-sizing: border-box !important;
+    width: 24px !important;
+    min-width: 24px !important;
+    max-width: 24px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    max-height: 24px !important;
+    flex: 0 0 24px !important;
+    overflow: visible !important;
+  }
+  html body nav.hc-mobile-tabbar-repair .bottom-nav-icon {
+    display: grid !important;
+    place-items: center !important;
+    color: var(--hc-foreground, currentColor) !important;
+    line-height: 0 !important;
+  }
+  html body nav.hc-mobile-tabbar-repair .bottom-nav-icon svg {
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.8 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  html.theme-light body nav.hc-mobile-tabbar-repair > a {
+    color: var(--hc-foreground, #171717) !important;
+    -webkit-text-fill-color: var(--hc-foreground, #171717) !important;
+  }
+  html.theme-dark body nav.hc-mobile-tabbar-repair > a {
+    color: var(--hc-foreground, #f7f7f5) !important;
+    -webkit-text-fill-color: var(--hc-foreground, #f7f7f5) !important;
+  }
+  html body nav.hc-mobile-tabbar-repair > a.active {
+    color: #FF5A1F !important;
+    -webkit-text-fill-color: #FF5A1F !important;
+    position: relative !important;
+  }
+  html body nav.hc-mobile-tabbar-repair > a.active::before {
+    content: "" !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 22% !important;
+    right: 22% !important;
+    height: 3px !important;
+    border-radius: 0 0 3px 3px !important;
+    background: #FF5A1F !important;
+  }
+}
+
+/* The account identity card is content-sized: identity row, then edit action. */
+.hc-dashboard-shell .hc-dashboard-profile-block {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 14px !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 16px 18px !important;
+  box-sizing: border-box !important;
+}
+.hc-dashboard-shell .hc-dashboard-profile-identity {
+  display: flex !important;
+  flex: 0 1 auto !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 12px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+}
+.hc-dashboard-shell .hc-dashboard-profile-copy {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+.hc-dashboard-shell .hc-dashboard-edit-profile {
+  align-self: flex-start !important;
+  justify-self: start !important;
+  margin: 0 !important;
+}
+.hc-dashboard-shell .hc-dashboard-membership-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  width: fit-content !important;
+  background: #FF5A1F !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  font-weight: 900 !important;
+}
+
+/* Membership, Reviews and Account share one top-to-bottom, left-aligned rhythm. */
+.hc-dashboard-shell .hc-dashboard-stat-grid {
+  align-items: stretch !important;
+}
+.hc-dashboard-shell .hc-dashboard-stat-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  gap: 0 !important;
+  padding: 16px !important;
+}
+.hc-dashboard-shell .hc-dashboard-stat-label,
+.hc-dashboard-shell .hc-dashboard-stat-value,
+.hc-dashboard-shell .hc-dashboard-stat-note {
+  display: block !important;
+  position: static !important;
+  inset: auto !important;
+  float: none !important;
+  width: 100% !important;
+  margin-inline: 0 !important;
+  text-align: left !important;
+  align-self: flex-start !important;
+}
+.hc-dashboard-shell .hc-dashboard-stat-value {
+  margin: 7px 0 3px !important;
+  line-height: 1.12 !important;
+}
+.hc-dashboard-shell .hc-dashboard-stat-note {
+  margin: 0 !important;
+  line-height: 1.35 !important;
+}
+
+/* Keep the profile action's established inverse treatment in both themes. */
+html.theme-light .hc-dashboard-shell .hc-dashboard-edit-profile,
+html.theme-light .hc-dashboard-shell .hc-dashboard-edit-profile:visited {
+  background: var(--hc-surface) !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  border-color: var(--hc-border, #D8D8D2) !important;
+}
+html.theme-light .hc-dashboard-shell .hc-dashboard-edit-profile > span {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+html.theme-dark .hc-dashboard-shell .hc-dashboard-edit-profile,
+html.theme-dark .hc-dashboard-shell .hc-dashboard-edit-profile:visited {
+  background: var(--hc-surface-inverse, #0A0A0A) !important;
+  color: var(--hc-on-inverse, #FFFFFF) !important;
+  -webkit-text-fill-color: var(--hc-on-inverse, #FFFFFF) !important;
+}
+html.theme-dark .hc-dashboard-shell .hc-dashboard-edit-profile > span {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  background: #FF5A1F !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+/* Reserve the full device inset plus 16px before page-level content on every route.
+   The global sticky header separately owns its own inset; this protects screen headings. */
+html body main.page-shell,
+html body main.dashboard-page,
+html body main.hc-dashboard-shell,
+html body main[class*="page"] {
+  padding-block-start: max(16px, calc(env(safe-area-inset-top, 0px) + 16px)) !important;
+}
+@media (max-width: 767px) {
+  html body main.page-shell,
+  html body main.dashboard-page,
+  html body main.hc-dashboard-shell,
+  html body main[class*="page"] {
+    padding-block-start: max(16px, calc(env(safe-area-inset-top, 0px) + 16px)) !important;
+  }
+  .hc-dashboard-shell .hc-dashboard-profile-block {
+    gap: 12px !important;
+    padding: 16px !important;
+  }
+  .hc-dashboard-shell .hc-dashboard-stat-card {
+    padding: 13px !important;
+  }
+}
