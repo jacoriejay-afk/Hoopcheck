@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 
 const files = {
   tokens: await readFile("app/hoopcheck-theme-tokens.css", "utf8"),
+  scoreboard: await readFile("app/hoopcheck-global-scoreboard.css", "utf8"),
   home: await readFile("app/hoopcheck-ia1-home.css", "utf8"),
   live: await readFile("app/globals.css", "utf8"),
   nav: await readFile("app/hoopcheck-lm2f-bottom-nav.css", "utf8"),
@@ -32,12 +33,14 @@ function tokenValue(themeSelector, token, seen = new Set()) {
   seen.add(token);
   const block = blockAfter(files.tokens, themeSelector);
   const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const value = block?.match(new RegExp(escaped + "\\s*:\\s*([^;]+)"))?.[1]?.trim();
+  const lateBlock = blockAfter(files.scoreboard, themeSelector);
+  const value = (lateBlock?.match(new RegExp(escaped + "\\s*:\\s*([^;]+)")) ?? block?.match(new RegExp(escaped + "\\s*:\\s*([^;]+)")))?.[1]?.trim();
   if (!value) return null;
   const alias = value.match(/^var\((--[a-z0-9-]+)\)$/i);
   if (alias) return tokenValue(themeSelector, alias[1], seen);
   const rgb = value.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
   if (rgb) return "#" + rgb.slice(1).map(n => Number(n).toString(16).padStart(2, "0")).join("");
+  if (/^#[0-9a-f]{3}$/i.test(value)) return "#" + [...value.slice(1)].map(c => c + c).join("");
   return /^#[0-9a-f]{6}$/i.test(value) ? value : null;
 }
 function luminance(hex) {
