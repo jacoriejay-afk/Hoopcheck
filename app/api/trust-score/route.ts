@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { hasActiveMembershipAtLeast } from "../../../lib/membership-tier";
 import { calculateTrustScore, type TrustScoreReview } from "../../../lib/trust-score";
 
 export const dynamic = "force-dynamic";
@@ -43,11 +44,10 @@ export async function GET(request: Request) {
         const db = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
         const [{ data: profile }, { data: subscription }] = await Promise.all([
           db.from("profiles").select("account_type").eq("id", authData.user.id).maybeSingle(),
-          db.from("subscriptions").select("plan,status,current_period_end").eq("user_id", authData.user.id).maybeSingle(),
+          db.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id", authData.user.id).maybeSingle(),
         ]);
-        const active = ["active", "trialing"].includes(subscription?.status || "") &&
-          (!subscription?.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now());
-        if (profile?.account_type === "player") tier = "player";
+        const active = hasActiveMembershipAtLeast(subscription);
+        if (profile?.account_type === "player" && active) tier = "player";
         else if (profile?.account_type === "fan" && active && subscription?.plan === "premium") tier = "premium";
         else if (profile?.account_type === "fan" && active && subscription?.plan === "pro") tier = "pro";
         else if (profile?.account_type && profile.account_type !== "fan" && active) tier = "member";

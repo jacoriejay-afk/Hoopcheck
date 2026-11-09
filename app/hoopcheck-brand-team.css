@@ -1,75 +1,299 @@
-/* Team-profile brand pass. Scoped to real team hero; preserves actions, reviews and role gates. */
-.hc-team-entity-profile {
-  --hc-team-brand-orange: #ff5a1f;
-}
+/* Team profile visual contract: one hero surface, no nested metric cards.
+   Keep role gates, actions, and content behavior in their existing components. */
+.hc-team-entity-profile { --hc-team-brand-orange:#ff5a1f; }
 .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  padding: clamp(18px,3vw,34px);
-  border-radius: 12px;
-  border: 1px solid #292929;
-  background: linear-gradient(125deg,#080808 0%,#171717 65%,#0a0a0a 100%);
-  color: #f7f7f5;
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  padding:clamp(18px,2.8vw,30px);
+  border:1px solid var(--hc-border,#dedede) !important;
+  border-top:3px solid var(--hc-team-brand-orange) !important;
+  border-radius:16px !important;
+  box-shadow:none !important;
+  background:linear-gradient(145deg,#fffaf4,#fff 70%,#f4f0e9) !important;
+  color:#171717 !important;
 }
 .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header::before {
-  content: "";
-  position: absolute;
-  top: -60px;
-  right: 12%;
-  height: 280px;
-  width: 9px;
-  transform: rotate(42deg);
-  background: #ff5a1f;
-  opacity: .9;
-  pointer-events: none;
-  z-index: -1;
-}
-html.theme-light .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header,
-html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header {
-  background: linear-gradient(125deg,#080808,#191919 68%,#0a0a0a);
-  color: #f7f7f5;
+  content:none !important;
 }
 .hc-team-entity-profile > .hc-team-profile-hero h1 {
-  color: #fff;
-  font-size: clamp(26px,4vw,48px);
-  font-weight: 950;
-  line-height: 1.08;
-  letter-spacing: -.025em;
-  overflow-wrap: anywhere;
+  color:#171717 !important;
+  font-size:clamp(26px,3.4vw,42px);
+  font-weight:950;
+  line-height:1.12;
+  letter-spacing:-.03em;
+  overflow-wrap:anywhere;
 }
 .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-kicker {
-  color: #ff5a1f;
-  font-weight: 900;
-  letter-spacing: .1em;
+  color:#b63b0c !important;
+  font-weight:900;
+  letter-spacing:.08em;
 }
-.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-meta,
-html.theme-light .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-meta {
-  color: #e3e3e3;
-}
-.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat strong,
-.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat small {
-  color: #f7f7f5;
-}
-.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat {
-  border-color: #444;
-  background: rgba(255,255,255,.06);
+.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-meta {
+  color:#525252 !important;
 }
 .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-logo {
-  background: #fff;
-  border: 1px solid #d9d9d9;
-  border-radius: 14px;
+  border:1px solid #d6d1ca;
+  border-radius:14px;
+}
+.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stats {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:0 !important;
+  padding-top:12px;
+  border-top:1px solid #d9d4cc !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  overflow:visible;
+}
+.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat {
+  min-width:0;
+  padding:10px 6px;
+  text-align:center;
+  border:0 !important;
+  border-right:1px solid #d9d4cc !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat:last-child {
+  border-right:0 !important;
+}
+.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat strong {
+  color:#171717 !important;
+}
+.hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat small {
+  color:#555 !important;
+  opacity:1 !important;
 }
 .hc-team-entity-profile > .hc-team-profile-nav {
-  border-bottom: 1px solid var(--hc-border,#d8d8d8);
-  gap: 12px;
+  gap:12px;
+  border-bottom:1px solid var(--hc-border,#d8d8d8);
 }
 .hc-team-entity-profile > .hc-team-profile-nav a[aria-current="page"] {
-  border-bottom: 3px solid #ff5a1f;
+  border-bottom:3px solid var(--hc-team-brand-orange);
+}
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header {
+  background:linear-gradient(145deg,#171717,#24211f) !important;
+  border-color:#444 !important;
+  color:#f7f7f5 !important;
+}
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero h1,
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat strong {
+  color:#f7f7f5 !important;
+}
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-meta,
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat small {
+  color:#d4d4d4 !important;
+}
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stats {
+  border-top-color:#555 !important;
+}
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-stat {
+  border-right-color:#555 !important;
+}
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-logo {
+  border-color:#555;
+}
+html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-kicker {
+  color:#ff885e !important;
 }
 @media(max-width:700px) {
-  .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header { padding: 18px 14px; border-radius: 10px; }
-  .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-logo { max-width: 76px; max-height: 76px; }
-  .hc-team-entity-profile > .hc-team-profile-nav { overflow-x: auto; scrollbar-width: none; }
-  .hc-team-entity-profile > .hc-team-profile-nav a { white-space: nowrap; }
+  .hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header {
+    padding:18px 14px !important;
+  }
+  .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile-logo {
+    max-width:76px;
+    max-height:76px;
+  }
+  .hc-team-entity-profile > .hc-team-profile-nav {
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .hc-team-entity-profile > .hc-team-profile-nav a {
+    white-space:nowrap;
+  }
 }
+
+/* Team profile structural redesign: real responsive hero and overview grid. */
+.hc-team-entity-profile > .hc-team-profile-hero.hc-social-profile-header {
+  min-height:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:20px !important;
+}
+.hc-team-entity-profile .hc-team-profile-identity {
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:clamp(14px,2.5vw,28px);
+  width:100%;
+}
+.hc-team-entity-profile .hc-team-profile-details { min-width:0; }
+.hc-team-entity-profile .hc-team-profile-details h1 { margin:6px 0 10px; }
+.hc-team-entity-profile .hc-team-profile-follow { align-self:center; }
+.hc-team-entity-profile .hc-team-profile-stats {
+  width:100%;
+  max-width:680px;
+  align-self:flex-start;
+}
+.hc-team-entity-profile .hc-team-profile-overview-grid {
+  display:grid;
+  grid-template-columns:minmax(0,1.5fr) minmax(230px,1fr) minmax(230px,1fr);
+  align-items:stretch;
+  gap:16px;
+  margin:20px 0 24px;
+}
+.hc-team-entity-profile .hc-team-profile-overview-grid > * {
+  min-width:0;
+  padding:clamp(18px,2vw,26px);
+  border:1px solid var(--hc-border,#454545);
+  border-radius:16px;
+  background:var(--hc-surface,#191919);
+  color:var(--hc-text,#f6f6f6);
+  box-shadow:none;
+}
+.hc-team-entity-profile .hc-team-profile-overview-grid h2 {
+  margin:5px 0 12px;
+  font-size:clamp(20px,2vw,28px);
+  line-height:1.2;
+  color:inherit;
+}
+.hc-team-entity-profile .hc-team-profile-overview-grid p { line-height:1.55; }
+.hc-team-entity-profile .hc-team-profile-facts {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin:22px 0 0;
+  padding-top:16px;
+  border-top:1px solid var(--hc-border,#444);
+}
+.hc-team-entity-profile .hc-team-profile-facts dt {
+  font-size:12px;
+  opacity:.75;
+}
+.hc-team-entity-profile .hc-team-profile-facts dd {
+  margin:4px 0 0;
+  font-weight:750;
+  overflow-wrap:anywhere;
+}
+.hc-team-entity-profile .hc-team-profile-community {
+  padding:0 !important;
+  overflow:hidden;
+}
+.hc-team-entity-profile .hc-team-profile-community .hc-team-fan-group-entry {
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:16px;
+  width:100%;
+  height:100%;
+  margin:0;
+  padding:clamp(18px,2vw,26px);
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+.hc-team-entity-profile .hc-team-profile-community .hc-team-fan-group-entry h2 {
+  overflow-wrap:anywhere;
+}
+.hc-team-entity-profile .hc-team-profile-community .hc-fan-group-actions {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.hc-team-entity-profile .hc-team-profile-snapshot-note {
+  margin:12px 0;
+}
+.hc-team-entity-profile .hc-team-profile-inline-link {
+  display:inline-block;
+  margin-top:12px;
+  color:#f97337;
+  font-weight:800;
+}
+html.theme-light .hc-team-entity-profile .hc-team-profile-overview-grid > * {
+  background:var(--hc-surface,#fafafa);
+  color:#171717;
+  border-color:#dedbd5;
+}
+html.theme-dark .hc-team-entity-profile .hc-team-profile-overview-grid > * {
+  background:#191919;
+  color:#f6f6f6;
+  border-color:#454545;
+}
+@media(max-width:1000px) {
+  .hc-team-entity-profile .hc-team-profile-overview-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .hc-team-entity-profile .hc-team-profile-about { grid-column:1/-1; }
+}
+@media(max-width:700px) {
+  .hc-team-entity-profile .hc-team-profile-identity {
+    grid-template-columns:auto minmax(0,1fr);
+    gap:12px;
+  }
+  .hc-team-entity-profile .hc-team-profile-follow {
+    grid-column:1/-1;
+    justify-self:start;
+  }
+  .hc-team-entity-profile .hc-team-profile-overview-grid {
+    grid-template-columns:minmax(0,1fr);
+    gap:12px;
+  }
+  .hc-team-entity-profile .hc-team-profile-about { grid-column:auto; }
+  .hc-team-entity-profile .hc-team-profile-facts {
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+
+
+/* TEAM-GRID-HOTFIX: the legacy 1024px two-column profile grid reserved
+   implicit rows for the old hero/sidebar. The new overview sections are
+   direct children, so that old grid created enormous empty tracks and
+   stranded review cards in the right rail. Keep the new profile in
+   document flow; only the explicit overview grid uses columns. */
+@media (min-width:1024px) {
+  main.hc-team-entity-profile.hc-entity-profile-page {
+    display:block !important;
+    grid-template-columns:none !important;
+    width:100%;
+    min-width:0;
+  }
+  main.hc-team-entity-profile > :where(section,nav,article,div) {
+    grid-column:auto !important;
+    grid-row:auto !important;
+    max-width:100%;
+    min-width:0;
+  }
+  main.hc-team-entity-profile > .hero.hc-team-write-review {
+    width:100%;
+    max-width:100%;
+  }
+}
+
+/* Shared AI arena art; uploaded club logos remain the team's identity. */
+html body .hc-team-entity-profile > .hc-team-profile-hero.hc-team-branded-hero,
+html body .hc-womens-profile-page .hc-womens-branded-hero {
+  background:linear-gradient(90deg,rgba(7,12,24,.97),rgba(7,12,24,.78) 60%,rgba(7,12,24,.58)),url('/images/basketball-arena-ai.webp') center 58%/cover !important;
+  border-color:#485a78 !important;
+  border-top:3px solid #ff790b !important;
+  color:#f7f7f5 !important;
+  border-radius:18px !important;
+  overflow:hidden;
+  position:relative;
+}
+html body .hc-womens-profile-page .hc-womens-branded-hero {
+  background:linear-gradient(90deg,rgba(29,9,46,.96),rgba(29,9,46,.8) 60%,rgba(29,9,46,.58)),url('/images/basketball-arena-ai.webp') center 58%/cover !important;
+  border-color:#79548a !important;
+  border-top-color:#cf83fa !important;
+  padding:clamp(18px,2.8vw,30px) !important;
+}
+html body .hc-team-branded-hero :is(h1,.hc-team-profile-stat strong,.hc-social-stats strong) {color:#f7f7f5 !important}
+html body .hc-team-branded-hero :is(.hc-team-profile-meta,.hc-team-profile-stat small,.hc-social-stats small) {color:#e2e5ef !important}
+html body .hc-team-branded-hero .hc-team-profile-kicker {color:#ffb17a !important}
+html body .hc-womens-branded-hero .hc-team-profile-kicker {color:#e2b1ff !important}
+.hc-team-art-label {display:block;font-size:10px;font-weight:750;letter-spacing:.1em;text-transform:uppercase;color:#d2d9e9;margin-bottom:14px}
+html body .hc-team-branded-hero .hc-team-profile-logo {flex-shrink:0;min-width:64px;min-height:64px;box-shadow:0 8px 26px #0005}
+html body .hc-team-branded-hero .hc-team-profile-stats {border-color:#ffffff38 !important}
+html body .hc-team-branded-hero .hc-team-profile-stat {border-color:#ffffff38 !important}
+@media(max-width:700px){.hc-team-branded-hero .hc-team-social-top{flex-wrap:wrap;gap:18px}.hc-team-art-label{font-size:9px;letter-spacing:.05em}.hc-team-branded-hero .hc-team-profile-heading{min-width:0;width:100%}.hc-team-branded-hero .hc-team-profile-heading__copy{min-width:0}.hc-team-branded-hero h1{overflow-wrap:anywhere}}

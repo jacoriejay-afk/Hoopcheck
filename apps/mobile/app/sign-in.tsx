@@ -15,9 +15,10 @@ export default function SignInScreen() {
     if (!email.trim() || !password) { Alert.alert("Missing details", "Enter your email and password."); return; }
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
       if (error) throw error;
-      router.replace("/dashboard");
+      const profile = data.user ? await supabase.from("profiles").select("username").eq("id", data.user.id).maybeSingle() : null;
+      router.replace(profile?.data && !profile.data.username?.trim() ? "/choose-username" : "/dashboard");
     } catch (error) {
       Alert.alert("Could not sign in", error instanceof Error ? error.message : "Please try again.");
     } finally { setBusy(false); }
@@ -50,11 +51,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 24 },
   title: { color: "#FFFFFF", fontSize: 30, fontWeight: "800" },
   subtitle: { color: "#BDBDBD", fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 20 },
-  label: { color: "#253247", fontSize: 13, fontWeight: "700", marginBottom: 8, marginTop: 14 },
+  label: { color: "#E5E7EB", fontSize: 13, fontWeight: "700", marginBottom: 8, marginTop: 14 },
   input: { minHeight: 50, borderColor: "#D5DCE5", borderWidth: 1, borderRadius: 10, backgroundColor: "#111111", paddingHorizontal: 14, color: "#FFFFFF", fontSize: 16 },
-  link: { color: "#263B59", fontWeight: "700" },
-  button: { minHeight: 52, borderRadius: 10, backgroundColor: "#050505", alignItems: "center", justifyContent: "center", marginTop: 24 },
+  link: { color: "#FF8A3D", fontWeight: "700" },
+  button: { minHeight: 52, borderRadius: 10, backgroundColor: "#FF6A00", alignItems: "center", justifyContent: "center", marginTop: 24 },
   buttonDim: { opacity: 0.7 }, buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
   signupPrompt: { color: "#BDBDBD", textAlign: "center", marginTop: 22 },
-  backLink: { color: "#263B59", textAlign: "center", fontWeight: "700", marginTop: 24 },
+  backLink: { color: "#FF8A3D", textAlign: "center", fontWeight: "700", marginTop: 24 },
 })

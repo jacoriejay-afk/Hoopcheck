@@ -32,6 +32,12 @@
   display:grid;
   gap:16px;
   padding:16px;
+  --hc-card-surface:var(--hc-surface-raised);
+  --hc-card-border:var(--hc-border);
+  --hc-on-card:var(--hc-foreground);
+  --hc-on-card-muted:var(--hc-foreground-muted);
+  --hc-chip-surface:var(--hc-surface-soft);
+  --hc-chip-foreground:var(--hc-foreground);
   border:1px solid var(--hc-border);
   border-radius:16px;
   background:var(--hc-page-bg);

@@ -287,35 +287,12 @@ export default function TeamDetailPage() {
         return;
       }
 
-      const [
-        profileResult,
-        subscriptionResult,
-        adminResult,
-      ] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("account_type")
-          .eq("id", user.id)
-          .maybeSingle(),
-
-        supabase
-          .from("subscriptions")
-          .select(
-            "plan, status, current_period_end"
-          )
-          .eq(
-            "user_id",
-            user.id
-          )
-          .maybeSingle(),
-
-        supabase.rpc(
-          "is_current_user_admin_or_moderator"
-        ),
+      const [profileResult, subscriptionResult] = await Promise.all([
+        supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
+        supabase.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id", user.id).maybeSingle(),
       ]);
 
-      const subscription =
-        subscriptionResult.data;
+      const subscription = subscriptionResult.data;
       setAccountType(profileResult.data?.account_type || "");
       // Team Portal belongs to the approved representative of THIS club, not every manager.
       const { data: approvedTeamClaim } = await supabase
@@ -327,46 +304,16 @@ export default function TeamDetailPage() {
         .eq("status", "approved")
         .maybeSingle();
       setHasApprovedTeamClaim(Boolean(approvedTeamClaim));
-      setMembershipPlan(subscription?.plan || "");
-
-      const currentPeriodEnd =
-        subscription?.current_period_end
-          ? new Date(
-              subscription.current_period_end
-            )
-          : null;
-
-      const subscriptionIsActive =
-        (
-          subscription?.status ===
-            "active" ||
-          subscription?.status ===
-            "trialing"
-        ) &&
-        (
-          !currentPeriodEnd ||
-          currentPeriodEnd >
-            new Date()
-        );
-
-      const isAdmin =
-        adminResult.data === true;
-
-      const fanHasPaidPlan =
-        profileResult.data?.account_type !== "fan" ||
-        hasActiveMembershipAtLeast(subscription);
-      const access =
-        (subscriptionIsActive && fanHasPaidPlan) ||
-        isAdmin;
-
-      setHasAccess(access);
+      setMembershipPlan(hasActiveMembershipAtLeast(subscription) ? (subscription?.plan || "") : "");
 
       const response = await fetch(`/api/review-access?entityType=team&entityId=${encodeURIComponent(id)}`, {
         headers: { Authorization: `Bearer ${session?.access_token || ""}` },
         cache: "no-store",
       });
       const reviewPayload = response.ok ? await response.json() : null;
-      const tier = profileResult.data?.account_type === "player" ? "player" : ((reviewPayload?.tier || "free") as typeof reviewTier);
+      // The server entitlement response is authoritative; do not override it
+      // with account role or a second client-side membership calculation.
+      const tier = (reviewPayload?.tier || "free") as typeof reviewTier;
       setReviewTier(tier);
       const fullRead = ["premium", "player", "member"].includes(tier);
       const canReadAnything = tier !== "free";
@@ -586,18 +533,21 @@ export default function TeamDetailPage() {
   return (
     <main className="hc-entity-profile-page hc-team-entity-profile">
 
-<section className="hero hc-team-profile-hero hc-social-profile-header" id="overview" aria-labelledby="hc-team-profile-title">
-        <div className="hc-team-profile-topline">
-          <TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={88} className="hc-team-profile-logo" />
-          <FollowButton targetType="team" targetId={team.id} variant="club" showCount={false} showNotifications={false} onCountChange={setTeamFollowerCount} />
+<section className="hero hc-team-profile-hero hc-social-profile-header hc-team-branded-hero" data-team-city={team.city || team.country || ""} style={{"--hc-team-hue": String([...team.name.toLowerCase()].reduce((n,c)=>(Math.imul(n,31)+c.charCodeAt(0))>>>0,7)%360)} as React.CSSProperties} id="overview" aria-labelledby="hc-team-profile-title">
+        <span className="hc-team-art-label">Men’s basketball · AI arena artwork</span>
+        <div className="hc-team-profile-identity">
+          <TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={112} className="hc-team-profile-logo" />
+          <div className="hc-team-profile-details">
+            <p className="hc-team-profile-kicker">HOOPCHECK™ CLUB PROFILE</p>
+            <h1 id="hc-team-profile-title" className={team.name.length > 28 ? "is-long-name" : ""}>{team.name}</h1>
+            <p className="hc-team-profile-meta" title={[team.country || t("countryNotListed"), team.city, league?.name || team.league_name].filter(Boolean).join(" · ")}>
+              <span>{team.city || team.country || t("countryNotListed")}</span>
+              {team.city && team.country ? <span> · {team.country}</span> : null}
+              {(league?.name || team.league_name) ? <span> · {league?.name || team.league_name}</span> : null}
+            </p>
+          </div>
+          <div className="hc-team-profile-follow"><FollowButton targetType="team" targetId={team.id} variant="club" showCount={false} showNotifications={false} onCountChange={setTeamFollowerCount} /></div>
         </div>
-        <p className="hc-team-profile-kicker">HOOPCHECK CLUB PROFILE</p>
-        <h1 id="hc-team-profile-title" className={team.name.length > 28 ? "is-long-name" : ""}>{team.name}</h1>
-        <p className="hc-team-profile-meta" title={[team.country || t("countryNotListed"), team.city, league?.name || team.league_name].filter(Boolean).join(" · ")}>
-          <span>{team.country || t("countryNotListed")}</span>
-          {team.city ? <span className="hc-team-profile-meta__city"> · {team.city}</span> : null}
-          {(league?.name || team.league_name) ? <span className="hc-team-profile-meta__league"> · {league?.name || team.league_name}</span> : null}
-        </p>
         <div className="hc-team-profile-stats" aria-label="Team profile statistics">
           <div className="hc-team-profile-stat"><strong>{teamReviewCount}</strong><small>Reviews</small></div>
           <div className="hc-team-profile-stat hc-team-profile-stat--trust">
@@ -608,12 +558,33 @@ export default function TeamDetailPage() {
         </div>
       </section>
       <nav className="hc-team-profile-nav" aria-label="Team profile sections">
-        <a href="#overview" aria-current="page">Overview</a><a href="#reviews">Reviews</a>{accountType !== "fan" && <><a href="#players">Players</a><a href="#roster-board">Roster Board</a><a href="#pay-transparency">Pay Transparency</a></>}
+        <a href="#overview" aria-current="page">Overview</a>
+        <a href="#reviews">Reviews</a>
+        {accountType !== "fan" && <><a href="#players">Players</a><a href="#roster-board">Roster Board</a><a href="#pay-transparency">Pay Transparency</a></>}
+        {accountType === "fan" && <a href="#fan-hq">Fan HQ</a>}
       </nav>
-      <TeamFanGroupEntry teamId={team.id} />
+      <div className="hc-team-profile-overview-grid">
+        <section className="hc-team-profile-about" aria-labelledby="hc-team-about-title">
+          <p className="hc-team-profile-kicker">CLUB OVERVIEW</p>
+          <h2 id="hc-team-about-title">About {team.name}</h2>
+          <p>{team.name} is a basketball club{team.city ? ` based in ${team.city}` : team.country ? ` based in ${team.country}` : ""}{league?.name || team.league_name ? `, competing in ${league?.name || team.league_name}` : ""}.</p>
+          <dl className="hc-team-profile-facts">
+            <div><dt>League</dt><dd>{league?.name || team.league_name || "Not listed"}</dd></div>
+            <div><dt>Location</dt><dd>{[team.city,team.country].filter(Boolean).join(", ") || "Not listed"}</dd></div>
+          </dl>
+        </section>
+        <div id="fan-hq" className="hc-team-profile-community"><TeamFanGroupEntry teamId={team.id} /></div>
+        <section className="hc-team-profile-snapshot" aria-labelledby="hc-team-snapshot-title">
+          <p className="hc-team-profile-kicker">PLAYER EXPERIENCE</p>
+          <h2 id="hc-team-snapshot-title">Trust Snapshot</h2>
+          <p className="hc-team-profile-snapshot-note">{teamReviewCount > 0 ? `${teamReviewCount} published team reviews` : "No published reviews yet"}</p>
+          {hasAccess && trustScoreData?.score != null ? <TrustScoreDial score={trustScoreData.score} explanation={trustScoreData.explanation || t("trustScoreUnavailable")} reviewCount={trustScoreData.reviewCount} verifiedReviewCount={trustScoreData.verifiedReviewCount} /> : <p className="hc-team-profile-snapshot-note">{accountType === "fan" ? "Full trust details require an eligible Fan membership." : "Trust details are available with an eligible membership."}</p>}
+          <a href="#reviews" className="hc-team-profile-inline-link">Explore team reviews</a>
+        </section>
+      </div>
 
       {accountType !== "fan" && knownPlayerFollowers.length > 0 && <p className="hc-team-social-proof">Followed by players you follow: <strong>{knownPlayerFollowers.join(", ")}</strong></p>}
-        <div className="entity-actions">{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}<ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} />{hasApprovedTeamClaim && <Link href="/team-dashboard" className="btn dark">Team Portal</Link>}</div>
+        <div className="entity-actions">{accountType === "player" ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}{accountType !== "fan" && <ClaimProfileButton entityType="team" entityId={team.id} entityName={team.name} />}{accountType !== "fan" && hasApprovedTeamClaim && <Link href="/team-dashboard" className="btn dark">Team Portal</Link>}</div>
         {accountType !== "fan" && <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />}
         {["premium", "player", "member"].includes(reviewTier) && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">{accountType === "fan" ? "LATEST TEAM REVIEW" : "LATEST PLAYER REVIEW"}</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || (accountType === "fan" ? "Team review" : t("playerExperience"))}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
       {!hasAccess && reviewTier === "free" && accountType !== "player" ? (

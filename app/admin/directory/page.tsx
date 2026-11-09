@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../../components/HoopLoading";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -104,11 +105,7 @@ export default function AdminDirectoryPage() {
 
   if (loading) {
     return (
-      <main className="admin-directory-shell" style={styles.page}>
-        <div style={styles.loader}>
-          {t("loadingDirectoryControls")}
-        </div>
-      </main>
+      <main className="admin-directory-shell" style={styles.page}><HoopLoading label="Loading HoopCheck…" /></main>
     );
   }
 
