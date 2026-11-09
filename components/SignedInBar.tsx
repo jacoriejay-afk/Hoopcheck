@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import NotificationBell from "./NotificationBell";
 import GlobalSearch from "./GlobalSearch";
+import FeatureLink from "./FeatureLink";
 import { getCachedSession, supabase } from "../lib/supabase";
 
 export default function SignedInBar(){
@@ -22,7 +23,7 @@ export default function SignedInBar(){
       <Link href="/teams" onClick={()=>setMenuOpen(false)}>Teams</Link>
       <Link href="/womens" onClick={()=>setMenuOpen(false)}>Women’s Teams</Link>
       <Link href="/leagues" onClick={()=>setMenuOpen(false)}>Leagues</Link>
-      {accountType === "fan" ? <><Link href="/fans" onClick={()=>setMenuOpen(false)}>Fans</Link><Link href="/team-hub" onClick={()=>setMenuOpen(false)}>Team Hub</Link><Link href="/fan-feed" onClick={()=>setMenuOpen(false)}>Fan HoopFeed</Link></> : <><Link href="/players" onClick={()=>setMenuOpen(false)}>Players</Link><Link href="/feed" onClick={()=>setMenuOpen(false)}>Community Feed</Link></>}
+      {accountType === "fan" ? <><Link href="/fans" onClick={()=>setMenuOpen(false)}>Fans</Link><Link href="/team-hub" onClick={()=>setMenuOpen(false)}>Team Hub</Link><FeatureLink href="/fan-feed" onClick={()=>setMenuOpen(false)}>Fan HoopFeed</FeatureLink></> : <><Link href="/players" onClick={()=>setMenuOpen(false)}>Players</Link><FeatureLink href="/feed" onClick={()=>setMenuOpen(false)}>Community Feed</FeatureLink></>}
       <Link href={profileHref} onClick={()=>setMenuOpen(false)}>Profile</Link>
       <Link href="/settings" onClick={()=>setMenuOpen(false)}>Settings</Link>
       <Link href="/support" onClick={()=>setMenuOpen(false)}>Help & Support</Link>

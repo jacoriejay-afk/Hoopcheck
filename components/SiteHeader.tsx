@@ -7,6 +7,7 @@ import { useAuthState } from "./AuthProvider";
 import { useLanguage } from "./LanguageProvider";
 import { supabase } from "../lib/supabase";
 import Logo from "./Logo";
+import FeatureLink from "./FeatureLink";
 
 function SearchIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.4" /><path d="m16 16 4.5 4.5" /></svg>; }
 function UserIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5" /><path d="M4.5 21c.4-4.4 3-6.7 7.5-6.7s7.1 2.3 7.5 6.7Z" /></svg>; }
@@ -22,11 +23,11 @@ export default function SiteHeader() {
     <button type="button" className="hc-mobile-menu-toggle" aria-label={menuOpen?"Close menu":"Open menu"} aria-expanded={menuOpen} onClick={()=>setMenuOpen(v=>!v)}><span/><span/><span/></button>
     <nav className={menuOpen?"hc-header-nav is-open":"hc-header-nav"} aria-label="Primary navigation">
       <div className="hc-header-links">
-        <div className="hc-header-mobile-links">{links.filter(item=>item.href!=="/players"||!signedIn||(accountType!==""&&accountType!=="fan")).map(item=><Link key={item.href} href={item.href} className={active(item.href)?"is-active":""} onClick={closeMenu}>{item.label}</Link>)}</div>
+        <div className="hc-header-mobile-links">{links.filter(item=>item.href!=="/players"||!signedIn||(accountType!==""&&accountType!=="fan")).map(item=>["/live-games","/connections","/feed","/fan-feed"].includes(item.href) ? <FeatureLink key={item.href} href={item.href} className={active(item.href)?"is-active":""} onClick={closeMenu}>{item.label}</FeatureLink> : <Link key={item.href} href={item.href} className={active(item.href)?"is-active":""} onClick={closeMenu}>{item.label}</Link>)}</div>
         <div className="hc-header-desktop-links">
-          {links.filter(item=>["/dashboard","/search","/directory","/live-games"].includes(item.href)).map(item=><Link key={item.href} href={item.href} className={active(item.href)?"is-active":""}>{item.label}</Link>)}
+          {links.filter(item=>["/dashboard","/search","/directory","/live-games"].includes(item.href)).map(item=>item.href==="/live-games" ? <FeatureLink key={item.href} href={item.href} className={active(item.href)?"is-active":""}>{item.label}</FeatureLink> : <Link key={item.href} href={item.href} className={active(item.href)?"is-active":""}>{item.label}</Link>)}
           <details className="hc-header-more"><summary>More <span aria-hidden="true">▾</span></summary><div className="hc-header-more-panel">
-            {links.filter(item=>!["/dashboard","/search","/directory","/live-games"].includes(item.href)&& (item.href!=="/players"||!signedIn||(accountType!==""&&accountType!=="fan"))).map(item=><Link key={item.href} href={item.href} className={active(item.href)?"is-active":""}>{item.label}</Link>)}
+            {links.filter(item=>!["/dashboard","/search","/directory","/live-games"].includes(item.href)&& (item.href!=="/players"||!signedIn||(accountType!==""&&accountType!=="fan"))).map(item=>["/connections","/feed","/fan-feed"].includes(item.href) ? <FeatureLink key={item.href} href={item.href} className={active(item.href)?"is-active":""}>{item.label}</FeatureLink> : <Link key={item.href} href={item.href} className={active(item.href)?"is-active":""}>{item.label}</Link>)}
           </div></details>
         </div>
       </div>

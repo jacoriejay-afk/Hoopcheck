@@ -1,90 +1,121 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { HoopIcon } from "./HoopCheckUI";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useLanguage } from "./LanguageProvider";
+import { useAuthState } from "./AuthProvider";
 
-type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string; variant?: "default" | "club"; showCount?: boolean; showNotifications?: boolean; onCountChange?: (count: number) => void };
+type Props = {
+  targetType: "team" | "player" | "league" | "fan";
+  targetId: string;
+  variant?: "default" | "club";
+  showCount?: boolean;
+  showNotifications?: boolean;
+  onCountChange?: (count: number) => void;
+};
 
-export default function FollowButton({ targetType, targetId, variant = "default", showCount = true, showNotifications = true, onCountChange }: Props) {
+export default function FollowButton({
+  targetType,
+  targetId,
+  variant = "default",
+  showCount = true,
+  showNotifications = true,
+  onCountChange,
+}: Props) {
   const { formatNumber, t } = useLanguage();
+  const { userId, signedIn, ready: authReady } = useAuthState();
+  const router = useRouter();
   const [following, setFollowing] = useState(false);
   const [notify, setNotify] = useState(true);
   const [count, setCount] = useState(0);
-  const [signedIn, setSignedIn] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
-  const userId = useRef<string | null>(null);
   const actionLock = useRef(false);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onCountChangeRef = useRef(onCountChange);
 
-  function showFailure() {
+  useEffect(() => {
+    onCountChangeRef.current = onCountChange;
+  }, [onCountChange]);
+
+  const showFailure = useCallback(() => {
     setNotice("Couldn't save that — try again");
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
     noticeTimer.current = setTimeout(() => setNotice(""), 2600);
-  }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user;
+    if (!authReady) return () => { mounted = false; };
+
+    const followPromise = userId
+      ? supabase.from("follow_relationships")
+          .select("notify_reviews,notify_ratings,notify_updates")
+          .eq("follower_id", userId)
+          .eq("target_type", targetType)
+          .eq("target_id", targetId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null });
+
+    void Promise.all([
+      followPromise,
+      supabase.rpc("get_follow_count", { p_target_type: targetType, p_target_id: targetId }),
+    ]).then(([followResult, countResult]) => {
       if (!mounted) return;
-      userId.current = user?.id ?? null;
-      setSignedIn(Boolean(user));
-      const followPromise = user
-        ? supabase.from("follow_relationships")
-            .select("notify_reviews,notify_ratings,notify_updates")
-            .eq("follower_id", user.id)
-            .eq("target_type", targetType)
-            .eq("target_id", targetId)
-            .maybeSingle()
-        : Promise.resolve({ data: null });
-      const [followResult, countResult] = await Promise.all([
-        followPromise,
-        supabase.rpc("get_follow_count", { p_target_type: targetType, p_target_id: targetId }),
-      ]);
-      if (!mounted) return;
+      if (followResult.error) {
+        console.error("Unable to load follow state:", followResult.error);
+        showFailure();
+      } else {
+        setFollowing(Boolean(followResult.data));
+        if (followResult.data) {
+          setNotify(Boolean(followResult.data.notify_reviews || followResult.data.notify_ratings || followResult.data.notify_updates));
+        }
+      }
+
+      if (countResult.error) {
+        console.error("Unable to load follow count:", countResult.error);
+        showFailure();
+        return;
+      }
       const nextCount = Number(countResult.data ?? 0);
       setCount(nextCount);
-      onCountChange?.(nextCount);
-      if (followResult.data) {
-        setFollowing(true);
-        setNotify(Boolean(followResult.data.notify_reviews || followResult.data.notify_ratings || followResult.data.notify_updates));
-      } else {
-        setFollowing(false);
-      }
-    })();
+      onCountChangeRef.current?.(nextCount);
+    }).catch((error) => {
+      console.error("Unable to load follow information:", error);
+      if (mounted) showFailure();
+    });
+
     return () => {
       mounted = false;
       if (noticeTimer.current) clearTimeout(noticeTimer.current);
     };
-  }, [targetType, targetId, onCountChange]);
+  }, [authReady, showFailure, targetId, targetType, userId]);
 
   async function toggle() {
-    if (actionLock.current) return;
-    const id = userId.current;
-    if (!id) {
-      window.location.href = "/login";
+    if (!authReady || actionLock.current) return;
+    if (!userId) {
+      router.push("/login");
       return;
     }
+
     actionLock.current = true;
+    setBusy(true);
     const wasFollowing = following;
     const previousCount = count;
     const nextFollowing = !wasFollowing;
     const nextCount = Math.max(0, previousCount + (nextFollowing ? 1 : -1));
-
-    // Commit the visual response before awaiting the network.
     setFollowing(nextFollowing);
     setCount(nextCount);
-    onCountChange?.(nextCount);
+    onCountChangeRef.current?.(nextCount);
     setNotice("");
 
     try {
       const result = nextFollowing
         ? await supabase.from("follow_relationships").insert({
-            follower_id: id,
+            follower_id: userId,
             target_type: targetType,
             target_id: targetId,
             notify_reviews: true,
@@ -92,35 +123,48 @@ export default function FollowButton({ targetType, targetId, variant = "default"
             notify_updates: true,
           })
         : await supabase.from("follow_relationships").delete()
-            .eq("follower_id", id).eq("target_type", targetType).eq("target_id", targetId);
+            .eq("follower_id", userId)
+            .eq("target_type", targetType)
+            .eq("target_id", targetId);
 
       if (result.error) {
+        console.error("Unable to update follow state:", result.error);
         setFollowing(wasFollowing);
         setCount(previousCount);
-        onCountChange?.(previousCount);
+        onCountChangeRef.current?.(previousCount);
         showFailure();
-      } else {
-        if (nextFollowing) setNotify(true);
-        const { data: reconciledCount } = await supabase.rpc("get_follow_count", { p_target_type: targetType, p_target_id: targetId });
-        if (reconciledCount !== null && reconciledCount !== undefined) {
-          const value = Number(reconciledCount);
-          setCount(value);
-          onCountChange?.(value);
-        }
+        return;
       }
-    } catch {
+
+      if (nextFollowing) setNotify(true);
+      const { data: reconciledCount, error: countError } = await supabase.rpc(
+        "get_follow_count",
+        { p_target_type: targetType, p_target_id: targetId },
+      );
+      if (countError) {
+        console.error("Unable to refresh follow count:", countError);
+        showFailure();
+      } else if (reconciledCount !== null && reconciledCount !== undefined) {
+        const value = Number(reconciledCount);
+        setCount(value);
+        onCountChangeRef.current?.(value);
+      }
+    } catch (error) {
+      console.error("Unable to update follow state:", error);
       setFollowing(wasFollowing);
       setCount(previousCount);
-      onCountChange?.(previousCount);
+      onCountChangeRef.current?.(previousCount);
       showFailure();
     } finally {
       actionLock.current = false;
+      setBusy(false);
     }
   }
 
   async function toggleNotify() {
-    if (actionLock.current || !userId.current || !following) return;
+    if (!authReady || actionLock.current || !userId || !following) return;
     actionLock.current = true;
+    setBusy(true);
     const previous = notify;
     const next = !previous;
     setNotify(next);
@@ -129,13 +173,19 @@ export default function FollowButton({ targetType, targetId, variant = "default"
         notify_reviews: next,
         notify_ratings: next,
         notify_updates: next,
-      }).eq("follower_id", userId.current).eq("target_type", targetType).eq("target_id", targetId);
-      if (error) { setNotify(previous); showFailure(); }
-    } catch {
+      }).eq("follower_id", userId).eq("target_type", targetType).eq("target_id", targetId);
+      if (error) {
+        console.error("Unable to update follow notifications:", error);
+        setNotify(previous);
+        showFailure();
+      }
+    } catch (error) {
+      console.error("Unable to update follow notifications:", error);
       setNotify(previous);
       showFailure();
     } finally {
       actionLock.current = false;
+      setBusy(false);
     }
   }
 
@@ -145,6 +195,7 @@ export default function FollowButton({ targetType, targetId, variant = "default"
         type="button"
         className={variant === "club" ? `hc-team-follow-pill ${following ? "is-following" : "is-not-following"}` : "btn dark"}
         onClick={() => void toggle()}
+        disabled={busy || !authReady}
         title={following ? t("followingProfileTitle") : t("followProfileTitle")}
         aria-pressed={following}
       >
@@ -156,12 +207,12 @@ export default function FollowButton({ targetType, targetId, variant = "default"
         aria-label={t("toggleNotifications")}
         title={following ? t("teamAlerts") : t("followToEnableAlerts")}
         onClick={() => void toggleNotify()}
-        disabled={!following}
+        disabled={!following || busy || !authReady}
         style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px", background: "transparent", color: "inherit", cursor: following ? "pointer" : "not-allowed", opacity: following ? 1 : 0.55 }}
       >
         <><HoopIcon name="bell" size={15} /> {notify ? t("on") : t("off")}</>
       </button>}
-      {!signedIn && <span className="muted" style={{ fontSize: 12 }}>{t("signInToFollow")}</span>}
+      {authReady && !signedIn && <span className="muted" style={{ fontSize: 12 }}>{t("signInToFollow")}</span>}
       {notice && <span role="status" aria-live="polite" className="hc-action-toast">{notice}</span>}
     </div>
   );

@@ -4082,6 +4082,18 @@ html.theme-dark .hc-team-entity-profile :where(.hero,.card,.dashboard-card) :whe
   color: var(--hc-foreground, #f7f7f5);
 }
 
+/* Shared feature-link lock state: retain preview copy while making access explicit. */
+.hc-feature-link { position:relative; }
+.hc-feature-lock-state { display:inline-flex; align-items:center; gap:5px; width:max-content; margin-left:8px; padding:4px 7px; border:1px solid var(--hc-border,var(--border)); border-radius:999px; color:var(--hc-foreground-muted,var(--muted)); background:var(--hc-surface-soft,var(--surface)); font-size:10px; font-weight:800; line-height:1; vertical-align:middle; }
+.hc-feature-lock-state small { font-size:10px; font-weight:850; }
+.hc-feature-link.is-tier-locked .hc-feature-lock-state { color:var(--hc-orange,#FF5A1F); border-color:color-mix(in srgb,var(--hc-orange,#FF5A1F) 45%,transparent); }
+.hc-feature-link:focus-visible { outline:2px solid var(--hc-orange,#FF5A1F); outline-offset:3px; }
+
+.hc-current-plan-badge { display:inline-flex; width:max-content; align-items:center; padding:5px 9px; border-radius:999px; background:#FF5A1F; color:#0A0A0A; font-size:10px; font-weight:900; letter-spacing:.08em; }
+.hc-free-plan-card { position:relative; }
+@media (min-width:760px) { .hc-membership-page .plans { grid-template-columns:repeat(3,minmax(0,1fr)); align-items:stretch; } }
+@media (max-width:759px) { .hc-membership-page .plans { grid-template-columns:minmax(0,1fr); } }
+.hc-membership-page .plan-card .plan-button:disabled { cursor:default; opacity:.82; }
 
 /* USER-1: username input and its inline availability/error state. */
 .signup-form .hc-username-field { display:grid; gap:5px; min-width:0; }

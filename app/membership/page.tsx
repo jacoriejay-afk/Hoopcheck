@@ -1,12 +1,13 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
 import MembershipComparison from "../../components/MembershipComparison";
-import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { useAuthState } from "../../components/AuthProvider";
+import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
 
 type Plan = "pro" | "premium";
 type BillingInterval = "month" | "6_month" | "year";
@@ -22,9 +23,11 @@ type Subscription = {
 
 function MembershipContent() {
   const searchParams = useSearchParams();
+  const { ready: authReady, refreshMembership } = useAuthState();
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
+  const [subscriptionLoadFailed, setSubscriptionLoadFailed] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [billingInterval, setBillingInterval] = useState<BillingInterval>("month");
   const [accountType, setAccountType] = useState<string | null>(null);
@@ -35,8 +38,9 @@ function MembershipContent() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  async function loadSubscription() {
+  const loadSubscription = useCallback(async () => {
     setLoading(true);
+    setSubscriptionLoadFailed(false);
     setError("");
 
     const {
@@ -66,12 +70,14 @@ function MembershipContent() {
     if (error) {
       console.error("Error loading subscription:", error);
       setError("We couldn't load your membership status.");
+      setSubscriptionLoadFailed(true);
     } else {
       setSubscription(data as Subscription | null);
+      await refreshMembership();
     }
 
     setLoading(false);
-  }
+  }, [refreshMembership]);
 
   useEffect(() => {
     void loadSubscription();
@@ -105,7 +111,7 @@ function MembershipContent() {
     }
 
     return undefined;
-  }, [searchParams]);
+  }, [loadSubscription, searchParams]);
 
   async function startCheckout(plan: Plan, interval: BillingInterval = billingInterval, code?: string) {
     setCheckoutLoading(`${plan}-${interval}`);
@@ -238,8 +244,8 @@ function MembershipContent() {
     }
   }
 
-  const isActive =
-    subscription?.status === "active" || subscription?.status === "trialing";
+  const isActive = hasActiveMembershipAtLeast(subscription, "pro");
+  const currentPlan = loading || !authReady || subscriptionLoadFailed ? null : hasActiveMembershipAtLeast(subscription, "premium") ? "premium" : isActive ? "pro" : "free";
   const premiumOnlyAccount = accountType === "coach" || accountType === "manager";
 
   return (
@@ -274,14 +280,6 @@ function MembershipContent() {
           </div>
         )}
         {isActive && subscription?.stripe_subscription_id && (
-          <MembershipComparison
-            audience={accountType === "fan" ? "fan" : "player"}
-            currentTier={hasActiveMembershipAtLeast(subscription, "premium") ? "premium" : hasActiveMembershipAtLeast(subscription, "pro") ? "pro" : "free"}
-            billingTerm={billingInterval}
-            premiumOnly={premiumOnlyAccount}
-          />
-        )}
-        {isActive && subscription?.stripe_subscription_id ? (
           <div className="active-card" id="manage-subscription">
             <div className="eyebrow">CURRENT MEMBERSHIP</div>
             <h2>
@@ -320,8 +318,8 @@ function MembershipContent() {
               subscription settings through the billing portal.
             </div>
           </div>
-        ) : (
-          <>
+        )}
+        <>
             <div className="section-heading">
               <div className="eyebrow">CHOOSE YOUR ACCESS</div>
               <h2>
@@ -357,93 +355,21 @@ function MembershipContent() {
               <button type="button" aria-pressed={billingInterval==="6_month"} className={billingInterval==="6_month" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("6_month")}><span>6 months</span><small>Save 10%</small></button>
               <button type="button" aria-pressed={billingInterval==="year"} className={billingInterval==="year" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 15%</small></button>
             </div>
-            <div className="hc-membership-value"><span className="hc-membership-value__mark">★</span><div><strong>Best flexibility, better value.</strong><p>Choose monthly, 6-month, or annual billing. The total shown is the amount charged for the selected term.</p></div></div><div className="plans">
-              <div className="plan-card">
-                <div className="plan-top">
-                  <div>
-                    <div className="eyebrow">{accountType === "fan" ? "HOOPCHECK FAN PRO" : "HOOPCHECK PRO"}</div>
-                    <h3>{accountType === "fan" ? "Fan Pro" : "Pro"}</h3>
-                  </div>
-                  <div className="price">
-                    <strong>{billingInterval==="month" ? "\$4.99" : billingInterval==="6_month" ? "\$25.45" : "\$53.89"}</strong>
-                    <span>{billingInterval==="month" ? "billed monthly" : billingInterval==="6_month" ? "billed every 6 months" : "billed annually"}</span>
-                  </div>
-                </div>
-                <p className="plan-description">
-                  {accountType === "fan"
-                    ? "Join Fan HoopFeed and live game chats, connect with other fans and compare teams."
-                    : "Full access to the core HoopCheck research experience."}
-                </p>
-                <ul>
-                  {accountType === "fan" ? <>
-                    <li>Fan HoopFeed reading and posting</li>
-                    <li>Fan network and connection requests</li>
-                    <li>Live Game Hub and Chat</li>
-                    <li>Team comparison and team alerts</li>
-                  </> : <>
-                    <li>Full coach ratings and reviews</li>
-                    <li>Full team ratings and reviews</li>
-                    <li>Full league ratings and reviews</li>
-                    <li>Coach research</li>
-                    <li>Team research</li>
-                    <li>League research</li>
-                  </>}
-                </ul>
-                <button
-                  className="btn plan-button"
-                  onClick={() => startCheckout("pro")}
-                  disabled={checkoutLoading !== null || loading}
-                >
-                  {checkoutLoading === `pro-${billingInterval}` ? "Opening Checkout..." : `Get ${accountType === "fan" ? "Fan Pro" : "Pro"} — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}
-                </button>
-              </div>
-
-              <div className="plan-card featured">
-                <div className="featured-badge">MORE ACCESS</div>
-                <div className="plan-top">
-                  <div>
-                    <div className="eyebrow">{accountType === "fan" ? "HOOPCHECK FAN PREMIUM" : "HOOPCHECK PREMIUM"}</div>
-                    <h3>{accountType === "fan" ? "Fan Premium" : "Premium"}</h3>
-                  </div>
-                  <div className="price">
-                    <strong>{billingInterval==="month" ? "\$9.99" : billingInterval==="6_month" ? "\$50.95" : "\$107.89"}</strong>
-                    <span>{billingInterval==="month" ? "billed monthly" : billingInterval==="6_month" ? "billed every 6 months" : "billed annually"}</span>
-                  </div>
-                </div>
-                <p className="plan-description">
-                  {accountType === "fan"
-                    ? "Everything in Fan Pro, plus complete access to player-written reviews and Trust Score details."
-                    : "Everything in Pro plus expanded research capabilities."}
-                </p>
-                <ul>
-                  {accountType === "fan" ? <>
-                    <li>Everything in Fan Pro</li>
-                    <li>Full coach, team and league review details</li>
-                    <li>Full Trust Score details</li>
-                    <li>Expanded team insights</li>
-                    <li>Premium discovery features</li>
-                    <li>Priority access to new features</li>
-                  </> : <>
-                    <li>Everything in Pro</li>
-                    <li>Advanced research tools</li>
-                    <li>Expanded coach insights</li>
-                    <li>Expanded team insights</li>
-                    <li>Expanded league insights</li>
-                    <li>Premium discovery features</li>
-                    <li>Priority access to new features</li>
-                  </>}
-                </ul>
-                <button
-                  className="btn plan-button"
-                  onClick={() => startCheckout("premium")}
-                  disabled={checkoutLoading !== null || loading}
-                >
-                  {checkoutLoading === `premium-${billingInterval}` ? "Opening Checkout..." : `Get ${accountType === "fan" ? "Fan Premium" : "Premium"} — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}
-                </button>
-              </div>
-            </div>
-
-            <p className="hc-promo-hint">Have a promo code? Enter it on the secure Stripe Checkout page before you pay.</p>\n            <div className="subscription-legal">
+            <div className="hc-membership-value"><span className="hc-membership-value__mark">★</span><div><strong>Best flexibility, better value.</strong><p>Choose monthly, 6-month, or annual billing. The total shown is the amount charged for the selected term.</p></div></div>
+            {currentPlan === null ? (
+              <p role="status">{subscriptionLoadFailed ? "Unable to verify your current plan." : "Checking your current plan…"}</p>
+            ) : (
+              <MembershipComparison
+                audience={accountType === "fan" ? "fan" : "player"}
+                currentTier={currentPlan}
+                billingTerm={billingInterval}
+                premiumOnly={premiumOnlyAccount}
+                purchaseDisabled={loading || checkoutLoading !== null}
+                onSelect={(tier) => void startCheckout(tier)}
+              />
+            )}
+            <p className="hc-promo-hint">Have a promo code? Enter it on the secure Stripe Checkout page before you pay.</p>
+            <div className="subscription-legal">
               <p>
                 By purchasing a HoopCheck membership, you agree to our{" "}
                 <Link href="/terms">Terms of Service</Link> and acknowledge our{" "}
@@ -461,7 +387,6 @@ function MembershipContent() {
               </p>
             </div>
           </>
-        )}
       </section>
 
       <section className="hero bottom-cta">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCachedSession, supabase } from "../../lib/supabase";
@@ -11,6 +11,7 @@ import { useLanguage } from "../../components/LanguageProvider";
 import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import { CategoryIconTile, HoopIcon } from "../../components/HoopCheckUI";
+import FeatureLink from "../../components/FeatureLink";
 import { calculateProfileCompletion } from "../../lib/profile-completion";
 import TeamLogo from "../../components/TeamLogo";
 import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
@@ -182,7 +183,7 @@ export default function DashboardPage() {
         <Link href="/team-hub" className="hc-ia-door"><CategoryIconTile category="teams" size="sm"/><span><strong>{t("home.teamHub")}</strong><small>{t("home.teamHubDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
         <Link href="/fan-feed" className="hc-ia-door"><CategoryIconTile category="reviews" size="sm"/><span><strong>{t("home.fanFeed")}</strong><small>{t("home.fanFeedDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
         <Link href="/fans" className="hc-ia-door"><CategoryIconTile category="reviews" icon="users" size="sm"/><span><strong>{t("home.findFan")}</strong><small>{t("home.findFanDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-        <Link href="/fan-live" className="hc-ia-door"><CategoryIconTile category="leagues" size="sm"/><span><strong>{t("home.liveGames")}</strong><small>{liveCounts.live===null?"Open the live game hub":`${liveCounts.live} live · ${liveCounts.upcoming ?? "—"} upcoming`}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
+        <FeatureLink href="/fan-live" className="hc-ia-door"><CategoryIconTile category="leagues" size="sm"/><span><strong>{t("home.liveGames")}</strong><small>{liveCounts.live===null?"Open the live game hub":`${liveCounts.live} live · ${liveCounts.upcoming ?? "—"} upcoming`}</small></span><HoopIcon name="chevron-right" size={18}/></FeatureLink>
       </div></section>
       <Link href="/account" className="hc-ia-account-link">{t("home.accountSettings")} <HoopIcon name="arrow-right" size={16}/></Link>
     </div></main>
@@ -202,7 +203,7 @@ export default function DashboardPage() {
         {profile?.account_type === "player" ? <PlayerProfileCompletionCard profile={profile} /> : completion < 100 && <Link href="/account#edit-profile" className="hc-ia-completion"><span><strong>{t("home.completeProfile")}</strong><small>{t("home.profileCompletion").replace("{percent}", String(completion))}</small></span><span>{t("home.continue")} <HoopIcon name="arrow-right" size={16}/></span></Link>}
 
         <HomePulse live={null} upcoming={null} followedClubs={teams.length} recentReviews={reviews.length}/>
-        <Link href="/live-games" className="hc-ia-live-strip"><span className={liveCounts.live!==null && liveCounts.live>0 ? "hc-ia-live-dot" : "hc-ia-live-dot hc-ia-live-dot--inactive"} aria-hidden="true"/><span><strong>{t("home.liveGames")}</strong><small>{t("home.liveDescription")}</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></Link>
+        <FeatureLink href="/live-games" className="hc-ia-live-strip"><span className={liveCounts.live!==null && liveCounts.live>0 ? "hc-ia-live-dot" : "hc-ia-live-dot hc-ia-live-dot--inactive"} aria-hidden="true"/><span><strong>{t("home.liveGames")}</strong><small>{t("home.liveDescription")}</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></FeatureLink>
 
         {profile?.account_type==="player" && <Link href="/pre-sign" className="hc-smooth-presign-dashboard-link hc-smooth-card"><span><small>PLAYER INTELLIGENCE</small><strong>Pre-Sign Check</strong><span>Six checks to research a club before you commit to a contract.</span></span><HoopIcon name="arrow-right" size={18}/></Link>}
 
@@ -224,8 +225,8 @@ export default function DashboardPage() {
 
         {reviews.length>0 && <section className="hc-ia-section"><div className="hc-ia-section-heading"><div><p className="eyebrow">{t("home.experiences")}</p><h2>{t("home.recentReviews")}</h2></div></div><div className="hc-ia-follow-list">{reviews.slice(0,3).map(review=><Link key={review.id} href={(basketballSide==="womens"?"/womens/":"/teams/")+review.team_id}><span><strong>{review.title||t("home.playerReview")}</strong><small>{review.body.slice(0,110)}{review.body.length>110?"…":""} · {review.overall_rating}/5</small></span><HoopIcon name="chevron-right" size={17}/></Link>)}</div></section>}
 
-        <section className="hc-ia-section hc-ia-feed-teaser"><div className="hc-ia-section-heading"><div><p className="eyebrow">{t("home.playerNetwork")}</p><h2>{t("home.hoopFeed")}</h2></div><Link href="/feed">{t("home.openFeed")} <HoopIcon name="arrow-right" size={15}/></Link></div>
-          {hasFeedAccess && feedPost ? <Link href="/feed" className="hc-ia-feed-card"><strong>{feedPost.profiles?.[0]?.display_name||t("home.playerFollow")}</strong><p>{feedPost.body.slice(0,180)}{feedPost.body.length>180?"…":""}</p><small>{t("home.latestPost")}</small></Link> : <Link href="/feed" className="hc-ia-feed-card"><strong>{t("home.openHoopFeed")}</strong><p>{t("home.feedDescription")}</p><small>{t("home.followersOnly")}</small></Link>}
+        <section className="hc-ia-section hc-ia-feed-teaser"><div className="hc-ia-section-heading"><div><p className="eyebrow">{t("home.playerNetwork")}</p><h2>{t("home.hoopFeed")}</h2></div><FeatureLink href="/feed">{t("home.openFeed")} <HoopIcon name="arrow-right" size={15}/></FeatureLink></div>
+          {hasFeedAccess && feedPost ? <FeatureLink href="/feed" className="hc-ia-feed-card"><strong>{feedPost.profiles?.[0]?.display_name||t("home.playerFollow")}</strong><p>{feedPost.body.slice(0,180)}{feedPost.body.length>180?"…":""}</p><small>{t("home.latestPost")}</small></FeatureLink> : <FeatureLink href="/feed" className="hc-ia-feed-card"><strong>{t("home.openHoopFeed")}</strong><p>{t("home.feedDescription")}</p><small>{t("home.followersOnly")}</small></FeatureLink>}
         </section>
         <Link href="/account" className="hc-ia-account-link">{t("home.accountReviewsSettings")} <HoopIcon name="arrow-right" size={16}/></Link>
       </div>

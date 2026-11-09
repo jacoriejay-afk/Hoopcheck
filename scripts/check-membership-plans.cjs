@@ -46,6 +46,12 @@ test("checkout choices are disabled during loading", () => {
   assert.match(html, /<button[^>]*disabled[^>]*>Choose Premium/);
 });
 
+test("Premium members see Pro as included, not as a lower-tier purchase", () => {
+  const html = render({ currentTier: "premium" });
+  assert.doesNotMatch(html, /Choose Pro/);
+  assert.match(html, /<button[^>]*disabled[^>]*>Included/);
+});
+
 test("role selection, server enforcement, and profile constraint remain aligned", () => {
   const page = read("app/membership/page.tsx");
   assert.match(page, /accountType === "coach" \|\| accountType === "manager"/);
