@@ -24,7 +24,17 @@ const config = {
           alerts: "#F5B800",
         },
       },
-      // Shared radius scale for consistent cards, controls, and overlays.\n      borderRadius: {\n        sm: "var(--hc-radius-control)",\n        DEFAULT: "var(--hc-radius-control)",\n        md: "var(--hc-radius-control)",\n        lg: "var(--hc-radius-card)",\n        xl: "var(--hc-radius-card)",\n        "2xl": "var(--hc-radius-hero)",\n        "3xl": "var(--hc-radius-hero)",\n      },\n      fontFamily: {
+      // Shared radius scale for consistent cards, controls, and overlays.
+      borderRadius: {
+        sm: "var(--hc-radius-control)",
+        DEFAULT: "var(--hc-radius-control)",
+        md: "var(--hc-radius-control)",
+        lg: "var(--hc-radius-card)",
+        xl: "var(--hc-radius-card)",
+        "2xl": "var(--hc-radius-hero)",
+        "3xl": "var(--hc-radius-hero)",
+      },
+      fontFamily: {
         display: ["var(--font-display)", "Graduate", "serif"],
         sans: ["var(--font-sans)", "Inter", "sans-serif"],
       },
