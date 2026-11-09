@@ -43,7 +43,7 @@ export default function Sponsor() {
         message: storedMessage,
       });
       if (error) {
-        setSent("Your inquiry couldn't be submitted. Please try again.");
+        setSent(error.code === "P0001" ? "You have reached the inquiry submission limit. Please try again later." : "Your inquiry couldn't be submitted. Please try again.");
         return;
       }
       setMessage("");
