@@ -3856,8 +3856,8 @@ html.theme-dark main :where(select) { background:#191919!important; color:#F7F7F
 html.theme-dark main :where(select option, select optgroup) { background:#191919!important; color:#F7F7F5!important; }
 html.theme-dark main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), textarea) { color:#F7F7F5; -webkit-text-fill-color:#F7F7F5; }
 html.theme-light main :where(select, option, optgroup) { color-scheme:light; }
-html.theme-light main :where(select) { background:#FFFFFF!important; color:#171717!important; border-color:#CFCFC9!important; -webkit-text-fill-color:#171717!important; }
-html.theme-light main :where(select option, select optgroup) { background:#FFFFFF!important; color:#171717!important; }
+html.theme-light main :where(select) { background:var(--hc-surface-raised, #F7F7F5)!important; color:#171717!important; border-color:#CFCFC9!important; -webkit-text-fill-color:#171717!important; }
+html.theme-light main :where(select option, select optgroup) { background:var(--hc-surface-raised, #F7F7F5)!important; color:#171717!important; }
 html.theme-light main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), textarea) { color:#171717; -webkit-text-fill-color:#171717; }
 html.theme-dark main :where(input[type="radio"], input[type="checkbox"]) { accent-color:#FF5A1F; }
 html.theme-light main :where(input[type="radio"], input[type="checkbox"]) { accent-color:#E84B16; }
@@ -3865,7 +3865,7 @@ html.theme-dark .hc-claim-panel { background:#171717; color:#F7F7F5; border-colo
 html.theme-dark .hc-claim-panel :where(h3,p,strong,label) { color:#F7F7F5; }
 html.theme-dark .hc-claim-panel :where(.hc-claim-field input) { background:#202020; color:#F7F7F5; border-color:#505050; }
 html.theme-dark .hc-claim-panel :where(.hc-claim-field small) { color:#B8B8B2; }
-html.theme-light .hc-claim-panel { background:#FFFFFF; color:#171717; }
+html.theme-light .hc-claim-panel { background:var(--hc-surface-raised, #F7F7F5); color:#171717; }
 html.theme-light .hc-claim-panel :where(h3,p,strong,label) { color:#171717; }
 html.theme-light .hc-claim-panel :where(.hc-claim-field input) { background:#F7F7F5; color:#171717; border-color:#D8D8D2; }
 
