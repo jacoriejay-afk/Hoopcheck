@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import Link from "next/link";
+import "../../hoopcheck-brand-team.css";
 
 import { useParams } from "next/navigation";
 

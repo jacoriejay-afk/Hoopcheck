@@ -2,12 +2,14 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
+import TeamLeaguePicker from "./TeamLeaguePicker";
 import { supabase } from "../lib/supabase";
 
 type CareerStop = {
   id: string;
   player_id: string;
   team_id: string | null;
+  womens_team_id: string | null;
   team_name: string;
   league_name: string | null;
   country: string;
@@ -15,8 +17,9 @@ type CareerStop = {
   position: string | null;
   stop_order: number;
   is_public: boolean;
+  team_source: "teams" | "womens_teams";
+  career_status: "current" | "former";
 };
-type DirectoryTeam = { id: string; name: string; country: string | null; league_name: string | null };
 
 const FLAGS: Record<string,string> = {
   "United States":"🇺🇸",Canada:"🇨🇦",Mexico:"🇲🇽",Spain:"🇪🇸",France:"🇫🇷",Germany:"🇩🇪",Italy:"🇮🇹",
@@ -31,11 +34,12 @@ const monogram = (name:string) => name.split(/\s+/).filter(Boolean).slice(0,2).m
 
 export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { playerId:string; isOwnProfile:boolean; canManage:boolean }) {
   const [stops,setStops] = useState<CareerStop[]>([]);
-  const [teams,setTeams] = useState<DirectoryTeam[]>([]);
   const [loading,setLoading] = useState(true);
   const [saving,setSaving] = useState(false);
   const [message,setMessage] = useState("");
   const [teamId,setTeamId] = useState("");
+  const [teamSource,setTeamSource] = useState<"teams"|"womens_teams">("teams");
+  const [careerStatus,setCareerStatus] = useState<"current"|"former">("former");
   const [teamName,setTeamName] = useState("");
   const [leagueName,setLeagueName] = useState("");
   const [country,setCountry] = useState("");
@@ -45,7 +49,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
 
   async function load() {
     const {data,error} = await supabase.from("player_career_stops")
-      .select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public")
+      .select("id,player_id,team_id,womens_team_id,team_name,league_name,country,seasons,position,stop_order,is_public,team_source,career_status")
       .eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true});
     if(!error) setStops((data||[]) as CareerStop[]);
     setLoading(false);
@@ -54,26 +58,16 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
   useEffect(() => {
     let active = true;
     void Promise.all([
-      supabase.from("player_career_stops").select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public").eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true}),
-      supabase.from("teams").select("id,name,country,league_name").or("basketball_type.eq.mens,source.eq.womens_teams_mirror").eq("active",true).order("name").limit(500),
-    ]).then(([stopResult,teamResult]) => {
+      supabase.from("player_career_stops").select("id,player_id,team_id,womens_team_id,team_name,league_name,country,seasons,position,stop_order,is_public,team_source,career_status").eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true}),
+    ]).then(([stopResult]) => {
       if(!active) return;
       if(!stopResult.error) setStops((stopResult.data||[]) as CareerStop[]);
-      setTeams((teamResult.data||[]) as DirectoryTeam[]);
       setLoading(false);
     }).catch(()=>{ if(active) setLoading(false); });
     return ()=>{active=false;};
   },[playerId]);
 
-  function chooseTeam(value:string) {
-    setTeamId(value);
-    const selected = teams.find(team=>team.id===value);
-    if(selected) {
-      setTeamName(selected.name);
-      setLeagueName(selected.league_name||"");
-      if(selected.country) setCountry(selected.country);
-    }
-  }
+  const countryPassport = Array.from(new Set(stops.filter(stop => isOwnProfile || stop.is_public).map(stop => stop.country.trim()).filter(Boolean))).sort();
 
   async function addStop(event:FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -84,14 +78,14 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
     const {data:{user}} = await supabase.auth.getUser();
     if(!user || user.id!==playerId) { setMessage("Sign in to your own player account to update your journey."); setSaving(false); return; }
     const {error} = await supabase.from("player_career_stops").insert({
-      player_id:playerId,team_id:teamId||null,team_name:name,league_name:leagueName.trim()||null,
+      player_id:playerId,team_id:teamSource==="teams"&&teamId?teamId:null,womens_team_id:teamSource==="womens_teams"&&teamId?teamId:null,team_name:name,league_name:leagueName.trim()||null,
       country:country.trim(),seasons:seasons.trim(),position:position.trim()||null,
-      stop_order:stops.length,is_public:isPublic
+      stop_order:stops.length,is_public:isPublic,team_source:teamSource,career_status:careerStatus
     });
     if(error) setMessage(error.message.includes("row-level security") ? "My Journey requires an active Premium Player membership." : "Couldn't save this career stop. Please try again.");
     else {
-      setTeamId("");setTeamName("");setLeagueName("");setCountry("");setSeasons("");setPosition("");setIsPublic(false);
-      setMessage("Career stop added.");await load();
+      setTeamId("");setTeamName("");setLeagueName("");setCountry("");setSeasons("");setPosition("");setIsPublic(false);setCareerStatus("former");
+      setMessage("Career stop added. Your passport countries are updated from your career history. Review eligibility is checked separately.");await load();
     }
     setSaving(false);
   }
@@ -113,14 +107,15 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
 
   return <section className="hc-journey-section">
     <div className="hc-journey-heading"><div><p className="eyebrow">CAREER PASSPORT</p><h2>My Journey<span>.</span></h2><p>Every stop tells part of the story.</p></div><span className="hc-journey-stamp">PLAYER<br/>HISTORY</span></div>
+    {!loading && countryPassport.length > 0 && <div className="hc-journey-countries" aria-label="Countries played in"><strong>COUNTRIES PLAYED IN · {countryPassport.length}</strong><div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:8}}>{countryPassport.map(name=><span key={name} className="hc-journey-country" style={{padding:"6px 10px",border:"1px solid var(--hc-border, #777)",borderRadius:10}}>{FLAGS[name]||"🌍"} {name}</span>)}</div></div>}
     {loading ? <p className="muted">Loading career stops…</p> : stops.length ? <div className="hc-journey-timeline">
       {stops.map((stop,index) => <article className="hc-journey-stop" key={stop.id}>
         <div className="hc-journey-stop__rail"><span className="hc-journey-stop__dot">{String(index+1).padStart(2,"0")}</span>{index<stops.length-1&&<span className="hc-journey-stop__line"/>}</div>
         <div className="hc-journey-stop__card">
-          <div className="hc-journey-stop__top"><span className="hc-journey-stop__flag" aria-label={stop.country}>{FLAGS[stop.country]||"🌍"}</span><span className="hc-journey-stop__season">{stop.seasons}</span>{stop.is_public&&<span className="hc-journey-public">PUBLIC</span>}</div>
+          <div className="hc-journey-stop__top"><span className="hc-journey-stop__flag" aria-label={stop.country}>{FLAGS[stop.country]||"🌍"}</span><span className="hc-journey-stop__season">{stop.seasons} · {stop.career_status === "current" ? "Current team" : "Former team"}</span>{stop.is_public&&<span className="hc-journey-public">PUBLIC</span>}</div>
           <div className="hc-journey-stop__team"><span className="hc-journey-stop__crest">{monogram(stop.team_name)}</span><div><h3>{stop.team_name}</h3><p>{stop.league_name||"League not listed"} · {stop.country}</p>{stop.position&&<small>Position · {stop.position}</small>}</div></div>
           <div className="hc-journey-stop__footer">
-            {stop.team_id ? <Link href={`/teams/${stop.team_id}`}>View team profile →</Link> : <span className="muted">Team not linked to directory</span>}
+            {(stop.team_id || stop.womens_team_id) ? <><Link href={`/${stop.womens_team_id ? "womens" : "teams"}/${stop.womens_team_id || stop.team_id}`}>View team profile →</Link>{isOwnProfile&&<Link href={`/${stop.womens_team_id ? "womens" : "teams"}/${stop.womens_team_id || stop.team_id}/review`}>Check review eligibility →</Link>}</> : <span className="muted">Team not linked to directory — request a listing to review</span>}
             {isOwnProfile&&canManage&&<div><button type="button" onClick={()=>void toggleVisibility(stop)}>{stop.is_public?"Make private":"Make public"}</button><button type="button" onClick={()=>void removeStop(stop)}>Remove</button></div>}
           </div>
         </div>
@@ -129,7 +124,10 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
     {isOwnProfile&&!canManage&&<div className="hc-journey-upgrade"><strong>Premium Players · My Journey</strong><p>Add career stops and create your professional basketball passport. Public sharing is always optional.</p><Link href="/membership" className="btn">Unlock My Journey</Link></div>}
     {isOwnProfile&&canManage&&<form className="hc-journey-form" onSubmit={addStop}>
       <p className="eyebrow">ADD CAREER STOP</p>
-      <label>Match a HoopCheck team <select value={teamId} onChange={event=>chooseTeam(event.target.value)}><option value="">Not listed / enter team below</option>{teams.map(team=><option key={team.id} value={team.id}>{team.name}{team.country?` · ${team.country}`:""}</option>)}</select></label>
+      <label>Current or former team <select value={careerStatus} onChange={event=>setCareerStatus(event.target.value as "current"|"former")}><option value="current">Current team</option><option value="former">Former team</option></select></label>
+      <label>Directory <select value={teamSource} onChange={event=>{setTeamSource(event.target.value as "teams"|"womens_teams");setTeamId("");setTeamName("");setLeagueName("");setCountry("");}}><option value="teams">Men’s teams</option><option value="womens_teams">Women’s teams</option></select></label>
+      <TeamLeaguePicker mode="team" directorySource={teamSource} basketballType={teamSource==="womens_teams"?"womens":"mens"} label="Match a HoopCheck team" placeholder="Search current or former club" value={teamId} onChange={setTeamId} onSelectItem={item=>{setTeamId(item.id);setTeamName(item.name);setCountry(item.country);setLeagueName(item.league_name||"");}} />
+      <p className="muted">Select a team to fill in its country and league. {careerStatus==="current"?"Enter the current season below.":"Enter the season(s) you previously played."} Adding a team does not automatically verify eligibility to publish a review.</p>
       <label>Team name <input value={teamName} onChange={event=>setTeamName(event.target.value)} maxLength={160} required placeholder="Team or club name"/></label>
       <label>League <input value={leagueName} onChange={event=>setLeagueName(event.target.value)} maxLength={160} placeholder="League name"/></label>
       <div className="hc-journey-form__row"><label>Country <input value={country} onChange={event=>setCountry(event.target.value)} maxLength={100} required placeholder="Country"/></label><label>Seasons <input value={seasons} onChange={event=>setSeasons(event.target.value)} maxLength={80} required placeholder="2024–25"/></label></div>
