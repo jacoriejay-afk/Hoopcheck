@@ -775,6 +775,12 @@ try {
         const missingText = expectedText.filter((expected) => !visibleText.toLocaleUpperCase().includes(expected.toLocaleUpperCase()));
         if (missingText.length) errors.push("language assertions missing: " + missingText.join(", "));
       }
+      // Directory results hydrate after the route shell. Capture populated content,
+      // not the temporary scanning/loading placeholder.
+      if (requestedPath === "/teams" || requestedPath === "/search?q=Baku") {
+        await page.locator(".hc-team-logo--image").first().waitFor({ state: "visible", timeout: 15000 });
+        await page.locator(".hc-team-logo--fallback").first().waitFor({ state: "visible", timeout: 15000 });
+      }
       await page.screenshot({
         path: `${artifactsDir}/routes/${requestedPath.replace(/[^a-z0-9-]+/gi, "_")}-${theme}-${testLanguage}-mobile.png`,
         fullPage: true,
