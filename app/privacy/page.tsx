@@ -12,7 +12,7 @@ export default function PrivacyPage() {
       </section>
       <section className="legal-content">
         <div className="legal-card">
-          <p className="updated">Last updated: October 9, 2026</p>
+          <p className="updated">Last updated: November 9, 2026</p>
 
           <h2>1. Scope</h2>
           <p>This policy applies to information processed through HoopCheck websites, applications, accounts, subscriptions, reviews, support interactions, and related services.</p>
@@ -21,6 +21,11 @@ export default function PrivacyPage() {
           <p>Depending on how you use HoopCheck, we may collect account and profile information such as name, email address, date of birth (used to enforce the 18+ eligibility rule), account type, country, biography, team information, profile photo, preferences, reviews, ratings, reports, messages, and support requests.</p>
           <p>We may collect technical information such as IP address, device/browser information, session information, approximate location derived from technical data, security logs, and usage events where needed to operate, secure, and improve the service.</p>
           <p>Subscription records may include plan, subscription status, billing period, Stripe customer or subscription identifiers, and transaction-related information. HoopCheck does not intentionally store complete payment-card numbers in its application database.</p>
+
+          <h2>Business and Partnership Inquiries</h2>
+          <p>If you contact HoopCheck about sponsorship, investment, ambassador opportunities, donations, or partnerships, we collect the name, email address, inquiry category, and message you provide to evaluate and respond to your request. You do not need a player or fan account to use the guest business inquiry form when that feature is available.</p>
+          <p>We use abuse-prevention measures, including a CAPTCHA provider, to protect the inquiry form. The CAPTCHA provider may process technical information about your browser and request under its own privacy terms. Business inquiries are not displayed publicly. Access is limited to personnel and service providers who need the information for legitimate business operations.</p>
+          <p>Business inquiry records are retained only as long as reasonably necessary for follow-up, legitimate business records, security, or legal obligations. To request access or deletion, use the Privacy Request Center or Support page.</p>
 
           <h2>3. Reviews and Public Information</h2>
           <p>Information you intentionally submit for public display, including reviews, ratings, profile information, or other public content, may be visible to other users according to the product's access rules.</p>
