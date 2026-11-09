@@ -239,7 +239,7 @@ export default function TeamsPage() {
       for (let offset = 0; offset < 5000; offset += 500) {
         let request = supabase.from("teams")
           .select("id,name,country,league_name,league_id,city,logo_url,logo_bg")
-          .eq("active", true).order("name");
+          .eq("active", true).eq("basketball_type", "mens").order("name").order("id");
         const term = query.trim();
         if (term) {
           const escaped = term.replace(/[%_]/g, (match) => "\\" + match);
@@ -260,7 +260,7 @@ export default function TeamsPage() {
         if (!data || data.length < 500) break;
       }
       if (!active) return;
-      setMapTeams(all);
+      setMapTeams(Array.from(new Map(all.map((team) => [team.id, team])).values()));
       const ids = all.map(team => team.id).filter(Boolean);
       const summaries: Record<string, TrustSummary> = {};
       for (let offset = 0; offset < ids.length; offset += 100) {
