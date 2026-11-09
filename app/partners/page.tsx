@@ -39,7 +39,7 @@ export default function Sponsor() {
       const { error } = await supabase.from("sponsor_inquiries").insert({
         user_id: user.id,
         type: type === "sponsor" || type === "donate" ? type : "inquire",
-        message: type === "inquire" ? cleanMessage : `[Category: ${type}]\n${cleanMessage}`,
+        message: type === "sponsor" || type === "donate" || type === "inquire" ? cleanMessage : `[Category: ${type}]\n${cleanMessage}`,
       });
       if (error) {
         setSent("Your inquiry couldn't be submitted. Please try again.");
