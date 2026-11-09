@@ -84,3 +84,52 @@ html.theme-dark main.hc-ia-home .hc-ia-avatar {
   background-color: var(--hc-surface-soft, #1B1B1B) !important;
   color: var(--hc-foreground, #F5F5F0) !important;
 }
+
+
+/* Signed-in dashboard density pass: one quiet surface language, readable type,
+   and no oversized gap between the global header and the first action. */
+main.hc-dashboard-compact {
+  padding-block-start: 8px !important;
+}
+main.hc-dashboard-compact > .page-container {
+  gap: 12px;
+}
+main.hc-dashboard-compact .hc-ia-welcome {
+  gap: 7px;
+}
+main.hc-dashboard-compact .hc-ia-welcome h1 {
+  max-width: 740px;
+  font-size: clamp(28px, 3.5vw, 42px);
+  line-height: 1.06;
+}
+main.hc-dashboard-compact .hc-ia-welcome .muted {
+  line-height: 1.45;
+}
+main.hc-dashboard-compact .hc-ia-section {
+  gap: 10px;
+}
+main.hc-dashboard-compact :is(.hc-ia-completion,.hc-ia-live-strip,.hc-ia-door,.hc-ia-feed-card,.hc-ia-follow-list) {
+  border: 1px solid var(--hc-border) !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+}
+main.hc-dashboard-compact .hc-ia-completion {
+  padding: 12px 14px;
+}
+main.hc-dashboard-compact :is(.hc-ia-completion,.hc-ia-live-strip) strong {
+  font-size: 13px;
+}
+main.hc-dashboard-compact :is(.hc-ia-completion,.hc-ia-live-strip,.hc-ia-door,.hc-ia-feed-card) small {
+  line-height: 1.45;
+}
+main.hc-dashboard-compact .hc-ia-door-grid,
+main.hc-dashboard-compact .hc-ia-fan-grid {
+  gap: 10px;
+}
+main.hc-dashboard-compact .hc-ia-door {
+  min-height: 64px;
+}
+@media (max-width: 767px) {
+  main.hc-dashboard-compact > .page-container { gap: 12px; }
+  main.hc-dashboard-compact .hc-ia-welcome h1 { font-size: clamp(27px, 8vw, 36px); }
+}

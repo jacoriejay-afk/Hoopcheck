@@ -10,7 +10,7 @@ const protectedFiles = [
 ];
 
 assert.match(migration, /create table if not exists public\.fan_player_career_follows/i);
-assert.match(migration, /target_type = 'player'/i);
+assert.match(migration, /target_type in\s*\([^)]*'player'/is);
 assert.match(migration, /p\.account_type='fan'/i);
 assert.match(migration, /p\.account_type='player'/i);
 assert.match(migration, /notify_fan_player_team_change/i);

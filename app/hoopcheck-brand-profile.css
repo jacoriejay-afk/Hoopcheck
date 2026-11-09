@@ -1,0 +1,75 @@
+/* HoopCheck account/profile brand makeover — role-aware content remains unchanged. */
+.hc-member-profile-page {
+  --hc-profile-brand-orange: #ff5a1f;
+}
+.hc-member-profile-page .hero-card.compact-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(18px,3vw,30px);
+  border: 1px solid #292929;
+  border-radius: 12px;
+  background: linear-gradient(125deg,#080808 0%,#181818 72%,#0a0a0a 100%);
+  color: #f7f7f5;
+}
+.hc-member-profile-page .hero-card.compact-hero::before {
+  content: "";
+  position: absolute;
+  top: -70px;
+  right: 8%;
+  height: 250px;
+  width: 10px;
+  background: #ff5a1f;
+  transform: rotate(40deg);
+  pointer-events: none;
+  z-index: -1;
+}
+html.theme-light .hc-member-profile-page .hero-card.compact-hero,
+html.theme-dark .hc-member-profile-page .hero-card.compact-hero {
+  background: linear-gradient(125deg,#080808,#181818 72%,#0a0a0a);
+  color: #f7f7f5;
+}
+.hc-member-profile-page .hero-card.compact-hero .eyebrow { color: #ff5a1f; font-weight: 900; }
+.hc-member-profile-page .hero-card.compact-hero h1 {
+  color: #fff;
+  font-size: clamp(24px,3vw,40px);
+  font-weight: 950;
+  line-height: 1.08;
+  letter-spacing: -.025em;
+  overflow-wrap: anywhere;
+}
+.hc-member-profile-page .hero-card.compact-hero .muted { color: #e2e2e2; }
+.hc-member-profile-page .hc-member-profile-avatar {
+  border: 2px solid #ff5a1f;
+  background: #f7f7f5;
+  color: #0a0a0a;
+}
+.hc-member-profile-page .hc-profile-edit-button {
+  background: #ff5a1f;
+  border-color: #ff5a1f;
+  color: #0a0a0a;
+  font-weight: 900;
+}
+.hc-member-profile-page .hc-profile-public-button {
+  background: transparent;
+  border: 1px solid #f7f7f5;
+  color: #f7f7f5;
+}
+.hc-member-profile-page .hc-profile-info-card {
+  border: 1px solid var(--hc-border,#d8d8d8);
+  border-radius: 10px;
+}
+.hc-member-profile-page .hc-profile-info-card .card-kicker {
+  color: #ff5a1f;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.hc-member-profile-page .hc-profile-completion-track > span { background: #ff5a1f; }
+.hc-member-profile-page a:focus-visible,.hc-member-profile-page button:focus-visible {
+  outline: 3px solid #ff5a1f;
+  outline-offset: 3px;
+}
+@media(max-width:700px) {
+  .hc-member-profile-page .hero-card.compact-hero { padding: 18px 14px; border-radius: 10px; }
+  .hc-member-profile-page .hc-member-profile-actions { gap: 8px; }
+}

@@ -79,21 +79,25 @@ export async function POST(request: Request) {
     if (action === "join") {
       if (profile?.account_type !== "fan") return NextResponse.json({ ok: false, message: "Only fan accounts can join team fan groups." }, { status: 403 });
       if (isMember) return NextResponse.json({ ok: true, joined: true });
-      if (group.join_mode === "open") {
-        const { error } = await db.from("team_fan_group_members").upsert({ team_id: teamId, user_id: user.id }, { onConflict: "team_id,user_id" });
-        if (error) throw error;
-        return NextResponse.json({ ok: true, joined: true });
-      }
-      const { error } = await db.from("team_fan_group_join_requests").insert({ team_id: teamId, user_id: user.id, status: "pending" });
-      if (error && error.code !== "23505") throw error;
-      const { data: mods } = await db.from("team_fan_group_moderators").select("user_id,moderator_type").eq("team_id", teamId);
-      const moderatorIds = (mods || []).map((m: any) => m.user_id).filter(Boolean);
-      if ((mods || []).some((m: any) => m.moderator_type === "platform")) {
-        const { data: admins } = await db.from("profiles").select("id").eq("account_type", "admin");
-        moderatorIds.push(...(admins || []).map((a: any) => a.id));
-      }
-      await notify(db, moderatorIds, teamId, "group_request", "Fan Group join request", "A fan has requested to join " + group.group_name + ".");
-      return NextResponse.json({ ok: true, requested: true });
+      // All Fan HQ groups are open: joining never creates an approval request.
+      const { error } = await db.from("team_fan_group_members").upsert(
+        { team_id: teamId, user_id: user.id },
+        { onConflict: "team_id,user_id" }
+      );
+      if (error) throw error;
+      return NextResponse.json({ ok: true, joined: true });
+    }
+
+    if (action === "leave") {
+      if (profile?.account_type !== "fan") return NextResponse.json({ ok: false, message: "Only fan accounts can leave Fan Groups." }, { status: 403 });
+      if (!isMember) return NextResponse.json({ ok: true, left: true });
+      // Remove any fan co-moderator appointment before deleting membership.
+      // A cleanup error must not turn a successful leave into an error response.
+      const { error: moderatorError } = await db.from("team_fan_group_moderators").delete().eq("team_id", teamId).eq("user_id", user.id).eq("moderator_type", "fan_co_moderator");
+      if (moderatorError) throw moderatorError;
+      const { error } = await db.from("team_fan_group_members").delete().eq("team_id", teamId).eq("user_id", user.id);
+      if (error) throw error;
+      return NextResponse.json({ ok: true, left: true });
     }
 
     if (action === "create_post" || action === "comment") {
@@ -154,7 +158,7 @@ export async function POST(request: Request) {
     if (!isModerator) return NextResponse.json({ ok: false, message: "Moderator access is required." }, { status: 403 });
     if (action === "set_join_mode") {
       const mode = String(form.get("join_mode") || "");
-      if (!["open", "approval"].includes(mode)) return NextResponse.json({ ok: false, message: "Choose a valid join mode." }, { status: 400 });
+      if (mode !== "open") return NextResponse.json({ ok: false, message: "All Fan HQ groups are open to join." }, { status: 400 });
       const { error } = await db.from("team_fan_groups").update({ join_mode: mode, updated_at: new Date().toISOString() }).eq("team_id", teamId);
       if (error) throw error;
       if (mode === "open") {

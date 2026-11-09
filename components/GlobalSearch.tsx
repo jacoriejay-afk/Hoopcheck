@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SearchBar from "./SearchBar";
 
-export default function GlobalSearch({ compact = false }: { compact?: boolean }) {
+export default function GlobalSearch({ compact = false, fanView = false }: { compact?: boolean; fanView?: boolean }) {
   const router = useRouter();
   const params = useSearchParams();
   const [value, setValue] = useState(params.get("q") || "");
@@ -20,7 +20,7 @@ export default function GlobalSearch({ compact = false }: { compact?: boolean })
       value={value}
       onChange={setValue}
       onSubmit={submit}
-      placeholder="Search players, coaches, teams, or leagues"
+      placeholder={fanView ? "Search teams, coaches, or leagues" : "Search players, coaches, teams, or leagues"}
       ariaLabel="Global search"
     />
   );
