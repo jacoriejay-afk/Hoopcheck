@@ -8,11 +8,11 @@
     top: auto !important;
     z-index: 2147483647 !important;
     display: grid !important;
-    grid-template-columns: repeat(5, minmax(64px, 1fr)) !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
     align-items: stretch !important;
     justify-items: stretch !important;
     width: 100% !important;
-    min-width: 320px !important;
+    min-width: 0 !important;
     max-width: 100% !important;
     min-height: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
     height: auto !important;
@@ -43,7 +43,7 @@
     align-items: center !important;
     justify-content: center !important;
     justify-self: stretch !important;
-    min-width: 64px !important;
+    min-width: 0 !important;
     width: 100% !important;
     min-height: 54px !important;
     height: 54px !important;
