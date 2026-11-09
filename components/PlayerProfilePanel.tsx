@@ -53,7 +53,7 @@ function PanelHeading({ label, title, count }: { label: string; title: string; c
         <p className="hc-profile-eyebrow">{label}</p>
         <h2>{title}</h2>
       </div>
-      <span className="hc-profile-record-count">{String(count).padStart(2, "0")} RECORDS</span>
+      <span className="hc-profile-record-count">{String(count)} RECORDS</span>
     </div>
   );
 }
@@ -102,8 +102,8 @@ export default function PlayerProfilePanel({
           </div>
         </div>
         <div className="hc-dossier-overview-stats">
-          <div><span>CONTRACT RECORDS</span><strong>{contracts.length.toString().padStart(2, "0")}</strong></div>
-          <div><span>VERIFIED AGENT REVIEWS</span><strong>{verifiedReviews.length.toString().padStart(2, "0")}</strong><small>{averageRating ? `${averageRating} / 5 average` : "No verified ratings yet"}</small></div>
+          <div><span>CONTRACT RECORDS</span><strong>{contracts.length}</strong></div>
+          <div><span>VERIFIED AGENT REVIEWS</span><strong>{verifiedReviews.length}</strong><small>{averageRating ? `${averageRating} / 5 average` : "No verified ratings yet"}</small></div>
         </div>
         <div className="hc-dossier-accent" aria-hidden="true" />
       </section>

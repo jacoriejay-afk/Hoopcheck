@@ -4005,6 +4005,43 @@ main :where(input,select,textarea) { max-width:100%; min-width:0; }
 }
 
 
+/* PP-3 social profile geometry and text contrast: theme tokens own every foreground. */
+.player-profile-page .hc-social-profile-header {
+  width:100%; min-height:0; height:auto; box-sizing:border-box;
+  padding:16px!important; border-radius:16px; margin:0 0 12px!important;
+  background:var(--hc-surface-raised)!important; color:var(--hc-foreground)!important;
+  border:1px solid var(--hc-border)!important;
+}
+.player-profile-page .hc-social-profile-top {
+  display:grid!important; grid-template-columns:72px minmax(0,1fr)!important;
+  align-items:start!important; gap:14px!important;
+}
+.player-profile-page .hc-social-avatar-frame { width:72px!important; height:72px!important; }
+.player-profile-page .hc-social-profile-main { display:grid!important; gap:10px!important; min-width:0; }
+.player-profile-page .hc-social-stats {
+  display:flex!important; flex-wrap:nowrap!important; justify-content:flex-start!important;
+  align-items:center!important; gap:clamp(10px,2.5vw,22px)!important;
+}
+.player-profile-page .hc-social-stats>:where(span,a) { min-width:0!important; text-align:left!important; }
+.player-profile-page .hc-social-stats :where(strong,small) { color:var(--hc-foreground)!important; }
+.player-profile-page .hc-social-stats small,
+.player-profile-page .player-profile-heading .muted { color:var(--hc-foreground-muted)!important; }
+.player-profile-page .player-profile-heading h1 { color:var(--hc-foreground)!important; }
+.player-profile-page .hc-social-profile-actions { margin:0!important; gap:8px!important; }
+.player-profile-page .hc-contact-request-gate {
+  display:flex!important; align-items:center!important; gap:8px!important;
+  width:100%; min-height:0!important; margin:0!important; padding:8px 12px!important;
+  border:1px solid var(--hc-border)!important; border-radius:10px!important;
+  background:var(--hc-surface-soft)!important; color:var(--hc-foreground)!important;
+}
+.player-profile-page .hc-contact-request-gate :where(strong,p) { margin:0!important; color:var(--hc-foreground)!important; }
+@media(max-width:380px) {
+  .player-profile-page .hc-social-profile-top { grid-template-columns:60px minmax(0,1fr)!important; gap:10px!important; }
+  .player-profile-page .hc-social-avatar-frame { width:60px!important; height:60px!important; }
+  .player-profile-page .hc-social-stats { gap:8px!important; }
+  .player-profile-page .hc-social-stats small { font-size:9px!important; letter-spacing:0!important; }
+}
+
 /* HERO-1 — Live Game Hub uses the same active-theme surface/foreground pair as cards. */
 .hc-live-hub-hero {
   background: var(--hc-surface-raised, #fff) !important;
