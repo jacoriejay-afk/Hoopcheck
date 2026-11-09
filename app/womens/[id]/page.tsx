@@ -8,6 +8,7 @@ import Surface from "../../../components/Surface";
 import HoopLoading from "../../../components/HoopLoading";
 import ClaimedTeamLogoEditor from "../../../components/ClaimedTeamLogoEditor";
 import TeamProfileHero from "../../../components/TeamProfileHero";
+import "../../hoopcheck-brand-team.css";
 import ReviewMembershipGate from "../../../components/ReviewMembershipGate";
 import TeamFanGroupEntry from "../../../components/TeamFanGroupEntry";
 import FanTeamPosts from "../../../components/FanTeamPosts";
