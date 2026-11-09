@@ -13,8 +13,15 @@ import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import { CategoryIconTile, HoopIcon } from "../../components/HoopCheckUI";
 import { calculateProfileCompletion } from "../../lib/profile-completion";
 import TeamLogo from "../../components/TeamLogo";
+import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
 
 type Profile = {
+  id?: string;
+  current_country?: string | null;
+  favorite_leagues?: string | null;
+  height?: string | null;
+  free_agent?: boolean | null;
+  profile_visibility?: string | null;
   display_name: string | null;
   first_name?: string | null;
   last_name?: string | null;
@@ -90,7 +97,7 @@ export default function DashboardPage() {
       setEmail(user.email||"");
 
       const [profileResult, subscriptionResult, followsResult] = await Promise.allSettled([
-        withTimeout(supabase.from("profiles").select("display_name,first_name,last_name,bio,position,current_team,nationality,hometown,avatar_url,interests,favorite_leagues,player_verified,account_type").eq("id",user.id).maybeSingle(), 8000),
+        withTimeout(supabase.from("profiles").select("id,display_name,first_name,last_name,bio,position,current_team,current_country,height,free_agent,profile_visibility,nationality,hometown,avatar_url,interests,favorite_leagues,player_verified,account_type").eq("id",user.id).maybeSingle(), 8000),
         withTimeout(supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",user.id).maybeSingle(), 8000),
         withTimeout(supabase.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").order("created_at",{ascending:false}).limit(100), 8000)
       ] as const);
@@ -192,7 +199,7 @@ export default function DashboardPage() {
           <div className="hc-ia-identity"><span className="hc-ia-avatar">{displayName.charAt(0).toUpperCase()}</span><span><small>SIGNED IN AS</small><strong>{displayName}</strong></span></div>
         </header>
 
-        {completion < 100 && <Link href="/account#edit-profile" className="hc-ia-completion"><span><strong>{t("home.completeProfile")}</strong><small>{t("home.profileCompletion").replace("{percent}", String(completion))}</small></span><span>{t("home.continue")} <HoopIcon name="arrow-right" size={16}/></span></Link>}
+        {profile?.account_type === "player" ? <PlayerProfileCompletionCard profile={profile} /> : completion < 100 && <Link href="/account#edit-profile" className="hc-ia-completion"><span><strong>{t("home.completeProfile")}</strong><small>{t("home.profileCompletion").replace("{percent}", String(completion))}</small></span><span>{t("home.continue")} <HoopIcon name="arrow-right" size={16}/></span></Link>}
 
         <HomePulse live={null} upcoming={null} followedClubs={teams.length} recentReviews={reviews.length}/>
         <Link href="/live-games" className="hc-ia-live-strip"><span className={liveCounts.live!==null && liveCounts.live>0 ? "hc-ia-live-dot" : "hc-ia-live-dot hc-ia-live-dot--inactive"} aria-hidden="true"/><span><strong>{t("home.liveGames")}</strong><small>{t("home.liveDescription")}</small></span><span>{t("home.openHub")} <HoopIcon name="arrow-right" size={16}/></span></Link>

@@ -10,6 +10,8 @@ import PlayerContactButton from "../../../components/PlayerContactButton";
 import PlayerProfilePanel from "../../../components/PlayerProfilePanel";
 import { HoopIcon, VerifiedBadge } from "../../../components/HoopCheckUI";
 import PlayerJourney from "../../../components/PlayerJourney";
+import PlayerProfileCompletionCard from "../../../components/PlayerProfileCompletionCard";
+import type { PlayerProfileCompletionRecord } from "../../../lib/player-profile-completion";
 
 type Player = {
   id: string;
@@ -32,6 +34,7 @@ export default function PlayerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [reportMessage, setReportMessage] = useState("");
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [ownCompletionProfile, setOwnCompletionProfile] = useState<PlayerProfileCompletionRecord | null>(null);
   const [countryPublic, setCountryPublic] = useState(false);
   const [canManageJourney, setCanManageJourney] = useState(false);
   const [viewerType, setViewerType] = useState("");
@@ -101,6 +104,8 @@ export default function PlayerProfilePage() {
       if(user){
         setIsOwnProfile(user.id===params.id);
         if (user.id === params.id) {
+          const { data: completionProfile } = await supabase.from("profiles").select("id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility").eq("id", user.id).maybeSingle();
+          setOwnCompletionProfile(completionProfile);
           const { data: ownSubscription } = await supabase.from("subscriptions").select("plan,status,current_period_end").eq("user_id", user.id).maybeSingle();
           setCanManageJourney(
             ownSubscription?.plan === "premium" &&
@@ -183,7 +188,7 @@ export default function PlayerProfilePage() {
             </div>
           </div>
         </section>
-        {isOwnProfile && <section className="hc-player-profile-completion" aria-label="Complete your player profile"><div><span className="card-kicker">YOUR PLAYER PROFILE</span><h2>Make your profile work for you</h2><p className="muted">Add your playing position, years as a pro, current team, location and bio so teams, coaches and other players can understand your basketball background.</p></div><Link href="/account#profile-editor" className="btn">Complete player profile <HoopIcon name="arrow-right" size={16} /></Link></section>}
+        {isOwnProfile && ownCompletionProfile && <PlayerProfileCompletionCard profile={ownCompletionProfile} />}
 
         {viewerType==="player" && !isOwnProfile && !connectionAccepted ? (
           <section className="dashboard-card" style={{marginTop:14}}>
