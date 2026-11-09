@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { isAtLeastTier } from "../lib/membership-tier";
 import { useLanguage, type Language } from "./LanguageProvider";
 
 type RequestRow={id:string;requester_id:string;fan_id:string;message:string|null;status:string;created_at:string};
@@ -39,7 +40,7 @@ export default function FanConnectionButton({fanId}:{fanId:string}){
       supabase.from("subscriptions").select("plan,status").eq("user_id",user.id).maybeSingle(),
       supabase.from("fan_connection_requests").select("id,requester_id,fan_id,message,status,created_at").or(`requester_id.eq.${user.id},fan_id.eq.${user.id}`).eq("fan_id",fanId).maybeSingle()
     ]);
-    setAllowed(p?.account_type==="fan" && ["pro","premium"].includes(s?.plan||"") && ["active","trialing"].includes(s?.status||""));
+    setAllowed(p?.account_type==="fan" && isAtLeastTier(s?.plan, "pro") && ["active","trialing"].includes(s?.status||""));
     setRequest((r||null) as RequestRow|null);
   }
   useEffect(()=>{void load()},[fanId]);

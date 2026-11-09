@@ -6,7 +6,7 @@ import { getPlayerProfileCompletion, type PlayerProfileCompletionRecord } from "
 import { supabase } from "../lib/supabase";
 import { HoopIcon } from "./HoopCheckUI";
 
-export default function PlayerProfileCompletionCard({ profile }: { profile: PlayerProfileCompletionRecord }) {
+export default function PlayerProfileCompletionCard({ profile, onPublished }: { profile: PlayerProfileCompletionRecord; onPublished?: () => void }) {
   const [currentProfile, setCurrentProfile] = useState(profile);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
@@ -14,7 +14,7 @@ export default function PlayerProfileCompletionCard({ profile }: { profile: Play
   const refreshProfile = useCallback(async () => {
     if (!profile.id) return;
     const { data, error: readError } = await supabase.from("profiles")
-      .select("id,account_type,avatar_url,position,current_team,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
+      .select("id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
       .eq("id", profile.id).maybeSingle();
     if (!readError && data) setCurrentProfile(current => ({ ...current, ...data }));
   }, [profile.id]);
@@ -42,14 +42,20 @@ export default function PlayerProfileCompletionCard({ profile }: { profile: Play
     if (!currentProfile.id || publishing) return;
     setPublishing(true);
     setError("");
-    const { data, error: updateError } = await supabase.from("profiles")
-      .update({ profile_visibility: "public" })
-      .eq("id", currentProfile.id)
-      .select("id,account_type,avatar_url,position,current_team,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
-      .maybeSingle();
-    if (updateError || !data) setError(updateError?.message || "Your profile could not be made public. Please try again.");
-    else setCurrentProfile(current => ({ ...current, ...data }));
-    setPublishing(false);
+    try {
+      const { data, error: updateError } = await supabase.from("profiles")
+        .update({ profile_visibility: "public" })
+        .eq("id", currentProfile.id)
+        .select("id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
+        .maybeSingle();
+      if (updateError || !data) throw updateError || new Error("Your profile could not be made public. Please try again.");
+      setCurrentProfile(current => ({ ...current, ...data }));
+      onPublished?.();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Your profile could not be made public. Please try again.");
+    } finally {
+      setPublishing(false);
+    }
   }
 
   if (currentProfile.account_type !== "player") return null;

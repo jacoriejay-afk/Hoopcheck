@@ -68,6 +68,15 @@ const sharedUiTranslations: Partial<Record<Language, Record<string, string>>> = 
  uk: { womensSearchPlaceholder:"Пошук гравців, тренерів, команд або ліг", countryLabel:"КРАЇНА", allCountries:"Усі країни", leagueLabel:"ЛІГА", allLeagues:"Усі ліги", clearFilters:"Очистити фільтри", teams:"Команди", teamCountSingular:"команда", teamCountPlural:"команд", womensTeamDirectoryView:"ДОВІДНИК ЖІНОЧИХ КОМАНД", womensTeamResults:"Результати жіночих команд", loadingWomensTeams:"Завантаження жіночих команд…", directoryView:"ВИГЛЯД ДОВІДНИКА", list:"Список", map:"Мапа", noTeamsMatchSearch:"Команд за цим запитом не знайдено", tryAnotherTeamOrClearFilters:"Спробуйте іншу назву або очистіть фільтри.", resetSearch:"Скинути пошук", adminControlCenter:"Центр керування довідником", manageWorldwideDirectory:"Керуйте світовим баскетбольним довідником.", reviewQueue:"Черга відгуків", profileClaims:"Запити профілю", communityInbox:"Вхідні спільноти", dashboard:"Панель керування", activeCoaches:"Активні тренери", activeTeams:"Активні команди", activeLeagues:"Активні ліги", directoryManagement:"КЕРУВАННЯ ДОВІДНИКОМ", loadingDirectoryControls:"Завантаження керування довідником…", resolve:"Вирішити", dismiss:"Відхилити", profileReports:"Скарги на профіль", noProfileReports:"Скарг на профіль немає.", reasonLabel:"Причина:", openUser:"Відкрити користувача", accountFlags:"Позначки облікового запису", openProfile:"Відкрити профіль", moderateUser:"Модерувати користувача", profileReportsDescription:"Перегляньте скарги користувачів і вирішіть або відхиліть їх.", researchAccountReportsDescription:"Перегляньте скарги, подані дослідницькими обліковими записами.", loadingReports:"Завантаження скарг…", profile:"Профіль", reporter:"Скаржник", loading:"Завантаження…", moderation:"Модерація", users:"Користувачі", reviews:"Відгуки" },
 };
 
+const dashboardTranslations: Partial<Record<Language, Record<string, string>>> = {
+  en: {
+    "home.fanEyebrow":"FAN HQ","home.fanTitle":"YOUR BASKETBALL COMMUNITY","home.fanDescription":"Your teams, fan conversations, and live game rooms in one place.","home.signedIn":"SIGNED IN AS","home.fanSide":"YOUR FAN SIDE","home.teamHub":"TEAM HUB","home.teamHubDescription":"Followed teams and updates","home.fanFeed":"FAN HOOPFEED","home.fanFeedDescription":"Posts from teams you follow","home.findFan":"FIND FAN","home.findFanDescription":"Discover and connect with fans","home.liveGames":"LIVE GAMES","home.accountSettings":"Account, membership and settings","home.eyebrow":"YOUR DAILY FRONT DOOR","home.headline":"KNOW WHO YOU’RE SIGNING WITH","home.description":"Real player experiences. Make your next move with confidence.","home.completeProfile":"COMPLETE YOUR PROFILE","home.profileCompletion":"{percent}% complete · Add your basketball background so players and organisations can recognise your experience.","home.continue":"Continue","home.liveDescription":"See live and upcoming games","home.openHub":"Open hub","home.shortcuts":"YOUR SHORTCUTS","home.quickAccess":"QUICK ACCESS","home.exploreAll":"Explore all","home.mensTeams":"MEN’S TEAMS","home.mensDescription":"Research teams before you sign","home.womensTeams":"WOMEN’S TEAMS","home.womensDescription":"Explore women’s basketball","home.coaches":"COACHES","home.coachesDescription":"Check coaching reputations","home.leagues":"LEAGUES","home.leaguesDescription":"Compare competitions","home.players":"PLAYERS","home.playersDescription":"Discover basketball players","home.network":"YOUR NETWORK","home.teamsFollow":"TEAMS YOU FOLLOW","home.findTeams":"Find teams","home.emptyTeams":"Follow teams to see their updates here.","home.browseTeams":"Browse teams","home.experiences":"PLAYER EXPERIENCES","home.recentReviews":"RECENT REVIEWS ON YOUR TEAMS","home.playerReview":"Player review","home.playerNetwork":"PLAYER NETWORK","home.hoopFeed":"HOOPFEED","home.openFeed":"Open feed","home.playerFollow":"A player you follow","home.latestPost":"Latest post · Posts expire after 24 hours","home.openHoopFeed":"Open HoopFeed","home.feedDescription":"Updates from players you follow and your accepted connections.","home.followersOnly":"Followers-only · 24-hour posts","home.accountReviewsSettings":"Account, membership, reviews and settings"
+  },
+  es: {
+    "home.fanEyebrow":"CENTRO DE FANS","home.fanTitle":"TU COMUNIDAD DE BALONCESTO","home.fanDescription":"Tus equipos, conversaciones de fans y salas de partidos en directo, todo en un solo lugar.","home.signedIn":"SESIÓN INICIADA COMO","home.fanSide":"TU ESPACIO DE FAN","home.teamHub":"CENTRO DE EQUIPOS","home.teamHubDescription":"Equipos que sigues y sus novedades","home.fanFeed":"HOOPFEED DE FANS","home.fanFeedDescription":"Publicaciones de los equipos que sigues","home.findFan":"ENCONTRAR FANS","home.findFanDescription":"Descubre y conecta con otros fans","home.liveGames":"PARTIDOS EN DIRECTO","home.accountSettings":"Cuenta, membresía y configuración","home.eyebrow":"TU PUNTO DE PARTIDA","home.headline":"ASEGÚRATE ANTES DE FIRMAR","home.description":"Experiencias reales de jugadores. Decide tu próximo paso con confianza.","home.completeProfile":"COMPLETA TU PERFIL","home.profileCompletion":"{percent}% completado · Añade tu trayectoria en el baloncesto para que jugadores y organizaciones reconozcan tu experiencia.","home.continue":"Continuar","home.liveDescription":"Consulta los partidos en directo y próximos","home.openHub":"Abrir centro","home.shortcuts":"TUS ACCESOS DIRECTOS","home.quickAccess":"ACCESO RÁPIDO","home.exploreAll":"Explorar todo","home.mensTeams":"EQUIPOS MASCULINOS","home.mensDescription":"Investiga los equipos antes de firmar","home.womensTeams":"EQUIPOS FEMENINOS","home.womensDescription":"Explora el baloncesto femenino","home.coaches":"ENTRENADORES","home.coachesDescription":"Consulta la reputación de los entrenadores","home.leagues":"LIGAS","home.leaguesDescription":"Compara competiciones","home.players":"JUGADORES","home.playersDescription":"Descubre jugadores de baloncesto","home.network":"TU RED","home.teamsFollow":"EQUIPOS QUE SIGUES","home.findTeams":"Buscar equipos","home.emptyTeams":"Sigue equipos para ver sus novedades aquí.","home.browseTeams":"Explorar equipos","home.experiences":"EXPERIENCIAS DE JUGADORES","home.recentReviews":"RESEÑAS RECIENTES DE TUS EQUIPOS","home.playerReview":"Reseña de un jugador","home.playerNetwork":"RED DE JUGADORES","home.hoopFeed":"HOOPFEED","home.openFeed":"Abrir feed","home.playerFollow":"Un jugador que sigues","home.latestPost":"Publicación reciente · Las publicaciones caducan en 24 horas","home.openHoopFeed":"Abrir HoopFeed","home.feedDescription":"Novedades de los jugadores que sigues y de tus conexiones aceptadas.","home.followersOnly":"Solo seguidores · Publicaciones de 24 horas","home.accountReviewsSettings":"Cuenta, membresía, reseñas y configuración"
+  }
+};
+
 type LanguageContextValue = {
   language: Language;
   t: (key: string) => string;
@@ -76,10 +85,28 @@ type LanguageContextValue = {
   formatRelativeTime: (value: string | number | Date) => string;
   setLanguage: (language: Language) => void;
 };
-const validLanguage = (value: unknown): value is Language => typeof value === "string" && Object.prototype.hasOwnProperty.call(labels, value);
+const validLanguage = (value: unknown): value is Language => typeof value === "string" && Object.prototype.hasOwnProperty.call(locales, value);
+
+function browserLanguage(): Language {
+  if (typeof navigator === "undefined") return "en";
+  for (const candidate of navigator.languages?.length ? navigator.languages : [navigator.language]) {
+    const normalized = String(candidate || "").toLowerCase().split("-")[0];
+    if (validLanguage(normalized)) return normalized;
+  }
+  return "en";
+}
+
+function readableFallback(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^\w/, (letter) => letter.toUpperCase());
+}
 
 const fallbackContext: LanguageContextValue = {
-  language:"en", t:(key)=>labels.en?.[key] || key,
+  language:"en", t:(key)=>labels.en?.[key] || readableFallback(key),
   formatNumber:(value, options)=>new Intl.NumberFormat("en-US", options).format(value),
   formatDate:(value, options)=>new Intl.DateTimeFormat("en-US", options).format(new Date(value)),
   formatRelativeTime:(value)=>new Intl.RelativeTimeFormat("en-US",{numeric:"auto"}).format(Math.round((new Date(value).getTime()-Date.now())/3600000),"hour"),
@@ -101,6 +128,9 @@ export default function LanguageProvider({ children, initialLanguage = "en" }: {
       localStorage.setItem("hoopcheck-language", next);
       document.cookie = "hoopcheck-language=" + encodeURIComponent(next) + "; Path=/; Max-Age=31536000; SameSite=Lax";
       window.dispatchEvent(new CustomEvent("hoopcheck-language-change", { detail: next }));
+      void supabase.auth.getUser().then(({ data }) => {
+        if (data.user) void supabase.from("profiles").update({ preferred_language: next }).eq("id", data.user.id);
+      });
     }
   }, []);
   useEffect(() => {
@@ -124,15 +154,20 @@ export default function LanguageProvider({ children, initialLanguage = "en" }: {
         .eq("id", userId)
         .maybeSingle();
       if (mounted) {
-        // A device selection is written synchronously by setLanguage. Prefer it over a stale
-        // profile response so an older server value cannot undo a live locale switch.
-        const deviceLanguage = localStorage.getItem("hoopcheck-language");
-        apply(deviceLanguage || profile?.preferred_language || "en");
+        // The account setting is authoritative across devices. Local storage is only
+        // a fallback for accounts that have not selected a language yet.
+        const accountLanguage = profile?.preferred_language;
+        const localLanguage = localStorage.getItem("hoopcheck-language");
+        apply(validLanguage(accountLanguage) ? accountLanguage : validLanguage(localLanguage) ? localLanguage : browserLanguage());
       }
     };
-    void supabase.auth.getUser().then(({ data }) => { if (data.user) void loadProfileLanguage(data.user.id); });
+    void supabase.auth.getUser().then(({ data }) => {
+      if (data.user) void loadProfileLanguage(data.user.id);
+      else apply(validLanguage(localStorage.getItem("hoopcheck-language")) ? localStorage.getItem("hoopcheck-language") : browserLanguage());
+    });
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") && session?.user) void loadProfileLanguage(session.user.id);
+      if (event === "SIGNED_IN" && session?.user) void loadProfileLanguage(session.user.id);
+      if (event === "SIGNED_OUT") apply(validLanguage(localStorage.getItem("hoopcheck-language")) ? localStorage.getItem("hoopcheck-language") : browserLanguage());
     });
     return () => {
       mounted = false;
@@ -143,7 +178,7 @@ export default function LanguageProvider({ children, initialLanguage = "en" }: {
   const value = useMemo<LanguageContextValue>(() => {
     const locale = locales[language];
     return {
-      language, setLanguage, t: (key) => sharedUiTranslations[language]?.[key] ?? extraLabels[language]?.[key] ?? labels[language]?.[key] ?? sharedUiTranslations.en?.[key] ?? extraLabels.en?.[key] ?? labels.en?.[key] ?? key,
+      language, setLanguage, t: (key) => dashboardTranslations[language]?.[key] ?? sharedUiTranslations[language]?.[key] ?? extraLabels[language]?.[key] ?? labels[language]?.[key] ?? dashboardTranslations.en?.[key] ?? sharedUiTranslations.en?.[key] ?? extraLabels.en?.[key] ?? labels.en?.[key] ?? readableFallback(key),
       formatNumber: (number, options) => new Intl.NumberFormat(locale, options).format(number),
       formatDate: (date, options) => new Intl.DateTimeFormat(locale, options).format(new Date(date)),
       formatRelativeTime: (date) => {

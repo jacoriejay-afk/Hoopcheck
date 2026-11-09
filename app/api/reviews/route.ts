@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { isAtLeastTier } from "../../../lib/membership-tier";
 
 function getAdminSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -37,7 +38,7 @@ export async function POST(req:Request){
    console.error("Review subscription lookup failed:", subscriptionError);
    return NextResponse.json({error:"Unable to verify your membership right now."},{status:500});
  }
- const hasPaidPlan = subscription?.plan === "pro" || subscription?.plan === "premium";
+ const hasPaidPlan = isAtLeastTier(subscription?.plan, "pro");
  const hasEntitledAccess = subscription?.status === "active" || subscription?.status === "trialing" || subscription?.access_status === "pro" || subscription?.access_status === "premium";
  const paid = hasPaidPlan && hasEntitledAccess && (!subscription?.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now());
  const { data: authorProfile, error: profileError } = await s.from("profiles").select("account_type,player_verified,basketball_type").eq("id", user.id).maybeSingle();

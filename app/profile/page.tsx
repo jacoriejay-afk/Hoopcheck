@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import "../hoopcheck-brand-profile.css";
+import OwnProfilePostsGrid from "../../components/OwnProfilePostsGrid";
 import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Surface from "../../components/Surface";
-import ProfileAvatar from "../../components/ProfileAvatar";
-import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
+import HoopPassport from "../../components/HoopPassport";
 import { useLanguage } from "../../components/LanguageProvider";
+import { calculateProfileCompletion } from "../../lib/profile-completion";
+import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
 
 function calculatePostingStreak(rows: { activity_date: string }[]) {
   const dates = new Set(rows.map(row => String(row.activity_date).slice(0, 10)));
@@ -30,8 +33,13 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [postingStreak, setPostingStreak] = useState(0);
+  const [loadError, setLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setLoadError(false);
     (async () => {
       const { data: { session } } = await getCachedSession();
       const user = session?.user;
@@ -40,6 +48,7 @@ export default function ProfilePage() {
         return;
       }
 
+      if (!active) return;
       setEmail(user.email || "");
       const result = await Promise.race([
         supabase
@@ -47,16 +56,20 @@ export default function ProfilePage() {
           .select("id,display_name,username,first_name,last_name,account_type,bio,position,years_pro,current_country,current_team,height,player_verified,coach_verified,avatar_url,avatar_moderation_status,basketball_type,free_agent,hometown,nationality,interests,favorite_leagues,profile_visibility")
           .eq("id", user.id)
           .maybeSingle(),
-        new Promise<any>((resolve) => setTimeout(() => resolve({ data: null }), 2500)),
+        new Promise<any>((resolve) => setTimeout(() => resolve({ data: null, error: new Error("Profile request timed out") }), 8000)),
       ]);
+      if (!active) return;
+      if (result.error) { setLoadError(true); setLoading(false); return; }
       setP(result.data);
       if (result.data?.account_type === "player") {
         const { data: activity } = await supabase.from("feed_posting_activity").select("activity_date").eq("user_id", user.id).order("activity_date", { ascending: false }).limit(370);
+        if (!active) return;
         setPostingStreak(calculatePostingStreak(activity || []));
       }
       setLoading(false);
-    })();
-  }, []);
+    })().catch(() => { if (active) { setLoadError(true); setLoading(false); } });
+    return () => { active = false; };
+  }, [retryKey]);
 
   if (loading) {
     return (
@@ -74,7 +87,8 @@ export default function ProfilePage() {
         <div className="page-container">
           <section className="hero-card">
             <h1>{t("profileUnavailable")}</h1>
-            <Link href="/account" className="btn">{t("editAccount")}</Link>
+            {loadError ? <p role="alert">Your profile could not be loaded. Please try again.</p> : null}
+            {loadError ? <button type="button" className="btn" onClick={() => setRetryKey(v => v + 1)}>Retry profile</button> : <Link href="/account" className="btn">{t("editAccount")}</Link>}
           </section>
         </div>
       </main>
@@ -82,13 +96,21 @@ export default function ProfilePage() {
   }
 
   const name = p.display_name || p.username || "HoopCheck Member";
+  const initials = name.trim().split(/\s+/).slice(0, 2).map((part: string) => part[0]).join("").toUpperCase() || "HC";
+  const completion = calculateProfileCompletion(p);
+  const profileCompletion = completion.percentage;
+  const firstMissingField = completion.nextMissing?.label ?? "profile details";
+  const nextFieldAnchor = completion.nextMissing?.key ?? "profile-editor";
+
   return (
     <main className="page-shell hc-member-profile-page">
       <div className="page-container">
         <section className="hero-card compact-hero" aria-labelledby="hc-member-profile-title">
           <div className="hc-member-profile-identity">
             <div className="hc-member-profile-avatar-wrap">
-              <ProfileAvatar name={name} src={p.avatar_url} className="hc-member-profile-avatar" size={76} />
+              <div className="hc-member-profile-avatar">
+                {p.avatar_url ? <img src={p.avatar_url} alt={name + " profile photo"} /> : <span>{initials}</span>}
+              </div>
               {p.avatar_url && p.avatar_moderation_status === "pending" && <span className="hc-profile-photo-state">{t("photoReview")}</span>}
             </div>
             <div className="hc-member-profile-copy">
@@ -102,27 +124,41 @@ export default function ProfilePage() {
           </div>
 
           <div className="hc-member-profile-actions">
-            <Link href="/account#profile-editor" className="btn hc-profile-edit-button">{t("editProfile")}</Link>
+            <Link href="/account#profile-editor" className="btn hc-profile-edit-button">{t("editProfile")}</Link>{p.account_type === "player" && <Link href="/account#team-review-checklist" className="btn dark">Team review checklist</Link>}
             {p.account_type === "player" && (p.profile_visibility === "public" ? (
               <Link href={"/players/" + encodeURIComponent(p.id)} className="btn dark hc-profile-public-button">
                 <span className="hc-profile-public-full">{t("profilePublic")}</span><span className="hc-profile-public-short">{t("profilePublic")}</span><HoopIcon name="arrow-up-right" size={16} />
               </Link>
             ) : (
               <Link href="/account#profile-editor" className="btn dark hc-profile-public-button">
-                <span>{t("profilePrivate")}</span><HoopIcon name="arrow-up-right" size={16} />
+                <span>Profile visibility · {t("profilePrivate")}</span><HoopIcon name="arrow-up-right" size={16} />
               </Link>
             ))}
           </div>
+          {p.account_type === "player" ? <PlayerProfileCompletionCard profile={p} onPublished={() => setP((current: any) => ({ ...current, profile_visibility: "public" }))} /> : profileCompletion < 100 && <div className="hc-profile-completion">
+            <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href={"/account#profile-editor-field-" + nextFieldAnchor}>Complete profile <span aria-hidden="true">→</span></Link></div>
+            <div className="hc-profile-completion-track" role="progressbar" aria-label={t("profileCompleteness")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}><span style={{width: profileCompletion + "%"}} /></div>
+          </div>}
           {p.account_type === "player" && postingStreak > 0 && <div className="hc-profile-streak-row"><span className="hc-feed-streak" aria-label={postingStreak + " day HoopFeed posting streak"}><span aria-hidden="true">🔥</span> {postingStreak}-day streak</span></div>}
 
         </section>
 
+        <HoopPassport name={name} accountType={p.account_type||"member"} username={p.username} verified={Boolean(p.player_verified||p.coach_verified)} country={p.current_country} position={p.account_type==="player"?p.position:null} team={p.account_type==="player"?p.current_team:null}/>
+        <nav className="hc-profile-action-hub" aria-label="Profile quick links">
+          <Link href="/membership" className="hc-profile-membership-link"><HoopIcon name="star" size={20} /><span>Membership &amp; Perks</span><HoopIcon name="chevron-right" size={18} /></Link>
+          <div className="hc-profile-quick-grid">
+            <Link href="/account" className="hc-profile-quick-link"><HoopIcon name="settings" size={22} /><span>Settings</span></Link>
+            <Link href="/notifications" className="hc-profile-quick-link"><HoopIcon name="bell" size={22} /><span>Alerts</span></Link>
+            <Link href="/search" className="hc-profile-quick-link"><HoopIcon name="search" size={22} /><span>Search</span></Link>
+            <Link href={p.account_type === "fan" ? "/fan-feed" : "/pre-sign"} className="hc-profile-quick-link"><HoopIcon name={p.account_type === "fan" ? "users" : "clipboard-check"} size={22} /><span>{p.account_type === "fan" ? "Fan HQ" : "Pre-Sign"}</span></Link>
+          </div>
+        </nav>
+
         <section className="hc-profile-overview" aria-label={t("profileOverview")}>
-          {p.account_type === "player" && <PlayerProfileCompletionCard profile={p} />}
           <div className="grid compact-grid">
             <Surface className="card hc-profile-info-card">
-              <span className="card-kicker">{t("basketball")}</span>
-              <h2>{p.basketball_type === "womens" ? t("womensBasketball") : t("mensBasketball")}</h2>
+              <span className="card-kicker">{p.account_type === "fan" ? t("account") : t("basketball")}</span>
+              <h2>{p.account_type === "fan" ? t("fan") : p.basketball_type === "womens" ? t("womensBasketball") : p.basketball_type === "mens" ? t("mensBasketball") : t("basketball")}</h2>
               <p className="muted">{t(p.account_type)}</p>
             </Surface>
             {p.account_type === "player" && (
@@ -139,6 +175,8 @@ export default function ProfilePage() {
             </Surface>
           </div>
         </section>
+
+        {p.account_type === "player" && <OwnProfilePostsGrid userId={p.id} />}
 
         <section className="dashboard-card compact-section">
           <p className="eyebrow">{t("about")}</p>
@@ -182,11 +220,7 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        <div className="bottom-back">
-          <button type="button" className="btn dark" onClick={() => window.history.back()}>
-            <HoopIcon name="arrow-right" size={16} style={{ transform: "rotate(180deg)" }} /> {t("back")}
-          </button>
-        </div>
+
       </div>
     </main>
   );

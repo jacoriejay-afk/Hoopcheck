@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { hasActiveMembershipAtLeast } from "../../../../lib/membership-tier";
 
 export const runtime = "nodejs";
 
@@ -177,10 +178,7 @@ export async function POST(request: Request) {
       if (!gameDayTeam || !gameDayOpponent || !scoresValid) return NextResponse.json({ allowed: false, message: "Add both teams and enter both final scores, or leave both scores blank until after the game." }, { status: 400 });
     }
     const { data: sub } = await db.from("subscriptions").select("plan,status,access_status").eq("user_id", user.id).maybeSingle();
-    const activeAccess = ["player","fan"].includes(profile?.account_type || "") &&
-      ["pro","premium"].includes(sub?.plan || "") &&
-      ["active","trialing"].includes(sub?.status || "") &&
-      ["active","trialing","pro","premium"].includes(sub?.access_status ?? "active");
+    const activeAccess = ["player","fan"].includes(profile?.account_type || "") && hasActiveMembershipAtLeast(sub);
     if (!activeAccess) return NextResponse.json({ allowed: false, message: "Active Pro or Premium player access is required." }, { status: 403 });
 
     // Re-share only live, approved posts the player is permitted to view.

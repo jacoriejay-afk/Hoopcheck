@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../../components/HoopLoading";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -104,11 +105,7 @@ export default function AdminDirectoryPage() {
 
   if (loading) {
     return (
-      <main className="admin-directory-shell" style={styles.page}>
-        <div style={styles.loader}>
-          {t("loadingDirectoryControls")}
-        </div>
-      </main>
+      <main className="admin-directory-shell" style={styles.page}><HoopLoading label="Loading HoopCheck…" /></main>
     );
   }
 
@@ -380,8 +377,8 @@ function RoadmapItem({
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
-    background: "#F7F7F5",
-    color: "#111111",
+    background: "var(--page-bg, #F7F7F5)",
+    color: "var(--page-text, #111111)",
     padding: "40px 24px 80px",
   },
 
@@ -407,7 +404,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   eyebrow: {
     margin: "0 0 8px",
-    color: "#C2410C",
+    color: "var(--orange, #C2410C)",
     fontSize: "12px",
     fontWeight: 900,
     letterSpacing: "0.16em",
@@ -423,7 +420,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   subtitle: {
-    color: "#525252",
+    color: "var(--page-muted, #525252)",
     margin: "14px 0 0",
     fontSize: "15px",
   },
@@ -435,9 +432,9 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: "44px",
     padding: "0 15px",
     borderRadius: "9px",
-    border: "1px solid #D8D8D4",
-    background: "#FFFFFF",
-    color: "#111111",
+    border: "1px solid var(--border, #D8D8D4)",
+    background: "var(--surface, #FFFFFF)",
+    color: "var(--page-text, #111111)",
     textDecoration: "none",
     fontSize: "12px",
     fontWeight: 900,
@@ -462,15 +459,15 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   statCard: {
-    background: "#FFFFFF",
-    border: "1px solid #E2E2DE",
+    background: "var(--surface, #FFFFFF)",
+    border: "1px solid var(--border, #E2E2DE)",
     borderRadius: "14px",
     padding: "19px",
   },
 
   statLabel: {
     display: "block",
-    color: "#525252",
+    color: "var(--page-muted, #525252)",
     fontSize: "11px",
     fontWeight: 900,
     letterSpacing: "0.1em",
@@ -480,15 +477,15 @@ const styles: Record<string, React.CSSProperties> = {
 
   statValue: {
     fontSize: "2.5rem",
-    color: "#C2410C",
+    color: "var(--orange, #C2410C)",
     lineHeight: 1,
     fontWeight: 950,
     letterSpacing: "-0.06em",
   },
 
   panel: {
-    background: "#FFFFFF",
-    border: "1px solid #E2E2DE",
+    background: "var(--surface, #FFFFFF)",
+    border: "1px solid var(--border, #E2E2DE)",
     borderRadius: "16px",
     padding: "24px",
     marginBottom: "20px",
@@ -505,7 +502,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   sectionEyebrow: {
     margin: "0 0 7px",
-    color: "#C2410C",
+    color: "var(--orange, #C2410C)",
     fontSize: "10px",
     fontWeight: 900,
     letterSpacing: "0.14em",
@@ -514,12 +511,12 @@ const styles: Record<string, React.CSSProperties> = {
   panelTitle: {
     margin: 0,
     fontSize: "1.45rem",
-    color: "#111111",
+    color: "var(--page-text, #111111)",
     fontWeight: 950,
   },
 
   panelText: {
-    color: "#525252",
+    color: "var(--page-muted, #525252)",
     maxWidth: "700px",
     lineHeight: 1.6,
     margin: "8px 0 0",
@@ -530,7 +527,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "7px 11px",
     background: "rgba(255,106,0,0.1)",
     border: "1px solid rgba(255,106,0,0.3)",
-    color: "#9A3412",
+    color: "var(--orange, #9A3412)",
     fontSize: "10px",
     fontWeight: 900,
     letterSpacing: "0.08em",
@@ -539,7 +536,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   adminGroup: { marginTop: "24px" },
 
-  groupTitle: { margin: "0 0 12px", color: "#73736E", fontSize: "11px", fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" },
+  groupTitle: { margin: "0 0 12px", color: "var(--page-muted, #73736E)", fontSize: "11px", fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" },
 
   cardGrid: {
     display: "grid",
@@ -552,15 +549,15 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     gap: "12px",
-    background: "#FFFFFF",
-    border: "1px solid #E2E2DE",
+    background: "var(--surface, #FFFFFF)",
+    border: "1px solid var(--border, #E2E2DE)",
     borderRadius: "13px",
     padding: "18px",
     minHeight: "0",
   },
 
   cardNumber: {
-    color: "#6B6B66",
+    color: "var(--page-muted, #6B6B66)",
     fontSize: "11px",
     fontWeight: 900,
     letterSpacing: "0.1em",
@@ -569,13 +566,13 @@ const styles: Record<string, React.CSSProperties> = {
   cardTitle: {
     margin: 0,
     fontSize: "1.15rem",
-    color: "#111111",
+    color: "var(--page-text, #111111)",
     fontWeight: 950,
   },
 
   cardText: {
     margin: 0,
-    color: "#525252",
+    color: "var(--page-muted, #525252)",
     lineHeight: 1.55,
     flex: 1,
     fontSize: "13px",
@@ -589,7 +586,7 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: "34px",
     padding: "0 13px",
     borderRadius: "8px",
-    background: "#ff6a00",
+    background: "var(--orange, #ff6a00)",
     color: "#050505",
     textDecoration: "none",
     fontSize: "11px",
@@ -608,21 +605,21 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     gap: "7px",
-    background: "#FFFFFF",
-    border: "1px solid #E2E2DE",
+    background: "var(--surface, #FFFFFF)",
+    border: "1px solid var(--border, #E2E2DE)",
     borderRadius: "11px",
     padding: "15px",
   },
 
   roadmapComplete: {
     borderColor: "rgba(255,106,0,0.35)",
-    background: "#FFF7F3",
+    background: "var(--surface-2, #FFF7F3)",
   },
 
   loader: {
     minHeight: "60vh",
     display: "grid",
     placeItems: "center",
-    color: "#525252",
+    color: "var(--page-muted, #525252)",
   },
 };
