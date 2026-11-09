@@ -171,3 +171,37 @@
  .hc-team-directory-page .hc-team-directory-row .hc-scout-card__ticket,
  .hc-womens-directory-page .hc-team-directory-row .hc-scout-card__ticket {margin:0;}
 }
+
+
+/* Explicit theme-aware team card colors: prevent dark-on-dark/light-on-light text. */
+html.theme-light .hc-team-directory-page,
+html.theme-light .hc-womens-directory-page {
+ --hc-list-bg:var(--hc-surface-raised);
+ --hc-list-fg:var(--hc-foreground);
+ --hc-list-muted:var(--hc-foreground-muted);
+ --hc-list-border:var(--hc-border);
+}
+html.theme-dark .hc-team-directory-page,
+html.theme-dark .hc-womens-directory-page {
+ --hc-list-bg:var(--hc-surface-raised);
+ --hc-list-fg:var(--hc-foreground);
+ --hc-list-muted:var(--hc-foreground-muted);
+ --hc-list-border:var(--hc-border);
+}
+html.theme-light .hc-team-directory-page .hc-team-directory-row,
+html.theme-light .hc-womens-directory-page .hc-team-directory-row,
+html.theme-dark .hc-team-directory-page .hc-team-directory-row,
+html.theme-dark .hc-womens-directory-page .hc-team-directory-row {
+ background:var(--hc-list-bg);
+ color:var(--hc-list-fg);
+ border-color:var(--hc-list-border);
+ border-left:3px solid var(--hc-list-accent);
+}
+html.theme-light .hc-team-directory-page .hc-team-directory-row :is(h2,p,small),
+html.theme-light .hc-womens-directory-page .hc-team-directory-row :is(h2,p,small),
+html.theme-dark .hc-team-directory-page .hc-team-directory-row :is(h2,p,small),
+html.theme-dark .hc-womens-directory-page .hc-team-directory-row :is(h2,p,small) {color:inherit;}
+html.theme-light .hc-team-directory-page .hc-scout-card__identity-copy p,
+html.theme-light .hc-womens-directory-page .hc-scout-card__identity-copy p,
+html.theme-dark .hc-team-directory-page .hc-scout-card__identity-copy p,
+html.theme-dark .hc-womens-directory-page .hc-scout-card__identity-copy p {color:var(--hc-list-muted);}
