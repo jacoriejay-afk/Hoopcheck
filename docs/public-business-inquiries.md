@@ -13,7 +13,7 @@ The endpoint intentionally fails closed when configuration is absent. The databa
 
 ## Release acceptance checklist
 
-- [ ] CI and Final Gate succeed for the exact merge candidate SHA.
+- [ ] CI and Final Gate succeed for the exact merge candidate SHA. (Both passed at `eb23b7f`; rerun on final SHA.)
 - [ ] Database migrations run successfully in the intended environment; confirm no `anon` or `authenticated` access to the private table or RPC.
 - [ ] Turnstile test keys and hostname validation work in preview; production secrets remain server-only.
 - [ ] Edge-level IP throttling is configured and tested before the endpoint is enabled.
@@ -29,3 +29,11 @@ The endpoint intentionally fails closed when configuration is absent. The databa
 - Configure an edge-enforced per-IP rate limit before Turnstile verification to prevent excessive verification traffic. Client-provided IP headers must not be trusted as authoritative.
 - Verify database role grants and the `submit_business_inquiry` function privileges after applying the migrations.
 - Review the existing signed-in form separately: it stores messages in `sponsor_inquiries`, not the new private guest table.
+
+## Verified rollout notes (2026-11-09)
+
+- Production Vercel contains the Turnstile site/secret keys, allowed hostname and allowed origin; values were not exposed. This verifies presence only, not successful Turnstile verification.
+- Production Supabase migrations `create_private_business_inquiries` and `create_business_inquiry_rpc` succeeded. Read-only privilege checks confirmed RLS enabled, no anon SELECT, no authenticated INSERT, no anon/authenticated RPC EXECUTE, and service-role RPC EXECUTE allowed.
+- A transaction-scoped four-submission test returned false on the fourth call; rollback completed and a follow-up query found zero test rows.
+- Vercel firewall GET and PATCH both returned 404 `Seawall Config not found`. No edge rate-limit rule was installed. Do not enable the public endpoint until a verified per-IP rule or equivalent protection is installed and tested.
+- CI and Final Gate passed at `eb23b7f`; newer changes require their own verification.
