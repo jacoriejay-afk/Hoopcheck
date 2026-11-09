@@ -43,7 +43,13 @@ try {
       holdTeam = true;
       await femaleLink.click();
       const loader = page.locator('.hc-brand-loader--screen');
-      await loader.waitFor();
+      await loader.waitFor({ state: 'visible' });
+      await page.waitForFunction(() => {
+        const el = document.querySelector('.hc-brand-loader--screen');
+        if (!el) return false;
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      });
       const bounds = await loader.boundingBox();
       assert.ok(bounds && Math.abs(bounds.x + bounds.width / 2 - width / 2) < 8, 'HoopCheck loader is horizontally centered');
       assert.ok(bounds && Math.abs(bounds.y + bounds.height / 2 - 450) < 120, 'HoopCheck loader is vertically centered in available content');

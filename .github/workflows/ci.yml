@@ -58,6 +58,9 @@ jobs:
       - name: Check membership plan selection
         run: node --test scripts/check-membership-plans.cjs
 
+      - name: Verify public business inquiry security invariants
+        run: node --test scripts/check-public-business-inquiries.mjs
+
       - name: Lint
         run: npm run lint
 
