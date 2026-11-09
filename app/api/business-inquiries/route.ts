@@ -4,7 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 
 const TYPES = new Set(["sponsor", "donate", "inquire"]);
-const json = (message: string, status: number) => NextResponse.json({ message }, { status });
+const responseHeaders = { "Cache-Control": "no-store, private", "X-Content-Type-Options": "nosniff" };
+const json = (message: string, status: number) => NextResponse.json({ message }, { status, headers: responseHeaders });
 
 export async function POST(request: NextRequest) {
   // Fail closed until both CAPTCHA and server-side storage are configured.
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
     });
     if (error) return json("Could not save your inquiry. Please try again.", 503);
     if (data !== true) return json("Too many inquiries from this email. Please try again tomorrow.", 429);
-    return NextResponse.json({ message: "Thanks! Your inquiry has been received." }, { status: 201 });
+    return NextResponse.json({ message: "Thanks! Your inquiry has been received." }, { status: 201, headers: responseHeaders });
   } catch {
     return json("Submission unavailable. Please try again later.", 503);
   }
