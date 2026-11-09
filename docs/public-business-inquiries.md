@@ -11,6 +11,17 @@ This is a staged public form and server endpoint, not yet an active production f
 
 The endpoint intentionally fails closed when configuration is absent. The database table is private and must never receive anonymous INSERT grants.
 
+## Release acceptance checklist
+
+- [ ] CI and Final Gate succeed for the exact merge candidate SHA.
+- [ ] Database migrations run successfully in the intended environment; confirm no `anon` or `authenticated` access to the private table or RPC.
+- [ ] Turnstile test keys and hostname validation work in preview; production secrets remain server-only.
+- [ ] Edge-level IP throttling is configured and tested before the endpoint is enabled.
+- [ ] Signed-out guest and signed-in member flows submit successfully without duplicate forms.
+- [ ] Invalid, reused, and expired CAPTCHA tokens; malformed JSON; oversized bodies; honeypot entries; and rate-limit exhaustion fail safely.
+- [ ] Privacy notice, retention schedule, monitoring, and mobile light/dark accessibility are reviewed.
+- [ ] Both feature flags are enabled only after all preceding checks pass.
+
 ## Privacy and operations
 
 - Add a visible privacy-policy link and explain that inquiry contact details are retained for business follow-up; establish a documented deletion schedule before launch.
