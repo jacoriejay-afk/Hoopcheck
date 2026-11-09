@@ -106,9 +106,10 @@ export default function PlayerProfilePage() {
         setIsOwnProfile(user.id===params.id);
         if (user.id === params.id) {
           const [{ data: ownProfile }, { data: ownSubscription }] = await Promise.all([
-            supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
+            supabase.from("profiles").select("id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility").eq("id", user.id).maybeSingle(),
             supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
           ]);
+          setOwnCompletionProfile(ownProfile as PlayerProfileCompletionRecord | null);
           const entitlements = getHoopCheckEntitlements({ accountType: ownProfile?.account_type, subscription: ownSubscription });
           setCanManageJourney(entitlements.canUseProPassport);
         }
