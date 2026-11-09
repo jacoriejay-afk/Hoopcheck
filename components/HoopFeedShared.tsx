@@ -51,8 +51,8 @@ export function FeedTimeRemaining({ expiresAt, now }: { expiresAt: string; now: 
 }
 
 export function FeedDiscoveryHeader({ audience }: { audience: "player" | "fan" }) {
-  return <section className="hc-feed-discovery" aria-label="HoopFeed discovery">
-    <div><span className="hc-feed-live-label">THE BASKETBALL COMMUNITY</span><h2>Beyond the box score.</h2><p>{audience === "fan" ? "Your teams. Your community. Your courtside conversation." : "Real moments from practice, travel, and game day."}</p></div>
-    <nav aria-label="Explore basketball"><Link href="/search?type=mens-teams">Men’s teams ↗</Link><Link href="/search?type=womens-teams">Women’s teams ↗</Link><Link href="/membership">Membership & perks ↗</Link></nav>
-  </section>;
+  return <header className="hc-feed-discovery hc-feed-compact-header" aria-label="HoopFeed discovery">
+    <div><h1>{audience === "fan" ? "Fan HQ" : "HoopFeed"}</h1><small className="hc-feed-live-label">24-hour posts · {audience === "fan" ? "Your club communities" : "Player experiences"}</small></div>
+    <details className="hc-feed-explore"><summary>Explore basketball</summary><nav aria-label="Explore basketball"><Link href="/search?type=mens-teams">Men’s teams ↗</Link><Link href="/search?type=womens-teams">Women’s teams ↗</Link><Link href="/membership">Membership & perks ↗</Link></nav></details>
+  </header>;
 }

@@ -207,7 +207,7 @@ try {
           body: color("body"),
           pageWrapper: color(wrapperSelector),
           composer: routeName === "feed" ? color(".hc-feed-composer") : null,
-          discoveryHeading: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-discovery h2")).color : null,
+          discoveryHeading: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-discovery h1")).color : null,
           composerBorder: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-composer")).borderTopWidth : null,
           topicChip: routeName === "feed" ? color(".hc-feed-topic-chip") : null,
           filterChip: routeName === "feed" ? color(".hc-feed-filter-chip:not(.is-active)") : null,
@@ -234,7 +234,7 @@ try {
       assert.equal(computed.pageWrapper, expectedPage, `${routeName}/${theme}: page wrapper background mismatch`);
       if (routeName === "feed") {
         assert.equal(computed.composer, "rgba(0, 0, 0, 0)", `feed/${theme}: composer uses open content flow`);
-        assert.equal(computed.discoveryHeading, "rgb(247, 247, 245)", `feed/${theme}: artwork banner text remains readable`);
+        assert.equal(computed.discoveryHeading, theme === "dark" ? "rgb(247, 247, 245)" : "rgb(23, 23, 23)", `feed/${theme}: compact heading remains readable`);
         assert.equal(computed.composerBorder, "0px", `feed/${theme}: decorative composer frame removed`);
         assert.equal(computed.topicChip, expectedChip, `feed/${theme}: topic chip background mismatch`);
         assert.equal(computed.filterChip, expectedChip, `feed/${theme}: filter chip background mismatch`);
@@ -518,21 +518,21 @@ try {
       const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
       const errors = [];
       if (requestedPath === "/fan-feed") {
-        // Fan HQ is a mixed feed; selecting a club changes the composer, not the hero.
-        await page.locator("main.hc-fan-feed-page .hc-feed-hero").waitFor({ state: "visible", timeout: 15000 });
+        // Fan HQ keeps a compact mixed-feed title; selecting a club changes the composer.
+        await page.locator("main.hc-fan-feed-page .hc-feed-compact-header").waitFor({ state: "visible", timeout: 15000 });
         await page.locator("main.hc-fan-feed-page .hc-feed-composer").waitFor({ state: "visible", timeout: 15000 });
-        const teamHeading = (await page.locator("main.hc-fan-feed-page .hc-feed-hero h1").innerText()).trim();
-        const teamSubtitle = (await page.locator("main.hc-fan-feed-page .hc-feed-hero .muted").innerText()).trim();
-        const fanHqEyebrow = (await page.locator("main.hc-fan-feed-page .hc-feed-hero .eyebrow").innerText()).trim();
+        const teamHeading = (await page.locator("main.hc-fan-feed-page .hc-feed-compact-header h1").innerText()).trim();
+        const compactCaption = (await page.locator("main.hc-fan-feed-page .hc-feed-compact-header .hc-feed-live-label").innerText()).trim();
+        const headerBounds = await page.locator("main.hc-fan-feed-page .hc-feed-compact-header").boundingBox();
         const composer = page.locator("main.hc-fan-feed-page .hc-feed-composer");
         const composerPlaceholder = await composer.locator("textarea").count() ? await composer.locator("textarea").getAttribute("placeholder") : null;
         const chooseClub = composer.getByRole("button", { name: "Choose a followed club to post" });
         if (!composerPlaceholder && await chooseClub.count() !== 1) errors.push("fan-feed: missing both selected-club composer and club chooser");
         if (teamHeading !== "Fan HQ") errors.push("fan-feed: mixed-feed hero title is incorrect: " + teamHeading);
-        if (!teamSubtitle.includes("clubs you follow")) errors.push("fan-feed: mixed-feed description is missing: " + teamSubtitle);
-        if (!fanHqEyebrow.includes("FAN HQ")) errors.push("fan-feed: real Fan HQ eyebrow is missing: " + fanHqEyebrow);
+        if (!compactCaption.includes("club communities")) errors.push("fan-feed: mixed-feed caption is missing: " + compactCaption);
+        if (!headerBounds || headerBounds.height >= 110) errors.push("fan-feed: compact header exceeds its height budget");
         if (composerPlaceholder !== null && !composerPlaceholder.trim()) errors.push("fan-feed: composer placeholder is empty");
-        const audienceNote = (await page.locator("main.hc-fan-feed-page .hc-feed-expiry-note").innerText()).trim();
+        const audienceNote = compactCaption;
         if (!audienceNote || !audienceNote.includes("24") || /KICKER|TITLE|Subtitle|TEAM FIRST|Fan Only Note/.test(audienceNote)) errors.push("fan-feed: audience note is missing or still scaffolded: " + audienceNote);
         const emptyState = page.locator("main.hc-fan-feed-page .hc-feed-empty");
         if (await emptyState.count()) {

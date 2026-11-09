@@ -78,10 +78,20 @@ html body .hc-global-page-shell main .hc-feed-discovery .hc-feed-live-label{colo
 html body .hc-global-page-shell main.hc-feed-page :is(.hc-feed-topic-picker,.hc-feed-filter-bar,.hc-feed-filter-scroll,.hc-feed-composer__footer){background:transparent !important;box-shadow:none !important}
 html body .hc-global-page-shell main .hc-team-branded-hero{border-inline:0 !important;border-bottom:0 !important;border-radius:0 !important}
 /* Legacy theme rules also read these local tokens; scope them to artwork only. */
-html body .hc-global-page-shell main :is(.hc-feed-discovery,.hc-team-branded-hero){--hc-foreground:#f7f7f5;--hc-foreground-muted:#d4d8e2;--hc-orange:#ffb37f;--hc-text-primary:#f7f7f5;--hc-text-secondary:#d4d8e2}
+html body .hc-global-page-shell main .hc-team-branded-hero{--hc-foreground:#f7f7f5;--hc-foreground-muted:#d4d8e2;--hc-orange:#ffb37f;--hc-text-primary:#f7f7f5;--hc-text-secondary:#d4d8e2}
 
 /* Keep a page loader centered even when the preceding route was scrolled. */
 html body .hc-brand-loader--screen.hoop-loading-inline{position:fixed;inset:72px 0;z-index:20;min-height:0 !important;height:auto !important;max-width:none;background:var(--hc-page-bg);overflow:auto}
 html body .hc-brand-loader .hc-logo--full{flex-direction:row !important;gap:10px !important}
 html body .hc-brand-loader--inline .hc-logo__wordmark{font-size:24px !important}
 html body .hc-brand-loader .hc-logo__check-word{color:#ff790b !important}
+/* Content-first feeds: one compact heading, secondary links on demand. */
+html body .hc-global-page-shell main.hc-feed-page .hc-feed-compact-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0 !important;margin:0 0 8px !important;min-height:0;background:none !important;color:var(--hc-foreground) !important;overflow:visible}
+html body .hc-global-page-shell main.hc-feed-page .hc-feed-compact-header h1{margin:0 0 4px !important;font-size:26px !important;line-height:1.1;color:var(--hc-foreground) !important}
+html body .hc-global-page-shell main.hc-feed-page .hc-feed-compact-header :is(summary,a){color:var(--hc-foreground) !important;font-size:12px}
+html body .hc-global-page-shell main.hc-feed-page .hc-feed-compact-header .hc-feed-live-label{font-size:10px;color:var(--hc-foreground-muted) !important;letter-spacing:.03em}
+.hc-feed-explore{position:relative;flex-shrink:0}.hc-feed-explore summary{cursor:pointer;min-height:42px;display:flex;align-items:center;gap:6px}.hc-feed-explore summary::after{content:'⌄';color:var(--hc-orange)}
+html body .hc-global-page-shell main.hc-feed-page .hc-feed-explore nav{position:absolute;right:0;top:100%;z-index:30;width:210px;display:grid;gap:4px;padding:10px;background:var(--hc-surface-raised);border:1px solid var(--hc-border);border-radius:10px;box-shadow:0 10px 30px #0002}
+html body .hc-global-page-shell main.hc-feed-page .hc-feed-explore nav a{border:0;border-radius:6px;white-space:normal;padding:10px}
+html body .hc-global-page-shell main.hc-feed-page .hc-feed-composer{margin-top:4px !important;padding-top:10px !important}
+.hc-player-review-checklist{margin:28px 0;padding-block:20px;border-top:1px solid var(--hc-border)}.hc-player-review-checklist h2{margin:6px 0 10px}.hc-player-review-checklist>p{line-height:1.6;max-width:70ch}.hc-player-review-checklist ul{list-style:none;padding:0;margin:18px 0}.hc-player-review-checklist li{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--hc-border);font-size:13px}.hc-player-review-checklist li>small{margin-left:auto}.hc-player-review-checklist li>span:first-child{color:var(--hc-orange)}.hc-player-review-checklist .checkbox-row{display:flex;align-items:flex-start;gap:10px;line-height:1.6;margin:16px 0}.hc-player-review-checklist .checkbox-row input{flex-shrink:0;width:18px;height:18px;margin-top:3px}

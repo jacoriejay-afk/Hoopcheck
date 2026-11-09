@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import HoopLoading from "../../components/HoopLoading";
+import TeamLeaguePicker from "../../components/TeamLeaguePicker";
 import ProfileAvatar from "../../components/ProfileAvatar";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import "./complete-profile.css";
@@ -12,6 +13,7 @@ import { getPlayerProfileCompletion, PLAYER_PROFILE_COMPLETION_FIELDS, type Play
 
 type PlayerRecord = PlayerProfileCompletionRecord & {
   id: string;
+  basketball_type?: "mens" | "womens" | null;
   display_name: string | null;
   username: string | null;
   avatar_url: string | null;
@@ -54,7 +56,7 @@ export default function CompleteProfilePage() {
     if (!user) { router.replace("/login?returnTo=/complete-profile"); setLoading(false); return; }
     setUserId(user.id);
     const { data, error: loadError } = await supabase.from("profiles")
-      .select("id,account_type,display_name,username,avatar_url,position,current_team,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
+      .select("id,account_type,basketball_type,display_name,username,avatar_url,position,current_team,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
       .eq("id", user.id).maybeSingle();
     if (loadError) { setError("Unable to load your profile: " + loadError.message); setLoading(false); return; }
     if (!data || data.account_type !== "player") { setError("The player profile checklist is available to player accounts."); setLoading(false); return; }
@@ -109,7 +111,7 @@ export default function CompleteProfilePage() {
 
       const { data, error: saveError } = await supabase.from("profiles").update(updates)
         .eq("id", userId)
-        .select("id,account_type,display_name,username,avatar_url,position,current_team,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
+        .select("id,account_type,basketball_type,display_name,username,avatar_url,position,current_team,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
         .maybeSingle();
       if (saveError) throw saveError;
       if (!data) throw new Error("No profile row was updated. Refresh and sign in again, then retry.");
@@ -130,7 +132,7 @@ export default function CompleteProfilePage() {
     setError("");
     try {
       const { data, error: updateError } = await supabase.from("profiles").update({ profile_visibility: "public" })
-        .eq("id", userId).select("id,account_type,display_name,username,avatar_url,position,current_team,current_country,favorite_leagues,height,bio,hometown,profile_visibility").maybeSingle();
+        .eq("id", userId).select("id,account_type,basketball_type,display_name,username,avatar_url,position,current_team,current_country,favorite_leagues,height,bio,hometown,profile_visibility").maybeSingle();
       if (updateError) throw updateError;
       if (!data) throw new Error("Your profile could not be made public. Please try again.");
       setProfile(data as PlayerRecord);
@@ -174,6 +176,7 @@ export default function CompleteProfilePage() {
                 {isActive && <div className="hc-ux2b-editor">
                   <p className="muted">{copy.hint}</p>
                   {field.key === "photo" ? <label className="hc-ux2b-file"><span>{photo?.name || copy.placeholder}</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={event => setPhoto(event.target.files?.[0] || null)} /></label> :
+                    field.key === "current_team" ? <TeamLeaguePicker mode="team" label="Current team" returnValue="name" value={value} onChange={setValue} basketballType={profile.basketball_type || "mens"} directorySource={profile.basketball_type === "womens" ? "womens_teams" : "teams"} placeholder="Search and select your current team" /> :
                     field.key === "position" ? <select aria-label={copy.label} value={value} onChange={event => setValue(event.target.value)}><option value="">Choose position</option>{value && !["PG", "SG", "SF", "PF", "C"].includes(value) && <option value={value}>{value} (current)</option>}<option value="PG">Point Guard (PG)</option><option value="SG">Shooting Guard (SG)</option><option value="SF">Small Forward (SF)</option><option value="PF">Power Forward (PF)</option><option value="C">Center (C)</option></select> :
                     field.key === "bio" ? <textarea value={value} onChange={event => setValue(event.target.value)} maxLength={500} rows={4} placeholder={copy.placeholder} /> :
                     <input value={value} onChange={event => setValue(event.target.value)} maxLength={field.key === "height" ? 24 : 160} placeholder={copy.placeholder} />}
