@@ -8,7 +8,7 @@ import WatchButton from "../../components/WatchButton";
 import ActivityWire from "../../components/ActivityWire";
 import { HoopIcon } from "../../components/HoopCheckUI";
 
-type Notice={id:string;target_type:"team"|"coach"|"league"|"game";target_id:string;notification_type:"review"|"rating"|"update"|"trust_score"|"roster_spot"|"pay_warning"|"game_reminder";title:string;body:string;read_at:string|null;created_at:string};
+type Notice={id:string;target_type:"team"|"coach"|"league"|"game"|"player";target_id:string;notification_type:"review"|"rating"|"update"|"trust_score"|"roster_spot"|"pay_warning"|"game_reminder"|"player_team_change";title:string;body:string;read_at:string|null;created_at:string};
 
 export default function NotificationsPage(){
   const [items,setItems]=useState<Notice[]>([]);
@@ -64,7 +64,7 @@ export default function NotificationsPage(){
     {!loadFailed&&<nav className="hc-smooth-inbox-tabs" aria-label="Filter alerts">{([["all","All"],["unread","Unread"],["games","Games"],["clubs","Clubs"],["reviews","Reviews"]] as const).map(([key,label])=><button key={key} type="button" aria-pressed={filter===key} className={filter===key?"is-active":""} onClick={()=>setFilter(key)}>{label}<span>{items.filter(n=>key==="all" || (key==="unread"&&!n.read_at) || (key==="games"&&n.target_type==="game") || (key==="clubs"&&n.target_type!=="game"&&!["review","rating","trust_score","pay_warning"].includes(n.notification_type)) || (key==="reviews"&&["review","rating","trust_score","pay_warning"].includes(n.notification_type))).length}</span></button>)}</nav>}
     {!loadFailed&&<section style={{marginTop:12,display:"grid",gap:10}}>
       {filtered.length ? filtered.map(n => {
-        const path = n.target_type === "team" ? "teams" : n.target_type === "coach" ? "coaches" : n.target_type === "game" ? "fan-live?gameId=" + n.target_id : "leagues";
+        const path = n.target_type === "team" ? "teams" : n.target_type === "coach" ? "coaches" : n.target_type === "game" ? "fan-live?gameId=" + n.target_id : n.target_type === "player" ? "players" : "leagues";
         const href = n.target_type === "game" ? "/" + path : "/" + path + "/" + n.target_id;
         const meta: Record<string, { label: string; icon: "message-square" | "star" | "external-link" | "shield-check" | "users" | "whistle" | "bell" }> = {
           review: { label: "NEW REVIEW", icon: "message-square" },
@@ -74,6 +74,7 @@ export default function NotificationsPage(){
           roster_spot: { label: "ROSTER SPOT", icon: "users" },
           pay_warning: { label: "PAY WARNING", icon: "whistle" },
           game_reminder: { label: "GAME REMINDER", icon: "bell" },
+          player_team_change: { label: "PLAYER CAREER UPDATE", icon: "users" },
         };
         const item = meta[n.notification_type] || meta.update;
         return <article key={n.id} className={"hc-alert-card " + (!n.read_at ? "unread" : "")}>
@@ -81,7 +82,7 @@ export default function NotificationsPage(){
             <span className={"hc-alert-type hc-alert-type--" + n.notification_type}><HoopIcon name={item.icon} size={14} />{item.label} · {new Date(n.created_at).toLocaleString()}</span>
             <strong>{n.title}</strong><small>{n.body}</small>
           </Link>
-          {n.target_type !== "game" && <div className="hc-alert-card__controls"><WatchButton targetType={n.target_type} targetId={n.target_id} targetName={n.title} /></div>}
+          {n.target_type !== "game" && n.target_type !== "player" && <div className="hc-alert-card__controls"><WatchButton targetType={n.target_type} targetId={n.target_id} targetName={n.title} /></div>}
         </article>;
       }) : <div className="card"><h2>{items.length ? "Nothing in this category" : "No notifications yet"}</h2><p className="muted">{items.length ? "Choose another filter to see more alerts." : "Follow a team and choose the alerts you want to receive."}</p>{!items.length&&<Link href="/teams" className="btn">Find Teams</Link>}</div>}
     </section>}
