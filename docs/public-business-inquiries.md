@@ -1,6 +1,6 @@
 # Public business inquiry rollout
 
-This is a staged server endpoint, not yet an active public form. Do not merge as a completed feature until a frontend CAPTCHA widget and integration tests are added.
+This is a staged public form and server endpoint, not yet an active production feature. The CAPTCHA widget exists behind a disabled feature flag. Do not activate until the remaining security controls and end-to-end tests pass.
 
 1. Review and apply `docs/sql/public-business-inquiries.sql` and `docs/sql/business-inquiry-rate-limit.sql` in order to the correct production Supabase project. The private RPC atomically limits each normalized email to three submissions per 24 hours.
 2. Set server-only `SUPABASE_SERVICE_ROLE_KEY`, `TURNSTILE_SECRET_KEY`, `TURNSTILE_ALLOWED_HOSTNAME=hoopcheck.online`, and `BUSINESS_INQUIRIES_ALLOWED_ORIGIN=https://hoopcheck.online`. Keep the service role key out of browser bundles and source control. The Origin check is defense-in-depth, not authentication or a replacement for rate limiting.
@@ -10,3 +10,11 @@ This is a staged server endpoint, not yet an active public form. Do not merge as
 6. Keep the existing signed-in flow until the replacement passes QA.
 
 The endpoint intentionally fails closed when configuration is absent. The database table is private and must never receive anonymous INSERT grants.
+
+## Privacy and operations
+
+- Add a visible privacy-policy link and explain that inquiry contact details are retained for business follow-up; establish a documented deletion schedule before launch.
+- Do not log inquiry bodies, email addresses, CAPTCHA tokens, or service-role credentials.
+- Configure an edge-enforced per-IP rate limit before Turnstile verification to prevent excessive verification traffic. Client-provided IP headers must not be trusted as authoritative.
+- Verify database role grants and the `submit_business_inquiry` function privileges after applying the migrations.
+- Review the existing signed-in form separately: it stores messages in `sponsor_inquiries`, not the new private guest table.
