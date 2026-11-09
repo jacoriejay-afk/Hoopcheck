@@ -116,7 +116,7 @@ for (let attempt = 0; attempt < 60; attempt += 1) {
 }
 assert.ok(serverReady, "Next production server did not become ready within 60 seconds.");
 
-const browser = await chromium.launch({ channel: "chrome", headless: true, args: ["--no-sandbox"] });
+const browser = await chromium.launch({ ...(process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : { channel: "chrome" }), headless: true, args: ["--no-sandbox"] });
 const results = [];
 try {
   for (const theme of ["dark", "light"]) {
@@ -854,6 +854,7 @@ try {
   }
   console.log("THEME_COMPONENT_INVENTORY=" + JSON.stringify(themeComponentInventory, null, 2));
   console.log("THEME_ROUTE_SWEEP=" + JSON.stringify(routeSweepResults, null, 2));
+  assert.deepEqual(routeSweepResults.filter(result => result.status === "FAIL"), [], "Theme route regressions must fail CI");
 
 } finally {
   await browser.close();

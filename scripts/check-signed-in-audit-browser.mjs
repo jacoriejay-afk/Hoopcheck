@@ -11,9 +11,11 @@ const now = Math.floor(Date.now() / 1000);
 const claims = Buffer.from(JSON.stringify({ sub: userId, aud: 'authenticated', role: 'authenticated', exp: now + 3600, iat: now })).toString('base64url');
 const session = { access_token: 'eyJhbGciOiJIUzI1NiJ9.' + claims + '.fixture', refresh_token: 'fixture', token_type: 'bearer', expires_in: 3600, expires_at: now + 3600, user };
 
-const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--no-sandbox'] });
+const browser = await chromium.launch({ ...(process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : { channel: 'chrome' }), headless: true, args: ['--no-sandbox'] });
 try {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: 'block' });
+  for (const width of [390, 1440]) {
+  for (const theme of ['light', 'dark']) {
+  const context = await browser.newContext({ viewport: { width, height: 900 }, colorScheme: theme, serviceWorkers: 'block' });
   const page = await context.newPage();
   let plan = 'premium';
   await page.route('https://ci.invalid/**', async route => {
@@ -57,7 +59,11 @@ try {
   await page.getByText(/^signed in as$/i).waitFor();
   console.log('PASS stalled client navigation recovers with an authenticated document request');
 
-  await page.locator('details.hc-header-more > summary').click();
+  await page.reload();
+  await page.getByText(/^signed in as$/i).waitFor();
+  assert.equal(new URL(page.url()).pathname, '/dashboard');
+  if (width === 390) await page.getByRole('button', { name: 'Open menu' }).click();
+  else await page.locator('details.hc-header-more > summary').click();
   await page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link', { name: 'Reviews', exact: true }).click();
   await page.getByRole('heading', { name: 'Reviews & Analytics' }).waitFor();
   assert.equal(await page.locator('details.hc-header-more').evaluate(el => el.open), false);
@@ -71,11 +77,17 @@ try {
   assert.equal(await complimentary.getAttribute('id'), 'manage-subscription');
 
   await page.goto(site + '/account');
+  await page.locator('#profile-editor').waitFor();
+  await page.reload();
+  await page.locator('#profile-editor').waitFor();
   const passportLink = page.getByRole('link', { name: 'Player Passport', exact: true });
   await passportLink.click();
   await page.getByRole('heading', { name: /My Journey/i }).waitFor();
   assert.equal(new URL(page.url()).hash, '#player-passport');
   const publicToggle = page.getByRole('checkbox', { name: /Show this stop publicly/i });
+  await publicToggle.waitFor();
+  assert.equal(await publicToggle.isChecked(), false);
+  await page.reload();
   await publicToggle.waitFor();
   assert.equal(await publicToggle.isChecked(), false);
   plan = 'pro';
@@ -114,6 +126,40 @@ try {
   await agreement.check();
   assert.equal(await agreement.evaluate(el => el.validity.valueMissing), false);
   console.log('PASS review agreement is associated with the form and required before submission');
+  let submissions = [];
+  await page.route('**/api/reviews', route => {
+    submissions.push(route.request().postDataJSON());
+    return route.fulfill({ status: 409, json: { error: 'You have already submitted a review for this team.' } });
+  });
+  const submit = page.getByRole('button', { name: 'Submit Review', exact: true });
+  await page.getByLabel('Review', { exact: true }).fill('A complete synthetic review for validation.');
+  await agreement.uncheck();
+  await submit.click();
+  assert.equal(submissions.length, 0, 'Rules must be accepted before submission');
+  await agreement.check();
+  await submit.click();
+  await page.getByRole('status').getByText('Please rate all seven signing categories.').waitFor();
+  assert.equal(submissions.length, 0);
+  for (const category of ['Pay On Time', 'Housing', 'Medical Support', 'Communication', 'Coaching Quality', 'Facilities', 'Playing Time Honesty']) {
+    await page.getByRole('button', { name: `Rate ${category} 4 out of 5`, exact: true }).click();
+  }
+  await page.getByLabel('Review Title', { exact: true }).fill('ab');
+  await submit.click();
+  await page.getByRole('status').getByText('Your title must be between 3 and 120 characters.').waitFor();
+  assert.equal(submissions.length, 0);
+  await page.getByLabel('Review Title', { exact: true }).fill('Synthetic audit');
+  await submit.click();
+  await page.getByRole('status').getByText('You have already submitted a review for this team.').waitFor();
+  assert.equal(submissions.length, 1);
+  assert.equal(submissions[0].overall_rating, 4);
+  assert.equal(submissions[0].team_id, teamId);
+  assert.equal(await submit.isEnabled(), true);
+  console.log('PASS review validation, computed rating, mocked submission and duplicate recovery');
+
+  console.log(`PASS Premium session matrix: ${width}px ${theme}, refresh on dashboard, Account and Passport`);
+  await context.close();
+  }
+  }
 } finally {
   await browser.close();
 }
