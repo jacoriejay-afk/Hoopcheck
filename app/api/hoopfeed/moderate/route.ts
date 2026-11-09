@@ -189,9 +189,8 @@ export async function POST(request: Request) {
     const { data: sub } = await db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle();
     const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription: sub });
     if (!entitlements.canWriteHoopFeed) return NextResponse.json({ allowed: false, message: "An active Pro or Premium membership is required to use HoopFeed." }, { status: 403 });
-    const userClient = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { global: { headers: { Authorization: `Bearer ${token}` } } });
-    const { data: adminRole } = await userClient.rpc("get_current_user_admin_role");
-    const isAdmin = adminRole === "admin";
+    const { data: adminRoleRows } = await db.from("admin_roles").select("role").eq("user_id", user.id);
+    const isAdmin = (adminRoleRows || []).some((r: any) => String(r?.role || "").trim().toLowerCase() === "admin");
 
     // Poll vote: one vote per member per poll; voting again changes the vote.
     if (kind === "vote") {
