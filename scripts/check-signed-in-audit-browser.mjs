@@ -31,6 +31,7 @@ try {
     if (url.pathname === '/rest/v1/profiles') data = profile;
     if (url.pathname === '/rest/v1/subscriptions') data = { plan, status: 'active', access_status: 'active', current_period_end: null, stripe_subscription_id: null };
     if (url.pathname === '/rest/v1/teams') data = [team];
+    if (url.pathname === '/rest/v1/rpc/can_user_review_team') data = true;
     return route.fulfill({ status: 200, headers, json: data });
   });
 
@@ -104,6 +105,15 @@ try {
   await reviewSection.getByRole('button', { name: 'Retry reviews' }).waitFor();
   assert.equal(await reviewSection.getByText(/membership required/i).count(), 0);
   console.log('PASS review loading, eligibility destination and error handling');
+
+  await page.goto(site + '/teams/' + teamId + '/review');
+  const agreement = page.getByRole('checkbox', { name: /read and agree to these review rules/i });
+  await agreement.waitFor();
+  assert.deepEqual(await agreement.evaluate(el => [el.form?.id, el.validity.valueMissing]), ['hc-team-review-form', true]);
+  assert.ok((await agreement.boundingBox()).width <= 24, 'The checkbox stays aligned beside its label');
+  await agreement.check();
+  assert.equal(await agreement.evaluate(el => el.validity.valueMissing), false);
+  console.log('PASS review agreement is associated with the form and required before submission');
 } finally {
   await browser.close();
 }
