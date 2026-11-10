@@ -168,9 +168,38 @@
     border-radius: var(--hc-radius-card) !important;
   }
 
+  /* Match dark-mode floating geometry without touching the proven five-tab
+     icon sizes, grid tracks, or the iPhone home-indicator clearance. */
+  html.theme-light body nav.hc-bottom-tab-bar.hc-lm2f-bottom-nav {
+    inset-inline: max(8px, env(safe-area-inset-left, 0px)) max(8px, env(safe-area-inset-right, 0px)) !important;
+    inset-block-end: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+    width: auto !important;
+    max-width: none !important;
+    grid-template-rows: 54px !important;
+    grid-auto-rows: 54px !important;
+    align-content: start !important;
+    height: 66px !important;
+    min-height: 66px !important;
+    max-height: 66px !important;
+    padding: 5px 0 7px !important;
+    border: 1px solid var(--hc-card-border) !important;
+    border-radius: var(--hc-radius-card) !important;
+    background: var(--hc-tab-bg) !important;
+    box-shadow: 0 6px 24px rgb(0 0 0 / 16%) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    backdrop-filter: blur(12px) !important;
+  }
+  @media (prefers-reduced-transparency: reduce), (prefers-contrast: more), (forced-colors: active) {
+    html.theme-light body nav.hc-bottom-tab-bar.hc-lm2f-bottom-nav {
+      background: #fafafa !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+    }
+  }
+  /* Keep the audit's canonical light-nav selector explicitly token-paired. */
   html.theme-light body nav.hc-lm2f-bottom-nav {
     background: var(--hc-tab-bg) !important;
-    border-top-color: var(--hc-card-border) !important;
+    border-color: var(--hc-card-border) !important;
   }
   html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab,
   html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab:link,
