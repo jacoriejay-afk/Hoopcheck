@@ -3,6 +3,8 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import GoogleSignInButton from "../../components/GoogleSignInButton";
+import { googleAuthMessage } from "../../lib/google-auth";
 import Logo from "../../components/Logo";
 import { supabase } from "../../lib/supabase";
 
@@ -16,7 +18,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [returnTo, setReturnTo] = useState("");
   useEffect(() => {
-    const candidate = new URLSearchParams(window.location.search).get("returnTo") || "";
+    const query = new URLSearchParams(window.location.search);
+    const candidate = query.get("returnTo") || "";
+    if (query.has("google_error")) setMessage(googleAuthMessage(query.get("google_error")));
     if (candidate.startsWith("/") && !candidate.startsWith("//") && !candidate.includes("\\\\") && !candidate.includes("\\") && !candidate.startsWith("/login")) setReturnTo(candidate);
   }, []);
 
@@ -106,6 +110,8 @@ export default function LoginPage() {
           <p className="muted">
             Use the email and password associated with your account.
           </p>
+
+          <GoogleSignInButton disabled={loading || resetLoading} />
 
           <form onSubmit={handleLogin}>
             <label htmlFor="email">Email</label>
