@@ -1,0 +1,34 @@
+.hc-feed-page .hf5-hero.hf5-hero--compact { min-height:0!important; margin:8px 0 12px!important; padding:14px 18px!important; border-radius:16px!important; overflow:hidden; }
+.hc-feed-page .hf5-hero--compact .hf5-hero__inner { display:flex!important; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; min-height:0!important; padding:0!important; }
+.hc-feed-page .hf5-hero--compact .hf5-hero__title { margin:0!important; font-size:clamp(24px,4vw,32px)!important; line-height:1.2!important; }
+.hc-feed-page .hf5-hero--compact .hf5-hero__plan { margin:0!important; white-space:nowrap; }
+@media(max-width:700px) { .hc-feed-page .hf5-hero.hf5-hero--compact { padding:12px 14px!important; } }
+
+/* Keep composer controls compact so the first posts appear sooner on phones. */
+.hc-feed-page .hc-feed-composer--compact .hc-feed-composer__heading {
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px 10px; margin-bottom:8px;
+}
+.hc-feed-page .hc-feed-composer--compact .hc-feed-composer__heading .card-kicker { margin:0; }
+.hc-feed-page .hc-feed-composer--compact .hc-feed-composer__heading .hc-feed-streak {
+  position:static; margin:0; font-size:12px; padding:4px 8px; line-height:1.3;
+}
+.hc-feed-page .hc-feed-composer--compact .hf5-mode-row { gap:6px; margin-bottom:8px; }
+.hc-feed-page .hc-feed-composer--compact .hf5-mode-row .hf5-type-chip { padding:6px 11px; }
+@media (max-width:700px) {
+  .hc-feed-page .hc-feed-composer--compact { padding:12px!important; }
+  .hc-feed-page .hc-feed-composer--compact .hc-feed-composer__heading { margin-bottom:6px; }
+  .hc-feed-page .hc-feed-composer--compact .hf5-mode-row { margin-bottom:6px; }
+  .hc-feed-page .hc-feed-composer--compact .hf5-mode-row .hf5-type-chip { padding:5px 10px; font-size:12px; min-height:32px; }
+  .hc-feed-page .hf5-type-row { padding-top:8px; }
+}
+
+/* The full composer remains visible on desktop. On phones, a single tap opens it. */
+.hc-feed-page .hc-feed-composer__toggle { display:none; border:1px solid var(--hc-border); border-radius:999px; padding:7px 12px; background:var(--hc-surface-soft); color:var(--hc-foreground); font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+.hc-feed-page .hc-feed-composer__toggle:focus-visible { outline:3px solid var(--hc-orange,#ff5a1f); outline-offset:2px; }
+@media(max-width:700px) {
+  .hc-feed-page .hc-feed-composer--compact.is-collapsed { padding:9px 12px!important; }
+  .hc-feed-page .hc-feed-composer--compact.is-collapsed .hc-feed-composer__heading { margin-bottom:0; }
+  .hc-feed-page .hc-feed-composer__toggle { display:inline-flex; align-items:center; justify-content:center; min-height:44px; }
+  .hc-feed-page .hc-feed-composer--compact.is-collapsed .hc-feed-composer__fields { display:none; }
+  .hc-feed-page .hc-feed-composer--compact.is-expanded .hc-feed-composer__fields { display:block; }
+}

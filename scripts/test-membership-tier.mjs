@@ -119,6 +119,15 @@ const expired = getHoopCheckEntitlements({
 assert.equal(expired.canReadFullReviews, false, "expired Premium must not retain Pro access");
 assert.equal(expired.canSubmitPayCheckIn, false, "expired Premium must not submit pay check-ins");
 
+// Administrator authorization is independent of a paid membership, but moderator access is not.
+const adminWithoutSubscription = getHoopCheckEntitlements({ accountType: "player", isAdmin: true });
+assert.equal(adminWithoutSubscription.canReadHoopFeed, true, "admin must read HoopFeed without a subscription");
+assert.equal(adminWithoutSubscription.canWriteHoopFeed, true, "admin must write HoopFeed without a subscription");
+const moderatorWithoutSubscription = getHoopCheckEntitlements({ accountType: "player", isAdmin: false });
+assert.equal(moderatorWithoutSubscription.canReadHoopFeed, false, "moderator must not inherit admin read access");
+assert.equal(moderatorWithoutSubscription.canWriteHoopFeed, false, "moderator must not inherit admin write access");
+assert.equal(expired.canWriteHoopFeed, false, "expired Premium must not post to HoopFeed");
+
 const trialing = getHoopCheckEntitlements({
   accountType: "player",
   subscription: { plan: "premium", status: "trialing", access_status: "trialing" },
@@ -132,6 +141,15 @@ const unverified = getHoopCheckEntitlements({
 assert.equal(unverified.canWriteReviews, false, "unverified players cannot write reviews");
 assert.equal(unverified.canSubmitPayCheckIn, false, "unverified player cannot submit pay check-ins");
 
+
+// Guard against checking HoopFeed membership before the authoritative admin role is known.
+const feedPageSource = readFileSync(new URL("../app/feed/page.tsx", import.meta.url), "utf8");
+const feedModerationSource = readFileSync(new URL("../app/api/hoopfeed/moderate/route.ts", import.meta.url), "utf8");
+assert.match(feedPageSource, /isAdmin:adminRole==="admin"/, "HoopFeed page must pass admin role to entitlements");
+assert.match(feedPageSource, /isAdmin:resolvedAdminRole==="admin"/, "HoopFeed initial gate must use resolved admin role");
+assert.ok(feedPageSource.indexOf('setAdminRole(resolvedAdminRole)') < feedPageSource.indexOf('const memberActive='), "resolve admin role before initial membership gate");
+assert.ok(feedModerationSource.includes("getHoopCheckEntitlements({ accountType: profile?.account_type, subscription: sub, isAdmin })"), "moderation API must use admin-aware entitlements");
+assert.ok(feedModerationSource.indexOf('const isAdmin = (adminRoleRows') < feedModerationSource.indexOf('if (!entitlements.canWriteHoopFeed)'), "server must resolve admin before write gate");
 
 const read = (relative) => readFileSync(new URL(relative, import.meta.url), "utf8");
 const menProfile = read("../app/teams/[id]/page.tsx");
