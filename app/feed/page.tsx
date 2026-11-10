@@ -92,7 +92,18 @@ export default function Feed(){
     void Promise.all([
       supabase.from("feed_post_comments").select("id,post_id,body,created_at,author_id,profiles:profiles!feed_post_comments_author_id_fkey(display_name,avatar_url)").in("post_id",ids).order("created_at",{ascending:true}),
       supabase.from("feed_post_checks").select("post_id,user_id").in("post_id",ids),
-      supabase.from("feed_poll_votes").select("post_id,user_id,option_index").in("post_id",ids),
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
+        if (!session?.access_token) return { data: null, error: new Error("Session unavailable") };
+        const response = await fetch("/api/hoopfeed/poll-results", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ post_ids: rows.filter(p => p.post_kind === "poll").map(p => p.id) }),
+          cache: "no-store",
+        });
+        if (!response.ok) return { data: null, error: new Error("Poll results unavailable") };
+        const payload = await response.json();
+        return { data: payload.results as Record<string, VoteState>, error: null };
+      }),
       supabase.from("feed_post_bookmarks").select("post_id").eq("user_id",currentUser.id).in("post_id",ids)
     ]).then(([commentsResult,checksResult,votesResult,bookmarksResult])=>{
       const cg:Record<string,Comment[]>={};const cc:Record<string,number>={};const cm:Record<string,boolean>={};
@@ -100,7 +111,7 @@ export default function Feed(){
       (checksResult.data||[]).forEach((r:any)=>{cc[r.post_id]=(cc[r.post_id]||0)+1;if(r.user_id===currentUser.id)cm[r.post_id]=true;});
       const vs:Record<string,VoteState>={};
       rows.forEach(p=>{if(p.post_kind==="poll"&&Array.isArray(p.poll_options))vs[p.id]={counts:p.poll_options.map(()=>0),total:0,mine:null};});
-      (votesResult.data||[]).forEach((r:any)=>{const v=vs[r.post_id];if(!v)return;if(typeof r.option_index==="number"&&v.counts[r.option_index]!==undefined){v.counts[r.option_index]+=1;v.total+=1;}if(r.user_id===currentUser.id)v.mine=r.option_index;});
+      for (const [postId, result] of Object.entries(votesResult.data || {})) { if (vs[postId] && result.counts.length === vs[postId].counts.length) vs[postId] = result; }
       const sm:Record<string,boolean>={};
       (bookmarksResult.data||[]).forEach((r:any)=>{sm[r.post_id]=true;});
       setComments(cg);setChecks(cc);setMine(cm);setVotes(vs);setSavedMap(sm);
