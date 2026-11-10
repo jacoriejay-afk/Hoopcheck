@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 // migration have been verified. Never treat this endpoint as rollout-ready.
 export async function POST(request: Request) {
   const deny = (status: number) => NextResponse.json({ error: "Media unavailable." }, { status, headers: { "Cache-Control": "no-store" } });
-  const bearer = request.headers.get("authorization")?.match(/^Bearer\\s+(\\S+)$/i)?.[1];
+  const bearer = request.headers.get("authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
   if (!bearer) return deny(401);
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

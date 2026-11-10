@@ -1,21 +1,4 @@
-/* Open content flow: remove decorative frames while preserving functional controls. */
-html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-directory-shell) :is(
-  .card,.dashboard-card,.hero-card,.hc-layout-card,.hc-layout-group,.plan-card,.state-card,
-  .result-card,.hc-team-directory-row,.hc-feed-shared-card,.hc-premium-intro,.hc-search-team-entry
-):not(.hc-team-branded-hero):not(.hc-feed-discovery):not(.hc-smooth-passport):not(.hc-member-profile-hero) {
-  border:0 !important;border-radius:0 !important;box-shadow:none !important;
-  background:transparent !important;color:inherit !important;
-}
-html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-directory-shell) :is(.card,.dashboard-card,.hero-card,.result-card,.hc-premium-intro,.hc-search-team-entry):not(.hc-team-branded-hero):not(.hc-feed-discovery):not(.hc-smooth-passport):not(.hc-member-profile-hero) :is(h1,h2,h3,h4) {color:var(--hc-foreground) !important}
-html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-directory-shell) :is(.card,.dashboard-card,.hero-card,.result-card):not(.hc-team-branded-hero):not(.hc-feed-discovery):not(.hc-smooth-passport):not(.hc-member-profile-hero) .muted {color:var(--hc-foreground-muted) !important}
-html body .hc-global-page-shell .hc-team-profile-overview-grid > :is(section,div),
-html body .hc-global-page-shell .hc-team-profile-community .hc-team-fan-group-entry {
-  border:0 !important;border-radius:0 !important;box-shadow:none !important;background:transparent !important;
-}
-html body .hc-global-page-shell .hc-team-directory-row {border-bottom:1px solid var(--hc-border) !important;padding-block:20px !important}
-html body .hc-global-page-shell .hc-feed-stream > article,
-html body .hc-global-page-shell .hc-feed-stream > section {border-bottom:1px solid var(--hc-border) !important;padding-block:24px !important}
-html body .hc-global-page-shell main :is(.hero-card,.card,.dashboard-card,.hc-layout-card,.hc-layout-group,.result-card,.hc-team-directory-row)::after {box-shadow:none !important}
+/* Content flow and interaction rules. Card surfaces live in hoopcheck-account-system.css. */
 /* Allow actual content to size its row rather than clipping names or translations. */
 .hc-global-page-shell main :is(section,article,aside,form,fieldset,.grid,.actions,.result-grid,.hc-scout-card__identity-copy,.hc-layout-row-label,.hc-team-profile-details) {min-width:0;max-width:100%;box-sizing:border-box}
 .hc-global-page-shell main :is(h1,h2,h3,h4,p,li,dt,dd,label,.hc-layout-row-label,.hc-scout-card__identity-copy,.hc-team-profile-meta) {overflow-wrap:anywhere;word-break:normal}
