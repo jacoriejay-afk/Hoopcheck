@@ -278,6 +278,9 @@ export async function POST(request: Request) {
       if (!source || source.status !== "approved" || !source.expires_at || new Date(source.expires_at).getTime() <= Date.now()) {
         return NextResponse.json({ allowed: false, message: "This post is no longer available and can't be shared." }, { status: 404 });
       }
+      // Cross-author reshares copy follower-only content into a different audience.
+      // Fail closed until source visibility is enforced on every reshare read.
+      if (source.author_id !== user.id) return NextResponse.json({ allowed: false, message: "Sharing another player's post is temporarily unavailable while audience privacy protections are being updated." }, { status: 403 });
       // Prevent reshare chains from multiplying copied content and obscuring source visibility.
       if (source.shared_post_id) return NextResponse.json({ allowed: false, message: "Share the original post instead of resharing a share." }, { status: 400 });
       if (source.post_kind === "poll") {
