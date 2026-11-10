@@ -2,6 +2,7 @@
 
 import FollowButton from "./FollowButton";
 import TeamLogo from "./TeamLogo";
+import { countryFlag } from "../lib/countryFlag";
 import TrustScoreDial from "./TrustScoreDial";
 
 type TeamProfileHeroProps = {
@@ -47,7 +48,7 @@ export default function TeamProfileHero({
       <p className="hc-team-profile-kicker">HOOPCHECK CLUB PROFILE</p>
       <h1 id="hc-team-profile-title">{name}</h1>
       <p className="hc-team-profile-meta" title={[country, city, leagueName].filter(Boolean).join(" · ")}>
-        <span>{country || "Country not listed"}</span>
+        <span>{countryFlag(country) ? <span className="hc-hero-flag" aria-hidden="true">{countryFlag(country)} </span> : null}{country || "Country not listed"}</span>
         {city ? <span className="hc-team-profile-meta__city"> · {city}</span> : null}
         {leagueName ? <span className="hc-team-profile-meta__league"> · {leagueName}</span> : null}
       </p>
