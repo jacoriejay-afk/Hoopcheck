@@ -112,3 +112,10 @@
 @media (max-width: 900px) and (min-width: 701px) {
   .hc-ia-public-home .hc-home-category-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
 }
+
+/* Visual refresh P3: landing category tiles — dark glossy in both themes,
+   each tile edged and accented with its own category colour. */
+.hc-ia-public-home .hc-home-category-tile { background:linear-gradient(150deg,#181818,#0b0b0b); border:1px solid #2b2b2b; border-top:3px solid var(--category-color); color:#f7f7f5; }
+.hc-ia-public-home .hc-home-category-tile .hc-category-tile__label { color:#f7f7f5; }
+.hc-ia-public-home .hc-home-category-tile .hc-category-tile__description { color:#c4c4c0; }
+.hc-ia-public-home .hc-home-category-tile:hover { background:linear-gradient(150deg,#1e1e1e,#0d0d0d); border-color:var(--category-color); }
