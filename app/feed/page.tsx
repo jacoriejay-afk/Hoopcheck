@@ -92,18 +92,28 @@ export default function Feed(){
     void Promise.all([
       supabase.from("feed_post_comments").select("id,post_id,body,created_at,author_id,profiles:profiles!feed_post_comments_author_id_fkey(display_name,avatar_url)").in("post_id",ids).order("created_at",{ascending:true}),
       supabase.from("feed_post_checks").select("post_id,user_id").in("post_id",ids),
-      supabase.auth.getSession().then(async ({ data: { session } }) => {
-        if (!session?.access_token) return { data: null, error: new Error("Session unavailable") };
-        const response = await fetch("/api/hoopfeed/poll-results", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-          body: JSON.stringify({ post_ids: rows.filter(p => p.post_kind === "poll").map(p => p.id) }),
-          cache: "no-store",
-        });
-        if (!response.ok) return { data: null, error: new Error("Poll results unavailable") };
-        const payload = await response.json();
-        return { data: payload.results as Record<string, VoteState>, error: null };
-      }),
+      (async () => {
+        const pollIds = rows.filter(p => p.post_kind === "poll").map(p => p.id);
+        if (!pollIds.length) return { data: {} as Record<string, VoteState>, error: null };
+        try {
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError || !session?.access_token) return { data: null, error: new Error("Session unavailable") };
+          const response = await fetch("/api/hoopfeed/poll-results", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({ post_ids: pollIds }),
+            cache: "no-store",
+          });
+          if (!response.ok) return { data: null, error: new Error("Poll results unavailable") };
+          const payload = await response.json();
+          if (!payload || typeof payload.results !== "object" || Array.isArray(payload.results) || payload.results === null) {
+            return { data: null, error: new Error("Invalid poll results response") };
+          }
+          return { data: payload.results as Record<string, VoteState>, error: null };
+        } catch {
+          return { data: null, error: new Error("Poll results request failed") };
+        }
+      })(),
       supabase.from("feed_post_bookmarks").select("post_id").eq("user_id",currentUser.id).in("post_id",ids)
     ]).then(([commentsResult,checksResult,votesResult,bookmarksResult])=>{
       const cg:Record<string,Comment[]>={};const cc:Record<string,number>={};const cm:Record<string,boolean>={};
