@@ -5118,3 +5118,27 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 @media (prefers-reduced-motion: reduce) {
   .page-shell :where(a,button) { scroll-behavior: auto; }
 }
+
+/* Settings theme picker: preserve legible labels in both appearance modes.
+   The base settings styles intentionally use light swatches, so dark mode
+   needs explicit surface and text colors rather than inherited light colors. */
+html.theme-dark body .hc-settings-page .theme-option {
+  background: #222226;
+  border-color: #62626a;
+  color: #f7f7f8;
+}
+html.theme-dark body .hc-settings-page .theme-option strong {
+  color: #f7f7f8;
+}
+html.theme-dark body .hc-settings-page .theme-option small {
+  color: #d0d0d5;
+}
+html.theme-dark body .hc-settings-page .theme-option.active {
+  background: #32251f;
+  border-color: var(--hc-orange);
+  box-shadow: inset 0 0 0 1px var(--hc-orange);
+}
+html.theme-dark body .hc-settings-page .theme-option:focus-visible {
+  outline: 3px solid var(--hc-orange);
+  outline-offset: 3px;
+}
