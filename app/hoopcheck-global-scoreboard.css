@@ -164,3 +164,19 @@ html:is(.theme-light,.theme-dark) .hc-member-profile-page .hc-smooth-passport a:
 html:is(.theme-light,.theme-dark) :where(.site-header,.topbar) :where(.brand,.logo,.brand-name) {
  color:#f7f7f5;
 }
+/* Visual refresh P1: lock the member-profile hero's dark background in BOTH
+   themes. The foreground forces above (near-white text over "authored dark
+   art") only work while this background actually wins; surface blankets were
+   repainting the hero light in the light theme, washing the text out. The
+   player completion card inside the hero gets the same dark pairing. */
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero {
+ background:linear-gradient(145deg,#141414,#080808)!important;
+ border:1px solid #363636!important;
+ border-bottom:5px solid #ff6a00!important;
+}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero .hc-ux2b-completion-card {
+ background:#161616!important;border-color:#383838!important;color:#f7f7f5!important;
+}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero .hc-ux2b-completion-card :is(p,span,strong,a) {color:#f7f7f5!important;}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero .hc-ux2b-completion-card .muted {color:#c9c9c9!important;}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero .hc-ux2b-completion-percent {color:#ff8a3d!important;}
