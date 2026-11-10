@@ -44,9 +44,28 @@ try {
       // results are settled before navigating; a stale link may disappear.
       await page.waitForFunction(() => !document.body.innerText.includes('Searching HoopCheck...'));
       await femaleLink.waitFor({ state: 'visible' });
+      // The category transition may trigger another search while the link is
+      // being clicked. Retry only after a settled, visible fixture result;
+      // keep a bounded failure so genuinely broken navigation still fails CI.
       holdTeam = true;
       try {
-        await femaleLink.click({ timeout: 15000 });
+        let navigated = false;
+        for (let attempt = 0; attempt < 3 && !navigated; attempt += 1) {
+          await page.waitForFunction((href) => {
+            const link = document.querySelector(`.result-group a[href="${href}"]`);
+            return !!link?.getClientRects().length && !document.body.innerText.includes('Searching HoopCheck...');
+          }, `/womens/${women.id}`, { timeout: 10000 });
+          try {
+            await femaleLink.click({ timeout: 4000 });
+            navigated = true;
+          } catch (clickError) {
+            if (page.url().includes(`/womens/${women.id}`)) {
+              navigated = true;
+            } else if (attempt === 2) {
+              throw clickError;
+            }
+          }
+        }
       } catch (error) {
         const state = await page.evaluate(() => ({
           url: location.href,
