@@ -213,7 +213,7 @@
   color: #f8f8fa;
 }
 .hc-journey-form.hc-liquid-glass-journey-form :is(input:not([type="checkbox"]), select, textarea) {
-  background-color: #fff;
+  background-color: var(--hc-surface-raised, #ffffff);
   color: #151515;
   border-color: #888;
 }
@@ -267,7 +267,7 @@
   box-shadow: 0 20px 60px rgba(0,0,0,.5);
 }
 .hc-liquid-glass-picker-dialog :is(input,select) {
-  background-color: #fff;
+  background-color: var(--hc-surface-raised, #ffffff);
   color: #151515;
   border-color: #888;
 }
