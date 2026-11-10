@@ -140,7 +140,7 @@ export default function Feed(){
   function clearPhotos(){previews.forEach(u=>URL.revokeObjectURL(u));setPhotos([]);setPreviews([]);}
   function chooseVideo(f:File){
     if(f.size>50*1024*1024||!(["video/mp4","video/webm","video/quicktime"].includes(f.type)||(!f.type&&/\.(mp4|webm|mov)$/i.test(f.name)))){setMsg("Use MP4, WebM, or MOV up to 50 MB.");return;}
-    setVideo(f);setVideoPreview(old=>{if(old)URL.revokeObjectURL(old);return URL.createObjectURL(f);});clearPhotos();setMsg("");
+    setVideo(f);setVideoPreview(old=>{if(old)URL.revokeObjectURL(old);return URL.createObjectURL(f);});clearPhotos();setMsg("Add a caption to your video before posting.");
   }
 
   async function apiAction(fields:Record<string,string>):Promise<{ok:boolean;message?:string}>{
