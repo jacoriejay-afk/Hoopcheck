@@ -189,6 +189,7 @@ export default function Feed(){
   async function post(){
     const pollOptionsClean=pollDraft.map(o=>o.trim()).filter(Boolean);
     if(!user||!access||posting)return;
+    if(photoSlotsRef.current>photos.length){setMsg("Your photos are still processing. Wait a moment before posting.");return;}
     if(composerMode==="poll"&&(!body.trim()||pollOptionsClean.length<2))return;
     if(composerMode!=="poll"&&!body.trim()&&!photos.length&&!video)return;
     if(video&&!body.trim()){setMsg("Add a caption to your video so HoopCheck can run safety checks.");return;}
