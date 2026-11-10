@@ -30,15 +30,8 @@ export default function Home() {
 
   return (
     <main className="hc-new-home min-h-screen bg-[#0b1019] text-white">
-      <div className="mx-auto max-w-6xl px-4 pb-20 pt-5 sm:px-6 lg:px-8">
-        <nav aria-label="Homepage navigation" className="mb-8 flex flex-wrap items-center justify-between gap-3">
-          <Link href="/" className="text-xl font-black tracking-tight text-white">HoopCheck<span className="text-orange-400">™</span></Link>
-          <div className="flex items-center gap-3 text-sm">
-            <Link href="/directory" className="hidden text-slate-200 hover:text-white sm:inline">Explore</Link>
-            <Link href="/login" className="rounded-xl px-3 py-2 text-slate-200 hover:text-white">Log in</Link>
-            <Link href="/signup" className="rounded-xl bg-orange-500 px-4 py-2 font-bold text-white hover:bg-orange-400">Join free</Link>
-          </div>
-        </nav>
+      <div className="mx-auto max-w-6xl px-4 pb-20 pt-4 sm:px-6 lg:px-8">
+
 
         <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#202b3d] via-[#111b2b] to-[#0b1019] px-5 py-12 sm:px-10 sm:py-16 lg:px-14">
           <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-32 h-80 w-80 rounded-full bg-orange-500/20 blur-3xl" />
