@@ -548,10 +548,6 @@ export default function TeamReviewPage() {
             <li>One review per player for each team. Reviews may be moderated before publication.</li>
             <li>You may choose to publish anonymously, but HoopCheck may retain verification information for moderation and trust.</li>
           </ul>
-          <label className="checkbox-row" style={{ marginTop: 10 }}>
-            <input type="checkbox" required />
-            <span>I have read and agree to these review rules.</span>
-          </label>
         </div>
 
         <form
@@ -562,6 +558,10 @@ export default function TeamReviewPage() {
             gap: "16px",
           }}
         >
+          <label className="checkbox-row" style={{ marginTop: 10 }}>
+            <input type="checkbox" name="reviewRulesAccepted" required />
+            <span>I have read and agree to these review rules.</span>
+          </label>
           <div className="card">
             <div className="eyebrow">Season Played</div>
             <label htmlFor="player-season">Which season did you play for {team.name}?</label>
