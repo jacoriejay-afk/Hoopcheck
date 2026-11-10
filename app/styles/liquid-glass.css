@@ -138,3 +138,32 @@
     -webkit-backdrop-filter: none; backdrop-filter: none;
   }
 }
+
+/* Fan-group composer and account identity: targeted opt-in glass surfaces. */
+.hc-team-fan-group-page .hc-liquid-glass-group-composer,
+.hc-account-page .hc-liquid-glass-account-header {
+  background: rgba(255,255,255,.94);
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: var(--hc-glass-radius);
+  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+}
+.theme-dark .hc-team-fan-group-page .hc-liquid-glass-group-composer,
+.theme-dark .hc-account-page .hc-liquid-glass-account-header {
+  background: rgba(24,25,30,.94);
+  border-color: rgba(255,255,255,.18);
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .hc-team-fan-group-page .hc-liquid-glass-group-composer,
+  .hc-account-page .hc-liquid-glass-account-header {
+    -webkit-backdrop-filter: saturate(135%) blur(12px);
+    backdrop-filter: saturate(135%) blur(12px);
+  }
+}
+@media (prefers-contrast: more), (forced-colors: active) {
+  .hc-team-fan-group-page .hc-liquid-glass-group-composer,
+  .hc-account-page .hc-liquid-glass-account-header {
+    background: Canvas; color: CanvasText; border-color: CanvasText;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+}
