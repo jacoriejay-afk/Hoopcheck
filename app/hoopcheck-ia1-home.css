@@ -188,3 +188,7 @@ html.theme-light body main.hc-ia-home header.hc-home-hero h1,
 html.theme-dark body main.hc-ia-home header.hc-home-hero h1 { color: #ffffff !important; }
 html.theme-light body main.hc-ia-home header.hc-home-hero h1 span,
 html.theme-dark body main.hc-ia-home header.hc-home-hero h1 span { color: #ff5a1f !important; }
+
+/* The hero description must not inherit light-theme muted ink on dark art. */
+html.theme-light body main.hc-ia-home header.hc-home-hero > p.muted,
+html.theme-dark body main.hc-ia-home header.hc-home-hero > p.muted { color: #e3e3e3 !important; }
