@@ -16,13 +16,26 @@ export async function POST(request: Request) {
   if (!url || !key) return deny(503);
   let body: unknown;
   try {
-    if (Number(request.headers.get("content-length") || 0) > 2048) return deny(413);
-    body = await request.json();
+    const reader = request.body?.getReader();
+    if (!reader) return deny(400);
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > 2048) { await reader.cancel(); return deny(413); }
+      chunks.push(value);
+    }
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+    body = JSON.parse(new TextDecoder().decode(bytes));
   } catch { return deny(400); }
   const input = body && typeof body === "object" ? body as Record<string, unknown> : {};
   const ref = parseHoopFeedPrivateMediaRef(input.ref);
   const postId = input.post_id;
-  if (!ref || typeof postId !== "string" || !/^[0-9a-f-]{36}$/i.test(postId)) return deny(400);
+  if (!ref || typeof postId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(postId)) return deny(400);
   const db = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
   const { data: auth, error: authError } = await db.auth.getUser(bearer);
   if (authError || !auth.user) return deny(401);
