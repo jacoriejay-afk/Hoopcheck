@@ -1,0 +1,4 @@
+.hc-account-page .hc-account-profile-editor { scroll-margin-top: 112px; }
+.hc-account-page .hc-account-identity-actions { display:flex; flex-wrap:wrap; gap:10px; }
+.hc-account-page .hc-account-identity-actions a { min-height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:999px; }
+@media (max-width:700px) { .hc-account-page .hc-account-profile-editor { scroll-margin-top: 88px; } }
