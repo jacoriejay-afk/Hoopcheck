@@ -1,0 +1,58 @@
+/* Consolidated mobile header corrections, scoped to preserve LM-2F tab geometry.
+   Safari's browser chrome handles the top inset; standalone PWA needs clearance. */
+@media (max-width: 700px) {
+  html body header.site-header-global .site-header-brand {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: calc(100% - 58px);
+    overflow: hidden;
+  }
+  html body header.site-header-global .site-header-brand .hc-logo--full {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0;
+    gap: 5px !important;
+  }
+  html body header.site-header-global .site-header-brand .hc-logo__wordmark {
+    min-width: 0;
+    white-space: nowrap;
+    font-size: clamp(13px, 4vw, 17px) !important;
+  }
+  html body header.site-header-global .hc-mobile-menu-toggle {
+    flex: 0 0 40px;
+  }
+  html body .global-back-wrap {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    visibility: visible;
+    opacity: 1;
+  }
+  html body .global-back-wrap .global-back-button {
+    min-height: 44px;
+    min-width: 44px;
+    visibility: visible;
+    opacity: 1;
+    color: #f7f7f5;
+    background: #191919;
+    border: 1px solid #777;
+    border-radius: 14px;
+  }
+  html body .global-back-wrap .global-back-button:focus-visible {
+    outline: 3px solid #ff5a1f;
+    outline-offset: 3px;
+  }
+}
+@media (max-width: 700px) and (display-mode: standalone) {
+  html body header.site-header-global.hc-template-header {
+    box-sizing: border-box;
+    padding-top: max(7px, env(safe-area-inset-top, 0px)) !important;
+    min-height: calc(56px + env(safe-area-inset-top, 0px));
+  }
+}
+html.theme-dark .hc-global-page-shell .hc-route-transition :where(.dashboard-card, .hc-layout-card, .hc-layout-group) {
+  color: #f7f7f5;
+}
+html.theme-light .hc-global-page-shell .hc-route-transition :where(.dashboard-card, .hc-layout-card, .hc-layout-group) {
+  color: #171717;
+}
