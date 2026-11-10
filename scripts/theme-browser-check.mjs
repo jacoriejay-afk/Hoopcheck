@@ -119,6 +119,45 @@ assert.ok(serverReady, "Next production server did not become ready within 60 se
 const browser = await chromium.launch({ ...(process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : { channel: "chrome" }), headless: true, args: ["--no-sandbox"] });
 const results = [];
 try {
+  // Public routes must not expose member-only mobile navigation when there is
+  // no session. Keep this separate from the authenticated screenshot fixtures.
+  for (const theme of ["light", "dark"]) {
+    const guestContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      isMobile: true,
+      hasTouch: true,
+      serviceWorkers: "block",
+    });
+    const guestPage = await guestContext.newPage();
+    await guestContext.addCookies([{ name: "hoopcheck-theme", value: theme, url: baseURL }]);
+    await guestPage.addInitScript((preference) => {
+      localStorage.setItem("hoopcheck-theme", preference);
+      localStorage.removeItem("sb-ci-auth-token");
+    }, theme);
+    await guestPage.route("https://ci.invalid/**", async route => {
+      const req = route.request();
+      const headers = {
+        "access-control-allow-origin": baseURL,
+        "access-control-allow-credentials": "true",
+        "access-control-allow-headers": req.headers()["access-control-request-headers"] || "*",
+        "access-control-allow-methods": "GET,POST,OPTIONS",
+      };
+      if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers });
+      return route.fulfill({ status: 401, headers, contentType: "application/json", body: JSON.stringify({ message: "Guest fixture: no session" }) });
+    });
+    for (const route of ["/login", "/signup", "/search"]) {
+      await guestPage.goto(baseURL + route);
+      await guestPage.locator("body").waitFor({ state: "visible" });
+      await guestPage.waitForTimeout(400);
+      assert.equal(await guestPage.locator("nav.bottom-nav").count(), 0,
+        `Guest ${theme} ${route}: member bottom navigation must not render`);
+      assert.equal(await guestPage.locator('a.hc-signin-button').count() > 0, true,
+        `Guest ${theme} ${route}: sign-in action must be available`);
+    }
+    await guestContext.close();
+  }
+  console.log("GUEST_MOBILE_NAV=PASS; routes=login,signup,search; themes=light,dark");
+
   for (const theme of ["dark", "light"]) {
     for (const routeName of ["dashboard", "feed", "admin"]) {
       const context = await browser.newContext({
