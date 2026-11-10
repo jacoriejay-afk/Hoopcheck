@@ -135,14 +135,10 @@ export default function DashboardPage() {
       const canUsePlayerFeed = entitlements.canReadHoopFeed;
       setHasFeedAccess(canUsePlayerFeed);
       if (canUsePlayerFeed) {
-        const [{data:followedPlayers},{data:connections},{data:posts}] = await Promise.all([
-          supabase.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","player").limit(100),
-          supabase.from("player_contact_requests").select("requester_id,player_id").or(`requester_id.eq.${user.id},player_id.eq.${user.id}`).eq("status","accepted").limit(100),
-          supabase.from("feed_posts").select("id,body,created_at,expires_at,author_id,profiles(display_name)").eq("status","approved").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(30)
-        ]);
-        const allowedAuthors = new Set([user.id,...(followedPlayers||[]).map((x:any)=>x.target_id),...(connections||[]).map((x:any)=>x.requester_id===user.id?x.player_id:x.requester_id)]);
-        const latest = (posts||[]).find((post:any)=>allowedAuthors.has(post.author_id));
-        if (mounted && latest) setFeedPost(latest as FeedPost);
+        // HF-5: HoopFeed is one public community — the teaser shows the newest
+        // approved community post, not a followers-only, expiring subset.
+        const {data:posts} = await supabase.from("feed_posts").select("id,body,created_at,expires_at,author_id,profiles(display_name)").eq("status","approved").order("created_at",{ascending:false}).limit(1);
+        if (mounted && posts && posts.length) setFeedPost(posts[0] as FeedPost);
       }
 
       if (entitlements.canUseLiveGameHub && p?.account_type === "fan") {
@@ -168,7 +164,7 @@ export default function DashboardPage() {
 
   if(profile?.account_type==="fan") return (
     <main className="page-shell hc-ia-home hc-dashboard-compact"><div className="page-container">
-      <header className="hc-ia-welcome"><p className="eyebrow">{t("home.fanEyebrow")}</p><h1>{t("home.fanTitle")}<span>.</span></h1><p className="muted">{t("home.fanDescription")}</p><div className="hc-ia-identity"><span className="hc-ia-avatar">{displayName.charAt(0).toUpperCase()}</span><span><small>{t("home.signedIn")}</small><strong>{displayName}</strong></span></div></header>
+      <header className="hc-ia-welcome hc-home-hero"><p className="eyebrow">{t("home.fanEyebrow")}</p><h1>{t("home.fanTitle")}<span>.</span></h1><p className="muted">{t("home.fanDescription")}</p><div className="hc-ia-identity"><span className="hc-ia-avatar">{displayName.charAt(0).toUpperCase()}</span><span><small>{t("home.signedIn")}</small><strong>{displayName}</strong></span></div></header>
       <HomePulse live={liveCounts.live} upcoming={liveCounts.upcoming} followedClubs={teams.length} fan/>
       {teams.length > 0 ? <section className="hc-ia-section hc-ia-your-clubs">
         <div className="hc-ia-section-heading"><div><p className="eyebrow">YOUR CLUBS</p><h2>Teams you follow</h2></div><Link href="/team-hub">Open Team Hub <HoopIcon name="arrow-right" size={15}/></Link></div>
@@ -192,7 +188,7 @@ export default function DashboardPage() {
     <main className="page-shell hc-ia-home">
       <div className="page-container">
         <SearchBar className="hc-ia-search" name="q" placeholder={t("searchPeoplePlaceholder")} ariaLabel={t("searchPeoplePlaceholder")}/>
-        <header className="hc-ia-welcome">
+        <header className="hc-ia-welcome hc-home-hero">
           <p className="eyebrow">{t("home.eyebrow")}</p>
           <h1>{t("home.headline")}<span>.</span></h1>
           <p className="muted">{t("home.description")}</p>

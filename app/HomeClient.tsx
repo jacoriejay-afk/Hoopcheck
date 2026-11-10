@@ -5,18 +5,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCachedSession } from "../lib/supabase";
 import HomeDirectoryStats from "../components/HomeDirectoryStats";
-import { HoopIcon, type HoopIconName } from "../components/HoopCheckUI";
+import { CategoryIconTile, HoopIcon, type HoopCategory } from "../components/HoopCheckUI";
 import SearchBar from "../components/SearchBar";
 import styles from "./home.module.css";
 
 const directoryLinks = [
-  { title: "Men’s teams", detail: "Find clubs by country and league", href: "/teams", icon: "basketball" },
-  { title: "Women’s teams", detail: "Explore women’s clubs worldwide", href: "/womens", icon: "basketball" },
-  { title: "Leagues", detail: "Explore basketball competitions", href: "/leagues", icon: "trophy" },
-  { title: "Coaches", detail: "Discover coaches and their profiles", href: "/coaches", icon: "whistle" },
-  { title: "Players", detail: "Find player profiles and career histories", href: "/players", icon: "users" },
-  { title: "Reviews", detail: "See what players say about their experience", href: "/reviews", icon: "clipboard-check" },
-] satisfies ReadonlyArray<{ title: string; detail: string; href: string; icon: HoopIconName }>;
+  { title: "Men’s teams", detail: "Find clubs by country and league", href: "/teams", category: "teams" },
+  { title: "Women’s teams", detail: "Explore women’s clubs worldwide", href: "/womens", category: "womens" },
+  { title: "Leagues", detail: "Explore basketball competitions", href: "/leagues", category: "leagues" },
+  { title: "Coaches", detail: "Discover coaches and their profiles", href: "/coaches", category: "coaches" },
+  { title: "Players", detail: "Find player profiles and career histories", href: "/players", category: "players" },
+  { title: "Reviews", detail: "See what players say about their experience", href: "/reviews", category: "reviews" },
+] satisfies ReadonlyArray<{ title: string; detail: string; href: string; category: HoopCategory }>;
 
 export default function Home() {
   const router = useRouter();
@@ -66,10 +66,10 @@ export default function Home() {
             <Link href="/directory" className={styles.textLink}>All directories <HoopIcon name="arrow-right" size={16} /></Link>
           </div>
           <ul className={styles.directoryGrid}>
-            {directoryLinks.map(({ title, detail, href, icon }) => (
+            {directoryLinks.map(({ title, detail, href, category }) => (
               <li key={href}>
                 <Link href={href} className={styles.directoryLink}>
-                  <span className={styles.directoryIcon}><HoopIcon name={icon} size={21} /></span>
+                  <CategoryIconTile category={category} size="sm" />
                   <span className={styles.directoryCopy}><strong>{title}</strong><small>{detail}</small></span>
                   <HoopIcon className={styles.directoryArrow} name="arrow-up-right" size={17} />
                 </Link>
@@ -86,7 +86,7 @@ export default function Home() {
             </div>
           </div>
           <div className={styles.featureGrid}>
-            <article className={styles.playerFeature}>
+            <article>
               <p className={styles.featureLabel}><HoopIcon name="shield-check" size={19} /> FOR PLAYERS</p>
               <h3>Pre-Sign Check</h3>
               <p>Work through six checks covering the club, payment history, contract terms, and player references.</p>

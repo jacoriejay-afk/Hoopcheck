@@ -133,3 +133,22 @@ main.hc-dashboard-compact .hc-ia-door {
   main.hc-dashboard-compact > .page-container { gap: 12px; }
   main.hc-dashboard-compact .hc-ia-welcome h1 { font-size: clamp(27px, 8vw, 36px); }
 }
+
+/* Home heroes share the branded dark surface across both theme modes. */
+:root {
+  --hc-home-hero-bg: radial-gradient(circle at 90% 68%, color-mix(in srgb, var(--hc-button-primary-surface) 24%, transparent), transparent 35%),
+    linear-gradient(120deg, #090909 0%, #181818 65%, #080808 100%);
+  --hc-home-hero-border: rgb(255 255 255 / 14%);
+  --hc-home-hero-text: #f7f7f5;
+  --hc-home-hero-muted: #e3e3e3;
+}
+
+.hc-ia-home .hc-home-hero { position:relative; isolation:isolate; overflow:hidden; padding:clamp(22px,4vw,38px); border:1px solid var(--hc-home-hero-border); border-radius:14px; background:var(--hc-home-hero-bg); color:var(--hc-home-hero-text); }
+html body main.hc-ia-home .hc-home-hero h1 { color:var(--hc-home-hero-text) !important; }
+.hc-ia-home .hc-home-hero h1 span,
+.hc-ia-home .hc-home-hero .eyebrow { color:var(--hc-button-primary-surface); }
+.hc-ia-home .hc-home-hero .muted { color:var(--hc-home-hero-muted); }
+.hc-ia-home .hc-home-hero .hc-ia-identity { background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.2); color:var(--hc-home-hero-text); }
+.hc-ia-home .hc-home-hero .hc-ia-identity small { color:#c9c9c9; }
+.hc-ia-home .hc-home-hero .hc-ia-identity strong { color:#fff; }
+.hc-ia-home .hc-home-hero .hc-ia-avatar { background:var(--hc-button-primary-surface); color:#0a0a0a; }
