@@ -79,6 +79,7 @@ export default function BottomNav() {
   const { signedIn, userId } = useAuthState();
   const { t } = useLanguage();
   const [accountType, setAccountType] = useState<string | null>(null);
+  const [unreadAlerts, setUnreadAlerts] = useState(0);
   const [accountTypeLoading, setAccountTypeLoading] = useState(true);
   useEffect(() => {
     let active = true;
@@ -93,6 +94,27 @@ export default function BottomNav() {
     });
     return () => { active = false; };
   }, [userId]);
+
+  useEffect(() => {
+    let active = true;
+    if (!signedIn || !userId) { setUnreadAlerts(0); return; }
+    const loadUnread = async () => {
+      const { count, error } = await supabase.from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId).is("read_at", null);
+      if (active) setUnreadAlerts(error ? 0 : (count ?? 0));
+    };
+    void loadUnread();
+    const onFocus = () => { void loadUnread(); };
+    const onVisibility = () => { if (!document.hidden) void loadUnread(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [signedIn, userId, pathname]);
 
   if (!signedIn || pathname.startsWith("/admin")) return null;
 
@@ -113,7 +135,7 @@ export default function BottomNav() {
             aria-disabled={feedResolving ? true : undefined}
             onClick={feedResolving ? (event) => event.preventDefault() : undefined}
           >
-            <span className="hc-lm2f-tab-icon"><TabIcon label={label} /></span>
+            <span className="hc-lm2f-tab-icon" style={{ position: "relative" }}><TabIcon label={label} />{label === "Alerts" && unreadAlerts > 0 && <span className="hc-mobile-alert-unread" aria-label={`${unreadAlerts} unread alerts`}>{unreadAlerts > 99 ? "99+" : unreadAlerts}</span>}</span>
             <span className="hc-lm2f-tab-label">{translationKey === "hoopFeed" ? (accountType === "fan" ? "FAN HQ" : "HoopFeed") : t(translationKey)}</span>
             {active && <span className="hc-lm2f-active-indicator" aria-hidden="true" />}
           </Link>
