@@ -108,11 +108,17 @@ html.theme-dark body .site-header-global :is(.hc-header-nav.is-open, .hc-header-
     /* A fixed border-box height prevents legacy tab-bar padding from
        stretching the glass panel below the five navigation items. */
     box-sizing: border-box !important;
-    height: calc(76px + var(--hc-safe-area-bottom)) !important;
+    /* The iOS home-indicator inset belongs below the tab row, not inside
+       an oversized stretchable grid track. */
+    grid-template-rows: 54px !important;
+    grid-auto-rows: 54px !important;
+    align-content: start !important;
+    align-items: center !important;
+    height: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
     min-height: 0 !important;
-    max-height: calc(76px + var(--hc-safe-area-bottom)) !important;
-    padding-block-start: 6px !important;
-    padding-block-end: calc(6px + var(--hc-safe-area-bottom)) !important;
+    max-height: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-block-start: 5px !important;
+    padding-block-end: calc(7px + env(safe-area-inset-bottom, 0px)) !important;
     z-index: 1100 !important;
   }
 }
