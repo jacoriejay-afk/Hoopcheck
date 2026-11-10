@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { isAuthSessionMissingError } from "@supabase/supabase-js";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
@@ -108,6 +109,7 @@ export default function AccountPage() {
   const [profileMessage, setProfileMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarStatus, setAvatarStatus] = useState<"pending"|"approved"|"rejected">("approved");
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -127,9 +129,17 @@ export default function AccountPage() {
   const [adminRole, setAdminRole] = useState<"admin"|"moderator"|null>(null);
 
   useEffect(() => {
+    let active = true;
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { window.location.href = "/login"; return; }
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (!active) return;
+      const sessionMissing = isAuthSessionMissingError(authError) || authError?.code === "session_not_found" || authError?.code === "refresh_token_not_found";
+      if (authError && !sessionMissing) throw new Error("We could not verify your sign-in. Try loading your account again.");
+      if (!user) {
+        const { pathname, search, hash } = window.location;
+        window.location.replace(`/login?${new URLSearchParams({ returnTo: pathname + search + hash })}`);
+        return;
+      }
       setEmail(user.email ?? "");
       setEmailConfirmed(Boolean(user.email_confirmed_at));
       setUserId(user.id);
@@ -184,8 +194,13 @@ export default function AccountPage() {
       for (const x of [...(c.data ?? []), ...(t.data ?? []), ...(l.data ?? [])]) map[x.id] = x;
       setTargets(map); setLoading(false);
     }
-    void load().catch(error => { setLoadError(error instanceof Error ? error.message : "Unable to load your profile."); setLoading(false); });
-  }, []);
+    void load().catch(error => {
+      if (!active) return;
+      setLoadError(error instanceof Error ? error.message : "Unable to load your profile.");
+      setLoading(false);
+    });
+    return () => { active = false; };
+  }, [loadAttempt]);
 
   function chooseAvatar(file: File) {
     if (!file.type.startsWith("image/")) { setProfileMessage(t("chooseImageFile")); return; }
@@ -395,6 +410,18 @@ export default function AccountPage() {
   }
 
   if (loading) return <main className="page-shell hc-account-page"><div className="page-container"><HoopLoading label={t("loadingAccount")} /></div></main>;
+
+  if (loadError) return (
+    <main className="page-shell hc-account-page"><div className="page-container">
+      <section className="state-card error" role="alert">
+        <h1>Account unavailable</h1>
+        <p>{loadError}</p>
+        <button type="button" className="btn" onClick={() => {
+          setLoadError(""); setLoading(true); setLoadAttempt(attempt => attempt + 1);
+        }}>Retry account</button>
+      </section>
+    </div></main>
+  );
 
   const entitlements = getHoopCheckEntitlements({ accountType: profile.account_type, subscription });
 
