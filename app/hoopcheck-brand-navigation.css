@@ -181,3 +181,34 @@ html body header.site-header-global .site-header-brand .hc-logo__wordmark::after
   letter-spacing: 0;
   line-height: 1;
 }
+
+
+/* Issue #423: iOS PWA status-bar clearance and compact mobile brand.
+   Scope to standalone mode to avoid adding a second inset in browser Safari. */
+@media (max-width: 700px) and (display-mode: standalone) {
+  html body header.site-header-global.hc-template-header {
+    padding-top: max(7px, env(safe-area-inset-top, 0px)) !important;
+    min-height: calc(56px + env(safe-area-inset-top, 0px));
+    box-sizing: border-box;
+  }
+}
+@media (max-width: 700px) {
+  html body header.site-header-global .site-header-brand {
+    flex: 0 1 auto;
+    max-width: calc(100% - 58px);
+    overflow: hidden;
+  }
+  html body header.site-header-global .site-header-brand .hc-logo--full {
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 5px !important;
+  }
+  html body header.site-header-global .site-header-brand .hc-logo__wordmark {
+    font-size: clamp(13px, 4vw, 17px) !important;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  html body header.site-header-global .hc-mobile-menu-toggle {
+    flex: 0 0 40px;
+  }
+}
