@@ -91,21 +91,28 @@ html.theme-dark body .site-header-global :is(.hc-header-nav.is-open, .hc-header-
   html.theme-dark body { padding-block-start: 0 !important; }
 
   html.theme-dark body header.site-header-global.hc-template-header {
-    top: 0 !important;
-    width: 100% !important;
-    padding-block-start: calc(8px + var(--hc-safe-area-top)) !important;
+    /* Float below the iPhone status bar instead of forming a full-width slab. */
+    top: calc(var(--hc-safe-area-top) + 8px) !important;
+    width: calc(100% - 24px) !important;
+    max-width: calc(100% - 24px) !important;
+    margin-inline: auto !important;
+    padding-block-start: 8px !important;
     padding-inline: max(12px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-right, 0px)) !important;
-    border-radius: 0 0 var(--hc-radius-card) var(--hc-radius-card) !important;
+    border-radius: var(--hc-radius-card) !important;
   }
 
   html.theme-dark body nav.hc-bottom-tab-bar.hc-lm2f-bottom-nav {
     inset-inline: max(8px, env(safe-area-inset-left, 0px)) max(8px, env(safe-area-inset-right, 0px)) !important;
     bottom: 6px !important;
     width: auto !important;
-    height: auto !important;
-    min-height: calc(66px + var(--hc-safe-area-bottom)) !important;
-    max-height: none !important;
-    padding-block-end: calc(5px + var(--hc-safe-area-bottom)) !important;
+    /* A fixed border-box height prevents legacy tab-bar padding from
+       stretching the glass panel below the five navigation items. */
+    box-sizing: border-box !important;
+    height: calc(76px + var(--hc-safe-area-bottom)) !important;
+    min-height: 0 !important;
+    max-height: calc(76px + var(--hc-safe-area-bottom)) !important;
+    padding-block-start: 6px !important;
+    padding-block-end: calc(6px + var(--hc-safe-area-bottom)) !important;
     z-index: 1100 !important;
   }
 }
