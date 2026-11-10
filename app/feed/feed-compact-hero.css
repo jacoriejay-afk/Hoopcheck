@@ -1,0 +1,5 @@
+.hc-feed-page .hf5-hero.hf5-hero--compact { min-height:0!important; margin:8px 0 12px!important; padding:14px 18px!important; border-radius:16px!important; overflow:hidden; }
+.hc-feed-page .hf5-hero--compact .hf5-hero__inner { display:flex!important; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; min-height:0!important; padding:0!important; }
+.hc-feed-page .hf5-hero--compact .hf5-hero__title { margin:0!important; font-size:clamp(24px,4vw,32px)!important; line-height:1.2!important; }
+.hc-feed-page .hf5-hero--compact .hf5-hero__plan { margin:0!important; white-space:nowrap; }
+@media(max-width:700px) { .hc-feed-page .hf5-hero.hf5-hero--compact { padding:12px 14px!important; } }
