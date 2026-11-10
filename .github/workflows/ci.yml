@@ -52,6 +52,9 @@ jobs:
       - name: Check HoopFeed text posts and team fan group invariants
         run: npm run check:hf4-fan-groups
 
+      - name: Inventory HoopFeed public media dependencies (read-only)
+        run: node scripts/audit-hoopfeed-media-privacy.mjs
+
       - name: Check player profile completion
         run: node scripts/check-player-profile-completion.mjs
 
