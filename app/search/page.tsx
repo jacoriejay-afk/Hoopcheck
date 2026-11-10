@@ -351,7 +351,7 @@ function SearchContent() {
           </div>
 
           {(
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 24 }}>
+            <div className="hc-search-filters" role="group" aria-label={t("searchResults")}>
               {(roleReady && !isFanAccount ? (["all", "players", "coaches", "mens-teams", "womens-teams", "leagues"] as const) : (["all", "coaches", "mens-teams", "womens-teams", "leagues"] as const)).map((type) => (
                 <button
                   key={type}

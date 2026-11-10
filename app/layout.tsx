@@ -56,6 +56,7 @@ import "./hoopcheck-unified-layout.css";
 import "./hoopcheck-spacing-density-consolidated.css";
 import "./hoopcheck-membership-refresh.css";
 import "./hoopcheck-flow.css";
+import "./hoopcheck-liquid-glass.css";
 import { SITE_URL } from "../lib/site-url";
 
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
@@ -108,7 +109,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const cookieStore = await cookies();
   const savedLanguage = cookieStore.get("hoopcheck-language")?.value;
   const rawSavedTheme = cookieStore.get("hoopcheck-theme")?.value;
-  const initialTheme = rawSavedTheme === "dynamic" ? "dark" : rawSavedTheme === "dark" || rawSavedTheme === "light" || rawSavedTheme === "system" ? rawSavedTheme : "system";
+  const initialTheme = rawSavedTheme === "light" || rawSavedTheme === "system" ? rawSavedTheme : "dark";
   const supportedLanguages = ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar", "ru", "az", "pl", "zh", "ja", "sr", "fi", "he", "lt", "uk"] as const;
   const initialLanguage = supportedLanguages.includes(savedLanguage as (typeof supportedLanguages)[number]) ? savedLanguage as (typeof supportedLanguages)[number] : "en";
   const organizationJsonLd = {
