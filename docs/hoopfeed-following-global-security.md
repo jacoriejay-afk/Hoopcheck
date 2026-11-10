@@ -7,7 +7,7 @@ Status: design only; **do not apply to production**. Verified against the active
 - `feed_posts` has no `audience` or `visibility` column. The authenticated SELECT policy `player experience feed read` requires an unexpired post and `can_view_player_feed_post(author_id)`.
 - `can_view_player_feed_post` currently allows the author, an authorized admin/moderator, or a Pro/Premium **player** following a **player** in the **same current country**. This is not a general-purpose public/follower visibility check.
 - `follow_relationships` has `follower_id`, `target_type`, `target_id`; the existing management policy limits access to the follower's own rows.
-- `feed_post_comments` and `feed_post_checks` read policies call the same helper. Bookmarks are owner-scoped.
+- `feed_post_comments` and `feed_post_checks` read policies call the same helper. Bookmarks are owner-scoped.\n- **Additional verified risk:** `feed_poll_votes` SELECT policy (`feed poll votes read`) has `USING (true)`, so it does not check post visibility. Its INSERT/UPDATE/DELETE policies are owner-scoped but also need an authorized-post check where appropriate. Do not expose voter identities through the new Global feed.
 - `team_fan_groups` are team-associated; do not conflate them with proposed Premium user-created HoopGroups.
 
 ## Required design before SQL
@@ -27,7 +27,7 @@ Status: design only; **do not apply to production**. Verified against the active
 - Valid follower can read followers-only post; unfollow revokes access.
 - Global contains public opted-in posts only; existing posts never appear publicly by migration.
 - Cross-country follower behavior matches newly agreed rules; all supported account types tested.
-- Expired, removed, blocked, suspended, and unapproved posts cannot leak via post/comment/check/vote/share/media endpoints.
+- Expired, removed, blocked, suspended, and unapproved posts cannot leak via post/comment/check/vote/share/media endpoints.\n- A non-follower cannot query poll votes for a followers-only post, including by direct post ID; test vote counts and individual voter identity separately.
 - Anonymous vs authenticated access; Pro/Premium vs Free access; admin/moderator visibility.
 - Insert/update cannot set forbidden audience or mutate ownership; UPDATE has both USING and WITH CHECK.
 - Test client and server APIs with real JWTs and RLS, not service-role queries; run security advisors and a full UI regression.
