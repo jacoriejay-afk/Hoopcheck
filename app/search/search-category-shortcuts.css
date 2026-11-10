@@ -1,0 +1,5 @@
+/* Search category shortcuts: clear mobile-friendly chips. */
+.hc-global-search-page .hc-search-category-shortcuts { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 16px; padding:0 4px; }
+.hc-global-search-page .hc-search-category-shortcuts a { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:8px 14px; border:1px solid #ff5a1f; border-radius:999px; font-size:13px; font-weight:700; line-height:1.2; text-decoration:none; color:inherit; background:transparent; }
+.hc-global-search-page .hc-search-category-shortcuts a:hover,.hc-global-search-page .hc-search-category-shortcuts a:focus-visible { background:rgba(255,90,31,.12); outline-offset:2px; }
+@media(max-width:700px) { .hc-global-search-page .hc-search-category-shortcuts { flex-wrap:nowrap; overflow-x:auto; padding:4px 12px 10px; margin-inline:-8px; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; } .hc-global-search-page .hc-search-category-shortcuts a { white-space:nowrap; flex:0 0 auto; scroll-snap-align:start; } }

@@ -13,6 +13,7 @@ import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import Surface from "../../components/Surface";
+import "./search-category-shortcuts.css";
 import { useLanguage } from "../../components/LanguageProvider";
 
 type Coach = { id: string; name: string; country: string | null; city: string | null };
@@ -325,6 +326,15 @@ function SearchContent() {
         </section>
       )}
 
+      <nav className="hc-search-category-shortcuts" aria-label="Search categories">
+        <Link href="/search?type=all">All</Link>
+        <Link href="/search?type=players">Players</Link>
+        <Link href="/search?type=coaches">Coaches</Link>
+        <Link href="/search?type=mens-teams">Men's teams</Link>
+        <Link href="/search?type=womens-teams">Women's teams</Link>
+        <Link href="/search?type=leagues">Leagues</Link>
+        <Link href="/fans">Fans</Link>
+      </nav>
       <section className="search-hero">
         <div className="eyebrow">{t("globalResearch")}</div>
         <h1>{t("searchBasketballWorld")}</h1>
