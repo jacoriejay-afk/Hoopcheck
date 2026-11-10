@@ -450,6 +450,7 @@ export default function AccountPage() {
       <section id="account-settings" className="hc-settings" aria-label={t("accountSettings")}>
         <SettingsGroup title={t("accountSection")}>
           <SettingsRow icon="user" label={t("editProfile")} value={t("editDetails")} href="#profile-editor" />
+          {profile.account_type === "player" && <SettingsRow icon="user" label="Career Passport" value="View your player passport" href="/profile#career-passport" />}
           <SettingsRow icon="mail" label={t("email")} value={email || t("notSelected")} onClick={changeEmail} />
           <SettingsRow icon="lock" label={t("changePassword")} value={t("updatePassword")} onClick={() => { setPasswordMessage(""); setPasswordModal(true); }} />
           <SettingsRow icon="crown" label={t("membershipLabel")} value={subscription?.plan === "premium" ? "Premium" : subscription?.plan === "pro" ? t("pro") : t("freePlan")} href="/membership" />
