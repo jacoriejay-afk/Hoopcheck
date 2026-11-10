@@ -197,3 +197,56 @@
     backdrop-filter: none;
   }
 }
+
+/* Passport and career editor: retain opaque inputs and readable labels. */
+.hc-journey-form.hc-liquid-glass-journey-form {
+  background-color: rgba(255,255,255,.94);
+  border: 1px solid rgba(0,0,0,.14);
+  border-radius: var(--hc-glass-radius);
+  box-shadow: 0 12px 28px rgba(0,0,0,.1);
+  color: #151515;
+}
+.theme-dark .hc-journey-form.hc-liquid-glass-journey-form {
+  background-color: rgba(24,25,30,.94);
+  border-color: rgba(255,255,255,.2);
+  box-shadow: 0 12px 28px rgba(0,0,0,.28);
+  color: #f8f8fa;
+}
+.hc-journey-form.hc-liquid-glass-journey-form :is(input:not([type="checkbox"]), select, textarea) {
+  background-color: #fff;
+  color: #151515;
+  border-color: #888;
+}
+.theme-dark .hc-journey-form.hc-liquid-glass-journey-form :is(input:not([type="checkbox"]), select, textarea) {
+  background-color: #171717;
+  color: #f8f8fa;
+  border-color: #777;
+}
+.hc-journey-form.hc-liquid-glass-journey-form :is(input, select, textarea, button):focus-visible {
+  outline: 2px solid #ff5a1f;
+  outline-offset: 3px;
+}
+.theme-light .hc-smooth-passport.hc-liquid-glass-passport :is(.hc-smooth-passport__identity span, .hc-smooth-passport__notice, .hc-smooth-passport__top > span:last-child) {
+  color: #50505a;
+}
+.theme-light .hc-smooth-passport.hc-liquid-glass-passport .hc-smooth-passport__bottom {
+  border-color: rgba(0,0,0,.18);
+}
+.theme-light .hc-smooth-passport.hc-liquid-glass-passport :is(.hc-smooth-passport__bottom button, .hc-smooth-passport__bottom a) {
+  color: #a6380c;
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .hc-journey-form.hc-liquid-glass-journey-form {
+    -webkit-backdrop-filter: saturate(135%) blur(12px);
+    backdrop-filter: saturate(135%) blur(12px);
+  }
+}
+@media (prefers-contrast: more), (forced-colors: active) {
+  .hc-journey-form.hc-liquid-glass-journey-form {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
