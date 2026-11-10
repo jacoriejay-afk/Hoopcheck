@@ -40,6 +40,10 @@ try {
       await page.getByRole('button', { name: 'Women’s Teams', exact: true }).click();
       await femaleLink.waitFor();
       await page.waitForFunction(() => !document.querySelector('.result-group a[href^="/teams/"]'));
+      // The search can briefly refetch after the category changes. Wait until
+      // results are settled before navigating; a stale link may disappear.
+      await page.waitForFunction(() => !document.body.innerText.includes('Searching HoopCheck...'));
+      await femaleLink.waitFor({ state: 'visible' });
       holdTeam = true;
       try {
         await femaleLink.click({ timeout: 15000 });
