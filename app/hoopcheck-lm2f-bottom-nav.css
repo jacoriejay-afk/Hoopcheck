@@ -148,6 +148,23 @@
     pointer-events: none !important;
   }
 
+  /* Dark Liquid Glass geometry must live in the final LM-2F stylesheet:
+     this file loads after hoopcheck-liquid-glass.css in app/layout.tsx. */
+  html.theme-dark body nav.hc-bottom-tab-bar.hc-lm2f-bottom-nav {
+    inset-inline: max(8px, env(safe-area-inset-left, 0px)) max(8px, env(safe-area-inset-right, 0px)) !important;
+    inset-block-end: 6px !important;
+    width: auto !important;
+    max-width: none !important;
+    grid-template-rows: 54px !important;
+    grid-auto-rows: 54px !important;
+    align-content: start !important;
+    height: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
+    min-height: 0 !important;
+    max-height: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 5px 0 calc(7px + env(safe-area-inset-bottom, 0px)) !important;
+    border-radius: var(--hc-radius-card) !important;
+  }
+
   html.theme-light body nav.hc-lm2f-bottom-nav {
     background: var(--hc-tab-bg) !important;
     border-top-color: var(--hc-card-border) !important;
