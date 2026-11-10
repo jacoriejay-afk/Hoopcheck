@@ -135,7 +135,7 @@ export default function BottomNav() {
             aria-disabled={feedResolving ? true : undefined}
             onClick={feedResolving ? (event) => event.preventDefault() : undefined}
           >
-            <span className="hc-lm2f-tab-icon" style={{ position: "relative" }}><TabIcon label={label} />{label === "Alerts" && unreadAlerts > 0 && <span className="hc-mobile-alert-unread" aria-label={`${unreadAlerts} unread alerts`}>{unreadAlerts > 99 ? "99+" : unreadAlerts}</span>}</span>
+            <span className="hc-lm2f-tab-icon" style={{ position: "relative" }}><TabIcon label={label} />{label === "Alerts" && unreadAlerts > 0 && <span className="hc-mobile-alert-unread" style={{ position: "absolute", top: -7, right: -14, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 999, background: "#ff5a1f", color: "#0a0a0a", fontSize: 10, fontWeight: 800, lineHeight: "18px", textAlign: "center", whiteSpace: "nowrap" }} aria-label={`${unreadAlerts} unread alerts`}>{unreadAlerts > 99 ? "99+" : unreadAlerts}</span>}</span>
             <span className="hc-lm2f-tab-label">{translationKey === "hoopFeed" ? (accountType === "fan" ? "FAN HQ" : "HoopFeed") : t(translationKey)}</span>
             {active && <span className="hc-lm2f-active-indicator" aria-hidden="true" />}
           </Link>
