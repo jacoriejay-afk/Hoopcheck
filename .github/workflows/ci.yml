@@ -61,6 +61,9 @@ jobs:
       - name: Verify public business inquiry security invariants
         run: node --test scripts/check-public-business-inquiries.mjs
 
+      - name: Verify all HoopFeed photos are moderated before upload
+        run: node --test scripts/check-hoopfeed-moderation.mjs
+
       - name: Check rounded-corner design tokens
         run: npm run check:rounded-corners
 
