@@ -125,13 +125,13 @@ export default function Feed(){
 
   async function choosePhoto(f:File){
     if(photos.length>=4){setMsg("Up to 4 photos per post.");return;}
-    if(!f.type.startsWith("image/")){setMsg("Choose a JPG, PNG, or WebP image.");return;}
+    if(!["image/jpeg","image/png","image/webp","image/heic","image/heif"].includes(f.type)&&!( !f.type&&/\.(jpe?g|png|webp|heic|heif)$/i.test(f.name))){setMsg("Choose a JPG, PNG, WebP, or supported iPhone photo.");return;}
     if(f.size>8*1024*1024){setMsg("Feed photos must be 8MB or smaller.");return;}
     try{
       const compressed=await new Promise<File>((resolve,reject)=>{
         const img=new Image(); const url=URL.createObjectURL(f);
         img.onload=()=>{URL.revokeObjectURL(url);const max=1600;const scale=Math.min(1,max/Math.max(img.width,img.height));const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));const ctx=canvas.getContext("2d");if(!ctx){reject(new Error("Photo processing failed."));return;}ctx.drawImage(img,0,0,canvas.width,canvas.height);canvas.toBlob(blob=>{if(!blob){reject(new Error("Photo processing failed."));return;}resolve(new File([blob],"hoopfeed.jpg",{type:"image/jpeg"}));},"image/jpeg",0.82);};
-        img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("Photo could not be read."));}; img.src=url;
+        img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("This photo could not be opened. Try taking a new photo or choosing a JPG from your library."));}; img.src=url;
       });
       setPhotos(x=>[...x,compressed]);setPreviews(x=>[...x,URL.createObjectURL(compressed)]);setMsg("");
     }catch(e:any){setMsg(e?.message||"Photo processing failed.");}
