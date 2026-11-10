@@ -12,7 +12,7 @@ const womensTeamPage = read("app/womens/[id]/page.tsx");
 
 const checks = [
   ["HoopFeed composer uses existing 2,000-character server limit", /maxLength=\{2000\}/.test(feed) && /\{body\.length\}\/2000/.test(feed)],
-  ["HoopFeed text body renders outside media wrapper", /hc-feed-post-body/.test(feed) && /<FeedMediaArea>\{p\.image_url/.test(feed)],
+  ["HoopFeed text body renders outside media wrapper", /hc-feed-post-body/.test(feed) && /<FeedMediaArea>/.test(feed) && /p\.image_urls/.test(feed) && /p\.video_url/.test(feed)],
   ["HoopFeed API keeps 2,000-character limit and text-only moderation", /MAX_TEXT_LENGTH = 2000/.test(moderate) && /if \(text\) input\.push/.test(moderate)],
   ["Text-only posts have standard theme-aware typography", /\.hc-feed-post-body/.test(sharedCss) && /var\(--hc-foreground\)/.test(sharedCss)],
   ["One fan group is created for existing and future teams", /insert into public\.team_fan_groups/.test(migration) && /teams_ensure_fan_group/.test(migration)],

@@ -24,6 +24,16 @@ const config = {
           alerts: "#F5B800",
         },
       },
+      // Shared radius scale for consistent cards, controls, and overlays.
+      borderRadius: {
+        sm: "var(--hc-radius-control)",
+        DEFAULT: "var(--hc-radius-control)",
+        md: "var(--hc-radius-control)",
+        lg: "var(--hc-radius-card)",
+        xl: "var(--hc-radius-card)",
+        "2xl": "var(--hc-radius-hero)",
+        "3xl": "var(--hc-radius-hero)",
+      },
       fontFamily: {
         display: ["var(--font-display)", "Graduate", "serif"],
         sans: ["var(--font-sans)", "Inter", "sans-serif"],

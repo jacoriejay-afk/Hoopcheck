@@ -61,6 +61,9 @@ jobs:
       - name: Verify public business inquiry security invariants
         run: node --test scripts/check-public-business-inquiries.mjs
 
+      - name: Check rounded-corner design tokens
+        run: npm run check:rounded-corners
+
       - name: Lint
         run: npm run lint
 

@@ -82,42 +82,31 @@ for (const term of scaffoldTerms) {
 for (const route of ['"/fan-feed"', '"/team-hub/groups/"', '"/live-games"', '"/theme-card-audit"']) {
   if (!browserCheck.includes(route)) failures.push("Browser route coverage missing: " + route);
 }
-if (!fanFeedPage.includes('ft("feedExplainer")') ||
-    !fanFeedPage.includes("filteredTeams.map") ||
-    !fanFeedPage.includes('ft("searchFollowedTeams")') ||
-    !fanFeedPage.includes("hc-fan-feed-group-label") ||
-    !fanFeedPage.includes("post.teams.name") ||
-    !fanFeedPage.includes("post.teams.group_name") ||
-    !fanFeedI18n.includes('"feedExplainer": "Posts from the fan groups of the clubs you follow."')) {
-  failures.push("Fan HQ is missing its plain-language purpose, followed-club picker, locked group destination, or group context.");
-}
-
-if (fanFeedPage.includes('from("fan_feed_posts")') ||
-    !fanFeedPage.includes('from("team_fan_group_posts")') ||
-    !fanFeedPage.includes('from("team_fan_group_members")') ||
-    !fanFeedPage.includes('from("team_fan_group_moderators")') ||
-    !fanFeedPage.includes('from("womens_teams")') ||
-    !womensFanGroupMirror.includes("womens_teams_sync_fan_group_mirror") ||
-    !womensFanGroupMirror.includes("womens_teams_mirror") ||
-    !teamPicker.includes('activeGender==="womens"?["womens_teams"]') ||
-    !onboardingTeams.includes('from("womens_teams")') ||
-    !fanFeedPage.includes('basketballSide === "womens"') ||
-    !fanFeedPage.includes("FanBasketballSideSwitch") ||
-    fanFeedPage.includes('from("fan_feed_posts")') ||
-    !fanFeedPage.includes('router.push("/team-hub/groups/" + team.id)') ||
-    fanFeedPage.includes("hc-feed-composer__editor") ||
-    !bottomNav.includes('accountType === "fan" ? "FAN HQ" : "HoopFeed"') ||
+// HF-5 unifies the public community feed at /feed; /fan-feed is a redirect.
+// Club Fan Groups remain separate, member-gated destinations under Team Hub.
+if (!fanFeedPage.includes('redirect("/feed")') ||
+    !fanGroupPage.includes("FAN HQ · OFFICIAL COMMUNITY") ||
+    !fanGroupPage.includes("Join to see the conversation") ||
     !fanGroupPage.includes("Posting to {teamName} fans") ||
     !fanGroupPage.includes("isFan && summary?.is_member && <section") ||
     !fanGroupPage.includes("No posts yet — be the first to post for {teamName}.") ||
-    !fanGroupPage.includes("Be the first to post") ||
+    !fanGroupPage.includes("Be the first to post")) {
+  failures.push("Unified HoopFeed redirect or member-gated club Fan Group purpose, context, and composer is missing.");
+}
+
+if (!womensFanGroupMirror.includes("womens_teams_sync_fan_group_mirror") ||
+    !womensFanGroupMirror.includes("womens_teams_mirror") ||
+    !teamPicker.includes('activeGender==="womens"?["womens_teams"]') ||
+    !onboardingTeams.includes('from("womens_teams")') ||
+    !bottomNav.includes('accountType === "fan" ? "FAN HQ" : "HoopFeed"') ||
+    !bottomNav.includes('accountType === "fan" ? "/fan-feed" : href') ||
     !womensTeamPage.includes("TeamFanGroupEntry teamId={team.id}") ||
     !womensTeamPage.includes("FanTeamPosts teamId={team.id}") ||
     !fanTeamPosts.includes('from("team_fan_group_posts")') ||
     fanTeamPosts.includes('rpc("get_fan_team_hub_posts"') ||
     !fanTeamPosts.includes('from("team_fan_group_members")') ||
     !fanTeamPosts.includes('from("team_fan_group_moderators")')) {
-  failures.push("Fan HQ must use member-visible club Fan Group posts and the shared locked group composer; fans must see FAN HQ in bottom navigation.");
+  failures.push("Club Fan Group member visibility, women's team mirroring, or fan navigation contract is missing.");
 }
 
 const importLine = 'import "./hoopcheck-hub-empty-state-pairing.css";';
