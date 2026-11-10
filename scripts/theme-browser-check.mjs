@@ -189,8 +189,7 @@ try {
       await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
       if (routeName === "feed") {
         await page.locator(".hc-feed-composer").waitFor({ state: "visible", timeout: 30000 });
-        await page.locator(".hc-feed-topic-chip").first().waitFor({ state: "visible", timeout: 30000 });
-        await page.locator(".hc-feed-filter-chip").first().waitFor({ state: "visible", timeout: 30000 });
+        await page.locator(".hf5-type-chip").first().waitFor({ state: "visible", timeout: 30000 });
       }
 
       // Auth/profile hydration can redirect /dashboard after its loading shell first
@@ -217,8 +216,7 @@ try {
           composer: routeName === "feed" ? color(".hc-feed-composer") : null,
           discoveryHeading: routeName === "feed" ? getComputedStyle(document.querySelector(".hf5-hero__title")).color : null,
           composerBorder: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-composer")).borderTopWidth : null,
-          topicChip: routeName === "feed" ? color(".hc-feed-topic-chip") : null,
-          filterChip: routeName === "feed" ? color(".hc-feed-filter-chip:not(.is-active)") : null,
+          filterChip: routeName === "feed" ? color(".hf5-type-chip:not(.is-active)") : null,
           homePairs: routeName === "dashboard" ? [".hc-ia-identity", ".hc-ia-live-strip", ".hc-ia-door"].map((selector) => {
             const element = document.querySelector(selector);
             if (!element) return { selector, missing: true };
@@ -266,8 +264,7 @@ try {
         assert.ok(computed.composer !== null, `feed/${theme}: composer renders`);
         assert.ok(computed.discoveryHeading && computed.discoveryHeading !== "rgba(0, 0, 0, 0)", `feed/${theme}: community heading has a computed color`);
         assert.ok(computed.composerBorder !== null, `feed/${theme}: composer border style computed`);
-        assert.equal(computed.topicChip, expectedChip, `feed/${theme}: topic chip background mismatch`);
-        assert.equal(computed.filterChip, expectedChip, `feed/${theme}: filter chip background mismatch`);
+        assert.equal(computed.filterChip, expectedChip, `feed/${theme}: type chip background mismatch`);
       }
       if (theme === "dark") {
         assert.equal(
