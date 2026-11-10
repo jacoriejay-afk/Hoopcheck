@@ -23,6 +23,9 @@ for (const [surface, file] of surfaces) {
   }
 }
 assert(rows.length > 0, "No media references found; review inventory inputs.");
+const hoopfeedMedia = rows.filter(row => row.surface === "HoopFeed moderation" || row.surface === "HoopFeed composer");
+assert(hoopfeedMedia.some(row => row.images), "HoopFeed image bucket reference missing; review upload migration.");
+assert(hoopfeedMedia.some(row => row.videos), "HoopFeed video bucket reference missing; review upload migration.");
 const fanSurfaces = rows.filter(row => /Fan Feed/.test(row.surface));
 assert(fanSurfaces.some(row => row.images), "Expected shared fan-feed image bucket; review migration assumptions.");
 const hoopfeed = rows.filter(row => row.surface.startsWith("HoopFeed"));
