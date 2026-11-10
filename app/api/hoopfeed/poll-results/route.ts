@@ -35,8 +35,23 @@ export async function POST(request: NextRequest) {
     if (!polls.length) return NextResponse.json({ results: {} });
 
     const admin = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
-    const { data: votes, error: voteError } = await admin.from("feed_poll_votes").select("post_id,user_id,option_index").in("post_id", polls.map((p) => p.id));
-    if (voteError) return NextResponse.json({ message: "Poll results unavailable." }, { status: 503 });
+    // Supabase REST defaults to a row limit; page through votes so popular polls
+    // do not silently show truncated totals. Fail closed if pagination fails.
+    const votes: { post_id: string; user_id: string; option_index: number }[] = [];
+    const pageSize = 1000;
+    for (let offset = 0; ; offset += pageSize) {
+      const { data: page, error: voteError } = await admin.from("feed_poll_votes")
+        .select("post_id,user_id,option_index")
+        .in("post_id", polls.map((p) => p.id))
+        .order("post_id", { ascending: true })
+        .order("user_id", { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (voteError || !page) return NextResponse.json({ message: "Poll results unavailable." }, { status: 503 });
+      votes.push(...page);
+      if (page.length < pageSize) break;
+      // Avoid unbounded request work. Return an error rather than inaccurate totals.
+      if (offset + pageSize >= 100000) return NextResponse.json({ message: "Poll results are temporarily unavailable." }, { status: 503 });
+    }
 
     const results: Record<string, { counts: number[]; total: number; mine: number | null }> = {};
     for (const poll of polls) results[poll.id] = { counts: (poll.poll_options as unknown[]).map(() => 0), total: 0, mine: null };
