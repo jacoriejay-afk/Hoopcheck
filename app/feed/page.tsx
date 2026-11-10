@@ -121,9 +121,24 @@ export default function Feed(){
       (checksResult.data||[]).forEach((r:any)=>{cc[r.post_id]=(cc[r.post_id]||0)+1;if(r.user_id===currentUser.id)cm[r.post_id]=true;});
       const vs:Record<string,VoteState>={};
       rows.forEach(p=>{if(p.post_kind==="poll"&&Array.isArray(p.poll_options))vs[p.id]={counts:p.poll_options.map(()=>0),total:0,mine:null};});
-      for (const [postId, result] of Object.entries(votesResult.data || {})) { if (vs[postId] && Array.isArray(result?.counts) && result.counts.length === vs[postId].counts.length) vs[postId] = result; }
-      setPollResultsUnavailable(Boolean(votesResult.error));
-      if (votesResult.error) console.error("HoopFeed poll totals unavailable", votesResult.error);
+      let invalidPollResults = false;
+      for (const [postId, result] of Object.entries(votesResult.data || {})) {
+        if (!vs[postId]) continue;
+        if (!result || !Array.isArray(result.counts) || result.counts.length !== vs[postId].counts.length ||
+            result.counts.some(count => !Number.isSafeInteger(count) || count < 0) ||
+            !Number.isSafeInteger(result.total) || result.total < 0 ||
+            result.counts.reduce((sum, count) => sum + count, 0) !== result.total ||
+            (result.mine !== null && (!Number.isInteger(result.mine) || result.mine < 0 || result.mine >= result.counts.length))) {
+          invalidPollResults = true;
+          continue;
+        }
+        vs[postId] = result;
+      }
+      // An authorized poll must have an aggregate entry, even if it has no votes.
+      // Missing entries may also indicate a permission change during refresh.
+      if (!votesResult.error && Object.keys(vs).some(postId => !Object.prototype.hasOwnProperty.call(votesResult.data || {}, postId))) invalidPollResults = true;
+      setPollResultsUnavailable(Boolean(votesResult.error) || invalidPollResults);
+      if (votesResult.error || invalidPollResults) console.error("HoopFeed poll totals unavailable or invalid", votesResult.error || "Incomplete aggregate response");
       const sm:Record<string,boolean>={};
       (bookmarksResult.data||[]).forEach((r:any)=>{sm[r.post_id]=true;});
       setComments(cg);setChecks(cc);setMine(cm);setVotes(vs);setSavedMap(sm);
