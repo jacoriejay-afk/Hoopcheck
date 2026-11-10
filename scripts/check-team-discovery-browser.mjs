@@ -46,7 +46,18 @@ try {
       await femaleLink.waitFor({ state: 'visible' });
       holdTeam = true;
       try {
-        await femaleLink.click({ timeout: 15000 });
+        // The result can re-render while category data refreshes. Dispatch the
+        // navigation from the currently connected anchor without Playwright's
+        // stability wait, which can race with React replacing that anchor.
+        await page.waitForFunction((href) => {
+          const anchor = document.querySelector(`.result-group a[href="${href}"]`);
+          return anchor?.isConnected && anchor.getClientRects().length > 0;
+        }, `/womens/${women.id}`);
+        await page.evaluate((href) => {
+          const anchor = document.querySelector(`.result-group a[href="${href}"]`);
+          if (!anchor?.isConnected) throw new Error('Women team link missing before navigation');
+          anchor.click();
+        }, `/womens/${women.id}`);
       } catch (error) {
         const state = await page.evaluate(() => ({
           url: location.href,
