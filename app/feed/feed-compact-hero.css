@@ -21,3 +21,14 @@
   .hc-feed-page .hc-feed-composer--compact .hf5-mode-row .hf5-type-chip { padding:5px 10px; font-size:12px; min-height:32px; }
   .hc-feed-page .hf5-type-row { padding-top:8px; }
 }
+
+/* The full composer remains visible on desktop. On phones, a single tap opens it. */
+.hc-feed-page .hc-feed-composer__toggle { display:none; border:1px solid var(--hc-border); border-radius:999px; padding:7px 12px; background:var(--hc-surface-soft); color:var(--hc-foreground); font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+.hc-feed-page .hc-feed-composer__toggle:focus-visible { outline:3px solid var(--hc-orange,#ff5a1f); outline-offset:2px; }
+@media(max-width:700px) {
+  .hc-feed-page .hc-feed-composer--compact.is-collapsed { padding:9px 12px!important; }
+  .hc-feed-page .hc-feed-composer--compact.is-collapsed .hc-feed-composer__heading { margin-bottom:0; }
+  .hc-feed-page .hc-feed-composer__toggle { display:inline-flex; align-items:center; justify-content:center; min-height:44px; }
+  .hc-feed-page .hc-feed-composer--compact.is-collapsed .hc-feed-composer__fields { display:none; }
+  .hc-feed-page .hc-feed-composer--compact.is-expanded .hc-feed-composer__fields { display:block; }
+}
