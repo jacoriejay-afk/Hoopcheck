@@ -334,12 +334,13 @@ export async function POST(request: Request) {
     }
 
     const moderationText = kind === "post" && postKind === "poll" ? text + "\n" + (pollOptions ?? []).join("\n") : text;
-    // Moderate every attachment: checking only the first image leaves additional images unreviewed.
-    // Text-only posts and comments still receive one moderation check.
-    for (const attachment of allImages.length ? allImages : [null]) {
-      const result = await moderate(moderationText, attachment);
-      if (!result.allowed) return NextResponse.json({ allowed: false, message: result.message }, { status: result.status });
-    }
+    const result = await moderate(moderationText, allImages[0] ?? null);
+    if (!result.allowed) return NextResponse.json({ allowed: false, message: result.message }, { status: result.status });
+
+    // Moderate every attached photo before any storage upload or publication.
+    const otherPhotoResults = await Promise.all(allImages.slice(1).map(photo => moderate("", photo)));
+    const photoRejection = otherPhotoResults.find(decision => !decision.allowed);
+    if (photoRejection) return NextResponse.json({ allowed: false, message: photoRejection.message }, { status: photoRejection.status });
 
     if (kind === "comment") {
       if (!text) return NextResponse.json({ allowed: false, message: "Write a comment before posting." }, { status: 400 });
