@@ -165,6 +165,9 @@ export async function POST(request: Request) {
     if (text.length > MAX_TEXT_LENGTH) {
       return NextResponse.json({ allowed: false, message: "Text must be 2,000 characters or fewer." }, { status: 413 });
     }
+    // Reject unsupported media field shapes instead of silently treating them as absent.
+    if (form.getAll("image").length > 1) return NextResponse.json({ allowed: false, message: "Attach the primary image only once." }, { status: 400 });
+    if (form.getAll("image").some((value) => !(value instanceof File)) || form.getAll("images").some((value) => !(value instanceof File))) return NextResponse.json({ allowed: false, message: "Image attachments must be files." }, { status: 400 });
     const imageValue = form.get("image");
     const image = imageValue instanceof File && imageValue.size > 0 ? imageValue : null;
     const extraImages = form.getAll("images").filter((v): v is File => v instanceof File && v.size > 0);
