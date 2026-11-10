@@ -1,44 +1,94 @@
 "use client";
 
 import Link from "next/link";
-import "./hoopcheck-brand-home.css";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getCachedSession } from "../lib/supabase";
-import CategoryTile, { type CategoryTileKind } from "../components/CategoryTile";
 import SearchBar from "../components/SearchBar";
-import { HoopIcon } from "../components/HoopCheckUI";
 import HomeDirectoryStats from "../components/HomeDirectoryStats";
-import HomeDesktopIdentity from "../components/HomeDesktopIdentity";
+import { HoopIcon } from "../components/HoopCheckUI";
+import "./hoopcheck-brand-home.css";
 
-const categories:{label:string;subtitle:string;href:string;category:CategoryTileKind}[]=[
- {label:"Men’s Teams",subtitle:"Research teams before you sign",href:"/teams",category:"teams"},
- {label:"Women’s Teams",subtitle:"Explore women’s basketball",href:"/womens",category:"womens"},
- {label:"Coaches",subtitle:"Check coaching reputations",href:"/coaches",category:"coaches"},
- {label:"Leagues",subtitle:"Compare competitions",href:"/leagues",category:"leagues"},
- {label:"Players",subtitle:"Discover basketball players",href:"/players",category:"players"},
- {label:"Reviews",subtitle:"Real feedback from basketball players",href:"/reviews",category:"reviews"},
- {label:"Alerts",subtitle:"Follow important updates",href:"/notifications",category:"alerts"}
+const destinations = [
+  { title: "Men's teams", detail: "Research clubs worldwide", href: "/teams", icon: "shield" },
+  { title: "Women's teams", detail: "Explore the women's game", href: "/womens", icon: "users" },
+  { title: "Players", detail: "Discover player profiles", href: "/players", icon: "user" },
+  { title: "Coaches", detail: "Know the people leading teams", href: "/coaches", icon: "clipboard" },
+  { title: "Leagues", detail: "Explore global competitions", href: "/leagues", icon: "trophy" },
+  { title: "Reviews", detail: "Learn from player experiences", href: "/reviews", icon: "star" },
 ];
 
-export default function Home(){
- const router=useRouter();
- useEffect(()=>{getCachedSession().then(({data})=>{if(data.session)router.replace("/dashboard");});},[router]);
- useEffect(()=>{if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;const nodes=Array.from(document.querySelectorAll<HTMLElement>(".hc-ia-door,.hc-d3-membership-band"));nodes.forEach((node,index)=>{node.classList.add("hc-d3-reveal");node.style.transitionDelay=`${Math.min(index,4)*.06}s`;});const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add("is-visible");observer.unobserve(entry.target);}}),{threshold:.12});nodes.forEach(node=>observer.observe(node));return()=>observer.disconnect();},[]);
- return <main className="hc-template-home hc-home-redesign hc-ia-home hc-ia-public-home">
-   <div className="hc-d3-desktop-only"><HomeDesktopIdentity/></div>
-   <div className="page-container">
-   <div className="hc-d3-mobile-only">
-   <SearchBar className="hc-ia-search" name="q" placeholder="Search teams, coaches, leagues, or players" ariaLabel="Search basketball directory"/>
-   <header className="hc-ia-welcome"><p className="eyebrow">THE GLOBAL BASKETBALL INTELLIGENCE HUB</p><h1>KNOW WHO YOU’RE SIGNING WITH<span>.</span></h1><p className="muted">Explore teams, coaches, leagues, and real basketball experiences. Built for players and fans worldwide.</p><div className="hc-home-hero-actions"><Link href="/signup" className="hc-template-cta hc-home-cta">CREATE YOUR ACCOUNT <HoopIcon name="arrow-right" size={17}/></Link><Link href="/login" className="hc-home-signin">SIGN IN <HoopIcon name="arrow-up-right" size={15}/></Link></div></header>
-   <Link href="/live-games" className="hc-ia-live-strip"><span className="hc-ia-live-dot"/><span><strong>LIVE GAMES</strong><small>See live and upcoming games</small></span><span>Open hub <HoopIcon name="arrow-right" size={16}/></span></Link>
-   <HomeDirectoryStats />
-   <Link href="/pre-sign" className="hc-smooth-presign-link"><strong>PRE-SIGN CHECK</strong><span>Six essential checks before signing a basketball contract</span><HoopIcon name="arrow-right" size={18}/></Link>
-   </div>
-   <div className="hc-d3-desktop-search"><SearchBar className="hc-ia-search" name="q" placeholder="Search teams, coaches, leagues, or players" ariaLabel="Search basketball directory"/></div>
-   <div className="hc-d3-desktop-only"><Link href="/pre-sign" className="hc-smooth-presign-link"><strong>PRE-SIGN CHECK</strong><span>Research the club before you commit</span><HoopIcon name="arrow-right" size={18}/></Link></div>
-   <section className="hc-ia-section"><div className="hc-ia-section-heading"><div><p className="eyebrow">YOUR NEXT MOVE</p><h2>EXPLORE HOOPCHECK</h2></div><Link href="/directory">All directories <HoopIcon name="arrow-right" size={15}/></Link></div><div className="hc-template-category-grid hc-home-category-grid hc-ia-door-grid">{categories.map(category=><CategoryTile key={category.label} label={category.label} category={category.category} href={category.href} description={category.subtitle} className="hc-home-category-tile"/>)}</div></section>
-   <div className="hc-d3-live-band hc-d3-desktop-only"><Link href="/live-games"><span>LIVE GAMES</span><span>OPEN THE HUB →</span></Link></div>
-   <section className="hc-d3-membership-band hc-d3-desktop-only"><Link href="/membership"><span>MEMBERSHIP</span><span>EXPLORE OPTIONS →</span></Link></section>
- </div></main>;
+export default function Home() {
+  const router = useRouter();
+  useEffect(() => {
+    let active = true;
+    getCachedSession().then(({ data }) => {
+      if (active && data.session) router.replace("/dashboard");
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [router]);
+
+  return (
+    <main className="hc-new-home min-h-screen bg-[#0b1019] text-white">
+      <div className="mx-auto max-w-6xl px-4 pb-20 pt-5 sm:px-6 lg:px-8">
+        <nav aria-label="Homepage navigation" className="mb-8 flex flex-wrap items-center justify-between gap-3">
+          <Link href="/" className="text-xl font-black tracking-tight text-white">HoopCheck<span className="text-orange-400">™</span></Link>
+          <div className="flex items-center gap-3 text-sm">
+            <Link href="/directory" className="hidden text-slate-200 hover:text-white sm:inline">Explore</Link>
+            <Link href="/login" className="rounded-xl px-3 py-2 text-slate-200 hover:text-white">Log in</Link>
+            <Link href="/signup" className="rounded-xl bg-orange-500 px-4 py-2 font-bold text-white hover:bg-orange-400">Join free</Link>
+          </div>
+        </nav>
+
+        <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#202b3d] via-[#111b2b] to-[#0b1019] px-5 py-12 sm:px-10 sm:py-16 lg:px-14">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-32 h-80 w-80 rounded-full bg-orange-500/20 blur-3xl" />
+          <div className="relative max-w-3xl">
+            <p className="mb-4 text-xs font-extrabold uppercase tracking-[.22em] text-orange-400">The global basketball network</p>
+            <h1 className="max-w-3xl text-4xl font-black uppercase leading-[1.05] tracking-tight text-white sm:text-6xl">Know who you're <span className="text-orange-400">signing with.</span></h1>
+            <p className="mt-5 max-w-xl text-base leading-7 text-slate-200 sm:text-lg">Discover teams, research leagues, learn from real player experiences, and connect with the basketball world—all in one place.</p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link href="/signup" className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-orange-500 px-6 py-3 font-bold text-white hover:bg-orange-400">Get started <HoopIcon name="arrow-right" size={17}/></Link>
+              <Link href="/teams" className="inline-flex min-h-12 items-center rounded-xl border border-white/25 px-6 py-3 font-bold text-white hover:bg-white/10">Explore teams</Link>
+            </div>
+          </div>
+        </section>
+
+        <section aria-label="Search the basketball directory" className="relative z-10 mx-auto mt-5 max-w-4xl rounded-2xl border border-white/15 bg-[#172234] p-3 sm:p-4">
+          <SearchBar className="hc-ia-search" name="q" placeholder="Search teams, players, coaches, leagues..." ariaLabel="Search the basketball directory" />
+        </section>
+
+        <section className="mt-9"><HomeDirectoryStats /></section>
+
+        <section className="mt-12" aria-labelledby="hc-explore-heading">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+            <div><p className="text-xs font-bold uppercase tracking-[.2em] text-orange-400">Find your next move</p><h2 id="hc-explore-heading" className="mt-2 text-2xl font-black sm:text-3xl">Explore basketball</h2></div>
+            <Link href="/directory" className="text-sm font-semibold text-orange-300 hover:text-orange-200">All directories →</Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+            {destinations.map(item => (
+              <Link key={item.href} href={item.href} className="group flex min-h-36 flex-col justify-between rounded-2xl border border-white/10 bg-[#172234] p-4 transition hover:-translate-y-0.5 hover:border-orange-400/60 hover:bg-[#202e43] sm:p-5">
+                <div className="flex items-start justify-between"><span className="rounded-xl bg-orange-500/15 p-2 text-orange-400"><HoopIcon name={item.icon as Parameters<typeof HoopIcon>[0]["name"]} size={22}/></span><span aria-hidden="true" className="text-slate-400 group-hover:text-orange-300">↗</span></div>
+                <div><h3 className="mt-4 font-bold text-white">{item.title}</h3><p className="mt-1 text-xs leading-5 text-slate-300 sm:text-sm">{item.detail}</p></div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-12 grid gap-4 md:grid-cols-2" aria-label="Featured HoopCheck tools">
+          <Link href="/pre-sign" className="group rounded-3xl border border-orange-400/25 bg-gradient-to-br from-orange-500/20 to-[#172234] p-6 hover:border-orange-400">
+            <p className="text-xs font-bold uppercase tracking-widest text-orange-300">For players</p><h2 className="mt-3 text-2xl font-black">Research before you sign.</h2><p className="mt-3 text-sm leading-6 text-slate-200">Use Pre-Sign Check to explore important questions about a club before making your next move.</p><span className="mt-6 inline-block font-bold text-orange-300">Explore Pre-Sign Check →</span>
+          </Link>
+          <Link href="/live-games" className="group rounded-3xl border border-white/10 bg-[#172234] p-6 hover:border-orange-400/60">
+            <p className="text-xs font-bold uppercase tracking-widest text-orange-300">For the community</p><h2 className="mt-3 text-2xl font-black">The game doesn't stop at tip-off.</h2><p className="mt-3 text-sm leading-6 text-slate-200">Explore live and upcoming games, fan conversations, and basketball community features.</p><span className="mt-6 inline-block font-bold text-orange-300">Open Live Game Hub →</span>
+          </Link>
+        </section>
+
+        <section className="mt-12 rounded-3xl border border-white/10 bg-[#172234] p-6 text-center sm:p-10">
+          <p className="text-xs font-bold uppercase tracking-widest text-orange-300">Your basketball world, connected</p><h2 className="mx-auto mt-3 max-w-xl text-2xl font-black sm:text-3xl">Built for players, fans, coaches, agents, and clubs.</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-200">Find the information and community that matter to your role. Explore publicly, then create an account for your personalized experience.</p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3"><Link href="/membership" className="rounded-xl border border-white/25 px-5 py-3 font-semibold text-white hover:bg-white/10">View memberships</Link><Link href="/signup" className="rounded-xl bg-orange-500 px-5 py-3 font-bold text-white hover:bg-orange-400">Create an account</Link></div>
+        </section>
+      </div>
+    </main>
+  );
 }
