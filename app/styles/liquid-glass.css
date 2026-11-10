@@ -295,3 +295,34 @@
     backdrop-filter: none;
   }
 }
+
+/* Screenshot review: keep the global search entry compact on narrow screens.
+   Preserve all directory links and form controls rather than hiding features. */
+@media (max-width: 600px) {
+  .hc-global-search-page .hc-search-team-entry {
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    border-radius: var(--hc-glass-radius);
+  }
+  .hc-global-search-page .hc-search-team-entry h2 {
+    margin: 2px 0 4px;
+    line-height: 1.18;
+  }
+  .hc-global-search-page .hc-search-team-entry p {
+    margin: 0;
+    line-height: 1.35;
+  }
+  .hc-global-search-page .hc-search-team-entry .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .hc-global-search-page .hc-search-team-entry .actions a {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--hc-glass-radius);
+  }
+}
