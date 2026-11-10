@@ -147,7 +147,7 @@ export default function ProfilePage() {
         <nav className="hc-profile-action-hub" aria-label="Profile quick links">
           <Link href="/membership" className="hc-profile-membership-link"><HoopIcon name="star" size={20} /><span>Membership &amp; Perks</span><HoopIcon name="chevron-right" size={18} /></Link>
           <div className="hc-profile-quick-grid">
-            <Link href="/account" className="hc-profile-quick-link"><HoopIcon name="settings" size={22} /><span>Settings</span></Link>
+            <Link href="/settings" className="hc-profile-quick-link"><HoopIcon name="settings" size={22} /><span>Settings</span></Link>
             <Link href="/notifications" className="hc-profile-quick-link"><HoopIcon name="bell" size={22} /><span>Alerts</span></Link>
             <Link href="/search" className="hc-profile-quick-link"><HoopIcon name="search" size={22} /><span>Search</span></Link>
             <Link href={p.account_type === "fan" ? "/fan-feed" : "/pre-sign"} className="hc-profile-quick-link"><HoopIcon name={p.account_type === "fan" ? "users" : "clipboard-check"} size={22} /><span>{p.account_type === "fan" ? "Fan HQ" : "Pre-Sign"}</span></Link>
