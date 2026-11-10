@@ -371,8 +371,12 @@ export async function POST(request: Request) {
       const fileName = videoPath.slice(user.id.length + 1);
       if (!fileName || fileName.includes("/")) return NextResponse.json({ allowed: false, message: "Invalid video upload path." }, { status: 400 });
       const { data: objects, error: listError } = await db.storage.from("feed-videos").list(user.id, { search: fileName, limit: 100 });
-      const uploaded = !listError && objects?.some((object) => object.name === fileName);
+      const uploaded = !listError ? objects?.find((object) => object.name === fileName) : null;
       if (!uploaded) return NextResponse.json({ allowed: false, message: "Video upload not found. Please upload again." }, { status: 400 });
+      const storedType = uploaded.metadata?.mimetype || uploaded.metadata?.contentType;
+      if (storedType && storedType !== videoType) {
+        return NextResponse.json({ allowed: false, message: "Uploaded video format does not match the selected file." }, { status: 400 });
+      }
       video_url = db.storage.from("feed-videos").getPublicUrl(videoPath).data.publicUrl;
     }
     const shareCountry = String(form.get("share_country") || "false") === "true";
