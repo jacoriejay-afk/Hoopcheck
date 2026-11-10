@@ -167,3 +167,33 @@
     -webkit-backdrop-filter: none; backdrop-filter: none;
   }
 }
+
+/* Identity passport: glass belongs to the outer shell, never to text fields. */
+.hc-smooth-passport.hc-liquid-glass-passport {
+  background-color: rgba(255,255,255,.94);
+  border: 1px solid rgba(0,0,0,.14);
+  border-radius: var(--hc-glass-radius);
+  box-shadow: 0 12px 28px rgba(0,0,0,.1);
+  color: #151515;
+}
+.theme-dark .hc-smooth-passport.hc-liquid-glass-passport {
+  background-color: rgba(24,25,30,.94);
+  border-color: rgba(255,255,255,.2);
+  color: #f8f8fa;
+  box-shadow: 0 12px 28px rgba(0,0,0,.28);
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .hc-smooth-passport.hc-liquid-glass-passport {
+    -webkit-backdrop-filter: saturate(135%) blur(12px);
+    backdrop-filter: saturate(135%) blur(12px);
+  }
+}
+@media (prefers-contrast: more), (forced-colors: active) {
+  .hc-smooth-passport.hc-liquid-glass-passport {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
