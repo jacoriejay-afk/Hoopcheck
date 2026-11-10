@@ -13,6 +13,9 @@ function UserIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><circle
 
 export default function SiteHeader() {
   const pathname=usePathname();const {signedIn,userId}=useAuthState();const {t}=useLanguage();const [menuOpen,setMenuOpen]=useState(false);const [accountType,setAccountType]=useState("");const [isAdmin,setIsAdmin]=useState(false);
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
   useEffect(()=>{let live=true;if(!userId){setAccountType("");return;}void Promise.all([supabase.from("profiles").select("account_type").eq("id",userId).maybeSingle(),supabase.rpc("get_current_user_admin_role")]).then(([profile,role])=>{if(live){setAccountType(profile.data?.account_type||"");setIsAdmin(role.data==="admin"||role.data==="moderator");}});return()=>{live=false};},[userId]);
   if(pathname.startsWith("/admin"))return null;
   const closeMenu=()=>setMenuOpen(false);const active=(href:string)=>pathname===href||pathname.startsWith(href+"/");
