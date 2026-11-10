@@ -402,7 +402,7 @@ export default function AccountPage() {
     <main className="page-shell hc-account-page"><div className="page-container">
       <header className="hc-account-settings-header">
         <p className="hc-account-settings-kicker">{t("settings")}</p>
-        <h1>{t("accountPreferences")}</h1>
+        <h1>Account & Profile</h1>
         <div className="hc-account-settings-identity">
           <span className="hc-account-settings-avatar" aria-hidden="true">
             {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{(displayName || email || "H").trim().split(/\s+/).slice(0,2).map(part => part[0]).join("").toUpperCase()}</span>}
@@ -412,8 +412,9 @@ export default function AccountPage() {
             <p>{email || t("emailNotSet")}</p><p className="hc-account-visibility-status"><span aria-hidden="true" />{profile.account_type === "fan" ? "Fan profile privacy is enabled" : settingsVisibility === "public" ? "Profile visible to everyone" : "Profile visible to players only"}</p>
           </div>
         </div>
+        <nav className="hc-account-identity-actions" aria-label="Account sections"><a href="#profile-editor" className="btn">Edit profile</a><Link href="/settings" className="btn dark">App settings</Link></nav>
         <div className="hc-account-identity-actions">
-          <a href={profile.account_type === "player" ? "/complete-profile" : "#profile-editor"} className="btn">{t("editProfile")}</a>
+          <a href="#profile-editor" className="btn">{t("editProfile")}</a>
           {profile.account_type === "player" && settingsVisibility === "public" ? <Link href={userId ? `/players/${encodeURIComponent(userId)}` : "/profile"} className="btn dark">{t("profilePublic")}</Link> : null}
         </div>
       </header>
