@@ -477,7 +477,7 @@ export default function AccountPage() {
             </div>}
           </>}
           <h2>{profile.account_type === "player" ? t("playerInformation") : profile.account_type === "coach" ? t("coachInformation") : t("profileInformation")} {((profile.account_type === "player" && profile.player_verified) || (profile.account_type === "coach" && profile.coach_verified)) && <VerifiedBadge label={t("verifiedProfessional")} />}</h2>
-          <Surface as="form" id="profile-editor" onSubmit={saveProfile} className="account-profile-form" style={{display:"grid",gap:12,marginTop:16}}>
+          <Surface as="form" id="profile-editor" onSubmit={saveProfile} className="account-profile-form hc-account-profile-editor" style={{display:"grid",gap:12,marginTop:16}}>
             <label className="muted">{t("firstName")}</label><input value={profile.first_name ?? ""} readOnly />
             <label className="muted">{t("lastName")}</label><input value={profile.last_name ?? ""} readOnly />
             <p className="muted" style={{fontSize:12}}>{t("nameLocked")}</p>
