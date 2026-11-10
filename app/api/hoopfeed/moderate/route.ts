@@ -56,7 +56,7 @@ function adminClient() {
 // decides whether a post is visible before privileged write operations.
 async function canReadPostAsViewer(postId: string, token: string): Promise<boolean> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anonKey) throw new Error("Missing public Supabase configuration.");
   const viewerDb = createClient(url, anonKey, {
     global: { headers: { Authorization: `Bearer ${token}` } },
