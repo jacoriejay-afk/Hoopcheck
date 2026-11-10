@@ -52,6 +52,7 @@ export default function TeamsPage() {
 
   const [loading, setLoading] = useState(true);
   const [viewerRole, setViewerRole] = useState("");
+  const [trustResolved, setTrustResolved] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
@@ -175,15 +176,21 @@ export default function TeamsPage() {
     if (!teams.length) { setTrustScores({}); setFollowerCounts({}); return; }
     let active = true;
     const ids = teams.map(team => team.id).filter(Boolean);
+    setTrustResolved(false);
     void (async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      if (active && session?.user) {
+        const { data: localProfile } = await supabase.from("profiles").select("account_type").eq("id", session.user.id).maybeSingle();
+        if (active && localProfile?.account_type) setViewerRole(current => current || localProfile.account_type);
+      }
       const response = await fetch(`/api/trust-score?entityType=team&entityIds=${ids.map(encodeURIComponent).join(",")}`, {
         headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}, cache: "no-store",
       });
       const payload = response.ok ? await response.json() : null;
-      if (active) setViewerRole(payload?.accountType || "");
+      if (active && payload?.accountType) setViewerRole(payload.accountType);
       if (active && payload?.scores) setTrustScores(payload.scores as Record<string, TrustSummary>);
-    })().catch(() => { if (active) setTrustScores({}); });
+      if (active) setTrustResolved(true);
+    })().catch(() => { if (active) { setTrustScores({}); setTrustResolved(true); } });
     return () => { active = false; };
   }, [teams]);
 
@@ -357,7 +364,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           teams.map((team) => (
-            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} followerCount={followerCounts[team.id] ?? null} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={trustScores[team.id]?.tier || "free"} viewerRole={viewerRole} logoUrl={team.logo_url} logoBg={team.logo_bg} />
+            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} followerCount={followerCounts[team.id] ?? null} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={trustResolved ? (trustScores[team.id]?.tier || "free") : "unknown"} viewerRole={viewerRole} logoUrl={team.logo_url} logoBg={team.logo_bg} />
           ))
         )}
       </section>
