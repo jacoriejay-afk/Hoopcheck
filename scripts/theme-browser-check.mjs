@@ -280,6 +280,17 @@ try {
         fullPage: true,
         animations: "disabled",
       });
+      if (routeName === "dashboard") {
+        const menuToggle = page.locator(".hc-mobile-menu-toggle");
+        const feedTab = page.getByRole("navigation", { name: "Mobile navigation" }).getByRole("link", { name: "HoopFeed" });
+        await page.locator('.bottom-nav a[href="/feed"]:not([aria-disabled="true"])').waitFor();
+        await menuToggle.click();
+        assert.equal(await menuToggle.getAttribute("aria-expanded"), "true");
+        await feedTab.click();
+        await page.waitForURL("**/feed");
+        await page.locator('.hc-mobile-menu-toggle[aria-expanded="false"]').waitFor({ timeout: 5000 });
+        console.log("MOBILE_MENU_DISMISSAL=PASS", theme, testLanguage);
+      }
       await context.close();
     }
   }
