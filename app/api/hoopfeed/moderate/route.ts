@@ -52,6 +52,24 @@ function adminClient() {
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
+// Resolve post access with the caller's JWT so database RLS, not the service role,
+// decides whether a post is visible before privileged write operations.
+async function canReadPostAsViewer(postId: string, token: string): Promise<boolean> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) throw new Error("Missing public Supabase configuration.");
+  const viewerDb = createClient(url, anonKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { data, error } = await viewerDb.from("feed_posts").select("id").eq("id", postId).maybeSingle();
+  if (error) {
+    console.error("HoopFeed viewer access check failed", { code: error.code });
+    return false;
+  }
+  return Boolean(data);
+}
+
 async function moderate(text: string, image: File | null) {
   // Apply deterministic checks even when the external moderation provider is unavailable.
   // This never allows content through without the required AI moderation result.
@@ -147,10 +165,14 @@ export async function POST(request: Request) {
     if (text.length > MAX_TEXT_LENGTH) {
       return NextResponse.json({ allowed: false, message: "Text must be 2,000 characters or fewer." }, { status: 413 });
     }
+    // Reject unsupported media field shapes instead of silently treating them as absent.
+    if (form.getAll("image").length > 1) return NextResponse.json({ allowed: false, message: "Attach the primary image only once." }, { status: 400 });
+    if (form.getAll("image").some((value) => !(value instanceof File)) || form.getAll("images").some((value) => !(value instanceof File))) return NextResponse.json({ allowed: false, message: "Image attachments must be files." }, { status: 400 });
     const imageValue = form.get("image");
     const image = imageValue instanceof File && imageValue.size > 0 ? imageValue : null;
     const extraImages = form.getAll("images").filter((v): v is File => v instanceof File && v.size > 0);
-    const allImages: File[] = [...(image ? [image] : []), ...extraImages].slice(0, 4);
+    const allImages: File[] = [...(image ? [image] : []), ...extraImages];
+    if (allImages.length > 4) return NextResponse.json({ allowed: false, message: "Add no more than four images per post." }, { status: 400 });
     for (const f of extraImages) {
       if (!ALLOWED_IMAGE_TYPES.has(f.type)) {
         return NextResponse.json({ allowed: false, message: "Use a JPEG, PNG, or WebP image." }, { status: 400 });
@@ -164,10 +186,15 @@ export async function POST(request: Request) {
     if (image && !ALLOWED_IMAGE_TYPES.has(image.type)) {
       return NextResponse.json({ allowed: false, message: "Use a JPEG, PNG, or WebP image." }, { status: 400 });
     }
-    if (videoPath && (!ALLOWED_VIDEO_TYPES.has(videoType) || !videoPath.startsWith(user.id + "/") || videoPath.includes("..") || videoPath.length > 240)) return NextResponse.json({ allowed:false, message:"Invalid video upload. Choose a supported video and try again." }, { status:400 });
+    const videoExtensionMatchesType: Record<string, RegExp> = {
+      "video/mp4": /\.mp4$/i,
+      "video/webm": /\.webm$/i,
+      "video/quicktime": /\.mov$/i,
+    };
+    if (videoPath && (!ALLOWED_VIDEO_TYPES.has(videoType) || !videoPath.startsWith(user.id + "/") || videoPath.includes("..") || videoPath.length > 240 || !videoExtensionMatchesType[videoType]?.test(videoPath))) return NextResponse.json({ allowed:false, message:"Invalid video upload. Choose a supported video and try again." }, { status:400 });
     if (videoPath && !text) return NextResponse.json({ allowed:false, message:"Add a caption so HoopCheck can run text safety checks before publishing a video." }, { status:400 });
-    if (kind === "comment" && (image || videoPath)) {
-      return NextResponse.json({ allowed: false, message: "Photos and videos can only be added to posts." }, { status: 400 });
+    if (kind !== "post" && (image || extraImages.length > 0 || videoPath)) {
+      return NextResponse.json({ allowed: false, message: "Media uploads are only supported when creating a post." }, { status: 400 });
     }
 
     const { data: profile } = await db.from("profiles").select("account_type,current_country,current_country_public").eq("id", user.id).maybeSingle();
@@ -195,11 +222,13 @@ export async function POST(request: Request) {
     // Poll vote: one vote per member per poll; voting again changes the vote.
     if (kind === "vote") {
       const postId = String(form.get("post_id") || "").trim();
-      const optionIndex = Number(form.get("option_index"));
+      const optionIndexRaw = form.get("option_index");
+      const optionIndex = optionIndexRaw === null || String(optionIndexRaw).trim() === "" ? NaN : Number(optionIndexRaw);
       if (!postId || !Number.isInteger(optionIndex)) return NextResponse.json({ allowed: false, message: "That vote didn't go through. Please try again." }, { status: 400 });
-      const { data: poll } = await db.from("feed_posts").select("id,status,post_kind,poll_options").eq("id", postId).maybeSingle();
+      if (!(await canReadPostAsViewer(postId, token))) return NextResponse.json({ allowed: false, message: "This poll is no longer available." }, { status: 404 });
+      const { data: poll } = await db.from("feed_posts").select("id,status,expires_at,post_kind,poll_options").eq("id", postId).maybeSingle();
       const options = Array.isArray(poll?.poll_options) ? poll.poll_options as string[] : [];
-      if (!poll || poll.status !== "approved" || poll.post_kind !== "poll" || optionIndex < 0 || optionIndex >= options.length) {
+      if (!poll || poll.status !== "approved" || !poll.expires_at || new Date(poll.expires_at).getTime() <= Date.now() || poll.post_kind !== "poll" || optionIndex < 0 || optionIndex >= options.length) {
         return NextResponse.json({ allowed: false, message: "This poll is no longer available." }, { status: 404 });
       }
       const { error } = await db.from("feed_poll_votes").upsert({ post_id: postId, user_id: user.id, option_index: optionIndex }, { onConflict: "post_id,user_id" });
@@ -210,11 +239,14 @@ export async function POST(request: Request) {
     // Save / unsave a post (bookmark).
     if (kind === "bookmark") {
       const postId = String(form.get("post_id") || "").trim();
-      const saved = String(form.get("saved") || "") === "true";
+      const savedValue = String(form.get("saved") || "");
+      if (savedValue !== "true" && savedValue !== "false") return NextResponse.json({ allowed: false, message: "Choose whether to save or remove this post." }, { status: 400 });
+      const saved = savedValue === "true";
       if (!postId) return NextResponse.json({ allowed: false, message: "Couldn't update your saved posts. Please try again." }, { status: 400 });
       if (saved) {
-        const { data: post } = await db.from("feed_posts").select("id,status").eq("id", postId).maybeSingle();
-        if (!post || post.status !== "approved") return NextResponse.json({ allowed: false, message: "This post is no longer available." }, { status: 404 });
+        if (!(await canReadPostAsViewer(postId, token))) return NextResponse.json({ allowed: false, message: "This post is no longer available." }, { status: 404 });
+        const { data: post } = await db.from("feed_posts").select("id,status,expires_at").eq("id", postId).maybeSingle();
+        if (!post || post.status !== "approved" || !post.expires_at || new Date(post.expires_at).getTime() <= Date.now()) return NextResponse.json({ allowed: false, message: "This post is no longer available." }, { status: 404 });
         const { error } = await db.from("feed_post_bookmarks").upsert({ post_id: postId, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
         if (error) return NextResponse.json({ allowed: false, message: "Couldn't save this post. Please try again." }, { status: 400 });
       } else {
@@ -228,10 +260,17 @@ export async function POST(request: Request) {
     if (kind === "pin") {
       if (!isAdmin) return NextResponse.json({ allowed: false, message: "Only HoopCheck can pin posts." }, { status: 403 });
       const postId = String(form.get("post_id") || "").trim();
-      const pinned = String(form.get("pinned") || "") === "true";
+      const pinnedValue = String(form.get("pinned") || "");
+      if (pinnedValue !== "true" && pinnedValue !== "false") return NextResponse.json({ allowed: false, message: "Choose whether to pin or unpin this post." }, { status: 400 });
+      const pinned = pinnedValue === "true";
       if (!postId) return NextResponse.json({ allowed: false, message: "Couldn't update the pin. Please try again." }, { status: 400 });
-      const { error } = await db.from("feed_posts").update({ is_pinned: pinned, pinned_at: pinned ? new Date().toISOString() : null }).eq("id", postId);
-      if (error) return NextResponse.json({ allowed: false, message: "Couldn't update the pin. Please try again." }, { status: 400 });
+      // Only approved, unexpired posts may be newly pinned; unpin remains available for cleanup.
+      if (pinned) {
+        const { data: post } = await db.from("feed_posts").select("id,status,expires_at").eq("id", postId).maybeSingle();
+        if (!post || post.status !== "approved" || !post.expires_at || new Date(post.expires_at).getTime() <= Date.now()) return NextResponse.json({ allowed: false, message: "Only active approved posts can be pinned." }, { status: 404 });
+      }
+      const { data: updated, error } = await db.from("feed_posts").update({ is_pinned: pinned, pinned_at: pinned ? new Date().toISOString() : null }).eq("id", postId).select("id").maybeSingle();
+      if (error || !updated) return NextResponse.json({ allowed: false, message: "Couldn't update the pin. Please try again." }, { status: 400 });
       return NextResponse.json({ allowed: true });
     }
 
@@ -240,21 +279,29 @@ export async function POST(request: Request) {
     if (kind === "share") {
       const sourceId = String(form.get("post_id") || "").trim();
       if (!sourceId) return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 400 });
+      if (!(await canReadPostAsViewer(sourceId, token))) return NextResponse.json({ allowed: false, message: "This post is no longer available and can\'t be shared." }, { status: 404 });
       const { data: source, error: sourceError } = await db.from("feed_posts")
-        .select("id,author_id,body,image_url,image_urls,video_url,post_kind,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,status,expires_at")
+        .select("id,author_id,shared_post_id,body,image_url,image_urls,video_url,post_kind,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,status,expires_at")
         .eq("id", sourceId).maybeSingle();
       if (sourceError) {
         console.error("HoopFeed share source lookup failed", { sourceId, code: sourceError.code });
         return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 500 });
       }
-      if (!source || source.status !== "approved") {
+      if (!source || source.status !== "approved" || !source.expires_at || new Date(source.expires_at).getTime() <= Date.now()) {
         return NextResponse.json({ allowed: false, message: "This post is no longer available and can't be shared." }, { status: 404 });
       }
+      // Cross-author reshares copy follower-only content into a different audience.
+      // Fail closed until source visibility is enforced on every reshare read.
+      if (source.author_id !== user.id) return NextResponse.json({ allowed: false, message: "Sharing another player's post is temporarily unavailable while audience privacy protections are being updated." }, { status: 403 });
+      // Prevent reshare chains from multiplying copied content and obscuring source visibility.
+      if (source.shared_post_id) return NextResponse.json({ allowed: false, message: "Share the original post instead of resharing a share." }, { status: 400 });
       if (source.post_kind === "poll") {
         return NextResponse.json({ allowed: false, message: "Polls can't be shared — vote on the original instead." }, { status: 400 });
       }
       const sharedAt = new Date();
-      const expiresAt = new Date("2100-01-01T00:00:00.000Z");
+      // A reshare must never outlive its source or its own 24-hour window.
+      // This also caps legacy source posts with incorrectly distant expiry dates.
+      const expiresAt = new Date(Math.min(new Date(source.expires_at).getTime(), sharedAt.getTime() + 24 * 60 * 60 * 1000));
       const sourceImageUrls = Array.isArray(source.image_urls) && source.image_urls.length ? source.image_urls as string[] : (source.image_url ? [source.image_url] : []);
       const { data: shared, error: shareError } = await db.from("feed_posts").insert({
         author_id: user.id, body: source.body, image_url: source.image_url, image_urls: sourceImageUrls, video_url: source.video_url, post_kind: "discussion",
@@ -281,13 +328,18 @@ export async function POST(request: Request) {
       const cleaned = Array.isArray(parsed) ? parsed.map((o) => String(o ?? "").trim().slice(0, 60)).filter(Boolean) : [];
       if (!text) return NextResponse.json({ allowed: false, message: "Add a question for your poll." }, { status: 400 });
       if (cleaned.length < 2 || cleaned.length > 4) return NextResponse.json({ allowed: false, message: "Polls need 2 to 4 options." }, { status: 400 });
+      if (new Set(cleaned.map((option) => option.toLocaleLowerCase())).size !== cleaned.length) return NextResponse.json({ allowed: false, message: "Poll options must be different." }, { status: 400 });
       if (videoPath || allImages.length) return NextResponse.json({ allowed: false, message: "Polls are text only for now — remove the photo or video." }, { status: 400 });
       pollOptions = cleaned;
     }
 
     const moderationText = kind === "post" && postKind === "poll" ? text + "\n" + (pollOptions ?? []).join("\n") : text;
-    const result = await moderate(moderationText, allImages[0] ?? null);
-    if (!result.allowed) return NextResponse.json({ allowed: false, message: result.message }, { status: result.status });
+    // Moderate every attachment: checking only the first image leaves additional images unreviewed.
+    // Text-only posts and comments still receive one moderation check.
+    for (const attachment of allImages.length ? allImages : [null]) {
+      const result = await moderate(moderationText, attachment);
+      if (!result.allowed) return NextResponse.json({ allowed: false, message: result.message }, { status: result.status });
+    }
 
     // Moderate every attached photo before any storage upload or publication.
     const otherPhotoResults = await Promise.all(allImages.slice(1).map(photo => moderate("", photo)));
@@ -295,10 +347,12 @@ export async function POST(request: Request) {
     if (photoRejection) return NextResponse.json({ allowed: false, message: photoRejection.message }, { status: photoRejection.status });
 
     if (kind === "comment") {
+      if (!text) return NextResponse.json({ allowed: false, message: "Write a comment before posting." }, { status: 400 });
       const postId = String(form.get("post_id") || "");
       if (!postId) return NextResponse.json({ allowed: false, message: "Post not found." }, { status: 400 });
+      if (!(await canReadPostAsViewer(postId, token))) return NextResponse.json({ allowed: false, message: "This HoopFeed post is no longer available." }, { status: 404 });
       const { data: post } = await db.from("feed_posts").select("id,author_id,expires_at,status").eq("id",postId).maybeSingle();
-      if (!post || post.status !== "approved") {
+      if (!post || post.status !== "approved" || !post.expires_at || new Date(post.expires_at).getTime() <= Date.now()) {
         return NextResponse.json({ allowed: false, message: "This HoopFeed post is no longer available." }, { status: 404 });
       }
       const { error } = await db.from("feed_post_comments").insert({ post_id:postId,author_id:user.id,body:text });
@@ -317,7 +371,20 @@ export async function POST(request: Request) {
       image_urls.push(db.storage.from("feed-images").getPublicUrl(path).data.publicUrl);
     }
     if (image_urls.length) image_url = image_urls[0];
-    if (videoPath) video_url = db.storage.from("feed-videos").getPublicUrl(videoPath).data.publicUrl;
+    if (videoPath) {
+      // Never trust a submitted storage path alone: ensure the file actually
+      // exists in the signed-in user's folder before publishing its URL.
+      const fileName = videoPath.slice(user.id.length + 1);
+      if (!fileName || fileName.includes("/")) return NextResponse.json({ allowed: false, message: "Invalid video upload path." }, { status: 400 });
+      const { data: objects, error: listError } = await db.storage.from("feed-videos").list(user.id, { search: fileName, limit: 100 });
+      const uploaded = !listError ? objects?.find((object) => object.name === fileName) : null;
+      if (!uploaded) return NextResponse.json({ allowed: false, message: "Video upload not found. Please upload again." }, { status: 400 });
+      const storedType = uploaded.metadata?.mimetype || uploaded.metadata?.contentType;
+      if (storedType && storedType !== videoType) {
+        return NextResponse.json({ allowed: false, message: "Uploaded video format does not match the selected file." }, { status: 400 });
+      }
+      video_url = db.storage.from("feed-videos").getPublicUrl(videoPath).data.publicUrl;
+    }
     const shareCountry = String(form.get("share_country") || "false") === "true";
     const submittedCountry = String(form.get("post_country") || "").trim().slice(0, 100);
     const { error } = await db.from("feed_posts").insert({
@@ -328,7 +395,7 @@ export async function POST(request: Request) {
       game_day_score_for: submittedTopicTag === "Game Day" ? scoreFor : null,
       game_day_score_against: submittedTopicTag === "Game Day" ? scoreAgainst : null,
       location_country:shareCountry && profile?.current_country_public !== false ? (submittedCountry || profile?.current_country || null) : null,
-      status:"approved", expires_at:new Date("2100-01-01T00:00:00.000Z").toISOString()
+      status:"approved", expires_at:new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     });
     if (error) return NextResponse.json({ allowed:false,message:"We couldn't publish your post. Please try again." },{status:400});
     const activityDate = new Date().toISOString().slice(0, 10);
