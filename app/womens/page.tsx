@@ -2,6 +2,7 @@
 
 import { supabase } from "../../lib/supabase";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
+import "../hoopcheck-reference-team-list.css";
 import { useEffect, useMemo, useState } from "react";
 import DirectoryLayout from "../../components/DirectoryLayout";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
@@ -35,20 +36,31 @@ export default function Womens() {
   useEffect(() => {
     let mounted = true;
     async function load() {
-      const [teamResult, leagueResult] = await Promise.all([
-        supabase.from("womens_teams")
-          .select("id,name,country,city,league_id,league_name,logo_url,logo_bg")
-          .eq("active", true).order("name"),
-        supabase.from("womens_leagues")
+      try {
+        // Page through the directory rather than silently truncating at the API row limit.
+        const allTeams: WomensTeam[] = [];
+        for (let offset = 0; offset < 10000; offset += 500) {
+          const result = await supabase.from("womens_teams")
+            .select("id,name,country,city,league_id,league_name,logo_url,logo_bg")
+            .eq("active", true).order("name").order("id")
+            .range(offset, offset + 499);
+          if (result.error) throw result.error;
+          if (!mounted) return;
+          allTeams.push(...((result.data || []) as WomensTeam[]));
+          if (!result.data || result.data.length < 500) break;
+        }
+        const leagueResult = await supabase.from("womens_leagues")
           .select("id,name,country,level")
-          .eq("active", true).order("name"),
-      ]);
-      if (!mounted) return;
-      if (teamResult.error) console.error("Unable to load women's teams:", teamResult.error);
-      if (leagueResult.error) console.error("Unable to load women's leagues:", leagueResult.error);
-      setTeams(teamResult.data || []);
-      setLeagues(leagueResult.data || []);
-      setLoading(false);
+          .eq("active", true).order("name");
+        if (!mounted) return;
+        if (leagueResult.error) console.error("Unable to load women's leagues:", leagueResult.error);
+        setTeams(Array.from(new Map(allTeams.map((team) => [team.id, team])).values()));
+        setLeagues(leagueResult.data || []);
+      } catch (error) {
+        console.error("Unable to load women's directory:", error);
+      } finally {
+        if (mounted) setLoading(false);
+      }
     }
     void load();
     return () => { mounted = false; };
@@ -104,7 +116,7 @@ export default function Womens() {
           <button type="button" className={viewMode === "list" ? "is-active" : ""} onClick={() => setViewMode("list")}>☷ {t("list")}</button>
           <button type="button" className={viewMode === "map" ? "is-active" : ""} onClick={() => setViewMode("map")}>◎ {t("map")}</button>
         </div>
-        {loading ? <div className="hc-womens-loading"><HoopLoading label={t("loadingWomensTeams")} /></div> : viewMode === "map" ? (
+        {loading ? <div className="hc-womens-loading"><HoopLoading variant="inline" label={t("loadingWomensTeams")} /></div> : viewMode === "map" ? (
           <TeamMap profileBasePath="womens" teams={filtered.map(team => ({...team, latitude:null, longitude:null}))} />
         ) : filtered.length ? (
           <section className="hc-womens-team-list" aria-label={t("womensTeamResults")}>

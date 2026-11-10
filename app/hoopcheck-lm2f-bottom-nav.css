@@ -20,7 +20,7 @@
     padding: 5px 0 calc(5px + env(safe-area-inset-bottom, 0px)) !important;
     box-sizing: border-box !important;
     overflow: visible !important;
-    background: var(--hc-nav-bg, #0A0A0A) !important;
+    background: var(--hc-tab-bg) !important;
     border: 0 !important;
     border-top: 1px solid var(--hc-border, #444) !important;
     border-radius: 0 !important;
@@ -54,7 +54,7 @@
     box-sizing: border-box !important;
     overflow: visible !important;
     background: transparent !important;
-    color: var(--hc-foreground, #F7F7F5) !important;
+    color: var(--hc-tab-fg) !important;
     -webkit-text-fill-color: currentColor !important;
     opacity: 1 !important;
     visibility: visible !important;
@@ -64,8 +64,8 @@
   }
 
   html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active {
-    color: #FF5A1F !important;
-    -webkit-text-fill-color: #FF5A1F !important;
+    color: var(--hc-nav-active-fg) !important;
+    -webkit-text-fill-color: var(--hc-nav-active-fg) !important;
     background: transparent !important;
   }
 
@@ -149,25 +149,25 @@
   }
 
   html.theme-light body nav.hc-lm2f-bottom-nav {
-    background: var(--hc-nav-bg, #F7F7F5) !important;
-    border-top-color: var(--hc-border, #D8D8D2) !important;
+    background: var(--hc-tab-bg) !important;
+    border-top-color: var(--hc-card-border) !important;
   }
   html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab,
   html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab:link,
   html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab:visited {
-    color: var(--hc-foreground, #22221F) !important;
+    color: var(--hc-tab-fg) !important;
     -webkit-text-fill-color: currentColor !important;
   }
   html.theme-dark body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab,
   html.theme-dark body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab:link,
   html.theme-dark body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab:visited {
-    color: var(--hc-foreground, #F7F7F5) !important;
+    color: var(--hc-tab-fg) !important;
     -webkit-text-fill-color: currentColor !important;
   }
   html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active,
   html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active,
   html.theme-dark body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active {
-    color: #FF5A1F !important;
-    -webkit-text-fill-color: #FF5A1F !important;
+    color: var(--hc-nav-active-fg) !important;
+    -webkit-text-fill-color: var(--hc-nav-active-fg) !important;
   }
 }

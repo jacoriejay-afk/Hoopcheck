@@ -27,7 +27,25 @@ const labels: Record<string,string> = {
 export default function AdminAnalyticsPage(){
   const [kpis,setKpis]=useState<Record<string,number>|null>(null);
   const [error,setError]=useState("");
-  useEffect(()=>{supabase.rpc("get_hoopcheck_kpis").then(({data,error})=>{if(error)setError(error.message);else setKpis((data||{}) as Record<string,number>);});},[]);
+  useEffect(() => {
+    let active = true;
+
+    void (async () => {
+      try {
+        const { data, error } = await supabase.rpc("get_hoopcheck_kpis");
+        if (error) throw error;
+        if (active) {
+          setKpis((data || {}) as Record<string, number>);
+          setError("");
+        }
+      } catch (error) {
+        console.error("Unable to load HoopCheck analytics:", error);
+        if (active) setError(error instanceof Error ? error.message : "Unable to load analytics right now.");
+      }
+    })();
+
+    return () => { active = false; };
+  }, []);
   return <main className="page-shell admin-light-shell"><div className="page-container">
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/admin/users">Users</Link><Link href="/admin/reviews">Reviews</Link><Link href="/admin/support">Support</Link></nav></header>
     <section className="hero-card"><div><p className="eyebrow">FOUNDER ANALYTICS</p><h1>HoopCheck KPI Dashboard</h1><p className="muted">Your operating dashboard for growth, subscriptions, reviews, safety, content and support.</p></div></section>

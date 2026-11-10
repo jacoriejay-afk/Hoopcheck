@@ -1,0 +1,107 @@
+/* LG-1: locked logo and control contrast pairs. Imported after all legacy styles. */
+:root {
+  --hc-brand-ink: #0A0A0A;
+  --hc-brand-paper: #F7F7F5;
+  --hc-brand-orange: #FF5A1F;
+  --hc-button-light-bg: #FF5A1F;
+  --hc-button-light-fg: #0A0A0A;
+  --hc-button-dark-bg: #0A0A0A;
+  --hc-button-dark-fg: #F7F7F5;
+}
+html.theme-light {
+  --hc-logo-ink: #0A0A0A;
+  --hc-logo-paper: #0A0A0A;
+  --hc-control-bg: #FF5A1F;
+  --hc-control-fg: #0A0A0A;
+}
+html.theme-dark {
+  --hc-logo-ink: #F7F7F5;
+  --hc-logo-paper: #F7F7F5;
+  --hc-control-bg: #FF5A1F;
+  --hc-control-fg: #0A0A0A;
+}
+
+/* Logo artwork never inherits header, footer, or page text colours. */
+html .hc-logo { color: var(--hc-logo-ink, #0A0A0A) !important; }
+html .hc-logo__icon { color: var(--hc-logo-ink, #0A0A0A) !important; stroke: var(--hc-logo-ink, #0A0A0A) !important; }
+html .hc-logo__icon .hc-logo__check { stroke: #FF5A1F !important; }
+html .hc-logo__wordmark { color: var(--hc-logo-ink, #0A0A0A) !important; }
+html .hc-logo__wordmark .hc-logo__hoop { color: var(--hc-logo-ink, #0A0A0A) !important; }
+html .hc-logo__wordmark .hc-logo__check-word { color: #FF5A1F !important; }
+html.theme-light .hc-logo,
+html.theme-light .hc-logo__icon,
+html.theme-light .hc-logo__wordmark,
+html.theme-light .hc-logo__wordmark .hc-logo__hoop { color: #0A0A0A !important; }
+html.theme-dark .hc-logo,
+html.theme-dark .hc-logo__icon,
+html.theme-dark .hc-logo__wordmark,
+html.theme-dark .hc-logo__wordmark .hc-logo__hoop { color: #F7F7F5 !important; }
+html .hc-logo__icon .hc-logo__check,
+html.theme-light .hc-logo__icon .hc-logo__check,
+html.theme-dark .hc-logo__icon .hc-logo__check,
+html .hc-logo__wordmark .hc-logo__check-word { color: #FF5A1F !important; stroke: #FF5A1F !important; }
+html .site-header-global .hc-logo,
+html .site-footer .hc-logo,
+html .hc-auth-logo .hc-logo,
+html .hoop-loading-copy .hc-logo { color: inherit; }
+
+/* Paired control tokens: never allow foreground to fall back to page text. */
+html :where(.btn, .hc-signin-button, .hc-dashboard-edit-profile, .admin-primary-action) {
+  background: var(--hc-button-light-bg) !important;
+  color: var(--hc-button-light-fg) !important;
+  -webkit-text-fill-color: var(--hc-button-light-fg) !important;
+  border-color: var(--hc-button-light-bg) !important;
+}
+html :where(.btn, .hc-signin-button, .hc-dashboard-edit-profile, .admin-primary-action) :where(span,strong,b,svg) {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+html :where(.btn.dark, .hc-dashboard-edit-profile.is-dark) {
+  background: var(--hc-button-dark-bg) !important;
+  color: var(--hc-button-dark-fg) !important;
+  -webkit-text-fill-color: var(--hc-button-dark-fg) !important;
+  border-color: var(--hc-button-dark-bg) !important;
+}
+html :where(.btn.dark, .hc-dashboard-edit-profile.is-dark) :where(span,strong,b,svg) {
+  color: var(--hc-button-dark-fg) !important;
+  -webkit-text-fill-color: var(--hc-button-dark-fg) !important;
+}
+
+/* Badge and pill text always uses the foreground paired with its surface. */
+html :where(.badge, .pill, [class*="badge"], [class*="chip"], [class*="pill"]) {
+  text-shadow: none;
+}
+html :where(.hc-dashboard-membership-badge, .hc-mobile-section-count, .quick-access-count, .quick-card-count, .count-badge, .hc-count-badge) {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  -webkit-text-fill-color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+html :where(.hc-dashboard-membership-badge, .hc-mobile-section-count, .quick-access-count, .quick-card-count, .count-badge, .hc-count-badge) :where(span,strong,b) {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+/* No-photo avatars always show the initial with a contrasting surface pair. */
+html.theme-light :where(.hc-dashboard-avatar, .hc-account-settings-avatar, .player-avatar-fallback) {
+  background: #0A0A0A !important;
+  color: #F7F7F5 !important;
+  -webkit-text-fill-color: #F7F7F5 !important;
+  border-color: #0A0A0A !important;
+}
+html.theme-dark :where(.hc-dashboard-avatar, .hc-account-settings-avatar, .player-avatar-fallback) {
+  background: #F7F7F5 !important;
+  color: #0A0A0A !important;
+  -webkit-text-fill-color: #0A0A0A !important;
+  border-color: #F7F7F5 !important;
+}
+html :where(.hc-dashboard-avatar, .hc-account-settings-avatar, .player-avatar-fallback) > span {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+html :where(.hc-account-settings-avatar, .hc-dashboard-avatar) img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}

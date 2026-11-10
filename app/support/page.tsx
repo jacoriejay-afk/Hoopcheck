@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../components/HoopLoading";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
@@ -196,7 +197,7 @@ export default function SupportPage() {
         <section className="dashboard-card" style={{ marginTop: 18 }}>
           <p className="eyebrow">MY TICKETS</p>
           {loading ? (
-            <p className="muted">Loading...</p>
+            <HoopLoading variant="inline" label="Loading..." />
           ) : tickets.length === 0 ? (
             <p className="muted">No tickets yet.</p>
           ) : (

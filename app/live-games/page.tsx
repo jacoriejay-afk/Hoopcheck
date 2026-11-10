@@ -12,6 +12,7 @@ import { getGameAvailability, formatViewerLocalTime } from "../../lib/game-avail
 import { HoopIcon } from "../../components/HoopCheckUI";
 import TeamLogo from "../../components/TeamLogo";
 import "./live-games-chat.css";
+import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 
 type Game = {
   id: string;
@@ -32,11 +33,7 @@ type Game = {
 type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null; country?: string | null; league_name?: string | null };
 type Filter = "all" | "live" | "my-teams";
 
-const activeSubscription = (subscription: {plan?: string|null;status?: string|null;current_period_end?: string|null} | null) =>
-  !!subscription &&
-  (subscription.plan === "pro" || subscription.plan === "premium") &&
-  (subscription.status === "active" || subscription.status === "trialing") &&
-  (!subscription.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now());
+
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase() || "HC";
@@ -76,9 +73,10 @@ export default function LiveGamesPage() {
     setUserId(user.id);
     const [{ data: profile }, { data: subscription }] = await Promise.all([
       supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
-      supabase.from("subscriptions").select("plan,status,current_period_end").eq("user_id", user.id).maybeSingle(),
+      supabase.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id", user.id).maybeSingle(),
     ]);
-    const isAllowed = profile?.account_type === "fan" && activeSubscription(subscription);
+    const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription });
+    const isAllowed = entitlements.canUseLiveGameHub;
     setAllowed(isAllowed);
     if (!isAllowed) { setGames([]); setLoading(false); return; }
 
@@ -93,9 +91,16 @@ export default function LiveGamesPage() {
     if (gamesResult.error) setMessage("Game schedules are temporarily unavailable. Please refresh in a moment.");
     const rawGames = (gamesResult.data || []) as Game[];
     const candidateIds = Array.from(new Set(rawGames.flatMap(game => [game.team_id, game.opponent_team_id].filter((id): id is string => Boolean(id)))));
-    const { data: sideRows } = candidateIds.length ? await supabase.from("teams").select("id").in("id", candidateIds).eq("basketball_type", basketballSide === "womens" ? "womens" : "mens") : { data: [] as {id:string}[] };
-    const sideIds = new Set((sideRows || []).map((row:any) => row.id));
-    const nextGames = rawGames.filter(game => sideIds.has(game.team_id));
+    const [{ data: sideRows }, { data: womensSideRows }] = await Promise.all([
+      candidateIds.length
+        ? supabase.from("teams").select("id").in("id", candidateIds).eq("basketball_type", basketballSide === "womens" ? "womens" : "mens")
+        : Promise.resolve({ data: [] as {id:string}[] }),
+      basketballSide === "womens" && candidateIds.length
+        ? supabase.from("womens_teams").select("id").in("id", candidateIds)
+        : Promise.resolve({ data: [] as {id:string}[] }),
+    ]);
+    const sideIds = new Set([...(sideRows || []), ...(womensSideRows || [])].map((row:any) => row.id));
+    const nextGames = rawGames.filter(game => sideIds.has(game.team_id) || sideIds.has(game.opponent_team_id || ""));
     const follows = (followsResult.data || []).map((row: {target_id:string}) => row.target_id);
     setFollowedIds(follows);
     setGames(nextGames);
@@ -103,8 +108,13 @@ export default function LiveGamesPage() {
 
     const ids = Array.from(new Set(nextGames.flatMap(game => [game.team_id, game.opponent_team_id].filter((id): id is string => Boolean(id)))));
     if (ids.length) {
-      const { data: teamRows } = await supabase.from("teams").select("id,name,logo_url,logo_bg,country,league_name").in("id", ids);
-      setTeams(Object.fromEntries((teamRows || []).map((team: Team) => [team.id, team])));
+      const [{ data: teamRows }, { data: womensTeamRows }] = await Promise.all([
+        supabase.from("teams").select("id,name,logo_url,logo_bg,country,league_name").in("id", ids),
+        basketballSide === "womens"
+          ? supabase.from("womens_teams").select("id,name,logo_url,logo_bg,country,league_name").in("id", ids)
+          : Promise.resolve({ data: [] as Team[] }),
+      ]);
+      setTeams(Object.fromEntries([...(teamRows || []), ...(womensTeamRows || [])].map((team: Team) => [team.id, team])));
     } else setTeams({});
 
     const freshAfter = new Date(Date.now() - 75_000).toISOString();
@@ -151,7 +161,7 @@ export default function LiveGamesPage() {
     if (filter === "live" && !(availability.state === "LIVE" && availability.phase !== "post-game")) return false;
     if (filter === "my-teams" && !followedIds.some(id => id === game.team_id || id === game.opponent_team_id)) return false;
     const search = query.trim().toLocaleLowerCase();
-    if (search && ![home?.name, away?.name, game.opponent_name, leagueName].some(value => value?.toLocaleLowerCase().includes(search))) return false;
+    if (search && ![home?.name, away?.name, game.opponent_name, leagueName, game.country, home?.country, away?.country].some(value => value?.toLocaleLowerCase().includes(search))) return false;
     return true;
   }), [prepared, leagueFilter, filter, followedIds, query, teams]);
 
@@ -226,7 +236,7 @@ export default function LiveGamesPage() {
           </div>
         </div>
         <div className="hc-live-card__meta">
-          {isLive && <span><HoopIcon name="users" size={15} /> {presenceCounts[game.id] || 0} {presenceCounts[game.id] === 1 ? "fan chatting" : "fans chatting"}</span>}
+          {isLive && <span><HoopIcon name="users" size={15} /> {presenceCounts[game.id] || 0} {presenceCounts[game.id] === 1 ? "member chatting" : "members chatting"}</span>}
           {isUpcoming && <span><HoopIcon name="calendar" size={15} /> {formatViewerLocalTime(tip)}</span>}
           {isRecent && <span><HoopIcon name="check" size={15} /> Chat closed</span>}
           {variant === "postgame" && <span><HoopIcon name="message-square" size={15} /> Post-game chat remains open</span>}
@@ -244,13 +254,13 @@ export default function LiveGamesPage() {
   }
 
   if (loading) return <main className="page-shell hc-live-hub-page"><div className="page-container"><HoopLoading label="Loading Live Games..." /></div></main>;
-  if (!userId) return <main className="page-shell hc-live-hub-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">FAN COMMUNITY</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in as a Pro or Premium Fan to discover games and join live conversations.</p><Link href="/login" className="btn">Sign in</Link></section></div></main>;
-  if (!allowed) return <main className="page-shell hc-live-hub-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM FANS</p><h1>LIVE GAME CHAT</h1><p className="muted">Watch together. Chat live with fans during real games.</p><p className="muted">An active Pro or Premium Fan membership is required to join live game chat.</p><Link href="/membership" className="btn">Explore Membership</Link></section></div></main>;
+  if (!userId) return <main className="page-shell hc-live-hub-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">LIVE GAME HUB</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in to discover live and upcoming games and join game conversations.</p><Link href="/login" className="btn">Sign in</Link></section></div></main>;
+  if (!allowed) return <main className="page-shell hc-live-hub-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM MEMBERS</p><h1>MEMBERSHIP REQUIRED</h1><p className="muted">Watch together. Follow live and upcoming games, and join the conversation.</p><p className="muted">An active Pro or Premium membership is required to open the Live Game Hub and join game chats.</p><Link href="/membership" className="btn">Explore Membership</Link></section></div></main>;
 
   return <main className="page-shell hc-live-hub-page">
       <FanBasketballSideSwitch /><div className="page-container">
     <header className="hc-live-hub-hero">
-      <div><p className="eyebrow">HOOPCHECK · FAN HQ</p><h1>LIVE GAME CHAT<span>.</span></h1><p>Watch together. Chat live with fans during real games.</p></div>
+      <div><p className="eyebrow">HOOPCHECK · LIVE GAME HUB</p><h1>LIVE GAME CHAT<span>.</span></h1><p>Watch together. Follow live and upcoming games, and join the conversation.</p></div>
       <div className="hc-live-hero-orbit" aria-hidden="true"><span /><span /><span /></div>
     </header>
 
@@ -261,7 +271,7 @@ export default function LiveGamesPage() {
         )}
       </div>
       <div className="hc-live-hub-filter-tools">
-        <SearchBar value={query} onChange={setQuery} onSubmit={() => {}} placeholder="Search teams or leagues…" ariaLabel="Search games by team or league" buttonLabel="Search" className="hc-live-hub-search" />
+        <SearchBar value={query} onChange={setQuery} onSubmit={() => {}} placeholder="Search country, team, or league…" ariaLabel="Search games by country, team, or league" buttonLabel="Search" className="hc-live-hub-search" />
         <label className="hc-live-league-select"><span>League</span><select value={leagueFilter} onChange={event => setLeagueFilter(event.target.value)}><option value="">All leagues</option>{leagues.map(league => <option key={league} value={league}>{league}</option>)}</select></label>
       </div>
     </section>

@@ -182,7 +182,7 @@ html.theme-dark main:not(.hc-template-home) :where(.card,.panel,.settings-card,.
 }
 html.theme-light main:not(.hc-template-home) :where(.card,.panel,.settings-card,.profile-card,.review-card,.quick-card,.form-card,.modal-content,.modal-panel,.hc-prediction) :where(h1,h2,h3,h4,p,span,strong,small,label,li,dt,dd) { color: var(--hc-content-ink) !important; }
 html.theme-dark main:not(.hc-template-home) :where(.card,.panel,.settings-card,.profile-card,.review-card,.quick-card,.form-card,.modal-content,.modal-panel,.hc-prediction) :where(h1,h2,h3,h4,p,span,strong,small,label,li,dt,dd) { color: var(--hc-content-ink) !important; }
-html.theme-light main:not(.hc-template-home) :where(input,textarea,select) { background: var(--hc-surface-raised, #F7F7F5) !important; color: #171717 !important; -webkit-text-fill-color: #171717 !important; }
+html.theme-light main:not(.hc-template-home) :where(input,textarea,select) { background: var(--hc-surface) !important; color: #171717 !important; -webkit-text-fill-color: #171717 !important; }
 html.theme-dark main:not(.hc-template-home) :where(input,textarea,select) { background: #1B1B1B !important; color: #F5F5F0 !important; -webkit-text-fill-color: #F5F5F0 !important; }
 html.theme-light main:not(.hc-template-home) :where(input,textarea,select)::placeholder { color: #666660 !important; -webkit-text-fill-color: #666660 !important; }
 html.theme-dark main:not(.hc-template-home) :where(input,textarea,select)::placeholder { color: #BDBDB7 !important; -webkit-text-fill-color: #BDBDB7 !important; }
@@ -333,28 +333,28 @@ html.theme-dark main:not(.hc-template-home) :where(input,textarea,select)::place
 @media (max-width: 767px) {
   html .bottom-nav.hc-bottom-tab-bar,
   html nav.bottom-nav.hc-bottom-tab-bar {
-    background: #0A0A0A !important;
-    background-color: #0A0A0A !important;
+    background: var(--hc-tab-bg) !important;
+    background-color: var(--hc-tab-bg) !important;
     opacity: 1 !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
   html .hc-bottom-tab-bar > a {
-    background: #0A0A0A !important;
+    background: var(--hc-tab-bg) !important;
     opacity: 1 !important;
-    color: #F7F7F5 !important;
+    color: var(--hc-tab-fg) !important;
   }
   html .hc-bottom-tab-bar > a :where(span, svg, path) { opacity: 1 !important; }
   html .hc-bottom-tab-bar > a.active {
     background: #20201E !important;
-    color: #FF5A1F !important;
+    color: var(--hc-nav-active-fg) !important;
     border-radius: 8px !important;
   }
   html.theme-light .bottom-nav.hc-bottom-tab-bar,
   html.theme-light nav.bottom-nav.hc-bottom-tab-bar,
-  html.theme-light .hc-bottom-tab-bar > a { background: #F7F7F5 !important; }
-  html.theme-light .hc-bottom-tab-bar > a { color: #22221F !important; }
-  html.theme-light .hc-bottom-tab-bar > a.active { background: #EAEAE5 !important; color: #D94712 !important; }
+  html.theme-light .hc-bottom-tab-bar > a { background: var(--hc-tab-bg) !important; }
+  html.theme-light .hc-bottom-tab-bar > a { color: var(--hc-tab-fg) !important; }
+  html.theme-light .hc-bottom-tab-bar > a.active { background: var(--hc-nav-active-bg) !important; color: var(--hc-nav-active-fg) !important; }
 }
 
 
@@ -375,8 +375,8 @@ html.theme-dark main:not(.hc-template-home) :where(input,textarea,select)::place
     overflow: hidden !important;
     isolation: isolate !important;
     z-index: 2147483000 !important;
-    background: #0A0A0A !important;
-    background-color: #0A0A0A !important;
+    background: var(--hc-tab-bg) !important;
+    background-color: var(--hc-tab-bg) !important;
     background-image: none !important;
     opacity: 1 !important;
     visibility: visible !important;
@@ -404,20 +404,20 @@ html.theme-dark main:not(.hc-template-home) :where(input,textarea,select)::place
     gap: 4px !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
-    background: #0A0A0A !important;
-    background-color: #0A0A0A !important;
+    background: var(--hc-tab-bg) !important;
+    background-color: var(--hc-tab-bg) !important;
     background-image: none !important;
-    color: #F7F7F5 !important;
+    color: var(--hc-tab-fg) !important;
     opacity: 1 !important;
     visibility: visible !important;
     text-decoration: none !important;
-    -webkit-text-fill-color: #F7F7F5 !important;
+    -webkit-text-fill-color: var(--hc-tab-fg) !important;
   }
   html body nav.bottom-nav.hc-bottom-tab-bar > a.active {
-    background: #242421 !important;
-    background-color: #242421 !important;
-    color: #FF5A1F !important;
-    -webkit-text-fill-color: #FF5A1F !important;
+    background: var(--hc-nav-active-bg) !important;
+    background-color: var(--hc-nav-active-bg) !important;
+    color: var(--hc-nav-active-fg) !important;
+    -webkit-text-fill-color: var(--hc-nav-active-fg) !important;
   }
   html body nav.bottom-nav.hc-bottom-tab-bar > a > span,
   html body nav.bottom-nav.hc-bottom-tab-bar > a > span *,
@@ -440,22 +440,22 @@ html.theme-dark main:not(.hc-template-home) :where(input,textarea,select)::place
     white-space: nowrap !important;
   }
   html.theme-light body nav.bottom-nav.hc-bottom-tab-bar {
-    background: #F7F7F5 !important;
-    background-color: #F7F7F5 !important;
-    border-top-color: #D4D4CE !important;
+    background: var(--hc-tab-bg) !important;
+    background-color: var(--hc-tab-bg) !important;
+    border-top-color: var(--hc-card-border) !important;
   }
   html.theme-light body nav.bottom-nav.hc-bottom-tab-bar > a,
   html.theme-light body nav.bottom-nav.hc-bottom-tab-bar > a:link,
   html.theme-light body nav.bottom-nav.hc-bottom-tab-bar > a:visited {
-    background: #F7F7F5 !important;
-    background-color: #F7F7F5 !important;
-    color: #22221F !important;
-    -webkit-text-fill-color: #22221F !important;
+    background: var(--hc-tab-bg) !important;
+    background-color: var(--hc-tab-bg) !important;
+    color: var(--hc-tab-fg) !important;
+    -webkit-text-fill-color: var(--hc-tab-fg) !important;
   }
   html.theme-light body nav.bottom-nav.hc-bottom-tab-bar > a.active {
-    background: #EAEAE5 !important;
-    background-color: #EAEAE5 !important;
-    color: #D94712 !important;
-    -webkit-text-fill-color: #D94712 !important;
+    background: var(--hc-nav-active-bg) !important;
+    background-color: var(--hc-nav-active-bg) !important;
+    color: var(--hc-nav-active-fg) !important;
+    -webkit-text-fill-color: var(--hc-nav-active-fg) !important;
   }
 }

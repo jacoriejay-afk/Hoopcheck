@@ -10,6 +10,8 @@ import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
 import GeoBadge from "../../components/GeoBadge";
+import TeamLogo from "../../components/TeamLogo";
+import { countryFlag } from "../../lib/countryFlag";
 
 type League = {
 id: string;
@@ -18,6 +20,7 @@ country: string | null;
 level: string | null;
 season: string | null;
 active: boolean;
+logo_url: string | null;
 };
 
 export default function LeaguesPage() {
@@ -33,23 +36,28 @@ const filteredLeagues = leagues.filter((league) => {
 });
 
 useEffect(() => {
+let active = true;
+
 async function loadLeagues() {
-const { data, error } = await supabase
-.from("leagues")
-.select("id, name, country, level, season, active")
-.eq("active", true)
-.order("name");
+  try {
+    const { data, error } = await supabase
+      .from("leagues")
+      .select("id, name, country, level, season, active, logo_url")
+      .eq("active", true)
+      .order("name");
 
-  if (error) {
+    if (error) throw error;
+    if (active) setLeagues(data || []);
+  } catch (error) {
     console.error("Error loading leagues:", error);
-    setLeagues([]);
-  } else {
-    setLeagues(data || []);
+    if (active) setLeagues([]);
+  } finally {
+    if (active) setLoading(false);
   }
-  setLoading(false);
 }
-loadLeagues();
 
+void loadLeagues();
+return () => { active = false; };
 }, []);
 
 return (
@@ -58,7 +66,7 @@ return (
 
   <section className="hc-league-filter" aria-label="Filter leagues">
     <label htmlFor="league-search">Find a league</label>
-    <SearchBar inputId="league-search" value={query} onChange={setQuery} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search leagues" onSubmit={setQuery} />
+    <SearchBar inputId="league-search" value={query} onChange={setQuery} placeholder="Search leagues, teams, or countries" ariaLabel="Search leagues" onSubmit={setQuery} />
     <label htmlFor="league-country">League country</label>
     <select id="league-country" value={country} onChange={(e) => setCountry(e.target.value)}>
       <option value="">All countries</option>
@@ -68,7 +76,7 @@ return (
     {(query || country) && <button type="button" className="hc-directory-reset" onClick={() => { setQuery(""); setCountry(""); }}>Clear filters</button>}
   </section>
   <section className="grid hc-team-directory-list">
-    {loading ? (<div className="card"><HoopLoading label="Scanning professional leagues..." /></div>) : leagues.length === 0 ? (
+    {loading ? (<div className="card"><HoopLoading variant="inline" label="Scanning professional leagues..." /></div>) : leagues.length === 0 ? (
       <div className="card">
         <div className="eyebrow">
           Coming Soon
@@ -94,16 +102,19 @@ return (
           className="card hc-team-row"
           key={league.id}
         >
-          <div className="eyebrow">
-            Professional League
+          <div className="hc-league-row-head">
+            <span className="hc-dir-crest hc-dir-crest--league"><TeamLogo name={league.name} logoUrl={league.logo_url} size={56} /></span>
+            <div>
+              <div className="eyebrow">
+                Professional League
+              </div>
+              <GeoBadge country={league.country} regional={league.country === "Europe"} />
+            </div>
           </div>
-          <GeoBadge country={league.country} regional={league.country === "Europe"} />
           <h2>
             {league.name}
           </h2>
-          <p>
-            {league.country || "Country not listed"}
-          </p>
+          {league.country ? <span className="hc-dir-flagchip">{countryFlag(league.country) ? <span className="hc-dir-flag" aria-hidden="true">{countryFlag(league.country)}</span> : null}<span>{league.country}</span></span> : <p>Country not listed</p>}
           <p style={{ color: "var(--orange)", fontWeight: 900 }}>Season: {league.season || "2026-27"}</p>
           {league.level && (
             <p>
@@ -125,7 +136,7 @@ return (
   </section>
   <section className="hero">
     <div className="eyebrow">
-      Player Intelligence
+      League Insight
     </div>
     <h2>
       Every league
@@ -133,8 +144,7 @@ return (
       has a story.
     </h2>
     <p>
-      Learn from the players who have already played
-      there before deciding where your career goes next.
+      Explore first-hand experiences from people who have competed in these leagues before making your next move.
     </p>
     <div className="actions">
       <Link href="/signup" className="btn">

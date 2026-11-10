@@ -3,6 +3,7 @@
 import Link from "next/link"; // Used by compact sign-in and upgrade actions.
 import { useEffect, useState } from "react";
 import { getCachedSession, supabase } from "../lib/supabase";
+import { getHoopCheckEntitlements } from "../lib/membership-tier";
 
 type RequestRow = { id:string; requester_id:string; player_id:string; message:string|null; status:string; created_at:string; };
 type MessageRow = { id:string; request_id:string; sender_id:string; body:string; created_at:string; };
@@ -10,7 +11,7 @@ type MessageRow = { id:string; request_id:string; sender_id:string; body:string;
 export default function PlayerContactButton({ playerId, compact = false }: { playerId:string; compact?: boolean }) {
   const [userId,setUserId]=useState("");
   const [accountType,setAccountType]=useState("");
-  const [premium,setPremium]=useState(false);
+  const [canAsk,setCanAsk]=useState(false);
   const [request,setRequest]=useState<RequestRow|null>(null);
   const [message,setMessage]=useState("");
   const [draft,setDraft]=useState("");
@@ -25,11 +26,15 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
     setUserId(user.id);
     const [profileResult,subscriptionResult,requestResult]=await Promise.all([
       supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle(),
-      supabase.from("subscriptions").select("plan,status").eq("user_id",user.id).maybeSingle(),
+      supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",user.id).maybeSingle(),
       supabase.from("player_contact_requests").select("id,requester_id,player_id,message,status,created_at").or(`requester_id.eq.${user.id},player_id.eq.${user.id}`).eq("player_id",playerId).maybeSingle()
     ]);
     setAccountType(profileResult.data?.account_type||"");
-    setPremium(["pro","premium"].includes(subscriptionResult.data?.plan||"") && (subscriptionResult.data?.status==="active" || subscriptionResult.data?.status==="trialing"));
+    const entitlements = getHoopCheckEntitlements({
+      accountType: profileResult.data?.account_type,
+      subscription: subscriptionResult.data,
+    });
+    setCanAsk(entitlements.canUseAskPlayer);
     const r=requestResult.data as RequestRow|null;
     setRequest(r);
     if(r?.status==="accepted"){
@@ -92,10 +97,10 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
     if (request?.status === "pending" && request.player_id === userId) {
       return <span className="contact-gate hc-contact-request-gate" style={{ display: "inline-flex", alignItems: "center", margin: 0, padding: "8px 12px" }}><strong>Request waiting</strong></span>;
     }
-    if (accountType === "player" && !premium) {
+    if (accountType === "player" && !canAsk) {
       return <Link href="/membership" className="btn">Upgrade to Add</Link>;
     }
-    if ((accountType === "player" || accountType === "scout" || accountType === "agent") && premium) {
+    if ((accountType === "player" || accountType === "scout" || accountType === "agent") && canAsk) {
       return <button className="btn" onClick={() => void sendRequest()} disabled={busy}>{busy ? "Adding..." : "Add Player"}</button>;
     }
     return null;
@@ -111,12 +116,12 @@ export default function PlayerContactButton({ playerId, compact = false }: { pla
     return <div className="contact-box hc-contact-request-card"><span className="card-kicker">HOOPCHAT</span><h3>Connected player</h3><div className="contact-messages">{messages.map(m=><div key={m.id} className={m.sender_id===userId?"contact-message mine":"contact-message"}>{m.body}<small>{new Date(m.created_at).toLocaleString()}</small></div>)}</div><textarea value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Write a message..." rows={3}/><button className="btn" onClick={()=>void sendMessage()} disabled={busy||!draft.trim()}>{busy?"Sending...":"Send Message"}</button></div>;
   }
   if(accountType==="player" && !request){
-    if(!premium)return <div className="contact-gate hc-contact-request-gate"><strong>Pro/Premium Player feature</strong><p className="muted">Upgrade to Pro or Premium to send a player request.</p></div>;
+    if(!canAsk)return <div className="contact-gate hc-contact-request-gate"><strong>Pro/Premium Player feature</strong><p className="muted">Upgrade to Pro or Premium to send a player request.</p></div>;
     return <div className="contact-box hc-contact-request-card"><span className="card-kicker">PLAYER CONNECTION</span><h3>Request player access</h3><p className="muted">Send a request to connect. The player must accept before HoopChat messaging opens.</p><textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Introduce yourself..." rows={3}/><button className="btn" onClick={()=>void sendRequest()} disabled={busy}>{busy?"Sending...":"Send Player Request"}</button>{info&&<p className="muted">{info}</p>}</div>;
   }
 
   if(accountType==="scout" || accountType==="agent"){
-    if(!premium)return <div className="contact-gate hc-contact-request-gate"><strong>Pro/Premium Scout/Agent feature</strong><p className="muted">Upgrade to Pro or Premium to request contact with professional players. Players control whether requests are accepted.</p></div>;
+    if(!canAsk)return <div className="contact-gate hc-contact-request-gate"><strong>Pro/Premium Scout/Agent feature</strong><p className="muted">Upgrade to Pro or Premium to request contact with professional players. Players control whether requests are accepted.</p></div>;
     if(request?.status==="accepted")return <div className="contact-box hc-contact-request-card"><span className="card-kicker">CONTACT ACCEPTED</span><h3>You can now get in touch</h3><div className="contact-messages">{messages.map(m=><div key={m.id} className={m.sender_id===userId?"contact-message mine":"contact-message"}>{m.body}<small>{new Date(m.created_at).toLocaleString()}</small></div>)}</div><textarea value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Write a message to the player..." rows={3}/><button className="btn" onClick={()=>void sendMessage()} disabled={busy||!draft.trim()}>{busy?"Sending...":"Send Message"}</button>{info&&<p className="muted">{info}</p>}</div>;
     if(request?.status==="pending")return <div className="contact-gate hc-contact-request-gate"><strong>Contact request pending</strong><p className="muted">The player will decide whether to accept your request.</p></div>;
     if(request?.status==="rejected")return <div className="contact-gate hc-contact-request-gate"><strong>Request declined</strong><p className="muted">This player declined the contact request.</p></div>;

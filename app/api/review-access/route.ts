@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { calculateReviewSummary } from "../../../lib/review-summary";
+import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +11,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const entityType = url.searchParams.get("entityType");
   const entityId = url.searchParams.get("entityId");
-  if (!["team", "coach", "womens-team"].includes(entityType || "") || !entityId || !/^[0-9a-f-]{36}$/i.test(entityId)) {
+  if (!["team", "coach", "womens-team", "league"].includes(entityType || "") || !entityId || !/^[0-9a-f-]{36}$/i.test(entityId)) {
     return NextResponse.json({ error: "Provide a valid review target." }, { status: 400 });
   }
 
@@ -28,41 +30,57 @@ export async function GET(request: Request) {
     const db = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
     let accountType = "";
-    let plan = "";
-    let active = false;
+    let profile: { account_type?: string; basketball_type?: string | null; player_verified?: boolean; selected_womens_team_id?: string | null } | null = null;
+    let subscription: { plan?: string; status?: string; access_status?: string | null; current_period_end?: string | null } | null = null;
     let isAdmin = false;
     if (user) {
-      const [{ data: profile }, { data: subscription }] = await Promise.all([
-        db.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
-        db.from("subscriptions").select("plan,status,current_period_end").eq("user_id", user.id).maybeSingle(),
+      const [profileResult, subscriptionResult] = await Promise.all([
+        db.from("profiles").select("account_type,basketball_type,player_verified,selected_womens_team_id").eq("id", user.id).maybeSingle(),
+        db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
       ]);
+      profile = profileResult.data;
+      subscription = subscriptionResult.data;
       accountType = profile?.account_type || "";
-      plan = subscription?.plan || "";
-      active = ["active", "trialing"].includes(subscription?.status || "") &&
-        (!subscription?.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now());
-      const { data: admin } = await authClient.auth.getUser(bearer);
-      if (admin.user) {
-        const scoped = createClient(supabaseUrl, anonKey, {
-          global: { headers: { Authorization: "Bearer " + bearer } },
-          auth: { autoRefreshToken: false, persistSession: false },
-        });
-        const { data } = await scoped.rpc("is_current_user_admin_or_moderator");
-        isAdmin = data === true;
-      }
+      const scoped = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: "Bearer " + bearer } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data } = await scoped.rpc("is_current_user_admin_or_moderator");
+      isAdmin = data === true;
     }
 
+    const entitlements = getHoopCheckEntitlements({ accountType, subscription, isAdmin, playerVerified: profile?.player_verified === true });
+    // Preserve the established paid-member review access for coaches, agents and club admins.
     const tier = isAdmin ? "premium" :
-      accountType === "player" ? "player" :
-      accountType === "fan" && active && plan === "premium" ? "premium" :
-      accountType === "fan" && active && plan === "pro" ? "pro" :
-      accountType !== "fan" && accountType !== "" && active ? "member" : "free";
-    const fullRead = ["premium", "player", "member"].includes(tier);
-    const targetColumn = entityType === "team" ? "team_id" : entityType === "coach" ? "coach_id" : "womens_team_id";
+      accountType && accountType !== "fan" && accountType !== "player" && entitlements.hasPaidMembership ? "member" :
+      entitlements.tier;
+    const fullRead = entitlements.canReadFullReviews;
+    let canWrite = entitlements.canWriteReviews && (
+      entityType !== "womens-team" ||
+      (profile?.basketball_type === "womens" && profile.selected_womens_team_id === entityId)
+    );
+
+    const targetColumn = entityType === "team" ? "team_id" : entityType === "coach" ? "coach_id" : entityType === "league" ? "league_id" : "womens_team_id";
     const table = entityType === "womens-team" ? "womens_team_reviews" : "reviews";
 
+    if (canWrite && entityType === "team" && user) {
+      const scoped = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: "Bearer " + bearer } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data: eligible, error: eligibilityError } = await scoped.rpc("can_user_review_team", {
+        p_user_id: user.id,
+        p_team_id: entityId,
+      });
+      if (eligibilityError) throw eligibilityError;
+      canWrite = eligible === true;
+    }
+
     const response: Record<string, unknown> = {
+      accountType,
       tier,
-      canWrite: accountType === "player" && entityType !== "womens-team",
+      canWrite,
+      canReadFull: fullRead,
       categories: ["Communication", "Professionalism", "Development", "Payment", "Pay on time", "Housing", "Medical support", "Coaching quality", "Facilities", "Playing time honesty"],
       summary: null,
       reviews: [],
@@ -78,18 +96,14 @@ export async function GET(request: Request) {
       .order("created_at", { ascending: false });
     if (rowsError) throw rowsError;
     const rows = (rawRows || []) as unknown as Array<Record<string, unknown>>;
-    const avg = (key: string) => {
-      const values = rows.map((row: Record<string, unknown>) => Number(row[key]))
-        .filter((value: number) => Number.isFinite(value) && value >= 1 && value <= 5);
-      return values.length ? Math.round(values.reduce((sum: number, value: number) => sum + value, 0) / values.length * 100) / 100 : null;
-    };
+    const summary = calculateReviewSummary(rows, fullRead && entityType !== "womens-team");
     response.summary = {
-      overall_rating: avg("overall_rating"),
-      review_count: fullRead ? rows.length : undefined,
-      communication_rating: fullRead && entityType !== "womens-team" ? avg("communication_rating") : undefined,
-      professionalism_rating: fullRead && entityType !== "womens-team" ? avg("professionalism_rating") : undefined,
-      development_rating: fullRead && entityType !== "womens-team" ? avg("development_rating") : undefined,
-      payment_rating: fullRead && entityType !== "womens-team" ? avg("payment_rating") : undefined,
+      overall_rating: summary.overall_rating,
+      review_count: fullRead ? summary.review_count : undefined,
+      communication_rating: fullRead && entityType !== "womens-team" ? summary.communication_rating : undefined,
+      professionalism_rating: fullRead && entityType !== "womens-team" ? summary.professionalism_rating : undefined,
+      development_rating: fullRead && entityType !== "womens-team" ? summary.development_rating : undefined,
+      payment_rating: fullRead && entityType !== "womens-team" ? summary.payment_rating : undefined,
     };
     if (fullRead) response.reviews = rows;
 

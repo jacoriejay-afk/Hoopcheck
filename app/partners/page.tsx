@@ -1,9 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import PublicBusinessInquiry from "../../components/PublicBusinessInquiry";
+import { useAuthState } from "../../components/AuthProvider";
 import { supabase } from "../../lib/supabase";
 
 export default function Sponsor() {
+  const { signedIn } = useAuthState();
+  const guestInquiriesEnabled = process.env.NEXT_PUBLIC_BUSINESS_INQUIRIES_ENABLED === "true";
   const [type, setType] = useState("sponsor");
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState("");
@@ -26,7 +31,7 @@ export default function Sponsor() {
       }
       const user = session?.user;
       if (!user) {
-        window.location.href = "/login";
+        setSent("Please sign in before submitting. Your draft is still here.");
         return;
       }
       const { error } = await supabase.from("sponsor_inquiries").insert({
@@ -57,7 +62,9 @@ export default function Sponsor() {
             Interested in sponsoring the basketball community, supporting HoopCheck, or discussing a partnership?
           </p>
         </section>
-        <section className="dashboard-card" style={{ marginTop: 18, display: "grid", gap: 12 }}>
+        {guestInquiriesEnabled && !signedIn && <PublicBusinessInquiry />}
+        {(!guestInquiriesEnabled || signedIn) && <section className="dashboard-card" style={{ marginTop: 18, display: "grid", gap: 12 }}>
+          {!signedIn && <p role="status" className="muted">A HoopCheck account is currently required to send an inquiry. <Link href="/login?next=/partners">Log in</Link> or <Link href="/signup">create an account</Link> before writing your message.</p>}
           <select value={type} onChange={(event) => setType(event.target.value)}>
             <option value="sponsor">Sponsor recommendation / partnership</option>
             <option value="donate">Donate / support</option>
@@ -72,9 +79,9 @@ export default function Sponsor() {
             required
             placeholder="Tell us what you have in mind..."
           />
-          <button className="btn" disabled={saving} onClick={() => void submit()}>{saving ? "Submitting..." : "Submit Inquiry"}</button>
+          <button className="btn" disabled={saving || !signedIn} onClick={() => void submit()}>{saving ? "Submitting..." : "Submit Inquiry"}</button>
           {sent && <p className="muted">{sent}</p>}
-        </section>
+        </section>}
       </div>
     </main>
   );

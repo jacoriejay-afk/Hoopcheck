@@ -1,8 +1,10 @@
 "use client";
 
+import HoopLoading from "../../../../components/HoopLoading";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../../../lib/supabase";
+import TeamLeaguePicker from "../../../../components/TeamLeaguePicker";
 
 type Coach = { id: string; name: string };
 type Team = { id: string; name: string };
@@ -28,7 +30,7 @@ export default function RelationshipsPage() {
     setLoading(true);
     const [c,t,l,a,m] = await Promise.all([
       supabase.from("coaches").select("id,name").eq("active",true).order("name"),
-      supabase.from("teams").select("id,name").eq("active",true).order("name"),
+      supabase.from("teams").select("id,name").or("source.is.null,source.neq.womens_teams_mirror").eq("active",true).order("name"),
       supabase.from("leagues").select("id,name").eq("active",true).order("name"),
       supabase.from("coach_team_assignments").select("id,coach_id,team_id,role,season,active").order("created_at",{ascending:false}),
       supabase.from("team_league_memberships").select("id,team_id,league_id,season,start_date,end_date,active").order("created_at",{ascending:false}),
@@ -81,12 +83,12 @@ export default function RelationshipsPage() {
         <h2 style={{marginTop:0}}>{editing?"Edit":"Add"} relationship</h2>
         {tab==="coach" ? <div style={grid()}>
           <label>Coach<select style={input} value={form.coach_id||""} onChange={e=>setForm({...form,coach_id:e.target.value})}><option value="">Select coach</option>{coaches.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-          <label>Team<select style={input} value={form.team_id||""} onChange={e=>setForm({...form,team_id:e.target.value})}><option value="">Select team</option>{teams.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+          <TeamLeaguePicker mode="team" label="Team" value={form.team_id||""} onChange={value=>setForm({...form,team_id:value})} placeholder="Search team" />
           <label>Role<input style={input} value={form.role||""} onChange={e=>setForm({...form,role:e.target.value})} placeholder="Head Coach" /></label>
           <label>Season<input style={input} value={form.season||""} onChange={e=>setForm({...form,season:e.target.value})} placeholder="2026-27" /></label>
         </div> : <div style={grid()}>
-          <label>Team<select style={input} value={form.team_id||""} onChange={e=>setForm({...form,team_id:e.target.value})}><option value="">Select team</option>{teams.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-          <label>League<select style={input} value={form.league_id||""} onChange={e=>setForm({...form,league_id:e.target.value})}><option value="">Select league</option>{leagues.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+          <TeamLeaguePicker mode="team" label="Team" value={form.team_id||""} onChange={value=>setForm({...form,team_id:value})} placeholder="Search team" />
+          <TeamLeaguePicker mode="league" allCategories label="League" value={form.league_id||""} onChange={value=>setForm({...form,league_id:value})} placeholder="Search league" />
           <label>Season<input style={input} value={form.season||""} onChange={e=>setForm({...form,season:e.target.value})} placeholder="2026-27" /></label>
           <label>Start date<input type="date" style={input} value={form.start_date||""} onChange={e=>setForm({...form,start_date:e.target.value})} /></label>
           <label>End date<input type="date" style={input} value={form.end_date||""} onChange={e=>setForm({...form,end_date:e.target.value})} /></label>
@@ -94,7 +96,7 @@ export default function RelationshipsPage() {
         <div style={{display:"flex",gap:8,marginTop:15}}><button onClick={save} style={button(true)}>Save</button><button onClick={reset} style={button(false)}>Cancel</button></div>
       </section>}
       {message && <div style={{padding:11,background:"#151515",border:"1px solid #333",borderRadius:8,marginBottom:14}}>{message}</div>}
-      {loading ? <p style={{color:"#888"}}>Loading relationships...</p> : <div style={{display:"grid",gap:9}}>
+      {loading ? <HoopLoading variant="inline" label="Loading relationships..." /> : <div style={{display:"grid",gap:9}}>
         {tab==="coach" ? coachRows.map(r=><Row key={r.id} title={(r.coach?.name||"Unknown coach")+" → "+(r.team?.name||"Unknown team")} meta={[r.role,r.season,!r.active&&"ARCHIVED"].filter(Boolean).join(" • ")} onEdit={()=>{setEditing(r.id);setForm({coach_id:r.coach_id,team_id:r.team_id,role:r.role||"",season:r.season||"",active:String(r.active)})}} onArchive={()=>archive(r.id)} active={r.active}/>) :
         leagueRows.map(r=><Row key={r.id} title={(r.team?.name||"Unknown team")+" → "+(r.league?.name||"Unknown league")} meta={[r.season,r.start_date&&("from "+r.start_date),r.end_date&&("to "+r.end_date),!r.active&&"ARCHIVED"].filter(Boolean).join(" • ")} onEdit={()=>{setEditing(r.id);setForm({team_id:r.team_id,league_id:r.league_id,season:r.season||"",start_date:r.start_date||"",end_date:r.end_date||"",active:String(r.active)})}} onArchive={()=>archive(r.id)} active={r.active}/>)}
         {!((tab==="coach"?coachRows:leagueRows).length) && <div style={{padding:30,textAlign:"center",color:"#777",border:"1px dashed #333",borderRadius:10}}>No relationships yet.</div>}

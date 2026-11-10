@@ -7,15 +7,10 @@
   --hc-motion-ease-out: cubic-bezier(0, 0, .2, 1);
 }
 
-/* Animate only compositor-friendly properties to avoid layout jank on route changes. */
+/* PageTransition owns the single route-entry animation via Web Animations API.
+   Avoid an overlapping CSS animation on first paint and route changes. */
 .hc-route-transition {
   min-width: 0;
-  animation: hc-route-enter var(--hc-motion-base) var(--hc-motion-ease-out) backwards;
-}
-
-@keyframes hc-route-enter {
-  from { opacity: .72; }
-  to { opacity: 1; }
 }
 
 /* Shared interaction motion; does not change sizing or the existing visual system. */
@@ -65,13 +60,7 @@
   line-height: 1.3;
   letter-spacing: .11em;
 }
-.hc-route-transition {
-  animation: hc-route-enter 180ms var(--hc-motion-ease-out) both;
-}
-@keyframes hc-route-enter {
-  from { opacity: .82; }
-  to { opacity: 1; }
-}
+/* Route entry animation is owned by PageTransition without remounting the page slot. */
 :where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,
 .hc-player-directory-page,.hc-womens-directory-page,.hc-global-search-page) .eyebrow,
 :where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,

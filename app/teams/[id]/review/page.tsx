@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../../../components/HoopLoading";
 import {
   FormEvent,
   useEffect,
@@ -10,6 +11,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { supabase } from "../../../../lib/supabase";
+import { getHoopCheckEntitlements } from "../../../../lib/membership-tier";
 
 type Team = {
   id: string;
@@ -141,6 +143,7 @@ export default function TeamReviewPage() {
     useState(false);
 
   const [eligible, setEligible] = useState(false);
+  const [accountType, setAccountType] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadPage() {
@@ -187,6 +190,7 @@ export default function TeamReviewPage() {
         .eq("id", user.id)
         .maybeSingle();
 
+      setAccountType(profile?.account_type || null);
       const { data: adminValue } = await supabase.rpc("is_current_user_admin_or_moderator");
       const isAdmin = adminValue === true;
 
@@ -196,7 +200,7 @@ export default function TeamReviewPage() {
       const { data: eligibility, error: eligibilityError } = await supabase.rpc("can_user_review_team", { p_user_id: user.id, p_team_id: id });
       if (profile?.account_type !== "player" || profile.player_verified !== true) {
         setEligible(false);
-        setMessage("Only verified player accounts can write reviews.");
+        setMessage(profile?.account_type === "fan" ? "Review writing is not available for fan accounts. Return to the team profile to follow the club and read reviews included with your membership." : "Only verified player accounts can write reviews.");
         setLoading(false);
         return;
       } else if (isAdmin || (!eligibilityError && eligibility === true)) {
@@ -214,16 +218,13 @@ export default function TeamReviewPage() {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      const hasActiveSubscription =
-        (subscription?.status === "active" || subscription?.status === "trialing" ||
-          subscription?.access_status === "pro" || subscription?.access_status === "premium") &&
-        (subscription?.plan === "pro" || subscription?.plan === "premium");
-      const hasValidSubscription =
-        hasActiveSubscription &&
-        (!subscription?.current_period_end ||
-          new Date(subscription.current_period_end) > new Date());
-
-      if (!isAdmin && !hasValidSubscription) {
+      const entitlements = getHoopCheckEntitlements({
+        accountType: profile?.account_type,
+        subscription,
+        isAdmin,
+        playerVerified: profile?.player_verified === true,
+      });
+      if (!isAdmin && !entitlements.canWriteReviews) {
         window.location.href = "/membership";
         return;
       }
@@ -255,7 +256,7 @@ export default function TeamReviewPage() {
         setAlreadyReviewed(true);
       }
 
-      setIsPaid(hasValidSubscription);
+      setIsPaid(isAdmin || entitlements.canWriteReviews);
 
       setLoading(false);
     }
@@ -389,17 +390,7 @@ export default function TeamReviewPage() {
 
   if (loading) {
     return (
-      <main>
-<section className="hero">
-          <div className="eyebrow">
-            HoopCheck
-          </div>
-
-          <h1>
-            Loading review form...
-          </h1>
-        </section>
-      </main>
+      <main><HoopLoading label="Loading HoopCheck…" /></main>
     );
   }
 
@@ -430,9 +421,9 @@ export default function TeamReviewPage() {
     return (
       <main>
 <section className="hero">
-          <div className="eyebrow">Player Eligibility Required</div>
-          <h1>Reviews are for players who played here.</h1>
-          <p>You can only make ratings and reviews for teams you currently or previously played for. Your player account must also be verified.</p>
+          <div className="eyebrow">{accountType === "fan" ? "FAN FEATURE" : "Player Eligibility Required"}</div>
+          <h1>{accountType === "fan" ? "Review writing is not available on fan accounts." : "Reviews are for players who played here."}</h1>
+          <p>{accountType === "fan" ? "You can still follow this team and read reviews available with your membership." : "You can only make ratings and reviews for teams you currently or previously played for. Your player account must also be verified."}</p>
           <div className="actions">
             <Link href="/account" className="btn">View My Account</Link>
             <Link href={`/teams/${team.id}`} className="btn dark">Back To Team</Link>

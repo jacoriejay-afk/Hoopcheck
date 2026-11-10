@@ -4,10 +4,12 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import PlayerContactButton from "../../components/PlayerContactButton";
+import FollowButton from "../../components/FollowButton";
 import { VerifiedBadge } from "../../components/HoopCheckUI";
+import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import Surface from "../../components/Surface";
@@ -17,6 +19,7 @@ type Coach = { id: string; name: string; country: string | null; city: string | 
 type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
 type WomensTeam = { id: string; name: string; country: string | null; city: string | null; league_name: string | null; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
 type League = { id: string; name: string; country: string | null; level: string | null };
+type SocialSuggestion = { entity_type: "player" | "team"; entity_id: string; display_name: string; avatar_url: string | null; detail: string | null; player_verified: boolean };
 type Player = {
   id: string;
   display_name: string | null;
@@ -109,11 +112,14 @@ function PlayerUsernameConnect() {
 function SearchContent() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const query = searchParams.get("q")?.trim() || "";
   const initialType = searchParams.get("type");
   const basketballSide = useFanBasketballSide();
   const [isFanAccount, setIsFanAccount] = useState(false);
-  useEffect(() => { void (async () => { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const { data } = await supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(); setIsFanAccount(data?.account_type === "fan"); })(); }, []);
+  const [roleReady, setRoleReady] = useState(false);
+  const [suggestions, setSuggestions] = useState<SocialSuggestion[]>([]);
+  useEffect(() => { let active = true; void (async () => { try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const [{ data }, { data: graphSuggestions }] = await Promise.all([supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(), supabase.rpc("get_social_suggestions")]); if (!active) return; const fan = !data || data.account_type === "fan"; setIsFanAccount(fan); setSuggestions(((graphSuggestions || []) as SocialSuggestion[]).filter(item => !fan || item.entity_type === "team")); } catch (error) { console.error("Unable to load search role context:", error); if (active) setIsFanAccount(true); } finally { if (active) setRoleReady(true); } })(); return () => { active = false; }; }, []);
 
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -130,13 +136,18 @@ function SearchContent() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
   useEffect(() => {
+    let active = true;
+
     async function search() {
       if (!query) {
+        if (!active) return;
         setCoaches([]);
         setTeams([]);
         setWomensTeams([]);
         setLeagues([]);
         setPlayers([]);
+        setLoading(false);
+        setError("");
         return;
       }
 
@@ -144,8 +155,8 @@ function SearchContent() {
       setError("");
 
       try {
-        const searchTerm = `%${query}%`;
-        const wantsPlayers = typeFilter === "all" || typeFilter === "players";
+        const searchTerm = `%${query.replace(/[,%()]/g, " ")}%`;
+        const wantsPlayers = roleReady && !isFanAccount && (typeFilter === "all" || typeFilter === "players");
         const wantsCoaches = typeFilter === "all" || typeFilter === "coaches";
         const wantsMensTeams = typeFilter === "all" || typeFilter === "mens-teams";
         const wantsWomensTeams = typeFilter === "all" || typeFilter === "womens-teams";
@@ -200,37 +211,54 @@ function SearchContent() {
             : Promise.resolve({ data: [], error: null }),
         ]);
 
-        if (playerResult.error) throw playerResult.error;
-        if (coachResult.error) throw coachResult.error;
-        if (teamResult.error) throw teamResult.error;
-        if (womensTeamResult.error) throw womensTeamResult.error;
-        if (leagueResult.error) throw leagueResult.error;
-
-
-        setPlayers((playerResult.data || []) as Player[]);
-        setCoaches(coachResult.data || []);
-        setTeams(teamResult.data || []);
-        setWomensTeams(womensTeamResult.data || []);
-        setLeagues(leagueResult.data || []);
+        if (!active) return;
+        const failures = [playerResult, coachResult, teamResult, womensTeamResult, leagueResult].filter(result => result.error);
+        if (failures.length) {
+          console.error("Some search categories failed:", failures.map(result => result.error));
+          setError("Some directories are temporarily unavailable. Available results are shown below; try another category or search again.");
+        }
+        setPlayers((playerResult.error ? [] : playerResult.data || []) as Player[]);
+        setCoaches(coachResult.error ? [] : coachResult.data || []);
+        setTeams(teamResult.error ? [] : teamResult.data || []);
+        setWomensTeams(womensTeamResult.error ? [] : womensTeamResult.data || []);
+        setLeagues(leagueResult.error ? [] : leagueResult.data || []);
       } catch (err) {
         console.error(err);
-        setError("Something went wrong while searching. Please try again.");
+        if (active) setError("Something went wrong while searching. Please try again.");
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
 
-    search();
-  }, [query, countryFilter, verifiedOnly, typeFilter]);
+    void search();
+    return () => { active = false; };
+  }, [query, countryFilter, verifiedOnly, typeFilter, roleReady, isFanAccount]);
 
   useEffect(() => { setSearchInput(query); }, [query]);
+
+  // Debounce URL-backed search so typing issues one server query per pause,
+  // while retaining the previous result set until the new query resolves.
   useEffect(() => {
+    const nextQuery = searchInput.trim();
+    if (nextQuery === query) return;
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      if (nextQuery) params.set("q", nextQuery);
+      else params.delete("q");
+      const suffix = params.toString();
+      router.replace(suffix ? `/search?${suffix}` : "/search", { scroll: false });
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [searchInput, query, router]);
+  // Sync explicit URL filters without resetting a category the visitor just selected
+  // while their account role (or basketball-side preference) is still loading.
+  useEffect(() => {
+    if (!roleReady) return;
+    if (initialType === "players" && isFanAccount) { setTypeFilter("all"); return; }
     if (initialType === "players" || initialType === "coaches" || initialType === "mens-teams" || initialType === "womens-teams" || initialType === "leagues") {
       setTypeFilter(initialType);
-    } else if (isFanAccount) {
-      setTypeFilter(basketballSide === "womens" ? "womens-teams" : "mens-teams");
     }
-  }, [initialType, isFanAccount, basketballSide]);
+  }, [initialType, isFanAccount, roleReady]);
 
   const countries = useMemo(() => Array.from(new Set([
     ...players.map((x) => x.country),
@@ -241,7 +269,7 @@ function SearchContent() {
     ...leagues.map((x) => x.country),
   ].filter(Boolean) as string[])).sort(), [players, coaches, teams, womensTeams, leagues]);
 
-  const visiblePlayers = typeFilter === "all" || typeFilter === "players"
+  const visiblePlayers = roleReady && !isFanAccount && (typeFilter === "all" || typeFilter === "players")
     ? players.filter((x) => !countryFilter || x.country === countryFilter || x.current_country === countryFilter)
     : [];
   const visibleCoaches = typeFilter === "all" || typeFilter === "coaches"
@@ -257,41 +285,58 @@ function SearchContent() {
     ? leagues.filter((x) => !countryFilter || x.country === countryFilter)
     : [];
 
-  const totalResults = visiblePlayers.length + visibleCoaches.length + visibleTeams.length + visibleWomensTeams.length + visibleLeagues.length;
+  const totalResults = (roleReady && !isFanAccount ? visiblePlayers.length : 0) + visibleCoaches.length + visibleTeams.length + visibleWomensTeams.length + visibleLeagues.length;
 
   return (
     <main className="search-page hc-global-search-page">
       <FanBasketballSideSwitch />
-      <nav className="hc-directory-switcher" aria-label={t("browseDirectoriesLabel")}>
+      <section className="hc-search-team-entry" aria-label="Search both basketball directories">
+        <div><p className="eyebrow">ONE GAME. BOTH DIRECTORIES.</p><h2>Find your next team</h2><p>Search men’s and women’s teams by name, city, country, or league.</p></div>
+        <div className="actions"><Link className="btn" href="/teams">Browse men’s teams ↗</Link><Link className="btn dark" href="/womens">Browse women’s teams ↗</Link></div>
+      </section>
+      <nav className="hc-directory-switcher hc-liquid-glass-search-switcher" aria-label={t("browseDirectoriesLabel")}>
         <span className="hc-directory-switcher-label">{t("browseDirectoriesLabel")}</span>
         <Link href="/teams">{t("mensTeams")}</Link>
         <Link href="/womens">{t("womensTeams")}</Link>
         <Link href="/coaches">{t("coaches")}</Link>
         <Link href="/leagues">{t("leagues")}</Link>
-        <Link href="/players">{t("players")}</Link>
+        {roleReady && !isFanAccount && <Link href="/players">{t("players")}</Link>}
         <Link href="/search">{t("globalSearch")}</Link>
         </nav>
-      <Surface as="section" className="dashboard-card hc-player-connect-surface" style={{ margin: "0 0 18px", padding: "16px" }}>
+      {roleReady && !isFanAccount && <Surface as="section" className="dashboard-card hc-player-connect-surface" style={{ margin: "0 0 18px", padding: "16px" }}>
         <div className="eyebrow">{t("playerConnect")}</div>
         <h2 style={{ margin: "4px 0 6px" }}>{t("addAPlayer")}</h2>
         <p className="muted" style={{ margin: "0 0 12px" }}>
           {t("enterPlayerUsername")}
         </p>
         <PlayerUsernameConnect />
-      </Surface>
+      </Surface>}
 
-      <section className="search-hero">
+      {roleReady && !query && suggestions.length > 0 && (
+        <section className="hc-suggested-for-you" aria-label="Suggested for you">
+          <div className="group-heading"><span>HC</span><h2>Suggested for you</h2></div>
+          <div className="hc-suggested-row">
+            {suggestions.map((item) => <Link key={item.entity_type + item.entity_id} href={item.entity_type === "team" ? "/teams/" + item.entity_id : "/players/" + item.entity_id} className="hc-suggested-card">
+              {item.avatar_url ? <img src={item.avatar_url} alt="" /> : <span className="hc-suggested-avatar">{(item.display_name || "HC").slice(0,1).toUpperCase()}</span>}
+              <strong>{item.display_name} {item.player_verified && <VerifiedBadge label="Verified player" />}</strong>
+              <small>{item.entity_type === "team" ? "Team" : "Player"} · {item.detail}</small>
+            </Link>)}
+          </div>
+        </section>
+      )}
+
+      <section className="search-hero hc-liquid-glass-search-hero">
         <div className="eyebrow">{t("globalResearch")}</div>
         <h1>{t("searchBasketballWorld")}</h1>
-        <p>{t("findBasketballPeople")}</p>
+        <p>{!roleReady || isFanAccount ? t("searchBasketballWorld") : t("findBasketballPeople")}</p>
 
         <SearchBar
           className="search-form"
           name="q"
           value={searchInput}
           onChange={setSearchInput}
-          placeholder={t("searchPeoplePlaceholder")}
-          ariaLabel={t("searchPeoplePlaceholder")}
+          placeholder={!roleReady || isFanAccount ? t("searchBasketballWorld") : t("searchPeoplePlaceholder")}
+          ariaLabel={!roleReady || isFanAccount ? t("searchBasketballWorld") : t("searchPeoplePlaceholder")}
         />
       </section>
 
@@ -305,9 +350,9 @@ function SearchContent() {
             {!loading && <div className="result-count">{totalResults} {t("resultCount")}</div>}
           </div>
 
-          {!loading && !error && (
+          {(
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 24 }}>
-              {(["all", "players", "coaches", "mens-teams", "womens-teams", "leagues"] as const).map((type) => (
+              {(roleReady && !isFanAccount ? (["all", "players", "coaches", "mens-teams", "womens-teams", "leagues"] as const) : (["all", "coaches", "mens-teams", "womens-teams", "leagues"] as const)).map((type) => (
                 <button
                   key={type}
                   type="button"
@@ -328,7 +373,7 @@ function SearchContent() {
             </div>
           )}
 
-          {loading && <div className="state-card"><p>{t("searchingHoopCheck")}</p></div>}
+          {loading && <HoopLoading variant="inline" label={t("searchingHoopCheck")} />}
           {error && <div className="state-card error"><p>{error}</p></div>}
 
           {!loading && !error && totalResults === 0 && (
@@ -339,30 +384,26 @@ function SearchContent() {
             </div>
           )}
 
-          {!loading && !error && visiblePlayers.length > 0 && (
+          {!loading && visiblePlayers.length > 0 && (
             <section className="result-group">
               <div className="group-heading"><span>01</span><h3>{t("players")}</h3></div>
               <div className="result-grid">
                 {visiblePlayers.map((player) => (
-                  <Link href={`/players/${player.id}`} key={player.id} className="result-card">
-                    <div className="result-type">{t("players").toUpperCase()}</div>
-                    <h4>{player.display_name || t("hoopCheckPlayer")} {player.player_verified && <VerifiedBadge label={t("verifiedPlayer")} />}</h4>
-                    <p>
-                      {[
-                        player.player_position,
-                        player.years_pro ? `${player.years_pro} years pro` : null,
-                        player.current_team,
-                        player.current_country || player.country,
-                      ].filter(Boolean).join(" · ") || t("professionalProfile")}
-                    </p>
-                    <span className="result-link">{t("viewPlayerProfile")}</span>
-                  </Link>
+                  <article className="result-card" key={player.id}>
+                    <Link href={`/players/${player.id}`} className="hc-search-player-result">
+                      <div className="result-type">{t("players").toUpperCase()}</div>
+                      <h4>{player.display_name || t("hoopCheckPlayer")} {player.player_verified && <VerifiedBadge label={t("verifiedPlayer")} />}</h4>
+                      <p>{[player.player_position, player.years_pro ? `${player.years_pro} years pro` : null, player.current_team, player.current_country || player.country].filter(Boolean).join(" · ") || t("professionalProfile")}</p>
+                      <span className="result-link">{t("viewPlayerProfile")}</span>
+                    </Link>
+                    <FollowButton targetType="player" targetId={player.id} showNotifications={false} />
+                  </article>
                 ))}
               </div>
             </section>
           )}
 
-          {!loading && !error && visibleCoaches.length > 0 && (
+          {!loading && visibleCoaches.length > 0 && (
             <section className="result-group">
               <div className="group-heading"><span>02</span><h3>{t("coaches")}</h3></div>
               <div className="result-grid">
@@ -378,29 +419,29 @@ function SearchContent() {
             </section>
           )}
 
-          {!loading && !error && visibleTeams.length > 0 && (
+          {!loading && visibleTeams.length > 0 && (
             <section className="result-group">
               <div className="group-heading"><span>03</span><h3>{t("mensTeams")}</h3></div>
               <div className="result-grid">
                 {visibleTeams.map((team) => (
-                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" logoUrl={team.logo_url} logoBg={team.logo_bg} />
+                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" fanView={!roleReady || isFanAccount} logoUrl={team.logo_url} logoBg={team.logo_bg} />
                 ))}
               </div>
             </section>
           )}
 
-          {!loading && !error && visibleWomensTeams.length > 0 && (
+          {!loading && visibleWomensTeams.length > 0 && (
             <section className="result-group">
               <div className="group-heading"><span>04</span><h3>{t("womensTeams")}</h3></div>
               <div className="result-grid">
                 {visibleWomensTeams.map((team) => (
-                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" logoUrl={team.logo_url} logoBg={team.logo_bg} />
+                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" fanView={isFanAccount} logoUrl={team.logo_url} logoBg={team.logo_bg} />
                 ))}
               </div>
             </section>
           )}
 
-          {!loading && !error && visibleLeagues.length > 0 && (
+          {!loading && visibleLeagues.length > 0 && (
             <section className="result-group">
               <div className="group-heading"><span>05</span><h3>{t("leagues")}</h3></div>
               <div className="result-grid">
@@ -424,7 +465,7 @@ function SearchContent() {
           <div className="eyebrow">{t("startResearching")}</div>
           <h2>{t("searchBeforeSign")}</h2>
           <div className="quick-links">
-            <Link href="/coaches" className="quick-card"><span>01</span><strong>{t("browseCoaches")}</strong><small>{t("researchPlayerExperiences")}</small></Link>
+            <Link href="/coaches" className="quick-card"><span>01</span><strong>{t("browseCoaches")}</strong><small>{!roleReady || isFanAccount ? t("researchCoach") : t("researchPlayerExperiences")}</small></Link>
             <Link href="/teams" className="quick-card"><span>02</span><strong>{t("browseTeams")}</strong><small>{t("exploreProfessionalOrganizations")}</small></Link>
             <Link href="/leagues" className="quick-card"><span>03</span><strong>{t("browseLeagues")}</strong><small>{t("exploreLeaguesWorldwide")}</small></Link>
           </div>
@@ -437,7 +478,7 @@ function SearchContent() {
 export default function SearchPage() {
   const { t } = useLanguage();
   return (
-    <Suspense fallback={<main className="search-page hc-global-search-page"><section className="search-hero"><p className="eyebrow">{t("globalResearch")}</p><h1>{t("loading")}</h1><p>{t("preparingSearchResults")}</p></section></main>}>
+    <Suspense fallback={<HoopLoading label={t("preparingSearchResults")} />}>
       <SearchContent />
     </Suspense>
   );

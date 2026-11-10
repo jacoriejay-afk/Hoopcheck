@@ -30,6 +30,8 @@ export default function CoachesPage() {
 
   const [loading, setLoading] =
     useState(true);
+  const [viewerRole, setViewerRole] = useState("");
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [query, setQuery] = useState("");
   const filteredCoaches = coaches.filter((coach) => {
     const term = query.trim().toLocaleLowerCase();
@@ -71,10 +73,16 @@ export default function CoachesPage() {
     const ids = coaches.map(coach => coach.id);
     void (async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      if (active) setSignedIn(Boolean(session));
+      if (active && session?.user) {
+        const { data: localProfile } = await supabase.from("profiles").select("account_type").eq("id", session.user.id).maybeSingle();
+        if (active && localProfile?.account_type) setViewerRole(current => current || localProfile.account_type);
+      }
       const response = await fetch(`/api/trust-score?entityType=coach&entityIds=${ids.map(encodeURIComponent).join(",")}`, {
         headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}, cache: "no-store",
       });
       const payload = response.ok ? await response.json() : null;
+      if (active && payload?.accountType) setViewerRole(payload.accountType);
       if (active && payload?.scores) setTrustScores(payload.scores as Record<string, TrustSummary>);
     })().catch(() => { if (active) setTrustScores({}); });
     return () => { active = false; };
@@ -86,7 +94,7 @@ export default function CoachesPage() {
 
       <section className="hc-coach-directory-tools" aria-label="Search coaches">
         <label htmlFor="coach-directory-search">Find a coach</label>
-        <SearchBar inputId="coach-directory-search" value={query} onChange={setQuery} placeholder="Search players, coaches, teams, or leagues" ariaLabel="Search coaches" onSubmit={setQuery} />
+        <SearchBar inputId="coach-directory-search" value={query} onChange={setQuery} placeholder="Search coaches, teams, or leagues" ariaLabel="Search coaches" onSubmit={setQuery} />
         <div className="hc-coach-directory-summary" aria-live="polite">
           {loading ? "Searching coaching profiles…" : `${filteredCoaches.length.toLocaleString()} coach${filteredCoaches.length === 1 ? "" : "es"}`}
           {query && <button type="button" className="hc-directory-reset" onClick={() => setQuery("")}>Clear filters</button>}
@@ -94,7 +102,7 @@ export default function CoachesPage() {
       </section>
 
       <section className="grid hc-team-directory-list">
-        {loading ? (<div className="card"><HoopLoading label="Scanning coaching profiles..." /></div>) : coaches.length === 0 ? (
+        {loading ? (<div className="card"><HoopLoading variant="inline" label="Scanning coaching profiles..." /></div>) : coaches.length === 0 ? (
           <div className="card hc-coach-empty">
             <CourtLines variant="circle" className="hc-court-empty-art" />
             <div className="eyebrow hc-court-section-kicker">Coming Soon</div>
@@ -124,7 +132,7 @@ export default function CoachesPage() {
                   <p>{coach.city && coach.country ? `${coach.city}, ${coach.country}` : coach.country || coach.city || "Location not listed"}</p>
                 </div>
               </div>
-              {["premium","player","member"].includes(trustScores[coach.id]?.tier || "free") ? <><div className="hc-team-directory-row__trust"><TrustScoreDial score={trustScores[coach.id]?.score ?? null} explanation={trustScores[coach.id]?.explanation || ""} reviewCount={trustScores[coach.id]?.reviewCount ?? 0} verifiedReviewCount={trustScores[coach.id]?.verifiedReviewCount ?? 0} size="mini" /></div><div className="hc-scout-card__stats" aria-label="Coach review statistics"><div className="hc-scout-card__stat"><span>Overall rating</span><strong>{trustScores[coach.id]?.averageRating == null ? "—" : trustScores[coach.id].averageRating!.toFixed(1)}</strong><small>{trustScores[coach.id]?.averageRating == null ? "Not available" : "Out of 5"}</small></div><div className="hc-scout-card__stat"><span>Reviews</span><strong>{trustScores[coach.id]?.reviewCount ?? "—"}</strong><small>Approved reviews</small></div><div className="hc-scout-card__stat"><span>Seasons tracked</span><strong>—</strong><small>Not listed</small></div></div></> : <div className="hc-directory-locked">{trustScores[coach.id]?.tier === "pro" ? <><strong>Trust Score</strong><small>Fan Premium feature</small></> : <strong>🔒 Player reviews are a Premium fan feature</strong>}<Link href="/membership" className="btn">Upgrade</Link></div>}
+              {["premium","player","member"].includes(trustScores[coach.id]?.tier || "free") ? <><div className="hc-team-directory-row__trust"><TrustScoreDial score={trustScores[coach.id]?.score ?? null} explanation={trustScores[coach.id]?.explanation || ""} reviewCount={trustScores[coach.id]?.reviewCount ?? 0} verifiedReviewCount={trustScores[coach.id]?.verifiedReviewCount ?? 0} size="mini" /></div><div className="hc-scout-card__stats" aria-label="Coach review statistics"><div className="hc-scout-card__stat"><span>Overall rating</span><strong>{trustScores[coach.id]?.averageRating == null ? "—" : trustScores[coach.id].averageRating!.toFixed(1)}</strong><small>{trustScores[coach.id]?.averageRating == null ? "Not available" : "Out of 5"}</small></div><div className="hc-scout-card__stat"><span>Reviews</span><strong>{trustScores[coach.id]?.reviewCount ?? "—"}</strong><small>Approved reviews</small></div><div className="hc-scout-card__stat"><span>Seasons tracked</span><strong>—</strong><small>Not listed</small></div></div></> : <div className="hc-directory-locked">{trustScores[coach.id]?.tier === "pro" ? <><strong>Trust Score</strong><small>Full Trust Score details require Fan Premium</small></> : <strong>{viewerRole === "fan" ? "Fan Premium unlocks full reviews and Trust Score" : viewerRole === "player" ? "Player Pro or Premium membership unlocks full review details" : viewerRole || signedIn ? "An active membership is required to view Trust Score details" : signedIn === false ? "Sign in to view Trust Score details" : "Trust Score"}</strong>}{trustScores[coach.id]?.tier === "pro" || viewerRole || signedIn ? <Link href="/membership" className="btn">{trustScores[coach.id]?.tier === "pro" ? "Upgrade to Fan Premium" : viewerRole === "fan" ? "View Fan Premium" : "View Membership"}</Link> : signedIn === false ? <Link href="/login" className="btn">Sign In</Link> : <small>Checking your access…</small>}</div>}
               <div className="hc-scout-card__ticket">
                 <Link href={`/coaches/${coach.id}`} className="hc-scout-card__coach-link">View coach report <span aria-hidden="true">→</span></Link>
               </div>
@@ -137,7 +145,7 @@ export default function CoachesPage() {
 
       <section className="hero">
         <div className="eyebrow">
-          Player Intelligence
+          Coach Insight
         </div>
 
         <h2>
@@ -147,9 +155,7 @@ export default function CoachesPage() {
         </h2>
 
         <p>
-          See what professional players have
-          experienced before you make your
-          next move.
+          Learn from first-hand coaching experiences before you choose your next coach.
         </p>
 
         <div className="actions">

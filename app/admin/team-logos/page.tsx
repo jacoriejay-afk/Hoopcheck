@@ -4,8 +4,9 @@ import { ChangeEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
 import TeamLogo from "../../../components/TeamLogo";
+import TeamLeaguePicker from "../../../components/TeamLeaguePicker";
 
-type Team = { id: string; tableName: "teams" | "womens_teams"; name: string; country: string | null; logo_url: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
+type Team = { id: string; tableName: "teams" | "womens_teams"; name: string; country: string | null; logo_url: string | null; logo_bg?: "transparent" | "light" | "dark" | null; basketball_type?:"mens"|"womens"|null };
 type Candidate = { sourceUrl: string; teamId: string; imageData: string; mimeType: string; imageUrl: string; bg: "transparent" | "light" | "dark"; approved: boolean };
 
 const inputStyle: React.CSSProperties = { width: "100%", padding: 12, borderRadius: 8, border: "1px solid #444", background: "#111", color: "#fff" };
@@ -29,7 +30,7 @@ export default function AdminTeamLogosPage() {
       return;
     }
     const [{ data: mens, error: mensError }, { data: womens, error: womensError }] = await Promise.all([
-      supabase.from("teams").select("id,name,country,logo_url,logo_bg").order("name").limit(2000),
+      supabase.from("teams").select("id,name,country,logo_url,logo_bg,basketball_type").or("source.is.null,source.neq.womens_teams_mirror").order("name").limit(2000),
       supabase.from("womens_teams").select("id,name,country,logo_url,logo_bg").order("name").limit(1000),
     ]);
     const error = mensError || womensError;
@@ -42,6 +43,13 @@ export default function AdminTeamLogosPage() {
   }
 
   useEffect(() => { void loadTeams(); }, []);
+
+  function pickerGender(teamKey:string):"mens"|"womens"|null {
+    if(!teamKey)return null;
+    const [tableName,id]=teamKey.split(":");
+    if(tableName==="womens_teams")return "womens";
+    return teams.find(team=>team.id===id&&team.tableName===tableName)?.basketball_type||null;
+  }
 
   async function uploadApproved(teamId: string, imageData: string, mimeType: string, background: "transparent" | "light" | "dark") {
     const [tableName, id] = teamId.split(":") as ["teams" | "womens_teams", string];
@@ -144,7 +152,7 @@ export default function AdminTeamLogosPage() {
       {loading ? <p>Checking access and loading teams…</p> : <>
         <section style={{ border: "1px solid #333", background: "#111", borderRadius: 14, padding: 18, marginTop: 22 }}>
           <h2>1. Choose a team</h2>
-          <label style={{ display: "grid", gap: 7 }}>Team<select value={selectedTeam} onChange={(event) => setSelectedTeam(event.target.value)} style={inputStyle}><option value="">Select team…</option>{teams.map((team) => <option key={team.tableName + ":" + team.id} value={team.tableName + ":" + team.id}>{team.tableName === "womens_teams" ? "Women · " : "Team · "}{team.name}{team.country ? ` — ${team.country}` : ""}</option>)}</select></label>
+          <TeamLeaguePicker mode="team" directorySource="both" label="Team" value={selectedTeam} basketballType={pickerGender(selectedTeam)} onChange={setSelectedTeam} placeholder="Search teams by name, city or country" />
           {selectedTeam && <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 12 }}><TeamLogo name={teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.name || "Team"} logoUrl={teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.logo_url} logoBg={teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.logo_bg} size={64}/><span>{teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.logo_url ? "Current approved logo" : "Using designed fallback"}</span></div>}
         </section>
         <section style={{ border: "1px solid #333", background: "#111", borderRadius: 14, padding: 18, marginTop: 16 }}>
@@ -165,7 +173,7 @@ export default function AdminTeamLogosPage() {
           <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
             {candidates.map((candidate, index) => <article key={candidate.sourceUrl + index} style={{ border: "1px solid #444", borderRadius: 12, padding: 14, display: "grid", gridTemplateColumns: "100px minmax(0,1fr)", gap: 14, alignItems: "center" }}>
               <div style={{ background: candidate.bg === "light" ? "#F7F7F5" : candidate.bg === "dark" ? "#0A0A0A" : "#222", borderRadius: 10, padding: 8 }}><img src={candidate.imageData} alt="Logo candidate preview" style={{ width: 84, height: 84, objectFit: "contain" }}/></div>
-              <div style={{ minWidth: 0 }}><p style={{ overflowWrap: "anywhere", color: "#aaa", fontSize: 12 }}>{candidate.sourceUrl}</p><p style={{ overflowWrap: "anywhere", fontSize: 12 }}>Image: {candidate.imageUrl}</p><label>Assign team<select value={candidate.teamId} onChange={(event) => updateCandidate(index, "teamId", event.target.value)} style={{ ...inputStyle, marginTop: 5 }}>{teams.map((team) => <option key={team.tableName + ":" + team.id} value={team.tableName + ":" + team.id}>{team.tableName === "womens_teams" ? "Women · " : "Team · "}{team.name}</option>)}</select></label><label style={{ display: "block", marginTop: 8 }}>Tile background<select value={candidate.bg} onChange={(event) => updateCandidate(index, "bg", event.target.value)} style={{ ...inputStyle, marginTop: 5 }}><option value="transparent">Transparent</option><option value="light">Light</option><option value="dark">Dark</option></select></label><button disabled={busy || candidate.approved} onClick={() => void approveCandidate(index)} style={{ marginTop: 10, border: 0, borderRadius: 999, background: candidate.approved ? "#333" : "#FF5A1F", color: "#fff", padding: "9px 14px", fontWeight: 900 }}>{candidate.approved ? "Approved and published" : "Approve and publish"}</button></div>
+              <div style={{ minWidth: 0 }}><p style={{ overflowWrap: "anywhere", color: "#aaa", fontSize: 12 }}>{candidate.sourceUrl}</p><p style={{ overflowWrap: "anywhere", fontSize: 12 }}>Image: {candidate.imageUrl}</p><TeamLeaguePicker mode="team" directorySource="both" label="Assign team" value={candidate.teamId} basketballType={pickerGender(candidate.teamId)} onChange={value=>updateCandidate(index,"teamId",value)} placeholder="Search team" /><label style={{ display: "block", marginTop: 8 }}>Tile background<select value={candidate.bg} onChange={(event) => updateCandidate(index, "bg", event.target.value)} style={{ ...inputStyle, marginTop: 5 }}><option value="transparent">Transparent</option><option value="light">Light</option><option value="dark">Dark</option></select></label><button disabled={busy || candidate.approved} onClick={() => void approveCandidate(index)} style={{ marginTop: 10, border: 0, borderRadius: 999, background: candidate.approved ? "#333" : "#FF5A1F", color: "#fff", padding: "9px 14px", fontWeight: 900 }}>{candidate.approved ? "Approved and published" : "Approve and publish"}</button></div>
             </article>)}
           </div>
         </section>

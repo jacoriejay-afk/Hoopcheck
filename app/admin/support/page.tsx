@@ -1,5 +1,6 @@
 "use client";
 
+import HoopLoading from "../../../components/HoopLoading";
 import {useEffect,useState} from "react";
 import Logo from "../../../components/Logo";
 import Link from "next/link";
@@ -16,6 +17,6 @@ export default function AdminSupport(){
   <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK ADMIN</Link><nav className="topnav"><Link href="/admin/analytics">Analytics</Link><Link href="/admin/users">Users</Link><Link href="/admin/reviews">Reviews</Link></nav></header>
   <section className="hero-card"><p className="eyebrow">FOUNDER SUPPORT</p><h1>Support ticket queue.</h1><p className="muted">Operational support queue for <a href="mailto:HoopCheck@outlook.com">HoopCheck@outlook.com</a>.</p></section>
   {message&&<div className="message" role="status" style={{marginTop:18}}>{message}</div>}
-  {loading?<div className="dashboard-card" style={{marginTop:18}}>Loading tickets...</div>:<section className="grid" style={{marginTop:18}}>{tickets.map(t=><article className="dashboard-card" key={t.id}><div className="eyebrow">{t.status} · {t.priority}</div><h2>{t.subject}</h2><p className="muted">{t.category} · {new Date(t.created_at).toLocaleString()}</p><p>{t.description}</p><p className="muted" style={{fontSize:12}}>Requester: {t.requester_id}</p><div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{["in_progress","waiting_on_user","resolved","closed"].map(s=><button key={s} className="btn dark" onClick={()=>void update(t.id,s)}>{s.replace("_"," ")}</button>)}</div></article>)}{!tickets.length&&<div className="dashboard-card"><h2>No tickets.</h2></div>}</section>}
+  {loading?<HoopLoading variant="inline" label="Loading tickets..." />:<section className="grid" style={{marginTop:18}}>{tickets.map(t=><article className="dashboard-card" key={t.id}><div className="eyebrow">{t.status} · {t.priority}</div><h2>{t.subject}</h2><p className="muted">{t.category} · {new Date(t.created_at).toLocaleString()}</p><p>{t.description}</p><p className="muted" style={{fontSize:12}}>Requester: {t.requester_id}</p><div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{["in_progress","waiting_on_user","resolved","closed"].map(s=><button key={s} className="btn dark" onClick={()=>void update(t.id,s)}>{s.replace("_"," ")}</button>)}</div></article>)}{!tickets.length&&<div className="dashboard-card"><h2>No tickets.</h2></div>}</section>}
  </div></main>;
 }

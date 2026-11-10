@@ -1,0 +1,97 @@
+/* Open content flow: remove decorative frames while preserving functional controls. */
+html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-directory-shell) :is(
+  .card,.dashboard-card,.hero-card,.hc-layout-card,.hc-layout-group,.plan-card,.state-card,
+  .result-card,.hc-team-directory-row,.hc-feed-shared-card,.hc-premium-intro,.hc-search-team-entry
+):not(.hc-team-branded-hero):not(.hc-feed-discovery):not(.hc-smooth-passport):not(.hc-member-profile-hero) {
+  border:0 !important;border-radius:0 !important;box-shadow:none !important;
+  background:transparent !important;color:inherit !important;
+}
+html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-directory-shell) :is(.card,.dashboard-card,.hero-card,.result-card,.hc-premium-intro,.hc-search-team-entry):not(.hc-team-branded-hero):not(.hc-feed-discovery):not(.hc-smooth-passport):not(.hc-member-profile-hero) :is(h1,h2,h3,h4) {color:var(--hc-foreground) !important}
+html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-directory-shell) :is(.card,.dashboard-card,.hero-card,.result-card):not(.hc-team-branded-hero):not(.hc-feed-discovery):not(.hc-smooth-passport):not(.hc-member-profile-hero) .muted {color:var(--hc-foreground-muted) !important}
+html body .hc-global-page-shell .hc-team-profile-overview-grid > :is(section,div),
+html body .hc-global-page-shell .hc-team-profile-community .hc-team-fan-group-entry {
+  border:0 !important;border-radius:0 !important;box-shadow:none !important;background:transparent !important;
+}
+html body .hc-global-page-shell .hc-team-directory-row {border-bottom:1px solid var(--hc-border) !important;padding-block:20px !important}
+html body .hc-global-page-shell .hc-feed-stream > article,
+html body .hc-global-page-shell .hc-feed-stream > section {border-bottom:1px solid var(--hc-border) !important;padding-block:24px !important}
+html body .hc-global-page-shell main :is(.hero-card,.card,.dashboard-card,.hc-layout-card,.hc-layout-group,.result-card,.hc-team-directory-row)::after {box-shadow:none !important}
+/* Allow actual content to size its row rather than clipping names or translations. */
+.hc-global-page-shell main :is(section,article,aside,form,fieldset,.grid,.actions,.result-grid,.hc-scout-card__identity-copy,.hc-layout-row-label,.hc-team-profile-details) {min-width:0;max-width:100%;box-sizing:border-box}
+.hc-global-page-shell main :is(h1,h2,h3,h4,p,li,dt,dd,label,.hc-layout-row-label,.hc-scout-card__identity-copy,.hc-team-profile-meta) {overflow-wrap:anywhere;word-break:normal}
+html body .hc-global-page-shell main :is(.hc-scout-card__identity-copy h2,.hc-team-directory-row h2,.result-card h3,.hc-layout-row-label) {white-space:normal !important;text-overflow:clip !important;overflow:visible !important;-webkit-line-clamp:unset !important;max-height:none !important}
+.hc-global-page-shell main :is(.actions,.entity-actions,.hc-layout-row) {flex-wrap:wrap;gap:10px}
+.hc-global-page-shell main :is(button,.btn) {height:auto;min-height:42px;white-space:normal;overflow-wrap:anywhere;line-height:1.35}
+.hc-global-page-shell main :is(img,video) {max-width:100%}
+.hc-global-page-shell main :is(input,textarea,select) {min-width:0;max-width:100%;box-sizing:border-box}
+.hc-global-page-shell main :is(pre,.table-scroll) {max-width:100%;overflow-x:auto}
+/* Color is carried by typography, active controls, and restrained gradients. */
+.hc-global-page-shell main :is(.eyebrow,.card-kicker,.hc-dossier-card__kicker) {color:var(--hc-orange);font-weight:800}
+html.theme-light .hc-global-page-shell main :is(.eyebrow,.card-kicker,.hc-dossier-card__kicker) {color:#a63b12}
+html.theme-dark .hc-global-page-shell main :is(.eyebrow,.card-kicker,.hc-dossier-card__kicker) {color:#ffad7d}
+.hc-global-page-shell main :is(.hc-directory-switcher,.hc-team-profile-nav) {border-bottom:1px solid var(--hc-border);background:transparent}
+.hc-global-page-shell main :is(button[aria-pressed="true"],a[aria-current="page"]) {text-decoration-color:var(--hc-orange);text-underline-offset:6px}
+/* One centered brand loader for all page-level boundaries and data gates. */
+html body .hc-brand-loader.hoop-loading-inline {
+  position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:100%;min-width:0;min-height:calc(100svh - 180px) !important;padding:28px 18px !important;
+  text-align:center;gap:22px;color:var(--hc-foreground);background:transparent;
+}
+html body .hc-brand-loader .hoop-loading-copy {display:flex;flex-direction:column;align-items:center;max-width:100%;gap:14px}
+html body .hc-brand-loader .hc-logo {display:flex;align-items:center;justify-content:center;gap:10px;max-width:100%;color:inherit;animation:hc-brand-breathe 1.8s ease-in-out infinite}
+html body .hc-brand-loader .hc-logo__wordmark {font-size:clamp(28px,7vw,46px) !important;line-height:1;white-space:nowrap;letter-spacing:-.04em !important}
+html body .hc-brand-loader .hc-logo__check-word {color:#ff790b}
+html body .hc-brand-loader .hc-logo__icon {width:52px;height:52px;flex-shrink:0;color:#ff790b}
+html body .hc-brand-loader .hoop-loading-copy small {font-size:12px !important;line-height:1.6;letter-spacing:.02em;margin:0 !important;color:var(--hc-foreground-muted);max-width:36ch;overflow-wrap:anywhere}
+.hc-brand-loader__orbit {position:relative;width:64px;height:64px;display:block}
+.hc-brand-loader__orbit i {position:absolute;inset:0;border:2px solid transparent;border-top-color:#ff790b;border-right-color:#ef77af;border-radius:50%;animation:hc-brand-orbit 1.2s linear infinite}
+.hc-brand-loader__orbit i:nth-child(2) {inset:10px;border-top-color:#9d89f5;border-right-color:#59b8cf;animation-direction:reverse;animation-duration:1.7s}
+.hc-brand-loader__orbit i:nth-child(3) {inset:23px;border:0;background:#ff790b;animation:hc-brand-breathe 1.6s ease-in-out infinite}
+.hc-brand-loader__track {display:block;width:132px;height:3px;border-radius:var(--hc-radius-control);background:var(--hc-border);overflow:hidden}
+.hc-brand-loader__track i {display:block;width:45%;height:100%;background:linear-gradient(90deg,#ff790b,#b58af5);animation:hc-brand-progress 1.3s ease-in-out infinite}
+html body .hc-brand-loader--inline.hoop-loading-inline {min-height:180px !important;padding:20px 12px !important;gap:12px}
+html body .hc-brand-loader--inline .hc-brand-loader__orbit {width:42px;height:42px}
+html body .hc-brand-loader--inline .hc-brand-loader__orbit i:nth-child(3) {inset:17px}
+html body .hc-brand-loader--inline .hc-logo__wordmark {font-size:24px}
+html body .hc-brand-loader--inline .hc-logo__icon {width:34px;height:34px}
+@keyframes hc-brand-orbit {to{transform:rotate(360deg)}}
+@keyframes hc-brand-breathe {0%,100%{opacity:.8;transform:translateY(0)}50%{opacity:1;transform:translateY(-2px)}}
+@keyframes hc-brand-progress {0%{transform:translateX(-100%)}100%{transform:translateX(325%)}}
+/* A single route animation is driven by PageTransition without remounting children. */
+html body .hc-route-transition {animation:none !important}
+.hc-global-page-shell main :is(button,.btn,a,.hc-team-directory-row) {transition:color 140ms ease,background-color 140ms ease,border-color 140ms ease,transform 140ms ease;touch-action:manipulation}
+@media(hover:hover) and (pointer:fine){.hc-global-page-shell main :is(.btn,button):not(:disabled):hover{transform:translateY(-1px)}}
+.hc-global-page-shell main :is(button,.btn):not(:disabled):active {transform:scale(.98)}
+@media(max-width:700px){.hc-global-page-shell main :is(.grid,.result-grid){grid-template-columns:minmax(0,1fr)}.hc-global-page-shell main .hc-scout-card__identity{align-items:flex-start}.hc-global-page-shell main .hc-team-profile-identity{align-items:start}}
+@media(prefers-reduced-motion:reduce){html body .hc-brand-loader *,html body .hc-brand-loader *::before,html body .hc-brand-loader *::after{animation:none !important;transition:none !important}.hc-global-page-shell main :is(button,.btn,a,.hc-team-directory-row){transition:none !important}.hc-global-page-shell main :is(button,.btn):hover,.hc-global-page-shell main :is(button,.btn):active{transform:none !important}}
+.hc-global-page-shell :is(.result-group,.hc-team-profile-overview-grid > section,.hc-feed-stream > section,.hc-team-directory-row){animation:hc-flow-enter 220ms cubic-bezier(.22,1,.36,1) both}
+@keyframes hc-flow-enter{from{opacity:.7;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+html body .hc-global-page-shell main :is(.hero,.hero-card,.dashboard-card):has(> .hc-brand-loader--screen){border:0 !important;border-radius:0 !important;box-shadow:none !important;background:transparent !important;padding:0 !important}
+@media(prefers-reduced-motion:reduce){.hc-global-page-shell :is(.result-group,.hc-team-profile-overview-grid > section,.hc-feed-stream > section,.hc-team-directory-row){animation:none !important}}
+html body .hc-global-page-shell main .hc-team-profile-heading__copy{min-width:0;max-width:100%}
+html body .hc-global-page-shell main .hc-team-profile-heading__copy h1{white-space:normal !important;overflow:visible !important;text-overflow:clip !important;overflow-wrap:anywhere}
+/* Illustrated banners retain explicit readable colors in both app themes. */
+html body .hc-global-page-shell main .hc-feed-discovery{border:0 !important;border-radius:0 !important;color:#f7f7f5 !important}
+html body .hc-global-page-shell main .hc-feed-discovery :is(h2,a){color:#f7f7f5 !important}
+html body .hc-global-page-shell main .hc-feed-discovery p{color:#d4d8e2 !important}
+html body .hc-global-page-shell main .hc-feed-discovery .hc-feed-live-label{color:#ffb37f !important}
+html body .hc-global-page-shell main.hc-feed-page :is(.hc-feed-topic-picker,.hc-feed-filter-bar,.hc-feed-filter-scroll,.hc-feed-composer__footer){background:transparent !important;box-shadow:none !important}
+html body .hc-global-page-shell main .hc-team-branded-hero{border-inline:0 !important;border-bottom:0 !important;border-radius:0 !important}
+/* Legacy theme rules also read these local tokens; scope them to artwork only. */
+html body .hc-global-page-shell main .hc-team-branded-hero{--hc-foreground:#f7f7f5;--hc-foreground-muted:#d4d8e2;--hc-orange:#ffb37f;--hc-text-primary:#f7f7f5;--hc-text-secondary:#d4d8e2}
+
+/* Keep a page loader centered even when the preceding route was scrolled. */
+html body .hc-brand-loader--screen.hoop-loading-inline{position:fixed;inset:72px 0;z-index:20;min-height:0 !important;height:auto !important;max-width:none;background:var(--hc-page-bg);overflow:auto}
+html body .hc-brand-loader .hc-logo--full{flex-direction:row !important;gap:10px !important}
+html body .hc-brand-loader--inline .hc-logo__wordmark{font-size:24px !important}
+html body .hc-brand-loader .hc-logo__check-word{color:#ff790b !important}
+/* Content-first feeds: one compact heading, secondary links on demand. */
+html body .hc-global-page-shell main.hc-feed-page .hc-feed-compact-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0 !important;margin:0 0 8px !important;min-height:0;background:none !important;color:var(--hc-foreground) !important;overflow:visible}
+html body .hc-global-page-shell main.hc-feed-page .hc-feed-compact-header h1{margin:0 0 4px !important;font-size:26px !important;line-height:1.1;color:var(--hc-foreground) !important}
+html body .hc-global-page-shell main.hc-feed-page .hc-feed-compact-header :is(summary,a){color:var(--hc-foreground) !important;font-size:12px}
+html body .hc-global-page-shell main.hc-feed-page .hc-feed-compact-header .hc-feed-live-label{font-size:10px;color:var(--hc-foreground-muted) !important;letter-spacing:.03em}
+.hc-feed-explore{position:relative;flex-shrink:0}.hc-feed-explore summary{cursor:pointer;min-height:42px;display:flex;align-items:center;gap:6px}.hc-feed-explore summary::after{content:'⌄';color:var(--hc-orange)}
+html body .hc-global-page-shell main.hc-feed-page .hc-feed-explore nav{position:absolute;right:0;top:100%;z-index:30;width:210px;display:grid;gap:4px;padding:10px;background:var(--hc-surface-raised);border:1px solid var(--hc-border);border-radius:var(--hc-radius-control);box-shadow:0 10px 30px #0002}
+html body .hc-global-page-shell main.hc-feed-page .hc-feed-explore nav a{border:0;border-radius:var(--hc-radius-control);white-space:normal;padding:10px}
+html body .hc-global-page-shell main.hc-feed-page .hc-feed-composer{margin-top:4px !important;padding-top:10px !important}
+.hc-player-review-checklist{margin:28px 0;padding-block:20px;border-top:1px solid var(--hc-border)}.hc-player-review-checklist h2{margin:6px 0 10px}.hc-player-review-checklist>p{line-height:1.6;max-width:70ch}.hc-player-review-checklist ul{list-style:none;padding:0;margin:18px 0}.hc-player-review-checklist li{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--hc-border);font-size:13px}.hc-player-review-checklist li>small{margin-left:auto}.hc-player-review-checklist li>span:first-child{color:var(--hc-orange)}.hc-player-review-checklist .checkbox-row{display:flex;align-items:flex-start;gap:10px;line-height:1.6;margin:16px 0}.hc-player-review-checklist .checkbox-row input{flex-shrink:0;width:18px;height:18px;margin-top:3px}

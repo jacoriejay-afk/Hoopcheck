@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
 
 function getAdminSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -37,16 +38,17 @@ export async function POST(req:Request){
    console.error("Review subscription lookup failed:", subscriptionError);
    return NextResponse.json({error:"Unable to verify your membership right now."},{status:500});
  }
- const hasPaidPlan = subscription?.plan === "pro" || subscription?.plan === "premium";
- const hasEntitledAccess = subscription?.status === "active" || subscription?.status === "trialing" || subscription?.access_status === "pro" || subscription?.access_status === "premium";
- const paid = hasPaidPlan && hasEntitledAccess && (!subscription?.current_period_end || new Date(subscription.current_period_end).getTime() > Date.now());
  const { data: authorProfile, error: profileError } = await s.from("profiles").select("account_type,player_verified,basketball_type").eq("id", user.id).maybeSingle();
  if (profileError) {
    console.error("Review author profile lookup failed:", profileError);
    return NextResponse.json({error:"Unable to verify your player account right now."},{status:500});
  }
- if (authorProfile?.account_type !== "player" || authorProfile?.player_verified !== true) return NextResponse.json({error:"Only verified professional player accounts can submit ratings or reviews. Scouts, agents, and fans can research but cannot post."},{status:403});
- if (!paid) return NextResponse.json({error:"An active HoopCheck membership is required to submit ratings or reviews."},{status:403});
+ const entitlements = getHoopCheckEntitlements({
+   accountType: authorProfile?.account_type,
+   subscription,
+   playerVerified: authorProfile?.player_verified === true,
+ });
+ if (!entitlements.canWriteReviews) return NextResponse.json({error:"Only verified professional players with an active Pro or Premium membership can submit ratings or reviews."},{status:403});
  const anonymous = b.is_anonymous === true; const targetKeys=["coach_id","team_id","league_id"].filter(k=>typeof b[k]==="string"&&b[k]);
  if(targetKeys.length!==1)return NextResponse.json({error:"Choose exactly one coach, team, or league."},{status:400});
  if (typeof b.team_id === "string" && b.team_id) {
