@@ -182,9 +182,9 @@
     min-height: 66px !important;
     max-height: 66px !important;
     padding: 5px 0 7px !important;
-    border: 1px solid #c5c5c9 !important;
+    border: 1px solid var(--hc-card-border) !important;
     border-radius: var(--hc-radius-card) !important;
-    background: rgb(250 250 251 / 94%) !important;
+    background: var(--hc-tab-bg) !important;
     box-shadow: 0 6px 24px rgb(0 0 0 / 16%) !important;
     -webkit-backdrop-filter: blur(12px) !important;
     backdrop-filter: blur(12px) !important;
