@@ -248,6 +248,13 @@ try {
       if (routeName === "dashboard") {
         const surface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
         for (const pair of computed.homePairs) {
+          if (pair.selector === ".hc-ia-identity" && pair.background === "rgba(255, 255, 255, 0.07)") {
+            // The identity pill sits inside the intentionally dark home hero in both themes.
+            // Verify its text against the hero's dark backing instead of expecting a white card.
+            assert.ok(pair.title && contrast(pair.title, "rgb(24, 24, 24)") >= 4.5,
+              `dashboard/${theme}: dark hero identity contrast: ${JSON.stringify(pair)}`);
+            continue;
+          }
           assert.equal(pair.background, surface, `dashboard/${theme}: ${pair.selector} surface: ${JSON.stringify(pair)}`);
           const contrast = (foreground, background) => {
             const luminance = (color) => color.match(/\d+/g).slice(0, 3).map(Number)
