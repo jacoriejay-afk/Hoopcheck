@@ -56,6 +56,7 @@ try {
   await page.waitForFunction(()=>!document.querySelector('#profile-editor button[type="submit"]').disabled);
   assert.ok(patches.length>0,'Profile update was sent');
   const saved=patches.find(p=>p.height==='193 cm');
+  assert.ok(saved, `Profile height PATCH not observed; patches=${JSON.stringify(patches)}; visible feedback=${JSON.stringify(await page.locator('#profile-editor').innerText())}`);
   assert.equal(saved.position,'PG');assert.equal(saved.current_team,team.name);assert.equal(saved.current_country,'QA Country');assert.equal(saved.favorite_teams,team.name);
   assert.equal(saved.profile_visibility,'players_only','Editing preserves private visibility');
   for(const key of ['player_verified','selected_team_id','selected_womens_team_id','years_pro'])assert.ok(!(key in saved),`${key} is not self-assigned`);
