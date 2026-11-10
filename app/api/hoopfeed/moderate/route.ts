@@ -262,7 +262,7 @@ export async function POST(request: Request) {
       if (!sourceId) return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 400 });
       if (!(await canReadPostAsViewer(sourceId, token))) return NextResponse.json({ allowed: false, message: "This post is no longer available and can\'t be shared." }, { status: 404 });
       const { data: source, error: sourceError } = await db.from("feed_posts")
-        .select("id,author_id,body,image_url,image_urls,video_url,post_kind,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,status,expires_at")
+        .select("id,author_id,shared_post_id,body,image_url,image_urls,video_url,post_kind,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,status,expires_at")
         .eq("id", sourceId).maybeSingle();
       if (sourceError) {
         console.error("HoopFeed share source lookup failed", { sourceId, code: sourceError.code });
@@ -271,6 +271,8 @@ export async function POST(request: Request) {
       if (!source || source.status !== "approved" || !source.expires_at || new Date(source.expires_at).getTime() <= Date.now()) {
         return NextResponse.json({ allowed: false, message: "This post is no longer available and can't be shared." }, { status: 404 });
       }
+      // Prevent reshare chains from multiplying copied content and obscuring source visibility.
+      if (source.shared_post_id) return NextResponse.json({ allowed: false, message: "Share the original post instead of resharing a share." }, { status: 400 });
       if (source.post_kind === "poll") {
         return NextResponse.json({ allowed: false, message: "Polls can't be shared — vote on the original instead." }, { status: 400 });
       }
