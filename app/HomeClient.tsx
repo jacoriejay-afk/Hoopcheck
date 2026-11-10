@@ -6,14 +6,14 @@ import { useRouter } from "next/navigation";
 import { getCachedSession } from "../lib/supabase";
 import SearchBar from "../components/SearchBar";
 import HomeDirectoryStats from "../components/HomeDirectoryStats";
-import { HoopIcon } from "../components/HoopCheckUI";
+import { HoopIcon, type HoopIconName } from "../components/HoopCheckUI";
 import "./hoopcheck-brand-home.css";
 
-const destinations = [
-  { title: "Men's teams", detail: "Research clubs worldwide", href: "/teams", icon: "shield" },
+const destinations: { title: string; detail: string; href: string; icon: HoopIconName }[] = [
+  { title: "Men's teams", detail: "Research clubs worldwide", href: "/teams", icon: "shield-check" },
   { title: "Women's teams", detail: "Explore the women's game", href: "/womens", icon: "users" },
   { title: "Players", detail: "Discover player profiles", href: "/players", icon: "user" },
-  { title: "Coaches", detail: "Know the people leading teams", href: "/coaches", icon: "clipboard" },
+  { title: "Coaches", detail: "Know the people leading teams", href: "/coaches", icon: "clipboard-check" },
   { title: "Leagues", detail: "Explore global competitions", href: "/leagues", icon: "trophy" },
   { title: "Reviews", detail: "Learn from player experiences", href: "/reviews", icon: "star" },
 ];
@@ -67,7 +67,7 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
             {destinations.map(item => (
               <Link key={item.href} href={item.href} className="group flex min-h-36 flex-col justify-between rounded-2xl border border-white/10 bg-[#172234] p-4 transition hover:-translate-y-0.5 hover:border-orange-400/60 hover:bg-[#202e43] sm:p-5">
-                <div className="flex items-start justify-between"><span className="rounded-xl bg-orange-500/15 p-2 text-orange-400"><HoopIcon name={item.icon as Parameters<typeof HoopIcon>[0]["name"]} size={22}/></span><span aria-hidden="true" className="text-slate-400 group-hover:text-orange-300">↗</span></div>
+                <div className="flex items-start justify-between"><span className="rounded-xl bg-orange-500/15 p-2 text-orange-400"><HoopIcon name={item.icon} size={22}/></span><span aria-hidden="true" className="text-slate-400 group-hover:text-orange-300">↗</span></div>
                 <div><h3 className="mt-4 font-bold text-white">{item.title}</h3><p className="mt-1 text-xs leading-5 text-slate-300 sm:text-sm">{item.detail}</p></div>
               </Link>
             ))}
