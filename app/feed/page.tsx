@@ -205,7 +205,7 @@ export default function Feed(){
       uploadedVideoPath=null;
       setBody("");setVideo(null);setVideoPreview(old=>{if(old)URL.revokeObjectURL(old);return "";});setShowCountry(Boolean(profile?.current_country_public));clearPhotos();setPollDraft(["",""]);setComposerMode("post");setMsg(composerMode==="poll"?"Poll posted to HoopFeed. AI safety checks passed.":"Posted to HoopFeed. AI safety checks passed.");await load(user);
     }catch(e:any){console.error("HoopFeed post failed",e);setMsg(e?.message==="Video upload failed. Please try again."?e.message:"Posting failed. Please try again.");}
-    if(uploadedVideoPath){const {error:cleanupError}=await supabase.storage.from("feed-videos").remove([uploadedVideoPath]);if(cleanupError)console.error("HoopFeed rejected video cleanup failed",cleanupError);}
+    if(uploadedVideoPath){try{const {error:cleanupError}=await supabase.storage.from("feed-videos").remove([uploadedVideoPath]);if(cleanupError)console.error("HoopFeed rejected video cleanup failed",cleanupError);}catch(cleanupError){console.error("HoopFeed rejected video cleanup threw",cleanupError);}}
     setPosting(false);
   }
 
