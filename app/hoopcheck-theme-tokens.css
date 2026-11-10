@@ -1,11 +1,10 @@
-/* Single source of truth for HoopCheck's light/dark semantic theme tokens.
-   Imported last so legacy page and desktop-breakpoint styles cannot override them. */
-:root {
+/* Shared HoopCheck palette and semantic surface pairs. */
+:root, html.theme-light, html.theme-dark {
   --hc-card-surface: var(--hc-surface-raised);
   --hc-card-border: var(--hc-border);
   --hc-on-card: var(--hc-foreground);
   --hc-on-card-muted: var(--hc-foreground-muted);
-  --hc-button-primary-surface: #FF5A1F;
+  --hc-button-primary-surface: var(--accent);
   --hc-button-primary-foreground: #111111;
   --hc-button-primary-bg: var(--hc-button-primary-surface);
   --hc-button-primary-fg: var(--hc-button-primary-foreground);
@@ -13,7 +12,7 @@
   --hc-button-outline-foreground: var(--hc-foreground);
   --hc-button-outline-bg: var(--hc-button-outline-surface);
   --hc-button-outline-fg: var(--hc-button-outline-foreground);
-  --hc-brand-tile-bg: #FF5A1F;
+  --hc-brand-tile-bg: var(--accent);
   --hc-brand-tile-fg: #17110E;
   --hc-brand-tile-border: #17110E;
   --hc-empty-surface: var(--hc-surface-soft);
@@ -22,22 +21,6 @@
   --hc-on-hero: var(--hc-foreground);
   --hc-hero-muted: var(--hc-foreground-muted);
   --hc-hero-border: var(--hc-border);
-  --hc-tab-bg: #F7F7F5;
-  --hc-tab-fg: #22221F;
-  --hc-nav-active-bg: #EAEAE5;
-  --hc-nav-active-fg: #B83E14;
-  --hc-chip-surface: #F1F1ED;
-  --hc-chip-foreground: #4C4C46;
-  --hc-live-chip-surface: #FFF0E9;
-  --hc-live-chip-foreground: #8F3215;
-  --hc-accent-text: #B83E14;
-
-  --hc-page-bg: #F4F4F1;
-  --hc-surface: #FFFFFF;
-  --hc-surface-raised: #FFFFFF;
-  --hc-surface-soft: #F8F8F6;
-  --hc-foreground: #151515;
-  --hc-foreground-muted: #666661;
   /* CARD-1: legacy card variables must follow the selected theme. */
   --hc-on-surface: var(--hc-foreground);
   --hc-on-surface-muted: var(--hc-foreground-muted);
@@ -49,43 +32,66 @@
   --hc-ink: var(--hc-foreground);
   --hc-paper: var(--hc-page-bg);
   --hc-paper-strong: var(--hc-surface-raised);
-  --hc-border: #E4E4E0;
-  --hc-input-bg: #FFFFFF;
-  --hc-input-fg: #151515;
-  --hc-nav-bg: rgba(10,10,10,.96);
-  --hc-nav-fg: #FFFFFF;
-  --hc-orange: #FF5A1F;
-  --hc-focus-ring: #FF5A1F;
   /* Backward-compatible aliases; canonical values live in this file. */
+  --hc-card-bg: var(--surface-strong);
+  --hc-card-raised: var(--surface-strong);
   --hc-surface-bg: var(--hc-surface-raised);
   --hc-surface-fg: var(--hc-foreground);
   --hc-surface-muted: var(--hc-foreground-muted);
   --hc-surface-border: var(--hc-border);
-  --hc-control-knob: #FFFFFF;
-  color-scheme: light;
+  --hc-surface: var(--surface-strong);
+  --hc-surface-raised: var(--surface-strong);
+  --hc-foreground: var(--on-surface);
+  --hc-border: var(--border);
+  --hc-orange: var(--accent);
+  --hc-focus-ring: var(--accent);
+  --hc-control-bg: var(--hc-input-bg);
+  --hc-control-fg: var(--hc-input-fg);
+  --hc-control-muted: var(--hc-foreground-muted);
 }
-html.theme-light {
-  --hc-card-surface: var(--hc-surface-raised);
-  --hc-card-border: var(--hc-border);
-  --hc-on-card: var(--hc-foreground);
-  --hc-on-card-muted: var(--hc-foreground-muted);
-  --hc-button-primary-surface: #FF5A1F;
-  --hc-button-primary-foreground: #111111;
-  --hc-button-primary-bg: var(--hc-button-primary-surface);
-  --hc-button-primary-fg: var(--hc-button-primary-foreground);
-  --hc-button-outline-surface: var(--hc-surface-raised);
-  --hc-button-outline-foreground: var(--hc-foreground);
-  --hc-button-outline-bg: var(--hc-button-outline-surface);
-  --hc-button-outline-fg: var(--hc-button-outline-foreground);
-  --hc-brand-tile-bg: #FF5A1F;
-  --hc-brand-tile-fg: #17110E;
-  --hc-brand-tile-border: #17110E;
-  --hc-empty-surface: var(--hc-surface-soft);
-  --hc-empty-foreground: var(--hc-foreground);
-  --hc-hero-surface: var(--hc-surface-raised);
-  --hc-on-hero: var(--hc-foreground);
-  --hc-hero-muted: var(--hc-foreground-muted);
-  --hc-hero-border: var(--hc-border);
+:root {
+  --accent: #FF5A1F;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --hc-radius-control: var(--radius-sm);
+  --hc-radius-card: var(--radius-md);
+  --hc-radius-hero: var(--radius-lg);
+  --hc-category-teams: var(--accent);
+  --hc-category-womens: #E84393;
+  --hc-category-leagues: #1E9E50;
+  --hc-light-page: #F4F4F1;
+  --hc-light-surface: #FFFFFF;
+  --hc-light-surface-soft: #F8F8F6;
+  --hc-light-ink: #171717;
+  --hc-light-muted: #535353;
+  --hc-light-border: #D2D2CC;
+  --hc-dark-page: #000000;
+  --hc-dark-surface: #171717;
+  --hc-dark-surface-soft: #1B1B1B;
+  --hc-dark-ink: #F7F7F5;
+  --hc-dark-muted: #BDBDBD;
+  --hc-dark-border: #414141;
+  --hc-inverse-surface: #0A0A0A;
+  --hc-on-inverse-surface: #FFFFFF;
+  --hc-crest-artwork-surface: var(--hc-light-surface);
+  --hc-on-crest-artwork: var(--hc-light-ink);
+}
+:root, html.theme-light {
+  color-scheme: light;
+  --hc-page-bg: var(--hc-light-page);
+  --surface: var(--surface-strong);
+  --surface-strong: var(--hc-light-surface);
+  --on-surface: var(--hc-light-ink);
+  --border: var(--hc-light-border);
+  --hc-surface-soft: var(--hc-light-surface-soft);
+  --hc-foreground-muted: var(--hc-light-muted);
+  --hc-input-bg: var(--hc-light-surface);
+  --hc-input-fg: var(--on-surface);
+  --hc-nav-bg: rgba(0, 0, 0, .98);
+  --hc-nav-fg: var(--hc-dark-ink);
+  --hc-control-knob: var(--hc-light-surface);
+  --hc-control-border: #767676;
   --hc-tab-bg: #F7F7F5;
   --hc-tab-fg: #22221F;
   --hc-nav-active-bg: #EAEAE5;
@@ -95,54 +101,22 @@ html.theme-light {
   --hc-live-chip-surface: #FFF0E9;
   --hc-live-chip-foreground: #8F3215;
   --hc-accent-text: #B83E14;
-
-  color-scheme: light;
-  --hc-page-bg: #F4F4F1;
-  --hc-surface: #FFFFFF;
-  --hc-surface-raised: #FFFFFF;
-  --hc-surface-soft: #F8F8F6;
-  --hc-foreground: #151515;
-  --hc-foreground-muted: #666661;
-  /* CARD-1: legacy card variables must follow the selected theme. */
-  --hc-on-surface: var(--hc-foreground);
-  --hc-on-surface-muted: var(--hc-foreground-muted);
-  --hc-on-surface-raised: var(--hc-foreground);
-  --hc-on-surface-raised-muted: var(--hc-foreground-muted);
-  --hc-on-surface-soft: var(--hc-foreground);
-  --hc-card: var(--hc-surface-raised);
-  --hc-text: var(--hc-foreground);
-  --hc-ink: var(--hc-foreground);
-  --hc-paper: var(--hc-page-bg);
-  --hc-paper-strong: var(--hc-surface-raised);
-  --hc-border: #E4E4E0;
-  --hc-input-bg: #FFFFFF;
-  --hc-input-fg: #151515;
-  --hc-nav-bg: rgba(10,10,10,.96);
-  --hc-nav-fg: #FFFFFF;
-  --hc-orange: #FF5A1F;
 }
 html.theme-dark {
-  --hc-card-surface: var(--hc-surface-raised);
-  --hc-card-border: var(--hc-border);
-  --hc-on-card: var(--hc-foreground);
-  --hc-on-card-muted: var(--hc-foreground-muted);
-  --hc-button-primary-surface: #FF5A1F;
-  --hc-button-primary-foreground: #111111;
-  --hc-button-primary-bg: var(--hc-button-primary-surface);
-  --hc-button-primary-fg: var(--hc-button-primary-foreground);
-  --hc-button-outline-surface: var(--hc-surface-raised);
-  --hc-button-outline-foreground: var(--hc-foreground);
-  --hc-button-outline-bg: var(--hc-button-outline-surface);
-  --hc-button-outline-fg: var(--hc-button-outline-foreground);
-  --hc-brand-tile-bg: #FF5A1F;
-  --hc-brand-tile-fg: #17110E;
-  --hc-brand-tile-border: #17110E;
-  --hc-empty-surface: var(--hc-surface-soft);
-  --hc-empty-foreground: var(--hc-foreground);
-  --hc-hero-surface: var(--hc-surface-raised);
-  --hc-on-hero: var(--hc-foreground);
-  --hc-hero-muted: var(--hc-foreground-muted);
-  --hc-hero-border: var(--hc-border);
+  color-scheme: dark;
+  --hc-page-bg: var(--hc-dark-page);
+  --surface: var(--surface-strong);
+  --surface-strong: var(--hc-dark-surface);
+  --on-surface: var(--hc-dark-ink);
+  --border: var(--hc-dark-border);
+  --hc-surface-soft: var(--hc-dark-surface-soft);
+  --hc-foreground-muted: var(--hc-dark-muted);
+  --hc-input-bg: #141414;
+  --hc-input-fg: var(--on-surface);
+  --hc-nav-bg: rgba(0, 0, 0, .98);
+  --hc-nav-fg: var(--hc-dark-ink);
+  --hc-control-knob: var(--hc-light-surface);
+  --hc-control-border: #777777;
   --hc-tab-bg: #0A0A0A;
   --hc-tab-fg: #F7F7F5;
   --hc-nav-active-bg: #242421;
@@ -152,31 +126,21 @@ html.theme-dark {
   --hc-live-chip-surface: #3A2119;
   --hc-live-chip-foreground: #FFB18F;
   --hc-accent-text: #FF8A5C;
+}
 
-  color-scheme: dark;
-  --hc-page-bg: #0A0A0A;
-  --hc-surface: #111111;
-  --hc-surface-raised: #171717;
-  --hc-surface-soft: #1B1B1B;
-  --hc-foreground: #F5F5F0;
-  --hc-foreground-muted: #B8B8B3;
-  /* CARD-1: legacy card variables must follow the selected theme. */
-  --hc-on-surface: var(--hc-foreground);
-  --hc-on-surface-muted: var(--hc-foreground-muted);
-  --hc-on-surface-raised: var(--hc-foreground);
-  --hc-on-surface-raised-muted: var(--hc-foreground-muted);
-  --hc-on-surface-soft: var(--hc-foreground);
-  --hc-card: var(--hc-surface-raised);
-  --hc-text: var(--hc-foreground);
-  --hc-ink: var(--hc-foreground);
-  --hc-paper: var(--hc-page-bg);
-  --hc-paper-strong: var(--hc-surface-raised);
-  --hc-border: #333333;
-  --hc-input-bg: #171717;
-  --hc-input-fg: #F5F5F0;
-  --hc-nav-bg: rgba(10,10,10,.98);
-  --hc-nav-fg: #F5F5F0;
-  --hc-orange: #FF6A36;
+/* Keep the opaque pair for browsers and preferences that need it. */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) and
+  (background-color: color-mix(in srgb, white 92%, transparent)) {
+  :root, html.theme-light, html.theme-dark {
+    --surface: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+    --hc-surface-backdrop: blur(12px) saturate(135%);
+  }
+}
+@media (prefers-contrast: more), (forced-colors: active), (prefers-reduced-transparency: reduce) {
+  :root, html.theme-light, html.theme-dark {
+    --surface: var(--surface-strong);
+    --hc-surface-backdrop: none;
+  }
 }
 /* Root surfaces and typography must inherit from the active semantic tokens. */
 html, body { min-width: 0; background: var(--hc-page-bg) !important; color: var(--hc-foreground) !important; }

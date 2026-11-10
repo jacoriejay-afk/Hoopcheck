@@ -1,9 +1,6 @@
 /* Unified visual contract. Imported after the legacy styles so every route shares
    consistent mobile gutters, panel borders, radii and vertical rhythm. */
-:root { --hc-unified-radius:16px; --hc-unified-gap:12px; }
-.hc-global-page-shell .hc-route-transition { min-width:0; width:100%; }
-.hc-global-page-shell .hc-route-transition > main { box-sizing:border-box; margin-block-start:0!important; }
-.hc-global-page-shell .hc-route-transition > main.page-shell { padding-block-start:12px!important; }
+:root { --hc-unified-radius:var(--radius-lg); --hc-unified-gap:var(--hc-shell-gap); }
 .hc-global-page-shell .hc-route-transition > main :where(.hero,.hero-card,.dashboard-card,.card,.hc-layout-card,.hc-layout-group,.hc-settings-group) { box-shadow:none!important; }
 .hc-global-page-shell .hc-route-transition > main :where(.hero-card,.dashboard-card,.card,.hc-layout-card,.hc-layout-group,.hc-settings-group) {
   border-radius:var(--hc-unified-radius)!important;
@@ -22,15 +19,11 @@
   margin-block-start:var(--hc-unified-gap)!important;
 }
 .hc-global-page-shell .hc-route-transition > main :where(input,textarea,select,button,a) { max-width:100%; }
-html.theme-light .hc-global-page-shell .hc-route-transition > main { --hc-unified-panel:#fff; }
-html.theme-dark .hc-global-page-shell .hc-route-transition > main { --hc-unified-panel:#171717; }
 @media(max-width:767px) {
-  .hc-global-page-shell .hc-route-transition > main { padding-block-start:8px!important; }
-  .hc-global-page-shell .hc-route-transition > main.page-shell { padding-block-start:8px!important; }
   .hc-global-page-shell .hc-route-transition > main :where(.hero,.hero-card,.dashboard-card,.hc-layout-card,.hc-layout-group) { margin-block-end:0!important; }
   .hc-global-page-shell .hc-route-transition > main .page-container > * + * { margin-block-start:var(--hc-unified-gap)!important; }
   .hc-global-page-shell .hc-route-transition > main :where(.grid,.hc-feed-stream) { gap:var(--hc-unified-gap)!important; }
-  .hc-global-page-shell .hc-route-transition > main :where(.hero-card,.dashboard-card,.card,.hc-layout-card,.hc-layout-group,.hc-settings-group) { border-radius:var(--hc-radius-control)!important; }
+  .hc-global-page-shell .hc-route-transition > main :where(.hero-card,.dashboard-card,.card,.hc-layout-card,.hc-layout-group,.hc-settings-group) { border-radius:var(--radius-lg)!important; }
 }
 /* Team directory: one filter panel, not a card inside a card with a court overlay. */
 .hc-global-page-shell main.hc-directory-refresh > .hero:has(.research-search) {
@@ -45,7 +38,7 @@ html.theme-dark .hc-global-page-shell .hc-route-transition > main { --hc-unified
   padding:12px!important;margin:0!important;
   border:1px solid var(--hc-border,var(--border,#ddd))!important;
   border-radius:var(--hc-radius-control)!important;
-  background:var(--hc-unified-panel)!important;
+  background:var(--surface-strong)!important;
   box-shadow:none!important;
 }
 .hc-global-page-shell main.hc-directory-refresh .research-search .hc-searchbar {
@@ -58,7 +51,7 @@ html.theme-dark .hc-global-page-shell .hc-route-transition > main { --hc-unified
   min-width:0!important;flex:1!important;width:100%!important;
   min-height:44px!important;border:1px solid var(--hc-border,#ccc)!important;
   border-radius:var(--hc-radius-control)!important;padding:10px 12px!important;
-  background:var(--hc-unified-panel)!important;
+  background:var(--surface-strong)!important;
   color:var(--hc-foreground,inherit)!important;
 }
 .hc-global-page-shell main.hc-directory-refresh .research-search .hc-searchbar__icon { position:static!important;flex:0 0 20px!important;width:20px!important;height:20px!important; }
@@ -71,7 +64,7 @@ html.theme-dark .hc-global-page-shell .hc-route-transition > main { --hc-unified
 .hc-global-page-shell main.hc-directory-refresh .research-search .team-filter-row select {
   width:100%!important;min-width:0!important;min-height:42px!important;
   border:1px solid var(--hc-border,#ccc)!important;border-radius:var(--hc-radius-control)!important;
-  background:var(--hc-unified-panel)!important;color:var(--hc-foreground,inherit)!important;
+  background:var(--surface-strong)!important;color:var(--hc-foreground,inherit)!important;
   font-size:13px!important;padding:8px!important;
 }
 .hc-global-page-shell main.hc-directory-refresh .hc-directory-summary {

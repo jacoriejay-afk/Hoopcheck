@@ -4,16 +4,13 @@
 
 :root {
   color-scheme: light;
-  --hc-radius-control: 12px;
-  --hc-radius-card: 16px;
-  --hc-radius-hero: 20px;
   --ink: #0A0A0A;
   --paper: #F7F7F5;
-  --brand-orange: #FF5A1F;
-  --category-teams: #FF5A1F;
-  --category-womens: #E84393;
+  --brand-orange: var(--accent);
+  --category-teams: var(--hc-category-teams);
+  --category-womens: var(--hc-category-womens);
   --category-coaches: #2456C8;
-  --category-leagues: #1E9E50;
+  --category-leagues: var(--hc-category-leagues);
   --category-players: #6C3FD4;
   --category-reviews: #0A0A0A;
   --category-alerts: #F5B800;
@@ -624,7 +621,7 @@ a {
   padding: 26px;
   border: 1px solid #343434;
   border-radius: var(--hc-radius-card);
-  background: #101010;
+  background: var(--surface-strong);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
 }
 .review-moderation-center .modal-header {
@@ -1137,7 +1134,7 @@ button:not(:disabled):hover, .btn:hover, .result-card:hover, .quick-card:hover {
 .empty-section { max-width:1180px; margin:0 auto; padding:34px 6% 90px; }
 .empty-section h2 { font-size:clamp(34px,6vw,58px); letter-spacing:-2px; }
 .quick-links { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
-.quick-card { text-decoration:none; display:flex; flex-direction:column; gap:8px; border:1px solid var(--border); border-radius:var(--hc-radius-control); padding:20px; background:#101010; }
+.quick-card { text-decoration:none; display:flex; flex-direction:column; gap:8px; border:1px solid var(--border); border-radius:var(--hc-radius-control); padding:20px; background:var(--surface-strong); }
 .quick-card span { color:var(--orange); font-size:11px; font-weight:900; }
 .quick-card strong { color:#fff; font-size:17px; }
 .quick-card small { color:var(--gray-500); line-height:1.4; }
@@ -1155,7 +1152,7 @@ button:not(:disabled):hover, .btn:hover, .result-card:hover, .quick-card:hover {
 :root {
   --display-font: Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Black", sans-serif;
   --body-font: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --surface: #101010;
+
   --surface-2: #151515;
   --surface-3: #0b0b0b;
   --page-bg: #050505;
@@ -1177,7 +1174,7 @@ html.theme-light {
   --page-bg: #ece7df;
   --page-text: #151515;
   --page-muted: #626262;
-  --surface: #f8f4ec;
+
   --surface-2: #fffaf0;
   --surface-3: #e7e0d5;
   --black: #ece7df;
@@ -2312,7 +2309,7 @@ main > .nav{display:none!important}
   --orange: #ff6a00;
   --orange-light: #ff8a1f;
   --orange-dark: #d94f00;
-  --surface: #101010;
+
   --surface-raised: #171717;
   --surface-muted: #202020;
   --text-primary: #fff;
@@ -3268,7 +3265,7 @@ body { background-color: var(--hc-page-bg); }
 
 
 /* HoopFeed's short-lived locker-room ticket identity. */
-.hc-feed-composer { position:relative; overflow:hidden; border:1px solid #2d2d2d!important; background:#111!important; color:#f8f8f5!important; }
+.hc-feed-composer { position:relative; overflow:hidden; border:1px solid #2d2d2d!important; background:var(--surface-strong)!important; color:#f8f8f5!important; }
 .hc-feed-composer>*:not(.hc-feed-composer__court) { position:relative; z-index:1; }
 .hc-feed-composer .card-kicker,.hc-feed-composer .eyebrow { color:#ff7b48; }
 .hc-feed-composer textarea { position:relative; z-index:1; border-color:#414141!important; background:rgba(20,20,20,.92)!important; color:#fff!important; }
@@ -3733,7 +3730,7 @@ html.theme-dark {
   --page-bg: #0A0A0A;
   --page-text: #F5F5F0;
   --page-muted: #B8B8B3;
-  --surface: #111111;
+
   --surface-2: #171717;
   --surface-3: #222222;
   --ink: #F5F5F0;
@@ -3747,7 +3744,7 @@ html.theme-dark {
   --hc-text-muted: #B8B8B3;
   --hc-divider: #303030;
   --hc-danger: #FF5C65;
-  --brand-orange: #FF5A1F;
+  --brand-orange: var(--accent);
   --orange: #FF5A1F;
 }
 html.theme-light {
@@ -3849,7 +3846,7 @@ button.hc-setting-row { appearance: none; }
 
 
 /* Final theme override: globals.css loads after the shared surface contract. */
-html.theme-dark body .hc-feed-composer { background:#171717!important; background-color:#171717!important; color:#f8f8f5!important; }
+html.theme-dark body .hc-feed-composer { background:var(--surface-strong)!important; background-color:var(--surface-strong)!important; color:#f8f8f5!important; }
 html.theme-light body .hc-feed-composer { background:var(--hc-surface-raised)!important; background-color:var(--hc-surface-raised)!important; color:#111!important; }
 
 
@@ -3873,7 +3870,7 @@ html.theme-light main :where(input[type="radio"],input[type="checkbox"]) { accen
 .hc-claim-steps li>div { display:grid; gap:3px; min-width:0; }
 .hc-claim-steps li strong { color:var(--hc-foreground); font-size:11px; }
 .hc-claim-steps li small { color:var(--hc-foreground-muted); font-size:10px; line-height:1.4; }
-html.theme-dark .hc-claim-panel { background:#171717; color:#F7F7F5; border-color:#444; }
+html.theme-dark .hc-claim-panel { background:var(--surface-strong); color:#F7F7F5; border-color:#444; }
 html.theme-dark .hc-claim-panel :where(h3,p,strong,label) { color:#F7F7F5; }
 html.theme-dark .hc-claim-panel :where(.hc-claim-methods label,.hc-claim-field input) { background:#202020; color:#F7F7F5; border-color:#505050; }
 html.theme-dark .hc-claim-panel :where(.hc-claim-methods small,.hc-claim-field small) { color:#B8B8B2; }
@@ -3893,7 +3890,7 @@ html.theme-light main :where(select option, select optgroup) { background:var(--
 html.theme-light main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), textarea) { color:#171717; -webkit-text-fill-color:#171717; }
 html.theme-dark main :where(input[type="radio"], input[type="checkbox"]) { accent-color:#FF5A1F; }
 html.theme-light main :where(input[type="radio"], input[type="checkbox"]) { accent-color:#E84B16; }
-html.theme-dark .hc-claim-panel { background:#171717; color:#F7F7F5; border-color:#444; }
+html.theme-dark .hc-claim-panel { background:var(--surface-strong); color:#F7F7F5; border-color:#444; }
 html.theme-dark .hc-claim-panel :where(h3,p,strong,label) { color:#F7F7F5; }
 html.theme-dark .hc-claim-panel :where(.hc-claim-field input) { background:#202020; color:#F7F7F5; border-color:#505050; }
 html.theme-dark .hc-claim-panel :where(.hc-claim-field small) { color:#B8B8B2; }

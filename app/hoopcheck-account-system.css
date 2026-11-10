@@ -1,8 +1,8 @@
 /* Account is the visual reference for member content. Keep theme pairs intact. */
 :root {
-  --hc-content-radius: 20px;
+  --hc-content-radius: var(--radius-lg);
   --hc-content-padding: clamp(18px, 3vw, 28px);
-  --hc-content-gap: 20px;
+  --hc-content-gap: var(--hc-shell-gap);
 }
 
 html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-directory-shell) :is(
@@ -13,8 +13,8 @@ html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-director
 ):not(.hc-member-profile-hero) {
   border: 1px solid var(--hc-border) !important;
   border-radius: var(--hc-content-radius) !important;
-  background: var(--hc-surface-raised) !important;
-  color: var(--hc-foreground) !important;
+  background: var(--surface) !important;
+  color: var(--on-surface) !important;
   box-shadow: none !important;
   min-width: 0;
 }
@@ -94,7 +94,7 @@ html body .hc-global-page-shell main .hc-searchbar__input {
   min-height: 48px; font-size: 16px;
 }
 html body .hc-global-page-shell main .hc-searchbar__submit {
-  border-radius: 10px !important; background: #ff5a1f !important;
+  border-radius: 10px !important; background: var(--accent) !important;
   color: #111 !important; min-height: 48px; font-weight: 800;
 }
 html body .hc-global-page-shell main .hc-directory-switcher {
@@ -130,7 +130,7 @@ html body .hc-global-page-shell main :is(a,button,input,select,textarea):focus-v
 }
 
 @media (max-width: 700px) {
-  :root { --hc-content-padding: 18px; --hc-content-gap: 16px; }
+  :root { --hc-content-padding: 18px; }
   html body .hc-global-page-shell main .hc-search-team-entry { grid-template-columns: minmax(0,1fr); gap: 12px; }
   html body .hc-global-page-shell main .hc-search-team-entry .actions { width: 100%; }
   html body .hc-global-page-shell main .hc-search-team-entry .btn { width: 100%; text-align: center; }

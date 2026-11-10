@@ -140,7 +140,7 @@
   color: #fff;
   border: 0;
   border-bottom: 4px solid var(--hc-orange);
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   box-shadow: none;
 }
 .hc-dashboard-shell .hc-player-hero :where(h1,h2,h3,strong) { color: #fff; }
@@ -157,7 +157,7 @@
   padding: clamp(18px, 2.8vw, 32px);
   background: var(--hc-surface-raised);
   border: 1px solid #dededb;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 .hc-dashboard-shell .hc-command-center .dashboard-command-copy h2 {
   max-width: 760px;
@@ -178,7 +178,7 @@
   color: #fff;
   border: 1px solid #303030;
   border-top: 3px solid var(--hc-orange);
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   box-shadow: none;
 }
 .hc-dashboard-shell .hc-command-grid .hc-command-tile :where(strong) {
@@ -200,7 +200,7 @@
 .hc-dashboard-shell .dashboard-card,
 .hc-dashboard-shell .player-dashboard-card,
 .hc-dashboard-shell .hc-command-tile {
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
 }
 .hc-dashboard-shell .dashboard-card {
   border-color: #dededb;
@@ -208,7 +208,7 @@
 }
 .hc-dashboard-shell .dashboard-card .card-kicker { color: var(--hc-orange); }
 .hc-dashboard-shell :where(input,select,textarea) {
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 @media (max-width: 760px) {
   .hc-dashboard-shell > .page-container { padding-inline: 10px; }
@@ -289,7 +289,7 @@
   border: 1px solid #3a3a3a;
   border-left: 3px solid var(--hc-orange);
   color: #eee;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 .hc-team-directory-page .search-button strong { color: var(--hc-orange); }
 .hc-team-directory-page > .hero:nth-child(2) {
@@ -319,7 +319,7 @@
   color: #111 !important;
   background: #fafaf9 !important;
   border: 1px solid #d5d5d2 !important;
-  border-radius: 2px !important;
+  border-radius: var(--radius-sm) !important;
 }
 .hc-team-directory-page .team-filter-row {
   display: grid;
@@ -335,7 +335,7 @@
   color: #222;
   background: var(--hc-surface-raised);
   border: 1px solid #d5d5d2;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 .hc-team-directory-page .hc-team-directory-list {
   padding-inline: clamp(12px, 3.5vw, 48px) !important;
@@ -354,7 +354,7 @@
   background: #080808;
   border: 0;
   border-bottom: 4px solid var(--hc-orange);
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
 }
 .hc-team-directory-page > .hero:nth-last-of-type(1) h2 { color: #fff; }
 .hc-team-directory-page > .hero:nth-last-of-type(1) p { color: #ccc; }
@@ -384,7 +384,7 @@
   background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange);
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   box-shadow: none;
 }
 .hc-coaches-directory-page .hc-team-row h2,
@@ -407,7 +407,7 @@
 .hc-leagues-directory-page .hc-team-row .btn {
   margin-top: auto;
   min-height: 42px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   font-weight: 900;
   text-transform: uppercase;
 }
@@ -420,7 +420,7 @@
   padding: 10px 12px;
   background: var(--hc-surface-raised);
   border: 1px solid #d5d5d2;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 .hc-coaches-directory-page > .hero:not(:first-child),
 .hc-leagues-directory-page > .hero:not(:first-child) {
@@ -436,7 +436,7 @@
   color: #fff;
   background: #080808;
   border-bottom: 4px solid var(--hc-orange);
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
 }
 .hc-coaches-directory-page > .hero:last-child h2,
 .hc-leagues-directory-page > .hero:last-child h2 { color: #fff; }
@@ -468,7 +468,7 @@
     linear-gradient(110deg, #050505, #17110d);
   border: 0;
   border-bottom: 4px solid var(--hc-orange);
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
 }
 .hc-global-search-page .search-hero h1 {
   color: #fff;
@@ -492,7 +492,7 @@
   color: #111;
   background: var(--hc-surface-raised);
   border: 1px solid #d5d5d2;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 .hc-global-search-page .results-section,
 .hc-global-search-page .empty-section {
@@ -527,10 +527,10 @@
   min-width: 0;
   padding: 16px;
   color: #111;
-  background: #f8f8f6;
+  background: var(--surface-strong);
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange);
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   text-decoration: none;
   overflow-wrap: anywhere;
 }
@@ -555,18 +555,18 @@
   gap: 9px;
   padding: 18px;
   color: #fff;
-  background: #090909;
+  background: var(--surface-strong);
   border-bottom: 3px solid var(--hc-orange);
   text-decoration: none;
 }
 .hc-global-search-page .quick-card > span { color: var(--hc-orange); font-size: 11px; font-weight: 900; }
 .hc-global-search-page .quick-card strong { font-family: var(--hc-display) !important; text-transform: uppercase; }
 .hc-global-search-page .quick-card small { color: #c5c5c5; }
-.hc-global-search-page .dashboard-card { margin-bottom: 18px; border-radius: 2px; }
-.hc-global-search-page .state-card { padding: 22px; background: #f8f8f6; border: 1px solid #dededb; }
+.hc-global-search-page .dashboard-card { margin-bottom: 18px; border-radius: var(--radius-lg); }
+.hc-global-search-page .state-card { padding: 22px; background: var(--surface-strong); border: 1px solid #dededb; }
 .player-profile-page .player-profile-hero,
 .player-profile-page .hero-card {
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
 }
 .player-profile-page .player-profile-hero {
   padding: clamp(22px, 4vw, 40px);
@@ -588,7 +588,7 @@
 .player-profile-page .player-profile-hero .muted { color: #ccc; }
 .player-profile-page .player-profile-card,
 .player-profile-page .dashboard-card {
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   border-color: #dededb;
 }
 @media (max-width: 760px) {
@@ -631,7 +631,7 @@
   min-width: 0;
   padding: clamp(20px, 3vw, 32px);
   border: 1px solid var(--hc-line);
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
   background: var(--hc-paper, #fff);
   color: var(--hc-ink, #111);
   box-shadow: 0 8px 24px rgb(0 0 0 / 5%);
@@ -695,7 +695,7 @@
   min-width: 0;
   min-height: 48px;
   border: 1px solid #d4d4d0;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--hc-surface-raised);
   color: #111;
   padding: 12px 14px;
@@ -714,7 +714,7 @@
   padding: 20px;
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange, #ff6a00);
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   background: var(--hc-surface-raised);
 }
 .hc-player-directory-page .hc-player-results h2 {
@@ -784,7 +784,7 @@
 .hc-coaches-directory-page > .hero:first-child .btn,
 .hc-leagues-directory-page > .hero:first-child .btn {
   min-height: 44px;
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: .04em;
@@ -889,7 +889,7 @@
 .hc-womens-directory-page .compact-section,
 .hc-womens-directory-page .dashboard-card {
   border: 1px solid #dededb;
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   box-shadow: none;
 }
 .hc-womens-directory-page .research-search { display: grid; gap: 12px; }
@@ -902,7 +902,7 @@
   color: #111;
   background: var(--hc-surface-raised);
   border: 1px solid #d4d4d0;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 .hc-womens-directory-page :where(a,button,input,select):focus-visible {
   outline: 2px solid var(--hc-orange);
@@ -927,7 +927,7 @@
   background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-top: 3px solid #252525;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 .hc-womens-directory-page .filter-chip strong {
   font-family: var(--hc-display) !important;
@@ -1005,7 +1005,7 @@
     linear-gradient(110deg, #070707, #17110d);
   border: 0;
   border-bottom: 4px solid var(--hc-orange);
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
 }
 .hc-womens-profile-page .hero-card h1 {
   color: #fff;
@@ -1027,7 +1027,7 @@
   min-width: 0;
   background: var(--hc-surface-raised);
   border: 1px solid #dededb;
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   box-shadow: none;
 }
 .hc-womens-profile-page .compact-grid > .card { border-top: 3px solid var(--hc-orange); padding: 20px; }
@@ -1082,7 +1082,7 @@
     linear-gradient(110deg, #070707, #17110d);
   border: 0;
   border-bottom: 4px solid var(--hc-orange);
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
 }
 .hc-member-profile-page .compact-hero h1,
 .hc-account-page > .page-container > .hero-card:first-child h1 {
@@ -1106,7 +1106,7 @@
   min-width: 0;
   background: var(--hc-surface-raised);
   border: 1px solid #dededb;
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   box-shadow: none;
 }
 .hc-member-profile-page .compact-grid > .card { padding: 20px; border-top: 3px solid var(--hc-orange); }
@@ -1128,7 +1128,7 @@
   color: #111;
   background: var(--hc-surface-raised);
   border: 1px solid #d4d4d0;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 .hc-account-page :where(input,select,textarea):focus-visible {
   outline: 2px solid var(--hc-orange);
@@ -1140,7 +1140,7 @@
 .hc-account-page .actions,
 .hc-member-profile-page .actions { gap: 9px; flex-wrap: wrap; }
 .hc-account-page .btn,
-.hc-member-profile-page .btn { min-height: 42px; border-radius: 2px; }
+.hc-member-profile-page .btn { min-height: 42px; border-radius: var(--radius-sm); }
 .hc-account-page :where(a,button):focus-visible,
 .hc-member-profile-page :where(a,button):focus-visible {
   outline: 2px solid var(--hc-orange);
@@ -1181,7 +1181,7 @@
     linear-gradient(110deg, #070707, #17110d);
   border: 0;
   border-bottom: 4px solid var(--hc-orange);
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
 }
 .hc-entity-profile-page > .hero:first-child h1 {
   color: #fff;
@@ -1201,7 +1201,7 @@
   padding: clamp(18px, 3vw, 28px);
   background: var(--hc-surface-raised);
   border: 1px solid #dededb;
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   box-shadow: none;
 }
 .hc-entity-profile-page > .hero:not(:first-child) h2,
@@ -1214,7 +1214,7 @@
 .hc-entity-profile-page .grid .card,
 .hc-entity-profile-page .card {
   min-width: 0;
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   box-shadow: none;
   overflow-wrap: anywhere;
 }
@@ -1299,7 +1299,7 @@
   background: var(--hc-surface-raised);
   border: 1px solid #d9d9d6;
   border-top: 4px solid #171717;
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 5px 18px rgba(0,0,0,.035);
 }
 .hc-membership-page .plan-card.featured { border-top-color: var(--hc-orange); }
@@ -1401,7 +1401,7 @@
   min-width: 40px;
   height: 40px;
   border: 1px solid #363636;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 .hc-template-header .hc-header-nav .hc-header-icon svg {
   width: 19px;
@@ -1503,7 +1503,7 @@
   background: var(--hc-surface-raised);
   border: 1px solid #dededb;
   border-top: 4px solid var(--hc-orange);
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 8px 26px rgba(0,0,0,.045);
 }
 .hc-auth-page .hc-auth-card h2 {
@@ -1519,7 +1519,7 @@
   padding:11px 12px;
   background:#fafaf8;
   border:1px solid #d4d4d0;
-  border-radius:2px;
+  border-radius:var(--radius-sm);
   color:#111;
 }
 .hc-auth-page :where(input,select,textarea):focus-visible {
@@ -1535,7 +1535,7 @@
   background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-left:4px solid var(--hc-orange);
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
 }
 .hc-auth-page .hc-auth-promo .card h2 {
@@ -1587,7 +1587,7 @@
   padding:clamp(22px,3vw,38px);
   background:radial-gradient(ellipse at 88% 12%,rgba(255,106,0,.18),transparent 35%),#080808;
   border-bottom:4px solid var(--hc-orange);
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   color:#fff;
 }
 .auth-page-shell .signup-page .auth-hero :where(h1,h2) {
@@ -1615,7 +1615,7 @@
   background:var(--hc-surface-raised);
   border:1px solid #dcdcd8;
   border-top:4px solid var(--hc-orange);
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:0 8px 28px rgba(0,0,0,.04);
 }
 .auth-page-shell .signup-card h2 {
@@ -1637,7 +1637,7 @@
   color:#222;
   background:#f7f7f5;
   border:1px solid #d9d9d5;
-  border-radius:2px;
+  border-radius:var(--radius-sm);
 }
 .auth-page-shell .account-type-choice.selected {
   background:#fff5ec;
@@ -1662,7 +1662,7 @@
   color:#111;
   background:#fafaf8;
   border:1px solid #d2d2ce;
-  border-radius:2px;
+  border-radius:var(--radius-sm);
 }
 .auth-page-shell .signup-form select[multiple] { min-height:120px; }
 .auth-page-shell .signup-form :where(input,select,textarea):focus-visible {
@@ -1722,7 +1722,7 @@
   color:#fff;
   border:0;
   border-bottom:4px solid var(--hc-orange);
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
 }
 .hc-notifications-page .hero-card :where(h1,h2) {
@@ -1743,7 +1743,7 @@
   background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-left:3px solid #c8c8c4;
-  border-radius:2px;
+  border-radius:var(--radius-sm);
   text-decoration:none;
   transition:border-color .16s ease,background .16s ease;
 }
@@ -1778,7 +1778,7 @@
   background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-top:3px solid var(--hc-orange);
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
 }
 @media (max-width:560px) {
@@ -1823,7 +1823,7 @@
   background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-top:3px solid #171717;
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
 }
 .hc-settings-page .settings-card:nth-child(2n) { border-top-color:var(--hc-orange); }
@@ -1849,7 +1849,7 @@
   color:#111;
   background:#fafaf8;
   border:1px solid #d4d4d0;
-  border-radius:2px;
+  border-radius:var(--radius-sm);
 }
 .hc-settings-page .theme-options { display:grid; gap:8px; margin-top:14px; }
 .hc-settings-page .theme-option {
@@ -1860,7 +1860,7 @@
   color:#111;
   background:#f7f7f5;
   border:1px solid #dededb;
-  border-radius:2px;
+  border-radius:var(--radius-sm);
 }
 .hc-settings-page .theme-option strong { font-size:13px; font-weight:950; text-transform:uppercase; }
 .hc-settings-page .theme-option small { color:#626262; font-size:11px; }
@@ -1879,7 +1879,7 @@
   color:#222;
   background:#f5f5f2;
   border:1px solid #d7d7d2;
-  border-radius:2px;
+  border-radius:var(--radius-sm);
   font-size:12px;
   font-weight:900;
 }
@@ -1955,7 +1955,7 @@
   background:radial-gradient(ellipse at 88% 12%,rgba(255,106,0,.2),transparent 34%),#080808;
   border:0;
   border-bottom:4px solid var(--hc-orange);
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
 }
 .hc-dashboard-shell .hc-player-hero :where(h1,h2) {
@@ -2005,7 +2005,7 @@
   padding:clamp(20px,3.5vw,36px);
   background:var(--hc-surface-raised);
   border:1px solid #dededb;
-  border-radius:2px;
+  border-radius:var(--radius-sm);
 }
 .hc-dashboard-shell .dashboard-command-copy { max-width:680px; }
 .hc-dashboard-shell .dashboard-command-copy h2 {
@@ -2035,7 +2035,7 @@
   background:#f7f7f5;
   border:1px solid #dededb;
   border-top:3px solid #171717;
-  border-radius:2px;
+  border-radius:var(--radius-sm);
   text-decoration:none;
   transition:transform .16s ease,border-color .16s ease,background .16s ease;
 }
@@ -2083,7 +2083,7 @@
   padding:clamp(17px,2.5vw,24px);
   background:var(--hc-surface-raised);
   border:1px solid #dededb;
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
   overflow-wrap:anywhere;
 }
@@ -2146,7 +2146,7 @@
   color:#fff;
   border:0;
   border-bottom:4px solid var(--hc-orange);
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
 }
 .hc-support-page .hero-card h1 {
@@ -2165,7 +2165,7 @@
   background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-top:3px solid var(--hc-orange);
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
 }
 .hc-support-page .signup-form { display:grid; gap:16px; }
@@ -2184,7 +2184,7 @@
   color:#111;
   background:#fbfbf9;
   border:1px solid #d5d5d0;
-  border-radius:2px;
+  border-radius:var(--radius-sm);
   font:inherit;
   font-size:14px;
 }
@@ -2199,9 +2199,9 @@
 .hc-support-page .card {
   min-width:0;
   padding:16px;
-  background:#fafaf8;
+  background:var(--surface-strong);
   border:1px solid #dededb;
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
   overflow-wrap:anywhere;
 }
@@ -2239,7 +2239,7 @@
   color:#fff;
   border:0;
   border-bottom:4px solid var(--hc-orange);
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
 }
 .hc-fans-directory-page .hero-card h1 {
@@ -2259,7 +2259,7 @@
   color:#111;
   background:var(--hc-surface-raised);
   border:1px solid #d4d4d0;
-  border-radius:2px;
+  border-radius:var(--radius-lg);
 }
 .hc-fans-directory-page .grid { gap:12px; }
 .hc-fans-directory-page .dashboard-card {
@@ -2268,7 +2268,7 @@
   background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-top:3px solid #191919;
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
   overflow-wrap:anywhere;
 }
@@ -2286,7 +2286,7 @@
   color:#fff;
   border:0;
   border-bottom:4px solid var(--hc-orange);
-  border-radius:2px;
+  border-radius:var(--radius-lg);
 }
 .hc-fan-profile-page .hc-fan-profile-heading h1 {
   color:#fff;
@@ -2307,7 +2307,7 @@
   padding:clamp(18px,3vw,28px);
   background:var(--hc-surface-raised);
   border:1px solid #dededb;
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
   line-height:1.65;
   overflow-wrap:anywhere;
@@ -2344,7 +2344,7 @@
   background:radial-gradient(ellipse at 90% 10%,rgba(255,106,0,.2),transparent 34%),#080808;
   border:0;
   border-bottom:4px solid var(--hc-orange);
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
 }
 .hc-partners-page .hero-card h1 {
@@ -2361,7 +2361,7 @@
   background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-top:3px solid var(--hc-orange);
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
 }
 .hc-partners-page :where(select,textarea) {
@@ -2371,7 +2371,7 @@
   color:#111;
   background:#fbfbf9;
   border:1px solid #d5d5d0;
-  border-radius:2px;
+  border-radius:var(--radius-sm);
   font:inherit;
   font-size:14px;
 }
@@ -2428,7 +2428,7 @@
   background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-top:3px solid var(--hc-orange);
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
   color:#242424;
   font-size:15px;
@@ -2482,7 +2482,7 @@
   background:radial-gradient(ellipse at 88% 10%,rgba(255,106,0,.2),transparent 35%),#080808;
   border:0;
   border-bottom:4px solid var(--hc-orange);
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
 }
 .hc-copyright-page .hero-card h1 {
@@ -2500,7 +2500,7 @@
   background:var(--hc-surface-raised);
   border:1px solid #dededb;
   border-top:3px solid var(--hc-orange);
-  border-radius:2px;
+  border-radius:var(--radius-lg);
   box-shadow:none;
   font-size:15px;
   line-height:1.75;
@@ -2567,7 +2567,7 @@
     right:25%;
     height:3px;
     background:var(--hc-orange);
-    border-radius:0 0 2px 2px;
+    border-radius:0 0 var(--radius-sm) var(--radius-sm);
   }
   .bottom-nav-icon {
     display:grid;
@@ -2617,7 +2617,7 @@
   overflow:hidden;
   border:1px solid #dededb;
   border-top:3px solid var(--hc-orange);
-  border-radius:2px;
+  border-radius:var(--radius-sm);
   background:var(--hc-surface-raised);
   box-shadow:none;
   transition:transform .16s ease,border-color .16s ease;
@@ -2633,7 +2633,7 @@
 .hc-coaches-directory-page :where(input,select,textarea),
 .hc-leagues-directory-page :where(input,select,textarea) {
   min-height:44px;
-  border-radius:2px;
+  border-radius:var(--radius-sm);
 }
 .hc-team-directory-page :where(a,button,input,select),
 .hc-coaches-directory-page :where(a,button,input,select),
@@ -2691,7 +2691,7 @@
 .hc-global-search-page .result-link { color:#a84400; font-weight:900; }
 @media (max-width:760px) {
   .hc-global-search-page { padding:10px; }
-  .hc-global-search-page .search-hero { padding:26px 17px; border-radius:2px; }
+  .hc-global-search-page .search-hero { padding:26px 17px; border-radius:var(--radius-lg); }
   .hc-global-search-page .search-form { display:grid; grid-template-columns:minmax(0,1fr); }
   .hc-global-search-page .search-form input,
   .hc-global-search-page .search-form button { width:100%; min-width:0; }
@@ -2729,7 +2729,7 @@
   color: #111;
   background: var(--hc-surface-raised);
   border: 1px solid #d5d5d2;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 .hc-leagues-directory-page .hc-league-filter p {
   justify-self: end;
@@ -2784,7 +2784,7 @@
   background: var(--hc-surface-raised);
   border: 1px solid #c9c9c5;
   border-left: 3px solid var(--hc-orange);
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   font-weight: 900;
   cursor: pointer;
 }
@@ -3071,7 +3071,7 @@ main:has(.hc-review-form) .hc-rating-field {
   background: var(--hc-surface-raised) !important;
   border: 1px solid #dededb !important;
   border-top: 3px solid var(--hc-orange) !important;
-  border-radius: 2px !important;
+  border-radius: var(--radius-sm) !important;
   box-shadow: 0 3px 12px rgba(0,0,0,.035);
 }
 main:has(.hc-review-form) .hc-rating-field > div:first-child {
@@ -3083,7 +3083,7 @@ main:has(.hc-review-form) .hc-rating-field > div:first-child {
 main:has(.hc-review-form) .hc-rating-field button {
   width: 46px !important;
   height: 44px !important;
-  border-radius: 2px !important;
+  border-radius: var(--radius-sm) !important;
   font-weight: 900;
   transition: background .14s ease, border-color .14s ease, transform .14s ease;
 }
@@ -3097,7 +3097,7 @@ main:has(.hc-review-form) .dashboard-card {
   background: var(--hc-surface-raised);
   color: #111;
   border: 1px solid #dededb;
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 3px 12px rgba(0,0,0,.035);
 }
 main:has(.hc-review-form) .hc-review-form label {
@@ -3117,7 +3117,7 @@ main:has(.hc-review-form) .hc-review-form select {
   color: #111;
   background: #fafaf9;
   border: 1px solid #cfcfcb;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 main:has(.hc-review-form) .hc-review-form textarea {
   min-height: 160px;
@@ -3133,7 +3133,7 @@ main:has(.hc-review-form) .hc-review-form select:focus {
 main:has(.hc-review-form) .hc-review-form > .btn {
   width: 100%;
   min-height: 50px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   letter-spacing: .08em;
 }
@@ -3230,7 +3230,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   color: #111;
   background: #f8f8f6;
   border: 1px solid #d4d4d0;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 .hc-coach-directory-tools input:focus {
   outline: 2px solid rgba(255,106,0,.2);
@@ -3259,7 +3259,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   color: #111;
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange);
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   box-shadow: 0 3px 12px rgba(0,0,0,.035);
 }
 .hc-coaches-directory-page .hc-team-row h2,
@@ -3343,7 +3343,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   color: #111;
   background: var(--hc-surface-raised);
   border: 1px solid #d5d5d2;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 .hc-leagues-directory-page .hc-league-filter input:focus,
 .hc-leagues-directory-page .hc-league-filter select:focus {
@@ -3403,7 +3403,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 }
 .hc-entity-profile-page > .hero:first-child .btn {
   min-height: 42px;
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   font-weight: 850;
 }
 .hc-entity-profile-page > .hero:not(:first-child) > .eyebrow,
@@ -3442,7 +3442,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   justify-content: center;
   min-height: 38px;
   margin-top: 8px;
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   font-weight: 850;
 }
 .hc-entity-profile-page .hc-profile-review-list {
@@ -3493,7 +3493,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   color: #3a3a38;
   background: #f5f5f2;
   border: 1px solid #d9d9d4;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 800;
 }
@@ -3538,7 +3538,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 }
 .hc-player-directory-page .research-search .team-filter-row .btn {
   min-height: 48px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
 }
 .hc-player-directory-page .hc-player-result-count {
@@ -3582,7 +3582,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .hc-global-search-page .results-section button[aria-pressed] {
   min-height: 40px;
   border: 1px solid #242424;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 850;
   letter-spacing: .02em;
@@ -3606,7 +3606,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   flex-direction: column;
   align-items: flex-start;
   gap: 7px;
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   overflow-wrap: anywhere;
 }
 .hc-global-search-page .result-card h4,
@@ -3622,11 +3622,11 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 }
 .hc-global-search-page #player-username {
   min-height: 44px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 .hc-global-search-page .search-form input {
   min-width: 0;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 @media (max-width: 640px) {
   .hc-global-search-page .results-header {
@@ -3663,7 +3663,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   padding: clamp(22px, 4vw, 42px);
   border: 1px solid #292929;
   border-top: 4px solid var(--hc-orange);
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   background: #111;
   color: #fff;
 }
@@ -3685,7 +3685,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .hc-team-directory-page .research-search:has(.team-filter-row) {
   padding: 18px;
   border: 1px solid #d7d7d2;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: #f8f8f6;
 }
 .hc-team-directory-page .research-search .search-label {
@@ -3701,7 +3701,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   min-width: 0;
   min-height: 46px;
   border: 1px solid #c9c9c4;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--hc-surface-raised);
   color: #171717;
   font: inherit;
@@ -3726,7 +3726,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   padding: clamp(16px, 3vw, 24px);
   border: 1px solid #dededb !important;
   border-top: 3px solid var(--hc-orange) !important;
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   background: var(--hc-surface-raised);
 }
 .hc-team-directory-page .hero:has(.dashboard-card) .dashboard-card h2 {
@@ -3740,7 +3740,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   min-width: 0;
   padding: 10px 12px;
   border: 1px solid #d0d0cb;
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   background: var(--hc-surface-raised);
   color: #171717;
 }
@@ -3753,7 +3753,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 .hc-team-directory-page .hc-team-row h2 {
   overflow-wrap: anywhere;
@@ -3797,7 +3797,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   padding: clamp(14px, 2.5vw, 22px);
   border: 1px solid #dededb;
   border-top: 3px solid var(--hc-orange);
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: #f8f8f6;
 }
 .hc-coaches-directory-page .hc-coach-directory-tools label,
@@ -3817,7 +3817,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   min-height: 46px;
   padding: 11px 13px;
   border: 1px solid #c9c9c4;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--hc-surface-raised);
   color: #171717;
   font: inherit;
@@ -3832,7 +3832,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .hc-coaches-directory-page .hc-coach-empty,
 .hc-leagues-directory-page .hc-directory-empty {
   border-top: 3px solid var(--hc-orange);
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: #f8f8f6;
 }
 .hc-coaches-directory-page .hc-team-directory-list > .hc-team-row,
@@ -3922,7 +3922,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   position: relative;
   min-width: 0;
   overflow: hidden;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   text-decoration: none;
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
@@ -3949,7 +3949,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 }
 .hc-template-home .hc-template-panel {
   min-width: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
 }
 .hc-template-home .hc-template-panel-top {
   gap: 12px;
@@ -3957,7 +3957,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .hc-template-home .hc-template-directory-links > a {
   min-width: 0;
   overflow-wrap: anywhere;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 @media (prefers-reduced-motion: reduce) {
   .hc-template-home .hc-template-category,
@@ -4084,7 +4084,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   overflow: hidden;
   border: 1px solid #292929;
   border-bottom: 4px solid var(--hc-orange, #ff6a00);
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
   background: #151515;
   color: #fff;
   box-shadow: 0 8px 26px rgba(0,0,0,.08);
@@ -4121,7 +4121,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .hc-account-page .dashboard-card,
 .hc-account-page .card {
   min-width: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
 }
 .hc-entity-profile-page .card,
 .hc-member-profile-page .card,
@@ -4144,8 +4144,8 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .hc-entity-profile-page .rating-locked-card {
   border: 1px solid #d8d8d3;
   border-top: 3px solid var(--hc-orange, #ff6a00);
-  border-radius: 3px;
-  background: #f7f7f4;
+  border-radius: var(--radius-lg);
+  background: var(--surface-strong);
 }
 .hc-entity-profile-page .review-footer {
   display: flex;
@@ -4211,7 +4211,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   min-height: 44px;
   margin-top: 6px;
   border: 1px solid #c9c9c4;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--hc-surface-raised);
   color: #171717;
   font: inherit;
@@ -4290,7 +4290,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 }
 .hc-dashboard-shell .dashboard-card {
   min-width: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
   overflow-wrap: anywhere;
 }
 .hc-dashboard-shell :where(button, a, input, select, textarea):focus-visible {
@@ -4309,7 +4309,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 }
 .hc-settings-page .settings-card {
   min-width: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
   border-top: 3px solid var(--hc-orange);
 }
 .hc-settings-page .settings-card :where(select, input, textarea) {
@@ -4317,7 +4317,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   width: 100%;
   min-width: 0;
   min-height: 44px;
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
 }
 .hc-settings-page .theme-options {
   display: grid;
@@ -4329,7 +4329,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   overflow-wrap: anywhere;
 }
 .hc-notifications-page .hero-card {
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
   border-bottom: 3px solid var(--hc-orange);
 }
 .hc-notifications-page .hero-card h1 {
@@ -4339,7 +4339,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 }
 .hc-notifications-page .notification-item {
   min-width: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   overflow-wrap: anywhere;
 }
 .hc-notifications-page :where(button, a):focus-visible,
@@ -4359,7 +4359,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   text-transform: uppercase;
 }
 .hc-auth-page .hc-auth-card {
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
   border-top: 3px solid var(--hc-orange);
 }
 .hc-auth-page .hc-auth-card :where(input, select, textarea) {
@@ -4367,7 +4367,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   width: 100%;
   min-width: 0;
   min-height: 46px;
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
 }
 .auth-page-shell .signup-page .auth-hero h1 {
   font-weight: 950;
@@ -4377,12 +4377,12 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 }
 .auth-page-shell .signup-card {
   min-width: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
   border-top: 4px solid var(--hc-orange);
 }
 .auth-page-shell .account-type-choice {
   min-width: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   transition: border-color .16s ease, background-color .16s ease, transform .16s ease;
 }
 .auth-page-shell .account-type-choice:hover {
@@ -4393,7 +4393,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   width: 100%;
   min-width: 0;
   min-height: 44px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 @media (max-width: 760px) {
   .hc-dashboard-shell > .page-container {
@@ -4503,7 +4503,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   background: radial-gradient(ellipse at 88% 12%, rgba(255,106,0,.2), transparent 34%), #090909;
   border: 0;
   border-bottom: 4px solid var(--hc-orange, #ff6a00);
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
 }
 .hc-feed-page > .page-container > .hero-card :where(h1,h2) {
   color: #fff;
@@ -4529,7 +4529,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   padding: clamp(16px, 3vw, 24px);
   overflow-wrap: anywhere;
   border: 1px solid #dededb;
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
   background: var(--hc-surface-raised);
   box-shadow: 0 4px 16px rgba(0,0,0,.035);
 }
@@ -4549,7 +4549,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   min-height: 44px;
   padding: 11px 12px;
   border: 1px solid #cecec8;
-  border-radius: 2px;
+  border-radius: var(--radius-lg);
   background: var(--hc-surface-raised);
   color: #151515;
   font: inherit;
@@ -4761,18 +4761,18 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
 }
 :where(.hc-player-directory-page,.hc-womens-directory-page,.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-global-search-page) :where(.dashboard-card,.card,.result-card,.quick-card) {
   min-width: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 4px 16px rgba(0,0,0,.045);
   overflow-wrap: anywhere;
 }
 :where(.hc-player-directory-page,.hc-womens-directory-page,.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-global-search-page) :where(input,select,textarea) {
   max-width: 100%;
   min-height: 44px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 :where(.hc-player-directory-page,.hc-womens-directory-page,.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-global-search-page) :where(button,a,input,select,textarea):focus-visible {
   outline: 3px solid rgba(255,106,0,.8);
@@ -4780,7 +4780,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 }
 :where(.hc-player-directory-page,.hc-womens-directory-page,.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-global-search-page) .btn {
   min-height: 42px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   font-weight: 850;
   letter-spacing: .01em;
 }
@@ -4822,11 +4822,11 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .hc-player-directory-page .hc-player-results .dashboard-card:hover { transform: translateY(-2px); box-shadow: 0 9px 24px rgba(0,0,0,.09); }
 .hc-womens-directory-page .compact-section { margin-top: 18px; }
 .hc-womens-directory-page .league-filter-grid { gap: 9px; }
-.hc-womens-directory-page .filter-chip { border-radius: 2px; border-color: #d9d9d4; }
+.hc-womens-directory-page .filter-chip { border-radius: var(--radius-sm); border-color: #d9d9d4; }
 .hc-womens-directory-page .filter-chip.active { border-color: var(--hc-orange); box-shadow: inset 0 -3px var(--hc-orange); }
 .hc-team-profile-page :where(.dashboard-card,.card),
 .hc-coach-profile-page :where(.dashboard-card,.card),
-.hc-league-profile-page :where(.dashboard-card,.card) { border-radius: 3px; border-color: var(--hc-line); }
+.hc-league-profile-page :where(.dashboard-card,.card) { border-radius: var(--radius-lg); border-color: var(--hc-line); }
 @media (max-width: 700px) {
   .hc-player-directory-page > .page-container,
   .hc-womens-directory-page > .page-container { width: calc(100% - 22px); }
@@ -4862,7 +4862,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   color: #fff;
   background: radial-gradient(ellipse at 92% 6%, rgba(255,106,0,.2), transparent 34%), #101010;
   border-bottom: 4px solid var(--hc-orange, #ff6a00);
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
 }
 .hc-entity-profile-page > .hero :where(h1,h2,h3),
 .hc-entity-profile-page > .hc-team-profile-hero :where(h1,h2,h3) {
@@ -4876,7 +4876,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .hc-entity-profile-page > .hc-team-profile-hero .muted { color: #d0d0d0; }
 .hc-entity-profile-page :where(.dashboard-card,.card,.review-card,.hc-profile-review-list > *) {
   min-width: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
   border-color: #deded9;
   overflow-wrap: anywhere;
 }
@@ -4884,7 +4884,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   box-sizing: border-box;
   max-width: 100%;
   min-height: 44px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 .hc-entity-profile-page :where(button,a,input,select,textarea):focus-visible {
   outline: 3px solid rgba(255,106,0,.85);
@@ -4924,7 +4924,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   background: var(--hc-surface-raised);
   border: 1px solid #deded9;
   border-top: 3px solid var(--hc-orange, #ff6a00);
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 5px 18px rgba(0,0,0,.04);
 }
 .hc-settings-page .settings-card .card-kicker { color: #777; font-size: 10px; font-weight: 950; letter-spacing: .15em; }
@@ -4938,7 +4938,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   background: radial-gradient(ellipse at 92% 8%, rgba(255,106,0,.2), transparent 34%), #101010;
   border: 0;
   border-bottom: 4px solid var(--hc-orange, #ff6a00);
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
 }
 .hc-notifications-page .hero-card :where(h1,h2) { color: #fff; font-weight: 950; text-transform: uppercase; letter-spacing: -.035em; }
 .hc-notifications-page .hero-card .muted { color: #d0d0d0; }
@@ -4968,12 +4968,12 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   background: radial-gradient(ellipse at 90% 8%, rgba(255,106,0,.25), transparent 36%), #101010;
   border: 0;
   border-bottom: 4px solid var(--hc-orange, #ff6a00);
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
 }
 .hc-membership-page .membership-hero :where(h1,h2,h3) { color: #fff; font-weight: 950; letter-spacing: -.04em; text-transform: uppercase; }
 .hc-membership-page .membership-hero .muted { color: #d4d4d4; }
 .hc-membership-page .membership-section { width: min(100% - 32px, 1120px); margin: 22px auto; }
-.hc-membership-page .membership-section :where(.card,.dashboard-card) { border-radius: 3px; border: 1px solid #deded9; box-shadow: 0 5px 18px rgba(0,0,0,.04); }
+.hc-membership-page .membership-section :where(.card,.dashboard-card) { border-radius: var(--radius-lg); border: 1px solid #deded9; box-shadow: 0 5px 18px rgba(0,0,0,.04); }
 .hc-membership-page :where(button,a):focus-visible { outline: 3px solid var(--hc-orange, #ff6a00); outline-offset: 3px; }
 .hc-support-page { min-height: 75vh; padding-bottom: 72px; background: var(--hc-paper, #f3f3f1); }
 .hc-support-page > .page-container { width: min(100% - 32px, 1000px); padding-top: 22px; }
@@ -4983,12 +4983,12 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   background: radial-gradient(ellipse at 90% 8%, rgba(255,106,0,.2), transparent 35%), #101010;
   border: 0;
   border-bottom: 4px solid var(--hc-orange, #ff6a00);
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
 }
 .hc-support-page .hero-card :where(h1,h2) { color: #fff; font-weight: 950; letter-spacing: -.03em; text-transform: uppercase; }
 .hc-support-page .hero-card .muted { color: #d0d0d0; }
-.hc-support-page :where(.dashboard-card,.card) { border: 1px solid #deded9; border-radius: 3px; box-shadow: 0 5px 18px rgba(0,0,0,.035); }
-.hc-support-page :where(input,select,textarea) { box-sizing: border-box; max-width: 100%; min-height: 44px; border-radius: 2px; }
+.hc-support-page :where(.dashboard-card,.card) { border: 1px solid #deded9; border-radius: var(--radius-lg); box-shadow: 0 5px 18px rgba(0,0,0,.035); }
+.hc-support-page :where(input,select,textarea) { box-sizing: border-box; max-width: 100%; min-height: 44px; border-radius: var(--radius-sm); }
 .hc-support-page :where(button,a,input,select,textarea):focus-visible { outline: 3px solid var(--hc-orange, #ff6a00); outline-offset: 3px; }
 .hc-fans-directory-page { min-height: 75vh; padding-bottom: 72px; background: var(--hc-paper, #f3f3f1); }
 .hc-fans-directory-page > .page-container { width: min(100% - 32px, 1120px); padding-top: 22px; }
@@ -4998,13 +4998,13 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   background: radial-gradient(ellipse at 92% 8%, rgba(255,106,0,.2), transparent 34%), #101010;
   border: 0;
   border-bottom: 4px solid var(--hc-orange, #ff6a00);
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
 }
 .hc-fans-directory-page .hero-card :where(h1,h2) { color: #fff; font-weight: 950; text-transform: uppercase; }
 .hc-fans-directory-page .hero-card .muted { color: #d0d0d0; }
 .hc-fans-directory-page .hero-card input { box-sizing: border-box; width: 100%; max-width: 540px; min-height: 46px; margin-top: 12px; }
 .hc-fans-directory-page .grid { gap: 13px; }
-.hc-fans-directory-page .dashboard-card { min-width: 0; padding: clamp(16px, 3vw, 24px); background: var(--hc-surface-raised); border: 1px solid #deded9; border-top: 3px solid var(--hc-orange, #ff6a00); border-radius: 3px; overflow-wrap: anywhere; }
+.hc-fans-directory-page .dashboard-card { min-width: 0; padding: clamp(16px, 3vw, 24px); background: var(--hc-surface-raised); border: 1px solid #deded9; border-top: 3px solid var(--hc-orange, #ff6a00); border-radius: var(--radius-lg); overflow-wrap: anywhere; }
 .hc-onboarding-page { min-height: 75vh; padding-bottom: 80px; background: var(--hc-paper, #f3f3f1); }
 .hc-onboarding-page > .page-container { width: min(100% - 32px, 920px); padding-top: 18px; }
 .hc-onboarding-page .hero-card {
@@ -5013,12 +5013,12 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   background: radial-gradient(ellipse at 90% 8%, rgba(255,106,0,.2), transparent 34%), #101010;
   border: 0;
   border-bottom: 4px solid var(--hc-orange, #ff6a00);
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
 }
 .hc-onboarding-page .hero-card :where(h1,h2) { color: #fff; font-weight: 950; text-transform: uppercase; letter-spacing: -.035em; }
 .hc-onboarding-page .hero-card .muted { color: #d0d0d0; }
-.hc-onboarding-page .dashboard-card { border: 1px solid #deded9; border-radius: 3px; box-shadow: 0 5px 18px rgba(0,0,0,.035); }
-.hc-onboarding-page :where(input,select,textarea) { box-sizing: border-box; max-width: 100%; min-height: 44px; border-radius: 2px; }
+.hc-onboarding-page .dashboard-card { border: 1px solid #deded9; border-radius: var(--radius-lg); box-shadow: 0 5px 18px rgba(0,0,0,.035); }
+.hc-onboarding-page :where(input,select,textarea) { box-sizing: border-box; max-width: 100%; min-height: 44px; border-radius: var(--radius-sm); }
 .hc-legal-page { background: var(--hc-paper, #f3f3f1); color: #171717; padding-bottom: 60px; }
 .hc-legal-page > .hero {
   padding: clamp(30px, 6vw, 68px) clamp(20px, 7vw, 90px);
@@ -5031,7 +5031,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .hc-legal-page > .hero :where(h1,h2) { color: #fff; font-weight: 950; letter-spacing: -.04em; text-transform: uppercase; }
 .hc-legal-page > .hero p:not(.eyebrow) { max-width: 66ch; color: #d0d0d0; line-height: 1.7; }
 .hc-legal-page .legal-content { width: min(100% - 32px, 920px); margin: 24px auto; }
-.hc-legal-page .legal-card { padding: clamp(20px, 4vw, 40px); background: var(--hc-surface-raised); border: 1px solid #deded9; border-radius: 3px; box-shadow: 0 5px 18px rgba(0,0,0,.035); }
+.hc-legal-page .legal-card { padding: clamp(20px, 4vw, 40px); background: var(--hc-surface-raised); border: 1px solid #deded9; border-radius: var(--radius-lg); box-shadow: 0 5px 18px rgba(0,0,0,.035); }
 .hc-legal-page .legal-card :where(h2,h3) { margin-top: 28px; font-weight: 900; letter-spacing: -.02em; }
 .hc-legal-page .legal-card p { line-height: 1.75; }
 .hc-legal-page .legal-footer { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 20px; border-top: 1px solid #deded9; }
@@ -5044,7 +5044,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 }
 .hc-auth-page .hc-auth-hero :where(h1,h2) { color: #fff; font-weight: 950; letter-spacing: -.04em; text-transform: uppercase; }
 .hc-auth-page .hc-auth-hero .muted { color: #d0d0d0; }
-.hc-auth-page .hc-auth-card { border-radius: 3px; border: 1px solid #deded9; box-shadow: 0 8px 26px rgba(0,0,0,.06); }
+.hc-auth-page .hc-auth-card { border-radius: var(--radius-lg); border: 1px solid #deded9; box-shadow: 0 8px 26px rgba(0,0,0,.06); }
 .auth-page-shell .signup-nav { width: min(100% - 32px, 1240px); margin-inline: auto; }
 .auth-page-shell .signup-page { width: min(100% - 32px, 1000px); }
 .auth-page-shell .auth-hero {
@@ -5053,11 +5053,11 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   border-bottom: 4px solid var(--hc-orange, #ff6a00);
 }
 .auth-page-shell .auth-hero :where(h1,h2) { color: #fff; font-weight: 950; letter-spacing: -.04em; text-transform: uppercase; }
-.auth-page-shell .signup-card { border-radius: 3px; border: 1px solid #deded9; box-shadow: 0 8px 26px rgba(0,0,0,.06); }
+.auth-page-shell .signup-card { border-radius: var(--radius-lg); border: 1px solid #deded9; box-shadow: 0 8px 26px rgba(0,0,0,.06); }
 .auth-page-shell .signup-account-type,
-.auth-page-shell .account-type-choice { border-radius: 3px; }
+.auth-page-shell .account-type-choice { border-radius: var(--radius-sm); }
 .auth-page-shell .signup-two-col { gap: 12px; }
-.auth-page-shell :where(input,select,textarea) { box-sizing: border-box; max-width: 100%; min-height: 44px; border-radius: 2px; }
+.auth-page-shell :where(input,select,textarea) { box-sizing: border-box; max-width: 100%; min-height: 44px; border-radius: var(--radius-sm); }
 :where(.hc-settings-page,.hc-notifications-page,.hc-membership-page,.hc-support-page,.hc-fans-directory-page,.hc-onboarding-page,.hc-legal-page,.hc-auth-page,.auth-page-shell) :where(button,a,input,select,textarea):focus-visible { outline: 3px solid var(--hc-orange, #ff6a00); outline-offset: 3px; }
 @media (max-width: 700px) {
   .hc-settings-page { padding: 14px 11px 80px; }
@@ -5089,7 +5089,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 /* Final cross-app baseline for pages not using a dedicated page class yet. */
 .page-shell > .page-container { min-width: 0; }
 .page-shell :where(.hero-card,.compact-hero) {
-  border-radius: 3px;
+  border-radius: var(--radius-lg);
   overflow-wrap: anywhere;
 }
 .page-shell :where(.dashboard-card,.card) {
@@ -5108,7 +5108,7 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .page-shell .hero-card .eyebrow,
 .page-shell .compact-hero .eyebrow { color: #ff8a38; font-weight: 950; letter-spacing: .15em; }
 .page-shell .dashboard-card :where(h1,h2,h3) { letter-spacing: -.025em; overflow-wrap: anywhere; }
-.page-shell .dashboard-card .btn { min-height: 42px; border-radius: 2px; font-weight: 850; }
+.page-shell .dashboard-card .btn { min-height: 42px; border-radius: var(--radius-lg); font-weight: 850; }
 @media (max-width: 700px) {
   .page-shell > .page-container { width: calc(100% - 22px); }
   .page-shell :where(.hero-card,.compact-hero) { padding: 22px 15px; }

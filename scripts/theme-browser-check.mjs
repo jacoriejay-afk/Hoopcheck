@@ -249,10 +249,16 @@ try {
           const element = document.querySelector(selector);
           return element ? getComputedStyle(element).backgroundColor : null;
         };
+        const probe = document.createElement("span");
+        probe.style.backgroundColor = "var(--surface)";
+        document.body.append(probe);
+        const glassSurface = getComputedStyle(probe).backgroundColor;
+        probe.remove();
         return {
           themeClass: document.documentElement.classList.contains("theme-dark") ? "dark" :
             document.documentElement.classList.contains("theme-light") ? "light" : "missing",
           body: color("body"),
+          glassSurface,
           pageWrapper: color(wrapperSelector),
           composer: routeName === "feed" ? color(".hc-feed-composer") : null,
           discoveryHeading: routeName === "feed" ? getComputedStyle(document.querySelector(".hf5-hero__title")).color : null,
@@ -283,7 +289,7 @@ try {
       }, { wrapperSelector, routeName });
 
       assert.equal(computed.themeClass, theme, `${routeName}: expected html theme class ${theme}, got ${computed.themeClass}`);
-      const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
+      const expectedPage = theme === "dark" ? "rgb(0, 0, 0)" : "rgb(244, 244, 241)";
       const expectedChip = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
       assert.equal(computed.body, expectedPage, `${routeName}/${theme}: body background mismatch`);
       assert.equal(computed.pageWrapper, expectedPage, `${routeName}/${theme}: page wrapper background mismatch`);
@@ -297,14 +303,21 @@ try {
           if (heroIdentity) {
             assert.ok(theme === "light" ? pair.background === "rgb(255, 255, 255)" : (pair.background === "rgba(255, 255, 255, 0.07)" || pair.background === "rgb(23, 23, 23)"), `dashboard/${theme}: hero identity surface: ${JSON.stringify(pair)}`);
           } else {
-            assert.equal(pair.background, surface, `dashboard/${theme}: ${pair.selector} surface: ${JSON.stringify(pair)}`);
+            assert.ok([surface, computed.glassSurface].includes(pair.background), `dashboard/${theme}: ${pair.selector} surface: ${JSON.stringify(pair)}`);
           }
           const contrast = (foreground, background) => {
-            const luminance = (color) => color.match(/\d+/g).slice(0, 3).map(Number)
-              .map(value => value / 255)
+            const channels = (color) => {
+              const srgb = color.startsWith("color(srgb ");
+              const values = color.match(/(?:\d*\.)?\d+/g).map(Number);
+              return [...values.slice(0, 3).map(value => srgb ? value : value / 255), values[3] ?? 1];
+            };
+            const luminance = (color) => color.slice(0, 3)
               .map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4)
               .reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
-            const levels = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+            const surface = channels(background);
+            const base = channels(computed.body);
+            const effective = surface.slice(0, 3).map((channel, i) => channel * surface[3] + base[i] * (1 - surface[3]));
+            const levels = [luminance(channels(foreground)), luminance(effective)].sort((a, b) => b - a);
             return (levels[0] + 0.05) / (levels[1] + 0.05);
           };
           assert.ok(pair.title && contrast(pair.title, heroIdentity && theme === "dark" ? "rgb(24, 24, 24)" : pair.background) >= 4.5, `dashboard/${theme}: ${pair.selector} title contrast: ${JSON.stringify(pair)}`);
@@ -611,7 +624,7 @@ try {
           navigationError,
         };
       }, { requestedPath, navigationError });
-      const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
+      const expectedPage = theme === "dark" ? "rgb(0, 0, 0)" : "rgb(244, 244, 241)";
       const errors = [];
       if (requestedPath.startsWith("/womens/")) {
         await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").waitFor({ state: "visible", timeout: 15000 });

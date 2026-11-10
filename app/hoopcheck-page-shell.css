@@ -1,0 +1,57 @@
+/* The root PageShell owns route geometry, including routes with custom mains. */
+:root {
+  --hc-shell-width: 1200px;
+  --hc-shell-gutter: 16px;
+  --hc-shell-gap: 16px;
+  --hc-shell-top: 12px;
+  --hc-shell-bottom: 32px;
+}
+
+.hc-global-page-shell {
+  width: 100%;
+  min-width: 0;
+}
+
+.hc-global-page-shell > .hc-route-transition {
+  box-sizing: border-box;
+  width: min(100%, calc(var(--hc-shell-width) + 2 * var(--hc-shell-gutter)));
+  min-width: 0;
+  margin-inline: auto;
+  padding: var(--hc-shell-top) var(--hc-shell-gutter) var(--hc-shell-bottom);
+}
+
+/* Retain any authored grid or flex display while containing collapsed margins. */
+:where(.hc-global-page-shell > .hc-route-transition main) {
+  display: flow-root;
+}
+
+html body .hc-global-page-shell > .hc-route-transition main {
+  box-sizing: border-box;
+  width: 100% !important;
+  min-width: 0;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+html body .hc-global-page-shell > .hc-route-transition main > .page-container {
+  box-sizing: border-box;
+  width: 100% !important;
+  min-width: 0;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --hc-shell-gap: 12px;
+    --hc-shell-top: 8px;
+  }
+}
+
+/* Fixed overlays inside cards must keep the viewport as their containing block. */
+.hc-global-page-shell main :where(.hc-layout-card, .hc-layout-group, .hc-ia-door):not(:has(.hc-shared-picker, [role="dialog"])) {
+  -webkit-backdrop-filter: var(--hc-surface-backdrop, none);
+  backdrop-filter: var(--hc-surface-backdrop, none);
+}
