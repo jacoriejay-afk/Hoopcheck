@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     if (visibleError) return NextResponse.json({ message: "Poll results unavailable." }, { status: 503 });
     // A visible poll with malformed options is a data-integrity failure, not
     // an inaccessible poll. Never silently omit it from the response.
-    if ((visible || []).some((p) => !Array.isArray(p.poll_options) || p.poll_options.length < 2 || p.poll_options.length > 10)) {
+    if ((visible || []).some((p) => !Array.isArray(p.poll_options) || p.poll_options.length < 2 || p.poll_options.length > 10 || p.poll_options.some((option: unknown) => typeof option !== "string" || !option.trim() || option.length > 200))) {
       return NextResponse.json({ message: "Poll results are temporarily unavailable." }, { status: 503 });
     }
     const polls = visible || [];
