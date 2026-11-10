@@ -6,6 +6,7 @@ useState,
 } from "react";
 import Link from "next/link";
 import DirectoryLayout from "../../components/DirectoryLayout";
+import "./league-directory-compact.css";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
@@ -75,7 +76,7 @@ return (
     <p aria-live="polite">{loading ? "Loading leagues…" : `${filteredLeagues.length.toLocaleString()} ${filteredLeagues.length === 1 ? "league" : "leagues"}`}</p>
     {(query || country) && <button type="button" className="hc-directory-reset" onClick={() => { setQuery(""); setCountry(""); }}>Clear filters</button>}
   </section>
-  <section className="grid hc-team-directory-list">
+  <section className="hc-league-directory-grid">
     {loading ? (<div className="card"><HoopLoading variant="inline" label="Scanning professional leagues..." /></div>) : leagues.length === 0 ? (
       <div className="card">
         <div className="eyebrow">
@@ -99,7 +100,7 @@ return (
         </div>
       ) : filteredLeagues.map((league) => (
         <div
-          className="card hc-team-row"
+          className="card hc-team-row hc-league-compact-card"
           key={league.id}
         >
           <div className="hc-league-row-head">
@@ -115,7 +116,7 @@ return (
             {league.name}
           </h2>
           {league.country ? <span className="hc-dir-flagchip">{countryFlag(league.country) ? <span className="hc-dir-flag" aria-hidden="true">{countryFlag(league.country)}</span> : null}<span>{league.country}</span></span> : <p>Country not listed</p>}
-          <p style={{ color: "var(--orange)", fontWeight: 900 }}>Season: {league.season || "2026-27"}</p>
+          <p style={{ color: "var(--orange)", fontWeight: 900 }}>Season: {league.season || "Not listed"}</p>
           {league.level && (
             <p>
               Level:{" "}
