@@ -1,0 +1,409 @@
+.home {
+  width: 100%;
+  max-width: 1160px;
+  margin-inline: auto;
+  color: var(--hc-foreground);
+}
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  align-items: center;
+  min-height: 460px;
+  border: 1px solid var(--hc-home-hero-border);
+  border-radius: var(--hc-radius-hero);
+  background: var(--hc-home-hero-bg);
+  color: var(--hc-home-hero-text);
+}
+
+.arena {
+  position: absolute;
+  inset: 0;
+  inset-inline-start: 36%;
+  z-index: -1;
+  pointer-events: none;
+  background: url("/images/basketball-arena-ai.webp") left 71% / cover no-repeat;
+  filter: grayscale(1);
+  opacity: 0.42;
+  mask-image: linear-gradient(90deg, black, transparent 90%);
+  transform: scaleX(-1);
+}
+
+:global(html[dir="rtl"]) .arena {
+  transform: none;
+}
+
+.heroContent {
+  width: min(100%, 725px);
+  padding: clamp(26px, 5vw, 62px);
+}
+
+.heroKicker,
+.kicker,
+.featureLabel {
+  margin: 0 0 12px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+}
+
+.home .heroContent .heroKicker {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--hc-button-primary-surface) !important;
+}
+
+.heroKicker span {
+  width: 17px;
+  height: 2px;
+  background: var(--hc-button-primary-surface);
+}
+
+.home .hero .heroContent h1 {
+  margin: 0;
+  color: var(--hc-home-hero-text) !important;
+  font-family: var(--font-sans), Inter, sans-serif !important;
+  font-size: clamp(2.65rem, 5.5vw, 4.55rem);
+  font-weight: 900;
+  letter-spacing: -0.065em;
+  line-height: 0.99;
+  text-transform: none;
+}
+
+.heroContent h1 em {
+  display: block;
+  color: var(--hc-button-primary-surface);
+  font-style: normal;
+}
+
+.home .heroContent .heroDescription {
+  max-width: 42ch;
+  margin: 20px 0 24px;
+  color: var(--hc-home-hero-muted) !important;
+  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+  line-height: 1.55;
+}
+
+.home .heroContent .search:global(.hc-searchbar) {
+  display: flex !important;
+  width: min(100%, 510px) !important;
+  margin: 0;
+  gap: 6px !important;
+  padding: 4px !important;
+  border-color: var(--hc-border) !important;
+  border-radius: var(--hc-radius-control) !important;
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+}
+
+.home .heroContent .search :global(.hc-searchbar__input) {
+  color: var(--hc-input-fg) !important;
+  -webkit-text-fill-color: currentColor !important;
+  background: transparent !important;
+  font-size: 16px !important;
+}
+
+.home .heroContent .search :global(.hc-searchbar__input)::placeholder {
+  color: var(--hc-foreground-muted) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+.home .heroContent .search :global(.hc-searchbar__clear) {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-input-fg) !important;
+}
+
+.home .heroContent .search :global(.hc-searchbar__submit) {
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 44px !important;
+  padding-inline: clamp(9px, 2vw, 18px);
+  border-radius: var(--hc-radius-control) !important;
+  background: var(--hc-button-primary-surface) !important;
+  color: var(--hc-button-primary-foreground) !important;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  align-items: center;
+  margin-block-start: 16px;
+}
+
+.primary,
+.signIn,
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  width: fit-content;
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.home .heroActions .primary {
+  padding-inline: 15px;
+  border-radius: var(--hc-radius-control);
+  background: var(--hc-button-primary-surface);
+  color: var(--hc-button-primary-foreground) !important;
+}
+
+.home .heroActions .primary:hover {
+  background: color-mix(in srgb, var(--hc-button-primary-surface) 92%, var(--hc-button-primary-foreground));
+}
+
+.home .heroActions .signIn {
+  color: var(--hc-home-hero-text) !important;
+}
+
+.home a.textLink {
+  color: var(--hc-accent-text) !important;
+}
+
+.signIn:hover,
+.textLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.home :is(a, button):focus-visible {
+  outline: 2px solid var(--hc-accent-text);
+  outline-offset: 3px;
+}
+
+.home .hero :is(a, button):focus-visible,
+.home .hero .search:focus-within {
+  outline: 2px solid var(--hc-focus-ring) !important;
+  outline-offset: 3px;
+}
+
+.stats :global(.hc-home-directory-stats) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin: 0;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--hc-card-border);
+}
+
+.home .stats :global(.hc-home-directory-stat) {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: center;
+  gap: 7px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent !important;
+  color: var(--hc-foreground);
+}
+
+.stats :global(.hc-home-directory-stat strong) {
+  color: inherit;
+  font-size: 1.1rem;
+}
+
+.home .stats :global(.hc-home-directory-stat span) {
+  color: var(--hc-foreground-muted) !important;
+  font-size: 0.7rem;
+}
+
+.section {
+  margin-block-start: clamp(28px, 5vw, 54px);
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0 20px;
+  margin-block-end: 16px;
+}
+
+.home .sectionHeading .kicker {
+  margin-block-end: 5px;
+  color: var(--hc-accent-text) !important;
+}
+
+.sectionHeading h2,
+.featureGrid h3 {
+  margin: 0;
+  color: inherit;
+  font-family: var(--font-sans), Inter, sans-serif !important;
+  font-weight: 850;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+  text-transform: none;
+}
+
+.sectionHeading h2 {
+  font-size: clamp(1.65rem, 3vw, 2.65rem);
+}
+
+.directoryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  border-block-start: 1px solid var(--hc-card-border);
+  list-style: none;
+}
+
+.directoryGrid li {
+  min-width: 0;
+  border-block-end: 1px solid var(--hc-card-border);
+}
+
+.directoryLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 81px;
+  padding: 10px 14px;
+  border-radius: var(--hc-radius-control);
+  color: var(--hc-foreground);
+}
+
+.directoryLink:hover {
+  background: var(--hc-surface-soft);
+}
+
+.directoryCopy {
+  flex: 1;
+  min-width: 0;
+}
+
+.directoryCopy strong,
+.directoryCopy small {
+  display: block;
+}
+
+.home .directoryCopy small {
+  margin-block-start: 3px;
+  color: var(--hc-foreground-muted) !important;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.directoryArrow {
+  flex: 0 0 auto;
+  color: var(--hc-accent-text);
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.featureGrid article {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: clamp(18px, 3vw, 32px);
+  border: 1px solid var(--hc-card-border);
+  border-radius: var(--hc-radius-card);
+  background: var(--hc-card-surface);
+  color: var(--hc-on-card);
+}
+
+.home .featureGrid .featureLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--hc-accent-text) !important;
+}
+
+.featureGrid h3 {
+  font-size: clamp(1.4rem, 2vw, 2rem);
+}
+
+.home .featureGrid p:not(.featureLabel) {
+  max-width: 48ch;
+  margin: 9px 0 8px;
+  color: var(--hc-on-card-muted) !important;
+  line-height: 1.5;
+}
+
+.featureGrid .textLink {
+  margin-block-start: auto;
+}
+
+.more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 24px;
+  margin-block-start: 22px;
+  padding-block-start: 6px;
+  border-block-start: 1px solid var(--hc-card-border);
+}
+
+/* The shared footer uses a light surface in light mode. Match its text to that surface here. */
+:global(html.theme-light body):has(.home) :global(.site-footer :is(.footer-brand p, .footer-links a, .footer-links .muted, .footer-bottom)) {
+  color: var(--hc-foreground-muted) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+:global(html.theme-light body):has(.home) :global(.site-footer :is(.footer-links strong, .footer-links a:hover)) {
+  color: var(--hc-accent-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+@media (max-width: 850px) {
+  .directoryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .hero {
+    min-height: 0;
+  }
+
+  .arena {
+    inset-inline-start: 0;
+    opacity: 0.26;
+    mask-image: linear-gradient(90deg, black, transparent 72%);
+  }
+
+  .heroContent {
+    padding: 24px 16px;
+  }
+
+  .home .hero .heroContent h1 {
+    font-size: clamp(2rem, 9.5vw, 3.5rem);
+  }
+
+  .stats :global(.hc-home-directory-stats) {
+    gap: 12px 8px;
+  }
+
+  .home .stats :global(.hc-home-directory-stat) {
+    flex-basis: 29%;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .sectionHeading {
+    margin-block-end: 9px;
+  }
+
+  .directoryGrid,
+  .featureGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .directoryLink {
+    min-height: 66px;
+    padding-inline: 4px;
+  }
+}
