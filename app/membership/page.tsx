@@ -1,5 +1,8 @@
 "use client";
 
+import { BILLING_LABELS, PLAN_PRICES } from "../../lib/plan-comparison";
+
+
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
@@ -365,8 +368,8 @@ function MembershipContent() {
                     <h3>{accountType === "fan" ? "Fan Pro" : "Pro"}</h3>
                   </div>
                   <div className="price">
-                    <strong>{billingInterval==="month" ? "\$4.99" : billingInterval==="6_month" ? "\$25.45" : "\$53.89"}</strong>
-                    <span>{billingInterval==="month" ? "billed monthly" : billingInterval==="6_month" ? "billed every 6 months" : "billed annually"}</span>
+                    <strong>{PLAN_PRICES.pro[billingInterval]}</strong>
+                    <span>{BILLING_LABELS[billingInterval]}</span>
                   </div>
                 </div>
                 <p className="plan-description">
@@ -406,7 +409,7 @@ function MembershipContent() {
                     <h3>{accountType === "fan" ? "Fan Premium" : "Premium"}</h3>
                   </div>
                   <div className="price">
-                    <strong>{billingInterval==="month" ? "\$9.99" : billingInterval==="6_month" ? "\$50.95" : "\$107.89"}</strong>
+                    <strong>{PLAN_PRICES.premium[billingInterval]}</strong>
                     <span>{billingInterval==="month" ? "billed monthly" : billingInterval==="6_month" ? "billed every 6 months" : "billed annually"}</span>
                   </div>
                 </div>
