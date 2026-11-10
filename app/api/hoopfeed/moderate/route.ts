@@ -289,6 +289,11 @@ export async function POST(request: Request) {
     const result = await moderate(moderationText, allImages[0] ?? null);
     if (!result.allowed) return NextResponse.json({ allowed: false, message: result.message }, { status: result.status });
 
+    // Moderate every attached photo before any storage upload or publication.
+    const otherPhotoResults = await Promise.all(allImages.slice(1).map(photo => moderate("", photo)));
+    const photoRejection = otherPhotoResults.find(decision => !decision.allowed);
+    if (photoRejection) return NextResponse.json({ allowed: false, message: photoRejection.message }, { status: photoRejection.status });
+
     if (kind === "comment") {
       const postId = String(form.get("post_id") || "");
       if (!postId) return NextResponse.json({ allowed: false, message: "Post not found." }, { status: 400 });
