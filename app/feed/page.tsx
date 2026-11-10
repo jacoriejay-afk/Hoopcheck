@@ -68,7 +68,7 @@ export default function Feed(){
     return new Date(b.created_at).getTime()-new Date(a.created_at).getTime();
   });
 
-  const access=getHoopCheckEntitlements({accountType:profile?.account_type,subscription}).canReadHoopFeed;
+  const access=getHoopCheckEntitlements({accountType:profile?.account_type,subscription,isAdmin:adminRole==="admin"}).canReadHoopFeed;
   const isAdmin=adminRole==="admin";
 
   async function load(currentUser:any){
@@ -115,10 +115,12 @@ export default function Feed(){
       supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",u.id).maybeSingle()
     ]);
     setProfile(p);setSubscription(s);setShowCountry(Boolean(p?.current_country_public));
-    void supabase.rpc("get_current_user_admin_role").then(({data})=>{setAdminRole(data==="admin"||data==="moderator"?data:null);});
+    const {data:roleData}=await supabase.rpc("get_current_user_admin_role");
+    const resolvedAdminRole=roleData==="admin"||roleData==="moderator"?roleData:null;
+    setAdminRole(resolvedAdminRole);
     const {data:activity}=await supabase.from("feed_posting_activity").select("activity_date").eq("user_id",u.id).order("activity_date",{ascending:false}).limit(370);setPostingStreak(calculatePostingStreak(activity||[]));
     void supabase.from("profiles").select("id",{count:"exact",head:true}).then(({count})=>{if(typeof count==="number")setMemberCount(count);});
-    const memberActive=getHoopCheckEntitlements({accountType:p?.account_type,subscription:s}).canReadHoopFeed;
+    const memberActive=getHoopCheckEntitlements({accountType:p?.account_type,subscription:s,isAdmin:resolvedAdminRole==="admin"}).canReadHoopFeed;
     setLoading(false);
     if(p&&memberActive)void load(u);
   })();},[]);
