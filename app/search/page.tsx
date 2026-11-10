@@ -297,9 +297,19 @@ function SearchContent() {
   return (
     <main className="search-page hc-global-search-page">
       <FanBasketballSideSwitch />
-      <section className="hc-search-team-entry" aria-label="Search both basketball directories">
-        <div><p className="eyebrow">ONE GAME. BOTH DIRECTORIES.</p><h2>Find your next team</h2><p>Search men’s and women’s teams by name, city, country, or league.</p></div>
-        <div className="actions"><Link className="btn" href="/teams">Browse men’s teams ↗</Link><Link className="btn dark" href="/womens">Browse women’s teams ↗</Link></div>
+      <section className="search-hero hc-liquid-glass-search-hero">
+        <div className="eyebrow">{t("globalResearch")}</div>
+        <h1>{t("searchBasketballWorld")}</h1>
+        {roleReady && !isFanAccount && <p>{t("findBasketballPeople")}</p>}
+
+        <SearchBar
+          className="search-form"
+          name="q"
+          value={searchInput}
+          onChange={setSearchInput}
+          placeholder={!roleReady || isFanAccount ? t("searchBasketballWorld") : t("searchPeoplePlaceholder")}
+          ariaLabel={!roleReady || isFanAccount ? t("searchBasketballWorld") : t("searchPeoplePlaceholder")}
+        />
       </section>
       <nav className="hc-directory-switcher hc-liquid-glass-search-switcher" aria-label={t("browseDirectoriesLabel")}>
         <span className="hc-directory-switcher-label">{t("browseDirectoriesLabel")}</span>
@@ -332,20 +342,11 @@ function SearchContent() {
         </section>
       )}
 
-      <section className="search-hero hc-liquid-glass-search-hero">
-        <div className="eyebrow">{t("globalResearch")}</div>
-        <h1>{t("searchBasketballWorld")}</h1>
-        <p>{!roleReady || isFanAccount ? t("searchBasketballWorld") : t("findBasketballPeople")}</p>
-
-        <SearchBar
-          className="search-form"
-          name="q"
-          value={searchInput}
-          onChange={setSearchInput}
-          placeholder={!roleReady || isFanAccount ? t("searchBasketballWorld") : t("searchPeoplePlaceholder")}
-          ariaLabel={!roleReady || isFanAccount ? t("searchBasketballWorld") : t("searchPeoplePlaceholder")}
-        />
+      <section className="hc-search-team-entry" aria-label="Search both basketball directories">
+        <div><p className="eyebrow">ONE GAME. BOTH DIRECTORIES.</p><h2>Find your next team</h2><p>Search men’s and women’s teams by name, city, country, or league.</p></div>
+        <div className="actions"><Link className="btn" href="/teams">Browse men’s teams ↗</Link><Link className="btn dark" href="/womens">Browse women’s teams ↗</Link></div>
       </section>
+
 
       {query && (
         <section className="results-section">

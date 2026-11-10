@@ -1,0 +1,142 @@
+/* Account is the visual reference for member content. Keep theme pairs intact. */
+:root {
+  --hc-content-radius: 20px;
+  --hc-content-padding: clamp(18px, 3vw, 28px);
+  --hc-content-gap: 20px;
+}
+
+html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-directory-shell) :is(
+  .card, .dashboard-card, .hero-card, .hc-layout-card, .hc-layout-group,
+  .result-card, .state-card, .quick-card, .hc-team-directory-row,
+  .hc-directory-row, .hc-ia-door, .hc-profile-panel, .hc-team-facts-card,
+  .hc-team-profile-overview-grid > *, .hc-team-fan-group-entry
+):not(.hc-member-profile-hero) {
+  border: 1px solid var(--hc-border) !important;
+  border-radius: var(--hc-content-radius) !important;
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+  box-shadow: none !important;
+  min-width: 0;
+}
+
+html body .hc-global-page-shell main :is(.card, .dashboard-card, .hc-layout-card, .hc-layout-group, .result-card, .state-card, .quick-card) {
+  padding: var(--hc-content-padding);
+}
+html body .hc-global-page-shell main :is(.card, .dashboard-card, .result-card, .hc-team-directory-row, .quick-card) :is(h2,h3,h4,strong) {
+  color: var(--hc-foreground) !important;
+}
+html body .hc-global-page-shell main :is(.card, .dashboard-card, .result-card, .hc-team-directory-row, .quick-card) :is(.muted,small,.result-meta) {
+  color: var(--hc-foreground-muted) !important;
+}
+
+/* The same orange edge and court-inspired surface as the account hero. */
+html body .hc-global-page-shell main :is(
+  .search-hero, .hc-directory-intro, .hc-home-hero,
+  .hc-team-profile-hero.hc-social-profile-header, .hc-directory-compact-head
+) {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid var(--hc-border) !important;
+  border-bottom: 5px solid #ff5a1f !important;
+  border-radius: var(--hc-content-radius) !important;
+  background: linear-gradient(125deg, var(--hc-surface-raised), var(--hc-surface-soft)) !important;
+  color: var(--hc-foreground) !important;
+  padding: clamp(24px, 4vw, 40px) !important;
+  box-shadow: none !important;
+}
+html body .hc-global-page-shell main :is(.search-hero,.hc-directory-intro,.hc-home-hero,.hc-team-profile-hero,.hc-directory-compact-head) :is(h1,h2) {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(28px, 4.5vw, 48px);
+  line-height: 1.12;
+  letter-spacing: -.025em;
+  color: var(--hc-foreground) !important;
+  text-transform: uppercase;
+  max-width: 24ch;
+  margin: 12px 0;
+}
+html body .hc-global-page-shell main :is(.search-hero,.hc-directory-intro,.hc-home-hero,.hc-team-profile-hero) :is(p,.hc-team-profile-meta) {
+  color: var(--hc-foreground-muted) !important;
+  line-height: 1.6;
+  max-width: 62ch;
+}
+html body .hc-global-page-shell main :is(.search-hero,.hc-directory-intro,.hc-home-hero,.hc-team-profile-hero) :is(.eyebrow,.hc-directory-kicker,.hc-team-profile-kicker) {
+  color: var(--hc-accent-text) !important;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+/* Search starts with its primary action; directories follow as clear choices. */
+.hc-global-search-page { display: flex; flex-direction: column; gap: var(--hc-content-gap); }
+html body .hc-global-page-shell main.hc-global-search-page > * { margin-block: 0 !important; }
+html body .hc-global-page-shell main .hc-search-team-entry {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  align-items: center;
+  gap: 24px;
+  border: 1px solid var(--hc-border) !important;
+  border-radius: var(--hc-content-radius) !important;
+  background: var(--hc-surface-raised) !important;
+  padding: var(--hc-content-padding) !important;
+}
+.hc-search-team-entry h2 { font-size: clamp(22px,3vw,30px); margin: 8px 0; }
+.hc-search-team-entry p { line-height: 1.6; margin: 8px 0; }
+html body .hc-global-page-shell main .hc-search-team-entry .actions { display: grid; gap: 10px; margin: 0; }
+html body .hc-global-page-shell main .hc-searchbar {
+  border: 1px solid var(--hc-border) !important;
+  border-radius: 14px !important;
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  box-shadow: none !important;
+  padding: 8px !important;
+}
+html body .hc-global-page-shell main .hc-searchbar__input {
+  background: transparent !important; color: var(--hc-input-fg) !important;
+  min-height: 48px; font-size: 16px;
+}
+html body .hc-global-page-shell main .hc-searchbar__submit {
+  border-radius: 10px !important; background: #ff5a1f !important;
+  color: #111 !important; min-height: 48px; font-weight: 800;
+}
+html body .hc-global-page-shell main .hc-directory-switcher {
+  display: flex; flex-wrap: wrap; gap: 8px; padding: 0 0 8px;
+  border: 0; background: transparent !important; box-shadow: none !important;
+}
+.hc-directory-switcher a { padding: 12px 16px; border: 1px solid var(--hc-border); border-radius: 999px; }
+.hc-directory-switcher a[aria-current="page"] { border-color: #ff5a1f; }
+
+/* Team identity, evidence, and actions each get their own readable section. */
+html body .hc-global-page-shell main .hc-team-directory-list { gap: 16px !important; }
+html body .hc-global-page-shell main .hc-team-directory-row { padding: 20px !important; }
+html body .hc-global-page-shell main .hc-scout-card__stats {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  border: 1px solid var(--hc-border) !important;
+  border-radius: 12px !important;
+  padding: 14px;
+}
+html body .hc-global-page-shell main .hc-scout-card__ticket {
+  border-top: 1px solid var(--hc-border); padding-top: 14px; margin-top: 16px;
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: transparent !important;
+}
+.hc-team-profile-overview-grid { gap: var(--hc-content-gap); }
+html body .hc-global-page-shell main .hc-team-profile-overview-grid > * { padding: var(--hc-content-padding) !important; }
+html body .hc-global-page-shell main .hc-team-profile-nav {
+  display: flex; gap: 8px; overflow-x: auto; padding-block: 12px;
+}
+.hc-team-profile-nav a { flex-shrink: 0; padding: 12px 16px; }
+html body .hc-global-page-shell main :is(a,button,input,select,textarea):focus-visible {
+  outline: 2px solid #ff5a1f; outline-offset: 4px;
+}
+
+@media (max-width: 700px) {
+  :root { --hc-content-padding: 18px; --hc-content-gap: 16px; }
+  html body .hc-global-page-shell main .hc-search-team-entry { grid-template-columns: minmax(0,1fr); gap: 12px; }
+  html body .hc-global-page-shell main .hc-search-team-entry .actions { width: 100%; }
+  html body .hc-global-page-shell main .hc-search-team-entry .btn { width: 100%; text-align: center; }
+  html body .hc-global-page-shell main .hc-searchbar { display: grid !important; grid-template-columns: 24px minmax(0,1fr) auto; gap: 4px; }
+  html body .hc-global-page-shell main .hc-searchbar__submit { grid-column: 1 / -1; width: 100%; }
+  html body .hc-global-page-shell main .hc-team-profile-overview-grid { grid-template-columns: minmax(0,1fr); }
+  html body .hc-global-page-shell main .hc-team-directory-row { padding: 16px !important; }
+}
