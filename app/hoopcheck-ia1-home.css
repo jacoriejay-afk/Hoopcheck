@@ -146,3 +146,8 @@ main.hc-dashboard-compact .hc-ia-door {
 .hc-ia-home .hc-home-hero .hc-ia-identity small { color:#c9c9c9; }
 .hc-ia-home .hc-home-hero .hc-ia-identity strong { color:#ffffff; }
 .hc-ia-home .hc-home-hero .hc-ia-avatar { background:#ff5a1f; color:#0a0a0a; }
+
+/* Keep the hero identity pill readable in light mode; the glass variant above is dark-only. */
+html.theme-light .hc-ia-home .hc-home-hero .hc-ia-identity { background:#ffffff; border-color:#d9d9d9; color:#171717; }
+html.theme-light .hc-ia-home .hc-home-hero .hc-ia-identity small { color:#555555; }
+html.theme-light .hc-ia-home .hc-home-hero .hc-ia-identity strong { color:#171717; }
