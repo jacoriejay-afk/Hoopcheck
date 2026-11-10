@@ -52,6 +52,9 @@ jobs:
       - name: Check HoopFeed text posts and team fan group invariants
         run: npm run check:hf4-fan-groups
 
+      - name: Check HoopFeed authorization and expiry regressions
+        run: npm run test:hoopfeed-security
+
       - name: Check player profile completion
         run: node scripts/check-player-profile-completion.mjs
 
