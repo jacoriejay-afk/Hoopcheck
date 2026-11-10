@@ -252,7 +252,7 @@ try {
           // brand hero in both themes; its translucent overlay is not a white card.
           const heroIdentity = pair.selector === ".hc-ia-identity";
           if (heroIdentity) {
-            assert.ok(pair.background === "rgba(255, 255, 255, 0.07)" || pair.background === "rgb(23, 23, 23)", `dashboard/${theme}: hero identity surface: ${JSON.stringify(pair)}`);
+            assert.ok(theme === "light" ? pair.background === "rgb(255, 255, 255)" : (pair.background === "rgba(255, 255, 255, 0.07)" || pair.background === "rgb(23, 23, 23)"), `dashboard/${theme}: hero identity surface: ${JSON.stringify(pair)}`);
           } else {
             assert.equal(pair.background, surface, `dashboard/${theme}: ${pair.selector} surface: ${JSON.stringify(pair)}`);
           }
@@ -264,7 +264,7 @@ try {
             const levels = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
             return (levels[0] + 0.05) / (levels[1] + 0.05);
           };
-          assert.ok(pair.title && contrast(pair.title, heroIdentity ? "rgb(24, 24, 24)" : pair.background) >= 4.5, `dashboard/${theme}: ${pair.selector} title contrast: ${JSON.stringify(pair)}`);
+          assert.ok(pair.title && contrast(pair.title, heroIdentity && theme === "dark" ? "rgb(24, 24, 24)" : pair.background) >= 4.5, `dashboard/${theme}: ${pair.selector} title contrast: ${JSON.stringify(pair)}`);
         }
       }
       if (routeName === "feed") {
