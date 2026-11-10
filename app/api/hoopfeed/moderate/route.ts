@@ -255,10 +255,17 @@ export async function POST(request: Request) {
     if (kind === "pin") {
       if (!isAdmin) return NextResponse.json({ allowed: false, message: "Only HoopCheck can pin posts." }, { status: 403 });
       const postId = String(form.get("post_id") || "").trim();
-      const pinned = String(form.get("pinned") || "") === "true";
+      const pinnedValue = String(form.get("pinned") || "");
+      if (pinnedValue !== "true" && pinnedValue !== "false") return NextResponse.json({ allowed: false, message: "Choose whether to pin or unpin this post." }, { status: 400 });
+      const pinned = pinnedValue === "true";
       if (!postId) return NextResponse.json({ allowed: false, message: "Couldn't update the pin. Please try again." }, { status: 400 });
-      const { error } = await db.from("feed_posts").update({ is_pinned: pinned, pinned_at: pinned ? new Date().toISOString() : null }).eq("id", postId);
-      if (error) return NextResponse.json({ allowed: false, message: "Couldn't update the pin. Please try again." }, { status: 400 });
+      // Only approved, unexpired posts may be newly pinned; unpin remains available for cleanup.
+      if (pinned) {
+        const { data: post } = await db.from("feed_posts").select("id,status,expires_at").eq("id", postId).maybeSingle();
+        if (!post || post.status !== "approved" || !post.expires_at || new Date(post.expires_at).getTime() <= Date.now()) return NextResponse.json({ allowed: false, message: "Only active approved posts can be pinned." }, { status: 404 });
+      }
+      const { data: updated, error } = await db.from("feed_posts").update({ is_pinned: pinned, pinned_at: pinned ? new Date().toISOString() : null }).eq("id", postId).select("id").maybeSingle();
+      if (error || !updated) return NextResponse.json({ allowed: false, message: "Couldn't update the pin. Please try again." }, { status: 400 });
       return NextResponse.json({ allowed: true });
     }
 
