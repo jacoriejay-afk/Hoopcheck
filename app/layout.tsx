@@ -30,7 +30,6 @@ import "./hoopcheck-brand-navigation.css";
 import "./hoopcheck-reference-identity.css";
 import "./hoopcheck-pastel-profiles.css";
 import "./hoopcheck-smooth-experience.css";
-import "./hoopcheck-lm2f-bottom-nav.css";
 import OfflineRuntime from "../components/OfflineRuntime";
 import ThemeProvider from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
@@ -57,6 +56,7 @@ import "./hoopcheck-spacing-density-consolidated.css";
 import "./hoopcheck-membership-refresh.css";
 import "./hoopcheck-flow.css";
 import "./styles/liquid-glass.css";
+import "./hoopcheck-lm2f-bottom-nav.css";
 import { SITE_URL } from "../lib/site-url";
 
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
