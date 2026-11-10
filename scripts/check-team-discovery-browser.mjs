@@ -28,8 +28,11 @@ try {
         if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
         if (url.pathname.includes('/coaches') && failCoaches) return route.fulfill({ status: 503, headers, contentType: 'application/json', body: JSON.stringify({ message: 'Fixture category failure' }) });
         let data = [];
-        if (url.pathname.includes('/womens_teams')) { if (holdTeam) await teamGate; data = [women]; }
-        else if (url.pathname.includes('/teams')) data = [men];
+        if (url.pathname.includes('/womens_teams')) {
+          // Hold the profile request so the loader is testable while search can still refetch.
+          if (holdTeam && url.searchParams.get('id') === `eq.${women.id}`) await teamGate;
+          data = [women];
+        } else if (url.pathname.includes('/teams')) data = [men];
         const single = req.headers().accept?.includes('vnd.pgrst.object');
         await route.fulfill({ status: 200, headers, contentType: 'application/json', body: JSON.stringify(single ? data[0] || null : data) });
       });
