@@ -1,0 +1,49 @@
+/* HoopCheck™ Liquid Glass foundation — opt-in surface primitives. */
+:root {
+  --hc-glass-radius: 20px;
+  --hc-glass-bg: rgba(255, 255, 255, .88);
+  --hc-glass-border: rgba(20, 20, 20, .12);
+  --hc-glass-ink: #151515;
+  --hc-glass-shadow: 0 12px 32px rgba(0, 0, 0, .12);
+}
+:where([data-theme="dark"], .dark, [class~="theme-dark"]) {
+  --hc-glass-bg: rgba(22, 23, 28, .88);
+  --hc-glass-border: rgba(255, 255, 255, .18);
+  --hc-glass-ink: #f8f8fa;
+  --hc-glass-shadow: 0 12px 32px rgba(0, 0, 0, .32);
+}
+.hc-glass {
+  background: var(--hc-glass-bg);
+  border: 1px solid var(--hc-glass-border);
+  border-radius: var(--hc-glass-radius);
+  color: var(--hc-glass-ink);
+  box-shadow: var(--hc-glass-shadow);
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .hc-glass {
+    -webkit-backdrop-filter: saturate(145%) blur(16px);
+    backdrop-filter: saturate(145%) blur(16px);
+  }
+}
+.hc-glass--floating { border-radius: 999px; }
+.hc-glass--header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50; }
+.hc-glass--bottom-nav {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+}
+.hc-glass :where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--brand-orange, #ff5a1f);
+  outline-offset: 3px;
+}
+.hc-glass [aria-current="page"], .hc-glass [data-active="true"] {
+  color: var(--brand-orange, #ff5a1f);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-glass, .hc-glass * { animation: none !important; transition-duration: .01ms !important; }
+}
+@media (prefers-contrast: more), (forced-colors: active) {
+  .hc-glass { -webkit-backdrop-filter: none; backdrop-filter: none; background: Canvas; color: CanvasText; border-color: CanvasText; }
+}
