@@ -1,8 +1,8 @@
 import { createBrowserClient } from "@supabase/ssr";
 
-const supabaseUrl =
+export const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
-const supabaseKey =
+export const supabaseKey =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "placeholder-key";
 
 export const supabase = createBrowserClient(supabaseUrl, supabaseKey, {

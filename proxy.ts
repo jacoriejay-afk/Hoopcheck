@@ -1,8 +1,35 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { GOOGLE_SIGNUP_COOKIE, GOOGLE_SIGNUP_PATH, GOOGLE_SIGNUP_ROLE } from "./lib/google-auth";
+
+const protectedPage = /^\/(?:dashboard|settings|profile|feed|admin)(?:\/|$)|^\/(?:teams|coaches|leagues)\/[^/]+\/review\/?$/;
+const pendingAllowed = new Set([GOOGLE_SIGNUP_PATH, "/auth/callback", "/login", "/terms", "/privacy", "/community-guidelines"]);
+
+function isPendingBearer(header: string | null) {
+  // An unverified payload can only trigger a denial. API handlers still verify
+  // credentials before granting access.
+  const payload = header?.trim().match(/^(?:Bearer\s+)?[\w-]+\.([\w-]+)\.[\w-]+$/i)?.[1];
+  if (!payload) return false;
+  try {
+    return JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))).role === GOOGLE_SIGNUP_ROLE;
+  } catch {
+    return false;
+  }
+}
 
 export async function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  if (path.startsWith("/api/")) {
+    if (isPendingBearer(request.headers.get("authorization"))) {
+      return NextResponse.json({ error: "Finish setting up your HoopCheck account first." }, { status: 403 });
+    }
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
+  const needsSession = protectedPage.test(path);
+  const hasSetupCookie = request.cookies.has(GOOGLE_SIGNUP_COOKIE);
+  if (!needsSession && (!hasSetupCookie || path === "/auth/callback")) return supabaseResponse;
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,13 +58,25 @@ export async function proxy(request: NextRequest) {
 
   const { data } = await supabase.auth.getClaims();
 
+  if (data?.claims?.role === GOOGLE_SIGNUP_ROLE) {
+    if (pendingAllowed.has(path)) return supabaseResponse;
+    const response = NextResponse.redirect(new URL(GOOGLE_SIGNUP_PATH, request.url));
+    for (const cookie of supabaseResponse.cookies.getAll()) response.cookies.set(cookie);
+    return response;
+  }
+
+  if (hasSetupCookie) supabaseResponse.cookies.delete(GOOGLE_SIGNUP_COOKIE);
+  if (!needsSession) return supabaseResponse;
+
   if (!data?.claims) {
     const url = request.nextUrl.clone();
     const returnTo = request.nextUrl.pathname + request.nextUrl.search;
     url.pathname = "/login";
     url.search = "";
     url.searchParams.set("returnTo", returnTo);
-    return NextResponse.redirect(url);
+    const response = NextResponse.redirect(url);
+    for (const cookie of supabaseResponse.cookies.getAll()) response.cookies.set(cookie);
+    return response;
   }
 
   const userId = typeof data.claims.sub === "string" ? data.claims.sub : null;
@@ -76,5 +115,7 @@ export const config = {
     "/profile/:path*",
     "/feed/:path*",
     "/admin/:path*",
+    "/api/:path*",
+    { source: "/((?!_next|api/|.*\\..*).*)", has: [{ type: "cookie", key: "hoopcheck-google-setup" }] },
   ],
 };

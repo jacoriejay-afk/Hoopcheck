@@ -56,6 +56,7 @@ try {
   await page.waitForFunction(()=>!document.querySelector('#profile-editor button[type="submit"]').disabled);
   assert.ok(patches.length>0,'Profile update was sent');
   const saved=patches.find(p=>p.height==='193 cm');
+  assert.ok(saved, `Expected profile PATCH containing height 193 cm; observed PATCH keys: ${JSON.stringify(patches.map(p=>Object.keys(p).sort()))}; observed heights: ${JSON.stringify(patches.map(p=>p.height ?? null))}`);
   assert.equal(saved.position,'PG');assert.equal(saved.current_team,team.name);assert.equal(saved.current_country,'QA Country');assert.equal(saved.favorite_teams,team.name);
   assert.equal(saved.profile_visibility,'players_only','Editing preserves private visibility');
   for(const key of ['player_verified','selected_team_id','selected_womens_team_id','years_pro'])assert.ok(!(key in saved),`${key} is not self-assigned`);
@@ -78,6 +79,13 @@ try {
   assert.ok(header.height>0,'HoopFeed community hero is visible');assert.ok(composer.y>header.y,'Composer follows the community hero');
   assert.equal(await page.locator('.hf5-hero').count(),1,'Exactly one community hero');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,'No horizontal overflow');
+  await page.goto(`${baseURL}/profile`);
+  await page.getByRole('navigation',{name:'Profile quick links'}).getByRole('link',{name:'Settings',exact:true}).click();
+  await page.waitForURL(`${baseURL}/settings`);
+  await page.getByRole('heading',{name:'Settings',exact:true,level:1}).waitFor();
+  await page.goBack();
+  await page.waitForURL(`${baseURL}/profile`);
+  await page.getByRole('navigation',{name:'Profile quick links'}).waitFor();
   console.log(`PASS ${gender} ${width}px: editable profile, team dropdown, privacy preservation, review eligibility, compact feed`);
   await context.close();
  }

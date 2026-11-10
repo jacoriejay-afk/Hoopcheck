@@ -7,11 +7,12 @@ import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
 import TeamLeaguePicker from "../../../components/TeamLeaguePicker";
 
-type AccountType="player"|"coach"|"fan"|"scout"|"agent";
+type AccountType="player"|"coach"|"fan"|"scout"|"agent"|"manager";
 
 const roleCopy:Record<AccountType,{title:string;description:string;goals:string[]}> = {
  player:{title:"Player Experience",description:"Research teams and coaches, manage your professional profile, verify your career, share first-hand experiences and connect with the basketball community.",goals:["Research a team before signing","Share professional experiences","Build a verified player profile","Connect with scouts and agents"]},
  coach:{title:"Coach Experience",description:"Build a coaching profile, research organizations, pursue verification and connect with professional players when eligible.",goals:["Build your coaching profile","Research teams and leagues","Pursue coach verification","Connect with players"]},
+ manager:{title:"Team Manager Experience",description:"Claim your organization and manage official team updates after verification.",goals:["Claim your organization","Manage official updates","Connect with your community"]},
  scout:{title:"Scout Experience",description:"Create a research-first workspace for discovering players, teams and leagues around the world.",goals:["Discover players","Follow markets and leagues","Research teams","Connect with eligible players"]},
  agent:{title:"Agent Experience",description:"Create a recruiting-focused workspace for researching players, teams and leagues and building professional connections.",goals:["Research players","Track leagues and markets","Research teams","Connect with eligible players"]},
  fan:{title:"Fan Experience",description:"Follow the teams and basketball worlds you care about, with fan membership features designed around your interests.",goals:["Follow favorite teams","Track leagues","Explore global basketball","Unlock fan membership features"]}

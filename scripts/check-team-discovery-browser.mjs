@@ -15,7 +15,7 @@ const women = { ...men, id: '22222222-2222-4222-8222-222222222222', name: 'Disco
 try {
   for (const width of [390, 1440]) {
     for (const theme of ['light', 'dark']) {
-      const context = await browser.newContext({ viewport: { width, height: 900 } });
+      const context = await browser.newContext({ viewport: { width, height: 900 }, serviceWorkers: 'block' });
       await context.addInitScript(theme => { localStorage.setItem('hoopcheck-theme', theme); localStorage.setItem('hoopcheck-language', 'en'); }, theme);
       let failCoaches = false;
       let releaseTeam;
@@ -46,7 +46,18 @@ try {
       await femaleLink.waitFor({ state: 'visible' });
       holdTeam = true;
       try {
-        await femaleLink.click({ timeout: 15000 });
+        // The result can re-render while category data refreshes. Dispatch the
+        // navigation from the currently connected anchor without Playwright's
+        // stability wait, which can race with React replacing that anchor.
+        await page.waitForFunction((href) => {
+          const anchor = document.querySelector(`.result-group a[href="${href}"]`);
+          return anchor?.isConnected && anchor.getClientRects().length > 0;
+        }, `/womens/${women.id}`);
+        await page.evaluate((href) => {
+          const anchor = document.querySelector(`.result-group a[href="${href}"]`);
+          if (!anchor?.isConnected) throw new Error('Women team link missing before navigation');
+          anchor.click();
+        }, `/womens/${women.id}`);
       } catch (error) {
         const state = await page.evaluate(() => ({
           url: location.href,
@@ -74,7 +85,12 @@ try {
       assert.ok(bounds && Math.abs(bounds.y + bounds.height / 2 - 450) < 120, 'HoopCheck loader is vertically centered in available content');
       await loader.getByRole('img', { name: 'HoopCheck', exact: true }).waitFor();
       await page.emulateMedia({ reducedMotion: 'reduce' });
-      assert.equal(await loader.locator('.hc-brand-loader__orbit i').first().evaluate(el => getComputedStyle(el).animationName), 'none', 'Reduced motion stops the loader animation');
+      // Route transitions can replace the loader between locating it and reading
+      // its style. Reacquire a connected node while the media change settles.
+      await page.waitForFunction(() => {
+        const orbit = document.querySelector('.hc-brand-loader--screen .hc-brand-loader__orbit i');
+        return orbit?.isConnected && getComputedStyle(orbit).animationName === 'none';
+      }, null, { timeout: 10000 });
       await page.emulateMedia({ reducedMotion: 'no-preference' });
       releaseTeam();
       holdTeam = false;
@@ -94,10 +110,18 @@ try {
       await page.waitForFunction(() => !document.querySelector('.result-group a[href^="/womens/"]'));
       await page.getByRole('button', { name: 'All', exact: true }).click();
       await femaleLink.waitFor();
-      assert.equal(await page.locator('.hc-team-directory-row').first().evaluate(el => getComputedStyle(el).borderTopWidth), '0px', 'Result content has no decorative frame');
+      for (const kind of ['mens', 'womens']) {
+        const result = page.locator(`.result-group .hc-team-directory-row--${kind}`).first();
+        const { border, radius } = await result.evaluate(el => {
+          const style = getComputedStyle(el);
+          return { border: style.borderTopWidth, radius: style.borderTopLeftRadius };
+        });
+        assert.equal(border, '1px', `${kind} team result has a visible border`);
+        assert.equal(radius, '20px', `${kind} team result uses the shared card radius`);
+      }
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2);
       assert.equal(overflow, false, `Search does not overflow at ${width}px`);
-      console.log(`PASS ${width}px ${theme}: both team searches, women’s navigation, long names, frameless results, centered loader, reduced motion, AI art, partial failure recovery`);
+      console.log(`PASS ${width}px ${theme}: both team searches, women’s navigation, long names, bordered results, centered loader, reduced motion, AI art, partial failure recovery`);
       await context.close();
     }
   }

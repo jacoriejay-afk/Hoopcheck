@@ -9,10 +9,7 @@
   --hc-text: #171715;
   --hc-muted: #73736e;
   --hc-line: #deded7;
-  --hc-category-teams: #ff5a1f;
-  --hc-category-womens: #e84393;
   --hc-category-coaches: #2456c8;
-  --hc-category-leagues: #1e9e50;
   --hc-category-players: #6c3fd4;
   --hc-category-reviews: #090909;
   --hc-category-alerts: #f5b800;
@@ -29,14 +26,14 @@ html, body { font-family: var(--hc-ui); }
 body { background: var(--hc-paper); color: var(--hc-text); }
 h1, h2, h3, h4 { font-family: var(--hc-display) !important; text-transform: uppercase; letter-spacing: .01em; }
 :where(main, section, article) :where(input, select, textarea) {
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
 }
 :where(a, button, input, select, textarea, summary):focus-visible {
   outline: 3px solid rgba(255,106,0,.72);
   outline-offset: 3px;
 }
 :where(.btn, button[type="submit"], .button-primary, .btn-primary) {
-  border-radius: 3px !important;
+  border-radius: var(--radius-sm) !important;
   font-family: var(--hc-ui);
   font-weight: 900;
   letter-spacing: .06em;
@@ -476,7 +473,7 @@ main:not(.hc-template-home) {
 .hc-template-home .hc-template-directory-links strong { display: block; font-size: 13px; text-transform: uppercase; }
 .hc-template-home .hc-template-directory-links small { display: block; margin-top: 3px; color: #777; font-size: 11px; }
 .hc-template-home .hc-template-directory-links > a > b { font-size: 22px; }
-.hc-template-home .hc-template-player-panel { display: flex; min-height: 100%; flex-direction: column; align-items: flex-start; background: #101010; color: var(--hc-paper-strong); border-color: #101010; }
+.hc-template-home .hc-template-player-panel { display: flex; min-height: 100%; flex-direction: column; align-items: flex-start; background: var(--hc-inverse-surface); color: var(--hc-paper-strong); border-color: #101010; }
 .hc-template-home .hc-template-player-panel h2 { position: relative; z-index: 1; margin: 28px 0 16px; font-size: clamp(34px, 4.3vw, 56px); line-height: .98; }
 .hc-template-home .hc-template-player-panel h2 span { color: #ff6a00; }
 .hc-template-home .hc-template-player-panel > p { position: relative; z-index: 1; max-width: 390px; color: #bdbdb7; }
@@ -1026,7 +1023,7 @@ main:not(.hc-template-home) {
   gap: 22px;
   padding: 0 17px;
   border: 1px solid #ff5500;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: #ff5500;
   color: #fff !important;
   font-size: 11px;
@@ -1277,7 +1274,7 @@ main:not(.hc-dashboard-shell) .page-container { width:min(100% - 32px,1280px); m
 .hc-template-home .hc-template-directory-links > a:last-child { border-bottom:0; }
 .hc-template-home .hc-template-directory-links > a > span strong { color:#171717; }
 .hc-template-home .hc-template-directory-links > a > span small { color:#666; }
-.hc-template-home .hc-template-player-panel { background:#0d0d0d; color:#fff; }
+.hc-template-home .hc-template-player-panel { background:var(--hc-inverse-surface); color:#fff; }
 .hc-template-home .hc-template-player-panel h2 span { color:#ff5500; }
 .hc-template-home .hc-template-outline-link { background:#ff5500; border-color:#ff5500; color:#111; border-radius:6px; }
 .hc-template-home .hc-template-outline-link:hover { background:#e64a00; border-color:#e64a00; }
@@ -2755,7 +2752,7 @@ main.auth-page-shell .signup-form .message.error {
 .hc-womens-directory-page .hc-womens-team-main-link {
   display:block;
   padding:4px 0 10px;
-  border-radius:3px;
+  border-radius:var(--radius-sm);
 }
 .hc-womens-directory-page .hc-womens-team-main-link h2 {
   color:var(--hc-text-primary) !important;
@@ -4664,10 +4661,8 @@ html.theme-dark {
   --page-bg: #0A0A0A;
   --page-text: #F5F5F0;
   --page-muted: #B8B8B3;
-  --surface: #111111;
   --surface-2: #171717;
   --surface-3: #222222;
-  --border: #333333;
   --brand-orange: #FF5A1F;
   --orange: #FF5A1F;
 }
@@ -4688,7 +4683,7 @@ html.theme-dark .settings-card,
 html.theme-dark .hc-settings-list,
 html.theme-dark .hc-confirm-modal {
   color: #F5F5F0;
-  background-color: #111111;
+  background-color: var(--surface-strong);
   border-color: #333333;
 }
 html.theme-dark .page-shell h1,
@@ -4838,7 +4833,7 @@ html.theme-dark .hc-member-profile-page .hc-profile-info-card,
 html.theme-dark .hc-account-page .hc-settings-group,
 html.theme-dark .hc-account-page .dashboard-card,
 html.theme-dark .hc-account-page .hero-card {
-  background:#101010; color:#f4f4f1; border-color:#303030;
+  background:var(--hc-inverse-surface); color:#f4f4f1; border-color:#303030;
 }
 html.theme-dark .hc-member-profile-page .hc-profile-completion-copy,
 html.theme-dark .hc-member-profile-page .hc-profile-info-card h2,
@@ -5284,33 +5279,6 @@ html.theme-dark .hc-account-page .hc-setting-row.is-danger { color: #ff8c8c; }
 
 
 
-/* Global design tokens: PreferencesProvider switches these on the document root. */
-:root, html.theme-light {
-  color-scheme: light;
-  --hc-surface: #f4f4f1;
-  --hc-surface-raised: #ffffff;
-  --hc-surface-soft: #f8f8f6;
-  --hc-foreground: #171715;
-  --hc-foreground-muted: #686862;
-  --hc-border: #deded7;
-  --hc-input-bg: #ffffff;
-  --hc-input-fg: #171715;
-  --hc-nav-bg: #090909;
-  --hc-nav-fg: #f4f4f1;
-}
-html.theme-dark {
-  color-scheme: dark;
-  --hc-surface: #0d0d0d;
-  --hc-surface-raised: #171717;
-  --hc-surface-soft: #202020;
-  --hc-foreground: #f5f5f2;
-  --hc-foreground-muted: #b8b8b2;
-  --hc-border: #343434;
-  --hc-input-bg: #171717;
-  --hc-input-fg: #f5f5f2;
-  --hc-nav-bg: #080808;
-  --hc-nav-fg: #f4f4f1;
-}
 html, body { background: var(--hc-surface); color: var(--hc-foreground); }
 body { transition: background-color .12s ease, color .12s ease; }
 .site-header-global, .hc-template-header { background: var(--hc-nav-bg); color: var(--hc-nav-fg); }
@@ -5387,7 +5355,6 @@ html.theme-dark {
   --hc-text: #f5f5f2;
   --hc-muted: #b8b8b2;
   --hc-line: #343434;
-  --border: #343434;
   --gray-100: #202020;
   --gray-300: #b8b8b2;
   --gray-500: #a0a09a;
@@ -5459,28 +5426,20 @@ html.theme-dark .hc-feed-page .hc-feed-filter-bar {
 }
 
 
-/* Canonical surface tokens. Keep literal surface colors in this token block only. */
+/* Legacy surface aliases. */
 :root, html.theme-light {
-  --hc-page-bg: #f8f9fa;
-  --hc-card-bg: #ffffff;
-  --hc-card-raised: #ffffff;
   --hc-card-border: #e8e8e8;
-  --hc-text-primary: #111111;
+  --hc-text-primary: var(--on-surface);
   --hc-text-secondary: #626262;
-  --hc-input-bg: #ffffff;
   --hc-input-text: #111111;
   --hc-divider: #e8e8e8;
   --hc-overlay: rgb(0 0 0 / 68%);
 }
 html.theme-dark {
   color-scheme: dark;
-  --hc-page-bg: #0a0a0a;
-  --hc-card-bg: #111111;
-  --hc-card-raised: #171717;
   --hc-card-border: #343434;
-  --hc-text-primary: #f5f5f2;
+  --hc-text-primary: var(--on-surface);
   --hc-text-secondary: #b8b8b2;
-  --hc-input-bg: #171717;
   --hc-input-text: #f5f5f2;
   --hc-divider: #303030;
   --hc-overlay: rgb(0 0 0 / 78%);
@@ -5560,36 +5519,6 @@ html.theme-light .hc-member-profile-page :where(.card, .dashboard-card, .hc-prof
 }
 
 
-/* Unified theme contract: the html theme class is the only global theme switch.
-   Components inherit these design tokens instead of hard-coded light surfaces. */
-:root, html.theme-light {
-  color-scheme: light;
-  --hc-page-bg: #f4f4f1;
-  --hc-surface: #f4f4f1;
-  --hc-surface-raised: #ffffff;
-  --hc-surface-soft: #f8f8f6;
-  --hc-foreground: #171715;
-  --hc-foreground-muted: #686862;
-  --hc-border: #deded7;
-  --hc-input-bg: #ffffff;
-  --hc-input-fg: #171715;
-  --hc-nav-bg: #090909;
-  --hc-nav-fg: #f4f4f1;
-}
-html.theme-dark {
-  color-scheme: dark;
-  --hc-page-bg: #0a0a0a;
-  --hc-surface: #0a0a0a;
-  --hc-surface-raised: #111111;
-  --hc-surface-soft: #1b1b1b;
-  --hc-foreground: #f5f5f2;
-  --hc-foreground-muted: #b8b8b2;
-  --hc-border: #343434;
-  --hc-input-bg: #171717;
-  --hc-input-fg: #f5f5f2;
-  --hc-nav-bg: #080808;
-  --hc-nav-fg: #f4f4f1;
-}
 html, body {
   background-color: var(--hc-page-bg) !important;
   color: var(--hc-foreground);
@@ -5797,7 +5726,6 @@ html.theme-dark {
   --page-bg: var(--hc-page-bg);
   --page-text: var(--hc-foreground);
   --page-muted: var(--hc-foreground-muted);
-  --surface: var(--hc-surface);
   --surface-2: var(--hc-surface-raised);
   --surface-3: var(--hc-surface-soft);
   --hc-paper: var(--hc-page-bg);
@@ -5815,7 +5743,6 @@ html.theme-dark {
   --gray-100: var(--hc-surface-soft);
   --gray-300: var(--hc-foreground-muted);
   --gray-500: var(--hc-foreground-muted);
-  --border: var(--hc-border);
   --white: var(--hc-surface-raised);
   --black: var(--hc-foreground);
   --hc-mobile-row-bg: var(--hc-surface-raised);
@@ -5828,7 +5755,6 @@ html.theme-dark {
   --page-bg: var(--hc-page-bg);
   --page-text: var(--hc-foreground);
   --page-muted: var(--hc-foreground-muted);
-  --surface: var(--hc-surface);
   --surface-2: var(--hc-surface-raised);
   --surface-3: var(--hc-surface-soft);
   --hc-paper: var(--hc-page-bg);
@@ -5846,7 +5772,6 @@ html.theme-dark {
   --gray-100: var(--hc-surface-soft);
   --gray-300: var(--hc-foreground-muted);
   --gray-500: var(--hc-foreground-muted);
-  --border: var(--hc-border);
   --white: var(--hc-foreground);
   --black: var(--hc-page-bg);
   --hc-mobile-row-bg: var(--hc-surface-raised);

@@ -36,7 +36,7 @@
 .hc-member-profile-page .hero-card.compact-hero .hc-profile-email { color:#bdbdbd !important; opacity:1 !important; }
 .hc-member-profile-page .hero-card.compact-hero .hc-member-profile-avatar { background:#202020 !important; color:#f7f7f5 !important; border-color:#101010 !important; outline-color:#ff5a1f !important; }
 .hc-member-profile-page .hero-card.compact-hero .hc-profile-edit-button { background:#ff5a1f !important; color:#0a0a0a !important; }
-.hc-member-profile-page .hero-card.compact-hero .hc-profile-public-button { background:#111 !important; border:1px solid #ff5a1f !important; color:#f7f7f5 !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-public-button { background:var(--hc-inverse-surface) !important; border:1px solid #ff5a1f !important; color:#f7f7f5 !important; }
 
 /* Keep branded club art subordinate to readable data and actions. */
 .hc-team-entity-profile .hc-team-branded-hero .hc-team-profile-topline,
@@ -54,7 +54,7 @@
 }
 
 /* Compact completion strip uses actual profile completeness and next missing field. */
-.hc-member-profile-page .hero-card.compact-hero .hc-profile-completion { margin:4px 0 0 !important; padding:12px !important; background:#161616 !important; border:1px solid #383838 !important; border-radius:12px !important; color:#f7f7f5 !important; }
+.hc-member-profile-page .hero-card.compact-hero .hc-profile-completion { margin:4px 0 0 !important; padding:12px !important; background:var(--hc-inverse-surface) !important; border:1px solid #383838 !important; border-radius:12px !important; color:#f7f7f5 !important; }
 .hc-member-profile-page .hero-card.compact-hero .hc-profile-completion-copy { color:#f7f7f5 !important; }
 .hc-member-profile-page .hero-card.compact-hero .hc-profile-completion-copy strong { color:#f7f7f5 !important; }
 .hc-member-profile-page .hero-card.compact-hero .hc-profile-completion-copy span { color:#bdbdbd !important; }

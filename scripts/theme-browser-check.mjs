@@ -116,12 +116,53 @@ for (let attempt = 0; attempt < 60; attempt += 1) {
 }
 assert.ok(serverReady, "Next production server did not become ready within 60 seconds.");
 
-const browser = await chromium.launch({ channel: "chrome", headless: true, args: ["--no-sandbox"] });
+const browser = await chromium.launch({ ...(process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : { channel: "chrome" }), headless: true, args: ["--no-sandbox"] });
 const results = [];
 try {
+  // Public routes must not expose member-only mobile navigation when there is
+  // no session. Keep this separate from the authenticated screenshot fixtures.
+  for (const theme of ["light", "dark"]) {
+    const guestContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      isMobile: true,
+      hasTouch: true,
+      serviceWorkers: "block",
+    });
+    const guestPage = await guestContext.newPage();
+    await guestContext.addCookies([{ name: "hoopcheck-theme", value: theme, url: baseURL }]);
+    await guestPage.addInitScript((preference) => {
+      localStorage.setItem("hoopcheck-theme", preference);
+      localStorage.removeItem("sb-ci-auth-token");
+    }, theme);
+    await guestPage.route("https://ci.invalid/**", async route => {
+      const req = route.request();
+      const headers = {
+        "access-control-allow-origin": baseURL,
+        "access-control-allow-credentials": "true",
+        "access-control-allow-headers": req.headers()["access-control-request-headers"] || "*",
+        "access-control-allow-methods": "GET,POST,OPTIONS",
+      };
+      if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers });
+      return route.fulfill({ status: 401, headers, contentType: "application/json", body: JSON.stringify({ message: "Guest fixture: no session" }) });
+    });
+    for (const route of ["/login", "/signup", "/search"]) {
+      await guestPage.goto(baseURL + route);
+      await guestPage.locator("body").waitFor({ state: "visible" });
+      await guestPage.waitForTimeout(400);
+      assert.equal(await guestPage.locator("nav.bottom-nav").count(), 0,
+        `Guest ${theme} ${route}: member bottom navigation must not render`);
+      assert.equal(await guestPage.locator('a.hc-signin-button').count() > 0, true,
+        `Guest ${theme} ${route}: sign-in action must be available`);
+    }
+    await guestContext.close();
+  }
+  console.log("GUEST_MOBILE_NAV=PASS; routes=login,signup,search; themes=light,dark");
+
   for (const theme of ["dark", "light"]) {
     for (const routeName of ["dashboard", "feed", "admin"]) {
       const context = await browser.newContext({
+        // Fixture routes must reach Playwright rather than a service worker.
+        serviceWorkers: "block",
         viewport: { width: 390, height: 844 },
         deviceScaleFactor: 1,
         isMobile: true,
@@ -208,15 +249,22 @@ try {
           const element = document.querySelector(selector);
           return element ? getComputedStyle(element).backgroundColor : null;
         };
+        const probe = document.createElement("span");
+        probe.style.backgroundColor = "var(--surface)";
+        document.body.append(probe);
+        const glassSurface = getComputedStyle(probe).backgroundColor;
+        probe.remove();
         return {
           themeClass: document.documentElement.classList.contains("theme-dark") ? "dark" :
             document.documentElement.classList.contains("theme-light") ? "light" : "missing",
           body: color("body"),
+          glassSurface,
           pageWrapper: color(wrapperSelector),
           composer: routeName === "feed" ? color(".hc-feed-composer") : null,
           discoveryHeading: routeName === "feed" ? getComputedStyle(document.querySelector(".hf5-hero__title")).color : null,
           composerBorder: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-composer")).borderTopWidth : null,
           filterChip: routeName === "feed" ? color(".hf5-type-chip:not(.is-active)") : null,
+          dashboardHeroHeadline: routeName === "dashboard" ? (() => { const element = document.querySelector("main.hc-ia-home header.hc-home-hero h1"); return element ? getComputedStyle(element).color : null; })() : null,
           homePairs: routeName === "dashboard" ? [".hc-ia-identity", ".hc-ia-live-strip", ".hc-ia-door"].map((selector) => {
             const element = document.querySelector(selector);
             if (!element) return { selector, missing: true };
@@ -241,23 +289,38 @@ try {
       }, { wrapperSelector, routeName });
 
       assert.equal(computed.themeClass, theme, `${routeName}: expected html theme class ${theme}, got ${computed.themeClass}`);
-      const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
+      const expectedPage = theme === "dark" ? "rgb(0, 0, 0)" : "rgb(244, 244, 241)";
       const expectedChip = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
       assert.equal(computed.body, expectedPage, `${routeName}/${theme}: body background mismatch`);
       assert.equal(computed.pageWrapper, expectedPage, `${routeName}/${theme}: page wrapper background mismatch`);
       if (routeName === "dashboard") {
+        assert.ok(computed.dashboardHeroHeadline && (() => { const channel = (color) => color.match(/\d+/g).slice(0, 3).map(Number).map(value => value / 255).map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4); const luminance = (color) => channel(color).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0); const a = luminance(computed.dashboardHeroHeadline); const b = luminance("rgb(24, 24, 24)"); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) >= 4.5; })(), `dashboard/${theme}: hero headline contrast must be >= 4.5:1 against dark gradient, got ${computed.dashboardHeroHeadline}`);
         const surface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
         for (const pair of computed.homePairs) {
-          assert.equal(pair.background, surface, `dashboard/${theme}: ${pair.selector} surface: ${JSON.stringify(pair)}`);
+          // The dashboard identity pill intentionally sits on the dark, gradient
+          // brand hero in both themes; its translucent overlay is not a white card.
+          const heroIdentity = pair.selector === ".hc-ia-identity";
+          if (heroIdentity) {
+            assert.ok(theme === "light" ? pair.background === "rgb(255, 255, 255)" : (pair.background === "rgba(255, 255, 255, 0.07)" || pair.background === "rgb(23, 23, 23)"), `dashboard/${theme}: hero identity surface: ${JSON.stringify(pair)}`);
+          } else {
+            assert.ok([surface, computed.glassSurface].includes(pair.background), `dashboard/${theme}: ${pair.selector} surface: ${JSON.stringify(pair)}`);
+          }
           const contrast = (foreground, background) => {
-            const luminance = (color) => color.match(/\d+/g).slice(0, 3).map(Number)
-              .map(value => value / 255)
+            const channels = (color) => {
+              const srgb = color.startsWith("color(srgb ");
+              const values = color.match(/(?:\d*\.)?\d+/g).map(Number);
+              return [...values.slice(0, 3).map(value => srgb ? value : value / 255), values[3] ?? 1];
+            };
+            const luminance = (color) => color.slice(0, 3)
               .map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4)
               .reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
-            const levels = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+            const surface = channels(background);
+            const base = channels(computed.body);
+            const effective = surface.slice(0, 3).map((channel, i) => channel * surface[3] + base[i] * (1 - surface[3]));
+            const levels = [luminance(channels(foreground)), luminance(effective)].sort((a, b) => b - a);
             return (levels[0] + 0.05) / (levels[1] + 0.05);
           };
-          assert.ok(pair.title && contrast(pair.title, pair.background) >= 4.5, `dashboard/${theme}: ${pair.selector} title contrast: ${JSON.stringify(pair)}`);
+          assert.ok(pair.title && contrast(pair.title, heroIdentity && theme === "dark" ? "rgb(24, 24, 24)" : pair.background) >= 4.5, `dashboard/${theme}: ${pair.selector} title contrast: ${JSON.stringify(pair)}`);
         }
       }
       if (routeName === "feed") {
@@ -306,7 +369,7 @@ try {
   ];
   const routeSweepResults = [];
   for (const theme of ["dark", "light"]) {
-    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, serviceWorkers: "block" });
     const encodedSession = "base64-" + btoa(unescape(encodeURIComponent(JSON.stringify(session))))
       .replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
     await context.addCookies([
@@ -442,6 +505,14 @@ try {
       activeRoutePath = requestedPath;
       try {
         await page.goto(baseURL + requestedPath, { waitUntil: "domcontentloaded", timeout: 20000 });
+        if (requestedPath === "/fan-feed") {
+          await page.waitForURL("**/feed", { timeout: 15000 });
+          await page.locator("main.hc-feed-page .hc-feed-composer").waitFor({ state: "visible", timeout: 15000 });
+        }
+        // A route shell can render before its fixture data and controls. Audit
+        // the populated page so timing does not hide contrast/copy findings.
+        await page.locator("main").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator("main .hc-brand-loader--screen").waitFor({ state: "hidden", timeout: 15000 });
         await page.waitForTimeout(300);
         if (requestedPath === "/live-games") {
           await page.locator("main.hc-live-hub-page .hc-live-hub-hero").waitFor({ state: "visible", timeout: 15000 });
@@ -553,7 +624,7 @@ try {
           navigationError,
         };
       }, { requestedPath, navigationError });
-      const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
+      const expectedPage = theme === "dark" ? "rgb(0, 0, 0)" : "rgb(244, 244, 241)";
       const errors = [];
       if (requestedPath.startsWith("/womens/")) {
         await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").waitFor({ state: "visible", timeout: 15000 });
