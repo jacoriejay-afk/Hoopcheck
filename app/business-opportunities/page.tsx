@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import CourtLines from "../../components/CourtLines";
+import { HoopIcon } from "../../components/HoopCheckUI";
+import styles from "../company/company.module.css";
 
 export const metadata: Metadata = {
   title: "Business Opportunities | HoopCheck™",
@@ -9,58 +12,77 @@ export const metadata: Metadata = {
 const opportunities = [
   {
     title: "Athlete ambassadors",
-    description: "Help introduce HoopCheck™ to basketball communities through authentic content, education, and referrals.",
-    details: "Discuss campaign expectations, audience fit, content rights, and any proposed referral compensation before an agreement is signed.",
+    icon: "star",
+    description: "Help introduce HoopCheck™ to basketball communities through content, education, and referrals.",
+    details: "Discuss campaign expectations, audience fit, content rights, and any proposed referral compensation.",
   },
   {
     title: "Sponsors",
-    description: "Support basketball-focused campaigns, community initiatives, and responsible brand collaborations.",
+    icon: "trophy",
+    description: "Support basketball campaigns, community initiatives, and brand collaborations.",
     details: "Share your brand, campaign goals, audience, budget range, and preferred timeline.",
   },
   {
     title: "Strategic partners",
+    icon: "users",
     description: "Explore collaborations with teams, leagues, agents, coaches, and basketball organizations.",
     details: "Tell us what your organization does and how a partnership could benefit the basketball community.",
   },
   {
     title: "Investors",
-    description: "Start a confidential conversation about HoopCheck™ and its long-term business direction.",
-    details: "An inquiry is not an offer of securities or a promise of returns. Any investment requires separate review and documentation.",
+    icon: "message-square",
+    description: "Start a conversation about HoopCheck™ and its long-term business direction.",
+    details: "Inquiries are for initial discussions only. Any securities offering or investment requires separate review and documentation.",
   },
 ] as const;
 
 export default function BusinessOpportunitiesPage() {
   return (
-    <main className="mx-auto max-w-5xl px-5 py-10 text-[color:var(--foreground)] sm:py-16">
-      <p className="text-sm font-semibold uppercase tracking-widest text-orange-500">Work with HoopCheck™</p>
-      <h1 className="mt-3 text-3xl font-bold sm:text-5xl">Build a better-connected basketball community.</h1>
-      <p className="mt-5 max-w-3xl text-lg leading-8">
-        We welcome thoughtful conversations with athletes, brands, basketball organizations, and prospective investors.
-        Choose the opportunity that best fits your goals.
-      </p>
-      <div className="mt-10 grid gap-5 sm:grid-cols-2">
-        {opportunities.map((item) => (
-          <section key={item.title} className="rounded-2xl border border-orange-500/40 bg-[color:var(--card)] p-6 shadow-sm">
-            <h2 className="text-xl font-bold">{item.title}</h2>
-            <p className="mt-3 leading-7">{item.description}</p>
-            <p className="mt-4 text-sm leading-6 opacity-80">{item.details}</p>
-            <Link href="/partners" className="mt-5 inline-flex rounded-xl border border-orange-500 px-4 py-2 font-semibold text-orange-500 hover:bg-orange-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500">
-              Start a conversation
+    <main className={styles.page}>
+      <header className={styles.hero}>
+        <CourtLines variant="full-court" className={styles.court} />
+        <div className={styles.heroContent}>
+          <p className={styles.eyebrow}>HoopCheck™ / Business opportunities</p>
+          <h1>Work with HoopCheck™.</h1>
+          <p className={styles.lede}>
+            Help build a better-connected basketball community. Explore the opportunity that fits your goals.
+          </p>
+          <div className={styles.actions}>
+            <Link className={styles.primary} href="/partners">
+              Start a conversation <HoopIcon name="arrow-up-right" size={18} />
+            </Link>
+            <Link className={styles.secondary} href="/company">Company information</Link>
+          </div>
+        </div>
+      </header>
+
+      <div className={styles.grid}>
+        {opportunities.map(({ title, icon, description, details }) => (
+          <section className={styles.card} key={title}>
+            <span className={styles.icon}><HoopIcon name={icon} /></span>
+            <h2>{title}</h2>
+            <p>{description}</p>
+            <p className={styles.note}>{details}</p>
+            <Link className={styles.cardLink} href="/partners" aria-label={`Inquire about ${title.toLowerCase()}`}>
+              Inquire <HoopIcon name="arrow-right" size={18} />
             </Link>
           </section>
         ))}
       </div>
-      <section className="mt-10 rounded-2xl border border-orange-500/30 p-6">
-        <h2 className="text-xl font-bold">How inquiries work</h2>
-        <p className="mt-3 leading-7">
-          Use our existing business inquiry form and describe the opportunity you are interested in.
-          Account sign-in may be required depending on inquiry availability.
-          Submitting an inquiry does not establish a partnership, ambassador appointment, or investment relationship.
-        </p>
-        <Link href="/partners" className="mt-4 inline-block font-semibold text-orange-500 underline underline-offset-4">Open the business inquiry form</Link>
+
+      <section className={styles.card} aria-labelledby="inquiry-details">
+        <h2 id="inquiry-details">How inquiries work</h2>
+        <p>Use the business inquiry form to describe the opportunity you’re interested in. Sign-in may be required.</p>
+        <p className={styles.note}>Inquiries start a conversation. Partnerships, ambassador appointments, and investments require separate agreements.</p>
+        <Link className={styles.cardLink} href="/partners">
+          Open the inquiry form <HoopIcon name="arrow-right" size={18} />
+        </Link>
       </section>
-      <nav aria-label="Company information" className="mt-8 flex flex-wrap gap-5 underline underline-offset-4">
-        <Link href="/about">About</Link><Link href="/founder">Founder</Link><Link href="/company">Company</Link>
+
+      <nav className={styles.nav} aria-label="Company information">
+        <Link href="/about">About</Link>
+        <Link href="/founder">Founder</Link>
+        <Link href="/company">Company</Link>
       </nav>
     </main>
   );
