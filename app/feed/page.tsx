@@ -133,7 +133,7 @@ export default function Feed(){
         img.onload=()=>{URL.revokeObjectURL(url);const max=1600;const scale=Math.min(1,max/Math.max(img.width,img.height));const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));const ctx=canvas.getContext("2d");if(!ctx){reject(new Error("Photo processing failed."));return;}ctx.drawImage(img,0,0,canvas.width,canvas.height);canvas.toBlob(blob=>{if(!blob){reject(new Error("Photo processing failed."));return;}resolve(new File([blob],"hoopfeed.jpg",{type:"image/jpeg"}));},"image/jpeg",0.82);};
         img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("This photo could not be opened. Try taking a new photo or choosing a JPG from your library."));}; img.src=url;
       });
-      setPhotos(x=>[...x,compressed]);setPreviews(x=>[...x,URL.createObjectURL(compressed)]);setMsg("");
+      setVideo(null);setVideoPreview(old=>{if(old)URL.revokeObjectURL(old);return "";});setPhotos(x=>[...x,compressed]);setPreviews(x=>[...x,URL.createObjectURL(compressed)]);setMsg("");
     }catch(e:any){setMsg(e?.message||"Photo processing failed.");}
   }
   function removePhoto(i:number){setPreviews(x=>{const u=x[i];if(u)URL.revokeObjectURL(u);return x.filter((_,j)=>j!==i);});setPhotos(x=>x.filter((_,j)=>j!==i));}
