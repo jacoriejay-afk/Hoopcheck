@@ -18,7 +18,7 @@ try {
   const team={id:tid,name:`${gender==='mens'?'Men':'Women'} QA Club`,country:'QA Country',city:'QA City',league_name:'QA League',basketball_type:gender,active:true,created_at:'2020-01-01T00:00:00Z'};
   let subscription={plan:'pro',status:'active',access_status:'active',current_period_end:null};
   let eligible=false,patches=[];
-  const context=await browser.newContext({viewport:{width,height:900}});
+  const context=await browser.newContext({viewport:{width,height:900},serviceWorkers:'block'});
   await context.addCookies([{name:'sb-ci-auth-token',value:'base64-'+Buffer.from(JSON.stringify(session)).toString('base64url'),url:baseURL}]);
   await context.addInitScript(session=>{localStorage.setItem('sb-ci-auth-token',JSON.stringify(session));localStorage.setItem('hoopcheck-theme','light');localStorage.setItem('hoopcheck-language','en');},session);
   const page=await context.newPage();
@@ -82,11 +82,12 @@ try {
   await page.goto(`${baseURL}/profile`);
   await page.getByRole('navigation',{name:'Profile quick links'}).getByRole('link',{name:'Settings',exact:true}).click();
   await page.waitForURL(`${baseURL}/settings`);
-  await page.getByRole('heading',{name:'Settings',exact:true,level:1}).waitFor();
+  await page.locator('main.hc-settings-page h1').waitFor();
+  assert.match(await page.locator('main.hc-settings-page h1').textContent(), /^settings$/i);
   await page.goBack();
   await page.waitForURL(`${baseURL}/profile`);
   await page.getByRole('navigation',{name:'Profile quick links'}).waitFor();
-  console.log(`PASS ${gender} ${width}px: editable profile, team dropdown, privacy preservation, review eligibility, compact feed`);
+  console.log(`PASS ${gender} ${width}px: editable profile, team dropdown, privacy preservation, review eligibility, compact feed, Settings navigation`);
   await context.close();
  }
 } finally {await browser.close();}
