@@ -188,9 +188,6 @@ export async function POST(request: Request) {
     if (kind !== "post" && (image || extraImages.length > 0 || videoPath)) {
       return NextResponse.json({ allowed: false, message: "Media uploads are only supported when creating a post." }, { status: 400 });
     }
-    if (kind === "comment" && (image || videoPath)) {
-      return NextResponse.json({ allowed: false, message: "Photos and videos can only be added to posts." }, { status: 400 });
-    }
 
     const { data: profile } = await db.from("profiles").select("account_type,current_country,current_country_public").eq("id", user.id).maybeSingle();
     if (!profile) return NextResponse.json({ allowed: false, message: "Your account profile could not be found." }, { status: 403 });
