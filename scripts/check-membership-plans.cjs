@@ -57,3 +57,16 @@ test("role selection, server enforcement, and profile constraint remain aligned"
     assert.match(migration, new RegExp(`'${role}'::text`));
   }
 });
+
+test("membership page uses approved shared prices instead of stale hardcoded totals", () => {
+  const page = read("app/membership/page.tsx");
+  const prices = read("lib/plan-comparison.ts");
+  assert.match(page, /PLAN_PRICES\.pro\[billingInterval\]/);
+  assert.match(page, /PLAN_PRICES\.premium\[billingInterval\]/);
+  for (const amount of ["$26.95", "$53.95", "$50.90", "$101.90"]) {
+    assert.ok(prices.includes(amount), `Approved price missing: ${amount}`);
+  }
+  for (const obsolete of ["$25.45", "$50.95", "$53.89", "$107.89"]) {
+    assert.ok(!page.includes(obsolete), `Obsolete display price remains: ${obsolete}`);
+  }
+});

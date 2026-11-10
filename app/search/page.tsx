@@ -13,7 +13,14 @@ import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import Surface from "../../components/Surface";
-import { useLanguage } from "../../components/LanguageProvider";
+import { useLanguage, type Language } from "../../components/LanguageProvider";
+
+const singleResultLabel: Record<Language, string> = {
+  en: "result", es: "resultado", fr: "résultat", de: "Ergebnis", tr: "sonuç",
+  pt: "resultado", it: "risultato", el: "αποτέλεσμα", ar: "نتيجة", ru: "результат",
+  az: "nəticə", pl: "wynik", zh: "条结果", ja: "件の結果", sr: "rezultat",
+  fi: "tulos", he: "תוצאה", lt: "rezultatas", uk: "результат",
+};
 
 type Coach = { id: string; name: string; country: string | null; city: string | null };
 type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
@@ -110,7 +117,7 @@ function PlayerUsernameConnect() {
 }
 
 function SearchContent() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const searchParams = useSearchParams();
   const router = useRouter();
   const query = searchParams.get("q")?.trim() || "";
@@ -347,7 +354,7 @@ function SearchContent() {
               <div className="eyebrow">{t("searchResults")}</div>
               <h2>{t("resultsFor")} &quot;{query}&quot;</h2>
             </div>
-            {!loading && <div className="result-count">{totalResults} {t("resultCount")}</div>}
+            {!loading && <div className="result-count">{totalResults} {totalResults === 1 ? singleResultLabel[language] : t("resultCount")}</div>}
           </div>
 
           {(
