@@ -37,9 +37,11 @@ try {
       const maleLink = page.locator(`.result-group a[href="/teams/${men.id}"]`).first();
       const femaleLink = page.locator(`.result-group a[href="/womens/${women.id}"]`).first();
       await maleLink.waitFor(); await femaleLink.waitFor();
+      assert.equal((await page.locator('.result-count').innerText()).toLowerCase(), '2 results');
       await page.getByRole('button', { name: 'Women’s Teams', exact: true }).click();
       await femaleLink.waitFor();
       await page.waitForFunction(() => !document.querySelector('.result-group a[href^="/teams/"]'));
+      assert.equal((await page.locator('.result-count').innerText()).toLowerCase(), '1 result');
       holdTeam = true;
       await femaleLink.click();
       const loader = page.locator('.hc-brand-loader--screen');
