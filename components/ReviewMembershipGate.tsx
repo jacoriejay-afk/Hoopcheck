@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 type ReviewMembershipGateProps = {
   title?: string;
@@ -10,11 +14,14 @@ type ReviewMembershipGateProps = {
 
 export default function ReviewMembershipGate({
   title = "Full review details require an eligible membership",
-  description = "Sign in with an eligible active membership to view full review details.",
+  description = "An eligible active membership unlocks full review details.",
   actionLabel = "View Membership",
   accountType = "",
   tier = "free",
 }: ReviewMembershipGateProps) {
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
+  useEffect(() => { let on = true; supabase.auth.getSession().then(({ data }) => { if (on) setSignedIn(Boolean(data.session)); }).catch(() => { if (on) setSignedIn(false); }); return () => { on = false; }; }, []);
+  const signedOut = signedIn === false;
   const isFan = accountType === "fan";
   const isPlayer = accountType === "player";
   const resolvedTitle = isFan
@@ -23,7 +30,9 @@ export default function ReviewMembershipGate({
       ? "Player Pro or Premium membership required"
       : accountType
         ? title
-        : "Sign in to view full review details";
+        : signedOut
+          ? "Sign in to view full review details"
+          : title;
   const resolvedDescription = isFan
     ? tier === "pro"
       ? "Fan Pro shows the overall rating preview. Upgrade to Fan Premium to unlock full reviews and category details."
@@ -32,7 +41,9 @@ export default function ReviewMembershipGate({
       ? "An active Pro or Premium player membership unlocks full review details and review-writing access."
       : accountType
         ? description
-        : "Sign in and choose an eligible HoopCheck membership to view full review details.";
+        : signedOut
+          ? "Sign in and choose an eligible HoopCheck membership to view full review details."
+          : description;
   const resolvedActionLabel = isFan ? "View Fan Premium" : isPlayer ? "View Membership" : accountType ? actionLabel : "View Membership";
 
   return (
@@ -43,7 +54,7 @@ export default function ReviewMembershipGate({
         <p>{resolvedDescription}</p>
         <div className="actions">
           <Link href="/membership" className="btn">{resolvedActionLabel}</Link>
-          <Link href="/login" className="btn dark">Sign in</Link>
+          {signedOut && <Link href="/login" className="btn dark">Sign in</Link>}
         </div>
       </div>
     </section>
