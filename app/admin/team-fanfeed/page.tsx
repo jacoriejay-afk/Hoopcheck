@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import HoopLoading from "../../../components/HoopLoading";
 import Logo from "../../../components/Logo";
@@ -19,6 +20,7 @@ type Post = {
 };
 
 export default function AdminTeamFanFeedPage() {
+  const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export default function AdminTeamFanFeedPage() {
     setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
-      window.location.assign("/login");
+      router.push("/login");
       return;
     }
     const response = await fetch("/api/admin/team-fanfeed", {
@@ -38,11 +40,11 @@ export default function AdminTeamFanFeedPage() {
     });
     const payload = await response.json().catch(() => ({}));
     if (response.status === 401) {
-      window.location.assign("/login");
+      router.push("/login");
       return;
     }
     if (response.status === 403) {
-      window.location.assign("/dashboard");
+      router.push("/dashboard");
       return;
     }
     if (!response.ok) {
@@ -52,7 +54,7 @@ export default function AdminTeamFanFeedPage() {
     }
     setPosts((payload.posts || []) as Post[]);
     setLoading(false);
-  }, []);
+  }, [router]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -63,7 +65,7 @@ export default function AdminTeamFanFeedPage() {
     setMessage("");
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
-      window.location.assign("/login");
+      router.push("/login");
       return;
     }
     const response = await fetch("/api/admin/team-fanfeed", {
