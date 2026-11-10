@@ -19,6 +19,7 @@ const checks = [
   ["video requires moderated caption", route.includes('if (videoPath && !text)')],
   ["poll totals require viewer RLS", poll.includes('viewer.from("feed_posts")')],
   ["poll totals never return raw voter rows", !poll.includes('NextResponse.json({ votes')],
+  ["invalid stored votes fail closed", poll.includes('Invalid persisted votes must not silently disappear from totals.')],
   ["poll vote SELECT limited to own user", /create policy "feed poll votes read"[\s\S]*?using \(user_id = \(select auth\.uid\(\)\)\)/.test(migration)],
   ["bookmark insert requires approved post", /create policy "feed bookmarks insert own"[\s\S]*?p\.status = 'approved'/.test(migration)],
   ["feed disables voting if results unavailable", feed.includes('pollResultsUnavailable')],
