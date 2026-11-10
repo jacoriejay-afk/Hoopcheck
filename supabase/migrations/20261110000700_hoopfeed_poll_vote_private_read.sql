@@ -27,9 +27,11 @@ create policy "feed poll votes insert own"
         and p.status = 'approved'
         and p.post_kind = 'poll'
         and p.expires_at > now()
-        and jsonb_typeof(p.poll_options) = 'array'
         and option_index >= 0
-        and option_index < jsonb_array_length(p.poll_options)
+        and option_index < case
+          when jsonb_typeof(p.poll_options) = 'array' then jsonb_array_length(p.poll_options)
+          else 0
+        end
     )
   );
 
@@ -45,9 +47,11 @@ create policy "feed poll votes update own"
         and p.status = 'approved'
         and p.post_kind = 'poll'
         and p.expires_at > now()
-        and jsonb_typeof(p.poll_options) = 'array'
         and option_index >= 0
-        and option_index < jsonb_array_length(p.poll_options)
+        and option_index < case
+          when jsonb_typeof(p.poll_options) = 'array' then jsonb_array_length(p.poll_options)
+          else 0
+        end
     )
   );
 
