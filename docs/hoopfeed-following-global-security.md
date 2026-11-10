@@ -35,3 +35,7 @@ Status: design only; **do not apply to production**. Verified against the active
 ## Rollout
 
 Prepare a migration in a development environment, audit policy diffs, run integration tests, and only then seek approval for production schema deployment. Keep feature flag off until verification is complete.
+
+## Reshare amplification risk (verified in moderation API)
+
+`kind === "share"` reads an accessible source post with a service-role client, then inserts a new approved post under the resharing user's `author_id`, copying `body`, `image_url`, `image_urls`, and `video_url` and setting `expires_at` to year 2100. A follower-only source can therefore be copied into a new post whose audience is determined by the resharing account; the copy may outlive the source and may be accessible to people who cannot read the original. The new caller-JWT read check in draft PR #431 confirms the resharing user may read the source, but **does not prove the new audience is authorized**. Before releasing follower-only privacy, disable reshares of non-public source posts (including older legacy posts) or redesign shares as references that always re-check source visibility and expiry; do not duplicate private media or text. Test unfollow, author deletion, source expiry, block and repost chains.
