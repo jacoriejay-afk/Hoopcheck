@@ -287,3 +287,26 @@ html.theme-dark :is(.hc-confirm-modal, .report-modal) {
     padding-block-start: 9px !important;
   }
 }
+
+/* iPhone header polish: keep brand and menu within one stable control row. */
+@media (max-width: 767px) {
+  html.theme-dark body header.site-header-global.hc-template-header {
+    box-sizing: border-box !important;
+    padding-inline: 12px !important;
+  }
+  html.theme-dark body header.site-header-global .site-header-brand {
+    min-width: 0 !important;
+    max-width: calc(100% - 68px) !important;
+    overflow: hidden;
+  }
+  html.theme-dark body header.site-header-global .site-header-brand .hc-logo--full {
+    max-width: 100% !important;
+  }
+  html.theme-dark body header.site-header-global .site-header-brand .hc-logo__wordmark {
+    font-size: clamp(15px, 4.1vw, 19px) !important;
+    white-space: nowrap !important;
+  }
+  html.theme-dark body header.site-header-global .site-header-brand .hc-logo__icon {
+    flex-shrink: 0 !important;
+  }
+}
