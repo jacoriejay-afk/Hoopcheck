@@ -116,12 +116,14 @@ for (let attempt = 0; attempt < 60; attempt += 1) {
 }
 assert.ok(serverReady, "Next production server did not become ready within 60 seconds.");
 
-const browser = await chromium.launch({ channel: "chrome", headless: true, args: ["--no-sandbox"] });
+const browser = await chromium.launch({ ...(process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : { channel: "chrome" }), headless: true, args: ["--no-sandbox"] });
 const results = [];
 try {
   for (const theme of ["dark", "light"]) {
     for (const routeName of ["dashboard", "feed", "admin"]) {
       const context = await browser.newContext({
+        // Fixture routes must reach Playwright rather than a service worker.
+        serviceWorkers: "block",
         viewport: { width: 390, height: 844 },
         deviceScaleFactor: 1,
         isMobile: true,
@@ -315,7 +317,7 @@ try {
   ];
   const routeSweepResults = [];
   for (const theme of ["dark", "light"]) {
-    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, serviceWorkers: "block" });
     const encodedSession = "base64-" + btoa(unescape(encodeURIComponent(JSON.stringify(session))))
       .replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
     await context.addCookies([
@@ -451,6 +453,14 @@ try {
       activeRoutePath = requestedPath;
       try {
         await page.goto(baseURL + requestedPath, { waitUntil: "domcontentloaded", timeout: 20000 });
+        if (requestedPath === "/fan-feed") {
+          await page.waitForURL("**/feed", { timeout: 15000 });
+          await page.locator("main.hc-feed-page .hc-feed-composer").waitFor({ state: "visible", timeout: 15000 });
+        }
+        // A route shell can render before its fixture data and controls. Audit
+        // the populated page so timing does not hide contrast/copy findings.
+        await page.locator("main").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator("main .hc-brand-loader--screen").waitFor({ state: "hidden", timeout: 15000 });
         await page.waitForTimeout(300);
         if (requestedPath === "/live-games") {
           await page.locator("main.hc-live-hub-page .hc-live-hub-hero").waitFor({ state: "visible", timeout: 15000 });
