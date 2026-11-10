@@ -250,3 +250,48 @@
     backdrop-filter: none;
   }
 }
+
+/* Searchable team/league modal: glass dialog, opaque form controls and results. */
+.hc-shared-picker-dialog.hc-liquid-glass-picker-dialog {
+  background-color: rgba(255,255,255,.96);
+  color: #151515;
+  border: 1px solid rgba(0,0,0,.16);
+  border-radius: var(--hc-glass-radius);
+  box-shadow: 0 20px 60px rgba(0,0,0,.24);
+  overflow: hidden;
+}
+.theme-dark .hc-shared-picker-dialog.hc-liquid-glass-picker-dialog {
+  background-color: rgba(24,25,30,.96);
+  color: #f8f8fa;
+  border-color: rgba(255,255,255,.22);
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+.hc-liquid-glass-picker-dialog :is(input,select) {
+  background-color: #fff;
+  color: #151515;
+  border-color: #888;
+}
+.theme-dark .hc-liquid-glass-picker-dialog :is(input,select) {
+  background-color: #171717;
+  color: #f8f8fa;
+  border-color: #777;
+}
+.hc-liquid-glass-picker-dialog :is(button,input,select):focus-visible {
+  outline: 2px solid #ff5a1f;
+  outline-offset: 2px;
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .hc-shared-picker-dialog.hc-liquid-glass-picker-dialog {
+    -webkit-backdrop-filter: saturate(135%) blur(12px);
+    backdrop-filter: saturate(135%) blur(12px);
+  }
+}
+@media (prefers-contrast: more), (forced-colors: active) {
+  .hc-shared-picker-dialog.hc-liquid-glass-picker-dialog {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
