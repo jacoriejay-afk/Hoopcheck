@@ -196,6 +196,11 @@
       backdrop-filter: none !important;
     }
   }
+  /* Keep the audit's canonical light-nav selector explicitly token-paired. */
+  html.theme-light body nav.hc-lm2f-bottom-nav {
+    background: var(--hc-tab-bg) !important;
+    border-color: var(--hc-card-border) !important;
+  }
   html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab,
   html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab:link,
   html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab:visited {
