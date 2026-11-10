@@ -187,6 +187,7 @@ export default function Feed(){
     if(composerMode!=="poll"&&!body.trim()&&!photos.length&&!video)return;
     if(video&&!body.trim()){setMsg("Add a caption to your video so HoopCheck can run safety checks.");return;}
     setPosting(true);setMsg("Checking your post for safety...");
+    let uploadedVideoPath:string|null=null;
     try{
       const {data:{session}}=await supabase.auth.getSession();
       if(!session?.access_token){setMsg("Your session expired. Please sign in again.");setPosting(false);return;}
@@ -197,12 +198,14 @@ export default function Feed(){
       form.append("post_kind",composerMode==="poll"?"poll":composerMode==="news"?"news":"discussion");
       if(composerMode==="poll")form.append("poll_options",JSON.stringify(pollOptionsClean));
       photos.forEach(f=>form.append("images",f));
-      if(video){const ext=video.type==="video/webm"?"webm":video.type==="video/quicktime"?"mov":(!video.type&&/\.webm$/i.test(video.name))?"webm":(!video.type&&/\.mov$/i.test(video.name))?"mov":"mp4";const videoType=video.type||({webm:"video/webm",mov:"video/quicktime",mp4:"video/mp4"} as Record<string,string>)[ext];const path=`${user.id}/${crypto.randomUUID()}.${ext}`;const {error:uploadError}=await supabase.storage.from("feed-videos").upload(path,video,{contentType:videoType,cacheControl:"31536000",upsert:false});if(uploadError)throw new Error("Video upload failed. Please try again.");form.append("video_path",path);form.append("video_type",videoType);}
+      if(video){const ext=video.type==="video/webm"?"webm":video.type==="video/quicktime"?"mov":(!video.type&&/\.webm$/i.test(video.name))?"webm":(!video.type&&/\.mov$/i.test(video.name))?"mov":"mp4";const videoType=video.type||({webm:"video/webm",mov:"video/quicktime",mp4:"video/mp4"} as Record<string,string>)[ext];const path=`${user.id}/${crypto.randomUUID()}.${ext}`;const {error:uploadError}=await supabase.storage.from("feed-videos").upload(path,video,{contentType:videoType,cacheControl:"31536000",upsert:false});if(uploadError)throw new Error("Video upload failed. Please try again.");uploadedVideoPath=path;form.append("video_path",path);form.append("video_type",videoType);}
       const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
       const result=await moderation.json().catch(()=>({}));
       if(!moderation.ok||result.allowed!==true){setMsg(result.message||"This post could not be published because it did not pass HoopFeed safety checks.");setPosting(false);return;}
+      uploadedVideoPath=null;
       setBody("");setVideo(null);setVideoPreview(old=>{if(old)URL.revokeObjectURL(old);return "";});setShowCountry(Boolean(profile?.current_country_public));clearPhotos();setPollDraft(["",""]);setComposerMode("post");setMsg(composerMode==="poll"?"Poll posted to HoopFeed. AI safety checks passed.":"Posted to HoopFeed. AI safety checks passed.");await load(user);
     }catch(e:any){console.error("HoopFeed post failed",e);setMsg(e?.message==="Video upload failed. Please try again."?e.message:"Posting failed. Please try again.");}
+    if(uploadedVideoPath){const {error:cleanupError}=await supabase.storage.from("feed-videos").remove([uploadedVideoPath]);if(cleanupError)console.error("HoopFeed rejected video cleanup failed",cleanupError);}
     setPosting(false);
   }
 
