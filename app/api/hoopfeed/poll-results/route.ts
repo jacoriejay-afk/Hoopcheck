@@ -18,7 +18,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Invalid poll IDs." }, { status: 400 });
     }
     const uniqueIds = [...new Set(ids as string[])];
-    if (!uniqueIds.length) return NextResponse.json({ results: {} });
 
     const viewer = createClient(url, publicKey, {
       global: { headers: { Authorization: `Bearer ${token}` } },
@@ -26,6 +25,8 @@ export async function POST(request: NextRequest) {
     });
     const { data: authData, error: authError } = await viewer.auth.getUser(token);
     if (authError || !authData.user) return NextResponse.json({ message: "Invalid session." }, { status: 401 });
+    // Even an empty request must authenticate before returning poll results.
+    if (!uniqueIds.length) return NextResponse.json({ results: {} }, { headers: { "Cache-Control": "private, no-store" } });
 
     // RLS filters inaccessible posts before the service-role client can read vote rows.
     const { data: visible, error: visibleError } = await viewer.from("feed_posts")
