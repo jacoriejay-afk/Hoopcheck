@@ -181,3 +181,10 @@ html.theme-light body main.hc-ia-home :is(
 ) {
   color: var(--hc-foreground-muted, #666661) !important;
 }
+
+/* Preserve white hero headline over the dark brand gradient in both themes.
+   Theme-audit light-mode rules can otherwise force near-black text here. */
+html.theme-light body main.hc-ia-home header.hc-home-hero h1,
+html.theme-dark body main.hc-ia-home header.hc-home-hero h1 { color: #ffffff !important; }
+html.theme-light body main.hc-ia-home header.hc-home-hero h1 span,
+html.theme-dark body main.hc-ia-home header.hc-home-hero h1 span { color: #ff5a1f !important; }

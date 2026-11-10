@@ -217,6 +217,7 @@ try {
           discoveryHeading: routeName === "feed" ? getComputedStyle(document.querySelector(".hf5-hero__title")).color : null,
           composerBorder: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-composer")).borderTopWidth : null,
           filterChip: routeName === "feed" ? color(".hf5-type-chip:not(.is-active)") : null,
+          dashboardHeroHeadline: routeName === "dashboard" ? (() => { const element = document.querySelector("main.hc-ia-home header.hc-home-hero h1"); return element ? getComputedStyle(element).color : null; })() : null,
           homePairs: routeName === "dashboard" ? [".hc-ia-identity", ".hc-ia-live-strip", ".hc-ia-door"].map((selector) => {
             const element = document.querySelector(selector);
             if (!element) return { selector, missing: true };
@@ -246,6 +247,7 @@ try {
       assert.equal(computed.body, expectedPage, `${routeName}/${theme}: body background mismatch`);
       assert.equal(computed.pageWrapper, expectedPage, `${routeName}/${theme}: page wrapper background mismatch`);
       if (routeName === "dashboard") {
+        assert.equal(computed.dashboardHeroHeadline, "rgb(255, 255, 255)", `dashboard/${theme}: hero headline must stay white over dark gradient`);
         const surface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
         for (const pair of computed.homePairs) {
           // The dashboard identity pill intentionally sits on the dark, gradient
