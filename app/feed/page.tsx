@@ -128,7 +128,7 @@ export default function Feed(){
   async function choosePhoto(f:File){
     if(photoSlotsRef.current>=4){setMsg("Up to 4 photos per post.");return;}
     if(!["image/jpeg","image/png","image/webp","image/heic","image/heif"].includes(f.type)&&!( !f.type&&/\.(jpe?g|png|webp|heic|heif)$/i.test(f.name))){setMsg("Choose a JPG, PNG, WebP, or supported iPhone photo.");return;}
-    if(f.size>8*1024*1024){setMsg("Feed photos must be 8MB or smaller.");return;}
+    if(f.size>30*1024*1024){setMsg("Choose a photo smaller than 30 MB. HoopCheck compresses photos to meet the 8 MB upload limit.");return;}
     photoSlotsRef.current+=1;
     const generation=photoGenerationRef.current;
     try{
