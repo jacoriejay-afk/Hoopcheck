@@ -16,4 +16,7 @@ assert.ok(account.includes('profile.account_type === "player" && <SettingsRow') 
 assert.ok(read('app/profile/page.tsx').includes('id="career-passport"'), 'Career Passport deep link target exists');
 const css = read('app/hoopcheck-directory-profile.css');
 assert.ok(css.includes('hc-team-logo__crest path { fill: none !important;'), 'Fallback crest outline remains hollow');
-console.log('PASS: review agreement, shared country flag, Career Passport navigation, and crest outline');
+const header = read('components/SiteHeader.tsx');
+assert.match(header, /if\(!userId\)\{setAccountType\(""\);setIsAdmin\(false\);return;\}/, 'Logout clears both account role and admin navigation');
+assert.match(header, /setAccountType\(""\);setIsAdmin\(false\);void Promise\.all/, 'Account switching clears stale role and admin navigation before loading new role');
+console.log('PASS: review agreement, shared country flag, Career Passport navigation, crest outline, and auth navigation reset');
