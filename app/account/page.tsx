@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Link from "next/link";
+import "./account-editor-navigation.css";
 import HoopLoading from "../../components/HoopLoading";
 import { supabase } from "../../lib/supabase";
 import ThemeToast from "../../components/ThemeToast";
