@@ -71,6 +71,24 @@ create policy "feed bookmarks insert own"
     )
   );
 
+
+-- A restrictive policy combines with existing permissive INSERT policies,
+-- retaining their subscription and ownership checks while requiring an active
+-- approved post for direct check/reaction inserts.
+drop policy if exists "feed checks approved post guard" on public.feed_post_checks;
+create policy "feed checks approved post guard"
+  on public.feed_post_checks
+  as restrictive
+  for insert to authenticated
+  with check (
+    exists (
+      select 1 from public.feed_posts p
+      where p.id = post_id
+        and p.status = 'approved'
+        and p.expires_at > now()
+    )
+  );
+
 commit;
 
 notify pgrst, 'reload schema';
