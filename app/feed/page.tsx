@@ -111,7 +111,8 @@ export default function Feed(){
       (checksResult.data||[]).forEach((r:any)=>{cc[r.post_id]=(cc[r.post_id]||0)+1;if(r.user_id===currentUser.id)cm[r.post_id]=true;});
       const vs:Record<string,VoteState>={};
       rows.forEach(p=>{if(p.post_kind==="poll"&&Array.isArray(p.poll_options))vs[p.id]={counts:p.poll_options.map(()=>0),total:0,mine:null};});
-      for (const [postId, result] of Object.entries(votesResult.data || {})) { if (vs[postId] && result.counts.length === vs[postId].counts.length) vs[postId] = result; }
+      for (const [postId, result] of Object.entries(votesResult.data || {})) { if (vs[postId] && Array.isArray(result?.counts) && result.counts.length === vs[postId].counts.length) vs[postId] = result; }
+      if (votesResult.error) console.error("HoopFeed poll totals unavailable", votesResult.error);
       const sm:Record<string,boolean>={};
       (bookmarksResult.data||[]).forEach((r:any)=>{sm[r.post_id]=true;});
       setComments(cg);setChecks(cc);setMine(cm);setVotes(vs);setSavedMap(sm);
@@ -180,7 +181,7 @@ export default function Feed(){
     const prev=votes[p.id];
     setVotes(x=>{const cur=x[p.id]||{counts:(p.poll_options||[]).map(()=>0),total:0,mine:null};const counts=cur.counts.slice();let total=cur.total;if(cur.mine!==null&&counts[cur.mine]!==undefined){counts[cur.mine]=Math.max(0,counts[cur.mine]-1);total=Math.max(0,total-1);}counts[optionIndex]=(counts[optionIndex]||0)+1;total+=1;return {...x,[p.id]:{counts,total,mine:optionIndex}};});
     const r=await apiAction({kind:"vote",post_id:p.id,option_index:String(optionIndex)});
-    if(!r.ok){if(prev)setVotes(x=>({...x,[p.id]:prev}));setMsg(r.message||"That vote didn't go through. Please try again.");}
+    if(!r.ok){setVotes(x=>{const next={...x};if(prev)next[p.id]=prev;else delete next[p.id];return next;});setMsg(r.message||"That vote didn't go through. Please try again.");}
   }
 
   async function toggleSave(p:Post){
