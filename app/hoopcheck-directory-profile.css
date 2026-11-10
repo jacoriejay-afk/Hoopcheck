@@ -1720,3 +1720,14 @@ html main.hc-team-entity-profile .hc-team-reviews-trust-strip :where(p,small,.mu
 .hc-hero-flag { font-size:19px; line-height:1; }
 .hc-league-hero-id { display:flex; align-items:center; gap:14px; margin:10px 0 4px; }
 .hc-league-hero-id .hc-dir-flagchip { margin-top:0; }
+
+/* Keep the fallback crest outline hollow so it cannot cover club initials.
+   Earlier generic brand rules applied a solid fill to both path and text. */
+html main .hc-team-profile-topline .hc-team-logo--fallback .hc-team-logo__crest path {
+  fill: none !important;
+  stroke: var(--hc-brand-tile-fg, #f7f7f5) !important;
+}
+html main .hc-team-profile-topline .hc-team-logo--fallback .hc-team-logo__crest text {
+  fill: var(--hc-brand-tile-fg, #f7f7f5) !important;
+  stroke: none !important;
+}
