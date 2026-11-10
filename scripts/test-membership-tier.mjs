@@ -148,7 +148,7 @@ const feedModerationSource = readFileSync(new URL("../app/api/hoopfeed/moderate/
 assert.match(feedPageSource, /isAdmin:adminRole==="admin"/, "HoopFeed page must pass admin role to entitlements");
 assert.match(feedPageSource, /isAdmin:resolvedAdminRole==="admin"/, "HoopFeed initial gate must use resolved admin role");
 assert.ok(feedPageSource.indexOf('setAdminRole(resolvedAdminRole)') < feedPageSource.indexOf('const memberActive='), "resolve admin role before initial membership gate");
-assert.match(feedModerationSource, /getHoopCheckEntitlements\\(\\{ accountType: profile\\?\\.account_type, subscription: sub, isAdmin \\}\\)/, "moderation API must use admin-aware entitlements");
+assert.ok(feedModerationSource.includes("getHoopCheckEntitlements({ accountType: profile?.account_type, subscription: sub, isAdmin })"), "moderation API must use admin-aware entitlements");
 assert.ok(feedModerationSource.indexOf('const isAdmin = (adminRoleRows') < feedModerationSource.indexOf('if (!entitlements.canWriteHoopFeed)'), "server must resolve admin before write gate");
 
 const read = (relative) => readFileSync(new URL(relative, import.meta.url), "utf8");
