@@ -25,12 +25,12 @@ export default function OwnProfilePostsGrid({ userId }: { userId: string }) {
     return () => { active = false; };
   }, [userId]);
   return (
-    <section className="hc-pastel-posts" aria-label="Your recent HoopFeed posts">
-      <div className="hc-pastel-posts__heading"><h2>Posts</h2><span>Recent HoopFeed</span></div>
-      {loading ? <p className="hc-pastel-posts__empty">Loading your posts…</p> : posts.length === 0
+    <section className="hc-pastel-posts" style={{ background: "#171717", color: "#f7f7f5", border: "1px solid #f97316", borderRadius: 16, padding: 16, minHeight: 0 }} aria-label="Your recent HoopFeed posts">
+      <div className="hc-pastel-posts__heading" style={{ color: "#f7f7f5" }}><h2 style={{ color: "#f7f7f5" }}>Posts</h2><span style={{ color: "#d1d5db" }}>Recent HoopFeed</span></div>
+      {loading ? <p className="hc-pastel-posts__empty" style={{ color: "#d1d5db", minHeight: 0, padding: "12px 0", margin: 0 }}>Loading your posts…</p> : posts.length === 0
         ? <p className="hc-pastel-posts__empty">No active posts yet. Your approved HoopFeed posts appear here while they are live.</p>
         : <div className="hc-pastel-posts__grid">
-          {posts.map(post => <article key={post.id} className="hc-pastel-posts__tile" aria-label={post.body || "HoopFeed media post"}>
+          {posts.map(post => <article key={post.id} className="hc-pastel-posts__tile" style={{ background: "#242424", color: "#f7f7f5", borderRadius: 12, overflow: "hidden" }} aria-label={post.body || "HoopFeed media post"}>
             {post.image_url ? <img src={post.image_url} alt={post.body || "HoopFeed photo"} loading="lazy" />
               : post.video_url ? <video src={post.video_url} preload="none" muted playsInline aria-label={post.body || "HoopFeed video"} />
               : <p>{post.body || "HoopFeed post"}</p>}
