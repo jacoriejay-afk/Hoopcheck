@@ -24,6 +24,7 @@ const checks = [
   ["invalid stored votes fail closed", poll.includes('Invalid persisted votes must not silently disappear from totals.')],
   ["malformed poll options fail closed", poll.includes('A visible poll with malformed options is a data-integrity failure')],
   ["malformed poll option labels fail closed", poll.includes('typeof option !== "string" || !option.trim() || option.length > 200')],
+  ["duplicate poll option labels fail closed", poll.includes('new Set(p.poll_options.map((option: string) => option.trim().toLocaleLowerCase())).size !== p.poll_options.length')],
   ["poll vote SELECT limited to own user", /create policy "feed poll votes read"[\s\S]*?using \(user_id = \(select auth\.uid\(\)\)\)/.test(migration)],
   ["bookmark insert requires approved post", /create policy "feed bookmarks insert own"[\s\S]*?p\.status = 'approved'/.test(migration)],
   ["feed disables voting if results unavailable", feed.includes('pollResultsUnavailable')],
