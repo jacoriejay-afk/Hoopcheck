@@ -97,7 +97,7 @@ export default function BottomNav() {
   if (!signedIn || pathname.startsWith("/admin")) return null;
 
   return (
-    <nav className="bottom-nav hc-bottom-tab-bar hc-mobile-tabbar-repair hc-lm2f-bottom-nav" aria-label="Mobile navigation">
+    <nav className="bottom-nav hc-bottom-tab-bar hc-mobile-tabbar-repair hc-lm2f-bottom-nav hc-liquid-glass-nav" aria-label="Mobile navigation">
       {items.map(([href, translationKey, label]) => {
         const destination = href === "/feed" && accountType === "fan" ? "/fan-feed" : href;
         const feedResolving = href === "/feed" && accountTypeLoading;

@@ -400,7 +400,7 @@ export default function AccountPage() {
 
   return (
     <main className="page-shell hc-account-page"><div className="page-container">
-      <header className="hc-account-settings-header">
+      <header className="hc-account-settings-header hc-liquid-glass-account-header">
         <p className="hc-account-settings-kicker">{t("settings")}</p>
         <h1>{t("accountPreferences")}</h1>
         <div className="hc-account-settings-identity">
