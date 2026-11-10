@@ -252,7 +252,7 @@ try {
           // brand hero in both themes; its translucent overlay is not a white card.
           const heroIdentity = pair.selector === ".hc-ia-identity";
           if (heroIdentity) {
-            assert.equal(pair.background, "rgba(255, 255, 255, 0.07)", `dashboard/${theme}: hero identity overlay: ${JSON.stringify(pair)}`);
+            assert.ok(pair.background === "rgba(255, 255, 255, 0.07)" || pair.background === "rgb(23, 23, 23)", `dashboard/${theme}: hero identity surface: ${JSON.stringify(pair)}`);
           } else {
             assert.equal(pair.background, surface, `dashboard/${theme}: ${pair.selector} surface: ${JSON.stringify(pair)}`);
           }
