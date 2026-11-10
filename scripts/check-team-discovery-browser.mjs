@@ -113,10 +113,18 @@ try {
       await page.waitForFunction(() => !document.querySelector('.result-group a[href^="/womens/"]'));
       await page.getByRole('button', { name: 'All', exact: true }).click();
       await femaleLink.waitFor();
-      assert.equal(await page.locator('.hc-team-directory-row').first().evaluate(el => getComputedStyle(el).borderTopWidth), '0px', 'Result content has no decorative frame');
+      for (const kind of ['mens', 'womens']) {
+        const result = page.locator(`.result-group .hc-team-directory-row--${kind}`).first();
+        const { border, radius } = await result.evaluate(el => {
+          const style = getComputedStyle(el);
+          return { border: style.borderTopWidth, radius: style.borderTopLeftRadius };
+        });
+        assert.equal(border, '1px', `${kind} team result has a visible border`);
+        assert.equal(radius, '20px', `${kind} team result uses the shared card radius`);
+      }
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2);
       assert.equal(overflow, false, `Search does not overflow at ${width}px`);
-      console.log(`PASS ${width}px ${theme}: both team searches, women’s navigation, long names, frameless results, centered loader, reduced motion, AI art, partial failure recovery`);
+      console.log(`PASS ${width}px ${theme}: both team searches, women’s navigation, long names, bordered results, centered loader, reduced motion, AI art, partial failure recovery`);
       await context.close();
     }
   }
