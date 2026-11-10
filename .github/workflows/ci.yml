@@ -64,6 +64,11 @@ jobs:
       - name: Verify all HoopFeed photos are moderated before upload
         run: node --test scripts/check-hoopfeed-moderation.mjs
 
+      - name: Verify private HoopFeed media reference security cases
+        run: |
+          node scripts/check-hoopfeed-private-media-ref.mjs
+          node --test scripts/check-hoopfeed-private-media-endpoint.test.mjs
+
       - name: Check rounded-corner design tokens
         run: npm run check:rounded-corners
 
