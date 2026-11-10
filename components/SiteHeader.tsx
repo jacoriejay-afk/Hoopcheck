@@ -13,7 +13,7 @@ function UserIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><circle
 
 export default function SiteHeader() {
   const pathname=usePathname();const {signedIn,userId}=useAuthState();const {t}=useLanguage();const [menuOpen,setMenuOpen]=useState(false);const [accountType,setAccountType]=useState("");const [isAdmin,setIsAdmin]=useState(false);
-  useEffect(()=>{let live=true;if(!userId){setAccountType("");return;}void Promise.all([supabase.from("profiles").select("account_type").eq("id",userId).maybeSingle(),supabase.rpc("get_current_user_admin_role")]).then(([profile,role])=>{if(live){setAccountType(profile.data?.account_type||"");setIsAdmin(role.data==="admin"||role.data==="moderator");}});return()=>{live=false};},[userId]);
+  useEffect(()=>{let live=true;if(!userId){setAccountType("");setIsAdmin(false);return;}setAccountType("");setIsAdmin(false);void Promise.all([supabase.from("profiles").select("account_type").eq("id",userId).maybeSingle(),supabase.rpc("get_current_user_admin_role")]).then(([profile,role])=>{if(live){setAccountType(profile.data?.account_type||"");setIsAdmin(role.data==="admin"||role.data==="moderator");}});return()=>{live=false};},[userId]);
   // Dismiss the mobile navigation after bottom-tab and browser route changes.
   useEffect(() => { setMenuOpen(false); }, [pathname]);
   if(pathname.startsWith("/admin"))return null;
