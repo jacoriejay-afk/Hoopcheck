@@ -41,7 +41,22 @@ try {
       await femaleLink.waitFor();
       await page.waitForFunction(() => !document.querySelector('.result-group a[href^="/teams/"]'));
       holdTeam = true;
-      await femaleLink.click();
+      try {
+        await femaleLink.click({ timeout: 15000 });
+      } catch (error) {
+        const state = await page.evaluate(() => ({
+          url: location.href,
+          viewport: innerWidth,
+          links: [...document.querySelectorAll('.result-group a[href^="/womens/"]')].map(el => ({
+            href: el.getAttribute('href'),
+            visible: !!el.getClientRects().length,
+            text: el.textContent?.trim().slice(0, 120),
+          })),
+          bodyText: document.body.innerText.slice(0, 900),
+        }));
+        console.error('TEAM_DISCOVERY_CLICK_DIAGNOSTIC', JSON.stringify({ width, theme, state }));
+        throw error;
+      }
       const loader = page.locator('.hc-brand-loader--screen');
       await loader.waitFor({ state: 'visible' });
       await page.waitForFunction(() => {
