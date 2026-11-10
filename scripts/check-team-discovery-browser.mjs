@@ -44,28 +44,20 @@ try {
       // results are settled before navigating; a stale link may disappear.
       await page.waitForFunction(() => !document.body.innerText.includes('Searching HoopCheck...'));
       await femaleLink.waitFor({ state: 'visible' });
-      // The category transition may trigger another search while the link is
-      // being clicked. Retry only after a settled, visible fixture result;
-      // keep a bounded failure so genuinely broken navigation still fails CI.
       holdTeam = true;
       try {
-        let navigated = false;
-        for (let attempt = 0; attempt < 3 && !navigated; attempt += 1) {
-          await page.waitForFunction((href) => {
-            const link = document.querySelector(`.result-group a[href="${href}"]`);
-            return !!link?.getClientRects().length && !document.body.innerText.includes('Searching HoopCheck...');
-          }, `/womens/${women.id}`, { timeout: 10000 });
-          try {
-            await femaleLink.click({ timeout: 4000 });
-            navigated = true;
-          } catch (clickError) {
-            if (page.url().includes(`/womens/${women.id}`)) {
-              navigated = true;
-            } else if (attempt === 2) {
-              throw clickError;
-            }
-          }
-        }
+        // The result can re-render while category data refreshes. Dispatch the
+        // navigation from the currently connected anchor without Playwright's
+        // stability wait, which can race with React replacing that anchor.
+        await page.waitForFunction((href) => {
+          const anchor = document.querySelector(`.result-group a[href="${href}"]`);
+          return anchor?.isConnected && anchor.getClientRects().length > 0;
+        }, `/womens/${women.id}`);
+        await page.evaluate((href) => {
+          const anchor = document.querySelector(`.result-group a[href="${href}"]`);
+          if (!anchor?.isConnected) throw new Error('Women team link missing before navigation');
+          anchor.click();
+        }, `/womens/${women.id}`);
       } catch (error) {
         const state = await page.evaluate(() => ({
           url: location.href,
