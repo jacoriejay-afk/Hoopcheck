@@ -13,7 +13,9 @@ function UserIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><circle
 
 export default function SiteHeader() {
   const pathname=usePathname();const {signedIn,userId}=useAuthState();const {t}=useLanguage();const [menuOpen,setMenuOpen]=useState(false);const [accountType,setAccountType]=useState("");const [isAdmin,setIsAdmin]=useState(false);
-  useEffect(()=>{let live=true;if(!userId){setAccountType("");return;}void Promise.all([supabase.from("profiles").select("account_type").eq("id",userId).maybeSingle(),supabase.rpc("get_current_user_admin_role")]).then(([profile,role])=>{if(live){setAccountType(profile.data?.account_type||"");setIsAdmin(role.data==="admin"||role.data==="moderator");}});return()=>{live=false};},[userId]);
+  useEffect(()=>{let live=true;if(!userId){setAccountType("");setIsAdmin(false);return;}setAccountType("");setIsAdmin(false);void Promise.all([supabase.from("profiles").select("account_type").eq("id",userId).maybeSingle(),supabase.rpc("get_current_user_admin_role")]).then(([profile,role])=>{if(live){setAccountType(profile.data?.account_type||"");setIsAdmin(role.data==="admin"||role.data==="moderator");}});return()=>{live=false};},[userId]);
+  // Dismiss the mobile navigation after bottom-tab and browser route changes.
+  useEffect(() => { setMenuOpen(false); }, [pathname]);
   if(pathname.startsWith("/admin"))return null;
   const closeMenu=()=>setMenuOpen(false);const active=(href:string)=>pathname===href||pathname.startsWith(href+"/");
   const roleHome=accountType==="fan"?{href:"/team-hub",label:"Fan HQ"}:accountType==="agent"||accountType==="scout"?{href:"/agents-hq",label:"Agents HQ"}:accountType==="manager"||accountType==="club_admin"?{href:"/team-dashboard",label:"Team HQ"}:{href:"/dashboard",label:"Home"};

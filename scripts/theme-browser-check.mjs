@@ -119,6 +119,45 @@ assert.ok(serverReady, "Next production server did not become ready within 60 se
 const browser = await chromium.launch({ ...(process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : { channel: "chrome" }), headless: true, args: ["--no-sandbox"] });
 const results = [];
 try {
+  // Public routes must not expose member-only mobile navigation when there is
+  // no session. Keep this separate from the authenticated screenshot fixtures.
+  for (const theme of ["light", "dark"]) {
+    const guestContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      isMobile: true,
+      hasTouch: true,
+      serviceWorkers: "block",
+    });
+    const guestPage = await guestContext.newPage();
+    await guestContext.addCookies([{ name: "hoopcheck-theme", value: theme, url: baseURL }]);
+    await guestPage.addInitScript((preference) => {
+      localStorage.setItem("hoopcheck-theme", preference);
+      localStorage.removeItem("sb-ci-auth-token");
+    }, theme);
+    await guestPage.route("https://ci.invalid/**", async route => {
+      const req = route.request();
+      const headers = {
+        "access-control-allow-origin": baseURL,
+        "access-control-allow-credentials": "true",
+        "access-control-allow-headers": req.headers()["access-control-request-headers"] || "*",
+        "access-control-allow-methods": "GET,POST,OPTIONS",
+      };
+      if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers });
+      return route.fulfill({ status: 401, headers, contentType: "application/json", body: JSON.stringify({ message: "Guest fixture: no session" }) });
+    });
+    for (const route of ["/login", "/signup", "/search"]) {
+      await guestPage.goto(baseURL + route);
+      await guestPage.locator("body").waitFor({ state: "visible" });
+      await guestPage.waitForTimeout(400);
+      assert.equal(await guestPage.locator("nav.bottom-nav").count(), 0,
+        `Guest ${theme} ${route}: member bottom navigation must not render`);
+      assert.equal(await guestPage.locator('a.hc-signin-button').count() > 0, true,
+        `Guest ${theme} ${route}: sign-in action must be available`);
+    }
+    await guestContext.close();
+  }
+  console.log("GUEST_MOBILE_NAV=PASS; routes=login,signup,search; themes=light,dark");
+
   for (const theme of ["dark", "light"]) {
     for (const routeName of ["dashboard", "feed", "admin"]) {
       const context = await browser.newContext({
@@ -219,6 +258,7 @@ try {
           discoveryHeading: routeName === "feed" ? getComputedStyle(document.querySelector(".hf5-hero__title")).color : null,
           composerBorder: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-composer")).borderTopWidth : null,
           filterChip: routeName === "feed" ? color(".hf5-type-chip:not(.is-active)") : null,
+          dashboardHeroHeadline: routeName === "dashboard" ? (() => { const element = document.querySelector("main.hc-ia-home header.hc-home-hero h1"); return element ? getComputedStyle(element).color : null; })() : null,
           homePairs: routeName === "dashboard" ? [".hc-ia-identity", ".hc-ia-live-strip", ".hc-ia-door"].map((selector) => {
             const element = document.querySelector(selector);
             if (!element) return { selector, missing: true };
@@ -248,9 +288,17 @@ try {
       assert.equal(computed.body, expectedPage, `${routeName}/${theme}: body background mismatch`);
       assert.equal(computed.pageWrapper, expectedPage, `${routeName}/${theme}: page wrapper background mismatch`);
       if (routeName === "dashboard") {
+        assert.ok(computed.dashboardHeroHeadline && (() => { const channel = (color) => color.match(/\d+/g).slice(0, 3).map(Number).map(value => value / 255).map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4); const luminance = (color) => channel(color).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0); const a = luminance(computed.dashboardHeroHeadline); const b = luminance("rgb(24, 24, 24)"); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) >= 4.5; })(), `dashboard/${theme}: hero headline contrast must be >= 4.5:1 against dark gradient, got ${computed.dashboardHeroHeadline}`);
         const surface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
         for (const pair of computed.homePairs) {
-          assert.equal(pair.background, surface, `dashboard/${theme}: ${pair.selector} surface: ${JSON.stringify(pair)}`);
+          // The dashboard identity pill intentionally sits on the dark, gradient
+          // brand hero in both themes; its translucent overlay is not a white card.
+          const heroIdentity = pair.selector === ".hc-ia-identity";
+          if (heroIdentity) {
+            assert.ok(theme === "light" ? pair.background === "rgb(255, 255, 255)" : (pair.background === "rgba(255, 255, 255, 0.07)" || pair.background === "rgb(23, 23, 23)"), `dashboard/${theme}: hero identity surface: ${JSON.stringify(pair)}`);
+          } else {
+            assert.equal(pair.background, surface, `dashboard/${theme}: ${pair.selector} surface: ${JSON.stringify(pair)}`);
+          }
           const contrast = (foreground, background) => {
             const luminance = (color) => color.match(/\d+/g).slice(0, 3).map(Number)
               .map(value => value / 255)
@@ -259,7 +307,7 @@ try {
             const levels = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
             return (levels[0] + 0.05) / (levels[1] + 0.05);
           };
-          assert.ok(pair.title && contrast(pair.title, pair.background) >= 4.5, `dashboard/${theme}: ${pair.selector} title contrast: ${JSON.stringify(pair)}`);
+          assert.ok(pair.title && contrast(pair.title, heroIdentity && theme === "dark" ? "rgb(24, 24, 24)" : pair.background) >= 4.5, `dashboard/${theme}: ${pair.selector} title contrast: ${JSON.stringify(pair)}`);
         }
       }
       if (routeName === "feed") {
