@@ -475,3 +475,31 @@
     margin-right: 0;
   }
 }
+
+/* Account switch geometry: position the thumb inside the track rather than
+   allowing flex layout plus translation to push it beyond the right edge. */
+.hc-account-page .hc-setting-row .hc-switch {
+  position: relative;
+  display: inline-block;
+  box-sizing: border-box;
+  flex: 0 0 51px;
+  width: 51px;
+  min-width: 51px;
+  height: 31px;
+  min-height: 31px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 999px;
+}
+.hc-account-page .hc-setting-row .hc-switch > span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  display: block;
+  width: 27px;
+  height: 27px;
+  transform: translateX(0);
+}
+.hc-account-page .hc-setting-row .hc-switch.is-on > span {
+  transform: translateX(20px);
+}
