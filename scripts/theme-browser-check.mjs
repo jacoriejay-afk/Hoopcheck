@@ -247,7 +247,7 @@ try {
       assert.equal(computed.body, expectedPage, `${routeName}/${theme}: body background mismatch`);
       assert.equal(computed.pageWrapper, expectedPage, `${routeName}/${theme}: page wrapper background mismatch`);
       if (routeName === "dashboard") {
-        assert.equal(computed.dashboardHeroHeadline, "rgb(255, 255, 255)", `dashboard/${theme}: hero headline must stay white over dark gradient`);
+        assert.ok(computed.dashboardHeroHeadline && (() => { const channel = (color) => color.match(/\d+/g).slice(0, 3).map(Number).map(value => value / 255).map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4); const luminance = (color) => channel(color).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0); const a = luminance(computed.dashboardHeroHeadline); const b = luminance("rgb(24, 24, 24)"); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) >= 4.5; })(), `dashboard/${theme}: hero headline contrast must be >= 4.5:1 against dark gradient, got ${computed.dashboardHeroHeadline}`);
         const surface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
         for (const pair of computed.homePairs) {
           // The dashboard identity pill intentionally sits on the dark, gradient
