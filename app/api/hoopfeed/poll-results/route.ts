@@ -35,9 +35,11 @@ export async function POST(request: NextRequest) {
     if (!polls.length) return NextResponse.json({ results: {} });
 
     const admin = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
-    // Supabase REST defaults to a row limit; page through votes so popular polls
-    // do not silently show truncated totals. Fail closed if pagination fails.
-    const votes: { post_id: string; user_id: string; option_index: number }[] = [];
+    const results: Record<string, { counts: number[]; total: number; mine: number | null }> = {};
+    for (const poll of polls) results[poll.id] = { counts: (poll.poll_options as unknown[]).map(() => 0), total: 0, mine: null };
+
+    // Aggregate page by page instead of accumulating every voter's row in memory.
+    // Supabase REST commonly limits a query to 1,000 rows. Never return partial totals.
     const pageSize = 1000;
     for (let offset = 0; ; offset += pageSize) {
       const { data: page, error: voteError } = await admin.from("feed_poll_votes")
@@ -47,20 +49,16 @@ export async function POST(request: NextRequest) {
         .order("user_id", { ascending: true })
         .range(offset, offset + pageSize - 1);
       if (voteError || !page) return NextResponse.json({ message: "Poll results unavailable." }, { status: 503 });
-      votes.push(...page);
+      for (const vote of page) {
+        const result = results[vote.post_id];
+        if (!result || !Number.isInteger(vote.option_index) || vote.option_index < 0 || vote.option_index >= result.counts.length) continue;
+        result.counts[vote.option_index]++;
+        result.total++;
+        if (vote.user_id === authData.user.id) result.mine = vote.option_index;
+      }
       if (page.length < pageSize) break;
-      // Avoid unbounded request work. Return an error rather than inaccurate totals.
+      // Hard limit on server-side work; fail closed rather than display incorrect counts.
       if (offset + pageSize >= 100000) return NextResponse.json({ message: "Poll results are temporarily unavailable." }, { status: 503 });
-    }
-
-    const results: Record<string, { counts: number[]; total: number; mine: number | null }> = {};
-    for (const poll of polls) results[poll.id] = { counts: (poll.poll_options as unknown[]).map(() => 0), total: 0, mine: null };
-    for (const vote of votes || []) {
-      const result = results[vote.post_id];
-      if (!result || !Number.isInteger(vote.option_index) || vote.option_index < 0 || vote.option_index >= result.counts.length) continue;
-      result.counts[vote.option_index]++;
-      result.total++;
-      if (vote.user_id === authData.user.id) result.mine = vote.option_index;
     }
     return NextResponse.json({ results }, { headers: { "Cache-Control": "private, no-store" } });
   } catch {
