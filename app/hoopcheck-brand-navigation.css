@@ -181,3 +181,38 @@ html body header.site-header-global .site-header-brand .hc-logo__wordmark::after
   letter-spacing: 0;
   line-height: 1;
 }
+
+/* Mobile native/PWA status-bar clearance and legible back navigation. */
+@media (max-width: 700px) {
+  html body header.site-header-global.hc-template-header {
+    box-sizing: border-box;
+    padding-top: max(12px, env(safe-area-inset-top, 0px)) !important;
+    min-height: calc(58px + env(safe-area-inset-top, 0px));
+  }
+  html body header.site-header-global .site-header-brand {
+    flex: 0 1 auto;
+    max-width: calc(100% - 72px);
+    overflow: hidden;
+  }
+  html body header.site-header-global .site-header-brand .hc-logo--full {
+    max-width: 100%;
+  }
+  html body .global-back-wrap {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    visibility: visible;
+    opacity: 1;
+  }
+  html body .global-back-wrap .global-back-button {
+    min-height: 44px;
+    color: #f7f7f5;
+    background: #191919;
+    border: 1px solid #555;
+    border-radius: 14px;
+  }
+  html body .global-back-wrap .global-back-button:focus-visible {
+    outline: 3px solid #ff5a1f;
+    outline-offset: 3px;
+  }
+}
