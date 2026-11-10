@@ -146,3 +146,38 @@ main.hc-dashboard-compact .hc-ia-door {
 .hc-ia-home .hc-home-hero .hc-ia-identity small { color:#c9c9c9; }
 .hc-ia-home .hc-home-hero .hc-ia-identity strong { color:#ffffff; }
 .hc-ia-home .hc-home-hero .hc-ia-avatar { background:#ff5a1f; color:#0a0a0a; }
+
+/* Match the dark dashboard contract in light mode. The identity chip and
+   navigation cards must not inherit translucent dark-theme surface tokens. */
+html.theme-light body main.hc-ia-home :is(
+  .hc-ia-identity,
+  .hc-ia-completion,
+  .hc-ia-live-strip,
+  .hc-ia-door,
+  .hc-ia-follow-list,
+  .hc-ia-feed-card
+) {
+  background-color: var(--hc-surface-raised, #fff) !important;
+  color: var(--hc-foreground, #151515) !important;
+  border-color: var(--hc-border, #e4e4e0) !important;
+}
+html.theme-light body main.hc-ia-home :is(
+  .hc-ia-identity,
+  .hc-ia-completion,
+  .hc-ia-live-strip,
+  .hc-ia-door,
+  .hc-ia-follow-list,
+  .hc-ia-feed-card
+) :where(strong, span, p, a) {
+  color: inherit;
+}
+html.theme-light body main.hc-ia-home :is(
+  .hc-ia-identity small,
+  .hc-ia-completion small,
+  .hc-ia-live-strip small,
+  .hc-ia-door small,
+  .hc-ia-follow-list small,
+  .hc-ia-feed-card small
+) {
+  color: var(--hc-foreground-muted, #666661) !important;
+}
