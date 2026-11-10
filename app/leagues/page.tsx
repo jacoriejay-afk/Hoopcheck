@@ -10,6 +10,8 @@ import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
 import GeoBadge from "../../components/GeoBadge";
+import TeamLogo from "../../components/TeamLogo";
+import { countryFlag } from "../../lib/countryFlag";
 
 type League = {
 id: string;
@@ -18,6 +20,7 @@ country: string | null;
 level: string | null;
 season: string | null;
 active: boolean;
+logo_url: string | null;
 };
 
 export default function LeaguesPage() {
@@ -39,7 +42,7 @@ async function loadLeagues() {
   try {
     const { data, error } = await supabase
       .from("leagues")
-      .select("id, name, country, level, season, active")
+      .select("id, name, country, level, season, active, logo_url")
       .eq("active", true)
       .order("name");
 
@@ -99,16 +102,19 @@ return (
           className="card hc-team-row"
           key={league.id}
         >
-          <div className="eyebrow">
-            Professional League
+          <div className="hc-league-row-head">
+            <span className="hc-dir-crest hc-dir-crest--league"><TeamLogo name={league.name} logoUrl={league.logo_url} size={56} /></span>
+            <div>
+              <div className="eyebrow">
+                Professional League
+              </div>
+              <GeoBadge country={league.country} regional={league.country === "Europe"} />
+            </div>
           </div>
-          <GeoBadge country={league.country} regional={league.country === "Europe"} />
           <h2>
             {league.name}
           </h2>
-          <p>
-            {league.country || "Country not listed"}
-          </p>
+          {league.country ? <span className="hc-dir-flagchip">{countryFlag(league.country) ? <span className="hc-dir-flag" aria-hidden="true">{countryFlag(league.country)}</span> : null}<span>{league.country}</span></span> : <p>Country not listed</p>}
           <p style={{ color: "var(--orange)", fontWeight: 900 }}>Season: {league.season || "2026-27"}</p>
           {league.level && (
             <p>
