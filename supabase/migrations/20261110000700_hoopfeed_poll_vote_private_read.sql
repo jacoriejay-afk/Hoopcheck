@@ -89,6 +89,38 @@ create policy "feed checks approved post guard"
     )
   );
 
+
+-- The existing comment/check SELECT policies already require follower access
+-- and a non-expired post. Add approval as a restrictive condition so rejected
+-- or pending posts cannot expose their comments or reaction metadata.
+drop policy if exists "feed comments approved post guard" on public.feed_post_comments;
+create policy "feed comments approved post guard"
+  on public.feed_post_comments
+  as restrictive
+  for select to authenticated
+  using (
+    exists (
+      select 1 from public.feed_posts p
+      where p.id = post_id
+        and p.status = 'approved'
+        and p.expires_at > now()
+    )
+  );
+
+drop policy if exists "feed checks read approved post guard" on public.feed_post_checks;
+create policy "feed checks read approved post guard"
+  on public.feed_post_checks
+  as restrictive
+  for select to authenticated
+  using (
+    exists (
+      select 1 from public.feed_posts p
+      where p.id = post_id
+        and p.status = 'approved'
+        and p.expires_at > now()
+    )
+  );
+
 commit;
 
 notify pgrst, 'reload schema';
