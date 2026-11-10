@@ -42,14 +42,16 @@ export default function TeamDirectoryRow({
   const showSignIn = !resolvedViewerRole && signedIn === false;
   const lockedTitle = resolvedViewerRole === "fan" ? "Fan Premium unlocks full reviews and Trust Score" : resolvedViewerRole === "player" ? "Player Pro or Premium membership unlocks full review details" : resolvedViewerRole || signedIn ? "An active membership is required to view Trust Score details" : showSignIn ? "Sign in to view Trust Score details" : "Trust Score";
   const hasTrustScore = typeof trustScore === "number" && Number.isFinite(trustScore);
+  const flag = countryFlag(country);
   return (
     <Surface className={"hc-team-directory-row hc-scout-card hc-smooth-card hc-team-directory-row--" + kind}>
       <Link href={href} className="hc-team-directory-row__main" aria-label={t("openTeamProfile") + ": " + name}>
         <span className="hc-scout-card__identity"><span className="hc-dossier-card__kicker">CLUB DOSSIER · {kind === "womens" ? "WOMEN" : "MEN"}</span>
-          <TeamLogo name={name} logoUrl={logoUrl} logoBg={logoBg} size={48} />
+          <span className="hc-dir-crest"><TeamLogo name={name} logoUrl={logoUrl} logoBg={logoBg} size={64} /></span>
           <span className="hc-scout-card__identity-copy">
             <h2 title={name}>{name}</h2>
-            <p>{city || "City not listed"}</p><span className="hc-scout-card__details"><small>{leagueName || "League not listed"}</small><small>{countryFlag(country) ? `${countryFlag(country)} ` : ""}{country || "Country not listed"}</small></span>
+            <p>{city || "City not listed"}</p><span className="hc-scout-card__details"><small>{leagueName || "League not listed"}</small></span>
+            {country ? <span className="hc-dir-flagchip">{flag ? <span className="hc-dir-flag" aria-hidden="true">{flag}</span> : null}<span>{country}</span></span> : null}
           </span>
           <span className="hc-team-directory-row__arrow" aria-hidden="true"><HoopIcon name="chevron-right" size={18} /></span>
         </span>
