@@ -51,7 +51,11 @@ export async function POST(request: NextRequest) {
       if (voteError || !page) return NextResponse.json({ message: "Poll results unavailable." }, { status: 503 });
       for (const vote of page) {
         const result = results[vote.post_id];
-        if (!result || !Number.isInteger(vote.option_index) || vote.option_index < 0 || vote.option_index >= result.counts.length) continue;
+        // Invalid persisted votes must not silently disappear from totals.
+        // Fail closed until the data can be repaired rather than show misleading results.
+        if (!result || !Number.isInteger(vote.option_index) || vote.option_index < 0 || vote.option_index >= result.counts.length) {
+          return NextResponse.json({ message: "Poll results are temporarily unavailable." }, { status: 503 });
+        }
         result.counts[vote.option_index]++;
         result.total++;
         if (vote.user_id === authData.user.id) result.mine = vote.option_index;
