@@ -138,6 +138,7 @@ export default function Feed(){
         img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("This photo could not be opened. Try taking a new photo or choosing a JPG from your library."));}; img.src=url;
       });
       if(generation!==photoGenerationRef.current)return;
+      if(compressed.size>8*1024*1024){photoSlotsRef.current=Math.max(0,photoSlotsRef.current-1);setMsg("This photo is still larger than 8 MB after processing. Choose a smaller image.");return;}
       setVideo(null);setVideoPreview(old=>{if(old)URL.revokeObjectURL(old);return "";});setPhotos(x=>[...x,compressed]);setPreviews(x=>[...x,URL.createObjectURL(compressed)]);setMsg("");
     }catch(e:any){if(generation===photoGenerationRef.current){photoSlotsRef.current=Math.max(0,photoSlotsRef.current-1);setMsg(e?.message||"Photo processing failed.");}}
   }
