@@ -268,6 +268,8 @@ export default function Feed(){
     <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/players">Players</Link><Link href="/profile">Profile</Link></nav></header>
     {hero}
 
+    <div className="hc-feed-audience" role="group" aria-label="HoopFeed audience"><span className="hc-feed-audience__active" aria-current="true">Following</span><span className="hc-feed-audience__disabled" aria-label="Global discovery is not yet available">Global · Coming soon</span></div>
+
     <div className="hf5-type-row hc-liquid-glass-filter" role="group" aria-label="Filter HoopFeed by post type">{TYPE_FILTERS.map(t=><button type="button" key={t} className={"hf5-type-chip"+(typeFilter===t?" is-active":"")} aria-pressed={typeFilter===t} onClick={()=>setTypeFilter(t)}>{t}</button>)}</div>
 
     <section className={"dashboard-card hc-feed-composer hc-liquid-glass-composer hc-feed-composer--compact"+(composerExpanded?" is-expanded":" is-collapsed")} style={{marginTop:8}}><CourtLines variant="arc" className="hc-feed-composer__court" /><div className="hc-feed-composer__heading"><span className="card-kicker">SHARE TO HOOPFEED</span><span className="hc-feed-streak" aria-label={postingStreak+" day HoopFeed posting streak"}><span aria-hidden="true">🔥</span> {postingStreak}-day streak</span><button type="button" className="hc-feed-composer__toggle" aria-expanded={composerExpanded} aria-controls="hc-feed-composer-fields" onClick={()=>setComposerExpanded(v=>!v)}>{composerExpanded?"Close":"Create post"}</button></div><div id="hc-feed-composer-fields" className="hc-feed-composer__fields">
