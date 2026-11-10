@@ -111,3 +111,30 @@
     -webkit-backdrop-filter: none; backdrop-filter: none;
   }
 }
+
+/* Search glass surfaces, without changing directory card styles. */
+.hc-global-search-page .hc-liquid-glass-search-switcher,
+.hc-global-search-page .hc-liquid-glass-search-hero {
+  background: rgba(255,255,255,.94);
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: var(--hc-glass-radius);
+}
+.theme-dark .hc-global-search-page .hc-liquid-glass-search-switcher,
+.theme-dark .hc-global-search-page .hc-liquid-glass-search-hero {
+  background: rgba(24,25,30,.94);
+  border-color: rgba(255,255,255,.18);
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .hc-global-search-page .hc-liquid-glass-search-switcher,
+  .hc-global-search-page .hc-liquid-glass-search-hero {
+    -webkit-backdrop-filter: saturate(135%) blur(12px);
+    backdrop-filter: saturate(135%) blur(12px);
+  }
+}
+@media (prefers-contrast: more), (forced-colors: active) {
+  .hc-global-search-page .hc-liquid-glass-search-switcher,
+  .hc-global-search-page .hc-liquid-glass-search-hero {
+    background: Canvas; color: CanvasText; border-color: CanvasText;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+}
