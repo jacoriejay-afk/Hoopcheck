@@ -92,11 +92,13 @@ html.theme-dark body .site-header-global :is(.hc-header-nav.is-open, .hc-header-
 
   html.theme-dark body header.site-header-global.hc-template-header {
     /* Float below the iPhone status bar instead of forming a full-width slab. */
-    top: calc(var(--hc-safe-area-top) + 8px) !important;
+    /* The status-bar inset is handled by header padding below; do not
+       add it again to sticky top or the header floats into home content. */
+    top: 8px !important;
     width: calc(100% - 24px) !important;
     max-width: calc(100% - 24px) !important;
     margin-inline: auto !important;
-    padding-block-start: 8px !important;
+    padding-block-start: calc(9px + var(--hc-safe-area-top)) !important;
     padding-inline: max(12px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-right, 0px)) !important;
     border-radius: var(--hc-radius-card) !important;
   }
