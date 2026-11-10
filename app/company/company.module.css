@@ -1,0 +1,237 @@
+.page {
+  display: grid;
+  gap: var(--hc-shell-gap);
+}
+
+.hero {
+  --hc-foreground: var(--hc-dark-ink);
+  --hc-foreground-muted: var(--hc-dark-muted);
+  --hc-accent-text: #ffb18f;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(24px, 5vw, 64px);
+  border: 1px solid var(--hc-dark-border);
+  border-bottom: 4px solid var(--accent);
+  border-radius: var(--radius-lg);
+  background: var(--hc-inverse-surface);
+  background-image:
+    linear-gradient(90deg, rgb(10 10 10 / 98%), rgb(10 10 10 / 90%) 47%, rgb(10 10 10 / 58%)),
+    url("/images/basketball-arena-ai.webp");
+  background-position: center, center 58%;
+  background-size: cover;
+  color: var(--hc-foreground);
+}
+
+.heroContent {
+  position: relative;
+  max-width: 640px;
+}
+
+.hero .court {
+  position: absolute;
+  inset: auto -5% -32% auto;
+  width: min(68%, 690px);
+  height: auto;
+  color: var(--accent);
+  opacity: .34;
+  pointer-events: none;
+  transform: rotate(-12deg);
+}
+
+.hero .eyebrow {
+  --hc-foreground: var(--hc-accent-text);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--hc-accent-text);
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  flex: 0 0 22px;
+  height: 2px;
+  background: var(--accent);
+  content: "";
+}
+
+.hero h1 {
+  max-width: 16ch;
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(1.9rem, 5.4vw, 3.75rem);
+  line-height: 1.08;
+  letter-spacing: -.025em;
+  text-wrap: balance;
+}
+
+.hero .lede {
+  max-width: 52ch;
+  margin: 0;
+  color: var(--hc-dark-ink);
+  font-size: clamp(1rem, 1.8vw, 1.15rem);
+  line-height: 1.55;
+}
+
+.heroContent,
+.card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.heroContent {
+  gap: 16px;
+}
+
+.page .eyebrow,
+.card h2,
+.card p,
+.details,
+.details dd {
+  margin: 0;
+}
+
+.actions,
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.actions {
+  margin-top: 6px;
+}
+
+.page :is(.primary, .secondary, .cardLink, .nav a) {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-weight: 750;
+  line-height: 1.3;
+  text-decoration: none;
+}
+
+.page .primary {
+  --hc-foreground: var(--hc-button-primary-foreground);
+  background: var(--accent);
+  color: var(--hc-foreground);
+}
+
+.page .primary:hover {
+  background: var(--hc-accent-text);
+}
+
+.page .secondary {
+  border-color: rgb(247 247 245 / 46%);
+  background: rgb(10 10 10 / 78%);
+  color: var(--hc-dark-ink);
+}
+
+.page :is(.secondary, .cardLink, .nav a):hover {
+  border-color: var(--accent);
+}
+
+.page a:focus-visible {
+  outline: 2px solid var(--hc-accent-text);
+  outline-offset: 3px;
+}
+
+.page svg {
+  flex-shrink: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--hc-shell-gap);
+}
+
+.card {
+  min-width: 0;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--on-surface);
+}
+
+.icon {
+  --hc-foreground: var(--hc-accent-text);
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--hc-live-chip-surface);
+  color: var(--hc-accent-text);
+}
+
+.card h2 {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(1.14rem, 2.1vw, 1.5rem);
+  line-height: 1.25;
+}
+
+.card p,
+.details dd {
+  line-height: 1.55;
+}
+
+.card .note,
+.details dt {
+  --hc-foreground: var(--hc-foreground-muted);
+  color: var(--hc-foreground-muted);
+  font-size: .875rem;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  gap: 12px;
+}
+
+.details dd {
+  font-weight: 650;
+}
+
+.page :is(.cardLink, .nav a) {
+  --hc-foreground: var(--hc-accent-text);
+  border-color: var(--border);
+  background: var(--hc-surface-soft);
+  color: var(--hc-accent-text);
+}
+
+.cardLink {
+  justify-self: start;
+}
+
+@media (max-width: 620px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    background-image:
+      linear-gradient(90deg, rgb(10 10 10 / 96%), rgb(10 10 10 / 82%)),
+      url("/images/basketball-arena-ai.webp");
+  }
+
+  .hero .court {
+    inset: auto -40% -20% auto;
+    width: 110%;
+  }
+
+  .actions > a {
+    flex: 1 1 165px;
+  }
+}
