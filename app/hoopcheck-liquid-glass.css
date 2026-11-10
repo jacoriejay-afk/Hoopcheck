@@ -280,7 +280,10 @@ html.theme-dark :is(.hc-confirm-modal, .report-modal) {
    the logo/menu row where the clock and indicators can overlap controls. */
 @media (max-width: 767px) {
   html.theme-dark body header.site-header-global.hc-template-header {
-    top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
+    /* Sticky top affects scrolling, not the header's initial flow position.
+       A conservative iOS fallback also works when PWA env() resolves to 0. */
+    top: max(52px, calc(env(safe-area-inset-top, 0px) + 8px)) !important;
+    margin-block-start: max(52px, calc(env(safe-area-inset-top, 0px) + 8px)) !important;
     padding-block-start: 9px !important;
   }
 }
