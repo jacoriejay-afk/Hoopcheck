@@ -55,6 +55,7 @@ import "./hoopcheck-unified-layout.css";
 import "./hoopcheck-spacing-density-consolidated.css";
 import "./hoopcheck-membership-refresh.css";
 import "./hoopcheck-flow.css";
+import "./hoopcheck-liquid-glass.css";
 import "./styles/liquid-glass.css";
 import "./hoopcheck-lm2f-bottom-nav.css";
 import "./hoopcheck-account-system.css";

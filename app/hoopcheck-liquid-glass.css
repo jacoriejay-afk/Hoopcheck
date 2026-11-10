@@ -1,0 +1,261 @@
+/* Dark glass is reserved for navigation, controls and feature headers.
+   The tint keeps text legible even over white imagery. */
+html.theme-dark {
+  --hc-glass-base: #1c1c1f;
+  --hc-glass-fill: var(--hc-glass-base);
+  --hc-glass-filter: none;
+  --hc-glass-edge: #65544c;
+  --hc-glass-accent: #ffab89;
+  --hc-glass-sheen: linear-gradient(135deg, rgb(255 106 55 / 7%), transparent 45%),
+    linear-gradient(rgb(255 255 255 / 5%), transparent 55%);
+  --hc-glass-shadow: inset 0 1px 0 rgb(255 255 255 / 9%), 0 6px 20px rgb(0 0 0 / 24%);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html.theme-dark {
+    --hc-glass-fill: rgb(23 23 26 / 88%);
+    --hc-glass-filter: blur(12px);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more), (forced-colors: active) {
+  html.theme-dark {
+    --hc-glass-fill: var(--hc-glass-base);
+    --hc-glass-filter: none;
+    --hc-glass-sheen: none;
+    --hc-glass-shadow: none;
+  }
+}
+
+.hc-search-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+html.theme-dark body header.site-header-global.hc-template-header,
+html.theme-dark body nav.hc-bottom-tab-bar.hc-lm2f-bottom-nav,
+html.theme-dark body .hc-global-page-shell main :is(
+  .hc-feed-composer.dashboard-card,
+  .hc-team-fan-group-page .hc-feed-hero.hero-card,
+  .hc-team-fan-group-entry,
+  .hc-search-filters,
+  .hc-smooth-inbox-tabs,
+  .hc-journey-heading,
+  .hc-smooth-passport__top
+),
+html.theme-dark body :is(
+  .notification-panel,
+  .hc-confirm-modal,
+  .hc-shared-picker-dialog,
+  .review-moderation-center .modal-panel,
+  .report-modal
+) {
+  background: var(--hc-glass-sheen) var(--hc-glass-fill) !important;
+  border: 1px solid var(--hc-glass-edge) !important;
+  border-radius: var(--hc-radius-card) !important;
+  box-shadow: var(--hc-glass-shadow) !important;
+  color: var(--hc-foreground) !important;
+  -webkit-backdrop-filter: var(--hc-glass-filter) !important;
+  backdrop-filter: var(--hc-glass-filter) !important;
+}
+
+html.theme-dark body header.site-header-global.hc-template-header {
+  position: sticky !important;
+  top: calc(var(--hc-safe-area-top) + 8px) !important;
+  z-index: 1200 !important;
+  width: min(1440px, calc(100% - 24px)) !important;
+  margin-inline: auto !important;
+  border-bottom-color: var(--hc-orange) !important;
+}
+
+html.theme-dark body header.site-header-global .hc-header-links a:is(:hover, .is-active) {
+  color: var(--hc-glass-accent) !important;
+}
+html.theme-dark body nav.hc-lm2f-bottom-nav {
+  --hc-nav-active-fg: var(--hc-glass-accent);
+}
+
+/* The open menus sit inside the header's backdrop layer. */
+html.theme-dark body .site-header-global .hc-header-nav:not(.is-open) {
+  background: transparent !important;
+}
+html.theme-dark body .site-header-global :is(.hc-header-nav.is-open, .hc-header-more-panel) {
+  background: var(--hc-glass-base) !important;
+  border-radius: var(--hc-radius-card);
+}
+
+@media (max-width: 767px) {
+  html.theme-dark body { padding-block-start: 0 !important; }
+
+  html.theme-dark body header.site-header-global.hc-template-header {
+    top: 0 !important;
+    width: 100% !important;
+    padding-block-start: calc(8px + var(--hc-safe-area-top)) !important;
+    padding-inline: max(12px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-right, 0px)) !important;
+    border-radius: 0 0 var(--hc-radius-card) var(--hc-radius-card) !important;
+  }
+
+  html.theme-dark body nav.hc-bottom-tab-bar.hc-lm2f-bottom-nav {
+    inset-inline: max(8px, env(safe-area-inset-left, 0px)) max(8px, env(safe-area-inset-right, 0px)) !important;
+    bottom: 6px !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: calc(66px + var(--hc-safe-area-bottom)) !important;
+    max-height: none !important;
+    padding-block-end: calc(5px + var(--hc-safe-area-bottom)) !important;
+    z-index: 1100 !important;
+  }
+}
+
+html.theme-dark :is(.hc-search-filters, .hc-smooth-inbox-tabs, .hc-smooth-passport__top) {
+  padding: 8px;
+}
+html.theme-dark .hc-journey-heading {
+  padding: 12px;
+}
+html.theme-dark .hc-journey-heading :is(.eyebrow, .hc-journey-stamp),
+html.theme-dark .hc-smooth-passport__orange {
+  color: var(--hc-glass-accent);
+  border-color: currentColor;
+}
+/* Keep the records beneath the glass controls on solid, paired surfaces. */
+html.theme-dark .hc-journey-section,
+html.theme-dark .hc-journey-section :is(.hc-journey-stop__card, .hc-journey-form, .hc-journey-empty, .hc-journey-upgrade, .hc-journey-public-toggle),
+html.theme-dark .hc-notifications-page .hc-alert-card {
+  background: var(--hc-surface-raised);
+  border-color: var(--hc-border);
+  color: var(--hc-foreground);
+}
+html.theme-dark body main :is(.hc-journey-stop__card, .hc-alert-card, .hc-smooth-passport) {
+  border-radius: var(--hc-radius-card) !important;
+}
+html.theme-dark .hc-notifications-page .hc-alert-card.unread {
+  border-inline-start-color: var(--hc-orange);
+}
+html.theme-dark .hc-notifications-page .hc-alert-card__main {
+  color: var(--hc-foreground) !important;
+}
+html.theme-dark .hc-journey-section :is(.hc-journey-stop__team h3, .hc-journey-public-toggle strong, .hc-journey-form label) {
+  color: var(--hc-foreground);
+}
+html.theme-dark .hc-journey-section :is(.hc-journey-heading p:last-child, .hc-journey-stop__team p, .hc-journey-stop__team small, .hc-journey-empty p, .hc-journey-upgrade p, .hc-journey-public-toggle small),
+html.theme-dark .hc-notifications-page .hc-alert-card__main > small {
+  color: var(--hc-foreground-muted);
+}
+html.theme-dark .hc-journey-section :is(.hc-journey-stop__season, .hc-journey-stop__footer > a, .hc-journey-empty > span, .hc-journey-form > .eyebrow, .hc-journey-upgrade strong),
+html.theme-dark .hc-notifications-page .hc-alert-type,
+html.theme-dark .hc-notifications-page .hc-alert-type svg {
+  color: var(--hc-accent-text);
+}
+html.theme-dark .hc-notifications-page .hc-alert-type--pay_warning,
+html.theme-dark .hc-notifications-page .hc-alert-type--pay_warning svg {
+  color: #ff9c9c;
+}
+html.theme-dark .hc-notifications-page .hc-alert-type--roster_spot {
+  color: #a5c5ff;
+}
+html.theme-dark .hc-journey-section :is(.hc-journey-form input, .hc-journey-form select, .hc-journey-stop__footer button) {
+  color: var(--hc-input-fg);
+  background: var(--hc-input-bg);
+  border-color: #727275;
+}
+
+html.theme-dark body main :is(.hc-search-filters, .hc-smooth-inbox-tabs) :is(button, select) {
+  min-height: 44px;
+  border: 1px solid #727275 !important;
+  border-radius: var(--hc-radius-control) !important;
+  background: var(--hc-input-bg) !important;
+  color: var(--hc-input-fg) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+html.theme-dark body main :is(.hc-search-filters, .hc-smooth-inbox-tabs) button[aria-pressed="true"] {
+  border-color: var(--hc-orange) !important;
+  box-shadow: inset 0 0 0 1px var(--hc-orange);
+  color: var(--hc-glass-accent) !important;
+}
+html.theme-dark body main .hc-smooth-inbox-tabs button {
+  flex: 0 0 auto;
+  padding-inline: 8px;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+html.theme-dark .hc-smooth-inbox-tabs button span {
+  opacity: 1;
+}
+html.theme-dark body :is(.hc-search-filters, .hc-smooth-inbox-tabs, .hc-feed-composer, .hc-confirm-modal, .hc-shared-picker-dialog) :is(button, select, input, textarea):focus-visible {
+  outline: 2px solid var(--hc-focus-ring) !important;
+  outline-offset: 2px;
+}
+
+html.theme-dark .report-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 70%);
+}
+html.theme-dark .report-modal {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 420px);
+  padding: 20px;
+}
+html.theme-dark :is(.hc-modal-backdrop, .report-overlay) {
+  padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px))
+    max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  overflow-y: auto;
+}
+html.theme-dark :is(.hc-confirm-modal, .report-modal) {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  /* Frost the picker controls rather than compositing a full-screen blur. */
+  html.theme-dark body .hc-shared-picker-dialog {
+    background: var(--hc-glass-base) !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  html.theme-dark .hc-shared-picker-sticky {
+    background: var(--hc-glass-sheen) var(--hc-glass-fill);
+    -webkit-backdrop-filter: var(--hc-glass-filter);
+    backdrop-filter: var(--hc-glass-filter);
+  }
+  html.theme-dark .hc-shared-picker-dialog :is(.hc-shared-picker-sticky, .hc-shared-picker-results, .hc-shared-picker-footer) {
+    padding-inline: max(12px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-right, 0px));
+  }
+
+  /* The post's entrance transform otherwise anchors its fixed sheet to the post. */
+  html.theme-dark .hc-feed-shared-card:has(> .hc-feed-comments-panel) {
+    animation: none !important;
+  }
+  html.theme-dark .hc-feed-comments-backdrop {
+    z-index: 1300;
+  }
+  html.theme-dark body main.hc-feed-page .hc-feed-comments-panel {
+    z-index: 1301;
+    padding-block-end: calc(18px + var(--hc-safe-area-bottom)) !important;
+    background: var(--hc-glass-sheen) var(--hc-glass-fill) !important;
+    border-radius: var(--hc-radius-card) var(--hc-radius-card) 0 0 !important;
+    -webkit-backdrop-filter: var(--hc-glass-filter);
+    backdrop-filter: var(--hc-glass-filter);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-dark :is(.hc-confirm-modal, .hc-shared-picker-dialog, .notification-panel, .report-modal, .review-moderation-center .modal-panel) {
+    animation: hc-glass-enter var(--hc-motion-fast) var(--hc-motion-ease-out) both;
+  }
+}
+
+@keyframes hc-glass-enter {
+  from { transform: translateY(6px); }
+  to { transform: none; }
+}
