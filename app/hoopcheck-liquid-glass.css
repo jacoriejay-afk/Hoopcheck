@@ -274,3 +274,13 @@ html.theme-dark :is(.hc-confirm-modal, .report-modal) {
   from { transform: translateY(6px); }
   to { transform: none; }
 }
+
+/* iPhone screenshot QA: keep header controls clear of the system status bar.
+   Use a single safe-area offset above the header, rather than padding inside
+   the logo/menu row where the clock and indicators can overlap controls. */
+@media (max-width: 767px) {
+  html.theme-dark body header.site-header-global.hc-template-header {
+    top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
+    padding-block-start: 9px !important;
+  }
+}
