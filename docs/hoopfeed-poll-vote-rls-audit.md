@@ -24,3 +24,9 @@ Any authenticated client with table SELECT privileges can read individual votes,
 5. Stage and review the migration, then apply to production only after explicit approval.
 
 **Do not merge the HoopFeed release until the vote RLS, audience policies, and public media exposure are resolved.**
+
+## Confirmed frontend dependency
+
+`app/feed/page.tsx` currently queries `feed_poll_votes` for `post_id,user_id,option_index` (around line 95), then counts every returned vote and compares `user_id` with the current user (around lines 101–103). Restricting SELECT to `user_id = auth.uid()` alone would cause poll totals to display only the current user's vote. The migration and frontend replacement must ship together.
+
+**Proposed coordinated change:** keep raw vote SELECT own-only; provide per-option totals through a carefully reviewed aggregate endpoint that checks caller visibility against the source `feed_posts` row; update the feed to combine aggregate totals with the user's own vote. Ensure the endpoint cannot return raw voter IDs or totals for inaccessible posts. Add negative RLS and API tests before rollout.
