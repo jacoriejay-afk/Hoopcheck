@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getCachedSession } from "../lib/supabase";
-import SearchBar from "../components/SearchBar";
 import HomeDirectoryStats from "../components/HomeDirectoryStats";
 import { HoopIcon, type HoopIconName } from "../components/HoopCheckUI";
 import "./hoopcheck-brand-home.css";
@@ -46,9 +45,6 @@ export default function Home() {
           </div>
         </section>
 
-        <section aria-label="Search the basketball directory" className="relative z-10 mx-auto mt-5 max-w-4xl rounded-2xl border border-white/15 bg-[#172234] p-3 sm:p-4">
-          <SearchBar className="hc-ia-search" name="q" placeholder="Search teams, players, coaches, leagues..." ariaLabel="Search the basketball directory" />
-        </section>
 
         <section className="mt-9"><HomeDirectoryStats /></section>
 
