@@ -187,10 +187,10 @@ export async function POST(request: Request) {
       if (!gameDayTeam || !gameDayOpponent || !scoresValid) return NextResponse.json({ allowed: false, message: "Add both teams and enter both final scores, or leave both scores blank until after the game." }, { status: 400 });
     }
     const { data: sub } = await db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle();
-    const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription: sub });
-    if (!entitlements.canWriteHoopFeed) return NextResponse.json({ allowed: false, message: "An active Pro or Premium membership is required to use HoopFeed." }, { status: 403 });
     const { data: adminRoleRows } = await db.from("admin_roles").select("role").eq("user_id", user.id);
     const isAdmin = (adminRoleRows || []).some((r: any) => String(r?.role || "").trim().toLowerCase() === "admin");
+    const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription: sub, isAdmin });
+    if (!entitlements.canWriteHoopFeed) return NextResponse.json({ allowed: false, message: "An active Pro or Premium membership is required to use HoopFeed." }, { status: 403 });
 
     // Poll vote: one vote per member per poll; voting again changes the vote.
     if (kind === "vote") {

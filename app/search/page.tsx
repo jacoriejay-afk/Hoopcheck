@@ -301,7 +301,7 @@ function SearchContent() {
         <div><p className="eyebrow">ONE GAME. BOTH DIRECTORIES.</p><h2>Find your next team</h2><p>Search men’s and women’s teams by name, city, country, or league.</p></div>
         <div className="actions"><Link className="btn" href="/teams">Browse men’s teams ↗</Link><Link className="btn dark" href="/womens">Browse women’s teams ↗</Link></div>
       </section>
-      <nav className="hc-directory-switcher" aria-label={t("browseDirectoriesLabel")}>
+      <nav className="hc-directory-switcher hc-liquid-glass-search-switcher" aria-label={t("browseDirectoriesLabel")}>
         <span className="hc-directory-switcher-label">{t("browseDirectoriesLabel")}</span>
         <Link href="/teams">{t("mensTeams")}</Link>
         <Link href="/womens">{t("womensTeams")}</Link>
@@ -332,7 +332,7 @@ function SearchContent() {
         </section>
       )}
 
-      <section className="search-hero">
+      <section className="search-hero hc-liquid-glass-search-hero">
         <div className="eyebrow">{t("globalResearch")}</div>
         <h1>{t("searchBasketballWorld")}</h1>
         <p>{!roleReady || isFanAccount ? t("searchBasketballWorld") : t("findBasketballPeople")}</p>
