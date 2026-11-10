@@ -102,10 +102,14 @@ html.theme-dark body .site-header-global :is(.hc-header-nav.is-open, .hc-header-
     inset-inline: max(8px, env(safe-area-inset-left, 0px)) max(8px, env(safe-area-inset-right, 0px)) !important;
     bottom: 6px !important;
     width: auto !important;
-    height: auto !important;
-    min-height: calc(66px + var(--hc-safe-area-bottom)) !important;
-    max-height: none !important;
-    padding-block-end: calc(5px + var(--hc-safe-area-bottom)) !important;
+    /* A fixed border-box height prevents legacy tab-bar padding from
+       stretching the glass panel below the five navigation items. */
+    box-sizing: border-box !important;
+    height: calc(76px + var(--hc-safe-area-bottom)) !important;
+    min-height: 0 !important;
+    max-height: calc(76px + var(--hc-safe-area-bottom)) !important;
+    padding-block-start: 6px !important;
+    padding-block-end: calc(6px + var(--hc-safe-area-bottom)) !important;
     z-index: 1100 !important;
   }
 }
