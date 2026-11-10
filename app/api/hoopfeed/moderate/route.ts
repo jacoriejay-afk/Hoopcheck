@@ -213,7 +213,8 @@ export async function POST(request: Request) {
     // Poll vote: one vote per member per poll; voting again changes the vote.
     if (kind === "vote") {
       const postId = String(form.get("post_id") || "").trim();
-      const optionIndex = Number(form.get("option_index"));
+      const optionIndexRaw = form.get("option_index");
+      const optionIndex = optionIndexRaw === null || String(optionIndexRaw).trim() === "" ? NaN : Number(optionIndexRaw);
       if (!postId || !Number.isInteger(optionIndex)) return NextResponse.json({ allowed: false, message: "That vote didn't go through. Please try again." }, { status: 400 });
       if (!(await canReadPostAsViewer(postId, token))) return NextResponse.json({ allowed: false, message: "This poll is no longer available." }, { status: 404 });
       const { data: poll } = await db.from("feed_posts").select("id,status,expires_at,post_kind,poll_options").eq("id", postId).maybeSingle();
@@ -229,7 +230,9 @@ export async function POST(request: Request) {
     // Save / unsave a post (bookmark).
     if (kind === "bookmark") {
       const postId = String(form.get("post_id") || "").trim();
-      const saved = String(form.get("saved") || "") === "true";
+      const savedValue = String(form.get("saved") || "");
+      if (savedValue !== "true" && savedValue !== "false") return NextResponse.json({ allowed: false, message: "Choose whether to save or remove this post." }, { status: 400 });
+      const saved = savedValue === "true";
       if (!postId) return NextResponse.json({ allowed: false, message: "Couldn't update your saved posts. Please try again." }, { status: 400 });
       if (saved) {
         if (!(await canReadPostAsViewer(postId, token))) return NextResponse.json({ allowed: false, message: "This post is no longer available." }, { status: 404 });
@@ -317,7 +320,7 @@ export async function POST(request: Request) {
       const postId = String(form.get("post_id") || "");
       if (!postId) return NextResponse.json({ allowed: false, message: "Post not found." }, { status: 400 });
       if (!(await canReadPostAsViewer(postId, token))) return NextResponse.json({ allowed: false, message: "This HoopFeed post is no longer available." }, { status: 404 });
-       const { data: post } = await db.from("feed_posts").select("id,author_id,expires_at,status").eq("id",postId).maybeSingle();
+      const { data: post } = await db.from("feed_posts").select("id,author_id,expires_at,status").eq("id",postId).maybeSingle();
       if (!post || post.status !== "approved" || !post.expires_at || new Date(post.expires_at).getTime() <= Date.now()) {
         return NextResponse.json({ allowed: false, message: "This HoopFeed post is no longer available." }, { status: 404 });
       }
