@@ -432,3 +432,46 @@
     margin-inline: 0;
   }
 }
+
+/* Account mobile: target LayoutSystem Row's real child class names. */
+@media (max-width: 600px) {
+  .hc-account-page .hc-setting-row.hc-layout-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    min-width: 0;
+    gap: 8px;
+  }
+  .hc-account-page .hc-setting-row.hc-layout-row .hc-layout-row-icon {
+    flex: 0 0 auto;
+  }
+  .hc-account-page .hc-setting-row.hc-layout-row .hc-layout-row-label {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .hc-account-page .hc-setting-row.hc-layout-row .hc-layout-row-value {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 34%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .hc-account-page .hc-setting-row.hc-layout-row .hc-layout-row-chevron {
+    display: inline-flex;
+    flex: 0 0 12px;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+  }
+  .hc-account-page .hc-setting-row:not(.hc-layout-row) .hc-setting-copy {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .hc-account-page .hc-setting-row:not(.hc-layout-row) .hc-switch {
+    flex: 0 0 auto;
+    margin-left: auto;
+    margin-right: 0;
+  }
+}
