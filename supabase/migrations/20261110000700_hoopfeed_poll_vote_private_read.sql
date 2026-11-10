@@ -55,6 +55,22 @@ create policy "feed poll votes update own"
     )
   );
 
+
+-- Direct Data API bookmark writes must not bypass post visibility.
+-- Deleting one's own old bookmark remains possible after a post expires.
+drop policy if exists "feed bookmarks insert own" on public.feed_post_bookmarks;
+create policy "feed bookmarks insert own"
+  on public.feed_post_bookmarks for insert to authenticated
+  with check (
+    user_id = (select auth.uid())
+    and exists (
+      select 1 from public.feed_posts p
+      where p.id = post_id
+        and p.status = 'approved'
+        and p.expires_at > now()
+    )
+  );
+
 commit;
 
 notify pgrst, 'reload schema';
