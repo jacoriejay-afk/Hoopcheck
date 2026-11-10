@@ -22,7 +22,6 @@ import "./hoopcheck-lm2d-contrast.css";
 import "./hoopcheck-motion.css";
 import "./hoopcheck-mobile-tabbar-repair.css";
 import "./hoopcheck-lm2e-account-layout.css";
-import "./hoopcheck-lm2f-bottom-nav.css";
 import "./hoopcheck-sp1-spacing.css";
 import "./hoopcheck-lg1-logo-contrast.css";
 import "./hoopcheck-ux2b-profile-completion.css";
@@ -57,6 +56,7 @@ import "./hoopcheck-spacing-density-consolidated.css";
 import "./hoopcheck-membership-refresh.css";
 import "./hoopcheck-flow.css";
 import "./styles/liquid-glass.css";
+import "./hoopcheck-lm2f-bottom-nav.css";
 import { SITE_URL } from "../lib/site-url";
 
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
