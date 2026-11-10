@@ -365,3 +365,38 @@
     gap: 8px;
   }
 }
+
+/* Account settings: reduce vertical scanning on phones without collapsing access. */
+@media (max-width: 600px) {
+  .hc-account-page .hc-account-settings-header.hc-liquid-glass-account-header {
+    padding: 14px;
+    border-radius: var(--hc-glass-radius);
+  }
+  .hc-account-page .hc-account-settings-header h1 {
+    margin: 2px 0 10px;
+    line-height: 1.2;
+  }
+  .hc-account-page .hc-account-settings-identity {
+    gap: 10px;
+  }
+  .hc-account-page .hc-account-settings-identity-copy p {
+    margin: 2px 0;
+    overflow-wrap: anywhere;
+  }
+  .hc-account-page .hc-account-identity-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .hc-account-page .hc-account-identity-actions .btn {
+    min-height: 40px;
+    border-radius: var(--hc-glass-radius);
+  }
+  .hc-account-page .hc-settings {
+    gap: 12px;
+  }
+  .hc-account-page .hc-settings-group {
+    border-radius: var(--hc-glass-radius);
+  }
+}
