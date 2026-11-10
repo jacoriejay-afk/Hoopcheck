@@ -334,7 +334,6 @@ function SearchContent() {
         <Link href="/search?type=womens-teams">Women's teams</Link>
         <Link href="/search?type=leagues">Leagues</Link>
         <Link href="/fans">Fans</Link>
-        <Link href="/agents">Agents / Scouts</Link>
       </nav>
       <section className="search-hero">
         <div className="eyebrow">{t("globalResearch")}</div>
