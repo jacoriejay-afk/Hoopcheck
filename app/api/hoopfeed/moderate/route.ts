@@ -389,7 +389,7 @@ export async function POST(request: Request) {
       game_day_score_for: submittedTopicTag === "Game Day" ? scoreFor : null,
       game_day_score_against: submittedTopicTag === "Game Day" ? scoreAgainst : null,
       location_country:shareCountry && profile?.current_country_public !== false ? (submittedCountry || profile?.current_country || null) : null,
-      status:"approved", expires_at:new Date("2100-01-01T00:00:00.000Z").toISOString()
+      status:"approved", expires_at:new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     });
     if (error) return NextResponse.json({ allowed:false,message:"We couldn't publish your post. Please try again." },{status:400});
     const activityDate = new Date().toISOString().slice(0, 10);
