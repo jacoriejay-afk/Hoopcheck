@@ -105,7 +105,7 @@ export default function ProfilePage() {
   return (
     <main className="page-shell hc-member-profile-page">
       <div className="page-container">
-        <section className="hero-card compact-hero" aria-labelledby="hc-member-profile-title">
+        <section className="hero-card compact-hero hc-member-profile-hero" aria-labelledby="hc-member-profile-title">
           <div className="hc-member-profile-identity">
             <div className="hc-member-profile-avatar-wrap">
               <div className="hc-member-profile-avatar">
