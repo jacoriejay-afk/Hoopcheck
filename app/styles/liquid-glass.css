@@ -326,3 +326,42 @@
     border-radius: var(--hc-glass-radius);
   }
 }
+
+/* Mobile HoopFeed density: preserve posting, poll, media, and privacy controls. */
+@media (max-width: 600px) {
+  .hc-feed-page .hc-feed-composer.hc-liquid-glass-composer {
+    padding: 12px;
+    margin-top: 8px !important;
+    border-radius: var(--hc-glass-radius);
+  }
+  .hc-feed-page .hc-liquid-glass-composer .card-kicker {
+    display: inline-block;
+    margin: 0 8px 4px 0;
+    letter-spacing: .045em;
+  }
+  .hc-feed-page .hc-liquid-glass-composer .hc-feed-streak {
+    display: inline-flex;
+    align-items: center;
+    margin: 0 0 4px;
+  }
+  .hc-feed-page .hc-liquid-glass-composer .hf5-mode-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 6px 0 8px;
+  }
+  .hc-feed-page .hc-liquid-glass-composer .hf5-mode-row .hf5-type-chip {
+    min-height: 40px;
+    padding: 6px 12px;
+    border-radius: var(--hc-glass-radius);
+  }
+  .hc-feed-page .hc-liquid-glass-composer .hc-feed-composer__editor {
+    margin: 6px 0;
+  }
+  .hc-feed-page .hc-liquid-glass-composer .hc-feed-composer__editor textarea {
+    min-height: 72px;
+  }
+  .hc-feed-page .hc-liquid-glass-composer .hc-feed-composer__footer {
+    gap: 8px;
+  }
+}
