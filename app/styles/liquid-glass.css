@@ -400,3 +400,35 @@
     border-radius: var(--hc-glass-radius);
   }
 }
+
+/* Screenshot-confirmed account row overflow: reserve room for trailing controls. */
+@media (max-width: 600px) {
+  .hc-account-page .hc-settings-group .hc-setting-row {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding-inline: 12px;
+    gap: 8px;
+    overflow: hidden;
+  }
+  .hc-account-page .hc-settings-group .hc-setting-row .hc-setting-copy {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .hc-account-page .hc-settings-group .hc-setting-row .hc-setting-value {
+    flex: 0 1 38%;
+    min-width: 0;
+    max-width: 38%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .hc-account-page .hc-settings-group .hc-setting-row .hc-setting-chevron,
+  .hc-account-page .hc-settings-group .hc-setting-row .hc-switch,
+  .hc-account-page .hc-settings-group .hc-setting-row .hc-setting-select {
+    flex-shrink: 0;
+  }
+  .hc-account-page .hc-settings-group .hc-setting-row .hc-switch {
+    margin-inline: 0;
+  }
+}
