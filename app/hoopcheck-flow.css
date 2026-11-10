@@ -2,12 +2,12 @@
 html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-directory-shell) :is(
   .card,.dashboard-card,.hero-card,.hc-layout-card,.hc-layout-group,.plan-card,.state-card,
   .result-card,.hc-team-directory-row,.hc-feed-shared-card,.hc-premium-intro,.hc-search-team-entry
-):not(.hc-team-branded-hero):not(.hc-feed-discovery):not(.hc-smooth-passport) {
+):not(.hc-team-branded-hero):not(.hc-feed-discovery):not(.hc-smooth-passport):not(.hc-member-profile-hero) {
   border:0 !important;border-radius:0 !important;box-shadow:none !important;
   background:transparent !important;color:inherit !important;
 }
-html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-directory-shell) :is(.card,.dashboard-card,.hero-card,.result-card,.hc-premium-intro,.hc-search-team-entry):not(.hc-team-branded-hero):not(.hc-feed-discovery):not(.hc-smooth-passport) :is(h1,h2,h3,h4) {color:var(--hc-foreground) !important}
-html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-directory-shell) :is(.card,.dashboard-card,.hero-card,.result-card):not(.hc-team-branded-hero):not(.hc-feed-discovery):not(.hc-smooth-passport) .muted {color:var(--hc-foreground-muted) !important}
+html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-directory-shell) :is(.card,.dashboard-card,.hero-card,.result-card,.hc-premium-intro,.hc-search-team-entry):not(.hc-team-branded-hero):not(.hc-feed-discovery):not(.hc-smooth-passport):not(.hc-member-profile-hero) :is(h1,h2,h3,h4) {color:var(--hc-foreground) !important}
+html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-directory-shell) :is(.card,.dashboard-card,.hero-card,.result-card):not(.hc-team-branded-hero):not(.hc-feed-discovery):not(.hc-smooth-passport):not(.hc-member-profile-hero) .muted {color:var(--hc-foreground-muted) !important}
 html body .hc-global-page-shell .hc-team-profile-overview-grid > :is(section,div),
 html body .hc-global-page-shell .hc-team-profile-community .hc-team-fan-group-entry {
   border:0 !important;border-radius:0 !important;box-shadow:none !important;background:transparent !important;
