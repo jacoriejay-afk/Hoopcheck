@@ -73,15 +73,10 @@ test('approved photos upload only after every decision succeeds', async () => {
   const response = await submit();
   assert.equal(response.status, 200);
   assert.equal((await response.json()).allowed, true);
-  // A route may conservatively re-check an attachment; the invariant is that
-  // every image is reviewed before any storage write or publication.
-  const firstWrite = events.findIndex(([action]) => action !== 'moderate');
-  assert.ok(firstWrite >= 2, 'Both photos must be moderated before uploads');
-  assert.deepEqual(events.slice(0, 2), [
+  // Exactly one decision per image avoids duplicate moderation charges and
+  // catches accidental concatenation of two moderation implementations.
+  assert.deepEqual(events, [
     ['moderate', 'first photo'], ['moderate', 'second photo'],
-  ]);
-  assert.ok(events.slice(0, firstWrite).every(([action]) => action === 'moderate'));
-  assert.deepEqual(events.slice(firstWrite), [
     ['upload', 'first photo'], ['upload', 'second photo'], ['insert', 'feed_posts', 2],
   ]);
 });
