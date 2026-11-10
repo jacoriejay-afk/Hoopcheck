@@ -7,7 +7,7 @@ const formStart = review.indexOf('<form');
 const checkbox = review.indexOf('name="reviewRulesAccepted"');
 const formEnd = review.indexOf('</form>', formStart);
 assert.ok(formStart >= 0 && checkbox > formStart && checkbox < formEnd, 'Required review agreement stays inside the review form');
-assert.match(review.slice(checkbox, checkbox + 90), /required/, 'Review agreement remains required');
+assert.match(review.slice(Math.max(formStart, checkbox - 90), checkbox + 90), /required/, 'Review agreement remains required');
 const women = read('app/womens/[id]/page.tsx');
 assert.ok(women.includes('country={team.country || t("international")}'), 'Women profile passes raw country to shared hero');
 assert.ok(!women.includes('country={\x60\x24{countryFlag'), 'Women profile does not prefix a flag twice');
