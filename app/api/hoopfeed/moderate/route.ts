@@ -360,7 +360,16 @@ export async function POST(request: Request) {
       image_urls.push(db.storage.from("feed-images").getPublicUrl(path).data.publicUrl);
     }
     if (image_urls.length) image_url = image_urls[0];
-    if (videoPath) video_url = db.storage.from("feed-videos").getPublicUrl(videoPath).data.publicUrl;
+    if (videoPath) {
+      // Never trust a submitted storage path alone: ensure the file actually
+      // exists in the signed-in user's folder before publishing its URL.
+      const fileName = videoPath.slice(user.id.length + 1);
+      if (!fileName || fileName.includes("/")) return NextResponse.json({ allowed: false, message: "Invalid video upload path." }, { status: 400 });
+      const { data: objects, error: listError } = await db.storage.from("feed-videos").list(user.id, { search: fileName, limit: 100 });
+      const uploaded = !listError && objects?.some((object) => object.name === fileName);
+      if (!uploaded) return NextResponse.json({ allowed: false, message: "Video upload not found. Please upload again." }, { status: 400 });
+      video_url = db.storage.from("feed-videos").getPublicUrl(videoPath).data.publicUrl;
+    }
     const shareCountry = String(form.get("share_country") || "false") === "true";
     const submittedCountry = String(form.get("post_country") || "").trim().slice(0, 100);
     const { error } = await db.from("feed_posts").insert({
