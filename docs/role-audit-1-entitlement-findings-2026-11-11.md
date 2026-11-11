@@ -70,6 +70,14 @@ Decision confirmed 2026-11-11: **One unified HoopFeed** for Player, Fan, Coach, 
 - Changed to `recognizedRole && !isFan`, preserving supported account types while denying unknown roles; added regression assertion in `scripts/test-membership-tier.mjs`.
 - The `team-pay-checkins` API already checks `entitlements.canViewTeamPayHistory`. Fresh CI and authenticated checks are required.
 
+## Draft-branch corrections and release caveats
+- Added a **review-only** SQL migration `20261111180000_align_agent_scout_contact_pro_premium.sql` to align Scout/Agent contact INSERT RLS with Pro/Premium UI entitlements. The migration is **not applied** to the live database; current production policy still requires Premium for Scout/Agent.
+- Unified HoopFeed moderation endpoint now rejects expired source posts for reshares, comments, poll votes, and new bookmarks; users can still remove saved bookmarks.
+- Rejected submissions containing more than four images instead of silently dropping extras; comment attachments are denied across both `image` and `images` fields.
+- Poll voting rejects an omitted/blank `option_index` instead of coercing it to zero (the first option).
+- Added source-level regression assertions in `scripts/test-membership-tier.mjs`. These do not substitute for authenticated E2E, RLS integration, or manual mobile checks.
+- Verify GitHub checks on the **final** branch commit before changing draft status. Never deploy the pending migration without explicit authorization.
+
 ## Staging verification matrix
 1. For each role (Player, Fan, Coach, Scout, Agent, Club Admin), verify Free cannot post and active Pro/Premium can create a text post, image, video, poll, comment, reaction, bookmark, and permitted reshare.
 2. Check Fan Free/Pro/Premium review restrictions: Fans never write reviews; Fan Pro teaser only; Fan Premium full reviews.
