@@ -69,9 +69,9 @@ select pg_temp.expect_denied($q$insert into public.feed_post_bookmarks values ('
 -- Positive bookmark and ownership tests under the authenticated role.
 insert into public.feed_post_bookmarks(post_id,user_id) values
  ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001');
-do $ begin
+do $bookmark_check$ begin
  if (select count(*) from public.feed_post_bookmarks) <> 1 then raise exception 'Own bookmark missing'; end if;
-end $;
+end $bookmark_check$;
 select pg_temp.expect_denied($q$insert into public.feed_post_bookmarks values ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001')$q$);
 select pg_temp.expect_denied($q$insert into public.feed_post_bookmarks values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002')$q$);
 select pg_temp.expect_denied($q$insert into public.feed_poll_votes values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002',0)$q$);
