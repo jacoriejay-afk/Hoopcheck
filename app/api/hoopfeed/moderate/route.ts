@@ -212,8 +212,8 @@ export async function POST(request: Request) {
     const gameDayOpponent = String(form.get("game_day_opponent") || "").trim().slice(0, 80);
     const scoreForRaw = String(form.get("game_day_score_for") || "").trim();
     const scoreAgainstRaw = String(form.get("game_day_score_against") || "").trim();
-    const scoreFor = scoreForRaw === "" ? null : Number(scoreForRaw);
-    const scoreAgainst = scoreAgainstRaw === "" ? null : Number(scoreAgainstRaw);
+    const scoreFor = scoreForRaw === "" ? null : /^\d{1,3}$/.test(scoreForRaw) ? Number(scoreForRaw) : NaN;
+    const scoreAgainst = scoreAgainstRaw === "" ? null : /^\d{1,3}$/.test(scoreAgainstRaw) ? Number(scoreAgainstRaw) : NaN;
     if (kind === "post" && submittedTopicTag && !ALLOWED_TOPIC_TAGS.has(submittedTopicTag)) {
       return NextResponse.json({ allowed: false, message: "Choose a valid HoopFeed topic." }, { status: 400 });
     }
