@@ -49,4 +49,14 @@ begin
   ) then
     raise exception 'Own-vote delete policy missing';
   end if;
+  if not exists (
+    select 1 from pg_class
+    where oid = 'public.feed_poll_votes'::regclass and relrowsecurity
+  ) then
+    raise exception 'Poll votes RLS must be enabled';
+  end if;
+  if (select count(*) from pg_policies
+      where schemaname='public' and tablename='feed_poll_votes') <> 4 then
+    raise exception 'Unexpected poll-vote policy count; inspect permissive policy overlap';
+  end if;
 end $$;
