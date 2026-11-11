@@ -43,14 +43,14 @@ export default function HoopFeedPrivateMedia({ postId, reference, kind, alt, cla
         setError(false);
         // Refresh before the short-lived signed link expires. Playback may need a new URL.
         const delay = Math.max(10000, (Number(data.expires_in) || 60) * 1000 - 15000);
-        refresh = setTimeout(() => { void resolve(); }, delay);
+        // Replacing a playing video URL resets playback. Refresh images only;\n        // videos retain their signed URL for the active playback session.\n        if (kind === "image") refresh = setTimeout(() => { void resolve(); }, delay);
       } catch {
         if (!cancelled) { setUrl(""); setError(true); }
       }
     }
     void resolve();
     return () => { cancelled = true; if (refresh) clearTimeout(refresh); };
-  }, [postId, reference, isPrivate]);
+  }, [postId, reference, isPrivate, kind]);
 
   if (error) return <span role="status" className="muted">Media unavailable</span>;
   if (!url) return <span role="status" className="muted">Loading media…</span>;
