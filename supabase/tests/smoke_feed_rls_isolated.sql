@@ -41,7 +41,9 @@ insert into public.profiles values
 insert into public.feed_posts values
  ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002','approved','poll','["A","B"]',now()+interval '1 day'),
  ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000002','approved','poll','{}',now()+interval '1 day'),
- ('10000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000002','approved','poll','["A"]',now()-interval '1 day');
+ ('10000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000002','approved','poll','["A"]',now()-interval '1 day'),
+ ('10000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000002','pending','poll','["A"]',now()+interval '1 day'),
+ ('10000000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000002','approved','discussion',null,now()+interval '1 day');
 \i supabase/migrations/20261111000100_secure_feed_poll_votes.sql
 \i supabase/migrations/20261111000200_secure_feed_bookmarks.sql
 \i supabase/tests/verify_feed_poll_vote_policies.sql
@@ -65,7 +67,10 @@ end $$;
 select pg_temp.expect_denied($q$insert into public.feed_poll_votes values ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001',0)$q$);
 select pg_temp.expect_denied($q$insert into public.feed_poll_votes values ('10000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000001',0)$q$);
 select pg_temp.expect_denied($q$update public.feed_poll_votes set option_index=5 where user_id=auth.uid()$q$);
+select pg_temp.expect_denied($q$insert into public.feed_poll_votes values ('10000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000001',0)$q$);
+select pg_temp.expect_denied($q$insert into public.feed_poll_votes values ('10000000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000001',0)$q$);
 select pg_temp.expect_denied($q$insert into public.feed_post_bookmarks values ('10000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000001')$q$);
+select pg_temp.expect_denied($q$insert into public.feed_post_bookmarks values ('10000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000001')$q$);
 -- Positive bookmark and ownership tests under the authenticated role.
 insert into public.feed_post_bookmarks(post_id,user_id) values
  ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001');
