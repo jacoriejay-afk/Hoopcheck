@@ -355,6 +355,11 @@ export async function POST(request: Request) {
     });
     if (error) {
       if (uploadedImagePaths.length) await db.storage.from(imageBucket).remove(uploadedImagePaths);
+      // A signed private upload cannot be removed by the browser without storage delete grants.
+      // Clean it up using the server's privileged client when post creation fails.
+      if (videoPath && process.env.HOOPFEED_PRIVATE_VIDEOS_ENABLED === "true") {
+        await db.storage.from("hoopfeed-private-videos").remove([videoPath]);
+      }
       return NextResponse.json({ allowed:false,message:"We couldn't publish your post. Please try again." },{status:400});
     }
     const activityDate = new Date().toISOString().slice(0, 10);
