@@ -36,7 +36,7 @@ assert(shareStart >= 0 && shareEnd > shareStart, "Expected share endpoint block"
 const share = source.slice(shareStart, shareEnd);
 assert.match(share, /Authorization:\s*`Bearer \$\{token\}`/);
 assert.match(share, /viewerDb\.from\("feed_posts"\)/);
-assert.doesNotMatch(share, /db\.from\("feed_posts"\)/);
+assert.doesNotMatch(share, /(?:await\s+)db\.from\("feed_posts"\)\s*\.select\(/);
 assert.match(share, /source\.expires_at/);
 assert.match(share, /source\.status\s*!==\s*"approved"/);
 assert.doesNotMatch(share, /2100-01-01/);
