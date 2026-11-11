@@ -32,6 +32,7 @@ type Player = {
 export default function PlayerProfilePage() {
   const params = useParams<{ id: string }>();
   const [player, setPlayer] = useState<Player | null>(null);
+  const [teamSeason, setTeamSeason] = useState<{ inSeason: boolean; seasonLabel: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [reportMessage, setReportMessage] = useState("");
   const [isOwnProfile, setIsOwnProfile] = useState(false);
@@ -134,6 +135,27 @@ export default function PlayerProfilePage() {
     const body=await res.json().catch(()=>({})); setReportMessage(res.ok?"Report submitted for review.":(body.error||"Unable to submit report."));
   }
 
+  useEffect(() => {
+    let cancelled = false;
+    setTeamSeason(null);
+    const teamName = player?.current_team?.trim();
+    if (!teamName) return;
+    async function resolveTeam() {
+      // Do not guess from similarly named teams across countries or leagues.
+      const { data: teams, error } = await supabase.from("teams")
+        .select("id,league_id,country").eq("name", teamName).limit(10);
+      if (error || !teams || teams.length !== 1 || !teams[0].league_id) return;
+      try {
+        const response = await fetch(`/api/leagues/season-status?ids=${encodeURIComponent(teams[0].league_id)}`, { cache: "no-store" });
+        if (!response.ok) return;
+        const payload: { status?: Record<string, { inSeason: boolean; seasonLabel: string }> } = await response.json();
+        if (!cancelled) setTeamSeason(payload.status?.[teams[0].league_id] || null);
+      } catch { /* Leave unverified rather than infer season state. */ }
+    }
+    void resolveTeam();
+    return () => { cancelled = true; };
+  }, [player?.current_team]);
+
   if (loading) {
     return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading player profile..." /></div></main>;
   }
@@ -181,7 +203,7 @@ export default function PlayerProfilePage() {
               </div>
               <div className="player-profile-heading">
                 <h1>{player.display_name || "HoopCheck Player"} {player.player_verified && <VerifiedBadge label="Verified professional player" />}</h1>
-                <p className="muted">{[player.player_position, player.current_team, player.current_country || player.country].filter(Boolean).join(" · ") || (player.player_verified ? "Verified professional player" : "HoopCheck player")}</p>
+                <p className="muted">{[player.player_position, player.current_team && teamSeason ? `${teamSeason.inSeason ? "Current team" : "Most recent team"}: ${player.current_team}` : player.current_team, player.current_country || player.country].filter(Boolean).join(" · ") || (player.player_verified ? "Verified professional player" : "HoopCheck player")}</p>
               </div>
               {player.bio && (isOwnProfile || viewerType !== "player" || connectionAccepted) && <p className="hc-social-profile-bio">{player.bio}</p>}
               <div className="hc-social-profile-actions">{isOwnProfile ? <Link href="/account#profile-editor" className="btn">Edit Profile</Link> : <FollowButton targetType="player" targetId={player.id} showCount={false} showNotifications={false} />}<PlayerContactButton playerId={player.id} /></div>

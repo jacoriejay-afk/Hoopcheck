@@ -141,7 +141,20 @@ export async function GET(request: NextRequest) {
       finalStatuses.has(statusOf(game)) || cancelledStatuses.has(statusOf(game))
     );
 
+    // Competition identity comes from a reviewed provider-league mapping, not
+    // the club's domestic league (clubs can play in multiple competitions).
+    const { data: competitionMappings, error: competitionError } = await db
+      .from("fan_live_league_provider_map")
+      .select("provider_league_id,league_id")
+      .eq("provider_source", "api-sports-basketball");
+    if (competitionError) throw competitionError;
+    const leagueByProviderId = new Map((competitionMappings || []).map(mapping => [Number(mapping.provider_league_id), mapping.league_id]));
+
+    // Resolve competitions only by reviewed provider competition IDs.
+
     const rows = [];
+    let verifiedCompetitionMatches = 0;
+    let unmappedProviderCompetitions = 0;
     for (const game of trackedGames) {
       const homeProviderId = Number(game.teams?.home?.id);
       const awayProviderId = Number((game.teams?.away ?? game.teams?.visitors)?.id);
@@ -158,6 +171,13 @@ export async function GET(request: NextRequest) {
       const primaryScore = primaryIsHome ? score(game.scores?.home) : score((game.scores?.away ?? game.scores?.visitors));
       const opponentScore = primaryIsHome ? score((game.scores?.away ?? game.scores?.visitors)) : score(game.scores?.home);
       if (!primaryId || !opponentName || !game.id) continue;
+      const providerLeagueId = Number(game.league?.id);
+      const verifiedProviderLeagueId = Number.isInteger(providerLeagueId) && providerLeagueId > 0
+        ? leagueByProviderId.get(providerLeagueId) : null;
+      const hasProviderCompetition = Number.isInteger(providerLeagueId) && providerLeagueId > 0;
+      const leagueId = verifiedProviderLeagueId || null;
+      if (verifiedProviderLeagueId) verifiedCompetitionMatches++;
+      else if (hasProviderCompetition) unmappedProviderCompetitions++;
 
       const startDate = game.timestamp ? new Date(game.timestamp * 1000).toISOString()
         : (game.date && !Number.isNaN(Date.parse(game.date)) ? new Date(game.date).toISOString() : null);
@@ -172,18 +192,76 @@ export async function GET(request: NextRequest) {
         opponent_name: opponentName,
         provider_source: "api-sports-basketball",
         provider_game_id: String(game.id),
+        provider_league_id: Number.isInteger(providerLeagueId) && providerLeagueId > 0 ? providerLeagueId : null,
         status: storedStatus,
         home_score: storedStatus === "scheduled" ? null : primaryScore,
         away_score: storedStatus === "scheduled" ? null : opponentScore,
         started_at: storedStatus === "scheduled" ? null : startDate,
         scheduled_at: startDate,
+        league_id: leagueId,
         league_name: game.league?.name || null,
         country: game.league?.country || null,
         period_label: liveStatuses.has(providerStatus) ? (game.status?.long || providerStatus) : null
       });
     }
 
+    // Provider has no final-whistle timestamp. Record the first time we
+    // observe a final result, preserving it across subsequent syncs.
+    // This is an observation timestamp, not a verified whistle time.
+    const finalIds = rows.filter(row => row.status === "final").map(row => row.provider_game_id);
+    if (finalIds.length) {
+      const { data: priorFinals, error: priorFinalError } = await db.from("fan_live_games")
+        .select("provider_game_id,ends_at")
+        .eq("provider_source", "api-sports-basketball")
+        .in("provider_game_id", finalIds);
+      if (priorFinalError) throw priorFinalError;
+      const knownEnd = new Map((priorFinals || []).map(item => [item.provider_game_id, item.ends_at]));
+      const observedAt = new Date().toISOString();
+      for (const row of rows) {
+        if (row.status === "final") {
+          // New final games get an observed finish; existing finishes remain stable.
+          Object.assign(row, { ends_at: knownEnd.get(row.provider_game_id) || observedAt });
+        }
+      }
+    }
+
+    let retainedExistingLeagueIds = 0;
     if (rows.length) {
+      // Do not erase a previously verified league assignment when a subsequent
+      // provider response lacks a usable competition mapping. Preserve existing
+      // IDs only for the same provider fixture, never transfer between games.
+      const { data: existingMappings, error: existingMappingsError } = await db.from("fan_live_games")
+        .select("provider_game_id,league_id,provider_league_id")
+        .eq("provider_source", "api-sports-basketball")
+        .in("provider_game_id", rows.map(row => row.provider_game_id))
+        .not("league_id", "is", null);
+      if (existingMappingsError) throw existingMappingsError;
+      const existingLeagueByGame = new Map((existingMappings || []).map(item => [item.provider_game_id, { leagueId: item.league_id, providerLeagueId: item.provider_league_id }]));
+      let conflictingLeagueAssignments = 0;
+      for (const row of rows) {
+        const previous = existingLeagueByGame.get(row.provider_game_id);
+        const existingLeagueId = previous?.leagueId;
+        // A provider may correct a fixture's competition. Never retain an old
+        // league assignment when both competition IDs exist and disagree.
+        if (existingLeagueId && previous?.providerLeagueId != null && row.provider_league_id != null
+          && previous.providerLeagueId !== row.provider_league_id) {
+          conflictingLeagueAssignments++;
+          continue;
+        }
+        if (row.league_id && existingLeagueId && row.league_id !== existingLeagueId) {
+          conflictingLeagueAssignments++;
+          continue;
+        }
+        if (!row.league_id && existingLeagueId) {
+          row.league_id = existingLeagueId;
+          retainedExistingLeagueIds++;
+        }
+      }
+      if (conflictingLeagueAssignments > 0) {
+        // Do not silently rewrite a fixture's reviewed competition identity.
+        // Require manual mapping review before accepting any sync writes.
+        throw new Error(`SEASON-1: ${conflictingLeagueAssignments} conflicting fixture league assignments`);
+      }
       const { error: upsertError } = await db.from("fan_live_games")
         .upsert(rows, { onConflict: "provider_source,provider_game_id" });
       if (upsertError) throw upsertError;
@@ -256,6 +334,13 @@ export async function GET(request: NextRequest) {
       providerScheduledGames: rows.filter(row => row.status === "scheduled").length,
       providerFinishedGames: rows.filter(row => row.status === "final").length,
       matchedGames: rows.length,
+      seasonMapping: {
+        verifiedCompetitionMatches,
+        unmappedProviderCompetitions,
+        retainedExistingLeagueIds,
+        unresolvedBeforeExistingAssignment: rows.length - verifiedCompetitionMatches,
+        unresolvedAfterExistingAssignment: rows.filter(row => !row.league_id).length
+      },
       unmatchedLiveGames
     }, {
       headers: { "Cache-Control": "no-store" }

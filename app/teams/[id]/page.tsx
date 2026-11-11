@@ -157,6 +157,8 @@ export default function TeamDetailPage() {
     ? params.id[0]
     : params.id;
 
+  const [teamSeason, setTeamSeason] = useState<{ inSeason: boolean; seasonLabel: string; nextStartMonth: string } | null>(null);
+  const [teamSeasonError, setTeamSeasonError] = useState(false);
   const [team, setTeam] =
     useState<Team | null>(null);
 
@@ -241,6 +243,18 @@ export default function TeamDetailPage() {
       }
 
       setTeam(teamData);
+      setTeamSeason(null);
+      setTeamSeasonError(false);
+      if (teamData.league_id) {
+        try {
+          const response = await fetch(`/api/leagues/season-status?ids=${encodeURIComponent(teamData.league_id)}`, { cache: "no-store" });
+          if (!response.ok) throw new Error("Season status unavailable");
+          const payload: { status?: Record<string, { inSeason: boolean; seasonLabel: string; nextStartMonth: string }> } = await response.json();
+          const status = payload.status?.[teamData.league_id];
+          if (!status) throw new Error("League season not configured");
+          setTeamSeason(status);
+        } catch { setTeamSeasonError(true); }
+      }
       setLoading(false);
       const { count: approvedReviewCount } = await supabase.from("reviews").select("id", { count: "exact", head: true }).eq("team_id", id).eq("status", "approved");
       setTeamReviewCount(approvedReviewCount || 0);
@@ -735,12 +749,13 @@ export default function TeamDetailPage() {
           </section>
 
       {accountType !== "fan" && <>
+      {team.league_id && <p role="status">{teamSeason ? (teamSeason.inSeason ? `Current season roster — ${teamSeason.seasonLabel}` : `Last season's roster — ${teamSeason.seasonLabel}. Season starts ${teamSeason.nextStartMonth}.`) : teamSeasonError ? "League season status unavailable; roster season unverified." : "Checking league season…"}</p>}
       <TeamPlayersHistory teamId={team.id} />
-      <section className="hero" id="roster-board">
+      {(!team.league_id || teamSeason?.inSeason === true) && <section className="hero" id="roster-board">
         <div className="eyebrow">ROSTER BOARD</div>
         <h2>Open roster spots</h2>
         <TeamRosterSpots teamId={team.id} teamName={team.name} />
-      </section>
+      </section>}
       {accountType && accountType !== "fan" && <section className="hero" id="pay-transparency">
         <div className="eyebrow">PAY TRANSPARENCY</div>
         <h2>Payment history</h2>
