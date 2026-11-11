@@ -186,7 +186,7 @@ export default function LiveGamesPage() {
       Number.isFinite(timestamp) && timestamp >= nowMs - 48 * 3_600_000;
   }).sort((a,b) => Date.parse(b.game.ends_at || b.game.started_at || b.game.scheduled_at || "") - Date.parse(a.game.ends_at || a.game.started_at || a.game.scheduled_at || ""));
 
-  const postGameOpen = filtered.filter(({availability,game}) => availability.phase === "post-game" && availability.chatOpen && !["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()));
+  const postGameOpen = filtered.filter(({availability,game}) => availability.phase === "post-game" && availability.chatOpen && ["final","finished"].includes(game.status.toLowerCase()));
   const nextUpcoming = upcoming[0] || null;
 
   async function toggleReminder(gameId: string) {
@@ -208,7 +208,7 @@ export default function LiveGamesPage() {
     const isLive = variant === "live";
     const isUpcoming = variant === "upcoming";
     const isRecent = variant === "recent";
-    const canJoin = availability.chatOpen && !isRecent && !["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()) && (!isUpcoming || Boolean(game.scheduled_at && Date.parse(game.scheduled_at) <= nowMs));
+    const canJoin = availability.chatOpen && !isRecent && (!isUpcoming || availability.phase === "pre-game");
     const score = scoreText(game);
     const tip = game.scheduled_at || game.started_at;
     return (
