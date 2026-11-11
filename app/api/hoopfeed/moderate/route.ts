@@ -147,7 +147,11 @@ export async function POST(request: Request) {
     if (kind !== "post" && kind !== "comment" && kind !== "share" && kind !== "vote" && kind !== "bookmark" && kind !== "pin") {
       return NextResponse.json({ allowed: false, message: "Unsupported content type." }, { status: 400 });
     }
-    const text = String(form.get("text") || "").trim();
+    const textValues = form.getAll("text");
+    if (textValues.length > 1 || (textValues.length === 1 && typeof textValues[0] !== "string")) {
+      return NextResponse.json({ allowed: false, message: "Invalid HoopFeed text field." }, { status: 400 });
+    }
+    const text = (textValues[0] ?? "").trim();
     if (text.length > MAX_TEXT_LENGTH) {
       return NextResponse.json({ allowed: false, message: "Text must be 2,000 characters or fewer." }, { status: 413 });
     }
