@@ -292,7 +292,10 @@ export async function POST(request: Request) {
     if (kind === "post" && postKind === "poll") {
       let parsed: unknown = null;
       try { parsed = JSON.parse(String(form.get("poll_options") || "[]")); } catch { parsed = null; }
-      const cleaned = Array.isArray(parsed) ? parsed.map((o) => String(o ?? "").trim().slice(0, 60)).filter(Boolean) : [];
+      if (!Array.isArray(parsed) || parsed.some((option) => typeof option !== "string" || option.trim().length === 0 || option.trim().length > 60)) {
+        return NextResponse.json({ allowed: false, message: "Each poll option must be text between 1 and 60 characters." }, { status: 400 });
+      }
+      const cleaned = parsed.map((option: string) => option.trim());
       if (!text) return NextResponse.json({ allowed: false, message: "Add a question for your poll." }, { status: 400 });
       if (cleaned.length < 2 || cleaned.length > 4) return NextResponse.json({ allowed: false, message: "Polls need 2 to 4 options." }, { status: 400 });
       if (new Set(cleaned.map((option) => option.toLocaleLowerCase())).size !== cleaned.length) return NextResponse.json({ allowed: false, message: "Poll options must be different." }, { status: 400 });
