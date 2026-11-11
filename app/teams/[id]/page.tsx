@@ -200,6 +200,16 @@ export default function TeamDetailPage() {
 
   const [activeProfileTab, setActiveProfileTab] = useState<"overview" | "reviews">("overview");
 
+  useEffect(() => {
+    const syncTabFromHash = () => {
+      if (window.location.hash === "#reviews" || window.location.hash === "#team-reviews-panel") setActiveProfileTab("reviews");
+      else if (window.location.hash === "#overview" || window.location.hash === "#team-overview-panel") setActiveProfileTab("overview");
+    };
+    syncTabFromHash();
+    window.addEventListener("hashchange", syncTabFromHash);
+    return () => window.removeEventListener("hashchange", syncTabFromHash);
+  }, []);
+
   const [reviewLoading, setReviewLoading] =
     useState(false);
 
