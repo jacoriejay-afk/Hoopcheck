@@ -259,6 +259,9 @@ assert.match(feedModerationSource, /\(videoPath && !videoType\) \|\| \(!videoPat
 
 assert.match(feedModerationSource, /videoPath && allImages\.length > 0/, "posts cannot mix photos and videos");
 
+assert.match(feedModerationSource, /\/\^\\d\{1,3\}\$\/\.test\(scoreForRaw\)/, "Game Day scores must be decimal integers");
+assert.match(feedModerationSource, /\/\^\\d\{1,3\}\$\/\.test\(scoreAgainstRaw\)/, "Opponent scores must be decimal integers");
+
 const playerContactPolicy = read("../supabase/migrations/20261111180000_align_agent_scout_contact_pro_premium.sql");
 assert.match(playerContactPolicy, /s\.plan IN \('pro', 'premium'\)/, "Agent/Scout contact RLS must accept Pro and Premium");
 assert.match(playerContactPolicy, /requester_id = \(SELECT auth\.uid\(\)\)/, "contact requester must match auth user");
