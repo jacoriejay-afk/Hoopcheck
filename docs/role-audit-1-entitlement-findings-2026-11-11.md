@@ -1,25 +1,26 @@
-# ROLE-AUDIT-1 — Account access findings (2026-11-11)
+# ROLE-AUDIT-1 — Unified HoopFeed role and moderation audit
 
-## Verified from source and CI
-- `lib/membership-tier.ts` grants `canWriteHoopFeed` to any recognized active Pro/Premium role, plus admins.
-- `scripts/test-membership-tier.mjs` explicitly expects Fan Pro `canWriteHoopFeed=true`. Restricting this to Players caused VERIFY-1 to fail (run 43029486441). The proposed restriction was reverted.
-- `app/fan-feed/page.tsx` redirects to `/feed` and says the feeds are unified.
-- `app/feed/page.tsx` posts through `/api/hoopfeed/moderate` and displays one community feed.
-- `app/api/hoopfeed/moderate/route.ts` enforces `getHoopCheckEntitlements().canWriteHoopFeed` server-side.
-- `app/api/fan-feed/moderate/route.ts` still enforces Fan-only `canWriteFanFeed` for its separate legacy API. Its continued use and access model require review.
+Decision confirmed 2026-11-11: **One unified HoopFeed** for Player, Fan, Coach, Scout, Agent, and Club Admin accounts. Admin override is preserved. Do not restore a separate Fan Feed UI.
 
-## Product decision required before changing permissions
-Choose one:
-1. **Unified community feed**: Players, Fans, Coaches, Agents/Scouts and other eligible roles can post through the shared endpoint with consistent moderation and entitlement tests.
-2. **Separate feeds**: Player HoopFeed restricted to Players; Fan Feed restored with a working separate route and tests.
+## Changes
+- The canonical entitlement helper recognizes only supported account types for paid HoopFeed access, rather than treating arbitrary nonempty role strings as authorized.
+- Player, Fan, Coach, Scout, Agent, and Club Admin Pro/Premium retain read/post permissions; Free cannot post. Admin override remains.
+- Tests assert all six supported roles, unknown-role denial, and existing Fan Pro posting contract.
+- `/fan-feed` remains a redirect to `/feed`; the legacy `/api/fan-feed/moderate` remains in place for compatibility pending caller inventory. It is Fan-only and must not become a second public composer.
 
-Do not change entitlements based solely on naming conventions. Existing tests and current UI reflect unified mode. Until confirmed, preserve current contract.
+## Source findings and release blockers
+- `app/feed/page.tsx` posts through `/api/hoopfeed/moderate` and has one composer.
+- `app/api/hoopfeed/moderate/route.ts` checks the canonical entitlement server-side, and restricts pinning and official news to Admin.
+- On current main, vote, bookmark, share, and other actions use service-role reads. **PR #464** contains visibility fixes and must be integrated before claiming cross-account privacy. **PR #467/#473** address 24-hour expiry. Do not infer privacy solely from UI checks.
+- Legacy `/api/fan-feed/moderate` uses a separate Fan-only authorization path; audit callers and sunset it in a follow-up after compatibility verification.
+- Static source review does not establish successful staging login, posting, moderation, or RLS isolation.
 
-## Next audit coverage
-- Fan Free/Pro/Premium: read/write feed, reviews read vs write, Fan HQ, men/women switch, live chat.
-- Player Free/Pro/Premium: review verification, Pro Passport, recruiting, feed, game hub.
-- Coach, Agent/Scout, Team Manager: dashboards, claim verification, moderation, recruiting.
-- Admin: moderation and membership management.
-- Validate both UI gating and server/RLS enforcement using separate staging accounts; static inspection cannot establish successful end-to-end behavior.
+## Staging verification matrix
+1. For each role (Player, Fan, Coach, Scout, Agent, Club Admin), verify Free cannot post and active Pro/Premium can create a text post, image, video, poll, comment, reaction, bookmark, and permitted reshare.
+2. Check Fan Free/Pro/Premium review restrictions: Fans never write reviews; Fan Pro teaser only; Fan Premium full reviews.
+3. Verify non-admin roles cannot pin or publish official news; Admin can. Moderator alone does not inherit Admin.
+4. Verify content moderation rejects flagged content for all roles; failures must not publish. Verify report/block workflows.
+5. Verify expired posts and followers-only posts are not accessible through guessed IDs, direct API calls, or signed media URLs; validate PR #464/#473 together.
+6. Check role-specific dashboards, Fan HQ, Team HQ, Agent HQ, live games, subscriptions, and logout/session restoration separately.
 
-No production data changes, migrations, merges, or deployments authorized.
+No production data changes, merges, or deployments authorized.
