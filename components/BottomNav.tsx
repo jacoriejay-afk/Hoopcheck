@@ -94,7 +94,7 @@ export default function BottomNav() {
     return () => { active = false; };
   }, [userId]);
 
-  if (!signedIn || pathname.startsWith("/admin")) return null;
+  // Authentication pages should never show the signed-in mobile tab bar.\n  if (!signedIn || pathname.startsWith("/admin") || pathname === "/login" || pathname === "/signup") return null;
 
   return (
     <nav className="bottom-nav hc-bottom-tab-bar hc-mobile-tabbar-repair hc-lm2f-bottom-nav hc-liquid-glass-nav" aria-label="Mobile navigation">

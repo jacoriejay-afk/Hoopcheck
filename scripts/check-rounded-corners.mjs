@@ -18,6 +18,8 @@ for (const [token, value] of Object.entries({
   assert.ok(!root.includes(token + ": " + value + ";\\n"), token + " has escaped newline");
 }
 
+assert.match(root, /--hc-radius-card\s*:\s*var\(--radius-lg\)\s*;/, "Card radius must use the shared 20px large token");
+
 for (const name of ["sm", "md", "lg", "xl", "2xl", "3xl"]) {
   assert.ok(tailwind.includes(name + ': "var(--hc-radius-') || tailwind.includes('"' + name + '": "var(--hc-radius-'), "Missing Tailwind radius: " + name);
 }

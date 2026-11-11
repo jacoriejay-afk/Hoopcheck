@@ -126,6 +126,24 @@ export async function POST(request: Request) {
     if (userError || !userData.user) return NextResponse.json({ allowed: false, message: "Your session is invalid. Please sign in again." }, { status: 401 });
     const user = userData.user;
 
+    // Service-role queries bypass RLS. Use the caller's JWT for post visibility
+    // before any service-role write that references an existing post.
+    async function canInteractWithPost(postId: string) {
+      // Create the viewer-scoped client only for actions targeting existing posts.
+      // New post creation must not depend on a second client.
+      const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (!publishableKey || !supabaseUrl) return false;
+      const viewerDb = createClient(supabaseUrl, publishableKey, {
+        global: { headers: { Authorization: "Bearer " + token } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data, error } = await viewerDb.from("feed_posts")
+        .select("id").eq("id", postId).eq("status", "approved")
+        .gt("expires_at", new Date().toISOString()).maybeSingle();
+      return !error && !!data;
+    }
+
     const bodyBytes = await readLimitedBody(request, MAX_REQUEST_BYTES);
     if (bodyBytes === null) {
       return NextResponse.json({ allowed: false, message: "Request body is too large." }, { status: 413 });
@@ -197,6 +215,7 @@ export async function POST(request: Request) {
       const postId = String(form.get("post_id") || "").trim();
       const optionIndex = Number(form.get("option_index"));
       if (!postId || !Number.isInteger(optionIndex)) return NextResponse.json({ allowed: false, message: "That vote didn't go through. Please try again." }, { status: 400 });
+      if (!(await canInteractWithPost(postId))) return NextResponse.json({ allowed: false, message: "This poll is no longer available." }, { status: 404 });
       const { data: poll } = await db.from("feed_posts").select("id,status,post_kind,poll_options").eq("id", postId).maybeSingle();
       const options = Array.isArray(poll?.poll_options) ? poll.poll_options as string[] : [];
       if (!poll || poll.status !== "approved" || poll.post_kind !== "poll" || optionIndex < 0 || optionIndex >= options.length) {
@@ -213,6 +232,7 @@ export async function POST(request: Request) {
       const saved = String(form.get("saved") || "") === "true";
       if (!postId) return NextResponse.json({ allowed: false, message: "Couldn't update your saved posts. Please try again." }, { status: 400 });
       if (saved) {
+        if (!(await canInteractWithPost(postId))) return NextResponse.json({ allowed: false, message: "This post is no longer available." }, { status: 404 });
         const { data: post } = await db.from("feed_posts").select("id,status").eq("id", postId).maybeSingle();
         if (!post || post.status !== "approved") return NextResponse.json({ allowed: false, message: "This post is no longer available." }, { status: 404 });
         const { error } = await db.from("feed_post_bookmarks").upsert({ post_id: postId, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
@@ -240,6 +260,7 @@ export async function POST(request: Request) {
     if (kind === "share") {
       const sourceId = String(form.get("post_id") || "").trim();
       if (!sourceId) return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 400 });
+      if (!(await canInteractWithPost(sourceId))) return NextResponse.json({ allowed: false, message: "This post is no longer available and can't be shared." }, { status: 404 });
       const { data: source, error: sourceError } = await db.from("feed_posts")
         .select("id,author_id,body,image_url,image_urls,video_url,post_kind,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,status,expires_at")
         .eq("id", sourceId).maybeSingle();
@@ -254,7 +275,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ allowed: false, message: "Polls can't be shared — vote on the original instead." }, { status: 400 });
       }
       const sharedAt = new Date();
-      const expiresAt = new Date("2100-01-01T00:00:00.000Z");
+      const expiresAt = new Date(sharedAt.getTime() + 24 * 60 * 60 * 1000);
       const sourceImageUrls = Array.isArray(source.image_urls) && source.image_urls.length ? source.image_urls as string[] : (source.image_url ? [source.image_url] : []);
       const { data: shared, error: shareError } = await db.from("feed_posts").insert({
         author_id: user.id, body: source.body, image_url: source.image_url, image_urls: sourceImageUrls, video_url: source.video_url, post_kind: "discussion",
@@ -269,6 +290,13 @@ export async function POST(request: Request) {
         return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 500 });
       }
       return NextResponse.json({ allowed: true, post_id: shared.id, shared_at: sharedAt.toISOString(), expires_at: expiresAt.toISOString() });
+    }
+
+    // Reject invisible comment targets before calling paid safety moderation.
+    if (kind === "comment") {
+      const postId = String(form.get("post_id") || "");
+      if (!postId) return NextResponse.json({ allowed: false, message: "Post not found." }, { status: 400 });
+      if (!(await canInteractWithPost(postId))) return NextResponse.json({ allowed: false, message: "This HoopFeed post is no longer available." }, { status: 404 });
     }
 
     // Stage 2 post kinds: "news" is reserved for official (admin) accounts; "poll" carries options.
@@ -297,6 +325,7 @@ export async function POST(request: Request) {
     if (kind === "comment") {
       const postId = String(form.get("post_id") || "");
       if (!postId) return NextResponse.json({ allowed: false, message: "Post not found." }, { status: 400 });
+      if (!(await canInteractWithPost(postId))) return NextResponse.json({ allowed: false, message: "This HoopFeed post is no longer available." }, { status: 404 });
       const { data: post } = await db.from("feed_posts").select("id,author_id,expires_at,status").eq("id",postId).maybeSingle();
       if (!post || post.status !== "approved") {
         return NextResponse.json({ allowed: false, message: "This HoopFeed post is no longer available." }, { status: 404 });
@@ -328,7 +357,7 @@ export async function POST(request: Request) {
       game_day_score_for: submittedTopicTag === "Game Day" ? scoreFor : null,
       game_day_score_against: submittedTopicTag === "Game Day" ? scoreAgainst : null,
       location_country:shareCountry && profile?.current_country_public !== false ? (submittedCountry || profile?.current_country || null) : null,
-      status:"approved", expires_at:new Date("2100-01-01T00:00:00.000Z").toISOString()
+      status:"approved", expires_at:new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     });
     if (error) return NextResponse.json({ allowed:false,message:"We couldn't publish your post. Please try again." },{status:400});
     const activityDate = new Date().toISOString().slice(0, 10);

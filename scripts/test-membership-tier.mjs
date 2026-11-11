@@ -111,6 +111,18 @@ for (const [label, input, expected] of cases) {
   for (const key of keys) assert.equal(actual[key], expected[key] ?? false, label + " → " + key);
 }
 
+// Cover every signup role at every tier, including manager and scout aliases.
+for (const role of ["player", "fan", "coach", "manager", "scout", "agent", "club_admin"]) {
+  for (const plan of ["free", "pro", "premium"]) {
+    const result = getHoopCheckEntitlements({ accountType: role, subscription: active(plan), playerVerified: true });
+    assert.equal(result.canWriteReviews, role === "player" && plan !== "free", `${role} ${plan}: review author boundary`);
+    assert.equal(result.canReadHoopFeed, plan !== "free", `${role} ${plan}: paid feed boundary`);
+    assert.equal(result.canUseFanGroups, role === "fan", `${role} ${plan}: fan group boundary`);
+    const inactive = getHoopCheckEntitlements({ accountType: role, subscription: { plan, status: "canceled" } });
+    assert.equal(inactive.canWriteHoopFeed, false, `${role} ${plan}: canceled subscription`);
+  }
+}
+
 const expired = getHoopCheckEntitlements({
   accountType: "player",
   subscription: { ...active("premium"), current_period_end: "2000-01-01T00:00:00.000Z" },

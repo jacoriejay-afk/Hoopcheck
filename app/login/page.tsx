@@ -131,8 +131,8 @@ export default function LoginPage() {
           </form>
 
           {message && (
-            <div style={{ marginTop: 18, padding: 14, border: messageIsSuccess ? "1px solid #86c7a2" : "1px solid #e5aaa6", borderRadius: 8, background: messageIsSuccess ? "#edf9f1" : "#fff1f0" }}>
-              <p role={messageIsSuccess ? "status" : "alert"} aria-live="polite" style={{ margin: 0, color: messageIsSuccess ? "#17633a" : "#8c1d18", lineHeight: 1.5 }}>
+            <div className={`hc-auth-feedback ${messageIsSuccess ? "hc-auth-feedback--success" : "hc-auth-feedback--error"}`}>
+              <p role={messageIsSuccess ? "status" : "alert"} aria-live="polite" className="hc-auth-feedback__text">
                 {message}
               </p>
             </div>
