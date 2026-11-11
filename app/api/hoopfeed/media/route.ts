@@ -48,7 +48,10 @@ export async function POST(request: Request) {
   if (!references.includes(mediaUrl)) return NextResponse.json({ error: "Media not attached to post" }, { status: 403 });
 
   // Stored private references use "bucket/path", never a user-supplied URL.
-  if (mediaUrl.includes("?") || mediaUrl.includes("#") || mediaUrl.includes("\\") || /%2f|%5c|%2e/i.test(mediaUrl)) {\n    return NextResponse.json({ error: "Invalid media reference" }, { status: 400 });\n  }\n  const separator = mediaUrl.indexOf("/");
+  if (mediaUrl.includes("?") || mediaUrl.includes("#") || mediaUrl.includes("\\") || /%2f|%5c|%2e/i.test(mediaUrl)) {
+    return NextResponse.json({ error: "Invalid media reference" }, { status: 400 });
+  }
+  const separator = mediaUrl.indexOf("/");
   const bucket = mediaUrl.slice(0, separator);
   const path = mediaUrl.slice(separator + 1);
   if (separator < 1 || !PRIVATE_BUCKETS.has(bucket) || !path || path.includes("..") || path.startsWith("/")) {
