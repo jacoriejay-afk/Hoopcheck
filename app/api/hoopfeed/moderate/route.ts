@@ -150,7 +150,10 @@ export async function POST(request: Request) {
     const imageValues = form.getAll("image");
     if (imageValues.length > 1) return NextResponse.json({ allowed: false, message: "Upload one primary photo and use the additional photos field for the rest." }, { status: 400 });
     const imageValue = imageValues[0] ?? null;
-    const image = imageValue instanceof File && imageValue.size > 0 ? imageValue : null;
+    if (imageValue !== null && (!(imageValue instanceof File) || imageValue.size === 0)) {
+      return NextResponse.json({ allowed: false, message: "Remove the invalid or empty primary photo and try again." }, { status: 400 });
+    }
+    const image = imageValue instanceof File ? imageValue : null;
     const extraImageValues = form.getAll("images");
     if (extraImageValues.some((value) => !(value instanceof File) || value.size === 0)) {
       return NextResponse.json({ allowed: false, message: "Remove invalid or empty photo attachments and try again." }, { status: 400 });
