@@ -21,7 +21,7 @@ export function getGameChatState(game: ChatFixture, now: Date = new Date()): "up
   const finalAt = timestamp(game.ends_at);
   if (FINISHED.has(status)) {
     if (finalAt === null) return "read-only"; // Fail closed without verified final timestamp.
-    return now.getTime() < finalAt + 120 * MINUTE ? "open" : "read-only";
+    return now.getTime() >= finalAt && now.getTime() < finalAt + 120 * MINUTE ? "open" : "read-only";
   }
   if (tip === null) return status === "live" || status === "in_progress" ? "open" : "upcoming";
   if (now.getTime() < tip - 60 * MINUTE) return "upcoming";
