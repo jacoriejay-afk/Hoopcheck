@@ -13,8 +13,18 @@ returns boolean language sql stable security definer set search_path=public as $
     cross join lateral (
       select
         extract(month from clock.local_day)::integer * 100 + extract(day from clock.local_day)::integer as today_key,
-        l.season_start_month::integer * 100 + l.season_start_day::integer as start_key,
-        l.season_end_month::integer * 100 + l.season_end_day::integer as end_key
+        l.season_start_month::integer * 100 +
+          case when l.season_start_month = 2 and l.season_start_day = 29
+            and not (extract(year from clock.local_day)::integer % 4 = 0
+              and (extract(year from clock.local_day)::integer % 100 <> 0
+                or extract(year from clock.local_day)::integer % 400 = 0))
+            then 28 else l.season_start_day::integer end as start_key,
+        l.season_end_month::integer * 100 +
+          case when l.season_end_month = 2 and l.season_end_day = 29
+            and not (extract(year from clock.local_day)::integer % 4 = 0
+              and (extract(year from clock.local_day)::integer % 100 <> 0
+                or extract(year from clock.local_day)::integer % 400 = 0))
+            then 28 else l.season_end_day::integer end as end_key
     ) bounds
     where g.id = p_game_id
       and l.season_start_month is not null and l.season_end_month is not null
