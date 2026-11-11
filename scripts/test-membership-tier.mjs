@@ -272,6 +272,10 @@ assert.match(unifiedFeedPolicy, /coalesce\(sub\.access_status,'active'\) IN/, "f
 assert.match(unifiedFeedPolicy, /coalesce\(s\.access_status,'active'\) IN/, "checks must preserve subscription access status");
 assert.match(unifiedFeedPolicy, /fp\.status = 'approved'/, "checks must target approved posts");
 
+const ownProfilePostsGrid = read("../components/OwnProfilePostsGrid.tsx");
+assert.doesNotMatch(ownProfilePostsGrid, /\.gt\("expires_at"/, "own profile must show permanent posts");
+assert.match(ownProfilePostsGrid, /\.eq\("status", "approved"\)/, "own profile must show approved posts only");
+
 const permanentFeedAnalytics = read("../supabase/migrations/20261111234500_permanent_hoopfeed_analytics.sql");
 assert.match(permanentFeedAnalytics, /'feed_posts_total',\(select count\(\*\) from public.feed_posts\)/, "permanent HoopFeed must have a total-post KPI");
 assert.match(permanentFeedAnalytics, /'feed_posts_24h',\(select count\(\*\) from public.feed_posts where created_at >= now\(\)-interval '24 hours'\)/, "24-hour activity must count post creation, not expiry");
