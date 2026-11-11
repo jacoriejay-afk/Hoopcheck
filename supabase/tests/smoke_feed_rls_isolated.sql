@@ -106,3 +106,92 @@ do $$ begin
  if (select count(*) from public.feed_poll_votes) <> 0 then raise exception 'Hidden vote leaked'; end if;
  if (select count(*) from public.feed_post_bookmarks) <> 2 then raise exception 'Own bookmarks not visible'; end if;
 end $$;
+
+-- Visibility matrix: reproduce the current production SQL authorization logic.
+-- Synthetic role/subscription data only; this is NOT authenticated Supabase integration.
+reset role;
+alter table public.profiles add column account_type text;
+alter table public.profiles add column current_country text;
+update public.profiles set account_type='player',current_country='Azerbaijan';
+create table public.subscriptions(user_id uuid,plan text,status text,access_status text);
+create table public.follow_relationships(follower_id uuid,target_type text,target_id uuid);
+create table public.admin_roles(user_id uuid,role text);
+insert into public.follow_relationships values
+ ('00000000-0000-0000-0000-000000000001','player','00000000-0000-0000-0000-000000000002');
+insert into public.subscriptions values
+ ('00000000-0000-0000-0000-000000000001','pro','active','active');
+grant select on public.profiles,public.subscriptions,public.follow_relationships,public.admin_roles to authenticated;
+create function public.is_current_user_admin_or_moderator() returns boolean
+language sql stable set search_path to 'public' as $admin_fn$
+ select exists(select 1 from public.admin_roles
+ where user_id=(select auth.uid()) and trim(lower(role)) in ('admin','moderator'))
+$admin_fn$;
+create or replace function public.can_view_player_feed_post(p_author_id uuid) returns boolean
+language sql stable set search_path to 'public' as $visibility_fn$
+select p_author_id=(select auth.uid())
+ or is_current_user_admin_or_moderator()
+ or exists (
+ select 1 from public.profiles viewer
+ join public.subscriptions sub on sub.user_id=viewer.id
+ join public.follow_relationships fr on fr.follower_id=viewer.id
+  and fr.target_type='player' and fr.target_id=p_author_id
+ join public.profiles author on author.id=p_author_id
+ where viewer.id=(select auth.uid())
+  and viewer.account_type='player' and viewer.current_country is not null
+  and author.account_type='player' and author.current_country is not null
+  and lower(viewer.current_country)=lower(author.current_country)
+  and sub.plan in ('pro','premium')
+  and sub.status in ('active','trialing')
+  and coalesce(sub.access_status,'active') in ('active','trialing','pro','premium')
+ )
+$visibility_fn$;
+grant execute on function public.is_current_user_admin_or_moderator() to authenticated;
+set role authenticated;
+select set_config('test.allowed_author','',false);
+do $visibility_matrix$
+declare visible boolean;
+begin
+ select public.can_view_player_feed_post('00000000-0000-0000-0000-000000000002') into visible;
+ if visible is distinct from true then raise exception 'Pro same-country follower denied'; end if;
+end $visibility_matrix$;
+reset role;
+update public.subscriptions set plan='free';
+set role authenticated;
+do $visibility_free$ begin
+ if public.can_view_player_feed_post('00000000-0000-0000-0000-000000000002') then
+ raise exception 'Free player accessed followed feed'; end if;
+end $visibility_free$;
+reset role;
+update public.subscriptions set plan='premium';
+update public.profiles set account_type='fan' where id='00000000-0000-0000-0000-000000000001';
+set role authenticated;
+do $visibility_fan$ begin
+ if public.can_view_player_feed_post('00000000-0000-0000-0000-000000000002') then
+ raise exception 'Premium fan accessed player-only feed'; end if;
+end $visibility_fan$;
+reset role;
+update public.profiles set account_type='player',current_country='Germany'
+ where id='00000000-0000-0000-0000-000000000001';
+set role authenticated;
+do $visibility_country$ begin
+ if public.can_view_player_feed_post('00000000-0000-0000-0000-000000000002') then
+ raise exception 'Cross-country follower accessed feed'; end if;
+end $visibility_country$;
+reset role;
+update public.profiles set current_country='Azerbaijan'
+ where id='00000000-0000-0000-0000-000000000001';
+delete from public.follow_relationships;
+set role authenticated;
+do $visibility_follow$ begin
+ if public.can_view_player_feed_post('00000000-0000-0000-0000-000000000002') then
+ raise exception 'Non-follower accessed feed'; end if;
+end $visibility_follow$;
+reset role;
+insert into public.admin_roles values ('00000000-0000-0000-0000-000000000001','moderator');
+set role authenticated;
+do $visibility_moderator$ begin
+ if not public.can_view_player_feed_post('00000000-0000-0000-0000-000000000002') then
+ raise exception 'Moderator denied feed'; end if;
+ if not public.can_view_player_feed_post('00000000-0000-0000-0000-000000000001') then
+ raise exception 'Author denied own feed'; end if;
+end $visibility_moderator$;
