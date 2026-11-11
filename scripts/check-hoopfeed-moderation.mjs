@@ -78,3 +78,74 @@ test('approved photos upload only after every decision succeeds', async () => {
     ['upload', 'first photo'], ['upload', 'second photo'], ['insert', 'feed_posts', 2],
   ]);
 });
+
+function actionFixture(kind, visible, lookupError = false) {
+  const writes = [];
+  const viewerQueries = [];
+  const records = {
+    profiles: { account_type: 'player' }, subscriptions: { plan: 'premium', status: 'active' },
+    admin_roles: [], feed_posts: { id: 'post', status: 'approved', post_kind: 'poll', poll_options: ['A', 'B'] },
+  };
+  const db = {
+    auth: { getUser: async () => ({ data: { user: { id: 'player' } } }) },
+    from(table) {
+      const chain = {
+        select() { return this; }, eq() { return this; },
+        maybeSingle: async () => ({ data: records[table] }),
+        then(resolve) { resolve({ data: records[table] }); },
+        upsert: async row => { writes.push([table, row]); return { error: null }; },
+      };
+      return chain;
+    },
+  };
+  const viewer = { from(table) {
+    assert.equal(table, 'feed_posts');
+    return {
+      select() { return this; },
+      eq(key, value) { viewerQueries.push([key, value]); return this; },
+      gt(key, value) { viewerQueries.push([key, value]); return this; },
+      maybeSingle: async () => ({ data: visible ? { id: 'post' } : null, error: lookupError ? new Error('unavailable') : null }),
+    };
+  } };
+  const exports = {};
+  loadRoute(id => {
+    if (id === 'next/server') return { NextResponse };
+    if (id === '@supabase/supabase-js') return { createClient: (_url, key, options) => {
+      if (key === 'public') {
+        assert.equal(options.global.headers.Authorization, 'Bearer caller-token');
+        return viewer;
+      }
+      return db;
+    } };
+    if (id.endsWith('/membership-tier')) return { getHoopCheckEntitlements: () => ({ canWriteHoopFeed: true }) };
+    throw new Error(id);
+  }, exports, () => { throw new Error('Unexpected external call'); }, { env: {
+    NEXT_PUBLIC_SUPABASE_URL: 'https://fixture.invalid', SUPABASE_SERVICE_ROLE_KEY: 'service', NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'public',
+  } });
+  const form = new FormData();
+  form.set('kind', kind); form.set('post_id', 'post'); form.set('option_index', '0'); form.set('saved', 'true'); form.set('text', 'A comment');
+  return { writes, viewerQueries, submit: () => exports.POST(new Request('http://localhost/api/hoopfeed/moderate', {
+    method: 'POST', headers: { Authorization: 'Bearer caller-token' }, body: form,
+  })) };
+}
+
+for (const kind of ['vote', 'bookmark', 'share', 'comment']) {
+  test(`${kind} rejects a post hidden from the caller without privileged writes`, async () => {
+    const fixture = actionFixture(kind, false);
+    assert.equal((await fixture.submit()).status, 404);
+    assert.deepEqual(fixture.writes, []);
+    assert.ok(fixture.viewerQueries.some(([key]) => key === 'expires_at'));
+  });
+}
+for (const kind of ['vote', 'bookmark']) {
+  test(`${kind} allows a visible approved post`, async () => {
+    const fixture = actionFixture(kind, true);
+    assert.equal((await fixture.submit()).status, 200);
+    assert.equal(fixture.writes.length, 1);
+  });
+}
+test('viewer lookup errors fail closed', async () => {
+  const fixture = actionFixture('vote', true, true);
+  assert.equal((await fixture.submit()).status, 404);
+  assert.deepEqual(fixture.writes, []);
+});
