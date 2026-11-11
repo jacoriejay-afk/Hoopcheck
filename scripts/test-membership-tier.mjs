@@ -249,6 +249,8 @@ assert.match(feedModerationSource, /pollOptionValues\.length !== 1 \|\| typeof p
 assert.match(feedModerationSource, /postIdValues\.length !== 1/, "all HoopFeed actions must reject duplicate or missing post IDs");
 assert.match(feedModerationSource, /const actionPostId = kind === "post"/, "actions must use the validated post ID");
 
+assert.match(feedModerationSource, /optionIndexValues\.length === 1 && typeof optionIndexValues\[0\] === "string"/, "poll votes must reject duplicate or non-text option indices");
+
 const playerContactPolicy = read("../supabase/migrations/20261111180000_align_agent_scout_contact_pro_premium.sql");
 assert.match(playerContactPolicy, /s\.plan IN \('pro', 'premium'\)/, "Agent/Scout contact RLS must accept Pro and Premium");
 assert.match(playerContactPolicy, /requester_id = \(SELECT auth\.uid\(\)\)/, "contact requester must match auth user");
