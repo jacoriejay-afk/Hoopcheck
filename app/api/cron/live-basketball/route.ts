@@ -141,8 +141,17 @@ export async function GET(request: NextRequest) {
       finalStatuses.has(statusOf(game)) || cancelledStatuses.has(statusOf(game))
     );
 
+    // Competition identity comes from a reviewed provider-league mapping, not
+    // the club's domestic league (clubs can play in multiple competitions).
+    const { data: competitionMappings, error: competitionError } = await db
+      .from("fan_live_league_provider_map")
+      .select("provider_league_id,league_id")
+      .eq("provider_source", "api-sports-basketball");
+    if (competitionError) throw competitionError;
+    const leagueByProviderId = new Map((competitionMappings || []).map(mapping => [Number(mapping.provider_league_id), mapping.league_id]));
+
     // A fixture must carry its internal league ID for season enforcement.
-    // Use the mapped team's league only when both mapped sides agree.
+    // The two-team agreement is a conservative fallback for unmapped provider leagues.
     const { data: leagueTeams, error: leagueTeamsError } = await db.from("teams")
       .select("id,league_id").not("league_id", "is", null);
     if (leagueTeamsError) throw leagueTeamsError;
@@ -168,7 +177,11 @@ export async function GET(request: NextRequest) {
       const homeLeagueId = homeInternalId ? teamLeague.get(homeInternalId) : null;
       const awayLeagueId = awayInternalId ? teamLeague.get(awayInternalId) : null;
       // Never guess a competition from one side when the other side disagrees.
-      const leagueId = homeLeagueId && awayLeagueId && homeLeagueId === awayLeagueId ? homeLeagueId : null;
+      const providerLeagueId = Number(game.league?.id);
+      const verifiedProviderLeagueId = Number.isInteger(providerLeagueId) && providerLeagueId > 0
+        ? leagueByProviderId.get(providerLeagueId) : null;
+      const leagueId = verifiedProviderLeagueId ||
+        (homeLeagueId && awayLeagueId && homeLeagueId === awayLeagueId ? homeLeagueId : null);
 
       const startDate = game.timestamp ? new Date(game.timestamp * 1000).toISOString()
         : (game.date && !Number.isNaN(Date.parse(game.date)) ? new Date(game.date).toISOString() : null);
