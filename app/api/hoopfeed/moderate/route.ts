@@ -147,6 +147,11 @@ export async function POST(request: Request) {
     if (kind !== "post" && kind !== "comment" && kind !== "share" && kind !== "vote" && kind !== "bookmark" && kind !== "pin") {
       return NextResponse.json({ allowed: false, message: "Unsupported content type." }, { status: 400 });
     }
+    const postIdValues = form.getAll("post_id");
+    if (kind !== "post" && (postIdValues.length !== 1 || typeof postIdValues[0] !== "string" || !postIdValues[0].trim())) {
+      return NextResponse.json({ allowed: false, message: "Provide one valid post ID." }, { status: 400 });
+    }
+    const actionPostId = kind === "post" ? "" : (postIdValues[0] as string).trim();
     const textValues = form.getAll("text");
     if (textValues.length > 1 || (textValues.length === 1 && typeof textValues[0] !== "string")) {
       return NextResponse.json({ allowed: false, message: "Invalid HoopFeed text field." }, { status: 400 });
@@ -215,7 +220,7 @@ export async function POST(request: Request) {
 
     // Poll vote: one vote per member per poll; voting again changes the vote.
     if (kind === "vote") {
-      const postId = String(form.get("post_id") || "").trim();
+      const postId = actionPostId;
       const rawOptionIndex = form.get("option_index");
       const optionIndexText = typeof rawOptionIndex === "string" ? rawOptionIndex.trim() : "";
       const optionIndex = /^\d+$/.test(optionIndexText) ? Number(optionIndexText) : NaN;
@@ -232,7 +237,7 @@ export async function POST(request: Request) {
 
     // Save / unsave a post (bookmark).
     if (kind === "bookmark") {
-      const postId = String(form.get("post_id") || "").trim();
+      const postId = actionPostId;
       const saved = String(form.get("saved") || "") === "true";
       if (!postId) return NextResponse.json({ allowed: false, message: "Couldn't update your saved posts. Please try again." }, { status: 400 });
       if (saved) {
@@ -250,7 +255,7 @@ export async function POST(request: Request) {
     // Pin / unpin: official (admin) accounts only.
     if (kind === "pin") {
       if (!isAdmin) return NextResponse.json({ allowed: false, message: "Only HoopCheck can pin posts." }, { status: 403 });
-      const postId = String(form.get("post_id") || "").trim();
+      const postId = actionPostId;
       const pinned = String(form.get("pinned") || "") === "true";
       if (!postId) return NextResponse.json({ allowed: false, message: "Couldn't update the pin. Please try again." }, { status: 400 });
       const { data: targetPost, error: targetError } = await db.from("feed_posts")
@@ -267,7 +272,7 @@ export async function POST(request: Request) {
     // Re-share any approved community post.
     // The source has already passed moderation; new user-authored content still uses moderate().
     if (kind === "share") {
-      const sourceId = String(form.get("post_id") || "").trim();
+      const sourceId = actionPostId;
       if (!sourceId) return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 400 });
       const { data: source, error: sourceError } = await db.from("feed_posts")
         .select("id,author_id,body,image_url,image_urls,video_url,post_kind,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,status,expires_at")
@@ -347,7 +352,7 @@ export async function POST(request: Request) {
 
     if (kind === "comment") {
       if (!text) return NextResponse.json({ allowed: false, message: "Write a comment before posting." }, { status: 400 });
-      const postId = String(form.get("post_id") || "");
+      const postId = actionPostId;
       if (!postId) return NextResponse.json({ allowed: false, message: "Post not found." }, { status: 400 });
       const { data: post } = await db.from("feed_posts").select("id,author_id,expires_at,status").eq("id",postId).maybeSingle();
       if (!post || post.status !== "approved" || (post.expires_at && new Date(post.expires_at).getTime() <= Date.now())) {
