@@ -49,6 +49,9 @@ jobs:
 
       - name: Audit paired theme surfaces and contrast (blocking)
         run: npm run audit:theme-pairs
+      - name: Verify unified HoopFeed RLS migration safeguards
+        run: npm run test:hoopfeed-rls
+
       - name: Check HoopFeed text posts and team fan group invariants
         run: npm run check:hf4-fan-groups
 
