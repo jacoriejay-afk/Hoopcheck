@@ -238,6 +238,9 @@ assert.match(feedModerationSource, /kindValues\.length > 1 \|\| \(kindValues\.le
 
 assert.match(feedModerationSource, /textValues\.length > 1 \|\| \(textValues\.length === 1 && typeof textValues\[0\] !== "string"\)/, "duplicate or non-text HoopFeed body fields must be rejected");
 
+assert.match(feedModerationSource, /postKindValues\.length > 1/, "duplicate post kind fields must be rejected");
+assert.match(feedModerationSource, /!\["discussion", "poll", "news"\]\.includes\(submittedKind\)/, "unknown post types must be rejected instead of silently converted");
+
 const playerContactPolicy = read("../supabase/migrations/20261111180000_align_agent_scout_contact_pro_premium.sql");
 assert.match(playerContactPolicy, /s\.plan IN \('pro', 'premium'\)/, "Agent/Scout contact RLS must accept Pro and Premium");
 assert.match(playerContactPolicy, /requester_id = \(SELECT auth\.uid\(\)\)/, "contact requester must match auth user");
