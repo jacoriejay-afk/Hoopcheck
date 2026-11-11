@@ -5,7 +5,7 @@ ALTER TABLE public.fan_live_games
   ADD COLUMN IF NOT EXISTS provider_league_id bigint;
 
 -- Idempotent constraint creation for migration replay in isolated staging.
-DO $
+DO $season_identity$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_constraint
@@ -16,7 +16,7 @@ BEGIN
       ADD CONSTRAINT fan_live_games_provider_league_id_positive
       CHECK (provider_league_id IS NULL OR provider_league_id > 0);
   END IF;
-END $;
+END $season_identity$;
 
 CREATE INDEX IF NOT EXISTS fan_live_games_provider_competition_idx
   ON public.fan_live_games(provider_source, provider_league_id)
