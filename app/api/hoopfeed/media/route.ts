@@ -69,6 +69,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unsupported media reference" }, { status: 400 });
   }
 
+  // Restrict the storage object path to the same author-scoped UUID structure
+  // issued by the private upload handlers; reject malformed object references.
+  const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+  const objectPath = new RegExp("^" + uuid + "/" + uuid + "[.](jpg|jpeg|png|webp|mp4|webm|mov)$", "i");
+  if (!objectPath.test(path)) return NextResponse.json({ error: "Invalid private media path" }, { status: 400 });
+
   const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
   const { data, error } = await admin.storage.from(bucket).createSignedUrl(path, 60);
   if (error || !data?.signedUrl) return NextResponse.json({ error: "Media unavailable" }, { status: 404 });
