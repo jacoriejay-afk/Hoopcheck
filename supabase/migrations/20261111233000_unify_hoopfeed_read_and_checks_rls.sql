@@ -1,11 +1,12 @@
 -- Staged for review only. Do not apply until authenticated role tests are ready.
 -- Unified HoopFeed: replace obsolete follower/country/player-only policies.
--- Keep paid access, owner/admin moderation visibility and post expiration boundaries.
+-- Keep paid access and owner/admin moderation visibility. Posts are permanent.
+ALTER TABLE public.feed_posts ALTER COLUMN expires_at DROP DEFAULT;
 DROP POLICY IF EXISTS "player experience feed read" ON public.feed_posts;
 CREATE POLICY "unified hoopfeed approved posts read"
 ON public.feed_posts FOR SELECT TO authenticated
 USING (
-  (status = 'approved' AND expires_at > now() AND (
+  (status = 'approved' AND (
     EXISTS (
       SELECT 1 FROM public.profiles viewer
       JOIN public.subscriptions sub ON sub.user_id = viewer.id
@@ -30,7 +31,6 @@ USING (
     SELECT 1 FROM public.feed_posts fp
     WHERE fp.id = feed_post_checks.post_id
       AND fp.status = 'approved'
-      AND fp.expires_at > now()
   )
 );
 
@@ -43,7 +43,6 @@ WITH CHECK (
     SELECT 1 FROM public.feed_posts fp
     WHERE fp.id = feed_post_checks.post_id
       AND fp.status = 'approved'
-      AND fp.expires_at > now()
   )
   AND (
     EXISTS (
