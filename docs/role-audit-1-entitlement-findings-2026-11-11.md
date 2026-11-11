@@ -59,6 +59,12 @@ Decision confirmed 2026-11-11: **One unified HoopFeed** for Player, Fan, Coach, 
 - **Recommended follow-up (not applied):** decide whether Agents/Scouts should require Premium or Pro/Premium, then align client entitlement and database policy through a reviewed migration. Current agreed product rule in this audit is Pro/Premium, so favor a migration only after approval.
 - No authenticated role-by-role direct-write tests have been performed.
 
+## Live profile/admin privilege boundary (read-only)
+- Live `profiles_own_update` RLS permits updating one's own profile row by ID; **RLS alone does not protect account_type**.
+- Live `prevent_user_privileged_profile_fields` BEFORE UPDATE trigger explicitly rejects account_type changes for non-admin/non-moderator users, except service-role operations. Thus the obvious self-promotion route is blocked by this trigger, rather than by RLS.
+- Live `admin_roles` has only `admin_roles_own_read` SELECT policy for authenticated users; no INSERT/UPDATE/DELETE user policy was returned.
+- Audit result is source/schema inspection, not a successful authenticated exploit attempt. Preserve the trigger and test it with a non-admin session before release.
+
 ## Staging verification matrix
 1. For each role (Player, Fan, Coach, Scout, Agent, Club Admin), verify Free cannot post and active Pro/Premium can create a text post, image, video, poll, comment, reaction, bookmark, and permitted reshare.
 2. Check Fan Free/Pro/Premium review restrictions: Fans never write reviews; Fan Pro teaser only; Fan Premium full reviews.
