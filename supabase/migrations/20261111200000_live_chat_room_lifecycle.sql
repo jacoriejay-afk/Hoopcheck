@@ -43,3 +43,17 @@ as $$
 $$;
 revoke all on function public.fan_live_chat_room_open(uuid) from public, anon;
 grant execute on function public.fan_live_chat_room_open(uuid) to authenticated;
+
+-- Prevent direct API reads from exposing presence for unopened or expired
+-- rooms. Moderators retain their existing oversight exception.
+drop policy if exists "eligible members read game presence"
+  on public.fan_live_chat_presence;
+create policy "eligible members read game presence"
+  on public.fan_live_chat_presence for select to authenticated
+  using (
+    public.is_current_user_admin_or_moderator()
+    or (
+      public.current_user_has_live_game_membership()
+      and public.fan_live_chat_room_open(game_id)
+    )
+  );
