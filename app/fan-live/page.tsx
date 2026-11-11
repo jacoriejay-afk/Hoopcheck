@@ -198,7 +198,7 @@ export default function FanLivePage() {
   async function send(textOverride?:string){
     const text=(textOverride??body).trim();
     if(!text||!selected||!userId||sending)return;
-    if(!roomOpen(selected,new Date())){setMessage("Chat closed — final score.");return;}
+    if(!roomOpen(selected,new Date())){setMessage("This chat is not accepting messages right now.");return;}
     const localId="pending-"+crypto.randomUUID();
     const optimistic:ChatMessage={id:localId,body:text,created_at:new Date().toISOString(),user_id:userId,pending:true};
     setMessages(current=>[...current,optimistic].slice(-200));setBody("");setSending(true);setMessage("");
@@ -206,7 +206,7 @@ export default function FanLivePage() {
     setSending(false);
     if(error){
       setMessages(current=>current.map(m=>m.id===localId?{...m,failed:true,pending:false}:m));
-      setMessage(error.message.includes("SLOW_MODE")?"Slow mode: wait two seconds between messages.":error.message.includes("CHAT_CLOSED")?"Chat closed — final score.":"Message failed to send. Tap Retry to try again.");
+      setMessage(error.message.includes("SLOW_MODE")?"Slow mode: wait two seconds between messages.":error.message.includes("CHAT_CLOSED")?"This chat is not accepting messages right now.":"Message failed to send. Tap Retry to try again.");
       return;
     }
     const saved=data as ChatMessage;
