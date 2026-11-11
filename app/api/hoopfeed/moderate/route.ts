@@ -247,7 +247,7 @@ export async function POST(request: Request) {
         console.error("HoopFeed share source lookup failed", { sourceId, code: sourceError.code });
         return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 500 });
       }
-      if (!source || source.status !== "approved") {
+      if (!source || source.status !== "approved" || (source.expires_at && new Date(source.expires_at).getTime() <= Date.now())) {
         return NextResponse.json({ allowed: false, message: "This post is no longer available and can't be shared." }, { status: 404 });
       }
       if (source.post_kind === "poll") {
