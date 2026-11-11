@@ -126,6 +126,21 @@ export async function POST(request: Request) {
     if (userError || !userData.user) return NextResponse.json({ allowed: false, message: "Your session is invalid. Please sign in again." }, { status: 401 });
     const user = userData.user;
 
+    // Service-role queries bypass RLS. Use the caller's JWT for post visibility
+    // before any service-role write that references an existing post.
+    const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if (!publishableKey) return NextResponse.json({ allowed: false, message: "Feed access is temporarily unavailable." }, { status: 503 });
+    const viewerDb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, publishableKey, {
+      global: { headers: { Authorization: "Bearer " + token } },
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    async function canInteractWithPost(postId: string) {
+      const { data, error } = await viewerDb.from("feed_posts")
+        .select("id").eq("id", postId).eq("status", "approved")
+        .gt("expires_at", new Date().toISOString()).maybeSingle();
+      return !error && !!data;
+    }
+
     const bodyBytes = await readLimitedBody(request, MAX_REQUEST_BYTES);
     if (bodyBytes === null) {
       return NextResponse.json({ allowed: false, message: "Request body is too large." }, { status: 413 });
@@ -197,6 +212,7 @@ export async function POST(request: Request) {
       const postId = String(form.get("post_id") || "").trim();
       const optionIndex = Number(form.get("option_index"));
       if (!postId || !Number.isInteger(optionIndex)) return NextResponse.json({ allowed: false, message: "That vote didn't go through. Please try again." }, { status: 400 });
+      if (!(await canInteractWithPost(postId))) return NextResponse.json({ allowed: false, message: "This poll is no longer available." }, { status: 404 });
       const { data: poll } = await db.from("feed_posts").select("id,status,post_kind,poll_options").eq("id", postId).maybeSingle();
       const options = Array.isArray(poll?.poll_options) ? poll.poll_options as string[] : [];
       if (!poll || poll.status !== "approved" || poll.post_kind !== "poll" || optionIndex < 0 || optionIndex >= options.length) {
@@ -213,6 +229,7 @@ export async function POST(request: Request) {
       const saved = String(form.get("saved") || "") === "true";
       if (!postId) return NextResponse.json({ allowed: false, message: "Couldn't update your saved posts. Please try again." }, { status: 400 });
       if (saved) {
+        if (!(await canInteractWithPost(postId))) return NextResponse.json({ allowed: false, message: "This post is no longer available." }, { status: 404 });
         const { data: post } = await db.from("feed_posts").select("id,status").eq("id", postId).maybeSingle();
         if (!post || post.status !== "approved") return NextResponse.json({ allowed: false, message: "This post is no longer available." }, { status: 404 });
         const { error } = await db.from("feed_post_bookmarks").upsert({ post_id: postId, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
@@ -240,6 +257,7 @@ export async function POST(request: Request) {
     if (kind === "share") {
       const sourceId = String(form.get("post_id") || "").trim();
       if (!sourceId) return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 400 });
+      if (!(await canInteractWithPost(sourceId))) return NextResponse.json({ allowed: false, message: "This post is no longer available and can't be shared." }, { status: 404 });
       const { data: source, error: sourceError } = await db.from("feed_posts")
         .select("id,author_id,body,image_url,image_urls,video_url,post_kind,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,status,expires_at")
         .eq("id", sourceId).maybeSingle();
@@ -297,6 +315,7 @@ export async function POST(request: Request) {
     if (kind === "comment") {
       const postId = String(form.get("post_id") || "");
       if (!postId) return NextResponse.json({ allowed: false, message: "Post not found." }, { status: 400 });
+      if (!(await canInteractWithPost(postId))) return NextResponse.json({ allowed: false, message: "This HoopFeed post is no longer available." }, { status: 404 });
       const { data: post } = await db.from("feed_posts").select("id,author_id,expires_at,status").eq("id",postId).maybeSingle();
       if (!post || post.status !== "approved") {
         return NextResponse.json({ allowed: false, message: "This HoopFeed post is no longer available." }, { status: 404 });
