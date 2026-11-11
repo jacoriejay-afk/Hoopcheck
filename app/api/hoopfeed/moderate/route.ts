@@ -139,7 +139,11 @@ export async function POST(request: Request) {
       body: formBody,
     });
     const form = await formRequest.formData();
-    const kind = String(form.get("kind") || "post");
+    const kindValues = form.getAll("kind");
+    if (kindValues.length > 1 || (kindValues.length === 1 && typeof kindValues[0] !== "string")) {
+      return NextResponse.json({ allowed: false, message: "Invalid HoopFeed action." }, { status: 400 });
+    }
+    const kind = kindValues.length === 0 ? "post" : kindValues[0];
     if (kind !== "post" && kind !== "comment" && kind !== "share" && kind !== "vote" && kind !== "bookmark" && kind !== "pin") {
       return NextResponse.json({ allowed: false, message: "Unsupported content type." }, { status: 400 });
     }
