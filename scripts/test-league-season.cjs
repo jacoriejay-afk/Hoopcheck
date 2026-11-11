@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Standalone CommonJS Node test harness. */
 // Run with: node scripts/test-league-season.cjs
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
