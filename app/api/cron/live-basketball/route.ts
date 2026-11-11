@@ -245,15 +245,23 @@ export async function GET(request: NextRequest) {
       // provider response lacks a usable competition mapping. Preserve existing
       // IDs only for the same provider fixture, never transfer between games.
       const { data: existingMappings, error: existingMappingsError } = await db.from("fan_live_games")
-        .select("provider_game_id,league_id")
+        .select("provider_game_id,league_id,provider_league_id")
         .eq("provider_source", "api-sports-basketball")
         .in("provider_game_id", rows.map(row => row.provider_game_id))
         .not("league_id", "is", null);
       if (existingMappingsError) throw existingMappingsError;
-      const existingLeagueByGame = new Map((existingMappings || []).map(item => [item.provider_game_id, item.league_id]));
+      const existingLeagueByGame = new Map((existingMappings || []).map(item => [item.provider_game_id, { leagueId: item.league_id, providerLeagueId: item.provider_league_id }]));
       let conflictingLeagueAssignments = 0;
       for (const row of rows) {
-        const existingLeagueId = existingLeagueByGame.get(row.provider_game_id);
+        const previous = existingLeagueByGame.get(row.provider_game_id);
+        const existingLeagueId = previous?.leagueId;
+        // A provider may correct a fixture's competition. Never retain an old
+        // league assignment when both competition IDs exist and disagree.
+        if (existingLeagueId && previous?.providerLeagueId != null && row.provider_league_id != null
+          && previous.providerLeagueId !== row.provider_league_id) {
+          conflictingLeagueAssignments++;
+          continue;
+        }
         if (row.league_id && existingLeagueId && row.league_id !== existingLeagueId) {
           conflictingLeagueAssignments++;
           continue;
