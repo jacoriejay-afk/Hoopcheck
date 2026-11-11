@@ -147,7 +147,9 @@ export async function POST(request: Request) {
     if (text.length > MAX_TEXT_LENGTH) {
       return NextResponse.json({ allowed: false, message: "Text must be 2,000 characters or fewer." }, { status: 413 });
     }
-    const imageValue = form.get("image");
+    const imageValues = form.getAll("image");
+    if (imageValues.length > 1) return NextResponse.json({ allowed: false, message: "Upload one primary photo and use the additional photos field for the rest." }, { status: 400 });
+    const imageValue = imageValues[0] ?? null;
     const image = imageValue instanceof File && imageValue.size > 0 ? imageValue : null;
     const extraImages = form.getAll("images").filter((v): v is File => v instanceof File && v.size > 0);
     const submittedImages: File[] = [...(image ? [image] : []), ...extraImages];
