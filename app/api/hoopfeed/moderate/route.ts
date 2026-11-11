@@ -199,7 +199,8 @@ export async function POST(request: Request) {
     // Poll vote: one vote per member per poll; voting again changes the vote.
     if (kind === "vote") {
       const postId = String(form.get("post_id") || "").trim();
-      const optionIndex = Number(form.get("option_index"));
+      const rawOptionIndex = form.get("option_index");
+      const optionIndex = rawOptionIndex === null || String(rawOptionIndex).trim() === "" ? NaN : Number(rawOptionIndex);
       if (!postId || !Number.isInteger(optionIndex)) return NextResponse.json({ allowed: false, message: "That vote didn't go through. Please try again." }, { status: 400 });
       const { data: poll } = await db.from("feed_posts").select("id,status,post_kind,poll_options,expires_at").eq("id", postId).maybeSingle();
       const options = Array.isArray(poll?.poll_options) ? poll.poll_options as string[] : [];
