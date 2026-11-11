@@ -128,13 +128,16 @@ export async function POST(request: Request) {
 
     // Service-role queries bypass RLS. Use the caller's JWT for post visibility
     // before any service-role write that references an existing post.
-    const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-    if (!publishableKey) return NextResponse.json({ allowed: false, message: "Feed access is temporarily unavailable." }, { status: 503 });
-    const viewerDb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, publishableKey, {
-      global: { headers: { Authorization: "Bearer " + token } },
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
     async function canInteractWithPost(postId: string) {
+      // Create the viewer-scoped client only for actions targeting existing posts.
+      // New post creation must not depend on a second client.
+      const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (!publishableKey || !supabaseUrl) return false;
+      const viewerDb = createClient(supabaseUrl, publishableKey, {
+        global: { headers: { Authorization: "Bearer " + token } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
       const { data, error } = await viewerDb.from("feed_posts")
         .select("id").eq("id", postId).eq("status", "approved")
         .gt("expires_at", new Date().toISOString()).maybeSingle();
