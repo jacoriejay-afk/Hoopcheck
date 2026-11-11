@@ -5,9 +5,12 @@ on:
     branches: [main]
     paths:
       - "lib/membership-tier.ts"
+      - "lib/game-availability.ts"
+      - "supabase/migrations/20261111200000_live_chat_room_lifecycle.sql"
       - "app/**"
       - "components/**"
       - "scripts/test-membership-tier.mjs"
+      - "scripts/test-game-availability.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/verify-1-entitlements.yml"
@@ -28,3 +31,5 @@ jobs:
         run: npm ci
       - name: Run role and tier entitlement matrix
         run: npm run test:entitlements
+      - name: Run game chat lifecycle regression tests
+        run: npm run test:game-availability
