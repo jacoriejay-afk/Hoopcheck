@@ -423,3 +423,27 @@ html.theme-dark :is(.hc-confirm-modal, .report-modal) {
     color: #17171b !important;
   }
 }
+
+/* MOBILE-LAYOUT-2: preserve an initial iOS status-bar gap without making the
+   sticky header hover 52px below the viewport while scrolling. */
+@media (max-width: 767px) {
+  html.theme-dark body header.site-header-global.hc-template-header.hc-liquid-glass-header,
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header {
+    position: sticky !important;
+    top: 8px !important;
+    margin-block-start: max(52px, calc(env(safe-area-inset-top, 0px) + 8px)) !important;
+    margin-block-end: 16px !important;
+    scroll-margin-top: 88px;
+  }
+  /* The fixed navigation needs a content-safe footer, especially on Account. */
+  html body:has(nav.bottom-nav.hc-bottom-tab-bar) {
+    padding-block-end: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  html body:has(nav.bottom-nav.hc-bottom-tab-bar) main {
+    padding-block-end: max(112px, calc(96px + env(safe-area-inset-bottom, 0px))) !important;
+    scroll-padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+  }
+  html body nav.bottom-nav.hc-bottom-tab-bar {
+    bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
