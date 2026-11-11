@@ -188,6 +188,32 @@ export default function LiveGamesPage() {
   }).sort((a,b) => Date.parse(b.game.ends_at || b.game.started_at || b.game.scheduled_at || "") - Date.parse(a.game.ends_at || a.game.started_at || a.game.scheduled_at || ""));
 
   const postGameOpen = filtered.filter(({availability,game}) => availability.phase === "post-game" && availability.chatOpen && ["final","finished"].includes(game.status.toLowerCase()));
+  const groupByGeography = (entries: typeof filtered) => {
+    const countries = new Map<string, Map<string, typeof filtered>>();
+    for (const entry of entries) {
+      const country = entry.game.country || teams[entry.game.team_id]?.country || "Country not listed";
+      const league = entry.game.league_name || teams[entry.game.team_id]?.league_name || "League not listed";
+      if (!countries.has(country)) countries.set(country, new Map());
+      const leaguesForCountry = countries.get(country)!;
+      if (!leaguesForCountry.has(league)) leaguesForCountry.set(league, []);
+      leaguesForCountry.get(league)!.push(entry);
+    }
+    return [...countries.entries()].sort(([a],[b]) => a.localeCompare(b)).map(([country, leaguesForCountry]) => ({
+      country,
+      leagues: [...leaguesForCountry.entries()].sort(([a],[b]) => a.localeCompare(b)).map(([league, games]) => ({ league, games })),
+    }));
+  };
+  const GeographicGames = ({ entries, variant }: { entries: typeof filtered; variant: "live" | "postgame" | "upcoming" | "recent" }) => (
+    <div className="hc-live-geography">
+      {groupByGeography(entries).map(({country,leagues}) => <section key={country} aria-label={country}>
+        <h3>{country}</h3>
+        {leagues.map(({league,games}) => <div key={league}>
+          <h4>{league}</h4>
+          <div className="hc-live-hub-grid">{games.map(entry => <GameCard key={entry.game.id} entry={entry} variant={variant} />)}</div>
+        </div>)}
+      </section>)}
+    </div>
+  );
   const nextUpcoming = upcoming[0] || null;
 
   async function toggleReminder(gameId: string) {
@@ -280,20 +306,20 @@ export default function LiveGamesPage() {
 
     <section className="hc-live-hub-section">
       <div className="hc-live-section-heading"><div><p className="eyebrow">RIGHT NOW</p><h2>LIVE NOW <span>{live.length}</span></h2></div><p>Real-time conversations, one game at a time.</p></div>
-      {live.length ? <div className="hc-live-hub-grid">{live.map(entry => <GameCard key={entry.game.id} entry={entry} variant="live" />)}</div>
+      {live.length ? <GeographicGames entries={live} variant="live" />
         : <div className="hc-live-empty"><div className="hc-live-empty__icon"><HoopIcon name="basketball" size={24} /></div><div><h3>No live games right now</h3>{upcoming[0] ? <><p>Next tip-off: {formatViewerLocalTime(upcoming[0].game.scheduled_at || upcoming[0].game.started_at)}. Set a reminder and we’ll keep it on your list.</p><div className="hc-live-empty__actions"><button type="button" className={`hc-remind-button ${reminders.includes(upcoming[0].game.id) ? "is-set" : ""}`} disabled={reminding===upcoming[0].game.id} onClick={() => void toggleReminder(upcoming[0].game.id)}><HoopIcon name="bell" size={16}/>{reminders.includes(upcoming[0].game.id) ? "REMINDER SET" : "REMIND ME"}</button></div></> : <p>When a game is live, its chat will appear here. There are no confirmed upcoming tip-off times yet.</p>}</div></div>}
-      {postGameOpen.length > 0 && <><div className="hc-live-section-heading hc-live-post-heading"><div><p className="eyebrow">STAY IN THE CONVERSATION</p><h2>POST-GAME CHAT <span>{postGameOpen.length}</span></h2></div></div><div className="hc-live-hub-grid">{postGameOpen.map(entry => <GameCard key={entry.game.id} entry={entry} variant="postgame" />)}</div></>}
+      {postGameOpen.length > 0 && <><div className="hc-live-section-heading hc-live-post-heading"><div><p className="eyebrow">STAY IN THE CONVERSATION</p><h2>POST-GAME CHAT <span>{postGameOpen.length}</span></h2></div></div><GeographicGames entries={postGameOpen} variant="postgame" /></>}
     </section>
 
     <section className="hc-live-hub-section">
       <div className="hc-live-section-heading"><div><p className="eyebrow">NEXT UP</p><h2>UPCOMING <span>{upcoming.length}</span></h2></div><p>Tip-off times are shown in your local timezone.</p></div>
-      {upcoming.length ? <div className="hc-live-hub-grid">{upcoming.map(entry => <GameCard key={entry.game.id} entry={entry} variant="upcoming" />)}</div>
+      {upcoming.length ? <GeographicGames entries={upcoming} variant="upcoming" />
         : <div className="hc-live-empty"><div className="hc-live-empty__icon"><HoopIcon name="calendar" size={24} /></div><div><h3>No confirmed upcoming games</h3><p>There are no scheduled fixtures in the current game feed yet. We’ll show them here when the provider supplies confirmed tip-off times.</p></div></div>}
     </section>
 
     <section className="hc-live-hub-section hc-live-recent-section">
       <div className="hc-live-section-heading"><div><p className="eyebrow">FINAL WHISTLE</p><h2>RECENTLY FINISHED <span>{recent.length}</span></h2></div><p>Games from the last 48 hours.</p></div>
-      {recent.length ? <div className="hc-live-hub-grid">{recent.map(entry => <GameCard key={entry.game.id} entry={entry} variant="recent" />)}</div>
+      {recent.length ? <GeographicGames entries={recent} variant="recent" />
         : <div className="hc-live-recent-empty">Recent final scores will appear here when available.</div>}
     </section>
 
