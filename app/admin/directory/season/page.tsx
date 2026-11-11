@@ -84,7 +84,7 @@ export default function LeagueSeasonEditor() {
         <input type="number" min={field.endsWith("month") ? 1 : 1} max={field.endsWith("month") ? 12 : 31} style={inputStyle} value={form[field]} onChange={event => setForm(previous => ({ ...previous, [field]: Number(event.target.value) }))} />
       </label>)}
       <label>Season label (optional)<input style={inputStyle} value={form.season_label || ""} onChange={event => setForm(previous => ({ ...previous, season_label: event.target.value || null }))} /></label>
-      <label>IANA timezone (optional)<input style={inputStyle} value={form.season_time_zone || ""} onChange={event => setForm(previous => ({ ...previous, season_time_zone: event.target.value || null }))} placeholder="Europe/Baku" /></label>
+      <label>IANA timezone (optional)<input style={inputStyle} value={form.season_time_zone || ""} onChange={event => setForm(previous => ({ ...previous, season_time_zone: event.target.value || null }))} placeholder="Asia/Baku" /></label>
       <button type="button" disabled={busy} onClick={save}>Save verified season</button>
     </section>}
     {message && <p role="status">{message}</p>}
