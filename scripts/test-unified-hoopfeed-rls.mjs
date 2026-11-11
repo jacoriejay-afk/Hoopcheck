@@ -20,7 +20,7 @@ const required = [
   /for insert to authenticated/i,
 ];
 for (const check of required) assert.match(sql, check, `Missing safeguard: ${check}`);
-assert.doesNotMatch(sql, /^\\s*security definer\\b/im, "Do not bypass RLS");
+assert.doesNotMatch(sql, /^\s*security definer\b/im, "Do not bypass RLS");
 assert.doesNotMatch(sql, /to public\b/i, "No public check inserts");
 assert.doesNotMatch(sql, /disable row level security/i, "Do not disable RLS");
 console.log("Unified HoopFeed RLS static safeguards passed (not database integration tests).");
