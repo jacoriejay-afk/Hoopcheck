@@ -151,7 +151,11 @@ export async function POST(request: Request) {
     if (imageValues.length > 1) return NextResponse.json({ allowed: false, message: "Upload one primary photo and use the additional photos field for the rest." }, { status: 400 });
     const imageValue = imageValues[0] ?? null;
     const image = imageValue instanceof File && imageValue.size > 0 ? imageValue : null;
-    const extraImages = form.getAll("images").filter((v): v is File => v instanceof File && v.size > 0);
+    const extraImageValues = form.getAll("images");
+    if (extraImageValues.some((value) => !(value instanceof File) || value.size === 0)) {
+      return NextResponse.json({ allowed: false, message: "Remove invalid or empty photo attachments and try again." }, { status: 400 });
+    }
+    const extraImages = extraImageValues as File[];
     const submittedImages: File[] = [...(image ? [image] : []), ...extraImages];
     if (submittedImages.length > 4) {
       return NextResponse.json({ allowed: false, message: "Add no more than 4 photos per post." }, { status: 400 });
