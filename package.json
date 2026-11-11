@@ -14,6 +14,7 @@
     "check:hub-theme-pairing": "node scripts/check-hub-theme-pairing.mjs",
     "check:card-theme-pairing": "node scripts/check-card-theme-pairing.mjs",
     "test:entitlements": "node scripts/test-membership-tier.mjs",
+    "test:game-availability": "node scripts/test-game-availability.mjs",
     "check:rounded-corners": "node scripts/check-rounded-corners.mjs"
   },
   "dependencies": {
