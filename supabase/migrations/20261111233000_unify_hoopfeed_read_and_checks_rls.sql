@@ -58,3 +58,16 @@ WITH CHECK (
     OR public.is_current_user_admin_or_moderator()
   )
 );
+
+-- Comments on permanent approved posts must no longer inherit the old
+-- follower/country restriction or 24-hour expiry.
+DROP POLICY IF EXISTS "player feed comments read" ON public.feed_post_comments;
+CREATE POLICY "unified hoopfeed comments read"
+ON public.feed_post_comments FOR SELECT TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.feed_posts fp
+    WHERE fp.id = feed_post_comments.post_id
+      AND fp.status = 'approved'
+  )
+);
