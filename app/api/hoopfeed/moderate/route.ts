@@ -301,7 +301,14 @@ export async function POST(request: Request) {
     }
 
     // Stage 2 post kinds: "news" is reserved for official (admin) accounts; "poll" carries options.
-    const submittedKind = String(form.get("post_kind") || "discussion").trim();
+    const postKindValues = form.getAll("post_kind");
+    if (kind === "post" && (postKindValues.length > 1 || (postKindValues.length === 1 && typeof postKindValues[0] !== "string"))) {
+      return NextResponse.json({ allowed: false, message: "Invalid post type." }, { status: 400 });
+    }
+    const submittedKind = kind === "post" && typeof postKindValues[0] === "string" ? postKindValues[0].trim() : "discussion";
+    if (kind === "post" && !["discussion", "poll", "news"].includes(submittedKind)) {
+      return NextResponse.json({ allowed: false, message: "Choose a valid post type." }, { status: 400 });
+    }
     if (kind === "post" && submittedKind === "news" && !isAdmin) {
       return NextResponse.json({ allowed: false, message: "Only HoopCheck administrators can publish official news." }, { status: 403 });
     }
