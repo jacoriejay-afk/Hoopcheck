@@ -43,6 +43,13 @@ Decision confirmed 2026-11-11: **One unified HoopFeed** for Player, Fan, Coach, 
 - `canUseRecruitingNetwork` currently permits Premium Players, not Agents/Scouts; verify whether this flag is intentionally for player-side recruiting only before modifying it.
 - Audit the contact/request API and database RLS for direct-call bypasses. Authenticated role-by-role tests are outstanding.
 
+## Agent/Scout direct database contact security
+- `components/PlayerContactButton.tsx` writes directly to `player_contact_requests` and `player_contact_messages`; server-side access relies on database RLS, not an API route.
+- `20261007210000_fan_connections_player_requests.sql` creates a Pro/Premium Player/Scout/Agent INSERT policy. `20261009124500_consolidate_player_contact_insert_policies.sql` adds an `eligible subscribers can request players` policy, requiring Premium for Scout/Agent within that particular policy.
+- PostgreSQL permissive policies combine with OR; the older Pro/Premium policy is not dropped by the later migration. This makes the effective policy potentially broader than the newest policy's text suggests. Verify all live `pg_policies` and consolidate in a dedicated migration after confirming desired Pro/Premium rule.
+- `20261008105244_enable_player_hoopchat_realtime.sql` limits message SELECT/INSERT to participants of accepted requests. It does not itself recheck current paid membership after acceptance; determine desired ongoing messaging access before modifying.
+- Source audit only; live database policy state and authenticated direct-write tests remain unverified.
+
 ## Staging verification matrix
 1. For each role (Player, Fan, Coach, Scout, Agent, Club Admin), verify Free cannot post and active Pro/Premium can create a text post, image, video, poll, comment, reaction, bookmark, and permitted reshare.
 2. Check Fan Free/Pro/Premium review restrictions: Fans never write reviews; Fan Pro teaser only; Fan Premium full reviews.
