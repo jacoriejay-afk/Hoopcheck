@@ -22,16 +22,13 @@ const finalStatus = (status:string) => ["final","finished","cancelled","canceled
 const initials = (name:string) => name.trim().split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join("").toUpperCase() || "HC";
 const renderTeamLogo = (team:Team|null|undefined) => <TeamLogo name={team?.name||"Team"} logoUrl={team?.logo_url} logoBg={team?.logo_bg} size={44} className="hc-live-team-logo" />;
 
-const roomOpen = (game:Game, now=new Date()) => {
-  const tip = Date.parse(game.scheduled_at || game.started_at || "");
-  const end = Date.parse(game.ends_at || "");
-  // Final games remain open for two hours only when a reliable end time exists.
-  if (finalStatus(game.status)) return Number.isFinite(end) && now.getTime() < end + 2*60*60_000;
-  if (!Number.isFinite(tip)) return ["live","in_progress"].includes(game.status.toLowerCase());
-  if (now.getTime() < tip - 60*60_000) return false;
-  if (Number.isFinite(end)) return now.getTime() < end + 2*60*60_000;
-  return now.getTime() < tip + 4*60*60_000;
-};
+const roomOpen = (game:Game, now=new Date()) => getGameAvailability({
+  status: game.status,
+  scheduledAt: game.scheduled_at,
+  startedAt: game.started_at,
+  endsAt: game.ends_at,
+  now,
+}).chatOpen;
 
 export default function FanLivePage() {
   const [games,setGames]=useState<Game[]>([]);
