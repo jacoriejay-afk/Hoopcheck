@@ -241,6 +241,9 @@ assert.match(feedModerationSource, /textValues\.length > 1 \|\| \(textValues\.le
 assert.match(feedModerationSource, /postKindValues\.length > 1/, "duplicate post kind fields must be rejected");
 assert.match(feedModerationSource, /!\["discussion", "poll", "news"\]\.includes\(submittedKind\)/, "unknown post types must be rejected instead of silently converted");
 
+assert.match(feedModerationSource, /const cleanupUploadedImages = async/, "uploaded photos must have failure cleanup");
+assert.match(feedModerationSource, /uploadedImagePaths\.push\(path\)/, "track each successfully uploaded photo for cleanup");
+
 const playerContactPolicy = read("../supabase/migrations/20261111180000_align_agent_scout_contact_pro_premium.sql");
 assert.match(playerContactPolicy, /s\.plan IN \('pro', 'premium'\)/, "Agent/Scout contact RLS must accept Pro and Premium");
 assert.match(playerContactPolicy, /requester_id = \(SELECT auth\.uid\(\)\)/, "contact requester must match auth user");
