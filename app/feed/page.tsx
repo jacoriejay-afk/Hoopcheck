@@ -73,7 +73,7 @@ export default function Feed(){
 
   async function load(currentUser:any){
     const feedResult=await supabase.from("feed_posts").select("id,shared_post_id,body,image_url,image_urls,video_url,post_kind,poll_options,is_pinned,pinned_at,location_country,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,created_at,expires_at,author_id,profiles:profiles!feed_posts_author_id_fkey(display_name,avatar_url,account_type,current_country,current_country_public,current_team)")
-      .eq("status","approved").order("created_at",{ascending:false}).limit(30);
+      .eq("status","approved").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(30);
     if(feedResult.error){console.error("HoopFeed posts query failed",feedResult.error);setMsg("HoopFeed could not load posts. Please refresh and try again.");return;}
     const {data:archiveRows}=await supabase.from("feed_post_archives").select("post_id").eq("user_id",currentUser.id);
     const archiveIds=new Set((archiveRows||[]).map((r:any)=>r.post_id));
