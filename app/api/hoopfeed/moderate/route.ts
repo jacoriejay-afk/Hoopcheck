@@ -305,7 +305,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ allowed: false, message: "Polls can't be shared — vote on the original instead." }, { status: 400 });
       }
       const sharedAt = new Date();
-      const expiresAt = new Date("2100-01-01T00:00:00.000Z");
+      const expiresAt = null;
       const sourceImageUrls = Array.isArray(source.image_urls) && source.image_urls.length ? source.image_urls as string[] : (source.image_url ? [source.image_url] : []);
       const { data: shared, error: shareError } = await db.from("feed_posts").insert({
         author_id: user.id, body: source.body, image_url: source.image_url, image_urls: sourceImageUrls, video_url: source.video_url, post_kind: "discussion",
@@ -313,13 +313,13 @@ export async function POST(request: Request) {
         game_day_opponent: source.game_day_opponent, game_day_score_for: source.game_day_score_for,
         game_day_score_against: source.game_day_score_against, location_country: null,
         shared_post_id: source.id, status: "approved",
-        created_at: sharedAt.toISOString(), expires_at: expiresAt.toISOString()
+        created_at: sharedAt.toISOString(), expires_at: expiresAt
       }).select("id").single();
       if (shareError) {
         console.error("HoopFeed share insert failed", { userId: user.id, sourceId, code: shareError.code });
         return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 500 });
       }
-      return NextResponse.json({ allowed: true, post_id: shared.id, shared_at: sharedAt.toISOString(), expires_at: expiresAt.toISOString() });
+      return NextResponse.json({ allowed: true, post_id: shared.id, shared_at: sharedAt.toISOString(), expires_at: expiresAt });
     }
 
     // Stage 2 post kinds: "news" is reserved for official (admin) accounts; "poll" carries options.
@@ -416,7 +416,7 @@ export async function POST(request: Request) {
       game_day_score_for: submittedTopicTag === "Game Day" ? scoreFor : null,
       game_day_score_against: submittedTopicTag === "Game Day" ? scoreAgainst : null,
       location_country:shareCountry && profile?.current_country_public !== false ? (submittedCountry || profile?.current_country || null) : null,
-      status:"approved", expires_at:new Date("2100-01-01T00:00:00.000Z").toISOString()
+      status:"approved", expires_at:null
     });
     if (error) {
       await cleanupUploadedImages();
