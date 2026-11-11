@@ -25,6 +25,11 @@ export function getGameChatState(game: ChatFixture, now: Date = new Date()): "up
   }
   if (tip === null) return status === "live" || status === "in_progress" ? "open" : "upcoming";
   if (now.getTime() < tip - 60 * MINUTE) return "upcoming";
+  // A stale scheduled fixture is not evidence of a game in progress.
+  // Stop offering chat if the provider has not confirmed live status after four hours.
+  if (status === "scheduled" || status === "upcoming") {
+    return now.getTime() >= tip + 240 * MINUTE ? "read-only" : "open";
+  }
   return "open";
 }
 export function chatOpeningTime(game: ChatFixture): Date | null {
