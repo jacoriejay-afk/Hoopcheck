@@ -51,7 +51,7 @@ export default function Feed(){
   const [open,setOpen]=useState<Record<string,boolean>>({});
   const [body,setBody]=useState(""); const [typeFilter,setTypeFilter]=useState<TypeFilter>("All Posts"); const [photos,setPhotos]=useState<File[]>([]); const [previews,setPreviews]=useState<string[]>([]); const [composerMode,setComposerMode]=useState<"post"|"poll"|"news">("post"); const [composerExpanded,setComposerExpanded]=useState(false); const [pollDraft,setPollDraft]=useState<string[]>(["",""]); const [votes,setVotes]=useState<Record<string,VoteState>>({}); const [savedMap,setSavedMap]=useState<Record<string,boolean>>({}); const [carouselIdx,setCarouselIdx]=useState<Record<string,number>>({}); const [video,setVideo]=useState<File|null>(null); const [videoPreview,setVideoPreview]=useState(""); const [showCountry,setShowCountry]=useState(false);
   const [user,setUser]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [adminRole,setAdminRole]=useState<string|null>(null); const [subscription,setSubscription]=useState<Subscription|null>(null); const [memberCount,setMemberCount]=useState<number|null>(null);
-  const [msg,setMsg]=useState(""); const [refreshing,setRefreshing]=useState(false); const [mediaPickerOpen,setMediaPickerOpen]=useState(false); const [postingStreak,setPostingStreak]=useState(0); const [loading,setLoading]=useState(true); const [posting,setPosting]=useState(false); const [now,setNow]=useState(0); const textareaRef = useRef<HTMLTextAreaElement|null>(null); const touchStartY = useRef<number|null>(null);
+  const [msg,setMsg]=useState(""); const [refreshing,setRefreshing]=useState(false); const [mediaPickerOpen,setMediaPickerOpen]=useState(false); const [postingStreak,setPostingStreak]=useState(0); const [loading,setLoading]=useState(true); const [posting,setPosting]=useState(false); const [now,setNow]=useState(0); const pendingChecksRef = useRef<Set<string>>(new Set()); const textareaRef = useRef<HTMLTextAreaElement|null>(null); const touchStartY = useRef<number|null>(null);
   const visiblePosts = posts.filter(p=>{
     const hasMedia=Boolean(p.image_url||(p.image_urls&&p.image_urls.length)||p.video_url);
     if(typeFilter==="Discussion"&&(hasMedia||p.post_kind==="poll"||p.post_kind==="news"))return false;
@@ -237,9 +237,29 @@ export default function Feed(){
   }
 
   async function toggleCheck(p:Post){
-    if(!user||!access)return;
-    if(mine[p.id]){const {error}=await supabase.from("feed_post_checks").delete().eq("post_id",p.id).eq("user_id",user.id);if(error){console.error("HoopFeed check update failed",error);setMsg("That check didn't go through. Please try again.");return;}setMine(x=>({...x,[p.id]:false}));setChecks(x=>({...x,[p.id]:Math.max(0,(x[p.id]||0)-1)}));}
-    else{const {error}=await supabase.from("feed_post_checks").insert({post_id:p.id,user_id:user.id});if(error){console.error("HoopFeed check update failed",error);setMsg("That check didn't go through. Please try again.");return;}setMine(x=>({...x,[p.id]:true}));setChecks(x=>({...x,[p.id]:(x[p.id]||0)+1}));setCheckBursts(x=>({...x,[p.id]:true}));window.setTimeout(()=>setCheckBursts(x=>({...x,[p.id]:false})),750);}
+    if(!user||!access||pendingChecksRef.current.has(p.id))return;
+    pendingChecksRef.current.add(p.id);
+    try{
+      if(mine[p.id]){
+        const {error}=await supabase.from("feed_post_checks").delete().eq("post_id",p.id).eq("user_id",user.id);
+        if(error){console.error("HoopFeed check update failed",error);setMsg("That check didn't go through. Please try again.");return;}
+        setMine(x=>({...x,[p.id]:false}));
+        setChecks(x=>({...x,[p.id]:Math.max(0,(x[p.id]||0)-1)}));
+      }else{
+        const {error}=await supabase.from("feed_post_checks").insert({post_id:p.id,user_id:user.id});
+        if(error){
+          console.error("HoopFeed check update failed",error);
+          setMsg(error.code==="42501"?"You don't have permission to check this post. Please verify your membership and try again.":"That check didn't go through. Please try again.");
+          return;
+        }
+        setMine(x=>({...x,[p.id]:true}));
+        setChecks(x=>({...x,[p.id]:(x[p.id]||0)+1}));
+        setCheckBursts(x=>({...x,[p.id]:true}));
+        window.setTimeout(()=>setCheckBursts(x=>({...x,[p.id]:false})),750);
+      }
+    }finally{
+      pendingChecksRef.current.delete(p.id);
+    }
   }
 
   async function comment(post_id:string){
