@@ -48,4 +48,9 @@ ALTER TABLE public.leagues
    CASE WHEN season_end_month=2 THEN 29
         WHEN season_end_month IN (4,6,9,11) THEN 30 ELSE 31 END);
 
+ALTER TABLE public.leagues
+ ADD CONSTRAINT leagues_season_distinct_bounds CHECK (
+  season_start_month <> season_end_month OR season_start_day <> season_end_day
+ );
+
 COMMENT ON COLUMN public.leagues.season_label IS 'Admin-selected display label; may require annual update; computed label used when NULL';
