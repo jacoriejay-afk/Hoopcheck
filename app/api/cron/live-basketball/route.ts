@@ -151,7 +151,8 @@ export async function GET(request: NextRequest) {
     const leagueByProviderId = new Map((competitionMappings || []).map(mapping => [Number(mapping.provider_league_id), mapping.league_id]));
 
     // A fixture must carry its internal league ID for season enforcement.
-    // The two-team agreement is a conservative fallback for unmapped provider leagues.
+    // Team agreement is used only when the provider supplies no valid competition ID;
+    // an unknown provider competition must remain unresolved until verified.
     const { data: leagueTeams, error: leagueTeamsError } = await db.from("teams")
       .select("id,league_id").not("league_id", "is", null);
     if (leagueTeamsError) throw leagueTeamsError;
