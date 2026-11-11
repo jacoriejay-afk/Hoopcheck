@@ -65,6 +65,11 @@ Decision confirmed 2026-11-11: **One unified HoopFeed** for Player, Fan, Coach, 
 - Live `admin_roles` has only `admin_roles_own_read` SELECT policy for authenticated users; no INSERT/UPDATE/DELETE user policy was returned.
 - Audit result is source/schema inspection, not a successful authenticated exploit attempt. Preserve the trigger and test it with a non-admin session before release.
 
+## Unknown-role pay-history hardening
+- `getHoopCheckEntitlements` previously set `canViewTeamPayHistory` for any nonempty role other than `fan`, including unrecognized role strings.
+- Changed to `recognizedRole && !isFan`, preserving supported account types while denying unknown roles; added regression assertion in `scripts/test-membership-tier.mjs`.
+- The `team-pay-checkins` API already checks `entitlements.canViewTeamPayHistory`. Fresh CI and authenticated checks are required.
+
 ## Staging verification matrix
 1. For each role (Player, Fan, Coach, Scout, Agent, Club Admin), verify Free cannot post and active Pro/Premium can create a text post, image, video, poll, comment, reaction, bookmark, and permitted reshare.
 2. Check Fan Free/Pro/Premium review restrictions: Fans never write reviews; Fan Pro teaser only; Fan Premium full reviews.
