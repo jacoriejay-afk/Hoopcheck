@@ -47,6 +47,7 @@ function scoreText(game: Game) {
 
 export default function LiveGamesPage() {
   const [games, setGames] = useState<Game[]>([]);
+  const [offSeasonLeagues, setOffSeasonLeagues] = useState<{ id: string; name: string; month: string }[]>([]);
   const [teams, setTeams] = useState<Record<string, Team>>({});
   const [followedIds, setFollowedIds] = useState<string[]>([]);
   const [reminders, setReminders] = useState<string[]>([]);
@@ -94,19 +95,22 @@ export default function LiveGamesPage() {
     // when a league cannot be resolved, rather than exposing off-season games.
     const leagueIds = Array.from(new Set(rawGames.map(game => game.league_id).filter((id): id is string => Boolean(id))));
     const verifiedActive = new Set<string>();
+    const inactive: { id: string; name: string; month: string }[] = [];
     let seasonLookupFailed = false;
     try {
       for (let offset = 0; offset < leagueIds.length; offset += 100) {
         const response = await fetch(`/api/leagues/season-status?ids=${encodeURIComponent(leagueIds.slice(offset, offset + 100).join(","))}`, { cache: "no-store" });
         if (!response.ok) throw new Error("Season lookup failed");
-        const payload: { status?: Record<string, { inSeason: boolean }> } = await response.json();
+        const payload: { status?: Record<string, { inSeason: boolean; nextStartMonth: string }> } = await response.json();
         for (const [id, state] of Object.entries(payload.status || {})) {
           if (state.inSeason) verifiedActive.add(id);
+          else inactive.push({ id, name: rawGames.find(game => game.league_id === id)?.league_name || "League", month: state.nextStartMonth });
         }
       }
     } catch {
       seasonLookupFailed = true;
     }
+    setOffSeasonLeagues(seasonLookupFailed ? [] : inactive);
     if (seasonLookupFailed) setMessage("League season status is temporarily unavailable. Games are hidden until verified.");
     const candidateIds = Array.from(new Set(rawGames.flatMap(game => [game.team_id, game.opponent_team_id].filter((id): id is string => Boolean(id)))));
     const [{ data: sideRows }, { data: womensSideRows }] = await Promise.all([
@@ -294,6 +298,7 @@ export default function LiveGamesPage() {
       </div>
     </section>
     {message && <p className="hc-live-hub-message" role="status">{message}</p>}
+    {offSeasonLeagues.length > 0 && <section className="hc-live-hub-section" aria-label="Leagues between seasons"><h2>Between seasons</h2><div className="hc-live-hub-grid">{offSeasonLeagues.map(league => <article className="hc-live-hub-card" key={league.id}><h3>{league.name}</h3><p>Season starts {league.month}</p></article>)}</div></section>}
 
     <section className="hc-live-hub-section">
       <div className="hc-live-section-heading"><div><p className="eyebrow">RIGHT NOW</p><h2>LIVE NOW <span>{live.length}</span></h2></div><p>Real-time conversations, one game at a time.</p></div>
