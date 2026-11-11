@@ -221,8 +221,8 @@ export async function POST(request: Request) {
     // Poll vote: one vote per member per poll; voting again changes the vote.
     if (kind === "vote") {
       const postId = actionPostId;
-      const rawOptionIndex = form.get("option_index");
-      const optionIndexText = typeof rawOptionIndex === "string" ? rawOptionIndex.trim() : "";
+      const optionIndexValues = form.getAll("option_index");
+      const optionIndexText = optionIndexValues.length === 1 && typeof optionIndexValues[0] === "string" ? optionIndexValues[0].trim() : "";
       const optionIndex = /^\d+$/.test(optionIndexText) ? Number(optionIndexText) : NaN;
       if (!postId || !Number.isInteger(optionIndex)) return NextResponse.json({ allowed: false, message: "That vote didn't go through. Please try again." }, { status: 400 });
       const { data: poll } = await db.from("feed_posts").select("id,status,post_kind,poll_options,expires_at").eq("id", postId).maybeSingle();
