@@ -1,0 +1,26 @@
+// Run with: node scripts/test-league-season.cjs
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const ts = require("typescript");
+const Module = require("node:module");
+const source = fs.readFileSync("lib/league-season.ts", "utf8");
+const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+const mod = new Module("league-season.ts", module);
+mod.filename = "league-season.ts";
+mod.paths = module.paths;
+mod._compile(js, mod.filename);
+const { isLeagueInSeason, currentSeasonLabel } = mod.exports;
+const winter = { season_start_month: 10, season_start_day: 1, season_end_month: 6, season_end_day: 30 };
+const january = { season_start_month: 1, season_start_day: 1, season_end_month: 5, season_end_day: 31 };
+assert.equal(isLeagueInSeason(winter, "2026-12-15"), true);
+assert.equal(isLeagueInSeason(winter, "2027-02-15"), true);
+assert.equal(isLeagueInSeason(winter, "2027-07-01"), false);
+assert.equal(isLeagueInSeason(winter, "2026-09-30"), false);
+assert.equal(currentSeasonLabel(winter, "2027-02-15"), "2026–27");
+assert.equal(isLeagueInSeason(january, "2026-12-15"), false);
+assert.equal(isLeagueInSeason(january, "2027-02-15"), true);
+assert.equal(isLeagueInSeason(january, "2027-01-01"), true);
+assert.equal(isLeagueInSeason(january, "2027-06-01"), false);
+const europe = { season_start_month: 9, season_start_day: 1, season_end_month: 6, season_end_day: 30 };
+assert.equal(isLeagueInSeason(europe, "2026-11-11"), true);
+console.log("SEASON-1 resolver assertions passed");
