@@ -236,7 +236,7 @@ export async function POST(request: Request) {
       if (!postId || !Number.isInteger(optionIndex)) return NextResponse.json({ allowed: false, message: "That vote didn't go through. Please try again." }, { status: 400 });
       const { data: poll } = await db.from("feed_posts").select("id,status,post_kind,poll_options,expires_at").eq("id", postId).maybeSingle();
       const options = Array.isArray(poll?.poll_options) ? poll.poll_options as string[] : [];
-      if (!poll || poll.status !== "approved" || (poll.expires_at && new Date(poll.expires_at).getTime() <= Date.now()) || poll.post_kind !== "poll" || optionIndex < 0 || optionIndex >= options.length) {
+      if (!poll || poll.status !== "approved" || poll.post_kind !== "poll" || optionIndex < 0 || optionIndex >= options.length) {
         return NextResponse.json({ allowed: false, message: "This poll is no longer available." }, { status: 404 });
       }
       const { error } = await db.from("feed_poll_votes").upsert({ post_id: postId, user_id: user.id, option_index: optionIndex }, { onConflict: "post_id,user_id" });
@@ -255,7 +255,7 @@ export async function POST(request: Request) {
       if (!postId) return NextResponse.json({ allowed: false, message: "Couldn't update your saved posts. Please try again." }, { status: 400 });
       if (saved) {
         const { data: post } = await db.from("feed_posts").select("id,status,expires_at").eq("id", postId).maybeSingle();
-        if (!post || post.status !== "approved" || (post.expires_at && new Date(post.expires_at).getTime() <= Date.now())) return NextResponse.json({ allowed: false, message: "This post is no longer available." }, { status: 404 });
+        if (!post || post.status !== "approved") return NextResponse.json({ allowed: false, message: "This post is no longer available." }, { status: 404 });
         const { error } = await db.from("feed_post_bookmarks").upsert({ post_id: postId, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
         if (error) return NextResponse.json({ allowed: false, message: "Couldn't save this post. Please try again." }, { status: 400 });
       } else {
@@ -278,7 +278,7 @@ export async function POST(request: Request) {
       const { data: targetPost, error: targetError } = await db.from("feed_posts")
         .select("id,status,expires_at").eq("id", postId).maybeSingle();
       if (targetError) return NextResponse.json({ allowed: false, message: "Couldn't update the pin. Please try again." }, { status: 500 });
-      if (!targetPost || (pinned && (targetPost.status !== "approved" || (targetPost.expires_at && new Date(targetPost.expires_at).getTime() <= Date.now())))) {
+      if (!targetPost || (pinned && (targetPost.status !== "approved"))) {
         return NextResponse.json({ allowed: false, message: "This post is no longer available for pinning." }, { status: 404 });
       }
       const { error } = await db.from("feed_posts").update({ is_pinned: pinned, pinned_at: pinned ? new Date().toISOString() : null }).eq("id", postId);
@@ -298,7 +298,7 @@ export async function POST(request: Request) {
         console.error("HoopFeed share source lookup failed", { sourceId, code: sourceError.code });
         return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 500 });
       }
-      if (!source || source.status !== "approved" || (source.expires_at && new Date(source.expires_at).getTime() <= Date.now())) {
+      if (!source || source.status !== "approved") {
         return NextResponse.json({ allowed: false, message: "This post is no longer available and can't be shared." }, { status: 404 });
       }
       if (source.post_kind === "poll") {
@@ -372,7 +372,7 @@ export async function POST(request: Request) {
       const postId = actionPostId;
       if (!postId) return NextResponse.json({ allowed: false, message: "Post not found." }, { status: 400 });
       const { data: post } = await db.from("feed_posts").select("id,author_id,expires_at,status").eq("id",postId).maybeSingle();
-      if (!post || post.status !== "approved" || (post.expires_at && new Date(post.expires_at).getTime() <= Date.now())) {
+      if (!post || post.status !== "approved") {
         return NextResponse.json({ allowed: false, message: "This HoopFeed post is no longer available." }, { status: 404 });
       }
       const { error } = await db.from("feed_post_comments").insert({ post_id:postId,author_id:user.id,body:text });
