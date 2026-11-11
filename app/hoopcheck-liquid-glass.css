@@ -280,7 +280,146 @@ html.theme-dark :is(.hc-confirm-modal, .report-modal) {
    the logo/menu row where the clock and indicators can overlap controls. */
 @media (max-width: 767px) {
   html.theme-dark body header.site-header-global.hc-template-header {
-    top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
+    /* Sticky top affects scrolling, not the header's initial flow position.
+       A conservative iOS fallback also works when PWA env() resolves to 0. */
+    top: max(52px, calc(env(safe-area-inset-top, 0px) + 8px)) !important;
+    margin-block-start: max(52px, calc(env(safe-area-inset-top, 0px) + 8px)) !important;
     padding-block-start: 9px !important;
+  }
+}
+
+/* iPhone header polish: keep brand and menu within one stable control row. */
+@media (max-width: 767px) {
+  html.theme-dark body header.site-header-global.hc-template-header {
+    box-sizing: border-box !important;
+    padding-inline: 12px !important;
+  }
+  html.theme-dark body header.site-header-global .site-header-brand {
+    min-width: 0 !important;
+    max-width: calc(100% - 68px) !important;
+    overflow: hidden;
+  }
+  html.theme-dark body header.site-header-global .site-header-brand .hc-logo--full {
+    max-width: 100% !important;
+  }
+  html.theme-dark body header.site-header-global .site-header-brand .hc-logo__wordmark {
+    font-size: clamp(15px, 4.1vw, 19px) !important;
+    white-space: nowrap !important;
+  }
+  html.theme-dark body header.site-header-global .site-header-brand .hc-logo__icon {
+    flex-shrink: 0 !important;
+  }
+}
+
+/* GLASS-HEADER: translucent floating iOS toolbar, with opaque accessibility fallback. */
+@media (max-width: 767px) {
+  html.theme-dark body header.site-header-global.hc-template-header {
+    background: rgba(22, 22, 26, .64) !important;
+    border: 1px solid rgba(255, 255, 255, .23) !important;
+    border-bottom: 2px solid var(--hc-orange) !important;
+    border-radius: 20px !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 12px 32px rgba(0,0,0,.27) !important;
+    -webkit-backdrop-filter: saturate(160%) blur(20px) !important;
+    backdrop-filter: saturate(160%) blur(20px) !important;
+  }
+}
+@media (max-width: 767px) and (prefers-reduced-transparency: reduce) {
+  html.theme-dark body header.site-header-global.hc-template-header {
+    background: #1c1c1f !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  @media (max-width: 767px) {
+    html.theme-dark body header.site-header-global.hc-template-header {
+      background: #1c1c1f !important;
+    }
+  }
+}
+
+/* LIGHT-GLASS-HEADER: theme tokens otherwise force the light header solid black. */
+@media (max-width: 767px) {
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header {
+    position: sticky !important;
+    top: max(52px, calc(env(safe-area-inset-top, 0px) + 8px)) !important;
+    margin: max(52px, calc(env(safe-area-inset-top, 0px) + 8px)) 12px 0 !important;
+    width: calc(100% - 24px) !important;
+    max-width: calc(100% - 24px) !important;
+    box-sizing: border-box !important;
+    padding: 9px 12px !important;
+    border-radius: 20px !important;
+    background: rgba(245, 246, 250, .72) !important;
+    color: #17171b !important;
+    border: 1px solid rgba(60, 65, 75, .22) !important;
+    border-bottom: 2px solid #ff5a1f !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 12px 32px rgba(0,0,0,.13) !important;
+    -webkit-backdrop-filter: saturate(160%) blur(20px) !important;
+    backdrop-filter: saturate(160%) blur(20px) !important;
+    z-index: 1200 !important;
+  }
+  html.theme-light body header.site-header-global.hc-template-header .site-header-brand {
+    min-width: 0 !important;
+    max-width: calc(100% - 68px) !important;
+  }
+  html.theme-light body header.site-header-global.hc-template-header .site-header-brand .hc-logo__wordmark {
+    font-size: clamp(15px, 4.1vw, 19px) !important;
+    white-space: nowrap !important;
+  }
+}
+@media (max-width: 767px) and (prefers-reduced-transparency: reduce) {
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header {
+    background: #f5f6fa !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  @media (max-width: 767px) {
+    html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header {
+      background: #f5f6fa !important;
+    }
+  }
+}
+
+/* Accessible dark lettering on the light floating glass header only. */
+@media (max-width: 767px) {
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header .site-header-brand .hc-logo__wordmark,
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header .site-header-brand .hc-logo__hoop,
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header .site-header-brand .hc-logo__check-word {
+    color: #17171b !important;
+    -webkit-text-fill-color: #17171b !important;
+  }
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-mobile-menu-toggle {
+    color: #17171b !important;
+  }
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-mobile-menu-toggle span {
+    background-color: #17171b !important;
+  }
+}
+
+/* Screenshot QA: light glass header controls must not inherit black nav button fill. */
+@media (max-width: 767px) {
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header button.hc-mobile-menu-toggle {
+    background: rgba(255,255,255,.55) !important;
+    background-color: rgba(255,255,255,.55) !important;
+    color: #17171b !important;
+    border: 1px solid rgba(23,23,27,.20) !important;
+    border-radius: 15px !important;
+    box-shadow: none !important;
+    -webkit-text-fill-color: #17171b !important;
+  }
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header button.hc-mobile-menu-toggle span {
+    background: #17171b !important;
+    background-color: #17171b !important;
+    color: #17171b !important;
+  }
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-header-nav.is-open {
+    background: rgba(250,250,252,.97) !important;
+    color: #17171b !important;
+    border-radius: 18px !important;
+  }
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-header-nav.is-open a {
+    color: #17171b !important;
   }
 }
