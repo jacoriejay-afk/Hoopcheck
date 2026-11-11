@@ -251,6 +251,9 @@ assert.match(feedModerationSource, /const actionPostId = kind === "post"/, "acti
 
 assert.match(feedModerationSource, /optionIndexValues\.length === 1 && typeof optionIndexValues\[0\] === "string"/, "poll votes must reject duplicate or non-text option indices");
 
+assert.match(feedModerationSource, /savedValues\.length !== 1/, "bookmarks require one explicit saved state");
+assert.match(feedModerationSource, /pinnedValues\.length !== 1/, "pins require one explicit pinned state");
+
 const playerContactPolicy = read("../supabase/migrations/20261111180000_align_agent_scout_contact_pro_premium.sql");
 assert.match(playerContactPolicy, /s\.plan IN \('pro', 'premium'\)/, "Agent/Scout contact RLS must accept Pro and Premium");
 assert.match(playerContactPolicy, /requester_id = \(SELECT auth\.uid\(\)\)/, "contact requester must match auth user");
