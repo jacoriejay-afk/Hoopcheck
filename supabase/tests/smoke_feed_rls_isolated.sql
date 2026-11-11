@@ -48,14 +48,33 @@ insert into public.feed_posts values
 \i supabase/migrations/20261111000200_secure_feed_bookmarks.sql
 \i supabase/tests/verify_feed_poll_vote_policies.sql
 \i supabase/tests/verify_feed_bookmark_policies.sql
+-- Seed another user's rows as the test administrator to exercise ownership RLS.
+insert into public.feed_poll_votes(post_id,user_id,option_index) values
+ ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002',0);
+insert into public.feed_post_bookmarks(post_id,user_id) values
+ ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002');
 set role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',false);
 select set_config('test.allowed_author','00000000-0000-0000-0000-000000000002',false);
 insert into public.feed_poll_votes(post_id,user_id,option_index) values
  ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001',1);
 do $$ begin
- if (select count(*) from public.feed_poll_votes) <> 1 then raise exception 'Visible vote missing'; end if;
+ if (select count(*) from public.feed_poll_votes) <> 2 then raise exception 'Visible vote missing'; end if;
 end $$;
+-- Other users' votes are readable on a visible poll but cannot be modified.
+do $ownership_check$ declare n integer;
+begin
+ update public.feed_poll_votes set option_index=1
+ where user_id='00000000-0000-0000-0000-000000000002';
+ get diagnostics n = row_count;
+ if n <> 0 then raise exception 'Modified another user vote'; end if;
+ delete from public.feed_poll_votes where user_id='00000000-0000-0000-0000-000000000002';
+ get diagnostics n = row_count;
+ if n <> 0 then raise exception 'Deleted another user vote'; end if;
+ delete from public.feed_post_bookmarks where user_id='00000000-0000-0000-0000-000000000002';
+ get diagnostics n = row_count;
+ if n <> 0 then raise exception 'Deleted another user bookmark'; end if;
+end $ownership_check$;
 -- Negative cases: each operation must be denied by RLS, not accepted.
 create function pg_temp.expect_denied(q text) returns void language plpgsql as $$
 begin
