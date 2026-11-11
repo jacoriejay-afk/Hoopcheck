@@ -1,0 +1,39 @@
+name: HoopFeed isolated RLS smoke test
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/20261111000100_secure_feed_poll_votes.sql"
+      - "supabase/migrations/20261111000200_secure_feed_bookmarks.sql"
+      - "supabase/tests/**"
+      - ".github/workflows/hoopfeed-rls-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-rls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test-only
+          POSTGRES_DB: hoopfeed_rls_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hoopfeed_rls_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Apply migrations and execute synthetic authenticated RLS cases
+        env:
+          PGPASSWORD: test-only
+        run: psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d hoopfeed_rls_test -f supabase/tests/smoke_feed_rls_isolated.sql
