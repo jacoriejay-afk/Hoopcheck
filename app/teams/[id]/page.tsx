@@ -198,6 +198,8 @@ export default function TeamDetailPage() {
   const [loading, setLoading] =
     useState(true);
 
+  const [activeProfileTab, setActiveProfileTab] = useState<"overview" | "reviews">("overview");
+
   const [reviewLoading, setReviewLoading] =
     useState(false);
 
@@ -567,10 +569,10 @@ export default function TeamDetailPage() {
         trustScore={trustScoreData}
         onFollowerCountChange={setTeamFollowerCount}
       />
-      <nav className="hc-team-profile-nav" aria-label="Team profile sections">
-        <a href="#overview" aria-current="page">Overview</a><a href="#reviews">Reviews</a><a href="#players">Players</a><a href="#roster-board">Roster Board</a>{accountType && accountType !== "fan" ? <a href="#pay-transparency">Pay Transparency</a> : null}
+      <nav className="hc-team-profile-nav" aria-label="Team profile sections" role="tablist">
+        <button type="button" role="tab" id="team-overview-tab" aria-selected={activeProfileTab === "overview"} aria-controls="team-overview-panel" onClick={() => setActiveProfileTab("overview")}>Overview</button><button type="button" role="tab" id="team-reviews-tab" aria-selected={activeProfileTab === "reviews"} aria-controls="team-reviews-panel" onClick={() => setActiveProfileTab("reviews")}>Reviews</button><a href="#players">Players</a><a href="#roster-board">Roster Board</a>{accountType && accountType !== "fan" ? <a href="#pay-transparency">Pay Transparency</a> : null}
       </nav>
-      <div className="hc-team-profile-overview-grid">
+      <div id="team-overview-panel" role="tabpanel" aria-labelledby="team-overview-tab" hidden={activeProfileTab !== "overview"}><div className="hc-team-profile-overview-grid">
         <section className="hc-team-profile-about" aria-labelledby="hc-team-about-title">
           <p className="hc-team-profile-kicker">CLUB OVERVIEW</p>
           <h2 id="hc-team-about-title">About {team.name}</h2>
@@ -586,10 +588,11 @@ export default function TeamDetailPage() {
           <h2 id="hc-team-snapshot-title">Trust Snapshot</h2>
           <p className="hc-team-profile-snapshot-note">{teamReviewCount > 0 ? `${teamReviewCount} published team reviews` : "No published reviews yet"}</p>
           {hasAccess && trustScoreData?.score != null ? <TrustScoreDial score={trustScoreData.score} explanation={trustScoreData.explanation || t("trustScoreUnavailable")} reviewCount={trustScoreData.reviewCount} verifiedReviewCount={trustScoreData.verifiedReviewCount} /> : <p className="hc-team-profile-snapshot-note">{accountType === "fan" ? "Full trust details require an eligible Fan membership." : "Trust details are available with an eligible membership."}</p>}
-          <a href="#reviews" className="hc-team-profile-inline-link">Explore team reviews</a>
+          <button type="button" className="hc-team-profile-inline-link" onClick={() => setActiveProfileTab("reviews")}>Explore team reviews</button>
         </section>
       </div>
 
+      </div>
       {knownPlayerFollowers.length > 0 && <p className="hc-team-social-proof">Followed by players you follow: <strong>{knownPlayerFollowers.join(", ")}</strong></p>}
         <div className="entity-actions">
           {canWriteReviews ? <Link href={`/teams/${team.id}/review`} className="btn">Write a Review</Link> : null}
@@ -598,7 +601,7 @@ export default function TeamDetailPage() {
         </div>
         <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
         {canReadFullReviews && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">LATEST PLAYER REVIEW</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || t("playerExperience")}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
-      <section className="hero" id="reviews">
+      <section className="hero" id="team-reviews-panel" role="tabpanel" aria-labelledby="team-reviews-tab" hidden={activeProfileTab !== "reviews"}>
             {canReadFullReviews ? (
               <Surface as="div" className="hc-entity-trust-score hc-team-reviews-trust-strip"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /><div className="hc-team-score-categories" aria-label="Category ratings">{([{label:"Communication",value:publicSummary.communication_rating},{label:"Professionalism",value:publicSummary.professionalism_rating},{label:"Development",value:publicSummary.development_rating},{label:"Payment",value:publicSummary.payment_rating}] as const).filter(item => item.value !== null).map(item => <span key={item.label}><small>{item.label}</small><strong>{Number(item.value).toFixed(1)}</strong></span>)}</div></Surface>
             ) : null}
