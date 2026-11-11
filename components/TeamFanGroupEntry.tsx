@@ -57,9 +57,12 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
       ]);
       const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, isAdmin: platformAdmin === true });
       setIsFan(entitlements.canUseFanGroups);
-      setIsModerator(Boolean(entitlements.canModerateFanGroups ||
+      // Team-scoped appointments are required for club admins; match the API guard.
+      setIsModerator(Boolean(
         (moderators || []).some((m: any) => m.user_id === user.id) ||
-        ((moderators || []).some((m: any) => m.moderator_type === "platform") && platformAdmin === true)));
+        (platformAdmin === true && (profile?.account_type === "admin" ||
+          (moderators || []).some((m: any) => m.moderator_type === "platform")))
+      ));
     } else {
       setIsFan(false);
       setIsModerator(false);
