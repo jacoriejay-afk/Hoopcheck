@@ -63,3 +63,11 @@ for (const [policyName, nextPolicy] of [
 assert.match(migration, /commit;/i, "Security migration must commit transaction");
 
 console.log("HoopFeed vote endpoint and poll-vote migration security guards passed");
+
+const bookmarkMigration = readFileSync(new URL("../supabase/migrations/20261111000200_secure_feed_bookmarks.sql", import.meta.url), "utf8");
+assert.match(bookmarkMigration, /drop policy if exists "feed bookmarks insert own"/);
+assert.match(bookmarkMigration, /for insert to authenticated/);
+assert.match(bookmarkMigration, /auth\.uid\(\)/);
+assert.match(bookmarkMigration, /can_view_player_feed_post/);
+assert.match(bookmarkMigration, /expires_at\s*>\s*now\(\)/);
+assert.match(bookmarkMigration, /status\s*=\s*'approved'/);
