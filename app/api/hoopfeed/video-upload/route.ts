@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   const { data: profile } = await admin.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
   const { data: subscription } = await admin.from("subscriptions").select("*").eq("user_id", user.id).maybeSingle();
   const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription });
-  if (!entitlements.canPostHoopFeed) return NextResponse.json({ error: "HoopFeed posting is unavailable" }, { status: 403 });
+  if (!entitlements.canWriteHoopFeed) return NextResponse.json({ error: "HoopFeed posting is unavailable" }, { status: 403 });
 
   let body: { content_type?: string; size?: number };
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
