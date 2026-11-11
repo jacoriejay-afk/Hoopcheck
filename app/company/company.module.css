@@ -61,7 +61,7 @@
 .hero h1 {
   max-width: 16ch;
   margin: 0;
-  font-family: var(--font-display), Georgia, serif;
+  font-family: var(--font-display), "Arial Black", Impact, sans-serif;
   font-size: clamp(1.9rem, 5.4vw, 3.75rem);
   line-height: 1.08;
   letter-spacing: -.025em;
@@ -177,7 +177,7 @@
 }
 
 .card h2 {
-  font-family: var(--font-display), Georgia, serif;
+  font-family: var(--font-display), "Arial Black", Impact, sans-serif;
   font-size: clamp(1.14rem, 2.1vw, 1.5rem);
   line-height: 1.25;
 }
