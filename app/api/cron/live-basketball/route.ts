@@ -180,8 +180,11 @@ export async function GET(request: NextRequest) {
       const providerLeagueId = Number(game.league?.id);
       const verifiedProviderLeagueId = Number.isInteger(providerLeagueId) && providerLeagueId > 0
         ? leagueByProviderId.get(providerLeagueId) : null;
-      const leagueId = verifiedProviderLeagueId ||
-        (homeLeagueId && awayLeagueId && homeLeagueId === awayLeagueId ? homeLeagueId : null);
+      // A provider competition ID is authoritative only after manual verification.
+      // Never substitute a club's domestic league for an unknown provider competition.
+      const leagueId = Number.isInteger(providerLeagueId) && providerLeagueId > 0
+        ? verifiedProviderLeagueId || null
+        : (homeLeagueId && awayLeagueId && homeLeagueId === awayLeagueId ? homeLeagueId : null);
 
       const startDate = game.timestamp ? new Date(game.timestamp * 1000).toISOString()
         : (game.date && !Number.isNaN(Date.parse(game.date)) ? new Date(game.date).toISOString() : null);
