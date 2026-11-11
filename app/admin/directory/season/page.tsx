@@ -15,6 +15,8 @@ const numberFields = ["season_start_month", "season_start_day", "season_end_mont
 export default function LeagueSeasonEditor() {
   const [leagueId, setLeagueId] = useState("");
   const [leagueName, setLeagueName] = useState("");
+  const [query, setQuery] = useState("");
+  const [matches, setMatches] = useState<{id:string;name:string;country:string|null}[]>([]);
   const [form, setForm] = useState<Season>(defaults);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -23,6 +25,19 @@ export default function LeagueSeasonEditor() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("Sign in to edit league seasons.");
     return { Authorization: `Bearer ${session.access_token}` };
+  }
+  async function searchLeagues() {
+    setBusy(true); setMessage("");
+    try {
+      await authHeaders();
+      const term = query.trim();
+      if (term.length < 2 || term.length > 80) throw new Error("Search using 2–80 characters.");
+      const { data, error } = await supabase.from("leagues").select("id,name,country").ilike("name", `%${term.replace(/[%_,]/g, "")}%`).order("name").limit(30);
+      if (error) throw error;
+      setMatches(data || []);
+      if (!data?.length) setMessage("No matching leagues.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Search unavailable."); }
+    finally { setBusy(false); }
   }
   async function load() {
     setBusy(true); setMessage(""); setPreview("");
@@ -58,6 +73,9 @@ export default function LeagueSeasonEditor() {
     <Link href="/admin/directory/manage?kind=leagues-mens">Back to directory manager</Link>
     <h1>League season settings</h1>
     <p>Set recurring competition dates. Timezones must use IANA names (for example, Europe/Baku). Leave timezone blank until verified.</p>
+    <label>Find league<input style={inputStyle} value={query} onChange={event => setQuery(event.target.value)} placeholder="Search league name" /></label>
+    <button type="button" disabled={busy} onClick={searchLeagues}>Search leagues</button>
+    {matches.length > 0 && <label>Choose league<select style={inputStyle} value={leagueId} onChange={event => { setLeagueId(event.target.value); setLeagueName(""); setPreview(""); }}><option value="">Select a league</option>{matches.map(item => <option key={item.id} value={item.id}>{item.name} · {item.country || "Country unknown"}</option>)}</select></label>}
     <label>League ID<input style={inputStyle} value={leagueId} onChange={event => setLeagueId(event.target.value.trim())} placeholder="League UUID" /></label>
     <button type="button" disabled={busy} onClick={load}>Load league</button>
     {leagueName && <section style={{ marginTop: 24, display: "grid", gap: 16 }}>
