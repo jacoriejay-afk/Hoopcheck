@@ -2,7 +2,6 @@
 \set ON_ERROR_STOP on
 create role authenticated nologin;
 create schema auth;
-create schema public;
 create table public.profiles(id uuid primary key);
 create table public.feed_posts(
  id uuid primary key, author_id uuid not null, status text not null,
