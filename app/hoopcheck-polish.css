@@ -1672,13 +1672,13 @@
 .auth-page-shell .signup-form .form-hint { color:var(--hc-foreground-muted); font-size:11px; line-height:1.5; }
 .auth-page-shell .signup-form .checkbox-row { display:flex; align-items:flex-start; gap:9px; line-height:1.5; }
 .auth-page-shell .signup-form .checkbox-row input { width:18px; min-height:18px; flex:0 0 18px; margin-top:2px; accent-color:var(--hc-orange); }
-.auth-page-shell .signup-form .checkbox-row a { color:#b94c00; text-decoration:underline; text-underline-offset:2px; }
-.auth-page-shell .signup-form .submit { width:100%; min-height:49px; justify-content:center; margin-top:8px; }
+.auth-page-shell .signup-form .checkbox-row a { color:var(--hc-accent-text); text-decoration:underline; text-underline-offset:2px; }
+.auth-page-shell .signup-form .submit { width:100%; min-height:49px; justify-content:center; margin-top:8px; border-radius:var(--hc-radius-control); }
 .auth-page-shell .signup-gate { display:grid; justify-items:center; gap:7px; padding:22px 10px; background:var(--hc-surface-soft); color:var(--hc-foreground); border:1px dashed var(--hc-border); border-radius:var(--hc-radius-control); text-align:center; }
 .auth-page-shell .signup-gate strong { font-size:13px; }
 .auth-page-shell .signup-gate small { color:var(--hc-foreground-muted); }
 .auth-page-shell .login-link { margin-top:18px; color:var(--hc-foreground-muted); font-size:12px; text-align:center; }
-.auth-page-shell .login-link a { color:#bd4e00; font-weight:900; }
+.auth-page-shell .login-link a { color:var(--hc-accent-text); font-weight:900; }
 .auth-page-shell :where(button,a):focus-visible { outline:2px solid var(--hc-orange); outline-offset:3px; }
 @media (max-width: 900px) {
   .auth-page-shell .signup-page { grid-template-columns:1fr; max-width:760px; }
