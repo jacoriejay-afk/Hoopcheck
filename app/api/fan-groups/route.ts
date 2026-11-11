@@ -74,7 +74,9 @@ export async function POST(request: Request) {
     const { data: explicitMod } = await db.from("team_fan_group_moderators").select("id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle();
     const { data: platformMod } = await db.from("team_fan_group_moderators").select("id").eq("team_id", teamId).eq("moderator_type", "platform").maybeSingle();
     const { data: isPlatformAdmin } = await db.rpc("is_current_user_admin_or_moderator");
-    const isModerator = Boolean(entitlements.canModerateFanGroups || explicitMod || (platformMod && (profile?.account_type === "admin" || isPlatformAdmin)));
+    // Club admins must be assigned to this specific team; their account type alone
+    // must never grant moderation access to every Fan HQ group.
+    const isModerator = Boolean(explicitMod || (isPlatformAdmin && (profile?.account_type === "admin" || platformMod)));
     const { data: membership } = await db.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle();
     const isMember = Boolean(membership);
 
