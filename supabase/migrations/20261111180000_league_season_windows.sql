@@ -59,3 +59,10 @@ ALTER TABLE public.leagues
 COMMENT ON COLUMN public.leagues.season_time_zone IS 'IANA competition timezone; NULL means not verified';
 
 COMMENT ON COLUMN public.leagues.season_label IS 'Admin-selected display label; may require annual update; computed label used when NULL';
+
+-- Game-to-league identity is required for fail-closed season checks.
+-- Nullable because a provider fixture may not map unambiguously to one league.
+ALTER TABLE public.fan_live_games
+  ADD COLUMN IF NOT EXISTS league_id uuid REFERENCES public.leagues(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS fan_live_games_league_id_idx ON public.fan_live_games(league_id);
+COMMENT ON COLUMN public.fan_live_games.league_id IS 'Verified internal competition ID; NULL blocks season-gated actions';
