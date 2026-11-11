@@ -84,7 +84,7 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
       return;
     }
     const {data,error}=await supabase.auth.signUp({
-      email:email.trim().toLowerCase(), password, options:{data:metadata, emailRedirectTo: "https://hoopcheck.online/auth/confirm"}
+      email:email.trim().toLowerCase(), password, options:{data:metadata, emailRedirectTo: "https://hoopcheck.online/signup/complete"}
     });
     if(error) throw error;
     const normalizedEmail = email.trim().toLowerCase();
