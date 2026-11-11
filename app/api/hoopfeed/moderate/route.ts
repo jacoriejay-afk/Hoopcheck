@@ -197,9 +197,9 @@ export async function POST(request: Request) {
       const postId = String(form.get("post_id") || "").trim();
       const optionIndex = Number(form.get("option_index"));
       if (!postId || !Number.isInteger(optionIndex)) return NextResponse.json({ allowed: false, message: "That vote didn't go through. Please try again." }, { status: 400 });
-      const { data: poll } = await db.from("feed_posts").select("id,status,post_kind,poll_options").eq("id", postId).maybeSingle();
+      const { data: poll } = await db.from("feed_posts").select("id,status,post_kind,poll_options,expires_at").eq("id", postId).maybeSingle();
       const options = Array.isArray(poll?.poll_options) ? poll.poll_options as string[] : [];
-      if (!poll || poll.status !== "approved" || poll.post_kind !== "poll" || optionIndex < 0 || optionIndex >= options.length) {
+      if (!poll || poll.status !== "approved" || (poll.expires_at && new Date(poll.expires_at).getTime() <= Date.now()) || poll.post_kind !== "poll" || optionIndex < 0 || optionIndex >= options.length) {
         return NextResponse.json({ allowed: false, message: "This poll is no longer available." }, { status: 404 });
       }
       const { error } = await db.from("feed_poll_votes").upsert({ post_id: postId, user_id: user.id, option_index: optionIndex }, { onConflict: "post_id,user_id" });
@@ -213,8 +213,8 @@ export async function POST(request: Request) {
       const saved = String(form.get("saved") || "") === "true";
       if (!postId) return NextResponse.json({ allowed: false, message: "Couldn't update your saved posts. Please try again." }, { status: 400 });
       if (saved) {
-        const { data: post } = await db.from("feed_posts").select("id,status").eq("id", postId).maybeSingle();
-        if (!post || post.status !== "approved") return NextResponse.json({ allowed: false, message: "This post is no longer available." }, { status: 404 });
+        const { data: post } = await db.from("feed_posts").select("id,status,expires_at").eq("id", postId).maybeSingle();
+        if (!post || post.status !== "approved" || (post.expires_at && new Date(post.expires_at).getTime() <= Date.now())) return NextResponse.json({ allowed: false, message: "This post is no longer available." }, { status: 404 });
         const { error } = await db.from("feed_post_bookmarks").upsert({ post_id: postId, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
         if (error) return NextResponse.json({ allowed: false, message: "Couldn't save this post. Please try again." }, { status: 400 });
       } else {
