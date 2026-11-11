@@ -268,21 +268,30 @@ export async function POST(request: Request) {
     if (kind === "share") {
       const sourceId = String(form.get("post_id") || "").trim();
       if (!sourceId) return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 400 });
-      const { data: source, error: sourceError } = await db.from("feed_posts")
+      const publicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (!publicKey || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
+        return NextResponse.json({ allowed: false, message: "Sharing is temporarily unavailable." }, { status: 503 });
+      }
+      const viewerDb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, publicKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data: source, error: sourceError } = await viewerDb.from("feed_posts")
         .select("id,author_id,body,image_url,image_urls,video_url,post_kind,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,status,expires_at")
         .eq("id", sourceId).maybeSingle();
       if (sourceError) {
         console.error("HoopFeed share source lookup failed", { sourceId, code: sourceError.code });
         return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 500 });
       }
-      if (!source || source.status !== "approved") {
+      if (!source || source.status !== "approved" || !source.expires_at || new Date(source.expires_at).getTime() <= Date.now()) {
         return NextResponse.json({ allowed: false, message: "This post is no longer available and can't be shared." }, { status: 404 });
       }
       if (source.post_kind === "poll") {
         return NextResponse.json({ allowed: false, message: "Polls can't be shared — vote on the original instead." }, { status: 400 });
       }
       const sharedAt = new Date();
-      const expiresAt = new Date("2100-01-01T00:00:00.000Z");
+      // A re-share must not outlive the original post's visibility window.
+      const expiresAt = new Date(source.expires_at);
       const sourceImageUrls = Array.isArray(source.image_urls) && source.image_urls.length ? source.image_urls as string[] : (source.image_url ? [source.image_url] : []);
       const { data: shared, error: shareError } = await db.from("feed_posts").insert({
         author_id: user.id, body: source.body, image_url: source.image_url, image_urls: sourceImageUrls, video_url: source.video_url, post_kind: "discussion",
