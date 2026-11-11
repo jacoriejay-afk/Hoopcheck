@@ -13,6 +13,7 @@ import GameWinnerPrediction from "../../components/GameWinnerPrediction";
 import TeamLogo from "../../components/TeamLogo";
 import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 import { groupLiveChatGames } from "../../lib/livechat-groups";
+import { getGameChatState, chatOpeningTime } from "../../lib/livechat-lifecycle";
 
 type Game = { id:string; team_id:string; opponent_team_id:string|null; opponent_name:string; status:string; home_score:number|null; away_score:number|null; started_at:string|null; ends_at:string|null; scheduled_at:string|null; league_name:string|null; country:string|null; period_label:string|null };
 type Team = { id:string; name:string; logo_url?:string|null; logo_bg?:"transparent"|"light"|"dark"|null };
@@ -23,15 +24,7 @@ const finalStatus = (status:string) => ["final","finished","cancelled","canceled
 const initials = (name:string) => name.trim().split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join("").toUpperCase() || "HC";
 const renderTeamLogo = (team:Team|null|undefined) => <TeamLogo name={team?.name||"Team"} logoUrl={team?.logo_url} logoBg={team?.logo_bg} size={44} className="hc-live-team-logo" />;
 
-const roomOpen = (game:Game, now=new Date()) => {
-  if (finalStatus(game.status)) return false;
-  const tip = Date.parse(game.scheduled_at || game.started_at || "");
-  if (!Number.isFinite(tip)) return ["live","in_progress"].includes(game.status.toLowerCase());
-  if (now.getTime() < tip - 30*60_000) return false;
-  const end = Date.parse(game.ends_at || "");
-  if (Number.isFinite(end)) return now.getTime() < end;
-  return !Number.isFinite(tip) || now.getTime() < tip + 4*60*60_000;
-};
+const roomOpen = (game:Game, now=new Date()) => getGameChatState(game,now)==="open";
 
 export default function FanLivePage() {
   const [games,setGames]=useState<Game[]>([]);
@@ -244,7 +237,7 @@ export default function FanLivePage() {
 
   const home=selected?teams[selected.team_id]:null;
   const away=selected?(teams[selected.opponent_team_id||""]||{id:"",name:selected.opponent_name}):null;
-  const isClosed=selected?finalStatus(selected.status)||(Number.isFinite(Date.parse(selected.ends_at||""))?clock.getTime()>=Date.parse(selected.ends_at||""):(Number.isFinite(Date.parse(selected.scheduled_at||selected.started_at||""))&&clock.getTime()>=Date.parse(selected.scheduled_at||selected.started_at||"")+4*60*60_000)):false;
+  const isClosed=selected?getGameChatState(selected,clock)==="read-only":false;
   const availability=selected?getGameAvailability({status:selected.status,scheduledAt:selected.scheduled_at,startedAt:selected.started_at,endsAt:selected.ends_at,now:clock}):null;
   const shownMessages=useMemo(()=>messages.filter(m=>!blockedUsers.has(m.user_id)&&!mutedUsers.has(m.user_id)),[messages,blockedUsers,mutedUsers]);
 
@@ -265,7 +258,7 @@ export default function FanLivePage() {
       {selected&&<section className="dashboard-card hc-live-room-panel">
         <GameWinnerPrediction game={selected} homeName={home?.name||"Home"} awayName={away?.name||selected.opponent_name}  />
         <header className="hc-live-room-scoreboard"><div className="hc-live-room-team">{renderTeamLogo(home)}<strong>{home?.name||"Team"}</strong></div><div className="hc-live-room-score"><span className={"hc-live-badge"+(selected.status==="live"?" is-live":"")}>{selected.status==="live"?<><i/> LIVE</>:finalStatus(selected.status)?"FINAL":availability?.state||"UPCOMING"}</span><strong>{selected.home_score??"—"} <span>:</span> {selected.away_score??"—"}</strong><small>{selected.period_label||selected.league_name||"Score updates automatically"}</small></div><div className="hc-live-room-team">{renderTeamLogo(away)}<strong>{away?.name||selected.opponent_name}</strong></div></header>
-        {isClosed?<div className="hc-live-closed-state"><span className="hc-live-closed-icon">✓</span><h2>Chat closed — final score</h2><p>{home?.name||"Home"} {selected.home_score??"—"} – {selected.away_score??"—"} {away?.name||selected.opponent_name}</p><small>This room is read-only after full-time.</small></div>:!chatEnabled?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div>{accountType==="fan"?<><h2>Fan Pro or Premium required for Live Game Chat</h2><p>Upgrade your fan membership to join the live conversation for men's and women's fixtures.</p><Link href="/membership" className="btn">View Fan Membership</Link></>:accountType==="player"?<><h2>Player Pro or Premium required for Live Game Chat</h2><p>An active Pro or Premium player membership unlocks live game chat for men's and women's fixtures.</p><Link href="/membership" className="btn">View Membership</Link></>:!userId?<><h2>Sign in to join Live Game Chat</h2><Link href="/login" className="btn">Sign In</Link></>:<><h2>Live Game Chat is for eligible players and fans</h2><p>Active Pro and Premium player and fan memberships can join the live conversation.</p></>}</div>:!roomOpen(selected,clock)?<div className="hc-live-empty-state"><h2>Chat opens 30 minutes before tip-off</h2><p>{selected.scheduled_at?new Date(selected.scheduled_at).toLocaleString():"Tip-off time is not confirmed yet."}</p></div>:<div className="hc-live-chat-shell">
+        {isClosed?<div className="hc-live-closed-state"><span className="hc-live-closed-icon">✓</span><h2>Chat closed — final score</h2><p>{home?.name||"Home"} {selected.home_score??"—"} – {selected.away_score??"—"} {away?.name||selected.opponent_name}</p><small>This room is read-only after full-time.</small></div>:!chatEnabled?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div>{accountType==="fan"?<><h2>Fan Pro or Premium required for Live Game Chat</h2><p>Upgrade your fan membership to join the live conversation for men's and women's fixtures.</p><Link href="/membership" className="btn">View Fan Membership</Link></>:accountType==="player"?<><h2>Player Pro or Premium required for Live Game Chat</h2><p>An active Pro or Premium player membership unlocks live game chat for men's and women's fixtures.</p><Link href="/membership" className="btn">View Membership</Link></>:!userId?<><h2>Sign in to join Live Game Chat</h2><Link href="/login" className="btn">Sign In</Link></>:<><h2>Live Game Chat is for eligible players and fans</h2><p>Active Pro and Premium player and fan memberships can join the live conversation.</p></>}</div>:!roomOpen(selected,clock)?<div className="hc-live-empty-state"><h2>Chat opens 60 minutes before tip-off</h2><p>{chatOpeningTime(selected)?.toLocaleString()||"Tip-off time is not confirmed yet."}</p></div>:<div className="hc-live-chat-shell">
           <div className="hc-live-chat-toolbar"><span><i className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"member":"members"} chatting</span><span>1 message / 2 seconds</span></div>
           <div className="hc-live-chat-messages" aria-live="polite" aria-label="Live chat messages">
             {!shownMessages.length?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div><h2>You're first in — start the conversation</h2><p>Kick off the conversation while you watch.</p></div>:shownMessages.map(item=><article key={item.id} className={"hc-live-chat-message"+(item.user_id===userId?" is-own":"")+(item.failed?" is-failed":"")}>
