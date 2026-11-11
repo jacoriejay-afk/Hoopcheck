@@ -26,7 +26,9 @@ export default function GoogleSignInButton({ disabled }: { disabled?: boolean })
       }
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: new URL("/auth/callback", window.location.origin).href },
+        options: { redirectTo: window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+          ? new URL("/auth/callback", window.location.origin).href
+          : "https://hoopcheck.online/auth/callback" },
       });
       if (error) {
         setMessage(googleAuthMessage(error.code));
