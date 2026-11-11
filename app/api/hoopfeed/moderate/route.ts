@@ -307,6 +307,7 @@ export async function POST(request: Request) {
     if (photoRejection) return NextResponse.json({ allowed: false, message: photoRejection.message }, { status: photoRejection.status });
 
     if (kind === "comment") {
+      if (!text) return NextResponse.json({ allowed: false, message: "Write a comment before posting." }, { status: 400 });
       const postId = String(form.get("post_id") || "");
       if (!postId) return NextResponse.json({ allowed: false, message: "Post not found." }, { status: 400 });
       const { data: post } = await db.from("feed_posts").select("id,author_id,expires_at,status").eq("id",postId).maybeSingle();
