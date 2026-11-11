@@ -240,7 +240,17 @@ export async function POST(request: Request) {
     if (kind === "share") {
       const sourceId = String(form.get("post_id") || "").trim();
       if (!sourceId) return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 400 });
-      const { data: source, error: sourceError } = await db.from("feed_posts")
+      // The service-role client bypasses RLS. Check the source through the
+      // authenticated viewer first, so a guessed post ID cannot expose
+      // followers-only text or private-media references through resharing.
+      const viewerUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const viewerKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if (!viewerUrl || !viewerKey) return NextResponse.json({ allowed:false, message:"Feed access unavailable." }, { status:503 });
+      const viewer = createClient(viewerUrl, viewerKey, {
+        global: { headers: { Authorization: "Bearer " + token } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data: source, error: sourceError } = await viewer.from("feed_posts")
         .select("id,author_id,body,image_url,image_urls,video_url,post_kind,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,status,expires_at")
         .eq("id", sourceId).maybeSingle();
       if (sourceError) {
