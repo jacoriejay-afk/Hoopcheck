@@ -195,6 +195,26 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Provider has no final-whistle timestamp. Record the first time we
+    // observe a final result, preserving it across subsequent syncs.
+    // This is an observation timestamp, not a verified whistle time.
+    const finalIds = rows.filter(row => row.status === "final").map(row => row.provider_game_id);
+    if (finalIds.length) {
+      const { data: priorFinals, error: priorFinalError } = await db.from("fan_live_games")
+        .select("provider_game_id,ends_at")
+        .eq("provider_source", "api-sports-basketball")
+        .in("provider_game_id", finalIds);
+      if (priorFinalError) throw priorFinalError;
+      const knownEnd = new Map((priorFinals || []).map(item => [item.provider_game_id, item.ends_at]));
+      const observedAt = new Date().toISOString();
+      for (const row of rows) {
+        if (row.status === "final") {
+          // New final games get an observed finish; existing finishes remain stable.
+          Object.assign(row, { ends_at: knownEnd.get(row.provider_game_id) || observedAt });
+        }
+      }
+    }
+
     if (rows.length) {
       const { error: upsertError } = await db.from("fan_live_games")
         .upsert(rows, { onConflict: "provider_source,provider_game_id" });
