@@ -31,9 +31,9 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v4
-      - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Apply migrations and execute synthetic authenticated RLS cases
-        env:
-          PGPASSWORD: test-only
-        run: psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d hoopfeed_rls_test -f supabase/tests/smoke_feed_rls_isolated.sql
+        run: |
+          docker run --rm --network host -e PGPASSWORD=test-only \
+            -v "$PWD:/workspace:ro" -w /workspace postgres:16 \
+            psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d hoopfeed_rls_test \
+            -f supabase/tests/smoke_feed_rls_isolated.sql
