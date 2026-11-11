@@ -200,3 +200,30 @@ do $visibility_moderator$ begin
  raise exception 'Author denied own feed'; end if;
  if (select count(*) from public.feed_poll_votes) <> 2 then raise exception 'Moderator could not SELECT visible poll votes'; end if;
 end $visibility_moderator$;
+
+-- Supporting-table RLS regression: mirror the production profiles SELECT rule.
+-- In particular, a private author profile is invisible to a non-admin follower.
+reset role;
+alter table public.profiles add column profile_visibility text not null default 'public';
+alter table public.profiles enable row level security;
+create policy profiles_authenticated_read on public.profiles for select to authenticated
+ using (profile_visibility='public' or id=(select auth.uid())
+ or public.is_current_user_admin_or_moderator());
+delete from public.admin_roles;
+insert into public.follow_relationships values
+ ('00000000-0000-0000-0000-000000000001','player','00000000-0000-0000-0000-000000000002');
+set role authenticated;
+do $public_author_check$ begin
+ if not public.can_view_player_feed_post('00000000-0000-0000-0000-000000000002') then
+ raise exception 'Public followed author inaccessible under profile RLS'; end if;
+end $public_author_check$;
+reset role;
+update public.profiles set profile_visibility='private'
+ where id='00000000-0000-0000-0000-000000000002';
+set role authenticated;
+do $private_author_check$ begin
+ if public.can_view_player_feed_post('00000000-0000-0000-0000-000000000002') then
+ raise exception 'Private author leaked through feed visibility'; end if;
+ if (select count(*) from public.feed_poll_votes) <> 0 then
+ raise exception 'Private author poll votes leaked'; end if;
+end $private_author_check$;
