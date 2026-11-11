@@ -10,7 +10,7 @@ const loadRoute = compileFunction(ts.transpileModule(route, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText, ['require', 'exports', 'fetch', 'process']);
 
-function fixture(secondResult) {
+function fixture(secondResult, failure = null) {
   const events = [];
   const db = {
     auth: { getUser: async () => ({ data: { user: { id: 'fixture-player' } } }) },
@@ -18,12 +18,13 @@ function fixture(secondResult) {
       const records = { profiles: { account_type: 'player' }, subscriptions: { plan: 'premium', status: 'active' } };
       return {
         select: () => ({ eq: () => table === 'admin_roles' ? { data: [] } : { maybeSingle: async () => ({ data: records[table] }) } }),
-        insert: async (row) => { events.push(['insert', table, row.image_urls.length]); return { error: null }; },
+        insert: async (row) => { events.push(['insert', table, row.image_urls.length]); return { error: failure === 'insert' ? { message: 'fixture insert failed' } : null }; },
         upsert: async () => ({ error: null }),
       };
     },
     storage: { from: () => ({
-      upload: async (_path, bytes) => { events.push(['upload', bytes.toString()]); return { error: null }; },
+      upload: async (_path, bytes) => { events.push(['upload', bytes.toString()]); return { error: failure === 'second-upload' && bytes.toString() === 'second photo' ? { message: 'fixture upload failed' } : null }; },
+      remove: async (paths) => { events.push(['remove', paths.length]); return { error: null }; },
       getPublicUrl: (path) => ({ data: { publicUrl: 'https://fixture.invalid/' + path } }),
     }) },
   };
@@ -77,4 +78,22 @@ test('approved photos upload only after every decision succeeds', async () => {
     ['moderate', 'first photo'], ['moderate', 'second photo'],
     ['upload', 'first photo'], ['upload', 'second photo'], ['insert', 'feed_posts', 2],
   ]);
+});
+
+
+test('failed second upload removes the first uploaded photo', async () => {
+  const { submit, events } = fixture({ flagged: false }, 'second-upload');
+  const response = await submit();
+  assert.equal(response.status, 400);
+  assert.equal((await response.json()).allowed, false);
+  assert.deepEqual(events.slice(-3).map(event => event[0]), ['upload', 'upload', 'remove']);
+  assert.deepEqual(events.at(-1), ['remove', 1]);
+});
+
+test('failed post insert removes every uploaded photo', async () => {
+  const { submit, events } = fixture({ flagged: false }, 'insert');
+  const response = await submit();
+  assert.equal(response.status, 400);
+  assert.equal((await response.json()).allowed, false);
+  assert.deepEqual(events.at(-1), ['remove', 2]);
 });

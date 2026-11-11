@@ -82,13 +82,14 @@ export function getHoopCheckEntitlements(args: {
   const active = isAdmin || tier !== "free";
   const isPlayer = role === "player";
   const isFan = role === "fan";
-  const otherMember = Boolean(role) && !isPlayer && !isFan;
+  const recognizedRole = ["player", "fan", "coach", "scout", "agent", "club_admin", "admin"].includes(role);
+  const otherMember = recognizedRole && !isPlayer && !isFan;
 
   return {
     tier,
     hasPaidMembership: active,
-    canReadHoopFeed: active && (isAdmin || Boolean(role)),
-    canWriteHoopFeed: (isAdmin || Boolean(role)) && isAtLeastTier(tier, "pro"),
+    canReadHoopFeed: active && (isAdmin || recognizedRole),
+    canWriteHoopFeed: (isAdmin || recognizedRole) && isAtLeastTier(tier, "pro"),
     canReadFanFeed: isFan && isAtLeastTier(tier, "pro"),
     canWriteFanFeed: isFan && isAtLeastTier(tier, "pro"),
     canReadFullReviews: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) ||
@@ -107,7 +108,7 @@ export function getHoopCheckEntitlements(args: {
     canConnectWithFans: isFan && isAtLeastTier(tier, "pro"),
     canSwitchBasketballSide: isFan && isAtLeastTier(tier, "pro"),
     canStartCoachIdentityVerification: role === "coach" && isAtLeastTier(tier, "pro"),
-    canViewTeamPayHistory: Boolean(role) && !isFan,
+    canViewTeamPayHistory: recognizedRole && !isFan,
     canSubmitPayCheckIn: isPlayer && args.playerVerified === true && isAtLeastTier(tier, "pro"),
     canUseFanGroups: isFan,
     canModerateFanGroups: isAdmin || role === "club_admin",

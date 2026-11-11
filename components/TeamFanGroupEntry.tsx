@@ -49,17 +49,20 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
 
     const nextActualMember = false;
     if (user) {
-      const [{ data: profile, error: profileError }, { data: moderators, error: moderatorsError }, { data: platformAdmin, error: adminError }, { data: membership, error: membershipError }] = await Promise.all([
+      const [{ data: profile, error: profileError }, { data: moderators, error: moderatorsError }, { data: platformRole, error: adminError }, { data: membership, error: membershipError }] = await Promise.all([
         supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
         supabase.from("team_fan_group_moderators").select("user_id,moderator_type").eq("team_id", teamId),
-        supabase.rpc("is_current_user_admin_or_moderator"),
+        supabase.rpc("get_current_user_admin_role"),
         supabase.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle()
       ]);
-      const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, isAdmin: platformAdmin === true });
+      const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, isAdmin: platformRole === "admin" });
       setIsFan(entitlements.canUseFanGroups);
-      setIsModerator(Boolean(entitlements.canModerateFanGroups ||
+      // Team-scoped appointments are required for club admins; match the API guard.
+      setIsModerator(Boolean(
         (moderators || []).some((m: any) => m.user_id === user.id) ||
-        ((moderators || []).some((m: any) => m.moderator_type === "platform") && platformAdmin === true)));
+        (platformRole === "admin" || (platformRole === "moderator" &&
+          (moderators || []).some((m: any) => m.moderator_type === "platform")))
+      ));
     } else {
       setIsFan(false);
       setIsModerator(false);
