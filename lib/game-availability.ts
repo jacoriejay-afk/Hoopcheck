@@ -62,6 +62,22 @@ export function getGameAvailability({
     };
   }
 
+  // A final score can arrive without a usable tip-off timestamp. The confirmed
+  // end time is sufficient to determine the post-game discussion window.
+  if (finalStatus && !hasTipoff) {
+    const closesAt = new Date(ended + POST_GAME_MINUTES * MINUTE);
+    const chatOpen = now.getTime() >= ended && now.getTime() < closesAt.getTime();
+    return {
+      state: chatOpen ? "LIVE" : "CLOSED",
+      phase: chatOpen ? "post-game" : "closed",
+      chatOpen,
+      opensAt: null,
+      closesAt,
+      minutesUntilOpen: null,
+      reason: chatOpen ? "Post-game chat is still open." : "The chat window for this game has closed.",
+    };
+  }
+
   if (!hasTipoff) {
     if (liveStatus) {
       return {
