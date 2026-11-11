@@ -337,3 +337,47 @@ html.theme-dark :is(.hc-confirm-modal, .report-modal) {
     }
   }
 }
+
+/* LIGHT-GLASS-HEADER: theme tokens otherwise force the light header solid black. */
+@media (max-width: 767px) {
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header {
+    position: sticky !important;
+    top: max(52px, calc(env(safe-area-inset-top, 0px) + 8px)) !important;
+    margin: max(52px, calc(env(safe-area-inset-top, 0px) + 8px)) 12px 0 !important;
+    width: calc(100% - 24px) !important;
+    max-width: calc(100% - 24px) !important;
+    box-sizing: border-box !important;
+    padding: 9px 12px !important;
+    border-radius: 20px !important;
+    background: rgba(245, 246, 250, .72) !important;
+    color: #17171b !important;
+    border: 1px solid rgba(60, 65, 75, .22) !important;
+    border-bottom: 2px solid #ff5a1f !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 12px 32px rgba(0,0,0,.13) !important;
+    -webkit-backdrop-filter: saturate(160%) blur(20px) !important;
+    backdrop-filter: saturate(160%) blur(20px) !important;
+    z-index: 1200 !important;
+  }
+  html.theme-light body header.site-header-global.hc-template-header .site-header-brand {
+    min-width: 0 !important;
+    max-width: calc(100% - 68px) !important;
+  }
+  html.theme-light body header.site-header-global.hc-template-header .site-header-brand .hc-logo__wordmark {
+    font-size: clamp(15px, 4.1vw, 19px) !important;
+    white-space: nowrap !important;
+  }
+}
+@media (max-width: 767px) and (prefers-reduced-transparency: reduce) {
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header {
+    background: #f5f6fa !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  @media (max-width: 767px) {
+    html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header {
+      background: #f5f6fa !important;
+    }
+  }
+}
