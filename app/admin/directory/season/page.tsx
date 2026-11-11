@@ -72,7 +72,7 @@ export default function LeagueSeasonEditor() {
   return <main style={{ maxWidth: 700, margin: "0 auto", padding: 24 }}>
     <Link href="/admin/directory/manage?kind=leagues-mens">Back to directory manager</Link>
     <h1>League season settings</h1>
-    <p>Set recurring competition dates. Timezones must use IANA names (for example, Europe/Baku). Leave timezone blank until verified.</p>
+    <p>Set recurring competition dates. Timezones must use IANA names (for example, Asia/Baku). Leave timezone blank until verified.</p>
     <label>Find league<input style={inputStyle} value={query} onChange={event => setQuery(event.target.value)} placeholder="Search league name" /></label>
     <button type="button" disabled={busy} onClick={searchLeagues}>Search leagues</button>
     {matches.length > 0 && <label>Choose league<select style={inputStyle} value={leagueId} onChange={event => { setLeagueId(event.target.value); setLeagueName(""); setPreview(""); }}><option value="">Select a league</option>{matches.map(item => <option key={item.id} value={item.id}>{item.name} · {item.country || "Country unknown"}</option>)}</select></label>}
