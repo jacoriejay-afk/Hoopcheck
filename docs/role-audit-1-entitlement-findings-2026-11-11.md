@@ -83,6 +83,12 @@ Decision confirmed 2026-11-11: **One unified HoopFeed** for Player, Fan, Coach, 
 - The new empty-post guard allows photo-only posts, but does **not** override the video-caption requirement. Do not advertise captionless video posting until a dedicated video safety workflow is designed and tested.
 - Staging QA must verify a captioned video succeeds only after text moderation, and captionless video is rejected.
 
+## Release blocker: HoopFeed expiration semantics
+- `app/api/hoopfeed/moderate/route.ts` assigns `2100-01-01T00:00:00.000Z` to newly created posts and reshares. That conflicts with the previously specified 24-hour HoopFeed expiration behavior.
+- The newly added expired-content checks operate on the stored `expires_at` value; they cannot expire posts whose expiration is set decades ahead.
+- Before release, reconcile the product decision for the unified feed and verify all writers, readers, cleanup jobs, and reshare behavior consistently use the chosen expiration semantics. Include a clock-controlled integration test for the boundary and verify existing rows are handled safely.
+- No automatic lifetime change was made in this security-audit branch because doing so without examining existing feed readers and persistence could unexpectedly hide content.
+
 ## Staging verification matrix
 1. For each role (Player, Fan, Coach, Scout, Agent, Club Admin), verify Free cannot post and active Pro/Premium can create a text post, image, video, poll, comment, reaction, bookmark, and permitted reshare.
 2. Check Fan Free/Pro/Premium review restrictions: Fans never write reviews; Fan Pro teaser only; Fan Premium full reviews.
