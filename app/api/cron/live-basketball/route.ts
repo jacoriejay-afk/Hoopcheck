@@ -206,6 +206,7 @@ export async function GET(request: NextRequest) {
         opponent_name: opponentName,
         provider_source: "api-sports-basketball",
         provider_game_id: String(game.id),
+        provider_league_id: Number.isInteger(providerLeagueId) && providerLeagueId > 0 ? providerLeagueId : null,
         status: storedStatus,
         home_score: storedStatus === "scheduled" ? null : primaryScore,
         away_score: storedStatus === "scheduled" ? null : opponentScore,
