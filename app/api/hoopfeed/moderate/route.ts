@@ -305,6 +305,20 @@ export async function POST(request: Request) {
       if (!post || post.status !== "approved" || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
         return NextResponse.json({ allowed: false, message: "This HoopFeed post is no longer available." }, { status: 404 });
       }
+      // The service-role client bypasses RLS. Recheck visibility using the caller's
+      // JWT so private or follower-restricted posts cannot be commented on by ID.
+      const publicUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (!publicUrl || !anonKey) throw new Error("Missing public Supabase configuration.");
+      const viewerDb = createClient(publicUrl, anonKey, {
+        global: { headers: { Authorization: "Bearer " + token } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data: visiblePost, error: visibilityError } = await viewerDb
+        .from("feed_posts").select("id").eq("id", postId).maybeSingle();
+      if (visibilityError || !visiblePost) {
+        return NextResponse.json({ allowed: false, message: "This HoopFeed post is not available to your account." }, { status: 404 });
+      }
       const { error } = await db.from("feed_post_comments").insert({ post_id:postId,author_id:user.id,body:text });
       if (error) return NextResponse.json({ allowed:false,message:"We couldn't publish your comment. Please try again." },{status:400});
       return NextResponse.json({ allowed:true });
