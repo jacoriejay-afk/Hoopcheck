@@ -22,7 +22,10 @@ begin
        or position('expires_at' in predicate) = 0
        or position('approved' in predicate) = 0
        or position('post_kind' in predicate) = 0
-       or position('poll' in predicate) = 0 then
+       or position('poll' in predicate) = 0
+       or position('jsonb_array_length' in predicate) = 0
+       or position('option_index' in predicate) = 0
+       or position('jsonb_typeof' in predicate) = 0 then
       raise exception 'Poll policy % (%) lacks approved-poll visibility/expiration checks',
         policy_row.policyname, policy_row.cmd;
     end if;
