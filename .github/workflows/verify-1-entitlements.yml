@@ -7,6 +7,7 @@ on:
       - "lib/membership-tier.ts"
       - "lib/game-availability.ts"
       - "supabase/migrations/20261111200000_live_chat_room_lifecycle.sql"
+      - "supabase/tests/live_chat_lifecycle.sql"
       - "app/**"
       - "components/**"
       - "scripts/test-membership-tier.mjs"
@@ -33,3 +34,27 @@ jobs:
         run: npm run test:entitlements
       - name: Run game chat lifecycle regression tests
         run: npm run test:game-availability
+
+  live-chat-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hoopcheck_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Run isolated SQL migration and RLS cases
+        env:
+          PGPASSWORD: postgres
+        run: psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d hoopcheck_test -f supabase/tests/live_chat_lifecycle.sql
