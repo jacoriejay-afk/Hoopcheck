@@ -199,6 +199,17 @@ export default function Feed(){
     setPosting(true);setMsg("Checking your post for safety...");
     let uploadedVideoPath:string|null=null;
     let uploadedVideoBucket="feed-videos";
+    async function cleanupUploadedVideo(path:string){
+      if(uploadedVideoBucket==="hoopfeed-private-videos"){
+        const {data:{session}}=await supabase.auth.getSession();
+        if(!session?.access_token)return;
+        const response=await fetch("/api/hoopfeed/video-cleanup",{method:"DELETE",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({path}),cache:"no-store"});
+        if(!response.ok)console.error("Private HoopFeed video cleanup failed",response.status);
+      }else{
+        const {error}=await supabase.storage.from("feed-videos").remove([path]);
+        if(error)console.error("HoopFeed video cleanup failed",error);
+      }
+    }
     try{
       const {data:{session}}=await supabase.auth.getSession();
       if(!session?.access_token){setMsg("Your session expired. Please sign in again.");setPosting(false);return;}
@@ -230,11 +241,11 @@ export default function Feed(){
        }
       const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
       const result=await moderation.json().catch(()=>({}));
-      if(!moderation.ok||result.allowed!==true){setMsg(result.message||"This post could not be published because it did not pass HoopFeed safety checks.");if(uploadedVideoPath){try{const {error:cleanupError}=await supabase.storage.from(uploadedVideoBucket).remove([uploadedVideoPath]);if(cleanupError)console.error("HoopFeed rejected video cleanup failed",cleanupError);}catch(cleanupError){console.error("HoopFeed rejected video cleanup threw",cleanupError);}uploadedVideoPath=null;}setPosting(false);return;}
+      if(!moderation.ok||result.allowed!==true){setMsg(result.message||"This post could not be published because it did not pass HoopFeed safety checks.");if(uploadedVideoPath){try{await cleanupUploadedVideo(uploadedVideoPath);}catch(cleanupError){console.error("HoopFeed rejected video cleanup threw",cleanupError);}uploadedVideoPath=null;}setPosting(false);return;}
       uploadedVideoPath=null;
       setBody("");setVideo(null);if(videoPreview)URL.revokeObjectURL(videoPreview);setVideoPreview("");setShowCountry(Boolean(profile?.current_country_public));clearPhotos();setPollDraft(["",""]);setComposerMode("post");setMsg(composerMode==="poll"?"Poll posted to HoopFeed. AI safety checks passed.":"Posted to HoopFeed. AI safety checks passed.");try{await load(user);}catch(refreshError){console.error("HoopFeed refresh after posting failed",refreshError);setMsg("Your post was published, but the feed could not refresh. Pull down to reload.");}
     }catch(e:any){console.error("HoopFeed post failed",e);setMsg(e?.message==="Video upload failed. Please try again."?e.message:"Posting failed. Please try again.");}
-    if(uploadedVideoPath){try{const {error:cleanupError}=await supabase.storage.from(uploadedVideoBucket).remove([uploadedVideoPath]);if(cleanupError)console.error("HoopFeed rejected video cleanup failed",cleanupError);}catch(cleanupError){console.error("HoopFeed rejected video cleanup threw",cleanupError);}}
+    if(uploadedVideoPath){try{await cleanupUploadedVideo(uploadedVideoPath);}catch(cleanupError){console.error("HoopFeed rejected video cleanup threw",cleanupError);}}
     setPosting(false);
   }
 
