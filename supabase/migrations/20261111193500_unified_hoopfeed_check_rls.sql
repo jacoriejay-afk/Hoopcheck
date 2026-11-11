@@ -13,10 +13,10 @@ as $$
       select 1
       from public.profiles viewer
       join public.subscriptions sub on sub.user_id = viewer.id
+      join public.profiles author on author.id = p_author_id
       join public.follow_relationships fr on fr.follower_id = viewer.id
         and fr.target_id = p_author_id
         and fr.target_type = author.account_type
-      join public.profiles author on author.id = p_author_id
       where viewer.id = (select auth.uid())
         and viewer.account_type in ('player','fan','coach','agent','scout','club_admin','manager')
         and author.account_type in ('player','fan','coach','agent','scout','club_admin','manager')
