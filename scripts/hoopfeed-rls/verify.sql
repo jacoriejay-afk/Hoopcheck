@@ -18,7 +18,7 @@ BEGIN
     END IF;
     SELECT count(*) INTO check_count FROM public.feed_posts
       WHERE id = '10000000-0000-0000-0000-000000000002'::uuid;
-    IF check_count <> CASE WHEN i = 1 THEN 1 ELSE 0 END THEN
+    IF check_count <> (CASE WHEN i = 1 THEN 1 ELSE 0 END) THEN
       RAISE EXCEPTION 'Role fixture % pending post visibility incorrect', i;
     END IF;
     IF i <= 6 THEN
