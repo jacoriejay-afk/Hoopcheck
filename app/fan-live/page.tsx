@@ -23,13 +23,14 @@ const initials = (name:string) => name.trim().split(/\s+/).filter(Boolean).slice
 const renderTeamLogo = (team:Team|null|undefined) => <TeamLogo name={team?.name||"Team"} logoUrl={team?.logo_url} logoBg={team?.logo_bg} size={44} className="hc-live-team-logo" />;
 
 const roomOpen = (game:Game, now=new Date()) => {
-  if (finalStatus(game.status)) return false;
   const tip = Date.parse(game.scheduled_at || game.started_at || "");
+  const end = Date.parse(game.ends_at || "");
+  // Final games remain open for two hours only when a reliable end time exists.
+  if (finalStatus(game.status)) return Number.isFinite(end) && now.getTime() < end + 2*60*60_000;
   if (!Number.isFinite(tip)) return ["live","in_progress"].includes(game.status.toLowerCase());
   if (now.getTime() < tip - 60*60_000) return false;
-  const end = Date.parse(game.ends_at || "");
-  if (Number.isFinite(end)) return now.getTime() < end;
-  return !Number.isFinite(tip) || now.getTime() < tip + 4*60*60_000;
+  if (Number.isFinite(end)) return now.getTime() < end + 2*60*60_000;
+  return now.getTime() < tip + 4*60*60_000;
 };
 
 export default function FanLivePage() {
@@ -241,7 +242,7 @@ export default function FanLivePage() {
 
   const home=selected?teams[selected.team_id]:null;
   const away=selected?(teams[selected.opponent_team_id||""]||{id:"",name:selected.opponent_name}):null;
-  const isClosed=selected?finalStatus(selected.status)||(Number.isFinite(Date.parse(selected.ends_at||""))?clock.getTime()>=Date.parse(selected.ends_at||""):(Number.isFinite(Date.parse(selected.scheduled_at||selected.started_at||""))&&clock.getTime()>=Date.parse(selected.scheduled_at||selected.started_at||"")+4*60*60_000)):false;
+  const isClosed=selected?finalStatus(selected.status)&&!roomOpen(selected,clock):false;
   const availability=selected?getGameAvailability({status:selected.status,scheduledAt:selected.scheduled_at,startedAt:selected.started_at,endsAt:selected.ends_at,now:clock}):null;
   const shownMessages=useMemo(()=>messages.filter(m=>!blockedUsers.has(m.user_id)&&!mutedUsers.has(m.user_id)),[messages,blockedUsers,mutedUsers]);
 
