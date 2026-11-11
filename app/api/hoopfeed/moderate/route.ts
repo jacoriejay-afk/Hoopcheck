@@ -197,9 +197,24 @@ export async function POST(request: Request) {
       const postId = String(form.get("post_id") || "").trim();
       const optionIndex = Number(form.get("option_index"));
       if (!postId || !Number.isInteger(optionIndex)) return NextResponse.json({ allowed: false, message: "That vote didn't go through. Please try again." }, { status: 400 });
-      const { data: poll } = await db.from("feed_posts").select("id,status,post_kind,poll_options").eq("id", postId).maybeSingle();
+      // Check visibility using the requester's JWT, not the service-role client.
+      // Service-role queries bypass RLS and must not authorize poll participation.
+      const publicKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (!publicKey || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
+        return NextResponse.json({ allowed: false, message: "Voting is temporarily unavailable." }, { status: 503 });
+      }
+      const viewerDb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, publicKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data: poll, error: pollError } = await viewerDb
+        .from("feed_posts")
+        .select("id,status,post_kind,poll_options,expires_at")
+        .eq("id", postId)
+        .maybeSingle();
+      if (pollError) return NextResponse.json({ allowed: false, message: "Voting is temporarily unavailable." }, { status: 503 });
       const options = Array.isArray(poll?.poll_options) ? poll.poll_options as string[] : [];
-      if (!poll || poll.status !== "approved" || poll.post_kind !== "poll" || optionIndex < 0 || optionIndex >= options.length) {
+      if (!poll || poll.status !== "approved" || poll.post_kind !== "poll" || !poll.expires_at || new Date(poll.expires_at).getTime() <= Date.now() || optionIndex < 0 || optionIndex >= options.length) {
         return NextResponse.json({ allowed: false, message: "This poll is no longer available." }, { status: 404 });
       }
       const { error } = await db.from("feed_poll_votes").upsert({ post_id: postId, user_id: user.id, option_index: optionIndex }, { onConflict: "post_id,user_id" });
