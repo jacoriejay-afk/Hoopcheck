@@ -50,7 +50,7 @@ BEGIN
 END $$;
 RESET ROLE;
 -- Permanent posts have no 24-hour default after the migration.
-DO $
+DO $assert$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
@@ -59,4 +59,4 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Permanent posts still have an expiration default';
   END IF;
-END $;
+END $assert$;
