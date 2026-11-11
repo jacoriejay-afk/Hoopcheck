@@ -124,6 +124,7 @@ assert.equal(unknownRole.canReadHoopFeed, false, "unrecognized roles cannot read
 assert.equal(unknownRole.canWriteHoopFeed, false, "unrecognized roles cannot post to HoopFeed");
 assert.equal(unknownRole.canReadFullReviews, false, "unrecognized roles cannot inherit review access");
 assert.equal(unknownRole.canViewTrustScore, false, "unrecognized roles cannot inherit trust access");
+assert.equal(unknownRole.canViewTeamPayHistory, false, "unrecognized roles cannot access team pay history");
 
 const expired = getHoopCheckEntitlements({
   accountType: "player",
