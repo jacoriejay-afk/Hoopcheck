@@ -50,6 +50,15 @@ Decision confirmed 2026-11-11: **One unified HoopFeed** for Player, Fan, Coach, 
 - `20261008105244_enable_player_hoopchat_realtime.sql` limits message SELECT/INSERT to participants of accepted requests. It does not itself recheck current paid membership after acceptance; determine desired ongoing messaging access before modifying.
 - Source audit only; live database policy state and authenticated direct-write tests remain unverified.
 
+## Live Supabase policy verification (read-only, 2026-11-11)
+- Queried `pg_policies` for `public.player_contact_requests` and `public.player_contact_messages` on project `ucbdceaieyenljcwlhnj`; **no data or schema was modified**.
+- **Correction to migration-only hypothesis above:** live `player_contact_requests` has only one INSERT policy, `eligible subscribers can request players`. There is **no overlapping older Pro/Premium policy live**.
+- **Confirmed functional mismatch:** live INSERT policy requires `premium` for Scouts/Agents, whereas `lib/membership-tier.ts` `canUseAskPlayer` permits `pro` or `premium` for Scouts/Agents. Pro Agents/Scouts see the contact action but will receive RLS rejection.
+- Live INSERT policy allows Player Pro/Premium and checks requester account type and public, non-suspended Player target.
+- Live message SELECT/INSERT policies require accepted requests and participating users. Live request UPDATE is restricted to the recipient Player with accepted/rejected status.
+- **Recommended follow-up (not applied):** decide whether Agents/Scouts should require Premium or Pro/Premium, then align client entitlement and database policy through a reviewed migration. Current agreed product rule in this audit is Pro/Premium, so favor a migration only after approval.
+- No authenticated role-by-role direct-write tests have been performed.
+
 ## Staging verification matrix
 1. For each role (Player, Fan, Coach, Scout, Agent, Club Admin), verify Free cannot post and active Pro/Premium can create a text post, image, video, poll, comment, reaction, bookmark, and permitted reshare.
 2. Check Fan Free/Pro/Premium review restrictions: Fans never write reviews; Fan Pro teaser only; Fan Premium full reviews.
