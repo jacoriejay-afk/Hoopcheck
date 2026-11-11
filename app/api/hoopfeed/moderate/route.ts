@@ -170,7 +170,7 @@ export async function POST(request: Request) {
     }
     if (videoPath && (!ALLOWED_VIDEO_TYPES.has(videoType) || !videoPath.startsWith(user.id + "/") || videoPath.includes("..") || videoPath.length > 240)) return NextResponse.json({ allowed:false, message:"Invalid video upload. Choose a supported video and try again." }, { status:400 });
     if (videoPath && !text) return NextResponse.json({ allowed:false, message:"Add a caption so HoopCheck can run text safety checks before publishing a video." }, { status:400 });
-    if (kind === "comment" && (image || videoPath)) {
+    if (kind === "comment" && (allImages.length > 0 || videoPath)) {
       return NextResponse.json({ allowed: false, message: "Photos and videos can only be added to posts." }, { status: 400 });
     }
 
