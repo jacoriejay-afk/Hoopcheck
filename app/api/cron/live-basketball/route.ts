@@ -251,12 +251,22 @@ export async function GET(request: NextRequest) {
         .not("league_id", "is", null);
       if (existingMappingsError) throw existingMappingsError;
       const existingLeagueByGame = new Map((existingMappings || []).map(item => [item.provider_game_id, item.league_id]));
+      let conflictingLeagueAssignments = 0;
       for (const row of rows) {
         const existingLeagueId = existingLeagueByGame.get(row.provider_game_id);
+        if (row.league_id && existingLeagueId && row.league_id !== existingLeagueId) {
+          conflictingLeagueAssignments++;
+          continue;
+        }
         if (!row.league_id && existingLeagueId) {
           row.league_id = existingLeagueId;
           retainedExistingLeagueIds++;
         }
+      }
+      if (conflictingLeagueAssignments > 0) {
+        // Do not silently rewrite a fixture's reviewed competition identity.
+        // Require manual mapping review before accepting any sync writes.
+        throw new Error(`SEASON-1: ${conflictingLeagueAssignments} conflicting fixture league assignments`);
       }
       const { error: upsertError } = await db.from("fan_live_games")
         .upsert(rows, { onConflict: "provider_source,provider_game_id" });
