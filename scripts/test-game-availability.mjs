@@ -19,6 +19,7 @@ const cases = [
   ["final without tip", {status:"final",scheduledAt:null,endsAt:at(-30)}, true],
   ["final with tip but future confirmed end", {status:"final",scheduledAt:at(-90),endsAt:at(10)}, false],
   ["final without tip but future confirmed end", {status:"final",scheduledAt:null,endsAt:at(10)}, false],
+  ["final at exact confirmed end", {status:"final",scheduledAt:at(-90),endsAt:at(0)}, true],
   ["final without end", {status:"final",scheduledAt:at(-240)}, false],
   ["cancelled", {status:"cancelled",scheduledAt:at(0)}, false],
   ["postponed", {status:"postponed",scheduledAt:at(0)}, false],
