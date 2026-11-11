@@ -53,9 +53,10 @@ export default function TeamFanGroupPage() {
     setIsFan(profile?.account_type === "fan");
     const row = Array.isArray(summaryRows) ? summaryRows[0] : summaryRows;
     setSummary(row ? { ...row, is_member: ownMembershipError ? Boolean(row.is_member) : Boolean(ownMembership), member_count: Math.max(Number(row.member_count || 0), ownMembership ? 1 : 0) } : null);
-    const { data: platformAdmin } = await supabase.rpc("is_current_user_admin_or_moderator");
+    const { data: platformRole } = await supabase.rpc("get_current_user_admin_role");
     const moderator = Boolean((moderators || []).some((m: any) => m.user_id === currentUser.id) ||
-      ((moderators || []).some((m: any) => m.moderator_type === "platform") && platformAdmin === true));
+      platformRole === "admin" ||
+      (platformRole === "moderator" && (moderators || []).some((m: any) => m.moderator_type === "platform")));
     if (profile?.account_type !== "fan" && !moderator) { router.replace((team?.basketball_type === "womens" ? "/womens/" : "/teams/") + teamId); return; }
     setIsModerator(moderator);
     if ((ownMembershipError ? row?.is_member : Boolean(ownMembership)) || moderator) {
