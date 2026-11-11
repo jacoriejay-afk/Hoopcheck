@@ -262,6 +262,14 @@ assert.match(feedModerationSource, /videoPath && allImages\.length > 0/, "posts 
 assert.match(feedModerationSource, /\/\^\\d\{1,3\}\$\/\.test\(scoreForRaw\)/, "Game Day scores must be decimal integers");
 assert.match(feedModerationSource, /\/\^\\d\{1,3\}\$\/\.test\(scoreAgainstRaw\)/, "Opponent scores must be decimal integers");
 
+const unifiedFeedPolicy = read("../supabase/migrations/20261111233000_unify_hoopfeed_read_and_checks_rls.sql");
+assert.match(unifiedFeedPolicy, /DROP POLICY IF EXISTS "player experience feed read"/, "old follower feed policy must be replaced");
+assert.match(unifiedFeedPolicy, /DROP POLICY IF EXISTS "player feed checks insert"/, "old player-only checks policy must be replaced");
+assert.match(unifiedFeedPolicy, /'player','fan','coach','scout','agent','club_admin','admin'/, "unified feed must include recognized account types");
+assert.match(unifiedFeedPolicy, /s\.current_period_end IS NULL OR s\.current_period_end > now\(\)/, "checks must respect membership expiration");
+assert.match(unifiedFeedPolicy, /fp\.status = 'approved'/, "checks must target approved posts");
+assert.match(unifiedFeedPolicy, /fp\.expires_at > now\(\)/, "checks must reject expired posts");
+
 const playerContactPolicy = read("../supabase/migrations/20261111180000_align_agent_scout_contact_pro_premium.sql");
 assert.match(playerContactPolicy, /s\.plan IN \('pro', 'premium'\)/, "Agent/Scout contact RLS must accept Pro and Premium");
 assert.match(playerContactPolicy, /requester_id = \(SELECT auth\.uid\(\)\)/, "contact requester must match auth user");
