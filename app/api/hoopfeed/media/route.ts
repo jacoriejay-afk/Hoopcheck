@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
   const postId = typeof payload.post_id === "string" ? payload.post_id : "";
   const mediaUrl = typeof payload.media_url === "string" ? payload.media_url : "";
-  if (!/^[0-9a-f]{8}-[0-9a-f-]{27,36}$/i.test(postId) || !mediaUrl || mediaUrl.length > 2048) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postId) || !mediaUrl || mediaUrl.length > 2048) {
     return NextResponse.json({ error: "Invalid media reference" }, { status: 400 });
   }
 
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
   if (!references.includes(mediaUrl)) return NextResponse.json({ error: "Media not attached to post" }, { status: 403 });
 
   // Stored private references use "bucket/path", never a user-supplied URL.
-  const separator = mediaUrl.indexOf("/");
+  if (mediaUrl.includes("?") || mediaUrl.includes("#") || mediaUrl.includes("\\") || /%2f|%5c|%2e/i.test(mediaUrl)) {\n    return NextResponse.json({ error: "Invalid media reference" }, { status: 400 });\n  }\n  const separator = mediaUrl.indexOf("/");
   const bucket = mediaUrl.slice(0, separator);
   const path = mediaUrl.slice(separator + 1);
   if (separator < 1 || !PRIVATE_BUCKETS.has(bucket) || !path || path.includes("..") || path.startsWith("/")) {
