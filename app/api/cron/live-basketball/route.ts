@@ -237,6 +237,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    let retainedExistingLeagueIds = 0;
     if (rows.length) {
       // Do not erase a previously verified league assignment when a subsequent
       // provider response lacks a usable competition mapping. Preserve existing
@@ -249,7 +250,11 @@ export async function GET(request: NextRequest) {
       if (existingMappingsError) throw existingMappingsError;
       const existingLeagueByGame = new Map((existingMappings || []).map(item => [item.provider_game_id, item.league_id]));
       for (const row of rows) {
-        if (!row.league_id) row.league_id = existingLeagueByGame.get(row.provider_game_id) || null;
+        const existingLeagueId = existingLeagueByGame.get(row.provider_game_id);
+        if (!row.league_id && existingLeagueId) {
+          row.league_id = existingLeagueId;
+          retainedExistingLeagueIds++;
+        }
       }
       const { error: upsertError } = await db.from("fan_live_games")
         .upsert(rows, { onConflict: "provider_source,provider_game_id" });
@@ -327,7 +332,9 @@ export async function GET(request: NextRequest) {
         verifiedCompetitionMatches,
         unmappedProviderCompetitions,
         fallbackTeamLeagueMatches,
-        unresolvedBeforeExistingAssignment: rows.length - verifiedCompetitionMatches - fallbackTeamLeagueMatches
+        retainedExistingLeagueIds,
+        unresolvedBeforeExistingAssignment: rows.length - verifiedCompetitionMatches - fallbackTeamLeagueMatches,
+        unresolvedAfterExistingAssignment: rows.filter(row => !row.league_id).length
       },
       unmatchedLiveGames
     }, {
