@@ -108,7 +108,7 @@ export function getHoopCheckEntitlements(args: {
     canConnectWithFans: isFan && isAtLeastTier(tier, "pro"),
     canSwitchBasketballSide: isFan && isAtLeastTier(tier, "pro"),
     canStartCoachIdentityVerification: role === "coach" && isAtLeastTier(tier, "pro"),
-    canViewTeamPayHistory: Boolean(role) && !isFan,
+    canViewTeamPayHistory: recognizedRole && !isFan,
     canSubmitPayCheckIn: isPlayer && args.playerVerified === true && isAtLeastTier(tier, "pro"),
     canUseFanGroups: isFan,
     canModerateFanGroups: isAdmin || role === "club_admin",
