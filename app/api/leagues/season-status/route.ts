@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const ids = Array.from(new Set((new URL(request.url).searchParams.get("ids") || "")
     .split(",").filter(Boolean)));
   if (!ids.length || ids.length > 100 ||
-      ids.some((id) => !/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id))) {
+      ids.some((id) => !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))) {
     return NextResponse.json({ error: "Provide 1–100 league UUIDs." }, { status: 400 });
   }
   try {
