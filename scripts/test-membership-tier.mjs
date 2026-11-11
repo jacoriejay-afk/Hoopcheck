@@ -214,7 +214,7 @@ assert.match(feedModerationSource, /kind === "comment" && \(allImages\.length > 
 
 assert.match(feedModerationSource, /rawOptionIndex === null \|\| String\(rawOptionIndex\)\.trim\(\) === "" \? NaN/, "missing poll option must not silently vote for first option");
 
-assert.match(feedModerationSource, /targetPost\.status !== "approved" \|\| \(targetPost\.expires_at/, "admin pin must reject unapproved or expired posts");
+assert.match(feedModerationSource, /pinned && \(targetPost\.status !== "approved" \|\| \(targetPost\.expires_at/, "admin pin must reject unapproved or expired posts while allowing unpin");
 
 const playerContactPolicy = read("../supabase/migrations/20261111180000_align_agent_scout_contact_pro_premium.sql");
 assert.match(playerContactPolicy, /s\.plan IN \('pro', 'premium'\)/, "Agent/Scout contact RLS must accept Pro and Premium");
