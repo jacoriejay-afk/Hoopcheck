@@ -47,8 +47,6 @@ function scoreText(game: Game) {
 
 export default function LiveGamesPage() {
   const [games, setGames] = useState<Game[]>([]);
-  const [activeLeagueIds, setActiveLeagueIds] = useState<Set<string>>(new Set());
-  const [seasonStatusUnavailable, setSeasonStatusUnavailable] = useState(false);
   const [teams, setTeams] = useState<Record<string, Team>>({});
   const [followedIds, setFollowedIds] = useState<string[]>([]);
   const [reminders, setReminders] = useState<string[]>([]);
@@ -109,8 +107,7 @@ export default function LiveGamesPage() {
     } catch {
       seasonLookupFailed = true;
     }
-    setSeasonStatusUnavailable(seasonLookupFailed);
-    setActiveLeagueIds(seasonLookupFailed ? new Set() : verifiedActive);
+    if (seasonLookupFailed) setMessage("League season status is temporarily unavailable. Games are hidden until verified.");
     const candidateIds = Array.from(new Set(rawGames.flatMap(game => [game.team_id, game.opponent_team_id].filter((id): id is string => Boolean(id)))));
     const [{ data: sideRows }, { data: womensSideRows }] = await Promise.all([
       candidateIds.length
