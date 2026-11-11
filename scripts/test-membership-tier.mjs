@@ -254,6 +254,9 @@ assert.match(feedModerationSource, /optionIndexValues\.length === 1 && typeof op
 assert.match(feedModerationSource, /savedValues\.length !== 1/, "bookmarks require one explicit saved state");
 assert.match(feedModerationSource, /pinnedValues\.length !== 1/, "pins require one explicit pinned state");
 
+assert.match(feedModerationSource, /videoPathValues\.length > 1 \|\| videoTypeValues\.length > 1/, "video fields must reject duplicates");
+assert.match(feedModerationSource, /\(videoPath && !videoType\) \|\| \(!videoPath && videoType\)/, "video upload path and type must be paired");
+
 const playerContactPolicy = read("../supabase/migrations/20261111180000_align_agent_scout_contact_pro_premium.sql");
 assert.match(playerContactPolicy, /s\.plan IN \('pro', 'premium'\)/, "Agent/Scout contact RLS must accept Pro and Premium");
 assert.match(playerContactPolicy, /requester_id = \(SELECT auth\.uid\(\)\)/, "contact requester must match auth user");
