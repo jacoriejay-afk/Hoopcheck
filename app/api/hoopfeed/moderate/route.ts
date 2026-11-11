@@ -185,8 +185,16 @@ export async function POST(request: Request) {
         return NextResponse.json({ allowed: false, message: "Image must be 8 MB or smaller." }, { status: 413 });
       }
     }
-    const videoPath = String(form.get("video_path") || "");
-    const videoType = String(form.get("video_type") || "");
+    const videoPathValues = form.getAll("video_path");
+    const videoTypeValues = form.getAll("video_type");
+    if (videoPathValues.length > 1 || videoTypeValues.length > 1 || videoPathValues.some(value => typeof value !== "string") || videoTypeValues.some(value => typeof value !== "string")) {
+      return NextResponse.json({ allowed: false, message: "Invalid video upload fields." }, { status: 400 });
+    }
+    const videoPath = typeof videoPathValues[0] === "string" ? videoPathValues[0] : "";
+    const videoType = typeof videoTypeValues[0] === "string" ? videoTypeValues[0] : "";
+    if ((videoPath && !videoType) || (!videoPath && videoType)) {
+      return NextResponse.json({ allowed: false, message: "Video path and type must be provided together." }, { status: 400 });
+    }
     if (image && !ALLOWED_IMAGE_TYPES.has(image.type)) {
       return NextResponse.json({ allowed: false, message: "Use a JPEG, PNG, or WebP image." }, { status: 400 });
     }
