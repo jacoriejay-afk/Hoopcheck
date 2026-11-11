@@ -33,3 +33,14 @@
 
 ## Release evidence
 Record the isolated database version, migration hashes, role/fixture matrix, actual API responses, RLS SQLSTATEs, and test outcomes. Re-run all three GitHub workflows on the exact final commit. Only then request explicit approval to merge/deploy. Do not copy production data into the isolated environment.
+
+## Read-only production authorization audit (2026-11-11)
+Live Supabase policy metadata was inspected without modifying data or applying migrations:
+- `profiles`: RLS enabled; authenticated SELECT permits public profiles, own profile, or the existing `private.is_admin_or_moderator()` exception.
+- `subscriptions`: RLS enabled; authenticated SELECT is limited to `user_id = auth.uid()`.
+- `follow_relationships`: RLS enabled; authenticated access is limited to rows where `follower_id = auth.uid()`.
+- `admin_roles`: RLS enabled; authenticated SELECT is limited to `user_id = auth.uid()`.
+
+**Integration gap:** The isolated test reproduces the current `can_view_player_feed_post` SQL predicate, but grants broad SELECT on its synthetic supporting tables. It does not reproduce supporting-table RLS, especially the author profile's `profile_visibility` setting. An authorized follower may be unable to see a private author through the SQL function's join even if the subscription/follow/country criteria match. Test public and private author profiles with actual JWT-scoped queries before release. Verify the expected product behavior with the owner before changing privacy rules. Do not bypass supporting-table RLS with service-role or SECURITY DEFINER shortcuts.
+
+Additional release evidence required: actual authenticated Pro/Premium player and Fan JWTs; public versus private author profile; own and foreign subscription/follow/admin-role reads; vote/bookmark SELECT and write outcomes; API vote/bookmark/share outcomes. Use disposable accounts and avoid production writes.
