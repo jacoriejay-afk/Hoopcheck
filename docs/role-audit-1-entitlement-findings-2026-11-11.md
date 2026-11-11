@@ -98,3 +98,12 @@ Decision confirmed 2026-11-11: **One unified HoopFeed** for Player, Fan, Coach, 
 6. Check role-specific dashboards, Fan HQ, Team HQ, Agent HQ, live games, subscriptions, and logout/session restoration separately.
 
 No production data changes, merges, or deployments authorized.
+
+
+## Confirmed production HoopFeed check/like RLS mismatch (read-only inspection, 2026-11-11)
+
+The user-reported error "That check didn't go through" originates in `app/feed/page.tsx` when direct client-side INSERT/DELETE on `feed_post_checks` fails. Live `pg_policies` inspection found that `player feed checks insert` restricts INSERT to `p.account_type = 'player'`, paid subscriptions, `fp.expires_at > now()`, and `can_view_player_feed_post(fp.author_id)`. Thus unified HoopFeed roles other than player are rejected by database RLS even if the UI grants feed access. This is a **confirmed** server authorization mismatch, not yet an authenticated reproduction of the exact reported session.
+
+A second blocker: the live `feed_posts` SELECT policy `player experience feed read` still requires `can_view_player_feed_post(author_id)`, which may impose old follower-based visibility. The `feed_post_checks` SELECT policy uses the same function. A safe correction must align all three policies with unified community visibility and paid-role entitlements, preserve moderation/expiry constraints, and verify the function, subscription edge cases, and admin override before any migration is applied. Other social tables' INSERT policies are less restrictive: `feed_poll_votes` and `feed_post_bookmarks` only require ownership. **No live SQL was modified.**
+
+Release verification must include real signed-in Player, Fan, Coach, Agent/Scout, Club Admin and Admin accounts for visibility, check/uncheck, and denial on unpaid accounts. Do not claim the likes bug fixed until the policies are migrated and authenticated behavior passes.
