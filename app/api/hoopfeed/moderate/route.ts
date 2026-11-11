@@ -240,7 +240,17 @@ export async function POST(request: Request) {
     if (kind === "share") {
       const sourceId = String(form.get("post_id") || "").trim();
       if (!sourceId) return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 400 });
-      const { data: source, error: sourceError } = await db.from("feed_posts")
+      // The service-role client bypasses RLS. Check the source through the
+      // authenticated viewer first, so a guessed post ID cannot expose
+      // followers-only text or private-media references through resharing.
+      const viewerUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const viewerKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if (!viewerUrl || !viewerKey) return NextResponse.json({ allowed:false, message:"Feed access unavailable." }, { status:503 });
+      const viewer = createClient(viewerUrl, viewerKey, {
+        global: { headers: { Authorization: "Bearer " + token } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data: source, error: sourceError } = await viewer.from("feed_posts")
         .select("id,author_id,body,image_url,image_urls,video_url,post_kind,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,status,expires_at")
         .eq("id", sourceId).maybeSingle();
       if (sourceError) {
@@ -254,7 +264,12 @@ export async function POST(request: Request) {
         return NextResponse.json({ allowed: false, message: "Polls can't be shared — vote on the original instead." }, { status: 400 });
       }
       const sharedAt = new Date();
-      const expiresAt = new Date("2100-01-01T00:00:00.000Z");
+      const sourceExpiry = new Date(source.expires_at).getTime();
+      if (!Number.isFinite(sourceExpiry) || sourceExpiry <= sharedAt.getTime()) {
+        return NextResponse.json({ allowed: false, message: "This post has expired and can't be shared." }, { status: 404 });
+      }
+      // A reshare must never keep another player's private media available past its original expiry.
+      const expiresAt = new Date(Math.min(sourceExpiry, sharedAt.getTime() + 24 * 60 * 60 * 1000));
       const sourceImageUrls = Array.isArray(source.image_urls) && source.image_urls.length ? source.image_urls as string[] : (source.image_url ? [source.image_url] : []);
       const { data: shared, error: shareError } = await db.from("feed_posts").insert({
         author_id: user.id, body: source.body, image_url: source.image_url, image_urls: sourceImageUrls, video_url: source.video_url, post_kind: "discussion",
@@ -309,15 +324,40 @@ export async function POST(request: Request) {
     let image_url: string | null = null;
     let video_url: string | null = null;
     const image_urls: string[] = [];
+    // Keep legacy uploads until the private buckets and signed-media reader are deployed.
+    const privateImagesEnabled = process.env.HOOPFEED_PRIVATE_IMAGES_ENABLED === "true";
+    const imageBucket = privateImagesEnabled ? "hoopfeed-private-images" : "feed-images";
+    const uploadedImagePaths: string[] = [];
     for (const f of allImages) {
       const path = user.id + "/" + crypto.randomUUID() + "." + IMAGE_EXTENSIONS[f.type];
       const bytes = Buffer.from(await f.arrayBuffer());
-      const { error } = await db.storage.from("feed-images").upload(path,bytes,{contentType:f.type,cacheControl:"31536000",upsert:false});
-      if (error) return NextResponse.json({ allowed:false,message:"Photo upload failed. Your post was not published." },{status:400});
-      image_urls.push(db.storage.from("feed-images").getPublicUrl(path).data.publicUrl);
+      const { error } = await db.storage.from(imageBucket).upload(path,bytes,{contentType:f.type,cacheControl:"31536000",upsert:false});
+      if (error) {
+        if (uploadedImagePaths.length) await db.storage.from(imageBucket).remove(uploadedImagePaths);
+        return NextResponse.json({ allowed:false,message:"Photo upload failed. Your post was not published." },{status:400});
+      }
+      uploadedImagePaths.push(path);
+      image_urls.push(privateImagesEnabled
+        ? imageBucket + "/" + path
+        : db.storage.from(imageBucket).getPublicUrl(path).data.publicUrl);
     }
     if (image_urls.length) image_url = image_urls[0];
-    if (videoPath) video_url = db.storage.from("feed-videos").getPublicUrl(videoPath).data.publicUrl;
+    if (videoPath) {
+      const privateVideo = process.env.HOOPFEED_PRIVATE_VIDEOS_ENABLED === "true";
+      const videoBucket = privateVideo ? "hoopfeed-private-videos" : "feed-videos";
+      // Verify the actual uploaded object exists and matches the declared media type.
+      const lastSlash = videoPath.lastIndexOf("/");
+      const { data: objects, error: lookupError } = await db.storage.from(videoBucket)
+        .list(videoPath.slice(0, lastSlash), { search: videoPath.slice(lastSlash + 1), limit: 20 });
+      const uploaded = objects?.find(item => item.name === videoPath.slice(lastSlash + 1));
+      const uploadedSize = Number(uploaded?.metadata?.size);
+      if (lookupError || !uploaded || uploaded.metadata?.mimetype !== videoType ||
+          !Number.isSafeInteger(uploadedSize) || uploadedSize <= 0 || uploadedSize > 100 * 1024 * 1024) {
+        if (uploadedImagePaths.length) await db.storage.from(imageBucket).remove(uploadedImagePaths);
+        return NextResponse.json({ allowed: false, message: "Video upload could not be verified." }, { status: 400 });
+      }
+      video_url = privateVideo ? videoBucket + "/" + videoPath : db.storage.from(videoBucket).getPublicUrl(videoPath).data.publicUrl;
+    }
     const shareCountry = String(form.get("share_country") || "false") === "true";
     const submittedCountry = String(form.get("post_country") || "").trim().slice(0, 100);
     const { error } = await db.from("feed_posts").insert({
@@ -328,9 +368,17 @@ export async function POST(request: Request) {
       game_day_score_for: submittedTopicTag === "Game Day" ? scoreFor : null,
       game_day_score_against: submittedTopicTag === "Game Day" ? scoreAgainst : null,
       location_country:shareCountry && profile?.current_country_public !== false ? (submittedCountry || profile?.current_country || null) : null,
-      status:"approved", expires_at:new Date("2100-01-01T00:00:00.000Z").toISOString()
+      status:"approved", expires_at:new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     });
-    if (error) return NextResponse.json({ allowed:false,message:"We couldn't publish your post. Please try again." },{status:400});
+    if (error) {
+      if (uploadedImagePaths.length) await db.storage.from(imageBucket).remove(uploadedImagePaths);
+      // A signed private upload cannot be removed by the browser without storage delete grants.
+      // Clean it up using the server's privileged client when post creation fails.
+      if (videoPath && process.env.HOOPFEED_PRIVATE_VIDEOS_ENABLED === "true") {
+        await db.storage.from("hoopfeed-private-videos").remove([videoPath]);
+      }
+      return NextResponse.json({ allowed:false,message:"We couldn't publish your post. Please try again." },{status:400});
+    }
     const activityDate = new Date().toISOString().slice(0, 10);
     const { error: activityError } = await db.from("feed_posting_activity").upsert({ user_id: user.id, activity_date: activityDate }, { onConflict: "user_id,activity_date", ignoreDuplicates: true });
     if (activityError) console.error("HoopFeed posting streak activity could not be recorded:", activityError.message);
