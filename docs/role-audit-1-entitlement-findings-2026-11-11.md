@@ -31,6 +31,12 @@ Decision confirmed 2026-11-11: **One unified HoopFeed** for Player, Fan, Coach, 
 - **Must verify in staging:** Club Admin A cannot pin, remove posts, appoint moderators, or kick members in Team B's group; Club Admin A can moderate Team A only with an assignment; platform Admin/moderator permissions still work.
 - Review the account-type-level `canModerateFanGroups` entitlement used by `components/TeamFanGroupEntry.tsx`: the UI may still display moderation controls for unassigned club admins, although the API now denies unauthorized actions. Align UI with team-scoped authorization in a follow-up.
 
+## Platform role lookup correction
+- Fan HQ API previously called `is_current_user_admin_or_moderator` on a service-role client, which does not carry the request user's JWT context. This could incorrectly deny platform moderation.
+- The API now reads `admin_roles` for the verified `user.id`, checks normalized `admin` / `moderator` roles, and fails closed on lookup errors.
+- Platform Admin is allowed to moderate; platform Moderator requires the group's platform moderator designation; Club Admin and fan co-moderator require explicit team-scoped appointment.
+- UI uses an authenticated client RPC and may not exactly match platform Admin's unconditional API access. Verify UI/server parity in staging.
+
 ## Staging verification matrix
 1. For each role (Player, Fan, Coach, Scout, Agent, Club Admin), verify Free cannot post and active Pro/Premium can create a text post, image, video, poll, comment, reaction, bookmark, and permitted reshare.
 2. Check Fan Free/Pro/Premium review restrictions: Fans never write reviews; Fan Pro teaser only; Fan Premium full reviews.
