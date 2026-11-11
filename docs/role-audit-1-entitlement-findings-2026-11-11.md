@@ -78,6 +78,11 @@ Decision confirmed 2026-11-11: **One unified HoopFeed** for Player, Fan, Coach, 
 - Added source-level regression assertions in `scripts/test-membership-tier.mjs`. These do not substitute for authenticated E2E, RLS integration, or manual mobile checks.
 - Verify GitHub checks on the **final** branch commit before changing draft status. Never deploy the pending migration without explicit authorization.
 
+## Video moderation limitation
+- The server currently requires a caption for video uploads (`videoPath && !text` rejects the request). This is intentional fail-closed text moderation; the endpoint does not analyze the video bytes with the image/text moderation request.
+- The new empty-post guard allows photo-only posts, but does **not** override the video-caption requirement. Do not advertise captionless video posting until a dedicated video safety workflow is designed and tested.
+- Staging QA must verify a captioned video succeeds only after text moderation, and captionless video is rejected.
+
 ## Staging verification matrix
 1. For each role (Player, Fan, Coach, Scout, Agent, Club Admin), verify Free cannot post and active Pro/Premium can create a text post, image, video, poll, comment, reaction, bookmark, and permitted reshare.
 2. Check Fan Free/Pro/Premium review restrictions: Fans never write reviews; Fan Pro teaser only; Fan Premium full reviews.
