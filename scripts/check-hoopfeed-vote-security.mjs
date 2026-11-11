@@ -56,6 +56,7 @@ for (const [policyName, nextPolicy] of [
   for (const required of ["fp.status = 'approved'", "fp.post_kind = 'poll'", "fp.expires_at > now()", "can_view_player_feed_post(fp.author_id)"]) {
     assert(policy.includes(required), `Policy ${policyName} missing ${required}`);
   }
+  assert.match(policy, /case\s+when\s+jsonb_typeof\(fp\.poll_options\)\s*=\s*'array'/i, `Policy ${policyName} must guard JSON array length with CASE`);
   if (policyName !== "feed poll votes read") {
     assert.match(policy, /user_id\s*=\s*\(select auth\.uid\(\)\)/, `Policy ${policyName} missing owner check`);
   }
