@@ -254,7 +254,12 @@ export async function POST(request: Request) {
         return NextResponse.json({ allowed: false, message: "Polls can't be shared — vote on the original instead." }, { status: 400 });
       }
       const sharedAt = new Date();
-      const expiresAt = new Date("2100-01-01T00:00:00.000Z");
+      const sourceExpiry = new Date(source.expires_at).getTime();
+      if (!Number.isFinite(sourceExpiry) || sourceExpiry <= sharedAt.getTime()) {
+        return NextResponse.json({ allowed: false, message: "This post has expired and can't be shared." }, { status: 404 });
+      }
+      // A reshare must never keep another player's private media available past its original expiry.
+      const expiresAt = new Date(Math.min(sourceExpiry, sharedAt.getTime() + 24 * 60 * 60 * 1000));
       const sourceImageUrls = Array.isArray(source.image_urls) && source.image_urls.length ? source.image_urls as string[] : (source.image_url ? [source.image_url] : []);
       const { data: shared, error: shareError } = await db.from("feed_posts").insert({
         author_id: user.id, body: source.body, image_url: source.image_url, image_urls: sourceImageUrls, video_url: source.video_url, post_kind: "discussion",
