@@ -181,7 +181,16 @@ try {
         localStorage.setItem("sb-ci-auth-token", JSON.stringify(authSession));
       }, { themePreference: theme, authSession: session, language: testLanguage });
 
-      await page.route("https://ci.invalid/**", async (route) => {
+      // SEASON-1: deterministic season lookup for the populated live-game
+    // visual fixture. Do not bypass the production season gate.
+    await page.route("**/api/leagues/season-status?**", async (route) => {
+      const ids = new URL(route.request().url()).searchParams.get("ids")?.split(",") || [];
+      const status = Object.fromEntries(ids.filter(id => id === leagueFixture.id).map(id => [
+        id, { inSeason: true, seasonLabel: "2026–27", nextStartMonth: "Sep", localDate: "2026-11-11", timeZone: "Asia/Baku", provisionalTimeZone: false },
+      ]));
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ status }) });
+    });
+    await page.route("https://ci.invalid/**", async (route) => {
         const request = route.request();
         const url = new URL(request.url());
         const cors = {
