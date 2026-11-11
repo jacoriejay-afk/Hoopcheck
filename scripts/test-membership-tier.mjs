@@ -267,6 +267,8 @@ assert.match(unifiedFeedPolicy, /DROP POLICY IF EXISTS "player experience feed r
 assert.match(unifiedFeedPolicy, /DROP POLICY IF EXISTS "player feed checks insert"/, "old player-only checks policy must be replaced");
 assert.match(unifiedFeedPolicy, /'player','fan','coach','scout','agent','club_admin','admin'/, "unified feed must include recognized account types");
 assert.match(unifiedFeedPolicy, /s\.current_period_end IS NULL OR s\.current_period_end > now\(\)/, "checks must respect membership expiration");
+assert.match(unifiedFeedPolicy, /coalesce\(sub\.access_status,'active'\) IN/, "feed reads must preserve subscription access status");
+assert.match(unifiedFeedPolicy, /coalesce\(s\.access_status,'active'\) IN/, "checks must preserve subscription access status");
 assert.match(unifiedFeedPolicy, /fp\.status = 'approved'/, "checks must target approved posts");
 assert.match(unifiedFeedPolicy, /fp\.expires_at > now\(\)/, "checks must reject expired posts");
 
