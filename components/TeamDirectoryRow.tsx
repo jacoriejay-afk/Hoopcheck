@@ -40,7 +40,7 @@ export default function TeamDirectoryRow({
   useEffect(() => { let on = true; supabase.auth.getSession().then(({ data }) => { if (on) setSignedIn(Boolean(data.session)); }).catch(() => { if (on) setSignedIn(false); }); return () => { on = false; }; }, []);
   const resolvedViewerRole = fanView ? "fan" : viewerRole;
   const showSignIn = !resolvedViewerRole && signedIn === false;
-  const lockedTitle = resolvedViewerRole === "fan" ? "Fan Premium unlocks full reviews and Trust Score" : resolvedViewerRole === "player" ? "Player Pro or Premium membership unlocks full review details" : resolvedViewerRole || signedIn ? "An active membership is required to view Trust Score details" : showSignIn ? "Sign in to view Trust Score details" : "Trust Score";
+  const lockedTitle = resolvedViewerRole === "fan" ? "Fan Premium unlocks full reviews and Trust Score; Fan Pro shows rating previews" : resolvedViewerRole === "player" ? "Player Pro or Premium membership unlocks full review details" : resolvedViewerRole || signedIn ? "An active membership is required to view Trust Score details" : showSignIn ? "Sign in to view Trust Score details" : "Trust Score";
   const hasTrustScore = typeof trustScore === "number" && Number.isFinite(trustScore);
   const flag = countryFlag(country);
   return (
