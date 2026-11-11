@@ -172,6 +172,7 @@ export default function LiveGamesPage() {
     (game.status === "live" || availability.phase === "schedule-unknown"));
   const upcoming = filtered.filter(({availability,game}) => {
     if (!(availability.state === "UPCOMING" || availability.state === "OPENS SOON")) return false;
+    if (["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase())) return false;
     const tip = game.scheduled_at ? Date.parse(game.scheduled_at) : Number.NaN;
     return !Number.isFinite(tip) || (tip >= nowMs && tip <= nowMs + 7 * 86_400_000);
   }).sort((a,b) => {
