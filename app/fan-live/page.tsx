@@ -12,6 +12,7 @@ import "../game-predictions.css";
 import GameWinnerPrediction from "../../components/GameWinnerPrediction";
 import TeamLogo from "../../components/TeamLogo";
 import { getHoopCheckEntitlements } from "../../lib/membership-tier";
+import { groupLiveChatGames } from "../../lib/livechat-groups";
 
 type Game = { id:string; team_id:string; opponent_team_id:string|null; opponent_name:string; status:string; home_score:number|null; away_score:number|null; started_at:string|null; ends_at:string|null; scheduled_at:string|null; league_name:string|null; country:string|null; period_label:string|null };
 type Team = { id:string; name:string; logo_url?:string|null; logo_bg?:"transparent"|"light"|"dark"|null };
@@ -34,6 +35,8 @@ const roomOpen = (game:Game, now=new Date()) => {
 
 export default function FanLivePage() {
   const [games,setGames]=useState<Game[]>([]);
+  const [countrySearch,setCountrySearch]=useState("");
+  const groupedGames=useMemo(()=>groupLiveChatGames(games,[],countrySearch),[games,countrySearch]);
   const [teams,setTeams]=useState<Record<string,Team>>({});
   const [selected,setSelected]=useState<Game|null>(null);
   const [messages,setMessages]=useState<ChatMessage[]>([]);
@@ -258,7 +261,7 @@ export default function FanLivePage() {
         : !userId ? <><h2>Sign in to view Live Games</h2><Link href="/login" className="btn">Sign In</Link></>
         : <><h2>Live Games are available to players and fans</h2><p className="muted">An active Pro or Premium membership is required for the full Live Game Hub.</p><Link href="/membership" className="btn">View Membership</Link></>}
     </section> : !games.length?<section className="dashboard-card"><h2>No games available</h2><p className="muted">Check back when the game schedule is updated.</p><Link href="/live-games" className="btn">Browse Games</Link></section>:<section className="hc-live-room-grid">
-      <aside className="dashboard-card hc-live-room-list"><div className="hc-live-room-list-heading"><span className="card-kicker">LIVE GAME HUB · GAME ROOMS</span><span>{games.length}</span></div>{games.map(game=>{const a=teams[game.team_id],b=teams[game.opponent_team_id||""]||{id:"",name:game.opponent_name};return <button key={game.id} type="button" className={"hc-live-room-game"+(selected?.id===game.id?" is-selected":"")} onClick={()=>setSelected(game)}><div className="hc-live-room-game-teams">{renderTeamLogo(a)}<div><strong>{a?.name||"Team"} vs {b.name}</strong><span>{game.home_score??"—"} : {game.away_score??"—"} · {game.period_label||game.status}</span></div></div><span className={"hc-live-room-game-status"+(game.status==="live"?" is-live":"")}>{game.status==="live"?"● LIVE":finalStatus(game.status)?"FINAL":roomOpen(game)?"CHAT OPEN":"UPCOMING"}</span></button>})}</aside>
+      <aside className="dashboard-card hc-live-room-list"><div className="hc-live-room-list-heading"><span className="card-kicker">LIVE GAME HUB · COUNTRY / LEAGUE / GAME</span><span>{games.length}</span></div><label htmlFor="hc-live-country-search">Search countries or leagues</label><input id="hc-live-country-search" type="search" value={countrySearch} onChange={event=>setCountrySearch(event.target.value)} placeholder="Country or league" aria-label="Search countries or leagues" />{groupedGames.length===0&&<p>No matching games today.</p>}{groupedGames.map(country=><section key={country.name} aria-label={country.name}><h2>{country.name}</h2>{country.leagues.map(league=><div key={league.name}><h3>{league.name}</h3>{league.games.map(game=>{const a=teams[game.team_id],b=teams[game.opponent_team_id||""]||{id:"",name:game.opponent_name};return <button key={game.id} type="button" className={"hc-live-room-game"+(selected?.id===game.id?" is-selected":"")} onClick={()=>setSelected(game)}><div className="hc-live-room-game-teams">{renderTeamLogo(a)}<div><strong>{a?.name||"Team"} vs {b.name}</strong><span>{game.home_score??"—"} : {game.away_score??"—"} · {game.period_label||game.status}</span></div></div><span className={"hc-live-room-game-status"+(game.status==="live"?" is-live":"")}>{game.status==="live"?"● LIVE":finalStatus(game.status)?"FINAL":roomOpen(game)?"CHAT OPEN":"UPCOMING"}</span></button>})}</div>)}</section>)}</aside>
       {selected&&<section className="dashboard-card hc-live-room-panel">
         <GameWinnerPrediction game={selected} homeName={home?.name||"Home"} awayName={away?.name||selected.opponent_name}  />
         <header className="hc-live-room-scoreboard"><div className="hc-live-room-team">{renderTeamLogo(home)}<strong>{home?.name||"Team"}</strong></div><div className="hc-live-room-score"><span className={"hc-live-badge"+(selected.status==="live"?" is-live":"")}>{selected.status==="live"?<><i/> LIVE</>:finalStatus(selected.status)?"FINAL":availability?.state||"UPCOMING"}</span><strong>{selected.home_score??"—"} <span>:</span> {selected.away_score??"—"}</strong><small>{selected.period_label||selected.league_name||"Score updates automatically"}</small></div><div className="hc-live-room-team">{renderTeamLogo(away)}<strong>{away?.name||selected.opponent_name}</strong></div></header>
