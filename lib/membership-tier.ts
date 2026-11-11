@@ -88,7 +88,7 @@ export function getHoopCheckEntitlements(args: {
     tier,
     hasPaidMembership: active,
     canReadHoopFeed: active && (isAdmin || Boolean(role)),
-    canWriteHoopFeed: (isAdmin || isPlayer) && isAtLeastTier(tier, "pro"),
+    canWriteHoopFeed: (isAdmin || Boolean(role)) && isAtLeastTier(tier, "pro"),
     canReadFanFeed: isFan && isAtLeastTier(tier, "pro"),
     canWriteFanFeed: isFan && isAtLeastTier(tier, "pro"),
     canReadFullReviews: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) ||
