@@ -53,11 +53,14 @@ try {
           const anchor = document.querySelector(`.result-group a[href="${href}"]`);
           return anchor?.isConnected && anchor.getClientRects().length > 0;
         }, `/womens/${women.id}`);
-        await page.evaluate((href) => {
+        // React may replace the anchor between waitForFunction and evaluate.
+        // Retry against a freshly connected anchor rather than failing on one stale frame.
+        await page.waitForFunction((href) => {
           const anchor = document.querySelector(`.result-group a[href="${href}"]`);
-          if (!anchor?.isConnected) throw new Error('Women team link missing before navigation');
+          if (!anchor?.isConnected || !anchor.getClientRects().length) return false;
           anchor.click();
-        }, `/womens/${women.id}`);
+          return true;
+        }, `/womens/${women.id}`, { timeout: 15000, polling: 100 });
       } catch (error) {
         const state = await page.evaluate(() => ({
           url: location.href,
