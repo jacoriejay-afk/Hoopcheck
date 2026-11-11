@@ -31,4 +31,18 @@ assert.equal(isLeagueInSeason(winter, "2027-06-30"), true);
 assert.equal(isLeagueInSeason(winter, "2026-10-01"), true);
 assert.throws(() => isLeagueInSeason({ season_start_month: 1, season_start_day: 1, season_end_month: 1, season_end_day: 1 }, "2026-01-01"));
 assert.throws(() => isLeagueInSeason(winter, "2026-02-30"));
+// Boundary coverage for summer calendars, leap days, and stale labels.
+const summer = { season_start_month: 5, season_start_day: 15, season_end_month: 8, season_end_day: 15 };
+assert.equal(isLeagueInSeason(summer, "2027-05-14"), false);
+assert.equal(isLeagueInSeason(summer, "2027-05-15"), true);
+assert.equal(isLeagueInSeason(summer, "2027-08-15"), true);
+assert.equal(isLeagueInSeason(summer, "2027-08-16"), false);
+const leapStart = { season_start_month: 2, season_start_day: 29, season_end_month: 4, season_end_day: 30 };
+assert.equal(isLeagueInSeason(leapStart, "2028-02-28"), false);
+assert.equal(isLeagueInSeason(leapStart, "2028-02-29"), true);
+assert.equal(isLeagueInSeason(leapStart, "2027-02-27"), false);
+assert.equal(isLeagueInSeason(leapStart, "2027-02-28"), true);
+const staleLabel = { ...winter, season_label: "2025–26" };
+assert.equal(currentSeasonLabel(staleLabel, "2027-02-15"), "2026–27");
+assert.equal(currentSeasonLabel(staleLabel, "2026-02-15"), "2025–26");
 console.log("SEASON-1 resolver assertions passed");
