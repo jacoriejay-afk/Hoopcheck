@@ -80,9 +80,18 @@ export function getGameAvailability({
 
   if (!hasTipoff) {
     if (liveStatus) {
+      const closesAt = Number.isFinite(ended) ? new Date(ended + POST_GAME_MINUTES * MINUTE) : null;
+      const chatOpen = closesAt === null || now.getTime() < closesAt.getTime();
       return {
-        state: "LIVE", phase: "schedule-unknown", chatOpen: true, opensAt: null, closesAt: null,
-        minutesUntilOpen: null, reason: "The provider marks this game live, but schedule timestamps are unavailable.",
+        state: chatOpen ? "LIVE" : "CLOSED",
+        phase: chatOpen ? "schedule-unknown" : "closed",
+        chatOpen,
+        opensAt: null,
+        closesAt,
+        minutesUntilOpen: null,
+        reason: chatOpen
+          ? "The provider marks this game live, but schedule timestamps are unavailable."
+          : "The chat window for this game has closed.",
       };
     }
     return {
