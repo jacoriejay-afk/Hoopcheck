@@ -284,7 +284,10 @@ export async function POST(request: Request) {
 
     // Stage 2 post kinds: "news" is reserved for official (admin) accounts; "poll" carries options.
     const submittedKind = String(form.get("post_kind") || "discussion").trim();
-    const postKind = kind !== "post" ? "discussion" : submittedKind === "news" && isAdmin ? "news" : submittedKind === "poll" ? "poll" : "discussion";
+    if (kind === "post" && submittedKind === "news" && !isAdmin) {
+      return NextResponse.json({ allowed: false, message: "Only HoopCheck administrators can publish official news." }, { status: 403 });
+    }
+    const postKind = kind !== "post" ? "discussion" : submittedKind === "news" ? "news" : submittedKind === "poll" ? "poll" : "discussion";
     let pollOptions: string[] | null = null;
     if (kind === "post" && postKind === "poll") {
       let parsed: unknown = null;
