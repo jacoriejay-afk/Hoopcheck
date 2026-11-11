@@ -33,4 +33,5 @@ const migration = readFileSync(new URL("../supabase/migrations/20261111200000_li
 assert.match(migration,/interval '60 minutes'/);
 assert.match(migration,/interval '2 hours'/);
 assert.match(migration,/revoke all on function public\.fan_live_chat_room_open\(uuid\) from public, anon/);
+assert.match(migration,/create policy "eligible members read game presence"[\\s\\S]*?fan_live_chat_room_open\\(game_id\\)/);
 console.log(`Passed ${cases.length} game lifecycle cases and migration guard assertions.`);
