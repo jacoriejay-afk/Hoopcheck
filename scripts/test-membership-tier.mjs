@@ -111,6 +111,20 @@ for (const [label, input, expected] of cases) {
   for (const key of keys) assert.equal(actual[key], expected[key] ?? false, label + " → " + key);
 }
 
+// Unified community posting: all recognized paid roles can post; unknown role values cannot.
+for (const role of ["player", "fan", "coach", "scout", "agent", "club_admin"]) {
+  const allowed = getHoopCheckEntitlements({ accountType: role, subscription: active("pro") });
+  assert.equal(allowed.canReadHoopFeed, true, role + " Pro reads unified HoopFeed");
+  assert.equal(allowed.canWriteHoopFeed, true, role + " Pro posts to unified HoopFeed");
+  const free = getHoopCheckEntitlements({ accountType: role });
+  assert.equal(free.canWriteHoopFeed, false, role + " Free cannot post to unified HoopFeed");
+}
+const unknownRole = getHoopCheckEntitlements({ accountType: "unexpected_role", subscription: active("premium") });
+assert.equal(unknownRole.canReadHoopFeed, false, "unrecognized roles cannot read member HoopFeed");
+assert.equal(unknownRole.canWriteHoopFeed, false, "unrecognized roles cannot post to HoopFeed");
+assert.equal(unknownRole.canReadFullReviews, false, "unrecognized roles cannot inherit review access");
+assert.equal(unknownRole.canViewTrustScore, false, "unrecognized roles cannot inherit trust access");
+
 const expired = getHoopCheckEntitlements({
   accountType: "player",
   subscription: { ...active("premium"), current_period_end: "2000-01-01T00:00:00.000Z" },
