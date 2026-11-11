@@ -37,6 +37,12 @@ Decision confirmed 2026-11-11: **One unified HoopFeed** for Player, Fan, Coach, 
 - Platform Admin is allowed to moderate; platform Moderator requires the group's platform moderator designation; Club Admin and fan co-moderator require explicit team-scoped appointment.
 - UI uses an authenticated client RPC and may not exactly match platform Admin's unconditional API access. Verify UI/server parity in staging.
 
+## Agent/Scout source audit
+- `app/agents-hq/page.tsx` checks the signed-in profile `account_type` and permits only `agent` or `scout` into the workspace UI.
+- `components/PlayerContactButton.tsx` uses `canUseAskPlayer`, which requires active Pro/Premium for Players, Scouts, and Agents. This is a client-side control and does **not** prove the receiving API enforces the same rules.
+- `canUseRecruitingNetwork` currently permits Premium Players, not Agents/Scouts; verify whether this flag is intentionally for player-side recruiting only before modifying it.
+- Audit the contact/request API and database RLS for direct-call bypasses. Authenticated role-by-role tests are outstanding.
+
 ## Staging verification matrix
 1. For each role (Player, Fan, Coach, Scout, Agent, Club Admin), verify Free cannot post and active Pro/Premium can create a text post, image, video, poll, comment, reaction, bookmark, and permitted reshare.
 2. Check Fan Free/Pro/Premium review restrictions: Fans never write reviews; Fan Pro teaser only; Fan Premium full reviews.
