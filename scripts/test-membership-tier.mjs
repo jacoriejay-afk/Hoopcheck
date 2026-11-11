@@ -220,6 +220,8 @@ assert.match(feedModerationSource, /new Set\(cleaned\.map\(\(option\) => option\
 
 assert.match(feedModerationSource, /if \(!text\) return NextResponse\.json\(\{ allowed: false, message: "Write a comment before posting\." \}/, "empty comments must be rejected");
 
+assert.match(feedModerationSource, /kind === "post" && !text && allImages\.length === 0 && !videoPath/, "posts must contain text or media");
+
 const playerContactPolicy = read("../supabase/migrations/20261111180000_align_agent_scout_contact_pro_premium.sql");
 assert.match(playerContactPolicy, /s\.plan IN \('pro', 'premium'\)/, "Agent/Scout contact RLS must accept Pro and Premium");
 assert.match(playerContactPolicy, /requester_id = \(SELECT auth\.uid\(\)\)/, "contact requester must match auth user");
