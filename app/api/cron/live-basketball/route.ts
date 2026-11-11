@@ -141,6 +141,13 @@ export async function GET(request: NextRequest) {
       finalStatuses.has(statusOf(game)) || cancelledStatuses.has(statusOf(game))
     );
 
+    // A fixture must carry its internal league ID for season enforcement.
+    // Use the mapped team's league only when both mapped sides agree.
+    const { data: leagueTeams, error: leagueTeamsError } = await db.from("teams")
+      .select("id,league_id").not("league_id", "is", null);
+    if (leagueTeamsError) throw leagueTeamsError;
+    const teamLeague = new Map((leagueTeams || []).map(team => [team.id, team.league_id]));
+
     const rows = [];
     for (const game of trackedGames) {
       const homeProviderId = Number(game.teams?.home?.id);
@@ -158,6 +165,10 @@ export async function GET(request: NextRequest) {
       const primaryScore = primaryIsHome ? score(game.scores?.home) : score((game.scores?.away ?? game.scores?.visitors));
       const opponentScore = primaryIsHome ? score((game.scores?.away ?? game.scores?.visitors)) : score(game.scores?.home);
       if (!primaryId || !opponentName || !game.id) continue;
+      const homeLeagueId = homeInternalId ? teamLeague.get(homeInternalId) : null;
+      const awayLeagueId = awayInternalId ? teamLeague.get(awayInternalId) : null;
+      // Never guess a competition from one side when the other side disagrees.
+      const leagueId = homeLeagueId && awayLeagueId && homeLeagueId === awayLeagueId ? homeLeagueId : null;
 
       const startDate = game.timestamp ? new Date(game.timestamp * 1000).toISOString()
         : (game.date && !Number.isNaN(Date.parse(game.date)) ? new Date(game.date).toISOString() : null);
@@ -177,6 +188,7 @@ export async function GET(request: NextRequest) {
         away_score: storedStatus === "scheduled" ? null : opponentScore,
         started_at: storedStatus === "scheduled" ? null : startDate,
         scheduled_at: startDate,
+        league_id: leagueId,
         league_name: game.league?.name || null,
         country: game.league?.country || null,
         period_label: liveStatuses.has(providerStatus) ? (game.status?.long || providerStatus) : null
