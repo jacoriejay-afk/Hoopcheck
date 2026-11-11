@@ -150,18 +150,11 @@ export async function GET(request: NextRequest) {
     if (competitionError) throw competitionError;
     const leagueByProviderId = new Map((competitionMappings || []).map(mapping => [Number(mapping.provider_league_id), mapping.league_id]));
 
-    // A fixture must carry its internal league ID for season enforcement.
-    // Team agreement is used only when the provider supplies no valid competition ID;
-    // an unknown provider competition must remain unresolved until verified.
-    const { data: leagueTeams, error: leagueTeamsError } = await db.from("teams")
-      .select("id,league_id").not("league_id", "is", null);
-    if (leagueTeamsError) throw leagueTeamsError;
-    const teamLeague = new Map((leagueTeams || []).map(team => [team.id, team.league_id]));
+    // Resolve competitions only by reviewed provider competition IDs.
 
     const rows = [];
     let verifiedCompetitionMatches = 0;
     let unmappedProviderCompetitions = 0;
-    let fallbackTeamLeagueMatches = 0;
     for (const game of trackedGames) {
       const homeProviderId = Number(game.teams?.home?.id);
       const awayProviderId = Number((game.teams?.away ?? game.teams?.visitors)?.id);
@@ -178,20 +171,13 @@ export async function GET(request: NextRequest) {
       const primaryScore = primaryIsHome ? score(game.scores?.home) : score((game.scores?.away ?? game.scores?.visitors));
       const opponentScore = primaryIsHome ? score((game.scores?.away ?? game.scores?.visitors)) : score(game.scores?.home);
       if (!primaryId || !opponentName || !game.id) continue;
-      const homeLeagueId = homeInternalId ? teamLeague.get(homeInternalId) : null;
-      const awayLeagueId = awayInternalId ? teamLeague.get(awayInternalId) : null;
-      // Never guess a competition from one side when the other side disagrees.
       const providerLeagueId = Number(game.league?.id);
       const verifiedProviderLeagueId = Number.isInteger(providerLeagueId) && providerLeagueId > 0
         ? leagueByProviderId.get(providerLeagueId) : null;
-      // A provider competition ID is authoritative only after manual verification.
-      // Never substitute a club's domestic league for an unknown provider competition.
       const hasProviderCompetition = Number.isInteger(providerLeagueId) && providerLeagueId > 0;
-      const agreedTeamLeague = homeLeagueId && awayLeagueId && homeLeagueId === awayLeagueId ? homeLeagueId : null;
-      const leagueId = hasProviderCompetition ? verifiedProviderLeagueId || null : agreedTeamLeague;
+      const leagueId = verifiedProviderLeagueId || null;
       if (verifiedProviderLeagueId) verifiedCompetitionMatches++;
       else if (hasProviderCompetition) unmappedProviderCompetitions++;
-      else if (agreedTeamLeague) fallbackTeamLeagueMatches++;
 
       const startDate = game.timestamp ? new Date(game.timestamp * 1000).toISOString()
         : (game.date && !Number.isNaN(Date.parse(game.date)) ? new Date(game.date).toISOString() : null);
@@ -351,9 +337,8 @@ export async function GET(request: NextRequest) {
       seasonMapping: {
         verifiedCompetitionMatches,
         unmappedProviderCompetitions,
-        fallbackTeamLeagueMatches,
         retainedExistingLeagueIds,
-        unresolvedBeforeExistingAssignment: rows.length - verifiedCompetitionMatches - fallbackTeamLeagueMatches,
+        unresolvedBeforeExistingAssignment: rows.length - verifiedCompetitionMatches,
         unresolvedAfterExistingAssignment: rows.filter(row => !row.league_id).length
       },
       unmatchedLiveGames
