@@ -297,6 +297,10 @@ export async function POST(request: Request) {
       pollOptions = cleaned;
     }
 
+    if (kind === "post" && !text && allImages.length === 0 && !videoPath) {
+      return NextResponse.json({ allowed: false, message: "Add text, a photo, or a video before posting." }, { status: 400 });
+    }
+
     const moderationText = kind === "post" && postKind === "poll" ? text + "\n" + (pollOptions ?? []).join("\n") : text;
     const result = await moderate(moderationText, allImages[0] ?? null);
     if (!result.allowed) return NextResponse.json({ allowed: false, message: result.message }, { status: result.status });
