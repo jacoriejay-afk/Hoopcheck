@@ -7,6 +7,8 @@ create policy "feed poll votes read" on public.feed_poll_votes
   using (exists (
     select 1 from public.feed_posts fp
     where fp.id = feed_poll_votes.post_id
+      and fp.status = 'approved'
+      and fp.post_kind = 'poll'
       and fp.expires_at > now()
       and public.can_view_player_feed_post(fp.author_id)
   ));
@@ -18,7 +20,9 @@ create policy "feed poll votes insert own" on public.feed_poll_votes
     and exists (
       select 1 from public.feed_posts fp
       where fp.id = feed_poll_votes.post_id
-        and fp.expires_at > now()
+        and fp.status = 'approved'
+      and fp.post_kind = 'poll'
+      and fp.expires_at > now()
         and public.can_view_player_feed_post(fp.author_id)
     )
   );
@@ -30,7 +34,9 @@ create policy "feed poll votes update own" on public.feed_poll_votes
     and exists (
       select 1 from public.feed_posts fp
       where fp.id = feed_poll_votes.post_id
-        and fp.expires_at > now()
+        and fp.status = 'approved'
+      and fp.post_kind = 'poll'
+      and fp.expires_at > now()
         and public.can_view_player_feed_post(fp.author_id)
     )
   )
@@ -39,7 +45,9 @@ create policy "feed poll votes update own" on public.feed_poll_votes
     and exists (
       select 1 from public.feed_posts fp
       where fp.id = feed_poll_votes.post_id
-        and fp.expires_at > now()
+        and fp.status = 'approved'
+      and fp.post_kind = 'poll'
+      and fp.expires_at > now()
         and public.can_view_player_feed_post(fp.author_id)
     )
   );
