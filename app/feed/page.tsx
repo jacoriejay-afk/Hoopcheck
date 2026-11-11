@@ -237,6 +237,7 @@ export default function Feed(){
            if(uploadError)throw new Error("Video upload failed. Please try again.");
            uploadedVideoPath=path;
          }else throw new Error("Invalid video upload authorization.");
+         if(!uploadedVideoPath)throw new Error("Video upload did not return a path.");
          form.append("video_path",uploadedVideoPath);form.append("video_type",videoType);
        }
       const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
