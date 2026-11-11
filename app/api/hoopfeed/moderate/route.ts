@@ -199,7 +199,7 @@ export async function POST(request: Request) {
       if (!postId || !Number.isInteger(optionIndex)) return NextResponse.json({ allowed: false, message: "That vote didn't go through. Please try again." }, { status: 400 });
       // Check visibility using the requester's JWT, not the service-role client.
       // Service-role queries bypass RLS and must not authorize poll participation.
-      const publicKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const publicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
       if (!publicKey || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
         return NextResponse.json({ allowed: false, message: "Voting is temporarily unavailable." }, { status: 503 });
       }
