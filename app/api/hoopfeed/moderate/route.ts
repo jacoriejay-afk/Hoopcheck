@@ -298,7 +298,8 @@ export async function POST(request: Request) {
       const postId = String(form.get("post_id") || "");
       if (!postId) return NextResponse.json({ allowed: false, message: "Post not found." }, { status: 400 });
       const { data: post } = await db.from("feed_posts").select("id,author_id,expires_at,status").eq("id",postId).maybeSingle();
-      if (!post || post.status !== "approved" || !post.expires_at || !Number.isFinite(Date.parse(post.expires_at)) || Date.parse(post.expires_at) <= Date.now()) {
+      const expiresAt = post?.expires_at ? Date.parse(post.expires_at) : NaN;
+      if (!post || post.status !== "approved" || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
         return NextResponse.json({ allowed: false, message: "This HoopFeed post is no longer available." }, { status: 404 });
       }
       const { error } = await db.from("feed_post_comments").insert({ post_id:postId,author_id:user.id,body:text });
