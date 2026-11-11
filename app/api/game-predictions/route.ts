@@ -1,3 +1,4 @@
+import { resolveLeagueSeason } from "../../../lib/league-season-server";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -20,6 +21,15 @@ async function currentUser(request: Request, auth: any) {
   if (!token) return null;
   const { data } = await auth.auth.getUser(token);
   return data.user || null;
+}
+async function leagueIsInSeason(db: ReturnType<typeof clients>["db"], leagueId: string | null | undefined) {
+  if (!leagueId) return false;
+  const { data, error } = await db.from("leagues")
+    .select("season_start_month,season_start_day,season_end_month,season_end_day,season_label,season_time_zone")
+    .eq("id", leagueId).maybeSingle();
+  if (error || !data) return false;
+  try { return resolveLeagueSeason(data, new Date(), data.season_time_zone || "UTC").inSeason; }
+  catch { return false; }
 }
 function winner(game: any) {
   if (!finalStatuses.has(String(game.status).toLowerCase())) return null;
@@ -70,7 +80,7 @@ export async function GET(request: Request) {
     const gameId = url.searchParams.get("gameId") || "";
     if (!/^[0-9a-f-]{36}$/i.test(gameId)) return NextResponse.json({error:"Provide a valid game."},{status:400});
     const [{data:game,error:gameError},{data:mine,error:mineError},{data:picks,error:picksError}] = await Promise.all([
-      db.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,scheduled_at,ends_at").eq("id",gameId).maybeSingle(),
+      db.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,scheduled_at,ends_at,league_id").eq("id",gameId).maybeSingle(),
       db.from("game_winner_picks").select("picked_team_id").eq("game_id",gameId).eq("user_id",user.id).maybeSingle(),
       db.from("game_winner_picks").select("picked_team_id").eq("game_id",gameId),
     ]);
@@ -78,7 +88,8 @@ export async function GET(request: Request) {
     if(!game) return NextResponse.json({error:"Game not found."},{status:404});
     const status=String(game.status).toLowerCase();
     const tip=Date.parse(game.scheduled_at||"");
-    const locked=finalStatuses.has(status)||liveStatuses.has(status)||(Number.isFinite(tip)&&Date.now()>=tip);
+    const inSeason = await leagueIsInSeason(db, game.league_id);
+    const locked=!inSeason||finalStatuses.has(status)||liveStatuses.has(status)||(Number.isFinite(tip)&&Date.now()>=tip);
     const winnerId=winner(game), total=(picks||[]).length;
     const winnerCount=winnerId?(picks||[]).filter((p:any)=>p.picked_team_id===winnerId).length:0;
     const results=finalStatuses.has(status)&&winnerId?{winner_team_id:winnerId,total_picks:total,winner_percent:total?Math.round(winnerCount/total*100):0,correct_picks:winnerCount}:null;
@@ -100,10 +111,11 @@ export async function POST(request: Request) {
     if(!/^[0-9a-f-]{36}$/i.test(gameId)||!/^[0-9a-f-]{36}$/i.test(pickedTeamId)) return NextResponse.json({error:"Choose one of the teams."},{status:400});
     const [{data:profile},{data:game,error:gameError}]=await Promise.all([
       db.from("profiles").select("account_type").eq("id",user.id).maybeSingle(),
-      db.from("fan_live_games").select("id,team_id,opponent_team_id,status,scheduled_at").eq("id",gameId).maybeSingle(),
+      db.from("fan_live_games").select("id,team_id,opponent_team_id,status,scheduled_at,league_id").eq("id",gameId).maybeSingle(),
     ]);
     if(!["fan","player"].includes(profile?.account_type||"")) return NextResponse.json({error:"Predictions are available to fans and players."},{status:403});
     if(gameError||!game) return NextResponse.json({error:"Game not found."},{status:404});
+    if (!(await leagueIsInSeason(db, game.league_id))) return NextResponse.json({error:"Predictions are closed outside the league season or until its season is verified."},{status:409});
     if(!game.opponent_team_id||![game.team_id,game.opponent_team_id].includes(pickedTeamId)) return NextResponse.json({error:"Pick one of the listed teams."},{status:400});
     const tip=Date.parse(game.scheduled_at||"");
     if(["final","finished","live","in_progress"].includes(String(game.status).toLowerCase())||!Number.isFinite(tip)||Date.now()>=tip) return NextResponse.json({error:"Picks are locked at tip-off."},{status:409});
