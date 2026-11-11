@@ -208,6 +208,8 @@ assert.match(feedModerationSource, /post\.expires_at && new Date\(post\.expires_
 assert.match(feedModerationSource, /poll\.expires_at && new Date\(poll\.expires_at\)\.getTime\(\) <= Date\.now\(\)/, "expired HoopFeed polls must not accept votes");
 assert.match(feedModerationSource, /\.select\("id,status,expires_at"\)/, "bookmark lookup must load post expiry");
 
+assert.match(feedModerationSource, /submittedImages\.length > 4/, "HoopFeed must reject uploads exceeding four photos");
+
 const playerContactPolicy = read("../supabase/migrations/20261111180000_align_agent_scout_contact_pro_premium.sql");
 assert.match(playerContactPolicy, /s\.plan IN \('pro', 'premium'\)/, "Agent/Scout contact RLS must accept Pro and Premium");
 assert.match(playerContactPolicy, /requester_id = \(SELECT auth\.uid\(\)\)/, "contact requester must match auth user");
