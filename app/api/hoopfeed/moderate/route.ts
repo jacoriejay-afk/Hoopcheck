@@ -150,7 +150,11 @@ export async function POST(request: Request) {
     const imageValue = form.get("image");
     const image = imageValue instanceof File && imageValue.size > 0 ? imageValue : null;
     const extraImages = form.getAll("images").filter((v): v is File => v instanceof File && v.size > 0);
-    const allImages: File[] = [...(image ? [image] : []), ...extraImages].slice(0, 4);
+    const submittedImages: File[] = [...(image ? [image] : []), ...extraImages];
+    if (submittedImages.length > 4) {
+      return NextResponse.json({ allowed: false, message: "Add no more than 4 photos per post." }, { status: 400 });
+    }
+    const allImages = submittedImages;
     for (const f of extraImages) {
       if (!ALLOWED_IMAGE_TYPES.has(f.type)) {
         return NextResponse.json({ allowed: false, message: "Use a JPEG, PNG, or WebP image." }, { status: 400 });
