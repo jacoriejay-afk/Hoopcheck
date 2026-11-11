@@ -359,9 +359,12 @@ export async function POST(request: Request) {
     const image_urls: string[] = [];
     const uploadedImagePaths: string[] = [];
     const cleanupUploadedImages = async () => {
-      if (uploadedImagePaths.length) {
+      if (!uploadedImagePaths.length) return;
+      try {
         const { error: cleanupError } = await db.storage.from("feed-images").remove(uploadedImagePaths);
         if (cleanupError) console.error("HoopFeed orphaned photo cleanup failed:", cleanupError.message);
+      } catch (cleanupError) {
+        console.error("HoopFeed orphaned photo cleanup threw:", cleanupError);
       }
     };
     for (const f of allImages) {
