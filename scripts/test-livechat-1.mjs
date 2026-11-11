@@ -40,4 +40,16 @@ assert.deepEqual(groups[1].leagues[0].games.map(game => game.id), ["az-live", "a
 assert.deepEqual(groupLiveChatGames(games, [], "azer").map(group => group.name), ["Azerbaijan"]);
 assert.deepEqual(groupLiveChatGames(games, [], "BBL").map(group => group.name), ["Germany"]);
 assert.equal(new Set(groups.flatMap(group => group.leagues.flatMap(league => league.games.map(game => game.id)))).size, 4);
-console.log("LIVECHAT-1 lifecycle and country/league grouping tests passed.");
+// Contract checks: protect against accidentally restoring the legacy 30-minute
+// server window or hiding archived messages behind the room-open predicate.
+const migration = readFileSync(new URL("../supabase/migrations/20261111190000_livechat_1_room_lifecycle_and_archive.sql", import.meta.url), "utf8");
+assert.match(migration, /g\.scheduled_at - interval '60 minutes'/);
+assert.match(migration, /g\.scheduled_at \+ interval '4 hours'/);
+assert.match(migration, /g\.ends_at \+ interval '2 hours'/);
+assert.match(migration, /g\.ends_at is not null/);
+assert.match(migration, /current_user_has_live_game_membership\(\)/);
+assert.match(migration, /c\.is_blocked/);
+const readPolicy = migration.split('create policy "eligible members read live chat"')[1]?.split('-- Existing insert')[0];
+assert.ok(readPolicy, "Archive SELECT policy must exist");
+assert.doesNotMatch(readPolicy, /fan_live_chat_room_open\(game_id\)/, "Archive SELECT must not require an open room");
+console.log("LIVECHAT-1 lifecycle, grouping, and migration contract tests passed.");
