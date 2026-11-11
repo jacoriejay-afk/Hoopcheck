@@ -22,6 +22,8 @@ assert.equal(getGameChatState(fixture, at("2026-11-12T21:59:59.999Z")), "open");
 assert.equal(getGameChatState(fixture, at("2026-11-12T22:00:00.000Z")), "read-only");
 assert.equal(getGameChatState({ ...fixture, status: "live" }, at("2026-11-12T22:00:00.000Z")), "open");
 const final = { ...fixture, status: "final", ends_at: "2026-11-12T20:00:00.000Z" };
+assert.equal(getGameChatState(final, at("2026-11-12T19:59:59.999Z")), "read-only");
+assert.equal(getGameChatState(final, at("2026-11-12T20:00:00.000Z")), "open");
 assert.equal(getGameChatState(final, at("2026-11-12T21:59:59.999Z")), "open");
 assert.equal(getGameChatState(final, at("2026-11-12T22:00:00.000Z")), "read-only");
 assert.equal(getGameChatState({ ...final, ends_at: null }, at("2026-11-12T20:01:00.000Z")), "read-only");
