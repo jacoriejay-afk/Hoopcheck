@@ -26,7 +26,7 @@ export default function GoogleSignInButton({ disabled }: { disabled?: boolean })
       }
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+        options: { redirectTo: !["hoopcheck.online", "www.hoopcheck.online", "hoopcheck-hoopcheck.vercel.app"].includes(window.location.hostname)
           ? new URL("/auth/callback", window.location.origin).href
           : "https://hoopcheck.online/auth/callback" },
       });
