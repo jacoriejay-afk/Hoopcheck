@@ -55,7 +55,7 @@
   --radius-md: 16px;
   --radius-lg: 20px;
   --hc-radius-control: var(--radius-sm);
-  --hc-radius-card: var(--radius-md);
+  --hc-radius-card: var(--radius-lg);
   --hc-radius-hero: var(--radius-lg);
   --hc-category-teams: var(--accent);
   --hc-category-womens: #E84393;
