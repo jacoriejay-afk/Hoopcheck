@@ -26,7 +26,8 @@ as $$
           and (
             -- Provider says live, but no reliable tip timestamp exists.
             (lower(g.status) in ('live', 'in_progress')
-              and g.scheduled_at is null and g.started_at is null)
+              and g.scheduled_at is null and g.started_at is null
+              and (g.ends_at is null or now() < g.ends_at + interval '2 hours'))
             or (
               coalesce(g.scheduled_at, g.started_at) is not null
               and now() >= coalesce(g.scheduled_at, g.started_at) - interval '60 minutes'
