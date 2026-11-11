@@ -160,6 +160,7 @@ set role authenticated;
 do $visibility_free$ begin
  if public.can_view_player_feed_post('00000000-0000-0000-0000-000000000002') then
  raise exception 'Free player accessed followed feed'; end if;
+ if (select count(*) from public.feed_poll_votes) <> 0 then raise exception 'Free player could SELECT poll votes'; end if;
 end $visibility_free$;
 reset role;
 update public.subscriptions set plan='premium';
@@ -168,6 +169,7 @@ set role authenticated;
 do $visibility_fan$ begin
  if public.can_view_player_feed_post('00000000-0000-0000-0000-000000000002') then
  raise exception 'Premium fan accessed player-only feed'; end if;
+ if (select count(*) from public.feed_poll_votes) <> 0 then raise exception 'Fan could SELECT player-only poll votes'; end if;
 end $visibility_fan$;
 reset role;
 update public.profiles set account_type='player',current_country='Germany'
@@ -176,6 +178,7 @@ set role authenticated;
 do $visibility_country$ begin
  if public.can_view_player_feed_post('00000000-0000-0000-0000-000000000002') then
  raise exception 'Cross-country follower accessed feed'; end if;
+ if (select count(*) from public.feed_poll_votes) <> 0 then raise exception 'Cross-country poll votes leaked'; end if;
 end $visibility_country$;
 reset role;
 update public.profiles set current_country='Azerbaijan'
@@ -185,6 +188,7 @@ set role authenticated;
 do $visibility_follow$ begin
  if public.can_view_player_feed_post('00000000-0000-0000-0000-000000000002') then
  raise exception 'Non-follower accessed feed'; end if;
+ if (select count(*) from public.feed_poll_votes) <> 0 then raise exception 'Non-follower poll votes leaked'; end if;
 end $visibility_follow$;
 reset role;
 insert into public.admin_roles values ('00000000-0000-0000-0000-000000000001','moderator');
@@ -194,4 +198,5 @@ do $visibility_moderator$ begin
  raise exception 'Moderator denied feed'; end if;
  if not public.can_view_player_feed_post('00000000-0000-0000-0000-000000000001') then
  raise exception 'Author denied own feed'; end if;
+ if (select count(*) from public.feed_poll_votes) <> 2 then raise exception 'Moderator could not SELECT visible poll votes'; end if;
 end $visibility_moderator$;
