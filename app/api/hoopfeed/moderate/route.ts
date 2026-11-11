@@ -350,7 +350,9 @@ export async function POST(request: Request) {
       const { data: objects, error: lookupError } = await db.storage.from(videoBucket)
         .list(videoPath.slice(0, lastSlash), { search: videoPath.slice(lastSlash + 1), limit: 20 });
       const uploaded = objects?.find(item => item.name === videoPath.slice(lastSlash + 1));
-      if (lookupError || !uploaded || uploaded.metadata?.mimetype !== videoType || Number(uploaded.metadata?.size) > 100 * 1024 * 1024) {
+      const uploadedSize = Number(uploaded?.metadata?.size);
+      if (lookupError || !uploaded || uploaded.metadata?.mimetype !== videoType ||
+          !Number.isSafeInteger(uploadedSize) || uploadedSize <= 0 || uploadedSize > 100 * 1024 * 1024) {
         if (uploadedImagePaths.length) await db.storage.from(imageBucket).remove(uploadedImagePaths);
         return NextResponse.json({ allowed: false, message: "Video upload could not be verified." }, { status: 400 });
       }
