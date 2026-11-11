@@ -66,7 +66,18 @@ select pg_temp.expect_denied($q$insert into public.feed_poll_votes values ('1000
 select pg_temp.expect_denied($q$insert into public.feed_poll_votes values ('10000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000001',0)$q$);
 select pg_temp.expect_denied($q$update public.feed_poll_votes set option_index=5 where user_id=auth.uid()$q$);
 select pg_temp.expect_denied($q$insert into public.feed_post_bookmarks values ('10000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000001')$q$);
+-- Positive bookmark and ownership tests under the authenticated role.
+insert into public.feed_post_bookmarks(post_id,user_id) values
+ ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001');
+do $ begin
+ if (select count(*) from public.feed_post_bookmarks) <> 1 then raise exception 'Own bookmark missing'; end if;
+end $;
+select pg_temp.expect_denied($q$insert into public.feed_post_bookmarks values ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001')$q$);
+select pg_temp.expect_denied($q$insert into public.feed_post_bookmarks values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002')$q$);
+select pg_temp.expect_denied($q$insert into public.feed_poll_votes values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002',0)$q$);
+
 select set_config('test.allowed_author','',false);
 do $$ begin
  if (select count(*) from public.feed_poll_votes) <> 0 then raise exception 'Hidden vote leaked'; end if;
+ if (select count(*) from public.feed_post_bookmarks) <> 1 then raise exception 'Own bookmark not visible'; end if;
 end $$;
