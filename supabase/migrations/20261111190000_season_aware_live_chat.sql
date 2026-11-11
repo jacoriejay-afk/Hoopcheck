@@ -35,6 +35,8 @@ $$;
 revoke all on function public.fan_live_chat_room_open(uuid) from public, anon;
 grant execute on function public.fan_live_chat_room_open(uuid) to authenticated;
 
+-- NOTE: Without a recorded ends_at, final games stay closed rather than
+-- inventing a final-whistle timestamp. This is intentionally fail-closed.
 -- The existing RLS and slow-mode trigger already invoke this function.
 -- Consequently the season gate is enforced for inserts and presence, and
 -- for message reads under the existing eligible-fans policy.
