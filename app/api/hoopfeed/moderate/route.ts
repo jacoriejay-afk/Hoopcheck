@@ -327,7 +327,20 @@ export async function POST(request: Request) {
         : db.storage.from(imageBucket).getPublicUrl(path).data.publicUrl);
     }
     if (image_urls.length) image_url = image_urls[0];
-    if (videoPath) video_url = db.storage.from("feed-videos").getPublicUrl(videoPath).data.publicUrl;
+    if (videoPath) {
+      const privateVideo = process.env.HOOPFEED_PRIVATE_VIDEOS_ENABLED === "true";
+      const videoBucket = privateVideo ? "hoopfeed-private-videos" : "feed-videos";
+      // Verify the actual uploaded object exists and matches the declared media type.
+      const lastSlash = videoPath.lastIndexOf("/");
+      const { data: objects, error: lookupError } = await db.storage.from(videoBucket)
+        .list(videoPath.slice(0, lastSlash), { search: videoPath.slice(lastSlash + 1), limit: 20 });
+      const uploaded = objects?.find(item => item.name === videoPath.slice(lastSlash + 1));
+      if (lookupError || !uploaded || uploaded.metadata?.mimetype !== videoType || Number(uploaded.metadata?.size) > 100 * 1024 * 1024) {
+        if (uploadedImagePaths.length) await db.storage.from(imageBucket).remove(uploadedImagePaths);
+        return NextResponse.json({ allowed: false, message: "Video upload could not be verified." }, { status: 400 });
+      }
+      video_url = privateVideo ? videoBucket + "/" + videoPath : db.storage.from(videoBucket).getPublicUrl(videoPath).data.publicUrl;
+    }
     const shareCountry = String(form.get("share_country") || "false") === "true";
     const submittedCountry = String(form.get("post_country") || "").trim().slice(0, 100);
     const { error } = await db.from("feed_posts").insert({
