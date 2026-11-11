@@ -72,12 +72,13 @@ insert into public.feed_post_bookmarks(post_id,user_id) values
 do $bookmark_check$ begin
  if (select count(*) from public.feed_post_bookmarks) <> 1 then raise exception 'Own bookmark missing'; end if;
 end $bookmark_check$;
-select pg_temp.expect_denied($q$insert into public.feed_post_bookmarks values ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001')$q$);
+-- Bookmarks do not depend on whether poll options are valid.
+insert into public.feed_post_bookmarks values ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001');
 select pg_temp.expect_denied($q$insert into public.feed_post_bookmarks values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002')$q$);
 select pg_temp.expect_denied($q$insert into public.feed_poll_votes values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002',0)$q$);
 
 select set_config('test.allowed_author','',false);
 do $$ begin
  if (select count(*) from public.feed_poll_votes) <> 0 then raise exception 'Hidden vote leaked'; end if;
- if (select count(*) from public.feed_post_bookmarks) <> 1 then raise exception 'Own bookmark not visible'; end if;
+ if (select count(*) from public.feed_post_bookmarks) <> 2 then raise exception 'Own bookmarks not visible'; end if;
 end $$;
