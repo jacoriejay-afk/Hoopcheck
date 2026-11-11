@@ -42,7 +42,7 @@ export default function LeagueSeasonEditor() {
   async function load() {
     setBusy(true); setMessage(""); setPreview("");
     try {
-      if (!/^[0-9a-f-]{36}$/i.test(leagueId)) throw new Error("Enter a valid league UUID.");
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(leagueId)) throw new Error("Enter a valid league UUID.");
       const { data, error } = await supabase.from("leagues")
         .select("id,name,season_start_month,season_start_day,season_end_month,season_end_day,season_label,season_time_zone")
         .eq("id", leagueId).single();
