@@ -1649,8 +1649,8 @@
 .auth-page-shell .account-type-choice small { display:block; margin-top:5px; color:#626262; font-size:11px; line-height:1.45; }
 .auth-page-shell .account-type-check { color:var(--hc-orange); font-weight:950; }
 .auth-page-shell .signup-form { display:grid; gap:10px; margin-top:20px; }
-.auth-page-shell .signup-step-label { padding:10px 0; border-bottom:1px solid #ddd; color:#c65300; font-size:10px; font-weight:950; letter-spacing:.1em; }
-.auth-page-shell .signup-account-badge { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; padding:12px; background:#f4f4f1; border-left:3px solid var(--hc-orange); }
+.auth-page-shell .signup-step-label { padding:10px 0; border-bottom:1px solid var(--hc-border); color:var(--hc-accent-text); font-size:10px; font-weight:950; letter-spacing:.1em; }
+.auth-page-shell .signup-account-badge { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; padding:12px; background:var(--hc-surface-soft); color:var(--hc-foreground); border-left:3px solid var(--hc-orange); }
 .auth-page-shell .signup-two-col { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
 .auth-page-shell .signup-two-col > div { min-width:0; }
 .auth-page-shell .signup-form :where(label) { display:block; margin:5px 0 4px; font-size:11px; font-weight:900; }
@@ -1659,25 +1659,25 @@
   min-width:0;
   min-height:43px;
   padding:9px 10px;
-  color:#111;
-  background:#fafaf8;
-  border:1px solid #d2d2ce;
-  border-radius:var(--radius-sm);
+  color:var(--hc-input-fg);
+  background:var(--hc-input-bg);
+  border:1px solid var(--hc-border);
+  border-radius:var(--hc-radius-control);
 }
 .auth-page-shell .signup-form select[multiple] { min-height:120px; }
 .auth-page-shell .signup-form :where(input,select,textarea):focus-visible {
   outline:2px solid var(--hc-orange);
   outline-offset:2px;
 }
-.auth-page-shell .signup-form .form-hint { color:#666; font-size:11px; line-height:1.5; }
+.auth-page-shell .signup-form .form-hint { color:var(--hc-foreground-muted); font-size:11px; line-height:1.5; }
 .auth-page-shell .signup-form .checkbox-row { display:flex; align-items:flex-start; gap:9px; line-height:1.5; }
 .auth-page-shell .signup-form .checkbox-row input { width:18px; min-height:18px; flex:0 0 18px; margin-top:2px; accent-color:var(--hc-orange); }
 .auth-page-shell .signup-form .checkbox-row a { color:#b94c00; text-decoration:underline; text-underline-offset:2px; }
 .auth-page-shell .signup-form .submit { width:100%; min-height:49px; justify-content:center; margin-top:8px; }
-.auth-page-shell .signup-gate { display:grid; justify-items:center; gap:7px; padding:22px 10px; background:#f5f5f2; border:1px dashed #ccc; text-align:center; }
+.auth-page-shell .signup-gate { display:grid; justify-items:center; gap:7px; padding:22px 10px; background:var(--hc-surface-soft); color:var(--hc-foreground); border:1px dashed var(--hc-border); border-radius:var(--hc-radius-control); text-align:center; }
 .auth-page-shell .signup-gate strong { font-size:13px; }
-.auth-page-shell .signup-gate small { color:#666; }
-.auth-page-shell .login-link { margin-top:18px; color:#666; font-size:12px; text-align:center; }
+.auth-page-shell .signup-gate small { color:var(--hc-foreground-muted); }
+.auth-page-shell .login-link { margin-top:18px; color:var(--hc-foreground-muted); font-size:12px; text-align:center; }
 .auth-page-shell .login-link a { color:#bd4e00; font-weight:900; }
 .auth-page-shell :where(button,a):focus-visible { outline:2px solid var(--hc-orange); outline-offset:3px; }
 @media (max-width: 900px) {
