@@ -25,6 +25,12 @@ Decision confirmed 2026-11-11: **One unified HoopFeed** for Player, Fan, Coach, 
 - Team reviews additionally require `can_user_review_team` RPC eligibility; review submission uses `claim_review_submission_slot` and enters pending status.
 - This is source-level authorization evidence only; direct database write policies, coach/league eligibility, and actual staging submissions still need testing.
 
+## Team Manager moderation authorization — confirmed defect and fix
+- **Defect:** `app/api/fan-groups/route.ts` previously used `entitlements.canModerateFanGroups` as an unconditional `isModerator` grant, so every `club_admin` could moderate every team's Fan HQ group through the service-role endpoint.
+- **Fix in PR #478:** club admins now require an explicit moderator row for the requested `team_id`. Platform moderation continues through the platform role check. Existing Fan co-moderator assignments still count.
+- **Must verify in staging:** Club Admin A cannot pin, remove posts, appoint moderators, or kick members in Team B's group; Club Admin A can moderate Team A only with an assignment; platform Admin/moderator permissions still work.
+- Review the account-type-level `canModerateFanGroups` entitlement used by `components/TeamFanGroupEntry.tsx`: the UI may still display moderation controls for unassigned club admins, although the API now denies unauthorized actions. Align UI with team-scoped authorization in a follow-up.
+
 ## Staging verification matrix
 1. For each role (Player, Fan, Coach, Scout, Agent, Club Admin), verify Free cannot post and active Pro/Premium can create a text post, image, video, poll, comment, reaction, bookmark, and permitted reshare.
 2. Check Fan Free/Pro/Premium review restrictions: Fans never write reviews; Fan Pro teaser only; Fan Premium full reviews.
