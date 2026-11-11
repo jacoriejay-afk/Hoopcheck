@@ -19,12 +19,12 @@ export async function GET(request: Request) {
   try {
     const db = await createAuthClient();
     const { data, error } = await db.from("leagues")
-      .select("id,country,season_start_month,season_start_day,season_end_month,season_end_day,season_label")
+      .select("id,country,season_start_month,season_start_day,season_end_month,season_end_day,season_label,season_time_zone")
       .in("id", ids);
     if (error) throw error;
-    // Country is not a timezone. Until a league timezone is persisted, use UTC
-    // consistently and mark the status timezone as provisional.
-    const status: Record<string, ReturnType<typeof resolveLeagueSeason>> = {};
+    // Country is not a timezone. Use verified league timezone when present;
+    // mark UTC fallback as provisional on each individual league.
+    const status: Record<string, ReturnType<typeof resolveLeagueSeason> & { timeZone: string; provisionalTimeZone: boolean }> = {};
     for (const row of data || []) {
       const window: LeagueSeasonWindow = {
         season_start_month: row.season_start_month,
@@ -33,9 +33,14 @@ export async function GET(request: Request) {
         season_end_day: row.season_end_day,
         season_label: row.season_label,
       };
-      status[row.id] = resolveLeagueSeason(window, new Date(), "UTC");
+      const timeZone = row.season_time_zone || "UTC";
+      status[row.id] = {
+        ...resolveLeagueSeason(window, new Date(), timeZone),
+        timeZone,
+        provisionalTimeZone: !row.season_time_zone,
+      };
     }
-    return NextResponse.json({ status, timeZone: "UTC", provisionalTimeZone: true }, {
+    return NextResponse.json({ status }, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch {
