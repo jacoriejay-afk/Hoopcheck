@@ -235,6 +235,12 @@ export async function POST(request: Request) {
       const postId = String(form.get("post_id") || "").trim();
       const pinned = String(form.get("pinned") || "") === "true";
       if (!postId) return NextResponse.json({ allowed: false, message: "Couldn't update the pin. Please try again." }, { status: 400 });
+      const { data: targetPost, error: targetError } = await db.from("feed_posts")
+        .select("id,status,expires_at").eq("id", postId).maybeSingle();
+      if (targetError) return NextResponse.json({ allowed: false, message: "Couldn't update the pin. Please try again." }, { status: 500 });
+      if (!targetPost || targetPost.status !== "approved" || (targetPost.expires_at && new Date(targetPost.expires_at).getTime() <= Date.now())) {
+        return NextResponse.json({ allowed: false, message: "This post is no longer available for pinning." }, { status: 404 });
+      }
       const { error } = await db.from("feed_posts").update({ is_pinned: pinned, pinned_at: pinned ? new Date().toISOString() : null }).eq("id", postId);
       if (error) return NextResponse.json({ allowed: false, message: "Couldn't update the pin. Please try again." }, { status: 400 });
       return NextResponse.json({ allowed: true });
