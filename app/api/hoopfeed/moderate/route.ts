@@ -200,7 +200,8 @@ export async function POST(request: Request) {
     if (kind === "vote") {
       const postId = String(form.get("post_id") || "").trim();
       const rawOptionIndex = form.get("option_index");
-      const optionIndex = rawOptionIndex === null || String(rawOptionIndex).trim() === "" ? NaN : Number(rawOptionIndex);
+      const optionIndexText = typeof rawOptionIndex === "string" ? rawOptionIndex.trim() : "";
+      const optionIndex = /^\d+$/.test(optionIndexText) ? Number(optionIndexText) : NaN;
       if (!postId || !Number.isInteger(optionIndex)) return NextResponse.json({ allowed: false, message: "That vote didn't go through. Please try again." }, { status: 400 });
       const { data: poll } = await db.from("feed_posts").select("id,status,post_kind,poll_options,expires_at").eq("id", postId).maybeSingle();
       const options = Array.isArray(poll?.poll_options) ? poll.poll_options as string[] : [];
