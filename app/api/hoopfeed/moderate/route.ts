@@ -228,8 +228,21 @@ export async function POST(request: Request) {
       const saved = String(form.get("saved") || "") === "true";
       if (!postId) return NextResponse.json({ allowed: false, message: "Couldn't update your saved posts. Please try again." }, { status: 400 });
       if (saved) {
-        const { data: post } = await db.from("feed_posts").select("id,status").eq("id", postId).maybeSingle();
-        if (!post || post.status !== "approved") return NextResponse.json({ allowed: false, message: "This post is no longer available." }, { status: 404 });
+        // Service-role clients bypass RLS. Confirm the caller can actually see the post.
+        const publicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        if (!publicKey || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
+          return NextResponse.json({ allowed: false, message: "Bookmarks are temporarily unavailable." }, { status: 503 });
+        }
+        const viewerDb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, publicKey, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+          auth: { autoRefreshToken: false, persistSession: false },
+        });
+        const { data: post, error: postError } = await viewerDb.from("feed_posts")
+          .select("id,status,expires_at").eq("id", postId).maybeSingle();
+        if (postError) return NextResponse.json({ allowed: false, message: "Bookmarks are temporarily unavailable." }, { status: 503 });
+        if (!post || post.status !== "approved" || !post.expires_at || new Date(post.expires_at).getTime() <= Date.now()) {
+          return NextResponse.json({ allowed: false, message: "This post is no longer available." }, { status: 404 });
+        }
         const { error } = await db.from("feed_post_bookmarks").upsert({ post_id: postId, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
         if (error) return NextResponse.json({ allowed: false, message: "Couldn't save this post. Please try again." }, { status: 400 });
       } else {
