@@ -1606,6 +1606,7 @@
   padding:13px;
   background:#111;
   border:1px solid #303030;
+  border-radius:var(--hc-radius-control);
 }
 .auth-page-shell .signup-page .feature strong { color:var(--hc-orange); font-size:19px; }
 .auth-page-shell .signup-page .feature span { color:#eee; font-size:13px; }
@@ -1613,9 +1614,10 @@
   min-width:0;
   padding:clamp(18px,2.6vw,30px);
   background:var(--hc-surface-raised);
-  border:1px solid #dcdcd8;
+  color:var(--hc-foreground);
+  border:1px solid var(--hc-border);
   border-top:4px solid var(--hc-orange);
-  border-radius:var(--radius-lg);
+  border-radius:var(--hc-radius-card);
   box-shadow:0 8px 28px rgba(0,0,0,.04);
 }
 .auth-page-shell .signup-card h2 {
