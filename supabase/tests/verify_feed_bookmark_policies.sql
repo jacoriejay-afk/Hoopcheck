@@ -21,4 +21,14 @@ begin
         and cmd='INSERT') <> 1 then
     raise exception 'Unexpected additional bookmark INSERT policies';
   end if;
+  if not exists (
+    select 1 from pg_class
+    where oid = 'public.feed_post_bookmarks'::regclass and relrowsecurity
+  ) then
+    raise exception 'Bookmarks RLS must be enabled';
+  end if;
+  if (select count(*) from pg_policies
+      where schemaname='public' and tablename='feed_post_bookmarks') <> 3 then
+    raise exception 'Unexpected bookmark policies; inspect permissive policy overlap';
+  end if;
 end $$;
