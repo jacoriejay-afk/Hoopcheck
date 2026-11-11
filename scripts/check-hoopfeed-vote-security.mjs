@@ -29,6 +29,19 @@ assert.doesNotMatch(bookmark, /db\.from\("feed_posts"\)/);
 assert.match(bookmark, /post\.expires_at/);
 assert.match(bookmark, /post\.status\s*!==\s*"approved"/);
 
+
+const shareStart = source.indexOf('if (kind === "share")');
+const shareEnd = source.indexOf('// Stage 2 post kinds:', shareStart);
+assert(shareStart >= 0 && shareEnd > shareStart, "Expected share endpoint block");
+const share = source.slice(shareStart, shareEnd);
+assert.match(share, /Authorization:\s*`Bearer \$\{token\}`/);
+assert.match(share, /viewerDb\.from\("feed_posts"\)/);
+assert.doesNotMatch(share, /db\.from\("feed_posts"\)/);
+assert.match(share, /source\.expires_at/);
+assert.match(share, /source\.status\s*!==\s*"approved"/);
+assert.doesNotMatch(share, /2100-01-01/);
+assert.match(share, /const expiresAt = new Date\(source\.expires_at\)/);
+
 const migration = readFileSync(new URL("../supabase/migrations/20261111000100_secure_feed_poll_votes.sql", import.meta.url), "utf8");
 for (const [policyName, nextPolicy] of [
   ["feed poll votes read", "feed poll votes insert own"],
