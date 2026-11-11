@@ -212,7 +212,7 @@ assert.match(feedModerationSource, /submittedImages\.length > 4/, "HoopFeed must
 
 assert.match(feedModerationSource, /kind === "comment" && \(allImages\.length > 0 \|\| videoPath\)/, "comments must reject every image attachment field");
 
-assert.match(feedModerationSource, /rawOptionIndex === null \|\| String\(rawOptionIndex\)\.trim\(\) === "" \? NaN/, "missing poll option must not silently vote for first option");
+assert.match(feedModerationSource, /const optionIndex = \/\^\\d\+\$\/\.test\(optionIndexText\) \? Number\(optionIndexText\) : NaN/, "poll option must be an explicitly supplied decimal integer");
 
 assert.match(feedModerationSource, /pinned && \(targetPost\.status !== "approved" \|\| \(targetPost\.expires_at/, "admin pin must reject unapproved or expired posts while allowing unpin");
 
