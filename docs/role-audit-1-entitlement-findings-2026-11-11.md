@@ -8,6 +8,10 @@ Decision confirmed 2026-11-11: **One unified HoopFeed** for Player, Fan, Coach, 
 - Tests assert all six supported roles, unknown-role denial, and existing Fan Pro posting contract.
 - `/fan-feed` remains a redirect to `/feed`; the legacy `/api/fan-feed/moderate` remains in place for compatibility pending caller inventory. It is Fan-only and must not become a second public composer.
 
+## Legacy Fan Feed compatibility finding
+- `app/api/fan-feed/moderate/route.ts` still writes `fan_feed_posts` and `fan_feed_comments`, while the unified `/feed` page uses `feed_posts` and `/api/hoopfeed/moderate`. This is a real divergent write path, not evidence of a second active UI.
+- Do not delete legacy rows or remove the endpoint until callers, saved deep links, and any migration/archival requirements are inventoried. Test that no active UI invokes the legacy route.
+
 ## Source findings and release blockers
 - `app/feed/page.tsx` posts through `/api/hoopfeed/moderate` and has one composer.
 - `app/api/hoopfeed/moderate/route.ts` checks the canonical entitlement server-side, and restricts pinning and official news to Admin.
