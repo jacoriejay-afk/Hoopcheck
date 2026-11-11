@@ -238,7 +238,11 @@ export async function POST(request: Request) {
     // Save / unsave a post (bookmark).
     if (kind === "bookmark") {
       const postId = actionPostId;
-      const saved = String(form.get("saved") || "") === "true";
+      const savedValues = form.getAll("saved");
+      if (savedValues.length !== 1 || typeof savedValues[0] !== "string" || !["true", "false"].includes(savedValues[0])) {
+        return NextResponse.json({ allowed: false, message: "Invalid saved state." }, { status: 400 });
+      }
+      const saved = savedValues[0] === "true";
       if (!postId) return NextResponse.json({ allowed: false, message: "Couldn't update your saved posts. Please try again." }, { status: 400 });
       if (saved) {
         const { data: post } = await db.from("feed_posts").select("id,status,expires_at").eq("id", postId).maybeSingle();
@@ -256,7 +260,11 @@ export async function POST(request: Request) {
     if (kind === "pin") {
       if (!isAdmin) return NextResponse.json({ allowed: false, message: "Only HoopCheck can pin posts." }, { status: 403 });
       const postId = actionPostId;
-      const pinned = String(form.get("pinned") || "") === "true";
+      const pinnedValues = form.getAll("pinned");
+      if (pinnedValues.length !== 1 || typeof pinnedValues[0] !== "string" || !["true", "false"].includes(pinnedValues[0])) {
+        return NextResponse.json({ allowed: false, message: "Invalid pinned state." }, { status: 400 });
+      }
+      const pinned = pinnedValues[0] === "true";
       if (!postId) return NextResponse.json({ allowed: false, message: "Couldn't update the pin. Please try again." }, { status: 400 });
       const { data: targetPost, error: targetError } = await db.from("feed_posts")
         .select("id,status,expires_at").eq("id", postId).maybeSingle();
