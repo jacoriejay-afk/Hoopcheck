@@ -158,6 +158,9 @@ export async function GET(request: NextRequest) {
     const teamLeague = new Map((leagueTeams || []).map(team => [team.id, team.league_id]));
 
     const rows = [];
+    let verifiedCompetitionMatches = 0;
+    let unmappedProviderCompetitions = 0;
+    let fallbackTeamLeagueMatches = 0;
     for (const game of trackedGames) {
       const homeProviderId = Number(game.teams?.home?.id);
       const awayProviderId = Number((game.teams?.away ?? game.teams?.visitors)?.id);
@@ -182,9 +185,12 @@ export async function GET(request: NextRequest) {
         ? leagueByProviderId.get(providerLeagueId) : null;
       // A provider competition ID is authoritative only after manual verification.
       // Never substitute a club's domestic league for an unknown provider competition.
-      const leagueId = Number.isInteger(providerLeagueId) && providerLeagueId > 0
-        ? verifiedProviderLeagueId || null
-        : (homeLeagueId && awayLeagueId && homeLeagueId === awayLeagueId ? homeLeagueId : null);
+      const hasProviderCompetition = Number.isInteger(providerLeagueId) && providerLeagueId > 0;
+      const agreedTeamLeague = homeLeagueId && awayLeagueId && homeLeagueId === awayLeagueId ? homeLeagueId : null;
+      const leagueId = hasProviderCompetition ? verifiedProviderLeagueId || null : agreedTeamLeague;
+      if (verifiedProviderLeagueId) verifiedCompetitionMatches++;
+      else if (hasProviderCompetition) unmappedProviderCompetitions++;
+      else if (agreedTeamLeague) fallbackTeamLeagueMatches++;
 
       const startDate = game.timestamp ? new Date(game.timestamp * 1000).toISOString()
         : (game.date && !Number.isNaN(Date.parse(game.date)) ? new Date(game.date).toISOString() : null);
@@ -317,6 +323,12 @@ export async function GET(request: NextRequest) {
       providerScheduledGames: rows.filter(row => row.status === "scheduled").length,
       providerFinishedGames: rows.filter(row => row.status === "final").length,
       matchedGames: rows.length,
+      seasonMapping: {
+        verifiedCompetitionMatches,
+        unmappedProviderCompetitions,
+        fallbackTeamLeagueMatches,
+        unresolvedBeforeExistingAssignment: rows.length - verifiedCompetitionMatches - fallbackTeamLeagueMatches
+      },
       unmatchedLiveGames
     }, {
       headers: { "Cache-Control": "no-store" }
