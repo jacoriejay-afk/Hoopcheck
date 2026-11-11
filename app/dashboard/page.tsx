@@ -36,7 +36,7 @@ type Profile = {
 };
 type Team = { id:string; name:string; country:string|null; league_name:string|null };
 type Review = { id:string; team_id:string; title:string|null; body:string; overall_rating:number; created_at:string };
-type FeedPost = { id:string; body:string; created_at:string; expires_at:string; author_id:string; profiles?:{display_name:string|null}[]|null };
+type FeedPost = { id:string; body:string; created_at:string; expires_at:string|null; author_id:string; profiles?:{display_name:string|null}[]|null };
 
 const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000): Promise<T | null> =>
   Promise.race([Promise.resolve(promise), new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
