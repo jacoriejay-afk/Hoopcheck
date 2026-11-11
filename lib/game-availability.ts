@@ -62,6 +62,16 @@ export function getGameAvailability({
     };
   }
 
+  // Match the database gate: a final result cannot open post-game chat
+  // before its confirmed end, even if a scheduled tip-off is available.
+  if (finalStatus && now.getTime() < ended) {
+    return {
+      state: "CLOSED", phase: "closed", chatOpen: false, opensAt: null,
+      closesAt: new Date(ended + POST_GAME_MINUTES * MINUTE),
+      minutesUntilOpen: null, reason: "Waiting for the confirmed game end time.",
+    };
+  }
+
   // A final score can arrive without a usable tip-off timestamp. The confirmed
   // end time is sufficient to determine the post-game discussion window.
   if (finalStatus && !hasTipoff) {
