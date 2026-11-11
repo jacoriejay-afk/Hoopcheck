@@ -4,7 +4,8 @@ ALTER TABLE public.leagues
   ADD COLUMN IF NOT EXISTS season_start_day smallint,
   ADD COLUMN IF NOT EXISTS season_end_month smallint,
   ADD COLUMN IF NOT EXISTS season_end_day smallint,
-  ADD COLUMN IF NOT EXISTS season_label text;
+  ADD COLUMN IF NOT EXISTS season_label text,
+  ADD COLUMN IF NOT EXISTS season_time_zone text;
 
 -- Regional baseline: Northern Hemisphere winter seasons Sep-Jun;
 -- Americas winter seasons Oct-Apr; selected summer leagues May-Aug.
@@ -52,5 +53,9 @@ ALTER TABLE public.leagues
  ADD CONSTRAINT leagues_season_distinct_bounds CHECK (
   season_start_month <> season_end_month OR season_start_day <> season_end_day
  );
+
+-- Leave timezone NULL until the league's competition timezone is verified.
+-- UTC is a visible, provisional fallback in the read-only API, not stored as fact.
+COMMENT ON COLUMN public.leagues.season_time_zone IS 'IANA competition timezone; NULL means not verified';
 
 COMMENT ON COLUMN public.leagues.season_label IS 'Admin-selected display label; may require annual update; computed label used when NULL';
