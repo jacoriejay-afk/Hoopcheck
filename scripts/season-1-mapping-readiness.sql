@@ -38,3 +38,26 @@ ORDER BY fixtures DESC, provider_source, game_status;
 
 -- Mappings require human verification of provider competition identity.
 -- Never execute an UPDATE based solely on league name or team membership.
+
+-- Provider competition coverage and reviewed mapping readiness.
+-- Requires 20261111210000 and 20261111220000 migrations on staging.
+-- A provider competition ID is evidence for review, not permission to infer
+-- a league mapping from team membership or free-text league names.
+SELECT g.provider_source,
+       g.provider_league_id,
+       max(g.league_name) AS sample_provider_competition,
+       max(g.country) AS sample_provider_country,
+       count(*) AS fixture_count,
+       count(*) FILTER (WHERE g.status IN ('live', 'scheduled')) AS active_fixtures,
+       count(*) FILTER (WHERE g.league_id IS NULL) AS unmapped_fixtures,
+       m.league_id AS reviewed_internal_league_id,
+       count(*) FILTER (WHERE g.league_id IS NOT NULL
+                         AND m.league_id IS NOT NULL
+                         AND g.league_id <> m.league_id) AS conflicts_with_reviewed_mapping
+FROM public.fan_live_games g
+LEFT JOIN public.fan_live_league_provider_map m
+  ON m.provider_source = g.provider_source
+ AND m.provider_league_id = g.provider_league_id
+WHERE g.provider_league_id IS NOT NULL
+GROUP BY g.provider_source, g.provider_league_id, m.league_id
+ORDER BY active_fixtures DESC, fixture_count DESC;
