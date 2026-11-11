@@ -203,6 +203,7 @@ assert.match(fanConnection, /accountType !== "fan"/, "fan connection gates must 
 
 
 assert.match(feedModerationSource, /source\.expires_at && new Date\(source\.expires_at\)\.getTime\(\) <= Date\.now\(\)/, "expired HoopFeed posts must not be reshared");
+assert.match(feedModerationSource, /post\.expires_at && new Date\(post\.expires_at\)\.getTime\(\) <= Date\.now\(\)/, "expired HoopFeed posts must not receive comments");
 
 const playerContactPolicy = read("../supabase/migrations/20261111180000_align_agent_scout_contact_pro_premium.sql");
 assert.match(playerContactPolicy, /s\.plan IN \('pro', 'premium'\)/, "Agent/Scout contact RLS must accept Pro and Premium");
