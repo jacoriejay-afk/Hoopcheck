@@ -315,8 +315,12 @@ export async function POST(request: Request) {
     const postKind = kind !== "post" ? "discussion" : submittedKind === "news" ? "news" : submittedKind === "poll" ? "poll" : "discussion";
     let pollOptions: string[] | null = null;
     if (kind === "post" && postKind === "poll") {
+      const pollOptionValues = form.getAll("poll_options");
+      if (pollOptionValues.length !== 1 || typeof pollOptionValues[0] !== "string") {
+        return NextResponse.json({ allowed: false, message: "Provide one valid set of poll options." }, { status: 400 });
+      }
       let parsed: unknown = null;
-      try { parsed = JSON.parse(String(form.get("poll_options") || "[]")); } catch { parsed = null; }
+      try { parsed = JSON.parse(pollOptionValues[0]); } catch { parsed = null; }
       if (!Array.isArray(parsed) || parsed.some((option) => typeof option !== "string" || option.trim().length === 0 || option.trim().length > 60)) {
         return NextResponse.json({ allowed: false, message: "Each poll option must be text between 1 and 60 characters." }, { status: 400 });
       }
