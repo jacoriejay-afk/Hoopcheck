@@ -22,3 +22,19 @@ SELECT count(*) AS total_fixtures,
        count(*) FILTER (WHERE exact_competition_matches = 1) AS unique_name_country_matches,
        count(*) FILTER (WHERE exact_competition_matches > 1) AS ambiguous_name_country_matches
 FROM fixture;
+
+-- Breakdown by source and status. This exposes the impact of fail-closed
+-- season visibility without modifying any fixture or assigning a league.
+SELECT coalesce(provider_source, '(unknown)') AS provider_source,
+       coalesce(status, '(unknown)') AS game_status,
+       count(*) AS fixtures,
+       count(*) FILTER (WHERE league_id IS NULL) AS unmapped,
+       count(*) FILTER (WHERE league_id IS NOT NULL) AS mapped,
+       count(*) FILTER (WHERE league_name IS NOT NULL AND btrim(league_name) <> '') AS with_competition_name,
+       count(*) FILTER (WHERE country IS NOT NULL AND btrim(country) <> '') AS with_country
+FROM public.fan_live_games
+GROUP BY provider_source, status
+ORDER BY fixtures DESC, provider_source, game_status;
+
+-- Mappings require human verification of provider competition identity.
+-- Never execute an UPDATE based solely on league name or team membership.
