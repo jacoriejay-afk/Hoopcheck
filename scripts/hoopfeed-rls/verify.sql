@@ -50,7 +50,13 @@ BEGIN
 END $$;
 RESET ROLE;
 -- Permanent posts have no 24-hour default after the migration.
-SELECT CASE WHEN column_default IS NULL THEN 'PASS: permanent posts have no expiry default'
-  ELSE (1/0)::text END
-FROM information_schema.columns
-WHERE table_schema='public' AND table_name='feed_posts' AND column_name='expires_at';
+DO $
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='feed_posts'
+      AND column_name='expires_at' AND column_default IS NOT NULL
+  ) THEN
+    RAISE EXCEPTION 'Permanent posts still have an expiration default';
+  END IF;
+END $;
