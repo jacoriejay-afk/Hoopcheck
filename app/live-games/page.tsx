@@ -47,6 +47,8 @@ function scoreText(game: Game) {
 
 export default function LiveGamesPage() {
   const [games, setGames] = useState<Game[]>([]);
+  const [activeLeagueIds, setActiveLeagueIds] = useState<Set<string>>(new Set());
+  const [seasonStatusUnavailable, setSeasonStatusUnavailable] = useState(false);
   const [teams, setTeams] = useState<Record<string, Team>>({});
   const [followedIds, setFollowedIds] = useState<string[]>([]);
   const [reminders, setReminders] = useState<string[]>([]);
@@ -90,6 +92,25 @@ export default function LiveGamesPage() {
     ]);
     if (gamesResult.error) setMessage("Game schedules are temporarily unavailable. Please refresh in a moment.");
     const rawGames = (gamesResult.data || []) as Game[];
+    // The server is the only authority for season calculations. Fail closed
+    // when a league cannot be resolved, rather than exposing off-season games.
+    const leagueIds = Array.from(new Set(rawGames.map(game => game.league_id).filter((id): id is string => Boolean(id))));
+    const verifiedActive = new Set<string>();
+    let seasonLookupFailed = false;
+    try {
+      for (let offset = 0; offset < leagueIds.length; offset += 100) {
+        const response = await fetch(`/api/leagues/season-status?ids=${encodeURIComponent(leagueIds.slice(offset, offset + 100).join(","))}`, { cache: "no-store" });
+        if (!response.ok) throw new Error("Season lookup failed");
+        const payload: { status?: Record<string, { inSeason: boolean }> } = await response.json();
+        for (const [id, state] of Object.entries(payload.status || {})) {
+          if (state.inSeason) verifiedActive.add(id);
+        }
+      }
+    } catch {
+      seasonLookupFailed = true;
+    }
+    setSeasonStatusUnavailable(seasonLookupFailed);
+    setActiveLeagueIds(seasonLookupFailed ? new Set() : verifiedActive);
     const candidateIds = Array.from(new Set(rawGames.flatMap(game => [game.team_id, game.opponent_team_id].filter((id): id is string => Boolean(id)))));
     const [{ data: sideRows }, { data: womensSideRows }] = await Promise.all([
       candidateIds.length
@@ -100,7 +121,7 @@ export default function LiveGamesPage() {
         : Promise.resolve({ data: [] as {id:string}[] }),
     ]);
     const sideIds = new Set([...(sideRows || []), ...(womensSideRows || [])].map((row:any) => row.id));
-    const nextGames = rawGames.filter(game => sideIds.has(game.team_id) || sideIds.has(game.opponent_team_id || ""));
+    const nextGames = rawGames.filter(game => !seasonLookupFailed && !!game.league_id && verifiedActive.has(game.league_id) && (sideIds.has(game.team_id) || sideIds.has(game.opponent_team_id || "")));
     const follows = (followsResult.data || []).map((row: {target_id:string}) => row.target_id);
     setFollowedIds(follows);
     setGames(nextGames);
