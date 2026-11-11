@@ -1,0 +1,43 @@
+name: HoopFeed isolated RLS verification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "supabase/migrations/20261111233000_unify_hoopfeed_read_and_checks_rls.sql"
+      - "scripts/hoopfeed-rls/**"
+      - ".github/workflows/hoopfeed-rls.yml"
+  workflow_dispatch:
+
+jobs:
+  isolated-rls:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hoopfeed_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hoopfeed_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: hoopfeed_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Create isolated authorization fixtures
+        run: psql -v ON_ERROR_STOP=1 -f scripts/hoopfeed-rls/bootstrap.sql
+      - name: Apply proposed RLS migration to isolated database
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261111233000_unify_hoopfeed_read_and_checks_rls.sql
+      - name: Verify authenticated role and tier access
+        run: psql -v ON_ERROR_STOP=1 -f scripts/hoopfeed-rls/verify.sql
