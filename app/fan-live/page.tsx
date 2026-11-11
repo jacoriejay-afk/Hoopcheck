@@ -159,7 +159,7 @@ export default function FanLivePage() {
     const gameId=selected.id;
     const heartbeat=async()=>{
       if(stopped)return;
-      if(!roomOpen(selected,new Date())){return;}
+      if(!roomOpen(selected,new Date())){setPresenceCount(0);return;}
       const now=new Date().toISOString();
       const {error}=await supabase.from("fan_live_chat_presence").upsert({game_id:gameId,user_id:userId,last_seen_at:now},{onConflict:"game_id,user_id"});
       
@@ -198,7 +198,7 @@ export default function FanLivePage() {
   async function send(textOverride?:string){
     const text=(textOverride??body).trim();
     if(!text||!selected||!userId||sending)return;
-    if(!roomOpen(selected,new Date())){setMessage("This chat is not accepting messages right now.");return;}
+    if(!chatEnabled||!roomOpen(selected,new Date())){setMessage("This chat is not accepting messages right now.");return;}
     const localId="pending-"+crypto.randomUUID();
     const optimistic:ChatMessage={id:localId,body:text,created_at:new Date().toISOString(),user_id:userId,pending:true};
     setMessages(current=>[...current,optimistic].slice(-200));setBody("");setSending(true);setMessage("");
