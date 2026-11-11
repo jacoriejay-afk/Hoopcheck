@@ -9,9 +9,10 @@ create policy "feed poll votes read" on public.feed_poll_votes
     where fp.id = feed_poll_votes.post_id
       and fp.status = 'approved'
       and fp.post_kind = 'poll'
-      and jsonb_typeof(fp.poll_options) = 'array'
-      and feed_poll_votes.option_index >= 0
-      and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
+      and case when jsonb_typeof(fp.poll_options) = 'array'
+      then feed_poll_votes.option_index >= 0
+       and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
+      else false end
       and fp.expires_at > now()
       and public.can_view_player_feed_post(fp.author_id)
   ));
@@ -25,9 +26,10 @@ create policy "feed poll votes insert own" on public.feed_poll_votes
       where fp.id = feed_poll_votes.post_id
         and fp.status = 'approved'
       and fp.post_kind = 'poll'
-      and jsonb_typeof(fp.poll_options) = 'array'
-      and feed_poll_votes.option_index >= 0
-      and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
+      and case when jsonb_typeof(fp.poll_options) = 'array'
+      then feed_poll_votes.option_index >= 0
+       and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
+      else false end
       and fp.expires_at > now()
         and public.can_view_player_feed_post(fp.author_id)
     )
@@ -42,9 +44,10 @@ create policy "feed poll votes update own" on public.feed_poll_votes
       where fp.id = feed_poll_votes.post_id
         and fp.status = 'approved'
       and fp.post_kind = 'poll'
-      and jsonb_typeof(fp.poll_options) = 'array'
-      and feed_poll_votes.option_index >= 0
-      and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
+      and case when jsonb_typeof(fp.poll_options) = 'array'
+      then feed_poll_votes.option_index >= 0
+       and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
+      else false end
       and fp.expires_at > now()
         and public.can_view_player_feed_post(fp.author_id)
     )
@@ -56,9 +59,10 @@ create policy "feed poll votes update own" on public.feed_poll_votes
       where fp.id = feed_poll_votes.post_id
         and fp.status = 'approved'
       and fp.post_kind = 'poll'
-      and jsonb_typeof(fp.poll_options) = 'array'
-      and feed_poll_votes.option_index >= 0
-      and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
+      and case when jsonb_typeof(fp.poll_options) = 'array'
+      then feed_poll_votes.option_index >= 0
+       and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
+      else false end
       and fp.expires_at > now()
         and public.can_view_player_feed_post(fp.author_id)
     )
