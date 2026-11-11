@@ -263,7 +263,7 @@ export default function LiveGamesPage() {
           </div>
         </div>
         <div className="hc-live-card__meta">
-          {isLive && <span><HoopIcon name="users" size={15} /> {presenceCounts[game.id] || 0} {presenceCounts[game.id] === 1 ? "member chatting" : "members chatting"}</span>}
+          {isLive && allowed && Object.prototype.hasOwnProperty.call(presenceCounts, game.id) && <span><HoopIcon name="users" size={15} /> {presenceCounts[game.id]} {presenceCounts[game.id] === 1 ? "member chatting" : "members chatting"}</span>}
           {isUpcoming && <span><HoopIcon name="calendar" size={15} /> {formatViewerLocalTime(tip)}</span>}
           {isRecent && <span><HoopIcon name="check" size={15} /> Chat closed</span>}
           {variant === "postgame" && <span><HoopIcon name="message-square" size={15} /> Post-game chat remains open</span>}
