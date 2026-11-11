@@ -19,6 +19,12 @@ Decision confirmed 2026-11-11: **One unified HoopFeed** for Player, Fan, Coach, 
 - Legacy `/api/fan-feed/moderate` uses a separate Fan-only authorization path; audit callers and sunset it in a follow-up after compatibility verification.
 - Static source review does not establish successful staging login, posting, moderation, or RLS isolation.
 
+## Review submission authorization (source verified)
+- `app/api/reviews/route.ts` requires an authenticated, email-confirmed user, reads membership and profile through the user-scoped Supabase client, and calls `canWriteReviews`.
+- `canWriteReviews` requires **Player + verified + active Pro/Premium**; Fan, Coach, Agent, Scout, and Club Admin roles cannot submit reviews through this endpoint.
+- Team reviews additionally require `can_user_review_team` RPC eligibility; review submission uses `claim_review_submission_slot` and enters pending status.
+- This is source-level authorization evidence only; direct database write policies, coach/league eligibility, and actual staging submissions still need testing.
+
 ## Staging verification matrix
 1. For each role (Player, Fan, Coach, Scout, Agent, Club Admin), verify Free cannot post and active Pro/Premium can create a text post, image, video, poll, comment, reaction, bookmark, and permitted reshare.
 2. Check Fan Free/Pro/Premium review restrictions: Fans never write reviews; Fan Pro teaser only; Fan Premium full reviews.
