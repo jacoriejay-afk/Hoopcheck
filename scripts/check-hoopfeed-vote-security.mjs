@@ -18,6 +18,17 @@ assert.match(vote, /poll\.status\s*!==\s*"approved"/);
 assert.match(vote, /poll\.post_kind\s*!==\s*"poll"/);
 assert.match(vote, /optionIndex\s*>=\s*options\.length/);
 
+
+const bookmarkStart = source.indexOf('if (kind === "bookmark")');
+const bookmarkEnd = source.indexOf('if (kind === "pin")', bookmarkStart);
+assert(bookmarkStart >= 0 && bookmarkEnd > bookmarkStart, "Expected bookmark endpoint block");
+const bookmark = source.slice(bookmarkStart, bookmarkEnd);
+assert.match(bookmark, /Authorization:\s*`Bearer \$\{token\}`/);
+assert.match(bookmark, /viewerDb\.from\("feed_posts"\)/);
+assert.doesNotMatch(bookmark, /db\.from\("feed_posts"\)/);
+assert.match(bookmark, /post\.expires_at/);
+assert.match(bookmark, /post\.status\s*!==\s*"approved"/);
+
 const migration = readFileSync(new URL("../supabase/migrations/20261111000100_secure_feed_poll_votes.sql", import.meta.url), "utf8");
 for (const [policyName, nextPolicy] of [
   ["feed poll votes read", "feed poll votes insert own"],
