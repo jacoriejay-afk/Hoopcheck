@@ -292,6 +292,7 @@ export async function POST(request: Request) {
       const cleaned = Array.isArray(parsed) ? parsed.map((o) => String(o ?? "").trim().slice(0, 60)).filter(Boolean) : [];
       if (!text) return NextResponse.json({ allowed: false, message: "Add a question for your poll." }, { status: 400 });
       if (cleaned.length < 2 || cleaned.length > 4) return NextResponse.json({ allowed: false, message: "Polls need 2 to 4 options." }, { status: 400 });
+      if (new Set(cleaned.map((option) => option.toLocaleLowerCase())).size !== cleaned.length) return NextResponse.json({ allowed: false, message: "Poll options must be different." }, { status: 400 });
       if (videoPath || allImages.length) return NextResponse.json({ allowed: false, message: "Polls are text only for now — remove the photo or video." }, { status: 400 });
       pollOptions = cleaned;
     }
