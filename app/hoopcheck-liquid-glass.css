@@ -381,3 +381,19 @@ html.theme-dark :is(.hc-confirm-modal, .report-modal) {
     }
   }
 }
+
+/* Accessible dark lettering on the light floating glass header only. */
+@media (max-width: 767px) {
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header .site-header-brand .hc-logo__wordmark,
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header .site-header-brand .hc-logo__hoop,
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header .site-header-brand .hc-logo__check-word {
+    color: #17171b !important;
+    -webkit-text-fill-color: #17171b !important;
+  }
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-mobile-menu-toggle {
+    color: #17171b !important;
+  }
+  html.theme-light body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-mobile-menu-toggle span {
+    background-color: #17171b !important;
+  }
+}
