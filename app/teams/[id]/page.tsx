@@ -579,6 +579,7 @@ export default function TeamDetailPage() {
         followerCount={teamFollowerCount}
         trustScore={trustScoreData}
         onFollowerCountChange={setTeamFollowerCount}
+        onOpenFanGroup={() => setActiveProfileTab("overview")}
       />
       <nav className="hc-team-profile-nav" aria-label="Team profile sections">
         <div role="tablist" aria-label="Team profile tabs" onKeyDown={(event) => { if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return; event.preventDefault(); const tabs = ["overview", "reviews", ...(accountType !== "fan" ? ["players", "roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeProfileTab>; const index = tabs.indexOf(activeProfileTab); const next = tabs[(index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length]; setActiveProfileTab(next); document.getElementById(`team-${next}-tab`)?.focus(); }}>{(["overview", "reviews", ...(accountType !== "fan" ? ["players", "roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeProfileTab>).map(tab => <button key={tab} type="button" role="tab" id={`team-${tab}-tab`} aria-selected={activeProfileTab === tab} aria-controls={`team-${tab}-panel`} tabIndex={activeProfileTab === tab ? 0 : -1} onClick={() => setActiveProfileTab(tab)}>{tab === "roster-board" ? (language === "es" ? "TABLERO DE PLANTILLA" : "Roster Board") : tab === "pay-transparency" ? "Pay Transparency" : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>)}</div>
