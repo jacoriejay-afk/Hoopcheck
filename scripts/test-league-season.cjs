@@ -1,0 +1,48 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Standalone CommonJS Node test harness. */
+// Run with: node scripts/test-league-season.cjs
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const ts = require("typescript");
+const Module = require("node:module");
+const source = fs.readFileSync("lib/league-season.ts", "utf8");
+const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+const mod = new Module("league-season.ts", module);
+mod.filename = "league-season.ts";
+mod.paths = module.paths;
+mod._compile(js, mod.filename);
+const { isLeagueInSeason, currentSeasonLabel } = mod.exports;
+const winter = { season_start_month: 10, season_start_day: 1, season_end_month: 6, season_end_day: 30 };
+const january = { season_start_month: 1, season_start_day: 1, season_end_month: 5, season_end_day: 31 };
+assert.equal(isLeagueInSeason(winter, "2026-12-15"), true);
+assert.equal(isLeagueInSeason(winter, "2027-02-15"), true);
+assert.equal(isLeagueInSeason(winter, "2027-07-01"), false);
+assert.equal(isLeagueInSeason(winter, "2026-09-30"), false);
+assert.equal(currentSeasonLabel(winter, "2027-02-15"), "2026–27");
+assert.equal(isLeagueInSeason(january, "2026-12-15"), false);
+assert.equal(isLeagueInSeason(january, "2027-02-15"), true);
+assert.equal(isLeagueInSeason(january, "2027-01-01"), true);
+assert.equal(isLeagueInSeason(january, "2027-06-01"), false);
+const europe = { season_start_month: 9, season_start_day: 1, season_end_month: 6, season_end_day: 30 };
+assert.equal(isLeagueInSeason(europe, "2026-11-11"), true);
+assert.equal(currentSeasonLabel(winter, "2027-08-15"), "2026–27");
+assert.equal(currentSeasonLabel(winter, "2026-09-15"), "2025–26");
+assert.equal(currentSeasonLabel(january, "2026-12-15"), "2026");
+assert.equal(isLeagueInSeason(winter, "2027-06-30"), true);
+assert.equal(isLeagueInSeason(winter, "2026-10-01"), true);
+assert.throws(() => isLeagueInSeason({ season_start_month: 1, season_start_day: 1, season_end_month: 1, season_end_day: 1 }, "2026-01-01"));
+assert.throws(() => isLeagueInSeason(winter, "2026-02-30"));
+// Boundary coverage for summer calendars, leap days, and stale labels.
+const summer = { season_start_month: 5, season_start_day: 15, season_end_month: 8, season_end_day: 15 };
+assert.equal(isLeagueInSeason(summer, "2027-05-14"), false);
+assert.equal(isLeagueInSeason(summer, "2027-05-15"), true);
+assert.equal(isLeagueInSeason(summer, "2027-08-15"), true);
+assert.equal(isLeagueInSeason(summer, "2027-08-16"), false);
+const leapStart = { season_start_month: 2, season_start_day: 29, season_end_month: 4, season_end_day: 30 };
+assert.equal(isLeagueInSeason(leapStart, "2028-02-28"), false);
+assert.equal(isLeagueInSeason(leapStart, "2028-02-29"), true);
+assert.equal(isLeagueInSeason(leapStart, "2027-02-27"), false);
+assert.equal(isLeagueInSeason(leapStart, "2027-02-28"), true);
+const staleLabel = { ...winter, season_label: "2025–26" };
+assert.equal(currentSeasonLabel(staleLabel, "2027-02-15"), "2026–27");
+assert.equal(currentSeasonLabel(staleLabel, "2026-02-15"), "2025–26");
+console.log("SEASON-1 resolver assertions passed");

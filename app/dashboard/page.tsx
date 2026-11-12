@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { fetchLeagueSeasons } from "../../lib/league-season-client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCachedSession, supabase } from "../../lib/supabase";
@@ -35,7 +36,7 @@ type Profile = {
   account_type: "player"|"coach"|"scout"|"agent"|"fan"|"club_admin"|"manager"|"admin";
 };
 type Team = { id:string; name:string; country:string|null; league_name:string|null };
-type HomeGame = { id:string; team_id:string|null; opponent_team_id:string|null; opponent_name:string|null; league_name:string|null; status:string; scheduled_at:string|null; started_at?:string|null; ends_at?:string|null; home_score:number|null; away_score:number|null };
+type HomeGame = { id:string; team_id:string|null; opponent_team_id:string|null; opponent_name:string|null; league_id:string|null; league_name:string|null; status:string; scheduled_at:string|null; started_at?:string|null; ends_at?:string|null; home_score:number|null; away_score:number|null };
 type FeedPost = { id:string; body:string; created_at:string; expires_at:string; author_id:string; profiles?:{display_name:string|null}[]|null };
 
 const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000): Promise<T | null> =>
@@ -208,13 +209,16 @@ export default function DashboardPage() {
       // Only display fixtures tied to a followed team. Never label global games "YOUR LEAGUE".
       if (entitlements.canUseLiveGameHub && followedIds.length) {
         const {data:games,error:gamesError} = await supabase.from("fan_live_games")
-          .select("id,team_id,opponent_team_id,opponent_name,league_name,status,scheduled_at,started_at,ends_at,home_score,away_score")
+          .select("id,team_id,opponent_team_id,opponent_name,league_id,league_name,status,scheduled_at,started_at,ends_at,home_score,away_score")
           .or(`team_id.in.(${followedIds.join(",")}),opponent_team_id.in.(${followedIds.join(",")})`).in("status",["live","in_progress","scheduled"])
           .order("scheduled_at",{ascending:true}).limit(40);
         if (mounted && !gamesError) {
           const now = Date.now();
           const visibleTeamIdSet = new Set(visibleTeamIds);
+          const seasons = await fetchLeagueSeasons((games || []).map(game => game.league_id));
+          if (!mounted) return;
           const relevant = ((games || []) as HomeGame[])
+            .filter(g => g.league_id && seasons[g.league_id]?.inSeason)
             .filter(g => visibleTeamIdSet.has(g.team_id || "") || visibleTeamIdSet.has(g.opponent_team_id || ""))
             .filter(g => g.status !== "scheduled" || (g.scheduled_at && new Date(g.scheduled_at).getTime() >= now))
             .sort((a,b) => {

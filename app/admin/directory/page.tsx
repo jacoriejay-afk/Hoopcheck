@@ -217,6 +217,7 @@ export default function AdminDirectoryPage() {
               <DirectoryCard number="11" title="Coaches" description="Manage coach profiles, teams, countries, sources, and active status." href="/admin/directory/manage?kind=coaches" />
               <DirectoryCard number="12" title="Teams" description="Manage professional teams and connect each team to its league." href="/admin/directory/manage?kind=teams" />
               <DirectoryCard number="13" title="Leagues" description="Manage leagues, countries, seasons, and competition levels." href="/admin/directory/manage?kind=leagues" />
+              <DirectoryCard number="14" title="League season windows" description="Set verified recurring dates and competition time zones." href="/admin/directory/season" />
               <DirectoryCard number="14" title="Team Logo Studio" description="Manage team logos and directory visual assets." href="/admin/team-logos" />
               <DirectoryCard number="15" title="Data Providers" description="Manage licensed providers, sync status, source documentation, and import history." href="/admin/directory/providers" />
             </div>

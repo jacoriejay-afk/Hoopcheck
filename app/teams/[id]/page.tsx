@@ -1,5 +1,7 @@
 "use client";
 
+import { fetchLeagueSeasons } from "../../../lib/league-season-client";
+import type { LeagueSeasonStatus } from "../../../lib/league-season-server";
 import { useEffect, useState } from "react";
 import { useLanguage } from "../../../components/LanguageProvider";
 
@@ -201,6 +203,7 @@ export default function TeamDetailPage() {
 
   const [loading, setLoading] =
     useState(true);
+  const [teamSeason, setTeamSeason] = useState<LeagueSeasonStatus | null>(null);
   const [activeProfileTab, setActiveProfileTab] = useState<"overview" | "reviews" | "players" | "roster-board" | "pay-transparency" | "fan-group" | "coaches">("overview");
 
   useEffect(() => {
@@ -274,6 +277,11 @@ export default function TeamDetailPage() {
 
       if (!active) return;
       setTeam(teamData);
+      setTeamSeason(null);
+      if (teamData.league_id) {
+        const leagueId = teamData.league_id;
+        void fetchLeagueSeasons([leagueId]).then(seasons => setTeamSeason(seasons[leagueId] ?? null)).catch(() => setTeamSeason(null));
+      }
       setLoading(false);
       const { count: approvedReviewCount } = await supabase.from("reviews").select("id", { count: "exact", head: true }).eq("team_id", id).eq("status", "approved");
       if (!active) return;
@@ -629,7 +637,7 @@ export default function TeamDetailPage() {
             <div><dt>Location</dt><dd>{[team.city,team.country].filter(Boolean).join(", ") || "Not listed"}</dd></div>
           </dl>
         </section>
-        
+
         <section className="hc-team-profile-snapshot" aria-labelledby="hc-team-snapshot-title">
           <p className="hc-team-profile-kicker">PLAYER EXPERIENCE</p>
           <h2 id="hc-team-snapshot-title">Trust Snapshot</h2>
@@ -810,11 +818,11 @@ export default function TeamDetailPage() {
             )}
           </section>
 
-      <div id="team-players-panel" role="tabpanel" aria-labelledby="team-players-tab" hidden={activeProfileTab !== "players"}><TeamPlayersHistory teamId={team.id} /></div>
+      <div id="team-players-panel" role="tabpanel" aria-labelledby="team-players-tab" hidden={activeProfileTab !== "players"}>{teamSeason && <p role="status">{teamSeason.inSeason ? `Current roster · ${teamSeason.seasonLabel}` : `Last season’s roster · ${teamSeason.seasonLabel}. Season starts ${teamSeason.nextStartMonth}.`}</p>}<TeamPlayersHistory teamId={team.id} /></div>
       {accountType && accountType !== "fan" && <section className="hero" id="team-roster-board-panel" role="tabpanel" aria-labelledby="team-roster-board-tab" hidden={activeProfileTab !== "roster-board"}>
         <div className="eyebrow">ROSTER BOARD</div>
         <h2>Open roster spots</h2>
-        <TeamRosterSpots teamId={team.id} teamName={team.name} />
+        {teamSeason?.inSeason ? <TeamRosterSpots teamId={team.id} teamName={team.name} /> : <p className="muted">{teamSeason ? `Season starts ${teamSeason.nextStartMonth}.` : "The league season window is awaiting verification."}</p>}
       </section>}
       {accountType && accountType !== "fan" && <section className="hero" id="team-pay-transparency-panel" role="tabpanel" aria-labelledby="team-pay-transparency-tab" hidden={activeProfileTab !== "pay-transparency"}>
         <div className="eyebrow">PAY TRANSPARENCY</div>

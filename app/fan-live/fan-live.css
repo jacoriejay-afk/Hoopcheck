@@ -85,3 +85,14 @@ html.theme-dark .hc-live-room .hc-live-message-menu>div{background:#151515;borde
 html.theme-dark .hc-live-room .hc-live-message-menu button{color:#f8f8f8}
 @media(max-width:800px){.hc-live-room-grid{grid-template-columns:minmax(0,1fr)}.hc-live-room-list{order:2}.hc-live-room-panel{order:1}.hc-live-room-hero{align-items:flex-start;flex-direction:column}.hc-live-room-scoreboard{grid-template-columns:minmax(0,1fr) minmax(100px,140px) minmax(0,1fr)}}
 @media(max-width:480px){.hc-live-room{padding-top:12px}.hc-live-room .page-container{padding-left:12px;padding-right:12px}.hc-live-room-list,.hc-live-room-panel{padding:12px;border-radius:12px}.hc-live-room-scoreboard{gap:5px}.hc-live-team-logo{width:42px;height:42px;flex-basis:42px}.hc-live-room-team strong{font-size:10px}.hc-live-room-score>strong{font-size:26px}.hc-live-room-score small{font-size:9px}.hc-live-chat-messages{min-height:250px;height:46vh}.hc-live-chat-compose{gap:6px}.hc-live-chat-compose input{padding:12px 10px}.hc-live-chat-compose>span{display:none}.hc-live-chat-compose .btn{padding:10px 12px;min-width:66px}.hc-live-presence-chip{font-size:11px}.hc-live-room-game{align-items:flex-start}.hc-live-room-game-status{font-size:8px}.hc-live-room-footnote{font-size:11px}}
+
+
+/* LIVECHAT-1: accessible country → league room navigation */
+.hc-live-room-list label[for="hc-live-country-search"]{display:block;margin:12px 0 6px;color:var(--ink);font-size:12px;font-weight:700}
+#hc-live-country-search{width:100%;min-width:0;min-height:44px;padding:10px 12px;background:var(--paper);color:var(--ink);border:1px solid var(--border);border-radius:12px;font:inherit}
+#hc-live-country-search:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.hc-live-room-list>section{margin-top:16px}
+.hc-live-room-list>section>h2{margin:0 0 8px;font-size:15px;font-weight:800;line-height:1.4;color:var(--ink);overflow-wrap:anywhere}
+.hc-live-room-list>section>div{padding:0 0 8px 10px;border-left:2px solid var(--border);margin:0 0 10px 4px}
+.hc-live-room-list>section>div>h3{margin:8px 0 4px;font-size:12px;font-weight:800;line-height:1.4;color:var(--gray-500);overflow-wrap:anywhere}
+@media(max-width:640px){.hc-live-room-list>section>div{padding-left:8px}.hc-live-room-list>section>h2{font-size:14px}}

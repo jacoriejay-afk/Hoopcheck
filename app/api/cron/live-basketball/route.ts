@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { resolveLeagueSeason } from "../../../../lib/league-season-server";
+import { getGameChatState } from "../../../../lib/livechat-lifecycle";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 20;
@@ -11,7 +13,8 @@ type ProviderGame = {
   date?: string;
   timestamp?: number;
   status?: { short?: string; long?: string };
-  league?: { id?: number; name?: string; country?: string };
+  league?: { id?: number; name?: string };
+  country?: { name?: string };
   teams?: { home?: ProviderTeam; away?: ProviderTeam; visitors?: ProviderTeam };
   scores?: { home?: ProviderScore; away?: ProviderScore; visitors?: ProviderScore };
 };
@@ -141,7 +144,20 @@ export async function GET(request: NextRequest) {
       finalStatuses.has(statusOf(game)) || cancelledStatuses.has(statusOf(game))
     );
 
+    // Competition identity comes from a reviewed provider-league mapping, not
+    // the club's domestic league (clubs can play in multiple competitions).
+    const { data: competitionMappings, error: competitionError } = await db
+      .from("fan_live_league_provider_map")
+      .select("provider_league_id,league_id")
+      .eq("provider_source", "api-sports-basketball");
+    if (competitionError) throw competitionError;
+    const leagueByProviderId = new Map((competitionMappings || []).map(mapping => [Number(mapping.provider_league_id), mapping.league_id]));
+
+    // Resolve competitions only by reviewed provider competition IDs.
+
     const rows = [];
+    let verifiedCompetitionMatches = 0;
+    let unmappedProviderCompetitions = 0;
     for (const game of trackedGames) {
       const homeProviderId = Number(game.teams?.home?.id);
       const awayProviderId = Number((game.teams?.away ?? game.teams?.visitors)?.id);
@@ -158,6 +174,13 @@ export async function GET(request: NextRequest) {
       const primaryScore = primaryIsHome ? score(game.scores?.home) : score((game.scores?.away ?? game.scores?.visitors));
       const opponentScore = primaryIsHome ? score((game.scores?.away ?? game.scores?.visitors)) : score(game.scores?.home);
       if (!primaryId || !opponentName || !game.id) continue;
+      const providerLeagueId = Number(game.league?.id);
+      const verifiedProviderLeagueId = Number.isInteger(providerLeagueId) && providerLeagueId > 0
+        ? leagueByProviderId.get(providerLeagueId) : null;
+      const hasProviderCompetition = Number.isInteger(providerLeagueId) && providerLeagueId > 0;
+      const leagueId = verifiedProviderLeagueId || null;
+      if (verifiedProviderLeagueId) verifiedCompetitionMatches++;
+      else if (hasProviderCompetition) unmappedProviderCompetitions++;
 
       const startDate = game.timestamp ? new Date(game.timestamp * 1000).toISOString()
         : (game.date && !Number.isNaN(Date.parse(game.date)) ? new Date(game.date).toISOString() : null);
@@ -172,18 +195,79 @@ export async function GET(request: NextRequest) {
         opponent_name: opponentName,
         provider_source: "api-sports-basketball",
         provider_game_id: String(game.id),
+        provider_league_id: Number.isInteger(providerLeagueId) && providerLeagueId > 0 ? providerLeagueId : null,
         status: storedStatus,
         home_score: storedStatus === "scheduled" ? null : primaryScore,
         away_score: storedStatus === "scheduled" ? null : opponentScore,
         started_at: storedStatus === "scheduled" ? null : startDate,
         scheduled_at: startDate,
+        league_id: leagueId,
         league_name: game.league?.name || null,
-        country: game.league?.country || null,
+        country: game.country?.name || null,
         period_label: liveStatuses.has(providerStatus) ? (game.status?.long || providerStatus) : null
       });
     }
 
+    // Provider has no final-whistle timestamp. Record the first time we
+    // observe a final result, preserving it across subsequent syncs.
+    // This is an observation timestamp, not a verified whistle time.
+    const finalIds = rows.filter(row => row.status === "final").map(row => row.provider_game_id);
+    if (finalIds.length) {
+      const { data: priorFinals, error: priorFinalError } = await db.from("fan_live_games")
+        .select("provider_game_id,status,ends_at")
+        .eq("provider_source", "api-sports-basketball")
+        .in("provider_game_id", finalIds);
+      if (priorFinalError) throw priorFinalError;
+      const previousGames = new Map((priorFinals || []).map(item => [item.provider_game_id, item]));
+      const observedAt = new Date().toISOString();
+      for (const row of rows) {
+        if (row.status === "final") {
+          const previous = previousGames.get(row.provider_game_id);
+          // Only a transition from a previously tracked live game can open a
+          // postgame room. Newly imported historical finals stay read-only.
+          const finish = previous?.ends_at ?? (previous?.status === "live" ? observedAt : null);
+          Object.assign(row, { ends_at: finish });
+        }
+      }
+    }
+
+    let retainedExistingLeagueIds = 0;
     if (rows.length) {
+      // Do not erase a previously verified league assignment when a subsequent
+      // provider response lacks a usable competition mapping. Preserve existing
+      // IDs only for the same provider fixture, never transfer between games.
+      const { data: existingMappings, error: existingMappingsError } = await db.from("fan_live_games")
+        .select("provider_game_id,league_id,provider_league_id")
+        .eq("provider_source", "api-sports-basketball")
+        .in("provider_game_id", rows.map(row => row.provider_game_id))
+        .not("league_id", "is", null);
+      if (existingMappingsError) throw existingMappingsError;
+      const existingLeagueByGame = new Map((existingMappings || []).map(item => [item.provider_game_id, { leagueId: item.league_id, providerLeagueId: item.provider_league_id }]));
+      let conflictingLeagueAssignments = 0;
+      for (const row of rows) {
+        const previous = existingLeagueByGame.get(row.provider_game_id);
+        const existingLeagueId = previous?.leagueId;
+        // A provider may correct a fixture's competition. Never retain an old
+        // league assignment when both competition IDs exist and disagree.
+        if (existingLeagueId && previous?.providerLeagueId != null && row.provider_league_id != null
+          && previous.providerLeagueId !== row.provider_league_id) {
+          conflictingLeagueAssignments++;
+          continue;
+        }
+        if (row.league_id && existingLeagueId && row.league_id !== existingLeagueId) {
+          conflictingLeagueAssignments++;
+          continue;
+        }
+        if (!row.league_id && existingLeagueId) {
+          row.league_id = existingLeagueId;
+          retainedExistingLeagueIds++;
+        }
+      }
+      if (conflictingLeagueAssignments > 0) {
+        // Do not silently rewrite a fixture's reviewed competition identity.
+        // Require manual mapping review before accepting any sync writes.
+        throw new Error(`SEASON-1: ${conflictingLeagueAssignments} conflicting fixture league assignments`);
+      }
       const { error: upsertError } = await db.from("fan_live_games")
         .upsert(rows, { onConflict: "provider_source,provider_game_id" });
       if (upsertError) throw upsertError;
@@ -198,32 +282,44 @@ export async function GET(request: NextRequest) {
     const { error: staleError } = await staleQuery;
     if (staleError) throw staleError;
 
-    // Send one in-app reminder when the 30-minute chat window opens.
+    // Send one in-app reminder when the season-aware chat window opens.
     const { data: pendingReminders, error: reminderReadError } = await db.from("fan_live_game_reminders")
       .select("id,game_id,user_id").is("notified_at", null).limit(1000);
     if (reminderReadError) throw reminderReadError;
     const reminderGameIds = Array.from(new Set((pendingReminders || []).map(reminder => reminder.game_id)));
     if (reminderGameIds.length) {
       const { data: reminderGames, error: reminderGamesError } = await db.from("fan_live_games")
-        .select("id,team_id,opponent_name,status,scheduled_at,started_at,ends_at")
+        .select("id,opponent_name,status,scheduled_at,started_at,ends_at,league_id")
         .in("id", reminderGameIds);
       if (reminderGamesError) throw reminderGamesError;
-      const byId = new Map((reminderGames || []).map(game => [game.id, game]));
-      const now = Date.now();
+      const now = new Date();
+      const leagueIds = [...new Set((reminderGames || []).flatMap(game => game.league_id ? [game.league_id] : []))];
+      const activeLeagues = new Set<string>();
+      if (leagueIds.length) {
+        const { data: leagues, error: seasonError } = await db.from("leagues")
+          .select("id,season_start_month,season_start_day,season_end_month,season_end_day,season_label,season_time_zone")
+          .in("id", leagueIds);
+        if (seasonError) throw seasonError;
+        for (const league of leagues || []) {
+          if (!league.season_start_month || !league.season_end_month) continue;
+          if (resolveLeagueSeason(league, now, league.season_time_zone || "UTC").inSeason) activeLeagues.add(league.id);
+        }
+      }
+      const openGames = new Map((reminderGames || []).filter(game => (
+        game.league_id && activeLeagues.has(game.league_id) &&
+        (game.status === "live" || game.status === "scheduled") &&
+        getGameChatState(game, now) === "open"
+      )).map(game => [game.id, game]));
       for (const reminder of pendingReminders || []) {
-        const game = byId.get(reminder.game_id);
-        if (!game || !game.scheduled_at || ["cancelled","canceled","postponed","abandoned","final"].includes(String(game.status).toLowerCase())) continue;
-        const tipoff = Date.parse(game.scheduled_at);
-        const opens = tipoff - 30 * 60 * 1000;
-        const closes = game.ends_at ? Date.parse(game.ends_at) + 60 * 60 * 1000 : tipoff + 4 * 60 * 60 * 1000;
-        if (!Number.isFinite(tipoff) || now < opens || now >= closes) continue;
+        const game = openGames.get(reminder.game_id);
+        if (!game) continue;
         const { data: preferences } = await db.from("user_preferences").select("notifications_enabled")
           .eq("user_id", reminder.user_id).maybeSingle();
         if (preferences?.notifications_enabled !== false) {
           const { error: notificationError } = await db.from("notifications").insert({
             user_id: reminder.user_id, target_type: "game", target_id: game.id,
             notification_type: "game_reminder", title: "Game chat is open",
-            body: "Chat opens soon for " + (game.opponent_name || "your scheduled game") + ". Join the game room now.",
+            body: "Chat is open for " + (game.opponent_name || "your scheduled game") + ". Join the game room now.",
           });
           if (notificationError) throw notificationError;
         }
@@ -256,6 +352,13 @@ export async function GET(request: NextRequest) {
       providerScheduledGames: rows.filter(row => row.status === "scheduled").length,
       providerFinishedGames: rows.filter(row => row.status === "final").length,
       matchedGames: rows.length,
+      seasonMapping: {
+        verifiedCompetitionMatches,
+        unmappedProviderCompetitions,
+        retainedExistingLeagueIds,
+        unresolvedBeforeExistingAssignment: rows.length - verifiedCompetitionMatches,
+        unresolvedAfterExistingAssignment: rows.filter(row => !row.league_id).length
+      },
       unmatchedLiveGames
     }, {
       headers: { "Cache-Control": "no-store" }
