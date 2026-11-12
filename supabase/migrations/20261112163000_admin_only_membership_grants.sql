@@ -4,7 +4,7 @@ create or replace function public.admin_set_membership(p_user_id uuid, p_plan te
 returns boolean
 language plpgsql
 security definer
-set search_path = 'public'
+set search_path = ''
 as $function$
 begin
   if auth.uid() is null or not exists (
