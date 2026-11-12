@@ -209,13 +209,13 @@ export default function TeamDetailPage() {
       if (["#roster", "#players", "#team-players-panel"].includes(window.location.hash)) setActiveProfileTab("players");
       if (["#coaches", "#team-coaches-panel"].includes(window.location.hash)) setActiveProfileTab("coaches");
       if (["#overview", "#team-overview-panel"].includes(window.location.hash)) setActiveProfileTab("overview");
-      if (["#roster-board", "#team-roster-board-panel"].includes(window.location.hash)) setActiveProfileTab("roster-board");
-      if (["#pay-transparency", "#team-pay-transparency-panel"].includes(window.location.hash)) setActiveProfileTab("pay-transparency");
+      if (accountType && accountType !== "fan" && ["#roster-board", "#team-roster-board-panel"].includes(window.location.hash)) setActiveProfileTab("roster-board");
+      if (accountType && accountType !== "fan" && ["#pay-transparency", "#team-pay-transparency-panel"].includes(window.location.hash)) setActiveProfileTab("pay-transparency");
     };
     syncTab();
     window.addEventListener("hashchange", syncTab);
     return () => window.removeEventListener("hashchange", syncTab);
-  }, []);
+  }, [accountType]);
 
   const [reviewLoading, setReviewLoading] =
     useState(false);
@@ -591,7 +591,7 @@ export default function TeamDetailPage() {
         onOpenFanGroup={() => setActiveProfileTab("fan-group")}
       />
       <nav className="hc-team-profile-nav" aria-label="Team profile sections" style={{position:"sticky",top:"var(--hc-header-height, 72px)",zIndex:20,overflowX:"auto",borderRadius:16,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",background:"var(--surface, rgba(24,27,36,.92))"}}>
-        <div role="tablist" aria-label="Team profile tabs" style={{display:"flex",flexWrap:"nowrap",width:"max-content",minWidth:"100%"}} onKeyDown={(event) => { if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return; event.preventDefault(); const tabs = ["overview", "players", "coaches", "reviews", "fan-group", ...(accountType !== "fan" ? ["roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeProfileTab>; const index = tabs.indexOf(activeProfileTab); const next = event.key === "Home" ? tabs[0] : event.key === "End" ? tabs[tabs.length - 1] : tabs[(index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length]; setActiveProfileTab(next); const target = document.getElementById(`team-${next}-tab`); target?.focus(); target?.scrollIntoView({block:"nearest",inline:"nearest"}); }}>{(["overview", "players", "coaches", "reviews", "fan-group", ...(accountType !== "fan" ? ["roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeProfileTab>).map(tab => <button key={tab} type="button" role="tab" id={`team-${tab}-tab`} aria-selected={activeProfileTab === tab} aria-controls={`team-${tab}-panel`} tabIndex={activeProfileTab === tab ? 0 : -1} onClick={() => setActiveProfileTab(tab)}>{tab === "players" ? "Roster" : tab === "fan-group" ? "Fan Group" : tab === "roster-board" ? (language === "es" ? "TABLERO DE PLANTILLA" : "Roster Board") : tab === "pay-transparency" ? "Pay Transparency" : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>)}</div>
+        <div role="tablist" aria-label="Team profile tabs" style={{display:"flex",flexWrap:"nowrap",width:"max-content",minWidth:"100%"}} onKeyDown={(event) => { if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return; event.preventDefault(); const tabs = ["overview", "players", "coaches", "reviews", "fan-group", ...(accountType && accountType !== "fan" ? ["roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeProfileTab>; const index = tabs.indexOf(activeProfileTab); const next = event.key === "Home" ? tabs[0] : event.key === "End" ? tabs[tabs.length - 1] : tabs[(index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length]; setActiveProfileTab(next); const target = document.getElementById(`team-${next}-tab`); target?.focus(); target?.scrollIntoView({block:"nearest",inline:"nearest"}); }}>{(["overview", "players", "coaches", "reviews", "fan-group", ...(accountType && accountType !== "fan" ? ["roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeProfileTab>).map(tab => <button key={tab} type="button" role="tab" id={`team-${tab}-tab`} aria-selected={activeProfileTab === tab} aria-controls={`team-${tab}-panel`} tabIndex={activeProfileTab === tab ? 0 : -1} onClick={() => setActiveProfileTab(tab)}>{tab === "players" ? "Roster" : tab === "fan-group" ? "Fan Group" : tab === "roster-board" ? (language === "es" ? "TABLERO DE PLANTILLA" : "Roster Board") : tab === "pay-transparency" ? "Pay Transparency" : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>)}</div>
       </nav>
       <div id="team-overview-panel" role="tabpanel" aria-labelledby="team-overview-tab" hidden={activeProfileTab !== "overview"}><div className="hc-team-profile-overview-grid">
         <section className="hc-team-profile-about" aria-labelledby="hc-team-about-title">
@@ -785,7 +785,7 @@ export default function TeamDetailPage() {
           </section>
 
       <div id="team-players-panel" role="tabpanel" aria-labelledby="team-players-tab" hidden={activeProfileTab !== "players"}><TeamPlayersHistory teamId={team.id} /></div>
-      {accountType !== "fan" && <section className="hero" id="team-roster-board-panel" role="tabpanel" aria-labelledby="team-roster-board-tab" hidden={activeProfileTab !== "roster-board"}>
+      {accountType && accountType !== "fan" && <section className="hero" id="team-roster-board-panel" role="tabpanel" aria-labelledby="team-roster-board-tab" hidden={activeProfileTab !== "roster-board"}>
         <div className="eyebrow">ROSTER BOARD</div>
         <h2>Open roster spots</h2>
         <TeamRosterSpots teamId={team.id} teamName={team.name} />
