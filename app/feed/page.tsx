@@ -198,9 +198,11 @@ export default function Feed(){
     if(video&&!body.trim()){setMsg("Add a caption to your video so HoopCheck can run safety checks.");return;}
     setPosting(true);setMsg("Checking your post for safety...");
     let uploadedVideoPath:string|null=null;
+    let uploadAccessToken="";
     try{
       const {data:{session}}=await supabase.auth.getSession();
       if(!session?.access_token){setMsg("Your session expired. Please sign in again.");setPosting(false);return;}
+      uploadAccessToken=session.access_token;
       const form=new FormData();
       form.append("kind","post");
       form.append("text",body.trim());
@@ -233,7 +235,7 @@ export default function Feed(){
       uploadedVideoPath=null;
       setBody("");setVideo(null);if(videoPreview)URL.revokeObjectURL(videoPreview);setVideoPreview("");setShowCountry(Boolean(profile?.current_country_public));clearPhotos();setPollDraft(["",""]);setComposerMode("post");setMsg(composerMode==="poll"?"Poll posted to HoopFeed. AI safety checks passed.":"Posted to HoopFeed. AI safety checks passed.");try{await load(user);}catch(refreshError){console.error("HoopFeed refresh after posting failed",refreshError);setMsg("Your post was published, but the feed could not refresh. Pull down to reload.");}
     }catch(e:any){console.error("HoopFeed post failed",e);setMsg(e?.message==="Video upload failed. Please try again."?e.message:"Posting failed. Please try again.");}
-    if(uploadedVideoPath){try{const {error:cleanupError}=uploadedVideoPath.startsWith("hoopfeed-private-videos/") ? await fetch("/api/hoopfeed/video-cleanup",{method:"DELETE",headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({path:uploadedVideoPath.slice("hoopfeed-private-videos/".length)})}).then(r=>({error:r.ok?null:new Error("Cleanup failed")})) : await supabase.storage.from("feed-videos").remove([uploadedVideoPath]);if(cleanupError)console.error("HoopFeed rejected video cleanup failed",cleanupError);}catch(cleanupError){console.error("HoopFeed rejected video cleanup threw",cleanupError);}}
+    if(uploadedVideoPath){try{const {error:cleanupError}=uploadedVideoPath.startsWith("hoopfeed-private-videos/") ? await fetch("/api/hoopfeed/video-cleanup",{method:"DELETE",headers:{Authorization:"Bearer "+uploadAccessToken,"Content-Type":"application/json"},body:JSON.stringify({path:uploadedVideoPath.slice("hoopfeed-private-videos/".length)})}).then(r=>({error:r.ok?null:new Error("Cleanup failed")})) : await supabase.storage.from("feed-videos").remove([uploadedVideoPath]);if(cleanupError)console.error("HoopFeed rejected video cleanup failed",cleanupError);}catch(cleanupError){console.error("HoopFeed rejected video cleanup threw",cleanupError);}}
     setPosting(false);
   }
 
@@ -244,7 +246,7 @@ export default function Feed(){
       const {data:{session}}=await supabase.auth.getSession();
       if(!session?.access_token){setMsg("Your session expired. Please sign in again.");return;}
       const form=new FormData();form.append("kind","share");form.append("post_id",p.id);
-      const response=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
+      const response=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+uploadAccessToken},body:form});
       const result=await response.json().catch(()=>({}));
       if(!response.ok||result.allowed!==true){setMsg(result.message||"Couldn't share — try again.");return;}
       setMsg("Shared to HoopFeed.");
@@ -268,7 +270,7 @@ export default function Feed(){
       const {data:{session}}=await supabase.auth.getSession();
       if(!session?.access_token){setMsg("Your session expired. Please sign in again.");return;}
       const form=new FormData();form.append("kind","comment");form.append("post_id",post_id);form.append("text",text);
-      const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
+      const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+uploadAccessToken},body:form});
       const result=await moderation.json().catch(()=>({}));
       if(!moderation.ok||result.allowed!==true){setMsg(result.message||"This comment did not pass HoopFeed safety checks.");return;}
       setDrafts(x=>({...x,[post_id]:""}));setMsg("");await load(user);
