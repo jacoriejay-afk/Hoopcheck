@@ -35,7 +35,7 @@ begin
  where id=p_profile_id
  returning jsonb_build_object('id',id,'account_type',account_type,'player_verified',player_verified,'moderation_status',moderation_status,'avatar_moderation_status',avatar_moderation_status,'profile_visibility',profile_visibility,'free_agent',free_agent) into v;
  if v is null then raise exception 'Profile not found'; end if; return v;
-end; $function$
+end; $function$;
 
 revoke all on function public.admin_update_profile(uuid,text,boolean,text,text,text,text,text,text,text,text,text,boolean,text,text) from public,anon;
 grant execute on function public.admin_update_profile(uuid,text,boolean,text,text,text,text,text,text,text,text,text,boolean,text,text) to authenticated,service_role;
