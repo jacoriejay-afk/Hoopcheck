@@ -73,7 +73,7 @@ export default function HomeDesktopIdentity() {
       <div className="hc-d3-hero__inner">
         <div className="hc-d3-hero__copy">
           <p className="hc-d3-eyebrow">THE GLOBAL BASKETBALL INTELLIGENCE HUB</p>
-          <h1>KNOW WHO YOU’RE<br/><em>SIGNING WITH.</em></h1>
+          <h1>KNOW WHO YOU’RE <em>SIGNING WITH.</em></h1>
           <p className="hc-d3-hero__sub">Explore teams, coaches, leagues, and real basketball experiences. Built for players and fans worldwide.</p>
           <HomeDirectoryStats/>
           <div className="hc-home-hero-actions"><Link href="/signup" className="hc-template-cta hc-home-cta">CREATE YOUR ACCOUNT</Link><Link href="/login" className="hc-home-signin">SIGN IN</Link></div>

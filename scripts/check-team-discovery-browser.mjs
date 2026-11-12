@@ -102,6 +102,10 @@ try {
       const reviewsTab = page.getByRole("tab", { name: "Reviews" });
       await overviewTab.focus();
       await overviewTab.press("ArrowRight");
+      assert.equal(await page.getByRole("tab", { name: "Roster" }).getAttribute("aria-selected"), "true");
+      await page.getByRole("tab", { name: "Roster" }).press("ArrowRight");
+      assert.equal(await page.getByRole("tab", { name: "Coaches" }).getAttribute("aria-selected"), "true");
+      await page.getByRole("tab", { name: "Coaches" }).press("ArrowRight");
       assert.equal(await reviewsTab.getAttribute("aria-selected"), "true");
       assert.equal(await page.getByRole("tabpanel", { name: "Reviews" }).isVisible(), true);
       assert.equal(await page.getByRole("tabpanel", { name: "Overview" }).isVisible(), false);

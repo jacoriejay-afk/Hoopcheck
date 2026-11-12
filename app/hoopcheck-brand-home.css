@@ -119,3 +119,164 @@
 .hc-ia-public-home .hc-home-category-tile .hc-category-tile__label { color:#f7f7f5; }
 .hc-ia-public-home .hc-home-category-tile .hc-category-tile__description { color:#c4c4c0; }
 .hc-ia-public-home .hc-home-category-tile:hover { background:linear-gradient(150deg,#1e1e1e,#0d0d0d); border-color:var(--category-color); }
+
+/* WEB-DESKTOP-1: responsive desktop layout, scoped to public homepage. */
+@media (min-width: 901px) {
+  .hc-ia-public-home .hc-home-category-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .hc-ia-public-home .hc-home-category-tile {
+    border-radius: 20px;
+    min-height: 0;
+    overflow-wrap: anywhere;
+  }
+  .hc-ia-public-home .hc-d3-hero__copy {
+    min-width: 0;
+  }
+  .hc-ia-public-home .hc-d3-hero__copy h1 {
+    max-width: 100%;
+    font-size: clamp(2.25rem, 3.6vw, 4.75rem);
+    line-height: 1.04;
+    overflow-wrap: normal;
+    word-break: normal;
+    text-wrap: balance;
+  }
+}
+@media (min-width: 701px) and (max-width: 1100px) {
+  .hc-ia-public-home .hc-home-category-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .hc-ia-public-home .hc-home-category-tile { border-radius: 20px; }
+}
+
+/* WEB-DESKTOP-1 follow-up: compact the desktop hero and remove theme-breaking white bands. */
+@media (min-width: 1024px) {
+  .hc-ia-public-home .hc-d3-hero {
+    padding-block: clamp(24px, 3vw, 44px);
+  }
+  .hc-ia-public-home .hc-d3-hero__inner {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: clamp(20px, 3vw, 48px);
+  }
+  .hc-ia-public-home .hc-d3-eyebrow { margin-bottom: 10px; }
+  .hc-ia-public-home .hc-d3-hero__sub { margin: 12px 0; }
+  .hc-ia-public-home .hc-d3-hero .hc-home-directory-stats {
+    margin: 16px 0 12px;
+  }
+  .hc-ia-public-home .hc-d3-hero .hc-home-directory-stat {
+    min-height: 62px;
+    padding: 9px;
+    border-radius: 12px;
+  }
+  .hc-ia-public-home .hc-d3-map { min-height: 190px; border-radius: 20px; }
+  .hc-ia-public-home .hc-d3-map svg { height: 190px; }
+  .hc-ia-public-home .hc-d3-feature-card { border-radius: 20px; }
+  .hc-ia-public-home .hc-d3-hero__visual { gap: 12px; }
+  .hc-ia-public-home .hc-d3-desktop-search { margin-top: 14px; }
+  .hc-ia-public-home .hc-ia-section {
+    padding-block: 28px;
+    margin-top: 16px;
+    background: var(--hc-surface, var(--paper));
+    color: var(--ink);
+  }
+  html.theme-dark .hc-ia-public-home .hc-ia-section {
+    background: var(--hc-surface, #121212);
+    color: var(--hc-text-primary, #f7f7f5);
+  }
+  html.theme-light .hc-ia-public-home .hc-ia-section {
+    background: var(--hc-surface, #f7f7f5);
+    color: var(--ink);
+  }
+  .hc-ia-public-home .hc-d3-live-band,
+  .hc-ia-public-home .hc-d3-membership-band { padding-block: 16px; }
+}
+
+/* Keep tablet category density consistent with the three-column layout. */
+@media (min-width: 701px) and (max-width: 900px) {
+  .hc-ia-public-home .hc-home-category-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* DESKTOP-VISUAL-2: keep public directory and membership inside the content
+   column instead of forcing 100vw light slabs across the viewport. */
+@media (min-width: 1024px) {
+  .hc-ia-public-home > .page-container > .hc-ia-section {
+    width: auto;
+    max-width: none;
+    margin: 12px 0 0;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+    border-radius: 20px;
+    background: color-mix(in srgb, currentColor 4%, transparent);
+    color: inherit;
+  }
+  .hc-ia-public-home .hc-ia-section-heading { margin-bottom: 12px; }
+  .hc-ia-public-home .hc-d3-membership-band {
+    width: auto;
+    margin: 12px 0 20px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+    border-radius: 20px;
+    background: color-mix(in srgb, currentColor 4%, transparent);
+    color: inherit;
+  }
+  .hc-ia-public-home .hc-d3-live-band {
+    width: auto;
+    margin: 12px 0 0;
+    padding: 14px;
+    border-radius: 20px;
+  }
+  html.theme-light .hc-ia-public-home > .page-container > .hc-ia-section,
+  html.theme-light .hc-ia-public-home .hc-d3-membership-band,
+  html.theme-dark .hc-ia-public-home > .page-container > .hc-ia-section,
+  html.theme-dark .hc-ia-public-home .hc-d3-membership-band {
+    background: color-mix(in srgb, currentColor 4%, transparent);
+    color: inherit;
+  }
+}
+
+/* HERO-DESKTOP-4: laptop-width hero. Keep the headline and copy in the
+   visible column; the decorative slash must never cover real content. */
+@media (min-width: 1024px) {
+  .hc-ia-public-home .hc-d3-hero {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+    padding: clamp(22px, 3vw, 42px) clamp(24px, 4vw, 64px);
+  }
+  .hc-ia-public-home .hc-d3-hero__inner {
+    width: 100%;
+    max-width: 1360px;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+    gap: clamp(22px, 3vw, 46px);
+  }
+  .hc-ia-public-home .hc-d3-hero__copy,
+  .hc-ia-public-home .hc-d3-hero__visual { min-width: 0; max-width: 100%; }
+  .hc-ia-public-home .hc-d3-hero__copy h1 {
+    max-width: 100%;
+    margin: 0;
+    font-size: clamp(32px, 3.4vw, 58px);
+    line-height: 1.07;
+    overflow-wrap: break-word;
+    text-wrap: wrap;
+  }
+  .hc-ia-public-home .hc-d3-hero__sub { max-width: 48ch; }
+  .hc-ia-public-home .hc-d3-hero::before {
+    right: -7%;
+    top: -30%;
+    opacity: .35;
+    z-index: 0;
+  }
+  .hc-ia-public-home .hc-d3-hero__inner { z-index: 2; }
+  .hc-ia-public-home .hc-d3-desktop-search { margin-top: 12px; }
+}
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .hc-ia-public-home .hc-d3-hero { padding-inline: 24px; }
+  .hc-ia-public-home .hc-d3-hero__inner { gap: 20px; }
+  .hc-ia-public-home .hc-d3-hero__copy h1 { font-size: clamp(30px, 3.2vw, 40px); }
+}
