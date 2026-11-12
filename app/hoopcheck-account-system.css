@@ -139,3 +139,29 @@ html body .hc-global-page-shell main :is(a,button,input,select,textarea):focus-v
   html body .hc-global-page-shell main .hc-team-profile-overview-grid { grid-template-columns: minmax(0,1fr); }
   html body .hc-global-page-shell main .hc-team-directory-row { padding: 16px !important; }
 }
+
+/* DESIGN-SYSTEM-1G: Sign-in visual consistency; preserve authentication behavior. */
+.hc-auth-page .hc-auth-card {
+  border: 1px solid var(--hc-border) !important;
+  border-radius: var(--hc-radius-card) !important;
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+}
+.hc-auth-page .hc-auth-card :is(input.input, button.btn) {
+  border-radius: var(--hc-radius-control);
+}
+.hc-auth-page .hc-auth-feedback {
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid var(--hc-border);
+  border-radius: var(--hc-radius-control);
+  background: var(--hc-surface-soft);
+  color: var(--hc-foreground);
+}
+.hc-auth-page .hc-auth-feedback--success { border-color: #438d64; }
+.hc-auth-page .hc-auth-feedback--error { border-color: #d07870; }
+.hc-auth-page .hc-auth-feedback__text {
+  margin: 0;
+  line-height: 1.5;
+  color: inherit !important;
+}
