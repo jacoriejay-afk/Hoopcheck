@@ -198,7 +198,7 @@ export default function TeamDetailPage() {
 
   const [loading, setLoading] =
     useState(true);
-  const [activeProfileTab, setActiveProfileTab] = useState<"overview" | "reviews" | "players" | "roster-board" | "pay-transparency" | "fan-group">("overview");
+  const [activeProfileTab, setActiveProfileTab] = useState<"overview" | "reviews" | "players" | "roster-board" | "pay-transparency" | "fan-group" | "coaches">("overview");
 
   useEffect(() => {
     const syncTab = () => {
@@ -581,8 +581,8 @@ export default function TeamDetailPage() {
         onFollowerCountChange={setTeamFollowerCount}
         onOpenFanGroup={() => setActiveProfileTab("fan-group")}
       />
-      <nav className="hc-team-profile-nav" aria-label="Team profile sections">
-        <div role="tablist" aria-label="Team profile tabs" onKeyDown={(event) => { if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return; event.preventDefault(); const tabs = ["overview", "reviews", "fan-group", ...(accountType !== "fan" ? ["players", "roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeProfileTab>; const index = tabs.indexOf(activeProfileTab); const next = tabs[(index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length]; setActiveProfileTab(next); document.getElementById(`team-${next}-tab`)?.focus(); }}>{(["overview", "reviews", "fan-group", ...(accountType !== "fan" ? ["players", "roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeProfileTab>).map(tab => <button key={tab} type="button" role="tab" id={`team-${tab}-tab`} aria-selected={activeProfileTab === tab} aria-controls={`team-${tab}-panel`} tabIndex={activeProfileTab === tab ? 0 : -1} onClick={() => setActiveProfileTab(tab)}>{tab === "fan-group" ? "Fan Group" : tab === "roster-board" ? (language === "es" ? "TABLERO DE PLANTILLA" : "Roster Board") : tab === "pay-transparency" ? "Pay Transparency" : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>)}</div>
+      <nav className="hc-team-profile-nav" aria-label="Team profile sections" style={{position:"sticky",top:"var(--hc-header-height, 72px)",zIndex:20,overflowX:"auto",borderRadius:16,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",background:"var(--surface, rgba(24,27,36,.92))"}}>
+        <div role="tablist" aria-label="Team profile tabs" onKeyDown={(event) => { if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return; event.preventDefault(); const tabs = ["overview", "players", "coaches", "reviews", "fan-group", ...(accountType !== "fan" ? ["roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeProfileTab>; const index = tabs.indexOf(activeProfileTab); const next = tabs[(index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length]; setActiveProfileTab(next); document.getElementById(`team-${next}-tab`)?.focus(); }}>{(["overview", "players", "coaches", "reviews", "fan-group", ...(accountType !== "fan" ? ["roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeProfileTab>).map(tab => <button key={tab} type="button" role="tab" id={`team-${tab}-tab`} aria-selected={activeProfileTab === tab} aria-controls={`team-${tab}-panel`} tabIndex={activeProfileTab === tab ? 0 : -1} onClick={() => setActiveProfileTab(tab)}>{tab === "players" ? "Roster" : tab === "fan-group" ? "Fan Group" : tab === "roster-board" ? (language === "es" ? "TABLERO DE PLANTILLA" : "Roster Board") : tab === "pay-transparency" ? "Pay Transparency" : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>)}</div>
       </nav>
       <div id="team-overview-panel" role="tabpanel" aria-labelledby="team-overview-tab" hidden={activeProfileTab !== "overview"}><div className="hc-team-profile-overview-grid">
         <section className="hc-team-profile-about" aria-labelledby="hc-team-about-title">
@@ -629,6 +629,15 @@ export default function TeamDetailPage() {
         <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
         {canReadFullReviews && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">LATEST PLAYER REVIEW</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || t("playerExperience")}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
       </div>
+      <section className="card" id="team-coaches-panel" role="tabpanel" aria-labelledby="team-coaches-tab" hidden={activeProfileTab !== "coaches"}>
+        <p className="eyebrow">TEAM STAFF</p><h2>Coaches</h2>
+        {coaches.length ? <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:12}}>
+          {coaches.map(coach => <Link key={coach.id} href={`/coaches/${coach.id}`} className="card" style={{display:"flex",alignItems:"center",gap:12,textDecoration:"none"}}>
+            <span aria-hidden="true" style={{width:44,height:44,borderRadius:"50%",display:"grid",placeItems:"center",background:"var(--surface-muted,rgba(128,128,128,.16))",fontWeight:800}}>{coach.name.trim().split(/\\s+/).slice(0,2).map(part => part[0]).join("").toUpperCase()}</span>
+            <span><strong>{coach.name}</strong><small style={{display:"block"}}>{[coach.city,coach.country].filter(Boolean).join(", ")}</small></span>
+          </Link>)}
+        </div> : <p className="muted">No coaches are listed for this club yet.</p>}
+      </section>
       <div id="team-fan-group-panel" role="tabpanel" aria-labelledby="team-fan-group-tab" hidden={activeProfileTab !== "fan-group"}><div id="fan-hq" className="hc-team-profile-community"><TeamFanGroupEntry teamId={team.id} /></div></div>
       <section className="hero" id="team-reviews-panel" role="tabpanel" aria-labelledby="team-reviews-tab" hidden={activeProfileTab !== "reviews"}>
             {canReadFullReviews ? (
