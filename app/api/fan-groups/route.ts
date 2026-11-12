@@ -73,8 +73,15 @@ export async function POST(request: Request) {
 
     const { data: explicitMod } = await db.from("team_fan_group_moderators").select("id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle();
     const { data: platformMod } = await db.from("team_fan_group_moderators").select("id").eq("team_id", teamId).eq("moderator_type", "platform").maybeSingle();
-    const { data: isPlatformAdmin } = await db.rpc("is_current_user_admin_or_moderator");
-    const isModerator = Boolean(entitlements.canModerateFanGroups || explicitMod || (platformMod && (profile?.account_type === "admin" || isPlatformAdmin)));
+    // Resolve the authenticated user's platform role explicitly; service-role RPCs
+    // do not inherit the request user's auth.uid().
+    const { data: platformRoles, error: platformRoleError } = await db.from("admin_roles")
+      .select("role").eq("user_id", user.id);
+    if (platformRoleError) throw platformRoleError;
+    const isPlatformAdmin = (platformRoles || []).some((r: any) => String(r.role || "").trim().toLowerCase() === "admin");
+    const isPlatformModerator = isPlatformAdmin || (platformRoles || []).some((r: any) => String(r.role || "").trim().toLowerCase() === "moderator");
+    // Team moderation requires an explicit appointment or authorized platform role.
+    const isModerator = Boolean(explicitMod || isPlatformAdmin || (platformMod && isPlatformModerator));
     const { data: membership } = await db.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle();
     const isMember = Boolean(membership);
 
