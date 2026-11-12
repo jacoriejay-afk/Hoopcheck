@@ -633,7 +633,7 @@ export default function TeamDetailPage() {
         <p className="eyebrow">TEAM STAFF</p><h2>Coaches</h2>
         {coaches.length ? <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:12}}>
           {coaches.map(coach => <Link key={coach.id} href={`/coaches/${coach.id}`} className="card" style={{display:"flex",alignItems:"center",gap:12,textDecoration:"none"}}>
-            <span aria-hidden="true" style={{width:44,height:44,borderRadius:"50%",display:"grid",placeItems:"center",background:"var(--surface-muted,rgba(128,128,128,.16))",fontWeight:800}}>{coach.name.trim().split(/\\s+/).slice(0,2).map(part => part[0]).join("").toUpperCase()}</span>
+            <span aria-hidden="true" style={{width:44,height:44,borderRadius:"50%",display:"grid",placeItems:"center",background:"var(--surface-muted,rgba(128,128,128,.16))",fontWeight:800}}>{coach.name.trim().split(/\s+/).slice(0,2).map(part => part[0]).join("").toUpperCase()}</span>
             <span><strong>{coach.name}</strong><small style={{display:"block"}}>{[coach.city,coach.country].filter(Boolean).join(", ")}</small></span>
           </Link>)}
         </div> : <p className="muted">No coaches are listed for this club yet.</p>}
@@ -775,19 +775,17 @@ export default function TeamDetailPage() {
             )}
           </section>
 
-      {accountType !== "fan" && <>
       <div id="team-players-panel" role="tabpanel" aria-labelledby="team-players-tab" hidden={activeProfileTab !== "players"}><TeamPlayersHistory teamId={team.id} /></div>
-      <section className="hero" id="team-roster-board-panel" role="tabpanel" aria-labelledby="team-roster-board-tab" hidden={activeProfileTab !== "roster-board"}>
+      {accountType !== "fan" && <section className="hero" id="team-roster-board-panel" role="tabpanel" aria-labelledby="team-roster-board-tab" hidden={activeProfileTab !== "roster-board"}>
         <div className="eyebrow">ROSTER BOARD</div>
         <h2>Open roster spots</h2>
         <TeamRosterSpots teamId={team.id} teamName={team.name} />
-      </section>
+      </section>}
       {accountType && accountType !== "fan" && <section className="hero" id="team-pay-transparency-panel" role="tabpanel" aria-labelledby="team-pay-transparency-tab" hidden={activeProfileTab !== "pay-transparency"}>
         <div className="eyebrow">PAY TRANSPARENCY</div>
         <h2>Payment history</h2>
         <TeamPayTimeline teamId={team.id} />
       </section>}
-      </>}
 
       {team && <><TeamOfficialUpdates teamId={team.id} /><FanTeamPosts teamId={team.id} /></>}
 
