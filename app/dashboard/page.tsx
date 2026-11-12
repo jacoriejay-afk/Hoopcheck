@@ -10,6 +10,7 @@ import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import { calculateProfileCompletion } from "../../lib/profile-completion";
+import { getPlayerProfileCompletion } from "../../lib/player-profile-completion";
 import TeamLogo from "../../components/TeamLogo";
 import { getGameAvailability } from "../../lib/game-availability";
 import "./home-3.css";
@@ -188,7 +189,7 @@ export default function DashboardPage() {
   },[router,basketballSide,reloadKey]);
 
   const displayName = profile?.display_name || [profile?.first_name,profile?.last_name].filter(Boolean).join(" ") || email.split("@")[0] || (profile?.account_type === "fan" ? t("fan") : "Player");
-  const completion = calculateProfileCompletion(profile).percentage;
+  const completion = profile?.account_type === "player" ? getPlayerProfileCompletion(profile).percentage : calculateProfileCompletion(profile).percentage;
 
   if(loading) return <main className="page-shell dashboard-page"><div className="page-container"><HoopLoading label={t("loadingDashboard")}/></div></main>;
 
