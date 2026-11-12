@@ -109,8 +109,8 @@ export default function FanBasketballSideSwitch({ lockedHint = false }: { locked
     window.dispatchEvent(new Event(SIDE_EVENT));
     const { data: { user } } = await supabase.auth.getUser();
     if (user) await supabase.from("profiles").update({ preferred_basketball_side: next }).eq("id", user.id);
-    if (pathname === "/teams" && next === "womens") router.push("/womens");
-    else if (pathname === "/womens" && next === "mens") router.push("/teams");
+    if ((pathname === "/teams" || pathname.startsWith("/teams/")) && next === "womens") router.push("/womens");
+    else if ((pathname === "/womens" || pathname.startsWith("/womens/")) && next === "mens") router.push("/teams");
     else if (pathname === "/search") {
       const params = new URLSearchParams(window.location.search);
       params.set("type", next === "womens" ? "womens-teams" : "mens-teams");
