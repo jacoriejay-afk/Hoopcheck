@@ -171,6 +171,7 @@ export default function TeamDetailPage() {
 
   const [coaches, setCoaches] =
     useState<Coach[]>([]);
+  const [coachesLoadError, setCoachesLoadError] = useState(false);
 
   const [reviews, setReviews] =
     useState<Review[]>([]);
@@ -298,9 +299,9 @@ export default function TeamDetailPage() {
         setLeague(leagueResult.data);
       }
 
-      if (!coachesResult.error && coachesResult.data) {
-        setCoaches(coachesResult.data);
-      }
+      setCoachesLoadError(Boolean(coachesResult.error));
+      if (coachesResult.error) console.error("Unable to load team coaches:", coachesResult.error);
+      setCoaches(coachesResult.error ? [] : (coachesResult.data || []));
 
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
@@ -646,7 +647,7 @@ export default function TeamDetailPage() {
       </div>
       <section className="card" id="team-coaches-panel" role="tabpanel" aria-labelledby="team-coaches-tab" hidden={activeProfileTab !== "coaches"}>
         <p className="eyebrow">TEAM STAFF</p><h2>Coaches</h2>
-        {coaches.length ? <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:12}}>
+        {coachesLoadError ? <p role="alert">Coaching information is temporarily unavailable. Please try again later.</p> : coaches.length ? <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:12}}>
           {coaches.map(coach => <Link key={coach.id} href={`/coaches/${coach.id}`} className="card" style={{display:"flex",alignItems:"center",gap:12,textDecoration:"none"}}>
             <span aria-hidden="true" style={{width:44,height:44,borderRadius:"50%",display:"grid",placeItems:"center",background:"var(--surface-muted,rgba(128,128,128,.16))",fontWeight:800}}>{coach.name.trim().split(/\s+/).slice(0,2).map(part => part[0]).join("").toUpperCase()}</span>
             <span><strong>{coach.name}</strong><small style={{display:"block"}}>{[coach.city,coach.country].filter(Boolean).join(", ")}</small></span>
