@@ -569,7 +569,7 @@ export default function TeamDetailPage() {
         onFollowerCountChange={setTeamFollowerCount}
       />
       <nav className="hc-team-profile-nav" role="tablist" aria-label="Team profile sections">
-        {(["overview", "reviews", ...(accountType !== "fan" ? ["players", "roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as const).map(section => <button key={section} type="button" role="tab" id={`team-tab-${section}`} aria-selected={activeTeamSection === section} aria-controls={`team-panel-${section}`} onClick={() => setActiveTeamSection(section)}>{section === "roster-board" ? "Roster Board" : section === "pay-transparency" ? "Pay Transparency" : section.charAt(0).toUpperCase() + section.slice(1)}</button>)}
+        {(["overview", "reviews", ...(accountType !== "fan" ? ["players", "roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeTeamSection>).map(section => <button key={section} type="button" role="tab" id={`team-tab-${section}`} aria-selected={activeTeamSection === section} aria-controls={`team-panel-${section}`} onClick={() => setActiveTeamSection(section)}>{section === "roster-board" ? "Roster Board" : section === "pay-transparency" ? "Pay Transparency" : section.charAt(0).toUpperCase() + section.slice(1)}</button>)}
       </nav>
       <div id="team-panel-overview" role="tabpanel" aria-labelledby="team-tab-overview" hidden={activeTeamSection !== "overview"} className="hc-team-profile-overview-grid">
         <section className="hc-team-profile-about" aria-labelledby="hc-team-about-title">
