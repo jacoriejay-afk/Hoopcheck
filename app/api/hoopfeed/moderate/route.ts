@@ -409,7 +409,19 @@ export async function POST(request: Request) {
       if (!post || post.status !== "approved") {
         return NextResponse.json({ allowed: false, message: "This HoopFeed post is no longer available." }, { status: 404 });
       }
-      const { error } = await db.from("feed_post_comments").insert({ post_id:postId,author_id:user.id,body:text });
+      const parentValues=form.getAll("parent_id");
+      if(parentValues.length>1 || parentValues.some(value=>typeof value!=="string")){
+        return NextResponse.json({allowed:false,message:"Invalid reply target."},{status:400});
+      }
+      const parentId=typeof parentValues[0]==="string"?parentValues[0].trim():"";
+      if(parentId){
+        const {data:parent,error:parentError}=await db.from("feed_post_comments")
+          .select("id,post_id").eq("id",parentId).maybeSingle();
+        if(parentError || !parent || parent.post_id!==postId){
+          return NextResponse.json({allowed:false,message:"Reply target not found in this post."},{status:400});
+        }
+      }
+      const { error } = await db.from("feed_post_comments").insert({ post_id:postId,author_id:user.id,body:text,parent_id:parentId||null });
       if (error) return NextResponse.json({ allowed:false,message:"We couldn't publish your comment. Please try again." },{status:400});
       return NextResponse.json({ allowed:true });
     }
