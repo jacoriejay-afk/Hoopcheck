@@ -246,7 +246,7 @@ export default function Feed(){
       const {data:{session}}=await supabase.auth.getSession();
       if(!session?.access_token){setMsg("Your session expired. Please sign in again.");return;}
       const form=new FormData();form.append("kind","share");form.append("post_id",p.id);
-      const response=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+uploadAccessToken},body:form});
+      const response=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
       const result=await response.json().catch(()=>({}));
       if(!response.ok||result.allowed!==true){setMsg(result.message||"Couldn't share — try again.");return;}
       setMsg("Shared to HoopFeed.");
@@ -270,7 +270,7 @@ export default function Feed(){
       const {data:{session}}=await supabase.auth.getSession();
       if(!session?.access_token){setMsg("Your session expired. Please sign in again.");return;}
       const form=new FormData();form.append("kind","comment");form.append("post_id",post_id);form.append("text",text);
-      const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+uploadAccessToken},body:form});
+      const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
       const result=await moderation.json().catch(()=>({}));
       if(!moderation.ok||result.allowed!==true){setMsg(result.message||"This comment did not pass HoopFeed safety checks.");return;}
       setDrafts(x=>({...x,[post_id]:""}));setMsg("");await load(user);
