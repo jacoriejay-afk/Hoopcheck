@@ -37,3 +37,13 @@ test('retains local plan duration and free transition', () => {
   assert.match(fn, /IF p_plan = 'free' THEN/i);
   assert.match(fn, /ON CONFLICT \(user_id\) DO UPDATE/i);
 });
+
+test('admin UI handles database authorization rejection without saving the profile', () => {
+  const ui = readFileSync(new URL('../app/admin/users/page.tsx', import.meta.url), 'utf8');
+  assert.match(ui, /supabase\.rpc\("admin_set_membership"/);
+  assert.match(ui, /error\.code==="42501"\?"Only administrators can change memberships\. No account changes were saved\."/);
+  const call = ui.indexOf('supabase.rpc("admin_set_membership"');
+  const profileSave = ui.indexOf('const profileSaved=await save()', call);
+  assert.ok(call >= 0 && profileSave > call, 'membership RPC precedes profile save');
+  assert.match(ui.slice(call, profileSave), /if\(error\)\{setMessage\([\s\S]*?\);return;\}/);
+});
