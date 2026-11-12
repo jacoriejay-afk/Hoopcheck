@@ -37,11 +37,10 @@ export async function POST(request: Request) {
   const { data: identity, error: identityError } = await viewer.auth.getUser(token);
   if (identityError || !identity.user) return NextResponse.json({ error: "Invalid session" }, { status: 401 });
 
-  // RLS must enforce the viewer's role, membership, follow and expiry rules.
+  // RLS must enforce the viewer's role and membership. Posts remain permanent.
   const { data: post, error: postError } = await viewer.from("feed_posts")
     .select("image_url,image_urls,video_url,shared_post_id")
-    .eq("id", postId).eq("status", "approved")
-    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).maybeSingle();
+    .eq("id", postId).eq("status", "approved").maybeSingle();
   if (postError || !post) return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
 
   // Reshares may reach a different follower audience. Never sign copied private
@@ -49,8 +48,7 @@ export async function POST(request: Request) {
   if (post.shared_post_id) {
     const { data: original, error: originalError } = await viewer.from("feed_posts")
       .select("id,image_url,image_urls,video_url")
-      .eq("id", post.shared_post_id).eq("status", "approved")
-      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).maybeSingle();
+      .eq("id", post.shared_post_id).eq("status", "approved").maybeSingle();
     if (originalError || !original) return NextResponse.json({ error: "Original post unavailable" }, { status: 404 });
     const originalRefs = [original.image_url, original.video_url, ...(Array.isArray(original.image_urls) ? original.image_urls : [])];
     if (!originalRefs.includes(mediaUrl)) return NextResponse.json({ error: "Media not attached to original" }, { status: 403 });
