@@ -11,6 +11,7 @@ import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import { calculateProfileCompletion } from "../../lib/profile-completion";
 import TeamLogo from "../../components/TeamLogo";
+import { getGameAvailability } from "../../lib/game-availability";
 import "./home-3.css";
 
 type Profile = {
@@ -33,7 +34,7 @@ type Profile = {
   account_type: "player"|"coach"|"scout"|"agent"|"fan";
 };
 type Team = { id:string; name:string; country:string|null; league_name:string|null };
-type HomeGame = { id:string; team_id:string|null; opponent_team_id:string|null; opponent_name:string|null; league_name:string|null; status:string; scheduled_at:string|null; home_score:number|null; away_score:number|null };
+type HomeGame = { id:string; team_id:string|null; opponent_team_id:string|null; opponent_name:string|null; league_name:string|null; status:string; scheduled_at:string|null; started_at?:string|null; ends_at?:string|null; home_score:number|null; away_score:number|null };
 type Review = { id:string; team_id:string; title:string|null; body:string; overall_rating:number; created_at:string };
 type FeedPost = { id:string; body:string; created_at:string; expires_at:string; author_id:string; profiles?:{display_name:string|null}[]|null };
 
@@ -149,7 +150,7 @@ export default function DashboardPage() {
       // Only display fixtures tied to a followed team. Never label global games "YOUR LEAGUE".
       if (entitlements.canUseLiveGameHub && followedIds.length) {
         const {data:games,error:gamesError} = await supabase.from("fan_live_games")
-          .select("id,team_id,opponent_team_id,opponent_name,league_name,status,scheduled_at,home_score,away_score")
+          .select("id,team_id,opponent_team_id,opponent_name,league_name,status,scheduled_at,started_at,ends_at,home_score,away_score")
           .or(`team_id.in.(${followedIds.join(",")}),opponent_team_id.in.(${followedIds.join(",")})`).in("status",["live","in_progress","scheduled"])
           .order("scheduled_at",{ascending:true}).limit(40);
         if (mounted && !gamesError) {
@@ -189,7 +190,7 @@ export default function DashboardPage() {
           <p>Know who you’re signing with.</p>
           {completion < 100 && <><div className="hc-home3-completion"><span style={{width:`${completion}%`}}/></div><div className="hc-home3-progress-label"><span>Profile {completion}% — finish for full visibility</span><Link href="/account#edit-profile">Finish</Link></div></>}
         </section>
-        {homeGames.length > 0 && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>YOUR TEAMS — LIVE & NEXT</h2><Link href="/live-games">All games →</Link></div><div className="hc-home3-game-strip">{homeGames.map(game => { const isLive = game.status === "live" || game.status === "in_progress"; const team = teams.find(t => t.id === game.team_id || t.id === game.opponent_team_id); return <Link key={game.id} href="/live-games" className="hc-home3-game"><small>{game.league_name || team?.league_name || "Basketball"} · {isLive ? "LIVE" : "UPCOMING"}</small><strong>{team?.name || "Your team"} vs {game.opponent_name || "Opponent"}</strong><span>{isLive ? [game.home_score,game.away_score].every(v => v !== null) ? `${game.home_score} – ${game.away_score}` : "Live now" : game.scheduled_at ? new Date(game.scheduled_at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "Time TBD"}</span></Link>; })}</div></section>}
+        {homeGames.length > 0 && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>YOUR TEAMS — LIVE & NEXT</h2><Link href="/live-games">All games →</Link></div><div className="hc-home3-game-strip">{homeGames.map(game => { const isLive = game.status === "live" || game.status === "in_progress"; const team = teams.find(t => t.id === game.team_id || t.id === game.opponent_team_id); const availability = getGameAvailability({status:game.status,scheduledAt:game.scheduled_at,startedAt:game.started_at,endsAt:game.ends_at}); return <Link key={game.id} href="/live-games" className="hc-home3-game"><small>{game.league_name || team?.league_name || "Basketball"} · {isLive ? "LIVE" : "UPCOMING"}</small><strong>{team?.name || "Your team"} vs {game.opponent_name || "Opponent"}</strong><span>{isLive ? [game.home_score,game.away_score].every(v => v !== null) ? `${game.home_score} – ${game.away_score}` : "Live now" : game.scheduled_at ? new Date(game.scheduled_at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "Time TBD"}</span><small>{availability.chatOpen ? "Chat open" : availability.state === "UPCOMING" ? "Chat opens before tip-off" : availability.state}</small></Link>; })}</div></section>}
         <section className="hc-home3-section"><h2>QUICK ACTIONS</h2><div className="hc-home3-actions">
           <Link href="/teams"><HoopIcon name="shield-check" size={22}/><span>Check a Team</span></Link>
           <Link href={canWriteReviews ? "/reviews" : "/team-hub"}><HoopIcon name="pencil-line" size={22}/><span>{canWriteReviews ? "Review a Team" : "Team Hub"}</span></Link>
