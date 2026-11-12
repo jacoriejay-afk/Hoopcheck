@@ -269,6 +269,7 @@ export default function Feed(){
         if(error){console.error("HoopFeed check update failed",error);setMsg("That check didn't go through. Please try again.");return;}
         setMine(x=>({...x,[p.id]:false}));
         setChecks(x=>({...x,[p.id]:Math.max(0,(x[p.id]||0)-1)}));
+        setMsg("");
       }else{
         const {error}=await supabase.from("feed_post_checks").insert({post_id:p.id,user_id:user.id});
         if(error){
@@ -286,6 +287,7 @@ export default function Feed(){
         }
         setMine(x=>({...x,[p.id]:true}));
         setChecks(x=>({...x,[p.id]:(x[p.id]||0)+1}));
+        setMsg("");
         setCheckBursts(x=>({...x,[p.id]:true}));
         window.setTimeout(()=>setCheckBursts(x=>({...x,[p.id]:false})),750);
       }
