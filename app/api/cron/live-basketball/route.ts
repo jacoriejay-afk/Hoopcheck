@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { resolveLeagueSeason } from "../../../../lib/league-season-server";
+import { getGameChatState } from "../../../../lib/livechat-lifecycle";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 20;
@@ -11,7 +13,8 @@ type ProviderGame = {
   date?: string;
   timestamp?: number;
   status?: { short?: string; long?: string };
-  league?: { id?: number; name?: string; country?: string };
+  league?: { id?: number; name?: string };
+  country?: { name?: string };
   teams?: { home?: ProviderTeam; away?: ProviderTeam; visitors?: ProviderTeam };
   scores?: { home?: ProviderScore; away?: ProviderScore; visitors?: ProviderScore };
 };
@@ -200,7 +203,7 @@ export async function GET(request: NextRequest) {
         scheduled_at: startDate,
         league_id: leagueId,
         league_name: game.league?.name || null,
-        country: game.league?.country || null,
+        country: game.country?.name || null,
         period_label: liveStatuses.has(providerStatus) ? (game.status?.long || providerStatus) : null
       });
     }
@@ -279,32 +282,44 @@ export async function GET(request: NextRequest) {
     const { error: staleError } = await staleQuery;
     if (staleError) throw staleError;
 
-    // Send one in-app reminder when the 30-minute chat window opens.
+    // Send one in-app reminder when the season-aware chat window opens.
     const { data: pendingReminders, error: reminderReadError } = await db.from("fan_live_game_reminders")
       .select("id,game_id,user_id").is("notified_at", null).limit(1000);
     if (reminderReadError) throw reminderReadError;
     const reminderGameIds = Array.from(new Set((pendingReminders || []).map(reminder => reminder.game_id)));
     if (reminderGameIds.length) {
       const { data: reminderGames, error: reminderGamesError } = await db.from("fan_live_games")
-        .select("id,team_id,opponent_name,status,scheduled_at,started_at,ends_at")
+        .select("id,opponent_name,status,scheduled_at,started_at,ends_at,league_id")
         .in("id", reminderGameIds);
       if (reminderGamesError) throw reminderGamesError;
-      const byId = new Map((reminderGames || []).map(game => [game.id, game]));
-      const now = Date.now();
+      const now = new Date();
+      const leagueIds = [...new Set((reminderGames || []).flatMap(game => game.league_id ? [game.league_id] : []))];
+      const activeLeagues = new Set<string>();
+      if (leagueIds.length) {
+        const { data: leagues, error: seasonError } = await db.from("leagues")
+          .select("id,season_start_month,season_start_day,season_end_month,season_end_day,season_label,season_time_zone")
+          .in("id", leagueIds);
+        if (seasonError) throw seasonError;
+        for (const league of leagues || []) {
+          if (!league.season_start_month || !league.season_end_month) continue;
+          if (resolveLeagueSeason(league, now, league.season_time_zone || "UTC").inSeason) activeLeagues.add(league.id);
+        }
+      }
+      const openGames = new Map((reminderGames || []).filter(game => (
+        game.league_id && activeLeagues.has(game.league_id) &&
+        (game.status === "live" || game.status === "scheduled") &&
+        getGameChatState(game, now) === "open"
+      )).map(game => [game.id, game]));
       for (const reminder of pendingReminders || []) {
-        const game = byId.get(reminder.game_id);
-        if (!game || !game.scheduled_at || ["cancelled","canceled","postponed","abandoned","final"].includes(String(game.status).toLowerCase())) continue;
-        const tipoff = Date.parse(game.scheduled_at);
-        const opens = tipoff - 30 * 60 * 1000;
-        const closes = game.ends_at ? Date.parse(game.ends_at) + 60 * 60 * 1000 : tipoff + 4 * 60 * 60 * 1000;
-        if (!Number.isFinite(tipoff) || now < opens || now >= closes) continue;
+        const game = openGames.get(reminder.game_id);
+        if (!game) continue;
         const { data: preferences } = await db.from("user_preferences").select("notifications_enabled")
           .eq("user_id", reminder.user_id).maybeSingle();
         if (preferences?.notifications_enabled !== false) {
           const { error: notificationError } = await db.from("notifications").insert({
             user_id: reminder.user_id, target_type: "game", target_id: game.id,
             notification_type: "game_reminder", title: "Game chat is open",
-            body: "Chat opens soon for " + (game.opponent_name || "your scheduled game") + ". Join the game room now.",
+            body: "Chat is open for " + (game.opponent_name || "your scheduled game") + ". Join the game room now.",
           });
           if (notificationError) throw notificationError;
         }
