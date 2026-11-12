@@ -56,6 +56,7 @@ export default function DashboardPage() {
   const [canViewTrust,setCanViewTrust] = useState(false);
   const [hasFeedAccess,setHasFeedAccess] = useState(false);
   const [canWriteReviews,setCanWriteReviews] = useState(false);
+  const [canUseLiveGames,setCanUseLiveGames] = useState(false);
   const [membershipTier,setMembershipTier] = useState<"free"|"pro"|"premium">("free");
   const [loading,setLoading] = useState(true);
   const [loadError,setLoadError] = useState(false);
@@ -119,6 +120,7 @@ export default function DashboardPage() {
       const entitlements = getHoopCheckEntitlements({ accountType: p?.account_type, subscription, playerVerified: p?.player_verified === true });
       setMembershipTier(entitlements.tier);
       setCanWriteReviews(entitlements.canWriteReviews);
+      setCanUseLiveGames(entitlements.canUseLiveGameHub);
       // A dismissed reminder stays hidden for 30 days on this device.
       // Do not show review prompts to fans or players without write access.
       if (entitlements.canWriteReviews) {
@@ -252,7 +254,7 @@ export default function DashboardPage() {
         <section className="hc-home3-section"><h2>{language === "es" ? "ACCIONES RÁPIDAS" : "QUICK ACTIONS"}</h2><div className="hc-home3-actions">
           <Link href="/teams"><HoopIcon name="shield-check" size={22}/><span>{language === "es" ? "Consultar un equipo" : "Check a Team"}</span></Link>
           <Link href={canWriteReviews ? "/reviews" : profile?.account_type === "fan" || profile?.account_type === "club_admin" || profile?.account_type === "manager" ? "/team-hub" : profile?.account_type === "agent" || profile?.account_type === "scout" ? "/agents-hq" : "/coaches"}><HoopIcon name="edit" size={22}/><span>{canWriteReviews ? (language === "es" ? "Reseñar un equipo" : "Review a Team") : profile?.account_type === "agent" || profile?.account_type === "scout" ? "Agents HQ" : profile?.account_type === "coach" ? (language === "es" ? "Entrenadores" : "Coaches") : (language === "es" ? "Centro de equipos" : "Team Hub")}</span></Link>
-          <Link href={profile?.account_type === "agent" || profile?.account_type === "scout" || profile?.account_type === "coach" ? "/players" : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? "/teams" : "/live-games"}><HoopIcon name="basketball" size={22}/><span>{profile?.account_type === "agent" || profile?.account_type === "scout" || profile?.account_type === "coach" ? (language === "es" ? "Jugadores" : "Players") : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? (language === "es" ? "Equipos" : "Teams") : (language === "es" ? "Partidos en vivo" : "Live Games")}</span></Link>
+          <Link href={profile?.account_type === "agent" || profile?.account_type === "scout" || profile?.account_type === "coach" ? "/players" : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? "/teams" : canUseLiveGames ? "/live-games" : "/players"}><HoopIcon name="basketball" size={22}/><span>{profile?.account_type === "agent" || profile?.account_type === "scout" || profile?.account_type === "coach" ? (language === "es" ? "Jugadores" : "Players") : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? (language === "es" ? "Equipos" : "Teams") : canUseLiveGames ? (language === "es" ? "Partidos en vivo" : "Live Games") : (language === "es" ? "Jugadores" : "Players")}</span></Link>
           <Link href={profile?.account_type === "agent" || profile?.account_type === "scout" ? "/coaches" : profile?.account_type === "coach" ? "/teams" : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? "/account" : "/team-hub"}><HoopIcon name="users" size={22}/><span>{profile?.account_type === "agent" || profile?.account_type === "scout" ? (language === "es" ? "Entrenadores" : "Coaches") : profile?.account_type === "coach" ? (language === "es" ? "Equipos" : "Teams") : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? (language === "es" ? "Cuenta" : "Account") : (language === "es" ? "Grupos de aficionados" : "Fan Groups")}</span></Link>
         </div></section>
         {popularTeams.length > 0 && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>POPULAR — TEAMS YOU FOLLOW</h2><Link href="/teams">Explore teams →</Link></div><div className="hc-home3-rated-list">{popularTeams.map(({team,followers})=><Link key={team.id} href={`${basketballSide === "womens" ? "/womens" : "/teams"}/${team.id}`} className="hc-home3-rated-team"><span>{team.name}<small>{team.league_name || team.country || "Basketball"}</small></span><strong>{followers.toLocaleString()}<small>followers</small></strong></Link>)}</div></section>}
