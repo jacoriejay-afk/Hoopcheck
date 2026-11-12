@@ -10,11 +10,11 @@ begin
   if not found or p.cmd <> 'INSERT'
      or not ('authenticated' = any(p.roles))
      or position('auth.uid()' in coalesce(p.with_check,'')) = 0
-     or position('can_view_player_feed_post' in coalesce(p.with_check,'')) = 0
-     or position('expires_at' in coalesce(p.with_check,'')) = 0
+     or position('can_view_player_feed_post' in coalesce(p.with_check,'')) > 0
+     or position('expires_at' in coalesce(p.with_check,'')) > 0
      or position('approved' in coalesce(p.with_check,'')) = 0
   then
-    raise exception 'Bookmark insert policy must enforce ownership and visible approved active post';
+    raise exception 'Bookmark insert policy must enforce ownership and visible approved permanent post';
   end if;
   if (select count(*) from pg_policies
       where schemaname='public' and tablename='feed_post_bookmarks'
