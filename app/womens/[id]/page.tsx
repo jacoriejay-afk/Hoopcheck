@@ -69,6 +69,7 @@ export default function WomensTeam(){
  return <main className="page-shell hc-womens-profile-page"><div className="page-container">
  <TeamProfileHero
    className="hc-womens-branded-hero"
+   gender="womens"
    teamId={team.id}
    name={team.name}
    country={team.country || t("international")}
@@ -84,8 +85,9 @@ export default function WomensTeam(){
  <nav className="hc-team-profile-nav" aria-label="Team profile sections">
    <a href="#overview" aria-current="page">Overview</a>
    <a href="#reviews">Reviews</a>
+   <a href="#fan-hq">Fan Group</a>
  </nav>
- <TeamFanGroupEntry teamId={team.id} />
+ <div id="fan-hq"><TeamFanGroupEntry teamId={team.id} /></div>
  {canReview && <div className="entity-actions"><Link href={"/womens/" + team.id + "/review"} className="btn">Write a Review</Link></div>}
  <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} teamTable="womens_teams" onSaved={(logoUrl, logoBg) => setTeam((current:any) => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
  <section className="grid compact-grid">
