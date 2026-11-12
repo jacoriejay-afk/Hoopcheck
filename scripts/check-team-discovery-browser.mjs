@@ -98,6 +98,15 @@ try {
       releaseTeam();
       holdTeam = false;
       await page.locator('.hc-womens-branded-hero').waitFor();
+      const overviewTab = page.getByRole("tab", { name: "Overview" });
+      const reviewsTab = page.getByRole("tab", { name: "Reviews" });
+      await overviewTab.focus();
+      await overviewTab.press("ArrowRight");
+      assert.equal(await reviewsTab.getAttribute("aria-selected"), "true");
+      assert.equal(await page.getByRole("tabpanel", { name: "Reviews" }).isVisible(), true);
+      assert.equal(await page.getByRole("tabpanel", { name: "Overview" }).isVisible(), false);
+      await overviewTab.click();
+      assert.equal(await overviewTab.getAttribute("aria-selected"), "true");
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2), false, 'Long team name fits the profile viewport');
       const art = await page.locator('.hc-womens-branded-hero').evaluate(el => getComputedStyle(el).backgroundImage);
       assert.ok(art.includes('basketball-arena-ai.webp'), 'Women’s team uses the AI arena background');
