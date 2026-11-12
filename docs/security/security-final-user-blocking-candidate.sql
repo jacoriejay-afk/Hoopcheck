@@ -12,6 +12,9 @@ CREATE TABLE IF NOT EXISTS public.user_blocks (
   CONSTRAINT user_blocks_no_self CHECK (blocker_id <> blocked_id)
 );
 CREATE INDEX IF NOT EXISTS user_blocks_blocked_id_idx ON public.user_blocks(blocked_id);
+-- Idempotent creation does not automatically establish a secure ownership
+-- policy on an existing table; production preflight must verify the schema.
+
 ALTER TABLE public.user_blocks ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.user_blocks FROM PUBLIC, anon;
 GRANT SELECT, INSERT, DELETE ON public.user_blocks TO authenticated;
@@ -27,6 +30,8 @@ USING (blocker_id = (SELECT auth.uid()));
 
 -- Both block creation and person-to-person follows acquire the same
 -- transaction-scoped pair lock BEFORE reading or changing the relationship.
+-- IMPORTANT: the lock helper runs as the function owner and is only called
+-- through internal triggers, not exposed as a user-callable RPC.
 -- A hash collision only serializes unrelated pairs; it cannot bypass checks.
 CREATE OR REPLACE FUNCTION public.security_final_lock_user_pair(p_a uuid, p_b uuid)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
