@@ -297,3 +297,11 @@ html body .hc-team-branded-hero .hc-team-profile-logo {flex-shrink:0;min-width:6
 html body .hc-team-branded-hero .hc-team-profile-stats {border-color:#ffffff38 !important}
 html body .hc-team-branded-hero .hc-team-profile-stat {border-color:#ffffff38 !important}
 @media(max-width:700px){.hc-team-branded-hero .hc-team-social-top{flex-wrap:wrap;gap:18px}.hc-team-art-label{font-size:9px;letter-spacing:.05em}.hc-team-branded-hero .hc-team-profile-heading{min-width:0;width:100%}.hc-team-branded-hero .hc-team-profile-heading__copy{min-width:0}.hc-team-branded-hero h1{overflow-wrap:anywhere}}
+
+/* Accessible team profile tabs */
+.hc-team-entity-profile .hc-team-profile-nav [role="tablist"]{display:flex;align-items:stretch;gap:12px}
+.hc-team-entity-profile .hc-team-profile-nav [role="tab"]{appearance:none;border:0;border-bottom:3px solid transparent;background:transparent;color:inherit;font:inherit;font-weight:700;padding:12px 8px;cursor:pointer;white-space:nowrap}
+.hc-team-entity-profile .hc-team-profile-nav [role="tab"][aria-selected="true"]{border-bottom-color:var(--hc-team-brand-orange,#f97337);color:var(--hc-team-brand-orange,#f97337)}
+.hc-team-entity-profile .hc-team-profile-nav [role="tab"]:focus-visible{outline:2px solid var(--hc-team-brand-orange,#f97337);outline-offset:2px;border-radius:4px}
+.hc-team-entity-profile [role="tabpanel"][hidden]{display:none!important}
+.hc-team-entity-profile button.hc-team-profile-inline-link{appearance:none;border:0;background:transparent;padding:0;cursor:pointer;text-align:left;font:inherit}
