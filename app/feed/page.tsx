@@ -16,7 +16,7 @@ import "./feed-compact-hero.css";
 import "./feed-pull-refresh.css";
 
 type MiniProfile = { display_name: string | null; avatar_url: string | null; account_type?: string | null; current_country?: string | null; current_country_public?: boolean; current_team?: string | null };
-type Post = { id:string; shared_post_id?:string|null; shared_post?:{author_id:string;profiles?:{display_name:string|null}|null}|null; body:string; image_url:string|null; image_urls?:string[]|null; video_url?:string|null; post_kind?:string|null; poll_options?:string[]|null; is_pinned?:boolean|null; pinned_at?:string|null; location_country:string|null; topic_tag?:TopicTag|null; game_day_team?:string|null; game_day_opponent?:string|null; game_day_score_for?:number|null; game_day_score_against?:number|null; created_at:string; expires_at:string; author_id:string; ageLabel?:string; profiles?:MiniProfile|null };
+type Post = { id:string; shared_post_id?:string|null; shared_post?:{author_id:string;profiles?:{display_name:string|null}|null}|null; body:string; image_url:string|null; image_urls?:string[]|null; video_url?:string|null; post_kind?:string|null; poll_options?:string[]|null; is_pinned?:boolean|null; pinned_at?:string|null; location_country:string|null; topic_tag?:TopicTag|null; game_day_team?:string|null; game_day_opponent?:string|null; game_day_score_for?:number|null; game_day_score_against?:number|null; created_at:string; expires_at:string|null; author_id:string; ageLabel?:string; profiles?:MiniProfile|null };
 type VoteState = { counts:number[]; total:number; mine:number|null };
 type TopicTag = "Practice" | "Game Day" | "Travel" | "Teammates" | "Culture" | "Win" | "Challenge";
 type TypeFilter = "All Posts" | "Discussion" | "News" | "Media" | "Polls" | "Saved";
@@ -33,9 +33,30 @@ function calculatePostingStreak(rows: { activity_date: string }[]) {
   while (dates.has(cursor)) { count += 1; cursor = new Date(Date.parse(cursor + "T00:00:00.000Z") - 86400000).toISOString().slice(0, 10); }
   return count;
 }
-type Comment = { id:string; post_id:string; body:string; created_at:string; author_id:string; profiles?:MiniProfile|null };
+type Comment = { id:string; post_id:string; parent_id?:string|null; body:string; created_at:string; author_id:string; profiles?:MiniProfile|null };
+function orderCommentThreads(items:Comment[]):Array<Comment & {depth:number}>{
+  const byParent=new Map<string,Comment[]>();
+  const ids=new Set(items.map(item=>item.id));
+  for(const item of items){
+    const parent=item.parent_id && ids.has(item.parent_id) && item.parent_id!==item.id ? item.parent_id : "";
+    const siblings=byParent.get(parent)||[];
+    siblings.push(item);
+    byParent.set(parent,siblings);
+  }
+  const ordered:Array<Comment & {depth:number}>=[];
+  const visited=new Set<string>();
+  const visit=(item:Comment,depth:number)=>{
+    if(visited.has(item.id))return;
+    visited.add(item.id);
+    ordered.push({...item,depth});
+    for(const child of byParent.get(item.id)||[])visit(child,Math.min(depth+1,3));
+  };
+  for(const item of byParent.get("")||[])visit(item,0);
+  for(const item of items)visit(item,0);
+  return ordered;
+}
 type Profile = { account_type:string; current_country:string|null; current_country_public:boolean };
-type Subscription = { plan:string|null; status:string|null; access_status:string|null };
+type Subscription = { plan:string|null; status:string|null; access_status:string|null; current_period_end:string|null };
 
 const ago = (v:string, now:number) => {
   const s=Math.max(0,Math.floor((now-new Date(v).getTime())/1000));
@@ -49,6 +70,13 @@ export default function Feed(){
   const [checks,setChecks]=useState<Record<string,number>>({}); const [checkBursts,setCheckBursts]=useState<Record<string,boolean>>({});
   const [mine,setMine]=useState<Record<string,boolean>>({});
   const [drafts,setDrafts]=useState<Record<string,string>>({});
+  const [replyTargets,setReplyTargets]=useState<Record<string,{id:string;name:string}|null>>({});
+  const [sendingComments,setSendingComments]=useState<Record<string,boolean>>({});
+  const commentRequests = useRef(new Set<string>());
+  const [canReply, setCanReply] = useState(false);
+  const [editingPost,setEditingPost]=useState<string|null>(null);
+  const [editText,setEditText]=useState("");
+  const [savingEdit,setSavingEdit]=useState(false);
   const [open,setOpen]=useState<Record<string,boolean>>({});
   const [body,setBody]=useState(""); const [typeFilter,setTypeFilter]=useState<TypeFilter>("All Posts"); const [photos,setPhotos]=useState<File[]>([]); const [previews,setPreviews]=useState<string[]>([]); const [composerMode,setComposerMode]=useState<"post"|"poll"|"news">("post"); const [composerExpanded,setComposerExpanded]=useState(false); const [pollDraft,setPollDraft]=useState<string[]>(["",""]); const [votes,setVotes]=useState<Record<string,VoteState>>({}); const [savedMap,setSavedMap]=useState<Record<string,boolean>>({}); const [carouselIdx,setCarouselIdx]=useState<Record<string,number>>({}); const [video,setVideo]=useState<File|null>(null); const [videoPreview,setVideoPreview]=useState(""); const [showCountry,setShowCountry]=useState(false);
   const [user,setUser]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [adminRole,setAdminRole]=useState<string|null>(null); const [subscription,setSubscription]=useState<Subscription|null>(null); const [memberCount,setMemberCount]=useState<number|null>(null);
@@ -74,7 +102,7 @@ export default function Feed(){
 
   async function load(currentUser:any){
     const feedResult=await supabase.from("feed_posts").select("id,shared_post_id,body,image_url,image_urls,video_url,post_kind,poll_options,is_pinned,pinned_at,location_country,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,created_at,expires_at,author_id,profiles:profiles!feed_posts_author_id_fkey(display_name,avatar_url,account_type,current_country,current_country_public,current_team)")
-      .eq("status","approved").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(30);
+      .eq("status","approved").or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).order("created_at",{ascending:false}).limit(30);
     if(feedResult.error){console.error("HoopFeed posts query failed",feedResult.error);setMsg("HoopFeed could not load posts. Please refresh and try again.");return;}
     const {data:archiveRows}=await supabase.from("feed_post_archives").select("post_id").eq("user_id",currentUser.id);
     const archiveIds=new Set((archiveRows||[]).map((r:any)=>r.post_id));
@@ -90,8 +118,18 @@ export default function Feed(){
     setPosts(rows);
     if(!rows.length){setComments({});setChecks({});setMine({});setVotes({});setSavedMap({});return;}
     const ids=rows.map(p=>p.id);
+    const commentFields = "id,post_id,body,created_at,author_id,profiles:profiles!feed_post_comments_author_id_fkey(display_name,avatar_url)";
+    const commentQuery = async () => {
+      const result = await supabase.from("feed_post_comments").select(`parent_id,${commentFields}`).in("post_id", ids).order("created_at", { ascending: true });
+      if (result.error?.code === "42703" || result.error?.code === "PGRST204") {
+        setCanReply(false);
+        return supabase.from("feed_post_comments").select(commentFields).in("post_id", ids).order("created_at", { ascending: true });
+      }
+      setCanReply(!result.error);
+      return result;
+    };
     void Promise.all([
-      supabase.from("feed_post_comments").select("id,post_id,body,created_at,author_id,profiles:profiles!feed_post_comments_author_id_fkey(display_name,avatar_url)").in("post_id",ids).order("created_at",{ascending:true}),
+      commentQuery(),
       supabase.from("feed_post_checks").select("post_id,user_id").in("post_id",ids),
       supabase.from("feed_poll_votes").select("post_id,user_id,option_index").in("post_id",ids),
       supabase.from("feed_post_bookmarks").select("post_id").eq("user_id",currentUser.id).in("post_id",ids)
@@ -113,7 +151,7 @@ export default function Feed(){
   useEffect(()=>{(async()=>{const {data:{session}}=await supabase.auth.getSession();const u=session?.user;setUser(u);if(!u){setLoading(false);return;}
     const [{data:p},{data:s}]=await Promise.all([
       supabase.from("profiles").select("account_type,current_country,current_country_public").eq("id",u.id).maybeSingle(),
-      supabase.from("subscriptions").select("plan,status,access_status").eq("user_id",u.id).maybeSingle()
+      supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",u.id).maybeSingle()
     ]);
     setProfile(p);setSubscription(s);setShowCountry(Boolean(p?.current_country_public));
     const {data:roleData}=await supabase.rpc("get_current_user_admin_role");
@@ -266,15 +304,25 @@ export default function Feed(){
         if(error){console.error("HoopFeed check update failed",error);setMsg("That check didn't go through. Please try again.");return;}
         setMine(x=>({...x,[p.id]:false}));
         setChecks(x=>({...x,[p.id]:Math.max(0,(x[p.id]||0)-1)}));
+        setMsg("");
       }else{
         const {error}=await supabase.from("feed_post_checks").insert({post_id:p.id,user_id:user.id});
         if(error){
+          // A duplicate check can happen when another device already checked this post.
+          if(error.code==="23505"){
+            setMine(x=>({...x,[p.id]:true}));
+            const {count}=await supabase.from("feed_post_checks").select("post_id",{count:"exact",head:true}).eq("post_id",p.id);
+            if(count!==null)setChecks(x=>({...x,[p.id]:count}));
+            setMsg("");
+            return;
+          }
           console.error("HoopFeed check update failed",error);
           setMsg(error.code==="42501"?"You don't have permission to check this post. Please verify your membership and try again.":"That check didn't go through. Please try again.");
           return;
         }
         setMine(x=>({...x,[p.id]:true}));
         setChecks(x=>({...x,[p.id]:(x[p.id]||0)+1}));
+        setMsg("");
         setCheckBursts(x=>({...x,[p.id]:true}));
         window.setTimeout(()=>setCheckBursts(x=>({...x,[p.id]:false})),750);
       }
@@ -284,17 +332,38 @@ export default function Feed(){
   }
 
   async function comment(post_id:string){
-    const text=(drafts[post_id]||"").trim();if(!user||!access||!text)return;
+    const text=(drafts[post_id]||"").trim();if(!user||!access||!text||commentRequests.current.has(post_id))return;
+    commentRequests.current.add(post_id);
+    setSendingComments(x=>({...x,[post_id]:true}));
     setMsg("Checking comment...");
     try{
       const {data:{session}}=await supabase.auth.getSession();
       if(!session?.access_token){setMsg("Your session expired. Please sign in again.");return;}
-      const form=new FormData();form.append("kind","comment");form.append("post_id",post_id);form.append("text",text);
+      const form=new FormData();form.append("kind","comment");form.append("post_id",post_id);form.append("text",text);if(replyTargets[post_id]?.id)form.append("parent_id",replyTargets[post_id]!.id);
       const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
       const result=await moderation.json().catch(()=>({}));
       if(!moderation.ok||result.allowed!==true){setMsg(result.message||"This comment did not pass HoopFeed safety checks.");return;}
-      setDrafts(x=>({...x,[post_id]:""}));setMsg("");await load(user);
-    }catch(e:any){console.error("HoopFeed comment failed",e);setMsg("That comment couldn't be posted. Please try again.");}
+      setDrafts(x=>({...x,[post_id]:""}));setReplyTargets(x=>({...x,[post_id]:null}));setMsg("");await load(user);
+    }catch(e:any){console.error("HoopFeed comment failed",e);setMsg("That comment couldn't be posted. Please try again.");}finally{commentRequests.current.delete(post_id);setSendingComments(x=>({...x,[post_id]:false}));}
+  }
+
+  async function saveEdit(p:Post){
+    if(!user||p.author_id!==user.id||savingEdit)return;
+    const next=editText.trim();
+    if(!next||next.length>2000){setMsg("Post text must be between 1 and 2,000 characters.");return;}
+    setSavingEdit(true);
+    try{
+      const {data:{session}}=await supabase.auth.getSession();
+      if(!session?.access_token){setMsg("Please sign in again.");return;}
+      const form=new FormData();
+      form.append("kind","edit");form.append("post_id",p.id);form.append("text",next);
+      const response=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
+      const result=await response.json().catch(()=>({}));
+      if(!response.ok||result.allowed!==true){setMsg(result.message||"Post edit failed.");return;}
+      setPosts(rows=>rows.map(row=>row.id===p.id?{...row,body:next}:row));
+      setEditingPost(null);setMsg("");
+    }catch(error){console.error("HoopFeed edit failed",error);setMsg("Post edit failed. Please try again.");}
+    finally{setSavingEdit(false);}
   }
 
   async function del(p:Post){if(!user||p.author_id!==user.id)return;if(!confirm("Delete this HoopFeed post?"))return;const {error}=await supabase.from("feed_posts").delete().eq("id",p.id);if(error){console.error("HoopFeed delete failed",error);setMsg("That post couldn't be deleted. Please try again.");return;}{const marker="/storage/v1/object/public/feed-images/";const urls=[...((p.image_urls&&p.image_urls.length)?p.image_urls:[]),...(p.image_url?[p.image_url]:[])];const paths=urls.map(u=>{const i=u.indexOf(marker);return i>=0?u.slice(i+marker.length):"";}).filter(Boolean);if(paths.length)await supabase.storage.from("feed-images").remove(paths);}if(p.video_url){const marker="/storage/v1/object/public/feed-videos/";const i=p.video_url.indexOf(marker);if(i>=0)await supabase.storage.from("feed-videos").remove([p.video_url.slice(i+marker.length)]);}await load(user);}
@@ -322,12 +391,12 @@ export default function Feed(){
     </section>
 
     <div className="hc-feed-filter-bar" aria-label="HoopFeed tools">{refreshing && <span className="hc-feed-pull-loading" role="status"><span className="hc-feed-pull-spinner" aria-hidden="true" /> Updating HoopFeed…</span>}<span className="hc-feed-result-count">{visiblePosts.length} {visiblePosts.length===1?"POST":"POSTS"}</span></div>
-    <section className="hc-feed-stream" aria-label="Recent HoopFeed posts">{visiblePosts.length?visiblePosts.map(p=>{const cs=comments[p.id]||[];const roleKey=(p.profiles?.account_type||"").toLowerCase();const rolePill=ROLE_PILLS[roleKey];const mediaImgs:string[]=(p.image_urls&&p.image_urls.length?p.image_urls:(p.image_url?[p.image_url]:[]));const carouselPos=Math.min(carouselIdx[p.id]||0,Math.max(0,mediaImgs.length-1));return <FeedPostCard key={p.id} onDoubleClick={()=>void toggleCheck(p)}>
+    <section className="hc-feed-stream" aria-label="Recent HoopFeed posts">{visiblePosts.length?visiblePosts.map(p=>{const cs=orderCommentThreads(comments[p.id]||[]);const roleKey=(p.profiles?.account_type||"").toLowerCase();const rolePill=ROLE_PILLS[roleKey];const mediaImgs:string[]=(p.image_urls&&p.image_urls.length?p.image_urls:(p.image_url?[p.image_url]:[]));const carouselPos=Math.min(carouselIdx[p.id]||0,Math.max(0,mediaImgs.length-1));return <FeedPostCard key={p.id} onDoubleClick={()=>void toggleCheck(p)}>
       {p.is_pinned&&<div className="hf5-pinbar"><span>📌 Pinned by HoopCheck</span></div>}
       <header className="hc-feed-post-header"><FeedAuthorRow>{p.profiles?.avatar_url?<img src={p.profiles.avatar_url} alt="" className="hc-feed-post-avatar hf5-avatar"/>:<span className="player-avatar-fallback hc-feed-post-avatar hf5-avatar">HC</span>}<div className="hc-feed-post-author__meta"><div className="hc-feed-post-author__line"><strong>{p.shared_post_id?"Shared by "+(p.profiles?.display_name||"HoopCheck Member"):(p.profiles?.display_name||"HoopCheck Member")}</strong><span className="hc-feed-verified" aria-label="HoopCheck member">✓</span>{rolePill&&<span className={"hf5-pill hf5-pill--"+roleKey}>{rolePill.label}</span>}{p.post_kind==="news"&&<span className="hf5-pill hf5-pill--news">News</span>}{p.post_kind==="poll"&&<span className="hf5-pill hf5-pill--poll">Poll</span>}<small>· {p.ageLabel}</small></div>{p.profiles?.current_team&&<span className="hc-feed-jersey-tag">{p.profiles.current_team}</span>}{p.shared_post?.profiles?.display_name&&<small className="muted">Originally shared from {p.shared_post.profiles.display_name}</small>}{p.location_country&&p.profiles?.current_country_public!==false&&<div className="muted hc-feed-location"><HoopIcon name="map-pin" size={14} /> Country: {p.location_country}</div>}</div></FeedAuthorRow></header>
-      {p.topic_tag==="Game Day"&&p.game_day_team&&p.game_day_opponent&&<div className="hc-feed-game-score"><span>{p.game_day_team}</span>{p.game_day_score_for!=null&&p.game_day_score_against!=null?<strong>{p.game_day_score_for} <i>—</i> {p.game_day_score_against}</strong>:<strong className="hc-feed-game-vs">VS</strong>}<span>{p.game_day_opponent}</span></div>}{p.body.trim()&&<div className="hc-feed-post-body"><p>{p.body}</p></div>}{p.post_kind==="poll"&&Array.isArray(p.poll_options)&&p.poll_options.length>0&&(()=>{const v=votes[p.id]||{counts:p.poll_options.map(()=>0),total:0,mine:null};const voted=v.mine!==null;return <div className="hf5-poll" role="group" aria-label="Poll">{p.poll_options.map((opt,oi)=>{const pct=v.total?Math.round((v.counts[oi]||0)/v.total*100):0;return voted?<div key={oi} className={"hf5-poll__result"+(v.mine===oi?" is-mine":"")}><button type="button" className="hf5-poll__bar-button" onClick={()=>void vote(p,oi)} aria-label={"Vote for "+opt}><span className="hf5-poll__fill" style={{width:pct+"%"}} /><span className="hf5-poll__label">{opt}{v.mine===oi?" ✓":""}</span><span className="hf5-poll__pct">{pct}%</span></button></div>:<button key={oi} type="button" className="hf5-poll__option" onClick={()=>void vote(p,oi)}>{opt}</button>;})}<small className="muted">{v.total} {v.total===1?"vote":"votes"}{voted?" · Tap another option to change your vote":""}</small></div>;})()}<FeedMediaArea>{p.image_url||mediaImgs.length?(mediaImgs.length===1?<HoopFeedPrivateMedia postId={p.id} reference={mediaImgs[0]} kind="image" alt="HoopFeed post" className={"hc-feed-post-image"+(checkBursts[p.id]?" hc-feed-photo-check-burst":"")} />:<div className="hf5-carousel"><HoopFeedPrivateMedia postId={p.id} reference={mediaImgs[carouselPos]} kind="image" alt={"HoopFeed post photo "+(carouselPos+1)+" of "+mediaImgs.length} className={"hc-feed-post-image"+(checkBursts[p.id]?" hc-feed-photo-check-burst":"")} /><span className="hf5-carousel__count">{carouselPos+1}/{mediaImgs.length}</span>{carouselPos>0&&<button type="button" className="hf5-carousel__nav hf5-carousel__nav--prev" aria-label="Previous photo" onClick={()=>setCarouselIdx(x=>({...x,[p.id]:carouselPos-1}))}>‹</button>}{carouselPos<mediaImgs.length-1&&<button type="button" className="hf5-carousel__nav hf5-carousel__nav--next" aria-label="Next photo" onClick={()=>setCarouselIdx(x=>({...x,[p.id]:carouselPos+1}))}>›</button>}<div className="hf5-carousel__dots">{mediaImgs.map((_,di)=><span key={di} className={"hf5-carousel__dot"+(di===carouselPos?" is-active":"")} />)}</div></div>):null}{p.video_url&&<HoopFeedPrivateMedia postId={p.id} reference={p.video_url} kind="video" className="hc-feed-post-image" ariaLabel="HoopFeed video"/>}</FeedMediaArea>
-      <FeedActionRow><button type="button" className={"hc-feed-action-pill hf5-check"+(mine[p.id]?" is-active":"")+(checkBursts[p.id]?" hc-feed-check-burst":"")} aria-label="Check this post" title="Check" onClick={()=>void toggleCheck(p)}><span className="hf5-up" aria-hidden="true">↑</span> {checks[p.id]||0}{checkBursts[p.id]&&<span className="hc-feed-check-pop" aria-hidden="true">✓</span>}</button><button type="button" className="hc-feed-action-pill" onClick={()=>setOpen(x=>({...x,[p.id]:!x[p.id]}))}>💬 {cs.length} {cs.length===1?"Comment":"Comments"}</button><button type="button" className="hc-feed-action-pill" disabled={posting} onClick={()=>void sharePost(p)}>Share</button><button type="button" className={"hc-feed-action-pill"+(savedMap[p.id]?" is-active":"")} onClick={()=>void toggleSave(p)}>{savedMap[p.id]?"🔖 Saved":"🔖 Save"}</button>{isAdmin&&<button type="button" className="hc-feed-action-pill" onClick={()=>void togglePin(p)}>{p.is_pinned?"📌 Unpin":"📌 Pin"}</button>}{p.author_id===user?.id&&<button type="button" className="hc-feed-action-pill" onClick={()=>void del(p)}>Delete</button>}</FeedActionRow>
-      {open[p.id]&&<><button type="button" className="hc-feed-comments-backdrop" aria-label="Close comments" onClick={()=>setOpen(x=>({...x,[p.id]:false}))}/><div className="hc-feed-comments-panel" role="dialog" aria-modal="true" aria-label="Comments" style={{marginTop:14,borderTop:"1px solid var(--border)",paddingTop:14}}><div className="hc-feed-comments-sheet-head"><strong>COMMENTS</strong><button type="button" onClick={()=>setOpen(x=>({...x,[p.id]:false}))}>Close</button></div><div style={{display:"grid",gap:10}}>{cs.map(c=><div key={c.id} style={{display:"flex",gap:10}}>{c.profiles?.avatar_url?<img src={c.profiles.avatar_url} alt="" style={{width:34,height:34,borderRadius:"50%",objectFit:"cover"}}/>:<div className="player-avatar-fallback" style={{width:34,height:34,minWidth:34}}>HC</div>}<div><strong>{c.profiles?.display_name||"Member"}</strong><div style={{whiteSpace:"pre-wrap"}}>{c.body}</div><small className="muted">{ago(c.created_at,now)}</small></div></div>)}{!cs.length&&<p className="muted">No comments yet.</p>}</div><div style={{display:"flex",gap:8,marginTop:12}}><input value={drafts[p.id]||""} onChange={e=>setDrafts(x=>({...x,[p.id]:e.target.value}))} maxLength={1000} placeholder="Add a comment..." /><button type="button" className="btn" disabled={!drafts[p.id]?.trim()} onClick={()=>void comment(p.id)}>Send</button></div></div></>}
+      {p.topic_tag==="Game Day"&&p.game_day_team&&p.game_day_opponent&&<div className="hc-feed-game-score"><span>{p.game_day_team}</span>{p.game_day_score_for!=null&&p.game_day_score_against!=null?<strong>{p.game_day_score_for} <i>—</i> {p.game_day_score_against}</strong>:<strong className="hc-feed-game-vs">VS</strong>}<span>{p.game_day_opponent}</span></div>}{editingPost===p.id?<div className="hc-feed-post-body"><textarea aria-label="Edit post text" value={editText} maxLength={2000} onChange={e=>setEditText(e.target.value)} rows={4}/><div className="actions"><button type="button" className="btn" disabled={savingEdit||!editText.trim()} onClick={()=>void saveEdit(p)}>{savingEdit?"Saving…":"Save"}</button><button type="button" className="btn dark" disabled={savingEdit} onClick={()=>setEditingPost(null)}>Cancel</button></div></div>:p.body.trim()&&<div className="hc-feed-post-body"><p>{p.body}</p></div>}{p.post_kind==="poll"&&Array.isArray(p.poll_options)&&p.poll_options.length>0&&(()=>{const v=votes[p.id]||{counts:p.poll_options.map(()=>0),total:0,mine:null};const voted=v.mine!==null;return <div className="hf5-poll" role="group" aria-label="Poll">{p.poll_options.map((opt,oi)=>{const pct=v.total?Math.round((v.counts[oi]||0)/v.total*100):0;return voted?<div key={oi} className={"hf5-poll__result"+(v.mine===oi?" is-mine":"")}><button type="button" className="hf5-poll__bar-button" onClick={()=>void vote(p,oi)} aria-label={"Vote for "+opt}><span className="hf5-poll__fill" style={{width:pct+"%"}} /><span className="hf5-poll__label">{opt}{v.mine===oi?" ✓":""}</span><span className="hf5-poll__pct">{pct}%</span></button></div>:<button key={oi} type="button" className="hf5-poll__option" onClick={()=>void vote(p,oi)}>{opt}</button>;})}<small className="muted">{v.total} {v.total===1?"vote":"votes"}{voted?" · Tap another option to change your vote":""}</small></div>;})()}<FeedMediaArea>{p.image_url||mediaImgs.length?(mediaImgs.length===1?<HoopFeedPrivateMedia postId={p.id} reference={mediaImgs[0]} kind="image" alt="HoopFeed post" className={"hc-feed-post-image"+(checkBursts[p.id]?" hc-feed-photo-check-burst":"")} />:<div className="hf5-carousel"><HoopFeedPrivateMedia postId={p.id} reference={mediaImgs[carouselPos]} kind="image" alt={"HoopFeed post photo "+(carouselPos+1)+" of "+mediaImgs.length} className={"hc-feed-post-image"+(checkBursts[p.id]?" hc-feed-photo-check-burst":"")} /><span className="hf5-carousel__count">{carouselPos+1}/{mediaImgs.length}</span>{carouselPos>0&&<button type="button" className="hf5-carousel__nav hf5-carousel__nav--prev" aria-label="Previous photo" onClick={()=>setCarouselIdx(x=>({...x,[p.id]:carouselPos-1}))}>‹</button>}{carouselPos<mediaImgs.length-1&&<button type="button" className="hf5-carousel__nav hf5-carousel__nav--next" aria-label="Next photo" onClick={()=>setCarouselIdx(x=>({...x,[p.id]:carouselPos+1}))}>›</button>}<div className="hf5-carousel__dots">{mediaImgs.map((_,di)=><span key={di} className={"hf5-carousel__dot"+(di===carouselPos?" is-active":"")} />)}</div></div>):null}{p.video_url&&<HoopFeedPrivateMedia postId={p.id} reference={p.video_url} kind="video" className="hc-feed-post-image" ariaLabel="HoopFeed video"/>}</FeedMediaArea>
+      <FeedActionRow><button type="button" className={"hc-feed-action-pill hf5-check"+(mine[p.id]?" is-active":"")+(checkBursts[p.id]?" hc-feed-check-burst":"")} aria-label="Check this post" title="Check" onClick={()=>void toggleCheck(p)}><span className="hf5-up" aria-hidden="true">↑</span> {checks[p.id]||0}{checkBursts[p.id]&&<span className="hc-feed-check-pop" aria-hidden="true">✓</span>}</button><button type="button" className="hc-feed-action-pill" onClick={()=>setOpen(x=>({...x,[p.id]:!x[p.id]}))}>💬 {cs.length} {cs.length===1?"Comment":"Comments"}</button><button type="button" className="hc-feed-action-pill" disabled={posting} onClick={()=>void sharePost(p)}>Share</button><button type="button" className={"hc-feed-action-pill"+(savedMap[p.id]?" is-active":"")} onClick={()=>void toggleSave(p)}>{savedMap[p.id]?"🔖 Saved":"🔖 Save"}</button>{isAdmin&&<button type="button" className="hc-feed-action-pill" onClick={()=>void togglePin(p)}>{p.is_pinned?"📌 Unpin":"📌 Pin"}</button>}{p.author_id===user?.id&&<>{!p.shared_post_id&&<button type="button" className="hc-feed-action-pill" onClick={()=>{setEditingPost(p.id);setEditText(p.body);}}>Edit</button>}<button type="button" className="hc-feed-action-pill" onClick={()=>void del(p)}>Delete</button></>}</FeedActionRow>
+      {open[p.id]&&<><button type="button" className="hc-feed-comments-backdrop" aria-label="Close comments" onClick={()=>setOpen(x=>({...x,[p.id]:false}))}/><div className="hc-feed-comments-panel" role="dialog" aria-modal="true" aria-label="Comments" style={{marginTop:14,borderTop:"1px solid var(--border)",paddingTop:14}}><div className="hc-feed-comments-sheet-head"><strong>COMMENTS</strong><button type="button" onClick={()=>setOpen(x=>({...x,[p.id]:false}))}>Close</button></div><div style={{display:"grid",gap:10}}>{cs.map(c=><div key={c.id} style={{display:"flex",gap:10}}>{c.profiles?.avatar_url?<img src={c.profiles.avatar_url} alt="" style={{width:34,height:34,borderRadius:"50%",objectFit:"cover"}}/>:<div className="player-avatar-fallback" style={{width:34,height:34,minWidth:34}}>HC</div>}<div style={{marginLeft:c.depth?Math.min(c.depth*14,42):0}}><strong>{c.profiles?.display_name||"Member"}</strong>{c.parent_id&&<small className="muted"> · Reply</small>}<div style={{whiteSpace:"pre-wrap"}}>{c.body}</div><small className="muted">{ago(c.created_at,now)}</small>{canReply&&<button type="button" className="hc-feed-action-pill" onClick={()=>setReplyTargets(x=>({...x,[p.id]:{id:c.id,name:c.profiles?.display_name||"Member"}}))}>Reply</button>}</div></div>)}{!cs.length&&<p className="muted">No comments yet.</p>}</div><div style={{display:"flex",gap:8,marginTop:12}}>{replyTargets[p.id]&&<button type="button" className="hc-feed-action-pill" onClick={()=>setReplyTargets(x=>({...x,[p.id]:null}))}>Replying to {replyTargets[p.id]?.name} ×</button>}<input value={drafts[p.id]||""} onChange={e=>setDrafts(x=>({...x,[p.id]:e.target.value}))} maxLength={1000} placeholder={replyTargets[p.id]?"Write a reply...":"Add a comment..."} /><button type="button" className="btn" disabled={!drafts[p.id]?.trim()||Boolean(sendingComments[p.id])} onClick={()=>void comment(p.id)}>{sendingComments[p.id]?"Sending...":"Send"}</button></div></div></>}
     </FeedPostCard>}) : posts.length===0 ? <FeedEmptyState><span className="eyebrow">THE FEED IS QUIET</span><h2>No posts yet — be the first to start the conversation</h2><p className="muted">HoopFeed is one community for players, fans, teams, coaches and agents. Share what is happening in your basketball world.</p><Link href="/players" className="btn">Find Players</Link></FeedEmptyState> : <FeedEmptyState><span className="eyebrow">NOTHING HERE YET</span><h2>{typeFilter==="Polls"?"No polls yet — start one from the composer":typeFilter==="News"?"No news posts yet":typeFilter==="Saved"?"Nothing saved yet — tap Save on any post":"No posts match this filter"}</h2><p className="muted">Try another filter or return to the full feed.</p><button type="button" className="btn" onClick={()=>{setTypeFilter("All Posts");}}>Show All Posts</button></FeedEmptyState>}
   </section>
   </div></main></PageShell>;

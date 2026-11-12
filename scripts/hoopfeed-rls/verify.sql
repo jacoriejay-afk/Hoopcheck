@@ -21,7 +21,18 @@ BEGIN
     IF check_count <> (CASE WHEN i = 1 THEN 1 ELSE 0 END) THEN
       RAISE EXCEPTION 'Role fixture % pending post visibility incorrect', i;
     END IF;
+    IF EXISTS (SELECT 1 FROM public.feed_posts WHERE id = '10000000-0000-0000-0000-000000000003') THEN
+      RAISE EXCEPTION 'Expired legacy post visible for fixture %', i;
+    END IF;
+    IF (SELECT count(*) FROM public.feed_post_comments) <> expected THEN
+      RAISE EXCEPTION 'Comment visibility differs from permanent post visibility for fixture %', i;
+    END IF;
     IF i <= 6 THEN
+      INSERT INTO public.feed_poll_votes VALUES ('10000000-0000-0000-0000-000000000001', auth.uid(), 0);
+      UPDATE public.feed_poll_votes SET option_index = 1
+        WHERE post_id = '10000000-0000-0000-0000-000000000001' AND user_id = auth.uid();
+      IF NOT FOUND THEN RAISE EXCEPTION 'Valid vote update failed'; END IF;
+      INSERT INTO public.feed_post_bookmarks VALUES ('10000000-0000-0000-0000-000000000001', auth.uid());
       INSERT INTO public.feed_post_checks(post_id,user_id)
       VALUES ('10000000-0000-0000-0000-000000000001'::uuid,
         ('00000000-0000-0000-0000-' || lpad(i::text,12,'0'))::uuid);
@@ -31,8 +42,17 @@ BEGIN
         VALUES ('10000000-0000-0000-0000-000000000001'::uuid,
           ('00000000-0000-0000-0000-' || lpad(i::text,12,'0'))::uuid);
         RAISE EXCEPTION 'Unexpectedly allowed check for fixture %', i;
-      EXCEPTION WHEN insufficient_privilege THEN
-        NULL;
+      EXCEPTION WHEN insufficient_privilege THEN NULL;
+      END;
+      BEGIN
+        INSERT INTO public.feed_poll_votes VALUES ('10000000-0000-0000-0000-000000000001', auth.uid(), 0);
+        RAISE EXCEPTION 'Unexpectedly allowed poll vote for fixture %', i;
+      EXCEPTION WHEN insufficient_privilege THEN NULL;
+      END;
+      BEGIN
+        INSERT INTO public.feed_post_bookmarks VALUES ('10000000-0000-0000-0000-000000000001', auth.uid());
+        RAISE EXCEPTION 'Unexpectedly allowed bookmark for fixture %', i;
+      EXCEPTION WHEN insufficient_privilege THEN NULL;
       END;
     END IF;
   END LOOP;
