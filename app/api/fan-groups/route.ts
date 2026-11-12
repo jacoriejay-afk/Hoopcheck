@@ -217,9 +217,17 @@ export async function POST(request: Request) {
     if (action === "pin_post" || action === "remove_post") {
       const postId = String(form.get("post_id") || "");
       if (action === "pin_post") {
-        await db.from("team_fan_group_posts").update({ is_pinned: false }).eq("team_id", teamId);
-        const { error } = await db.from("team_fan_group_posts").update({ is_pinned: true }).eq("id", postId).eq("team_id", teamId).eq("status", "published");
+        // Validate the target before unpinning the currently featured post.
+        const { data: target, error: lookupError } = await db.from("team_fan_group_posts")
+          .select("id").eq("id", postId).eq("team_id", teamId).eq("status", "published").maybeSingle();
+        if (lookupError) throw lookupError;
+        if (!target) return NextResponse.json({ ok: false, message: "This group post is no longer available." }, { status: 404 });
+        const { error: unpinError } = await db.from("team_fan_group_posts").update({ is_pinned: false }).eq("team_id", teamId);
+        if (unpinError) throw unpinError;
+        const { data: pinned, error } = await db.from("team_fan_group_posts").update({ is_pinned: true })
+          .eq("id", postId).eq("team_id", teamId).eq("status", "published").select("id").maybeSingle();
         if (error) throw error;
+        if (!pinned) return NextResponse.json({ ok: false, message: "This group post is no longer available." }, { status: 404 });
       } else {
         const { data: removedPost } = await db.from("team_fan_group_posts").select("id,image_url").eq("id", postId).eq("team_id", teamId).maybeSingle();
         const { error } = await db.from("team_fan_group_posts").update({ status: "removed", is_pinned: false }).eq("id", postId).eq("team_id", teamId);
