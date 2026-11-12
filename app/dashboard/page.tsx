@@ -1,19 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
-import HomePulse from "../../components/HomePulse";
-import SearchBar from "../../components/SearchBar";
 import { useLanguage } from "../../components/LanguageProvider";
 import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
-import { CategoryIconTile, HoopIcon } from "../../components/HoopCheckUI";
+import { HoopIcon } from "../../components/HoopCheckUI";
 import { calculateProfileCompletion } from "../../lib/profile-completion";
 import TeamLogo from "../../components/TeamLogo";
-import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
 import "./home-3.css";
 
 type Profile = {
@@ -53,6 +50,7 @@ export default function DashboardPage() {
   const [feedPost,setFeedPost] = useState<FeedPost|null>(null);
   const [liveCounts,setLiveCounts] = useState<{live:number|null;upcoming:number|null}>({live:null,upcoming:null});
   const [hasFeedAccess,setHasFeedAccess] = useState(false);
+  const [canWriteReviews,setCanWriteReviews] = useState(false);
   const [membershipTier,setMembershipTier] = useState<"free"|"pro"|"premium">("free");
   const [loading,setLoading] = useState(true);
   const [loadError,setLoadError] = useState(false);
@@ -112,8 +110,9 @@ export default function DashboardPage() {
       if (subscriptionResult.status === "rejected") console.error("Dashboard subscription request failed:", subscriptionResult.reason);
       if (followsResult.status === "rejected") console.error("Dashboard follows request failed:", followsResult.reason);
       setProfile(p as Profile|null);
-      const entitlements = getHoopCheckEntitlements({ accountType: p?.account_type, subscription });
+      const entitlements = getHoopCheckEntitlements({ accountType: p?.account_type, subscription, playerVerified: p?.player_verified === true });
       setMembershipTier(entitlements.tier);
+      setCanWriteReviews(entitlements.canWriteReviews);
       const followedIds = (follows||[]).map((row:any)=>row.target_id).filter(Boolean);
 
       // Show the dashboard immediately; the remaining panels are best-effort enhancements.
@@ -177,11 +176,11 @@ export default function DashboardPage() {
         {liveCounts.live !== null && (liveCounts.live > 0 || (liveCounts.upcoming ?? 0) > 0) && <section className="hc-home3-section"><h2>YOUR LEAGUE — LIVE & NEXT</h2><Link href="/live-games" className="hc-home3-live"><span className="hc-ia-live-dot"/> {liveCounts.live} live · {liveCounts.upcoming} upcoming <span>View games →</span></Link></section>}
         <section className="hc-home3-section"><h2>QUICK ACTIONS</h2><div className="hc-home3-actions">
           <Link href="/teams"><HoopIcon name="shield-check" size={22}/><span>Check a Team</span></Link>
-          <Link href={profile?.account_type === "fan" ? "/team-hub" : "/reviews"}><HoopIcon name="pencil-line" size={22}/><span>{profile?.account_type === "fan" ? "Team Hub" : "Review a Team"}</span></Link>
+          <Link href={canWriteReviews ? "/reviews" : "/team-hub"}><HoopIcon name="pencil-line" size={22}/><span>{canWriteReviews ? "Review a Team" : "Team Hub"}</span></Link>
           <Link href="/live-games"><HoopIcon name="radio" size={22}/><span>Live Games</span></Link>
           <Link href="/team-hub"><HoopIcon name="users" size={22}/><span>Fan Groups</span></Link>
         </div></section>
-        {(feedPost || !hasFeedAccess) && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>FROM THE COMMUNITY</h2><Link href="/feed">Open HoopFeed →</Link></div>
+        {(feedPost || (!hasFeedAccess && profile?.account_type !== "fan")) && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>FROM THE COMMUNITY</h2><Link href="/feed">Open HoopFeed →</Link></div>
           {hasFeedAccess && feedPost ? <Link href="/feed" className="hc-home3-post"><strong>{feedPost.profiles?.[0]?.display_name || "Community member"}</strong><p>{feedPost.body}</p></Link> : !hasFeedAccess && profile?.account_type !== "fan" ? <Link href="/membership" className="hc-home3-post">HoopFeed is available with Pro or Premium. View membership →</Link> : null}
         </section>}
         {teams.length > 0 ? <section className="hc-home3-section"><h2>YOUR TEAM</h2><Link href={(basketballSide === "womens" ? "/womens/" : "/teams/") + teams[0].id} className="hc-home3-team"><TeamLogo name={teams[0].name} size={34}/><strong>{teams[0].name}</strong><span>Team page →</span></Link></section> : <Link href="/teams" className="hc-home3-team">Find your team →</Link>}
