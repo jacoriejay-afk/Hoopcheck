@@ -46,7 +46,7 @@ export default function WomensTeam(){
      setTeam(teamData || null);
      setLeagueSeason(null);
      if(teamData?.league_id){const {data:leagueRow}=await supabase.from("leagues").select("season").eq("id",teamData.league_id).maybeSingle();if(active)setLeagueSeason(typeof leagueRow?.season==="string"&&leagueRow.season.trim()?leagueRow.season.trim():null);}
-     if(teamData){const {data:coachRows,error:coachError}=await supabase.from("coaches").select("id,name,city,country").eq("current_team_id",teamData.id);if(active){setCoaches(coachError?[]:(coachRows||[]));}}
+     if(teamData){const {data:coachRows,error:coachError}=await supabase.from("coaches").select("id,name,city,country").eq("current_team_id",teamData.id).eq("active",true).order("name");if(active){setCoaches(coachError?[]:(coachRows||[]));}}
      setTeamFollowerCount(followerCount || 0);
      const { data: { session } } = await supabase.auth.getSession();
      if (session?.user) {
