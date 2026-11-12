@@ -34,8 +34,8 @@ AS $lock$
 BEGIN
   PERFORM pg_catalog.pg_advisory_xact_lock(
     pg_catalog.hashtextextended(
-      pg_catalog.least(p_a::text, p_b::text) || ':' ||
-      pg_catalog.greatest(p_a::text, p_b::text), 0
+      least(p_a::text, p_b::text) || ':' ||
+      greatest(p_a::text, p_b::text), 0
     )
   );
 END
