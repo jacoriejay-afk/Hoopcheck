@@ -121,9 +121,10 @@ const results = [];
 try {
   // Public routes must not expose member-only mobile navigation when there is
   // no session. Keep this separate from the authenticated screenshot fixtures.
-  for (const theme of ["light", "dark"]) {
+  for (const theme of ["light", "dark", "system"]) {
     const guestContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
+      colorScheme: theme === "light" ? "light" : "dark",
       isMobile: true,
       hasTouch: true,
       serviceWorkers: "block",
@@ -163,7 +164,7 @@ try {
         const style = getComputedStyle(element);
         const tokenColor = (token) => {
           const sample = document.createElement("span");
-          sample.style.color = `var(${token})`;
+          sample.style.setProperty("color", `var(${token})`, "important");
           element.parentElement.append(sample);
           const color = getComputedStyle(sample).color;
           sample.remove();
@@ -171,7 +172,7 @@ try {
         };
         return {
           text: style.color,
-          placeholder: getComputedStyle(element, "::placeholder").color,
+          placeholder: getComputedStyle(element, "::placeholder").webkitTextFillColor,
           expectedText: tokenColor("--hc-input-fg"),
           expectedPlaceholder: tokenColor("--hc-foreground-muted"),
         };
@@ -179,9 +180,14 @@ try {
       assert.equal(colors.text, colors.expectedText, `Guest ${theme} home at ${width}px: typed search text must follow the input theme`);
       assert.equal(colors.placeholder, colors.expectedPlaceholder, `Guest ${theme} home at ${width}px: search placeholder must follow the muted theme`);
     }
+    if (theme === "system") {
+      await guestPage.locator("html.theme-dark").waitFor({ state: "attached", timeout: 10000 });
+      await guestPage.emulateMedia({ colorScheme: "light" });
+      await guestPage.locator("html.theme-light").waitFor({ state: "attached", timeout: 10000 });
+    }
     await guestContext.close();
   }
-  console.log("GUEST_MOBILE_NAV=PASS; routes=login,signup,search; themes=light,dark");
+  console.log("GUEST_MOBILE_NAV=PASS; routes=login,signup,search; themes=light,dark,system");
 
   for (const theme of ["dark", "light"]) {
     for (const routeName of ["dashboard", "feed", "admin"]) {
