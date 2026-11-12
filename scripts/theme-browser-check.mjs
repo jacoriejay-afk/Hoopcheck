@@ -121,9 +121,10 @@ const results = [];
 try {
   // Public routes must not expose member-only mobile navigation when there is
   // no session. Keep this separate from the authenticated screenshot fixtures.
-  for (const theme of ["light", "dark"]) {
+  for (const theme of ["light", "dark", "system"]) {
     const guestContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
+      colorScheme: theme === "light" ? "light" : "dark",
       isMobile: true,
       hasTouch: true,
       serviceWorkers: "block",
@@ -154,9 +155,46 @@ try {
       assert.equal(await guestPage.locator('a.hc-signin-button').count() > 0, true,
         `Guest ${theme} ${route}: sign-in action must be available`);
     }
+    for (const width of [390, 1024, 1440]) {
+      await guestPage.setViewportSize({ width, height: 844 });
+      await guestPage.goto(baseURL + "/");
+      const input = guestPage.locator("main .hc-searchbar__input:visible");
+      await input.fill("Basketball");
+      const readColors = () => input.evaluate((element) => {
+        const style = getComputedStyle(element);
+        const tokenColor = (token) => {
+          const sample = document.createElement("span");
+          sample.style.setProperty("color", `var(${token})`, "important");
+          element.parentElement.append(sample);
+          const color = getComputedStyle(sample).color;
+          sample.remove();
+          return color;
+        };
+        return {
+          text: style.webkitTextFillColor,
+          placeholder: getComputedStyle(element, "::placeholder").webkitTextFillColor,
+          expectedText: tokenColor("--hc-input-fg"),
+          expectedPlaceholder: tokenColor("--hc-foreground-muted"),
+        };
+      });
+      // System mode can transition from the server-rendered theme during hydration.
+      const deadline = Date.now() + 2000;
+      let colors = await readColors();
+      while ((colors.text !== colors.expectedText || colors.placeholder !== colors.expectedPlaceholder) && Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+        colors = await readColors();
+      }
+      assert.equal(colors.text, colors.expectedText, `Guest ${theme} home at ${width}px: typed search text must follow the input theme`);
+      assert.equal(colors.placeholder, colors.expectedPlaceholder, `Guest ${theme} home at ${width}px: search placeholder must follow the muted theme`);
+    }
+    if (theme === "system") {
+      await guestPage.locator("html.theme-dark").waitFor({ state: "attached", timeout: 10000 });
+      await guestPage.emulateMedia({ colorScheme: "light" });
+      await guestPage.locator("html.theme-light").waitFor({ state: "attached", timeout: 10000 });
+    }
     await guestContext.close();
   }
-  console.log("GUEST_MOBILE_NAV=PASS; routes=login,signup,search; themes=light,dark");
+  console.log("GUEST_MOBILE_NAV=PASS; routes=login,signup,search; themes=light,dark,system");
 
   for (const theme of ["dark", "light"]) {
     for (const routeName of ["dashboard", "feed", "admin"]) {
