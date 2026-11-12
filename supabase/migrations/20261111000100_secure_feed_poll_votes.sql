@@ -13,7 +13,7 @@ create policy "feed poll votes read" on public.feed_poll_votes
       then feed_poll_votes.option_index >= 0
        and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
       else false end
-      and fp.expires_at > now()
+      and (fp.expires_at IS NULL OR fp.expires_at > now())
       and public.can_view_player_feed_post(fp.author_id)
   ));
 drop policy if exists "feed poll votes insert own" on public.feed_poll_votes;
@@ -30,7 +30,7 @@ create policy "feed poll votes insert own" on public.feed_poll_votes
       then feed_poll_votes.option_index >= 0
        and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
       else false end
-      and fp.expires_at > now()
+      and (fp.expires_at IS NULL OR fp.expires_at > now())
         and public.can_view_player_feed_post(fp.author_id)
     )
   );
@@ -48,7 +48,7 @@ create policy "feed poll votes update own" on public.feed_poll_votes
       then feed_poll_votes.option_index >= 0
        and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
       else false end
-      and fp.expires_at > now()
+      and (fp.expires_at IS NULL OR fp.expires_at > now())
         and public.can_view_player_feed_post(fp.author_id)
     )
   )
@@ -63,7 +63,7 @@ create policy "feed poll votes update own" on public.feed_poll_votes
       then feed_poll_votes.option_index >= 0
        and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
       else false end
-      and fp.expires_at > now()
+      and (fp.expires_at IS NULL OR fp.expires_at > now())
         and public.can_view_player_feed_post(fp.author_id)
     )
   );
