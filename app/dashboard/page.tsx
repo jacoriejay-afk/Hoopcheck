@@ -51,6 +51,7 @@ export default function DashboardPage() {
   const [feedPost,setFeedPost] = useState<FeedPost|null>(null);
   const [homeGames,setHomeGames] = useState<HomeGame[]>([]);
   const [teamTrust,setTeamTrust] = useState<{score:number|null;reviewCount:number|null}|null>(null);
+  const [ratedTeams,setRatedTeams] = useState<Array<{team:Team;rating:number;count:number}>>([]);
   const [canViewTrust,setCanViewTrust] = useState(false);
   const [hasFeedAccess,setHasFeedAccess] = useState(false);
   const [canWriteReviews,setCanWriteReviews] = useState(false);
@@ -133,6 +134,7 @@ export default function DashboardPage() {
       setHomeGames([]);
       setFeedPost(null);
       setTeamTrust(null);
+      setRatedTeams([]);
       try {
       let visibleTeamIds: string[] = [];
       if (followedIds.length) {
@@ -142,6 +144,22 @@ export default function DashboardPage() {
         if (!mounted) return;
         setTeams((teamResult.data||[]) as Team[]);
         visibleTeamIds = (teamResult.data || []).map(row => row.id);
+        // A small, factual ranking of followed teams only. Ratings are never
+        // fetched for roles without review-summary access, and missing or
+        // suppressed review counts are excluded rather than guessed.
+        if (entitlements.canReadFullReviews && basketballSide === "mens") {
+          const candidates = ((teamResult.data || []) as Team[]).slice(0,8);
+          const summaries = await Promise.all(candidates.map(async team => {
+            const {data,error} = await supabase.rpc("get_public_review_summary",{p_entity_type:"team",p_entity_id:team.id});
+            if (error) return null;
+            const summary = Array.isArray(data) ? data[0] : data;
+            const count = Number(summary?.review_count);
+            const rating = Number(summary?.overall_rating);
+            if (!Number.isFinite(count) || count < 3 || summary?.overall_rating == null || !Number.isFinite(rating) || rating < 1 || rating > 5) return null;
+            return {team,rating,count};
+          }));
+          if (mounted) setRatedTeams(summaries.filter((item):item is {team:Team;rating:number;count:number} => item !== null).sort((a,b)=>b.rating-a.rating || b.count-a.count).slice(0,3));
+        }
         if (entitlements.canViewTrustScore && visibleTeamIds.length) {
           const {data:authData} = await supabase.auth.getSession();
           const token = authData.session?.access_token;
@@ -220,6 +238,7 @@ export default function DashboardPage() {
           <Link href={profile?.account_type === "agent" || profile?.account_type === "scout" || profile?.account_type === "coach" ? "/players" : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? "/teams" : "/live-games"}><HoopIcon name="basketball" size={22}/><span>{profile?.account_type === "agent" || profile?.account_type === "scout" || profile?.account_type === "coach" ? (language === "es" ? "Jugadores" : "Players") : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? (language === "es" ? "Equipos" : "Teams") : (language === "es" ? "Partidos en vivo" : "Live Games")}</span></Link>
           <Link href={profile?.account_type === "agent" || profile?.account_type === "scout" ? "/coaches" : profile?.account_type === "coach" ? "/teams" : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? "/account" : "/team-hub"}><HoopIcon name="users" size={22}/><span>{profile?.account_type === "agent" || profile?.account_type === "scout" ? (language === "es" ? "Entrenadores" : "Coaches") : profile?.account_type === "coach" ? (language === "es" ? "Equipos" : "Teams") : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? (language === "es" ? "Cuenta" : "Account") : (language === "es" ? "Grupos de aficionados" : "Fan Groups")}</span></Link>
         </div></section>
+        {ratedTeams.length > 0 && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>TOP RATED — TEAMS YOU FOLLOW</h2><Link href="/teams">Explore teams →</Link></div><div className="hc-home3-rated-list">{ratedTeams.map(({team,rating,count})=><Link key={team.id} href={`/teams/${team.id}`} className="hc-home3-rated-team"><span>{team.name}<small>{team.league_name || team.country || "Basketball"}</small></span><strong>{rating.toFixed(1)}/5 <small>({count} reviews)</small></strong></Link>)}</div></section>}
         {canWriteReviews && reviewNudgeVisible && <section className="hc-home3-review-nudge" aria-label="Review reminder"><div><strong>Played for a team recently?</strong><p>Share your experience to help the next player make an informed decision.</p></div><div className="hc-home3-nudge-actions"><Link href="/reviews">Write a review</Link><button type="button" aria-label="Dismiss review reminder for 30 days" onClick={() => { try { if(profile?.id) window.localStorage.setItem(`hc-home3-review-nudge:${profile.id}`, String(Date.now())); } catch {} setReviewNudgeVisible(false); }}>Dismiss</button></div></section>}
         {(feedPost || (!hasFeedAccess && profile?.account_type !== "fan")) && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>FROM THE COMMUNITY</h2><Link href="/feed">Open HoopFeed →</Link></div>
           {hasFeedAccess && feedPost ? <Link href="/feed" className="hc-home3-post"><strong>{feedPost.profiles?.[0]?.display_name || "Community member"}</strong><p>{feedPost.body}</p></Link> : !hasFeedAccess && profile?.account_type !== "fan" ? <Link href="/membership" className="hc-home3-post">HoopFeed is available with Pro or Premium. View membership →</Link> : null}
