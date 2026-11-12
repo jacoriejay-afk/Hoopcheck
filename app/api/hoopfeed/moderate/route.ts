@@ -126,6 +126,23 @@ export async function POST(request: Request) {
     if (userError || !userData.user) return NextResponse.json({ allowed: false, message: "Your session is invalid. Please sign in again." }, { status: 401 });
     const user = userData.user;
 
+    // A service-role client bypasses RLS. Authorize every existing-post action
+    // through the caller's JWT before using privileged database writes.
+    async function canInteractWithPost(postId: string): Promise<boolean> {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if (!supabaseUrl || !publishableKey) return false;
+      const viewerDb = createClient(supabaseUrl, publishableKey, {
+        global: { headers: { Authorization: "Bearer " + token } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data, error } = await viewerDb.from("feed_posts")
+        .select("id").eq("id", postId).eq("status", "approved")
+        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+        .maybeSingle();
+      return !error && !!data;
+    }
+
     const bodyBytes = await readLimitedBody(request, MAX_REQUEST_BYTES);
     if (bodyBytes === null) {
       return NextResponse.json({ allowed: false, message: "Request body is too large." }, { status: 413 });
@@ -229,6 +246,7 @@ export async function POST(request: Request) {
 
     // Poll vote: one vote per member per poll; voting again changes the vote.
     if (kind === "vote") {
+      if (!(await canInteractWithPost(actionPostId))) return NextResponse.json({ allowed: false, message: "Post unavailable." }, { status: 404 });
       const postId = actionPostId;
       const optionIndexValues = form.getAll("option_index");
       const optionIndexText = optionIndexValues.length === 1 && typeof optionIndexValues[0] === "string" ? optionIndexValues[0].trim() : "";
@@ -253,6 +271,7 @@ export async function POST(request: Request) {
       }
       const saved = savedValues[0] === "true";
       if (!postId) return NextResponse.json({ allowed: false, message: "Couldn't update your saved posts. Please try again." }, { status: 400 });
+      if (saved && !(await canInteractWithPost(postId))) return NextResponse.json({ allowed: false, message: "Post unavailable." }, { status: 404 });
       if (saved) {
         const { data: post } = await db.from("feed_posts").select("id,status,expires_at").eq("id", postId).maybeSingle();
         if (!post || post.status !== "approved") return NextResponse.json({ allowed: false, message: "This post is no longer available." }, { status: 404 });
@@ -289,6 +308,7 @@ export async function POST(request: Request) {
     // Re-share any approved community post.
     // The source has already passed moderation; new user-authored content still uses moderate().
     if (kind === "share") {
+      if (!(await canInteractWithPost(actionPostId))) return NextResponse.json({ allowed: false, message: "Post unavailable." }, { status: 404 });
       const sourceId = actionPostId;
       if (!sourceId) return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 400 });
       const { data: source, error: sourceError } = await db.from("feed_posts")
@@ -368,6 +388,7 @@ export async function POST(request: Request) {
     if (photoRejection) return NextResponse.json({ allowed: false, message: photoRejection.message }, { status: photoRejection.status });
 
     if (kind === "comment") {
+      if (!(await canInteractWithPost(actionPostId))) return NextResponse.json({ allowed: false, message: "Post unavailable." }, { status: 404 });
       if (!text) return NextResponse.json({ allowed: false, message: "Write a comment before posting." }, { status: 400 });
       const postId = actionPostId;
       if (!postId) return NextResponse.json({ allowed: false, message: "Post not found." }, { status: 400 });
