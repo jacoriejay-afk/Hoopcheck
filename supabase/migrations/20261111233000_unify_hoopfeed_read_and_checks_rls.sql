@@ -41,6 +41,9 @@ USING (
   )
 );
 
+-- Live policy inventory (2026-11-12) found this older permissive INSERT
+-- policy, which otherwise OR-combines with the unified authorization rule.
+DROP POLICY IF EXISTS "unified feed checks insert" ON public.feed_post_checks;
 DROP POLICY IF EXISTS "player feed checks insert" ON public.feed_post_checks;
 CREATE POLICY "unified hoopfeed checks insert"
 ON public.feed_post_checks FOR INSERT TO authenticated
