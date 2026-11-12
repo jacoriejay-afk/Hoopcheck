@@ -47,6 +47,8 @@ export default function TeamsPage() {
   const [followerCounts, setFollowerCounts] = useState<Record<string, number>>({});
   const [teamCoordinates, setTeamCoordinates] = useState<Record<string, { latitude: number | null; longitude: number | null }>>({});
   const [mapTeams, setMapTeams] = useState<Team[]>([]);
+  const [mapLoading, setMapLoading] = useState(false);
+  const [mapError, setMapError] = useState(false);
   const [mapTrustScores, setMapTrustScores] = useState<Record<string, TrustSummary>>({});
   const [mapCoordinates, setMapCoordinates] = useState<Record<string, { latitude: number | null; longitude: number | null }>>({});
 
@@ -231,6 +233,8 @@ export default function TeamsPage() {
   useEffect(() => {
     if (viewMode !== "map") return;
     let active = true;
+    setMapLoading(true);
+    setMapError(false);
     const loadAllMapTeams = async () => {
       const all: Team[] = [];
       for (let offset = 0; offset < 5000; offset += 500) {
@@ -252,33 +256,46 @@ export default function TeamsPage() {
         if (continentCountries.length) request = request.in("country", continentCountries);
         const { data, error } = await request.range(offset, offset + 499);
         if (!active) return;
-        if (error) { setMapTeams([]); return; }
+        if (error) { setMapTeams([]); setMapError(true); setMapLoading(false); return; }
         all.push(...((data || []) as Team[]));
         if (!data || data.length < 500) break;
       }
       if (!active) return;
       setMapTeams(all);
+      setMapLoading(false);
       const ids = all.map(team => team.id).filter(Boolean);
+      // Load coordinates independently so optional trust score failures cannot delay map pins.
+      const resolvedCoordinates: Record<string, { latitude: number | null; longitude: number | null }> = {};
+      for (let offset = 0; offset < ids.length; offset += 100) {
+        const batch = ids.slice(offset, offset + 100);
+        const { data: coordinates, error: coordinateError } = await supabase.from("teams")
+          .select("id,latitude,longitude").in("id", batch);
+        if (!active) return;
+        if (!coordinateError) {
+          for (const row of coordinates || []) {
+            resolvedCoordinates[row.id] = {
+              latitude: row.latitude == null ? null : Number(row.latitude),
+              longitude: row.longitude == null ? null : Number(row.longitude),
+            };
+          }
+        }
+      }
+      if (active) setMapCoordinates(resolvedCoordinates);
       const summaries: Record<string, TrustSummary> = {};
       for (let offset = 0; offset < ids.length; offset += 100) {
         const batch = ids.slice(offset, offset + 100);
-        if (!batch.length) continue;
-        const response = await fetch(`/api/trust-score?entityType=team&entityIds=${batch.map(encodeURIComponent).join(",")}`);
-        if (!active) return;
-        if (response.ok) {
-          const payload = await response.json();
-          Object.assign(summaries, payload?.scores || {});
-        }
+        try {
+          const response = await fetch(`/api/trust-score?entityType=team&entityIds=${batch.map(encodeURIComponent).join(",")}`);
+          if (!active) return;
+          if (response.ok) {
+            const payload = await response.json();
+            Object.assign(summaries, payload?.scores || {});
+          }
+        } catch { /* Trust score is optional; keep map locations available. */ }
       }
       if (active) setMapTrustScores(summaries);
-      const { data: coordinates, error: coordinateError } = await supabase.from("teams")
-        .select("id,latitude,longitude").in("id", ids);
-      if (active) setMapCoordinates(!coordinateError ? Object.fromEntries((coordinates || []).map((row: any) => [row.id, {
-        latitude: row.latitude == null ? null : Number(row.latitude),
-        longitude: row.longitude == null ? null : Number(row.longitude),
-      }])) : {});
     };
-    void loadAllMapTeams().catch(() => { if (active) setMapTeams([]); });
+    void loadAllMapTeams().catch(() => { if (active) { setMapTeams([]); setMapError(true); setMapLoading(false); } });
     return () => { active = false; };
   }, [viewMode, query, country, continent, league, division, leagueOptions]);
 
@@ -330,6 +347,9 @@ export default function TeamsPage() {
       </div>
 
       {viewMode === "map" && (
+        <>
+        {mapLoading && <div role="status">Loading team locations…</div>}
+        {mapError && <div role="alert">Team locations could not load. Try switching to List and back to Map.</div>}
         <TeamMap teams={mapTeams.map(team => ({
           ...team,
           latitude: mapCoordinates[team.id]?.latitude ?? null,
@@ -337,6 +357,7 @@ export default function TeamsPage() {
           trustScore: mapTrustScores[team.id]?.score ?? null,
           averageRating: mapTrustScores[team.id]?.averageRating ?? null,
         }))} />
+        </>
       )}
       {viewMode === "list" && (
       <section className="grid hc-team-directory-list" aria-busy={loading}>
