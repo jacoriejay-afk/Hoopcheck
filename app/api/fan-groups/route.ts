@@ -195,7 +195,9 @@ export async function POST(request: Request) {
     }
     if (action === "remove_member") {
       const memberId = String(form.get("user_id") || "");
-      await db.from("team_fan_group_moderators").delete().eq("team_id", teamId).eq("user_id", memberId).eq("moderator_type", "fan_co_moderator");
+      const { error: moderatorError } = await db.from("team_fan_group_moderators").delete()
+        .eq("team_id", teamId).eq("user_id", memberId).eq("moderator_type", "fan_co_moderator");
+      if (moderatorError) throw moderatorError;
       const { error } = await db.from("team_fan_group_members").delete().eq("team_id", teamId).eq("user_id", memberId);
       if (error) throw error;
       return NextResponse.json({ ok: true });
