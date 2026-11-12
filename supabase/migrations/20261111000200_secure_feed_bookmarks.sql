@@ -10,7 +10,7 @@ create policy "feed bookmarks insert own" on public.feed_post_bookmarks
       select 1 from public.feed_posts fp
       where fp.id = feed_post_bookmarks.post_id
         and fp.status = 'approved'
-        and fp.expires_at > now()
+        and (fp.expires_at IS NULL OR fp.expires_at > now())
         and public.can_view_player_feed_post(fp.author_id)
     )
   );
