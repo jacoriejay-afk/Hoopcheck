@@ -1,0 +1,24 @@
+name: Security Final Static Tests
+
+on:
+  pull_request:
+    paths:
+      - 'docs/security/**'
+      - 'scripts/security-final-*.test.mjs'
+      - '.github/workflows/security-final-static.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  membership-static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify membership RPC candidate
+        run: node --test scripts/security-final-membership-static.test.mjs
