@@ -160,7 +160,7 @@ try {
       await guestPage.goto(baseURL + "/");
       const input = guestPage.locator("main .hc-searchbar__input:visible");
       await input.fill("Basketball");
-      const colors = await input.evaluate((element) => {
+      const readColors = () => input.evaluate((element) => {
         const style = getComputedStyle(element);
         const tokenColor = (token) => {
           const sample = document.createElement("span");
@@ -171,12 +171,19 @@ try {
           return color;
         };
         return {
-          text: style.color,
+          text: style.webkitTextFillColor,
           placeholder: getComputedStyle(element, "::placeholder").webkitTextFillColor,
           expectedText: tokenColor("--hc-input-fg"),
           expectedPlaceholder: tokenColor("--hc-foreground-muted"),
         };
       });
+      // System mode can transition from the server-rendered theme during hydration.
+      const deadline = Date.now() + 2000;
+      let colors = await readColors();
+      while ((colors.text !== colors.expectedText || colors.placeholder !== colors.expectedPlaceholder) && Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+        colors = await readColors();
+      }
       assert.equal(colors.text, colors.expectedText, `Guest ${theme} home at ${width}px: typed search text must follow the input theme`);
       assert.equal(colors.placeholder, colors.expectedPlaceholder, `Guest ${theme} home at ${width}px: search placeholder must follow the muted theme`);
     }
