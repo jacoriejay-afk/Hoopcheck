@@ -238,3 +238,45 @@
     color: inherit;
   }
 }
+
+/* HERO-DESKTOP-4: laptop-width hero. Keep the headline and copy in the
+   visible column; the decorative slash must never cover real content. */
+@media (min-width: 1024px) {
+  .hc-ia-public-home .hc-d3-hero {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+    padding: clamp(22px, 3vw, 42px) clamp(24px, 4vw, 64px);
+  }
+  .hc-ia-public-home .hc-d3-hero__inner {
+    width: 100%;
+    max-width: 1360px;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+    gap: clamp(22px, 3vw, 46px);
+  }
+  .hc-ia-public-home .hc-d3-hero__copy,
+  .hc-ia-public-home .hc-d3-hero__visual { min-width: 0; max-width: 100%; }
+  .hc-ia-public-home .hc-d3-hero__copy h1 {
+    max-width: 100%;
+    margin: 0;
+    font-size: clamp(32px, 3.4vw, 58px);
+    line-height: 1.07;
+    overflow-wrap: break-word;
+    text-wrap: wrap;
+  }
+  .hc-ia-public-home .hc-d3-hero__sub { max-width: 48ch; }
+  .hc-ia-public-home .hc-d3-hero::before {
+    right: -7%;
+    top: -30%;
+    opacity: .35;
+    z-index: 0;
+  }
+  .hc-ia-public-home .hc-d3-hero__inner { z-index: 2; }
+  .hc-ia-public-home .hc-d3-desktop-search { margin-top: 12px; }
+}
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .hc-ia-public-home .hc-d3-hero { padding-inline: 24px; }
+  .hc-ia-public-home .hc-d3-hero__inner { gap: 20px; }
+  .hc-ia-public-home .hc-d3-hero__copy h1 { font-size: clamp(30px, 3.2vw, 40px); }
+}
