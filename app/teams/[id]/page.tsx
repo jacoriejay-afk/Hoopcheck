@@ -203,6 +203,9 @@ export default function TeamDetailPage() {
   useEffect(() => {
     const syncTab = () => {
       if (["#reviews", "#team-reviews-panel"].includes(window.location.hash)) setActiveProfileTab("reviews");
+      if (["#fan-hq", "#fan-group", "#team-fan-group-panel"].includes(window.location.hash)) setActiveProfileTab("fan-group");
+      if (["#roster", "#players", "#team-players-panel"].includes(window.location.hash)) setActiveProfileTab("players");
+      if (["#coaches", "#team-coaches-panel"].includes(window.location.hash)) setActiveProfileTab("coaches");
       if (["#overview", "#team-overview-panel"].includes(window.location.hash)) setActiveProfileTab("overview");
     };
     syncTab();
