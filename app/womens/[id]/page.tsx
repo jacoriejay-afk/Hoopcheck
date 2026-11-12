@@ -90,6 +90,7 @@ export default function WomensTeam(){
        } else {
          setTrustScoreData(null);
        }
+       if (!active) return;
        const summary = payload?.summary;
        if (summary) {
          setRatingCount(Number(summary.review_count || 0));
