@@ -52,13 +52,14 @@ export default function TeamFanGroupPage() {
     setTeamBasketballSide(team?.basketball_type === "womens" ? "womens" : "mens");
     setIsFan(profile?.account_type === "fan");
     const row = Array.isArray(summaryRows) ? summaryRows[0] : summaryRows;
-    setSummary(row ? { ...row, is_member: ownMembershipError ? Boolean(row.is_member) : Boolean(ownMembership), member_count: Math.max(Number(row.member_count || 0), ownMembership ? 1 : 0) } : null);
+    setSummary(row ? { ...row, is_member: !ownMembershipError && Boolean(ownMembership), member_count: Math.max(Number(row.member_count || 0), ownMembership ? 1 : 0) } : null);
+    if (ownMembershipError) setMessage("Could not verify your group membership. Please refresh and try again.");
     const { data: platformAdmin } = await supabase.rpc("is_current_user_admin_or_moderator");
     const moderator = Boolean((moderators || []).some((m: any) => m.user_id === currentUser.id) ||
       ((moderators || []).some((m: any) => m.moderator_type === "platform") && platformAdmin === true));
     if (profile?.account_type !== "fan" && !moderator) { router.replace((team?.basketball_type === "womens" ? "/womens/" : "/teams/") + teamId); return; }
     setIsModerator(moderator);
-    if ((ownMembershipError ? row?.is_member : Boolean(ownMembership)) || moderator) {
+    if ((!ownMembershipError && Boolean(ownMembership)) || moderator) {
       const { data: postRows } = await supabase.from("team_fan_group_posts")
         .select("id,team_id,author_id,body,image_url,is_pinned,created_at,profiles:profiles!team_fan_group_posts_author_id_fkey(display_name,avatar_url)")
         .eq("team_id", teamId).eq("status", "published").order("is_pinned", { ascending: false }).order("created_at", { ascending: false });
