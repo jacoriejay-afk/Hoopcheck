@@ -138,7 +138,6 @@ export async function POST(request: Request) {
       });
       const { data, error } = await viewerDb.from("feed_posts")
         .select("id").eq("id", postId).eq("status", "approved")
-        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
         .maybeSingle();
       return !error && !!data;
     }
