@@ -355,6 +355,7 @@ try {
     ]);
     const page = await context.newPage();
     let activeRoutePath = "";
+    let moderatorViewingGroup = false;
     let liveGameFixtureMode = "empty";
     const fixtureNow = Date.now();
     const liveGameFixtures = [
@@ -442,9 +443,18 @@ try {
         data = isFanTeamFollow ? [{ target_id: teamFixture.id, target_type: "team" }] : single ? null : [];
       }
       else if (url.pathname.includes("/rest/v1/team_fan_groups")) data = single ? { team_id: teamFixture.id, group_name: teamFixture.name + " Fan Group" } : [{ team_id: teamFixture.id, group_name: teamFixture.name + " Fan Group" }];
-      else if (url.pathname.includes("/rest/v1/team_fan_group_members")) data = single ? { team_id: teamFixture.id, user_id: userId } : [{ team_id: teamFixture.id, user_id: userId }];
+      else if (url.pathname.includes("/rest/v1/team_fan_group_members")) data = moderatorViewingGroup ? (single ? null : []) : single ? { team_id: teamFixture.id, user_id: userId } : [{ team_id: teamFixture.id, user_id: userId }];
       else if (url.pathname.includes("/rest/v1/team_fan_group_moderators")) data = single ? null : [];
-      else if (url.pathname.includes("/rest/v1/team_fan_group_posts")) data = [];
+      else if (url.pathname.includes("/rest/v1/rpc/is_team_fan_group_moderator")) data = moderatorViewingGroup;
+      else if (url.pathname.includes("/rest/v1/team_fan_group_posts")) data = moderatorViewingGroup ? [{
+        id: "a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f1",
+        team_id: teamFixture.id,
+        author_id: userId,
+        body: "Post visible to the group moderator",
+        image_url: null,
+        is_pinned: false,
+        created_at: "2026-01-01T00:00:00.000Z",
+      }] : [];
       else if (url.pathname.includes("/rest/v1/team_fan_group_comments")) data = [];
       else if (url.pathname.includes("/rest/v1/rpc/get_team_fan_group_summary")) {
         const summary = {
@@ -627,6 +637,14 @@ try {
         await page.locator("main.hc-team-fan-group-page .hc-feed-empty button").click();
         const composerFocused = await page.locator("#fan-group-post-body").evaluate(element => element === document.activeElement);
         if (!composerFocused) errors.push("team-hub group: empty-state action did not focus the locked group composer");
+        moderatorViewingGroup = true;
+        await page.reload({ waitUntil: "domcontentloaded" });
+        await page.getByText("Post visible to the group moderator").waitFor({ state: "visible", timeout: 15000 });
+        assert.ok(await page.getByRole("button", { name: "Pin", exact: true }).isVisible());
+        assert.equal(await page.locator("#fan-group-post-body").count(), 0);
+        assert.equal(await page.getByPlaceholder("Write a comment…").count(), 0);
+        assert.equal(await page.getByRole("button", { name: "Report", exact: true }).count(), 0);
+        moderatorViewingGroup = false;
       }
       if (requestedPath === "/theme-card-audit") {
         const previews = await page.locator("main.hc-card-audit-page .hc-card-audit-preview").count();
