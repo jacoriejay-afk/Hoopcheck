@@ -48,7 +48,7 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
     if(!isGoogleSignup && password!==confirmPassword){setError("Passwords do not match.");setLoading(false);return;}
     if(!birthMonth||!birthDay||!birthYear){setError("Birthdate is required.");setLoading(false);return;}
     const birthdate=`${birthYear}-${birthMonth.padStart(2,"0")}-${birthDay.padStart(2,"0")}`; const maxDay=new Date(Date.UTC(Number(birthYear),Number(birthMonth),0)).getUTCDate();
-    if(Number(birthDay)<1||Number(birthDay)>maxDay){setError("Please enter a valid birthdate.");setLoading(false);return;}
+    if(!Number.isInteger(Number(birthYear)) || Number(birthYear) < 1900 || Number(birthYear) > new Date().getFullYear() || !Number.isInteger(Number(birthMonth)) || Number(birthMonth) < 1 || Number(birthMonth) > 12 || !Number.isInteger(Number(birthDay)) || Number(birthDay) < 1 || Number(birthDay) > maxDay){setError("Please enter a valid birthdate.");setLoading(false);return;}
     const today=new Date(); let age=today.getFullYear()-Number(birthYear); const birthdayPassed=(today.getMonth()+1>Number(birthMonth))||(today.getMonth()+1===Number(birthMonth)&&today.getDate()>=Number(birthDay)); if(!birthdayPassed) age--;
     if(age<18){setError("You must be 18 or older.");setLoading(false);return;}
     if(!gender){setError("Gender is required.");setLoading(false);return;}
