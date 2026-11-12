@@ -186,6 +186,7 @@ export default function TeamDetailPage() {
   const [hasAccess, setHasAccess] =
     useState(false);
   const [accountType, setAccountType] = useState<string>("");
+  const [activeTeamSection, setActiveTeamSection] = useState<"overview" | "reviews" | "players" | "roster-board" | "pay-transparency">("overview");
   const [hasApprovedTeamClaim, setHasApprovedTeamClaim] = useState(false);
   const [membershipPlan, setMembershipPlan] = useState<string>("");
   const [knownPlayerFollowers, setKnownPlayerFollowers] = useState<string[]>([]);
@@ -568,9 +569,9 @@ export default function TeamDetailPage() {
         onFollowerCountChange={setTeamFollowerCount}
       />
       <nav className="hc-team-profile-nav" aria-label="Team profile sections">
-        <a href="#overview" aria-current="page">Overview</a><a href="#reviews">Reviews</a><a href="#players">Players</a><a href="#roster-board">Roster Board</a>{accountType && accountType !== "fan" ? <a href="#pay-transparency">Pay Transparency</a> : null}
+        {(["overview", "reviews", ...(accountType !== "fan" ? ["players", "roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as const).map(section => <button key={section} type="button" aria-current={activeTeamSection === section ? "page" : undefined} aria-controls={`team-panel-${section}`} onClick={() => setActiveTeamSection(section)}>{section === "roster-board" ? "Roster Board" : section === "pay-transparency" ? "Pay Transparency" : section.charAt(0).toUpperCase() + section.slice(1)}</button>)}
       </nav>
-      <div className="hc-team-profile-overview-grid">
+      <div id="team-panel-overview" hidden={activeTeamSection !== "overview"} className="hc-team-profile-overview-grid">
         <section className="hc-team-profile-about" aria-labelledby="hc-team-about-title">
           <p className="hc-team-profile-kicker">CLUB OVERVIEW</p>
           <h2 id="hc-team-about-title">About {team.name}</h2>
@@ -586,7 +587,7 @@ export default function TeamDetailPage() {
           <h2 id="hc-team-snapshot-title">Trust Snapshot</h2>
           <p className="hc-team-profile-snapshot-note">{teamReviewCount > 0 ? `${teamReviewCount} published team reviews` : "No published reviews yet"}</p>
           {hasAccess && trustScoreData?.score != null ? <TrustScoreDial score={trustScoreData.score} explanation={trustScoreData.explanation || t("trustScoreUnavailable")} reviewCount={trustScoreData.reviewCount} verifiedReviewCount={trustScoreData.verifiedReviewCount} /> : <p className="hc-team-profile-snapshot-note">{accountType === "fan" ? "Full trust details require an eligible Fan membership." : "Trust details are available with an eligible membership."}</p>}
-          <a href="#reviews" className="hc-team-profile-inline-link">Explore team reviews</a>
+          <button type="button" className="hc-team-profile-inline-link" onClick={() => setActiveTeamSection("reviews")}>Explore team reviews</button>
         </section>
       </div>
 
@@ -598,7 +599,7 @@ export default function TeamDetailPage() {
         </div>
         <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
         {canReadFullReviews && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">LATEST PLAYER REVIEW</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || t("playerExperience")}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
-      <section className="hero" id="reviews">
+      <section className="hero" id="team-panel-reviews" hidden={activeTeamSection !== "reviews"}>
             {canReadFullReviews ? (
               <Surface as="div" className="hc-entity-trust-score hc-team-reviews-trust-strip"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /><div className="hc-team-score-categories" aria-label="Category ratings">{([{label:"Communication",value:publicSummary.communication_rating},{label:"Professionalism",value:publicSummary.professionalism_rating},{label:"Development",value:publicSummary.development_rating},{label:"Payment",value:publicSummary.payment_rating}] as const).filter(item => item.value !== null).map(item => <span key={item.label}><small>{item.label}</small><strong>{Number(item.value).toFixed(1)}</strong></span>)}</div></Surface>
             ) : null}
@@ -735,13 +736,13 @@ export default function TeamDetailPage() {
           </section>
 
       {accountType !== "fan" && <>
-      <TeamPlayersHistory teamId={team.id} />
-      <section className="hero" id="roster-board">
+      <div id="team-panel-players" hidden={activeTeamSection !== "players"}><TeamPlayersHistory teamId={team.id} /></div>
+      <section className="hero" id="team-panel-roster-board" hidden={activeTeamSection !== "roster-board"}>
         <div className="eyebrow">ROSTER BOARD</div>
         <h2>Open roster spots</h2>
         <TeamRosterSpots teamId={team.id} teamName={team.name} />
       </section>
-      {accountType && accountType !== "fan" && <section className="hero" id="pay-transparency">
+      {accountType && accountType !== "fan" && <section className="hero" id="team-panel-pay-transparency" hidden={activeTeamSection !== "pay-transparency"}>
         <div className="eyebrow">PAY TRANSPARENCY</div>
         <h2>Payment history</h2>
         <TeamPayTimeline teamId={team.id} />
