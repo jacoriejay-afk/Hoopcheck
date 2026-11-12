@@ -213,8 +213,11 @@ export async function POST(request: Request) {
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(memberId))
         return NextResponse.json({ ok: false, message: "Choose a valid member." }, { status: 400 });
       if (action === "appoint_co_moderator") {
-        const { data: target } = await db.from("profiles").select("account_type").eq("id", memberId).maybeSingle();
-        const { data: member } = await db.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", memberId).maybeSingle();
+        const { data: target, error: profileError } = await db.from("profiles").select("account_type").eq("id", memberId).maybeSingle();
+        if (profileError) throw profileError;
+        const { data: member, error: membershipError } = await db.from("team_fan_group_members")
+          .select("user_id").eq("team_id", teamId).eq("user_id", memberId).maybeSingle();
+        if (membershipError) throw membershipError;
         if (target?.account_type !== "fan" || !member) return NextResponse.json({ ok: false, message: "Only current fan members can become co-moderators." }, { status: 400 });
         const { error } = await db.from("team_fan_group_moderators").upsert({ team_id: teamId, user_id: memberId, moderator_type: "fan_co_moderator" }, { onConflict: "team_id,user_id" });
         if (error) throw error;
