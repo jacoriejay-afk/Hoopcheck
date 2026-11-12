@@ -1,0 +1,15 @@
+/* VISUAL-FINAL-1: compact shared UI refinements, loaded after existing theme layers. */
+.site-header-global :where(.hc-header-desktop-links, .hc-header-actions, .hc-header-links) { min-width: 0; }
+.site-header-global :where(.hc-header-desktop-links, .hc-header-actions) { align-items: center; }
+.site-header-global .site-header-brand { flex-shrink: 0; }
+.site-header-global :where(.hc-header-icon, .hc-mobile-menu-toggle) { flex-shrink: 0; }
+:where(.hc-shared-picker-dialog, .hc-shared-picker-results) { overscroll-behavior: contain; }
+:where(.hc-shared-picker-dialog, .hc-team-entity-profile) :where(p, h1, h2, h3, strong) { overflow-wrap: break-word; }
+@media (max-width: 640px) {
+  .site-header-global { min-width: 0; }
+  .site-header-global .site-header-brand { min-width: 0; }
+  .hc-shared-picker-filters > * { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.site-header-global, .hc-shared-picker-dialog) { scroll-behavior: auto; }
+}
