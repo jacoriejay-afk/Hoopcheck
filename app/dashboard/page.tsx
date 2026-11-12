@@ -33,6 +33,7 @@ type Profile = {
   account_type: "player"|"coach"|"scout"|"agent"|"fan";
 };
 type Team = { id:string; name:string; country:string|null; league_name:string|null };
+type HomeGame = { id:string; team_id:string|null; opponent_name:string|null; league_name:string|null; status:string; scheduled_at:string|null; home_score:number|null; away_score:number|null };
 type Review = { id:string; team_id:string; title:string|null; body:string; overall_rating:number; created_at:string };
 type FeedPost = { id:string; body:string; created_at:string; expires_at:string; author_id:string; profiles?:{display_name:string|null}[]|null };
 
@@ -48,7 +49,7 @@ export default function DashboardPage() {
   const [teams,setTeams] = useState<Team[]>([]);
   const [reviews,setReviews] = useState<Review[]>([]);
   const [feedPost,setFeedPost] = useState<FeedPost|null>(null);
-  const [liveCounts,setLiveCounts] = useState<{live:number|null;upcoming:number|null}>({live:null,upcoming:null});
+  const [homeGames,setHomeGames] = useState<HomeGame[]>([]);
   const [hasFeedAccess,setHasFeedAccess] = useState(false);
   const [canWriteReviews,setCanWriteReviews] = useState(false);
   const [membershipTier,setMembershipTier] = useState<"free"|"pro"|"premium">("free");
@@ -117,6 +118,8 @@ export default function DashboardPage() {
 
       // Show the dashboard immediately; the remaining panels are best-effort enhancements.
       setLoading(false);
+      setHomeGames([]);
+      setFeedPost(null);
       try {
       if (followedIds.length) {
         const teamResult = basketballSide === "womens"
@@ -143,10 +146,23 @@ export default function DashboardPage() {
         if (mounted && posts && posts.length) setFeedPost(posts[0] as FeedPost);
       }
 
-      if (entitlements.canUseLiveGameHub) {
-        const {data:games,error:gamesError} = await supabase.from("fan_live_games").select("status,scheduled_at").in("status",["live","scheduled"]).order("scheduled_at",{ascending:true}).limit(200);
-        const now = Date.now();
-        if (mounted && !gamesError) setLiveCounts({live:(games||[]).filter((g:any)=>g.status==="live").length,upcoming:(games||[]).filter((g:any)=>g.status==="scheduled" && (!g.scheduled_at || new Date(g.scheduled_at).getTime()>=now)).length});
+      // Only display fixtures tied to a followed team. Never label global games "YOUR LEAGUE".
+      if (entitlements.canUseLiveGameHub && followedIds.length && basketballSide === "mens") {
+        const {data:games,error:gamesError} = await supabase.from("fan_live_games")
+          .select("id,team_id,opponent_name,league_name,status,scheduled_at,home_score,away_score")
+          .in("team_id",followedIds).in("status",["live","in_progress","scheduled"])
+          .order("scheduled_at",{ascending:true}).limit(40);
+        if (mounted && !gamesError) {
+          const now = Date.now();
+          const relevant = ((games || []) as HomeGame[])
+            .filter(g => g.status !== "scheduled" || (g.scheduled_at && new Date(g.scheduled_at).getTime() >= now))
+            .sort((a,b) => {
+              const al = a.status === "live" || a.status === "in_progress";
+              const bl = b.status === "live" || b.status === "in_progress";
+              return Number(bl) - Number(al) || new Date(a.scheduled_at || 0).getTime() - new Date(b.scheduled_at || 0).getTime();
+            }).slice(0,6);
+          setHomeGames(relevant);
+        }
       }
       } catch (error) {
         console.error("Optional dashboard panels failed:", error);
@@ -173,7 +189,7 @@ export default function DashboardPage() {
           <p>Know who you’re signing with.</p>
           {completion < 100 && <><div className="hc-home3-completion"><span style={{width:`${completion}%`}}/></div><div className="hc-home3-progress-label"><span>Profile {completion}% — finish for full visibility</span><Link href="/account#edit-profile">Finish</Link></div></>}
         </section>
-        {liveCounts.live !== null && (liveCounts.live > 0 || (liveCounts.upcoming ?? 0) > 0) && <section className="hc-home3-section"><h2>YOUR LEAGUE — LIVE & NEXT</h2><Link href="/live-games" className="hc-home3-live"><span className="hc-ia-live-dot"/> {liveCounts.live} live · {liveCounts.upcoming} upcoming <span>View games →</span></Link></section>}
+        {homeGames.length > 0 && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>YOUR TEAMS — LIVE & NEXT</h2><Link href="/live-games">All games →</Link></div><div className="hc-home3-game-strip">{homeGames.map(game => { const isLive = game.status === "live" || game.status === "in_progress"; const team = teams.find(t => t.id === game.team_id); return <Link key={game.id} href="/live-games" className="hc-home3-game"><small>{game.league_name || team?.league_name || "Basketball"} · {isLive ? "LIVE" : "UPCOMING"}</small><strong>{team?.name || "Your team"} vs {game.opponent_name || "Opponent"}</strong><span>{isLive ? [game.home_score,game.away_score].every(v => v !== null) ? `${game.home_score} – ${game.away_score}` : "Live now" : game.scheduled_at ? new Date(game.scheduled_at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "Time TBD"}</span></Link>; })}</div></section>}
         <section className="hc-home3-section"><h2>QUICK ACTIONS</h2><div className="hc-home3-actions">
           <Link href="/teams"><HoopIcon name="shield-check" size={22}/><span>Check a Team</span></Link>
           <Link href={canWriteReviews ? "/reviews" : "/team-hub"}><HoopIcon name="pencil-line" size={22}/><span>{canWriteReviews ? "Review a Team" : "Team Hub"}</span></Link>
