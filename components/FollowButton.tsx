@@ -19,8 +19,8 @@ export default function FollowButton({ targetType, targetId, variant = "default"
   const actionLock = useRef(false);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function showFailure() {
-    setNotice("Couldn't save that — try again");
+  function showFailure(message = "Couldn't save that — try again") {
+    setNotice(message);
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
     noticeTimer.current = setTimeout(() => setNotice(""), 2600);
   }
@@ -69,6 +69,10 @@ export default function FollowButton({ targetType, targetId, variant = "default"
       window.location.href = "/login";
       return;
     }
+    if ((targetType === "player" || targetType === "fan") && id === targetId) {
+      showFailure("You cannot follow your own profile.");
+      return;
+    }
     actionLock.current = true;
     const wasFollowing = following;
     const previousCount = count;
@@ -98,7 +102,7 @@ export default function FollowButton({ targetType, targetId, variant = "default"
         setFollowing(wasFollowing);
         setCount(previousCount);
         onCountChange?.(previousCount);
-        showFailure();
+        showFailure(result.error.code === "42501" || result.error.code === "23514" ? "This follow is not permitted." : undefined);
       } else {
         if (nextFollowing) setNotify(true);
         const { data: reconciledCount } = await supabase.rpc("get_follow_count", { p_target_type: targetType, p_target_id: targetId });
