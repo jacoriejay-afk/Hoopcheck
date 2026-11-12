@@ -32,6 +32,7 @@ export default function WomensTeam(){
    return()=>window.removeEventListener("hashchange",syncSection);
  },[]);
  const [coaches,setCoaches]=useState<Array<{id:string;name:string;city:string|null;country:string|null}>>([]);
+ const [leagueSeason,setLeagueSeason]=useState<string|null>(null);
  const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [accountType,setAccountType]=useState(""); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [teamFollowerCount,setTeamFollowerCount]=useState(0); const [trustScoreData,setTrustScoreData]=useState<any>(null);
  useEffect(() => {
    let active = true;
@@ -43,6 +44,8 @@ export default function WomensTeam(){
      if (teamError) console.error("Unable to load women’s team profile:", teamError);
      if (!active) return;
      setTeam(teamData || null);
+     setLeagueSeason(null);
+     if(teamData?.league_id){const {data:leagueRow}=await supabase.from("leagues").select("season").eq("id",teamData.league_id).maybeSingle();if(active)setLeagueSeason(typeof leagueRow?.season==="string"&&leagueRow.season.trim()?leagueRow.season.trim():null);}
      if(teamData){const {data:coachRows,error:coachError}=await supabase.from("coaches").select("id,name,city,country").eq("current_team_id",teamData.id);if(active){setCoaches(coachError?[]:(coachRows||[]));}}
      setTeamFollowerCount(followerCount || 0);
      const { data: { session } } = await supabase.auth.getSession();
@@ -89,6 +92,7 @@ export default function WomensTeam(){
  <TeamProfileHero
    className="hc-womens-branded-hero"
    gender="womens"
+   seasonLabel={leagueSeason}
    teamId={team.id}
    name={team.name}
    country={team.country || t("international")}
