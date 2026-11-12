@@ -210,6 +210,8 @@ export async function POST(request: Request) {
     }
     if (action === "appoint_co_moderator" || action === "remove_co_moderator") {
       const memberId = String(form.get("user_id") || "");
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(memberId))
+        return NextResponse.json({ ok: false, message: "Choose a valid member." }, { status: 400 });
       if (action === "appoint_co_moderator") {
         const { data: target } = await db.from("profiles").select("account_type").eq("id", memberId).maybeSingle();
         const { data: member } = await db.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", memberId).maybeSingle();
