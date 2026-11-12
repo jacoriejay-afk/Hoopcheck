@@ -19,7 +19,7 @@ async function moderate(text: string, image: File | null) {
   if (text.trim()) input.push({ type: "text", text });
   if (image) {
     if (!["image/jpeg", "image/png", "image/webp"].includes(image.type) || image.size > MAX_IMAGE_BYTES)
-      return { allowed: false, status: 400, message: "Choose a JPG, PNG, or WebP image up to 8 MB." };
+      return { allowed: false, status: 400, message: "Choose a JPG, PNG, or WebP image up to 4 MB." };
     const bytes = Buffer.from(await image.arrayBuffer());
     input.push({ type: "image_url", image_url: { url: "data:" + image.type + ";base64," + bytes.toString("base64") } });
   }
