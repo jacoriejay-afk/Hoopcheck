@@ -11,6 +11,7 @@ import TeamProfileHero from "../../../components/TeamProfileHero";
 import "../../hoopcheck-brand-team.css";
 import ReviewMembershipGate from "../../../components/ReviewMembershipGate";
 import TeamFanGroupEntry from "../../../components/TeamFanGroupEntry";
+import FanBasketballSideSwitch from "../../../components/FanBasketballSideSwitch";
 import TeamPlayersHistory from "../../../components/TeamPlayersHistory";
 import FanTeamPosts from "../../../components/FanTeamPosts";
 
@@ -84,6 +85,7 @@ export default function WomensTeam(){
  if(!team)return <main className="page-shell hc-womens-profile-page"><div className="page-container"><Surface as="section" className="hero-card"><h1>{t("womenTeamNotFound")}</h1><Link href="/womens" className="btn">{t("backToWomensBasketball")}</Link></Surface></div></main>;
  const average=ratingAverage;
  return <main className="page-shell hc-womens-profile-page"><div className="page-container">
+ <FanBasketballSideSwitch lockedHint />
  <TeamProfileHero
    className="hc-womens-branded-hero"
    gender="womens"
