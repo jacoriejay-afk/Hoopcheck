@@ -54,6 +54,7 @@ type Coach = {
 };
 
 type League = {
+  season: string | null;
   id: string;
   name: string;
   country: string | null;
@@ -273,7 +274,7 @@ export default function TeamDetailPage() {
           teamData.league_id
             ? supabase
                 .from("leagues")
-                .select("id, name, country, level")
+                .select("id, name, country, level, season")
                 .eq("id", teamData.league_id)
                 .maybeSingle()
             : Promise.resolve({ data: null, error: null }),
@@ -580,7 +581,7 @@ export default function TeamDetailPage() {
         logoUrl={team.logo_url}
         logoBg={team.logo_bg}
         level={league?.level}
-        seasonLabel={history.length ? (history[0]?.season || undefined) : undefined}
+        seasonLabel={history.find(item => item.season)?.season || league?.season || undefined}
         reviewCount={teamReviewCount}
         followerCount={teamFollowerCount}
         trustScore={trustScoreData}
