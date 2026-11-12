@@ -32,6 +32,7 @@ import ClaimProfileButton from "../../../components/ClaimProfileButton";
 import TeamOfficialUpdates from "../../../components/TeamOfficialUpdates";
 import TeamPlayersHistory from "../../../components/TeamPlayersHistory";
 import TeamFanGroupEntry from "../../../components/TeamFanGroupEntry";
+import { summarizeRatedCategory } from "../../../lib/team-profile-rating-threshold";
 
 type Team = {
   id: string;
@@ -573,6 +574,7 @@ export default function TeamDetailPage() {
         leagueName={league?.name || team.league_name}
         logoUrl={team.logo_url}
         logoBg={team.logo_bg}
+        level={league?.level}
         reviewCount={teamReviewCount}
         followerCount={teamFollowerCount}
         trustScore={trustScoreData}
@@ -596,7 +598,23 @@ export default function TeamDetailPage() {
           <p className="hc-team-profile-kicker">PLAYER EXPERIENCE</p>
           <h2 id="hc-team-snapshot-title">Trust Snapshot</h2>
           <p className="hc-team-profile-snapshot-note">{teamReviewCount > 0 ? `${teamReviewCount} published team reviews` : "No published reviews yet"}</p>
-          {hasAccess && trustScoreData?.score != null ? <TrustScoreDial score={trustScoreData.score} explanation={trustScoreData.explanation || t("trustScoreUnavailable")} reviewCount={trustScoreData.reviewCount} verifiedReviewCount={trustScoreData.verifiedReviewCount} /> : <p className="hc-team-profile-snapshot-note">{accountType === "fan" ? "Full trust details require an eligible Fan membership." : "Trust details are available with an eligible membership."}</p>}
+          {teamReviewCount === 0 ? <p className="hc-team-profile-snapshot-note">No reviews yet — players, be the first.</p> : hasAccess && trustScoreData?.score != null ? <TrustScoreDial score={trustScoreData.score} explanation={trustScoreData.explanation || t("trustScoreUnavailable")} reviewCount={trustScoreData.reviewCount} verifiedReviewCount={trustScoreData.verifiedReviewCount} /> : <p className="hc-team-profile-snapshot-note">{accountType === "fan" ? "Full trust details require an eligible Fan membership." : "Trust details are available with an eligible membership."}</p>}
+          {canReadFullReviews && reviews.length > 0 ? <div className="hc-team-look-categories" aria-label="Review category aggregates">
+            {([
+              ["Pay reliability", "pay_on_time_rating"],
+              ["Housing", "housing_rating"],
+              ["Coaching", "coaching_quality_rating"],
+              ["Medical support", "medical_support_rating"],
+              ["Facilities", "facilities_rating"],
+              ["Communication", "communication_rating"],
+              ["Playing time honesty", "playing_time_honesty_rating"],
+            ] as const).map(([label, key]) => {
+              const summary = summarizeRatedCategory(reviews, review => review[key]);
+              return <div key={key} style={{display:"flex",justifyContent:"space-between",gap:12,padding:"8px 0",borderBottom:"1px solid var(--border, rgba(128,128,128,.2))"}}>
+                <span>{label}</span><strong>{summary.percentage === null ? "Not enough reviews yet" : `${summary.percentage}%`}</strong>
+              </div>;
+            })}
+          </div> : null}
           <button type="button" className="hc-team-profile-inline-link" onClick={() => setActiveProfileTab("reviews")}>Explore team reviews</button>
         </section>
       </div>
