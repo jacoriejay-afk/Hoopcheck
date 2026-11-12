@@ -14,6 +14,7 @@ type TeamProfileHeroProps = {
   logoBg?: "transparent" | "light" | "dark" | null;
   coverUrl?: string | null;
   level?: string | null;
+  seasonLabel?: string | null;
   gender?: "mens" | "womens";
   claimed?: boolean;
   reviewCount: number;
@@ -26,7 +27,7 @@ type TeamProfileHeroProps = {
 
 export default function TeamProfileHero({
   teamId, name, country, city, leagueName, logoUrl, logoBg, coverUrl,
-  level, gender = "mens", claimed = false, className = "", onFollowerCountChange, onOpenFanGroup,
+  level, seasonLabel, gender = "mens", claimed = false, className = "", onFollowerCountChange, onOpenFanGroup,
 }: TeamProfileHeroProps) {
   const initials = name.trim().split(/\s+/).slice(0, 2).map(word => word[0]).join("").toUpperCase();
   const accent = gender === "womens" ? "#e83e8c" : "#f97316";
@@ -54,7 +55,7 @@ export default function TeamProfileHero({
           <h1 id="hc-team-profile-title" style={{fontSize:"clamp(30px,5vw,58px)",fontWeight:900,lineHeight:1.05,letterSpacing:"-.035em",color:"#fff",margin:"0 0 12px"}}>{name}{claimed ? <span aria-label="Verified club" title="Verified club" style={{color:accent,marginLeft:10}}>✓</span> : null}</h1>
           <p style={{color:"#e5e7eb",margin:0}}>{countryFlag(country)} {[city,country].filter(Boolean).join(", ") || "Location not listed"}</p>
           <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:16}}>
-            {[gender === "womens" ? "Women's" : "Men's",level,leagueName].filter(Boolean).map(value=><span key={value} style={{fontSize:12,padding:"6px 11px",borderRadius:999,background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.18)",color:"#fff"}}>{value}</span>)}
+            {[gender === "womens" ? "Women's" : "Men's",level,leagueName,seasonLabel ? `Season ${seasonLabel}` : null].filter(Boolean).map(value=><span key={value} style={{fontSize:12,padding:"6px 11px",borderRadius:999,background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.18)",color:"#fff"}}>{value}</span>)}
           </div>
         </div>
       </div>
