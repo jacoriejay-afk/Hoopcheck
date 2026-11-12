@@ -13,3 +13,10 @@
 @media (prefers-reduced-motion: reduce) {
   :where(.site-header-global, .hc-shared-picker-dialog) { scroll-behavior: auto; }
 }
+
+/* VISUAL-FINAL-2: use the existing 20px hero radius for shared cards.
+   Limit this to the canonical card tokens so buttons, pills, and compact controls
+   retain their purpose-specific radii. */
+:root, html.theme-light, html.theme-dark {
+  --hc-radius-card: var(--radius-lg, 20px);
+}
