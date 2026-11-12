@@ -71,8 +71,10 @@ export async function POST(request: Request) {
     const { data: group } = await db.from("team_fan_groups").select("team_id,group_name,join_mode").eq("team_id", teamId).maybeSingle();
     if (!group) return NextResponse.json({ ok: false, message: "This team's Fan Group is not available." }, { status: 404 });
 
-    const { data: explicitMod } = await db.from("team_fan_group_moderators").select("id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle();
-    const { data: platformMod } = await db.from("team_fan_group_moderators").select("id").eq("team_id", teamId).eq("moderator_type", "platform").maybeSingle();
+    const { data: explicitMod, error: explicitModError } = await db.from("team_fan_group_moderators").select("id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle();
+    const { data: platformMod, error: platformModError } = await db.from("team_fan_group_moderators").select("id").eq("team_id", teamId).eq("moderator_type", "platform").maybeSingle();
+    if (explicitModError) throw explicitModError;
+    if (platformModError) throw platformModError;
     // Resolve the authenticated user's platform role explicitly; service-role RPCs
     // do not inherit the request user's auth.uid().
     const { data: platformRoles, error: platformRoleError } = await db.from("admin_roles")
@@ -82,7 +84,8 @@ export async function POST(request: Request) {
     const isPlatformModerator = isPlatformAdmin || (platformRoles || []).some((r: any) => String(r.role || "").trim().toLowerCase() === "moderator");
     // Team moderation requires an explicit appointment or authorized platform role.
     const isModerator = Boolean(explicitMod || isPlatformAdmin || (platformMod && isPlatformModerator));
-    const { data: membership } = await db.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle();
+    const { data: membership, error: membershipError } = await db.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle();
+    if (membershipError) throw membershipError;
     const isMember = Boolean(membership);
 
     if (action === "join") {
