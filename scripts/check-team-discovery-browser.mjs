@@ -53,14 +53,26 @@ try {
           const anchor = document.querySelector(`.result-group a[href="${href}"]`);
           return anchor?.isConnected && anchor.getClientRects().length > 0;
         }, `/womens/${women.id}`);
-        // React may replace the anchor between waitForFunction and evaluate.
-        // Retry against a freshly connected anchor rather than failing on one stale frame.
-        await page.waitForFunction((href) => {
-          const anchor = document.querySelector(`.result-group a[href="${href}"]`);
-          if (!anchor?.isConnected || !anchor.getClientRects().length) return false;
-          anchor.click();
-          return true;
-        }, `/womens/${women.id}`, { timeout: 15000, polling: 100 });
+        // Wait for the filtered result to settle, then navigate through the
+        // actual anchor. A late search response can temporarily clear results.
+        // Recover the selected category once if that happens; never navigate
+        // directly to the fixture URL, which would hide a broken search.
+        let navigated = false;
+        for (let attempt = 0; attempt < 2 && !navigated; attempt += 1) {
+          try {
+            await femaleLink.waitFor({ state: 'visible', timeout: 12000 });
+            await femaleLink.click({ timeout: 12000 });
+            navigated = true;
+          } catch (clickError) {
+            if (page.url().includes(`/womens/${women.id}`)) {
+              navigated = true;
+              break;
+            }
+            if (attempt === 1) throw clickError;
+            await page.getByRole('button', { name: 'Women’s Teams', exact: true }).click();
+            await page.waitForFunction(() => !document.body.innerText.includes('Searching HoopCheck...'));
+          }
+        }
       } catch (error) {
         const state = await page.evaluate(() => ({
           url: location.href,
