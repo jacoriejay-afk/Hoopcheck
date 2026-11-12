@@ -133,10 +133,10 @@ export default function WomensTeam(){
      {(["overview","roster","coaches","reviews","fan-group"] as const).map(tab=><button key={tab} id={`womens-team-${tab}-tab`} type="button" role="tab" style={{minHeight:44,padding:"10px 14px",flexShrink:0,whiteSpace:"nowrap",touchAction:"manipulation"}} aria-selected={activeSection===tab} aria-controls={`womens-team-${tab}-panel`} tabIndex={activeSection===tab?0:-1} onClick={()=>setActiveSection(tab)}>{tab==="fan-group"?"Fan Group":tab==="overview"?"Overview":tab==="roster"?"Roster":tab==="coaches"?"Coaches":"Reviews"}</button>)}
    </div>
  </nav>
- <section id="womens-team-roster-panel" role="tabpanel" aria-labelledby="womens-team-roster-tab" hidden={activeSection!=="roster"}>
+ <section id="womens-team-roster-panel" role="tabpanel" aria-labelledby="womens-team-roster-tab" hidden={activeSection!=="roster"} style={{display:activeSection==="roster"?undefined:"none"}}>
    <TeamPlayersHistory teamId={team.id} teamTable="womens_teams" />
  </section>
- <section className="card" id="womens-team-coaches-panel" role="tabpanel" aria-labelledby="womens-team-coaches-tab" hidden={activeSection!=="coaches"}>
+ <section className="card" id="womens-team-coaches-panel" role="tabpanel" aria-labelledby="womens-team-coaches-tab" hidden={activeSection!=="coaches"} style={{display:activeSection==="coaches"?undefined:"none"}}>
    <p className="eyebrow">TEAM STAFF</p><h2>Coaches</h2>
    {coachesLoadError ? <p role="alert">Coaching information is temporarily unavailable. Please try again later.</p> : coaches.length ? <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:12}}>
      {coaches.map(coach=><Link key={coach.id} href={`/coaches/${coach.id}`} className="card" style={{display:"flex",alignItems:"center",gap:12,textDecoration:"none"}}>
@@ -145,14 +145,14 @@ export default function WomensTeam(){
      </Link>)}
    </div> : <p className="muted">No coaches are listed for this club yet.</p>}
  </section>
- <div id="womens-team-fan-group-panel" role="tabpanel" aria-labelledby="womens-team-fan-group-tab" hidden={activeSection!=="fan-group"}><div id="fan-hq"><TeamFanGroupEntry teamId={team.id} /></div></div>
+ <div id="womens-team-fan-group-panel" role="tabpanel" aria-labelledby="womens-team-fan-group-tab" hidden={activeSection!=="fan-group"} style={{display:activeSection==="fan-group"?undefined:"none"}}><div id="fan-hq"><TeamFanGroupEntry teamId={team.id} /></div></div>
  {canReview && <div className="entity-actions"><Link href={"/womens/" + team.id + "/review"} className="btn">Write a Review</Link></div>}
  <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} teamTable="womens_teams" onSaved={(logoUrl, logoBg) => setTeam((current:any) => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
- <section className="grid compact-grid" id="womens-team-overview-panel" role="tabpanel" aria-labelledby="womens-team-overview-tab" hidden={activeSection!=="overview"}>
+ <section className="grid compact-grid" id="womens-team-overview-panel" role="tabpanel" aria-labelledby="womens-team-overview-tab" hidden={activeSection!=="overview"} style={{display:activeSection==="overview"?undefined:"none"}}>
     {canSeeRatings ? <Surface className="card"><span className="card-kicker">{t("rating")}</span><h2>{average===null?"—":average.toFixed(1)+"/5"}</h2><p className="muted">{formatNumber(ratingCount)+" "+(ratingCount===1?t("publishedReview"):t("publishedReviews"))}</p></Surface> : null}
     <Surface className="card"><span className="card-kicker">{t("league")}</span><h2>{team.league_name||t("professional")}</h2><p className="muted">{team.country||t("international")}</p></Surface>
   </section>
-  <Surface as="section" id="womens-team-reviews-panel" className="dashboard-card compact-section" role="tabpanel" aria-labelledby="womens-team-reviews-tab" hidden={activeSection!=="reviews"}>
+  <Surface as="section" id="womens-team-reviews-panel" className="dashboard-card compact-section" role="tabpanel" aria-labelledby="womens-team-reviews-tab" hidden={activeSection!=="reviews"} style={{display:activeSection==="reviews"?undefined:"none"}}>
     {!canViewReviews ? (
       <ReviewMembershipGate
         title="Full player reviews require an eligible membership"
