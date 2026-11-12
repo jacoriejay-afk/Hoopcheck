@@ -45,7 +45,7 @@
 /* VISUAL-FINAL-4: shared typography and spacing rhythm.
    Keep existing page-specific type scales and compact controls intact. */
 :root, html.theme-light, html.theme-dark {
-  --hc-space-card: clamp(16px, 2.5vw, 24px);
+  /* Card gaps remain owned by SP-1 (12px); avoid overriding its shared token. */
   --hc-reading-line-height: 1.55;
 }
 :where(.dashboard-card, .result-card, .quick-card, .hc-auth-card)
