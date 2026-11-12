@@ -604,6 +604,7 @@ try {
       const expectedPage = theme === "dark" ? "rgb(0, 0, 0)" : "rgb(244, 244, 241)";
       const errors = [];
       if (requestedPath.startsWith("/womens/")) {
+        await page.getByRole("tab", { name: "Fan Group" }).click();
         await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").waitFor({ state: "visible", timeout: 15000 });
         const fanGroupEntry = (await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").innerText()).trim();
         if (!fanGroupEntry.includes("Fan Group") || !fanGroupEntry.includes("Joined")) errors.push("women team profile: Fan Group entry is missing or not joined: " + fanGroupEntry);
