@@ -45,6 +45,8 @@ export default function WomensTeam(){
      if (teamError) console.error("Unable to load women’s team profile:", teamError);
      if (!active) return;
      setTeam(teamData || null);
+     setCoaches([]);
+     setCoachesLoadError(false);
      setLeagueSeason(null);
      if(teamData?.league_id){const {data:leagueRow}=await supabase.from("leagues").select("season").eq("id",teamData.league_id).maybeSingle();if(active)setLeagueSeason(typeof leagueRow?.season==="string"&&leagueRow.season.trim()?leagueRow.season.trim():null);}
      if(teamData){const {data:coachRows,error:coachError}=await supabase.from("coaches").select("id,name,city,country").eq("current_team_id",teamData.id).eq("active",true).order("name");if(active){setCoachesLoadError(Boolean(coachError));if(coachError)console.error("Unable to load women’s team coaches:",coachError);setCoaches(coachError?[]:(coachRows||[]));}}
