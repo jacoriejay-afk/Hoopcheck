@@ -32,6 +32,7 @@ import ClaimProfileButton from "../../../components/ClaimProfileButton";
 import TeamOfficialUpdates from "../../../components/TeamOfficialUpdates";
 import TeamPlayersHistory from "../../../components/TeamPlayersHistory";
 import TeamFanGroupEntry from "../../../components/TeamFanGroupEntry";
+import FanBasketballSideSwitch from "../../../components/FanBasketballSideSwitch";
 import { summarizeRatedCategory } from "../../../lib/team-profile-rating-threshold";
 
 type Team = {
@@ -569,7 +570,8 @@ export default function TeamDetailPage() {
   return (
     <main className="hc-entity-profile-page hc-team-entity-profile">
 
-<TeamProfileHero
+<FanBasketballSideSwitch lockedHint />
+      <TeamProfileHero
         teamId={team.id}
         name={team.name}
         country={team.country || t("countryNotListed")}
