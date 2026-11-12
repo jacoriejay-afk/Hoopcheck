@@ -84,12 +84,16 @@ export function getHoopCheckEntitlements(args: {
   const isFan = role === "fan";
   const recognizedRole = ["player", "fan", "coach", "scout", "agent", "club_admin", "admin"].includes(role);
   const otherMember = recognizedRole && !isPlayer && !isFan;
+  const canUseHoopFeed = isAdmin || (
+    (recognizedRole || role === "manager") && active &&
+    ["active", "trialing", "pro", "premium"].includes(args.subscription?.access_status ?? "active")
+  );
 
   return {
     tier,
     hasPaidMembership: active,
-    canReadHoopFeed: active && (isAdmin || recognizedRole),
-    canWriteHoopFeed: (isAdmin || recognizedRole) && isAtLeastTier(tier, "pro"),
+    canReadHoopFeed: canUseHoopFeed,
+    canWriteHoopFeed: canUseHoopFeed,
     canReadFanFeed: isFan && isAtLeastTier(tier, "pro"),
     canWriteFanFeed: isFan && isAtLeastTier(tier, "pro"),
     canReadFullReviews: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) ||

@@ -83,7 +83,7 @@ html body .hc-global-page-shell main .hc-search-team-entry {
 html body .hc-global-page-shell main .hc-search-team-entry .actions { display: grid; gap: 10px; margin: 0; }
 html body .hc-global-page-shell main .hc-searchbar {
   border: 1px solid var(--hc-border) !important;
-  border-radius: 14px !important;
+  border-radius: var(--hc-radius-control) !important;
   background: var(--hc-input-bg) !important;
   color: var(--hc-input-fg) !important;
   box-shadow: none !important;
@@ -94,7 +94,7 @@ html body .hc-global-page-shell main .hc-searchbar__input {
   min-height: 48px; font-size: 16px;
 }
 html body .hc-global-page-shell main .hc-searchbar__submit {
-  border-radius: 10px !important; background: var(--accent) !important;
+  border-radius: var(--hc-radius-control) !important; background: var(--accent) !important;
   color: #111 !important; min-height: 48px; font-weight: 800;
 }
 html body .hc-global-page-shell main .hc-directory-switcher {

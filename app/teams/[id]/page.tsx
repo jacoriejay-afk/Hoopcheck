@@ -34,6 +34,8 @@ import ClaimProfileButton from "../../../components/ClaimProfileButton";
 import TeamOfficialUpdates from "../../../components/TeamOfficialUpdates";
 import TeamPlayersHistory from "../../../components/TeamPlayersHistory";
 import TeamFanGroupEntry from "../../../components/TeamFanGroupEntry";
+import FanBasketballSideSwitch from "../../../components/FanBasketballSideSwitch";
+import { summarizeRatedCategory } from "../../../lib/team-profile-rating-threshold";
 
 type Team = {
   id: string;
@@ -54,6 +56,7 @@ type Coach = {
 };
 
 type League = {
+  season: string | null;
   id: string;
   name: string;
   country: string | null;
@@ -170,6 +173,7 @@ export default function TeamDetailPage() {
 
   const [coaches, setCoaches] =
     useState<Coach[]>([]);
+  const [coachesLoadError, setCoachesLoadError] = useState(false);
 
   const [reviews, setReviews] =
     useState<Review[]>([]);
@@ -200,17 +204,28 @@ export default function TeamDetailPage() {
   const [loading, setLoading] =
     useState(true);
   const [teamSeason, setTeamSeason] = useState<LeagueSeasonStatus | null>(null);
-  const [activeProfileTab, setActiveProfileTab] = useState<"overview" | "reviews" | "players" | "roster-board" | "pay-transparency">("overview");
+  const [activeProfileTab, setActiveProfileTab] = useState<"overview" | "reviews" | "players" | "roster-board" | "pay-transparency" | "fan-group" | "coaches">("overview");
 
   useEffect(() => {
     const syncTab = () => {
       if (["#reviews", "#team-reviews-panel"].includes(window.location.hash)) setActiveProfileTab("reviews");
+      if (["#fan-hq", "#fan-group", "#team-fan-group-panel"].includes(window.location.hash)) setActiveProfileTab("fan-group");
+      if (["#roster", "#players", "#team-players-panel"].includes(window.location.hash)) setActiveProfileTab("players");
+      if (["#coaches", "#team-coaches-panel"].includes(window.location.hash)) setActiveProfileTab("coaches");
       if (["#overview", "#team-overview-panel"].includes(window.location.hash)) setActiveProfileTab("overview");
+      if (accountType && accountType !== "fan" && ["#roster-board", "#team-roster-board-panel"].includes(window.location.hash)) setActiveProfileTab("roster-board");
+      if (accountType && accountType !== "fan" && ["#pay-transparency", "#team-pay-transparency-panel"].includes(window.location.hash)) setActiveProfileTab("pay-transparency");
     };
     syncTab();
     window.addEventListener("hashchange", syncTab);
     return () => window.removeEventListener("hashchange", syncTab);
-  }, []);
+  }, [accountType]);
+
+  useEffect(() => {
+    if ((!accountType || accountType === "fan") && (activeProfileTab === "roster-board" || activeProfileTab === "pay-transparency")) {
+      setActiveProfileTab("overview");
+    }
+  }, [accountType, activeProfileTab]);
 
   const [reviewLoading, setReviewLoading] =
     useState(false);
@@ -228,6 +243,11 @@ export default function TeamDetailPage() {
     useState("");
 
   useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setTeam(null);
+    setCoaches([]);
+    setCoachesLoadError(false);
     async function loadTeam() {
       if (!id) {
         setLoading(false);
@@ -245,6 +265,7 @@ export default function TeamDetailPage() {
         .eq("id", id)
         .maybeSingle();
 
+      if (!active) return;
       if (
         teamError ||
         !teamData
@@ -254,6 +275,7 @@ export default function TeamDetailPage() {
         return;
       }
 
+      if (!active) return;
       setTeam(teamData);
       setTeamSeason(null);
       if (teamData.league_id) {
@@ -262,12 +284,15 @@ export default function TeamDetailPage() {
       }
       setLoading(false);
       const { count: approvedReviewCount } = await supabase.from("reviews").select("id", { count: "exact", head: true }).eq("team_id", id).eq("status", "approved");
+      if (!active) return;
       setTeamReviewCount(approvedReviewCount || 0);
 
       const { data: membershipData } = await supabase.from("team_league_memberships").select("id,league_id,season,start_date,end_date,active").eq("team_id", id).eq("active", true).order("season", { ascending: false });
+      if (!active) return;
       if (membershipData) {
         const leagueIds = membershipData.map((x) => x.league_id);
         const { data: leagueRows } = leagueIds.length ? await supabase.from("leagues").select("id,name").in("id", leagueIds) : { data: [] as any[] };
+        if (!active) return;
         setHistory(membershipData.map((x) => ({ ...x, league: leagueRows?.find((l) => l.id === x.league_id) })));
       }
 
@@ -276,7 +301,7 @@ export default function TeamDetailPage() {
           teamData.league_id
             ? supabase
                 .from("leagues")
-                .select("id, name, country, level")
+                .select("id, name, country, level, season")
                 .eq("id", teamData.league_id)
                 .maybeSingle()
             : Promise.resolve({ data: null, error: null }),
@@ -288,21 +313,26 @@ export default function TeamDetailPage() {
             .order("name"),
         ]);
 
+      if (!active) return;
       if (!leagueResult.error && leagueResult.data) {
         setLeague(leagueResult.data);
       }
 
-      if (!coachesResult.error && coachesResult.data) {
-        setCoaches(coachesResult.data);
-      }
+      if (!active) return;
+      setCoachesLoadError(Boolean(coachesResult.error));
+      if (coachesResult.error) console.error("Unable to load team coaches:", coachesResult.error);
+      setCoaches(coachesResult.error ? [] : (coachesResult.data || []));
 
       const { data: { session } } = await supabase.auth.getSession();
+      if (!active) return;
       const user = session?.user;
 
       if (user) {
         const { data: sharedProfiles } = await supabase.rpc("get_shared_team_followers", { p_team_id: id });
+      if (!active) return;
         setKnownPlayerFollowers((sharedProfiles || []).map((row: any) => row.display_name).filter(Boolean));
       }
+      if (!active) return;
       if (!user) {
         setLoading(false);
         return;
@@ -335,6 +365,7 @@ export default function TeamDetailPage() {
         ),
       ]);
 
+      if (!active) return;
       const subscription = subscriptionResult.data;
       setAccountType(profileResult.data?.account_type || "");
       setMembershipPlan(subscription?.plan || "");
@@ -351,6 +382,7 @@ export default function TeamDetailPage() {
         headers: { Authorization: `Bearer ${session?.access_token || ""}` },
         cache: "no-store",
       });
+      if (!active) return;
       const reviewPayload = response.ok ? await response.json() : null;
       const tier = (reviewPayload?.tier || "free") as typeof reviewTier;
       setReviewTier(tier);
@@ -376,7 +408,8 @@ export default function TeamDetailPage() {
         const { data: verificationData } = reviewIds.length
           ? await supabase.rpc("get_review_verification", { p_review_ids: reviewIds })
           : { data: [] };
-        const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map((item) => [item.review_id, Boolean(item.player_verified)]));
+        if (!active) return;
+      const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map((item) => [item.review_id, Boolean(item.player_verified)]));
         setReviews(reviewData.map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
       } else {
         setReviews([]);
@@ -387,6 +420,7 @@ export default function TeamDetailPage() {
     }
 
     loadTeam();
+    return () => { active = false; };
   }, [id]);
 
   useEffect(() => {
@@ -573,7 +607,8 @@ export default function TeamDetailPage() {
   return (
     <main className="hc-entity-profile-page hc-team-entity-profile">
 
-<TeamProfileHero
+<FanBasketballSideSwitch lockedHint />
+      <TeamProfileHero
         teamId={team.id}
         name={team.name}
         country={team.country || t("countryNotListed")}
@@ -581,13 +616,16 @@ export default function TeamDetailPage() {
         leagueName={league?.name || team.league_name}
         logoUrl={team.logo_url}
         logoBg={team.logo_bg}
+        level={league?.level}
+        seasonLabel={history.find(item => item.season)?.season || league?.season || undefined}
         reviewCount={teamReviewCount}
         followerCount={teamFollowerCount}
         trustScore={trustScoreData}
         onFollowerCountChange={setTeamFollowerCount}
+        onOpenFanGroup={() => setActiveProfileTab("fan-group")}
       />
-      <nav className="hc-team-profile-nav" aria-label="Team profile sections">
-        <div role="tablist" aria-label="Team profile tabs" onKeyDown={(event) => { if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return; event.preventDefault(); const tabs = ["overview", "reviews", ...(accountType !== "fan" ? ["players", "roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeProfileTab>; const index = tabs.indexOf(activeProfileTab); const next = tabs[(index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length]; setActiveProfileTab(next); document.getElementById(`team-${next}-tab`)?.focus(); }}>{(["overview", "reviews", ...(accountType !== "fan" ? ["players", "roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeProfileTab>).map(tab => <button key={tab} type="button" role="tab" id={`team-${tab}-tab`} aria-selected={activeProfileTab === tab} aria-controls={`team-${tab}-panel`} tabIndex={activeProfileTab === tab ? 0 : -1} onClick={() => setActiveProfileTab(tab)}>{tab === "roster-board" ? (language === "es" ? "TABLERO DE PLANTILLA" : "Roster Board") : tab === "pay-transparency" ? "Pay Transparency" : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>)}</div>
+      <nav className="hc-team-profile-nav" aria-label="Team profile sections" style={{position:"sticky",top:"var(--hc-header-height, 72px)",zIndex:20,maxWidth:"100%",overflowX:"auto",overscrollBehaviorX:"contain",WebkitOverflowScrolling:"touch",borderRadius:16,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",background:"var(--surface, rgba(24,27,36,.92))"}}>
+        <div role="tablist" aria-label="Team profile tabs" style={{display:"flex",flexWrap:"nowrap",width:"max-content",minWidth:"100%"}} onKeyDown={(event) => { if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return; event.preventDefault(); const tabs = ["overview", "players", "coaches", "reviews", "fan-group", ...(accountType && accountType !== "fan" ? ["roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeProfileTab>; const index = tabs.indexOf(activeProfileTab); const next = event.key === "Home" ? tabs[0] : event.key === "End" ? tabs[tabs.length - 1] : tabs[(index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length]; setActiveProfileTab(next); const target = document.getElementById(`team-${next}-tab`); target?.focus(); target?.scrollIntoView({block:"nearest",inline:"nearest"}); }}>{(["overview", "players", "coaches", "reviews", "fan-group", ...(accountType && accountType !== "fan" ? ["roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeProfileTab>).map(tab => <button key={tab} type="button" role="tab" style={{minHeight:44,padding:"10px 14px",flexShrink:0,whiteSpace:"nowrap",touchAction:"manipulation"}} id={`team-${tab}-tab`} aria-selected={activeProfileTab === tab} aria-controls={`team-${tab}-panel`} tabIndex={activeProfileTab === tab ? 0 : -1} onClick={() => setActiveProfileTab(tab)}>{tab === "players" ? "Roster" : tab === "fan-group" ? "Fan Group" : tab === "roster-board" ? (language === "es" ? "TABLERO DE PLANTILLA" : "Roster Board") : tab === "pay-transparency" ? "Pay Transparency" : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>)}</div>
       </nav>
       <div id="team-overview-panel" role="tabpanel" aria-labelledby="team-overview-tab" hidden={activeProfileTab !== "overview"}><div className="hc-team-profile-overview-grid">
         <section className="hc-team-profile-about" aria-labelledby="hc-team-about-title">
@@ -599,12 +637,28 @@ export default function TeamDetailPage() {
             <div><dt>Location</dt><dd>{[team.city,team.country].filter(Boolean).join(", ") || "Not listed"}</dd></div>
           </dl>
         </section>
-        <div id="fan-hq" className="hc-team-profile-community"><TeamFanGroupEntry teamId={team.id} /></div>
+
         <section className="hc-team-profile-snapshot" aria-labelledby="hc-team-snapshot-title">
           <p className="hc-team-profile-kicker">PLAYER EXPERIENCE</p>
           <h2 id="hc-team-snapshot-title">Trust Snapshot</h2>
           <p className="hc-team-profile-snapshot-note">{teamReviewCount > 0 ? `${teamReviewCount} published team reviews` : "No published reviews yet"}</p>
-          {hasAccess && trustScoreData?.score != null ? <TrustScoreDial score={trustScoreData.score} explanation={trustScoreData.explanation || t("trustScoreUnavailable")} reviewCount={trustScoreData.reviewCount} verifiedReviewCount={trustScoreData.verifiedReviewCount} /> : <p className="hc-team-profile-snapshot-note">{accountType === "fan" ? "Full trust details require an eligible Fan membership." : "Trust details are available with an eligible membership."}</p>}
+          {teamReviewCount === 0 ? <p className="hc-team-profile-snapshot-note">No reviews yet — players, be the first.</p> : hasAccess && trustScoreData?.score != null ? <TrustScoreDial score={trustScoreData.score} explanation={trustScoreData.explanation || t("trustScoreUnavailable")} reviewCount={trustScoreData.reviewCount} verifiedReviewCount={trustScoreData.verifiedReviewCount} /> : <p className="hc-team-profile-snapshot-note">{accountType === "fan" ? "Full trust details require an eligible Fan membership." : "Trust details are available with an eligible membership."}</p>}
+          {canReadFullReviews && reviews.length > 0 ? <div className="hc-team-look-categories" aria-label="Review category aggregates">
+            {([
+              ["Pay reliability", "pay_on_time_rating"],
+              ["Housing", "housing_rating"],
+              ["Coaching", "coaching_quality_rating"],
+              ["Medical support", "medical_support_rating"],
+              ["Facilities", "facilities_rating"],
+              ["Communication", "communication_rating"],
+              ["Playing time honesty", "playing_time_honesty_rating"],
+            ] as const).map(([label, key]) => {
+              const summary = summarizeRatedCategory(reviews, review => review[key]);
+              return <div key={key} style={{display:"flex",justifyContent:"space-between",gap:12,padding:"8px 0",borderBottom:"1px solid var(--border, rgba(128,128,128,.2))"}}>
+                <span>{label}</span><strong>{summary.percentage === null ? "Not enough reviews yet" : `${summary.percentage}%`}</strong>
+              </div>;
+            })}
+          </div> : null}
           <button type="button" className="hc-team-profile-inline-link" onClick={() => setActiveProfileTab("reviews")}>Explore team reviews</button>
         </section>
       </div>
@@ -618,6 +672,16 @@ export default function TeamDetailPage() {
         <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
         {canReadFullReviews && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">LATEST PLAYER REVIEW</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || t("playerExperience")}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
       </div>
+      <section className="card" id="team-coaches-panel" role="tabpanel" aria-labelledby="team-coaches-tab" hidden={activeProfileTab !== "coaches"}>
+        <p className="eyebrow">TEAM STAFF</p><h2>Coaches</h2>
+        {coachesLoadError ? <p role="alert">Coaching information is temporarily unavailable. Please try again later.</p> : coaches.length ? <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:12}}>
+          {coaches.map(coach => <Link key={coach.id} href={`/coaches/${coach.id}`} className="card" style={{display:"flex",alignItems:"center",gap:12,textDecoration:"none"}}>
+            <span aria-hidden="true" style={{width:44,height:44,borderRadius:"50%",display:"grid",placeItems:"center",background:"var(--surface-muted,rgba(128,128,128,.16))",fontWeight:800}}>{coach.name.trim().split(/\s+/).slice(0,2).map(part => part[0]).join("").toUpperCase()}</span>
+            <span><strong>{coach.name}</strong><small style={{display:"block"}}>{[coach.city,coach.country].filter(Boolean).join(", ")}</small></span>
+          </Link>)}
+        </div> : <p className="muted">No coaches are listed for this club yet.</p>}
+      </section>
+      <div id="team-fan-group-panel" role="tabpanel" aria-labelledby="team-fan-group-tab" hidden={activeProfileTab !== "fan-group"}><div id="fan-hq" className="hc-team-profile-community"><TeamFanGroupEntry teamId={team.id} /></div></div>
       <section className="hero" id="team-reviews-panel" role="tabpanel" aria-labelledby="team-reviews-tab" hidden={activeProfileTab !== "reviews"}>
             {canReadFullReviews ? (
               <Surface as="div" className="hc-entity-trust-score hc-team-reviews-trust-strip"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /><div className="hc-team-score-categories" aria-label="Category ratings">{([{label:"Communication",value:publicSummary.communication_rating},{label:"Professionalism",value:publicSummary.professionalism_rating},{label:"Development",value:publicSummary.development_rating},{label:"Payment",value:publicSummary.payment_rating}] as const).filter(item => item.value !== null).map(item => <span key={item.label}><small>{item.label}</small><strong>{Number(item.value).toFixed(1)}</strong></span>)}</div></Surface>
@@ -754,19 +818,17 @@ export default function TeamDetailPage() {
             )}
           </section>
 
-      {accountType !== "fan" && <>
       <div id="team-players-panel" role="tabpanel" aria-labelledby="team-players-tab" hidden={activeProfileTab !== "players"}>{teamSeason && <p role="status">{teamSeason.inSeason ? `Current roster · ${teamSeason.seasonLabel}` : `Last season’s roster · ${teamSeason.seasonLabel}. Season starts ${teamSeason.nextStartMonth}.`}</p>}<TeamPlayersHistory teamId={team.id} /></div>
-      <section className="hero" id="team-roster-board-panel" role="tabpanel" aria-labelledby="team-roster-board-tab" hidden={activeProfileTab !== "roster-board"}>
+      {accountType && accountType !== "fan" && <section className="hero" id="team-roster-board-panel" role="tabpanel" aria-labelledby="team-roster-board-tab" hidden={activeProfileTab !== "roster-board"}>
         <div className="eyebrow">ROSTER BOARD</div>
         <h2>Open roster spots</h2>
         {teamSeason?.inSeason ? <TeamRosterSpots teamId={team.id} teamName={team.name} /> : <p className="muted">{teamSeason ? `Season starts ${teamSeason.nextStartMonth}.` : "The league season window is awaiting verification."}</p>}
-      </section>
+      </section>}
       {accountType && accountType !== "fan" && <section className="hero" id="team-pay-transparency-panel" role="tabpanel" aria-labelledby="team-pay-transparency-tab" hidden={activeProfileTab !== "pay-transparency"}>
         <div className="eyebrow">PAY TRANSPARENCY</div>
         <h2>Payment history</h2>
         <TeamPayTimeline teamId={team.id} />
       </section>}
-      </>}
 
       {team && <><TeamOfficialUpdates teamId={team.id} /><FanTeamPosts teamId={team.id} /></>}
 

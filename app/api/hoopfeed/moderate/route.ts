@@ -138,6 +138,7 @@ export async function POST(request: Request) {
       });
       const { data, error } = await viewerDb.from("feed_posts")
         .select("id").eq("id", postId).eq("status", "approved")
+        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
         .maybeSingle();
       return !error && !!data;
     }
@@ -160,7 +161,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: false, message: "Invalid HoopFeed action." }, { status: 400 });
     }
     const kind = kindValues.length === 0 ? "post" : kindValues[0];
-    if (kind !== "post" && kind !== "comment" && kind !== "share" && kind !== "vote" && kind !== "bookmark" && kind !== "pin") {
+    if (kind !== "post" && kind !== "edit" && kind !== "comment" && kind !== "share" && kind !== "vote" && kind !== "bookmark" && kind !== "pin") {
       return NextResponse.json({ allowed: false, message: "Unsupported content type." }, { status: 400 });
     }
     const postIdValues = form.getAll("post_id");
@@ -217,7 +218,7 @@ export async function POST(request: Request) {
     if (videoPath && (!ALLOWED_VIDEO_TYPES.has(videoType) || !(videoPath.startsWith(user.id + "/") || videoPath.startsWith("hoopfeed-private-videos/" + user.id + "/")) || videoPath.includes("..") || videoPath.length > 240)) return NextResponse.json({ allowed:false, message:"Invalid video upload. Choose a supported video and try again." }, { status:400 });
     if (videoPath && allImages.length > 0) return NextResponse.json({ allowed: false, message: "Choose photos or a video for one post, not both." }, { status: 400 });
     if (videoPath && !text) return NextResponse.json({ allowed:false, message:"Add a caption so HoopCheck can run text safety checks before publishing a video." }, { status:400 });
-    if (kind === "comment" && (allImages.length > 0 || videoPath)) {
+    if ((kind === "comment" || kind === "edit") && (allImages.length > 0 || videoPath)) {
       return NextResponse.json({ allowed: false, message: "Photos and videos can only be added to posts." }, { status: 400 });
     }
 
@@ -377,6 +378,59 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: false, message: "Add text, a photo, or a video before posting." }, { status: 400 });
     }
 
+    if (kind === "edit") {
+      if (!text) return NextResponse.json({ allowed: false, message: "Post text cannot be empty." }, { status: 400 });
+      if (!(await canInteractWithPost(actionPostId))) {
+        return NextResponse.json({ allowed: false, message: "Post unavailable." }, { status: 404 });
+      }
+      const { data: existing, error: readError } = await db.from("feed_posts")
+        .select("id").eq("id", actionPostId).eq("author_id", user.id).eq("status", "approved")
+        .is("shared_post_id", null).maybeSingle();
+      if (readError || !existing) {
+        return NextResponse.json({ allowed: false, message: "You cannot edit this post." }, { status: 403 });
+      }
+      const decision = await moderate(text, null);
+      if (!decision.allowed) return NextResponse.json({ allowed: false, message: decision.message }, { status: decision.status });
+      const { data: updated, error: updateError } = await db.from("feed_posts")
+        .update({ body: text }).eq("id", actionPostId).eq("author_id", user.id).eq("status", "approved")
+        .is("shared_post_id", null).select("id").maybeSingle();
+      if (updateError || !updated) {
+        return NextResponse.json({ allowed: false, message: "Post edit failed. Please try again." }, { status: 400 });
+      }
+      return NextResponse.json({ allowed: true });
+    }
+
+    if (kind === "comment") {
+      if (!text || text.length > 1000) {
+        return NextResponse.json({ allowed: false, message: "Write a comment of up to 1,000 characters." }, { status: 400 });
+      }
+      if (!(await canInteractWithPost(actionPostId))) return NextResponse.json({ allowed: false, message: "Post unavailable." }, { status: 404 });
+      const parentValues = form.getAll("parent_id");
+      const parentId = parentValues[0];
+      if (parentValues.length > 1 || (parentId !== undefined && (
+        typeof parentId !== "string" || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(parentId)
+      ))) {
+        return NextResponse.json({ allowed: false, message: "Invalid reply target." }, { status: 400 });
+      }
+      if (parentId) {
+        const { data: parent, error } = await db.from("feed_post_comments")
+          .select("id").eq("id", parentId).eq("post_id", actionPostId).maybeSingle();
+        if (error || !parent) {
+          return NextResponse.json({ allowed: false, message: "Reply target not found in this post." }, { status: 400 });
+        }
+      }
+      const decision = await moderate(text, null);
+      if (!decision.allowed) return NextResponse.json({ allowed: false, message: decision.message }, { status: decision.status });
+      const { error } = await db.from("feed_post_comments").insert({
+        post_id: actionPostId,
+        author_id: user.id,
+        body: text,
+        ...(parentId ? { parent_id: parentId } : {}),
+      });
+      if (error) return NextResponse.json({ allowed: false, message: "We couldn't publish your comment. Please try again." }, { status: 400 });
+      return NextResponse.json({ allowed: true });
+    }
+
     const moderationText = kind === "post" && postKind === "poll" ? text + "\n" + (pollOptions ?? []).join("\n") : text;
     const result = await moderate(moderationText, allImages[0] ?? null);
     if (!result.allowed) return NextResponse.json({ allowed: false, message: result.message }, { status: result.status });
@@ -385,20 +439,6 @@ export async function POST(request: Request) {
     const otherPhotoResults = await Promise.all(allImages.slice(1).map(photo => moderate("", photo)));
     const photoRejection = otherPhotoResults.find(decision => !decision.allowed);
     if (photoRejection) return NextResponse.json({ allowed: false, message: photoRejection.message }, { status: photoRejection.status });
-
-    if (kind === "comment") {
-      if (!(await canInteractWithPost(actionPostId))) return NextResponse.json({ allowed: false, message: "Post unavailable." }, { status: 404 });
-      if (!text) return NextResponse.json({ allowed: false, message: "Write a comment before posting." }, { status: 400 });
-      const postId = actionPostId;
-      if (!postId) return NextResponse.json({ allowed: false, message: "Post not found." }, { status: 400 });
-      const { data: post } = await db.from("feed_posts").select("id,author_id,expires_at,status").eq("id",postId).maybeSingle();
-      if (!post || post.status !== "approved") {
-        return NextResponse.json({ allowed: false, message: "This HoopFeed post is no longer available." }, { status: 404 });
-      }
-      const { error } = await db.from("feed_post_comments").insert({ post_id:postId,author_id:user.id,body:text });
-      if (error) return NextResponse.json({ allowed:false,message:"We couldn't publish your comment. Please try again." },{status:400});
-      return NextResponse.json({ allowed:true });
-    }
 
     let image_url: string | null = null;
     let video_url: string | null = null;
