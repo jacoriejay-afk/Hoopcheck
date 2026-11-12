@@ -4,19 +4,17 @@
 -- still require server-side block enforcement and isolated tests.
 BEGIN;
 
-CREATE TABLE IF NOT EXISTS public.user_blocks (
+-- Fail closed if an unexpected table already exists; never inherit unknown policies.\nCREATE TABLE public.user_blocks (
   blocker_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   blocked_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (blocker_id, blocked_id),
   CONSTRAINT user_blocks_no_self CHECK (blocker_id <> blocked_id)
 );
-CREATE INDEX IF NOT EXISTS user_blocks_blocked_id_idx ON public.user_blocks(blocked_id);
--- Idempotent creation does not automatically establish a secure ownership
--- policy on an existing table; production preflight must verify the schema.
+CREATE INDEX user_blocks_blocked_id_idx ON public.user_blocks(blocked_id);
 
 ALTER TABLE public.user_blocks ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.user_blocks FROM PUBLIC, anon;
+REVOKE ALL ON public.user_blocks FROM PUBLIC, anon, authenticated;
 GRANT SELECT, INSERT, DELETE ON public.user_blocks TO authenticated;
 DROP POLICY IF EXISTS user_blocks_select_own ON public.user_blocks;
 CREATE POLICY user_blocks_select_own ON public.user_blocks FOR SELECT TO authenticated
