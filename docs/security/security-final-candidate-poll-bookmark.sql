@@ -12,9 +12,10 @@ CREATE POLICY "feed poll votes read" ON public.feed_poll_votes
  WHERE fp.id=feed_poll_votes.post_id AND fp.status='approved'
  AND fp.post_kind='poll'
  AND (fp.expires_at IS NULL OR fp.expires_at>now())
- AND jsonb_typeof(fp.poll_options)='array'
- AND feed_poll_votes.option_index>=0
- AND feed_poll_votes.option_index<jsonb_array_length(fp.poll_options)));
+ AND CASE WHEN jsonb_typeof(fp.poll_options)='array'
+ THEN feed_poll_votes.option_index>=0
+ AND feed_poll_votes.option_index<jsonb_array_length(fp.poll_options)
+ ELSE false END));
 DROP POLICY IF EXISTS "feed poll votes insert own" ON public.feed_poll_votes;
 CREATE POLICY "feed poll votes insert own" ON public.feed_poll_votes
  FOR INSERT TO authenticated WITH CHECK (
@@ -22,9 +23,10 @@ CREATE POLICY "feed poll votes insert own" ON public.feed_poll_votes
  SELECT 1 FROM public.feed_posts fp WHERE fp.id=feed_poll_votes.post_id
  AND fp.status='approved' AND fp.post_kind='poll'
  AND (fp.expires_at IS NULL OR fp.expires_at>now())
- AND jsonb_typeof(fp.poll_options)='array'
- AND feed_poll_votes.option_index>=0
- AND feed_poll_votes.option_index<jsonb_array_length(fp.poll_options)));
+ AND CASE WHEN jsonb_typeof(fp.poll_options)='array'
+ THEN feed_poll_votes.option_index>=0
+ AND feed_poll_votes.option_index<jsonb_array_length(fp.poll_options)
+ ELSE false END));
 DROP POLICY IF EXISTS "feed poll votes update own" ON public.feed_poll_votes;
 CREATE POLICY "feed poll votes update own" ON public.feed_poll_votes
  FOR UPDATE TO authenticated
@@ -36,9 +38,10 @@ CREATE POLICY "feed poll votes update own" ON public.feed_poll_votes
  SELECT 1 FROM public.feed_posts fp WHERE fp.id=feed_poll_votes.post_id
  AND fp.status='approved' AND fp.post_kind='poll'
  AND (fp.expires_at IS NULL OR fp.expires_at>now())
- AND jsonb_typeof(fp.poll_options)='array'
- AND feed_poll_votes.option_index>=0
- AND feed_poll_votes.option_index<jsonb_array_length(fp.poll_options)));
+ AND CASE WHEN jsonb_typeof(fp.poll_options)='array'
+ THEN feed_poll_votes.option_index>=0
+ AND feed_poll_votes.option_index<jsonb_array_length(fp.poll_options)
+ ELSE false END));
 DROP POLICY IF EXISTS "feed bookmarks insert own" ON public.feed_post_bookmarks;
 CREATE POLICY "feed bookmarks insert own" ON public.feed_post_bookmarks
  FOR INSERT TO authenticated WITH CHECK (
