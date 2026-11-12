@@ -78,7 +78,7 @@ export default function LoginPage() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: "https://hoopcheck.online/reset-password",
       });
       if (error) throw error;
       setMessage("If an account exists for that email, we sent a password reset link.");
