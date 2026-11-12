@@ -53,6 +53,7 @@ export default function DashboardPage() {
   const [feedPost,setFeedPost] = useState<FeedPost|null>(null);
   const [liveCounts,setLiveCounts] = useState<{live:number|null;upcoming:number|null}>({live:null,upcoming:null});
   const [hasFeedAccess,setHasFeedAccess] = useState(false);
+  const [membershipTier,setMembershipTier] = useState<"free"|"pro"|"premium">("free");
   const [loading,setLoading] = useState(true);
   const [loadError,setLoadError] = useState(false);
   const [authErrorDetail,setAuthErrorDetail] = useState("");
@@ -112,6 +113,7 @@ export default function DashboardPage() {
       if (followsResult.status === "rejected") console.error("Dashboard follows request failed:", followsResult.reason);
       setProfile(p as Profile|null);
       const entitlements = getHoopCheckEntitlements({ accountType: p?.account_type, subscription });
+      setMembershipTier(entitlements.tier);
       const followedIds = (follows||[]).map((row:any)=>row.target_id).filter(Boolean);
 
       // Show the dashboard immediately; the remaining panels are best-effort enhancements.
@@ -142,7 +144,7 @@ export default function DashboardPage() {
         if (mounted && posts && posts.length) setFeedPost(posts[0] as FeedPost);
       }
 
-      if (entitlements.canUseLiveGameHub && p?.account_type === "fan") {
+      if (entitlements.canUseLiveGameHub) {
         const {data:games,error:gamesError} = await supabase.from("fan_live_games").select("status,scheduled_at").in("status",["live","scheduled"]).order("scheduled_at",{ascending:true}).limit(200);
         const now = Date.now();
         if (mounted && !gamesError) setLiveCounts({live:(games||[]).filter((g:any)=>g.status==="live").length,upcoming:(games||[]).filter((g:any)=>g.status==="scheduled" && (!g.scheduled_at || new Date(g.scheduled_at).getTime()>=now)).length});
@@ -163,47 +165,25 @@ export default function DashboardPage() {
 
   if(loadError)return <main className="page-shell dashboard-page"><div className="page-container"><div role="alert" className="hc-smooth-inbox-error"><strong>Dashboard unavailable.</strong> {authErrorDetail || "Please try again."} <div style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:16}}><button type="button" onClick={()=>setReloadKey(v=>v+1)}>Retry dashboard</button><Link href="/login?returnTo=/dashboard">Go to login</Link><Link href="/">Back to home</Link></div></div></div></main>;
 
-  if(profile?.account_type==="fan") return (
-    <main className="page-shell hc-ia-home hc-dashboard-compact"><div className="page-container">
-      <header className="hc-ia-welcome hc-home-hero"><p className="eyebrow">{t("home.fanEyebrow")}</p><h1>{t("home.fanTitle")}<span>.</span></h1><p className="muted">{t("home.fanDescription")}</p><div className="hc-ia-identity"><span className="hc-ia-avatar">{displayName.charAt(0).toUpperCase()}</span><span><small>{t("home.signedIn")}</small><strong>{displayName}</strong></span></div></header>
-      <HomePulse live={liveCounts.live} upcoming={liveCounts.upcoming} followedClubs={teams.length} fan/>
-      {teams.length > 0 ? <section className="hc-ia-section hc-ia-your-clubs">
-        <div className="hc-ia-section-heading"><div><p className="eyebrow">YOUR CLUBS</p><h2>Teams you follow</h2></div><Link href="/team-hub">Open Team Hub <HoopIcon name="arrow-right" size={15}/></Link></div>
-        <div className="hc-ia-fan-grid">{teams.slice(0,4).map(team => <Link key={team.id} href={basketballSide === "womens" ? `/womens/${team.id}` : `/teams/${team.id}`} className="hc-ia-door"><TeamLogo name={team.name} size={40} className="hc-live-team-logo"/><span><strong>{team.name}</strong><small>{[team.league_name,team.country].filter(Boolean).join(" · ") || "Basketball club"}</small></span><HoopIcon name="chevron-right" size={18}/></Link>)}</div>
-      </section> : <section className="hc-ia-section hc-ia-your-clubs">
-        <p className="eyebrow">START YOUR FAN HQ</p><h2>Follow your first club</h2>
-        <p className="muted">Choose a team to personalize your scores, club updates and fan conversations.</p>
-        <Link href={basketballSide === "womens" ? "/womens" : "/teams"} className="btn">Explore {basketballSide === "womens" ? "women's" : "men's"} teams</Link>
-      </section>}
-      <section className="hc-ia-section"><h2>{t("home.fanSide")}</h2><div className="hc-ia-fan-grid">
-        <Link href="/team-hub" className="hc-ia-door"><CategoryIconTile category="teams" size="sm"/><span><strong>{t("home.teamHub")}</strong><small>{t("home.teamHubDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-        <Link href="/fan-feed" className="hc-ia-door"><CategoryIconTile category="reviews" size="sm"/><span><strong>{t("home.fanFeed")}</strong><small>{t("home.fanFeedDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-        <Link href="/fans" className="hc-ia-door"><CategoryIconTile category="reviews" icon="users" size="sm"/><span><strong>{t("home.findFan")}</strong><small>{t("home.findFanDescription")}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-        <Link href="/fan-live" className="hc-ia-door"><CategoryIconTile category="leagues" size="sm"/><span><strong>{t("home.liveGames")}</strong><small>{liveCounts.live===null?"Open the live game hub":`${liveCounts.live} live · ${liveCounts.upcoming ?? "—"} upcoming`}</small></span><HoopIcon name="chevron-right" size={18}/></Link>
-      </div></section>
-      <Link href="/account" className="hc-ia-account-link">{t("home.accountSettings")} <HoopIcon name="arrow-right" size={16}/></Link>
-    </div></main>
-  );
-
   return (
     <main className="page-shell hc-home3">
       <div className="page-container hc-home3-stack">
         <Link href="/search" className="hc-home3-search"><HoopIcon name="search" size={17}/> <span>Search players, coaches, teams, or leagues…</span></Link>
         <section className="hc-home3-greeting">
-          <div className="hc-home3-greeting-line"><strong>Welcome back, {displayName}</strong><span className="hc-home3-tier">{profile?.account_type?.toUpperCase() || "PLAYER"}</span></div>
+          <div className="hc-home3-greeting-line"><strong>Welcome back, {displayName}</strong><span className="hc-home3-tier">{membershipTier.toUpperCase()}</span></div>
           <p>Know who you’re signing with.</p>
           {completion < 100 && <><div className="hc-home3-completion"><span style={{width:`${completion}%`}}/></div><div className="hc-home3-progress-label"><span>Profile {completion}% — finish for full visibility</span><Link href="/account#edit-profile">Finish</Link></div></>}
         </section>
         {liveCounts.live !== null && (liveCounts.live > 0 || (liveCounts.upcoming ?? 0) > 0) && <section className="hc-home3-section"><h2>YOUR LEAGUE — LIVE & NEXT</h2><Link href="/live-games" className="hc-home3-live"><span className="hc-ia-live-dot"/> {liveCounts.live} live · {liveCounts.upcoming} upcoming <span>View games →</span></Link></section>}
         <section className="hc-home3-section"><h2>QUICK ACTIONS</h2><div className="hc-home3-actions">
           <Link href="/teams"><HoopIcon name="shield-check" size={22}/><span>Check a Team</span></Link>
-          <Link href="/reviews"><HoopIcon name="pencil-line" size={22}/><span>Review a Team</span></Link>
+          <Link href={profile?.account_type === "fan" ? "/team-hub" : "/reviews"}><HoopIcon name="pencil-line" size={22}/><span>{profile?.account_type === "fan" ? "Team Hub" : "Review a Team"}</span></Link>
           <Link href="/live-games"><HoopIcon name="radio" size={22}/><span>Live Games</span></Link>
           <Link href="/team-hub"><HoopIcon name="users" size={22}/><span>Fan Groups</span></Link>
         </div></section>
-        <section className="hc-home3-section"><div className="hc-home3-heading"><h2>FROM THE COMMUNITY</h2><Link href="/feed">Open HoopFeed →</Link></div>
-          {hasFeedAccess && feedPost ? <Link href="/feed" className="hc-home3-post"><strong>{feedPost.profiles?.[0]?.display_name || "Community member"}</strong><p>{feedPost.body}</p></Link> : !hasFeedAccess ? <Link href="/membership" className="hc-home3-post">HoopFeed is available with Pro or Premium. View membership →</Link> : null}
-        </section>
+        {(feedPost || !hasFeedAccess) && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>FROM THE COMMUNITY</h2><Link href="/feed">Open HoopFeed →</Link></div>
+          {hasFeedAccess && feedPost ? <Link href="/feed" className="hc-home3-post"><strong>{feedPost.profiles?.[0]?.display_name || "Community member"}</strong><p>{feedPost.body}</p></Link> : !hasFeedAccess && profile?.account_type !== "fan" ? <Link href="/membership" className="hc-home3-post">HoopFeed is available with Pro or Premium. View membership →</Link> : null}
+        </section>}
         {teams.length > 0 ? <section className="hc-home3-section"><h2>YOUR TEAM</h2><Link href={(basketballSide === "womens" ? "/womens/" : "/teams/") + teams[0].id} className="hc-home3-team"><TeamLogo name={teams[0].name} size={34}/><strong>{teams[0].name}</strong><span>Team page →</span></Link></section> : <Link href="/teams" className="hc-home3-team">Find your team →</Link>}
         <footer className="hc-home3-footer">Every league. Every level. Real reviews, one community.</footer>
       </div>
