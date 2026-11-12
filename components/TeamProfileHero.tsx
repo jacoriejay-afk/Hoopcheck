@@ -21,11 +21,12 @@ type TeamProfileHeroProps = {
   trustScore?: { score: number | null; explanation?: string; reviewCount?: number; verifiedReviewCount?: number } | null;
   className?: string;
   onFollowerCountChange?: (count: number) => void;
+  onOpenFanGroup?: () => void;
 };
 
 export default function TeamProfileHero({
   teamId, name, country, city, leagueName, logoUrl, logoBg, coverUrl,
-  level, gender = "mens", claimed = false, className = "", onFollowerCountChange,
+  level, gender = "mens", claimed = false, className = "", onFollowerCountChange, onOpenFanGroup,
 }: TeamProfileHeroProps) {
   const initials = name.trim().split(/\s+/).slice(0, 2).map(word => word[0]).join("").toUpperCase();
   const accent = gender === "womens" ? "#e83e8c" : "#f97316";
@@ -59,7 +60,7 @@ export default function TeamProfileHero({
       </div>
       <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginTop:24}}>
         <FollowButton targetType="team" targetId={teamId} variant="club" showCount={false} showNotifications={false} onCountChange={onFollowerCountChange} />
-        <a href="#fan-hq" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",padding:"11px 18px",borderRadius:12,background:accent,color:"#fff",fontWeight:800,textDecoration:"none"}}>Join Fan Group</a>
+        <a href="#fan-hq" onClick={onOpenFanGroup} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",padding:"11px 18px",borderRadius:12,background:accent,color:"#fff",fontWeight:800,textDecoration:"none"}}>Join Fan Group</a>
       </div>
     </section>
   );
