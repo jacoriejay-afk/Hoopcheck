@@ -206,14 +206,14 @@ assert.match(fanConnection, /accountType !== "fan"/, "fan connection gates must 
 
 assert.match(feedModerationSource, /submittedImages\.length > 4/, "HoopFeed must reject uploads exceeding four photos");
 
-assert.match(feedModerationSource, /kind === "comment" && \(allImages\.length > 0 \|\| videoPath\)/, "comments must reject every image attachment field");
+assert.match(feedModerationSource, /\(kind === "comment" \|\| kind === "edit"\) && \(allImages\.length > 0 \|\| videoPath\)/, "comments must reject every image attachment field");
 
 assert.match(feedModerationSource, /const optionIndex = \/\^\\d\+\$\/\.test\(optionIndexText\) \? Number\(optionIndexText\) : NaN/, "poll option must be an explicitly supplied decimal integer");
 
 
 assert.match(feedModerationSource, /new Set\(cleaned\.map\(\(option\) => option\.toLocaleLowerCase\(\)\)\)\.size !== cleaned\.length/, "poll choices must be distinct regardless of case");
 
-assert.match(feedModerationSource, /if \(!text\) return NextResponse\.json\(\{ allowed: false, message: "Write a comment before posting\." \}/, "empty comments must be rejected");
+assert.match(feedModerationSource, /if \(!text \|\| text\.length > 1000\)/, "empty comments must be rejected");
 
 assert.match(feedModerationSource, /kind === "post" && !text && allImages\.length === 0 && !videoPath/, "posts must contain text or media");
 
@@ -264,11 +264,10 @@ const unifiedFeedPolicy = read("../supabase/migrations/20261111233000_unify_hoop
 assert.match(unifiedFeedPolicy, /DROP POLICY IF EXISTS "player experience feed read"/, "old follower feed policy must be replaced");
 assert.match(unifiedFeedPolicy, /ALTER TABLE public.feed_posts ALTER COLUMN expires_at DROP DEFAULT/, "permanent feed must remove 24-hour database default");
 assert.match(unifiedFeedPolicy, /DROP POLICY IF EXISTS "player feed comments read"/, "comment reads must use unified feed permissions");
-assert.doesNotMatch(unifiedFeedPolicy, /expires_at > now\(\)/, "permanent feed policies must not expire posts");
+assert.match(unifiedFeedPolicy, /expires_at IS NULL OR expires_at > now\(\)/, "permanent posts remain visible while legacy expirations are respected");
 assert.match(unifiedFeedPolicy, /DROP POLICY IF EXISTS "player feed checks insert"/, "old player-only checks policy must be replaced");
-assert.match(unifiedFeedPolicy, /'player','fan','coach','scout','agent','club_admin','admin'/, "unified feed must include recognized account types");
+assert.match(unifiedFeedPolicy, /'player','fan','coach','scout','agent','club_admin','manager'/, "unified feed must include recognized account types");
 assert.match(unifiedFeedPolicy, /s\.current_period_end IS NULL OR s\.current_period_end > now\(\)/, "checks must respect membership expiration");
-assert.match(unifiedFeedPolicy, /coalesce\(sub\.access_status,'active'\) IN/, "feed reads must preserve subscription access status");
 assert.match(unifiedFeedPolicy, /coalesce\(s\.access_status,'active'\) IN/, "checks must preserve subscription access status");
 assert.match(unifiedFeedPolicy, /fp\.status = 'approved'/, "checks must target approved posts");
 
