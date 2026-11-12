@@ -568,10 +568,10 @@ export default function TeamDetailPage() {
         trustScore={trustScoreData}
         onFollowerCountChange={setTeamFollowerCount}
       />
-      <nav className="hc-team-profile-nav" aria-label="Team profile sections">
-        {(["overview", "reviews", ...(accountType !== "fan" ? ["players", "roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as const).map(section => <button key={section} type="button" aria-current={activeTeamSection === section ? "page" : undefined} aria-controls={`team-panel-${section}`} onClick={() => setActiveTeamSection(section)}>{section === "roster-board" ? "Roster Board" : section === "pay-transparency" ? "Pay Transparency" : section.charAt(0).toUpperCase() + section.slice(1)}</button>)}
+      <nav className="hc-team-profile-nav" role="tablist" aria-label="Team profile sections">
+        {(["overview", "reviews", ...(accountType !== "fan" ? ["players", "roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as const).map(section => <button key={section} type="button" role="tab" id={`team-tab-${section}`} aria-selected={activeTeamSection === section} aria-controls={`team-panel-${section}`} onClick={() => setActiveTeamSection(section)}>{section === "roster-board" ? "Roster Board" : section === "pay-transparency" ? "Pay Transparency" : section.charAt(0).toUpperCase() + section.slice(1)}</button>)}
       </nav>
-      <div id="team-panel-overview" hidden={activeTeamSection !== "overview"} className="hc-team-profile-overview-grid">
+      <div id="team-panel-overview" role="tabpanel" aria-labelledby="team-tab-overview" hidden={activeTeamSection !== "overview"} className="hc-team-profile-overview-grid">
         <section className="hc-team-profile-about" aria-labelledby="hc-team-about-title">
           <p className="hc-team-profile-kicker">CLUB OVERVIEW</p>
           <h2 id="hc-team-about-title">About {team.name}</h2>
@@ -599,7 +599,7 @@ export default function TeamDetailPage() {
         </div>
         <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} onSaved={(logoUrl, logoBg) => setTeam(current => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
         {canReadFullReviews && reviews[0] && <article className="card hc-team-overview-latest"><p className="eyebrow">LATEST PLAYER REVIEW</p><div className="hc-team-overview-latest__top"><h2>{reviews[0].title || t("playerExperience")}</h2><strong>{Number(reviews[0].overall_rating).toFixed(1)}/5</strong></div><p>{reviews[0].body}</p><p className="muted">{reviews[0].player_season || t("seasonNotRecorded")} · {formatDate(reviews[0].created_at)}</p></article>}
-      <section className="hero" id="team-panel-reviews" hidden={activeTeamSection !== "reviews"}>
+      <section className="hero" id="team-panel-reviews" role="tabpanel" aria-labelledby="team-tab-reviews" hidden={activeTeamSection !== "reviews"}>
             {canReadFullReviews ? (
               <Surface as="div" className="hc-entity-trust-score hc-team-reviews-trust-strip"><TrustScoreDial score={trustScoreData?.score ?? null} explanation={trustScoreData?.explanation || (publicSummary.review_count > 0 ? t("trustScoreUnavailable") : t("noApprovedPlayerReviewsYet"))} reviewCount={trustScoreData?.reviewCount ?? publicSummary.review_count} verifiedReviewCount={trustScoreData?.verifiedReviewCount ?? 0} /><div className="hc-team-score-categories" aria-label="Category ratings">{([{label:"Communication",value:publicSummary.communication_rating},{label:"Professionalism",value:publicSummary.professionalism_rating},{label:"Development",value:publicSummary.development_rating},{label:"Payment",value:publicSummary.payment_rating}] as const).filter(item => item.value !== null).map(item => <span key={item.label}><small>{item.label}</small><strong>{Number(item.value).toFixed(1)}</strong></span>)}</div></Surface>
             ) : null}
@@ -736,13 +736,13 @@ export default function TeamDetailPage() {
           </section>
 
       {accountType !== "fan" && <>
-      <div id="team-panel-players" hidden={activeTeamSection !== "players"}><TeamPlayersHistory teamId={team.id} /></div>
-      <section className="hero" id="team-panel-roster-board" hidden={activeTeamSection !== "roster-board"}>
+      <div id="team-panel-players" role="tabpanel" aria-labelledby="team-tab-players" hidden={activeTeamSection !== "players"}><TeamPlayersHistory teamId={team.id} /></div>
+      <section className="hero" id="team-panel-roster-board" role="tabpanel" aria-labelledby="team-tab-roster-board" hidden={activeTeamSection !== "roster-board"}>
         <div className="eyebrow">ROSTER BOARD</div>
         <h2>Open roster spots</h2>
         <TeamRosterSpots teamId={team.id} teamName={team.name} />
       </section>
-      {accountType && accountType !== "fan" && <section className="hero" id="team-panel-pay-transparency" hidden={activeTeamSection !== "pay-transparency"}>
+      {accountType && accountType !== "fan" && <section className="hero" id="team-panel-pay-transparency" role="tabpanel" aria-labelledby="team-tab-pay-transparency" hidden={activeTeamSection !== "pay-transparency"}>
         <div className="eyebrow">PAY TRANSPARENCY</div>
         <h2>Payment history</h2>
         <TeamPayTimeline teamId={team.id} />
