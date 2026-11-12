@@ -272,8 +272,8 @@ function MembershipContent() {
       <section className="membership-section">
         {isActive && subscription && !subscription.stripe_subscription_id && (
           <div className="dashboard-card" style={{ marginBottom: 16 }}>
-            <strong>Complimentary HoopCheck access is active.</strong>
-            <span className="muted"> You can keep using your current access or choose a paid membership below.</span>
+            <strong>Your HoopCheck membership is active.</strong>
+            <span className="muted"> Your current access is based on your account membership. You can review available plans below.</span>
           </div>
         )}
         {isActive && subscription?.stripe_subscription_id && (
@@ -380,6 +380,7 @@ function MembershipContent() {
                 <ul>
                   {accountType === "fan" ? <>
                     <li>Fan HoopFeed reading and posting</li>
+                    <li>Review previews only; full player-written reviews require Fan Premium</li>
                     <li>Fan network and connection requests</li>
                     <li>Live Game Hub and Chat</li>
                     <li>Team comparison and team alerts</li>
