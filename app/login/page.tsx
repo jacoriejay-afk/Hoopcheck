@@ -131,8 +131,8 @@ export default function LoginPage() {
           </form>
 
           {message && (
-            <div style={{ marginTop: 18, padding: 14, border: messageIsSuccess ? "1px solid #86c7a2" : "1px solid #e5aaa6", borderRadius: 8, background: messageIsSuccess ? "#edf9f1" : "#fff1f0" }}>
-              <p role={messageIsSuccess ? "status" : "alert"} aria-live="polite" style={{ margin: 0, color: messageIsSuccess ? "#17633a" : "#8c1d18", lineHeight: 1.5 }}>
+            <div style={{ marginTop: 18, padding: 14, border: messageIsSuccess ? "1px solid #438f65" : "1px solid #a74d47", borderRadius: 12, background: messageIsSuccess ? "#102b1c" : "#321b1b" }}>
+              <p role={messageIsSuccess ? "status" : "alert"} aria-live="polite" style={{ margin: 0, color: messageIsSuccess ? "#c3f4d5" : "#ffd6d2", lineHeight: 1.5 }}>
                 {message}
               </p>
             </div>
