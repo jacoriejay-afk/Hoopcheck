@@ -41,3 +41,28 @@
     transform: none;
   }
 }
+
+/* VISUAL-FINAL-4: shared typography and spacing rhythm.
+   Keep existing page-specific type scales and compact controls intact. */
+:root, html.theme-light, html.theme-dark {
+  --hc-space-card: clamp(16px, 2.5vw, 24px);
+  --hc-reading-line-height: 1.55;
+}
+:where(.dashboard-card, .result-card, .quick-card, .hc-auth-card)
+  :where(p, li, dd) {
+  line-height: var(--hc-reading-line-height);
+}
+:where(.dashboard-card, .result-card, .quick-card, .hc-auth-card)
+  :where(h1, h2, h3, h4) {
+  line-height: 1.2;
+  text-wrap: balance;
+}
+:where(.dashboard-card, .result-card, .quick-card, .hc-auth-card)
+  :where(p, h1, h2, h3, h4, strong, small) {
+  overflow-wrap: break-word;
+}
+@media (max-width: 640px) {
+  :where(.dashboard-card, .result-card, .quick-card, .hc-auth-card) {
+    min-width: 0;
+  }
+}
