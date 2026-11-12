@@ -11,11 +11,12 @@ import TeamProfileHero from "../../../components/TeamProfileHero";
 import "../../hoopcheck-brand-team.css";
 import ReviewMembershipGate from "../../../components/ReviewMembershipGate";
 import TeamFanGroupEntry from "../../../components/TeamFanGroupEntry";
+import TeamPlayersHistory from "../../../components/TeamPlayersHistory";
 import FanTeamPosts from "../../../components/FanTeamPosts";
 
 export default function WomensTeam(){
  const {formatDate,formatNumber,t}=useLanguage();
- const [activeSection,setActiveSection]=useState<"overview"|"reviews"|"fan-group">("overview");
+ const [activeSection,setActiveSection]=useState<"overview"|"roster"|"reviews"|"fan-group">("overview");
  const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [accountType,setAccountType]=useState(""); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [teamFollowerCount,setTeamFollowerCount]=useState(0); const [trustScoreData,setTrustScoreData]=useState<any>(null);
  useEffect(() => {
    let active = true;
@@ -86,9 +87,12 @@ export default function WomensTeam(){
  />
  <nav className="hc-team-profile-nav" aria-label="Team profile sections" style={{position:"sticky",top:"var(--hc-header-height, 72px)",zIndex:20,overflowX:"auto",borderRadius:16,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",background:"var(--surface,rgba(24,27,36,.92))"}}>
    <div role="tablist" aria-label="Team profile tabs">
-     {(["overview","reviews","fan-group"] as const).map(tab=><button key={tab} id={`womens-team-${tab}-tab`} type="button" role="tab" aria-selected={activeSection===tab} aria-controls={`womens-team-${tab}-panel`} tabIndex={activeSection===tab?0:-1} onClick={()=>setActiveSection(tab)}>{tab==="fan-group"?"Fan Group":tab==="overview"?"Overview":"Reviews"}</button>)}
+     {(["overview","roster","reviews","fan-group"] as const).map(tab=><button key={tab} id={`womens-team-${tab}-tab`} type="button" role="tab" aria-selected={activeSection===tab} aria-controls={`womens-team-${tab}-panel`} tabIndex={activeSection===tab?0:-1} onClick={()=>setActiveSection(tab)}>{tab==="fan-group"?"Fan Group":tab==="overview"?"Overview":tab==="roster"?"Roster":"Reviews"}</button>)}
    </div>
  </nav>
+ <section id="womens-team-roster-panel" role="tabpanel" aria-labelledby="womens-team-roster-tab" hidden={activeSection!=="roster"}>
+   <TeamPlayersHistory teamId={team.id} teamTable="womens_teams" />
+ </section>
  <div id="womens-team-fan-group-panel" role="tabpanel" aria-labelledby="womens-team-fan-group-tab" hidden={activeSection!=="fan-group"}><div id="fan-hq"><TeamFanGroupEntry teamId={team.id} /></div></div>
  {canReview && <div className="entity-actions"><Link href={"/womens/" + team.id + "/review"} className="btn">Write a Review</Link></div>}
  <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} teamTable="womens_teams" onSaved={(logoUrl, logoBg) => setTeam((current:any) => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
