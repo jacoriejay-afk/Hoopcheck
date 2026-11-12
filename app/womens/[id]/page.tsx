@@ -1,5 +1,5 @@
 "use client";
-import {useEffect,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {useParams} from "next/navigation";
 import Link from "next/link";
 import {supabase} from "../../../lib/supabase";
@@ -15,6 +15,9 @@ import FanTeamPosts from "../../../components/FanTeamPosts";
 
 export default function WomensTeam(){
  const {formatDate,formatNumber,t}=useLanguage();
+ const [activeTab, setActiveTab] = useState<"overview" | "reviews">("overview");
+ const overviewTab = useRef<HTMLButtonElement>(null);
+ const reviewsTab = useRef<HTMLButtonElement>(null);
  const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [accountType,setAccountType]=useState(""); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [teamFollowerCount,setTeamFollowerCount]=useState(0); const [trustScoreData,setTrustScoreData]=useState<any>(null);
  useEffect(() => {
    let active = true;
@@ -82,9 +85,18 @@ export default function WomensTeam(){
    onFollowerCountChange={setTeamFollowerCount}
  />
  <nav className="hc-team-profile-nav" aria-label="Team profile sections">
-   <a href="#overview" aria-current="page">Overview</a>
-   <a href="#reviews">Reviews</a>
+   <div role="tablist" aria-label="Team profile tabs" onKeyDown={event => {
+     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+     event.preventDefault();
+     const next = event.key === "Home" ? "overview" : event.key === "End" ? "reviews" : activeTab === "overview" ? "reviews" : "overview";
+     setActiveTab(next);
+     (next === "overview" ? overviewTab : reviewsTab).current?.focus();
+   }}>
+     <button ref={overviewTab} type="button" role="tab" id="womens-overview-tab" aria-controls="womens-overview-panel" aria-selected={activeTab === "overview"} tabIndex={activeTab === "overview" ? 0 : -1} onClick={() => setActiveTab("overview")}>Overview</button>
+     <button ref={reviewsTab} type="button" role="tab" id="womens-reviews-tab" aria-controls="womens-reviews-panel" aria-selected={activeTab === "reviews"} tabIndex={activeTab === "reviews" ? 0 : -1} onClick={() => setActiveTab("reviews")}>Reviews</button>
+   </div>
  </nav>
+ <div role="tabpanel" id="womens-overview-panel" aria-labelledby="womens-overview-tab" hidden={activeTab !== "overview"}>
  <TeamFanGroupEntry teamId={team.id} />
  {canReview && <div className="entity-actions"><Link href={"/womens/" + team.id + "/review"} className="btn">Write a Review</Link></div>}
  <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} teamTable="womens_teams" onSaved={(logoUrl, logoBg) => setTeam((current:any) => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
@@ -92,6 +104,9 @@ export default function WomensTeam(){
     {canSeeRatings ? <Surface className="card"><span className="card-kicker">{t("rating")}</span><h2>{average===null?"—":average.toFixed(1)+"/5"}</h2><p className="muted">{formatNumber(ratingCount)+" "+(ratingCount===1?t("publishedReview"):t("publishedReviews"))}</p></Surface> : null}
     <Surface className="card"><span className="card-kicker">{t("league")}</span><h2>{team.league_name||t("professional")}</h2><p className="muted">{team.country||t("international")}</p></Surface>
   </section>
+  <FanTeamPosts teamId={team.id} />
+  </div>
+  <div role="tabpanel" id="womens-reviews-panel" aria-labelledby="womens-reviews-tab" hidden={activeTab !== "reviews"}>
   <Surface as="section" id="reviews" className="dashboard-card compact-section">
     {!canViewReviews ? (
       <ReviewMembershipGate
@@ -110,6 +125,6 @@ export default function WomensTeam(){
       </>
     )}
   </Surface>
-  <FanTeamPosts teamId={team.id} />
+  </div>
   <div className="bottom-back"><button type="button" className="btn dark" onClick={()=>window.history.back()}>← {t("back")}</button></div></div></main>;
 }
