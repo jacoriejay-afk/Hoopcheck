@@ -568,7 +568,7 @@ export default function TeamDetailPage() {
         onFollowerCountChange={setTeamFollowerCount}
       />
       <nav className="hc-team-profile-nav" aria-label="Team profile sections">
-        <a href="#overview" aria-current="page">Overview</a><a href="#reviews">Reviews</a><a href="#players">Players</a><a href="#roster-board">Roster Board</a>{accountType && accountType !== "fan" ? <a href="#pay-transparency">Pay Transparency</a> : null}
+        <a href="#overview">Overview</a><a href="#reviews">Reviews</a>{accountType !== "fan" ? <><a href="#players">Players</a><a href="#roster-board">Roster Board</a></> : null}{accountType && accountType !== "fan" ? <a href="#pay-transparency">Pay Transparency</a> : null}
       </nav>
       <div className="hc-team-profile-overview-grid">
         <section className="hc-team-profile-about" aria-labelledby="hc-team-about-title">
