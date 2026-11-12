@@ -240,6 +240,7 @@ export default function TeamDetailPage() {
     useState("");
 
   useEffect(() => {
+    let active = true;
     setLoading(true);
     setTeam(null);
     setCoaches([]);
@@ -261,6 +262,7 @@ export default function TeamDetailPage() {
         .eq("id", id)
         .maybeSingle();
 
+      if (!active) return;
       if (
         teamError ||
         !teamData
@@ -270,12 +272,15 @@ export default function TeamDetailPage() {
         return;
       }
 
+      if (!active) return;
       setTeam(teamData);
       setLoading(false);
       const { count: approvedReviewCount } = await supabase.from("reviews").select("id", { count: "exact", head: true }).eq("team_id", id).eq("status", "approved");
+      if (!active) return;
       setTeamReviewCount(approvedReviewCount || 0);
 
       const { data: membershipData } = await supabase.from("team_league_memberships").select("id,league_id,season,start_date,end_date,active").eq("team_id", id).eq("active", true).order("season", { ascending: false });
+      if (!active) return;
       if (membershipData) {
         const leagueIds = membershipData.map((x) => x.league_id);
         const { data: leagueRows } = leagueIds.length ? await supabase.from("leagues").select("id,name").in("id", leagueIds) : { data: [] as any[] };
@@ -299,21 +304,26 @@ export default function TeamDetailPage() {
             .order("name"),
         ]);
 
+      if (!active) return;
       if (!leagueResult.error && leagueResult.data) {
         setLeague(leagueResult.data);
       }
 
+      if (!active) return;
       setCoachesLoadError(Boolean(coachesResult.error));
       if (coachesResult.error) console.error("Unable to load team coaches:", coachesResult.error);
       setCoaches(coachesResult.error ? [] : (coachesResult.data || []));
 
       const { data: { session } } = await supabase.auth.getSession();
+      if (!active) return;
       const user = session?.user;
 
       if (user) {
         const { data: sharedProfiles } = await supabase.rpc("get_shared_team_followers", { p_team_id: id });
+      if (!active) return;
         setKnownPlayerFollowers((sharedProfiles || []).map((row: any) => row.display_name).filter(Boolean));
       }
+      if (!active) return;
       if (!user) {
         setLoading(false);
         return;
@@ -346,6 +356,7 @@ export default function TeamDetailPage() {
         ),
       ]);
 
+      if (!active) return;
       const subscription = subscriptionResult.data;
       setAccountType(profileResult.data?.account_type || "");
       setMembershipPlan(subscription?.plan || "");
@@ -362,6 +373,7 @@ export default function TeamDetailPage() {
         headers: { Authorization: `Bearer ${session?.access_token || ""}` },
         cache: "no-store",
       });
+      if (!active) return;
       const reviewPayload = response.ok ? await response.json() : null;
       const tier = (reviewPayload?.tier || "free") as typeof reviewTier;
       setReviewTier(tier);
@@ -387,7 +399,8 @@ export default function TeamDetailPage() {
         const { data: verificationData } = reviewIds.length
           ? await supabase.rpc("get_review_verification", { p_review_ids: reviewIds })
           : { data: [] };
-        const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map((item) => [item.review_id, Boolean(item.player_verified)]));
+        if (!active) return;
+      const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map((item) => [item.review_id, Boolean(item.player_verified)]));
         setReviews(reviewData.map((review) => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
       } else {
         setReviews([]);
@@ -398,6 +411,7 @@ export default function TeamDetailPage() {
     }
 
     loadTeam();
+    return () => { active = false; };
   }, [id]);
 
   useEffect(() => {
