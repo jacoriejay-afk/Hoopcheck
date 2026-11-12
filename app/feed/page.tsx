@@ -269,6 +269,14 @@ export default function Feed(){
       }else{
         const {error}=await supabase.from("feed_post_checks").insert({post_id:p.id,user_id:user.id});
         if(error){
+          // A duplicate check can happen when another device already checked this post.
+          if(error.code==="23505"){
+            setMine(x=>({...x,[p.id]:true}));
+            const {count}=await supabase.from("feed_post_checks").select("id",{count:"exact",head:true}).eq("post_id",p.id);
+            if(count!==null)setChecks(x=>({...x,[p.id]:count}));
+            setMsg("");
+            return;
+          }
           console.error("HoopFeed check update failed",error);
           setMsg(error.code==="42501"?"You don't have permission to check this post. Please verify your membership and try again.":"That check didn't go through. Please try again.");
           return;
