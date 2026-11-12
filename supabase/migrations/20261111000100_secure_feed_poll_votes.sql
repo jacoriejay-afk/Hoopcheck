@@ -1,4 +1,4 @@
--- Security hardening: align poll vote access with HoopFeed post visibility.
+-- Security hardening: align poll vote access with unified HoopFeed post RLS visibility.
 -- Review and rehearse on staging before production rollout.
 begin;
 drop policy if exists "feed poll votes read" on public.feed_poll_votes;
@@ -13,8 +13,6 @@ create policy "feed poll votes read" on public.feed_poll_votes
       then feed_poll_votes.option_index >= 0
        and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
       else false end
-      and (fp.expires_at IS NULL OR fp.expires_at > now())
-      and public.can_view_player_feed_post(fp.author_id)
   ));
 drop policy if exists "feed poll votes insert own" on public.feed_poll_votes;
 create policy "feed poll votes insert own" on public.feed_poll_votes
@@ -30,9 +28,7 @@ create policy "feed poll votes insert own" on public.feed_poll_votes
       then feed_poll_votes.option_index >= 0
        and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
       else false end
-      and (fp.expires_at IS NULL OR fp.expires_at > now())
-        and public.can_view_player_feed_post(fp.author_id)
-    )
+      )
   );
 drop policy if exists "feed poll votes update own" on public.feed_poll_votes;
 create policy "feed poll votes update own" on public.feed_poll_votes
@@ -48,9 +44,7 @@ create policy "feed poll votes update own" on public.feed_poll_votes
       then feed_poll_votes.option_index >= 0
        and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
       else false end
-      and (fp.expires_at IS NULL OR fp.expires_at > now())
-        and public.can_view_player_feed_post(fp.author_id)
-    )
+      )
   )
   with check (
     user_id = (select auth.uid())
@@ -63,9 +57,7 @@ create policy "feed poll votes update own" on public.feed_poll_votes
       then feed_poll_votes.option_index >= 0
        and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
       else false end
-      and (fp.expires_at IS NULL OR fp.expires_at > now())
-        and public.can_view_player_feed_post(fp.author_id)
-    )
+      )
   );
 -- Preserve existing own-vote DELETE policy for cleanup.
 commit;
