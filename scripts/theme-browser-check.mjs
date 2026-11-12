@@ -777,10 +777,10 @@ try {
       if (["/dashboard", "/search", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2"].includes(requestedPath)) {
         const visibleText = await page.locator("body").innerText();
         const expectedText = testLanguage === "es"
-          ? requestedPath === "/dashboard" ? ["TUS ACCESOS DIRECTOS", "ACCESO RÁPIDO"]
+          ? requestedPath === "/dashboard" ? ["ACCIONES RÁPIDAS", "CONSULTAR UN EQUIPO"]
             : requestedPath === "/search" ? ["CONEXIÓN ENTRE JUGADORES", "EMPIEZA A INVESTIGAR"]
             : ["TABLERO DE PLANTILLA", "AÚN NO HAY RESEÑAS APROBADAS"]
-          : requestedPath === "/dashboard" ? ["YOUR SHORTCUTS", "Quick Access"]
+          : requestedPath === "/dashboard" ? ["QUICK ACTIONS", "Check a Team"]
             : requestedPath === "/search" ? ["PLAYER CONNECT", "Start Researching"]
             : ["ROSTER BOARD", "No approved reviews yet"];
         const missingText = expectedText.filter((expected) => !visibleText.toLocaleUpperCase().includes(expected.toLocaleUpperCase()));
@@ -852,8 +852,8 @@ try {
       assert.equal(await page.evaluate(() => performance.timeOrigin), beforeSwitchOrigin, "language selection reloaded the document");
       await page.locator("a.site-header-brand").click();
       await page.waitForURL(/\/dashboard$/, { timeout: 15000 });
-      await page.getByText("TUS ACCESOS DIRECTOS", { exact: false }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByText("ACCESO RÁPIDO", { exact: false }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("heading", { name: "ACCIONES RÁPIDAS" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByText("Consultar un equipo", { exact: true }).waitFor({ state: "visible", timeout: 15000 });
       await page.screenshot({ path: `${artifactsDir}/language-live-03-dashboard-es.png`, fullPage: true, animations: "disabled" });
       assert.equal(await page.evaluate(() => performance.timeOrigin), beforeSwitchOrigin, "dashboard navigation performed a full document reload");
       await page.locator('a[href="/teams"]:visible').first().click();
