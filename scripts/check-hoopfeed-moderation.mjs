@@ -97,3 +97,11 @@ test('failed post insert removes every uploaded photo', async () => {
   assert.equal((await response.json()).allowed, false);
   assert.deepEqual(events.at(-1), ['remove', 2]);
 });
+
+test('fan-group moderation resolves the authenticated platform role, not a service-role RPC', () => {
+  const groupRoute = readFileSync(new URL('../app/api/fan-groups/route.ts', import.meta.url), 'utf8');
+  assert.match(groupRoute, /from\("admin_roles"\)[\s\S]*?\.eq\("user_id", user\.id\)/);
+  assert.match(groupRoute, /const isModerator = Boolean\(explicitMod \|\| isPlatformAdmin \|\| \(platformMod && isPlatformModerator\)\)/);
+  assert.doesNotMatch(groupRoute, /rpc\("is_current_user_admin_or_moderator"\)/);
+  assert.doesNotMatch(groupRoute, /entitlements\.canModerateFanGroups\s*\|\|/);
+});

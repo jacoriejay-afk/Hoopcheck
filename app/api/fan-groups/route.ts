@@ -19,7 +19,7 @@ async function moderate(text: string, image: File | null) {
   if (text.trim()) input.push({ type: "text", text });
   if (image) {
     if (!["image/jpeg", "image/png", "image/webp"].includes(image.type) || image.size > MAX_IMAGE_BYTES)
-      return { allowed: false, status: 400, message: "Choose a JPG, PNG, or WebP image up to 8 MB." };
+      return { allowed: false, status: 400, message: "Choose a JPG, PNG, or WebP image up to 4 MB." };
     const bytes = Buffer.from(await image.arrayBuffer());
     input.push({ type: "image_url", image_url: { url: "data:" + image.type + ";base64," + bytes.toString("base64") } });
   }
@@ -66,16 +66,28 @@ export async function POST(request: Request) {
     const teamId = String(form.get("team_id") || "");
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(teamId))
       return NextResponse.json({ ok: false, message: "Choose a valid team." }, { status: 400 });
-    const { data: profile } = await db.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
+    const { data: profile, error: profileError } = await db.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
+    if (profileError) throw profileError;
     const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type });
-    const { data: group } = await db.from("team_fan_groups").select("team_id,group_name,join_mode").eq("team_id", teamId).maybeSingle();
+    const { data: group, error: groupError } = await db.from("team_fan_groups").select("team_id,group_name,join_mode").eq("team_id", teamId).maybeSingle();
+    if (groupError) throw groupError;
     if (!group) return NextResponse.json({ ok: false, message: "This team's Fan Group is not available." }, { status: 404 });
 
-    const { data: explicitMod } = await db.from("team_fan_group_moderators").select("id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle();
-    const { data: platformMod } = await db.from("team_fan_group_moderators").select("id").eq("team_id", teamId).eq("moderator_type", "platform").maybeSingle();
-    const { data: isPlatformAdmin } = await db.rpc("is_current_user_admin_or_moderator");
-    const isModerator = Boolean(entitlements.canModerateFanGroups || explicitMod || (platformMod && (profile?.account_type === "admin" || isPlatformAdmin)));
-    const { data: membership } = await db.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle();
+    const { data: explicitMod, error: explicitModError } = await db.from("team_fan_group_moderators").select("id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle();
+    const { data: platformMod, error: platformModError } = await db.from("team_fan_group_moderators").select("id").eq("team_id", teamId).eq("moderator_type", "platform").maybeSingle();
+    if (explicitModError) throw explicitModError;
+    if (platformModError) throw platformModError;
+    // Resolve the authenticated user's platform role explicitly; service-role RPCs
+    // do not inherit the request user's auth.uid().
+    const { data: platformRoles, error: platformRoleError } = await db.from("admin_roles")
+      .select("role").eq("user_id", user.id);
+    if (platformRoleError) throw platformRoleError;
+    const isPlatformAdmin = (platformRoles || []).some((r: any) => String(r.role || "").trim().toLowerCase() === "admin");
+    const isPlatformModerator = isPlatformAdmin || (platformRoles || []).some((r: any) => String(r.role || "").trim().toLowerCase() === "moderator");
+    // Team moderation requires an explicit appointment or authorized platform role.
+    const isModerator = Boolean(explicitMod || isPlatformAdmin || (platformMod && isPlatformModerator));
+    const { data: membership, error: membershipError } = await db.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle();
+    if (membershipError) throw membershipError;
     const isMember = Boolean(membership);
 
     if (action === "join") {
@@ -188,16 +200,29 @@ export async function POST(request: Request) {
     }
     if (action === "remove_member") {
       const memberId = String(form.get("user_id") || "");
-      await db.from("team_fan_group_moderators").delete().eq("team_id", teamId).eq("user_id", memberId).eq("moderator_type", "fan_co_moderator");
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(memberId))
+        return NextResponse.json({ ok: false, message: "Choose a valid member." }, { status: 400 });
+      const { data: existingMember, error: memberLookupError } = await db.from("team_fan_group_members")
+        .select("user_id").eq("team_id", teamId).eq("user_id", memberId).maybeSingle();
+      if (memberLookupError) throw memberLookupError;
+      if (!existingMember) return NextResponse.json({ ok: false, message: "This member is no longer in the group." }, { status: 404 });
+      const { error: moderatorError } = await db.from("team_fan_group_moderators").delete()
+        .eq("team_id", teamId).eq("user_id", memberId).eq("moderator_type", "fan_co_moderator");
+      if (moderatorError) throw moderatorError;
       const { error } = await db.from("team_fan_group_members").delete().eq("team_id", teamId).eq("user_id", memberId);
       if (error) throw error;
       return NextResponse.json({ ok: true });
     }
     if (action === "appoint_co_moderator" || action === "remove_co_moderator") {
       const memberId = String(form.get("user_id") || "");
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(memberId))
+        return NextResponse.json({ ok: false, message: "Choose a valid member." }, { status: 400 });
       if (action === "appoint_co_moderator") {
-        const { data: target } = await db.from("profiles").select("account_type").eq("id", memberId).maybeSingle();
-        const { data: member } = await db.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", memberId).maybeSingle();
+        const { data: target, error: profileError } = await db.from("profiles").select("account_type").eq("id", memberId).maybeSingle();
+        if (profileError) throw profileError;
+        const { data: member, error: membershipError } = await db.from("team_fan_group_members")
+          .select("user_id").eq("team_id", teamId).eq("user_id", memberId).maybeSingle();
+        if (membershipError) throw membershipError;
         if (target?.account_type !== "fan" || !member) return NextResponse.json({ ok: false, message: "Only current fan members can become co-moderators." }, { status: 400 });
         const { error } = await db.from("team_fan_group_moderators").upsert({ team_id: teamId, user_id: memberId, moderator_type: "fan_co_moderator" }, { onConflict: "team_id,user_id" });
         if (error) throw error;
@@ -210,14 +235,31 @@ export async function POST(request: Request) {
     if (action === "pin_post" || action === "remove_post") {
       const postId = String(form.get("post_id") || "");
       if (action === "pin_post") {
-        await db.from("team_fan_group_posts").update({ is_pinned: false }).eq("team_id", teamId);
-        const { error } = await db.from("team_fan_group_posts").update({ is_pinned: true }).eq("id", postId).eq("team_id", teamId).eq("status", "published");
+        // Validate the target before unpinning the currently featured post.
+        const { data: target, error: lookupError } = await db.from("team_fan_group_posts")
+          .select("id").eq("id", postId).eq("team_id", teamId).eq("status", "published").maybeSingle();
+        if (lookupError) throw lookupError;
+        if (!target) return NextResponse.json({ ok: false, message: "This group post is no longer available." }, { status: 404 });
+        const { error: unpinError } = await db.from("team_fan_group_posts").update({ is_pinned: false }).eq("team_id", teamId);
+        if (unpinError) throw unpinError;
+        const { data: pinned, error } = await db.from("team_fan_group_posts").update({ is_pinned: true })
+          .eq("id", postId).eq("team_id", teamId).eq("status", "published").select("id").maybeSingle();
         if (error) throw error;
+        if (!pinned) return NextResponse.json({ ok: false, message: "This group post is no longer available." }, { status: 404 });
       } else {
-        const { data: removedPost } = await db.from("team_fan_group_posts").select("id,image_url").eq("id", postId).eq("team_id", teamId).maybeSingle();
-        const { error } = await db.from("team_fan_group_posts").update({ status: "removed", is_pinned: false }).eq("id", postId).eq("team_id", teamId);
+        const { data: removedPost, error: lookupError } = await db.from("team_fan_group_posts")
+          .select("id,image_url").eq("id", postId).eq("team_id", teamId).eq("status", "published").maybeSingle();
+        if (lookupError) throw lookupError;
+        if (!removedPost) return NextResponse.json({ ok: false, message: "This group post is no longer available." }, { status: 404 });
+        const { data: removed, error } = await db.from("team_fan_group_posts")
+          .update({ status: "removed", is_pinned: false }).eq("id", postId).eq("team_id", teamId)
+          .eq("status", "published").select("id").maybeSingle();
         if (error) throw error;
-        if (removedPost?.image_url) await db.storage.from("fan-group-images").remove([removedPost.image_url]);
+        if (!removed) return NextResponse.json({ ok: false, message: "This group post is no longer available." }, { status: 404 });
+        if (removedPost.image_url) {
+          const { error: storageError } = await db.storage.from("fan-group-images").remove([removedPost.image_url]);
+          if (storageError) console.error("Fan Group image cleanup failed", { postId, code: storageError.message });
+        }
       }
       return NextResponse.json({ ok: true });
     }
