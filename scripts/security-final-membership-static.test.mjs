@@ -47,3 +47,12 @@ test('admin UI handles database authorization rejection without saving the profi
   assert.ok(call >= 0 && profileSave > call, 'membership RPC precedes profile save');
   assert.match(ui.slice(call, profileSave), /if\(error\)\{setMessage\([\s\S]*?\);return;\}/);
 });
+
+test('membership editor requires admin role and preserves moderator profile save', () => {
+  const ui = readFileSync(new URL('../app/admin/users/page.tsx', import.meta.url), 'utf8');
+  assert.match(ui, /from\("admin_roles"\)\.select\("role"\)\.eq\("user_id",session\.user\.id\)\.maybeSingle\(\)/);
+  assert.match(ui, /setCanManageMembership\(!ownRoleError&&String\(ownRole\?\.role\|\|""\)\.trim\(\)\.toLowerCase\(\)==="admin"\)/);
+  assert.match(ui, /<select disabled=\{!canManageMembership\} aria-label="Membership \(administrators only\)"/);
+  assert.match(ui, /if\(!canManageMembership\)\{setMessage\("Only administrators can change memberships\. No changes were saved\."\);return;\}/);
+  assert.match(ui, /const profileSaved=await save\(\)/);
+});
