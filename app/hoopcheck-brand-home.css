@@ -119,3 +119,35 @@
 .hc-ia-public-home .hc-home-category-tile .hc-category-tile__label { color:#f7f7f5; }
 .hc-ia-public-home .hc-home-category-tile .hc-category-tile__description { color:#c4c4c0; }
 .hc-ia-public-home .hc-home-category-tile:hover { background:linear-gradient(150deg,#1e1e1e,#0d0d0d); border-color:var(--category-color); }
+
+/* WEB-DESKTOP-1: responsive desktop layout, scoped to public homepage. */
+@media (min-width: 901px) {
+  .hc-ia-public-home .hc-home-category-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .hc-ia-public-home .hc-home-category-tile {
+    border-radius: 20px;
+    min-height: 0;
+    overflow-wrap: anywhere;
+  }
+  .hc-ia-public-home .hc-d3-hero__copy {
+    min-width: 0;
+  }
+  .hc-ia-public-home .hc-d3-hero__copy h1 {
+    max-width: 100%;
+    font-size: clamp(2.25rem, 3.6vw, 4.75rem);
+    line-height: 1.04;
+    overflow-wrap: normal;
+    word-break: normal;
+    text-wrap: balance;
+  }
+}
+@media (min-width: 701px) and (max-width: 1100px) {
+  .hc-ia-public-home .hc-home-category-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .hc-ia-public-home .hc-home-category-tile { border-radius: 20px; }
+}
