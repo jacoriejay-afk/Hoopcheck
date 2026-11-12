@@ -150,7 +150,7 @@ export default function ProfilePage() {
             <Link href="/settings" className="hc-profile-quick-link"><HoopIcon name="settings" size={22} /><span>Settings</span></Link>
             <Link href="/notifications" className="hc-profile-quick-link"><HoopIcon name="bell" size={22} /><span>Alerts</span></Link>
             <Link href="/search" className="hc-profile-quick-link"><HoopIcon name="search" size={22} /><span>Search</span></Link>
-            <Link href={p.account_type === "fan" ? "/fan-feed" : p.account_type === "agent" || p.account_type === "scout" ? "/agents-hq" : "/pre-sign"} className="hc-profile-quick-link"><HoopIcon name={p.account_type === "fan" || p.account_type === "agent" || p.account_type === "scout" ? "users" : "clipboard-check"} size={22} /><span>{p.account_type === "fan" ? "Fan HQ" : p.account_type === "agent" || p.account_type === "scout" ? "Agents HQ" : "Pre-Sign"}</span></Link>
+            <Link href={p.account_type === "fan" ? "/fan-feed" : p.account_type === "agent" || p.account_type === "scout" ? "/agents-hq" : p.account_type === "coach" ? "/coach-placement" : p.account_type === "manager" || p.account_type === "club_admin" ? "/team-dashboard" : "/pre-sign"} className="hc-profile-quick-link"><HoopIcon name={p.account_type === "player" ? "clipboard-check" : "users"} size={22} /><span>{p.account_type === "fan" ? "Fan HQ" : p.account_type === "agent" || p.account_type === "scout" ? "Agents HQ" : p.account_type === "coach" ? "Coach Placement" : p.account_type === "manager" || p.account_type === "club_admin" ? "Team HQ" : "Pre-Sign"}</span></Link>
           </div>
         </nav>
 
