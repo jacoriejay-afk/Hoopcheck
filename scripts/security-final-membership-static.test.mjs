@@ -68,7 +68,7 @@ test('follow UI rejects self-follows and rolls back rejected authorization', () 
 
 test('blocking candidate has owner-only RLS and shared pair locking', () => {
   const candidate = readFileSync(new URL('../docs/security/security-final-user-blocking-candidate.sql', import.meta.url), 'utf8');
-  assert.match(candidate, /CREATE TABLE IF NOT EXISTS public\.user_blocks/);
+  assert.match(candidate, /CREATE TABLE public\.user_blocks/);\n  assert.doesNotMatch(candidate, /CREATE TABLE IF NOT EXISTS public\.user_blocks/);\n  assert.match(candidate, /REVOKE ALL ON public\.user_blocks FROM PUBLIC, anon, authenticated/);
   assert.match(candidate, /PRIMARY KEY \(blocker_id, blocked_id\)/);
   assert.match(candidate, /ALTER TABLE public\.user_blocks ENABLE ROW LEVEL SECURITY/);
   assert.match(candidate, /CREATE POLICY user_blocks_insert_own[\s\S]*?WITH CHECK \(blocker_id = \(SELECT auth\.uid\(\)\)\)/);
