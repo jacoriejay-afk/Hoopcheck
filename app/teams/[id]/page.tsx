@@ -284,6 +284,7 @@ export default function TeamDetailPage() {
       if (membershipData) {
         const leagueIds = membershipData.map((x) => x.league_id);
         const { data: leagueRows } = leagueIds.length ? await supabase.from("leagues").select("id,name").in("id", leagueIds) : { data: [] as any[] };
+        if (!active) return;
         setHistory(membershipData.map((x) => ({ ...x, league: leagueRows?.find((l) => l.id === x.league_id) })));
       }
 
