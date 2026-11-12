@@ -217,6 +217,12 @@ export default function TeamDetailPage() {
     return () => window.removeEventListener("hashchange", syncTab);
   }, [accountType]);
 
+  useEffect(() => {
+    if ((!accountType || accountType === "fan") && (activeProfileTab === "roster-board" || activeProfileTab === "pay-transparency")) {
+      setActiveProfileTab("overview");
+    }
+  }, [accountType, activeProfileTab]);
+
   const [reviewLoading, setReviewLoading] =
     useState(false);
 
