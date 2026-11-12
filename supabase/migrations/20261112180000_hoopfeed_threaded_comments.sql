@@ -15,6 +15,20 @@ begin
   if parent_post is distinct from new.post_id then
     raise exception 'Reply parent must belong to the same post';
   end if;
+  -- Prevent updates from creating a cycle in the reply tree.
+  if exists (
+    with recursive ancestors(id, parent_id) as (
+      select c.id, c.parent_id
+      from public.feed_post_comments c where c.id = new.parent_id
+      union
+      select c.id, c.parent_id
+      from public.feed_post_comments c
+      join ancestors a on c.id = a.parent_id
+    )
+    select 1 from ancestors where id = new.id
+  ) then
+    raise exception 'A reply cannot be its own ancestor';
+  end if;
   return new;
 end;
 $$;
