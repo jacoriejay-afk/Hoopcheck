@@ -47,7 +47,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
     ]);
     if (authError || summaryError) throw authError || summaryError;
 
-    const nextActualMember = false;
+    let nextActualMember = false;
     if (user) {
       const [{ data: profile, error: profileError }, { data: moderators, error: moderatorsError }, { data: platformAdmin, error: adminError }, { data: membership, error: membershipError }] = await Promise.all([
         supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
@@ -55,6 +55,9 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
         supabase.rpc("is_current_user_admin_or_moderator"),
         supabase.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle()
       ]);
+      if (profileError || moderatorsError || adminError || membershipError) throw profileError || moderatorsError || adminError || membershipError;
+      nextActualMember = Boolean(membership);
+      setActualMember(nextActualMember);
       const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, isAdmin: platformAdmin === true });
       setIsFan(entitlements.canUseFanGroups);
       setIsModerator(Boolean(entitlements.canModerateFanGroups ||
@@ -67,7 +70,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
     }
 
     const row = Array.isArray(rows) ? rows[0] : rows;
-    const normalizedRow = row ? { ...row, is_member: row.is_member || nextActualMember } : row;
+    const normalizedRow = row ? { ...row, is_member: nextActualMember } : row;
     setSummary(normalizedRow || null);
   }, [teamId]);
 
