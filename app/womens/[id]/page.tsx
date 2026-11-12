@@ -51,6 +51,7 @@ export default function WomensTeam(){
    setCanViewReviews(false);
    setCanReview(false);
    setReviewTier("free");
+   setAccountType("");
    (async () => {
      const [{ data: teamData, error: teamError }, { count: followerCount }] = await Promise.all([
        supabase.from("womens_teams").select("id,name,country,city,league_id,league_name,logo_url,logo_bg").eq("id", id).maybeSingle(),
