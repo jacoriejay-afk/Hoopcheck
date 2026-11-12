@@ -32,7 +32,7 @@ type Profile = {
   hometown?: string | null;
   avatar_url?: string | null;
   player_verified: boolean;
-  account_type: "player"|"coach"|"scout"|"agent"|"fan";
+  account_type: "player"|"coach"|"scout"|"agent"|"fan"|"club_admin"|"manager"|"admin";
 };
 type Team = { id:string; name:string; country:string|null; league_name:string|null };
 type HomeGame = { id:string; team_id:string|null; opponent_team_id:string|null; opponent_name:string|null; league_name:string|null; status:string; scheduled_at:string|null; started_at?:string|null; ends_at?:string|null; home_score:number|null; away_score:number|null };
