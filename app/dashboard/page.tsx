@@ -43,7 +43,7 @@ const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000): Promise<T | null> 
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const basketballSide = useFanBasketballSide();
   const [profile,setProfile] = useState<Profile|null>(null);
   const [email,setEmail] = useState("");
@@ -205,11 +205,11 @@ export default function DashboardPage() {
           {<><div className="hc-home3-completion" role="progressbar" aria-label="Player profile completion" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completion}><span style={{width:`${completion}%`}}/></div><div className="hc-home3-progress-label"><span>{completion === 100 ? "Profile complete" : `Profile ${completion}% — finish for full visibility`}</span>{completion < 100 && <Link href="/account#edit-profile">Finish</Link>}</div></>}
         </section>
         {homeGames.length > 0 && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>YOUR TEAMS — LIVE & NEXT</h2><Link href="/live-games">All games →</Link></div><div className="hc-home3-game-strip">{homeGames.map(game => { const isLive = game.status === "live" || game.status === "in_progress"; const team = teams.find(t => t.id === game.team_id || t.id === game.opponent_team_id); const availability = getGameAvailability({status:game.status,scheduledAt:game.scheduled_at,startedAt:game.started_at,endsAt:game.ends_at}); return <Link key={game.id} href={availability.chatOpen ? `/fan-live?gameId=${encodeURIComponent(game.id)}` : "/live-games"} className="hc-home3-game"><small>{game.league_name || team?.league_name || "Basketball"} · {isLive ? "LIVE" : "UPCOMING"}</small><strong>{team?.name || "Your team"} vs {game.opponent_name || "Opponent"}</strong><span>{isLive ? [game.home_score,game.away_score].every(v => v !== null) ? `${game.home_score} – ${game.away_score}` : "Live now" : game.scheduled_at ? new Date(game.scheduled_at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "Time TBD"}</span><small>{availability.chatOpen ? "Join game chat →" : availability.opensAt ? `Chat opens ${availability.opensAt.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})}` : availability.state === "UPCOMING" ? "Chat opens before tip-off" : availability.state}</small></Link>; })}</div></section>}
-        <section className="hc-home3-section"><h2>QUICK ACTIONS</h2><div className="hc-home3-actions">
-          <Link href="/teams"><HoopIcon name="shield-check" size={22}/><span>Check a Team</span></Link>
-          <Link href={canWriteReviews ? "/reviews" : "/team-hub"}><HoopIcon name="edit" size={22}/><span>{canWriteReviews ? "Review a Team" : "Team Hub"}</span></Link>
-          <Link href="/live-games"><HoopIcon name="basketball" size={22}/><span>Live Games</span></Link>
-          <Link href="/team-hub"><HoopIcon name="users" size={22}/><span>Fan Groups</span></Link>
+        <section className="hc-home3-section"><h2>{language === "es" ? "ACCIONES RÁPIDAS" : "QUICK ACTIONS"}</h2><div className="hc-home3-actions">
+          <Link href="/teams"><HoopIcon name="shield-check" size={22}/><span>{language === "es" ? "Consultar un equipo" : "Check a Team"}</span></Link>
+          <Link href={canWriteReviews ? "/reviews" : "/team-hub"}><HoopIcon name="edit" size={22}/><span>{canWriteReviews ? (language === "es" ? "Reseñar un equipo" : "Review a Team") : (language === "es" ? "Centro de equipos" : "Team Hub")}</span></Link>
+          <Link href="/live-games"><HoopIcon name="basketball" size={22}/><span>{language === "es" ? "Partidos en vivo" : "Live Games"}</span></Link>
+          <Link href="/team-hub"><HoopIcon name="users" size={22}/><span>{language === "es" ? "Grupos de aficionados" : "Fan Groups"}</span></Link>
         </div></section>
         {(feedPost || (!hasFeedAccess && profile?.account_type !== "fan")) && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>FROM THE COMMUNITY</h2><Link href="/feed">Open HoopFeed →</Link></div>
           {hasFeedAccess && feedPost ? <Link href="/feed" className="hc-home3-post"><strong>{feedPost.profiles?.[0]?.display_name || "Community member"}</strong><p>{feedPost.body}</p></Link> : !hasFeedAccess && profile?.account_type !== "fan" ? <Link href="/membership" className="hc-home3-post">HoopFeed is available with Pro or Premium. View membership →</Link> : null}
