@@ -65,3 +65,18 @@ test('follow UI rejects self-follows and rolls back rejected authorization', () 
   assert.match(ui, /setFollowing\(wasFollowing\)/);
   assert.match(ui, /setCount\(previousCount\)/);
 });
+
+test('blocking candidate has owner-only RLS and shared pair locking', () => {
+  const candidate = readFileSync(new URL('../docs/security/security-final-user-blocking-candidate.sql', import.meta.url), 'utf8');
+  assert.match(candidate, /CREATE TABLE IF NOT EXISTS public\.user_blocks/);
+  assert.match(candidate, /PRIMARY KEY \(blocker_id, blocked_id\)/);
+  assert.match(candidate, /ALTER TABLE public\.user_blocks ENABLE ROW LEVEL SECURITY/);
+  assert.match(candidate, /CREATE POLICY user_blocks_insert_own[\s\S]*?WITH CHECK \(blocker_id = \(SELECT auth\.uid\(\)\)\)/);
+  assert.match(candidate, /CREATE POLICY user_blocks_delete_own[\s\S]*?USING \(blocker_id = \(SELECT auth\.uid\(\)\)\)/);
+  assert.match(candidate, /CREATE TRIGGER security_final_lock_block_pair[\s\S]*?BEFORE INSERT ON public\.user_blocks/);
+  assert.match(candidate, /PERFORM public\.security_final_lock_user_pair\(NEW\.follower_id, NEW\.target_id\)/);
+  assert.match(candidate, /PERFORM public\.security_final_lock_user_pair\(NEW\.blocker_id, NEW\.blocked_id\)/);
+  assert.match(candidate, /CREATE TRIGGER security_final_reject_blocked_follow[\s\S]*?BEFORE INSERT OR UPDATE OF follower_id, target_type, target_id/);
+  assert.match(candidate, /CREATE TRIGGER security_final_block_cleanup[\s\S]*?AFTER INSERT ON public\.user_blocks/);
+  assert.match(candidate, /REVOKE ALL ON FUNCTION public\.security_final_lock_user_pair\(uuid,uuid\)[\s\S]*?FROM PUBLIC, anon, authenticated/);
+});
