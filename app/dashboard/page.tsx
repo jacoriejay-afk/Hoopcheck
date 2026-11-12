@@ -59,6 +59,7 @@ export default function DashboardPage() {
   const [loadError,setLoadError] = useState(false);
   const [authErrorDetail,setAuthErrorDetail] = useState("");
   const [reloadKey,setReloadKey] = useState(0);
+  const [reviewNudgeVisible,setReviewNudgeVisible] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -116,6 +117,14 @@ export default function DashboardPage() {
       const entitlements = getHoopCheckEntitlements({ accountType: p?.account_type, subscription, playerVerified: p?.player_verified === true });
       setMembershipTier(entitlements.tier);
       setCanWriteReviews(entitlements.canWriteReviews);
+      // A dismissed reminder stays hidden for 30 days on this device.
+      // Do not show review prompts to fans or players without write access.
+      if (entitlements.canWriteReviews) {
+        try {
+          const dismissedAt = Number(window.localStorage.getItem(`hc-home3-review-nudge:${user.id}`) || 0);
+          setReviewNudgeVisible(!dismissedAt || Date.now() - dismissedAt >= 30 * 24 * 60 * 60 * 1000);
+        } catch { setReviewNudgeVisible(true); }
+      } else setReviewNudgeVisible(false);
       setCanViewTrust(entitlements.canViewTrustScore);
       const followedIds = (follows||[]).map((row:any)=>row.target_id).filter(Boolean);
 
@@ -211,6 +220,7 @@ export default function DashboardPage() {
           <Link href="/live-games"><HoopIcon name="basketball" size={22}/><span>{language === "es" ? "Partidos en vivo" : "Live Games"}</span></Link>
           <Link href="/team-hub"><HoopIcon name="users" size={22}/><span>{language === "es" ? "Grupos de aficionados" : "Fan Groups"}</span></Link>
         </div></section>
+        {canWriteReviews && reviewNudgeVisible && <section className="hc-home3-review-nudge" aria-label="Review reminder"><div><strong>Played for a team recently?</strong><p>Share your experience to help the next player make an informed decision.</p></div><div className="hc-home3-nudge-actions"><Link href="/reviews">Write a review</Link><button type="button" aria-label="Dismiss review reminder for 30 days" onClick={() => { try { if(profile?.id) window.localStorage.setItem(`hc-home3-review-nudge:${profile.id}`, String(Date.now())); } catch {} setReviewNudgeVisible(false); }}>Dismiss</button></div></section>}
         {(feedPost || (!hasFeedAccess && profile?.account_type !== "fan")) && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>FROM THE COMMUNITY</h2><Link href="/feed">Open HoopFeed →</Link></div>
           {hasFeedAccess && feedPost ? <Link href="/feed" className="hc-home3-post"><strong>{feedPost.profiles?.[0]?.display_name || "Community member"}</strong><p>{feedPost.body}</p></Link> : !hasFeedAccess && profile?.account_type !== "fan" ? <Link href="/membership" className="hc-home3-post">HoopFeed is available with Pro or Premium. View membership →</Link> : null}
         </section>}
