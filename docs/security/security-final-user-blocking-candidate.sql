@@ -4,7 +4,8 @@
 -- still require server-side block enforcement and isolated tests.
 BEGIN;
 
--- Fail closed if an unexpected table already exists; never inherit unknown policies.\nCREATE TABLE public.user_blocks (
+-- Fail closed if an unexpected table already exists; never inherit unknown policies.
+CREATE TABLE public.user_blocks (
   blocker_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   blocked_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at timestamptz NOT NULL DEFAULT now(),
