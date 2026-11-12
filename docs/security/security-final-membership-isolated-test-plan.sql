@@ -27,3 +27,23 @@ SELECT
 FROM pg_proc p
 JOIN pg_namespace n ON n.oid = p.pronamespace
 WHERE n.nspname = 'public' AND p.proname = 'admin_set_membership';
+
+-- Expected results matrix (run only in disposable fixture database):
+-- actor        target type       plan       expected
+-- admin        local/new         pro        success, active, +1 year
+-- admin        local/existing    premium    success, active, +1 year
+-- admin        local/existing    free       success, inactive/free
+-- admin        Stripe-linked     free       exception; unchanged
+-- admin        Stripe-linked     premium    exception; unchanged
+-- admin        local             NULL       22023; unchanged
+-- admin        local             'gold'     22023; unchanged
+-- moderator    local             pro        42501; unchanged
+-- member       local             pro        42501; unchanged
+-- anonymous    local             pro        EXECUTE denied; unchanged
+--
+-- For each negative case, snapshot the target subscription before and after
+-- and assert byte-for-byte equality of relevant fields. Verify a second
+-- unrelated subscription remains unchanged for every successful case.
+-- The admin role must come from public.admin_roles, never editable user_metadata.
+-- Do not use a production service-role token as an authenticated test actor:
+-- service_role bypasses RLS and cannot validate real end-user behavior.
