@@ -17,6 +17,19 @@ import FanTeamPosts from "../../../components/FanTeamPosts";
 export default function WomensTeam(){
  const {formatDate,formatNumber,t}=useLanguage();
  const [activeSection,setActiveSection]=useState<"overview"|"roster"|"coaches"|"reviews"|"fan-group">("overview");
+ useEffect(()=>{
+   const syncSection=()=>{
+     const hash=window.location.hash;
+     if(["#reviews","#womens-team-reviews-panel"].includes(hash))setActiveSection("reviews");
+     else if(["#fan-hq","#fan-group","#womens-team-fan-group-panel"].includes(hash))setActiveSection("fan-group");
+     else if(["#roster","#players","#womens-team-roster-panel"].includes(hash))setActiveSection("roster");
+     else if(["#coaches","#womens-team-coaches-panel"].includes(hash))setActiveSection("coaches");
+     else if(["#overview","#womens-team-overview-panel"].includes(hash))setActiveSection("overview");
+   };
+   syncSection();
+   window.addEventListener("hashchange",syncSection);
+   return()=>window.removeEventListener("hashchange",syncSection);
+ },[]);
  const [coaches,setCoaches]=useState<Array<{id:string;name:string;city:string|null;country:string|null}>>([]);
  const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [accountType,setAccountType]=useState(""); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [teamFollowerCount,setTeamFollowerCount]=useState(0); const [trustScoreData,setTrustScoreData]=useState<any>(null);
  useEffect(() => {
@@ -88,7 +101,7 @@ export default function WomensTeam(){
    onOpenFanGroup={()=>setActiveSection("fan-group")}
  />
  <nav className="hc-team-profile-nav" aria-label="Team profile sections" style={{position:"sticky",top:"var(--hc-header-height, 72px)",zIndex:20,overflowX:"auto",borderRadius:16,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",background:"var(--surface,rgba(24,27,36,.92))"}}>
-   <div role="tablist" aria-label="Team profile tabs">
+   <div role="tablist" aria-label="Team profile tabs" onKeyDown={(event)=>{if(event.key!=="ArrowRight"&&event.key!=="ArrowLeft"&&event.key!=="Home"&&event.key!=="End")return;event.preventDefault();const tabs=["overview","roster","coaches","reviews","fan-group"] as const;const current=tabs.indexOf(activeSection);const next=event.key==="Home"?tabs[0]:event.key==="End"?tabs[tabs.length-1]:tabs[(current+(event.key==="ArrowRight"?1:tabs.length-1))%tabs.length];setActiveSection(next);document.getElementById(`womens-team-${next}-tab`)?.focus();}}>
      {(["overview","roster","coaches","reviews","fan-group"] as const).map(tab=><button key={tab} id={`womens-team-${tab}-tab`} type="button" role="tab" aria-selected={activeSection===tab} aria-controls={`womens-team-${tab}-panel`} tabIndex={activeSection===tab?0:-1} onClick={()=>setActiveSection(tab)}>{tab==="fan-group"?"Fan Group":tab==="overview"?"Overview":tab==="roster"?"Roster":tab==="coaches"?"Coaches":"Reviews"}</button>)}
    </div>
  </nav>
