@@ -200,3 +200,41 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* DESKTOP-VISUAL-2: keep public directory and membership inside the content
+   column instead of forcing 100vw light slabs across the viewport. */
+@media (min-width: 1024px) {
+  .hc-ia-public-home > .page-container > .hc-ia-section {
+    width: auto;
+    max-width: none;
+    margin: 12px 0 0;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+    border-radius: 20px;
+    background: color-mix(in srgb, currentColor 4%, transparent);
+    color: inherit;
+  }
+  .hc-ia-public-home .hc-ia-section-heading { margin-bottom: 12px; }
+  .hc-ia-public-home .hc-d3-membership-band {
+    width: auto;
+    margin: 12px 0 20px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+    border-radius: 20px;
+    background: color-mix(in srgb, currentColor 4%, transparent);
+    color: inherit;
+  }
+  .hc-ia-public-home .hc-d3-live-band {
+    width: auto;
+    margin: 12px 0 0;
+    padding: 14px;
+    border-radius: 20px;
+  }
+  html.theme-light .hc-ia-public-home > .page-container > .hc-ia-section,
+  html.theme-light .hc-ia-public-home .hc-d3-membership-band,
+  html.theme-dark .hc-ia-public-home > .page-container > .hc-ia-section,
+  html.theme-dark .hc-ia-public-home .hc-d3-membership-band {
+    background: color-mix(in srgb, currentColor 4%, transparent);
+    color: inherit;
+  }
+}
