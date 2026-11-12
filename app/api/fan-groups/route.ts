@@ -229,10 +229,19 @@ export async function POST(request: Request) {
         if (error) throw error;
         if (!pinned) return NextResponse.json({ ok: false, message: "This group post is no longer available." }, { status: 404 });
       } else {
-        const { data: removedPost } = await db.from("team_fan_group_posts").select("id,image_url").eq("id", postId).eq("team_id", teamId).maybeSingle();
-        const { error } = await db.from("team_fan_group_posts").update({ status: "removed", is_pinned: false }).eq("id", postId).eq("team_id", teamId);
+        const { data: removedPost, error: lookupError } = await db.from("team_fan_group_posts")
+          .select("id,image_url").eq("id", postId).eq("team_id", teamId).eq("status", "published").maybeSingle();
+        if (lookupError) throw lookupError;
+        if (!removedPost) return NextResponse.json({ ok: false, message: "This group post is no longer available." }, { status: 404 });
+        const { data: removed, error } = await db.from("team_fan_group_posts")
+          .update({ status: "removed", is_pinned: false }).eq("id", postId).eq("team_id", teamId)
+          .eq("status", "published").select("id").maybeSingle();
         if (error) throw error;
-        if (removedPost?.image_url) await db.storage.from("fan-group-images").remove([removedPost.image_url]);
+        if (!removed) return NextResponse.json({ ok: false, message: "This group post is no longer available." }, { status: 404 });
+        if (removedPost.image_url) {
+          const { error: storageError } = await db.storage.from("fan-group-images").remove([removedPost.image_url]);
+          if (storageError) console.error("Fan Group image cleanup failed", { postId, code: storageError.message });
+        }
       }
       return NextResponse.json({ ok: true });
     }
