@@ -68,6 +68,7 @@ export default function WomensTeam(){
      if (!active) return;
      setTeamFollowerCount(followerCount || 0);
      const { data: { session } } = await supabase.auth.getSession();
+     if (!active) return;
      if (session?.user) {
        const response = await fetch(`/api/review-access?entityType=womens-team&entityId=${encodeURIComponent(id)}`, {
          headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store",
