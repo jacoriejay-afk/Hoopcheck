@@ -6,3 +6,23 @@
 .hc-home3-review-nudge{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border:1px solid var(--border,rgba(128,128,128,.2));border-radius:20px;background:var(--surface,rgba(128,128,128,.08));font-size:13px}.hc-home3-review-nudge strong{font-size:13px}.hc-home3-review-nudge p{margin:3px 0 0;font-size:12px;line-height:1.35;opacity:.8}.hc-home3-nudge-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}.hc-home3-nudge-actions a{color:#ff8a33;font-weight:700;text-decoration:none;font-size:12px;white-space:nowrap}.hc-home3-nudge-actions button{background:none;border:0;color:inherit;text-decoration:underline;cursor:pointer;font-size:12px;padding:5px}@media(max-width:540px){.hc-home3-review-nudge{align-items:flex-start;flex-direction:column}.hc-home3-nudge-actions{width:100%;justify-content:space-between}}
 
 .hc-home3-rated-list{display:flex;flex-direction:column;gap:6px}.hc-home3-rated-team{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border:1px solid var(--border,rgba(128,128,128,.2));border-radius:20px;background:var(--surface,rgba(128,128,128,.08));color:inherit;text-decoration:none;font-size:13px}.hc-home3-rated-team>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}.hc-home3-rated-team small{display:block;font-size:11px;font-weight:400;opacity:.7}.hc-home3-rated-team strong{flex-shrink:0;font-size:13px;text-align:right;color:#ff8a33}.hc-home3-rated-team strong small{color:inherit}
+
+/* DASHBOARD-DESKTOP-3: use available desktop space while preserving the
+   compact, single-column mobile layout and all role-based content. */
+@media (min-width: 1024px) {
+  .hc-home3 .page-container {
+    width: min(calc(100% - 48px), 1180px);
+    max-width: 1180px;
+    padding-bottom: 64px;
+  }
+  .hc-home3-stack { gap: 12px; }
+  .hc-home3-actions { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .hc-home3-actions > a { min-height: 76px; height: auto; padding: 14px; }
+  .hc-home3-game { flex-basis: 205px; }
+  .hc-home3-section,
+  .hc-home3-greeting,
+  .hc-home3-review-nudge { min-width: 0; }
+}
+@media (min-width: 701px) and (max-width: 1023px) {
+  .hc-home3 .page-container { width: min(calc(100% - 32px), 860px); }
+}
