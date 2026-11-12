@@ -154,6 +154,31 @@ try {
       assert.equal(await guestPage.locator('a.hc-signin-button').count() > 0, true,
         `Guest ${theme} ${route}: sign-in action must be available`);
     }
+    for (const width of [390, 1024, 1440]) {
+      await guestPage.setViewportSize({ width, height: 844 });
+      await guestPage.goto(baseURL + "/");
+      const input = guestPage.locator("main .hc-searchbar__input:visible");
+      await input.fill("Basketball");
+      const colors = await input.evaluate((element) => {
+        const style = getComputedStyle(element);
+        const tokenColor = (token) => {
+          const sample = document.createElement("span");
+          sample.style.color = `var(${token})`;
+          element.parentElement.append(sample);
+          const color = getComputedStyle(sample).color;
+          sample.remove();
+          return color;
+        };
+        return {
+          text: style.color,
+          placeholder: getComputedStyle(element, "::placeholder").color,
+          expectedText: tokenColor("--hc-input-fg"),
+          expectedPlaceholder: tokenColor("--hc-foreground-muted"),
+        };
+      });
+      assert.equal(colors.text, colors.expectedText, `Guest ${theme} home at ${width}px: typed search text must follow the input theme`);
+      assert.equal(colors.placeholder, colors.expectedPlaceholder, `Guest ${theme} home at ${width}px: search placeholder must follow the muted theme`);
+    }
     await guestContext.close();
   }
   console.log("GUEST_MOBILE_NAV=PASS; routes=login,signup,search; themes=light,dark");
