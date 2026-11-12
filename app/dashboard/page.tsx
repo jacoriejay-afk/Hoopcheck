@@ -150,7 +150,7 @@ export default function DashboardPage() {
         // global trending score. Keep this bounded and independent of fixtures.
         const popularityCandidates = ((teamResult.data || []) as Team[]).slice(0,8);
         void Promise.all(popularityCandidates.map(async team => {
-          const result = await withTimeout(supabase.rpc("get_follow_count",{p_target_type:"team",p_target_id:team.id}),5000);
+          const result = await withTimeout(supabase.rpc("get_follow_count",{p_target_type:basketballSide === "womens" ? "womens-team" : "team",p_target_id:team.id}),5000);
           const followers = Number(result?.data);
           return result && !result.error && Number.isFinite(followers) && followers > 0 ? {team,followers} : null;
         })).then(results => {
