@@ -74,7 +74,14 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
     setSummary(normalizedRow || null);
   }, [teamId]);
 
-  useEffect(() => { void load().catch(() => setMessage(labels.failed)); }, [load, labels.failed]);
+  useEffect(() => {
+    setSummary(null);
+    setActualMember(null);
+    setIsFan(false);
+    setIsModerator(false);
+    setMessage("");
+    void load().catch(() => setMessage(labels.failed));
+  }, [load, labels.failed]);
 
   const isJoined = actualMember ?? Boolean(summary?.is_member);
 
@@ -98,7 +105,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
         return;
       }
       setActualMember(true);
-      setSummary(current => current ? { ...current, is_member: true, member_count: Math.max(1, Number(current.member_count || 0) + (current.is_member ? 0 : 1)) } : current);
+      setSummary(current => current ? { ...current, is_member: true, member_count: Math.max(1, Number(current.member_count || 0) + (isJoined ? 0 : 1)) } : current);
       try { await load(); } catch { /* API confirmed membership; keep optimistic state until refresh completes. */ }
       setMessage(labels.joinedMessage);
     } catch {
@@ -122,7 +129,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.ok) { setMessage(result.message || "Could not leave this group."); return; }
       setActualMember(false);
-      setSummary(current => current ? { ...current, is_member: false, member_count: Math.max(0, Number(current.member_count || 0) - (current.is_member ? 1 : 0)) } : current);
+      setSummary(current => current ? { ...current, is_member: false, member_count: Math.max(0, Number(current.member_count || 0) - (isJoined ? 1 : 0)) } : current);
       try { await load(); } catch { /* API confirmed membership removal; keep optimistic state until refresh completes. */ }
       setMessage("You left the Fan Group. You can rejoin anytime.");
     } catch { setMessage("Could not leave this group. Please try again."); }
