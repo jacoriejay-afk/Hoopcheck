@@ -1,5 +1,6 @@
 "use client";
 
+import { fetchLeagueSeasons } from "../../lib/league-season-client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -142,9 +143,15 @@ export default function DashboardPage() {
       }
 
       if (entitlements.canUseLiveGameHub && p?.account_type === "fan") {
-        const {data:games,error:gamesError} = await supabase.from("fan_live_games").select("status,scheduled_at").in("status",["live","scheduled"]).order("scheduled_at",{ascending:true}).limit(200);
+        const {data:games,error:gamesError} = await supabase.from("fan_live_games").select("status,scheduled_at,league_id").in("status",["live","scheduled"]).order("scheduled_at",{ascending:true}).limit(200);
+        const seasons = await fetchLeagueSeasons((games || []).map(game => game.league_id));
+        const visibleGames = (games || []).filter(game => game.league_id && seasons[game.league_id]?.inSeason);
         const now = Date.now();
-        if (mounted && !gamesError) setLiveCounts({live:(games||[]).filter((g:any)=>g.status==="live").length,upcoming:(games||[]).filter((g:any)=>g.status==="scheduled" && (!g.scheduled_at || new Date(g.scheduled_at).getTime()>=now)).length});
+        if (mounted && !gamesError) setLiveCounts({
+          live: visibleGames.filter(game => game.status === "live").length,
+          upcoming: visibleGames.filter(game => game.status === "scheduled" && game.scheduled_at &&
+            Date.parse(game.scheduled_at) >= now && Date.parse(game.scheduled_at) <= now + 7 * 86_400_000).length,
+        });
       }
       } catch (error) {
         console.error("Optional dashboard panels failed:", error);

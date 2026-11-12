@@ -1,5 +1,6 @@
 "use client";
 
+import { fetchLeagueSeasons } from "../../lib/league-season-client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
@@ -47,6 +48,7 @@ function scoreText(game: Game) {
 
 export default function LiveGamesPage() {
   const [games, setGames] = useState<Game[]>([]);
+  const [offSeasonLeagues, setOffSeasonLeagues] = useState<{ id: string; name: string; month: string }[]>([]);
   const [teams, setTeams] = useState<Record<string, Team>>({});
   const [followedIds, setFollowedIds] = useState<string[]>([]);
   const [reminders, setReminders] = useState<string[]>([]);
@@ -90,6 +92,14 @@ export default function LiveGamesPage() {
     ]);
     if (gamesResult.error) setMessage("Game schedules are temporarily unavailable. Please refresh in a moment.");
     const rawGames = (gamesResult.data || []) as Game[];
+    // The server is the only authority for season calculations. Fail closed
+    // when a league cannot be resolved, rather than exposing off-season games.
+    const seasons = await fetchLeagueSeasons(rawGames.map(game => game.league_id)).catch(() => {
+      setMessage("League season status is temporarily unavailable. Games are hidden until verified.");
+      return {} as Awaited<ReturnType<typeof fetchLeagueSeasons>>;
+    });
+    setOffSeasonLeagues(Object.entries(seasons).filter(([, season]) => !season.inSeason)
+      .map(([id, season]) => ({ id, name: rawGames.find(game => game.league_id === id)?.league_name || "League", month: season.nextStartMonth })));
     const candidateIds = Array.from(new Set(rawGames.flatMap(game => [game.team_id, game.opponent_team_id].filter((id): id is string => Boolean(id)))));
     const [{ data: sideRows }, { data: womensSideRows }] = await Promise.all([
       candidateIds.length
@@ -100,7 +110,7 @@ export default function LiveGamesPage() {
         : Promise.resolve({ data: [] as {id:string}[] }),
     ]);
     const sideIds = new Set([...(sideRows || []), ...(womensSideRows || [])].map((row:any) => row.id));
-    const nextGames = rawGames.filter(game => sideIds.has(game.team_id) || sideIds.has(game.opponent_team_id || ""));
+    const nextGames = rawGames.filter(game => game.league_id && seasons[game.league_id]?.inSeason && (sideIds.has(game.team_id) || sideIds.has(game.opponent_team_id || "")));
     const follows = (followsResult.data || []).map((row: {target_id:string}) => row.target_id);
     setFollowedIds(follows);
     setGames(nextGames);
@@ -276,6 +286,7 @@ export default function LiveGamesPage() {
       </div>
     </section>
     {message && <p className="hc-live-hub-message" role="status">{message}</p>}
+    {offSeasonLeagues.length > 0 && <section className="hc-live-hub-section" aria-label="Leagues between seasons"><h2>Between seasons</h2><div className="hc-live-hub-grid">{offSeasonLeagues.map(league => <article className="hc-live-hub-card" key={league.id}><h3>{league.name}</h3><p>Season starts {league.month}</p></article>)}</div></section>}
 
     <section className="hc-live-hub-section">
       <div className="hc-live-section-heading"><div><p className="eyebrow">RIGHT NOW</p><h2>LIVE NOW <span>{live.length}</span></h2></div><p>Real-time conversations, one game at a time.</p></div>

@@ -21,8 +21,8 @@ export type GameAvailability = {
 };
 
 const MINUTE = 60_000;
-const OPEN_EARLY_MINUTES = 30;
-const POST_GAME_MINUTES = 60;
+const OPEN_EARLY_MINUTES = 60;
+const POST_GAME_MINUTES = 120;
 const MAX_GAME_WINDOW_HOURS = 4;
 
 /**
@@ -55,6 +55,13 @@ export function getGameAvailability({
   const liveStatus = normalizedStatus === "live" || normalizedStatus === "in_progress";
   const finalStatus = normalizedStatus === "final" || normalizedStatus === "finished";
 
+  if (finalStatus && (!Number.isFinite(ended) || now.getTime() < ended)) {
+    return {
+      state: "CLOSED", phase: "closed", chatOpen: false, opensAt: null, closesAt: null,
+      minutesUntilOpen: null, reason: "The final result does not have a confirmed finish time.",
+    };
+  }
+
   if (!hasTipoff) {
     if (liveStatus) {
       return {
@@ -79,11 +86,11 @@ export function getGameAvailability({
   if (now.getTime() < opensMs) {
     return {
       state: "UPCOMING", phase: "pre-game", chatOpen: false, opensAt, closesAt,
-      minutesUntilOpen, reason: "Chat opens 30 minutes before tip-off.",
+      minutesUntilOpen, reason: "Chat opens 60 minutes before tip-off.",
     };
   }
 
-  if (now.getTime() >= closesMs || (finalStatus && now.getTime() >= closesMs)) {
+  if (!liveStatus && now.getTime() >= closesMs) {
     return {
       state: "CLOSED", phase: "closed", chatOpen: false, opensAt, closesAt,
       minutesUntilOpen: null, reason: "The chat window for this game has closed.",
