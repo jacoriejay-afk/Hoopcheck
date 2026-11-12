@@ -1,4 +1,11 @@
 -- Staged for review only. Do not apply until authenticated role tests are ready.
+-- SECURITY WARNING: PostgreSQL combines permissive RLS policies with OR.
+-- Dropping the named legacy policies below does NOT remove any other SELECT
+-- or INSERT policies that may already exist on these tables. Before rollout,
+-- inventory pg_policies for feed_posts, feed_post_checks, feed_post_comments,
+-- feed_poll_votes, and feed_post_bookmarks, and reconcile every overlapping
+-- policy against the unified role matrix. Do not assume this migration alone
+-- closes older grants.
 -- Unified HoopFeed: replace obsolete follower/country/player-only policies.
 -- Keep paid access and owner/admin moderation visibility. Posts are permanent.
 ALTER TABLE public.feed_posts ALTER COLUMN expires_at DROP DEFAULT;
