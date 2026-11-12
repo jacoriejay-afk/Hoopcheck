@@ -20,3 +20,24 @@
 :root, html.theme-light, html.theme-dark {
   --hc-radius-card: var(--radius-lg, 20px);
 }
+
+/* VISUAL-FINAL-3: shared interactive controls across both themes. */
+:where(.hc-shared-picker-dialog, .hc-shared-picker-filters, .hc-auth-card)
+  :where(button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--hc-focus-ring, #ff5a1f);
+  outline-offset: 3px;
+}
+:where(.hc-shared-picker-dialog, .hc-shared-picker-filters)
+  :where(input, select, button) {
+  max-width: 100%;
+  min-width: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.btn, .dashboard-card, .result-card, .quick-card, .hc-shared-picker-dialog button) {
+    transition: none;
+    animation: none;
+  }
+  :where(.btn, .dashboard-card, .result-card, .quick-card):hover {
+    transform: none;
+  }
+}
