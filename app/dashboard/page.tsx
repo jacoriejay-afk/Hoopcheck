@@ -52,6 +52,7 @@ export default function DashboardPage() {
   const [homeGames,setHomeGames] = useState<HomeGame[]>([]);
   const [teamTrust,setTeamTrust] = useState<{score:number|null;reviewCount:number|null}|null>(null);
   const [ratedTeams,setRatedTeams] = useState<Array<{team:Team;rating:number;count:number}>>([]);
+  const [popularTeams,setPopularTeams] = useState<Array<{team:Team;followers:number}>>([]);
   const [canViewTrust,setCanViewTrust] = useState(false);
   const [hasFeedAccess,setHasFeedAccess] = useState(false);
   const [canWriteReviews,setCanWriteReviews] = useState(false);
@@ -135,6 +136,7 @@ export default function DashboardPage() {
       setFeedPost(null);
       setTeamTrust(null);
       setRatedTeams([]);
+      setPopularTeams([]);
       try {
       let visibleTeamIds: string[] = [];
       if (followedIds.length) {
@@ -144,6 +146,16 @@ export default function DashboardPage() {
         if (!mounted) return;
         setTeams((teamResult.data||[]) as Team[]);
         visibleTeamIds = (teamResult.data || []).map(row => row.id);
+        // Follow counts are a factual popularity signal, not an invented
+        // global trending score. Keep this bounded and independent of fixtures.
+        const popularityCandidates = ((teamResult.data || []) as Team[]).slice(0,8);
+        void Promise.all(popularityCandidates.map(async team => {
+          const result = await withTimeout(supabase.rpc("get_follow_count",{p_target_type:"team",p_target_id:team.id}),5000);
+          const followers = Number(result?.data);
+          return result && !result.error && Number.isFinite(followers) && followers > 0 ? {team,followers} : null;
+        })).then(results => {
+          if (mounted) setPopularTeams(results.filter((item):item is {team:Team;followers:number} => item !== null).sort((a,b)=>b.followers-a.followers).slice(0,3));
+        }).catch(error=>console.error("Optional team popularity unavailable:",error));
         // A small, factual ranking of followed teams only. Ratings are never
         // fetched for roles without review-summary access, and missing or
         // suppressed review counts are excluded rather than guessed.
@@ -243,6 +255,7 @@ export default function DashboardPage() {
           <Link href={profile?.account_type === "agent" || profile?.account_type === "scout" || profile?.account_type === "coach" ? "/players" : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? "/teams" : "/live-games"}><HoopIcon name="basketball" size={22}/><span>{profile?.account_type === "agent" || profile?.account_type === "scout" || profile?.account_type === "coach" ? (language === "es" ? "Jugadores" : "Players") : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? (language === "es" ? "Equipos" : "Teams") : (language === "es" ? "Partidos en vivo" : "Live Games")}</span></Link>
           <Link href={profile?.account_type === "agent" || profile?.account_type === "scout" ? "/coaches" : profile?.account_type === "coach" ? "/teams" : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? "/account" : "/team-hub"}><HoopIcon name="users" size={22}/><span>{profile?.account_type === "agent" || profile?.account_type === "scout" ? (language === "es" ? "Entrenadores" : "Coaches") : profile?.account_type === "coach" ? (language === "es" ? "Equipos" : "Teams") : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? (language === "es" ? "Cuenta" : "Account") : (language === "es" ? "Grupos de aficionados" : "Fan Groups")}</span></Link>
         </div></section>
+        {popularTeams.length > 0 && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>POPULAR — TEAMS YOU FOLLOW</h2><Link href="/teams">Explore teams →</Link></div><div className="hc-home3-rated-list">{popularTeams.map(({team,followers})=><Link key={team.id} href={`${basketballSide === "womens" ? "/womens" : "/teams"}/${team.id}`} className="hc-home3-rated-team"><span>{team.name}<small>{team.league_name || team.country || "Basketball"}</small></span><strong>{followers.toLocaleString()}<small>followers</small></strong></Link>)}</div></section>}
         {ratedTeams.length > 0 && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>TOP RATED — TEAMS YOU FOLLOW</h2><Link href="/teams">Explore teams →</Link></div><div className="hc-home3-rated-list">{ratedTeams.map(({team,rating,count})=><Link key={team.id} href={`${basketballSide === "womens" ? "/womens" : "/teams"}/${team.id}`} className="hc-home3-rated-team"><span>{team.name}<small>{team.league_name || team.country || "Basketball"}</small></span><strong>{rating.toFixed(1)}/5 <small>({count} reviews)</small></strong></Link>)}</div></section>}
         {canWriteReviews && reviewNudgeVisible && <section className="hc-home3-review-nudge" aria-label="Review reminder"><div><strong>Played for a team recently?</strong><p>Share your experience to help the next player make an informed decision.</p></div><div className="hc-home3-nudge-actions"><Link href="/reviews">Write a review</Link><button type="button" aria-label="Dismiss review reminder for 30 days" onClick={() => { try { if(profile?.id) window.localStorage.setItem(`hc-home3-review-nudge:${profile.id}`, String(Date.now())); } catch {} setReviewNudgeVisible(false); }}>Dismiss</button></div></section>}
         {(feedPost || (!hasFeedAccess && profile?.account_type !== "fan")) && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>FROM THE COMMUNITY</h2><Link href="/feed">Open HoopFeed →</Link></div>
