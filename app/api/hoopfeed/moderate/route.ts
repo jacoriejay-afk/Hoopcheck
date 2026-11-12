@@ -408,7 +408,7 @@ export async function POST(request: Request) {
     const cleanupUploadedImages = async () => {
       if (!uploadedImagePaths.length) return;
       try {
-        const { error: cleanupError } = await db.storage.from("feed-images").remove(uploadedImagePaths);
+        const { error: cleanupError } = await db.storage.from("hoopfeed-private-images").remove(uploadedImagePaths);
         if (cleanupError) console.error("HoopFeed orphaned photo cleanup failed:", cleanupError.message);
       } catch (cleanupError) {
         console.error("HoopFeed orphaned photo cleanup threw:", cleanupError);
@@ -417,16 +417,16 @@ export async function POST(request: Request) {
     for (const f of allImages) {
       const path = user.id + "/" + crypto.randomUUID() + "." + IMAGE_EXTENSIONS[f.type];
       const bytes = Buffer.from(await f.arrayBuffer());
-      const { error } = await db.storage.from("feed-images").upload(path,bytes,{contentType:f.type,cacheControl:"31536000",upsert:false});
+      const { error } = await db.storage.from("hoopfeed-private-images").upload(path,bytes,{contentType:f.type,cacheControl:"31536000",upsert:false});
       if (error) {
         await cleanupUploadedImages();
         return NextResponse.json({ allowed:false,message:"Photo upload failed. Your post was not published." },{status:400});
       }
       uploadedImagePaths.push(path);
-      image_urls.push(db.storage.from("feed-images").getPublicUrl(path).data.publicUrl);
+      image_urls.push("hoopfeed-private-images/" + path);
     }
     if (image_urls.length) image_url = image_urls[0];
-    if (videoPath) video_url = db.storage.from("feed-videos").getPublicUrl(videoPath).data.publicUrl;
+    if (videoPath) video_url = videoPath.startsWith("hoopfeed-private-videos/") ? videoPath : db.storage.from("feed-videos").getPublicUrl(videoPath).data.publicUrl;
     const shareCountry = String(form.get("share_country") || "false") === "true";
     const submittedCountry = String(form.get("post_country") || "").trim().slice(0, 100);
     const { error } = await db.from("feed_posts").insert({
