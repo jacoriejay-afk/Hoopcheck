@@ -280,3 +280,25 @@
   .hc-ia-public-home .hc-d3-hero__inner { gap: 20px; }
   .hc-ia-public-home .hc-d3-hero__copy h1 { font-size: clamp(30px, 3.2vw, 40px); }
 }
+
+/* DESKTOP-QA-5: the five-column directory summary squeezes labels into
+   ~70px cards on 1024px laptops. Give each statistic a readable width. */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .hc-ia-public-home .hc-d3-hero .hc-home-directory-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-block: 12px;
+  }
+  .hc-ia-public-home .hc-d3-hero .hc-home-directory-stat {
+    min-width: 0;
+    padding: 9px 7px;
+  }
+  .hc-ia-public-home .hc-d3-hero .hc-home-directory-stat span {
+    overflow-wrap: anywhere;
+    line-height: 1.3;
+  }
+  .hc-ia-public-home .hc-d3-hero__visual > * { min-width: 0; max-width: 100%; }
+  .hc-ia-public-home .hc-d3-feature-card__top { flex-wrap: wrap; }
+  .hc-ia-public-home .hc-d3-feature-card__body { min-width: 0; }
+  .hc-ia-public-home .hc-d3-feature-card__body > div:last-child { min-width: 0; overflow-wrap: anywhere; }
+}
