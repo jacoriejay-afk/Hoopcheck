@@ -1,5 +1,6 @@
 "use client";
 
+import HoopFeedPrivateMedia from "./HoopFeedPrivateMedia";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
@@ -30,8 +31,8 @@ export default function OwnProfilePostsGrid({ userId }: { userId: string }) {
         ? <p className="hc-pastel-posts__empty">No posts yet. Your approved HoopFeed posts appear here and remain available.</p>
         : <div className="hc-pastel-posts__grid">
           {posts.map(post => <article key={post.id} className="hc-pastel-posts__tile" aria-label={post.body || "HoopFeed media post"}>
-            {post.image_url ? <img src={post.image_url} alt={post.body || "HoopFeed photo"} loading="lazy" />
-              : post.video_url ? <video src={post.video_url} preload="none" muted playsInline aria-label={post.body || "HoopFeed video"} />
+            {post.image_url ? <HoopFeedPrivateMedia postId={post.id} reference={post.image_url} kind="image" alt={post.body || "HoopFeed photo"} />
+              : post.video_url ? <HoopFeedPrivateMedia postId={post.id} reference={post.video_url} kind="video" ariaLabel={post.body || "HoopFeed video"} />
               : <p>{post.body || "HoopFeed post"}</p>}
             {post.video_url && <span className="hc-pastel-posts__video-mark" aria-hidden="true">▶</span>}
           </article>)}
