@@ -35,7 +35,6 @@ type Profile = {
 };
 type Team = { id:string; name:string; country:string|null; league_name:string|null };
 type HomeGame = { id:string; team_id:string|null; opponent_team_id:string|null; opponent_name:string|null; league_name:string|null; status:string; scheduled_at:string|null; started_at?:string|null; ends_at?:string|null; home_score:number|null; away_score:number|null };
-type Review = { id:string; team_id:string; title:string|null; body:string; overall_rating:number; created_at:string };
 type FeedPost = { id:string; body:string; created_at:string; expires_at:string; author_id:string; profiles?:{display_name:string|null}[]|null };
 
 const withTimeout = <T,>(promise: PromiseLike<T>, ms = 8000): Promise<T | null> =>
@@ -48,7 +47,6 @@ export default function DashboardPage() {
   const [profile,setProfile] = useState<Profile|null>(null);
   const [email,setEmail] = useState("");
   const [teams,setTeams] = useState<Team[]>([]);
-  const [reviews,setReviews] = useState<Review[]>([]);
   const [feedPost,setFeedPost] = useState<FeedPost|null>(null);
   const [homeGames,setHomeGames] = useState<HomeGame[]>([]);
   const [hasFeedAccess,setHasFeedAccess] = useState(false);
@@ -122,20 +120,17 @@ export default function DashboardPage() {
       setHomeGames([]);
       setFeedPost(null);
       try {
+      let visibleTeamIds: string[] = [];
       if (followedIds.length) {
         const teamResult = basketballSide === "womens"
           ? await supabase.from("womens_teams").select("id,name,country,league_name").in("id",followedIds).limit(100)
           : await supabase.from("teams").select("id,name,country,league_name").in("id",followedIds).eq("basketball_type","mens").limit(100);
         if (!mounted) return;
         setTeams((teamResult.data||[]) as Team[]);
-        if (p?.account_type !== "fan") {
-          const {data:reviewRows} = await supabase.from("reviews").select("id,team_id,title,body,overall_rating,created_at").in("team_id",followedIds).eq("status","approved").order("created_at",{ascending:false}).limit(3);
-          if (!mounted) return;
-          setReviews((reviewRows||[]) as Review[]);
-        }
+        visibleTeamIds = (teamResult.data || []).map(row => row.id);
+
       } else {
         setTeams([]);
-        setReviews([]);
       }
 
       const canUsePlayerFeed = entitlements.canReadHoopFeed;
@@ -155,7 +150,9 @@ export default function DashboardPage() {
           .order("scheduled_at",{ascending:true}).limit(40);
         if (mounted && !gamesError) {
           const now = Date.now();
+          const visibleTeamIdSet = new Set(visibleTeamIds);
           const relevant = ((games || []) as HomeGame[])
+            .filter(g => visibleTeamIdSet.has(g.team_id || "") || visibleTeamIdSet.has(g.opponent_team_id || ""))
             .filter(g => g.status !== "scheduled" || (g.scheduled_at && new Date(g.scheduled_at).getTime() >= now))
             .sort((a,b) => {
               const al = a.status === "live" || a.status === "in_progress";
