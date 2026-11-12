@@ -195,6 +195,12 @@ export async function POST(request: Request) {
     }
     if (action === "remove_member") {
       const memberId = String(form.get("user_id") || "");
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(memberId))
+        return NextResponse.json({ ok: false, message: "Choose a valid member." }, { status: 400 });
+      const { data: existingMember, error: memberLookupError } = await db.from("team_fan_group_members")
+        .select("user_id").eq("team_id", teamId).eq("user_id", memberId).maybeSingle();
+      if (memberLookupError) throw memberLookupError;
+      if (!existingMember) return NextResponse.json({ ok: false, message: "This member is no longer in the group." }, { status: 404 });
       const { error: moderatorError } = await db.from("team_fan_group_moderators").delete()
         .eq("team_id", teamId).eq("user_id", memberId).eq("moderator_type", "fan_co_moderator");
       if (moderatorError) throw moderatorError;
