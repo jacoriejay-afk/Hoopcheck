@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   if (!EXT[type] || !Number.isSafeInteger(size) || !size || size > 100 * 1024 * 1024) {
     return NextResponse.json({ error: "Unsupported video or size" }, { status: 400 });
   }
-  if (process.env.HOOPFEED_PRIVATE_VIDEOS_ENABLED !== "true") {
+  if (process.env.HOOPFEED_PRIVATE_VIDEOS_ENABLED === "false") {
     return NextResponse.json({ mode: "legacy" }, { headers: { "Cache-Control": "no-store" } });
   }
   const path = user.id + "/" + crypto.randomUUID() + "." + EXT[type];
