@@ -580,6 +580,7 @@ export default function TeamDetailPage() {
         logoUrl={team.logo_url}
         logoBg={team.logo_bg}
         level={league?.level}
+        seasonLabel={history.length ? (history[0]?.season || undefined) : undefined}
         reviewCount={teamReviewCount}
         followerCount={teamFollowerCount}
         trustScore={trustScoreData}
