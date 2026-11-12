@@ -49,7 +49,7 @@ export default function TeamDashboardPage() {
       if (!user) { window.location.href = "/login"; return; }
       const { data: profile, error: profileError } = await supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
       if (!active) return;
-      if (profileError || !profile || !["coach", "manager", "admin"].includes(profile.account_type)) { window.location.replace("/dashboard"); return; }
+      if (profileError || !profile || !["coach", "manager", "club_admin", "admin"].includes(profile.account_type)) { window.location.replace("/dashboard"); return; }
       setUserId(user.id);
       await load(user.id);
       if (active) setLoading(false);
