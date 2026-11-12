@@ -150,7 +150,7 @@ function RatingBar({
 }
 
 export default function TeamDetailPage() {
-  const { formatDate, t } = useLanguage();
+  const { formatDate, t, language } = useLanguage();
   const params = useParams();
 
   const id = Array.isArray(params.id)
@@ -197,7 +197,7 @@ export default function TeamDetailPage() {
 
   const [loading, setLoading] =
     useState(true);
-  const [activeProfileTab, setActiveProfileTab] = useState<"overview" | "reviews">("overview");
+  const [activeProfileTab, setActiveProfileTab] = useState<"overview" | "reviews" | "players" | "roster-board" | "pay-transparency">("overview");
 
   useEffect(() => {
     const syncTab = () => {
@@ -579,7 +579,7 @@ export default function TeamDetailPage() {
         onFollowerCountChange={setTeamFollowerCount}
       />
       <nav className="hc-team-profile-nav" aria-label="Team profile sections">
-        <div role="tablist" aria-label="Team profile tabs" onKeyDown={(event) => { if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return; event.preventDefault(); const next = activeProfileTab === "overview" ? "reviews" : "overview"; setActiveProfileTab(next); document.getElementById(next === "overview" ? "team-overview-tab" : "team-reviews-tab")?.focus(); }}><button type="button" role="tab" id="team-overview-tab" aria-selected={activeProfileTab === "overview"} aria-controls="team-overview-panel" tabIndex={activeProfileTab === "overview" ? 0 : -1} onClick={() => setActiveProfileTab("overview")}>Overview</button><button type="button" role="tab" id="team-reviews-tab" aria-selected={activeProfileTab === "reviews"} aria-controls="team-reviews-panel" tabIndex={activeProfileTab === "reviews" ? 0 : -1} onClick={() => setActiveProfileTab("reviews")}>Reviews</button></div><a href="#players">Players</a><a href="#roster-board">Roster Board</a>{accountType && accountType !== "fan" ? <a href="#pay-transparency">Pay Transparency</a> : null}
+        <div role="tablist" aria-label="Team profile tabs" onKeyDown={(event) => { if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return; event.preventDefault(); const tabs = ["overview", "reviews", ...(accountType !== "fan" ? ["players", "roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeProfileTab>; const index = tabs.indexOf(activeProfileTab); const next = tabs[(index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length]; setActiveProfileTab(next); document.getElementById(`team-${next}-tab`)?.focus(); }}>{(["overview", "reviews", ...(accountType !== "fan" ? ["players", "roster-board"] : []), ...(accountType && accountType !== "fan" ? ["pay-transparency"] : [])] as Array<typeof activeProfileTab>).map(tab => <button key={tab} type="button" role="tab" id={`team-${tab}-tab`} aria-selected={activeProfileTab === tab} aria-controls={`team-${tab}-panel`} tabIndex={activeProfileTab === tab ? 0 : -1} onClick={() => setActiveProfileTab(tab)}>{tab === "roster-board" ? (language === "es" ? "TABLERO DE PLANTILLA" : "Roster Board") : tab === "pay-transparency" ? "Pay Transparency" : tab.charAt(0).toUpperCase() + tab.slice(1)}</button>)}</div>
       </nav>
       <div id="team-overview-panel" role="tabpanel" aria-labelledby="team-overview-tab" hidden={activeProfileTab !== "overview"}><div className="hc-team-profile-overview-grid">
         <section className="hc-team-profile-about" aria-labelledby="hc-team-about-title">
@@ -747,13 +747,13 @@ export default function TeamDetailPage() {
           </section>
 
       {accountType !== "fan" && <>
-      <TeamPlayersHistory teamId={team.id} />
-      <section className="hero" id="roster-board">
+      <div id="team-players-panel" role="tabpanel" aria-labelledby="team-players-tab" hidden={activeProfileTab !== "players"}><TeamPlayersHistory teamId={team.id} /></div>
+      <section className="hero" id="team-roster-board-panel" role="tabpanel" aria-labelledby="team-roster-board-tab" hidden={activeProfileTab !== "roster-board"}>
         <div className="eyebrow">ROSTER BOARD</div>
         <h2>Open roster spots</h2>
         <TeamRosterSpots teamId={team.id} teamName={team.name} />
       </section>
-      {accountType && accountType !== "fan" && <section className="hero" id="pay-transparency">
+      {accountType && accountType !== "fan" && <section className="hero" id="team-pay-transparency-panel" role="tabpanel" aria-labelledby="team-pay-transparency-tab" hidden={activeProfileTab !== "pay-transparency"}>
         <div className="eyebrow">PAY TRANSPARENCY</div>
         <h2>Payment history</h2>
         <TeamPayTimeline teamId={team.id} />
