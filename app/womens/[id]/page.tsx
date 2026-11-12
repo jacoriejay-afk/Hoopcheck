@@ -72,6 +72,7 @@ export default function WomensTeam(){
        const response = await fetch(`/api/review-access?entityType=womens-team&entityId=${encodeURIComponent(id)}`, {
          headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store",
        });
+       if (!response.ok) console.error("Unable to load women’s team review access:", response.status);
        const payload = response.ok ? await response.json() : null;
        const tier = (payload?.tier || "free") as typeof reviewTier;
        if (!active) return;
