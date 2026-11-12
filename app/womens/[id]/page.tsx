@@ -33,6 +33,7 @@ export default function WomensTeam(){
  },[]);
  const [coaches,setCoaches]=useState<Array<{id:string;name:string;city:string|null;country:string|null}>>([]);
  const [leagueSeason,setLeagueSeason]=useState<string|null>(null);
+ const [coachesLoadError,setCoachesLoadError]=useState(false);
  const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [accountType,setAccountType]=useState(""); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [teamFollowerCount,setTeamFollowerCount]=useState(0); const [trustScoreData,setTrustScoreData]=useState<any>(null);
  useEffect(() => {
    let active = true;
@@ -46,7 +47,7 @@ export default function WomensTeam(){
      setTeam(teamData || null);
      setLeagueSeason(null);
      if(teamData?.league_id){const {data:leagueRow}=await supabase.from("leagues").select("season").eq("id",teamData.league_id).maybeSingle();if(active)setLeagueSeason(typeof leagueRow?.season==="string"&&leagueRow.season.trim()?leagueRow.season.trim():null);}
-     if(teamData){const {data:coachRows,error:coachError}=await supabase.from("coaches").select("id,name,city,country").eq("current_team_id",teamData.id).eq("active",true).order("name");if(active){if(coachError)console.error("Unable to load women’s team coaches:",coachError);setCoaches(coachError?[]:(coachRows||[]));}}
+     if(teamData){const {data:coachRows,error:coachError}=await supabase.from("coaches").select("id,name,city,country").eq("current_team_id",teamData.id).eq("active",true).order("name");if(active){setCoachesLoadError(Boolean(coachError));if(coachError)console.error("Unable to load women’s team coaches:",coachError);setCoaches(coachError?[]:(coachRows||[]));}}
      setTeamFollowerCount(followerCount || 0);
      const { data: { session } } = await supabase.auth.getSession();
      if (session?.user) {
@@ -116,7 +117,7 @@ export default function WomensTeam(){
  </section>
  <section className="card" id="womens-team-coaches-panel" role="tabpanel" aria-labelledby="womens-team-coaches-tab" hidden={activeSection!=="coaches"}>
    <p className="eyebrow">TEAM STAFF</p><h2>Coaches</h2>
-   {coaches.length ? <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:12}}>
+   {coachesLoadError ? <p role="alert">Coaching information is temporarily unavailable. Please try again later.</p> : coaches.length ? <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:12}}>
      {coaches.map(coach=><Link key={coach.id} href={`/coaches/${coach.id}`} className="card" style={{display:"flex",alignItems:"center",gap:12,textDecoration:"none"}}>
        <span aria-hidden="true" style={{width:44,height:44,borderRadius:"50%",display:"grid",placeItems:"center",background:"var(--surface-muted,rgba(128,128,128,.16))",fontWeight:800}}>{coach.name.trim().split(/\s+/).slice(0,2).map(part=>part[0]).join("").toUpperCase()}</span>
        <span><strong>{coach.name}</strong><small style={{display:"block"}}>{[coach.city,coach.country].filter(Boolean).join(", ")}</small></span>
