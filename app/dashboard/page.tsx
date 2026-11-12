@@ -149,18 +149,21 @@ export default function DashboardPage() {
         // suppressed review counts are excluded rather than guessed.
         if (entitlements.canReadFullReviews) {
           const candidates = ((teamResult.data || []) as Team[]).slice(0,8);
-          const summaries = await Promise.all(candidates.map(async team => {
-            const {data,error} = basketballSide === "womens"
-              ? await supabase.rpc("get_womens_review_rating_summary",{p_team_id:team.id})
-              : await supabase.rpc("get_public_review_summary",{p_entity_type:"team",p_entity_id:team.id});
-            if (error) return null;
-            const summary = Array.isArray(data) ? data[0] : data;
+          // Rankings are optional. Load them independently so slow review RPCs
+          // cannot hold up the live-game strip or unified HoopFeed teaser.
+          void Promise.all(candidates.map(async team => {
+            const result = await withTimeout(basketballSide === "womens"
+              ? supabase.rpc("get_womens_review_rating_summary",{p_team_id:team.id})
+              : supabase.rpc("get_public_review_summary",{p_entity_type:"team",p_entity_id:team.id}), 5000);
+            if (!result || result.error) return null;
+            const summary = Array.isArray(result.data) ? result.data[0] : result.data;
             const count = Number(summary?.review_count);
             const rating = Number(summary?.overall_rating);
             if (!Number.isFinite(count) || count < 3 || summary?.overall_rating == null || !Number.isFinite(rating) || rating < 1 || rating > 5) return null;
             return {team,rating,count};
-          }));
-          if (mounted) setRatedTeams(summaries.filter((item):item is {team:Team;rating:number;count:number} => item !== null).sort((a,b)=>b.rating-a.rating || b.count-a.count).slice(0,3));
+          })).then(summaries => {
+            if (mounted) setRatedTeams(summaries.filter((item):item is {team:Team;rating:number;count:number} => item !== null).sort((a,b)=>b.rating-a.rating || b.count-a.count).slice(0,3));
+          }).catch(error => console.error("Optional team ratings unavailable:",error));
         }
         if (entitlements.canViewTrustScore && visibleTeamIds.length) {
           const {data:authData} = await supabase.auth.getSession();
