@@ -193,3 +193,10 @@
   .hc-ia-public-home .hc-d3-live-band,
   .hc-ia-public-home .hc-d3-membership-band { padding-block: 16px; }
 }
+
+/* Keep tablet category density consistent with the three-column layout. */
+@media (min-width: 701px) and (max-width: 900px) {
+  .hc-ia-public-home .hc-home-category-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
