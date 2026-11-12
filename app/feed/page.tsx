@@ -209,7 +209,7 @@ export default function Feed(){
       if(composerMode==="poll")form.append("poll_options",JSON.stringify(pollOptionsClean));
       photos.forEach(f=>form.append("images",f));
       if(video){
-        const ext=video.type==="video/webm"?"webm":video.type==="video/quicktime"?"mov":(!video.type&&/\\.webm$/i.test(video.name))?"webm":(!video.type&&/\\.mov$/i.test(video.name))?"mov":"mp4";
+        const ext=video.type==="video/webm"?"webm":video.type==="video/quicktime"?"mov":(!video.type&&/\.webm$/i.test(video.name))?"webm":(!video.type&&/\.mov$/i.test(video.name))?"mov":"mp4";
         const videoType=video.type||({webm:"video/webm",mov:"video/quicktime",mp4:"video/mp4"} as Record<string,string>)[ext];
         const authorization=await fetch("/api/hoopfeed/video-upload",{method:"POST",headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({content_type:videoType,size:video.size})});
         if(!authorization.ok)throw new Error("Video upload authorization failed. Please try again.");
