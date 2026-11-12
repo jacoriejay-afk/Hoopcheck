@@ -49,6 +49,8 @@ export default function DashboardPage() {
   const [teams,setTeams] = useState<Team[]>([]);
   const [feedPost,setFeedPost] = useState<FeedPost|null>(null);
   const [homeGames,setHomeGames] = useState<HomeGame[]>([]);
+  const [teamTrust,setTeamTrust] = useState<{score:number|null;reviewCount:number|null}|null>(null);
+  const [canViewTrust,setCanViewTrust] = useState(false);
   const [hasFeedAccess,setHasFeedAccess] = useState(false);
   const [canWriteReviews,setCanWriteReviews] = useState(false);
   const [membershipTier,setMembershipTier] = useState<"free"|"pro"|"premium">("free");
@@ -113,12 +115,14 @@ export default function DashboardPage() {
       const entitlements = getHoopCheckEntitlements({ accountType: p?.account_type, subscription, playerVerified: p?.player_verified === true });
       setMembershipTier(entitlements.tier);
       setCanWriteReviews(entitlements.canWriteReviews);
+      setCanViewTrust(entitlements.canViewTrustScore);
       const followedIds = (follows||[]).map((row:any)=>row.target_id).filter(Boolean);
 
       // Show the dashboard immediately; the remaining panels are best-effort enhancements.
       setLoading(false);
       setHomeGames([]);
       setFeedPost(null);
+      setTeamTrust(null);
       try {
       let visibleTeamIds: string[] = [];
       if (followedIds.length) {
@@ -128,6 +132,18 @@ export default function DashboardPage() {
         if (!mounted) return;
         setTeams((teamResult.data||[]) as Team[]);
         visibleTeamIds = (teamResult.data || []).map(row => row.id);
+        if (entitlements.canViewTrustScore && visibleTeamIds.length) {
+          const {data:authData} = await supabase.auth.getSession();
+          const token = authData.session?.access_token;
+          if (token) {
+            const params = new URLSearchParams({entityType:basketballSide === "womens" ? "womens-team" : "team",entityId:visibleTeamIds[0]});
+            const trustResponse = await fetch(`/api/trust-score?${params}`,{headers:{Authorization:`Bearer ${token}`},cache:"no-store"});
+            if (trustResponse.ok) {
+              const trust = await trustResponse.json();
+              if (mounted && !trust.locked) setTeamTrust({score:typeof trust.score === "number" ? trust.score : null,reviewCount:typeof trust.reviewCount === "number" ? trust.reviewCount : null});
+            }
+          }
+        }
 
       } else {
         setTeams([]);
@@ -197,7 +213,7 @@ export default function DashboardPage() {
         {(feedPost || (!hasFeedAccess && profile?.account_type !== "fan")) && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>FROM THE COMMUNITY</h2><Link href="/feed">Open HoopFeed →</Link></div>
           {hasFeedAccess && feedPost ? <Link href="/feed" className="hc-home3-post"><strong>{feedPost.profiles?.[0]?.display_name || "Community member"}</strong><p>{feedPost.body}</p></Link> : !hasFeedAccess && profile?.account_type !== "fan" ? <Link href="/membership" className="hc-home3-post">HoopFeed is available with Pro or Premium. View membership →</Link> : null}
         </section>}
-        {teams.length > 0 ? <section className="hc-home3-section"><h2>YOUR TEAM</h2><Link href={(basketballSide === "womens" ? "/womens/" : "/teams/") + teams[0].id} className="hc-home3-team"><TeamLogo name={teams[0].name} size={34}/><strong>{teams[0].name}</strong><span>Team page →</span></Link></section> : <Link href="/teams" className="hc-home3-team">Find your team →</Link>}
+        {teams.length > 0 ? <section className="hc-home3-section"><h2>YOUR TEAM</h2><Link href={(basketballSide === "womens" ? "/womens/" : "/teams/") + teams[0].id} className="hc-home3-team"><TeamLogo name={teams[0].name} size={34}/><div className="hc-home3-team-details"><strong>{teams[0].name}</strong>{canViewTrust && teamTrust && <small>{teamTrust.score !== null ? `Trust ${teamTrust.score}/100` : "Trust score unavailable"}{teamTrust.reviewCount !== null ? ` · ${teamTrust.reviewCount} reviews` : ""}</small>}</div><span>Team page →</span></Link></section> : <Link href="/teams" className="hc-home3-team">Find your team →</Link>}
         <footer className="hc-home3-footer">Every league. Every level. Real reviews, one community.</footer>
       </div>
     </main>
