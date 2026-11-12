@@ -160,7 +160,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: false, message: "Invalid HoopFeed action." }, { status: 400 });
     }
     const kind = kindValues.length === 0 ? "post" : kindValues[0];
-    if (kind !== "post" && kind !== "comment" && kind !== "share" && kind !== "vote" && kind !== "bookmark" && kind !== "pin") {
+    if (kind !== "post" && kind !== "edit" && kind !== "comment" && kind !== "share" && kind !== "vote" && kind !== "bookmark" && kind !== "pin") {
       return NextResponse.json({ allowed: false, message: "Unsupported content type." }, { status: 400 });
     }
     const postIdValues = form.getAll("post_id");
@@ -385,6 +385,20 @@ export async function POST(request: Request) {
     const otherPhotoResults = await Promise.all(allImages.slice(1).map(photo => moderate("", photo)));
     const photoRejection = otherPhotoResults.find(decision => !decision.allowed);
     if (photoRejection) return NextResponse.json({ allowed: false, message: photoRejection.message }, { status: photoRejection.status });
+
+    if (kind === "edit") {
+      if (!text) return NextResponse.json({ allowed:false,message:"Post text cannot be empty." },{status:400});
+      if (allImages.length || videoPath) return NextResponse.json({ allowed:false,message:"Editing media is not supported." },{status:400});
+      const { data: existing, error: readError } = await db.from("feed_posts")
+        .select("id,author_id,status").eq("id",actionPostId).maybeSingle();
+      if (readError || !existing || existing.author_id !== user.id || existing.status !== "approved") {
+        return NextResponse.json({ allowed:false,message:"You cannot edit this post." },{status:403});
+      }
+      const { error: updateError } = await db.from("feed_posts")
+        .update({body:text}).eq("id",actionPostId).eq("author_id",user.id).eq("status","approved");
+      if (updateError) return NextResponse.json({ allowed:false,message:"Post edit failed. Please try again." },{status:400});
+      return NextResponse.json({allowed:true});
+    }
 
     if (kind === "comment") {
       if (!(await canInteractWithPost(actionPostId))) return NextResponse.json({ allowed: false, message: "Post unavailable." }, { status: 404 });
