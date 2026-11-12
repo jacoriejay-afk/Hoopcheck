@@ -209,6 +209,8 @@ export default function TeamDetailPage() {
       if (["#roster", "#players", "#team-players-panel"].includes(window.location.hash)) setActiveProfileTab("players");
       if (["#coaches", "#team-coaches-panel"].includes(window.location.hash)) setActiveProfileTab("coaches");
       if (["#overview", "#team-overview-panel"].includes(window.location.hash)) setActiveProfileTab("overview");
+      if (["#roster-board", "#team-roster-board-panel"].includes(window.location.hash)) setActiveProfileTab("roster-board");
+      if (["#pay-transparency", "#team-pay-transparency-panel"].includes(window.location.hash)) setActiveProfileTab("pay-transparency");
     };
     syncTab();
     window.addEventListener("hashchange", syncTab);
