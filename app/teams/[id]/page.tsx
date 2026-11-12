@@ -240,6 +240,8 @@ export default function TeamDetailPage() {
     useState("");
 
   useEffect(() => {
+    setCoaches([]);
+    setCoachesLoadError(false);
     async function loadTeam() {
       if (!id) {
         setLoading(false);
