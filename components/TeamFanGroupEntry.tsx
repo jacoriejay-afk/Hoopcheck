@@ -116,7 +116,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
   }
 
   async function leave() {
-    if (!window.confirm("Leave this Fan Group? You can join again anytime.")) return;
+    if (!window.confirm(`${labels.leave}?`)) return;
     setBusy(true);
     setMessage("");
     try {
@@ -131,8 +131,8 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
       setActualMember(false);
       setSummary(current => current ? { ...current, is_member: false, member_count: Math.max(0, Number(current.member_count || 0) - (isJoined ? 1 : 0)) } : current);
       try { await load(); } catch { /* API confirmed membership removal; keep optimistic state until refresh completes. */ }
-      setMessage("You left the Fan Group. You can rejoin anytime.");
-    } catch { setMessage("Could not leave this group. Please try again."); }
+      setMessage(labels.leave);
+    } catch { setMessage(labels.failed); }
     finally { setBusy(false); }
   }
 
@@ -143,7 +143,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
       {isFan && (isJoined
         ? <><Link className="btn" href={"/team-hub/groups/" + teamId}>{labels.joinedOpen}</Link><button type="button" className="btn hc-fan-group-leave" disabled={busy} onClick={() => void leave()}>{busy ? labels.wait : labels.leave}</button></>
         : <button className="btn" type="button" disabled={busy} onClick={() => void join()}>{busy ? labels.wait : labels.join}</button>) }
-      {isModerator && <Link className="btn hc-fan-group-moderator-link" href={"/team-hub/groups/" + teamId}>{labels.moderatorOpen}</Link>}
+      {isModerator && !isJoined && <Link className="btn hc-fan-group-moderator-link" href={"/team-hub/groups/" + teamId}>{labels.moderatorOpen}</Link>}
     </div>
     {message && <p className="hc-feed-message" role="status">{message}</p>}
   </section>;
