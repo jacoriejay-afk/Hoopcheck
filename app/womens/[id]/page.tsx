@@ -16,7 +16,8 @@ import FanTeamPosts from "../../../components/FanTeamPosts";
 
 export default function WomensTeam(){
  const {formatDate,formatNumber,t}=useLanguage();
- const [activeSection,setActiveSection]=useState<"overview"|"roster"|"reviews"|"fan-group">("overview");
+ const [activeSection,setActiveSection]=useState<"overview"|"roster"|"coaches"|"reviews"|"fan-group">("overview");
+ const [coaches,setCoaches]=useState<Array<{id:string;name:string;city:string|null;country:string|null}>>([]);
  const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [accountType,setAccountType]=useState(""); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [teamFollowerCount,setTeamFollowerCount]=useState(0); const [trustScoreData,setTrustScoreData]=useState<any>(null);
  useEffect(() => {
    let active = true;
@@ -28,6 +29,7 @@ export default function WomensTeam(){
      if (teamError) console.error("Unable to load women’s team profile:", teamError);
      if (!active) return;
      setTeam(teamData || null);
+     if(teamData){const {data:coachRows,error:coachError}=await supabase.from("coaches").select("id,name,city,country").eq("current_team_id",teamData.id);if(active){setCoaches(coachError?[]:(coachRows||[]));}}
      setTeamFollowerCount(followerCount || 0);
      const { data: { session } } = await supabase.auth.getSession();
      if (session?.user) {
@@ -87,11 +89,20 @@ export default function WomensTeam(){
  />
  <nav className="hc-team-profile-nav" aria-label="Team profile sections" style={{position:"sticky",top:"var(--hc-header-height, 72px)",zIndex:20,overflowX:"auto",borderRadius:16,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",background:"var(--surface,rgba(24,27,36,.92))"}}>
    <div role="tablist" aria-label="Team profile tabs">
-     {(["overview","roster","reviews","fan-group"] as const).map(tab=><button key={tab} id={`womens-team-${tab}-tab`} type="button" role="tab" aria-selected={activeSection===tab} aria-controls={`womens-team-${tab}-panel`} tabIndex={activeSection===tab?0:-1} onClick={()=>setActiveSection(tab)}>{tab==="fan-group"?"Fan Group":tab==="overview"?"Overview":tab==="roster"?"Roster":"Reviews"}</button>)}
+     {(["overview","roster","coaches","reviews","fan-group"] as const).map(tab=><button key={tab} id={`womens-team-${tab}-tab`} type="button" role="tab" aria-selected={activeSection===tab} aria-controls={`womens-team-${tab}-panel`} tabIndex={activeSection===tab?0:-1} onClick={()=>setActiveSection(tab)}>{tab==="fan-group"?"Fan Group":tab==="overview"?"Overview":tab==="roster"?"Roster":tab==="coaches"?"Coaches":"Reviews"}</button>)}
    </div>
  </nav>
  <section id="womens-team-roster-panel" role="tabpanel" aria-labelledby="womens-team-roster-tab" hidden={activeSection!=="roster"}>
    <TeamPlayersHistory teamId={team.id} teamTable="womens_teams" />
+ </section>
+ <section className="card" id="womens-team-coaches-panel" role="tabpanel" aria-labelledby="womens-team-coaches-tab" hidden={activeSection!=="coaches"}>
+   <p className="eyebrow">TEAM STAFF</p><h2>Coaches</h2>
+   {coaches.length ? <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:12}}>
+     {coaches.map(coach=><Link key={coach.id} href={`/coaches/${coach.id}`} className="card" style={{display:"flex",alignItems:"center",gap:12,textDecoration:"none"}}>
+       <span aria-hidden="true" style={{width:44,height:44,borderRadius:"50%",display:"grid",placeItems:"center",background:"var(--surface-muted,rgba(128,128,128,.16))",fontWeight:800}}>{coach.name.trim().split(/\s+/).slice(0,2).map(part=>part[0]).join("").toUpperCase()}</span>
+       <span><strong>{coach.name}</strong><small style={{display:"block"}}>{[coach.city,coach.country].filter(Boolean).join(", ")}</small></span>
+     </Link>)}
+   </div> : <p className="muted">No coaches are listed for this club yet.</p>}
  </section>
  <div id="womens-team-fan-group-panel" role="tabpanel" aria-labelledby="womens-team-fan-group-tab" hidden={activeSection!=="fan-group"}><div id="fan-hq"><TeamFanGroupEntry teamId={team.id} /></div></div>
  {canReview && <div className="entity-actions"><Link href={"/womens/" + team.id + "/review"} className="btn">Write a Review</Link></div>}
