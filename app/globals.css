@@ -4203,3 +4203,26 @@ html.theme-dark .hc-team-profile-hero .hc-team-social-stats :where(strong,small)
   color:#ff6a00 !important;
   -webkit-text-fill-color:#ff6a00 !important;
 }
+
+
+/* VISUAL-FINAL-1: consistent keyboard focus and reduced-motion support.
+   Scoped to interactive elements; preserve existing theme and entitlement behavior. */
+:where(a, button, input, select, textarea, summary, [role="button"], [role="tab"]):focus-visible {
+  outline: 2px solid var(--hc-orange, #ff6a00);
+  outline-offset: 3px;
+}
+:where(button, input, select, textarea) {
+  max-width: 100%;
+}
+:where(.hc-shared-picker-dialog, .hc-team-entity-profile, .moderation-page) {
+  min-width: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  :where(a, button, input, select, textarea, [role="button"], [role="tab"]) {
+    scroll-behavior: auto;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
