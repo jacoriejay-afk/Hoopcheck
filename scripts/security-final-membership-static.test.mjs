@@ -56,3 +56,12 @@ test('membership editor requires admin role and preserves moderator profile save
   assert.match(ui, /if\(!canManageMembership\)\{setMessage\("Only administrators can change memberships\. No changes were saved\."\);return;\}/);
   assert.match(ui, /const profileSaved=await save\(\)/);
 });
+
+test('follow UI rejects self-follows and rolls back rejected authorization', () => {
+  const ui = readFileSync(new URL('../components/FollowButton.tsx', import.meta.url), 'utf8');
+  assert.match(ui, /\(targetType === "player" \|\| targetType === "fan"\) && id === targetId/);
+  assert.match(ui, /showFailure\("You cannot follow your own profile\."\)/);
+  assert.match(ui, /result\.error\.code === "42501" \|\| result\.error\.code === "23514"/);
+  assert.match(ui, /setFollowing\(wasFollowing\)/);
+  assert.match(ui, /setCount\(previousCount\)/);
+});
