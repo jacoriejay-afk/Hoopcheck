@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { feedMediaId, resolveFeedMedia } from "../../../../lib/feed-media-reference";
 
 export const runtime = "nodejs";
-
-const PRIVATE_BUCKETS = new Set(["hoopfeed-private-images", "hoopfeed-private-videos"]);
 
 /**
  * Issue short-lived media links only when the caller can read the exact post
@@ -26,7 +25,7 @@ export async function POST(request: Request) {
   catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
   const postId = typeof payload.post_id === "string" ? payload.post_id : "";
   const mediaUrl = typeof payload.media_url === "string" ? payload.media_url : "";
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postId) || !mediaUrl || mediaUrl.length > 2048) {
+  if (!feedMediaId.test(postId) || !mediaUrl || mediaUrl.length > 2048) {
     return NextResponse.json({ error: "Invalid media reference" }, { status: 400 });
   }
 
@@ -39,42 +38,31 @@ export async function POST(request: Request) {
 
   // RLS must enforce the viewer's role and membership. Posts remain permanent.
   const { data: post, error: postError } = await viewer.from("feed_posts")
-    .select("image_url,image_urls,video_url,shared_post_id")
+    .select("author_id,author_id,image_url,image_urls,video_url,shared_post_id")
     .eq("id", postId).eq("status", "approved").maybeSingle();
   if (postError || !post) return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
 
   // Reshares may reach a different follower audience. Never sign copied private
   // media unless the viewer can also read the original post through its RLS.
+  let mediaOwnerId = post.author_id;
   if (post.shared_post_id) {
     const { data: original, error: originalError } = await viewer.from("feed_posts")
-      .select("id,image_url,image_urls,video_url")
+      .select("id,author_id,image_url,image_urls,video_url")
       .eq("id", post.shared_post_id).eq("status", "approved").maybeSingle();
     if (originalError || !original) return NextResponse.json({ error: "Original post unavailable" }, { status: 404 });
+    mediaOwnerId = original.author_id;
     const originalRefs = [original.image_url, original.video_url, ...(Array.isArray(original.image_urls) ? original.image_urls : [])];
     if (!originalRefs.includes(mediaUrl)) return NextResponse.json({ error: "Media not attached to original" }, { status: 403 });
   }
   const references = [post.image_url, post.video_url, ...(Array.isArray(post.image_urls) ? post.image_urls : [])];
   if (!references.includes(mediaUrl)) return NextResponse.json({ error: "Media not attached to post" }, { status: 403 });
 
-  // Stored private references use "bucket/path", never a user-supplied URL.
-  if (mediaUrl.includes("?") || mediaUrl.includes("#") || mediaUrl.includes("\\") || /%2f|%5c|%2e/i.test(mediaUrl)) {
-    return NextResponse.json({ error: "Invalid media reference" }, { status: 400 });
-  }
-  const separator = mediaUrl.indexOf("/");
-  const bucket = mediaUrl.slice(0, separator);
-  const path = mediaUrl.slice(separator + 1);
-  if (separator < 1 || !PRIVATE_BUCKETS.has(bucket) || !path || path.includes("..") || path.startsWith("/")) {
-    return NextResponse.json({ error: "Unsupported media reference" }, { status: 400 });
-  }
-
-  // Restrict the storage object path to the same author-scoped UUID structure
-  // issued by the private upload handlers; reject malformed object references.
-  const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
-  const objectPath = new RegExp("^" + uuid + "/" + uuid + "[.](jpg|jpeg|png|webp|mp4|webm|mov)$", "i");
-  if (!objectPath.test(path)) return NextResponse.json({ error: "Invalid private media path" }, { status: 400 });
+  const kind = mediaUrl === post.video_url ? "video" : "image";
+  const media = resolveFeedMedia(mediaUrl, url, mediaOwnerId, kind);
+  if (!media) return NextResponse.json({ error: "Unsupported media reference" }, { status: 400 });
 
   const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
-  const { data, error } = await admin.storage.from(bucket).createSignedUrl(path, 60);
+  const { data, error } = await admin.storage.from(media.bucket).createSignedUrl(media.path, 60);
   if (error || !data?.signedUrl) return NextResponse.json({ error: "Media unavailable" }, { status: 404 });
   return NextResponse.json({ url: data.signedUrl, expires_in: 60 }, { headers: { "Cache-Control": "no-store" } });
 }
