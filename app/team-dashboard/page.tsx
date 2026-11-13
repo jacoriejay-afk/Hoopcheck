@@ -48,9 +48,9 @@ export default function TeamDashboardPage() {
     void (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { window.location.href = "/login"; return; }
-      const { data: profile, error: profileError } = await supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
       if (!active) return;
-      if (profileError || !profile || !["coach", "manager", "club_admin", "admin"].includes(profile.account_type)) { window.location.replace("/dashboard"); return; }
+      // Club access is derived from approved claims, never a profile role.
+      // All privileged mutations must independently verify club scope server-side.
       setUserId(user.id);
       await load(user.id);
       if (active) setLoading(false);
