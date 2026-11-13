@@ -40,3 +40,25 @@ BEGIN
   END IF;
   RAISE NOTICE 'HOOPFEED-SHARE-1 structural permission checks passed';
 END $$;
+
+-- A signed-in user who is neither party must not be able to probe recipient
+-- access through the SECURITY DEFINER helper.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',true);
+DO $$
+BEGIN
+  IF private.hoopfeed_share_recipient_can_read(
+    'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid,
+    'cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid,
+    'dddddddd-dddd-4ddd-8ddd-dddddddddddd'::uuid
+  ) IS DISTINCT FROM false THEN
+    RAISE EXCEPTION 'Unrelated authenticated user can probe recipient access';
+  END IF;
+  IF private.hoopfeed_share_not_blocked(
+    'cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid,
+    'dddddddd-dddd-4ddd-8ddd-dddddddddddd'::uuid
+  ) IS DISTINCT FROM false THEN
+    RAISE EXCEPTION 'Unrelated authenticated user can probe block status';
+  END IF;
+END $$;
+RESET ROLE;
