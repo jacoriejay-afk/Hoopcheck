@@ -314,3 +314,18 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header .h
  .auth-page-shell .signup-page .signup-card { min-width:0; width:100%; padding:20px 16px; border-radius:var(--hc-radius-card,20px); }
  .auth-page-shell .signup-page .account-type-grid { min-width:0; grid-template-columns:minmax(0,1fr); }
 }
+
+/* CONSISTENCY-3: account settings should fit small phones without horizontal overflow. */
+.hc-account-page .page-container { min-width:0; max-width:960px; margin-inline:auto; }
+.hc-account-page :is(.hc-account-settings-header,.hc-settings,.hc-settings-group,.account-profile-form,.hc-account-public-profile) { min-width:0; max-width:100%; }
+.hc-account-page :is(.hc-account-settings-identity,.hc-account-identity-title,.hc-account-identity-actions,.hc-account-membership-actions,.hc-account-public-actions) { min-width:0; flex-wrap:wrap; }
+.hc-account-page :is(.hc-account-settings-identity-copy,.hc-account-settings-identity-copy p,.hc-account-identity-title strong) { min-width:0; overflow-wrap:anywhere; }
+.hc-account-page :is(input,select,textarea) { max-width:100%; }
+@media (max-width:767px) {
+ .hc-account-page .page-container { padding-inline:14px; padding-bottom:calc(104px + env(safe-area-inset-bottom,0px)); }
+ .hc-account-page .hc-account-settings-header { padding:18px 16px; border-radius:var(--hc-radius-card,20px); }
+ .hc-account-page .hc-account-settings-header h1 { font-size:clamp(1.5rem,6vw,2rem); line-height:1.15; }
+ .hc-account-page .hc-account-identity-actions { gap:8px; }
+ .hc-account-page .hc-account-membership-actions > *, .hc-account-page .hc-account-public-actions > * { max-width:100%; }
+ .hc-account-page .account-profile-form { grid-template-columns:minmax(0,1fr); }
+}
