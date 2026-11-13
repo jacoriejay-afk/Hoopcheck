@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
+import TeamOfficialPrivateImage from "../../components/TeamOfficialPrivateImage";
 
 type Team = { id: string; name: string; country: string | null; city: string | null };
 type Claim = { id: string; entity_id: string; status: "pending" | "approved" | "rejected"; created_at: string };
@@ -185,7 +186,7 @@ export default function TeamDashboardPage() {
       <section style={{ marginTop: 22 }}>
         <div className="section-heading"><div><p className="eyebrow">PUBLISHED BY YOUR TEAM</p><h2>Manage official updates</h2></div></div>
         <div style={{ display: "grid", gap: 12 }}>{posts.map(post => <article className="dashboard-card" key={post.id} style={{ padding: 18 }}>
-          {post.image_url && <img src={post.image_url} alt="Official team update" style={{ display: "block", width: "100%", maxHeight: 360, objectFit: "cover", borderRadius: 12, marginBottom: 12 }} />}<p style={{ whiteSpace: "pre-wrap" }}>{post.body}</p><small className="muted">{new Date(post.created_at).toLocaleString()}</small>
+          {post.image_url && <TeamOfficialPrivateImage postId={post.id} reference={post.image_url} alt="Official team update" />}<p style={{ whiteSpace: "pre-wrap" }}>{post.body}</p><small className="muted">{new Date(post.created_at).toLocaleString()}</small>
           <div style={{ marginTop: 12 }}><button className="btn dark" onClick={() => void remove(post)}>Delete update</button></div>
         </article>)}{!posts.length && <p className="muted">Your official FanFeed updates will appear here.</p>}</div>
       </section>
