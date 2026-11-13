@@ -176,8 +176,13 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header .h
 }
 
 @media (max-width: 767px) {
+  /* Reserve the iPhone notch/status-bar inset in normal document flow once.
+     The sticky header then uses only its visual gap; do not add the inset twice. */
   html body:has(header.site-header-global.hc-liquid-glass-header) {
     padding-block-start: var(--hc-safe-area-top) !important;
+  }
+  html body header.site-header-global.hc-template-header.hc-liquid-glass-header {
+    inset-block-start: var(--hc-header-gap) !important;
   }
 
   html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-mobile-menu-toggle {
