@@ -58,6 +58,9 @@ jobs:
       - name: Inventory HoopFeed public media dependencies (read-only)
         run: node scripts/audit-hoopfeed-media-privacy.mjs
 
+      - name: Verify private feed media authorization
+        run: node --test scripts/check-private-feed-media.mjs
+
       - name: Check player profile completion
         run: node scripts/check-player-profile-completion.mjs
 

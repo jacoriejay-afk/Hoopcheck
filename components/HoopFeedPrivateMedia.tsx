@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-const PRIVATE_PREFIXES = ["hoopfeed-private-images/", "hoopfeed-private-videos/"];
+import { isProtectedFeedMedia } from "../lib/feed-media-reference";
 
 type Props = {
   postId: string;
@@ -14,9 +14,8 @@ type Props = {
   ariaLabel?: string;
 };
 
-/** Public legacy URLs remain readable; new private references require post-scoped authorization. */
 export default function HoopFeedPrivateMedia({ postId, reference, kind, alt, className, ariaLabel }: Props) {
-  const isPrivate = PRIVATE_PREFIXES.some(prefix => reference.startsWith(prefix));
+  const isPrivate = isProtectedFeedMedia(reference);
   const [url, setUrl] = useState(isPrivate ? "" : reference);
   const [error, setError] = useState(false);
 
