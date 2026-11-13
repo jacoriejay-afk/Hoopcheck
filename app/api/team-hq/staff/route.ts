@@ -26,9 +26,15 @@ export async function GET(request: Request) {
       .select("user_id,accepted_at").eq("club_id", clubId).is("revoked_at", null)
       .order("accepted_at", { ascending: false }).limit(100);
     if (staffError) return NextResponse.json({ error: "Staff unavailable." }, { status: 503 });
-    return NextResponse.json({ staff: (data || []).map(row => ({
-      userId: row.user_id, joinedAt: row.accepted_at,
-    })) }, { headers: { "Cache-Control": "no-store" } });
+    // A non-revoked row is not itself an authorization grant. Exclude stale
+    // rows whose invitation or inviting owner's claim is no longer valid.
+    const verified = await Promise.all((data || []).map(async row => ({
+      row, grant: await resolveClubGrant(row.user_id, clubId),
+    })));
+    return NextResponse.json({ staff: verified
+      .filter(({ grant }) => grant?.role === "manager")
+      .map(({ row }) => ({ userId: row.user_id, joinedAt: row.accepted_at })) },
+      { headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({ error: "Staff unavailable." }, { status: 503 });
   }
