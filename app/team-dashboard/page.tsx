@@ -154,6 +154,7 @@ export default function TeamDashboardPage() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
           <Link href={"/team-hub/groups/" + teamId} className="btn">Open fan group</Link>
           <Link href={"/teams/" + teamId + "#reviews"} className="btn dark">Read club reviews</Link>
+          <Link href="/team-dashboard/staff" className="btn dark">Manage club staff</Link>
         </div>
       </section>
     </>}
