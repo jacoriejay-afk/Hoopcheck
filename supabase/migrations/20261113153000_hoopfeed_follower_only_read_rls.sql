@@ -5,6 +5,8 @@
 -- authenticated role matrix and direct REST tests pass.
 --
 -- Block relationships are created below and checked in both directions.
+-- NOTE: approved posts remain hidden from blocked pairs even for moderators;
+-- this is deliberate user-facing visibility, not a moderation audit endpoint.
 create table if not exists public.user_blocks (
   blocker_id uuid not null references auth.users(id) on delete cascade,
   blocked_id uuid not null references auth.users(id) on delete cascade,
