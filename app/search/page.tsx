@@ -126,7 +126,7 @@ function SearchContent() {
   const [isFanAccount, setIsFanAccount] = useState(false);
   const [roleReady, setRoleReady] = useState(false);
   const [suggestions, setSuggestions] = useState<SocialSuggestion[]>([]);
-  useEffect(() => { let active = true; void (async () => { try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const [{ data }, { data: graphSuggestions }] = await Promise.all([supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(), supabase.rpc("get_social_suggestions")]); if (!active) return; const fan = !data || data.account_type === "fan"; setIsFanAccount(fan); setSuggestions(((graphSuggestions || []) as SocialSuggestion[]).filter(item => !fan || item.entity_type === "team")); } catch (error) { console.error("Unable to load search role context:", error); if (active) setIsFanAccount(true); } finally { if (active) setRoleReady(true); } })(); return () => { active = false; }; }, []);
+  useEffect(() => { let active = true; void (async () => { try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const [{ data }, { data: graphSuggestions }] = await Promise.all([supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(), supabase.rpc("get_social_suggestions")]); if (!active) return; const fan = data?.account_type === "fan"; setIsFanAccount(fan); setSuggestions(((graphSuggestions || []) as SocialSuggestion[]).filter(item => !fan || item.entity_type === "team")); } catch (error) { console.error("Unable to load search role context:", error); if (active) setIsFanAccount(false); } finally { if (active) setRoleReady(true); } })(); return () => { active = false; }; }, []);
 
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -297,10 +297,8 @@ function SearchContent() {
   return (
     <main className="search-page hc-global-search-page">
       <FanBasketballSideSwitch />
-      <section className="search-hero hc-liquid-glass-search-hero">
-        <div className="eyebrow">{t("globalResearch")}</div>
-        <h1>{t("searchBasketballWorld")}</h1>
-        {roleReady && !isFanAccount && <p>{t("findBasketballPeople")}</p>}
+      <section className="hc-search-compact-bar" style={{ position: "sticky", top: "var(--header-height, 64px)", zIndex: 20, padding: "8px 0", background: "var(--background, transparent)" }}>
+        
 
         <SearchBar
           className="search-form"
@@ -320,14 +318,7 @@ function SearchContent() {
         {roleReady && !isFanAccount && <Link href="/players">{t("players")}</Link>}
         <Link href="/search">{t("globalSearch")}</Link>
         </nav>
-      {roleReady && !isFanAccount && <Surface as="section" className="dashboard-card hc-player-connect-surface" style={{ margin: "0 0 18px", padding: "16px" }}>
-        <div className="eyebrow">{t("playerConnect")}</div>
-        <h2 style={{ margin: "4px 0 6px" }}>{t("addAPlayer")}</h2>
-        <p className="muted" style={{ margin: "0 0 12px" }}>
-          {t("enterPlayerUsername")}
-        </p>
-        <PlayerUsernameConnect />
-      </Surface>}
+
 
       {roleReady && !query && suggestions.length > 0 && (
         <section className="hc-suggested-for-you" aria-label="Suggested for you">
@@ -342,10 +333,7 @@ function SearchContent() {
         </section>
       )}
 
-      <section className="hc-search-team-entry" aria-label="Search both basketball directories">
-        <div><p className="eyebrow">ONE GAME. BOTH DIRECTORIES.</p><h2>Find your next team</h2><p>Search men’s and women’s teams by name, city, country, or league.</p></div>
-        <div className="actions"><Link className="btn" href="/teams">Browse men’s teams ↗</Link><Link className="btn dark" href="/womens">Browse women’s teams ↗</Link></div>
-      </section>
+
 
 
       {query && (
