@@ -41,3 +41,34 @@ revoke all on public.team_hq_audit from anon,authenticated;
 -- No client-side policies or direct mutation privileges. A future authenticated,
 -- atomic server/RPC flow must validate approved owner claim, verified invitee
 -- identity and invitation expiry, then write staff + audit in one transaction.
+
+-- Atomic invitation creation: the caller identity must come from a verified
+-- server session. Never expose this function to browser roles.
+create or replace function public.team_hq_create_invitation(
+  p_actor uuid, p_club uuid, p_email text
+) returns uuid
+language plpgsql security definer
+set search_path = ''
+as $$
+declare v_id uuid; v_email text := lower(trim(p_email));
+begin
+  if p_actor is null or p_club is null or v_email is null or
+     length(v_email) not between 3 and 254 or position('@' in v_email) < 2 then
+    raise exception 'Invalid invitation request';
+  end if;
+  if not exists (
+    select 1 from public.profile_claim_requests
+    where requester_id = p_actor and entity_type = 'team'
+      and entity_id = p_club and status = 'approved'
+  ) then
+    raise exception 'Approved club owner required';
+  end if;
+  insert into public.team_hq_invitations (club_id,invitee_email,invited_by)
+    values (p_club,v_email,p_actor) returning id into v_id;
+  insert into public.team_hq_audit (club_id,actor_id,action,detail)
+    values (p_club,p_actor,'invite',jsonb_build_object('invitation_id',v_id));
+  return v_id;
+end;
+$$;
+revoke all on function public.team_hq_create_invitation(uuid,uuid,text) from public,anon,authenticated;
+grant execute on function public.team_hq_create_invitation(uuid,uuid,text) to service_role;
