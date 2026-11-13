@@ -116,11 +116,6 @@
   .hc-global-page-shell main.hc-account-page > .page-container > * {
     min-width:0; max-width:100%;
   }
-  /* The accessible route title stays in the document, not in the viewport.
-     Branding is owned by the shared header, not a second feed hero. */
-  .hc-global-page-shell main.hc-feed-page > .page-container > h1:not(.sr-only) {
-    display:none!important;
-  }
   .hc-global-page-shell main.hc-feed-page .hf5-type-row {
     margin-block:0!important; gap:6px!important;
   }
