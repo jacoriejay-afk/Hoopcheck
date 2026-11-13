@@ -309,6 +309,17 @@ function SearchContent() {
           ariaLabel={!roleReady || isFanAccount ? t("searchBasketballWorld") : t("searchPeoplePlaceholder")}
         />
       </section>
+      <div className="hc-search-type-chips" role="group" aria-label="Search categories" style={{display:"flex",gap:8,flexWrap:"wrap",padding:"8px 0 12px"}}>
+        {(["all","mens-teams","players","coaches","leagues"] as const).filter(type=>type!=="players"||!isFanAccount).map(type=><button key={type} type="button" className="btn dark" aria-pressed={typeFilter===type} onClick={()=>setTypeFilter(type)}>{type==="all"?"All":type==="mens-teams"?"Teams":type==="players"?"Players":type==="coaches"?"Coaches":"Leagues"}</button>)}
+      </div>
+      {searchInput.trim() && searchInput.trim() === query && !loading && totalResults > 0 && <section className="hc-search-suggestions" aria-label="Search suggestions" style={{padding:12,border:"1px solid var(--border)",borderRadius:16,marginBottom:12}}>
+        {visibleTeams.slice(0,3).map(team=><Link key={"team-"+team.id} href={`/teams/${team.id}`} style={{display:"block",padding:8}}>{team.name} · {team.country}</Link>)}
+        {visibleWomensTeams.slice(0,3).map(team=><Link key={"women-"+team.id} href={`/womens/${team.id}`} style={{display:"block",padding:8}}>{team.name} · {team.country}</Link>)}
+        {visiblePlayers.slice(0,3).map(player=><Link key={"player-"+player.id} href={`/players/${player.id}`} style={{display:"block",padding:8}}>{player.display_name || "Player"} · {player.current_team || ""}</Link>)}
+        {visibleCoaches.slice(0,2).map(coach=><Link key={"coach-"+coach.id} href={`/coaches/${coach.id}`} style={{display:"block",padding:8}}>{coach.name}</Link>)}
+        {visibleLeagues.slice(0,2).map(league=><Link key={"league-"+league.id} href={`/leagues/${league.id}`} style={{display:"block",padding:8}}>{league.name}</Link>)}
+        <a href="#search-full-results" style={{display:"block",padding:8,fontWeight:700}}>See all results for &quot;{query}&quot; →</a>
+      </section>}
       <nav className="hc-directory-switcher hc-liquid-glass-search-switcher" aria-label={t("browseDirectoriesLabel")}>
         <span className="hc-directory-switcher-label">{t("browseDirectoriesLabel")}</span>
         <Link href="/teams">{t("mensTeams")}</Link>
@@ -337,7 +348,7 @@ function SearchContent() {
 
 
       {query && (
-        <section className="results-section">
+        <section id="search-full-results" className="results-section">
           <div className="results-header">
             <div>
               <div className="eyebrow">{t("searchResults")}</div>
