@@ -547,12 +547,12 @@ try {
 
     // Exercise the real Settings language control before capturing every route.
     await page.goto(baseURL + "/settings", { waitUntil: "domcontentloaded", timeout: 20000 });
-    const languageSelect = page.locator("select.language-select");
+    const languageSelect = page.locator("main:visible select.language-select:visible");
     await languageSelect.waitFor({ state: "visible", timeout: 10000 });
     if (testLanguage === "en") {
       await languageSelect.selectOption("es");
       await page.waitForFunction(() => document.documentElement.lang === "es", null, { timeout: 10000 });
-      await page.locator("select.language-select").selectOption("en");
+      await page.locator("main:visible select.language-select:visible").selectOption("en");
     } else {
       await languageSelect.selectOption("es");
     }
@@ -570,7 +570,7 @@ try {
         }
         // A route shell can render before its fixture data and controls. Audit
         // the populated page so timing does not hide contrast/copy findings.
-        await page.locator("main").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator("main:visible").waitFor({ state: "visible", timeout: 15000 });
         await page.locator("main .hc-brand-loader--screen").waitFor({ state: "hidden", timeout: 15000 });
         await page.waitForTimeout(300);
         if (requestedPath === "/live-games") {
@@ -588,11 +588,11 @@ try {
         await page.waitForFunction((expected) => document.body.innerText.toLocaleUpperCase().includes(expected), expectedAccountHeading, { timeout: 15000 });
       }
       if (requestedPath === "/search") {
-        await page.locator("main").getByRole("combobox").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator("main:visible").getByRole("combobox").waitFor({ state: "visible", timeout: 15000 });
         await page.locator(".hc-search-browse a[href='/teams']").waitFor({ state: "visible", timeout: 15000 });
       }
       const result = await page.evaluate(({ requestedPath, navigationError }) => {
-        const main = document.querySelector("main");
+        const main = Array.from(document.querySelectorAll("main")).find((element) => element.checkVisibility());
         const routeRoot = document.body;
         const color = (element) => element ? getComputedStyle(element).backgroundColor : null;
         const scaffoldTerms = ["KICKER", "TITLE", "Subtitle", "TEAM FIRST", "Fan Only Note", "Composer Placeholder", "EMPTY TITLE", "EMPTY KICKER", "Empty Body", "Lorem", "TODO", "Placeholder"];
@@ -933,10 +933,10 @@ try {
     }
     if (testLanguage === "en") {
       await page.goto(baseURL + "/settings", { waitUntil: "domcontentloaded" });
-      await page.locator(".language-select").waitFor({ state: "visible", timeout: 30000 });
+      await page.locator("main:visible select.language-select:visible").waitFor({ state: "visible", timeout: 30000 });
       const beforeSwitchOrigin = await page.evaluate(() => performance.timeOrigin);
       await page.screenshot({ path: `${artifactsDir}/language-live-01-settings-en.png`, fullPage: true, animations: "disabled" });
-      await page.locator(".language-select").selectOption("es");
+      await page.locator("main:visible select.language-select:visible").selectOption("es");
       await page.waitForFunction(() => document.documentElement.lang === "es", null, { timeout: 10000 });
       await page.getByRole("heading", { name: "AJUSTES" }).waitFor({ state: "visible", timeout: 10000 });
       await page.screenshot({ path: `${artifactsDir}/language-live-02-settings-es.png`, fullPage: true, animations: "disabled" });
