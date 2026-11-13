@@ -37,11 +37,39 @@ export async function resolveClubGrant(userId: string, clubId: string): Promise<
     .eq("status", "approved")
     .limit(1);
   if (error) throw new Error("Team HQ claim verification failed.");
-  if (!data?.length) return null;
+  if (data?.length) {
+    return {
+      clubId, role: "owner",
+      editProfile: true, manageRoster: true, answerVerifications: true,
+      replyReviews: true, moderateFanGroup: true, manageStaff: true,
+      publishUpdates: true,
+    };
+  }
+  // Staff grants are scoped to a club, require an accepted invitation, and
+  // never inherit owner-only staff management or ownership transfer rights.
+  const { data: staff, error: staffError } = await db.from("team_hq_staff")
+    .select("user_id,invited_by,accepted_at,revoked_at")
+    .eq("club_id", clubId)
+    .eq("user_id", userId)
+    .is("revoked_at", null)
+    .maybeSingle();
+  if (staffError) throw new Error("Team HQ staff verification failed.");
+  if (!staff?.accepted_at) return null;
+  // An invitation grant is only valid while its inviting owner still holds
+  // an approved claim for this exact club.
+  const { data: ownerClaim, error: ownerError } = await db.from("profile_claim_requests")
+    .select("id")
+    .eq("entity_type", "team")
+    .eq("entity_id", clubId)
+    .eq("requester_id", staff.invited_by)
+    .eq("status", "approved")
+    .limit(1);
+  if (ownerError) throw new Error("Team HQ owner verification failed.");
+  if (!ownerClaim?.length) return null;
   return {
-    clubId, role: "owner",
+    clubId, role: "manager",
     editProfile: true, manageRoster: true, answerVerifications: true,
-    replyReviews: true, moderateFanGroup: true, manageStaff: true,
+    replyReviews: true, moderateFanGroup: true, manageStaff: false,
     publishUpdates: true,
   };
 }
