@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 
 export type ClubCapability =
   | "editProfile" | "manageRoster" | "answerVerifications"
-  | "replyReviews" | "moderateFanGroup" | "manageStaff";
+  | "replyReviews" | "moderateFanGroup" | "manageStaff" | "publishUpdates";
 
 export type ClubGrant = Readonly<{
   clubId: string;
@@ -13,6 +13,7 @@ export type ClubGrant = Readonly<{
   replyReviews: boolean;
   moderateFanGroup: boolean;
   manageStaff: boolean;
+  publishUpdates: boolean;
 }>;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -41,6 +42,7 @@ export async function resolveClubGrant(userId: string, clubId: string): Promise<
     clubId, role: "owner",
     editProfile: true, manageRoster: true, answerVerifications: true,
     replyReviews: true, moderateFanGroup: true, manageStaff: true,
+    publishUpdates: true,
   };
 }
 
