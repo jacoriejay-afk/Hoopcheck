@@ -55,6 +55,26 @@ export async function resolveClubGrant(userId: string, clubId: string): Promise<
     .maybeSingle();
   if (staffError) throw new Error("Team HQ staff verification failed.");
   if (!staff?.accepted_at) return null;
+  // Staff rows alone are insufficient: require a matching, accepted, unrevoked
+  // invitation, accepted within its original seven-day validity window.
+  const { data: invitations, error: invitationError } = await db.from("team_hq_invitations")
+    .select("id,accepted_at,created_at,expires_at")
+    .eq("club_id", clubId)
+    .eq("invited_by", staff.invited_by)
+    .eq("accepted_by", userId)
+    .is("revoked_at", null)
+    .not("accepted_at", "is", null)
+    .limit(20);
+  if (invitationError) throw new Error("Team HQ invitation verification failed.");
+  const accepted = invitations?.some((invite) => {
+    const acceptedAt = Date.parse(invite.accepted_at);
+    const createdAt = Date.parse(invite.created_at);
+    const expiresAt = Date.parse(invite.expires_at);
+    return Number.isFinite(acceptedAt) && Number.isFinite(createdAt) &&
+      Number.isFinite(expiresAt) && acceptedAt >= createdAt &&
+      acceptedAt <= expiresAt && acceptedAt <= createdAt + 7 * 86400000;
+  });
+  if (!accepted) return null;
   // An invitation grant is only valid while its inviting owner still holds
   // an approved claim for this exact club.
   const { data: ownerClaim, error: ownerError } = await db.from("profile_claim_requests")
