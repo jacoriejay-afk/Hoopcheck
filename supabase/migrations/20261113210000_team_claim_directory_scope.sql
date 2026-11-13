@@ -27,45 +27,46 @@ ALTER TABLE public.profile_claim_requests
 -- Preserve platform moderators; they must not be deleted on approval.
 CREATE OR REPLACE FUNCTION public.transfer_team_fan_group_moderator()
 RETURNS trigger
-LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $function$
 BEGIN
-  IF TG_OP = 'UPDATE' THEN
-      IF OLD.entity_type = 'team' AND OLD.team_directory = 'men' AND OLD.status = 'approved'
-         AND (NEW.entity_type IS DISTINCT FROM 'team'
-              OR NEW.status IS DISTINCT FROM 'approved'
-              OR NEW.entity_id IS DISTINCT FROM OLD.entity_id
-              OR NEW.requester_id IS DISTINCT FROM OLD.requester_id
-              OR NEW.team_directory IS DISTINCT FROM OLD.team_directory) THEN
-        DELETE FROM public.team_fan_group_moderators m
-        WHERE m.team_id = OLD.entity_id
-          AND m.user_id = OLD.requester_id
-          AND m.moderator_type = 'club_admin'
-          AND NOT EXISTS (
-            SELECT 1 FROM public.profile_claim_requests c
-            WHERE c.id <> NEW.id
-              AND c.entity_type = 'team'
-              AND c.team_directory = 'men'
-              AND c.entity_id = OLD.entity_id
-              AND c.requester_id = OLD.requester_id
-              AND c.status = 'approved'
-          );
-      END IF;
-    END IF;
-    IF NEW.entity_type = 'team' AND NEW.status = 'approved' AND NEW.team_directory = 'men' THEN
-      INSERT INTO public.team_fan_group_moderators(team_id,user_id,moderator_type)
-      VALUES(NEW.entity_id,NEW.requester_id,'club_admin')
-      ON CONFLICT(team_id,user_id) DO UPDATE
-      SET moderator_type='club_admin';
-    END IF;
-  RETURN NEW;
+  IF TG_OP <> 'INSERT'
+     AND OLD.entity_type = 'team'
+     AND OLD.team_directory = 'men'
+     AND OLD.status = 'approved' THEN
+    DELETE FROM public.team_fan_group_moderators m
+    WHERE m.team_id = OLD.entity_id
+      AND m.user_id = OLD.requester_id
+      AND m.moderator_type = 'club_admin'
+      AND NOT EXISTS (
+        SELECT 1 FROM public.profile_claim_requests c
+        WHERE c.entity_type = 'team'
+          AND c.team_directory = 'men'
+          AND c.entity_id = OLD.entity_id
+          AND c.requester_id = OLD.requester_id
+          AND c.status = 'approved'
+      );
+  END IF;
+
+  IF TG_OP <> 'DELETE'
+     AND NEW.entity_type = 'team'
+     AND NEW.team_directory = 'men'
+     AND NEW.status = 'approved' THEN
+    INSERT INTO public.team_fan_group_moderators(team_id, user_id, moderator_type)
+    VALUES (NEW.entity_id, NEW.requester_id, 'club_admin')
+    ON CONFLICT (team_id, user_id) DO NOTHING;
+  END IF;
+
+  RETURN NULL;
 END;
 $function$;
 
--- Re-evaluate moderator assignment if any ownership dimension changes.
+REVOKE ALL ON FUNCTION public.transfer_team_fan_group_moderator()
+FROM PUBLIC, anon, authenticated;
+
 DROP TRIGGER IF EXISTS profile_claim_team_fan_group_moderator
   ON public.profile_claim_requests;
 CREATE TRIGGER profile_claim_team_fan_group_moderator
-AFTER INSERT OR UPDATE OF status, entity_type, entity_id, requester_id, team_directory
+AFTER INSERT OR DELETE OR UPDATE OF status, entity_type, entity_id, requester_id, team_directory
 ON public.profile_claim_requests
 FOR EACH ROW EXECUTE FUNCTION public.transfer_team_fan_group_moderator();
