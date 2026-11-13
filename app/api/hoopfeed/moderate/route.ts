@@ -220,7 +220,7 @@ export async function POST(request: Request) {
     if (image && !ALLOWED_IMAGE_TYPES.has(image.type)) {
       return NextResponse.json({ allowed: false, message: "Use a JPEG, PNG, or WebP image." }, { status: 400 });
     }
-    if (videoPath && (!ALLOWED_VIDEO_TYPES.has(videoType) || !(videoPath.startsWith(user.id + "/") || videoPath.startsWith("hoopfeed-private-videos/" + user.id + "/")) || videoPath.includes("..") || videoPath.length > 240)) return NextResponse.json({ allowed:false, message:"Invalid video upload. Choose a supported video and try again." }, { status:400 });
+    if (videoPath && (!ALLOWED_VIDEO_TYPES.has(videoType) || !videoPath.startsWith("hoopfeed-private-videos/" + user.id + "/") || videoPath.includes("..") || videoPath.length > 240)) return NextResponse.json({ allowed:false, message:"Invalid video upload. Choose a supported video and try again." }, { status:400 });
     if (videoPath && allImages.length > 0) return NextResponse.json({ allowed: false, message: "Choose photos or a video for one post, not both." }, { status: 400 });
     if (videoPath && !text) return NextResponse.json({ allowed:false, message:"Add a caption so HoopCheck can run text safety checks before publishing a video." }, { status:400 });
     if ((kind === "comment" || kind === "edit") && (allImages.length > 0 || videoPath)) {
@@ -470,7 +470,7 @@ export async function POST(request: Request) {
       image_urls.push("hoopfeed-private-images/" + path);
     }
     if (image_urls.length) image_url = image_urls[0];
-    if (videoPath) video_url = videoPath.startsWith("hoopfeed-private-videos/") ? videoPath : db.storage.from("feed-videos").getPublicUrl(videoPath).data.publicUrl;
+    if (videoPath) video_url = videoPath;
     const shareCountry = String(form.get("share_country") || "false") === "true";
     const submittedCountry = String(form.get("post_country") || "").trim().slice(0, 100);
     const { error } = await db.from("feed_posts").insert({
