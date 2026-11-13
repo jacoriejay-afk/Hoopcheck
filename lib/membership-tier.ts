@@ -44,6 +44,7 @@ export type ActiveMembership = {
   status?: string | null;
   access_status?: string | null;
   current_period_end?: string | null;
+  trial_end?: string | null;
 };
 
 export function hasActiveMembershipAtLeast(
@@ -53,8 +54,14 @@ export function hasActiveMembershipAtLeast(
 ): boolean {
   if (!subscription || !isAtLeastTier(subscription.plan, required)) return false;
   if (!["active", "trialing"].includes(subscription.status || "")) return false;
-  if (subscription.current_period_end) {
-    const periodEnd = new Date(subscription.current_period_end).getTime();
+  // A cancelled trial retains access until trial_end, never beyond it.
+  // For active paid subscriptions, use the billing period end as before.
+  const entitlementEnd = subscription.status === "trialing"
+    ? subscription.trial_end
+    : subscription.current_period_end;
+  if (subscription.status === "trialing" && !entitlementEnd) return false;
+  if (entitlementEnd) {
+    const periodEnd = new Date(entitlementEnd).getTime();
     if (!Number.isFinite(periodEnd) || periodEnd <= now) return false;
   }
   return true;
