@@ -181,3 +181,15 @@ html body header.site-header-global .site-header-brand .hc-logo__wordmark::after
   letter-spacing: 0;
   line-height: 1;
 }
+
+.hc-header-feed-wordmark {
+  color: var(--hc-foreground);
+  font-family: var(--font-display, inherit);
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.hc-header-feed-wordmark > span {
+  color: var(--hc-accent-text, var(--hc-foreground));
+}

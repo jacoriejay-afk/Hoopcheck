@@ -299,7 +299,7 @@ try {
           glassSurface,
           pageWrapper: color(wrapperSelector),
           composer: routeName === "feed" ? color(".hc-feed-composer") : null,
-          discoveryHeading: routeName === "feed" ? getComputedStyle(document.querySelector(".hf5-hero__title")).color : null,
+          discoveryHeading: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-header-feed-wordmark")).color : null,
           composerBorder: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-composer")).borderTopWidth : null,
           filterChip: routeName === "feed" ? color(".hf5-type-chip:not(.is-active)") : null,
           dashboardHeroHeadline: routeName === "dashboard" ? (() => { const element = document.querySelector("main.hc-home3 .hc-home3-greeting-line strong"); return element ? getComputedStyle(element).color : null; })() : null,
@@ -554,8 +554,8 @@ try {
         await page.waitForFunction((expected) => document.body.innerText.toLocaleUpperCase().includes(expected), expectedAccountHeading, { timeout: 15000 });
       }
       if (requestedPath === "/search") {
-        const expectedSearchHeading = testLanguage === "es" ? "CONEXIÓN ENTRE JUGADORES" : "PLAYER CONNECT";
-        await page.waitForFunction((expected) => document.body.innerText.toLocaleUpperCase().includes(expected), expectedSearchHeading, { timeout: 15000 });
+        await page.locator("main").getByRole("combobox").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator(".hc-search-browse a[href='/teams']").waitFor({ state: "visible", timeout: 15000 });
       }
       const result = await page.evaluate(({ requestedPath, navigationError }) => {
         const main = document.querySelector("main");
@@ -835,10 +835,10 @@ try {
         const visibleText = await page.locator("body").innerText();
         const expectedText = testLanguage === "es"
           ? requestedPath === "/dashboard" ? ["ACCIONES RÁPIDAS", "CONSULTAR UN EQUIPO"]
-            : requestedPath === "/search" ? ["CONEXIÓN ENTRE JUGADORES", "EMPIEZA A INVESTIGAR"]
+            : requestedPath === "/search" ? ["Explorar directorios"]
             : ["TABLERO DE PLANTILLA", "AÚN NO HAY RESEÑAS APROBADAS"]
           : requestedPath === "/dashboard" ? ["QUICK ACTIONS", "Check a Team"]
-            : requestedPath === "/search" ? ["PLAYER CONNECT", "Start Researching"]
+            : requestedPath === "/search" ? ["Browse directories"]
             : ["ROSTER BOARD", "No approved reviews yet"];
         const missingText = expectedText.filter((expected) => !visibleText.toLocaleUpperCase().includes(expected.toLocaleUpperCase()));
         if (missingText.length) errors.push("language assertions missing: " + missingText.join(", "));
