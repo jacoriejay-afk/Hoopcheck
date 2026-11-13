@@ -302,6 +302,8 @@ function SearchContent() {
 
         <SearchBar
           className="search-form"
+          hideSubmit
+          autoFocus={typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches}
           name="q"
           value={searchInput}
           onChange={setSearchInput}
