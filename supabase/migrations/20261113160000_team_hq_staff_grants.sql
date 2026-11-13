@@ -149,6 +149,14 @@ begin
     where club_id = p_club and user_id = p_target;
   update public.team_hq_invitations set revoked_at = now()
     where club_id = p_club and accepted_by = p_target and revoked_at is null;
+  -- Invalidate pending invitations addressed to the same verified account.
+  -- Otherwise an owner could revoke a manager while a second invitation
+  -- remains available for immediate re-acceptance.
+  update public.team_hq_invitations set revoked_at = now()
+    where club_id = p_club and revoked_at is null and accepted_at is null
+      and lower(trim(invitee_email)) = (
+        select lower(trim(email)) from auth.users where id = p_target
+      );
   insert into public.team_hq_audit (club_id,actor_id,target_user_id,action,detail)
     values (p_club,p_actor,p_target,'revoke',jsonb_build_object('prior_inviter',v_staff.invited_by));
   return true;
