@@ -62,3 +62,11 @@ BEGIN
   RETURN NEW;
 END;
 $function$;
+
+-- Re-evaluate moderator assignment if any ownership dimension changes.
+DROP TRIGGER IF EXISTS profile_claim_team_fan_group_moderator
+  ON public.profile_claim_requests;
+CREATE TRIGGER profile_claim_team_fan_group_moderator
+AFTER INSERT OR UPDATE OF status, entity_type, entity_id, requester_id, team_directory
+ON public.profile_claim_requests
+FOR EACH ROW EXECUTE FUNCTION public.transfer_team_fan_group_moderator();
