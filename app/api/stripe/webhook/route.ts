@@ -175,7 +175,6 @@ async function saveSubscription(
       !Number.isFinite(trialEnd) ||
       !Number.isFinite(trialStart) ||
       trialEnd <= trialStart ||
-      trialEnd <= Math.floor(Date.now() / 1000) ||
       trialEnd - trialStart > 7 * 24 * 60 * 60 + 300
     ) {
       throw new Error("Stripe trial has an invalid or excessive duration.");
