@@ -9,6 +9,39 @@ const compiled = ts.transpileModule(source, {
 const moduleUrl = "data:text/javascript;base64," + Buffer.from(compiled).toString("base64");
 const { getHoopCheckEntitlements } = await import(moduleUrl);
 
+// SUB-1 product catalog: prevent price drift, accidental fan checkout,
+// duplicate app-store identifiers, or trial offers on longer terms.
+const catalogSource = readFileSync(new URL("../lib/subscription-products.ts", import.meta.url), "utf8");
+const catalogCompiled = ts.transpileModule(catalogSource, {
+  compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 },
+}).outputText;
+const catalogUrl = "data:text/javascript;base64," + Buffer.from(catalogCompiled).toString("base64");
+const { SUBSCRIPTION_PRODUCTS, getSubscriptionProduct, getTrialOfferCopy } = await import(catalogUrl);
+const approvedPrices = [
+  ["pro", "month", 499, "hoopcheck.pro.monthly"],
+  ["pro", "6_month", 2695, "hoopcheck.pro.6month"],
+  ["pro", "year", 5090, "hoopcheck.pro.annual"],
+  ["premium", "month", 999, "hoopcheck.premium.monthly"],
+  ["premium", "6_month", 5395, "hoopcheck.premium.6month"],
+  ["premium", "year", 10190, "hoopcheck.premium.annual"],
+];
+assert.equal(SUBSCRIPTION_PRODUCTS.length, approvedPrices.length, "exactly six approved player products");
+for (const [tier, duration, amountCents, productId] of approvedPrices) {
+  const product = getSubscriptionProduct("player", tier, duration);
+  assert.ok(product, `missing ${tier}/${duration} product`);
+  assert.equal(product.amountCents, amountCents);
+  assert.equal(product.currency, "USD");
+  assert.equal(product.iosProductId, productId);
+  assert.equal(product.androidProductId, productId);
+  assert.equal(product.trialDays, duration === "month" ? 7 : null);
+  assert.equal(Boolean(getTrialOfferCopy(product)), duration === "month");
+}
+assert.equal(new Set(SUBSCRIPTION_PRODUCTS.map(p => p.iosProductId)).size, 6, "store product IDs must be unique");
+assert.equal(new Set(SUBSCRIPTION_PRODUCTS.map(p => p.stripeLookupKey)).size, 6, "Stripe lookup keys must be unique");
+for (const role of ["fan", "coach", "agent", "scout", "club_admin", "admin", "manager"]) {
+  assert.equal(getSubscriptionProduct(role, "pro", "month"), null, `${role} must not inherit player prices`);
+}
+
 const active = (plan) => ({ plan, status: "active", access_status: "active" });
 const keys = [
   "canReadHoopFeed", "canWriteHoopFeed", "canReadFanFeed", "canWriteFanFeed",
