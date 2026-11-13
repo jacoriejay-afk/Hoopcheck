@@ -203,3 +203,6 @@ html body header.site-header-global .site-header-brand .hc-logo__icon .hc-logo__
   -webkit-text-fill-color: currentColor !important;
   stroke: currentColor !important;
 }
+html body header.site-header-global .site-header-brand .hc-logo__official-wordmark {
+  stroke: none !important;
+}
