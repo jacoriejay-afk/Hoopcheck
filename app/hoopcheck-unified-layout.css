@@ -105,3 +105,35 @@
  .hc-account-page .hc-account-identity-actions > * {flex:1 1 auto}
  .hc-account-page .hc-settings {display:grid;gap:12px}
 }
+
+/* Mobile visual rhythm: Search, Account and HoopFeed only. */
+@media(max-width:767px) {
+  .hc-global-page-shell main.hc-feed-page > .page-container,
+  .hc-global-page-shell main.hc-account-page > .page-container {
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .hc-global-page-shell main.hc-feed-page > .page-container > *,
+  .hc-global-page-shell main.hc-account-page > .page-container > * {
+    min-width:0; max-width:100%;
+  }
+  .hc-global-page-shell main.hc-feed-page .hf5-type-row {
+    margin-block:0!important; gap:6px!important;
+  }
+  .hc-global-page-shell main.hc-feed-page .hf5-type-chip {
+    max-width:100%; white-space:nowrap;
+  }
+  .hc-global-page-shell main.hc-account-page .hc-account-settings-header,
+  .hc-global-page-shell main.hc-account-page .hc-settings-group {
+    margin-block:0!important;
+  }
+  .hc-global-page-shell main.hc-account-page .hc-settings {
+    gap:12px!important;
+  }
+  .hc-global-page-shell main.hc-account-page .hc-account-identity-actions > * {
+    min-height:44px;
+  }
+  .hc-global-page-shell main.hc-search-page .page-container > *,
+  .hc-global-page-shell main.hc-search-page :where(.search-directory-grid,.search-country-grid) {
+    min-width:0; max-width:100%;
+  }
+}
