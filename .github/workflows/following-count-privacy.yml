@@ -1,0 +1,22 @@
+name: Following count privacy security
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/*private_following_count_visibility.sql'
+      - '.github/workflows/following-count-privacy.yml'
+  workflow_dispatch:
+jobs:
+  verify-privacy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify owner and private-profile visibility gates
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('supabase/migrations/20261113090000_private_following_count_visibility.sql').read_text()
+          assert "owner_profile.id = p_user_id" in s
+          assert "(auth.uid() = p_user_id or owner_profile.profile_visibility = 'public')" in s
+          assert "auth.uid() = p_user_id" in s
+          assert "target_profile.profile_visibility = 'public'" in s
+          PY
