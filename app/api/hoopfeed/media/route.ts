@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
   // RLS must enforce the viewer's role and membership. Posts remain permanent.
   const { data: post, error: postError } = await viewer.from("feed_posts")
-    .select("author_id,author_id,image_url,image_urls,video_url,shared_post_id")
+    .select("author_id,image_url,image_urls,video_url,shared_post_id")
     .eq("id", postId).eq("status", "approved").maybeSingle();
   if (postError || !post) return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
 
