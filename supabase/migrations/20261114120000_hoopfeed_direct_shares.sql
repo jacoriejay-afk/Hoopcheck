@@ -32,6 +32,9 @@ create index hoopfeed_direct_shares_recipient_idx on public.hoopfeed_direct_shar
 alter table public.hoopfeed_direct_shares enable row level security;
 revoke all on public.hoopfeed_direct_shares from public,anon,authenticated;
 grant select,insert,delete on public.hoopfeed_direct_shares to authenticated;
+-- Prevent forged primary keys or sender-controlled timestamps via column grants.
+revoke insert on public.hoopfeed_direct_shares from authenticated;
+grant insert (post_id,sender_id,recipient_id) on public.hoopfeed_direct_shares to authenticated;
 -- Visibility is limited to the two parties; the recipient sees only a post ID.
 -- The original feed_posts RLS still decides whether that post can be opened.
 create policy "direct shares own read" on public.hoopfeed_direct_shares
