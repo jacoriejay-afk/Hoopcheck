@@ -18,6 +18,8 @@ export default function TeamDashboardPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [teamId, setTeamId] = useState("");
   const [groupPulse, setGroupPulse] = useState<GroupPulse | null>(null);
+  const [alertPrefs, setAlertPrefs] = useState<{new_review:boolean;join_batch:boolean;review_moderation:boolean;flagged_post:boolean;roster_dispute:boolean}|null>(null);
+  const [savingAlerts, setSavingAlerts] = useState(false);
   const [body, setBody] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,6 +84,30 @@ export default function TeamDashboardPage() {
     return () => { active = false; };
   }, [teamId, userId, teams]);
 
+  useEffect(() => {
+    let active = true;
+    setAlertPrefs(null);
+    if (!teamId || !userId || !teams.some(team => team.id === teamId)) return;
+    void (async () => {
+      const { data, error } = await supabase.from("team_manager_alert_preferences")
+        .select("new_review,join_batch,review_moderation,flagged_post,roster_dispute")
+        .eq("user_id",userId).eq("team_id",teamId).maybeSingle();
+      if (active && !error) setAlertPrefs(data || {new_review:true,join_batch:false,review_moderation:true,flagged_post:true,roster_dispute:true});
+    })();
+    return () => { active = false; };
+  }, [teamId,userId,teams]);
+
+  async function changeAlert(key: "new_review"|"join_batch"|"review_moderation"|"flagged_post"|"roster_dispute", enabled:boolean) {
+    if (!alertPrefs || savingAlerts || !teamId || !teams.some(team => team.id === teamId)) return;
+    setSavingAlerts(true);
+    const next = {...alertPrefs,[key]:enabled};
+    const { error } = await supabase.from("team_manager_alert_preferences")
+      .upsert({user_id:userId,team_id:teamId,...next},{onConflict:"user_id,team_id"});
+    if (error) setMessage("Could not save your manager alert preferences.");
+    else {setAlertPrefs(next);setMessage("Alert preferences saved.");}
+    setSavingAlerts(false);
+  }
+
   async function publish() {
     if (!userId || !teamId || !body.trim() || posting) return;
     setPosting(true); setMessage("");
@@ -129,6 +155,20 @@ export default function TeamDashboardPage() {
       <p className="muted">Manage your claimed team profile and publish official updates for supporters.</p>
     </section>
     {message && <p className="hc-claim-message" role="status">{message}</p>}
+    {approvedCount > 0 && alertPrefs && <section className="dashboard-card" aria-label="Manager alert settings" style={{marginTop:12}}>
+      <p className="eyebrow">NOTIFICATIONS</p><h2>Manager alerts</h2>
+      <p className="muted">Settings for {teams.find(t=>t.id===teamId)?.name}. Each club has its own preferences.</p>
+      {([
+        ["new_review","New published reviews"],
+        ["review_moderation","Review moderation changes"],
+        ["join_batch","Fan-group join batches"],
+        ["flagged_post","Flagged group posts"],
+        ["roster_dispute","Roster disputes"],
+      ] as const).map(([key,label])=><label key={key} style={{display:"flex",alignItems:"center",gap:10,marginTop:10}}>
+        <input type="checkbox" checked={alertPrefs[key]} disabled={savingAlerts} onChange={e=>void changeAlert(key,e.target.checked)}/>{label}
+      </label>)}
+      <small className="muted">New review alerts are active. Other event types will deliver when their event pipelines are connected.</small>
+    </section>}
     {approvedCount > 0 && <>
       <section className="dashboard-card" aria-label="Club command center" style={{ marginTop: 12 }}>
         <p className="eyebrow">CLUB COMMAND CENTER</p>
