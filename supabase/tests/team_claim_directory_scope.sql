@@ -1,5 +1,5 @@
--- Run against an isolated database with the claim and fan group migrations.
 BEGIN;
+-- Run against an isolated database with the claim and fan group migrations.
 DO $test$
 <<team_claim_directory_scope>>
 DECLARE
@@ -8,10 +8,7 @@ DECLARE
   claim_id uuid;
 BEGIN
   INSERT INTO auth.users(id, email, raw_user_meta_data)
-  VALUES (manager_id, 'team-claim-fixture@hoopcheck.invalid', '{"account_type":"manager"}');
-  INSERT INTO public.profiles(id, account_type)
-  VALUES (manager_id, 'manager')
-  ON CONFLICT (id) DO UPDATE SET account_type = EXCLUDED.account_type;
+  VALUES (manager_id, 'team-claim-fixture@hoopcheck.invalid', jsonb_build_object('account_type','manager','birthdate','1990-01-01','gender','prefer_not_to_say','username','hc_team_claim_102','agreed_to_terms',true,'terms_accepted_at',now(),'terms_version','fixture'));
   INSERT INTO public.teams(id, name) VALUES (team_id, 'Claim scope fixture');
   INSERT INTO public.womens_teams(id, name) VALUES (team_id, 'Women claim scope fixture');
 
