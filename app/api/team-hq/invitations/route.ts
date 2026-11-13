@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function POST(request: Request) {
-  const token = request.headers.get("authorization")?.match(/^Bearer\\s+(\\S+)$/i)?.[1];
+  const token = request.headers.get("authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
   if (!token) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   let body: unknown;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON." }, { status: 400 }); }
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const clubId = input.clubId;
   const email = input.email;
   if (typeof clubId !== "string" || !UUID.test(clubId) || typeof email !== "string" ||
-      email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.trim())) {
+      email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     return NextResponse.json({ error: "Valid club ID and email required." }, { status: 400 });
   }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
