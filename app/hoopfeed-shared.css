@@ -23,7 +23,7 @@ html body .hc-global-page-shell main.hc-feed-page {
   margin: 0;
   padding: 16px !important;
   border: 1px solid var(--hc-border) !important;
-  border-radius: 16px !important;
+  border-radius: var(--hc-radius-card) !important;
   background: var(--hc-surface-raised) !important;
   color: var(--hc-foreground) !important;
   box-shadow: none !important;
@@ -428,14 +428,14 @@ html body .hc-global-page-shell main.hc-feed-page {
 .hc-feed-discovery nav a {color:#f7f7f5;border:1px solid #ffffff40;border-radius:10px;padding:10px 14px;text-decoration:none;font-size:12px;font-weight:700;min-height:42px}
 .hc-feed-discovery nav a:hover {background:#ffffff15;border-color:#ff885e}
 .hc-feed-page .hc-feed-stream {max-width:820px;margin-inline:auto;gap:20px}
-.hc-feed-page .hc-feed-shared-card {padding:clamp(16px,2.4vw,26px) !important;border-radius:20px !important;box-shadow:0 6px 24px #00000008 !important}
+.hc-feed-page .hc-feed-shared-card {padding:clamp(16px,2.4vw,26px) !important;border-radius:var(--hc-radius-card) !important;box-shadow:0 6px 24px #00000008 !important}
 .hc-feed-page .hc-feed-shared-author {gap:12px}
 .hc-feed-page .hc-feed-media-area {margin-block:16px;gap:14px}
 .hc-feed-page .hc-feed-media-area > p {font-size:15px;line-height:1.7;overflow-wrap:anywhere}
 .hc-feed-page .hc-feed-media-area :is(img,video) {border-radius:14px;max-width:100%}
 .hc-feed-page .hc-feed-shared-actions {padding-top:14px;border-top:1px solid var(--hc-border);gap:10px;flex-wrap:wrap}
 .hc-feed-page .hc-feed-shared-actions button {min-height:42px}
-.hc-feed-page .hc-feed-composer {max-width:820px;margin-inline:auto;border-radius:20px}
+.hc-feed-page .hc-feed-composer {max-width:820px;margin-inline:auto;border-radius:var(--hc-radius-card)}
 .hc-feed-page .hc-feed-filter-bar {max-width:820px;margin-inline:auto;gap:12px;padding-block:16px}
 .hc-feed-page .hc-feed-filter-scroll {scrollbar-width:thin}
 @media(max-width:700px){.hc-feed-page .hc-feed-discovery{grid-template-columns:1fr;padding:22px 18px;gap:20px;border-radius:16px}.hc-feed-discovery nav{display:flex;overflow-x:auto;gap:8px;padding-bottom:3px}.hc-feed-discovery nav a{white-space:nowrap;flex-shrink:0}.hc-feed-page .hc-feed-stream{gap:14px}.hc-feed-page .hc-feed-shared-card{border-radius:16px !important}.hc-feed-page .hc-feed-media-area > p{font-size:14px}.hc-feed-page .hc-feed-filter-bar{flex-wrap:wrap}}
