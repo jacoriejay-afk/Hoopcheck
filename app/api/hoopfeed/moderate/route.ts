@@ -169,6 +169,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: false, message: "Provide one valid post ID." }, { status: 400 });
     }
     const actionPostId = kind === "post" ? "" : (postIdValues[0] as string).trim();
+    // All non-create actions target a feed_posts UUID. Reject malformed identifiers
+    // before any privileged lookup, including service-role comment/reply writes.
+    if (kind !== "post" && !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(actionPostId)) {
+      return NextResponse.json({ allowed: false, message: "Invalid post ID." }, { status: 400 });
+    }
     const textValues = form.getAll("text");
     if (textValues.length > 1 || (textValues.length === 1 && typeof textValues[0] !== "string")) {
       return NextResponse.json({ allowed: false, message: "Invalid HoopFeed text field." }, { status: 400 });
