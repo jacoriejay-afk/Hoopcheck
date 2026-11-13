@@ -149,6 +149,20 @@ async function saveSubscription(
         ).toISOString()
       : null;
 
+  // Never grant a trial that was not reserved by HoopCheck.
+  // Signed Stripe webhooks alone are insufficient to establish first-time
+  // eligibility: trial history must be checked independently.
+  if (subscription.status === "trialing") {
+    const { data: trialHistory, error: historyError } = await supabase
+      .from("subscription_trial_history")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (historyError || !trialHistory) {
+      throw new Error("Stripe trial cannot be synchronized without a recorded trial reservation.");
+    }
+  }
+
   const { error } =
     await supabase
       .from("subscriptions")
