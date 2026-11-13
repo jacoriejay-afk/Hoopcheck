@@ -1,5 +1,11 @@
 -- TEAMHQ-1 Part A: private, club-scoped manager grants and immutable audit events.
 -- Migration is staged only; do not apply to production without review.
+-- One approved team owner per club, prerequisite for atomic transfer.
+-- Read-only production preflight found zero duplicate approved rows.
+create unique index if not exists profile_claim_one_approved_team_owner_idx
+  on public.profile_claim_requests (entity_id)
+  where entity_type = 'team' and status = 'approved';
+
 create table if not exists public.team_hq_staff (
   club_id uuid not null references public.teams(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
