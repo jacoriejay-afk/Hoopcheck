@@ -15,6 +15,8 @@ type SearchBarProps = {
   inputId?: string;
   ariaLabel?: string;
   disabled?: boolean;
+  hideSubmit?: boolean;
+  autoFocus?: boolean;
 } & Pick<InputHTMLAttributes<HTMLInputElement>, "autoComplete" | "required">;
 
 export default function SearchBar({
@@ -30,6 +32,8 @@ export default function SearchBar({
   inputId,
   ariaLabel = "Search players, coaches, teams, or leagues",
   disabled = false,
+  hideSubmit = false,
+  autoFocus = false,
   autoComplete = "off",
   required = false,
 }: SearchBarProps) {
@@ -65,9 +69,10 @@ export default function SearchBar({
         autoComplete={autoComplete}
         required={required}
         disabled={disabled}
+        autoFocus={autoFocus}
       />
       {currentValue && <button className="hc-searchbar__clear" type="button" aria-label="Clear search" onClick={() => change("")}>×</button>}
-      <button className="hc-searchbar__submit" type="submit" disabled={disabled}>{buttonLabel}</button>
+      {!hideSubmit && <button className="hc-searchbar__submit" type="submit" disabled={disabled}>{buttonLabel}</button>}
     </form>
   );
 }
