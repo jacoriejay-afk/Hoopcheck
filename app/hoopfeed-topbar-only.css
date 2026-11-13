@@ -1,0 +1,4 @@
+/* Fit the branded HoopFeed lockup in the global top navigation, not the page body. */
+html body header.site-header-global .site-header-brand .hc-header-feed-lockup { display:inline-flex; align-items:center; min-width:0; max-width:100%; }
+html body header.site-header-global .site-header-brand .hc-header-feed-artwork { display:block; width:clamp(150px,31vw,225px); height:auto; max-width:100%; object-fit:contain; }
+@media(max-width:420px) { html body header.site-header-global .site-header-brand .hc-header-feed-artwork { width:clamp(136px,43vw,176px); } }
