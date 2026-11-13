@@ -75,18 +75,18 @@ export async function POST(request: Request) {
     if (image instanceof File && bytes) {
       const extension = image.type === "image/jpeg" ? "jpg" : image.type === "image/png" ? "png" : "webp";
       uploadedPath = "team-posts/" + teamId + "/" + user.id + "/" + randomUUID() + "." + extension;
-      const { error: uploadError } = await db.storage.from("feed-images").upload(uploadedPath, bytes, {
+      const { error: uploadError } = await db.storage.from("hoopfeed-private-images").upload(uploadedPath, bytes, {
         contentType: image.type, cacheControl: "31536000", upsert: false,
       });
       if (uploadError) return NextResponse.json({ allowed: false, message: "The approved image could not be uploaded." }, { status: 400 });
-      imageUrl = db.storage.from("feed-images").getPublicUrl(uploadedPath).data.publicUrl;
+      imageUrl = "hoopfeed-private-images/" + uploadedPath;
     }
 
     const { data: post, error } = await db.from("team_fanfeed_posts")
       .insert({ team_id: teamId, author_id: user.id, body, image_url: imageUrl, status: "published" })
       .select("id,team_id,body,image_url,created_at,status").single();
     if (error || !post) {
-      if (uploadedPath) await db.storage.from("feed-images").remove([uploadedPath]);
+      if (uploadedPath) await db.storage.from("hoopfeed-private-images").remove([uploadedPath]);
       uploadedPath = null;
       return NextResponse.json({ allowed: false, message: "Your official update could not be published." }, { status: 400 });
     }
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ allowed: true, post });
   } catch (error) {
     if (db && uploadedPath) {
-      try { await db.storage.from("feed-images").remove([uploadedPath]); } catch { /* best-effort cleanup */ }
+      try { await db.storage.from("hoopfeed-private-images").remove([uploadedPath]); } catch { /* best-effort cleanup */ }
     }
     console.error("Team FanFeed publishing failed", error);
     return NextResponse.json({ allowed: false, message: "Team FanFeed could not complete the request." }, { status: 500 });
