@@ -92,6 +92,9 @@ function SearchContent() {
   const [countryFilter, setCountryFilter] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(true);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+  const [desktopAutofocus, setDesktopAutofocus] = useState(false);
+  useEffect(() => { setDesktopAutofocus(window.matchMedia("(min-width: 768px)").matches); }, []);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setSuggestionsOpen(false);
@@ -261,6 +264,7 @@ function SearchContent() {
         <SearchBar
           className="search-form"
           hideSubmit
+          autoFocus={desktopAutofocus}
           onSubmit={(value) => { rememberSearch(value); router.push("/search?q=" + encodeURIComponent(value)); }}
 
           name="q"
@@ -274,7 +278,7 @@ function SearchContent() {
       <div className="hc-search-type-chips" role="group" aria-label="Search categories" style={{display:"flex",gap:8,flexWrap:"wrap",padding:"8px 0 12px"}}>
         {(["all","mens-teams","players","coaches","leagues"] as const).filter(type=>type!=="players"||isFanAccount===false).map(type=><button key={type} type="button" className="btn dark" aria-pressed={typeFilter===type} onClick={()=>setTypeFilter(type)}>{type==="all"?"All":type==="mens-teams"?"Teams":type==="players"?"Players":type==="coaches"?"Coaches":"Leagues"}</button>)}
       </div>
-      {suggestionsOpen && searchInput.trim() && searchInput.trim() === query && !loading && totalResults > 0 && <section className="hc-search-suggestions" aria-label="Search suggestions" style={{padding:12,border:"1px solid var(--border)",borderRadius:16,marginBottom:12}}>
+      {suggestionsOpen && searchInput.trim() && searchInput.trim() === query && !loading && totalResults > 0 && <section id="hc-search-suggestions" className="hc-search-suggestions" aria-label="Search suggestions" style={{padding:12,border:"1px solid var(--border)",borderRadius:16,marginBottom:12}}>
         {visibleTeams.slice(0,3).map(team=><Link key={"team-"+team.id} href={`/teams/${team.id}`} style={{display:"block",padding:8}}>{team.name} · {team.country}</Link>)}
         {visibleWomensTeams.slice(0,3).map(team=><Link key={"women-"+team.id} href={`/womens/${team.id}`} style={{display:"block",padding:8}}>{team.name} · {team.country}</Link>)}
         {visiblePlayers.slice(0,3).map(player=><Link key={"player-"+player.id} href={`/players/${player.id}`} style={{display:"block",padding:8}}>{player.display_name || "Player"} · {player.current_team || ""}</Link>)}
