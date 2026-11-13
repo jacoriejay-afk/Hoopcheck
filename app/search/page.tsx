@@ -136,6 +136,33 @@ function SearchContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState(query);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [signedInViewer, setSignedInViewer] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void supabase.auth.getUser().then(({data}) => {
+      if (!active) return;
+      setSignedInViewer(Boolean(data.user));
+      if (data.user) {
+        try { setRecentSearches(JSON.parse(localStorage.getItem("hc-recent-searches") || "[]").filter((x: unknown) => typeof x === "string").slice(0,5)); } catch { setRecentSearches([]); }
+      }
+    });
+    return () => { active = false; };
+  }, []);
+  const rememberSearch = (term: string) => {
+    const value = term.trim();
+    if (!value || !signedInViewer) return;
+    setRecentSearches(previous => {
+      const next = [value, ...previous.filter(x => x.toLowerCase() !== value.toLowerCase())].slice(0,5);
+      localStorage.setItem("hc-recent-searches", JSON.stringify(next));
+      return next;
+    });
+  };
+  const removeRecent = (term: string) => setRecentSearches(previous => {
+    const next = previous.filter(x => x !== term);
+    localStorage.setItem("hc-recent-searches", JSON.stringify(next));
+    return next;
+  });
   const [typeFilter, setTypeFilter] = useState<"all" | "players" | "coaches" | "mens-teams" | "womens-teams" | "leagues">(
     initialType === "players" || initialType === "coaches" || initialType === "mens-teams" || initialType === "womens-teams" || initialType === "leagues" ? initialType : "all"
   );
@@ -303,6 +330,7 @@ function SearchContent() {
         <SearchBar
           className="search-form"
           hideSubmit
+          onSubmit={(value) => { rememberSearch(value); router.push("/search?q=" + encodeURIComponent(value)); }}
 
           name="q"
           value={searchInput}
@@ -322,6 +350,7 @@ function SearchContent() {
         {visibleLeagues.slice(0,2).map(league=><Link key={"league-"+league.id} href={`/leagues/${league.id}`} style={{display:"block",padding:8}}>{league.name}</Link>)}
         <a href="#search-full-results" style={{display:"block",padding:8,fontWeight:700}}>See all results for &quot;{query}&quot; →</a>
       </section>}
+      {!query && signedInViewer && recentSearches.length > 0 && <section aria-label="Recent searches" style={{padding:"8px 0 12px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><strong>RECENT</strong><button type="button" onClick={()=>{setRecentSearches([]);localStorage.removeItem("hc-recent-searches");}}>Clear all</button></div>{recentSearches.map(term=><div key={term} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:8}}><button type="button" onClick={()=>setSearchInput(term)}>{term}</button><button type="button" aria-label={"Remove "+term} onClick={()=>removeRecent(term)}>×</button></div>)}</section>}
       <nav className="hc-directory-switcher hc-liquid-glass-search-switcher" aria-label={t("browseDirectoriesLabel")}>
         <span className="hc-directory-switcher-label">{t("browseDirectoriesLabel")}</span>
         <Link href="/teams">{t("mensTeams")}</Link>
