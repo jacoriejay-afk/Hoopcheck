@@ -95,21 +95,21 @@ html body header.site-header-global button:focus-visible {
 /* Compact desktop navigation; keep every destination in the More menu. */
 .hc-header-desktop-links { display: none; }
 .hc-header-mobile-links { display: contents; }
-@media (min-width: 701px) {
+@media (min-width: 768px) {
   html body header.site-header-global .hc-header-mobile-links { display: none !important; }
   html body header.site-header-global .hc-header-desktop-links {
     display: flex; align-items: center; justify-content: center;
     gap: clamp(10px, 1.5vw, 24px); min-width: 0; white-space: nowrap;
   }
-  html body header.site-header-global .hc-header-more { position: relative; color: #f7f7f5; }
+  html body header.site-header-global .hc-header-more { position: relative; }
   html body header.site-header-global .hc-header-more > summary {
     display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
     padding: 10px 4px; font-size: 12px; font-weight: 800;
-    list-style: none; color: #f7f7f5;
+    list-style: none; color: inherit;
   }
   html body header.site-header-global .hc-header-more > summary::-webkit-details-marker { display: none; }
   html body header.site-header-global .hc-header-more-panel {
-    position: absolute; right: 0; top: calc(100% + 8px); z-index: 100;
+    position: absolute; inset-inline-end: 0; top: calc(100% + 8px); z-index: 100;
     display: grid; grid-template-columns: repeat(2, minmax(140px,1fr));
     gap: 3px; width: min(380px, calc(100vw - 32px));
     max-height: min(65vh, 520px); overflow-y: auto;

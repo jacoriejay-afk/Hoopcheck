@@ -169,6 +169,7 @@
   .hc-ia-public-home .hc-d3-eyebrow { margin-bottom: 10px; }
   .hc-ia-public-home .hc-d3-hero__sub { margin: 12px 0; }
   .hc-ia-public-home .hc-d3-hero .hc-home-directory-stats {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 105px), 1fr));
     margin: 16px 0 12px;
   }
   .hc-ia-public-home .hc-d3-hero .hc-home-directory-stat {
@@ -176,13 +177,19 @@
     padding: 9px;
     border-radius: var(--hc-radius-card);
   }
+  .hc-ia-public-home .hc-d3-hero .hc-home-directory-stat strong {
+    font-size: clamp(20px, 2vw, 25px);
+    white-space: nowrap;
+  }
   .hc-ia-public-home .hc-d3-map { min-height: 190px; border-radius: 20px; }
   .hc-ia-public-home .hc-d3-map svg { height: 190px; }
   .hc-ia-public-home .hc-d3-feature-card { border-radius: 20px; }
   .hc-ia-public-home .hc-d3-hero__visual { gap: 12px; }
   .hc-ia-public-home .hc-d3-desktop-search {
+    width: 100%;
     max-width: 38rem;
     margin-top: 14px;
+    padding-inline: 0;
   }
   .hc-ia-public-home .hc-ia-section {
     padding-block: 28px;
@@ -292,12 +299,9 @@
   .hc-ia-public-home .hc-d3-hero__copy h1 { font-size: clamp(30px, 3.2vw, 40px); }
 }
 
-/* DESKTOP-QA-5: the five-column directory summary squeezes labels into
-   ~70px cards on 1024px laptops. Give each statistic a readable width. */
+/* Compact the directory summary and spotlight on laptop screens. */
 @media (min-width: 1024px) and (max-width: 1199px) {
   .hc-ia-public-home .hc-d3-hero .hc-home-directory-stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
     margin-block: 12px;
   }
   .hc-ia-public-home .hc-d3-hero .hc-home-directory-stat {

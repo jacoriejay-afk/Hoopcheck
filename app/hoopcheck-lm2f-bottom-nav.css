@@ -117,10 +117,11 @@
     padding: 0 !important;
     color: inherit !important;
     -webkit-text-fill-color: currentColor !important;
-    font: 600 9px/1.15 Inter, Arial, sans-serif !important;
+    font: 600 9px/1.15 var(--font-sans), Arial, sans-serif !important;
     text-align: center !important;
     white-space: nowrap !important;
-    overflow: visible !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
     opacity: 1 !important;
     visibility: visible !important;
   }
@@ -148,59 +149,41 @@
     pointer-events: none !important;
   }
 
-  /* Dark Liquid Glass geometry must live in the final LM-2F stylesheet:
-     this file loads after hoopcheck-liquid-glass.css in app/layout.tsx. */
-  html.theme-dark body nav.hc-bottom-tab-bar.hc-lm2f-bottom-nav {
+  html.theme-light body nav.hc-lm2f-bottom-nav,
+  html.theme-dark body nav.hc-lm2f-bottom-nav {
     inset-inline: max(8px, env(safe-area-inset-left, 0px)) max(8px, env(safe-area-inset-right, 0px)) !important;
-    /* Keep the iOS home-indicator inset OUTSIDE the glass panel.
-       Adding the inset to both height and padding made a tall empty footer
-       in the owner's installed iPhone PWA despite browser CI screenshots. */
-    inset-block-end: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+    inset-block-end: max(6px, var(--hc-safe-area-bottom)) !important;
     width: auto !important;
     max-width: none !important;
     grid-template-rows: 54px !important;
-    grid-auto-rows: 54px !important;
     align-content: start !important;
-    height: 66px !important;
     min-height: 66px !important;
-    max-height: 66px !important;
-    padding: 5px 0 7px !important;
-    border-radius: var(--hc-radius-card) !important;
-  }
-
-  /* Match dark-mode floating geometry without touching the proven five-tab
-     icon sizes, grid tracks, or the iPhone home-indicator clearance. */
-  html.theme-light body nav.hc-bottom-tab-bar.hc-lm2f-bottom-nav {
-    inset-inline: max(8px, env(safe-area-inset-left, 0px)) max(8px, env(safe-area-inset-right, 0px)) !important;
-    inset-block-end: max(6px, env(safe-area-inset-bottom, 0px)) !important;
-    width: auto !important;
-    max-width: none !important;
-    grid-template-rows: 54px !important;
-    grid-auto-rows: 54px !important;
-    align-content: start !important;
     height: 66px !important;
-    min-height: 66px !important;
-    max-height: 66px !important;
     padding: 5px 0 7px !important;
     border: 1px solid var(--hc-card-border) !important;
     border-radius: var(--hc-radius-card) !important;
     background: var(--hc-tab-bg) !important;
-    box-shadow: 0 6px 24px rgb(0 0 0 / 16%) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    backdrop-filter: blur(12px) !important;
+    box-shadow: 0 6px 24px rgb(0 0 0 / 20%) !important;
   }
-  @media (prefers-reduced-transparency: reduce), (prefers-contrast: more), (forced-colors: active) {
-    html.theme-light body nav.hc-bottom-tab-bar.hc-lm2f-bottom-nav {
-      background: #fafafa !important;
-      -webkit-backdrop-filter: none !important;
-      backdrop-filter: none !important;
+
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    @media (prefers-reduced-transparency: no-preference) and (prefers-contrast: no-preference) and (forced-colors: none) {
+      html.theme-light body nav.hc-lm2f-bottom-nav,
+      html.theme-dark body nav.hc-lm2f-bottom-nav {
+        background: color-mix(in srgb, var(--hc-tab-bg) 92%, transparent) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        backdrop-filter: blur(12px) !important;
+      }
     }
   }
-  /* Keep the audit's canonical light-nav selector explicitly token-paired. */
-  html.theme-light body nav.hc-lm2f-bottom-nav {
-    background: var(--hc-tab-bg) !important;
-    border-color: var(--hc-card-border) !important;
+  @media (forced-colors: active) {
+    html.theme-light body nav.hc-lm2f-bottom-nav,
+    html.theme-dark body nav.hc-lm2f-bottom-nav {
+      background: Canvas !important;
+      border-color: CanvasText !important;
+    }
   }
+
   html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab,
   html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab:link,
   html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab:visited {
