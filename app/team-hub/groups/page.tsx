@@ -42,7 +42,7 @@ export default function FanGroupsPage() {
     return () => { active = false; window.clearTimeout(timer); };
   }, [userId, query, page]);
 
-  return <main className="page-shell">
+  return <main className="page-shell hc-fan-groups-directory">
     <div className="page-container">
       <h1>{spanish ? "Grupos de aficionados" : "Fan Groups"}</h1>
       {!userId ? <Link className="btn" href="/login?returnTo=%2Fteam-hub%2Fgroups">
@@ -56,8 +56,8 @@ export default function FanGroupsPage() {
           }} />
         {!current ? <HoopLoading variant="inline" label={spanish ? "Cargando grupos" : "Loading groups"} />
           : current.failed ? <p role="status">{spanish ? "No se pudieron cargar los grupos." : "Could not load fan groups."}</p>
-          : current.groups.length ? <ul className="result-grid">
-            {current.groups.map(group => <li key={group.team_id} className="result-card">
+          : current.groups.length ? <ul className="result-grid hc-fan-groups-list">
+            {current.groups.map(group => <li key={group.team_id} className="result-card hc-fan-groups-item">
               <Link href={`/team-hub/groups/${group.team_id}`}>{group.group_name}</Link>
             </li>)}
           </ul> : <p role="status">{spanish ? "No se encontraron grupos." : "No fan groups found."}</p>}
