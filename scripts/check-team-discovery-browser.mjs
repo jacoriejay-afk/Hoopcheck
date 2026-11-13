@@ -137,6 +137,13 @@ try {
       }
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2);
       assert.equal(overflow, false, `Search does not overflow at ${width}px`);
+      await page.locator(".hc-live-search input").fill("Discovery Team");
+      const option = page.getByRole("option", { name: /Discovery Men QA/ });
+      await option.waitFor();
+      await page.locator(".hc-live-search input").press("ArrowDown");
+      assert.equal(await option.getAttribute("aria-selected"), "true");
+      await page.locator(".hc-live-search input").press("Escape");
+      await option.waitFor({ state: "hidden" });
       console.log(`PASS ${width}px ${theme}: both team searches, women’s navigation, long names, bordered results, centered loader, reduced motion, AI art, partial failure recovery`);
       await context.close();
     }

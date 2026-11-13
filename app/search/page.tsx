@@ -368,7 +368,7 @@ function SearchContent() {
               autoComplete="off"
               maxLength={120}
               value={searchInput}
-              onFocus={() => setSuggestionsOpen(true)}
+              onClick={() => setSuggestionsOpen(true)}
               onChange={event => {
                 setSearchInput(event.target.value);
                 setSelectedSuggestion(-1);
