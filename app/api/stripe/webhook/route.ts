@@ -171,6 +171,9 @@ async function saveSubscription(
             subscription.status,
           current_period_end:
             currentPeriodEnd,
+          trial_end: subscription.trial_end
+            ? new Date(subscription.trial_end * 1000).toISOString()
+            : null,
           cancel_at_period_end:
             subscription.cancel_at_period_end,
         },
