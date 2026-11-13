@@ -1,0 +1,33 @@
+name: Security Final PostgreSQL Integration
+on:
+  pull_request:
+    paths:
+      - 'docs/security/security-final-user-blocking-candidate.sql'
+      - 'supabase/tests/security_final_blocking_integration.sql'
+      - '.github/workflows/security-final-postgres.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  blocking-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: security_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute isolated PostgreSQL RLS and trigger tests
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d security_test -v ON_ERROR_STOP=1 -f supabase/tests/security_final_blocking_integration.sql
