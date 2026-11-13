@@ -18,7 +18,7 @@ GRANT SELECT ON public.hoopfeed_post_shares TO authenticated;
 -- RLS on user_blocks only reveals rows blocked BY the viewer. A narrow
 -- SECURITY DEFINER helper is required to check blocks in both directions.
 -- It accepts only the sender ID; the recipient is always auth.uid().
-CREATE OR REPLACE FUNCTION public.hoopfeed_share_sender_unblocked(p_sender_id uuid)
+CREATE OR REPLACE FUNCTION private.hoopfeed_share_sender_unblocked(p_sender_id uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path = ''
 AS $share_guard$
@@ -30,13 +30,13 @@ AS $share_guard$
          OR (b.blocker_id = p_sender_id AND b.blocked_id = (SELECT auth.uid()))
     );
 $share_guard$;
-REVOKE ALL ON FUNCTION public.hoopfeed_share_sender_unblocked(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.hoopfeed_share_sender_unblocked(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION private.hoopfeed_share_sender_unblocked(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.hoopfeed_share_sender_unblocked(uuid) TO authenticated;
 CREATE POLICY "hoopfeed shares recipient read"
   ON public.hoopfeed_post_shares FOR SELECT TO authenticated
   USING (
     recipient_id = (SELECT auth.uid())
-    AND public.hoopfeed_share_sender_unblocked(sender_id)
+    AND private.hoopfeed_share_sender_unblocked(sender_id)
     AND EXISTS (
       SELECT 1 FROM public.feed_posts fp
       WHERE fp.id = post_id
