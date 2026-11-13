@@ -25,12 +25,12 @@ SELECT set_config('request.jwt.claim.sub','11111111-1111-1111-1111-111111111111'
 -- Non-person team follows must remain unaffected by person blocking.
 INSERT INTO public.follow_relationships VALUES ('11111111-1111-1111-1111-111111111111','team','22222222-2222-2222-2222-222222222222');
 -- Self-follow must be rejected even before a block exists.
-DO $ BEGIN
+DO $selftest$ BEGIN
  BEGIN
   INSERT INTO public.follow_relationships VALUES ('11111111-1111-1111-1111-111111111111','player','11111111-1111-1111-1111-111111111111');
   RAISE EXCEPTION 'self-follow allowed';
  EXCEPTION WHEN check_violation THEN NULL; END;
-END $;
+END $selftest$;
 INSERT INTO public.follow_relationships VALUES ('11111111-1111-1111-1111-111111111111','player','22222222-2222-2222-2222-222222222222');
 INSERT INTO public.user_blocks(blocker_id,blocked_id) VALUES ('11111111-1111-1111-1111-111111111111','22222222-2222-2222-2222-222222222222');
 DO $$
