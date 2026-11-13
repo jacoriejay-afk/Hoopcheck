@@ -22,11 +22,21 @@ BEGIN
 END $$;
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','11111111-1111-1111-1111-111111111111',false);
+-- Non-person team follows must remain unaffected by person blocking.
+INSERT INTO public.follow_relationships VALUES ('11111111-1111-1111-1111-111111111111','team','22222222-2222-2222-2222-222222222222');
+-- Self-follow must be rejected even before a block exists.
+DO $ BEGIN
+ BEGIN
+  INSERT INTO public.follow_relationships VALUES ('11111111-1111-1111-1111-111111111111','player','11111111-1111-1111-1111-111111111111');
+  RAISE EXCEPTION 'self-follow allowed';
+ EXCEPTION WHEN check_violation THEN NULL; END;
+END $;
 INSERT INTO public.follow_relationships VALUES ('11111111-1111-1111-1111-111111111111','player','22222222-2222-2222-2222-222222222222');
 INSERT INTO public.user_blocks(blocker_id,blocked_id) VALUES ('11111111-1111-1111-1111-111111111111','22222222-2222-2222-2222-222222222222');
 DO $$
 BEGIN
- IF EXISTS(SELECT 1 FROM public.follow_relationships) THEN RAISE EXCEPTION 'block did not remove follow'; END IF;
+ IF EXISTS(SELECT 1 FROM public.follow_relationships WHERE target_type IN ('player','fan')) THEN RAISE EXCEPTION 'block did not remove person follow'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.follow_relationships WHERE target_type='team') THEN RAISE EXCEPTION 'block incorrectly removed team follow'; END IF;
  BEGIN
   INSERT INTO public.follow_relationships VALUES ('11111111-1111-1111-1111-111111111111','player','22222222-2222-2222-2222-222222222222');
   RAISE EXCEPTION 'blocked follow allowed';
