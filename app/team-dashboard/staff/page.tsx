@@ -6,6 +6,7 @@ import { supabase } from "../../../lib/supabase";
 
 type Club = { id: string; name: string };
 type Access = { allowed: boolean; role?: string; capabilities?: { manageStaff?: boolean } };
+type StaffMember = { userId: string; joinedAt: string };
 
 export default function TeamStaffPage() {
   const [clubs, setClubs] = useState<Club[]>([]);
@@ -15,6 +16,8 @@ export default function TeamStaffPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [invitationId, setInvitationId] = useState("");
+  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [revokeId, setRevokeId] = useState("");
 
   useEffect(() => {
     let live = true;
@@ -40,6 +43,7 @@ export default function TeamStaffPage() {
   useEffect(() => {
     let live = true;
     setAccess(null);
+    setStaff([]);
     setInvitationId("");
     if (!clubId) return;
     void (async () => {
@@ -48,7 +52,19 @@ export default function TeamStaffPage() {
       const response = await fetch("/api/team-hq/access?clubId=" + encodeURIComponent(clubId), {
         headers: { Authorization: "Bearer " + session.access_token }, cache: "no-store",
       });
-      if (live) setAccess(response.ok ? await response.json() as Access : { allowed: false });
+      const verified = response.ok ? await response.json() as Access : { allowed: false };
+      if (!live) return;
+      setAccess(verified);
+      if (verified.capabilities?.manageStaff) {
+        const rosterResponse = await fetch("/api/team-hq/staff?clubId=" + encodeURIComponent(clubId), {
+          headers: { Authorization: "Bearer " + session.access_token }, cache: "no-store",
+        });
+        if (!live) return;
+        if (rosterResponse.ok) {
+          const roster = await rosterResponse.json();
+          setStaff((roster.staff || []) as StaffMember[]);
+        } else setMessage("Active managers could not be loaded.");
+      }
     })();
     return () => { live = false; };
   }, [clubId]);
@@ -75,6 +91,26 @@ export default function TeamStaffPage() {
     } finally { setBusy(false); }
   }
 
+  async function revoke(member: StaffMember) {
+    if (busy || !access?.capabilities?.manageStaff || !window.confirm("Revoke this manager's access to this club?")) return;
+    setBusy(true); setRevokeId(member.userId); setMessage("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sign in required.");
+      const response = await fetch("/api/team-hq/staff/revoke", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token },
+        body: JSON.stringify({ clubId, targetUserId: member.userId }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not revoke manager.");
+      setStaff(current => current.filter(item => item.userId !== member.userId));
+      setMessage("Manager access revoked for this club.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not revoke manager.");
+    } finally { setBusy(false); setRevokeId(""); }
+  }
+
   return <main className="page-shell"><div className="page-container">
     <Link href="/team-dashboard">Team HQ</Link>
     <section className="dashboard-card" style={{ marginTop: 16 }}>
@@ -95,6 +131,16 @@ export default function TeamStaffPage() {
         </label>
         <button className="btn" type="submit" disabled={busy}>{busy ? "Creating…" : "Create invitation"}</button>
       </form>}
+      {access?.capabilities?.manageStaff && <section aria-label="Active club managers" style={{ marginTop: 24 }}>
+        <h2>Active managers</h2>
+        {staff.length === 0 && <p className="muted">No active invited managers.</p>}
+        {staff.map(member => <div key={member.userId} className="dashboard-card" style={{ marginTop: 12, padding: 12 }}>
+          <p><strong>Manager ID:</strong> <code>{member.userId}</code></p>
+          <p className="muted">Accepted {new Date(member.joinedAt).toLocaleDateString()}</p>
+          <button type="button" className="btn dark" disabled={busy}
+            onClick={() => void revoke(member)}>{revokeId === member.userId ? "Revoking…" : "Revoke access"}</button>
+        </div>)}
+      </section>}
       {message && <p role="status">{message}</p>}
       {invitationId && <p>Invitation ID: <code>{invitationId}</code></p>}
     </section>
