@@ -28,6 +28,12 @@ begin
     or p_product_id not in ('hoopcheck.pro.monthly', 'hoopcheck.premium.monthly') then
     return false;
   end if;
+  -- Refuse existing or previously billed subscriptions.
+  if exists (select 1 from public.subscriptions s where s.user_id = p_user_id
+    and (s.trial_used or s.stripe_subscription_id is not null
+      or s.status in ('active', 'trialing'))) then
+    return false;
+  end if;
   -- One row per user, permanently; concurrent platform requests serialize
   -- through the unique primary-key constraint.
   insert into public.subscription_trial_history(user_id, first_platform, first_product_id)
@@ -35,7 +41,9 @@ begin
   on conflict (user_id) do nothing;
   get diagnostics v_reserved = row_count;
   if v_reserved = 0 then return false; end if;
-  update public.subscriptions set trial_used = true where user_id = p_user_id;
+  insert into public.subscriptions(user_id, status, trial_used)
+  values (p_user_id, 'incomplete', true)
+  on conflict (user_id) do update set trial_used = true;
   return true;
 end;
 $$;
