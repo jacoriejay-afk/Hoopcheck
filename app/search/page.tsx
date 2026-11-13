@@ -39,83 +39,6 @@ type Player = {
   player_verified: boolean;
 };
 
-function PlayerUsernameConnect() {
-  const { t } = useLanguage();
-  const [username, setUsername] = useState("");
-  const [player, setPlayer] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-
-  async function findPlayer(event: React.FormEvent) {
-    event.preventDefault();
-    const value = username.trim().replace(/^@+/, "");
-    setMessage("");
-    setPlayer(null);
-    if (!value) {
-      setMessage("Enter the player username first.");
-      return;
-    }
-
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id,display_name,username,avatar_url,current_team,current_country,player_verified")
-      .eq("account_type", "player")
-      .eq("profile_visibility", "public")
-      .not("username", "is", null)
-      .neq("moderation_status", "suspended")
-      .ilike("username", value)
-      .maybeSingle();
-    setLoading(false);
-
-    if (error) {
-      setMessage("We couldn’t find that username. Try again.");
-      return;
-    }
-    if (!data) {
-      setMessage("No player found with that username.");
-      return;
-    }
-    setPlayer(data);
-  }
-
-  return (
-    <div>
-      <form onSubmit={findPlayer} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <label htmlFor="player-username" className="sr-only">{t("playerUsername")}</label>
-        <input
-          id="player-username"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-          placeholder="@playerusername"
-          autoComplete="off"
-          required
-          style={{ flex: "1 1 220px" }}
-        />
-        <button type="submit" className="btn" disabled={loading}>
-          {loading ? "Finding..." : "Find Player"}
-        </button>
-      </form>
-      {message && <p className="muted" style={{ margin: "8px 0 0" }}>{message}</p>}
-      {player && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-          {player.avatar_url ? (
-            <img src={player.avatar_url} alt="" style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover" }} />
-          ) : (
-            <div className="player-avatar-fallback">HC</div>
-          )}
-          <div style={{ minWidth: 150, flex: "1 1 180px" }}>
-            <strong>{player.display_name || t("hoopCheckPlayer")} {player.player_verified && <VerifiedBadge label={t("verifiedPlayer")} />}</strong>
-            <div className="muted">@{player.username}</div>
-            <div className="muted">{[player.current_team, player.current_country].filter(Boolean).join(" · ")}</div>
-          </div>
-          <PlayerContactButton playerId={player.id} compact />
-        </div>
-      )}
-    </div>
-  );
-}
-
 function SearchContent() {
   const { language, t } = useLanguage();
   const searchParams = useSearchParams();
@@ -397,19 +320,7 @@ function SearchContent() {
             {!loading && <div className="result-count">{totalResults} {totalResults === 1 ? singleResultLabel[language] : t("resultCount")}</div>}
           </div>
 
-          {(
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 24 }}>
-              {(roleReady && !isFanAccount ? (["all", "players", "coaches", "mens-teams", "womens-teams", "leagues"] as const) : (["all", "coaches", "mens-teams", "womens-teams", "leagues"] as const)).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  className="btn dark"
-                  onClick={() => setTypeFilter(type)}
-                  aria-pressed={typeFilter === type}
-                >
-                  {type === "all" ? t("all") : type === "mens-teams" ? t("mensTeams") : type === "womens-teams" ? t("womensTeams") : type === "players" ? t("players") : type === "coaches" ? t("coaches") : t("leagues")}
-                </button>
-              ))}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
               <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} aria-label={t("country")} style={{ padding: "10px 14px", borderRadius: 8 }}>
                 <option value="">{t("allCountries")}</option>
                 {countries.map((country) => <option key={country} value={country}>{country}</option>)}
@@ -429,7 +340,7 @@ function SearchContent() {
               <h3>{t("nothingFound")}</h3>
               <p>{t("tryDifferentSearch")}</p>
             </div>
-          )}
+          }
 
           {!loading && visiblePlayers.length > 0 && (
             <section className="result-group">
