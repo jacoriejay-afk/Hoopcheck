@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
 
 export default function TeamOfficialPrivateImage({ postId, reference, alt }: { postId: string; reference: string; alt: string }) {
   const isPrivate = reference.startsWith("hoopfeed-private-images/");
@@ -11,10 +10,8 @@ export default function TeamOfficialPrivateImage({ postId, reference, alt }: { p
     let active = true;
     let refresh: ReturnType<typeof setTimeout> | undefined;
     async function load() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) { if (active) setUrl(""); return; }
       try {
-        const response = await fetch("/api/team-fanfeed/media", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token }, body: JSON.stringify({ post_id: postId }), cache: "no-store" });
+        const response = await fetch("/api/team-fanfeed/media", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ post_id: postId }), cache: "no-store" });
         if (!response.ok) throw new Error("Image unavailable");
         const data = await response.json();
         if (active) { setUrl(data.url || ""); refresh = setTimeout(() => { void load(); }, 45000); }
