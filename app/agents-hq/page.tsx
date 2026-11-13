@@ -43,7 +43,7 @@ export default function AgentsHQPage() {
   if (loading) return <main className="page-shell"><div className="page-container"><HoopLoading label="Opening Agents HQ…" /></div></main>;
   if (error) return <main className="page-shell"><div className="page-container"><section className="state-card error"><h1>Agents HQ unavailable</h1><p>{error}</p><button className="btn" onClick={() => window.location.reload()}>Retry</button></section></div></main>;
   if (!role) return null;
-  return <main className="page-shell"><div className="page-container">
+  return <main className="page-shell hc-agents-hq-page"><div className="page-container">
     <header className="hero-card">
       <p className="eyebrow">{role === "agent" ? "AGENT WORKSPACE" : "SCOUT WORKSPACE"}</p>
       <h1>Agents HQ</h1>
