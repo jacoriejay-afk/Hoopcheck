@@ -282,7 +282,7 @@ function SearchContent() {
               rememberSearch(searchInput);
               router.push(suggestionTargets[activeSuggestion]);
             }
-          }
+          }}
           onSubmit={(value) => { rememberSearch(value); router.push("/search?q=" + encodeURIComponent(value)); }}
 
           name="q"
