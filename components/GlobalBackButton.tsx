@@ -48,7 +48,7 @@ export default function GlobalBackButton() {
   }, [pathname, router]);
 
   // The public landing page is a navigation root, not a detail view.
-  if (pathname === "/") return null;
+  if (pathname === "/" || pathname === "/feed" || pathname.startsWith("/feed/") || pathname === "/fan-feed") return null;
 
   return (
     <div className="global-back-wrap">
