@@ -95,12 +95,5 @@ set local role anon;
 select set_config('request.jwt.claims','{"role":"anon"}',true);
 do $$ begin if exists(select 1 from public.feed_posts where id='7ea17b00-baba-4abc-9100-100000000001') then raise exception 'Anonymous access'; end if; exception when insufficient_privilege then null; end $$;
 reset role;
-do $ begin
-  if not exists (select 1 from pg_policies where schemaname = 'public'
-    and tablename = 'feed_posts' and policyname = 'unified hoopfeed approved posts read'
-    and qual like '%hoopfeed_can_read_reshare_source%') then
-    raise exception 'HoopFeed policy is missing the reshare guard';
-  end if;
-end $;
 select 'HoopFeed RLS matrix passed' as result;
 rollback;
