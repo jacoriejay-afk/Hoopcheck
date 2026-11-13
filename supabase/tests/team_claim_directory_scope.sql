@@ -7,7 +7,11 @@ DECLARE
   manager_id constant uuid := '00000000-0000-0000-0000-000000000102';
   claim_id uuid;
 BEGIN
-  INSERT INTO public.profiles(id, account_type) VALUES (manager_id, 'manager');
+  INSERT INTO auth.users(id, email, raw_user_meta_data)
+  VALUES (manager_id, 'team-claim-fixture@hoopcheck.invalid', '{"account_type":"manager"}');
+  INSERT INTO public.profiles(id, account_type)
+  VALUES (manager_id, 'manager')
+  ON CONFLICT (id) DO UPDATE SET account_type = EXCLUDED.account_type;
   INSERT INTO public.teams(id, name) VALUES (team_id, 'Claim scope fixture');
   INSERT INTO public.womens_teams(id, name) VALUES (team_id, 'Women claim scope fixture');
 
