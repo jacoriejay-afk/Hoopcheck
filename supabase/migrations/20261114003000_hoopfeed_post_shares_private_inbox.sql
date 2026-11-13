@@ -15,15 +15,28 @@ REVOKE ALL ON public.hoopfeed_post_shares FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.hoopfeed_post_shares TO authenticated;
 -- A share reference is visible only to its recipient and only while the parent
 -- post is approved, unexpired and visible under the existing feed_posts RLS.
+-- RLS on user_blocks only reveals rows blocked BY the viewer. A narrow
+-- SECURITY DEFINER helper is required to check blocks in both directions.
+-- It accepts only the sender ID; the recipient is always auth.uid().
+CREATE OR REPLACE FUNCTION public.hoopfeed_share_sender_unblocked(p_sender_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = ''
+AS $
+  SELECT (SELECT auth.uid()) IS NOT NULL
+    AND p_sender_id IS NOT NULL
+    AND NOT EXISTS (
+      SELECT 1 FROM public.user_blocks b
+      WHERE (b.blocker_id = (SELECT auth.uid()) AND b.blocked_id = p_sender_id)
+         OR (b.blocker_id = p_sender_id AND b.blocked_id = (SELECT auth.uid()))
+    );
+$;
+REVOKE ALL ON FUNCTION public.hoopfeed_share_sender_unblocked(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.hoopfeed_share_sender_unblocked(uuid) TO authenticated;
 CREATE POLICY "hoopfeed shares recipient read"
   ON public.hoopfeed_post_shares FOR SELECT TO authenticated
   USING (
     recipient_id = (SELECT auth.uid())
-    AND NOT EXISTS (
-      SELECT 1 FROM public.user_blocks b
-      WHERE (b.blocker_id = recipient_id AND b.blocked_id = sender_id)
-         OR (b.blocker_id = sender_id AND b.blocked_id = recipient_id)
-    )
+    AND public.hoopfeed_share_sender_unblocked(sender_id)
     AND EXISTS (
       SELECT 1 FROM public.feed_posts fp
       WHERE fp.id = post_id
