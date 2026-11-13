@@ -1,0 +1,8 @@
+/* Compact league directory: consistent orange outline and content rhythm. */
+.hc-league-directory-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:14px; margin:16px auto; }
+.hc-league-directory-grid .hc-league-compact-card { display:flex; flex-direction:column; align-items:flex-start; gap:10px; min-width:0; min-height:0!important; height:auto!important; padding:18px!important; border:1px solid #ff5a1f!important; border-radius:16px!important; box-shadow:none!important; }
+.hc-league-directory-grid .hc-league-compact-card .hc-league-row-head { display:flex; align-items:center; gap:12px; width:100%; min-width:0; margin:0; }
+.hc-league-directory-grid .hc-league-compact-card h2 { margin:4px 0!important; font-size:clamp(19px,2vw,25px); line-height:1.25; overflow-wrap:anywhere; }
+.hc-league-directory-grid .hc-league-compact-card p { margin:0!important; line-height:1.45; }
+.hc-league-directory-grid .hc-league-compact-card .btn { margin-top:auto; align-self:flex-start; min-height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:999px; }
+@media(max-width:700px) { .hc-league-directory-grid { grid-template-columns:minmax(0,1fr); gap:12px; padding-inline:12px; } .hc-league-directory-grid .hc-league-compact-card { padding:16px!important; } }
