@@ -155,9 +155,37 @@ try {
       assert.equal(await guestPage.locator('a.hc-signin-button').count() > 0, true,
         `Guest ${theme} ${route}: sign-in action must be available`);
     }
-    for (const width of [390, 1024, 1440]) {
+    for (const width of [320, 390, 740, 768, 1024, 1440]) {
       await guestPage.setViewportSize({ width, height: 844 });
       await guestPage.goto(baseURL + "/");
+      const resolvedTheme = theme === "system" ? "dark" : theme;
+      await guestPage.locator(`html.theme-${resolvedTheme}`).waitFor({ state: "attached" });
+      const header = guestPage.locator("header.site-header-global");
+      const brand = header.locator(".site-header-brand");
+      const menuToggle = header.getByRole("button", { name: "Open menu" });
+      const topNav = header.getByRole("navigation", { name: "Primary navigation" });
+      if (width < 768) {
+        const headerBox = await header.boundingBox();
+        assert.ok(headerBox.y >= 0 && headerBox.y <= 16, `Guest ${theme} at ${width}px: unexpected top gap ${headerBox.y}px`);
+        await menuToggle.click();
+        await topNav.getByRole("link", { name: "Explore", exact: true }).waitFor();
+        await topNav.getByRole("link", { name: "Men’s Teams", exact: true }).waitFor();
+        await header.getByRole("button", { name: "Close menu" }).click();
+      } else {
+        const brandBox = await brand.boundingBox();
+        const linksBox = await header.locator(".hc-header-desktop-links").boundingBox();
+        const actionsBox = await header.locator(".hc-header-actions").boundingBox();
+        assert.ok(brandBox.x + brandBox.width <= linksBox.x && linksBox.x + linksBox.width <= actionsBox.x,
+          `Guest ${theme} at ${width}px: desktop navigation overlaps`);
+        await header.locator(".hc-header-more > summary").click();
+        await topNav.getByRole("link", { name: "Men’s Teams", exact: true }).waitFor();
+        await header.locator(".hc-header-more > summary").click();
+      }
+      const headerColors = await header.evaluate(element => ({
+        foreground: getComputedStyle(element.querySelector(".hc-logo__wordmark")).color,
+        expected: getComputedStyle(element).color,
+      }));
+      assert.equal(headerColors.foreground, headerColors.expected, `Guest ${theme} at ${width}px: logo must match header foreground`);
       const input = guestPage.locator("main .hc-searchbar__input:visible");
       await input.fill("Basketball");
       const readColors = () => input.evaluate((element) => {
@@ -581,7 +609,7 @@ try {
           headerTop: document.querySelector(".site-header-global") ? document.querySelector(".site-header-global").getBoundingClientRect().top : null,
           mainTop: main ? main.getBoundingClientRect().top : null,
           safeAreaBottom: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hc-safe-area-bottom")) || 0,
-          tabBarBottomPadding: document.querySelector(".bottom-nav") ? parseFloat(getComputedStyle(document.querySelector(".bottom-nav")).paddingBottom) || 0 : null,
+          tabBarBottomClearance: document.querySelector(".bottom-nav") ? window.innerHeight - document.querySelector(".bottom-nav").getBoundingClientRect().bottom : null,
           criticalControlContrast: Array.from(document.querySelectorAll(".hc-dashboard-edit-profile,.hc-dashboard-avatar,.player-avatar-fallback,.hc-mobile-menu-toggle,.quick-access-count,.quick-card-count,.count-badge,.hc-count-badge,.hc-mobile-section-count"))
             .filter((element) => element.getClientRects().length)
             .map((element) => {
@@ -827,7 +855,7 @@ try {
       if (result.bodyTopPadding < result.safeAreaTop - 1) errors.push("top safe-area padding missing");
       if (result.headerTop !== null && result.headerTop < result.safeAreaTop - 1) errors.push("header overlaps the status-bar safe area");
       if (result.mainTop !== null && result.mainTop < result.safeAreaTop - 1) errors.push("main content overlaps the status-bar safe area");
-      if (result.tabBarBottomPadding !== null && result.tabBarBottomPadding < result.safeAreaBottom - 1) errors.push("bottom tab bar overlaps the home-indicator safe area");
+      if (result.tabBarBottomClearance !== null && result.tabBarBottomClearance < result.safeAreaBottom - 1) errors.push("bottom tab bar overlaps the home-indicator safe area");
       if (result.criticalControlContrast.length) errors.push("low contrast critical controls: " + JSON.stringify(result.criticalControlContrast));
       if (theme === "dark" && result.whiteSurfaceOffenders.length) errors.push("white surface offenders: " + JSON.stringify(result.whiteSurfaceOffenders));
       if (result.lowContrastText.length) errors.push("low contrast text: " + JSON.stringify(result.lowContrastText));
