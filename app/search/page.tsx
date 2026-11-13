@@ -97,7 +97,7 @@ function SearchContent() {
   useEffect(() => { setDesktopAutofocus(window.matchMedia("(min-width: 768px)").matches); }, []);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSuggestionsOpen(false);
+      if (event.key === "Escape") { setSuggestionsOpen(false); setActiveSuggestion(-1); }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -274,11 +274,11 @@ function SearchContent() {
           autoFocus={desktopAutofocus}
           onKeyDown={(event) => {
             if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-              if (!suggestionsOpen || !suggestionTargets.length) return;
+              if (!suggestionsOpen || loading || searchInput.trim() !== query || !suggestionTargets.length) return;
               event.preventDefault();
               setActiveSuggestion(previous => event.key === "ArrowDown" ? (previous + 1) % suggestionTargets.length : (previous + suggestionTargets.length - 1) % suggestionTargets.length);
             }
-            if (event.key === "Enter" && activeSuggestion >= 0 && suggestionTargets[activeSuggestion]) {
+            if (event.key === "Enter" && suggestionsOpen && !loading && searchInput.trim() === query && activeSuggestion >= 0 && suggestionTargets[activeSuggestion]) {
               event.preventDefault();
               rememberSearch(searchInput);
               router.push(suggestionTargets[activeSuggestion]);
@@ -295,7 +295,7 @@ function SearchContent() {
       </section>
       {suggestionsOpen && searchInput.trim() && <button type="button" onClick={()=>setSuggestionsOpen(false)} style={{fontSize:12,marginBottom:6}}>Close suggestions (Esc)</button>}
       <div className="hc-search-type-chips" role="group" aria-label="Search categories" style={{display:"flex",gap:8,flexWrap:"wrap",padding:"8px 0 12px"}}>
-        {(["all","mens-teams","players","coaches","leagues"] as const).filter(type=>type!=="players"||isFanAccount===false).map(type=><button key={type} type="button" className="btn dark" aria-pressed={typeFilter===type} onClick={()=>setTypeFilter(type)}>{type==="all"?"All":type==="mens-teams"?"Teams":type==="players"?"Players":type==="coaches"?"Coaches":"Leagues"}</button>)}
+        {(["all","mens-teams","players","coaches","leagues"] as const).filter(type=>type!=="players"||isFanAccount===false).map(type=><button key={type} type="button" className="btn dark" aria-pressed={typeFilter===type} onClick={()=>{setTypeFilter(type);setActiveSuggestion(-1);}}>{type==="all"?"All":type==="mens-teams"?"Teams":type==="players"?"Players":type==="coaches"?"Coaches":"Leagues"}</button>)}
       </div>
       {suggestionsOpen && searchInput.trim() && searchInput.trim() === query && !loading && totalResults > 0 && <section id="hc-search-suggestions" className="hc-search-suggestions" aria-label="Search suggestions" aria-live="polite" style={{padding:12,border:"1px solid var(--border)",borderRadius:16,marginBottom:12}}>
         {[
