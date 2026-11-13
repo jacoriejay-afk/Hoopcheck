@@ -153,13 +153,31 @@ async function saveSubscription(
   // Signed Stripe webhooks alone are insufficient to establish first-time
   // eligibility: trial history must be checked independently.
   if (subscription.status === "trialing") {
+    const trialEnd = subscription.trial_end;
+    const trialStart = subscription.trial_start;
+    if (
+      !trialEnd ||
+      !trialStart ||
+      !Number.isFinite(trialEnd) ||
+      !Number.isFinite(trialStart) ||
+      trialEnd <= trialStart ||
+      trialEnd - trialStart > 7 * 24 * 60 * 60 + 300
+    ) {
+      throw new Error("Stripe trial has an invalid or excessive duration.");
+    }
     const { data: trialHistory, error: historyError } = await supabase
       .from("subscription_trial_history")
-      .select("user_id")
+      .select("first_platform, first_product_id")
       .eq("user_id", userId)
       .maybeSingle();
-    if (historyError || !trialHistory) {
-      throw new Error("Stripe trial cannot be synchronized without a recorded trial reservation.");
+    if (
+      historyError ||
+      !trialHistory ||
+      trialHistory.first_platform !== "web" ||
+      trialHistory.first_product_id !== `hoopcheck.${plan}.monthly` ||
+      getBillingInterval(priceId, subscription.items.data[0]?.price?.metadata, subscription.metadata) !== "month"
+    ) {
+      throw new Error("Stripe trial does not match a reserved web monthly product.");
     }
   }
 
