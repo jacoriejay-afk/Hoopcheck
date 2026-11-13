@@ -278,7 +278,7 @@ export async function POST(request: Request) {
       if (!postId) return NextResponse.json({ allowed: false, message: "Couldn't update your saved posts. Please try again." }, { status: 400 });
       if (saved && !(await canInteractWithPost(postId))) return NextResponse.json({ allowed: false, message: "Post unavailable." }, { status: 404 });
       if (saved) {
-        const { data: post } = await db.from("feed_posts").select("id,status,expires_at").eq("id", postId).maybeSingle();
+        const { data: post } = await db.from("feed_posts").select("id,author_id,status,expires_at").eq("id", postId).maybeSingle();
         if (!post || post.status !== "approved" || (post.expires_at && (!Number.isFinite(Date.parse(post.expires_at)) || Date.parse(post.expires_at) <= Date.now()))) return NextResponse.json({ allowed: false, message: "This post is no longer available." }, { status: 404 });
         const { error } = await db.from("feed_post_bookmarks").upsert({ post_id: postId, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
         if (error) return NextResponse.json({ allowed: false, message: "Couldn't save this post. Please try again." }, { status: 400 });
@@ -289,9 +289,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: true });
     }
 
-    // Pin / unpin: official (admin) accounts only.
+    // Profile-only pinning: the authenticated author may pin only their own approved post.
     if (kind === "pin") {
-      if (!isAdmin) return NextResponse.json({ allowed: false, message: "Only HoopCheck can pin posts." }, { status: 403 });
+
       const postId = actionPostId;
       const pinnedValues = form.getAll("pinned");
       if (pinnedValues.length !== 1 || typeof pinnedValues[0] !== "string" || !["true", "false"].includes(pinnedValues[0])) {
@@ -305,7 +305,8 @@ export async function POST(request: Request) {
       if (!targetPost || (pinned && (targetPost.status !== "approved"))) {
         return NextResponse.json({ allowed: false, message: "This post is no longer available for pinning." }, { status: 404 });
       }
-      const { error } = await db.from("feed_posts").update({ is_pinned: pinned, pinned_at: pinned ? new Date().toISOString() : null }).eq("id", postId);
+      if (targetPost.author_id !== user.id) return NextResponse.json({ allowed: false, message: "You can only pin your own posts." }, { status: 403 });
+      const { error } = await db.from("feed_posts").update({ is_pinned: pinned, pinned_at: pinned ? new Date().toISOString() : null }).eq("id", postId).eq("author_id", user.id);
       if (error) return NextResponse.json({ allowed: false, message: "Couldn't update the pin. Please try again." }, { status: 400 });
       return NextResponse.json({ allowed: true });
     }
