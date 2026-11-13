@@ -1,3 +1,5 @@
+import type { ClubGrant, ClubCapability } from "./team-hq-access";
+
 export type MembershipTier = "free" | "pro" | "premium";
 export type HoopCheckAccountType = "player" | "fan" | "coach" | "agent" | "club_admin" | "admin" | string;
 
@@ -26,6 +28,7 @@ export type HoopCheckEntitlements = {
   canSubmitPayCheckIn: boolean;
   canUseFanGroups: boolean;
   canModerateFanGroups: boolean;
+  clubCapabilities: Readonly<Record<ClubCapability, boolean>>;
 };
 
 const TIER_RANK: Record<MembershipTier, number> = {
@@ -75,9 +78,21 @@ export function getHoopCheckEntitlements(args: {
   isAdmin?: boolean;
   playerVerified?: boolean;
   now?: number;
+  clubGrant?: ClubGrant | null;
+  clubId?: string;
 }): HoopCheckEntitlements {
   const role = args.accountType || "";
-  const isAdmin = args.isAdmin === true || role === "admin";
+  const isAdmin = args.isAdmin === true;
+  const clubGrant = args.clubGrant?.clubId === args.clubId ? args.clubGrant : null;
+  const clubCapabilities: Record<ClubCapability, boolean> = {
+    editProfile: clubGrant?.editProfile === true,
+    manageRoster: clubGrant?.manageRoster === true,
+    answerVerifications: clubGrant?.answerVerifications === true,
+    replyReviews: clubGrant?.replyReviews === true,
+    moderateFanGroup: clubGrant?.moderateFanGroup === true,
+    manageStaff: clubGrant?.manageStaff === true,
+    publishUpdates: clubGrant?.publishUpdates === true,
+  };
   const tier = isAdmin ? "premium" : getActiveMembershipTier(args.subscription, args.now);
   const active = isAdmin || tier !== "free";
   const isPlayer = role === "player";
@@ -115,6 +130,7 @@ export function getHoopCheckEntitlements(args: {
     canViewTeamPayHistory: recognizedRole && !isFan,
     canSubmitPayCheckIn: isPlayer && args.playerVerified === true && isAtLeastTier(tier, "pro"),
     canUseFanGroups: isFan,
-    canModerateFanGroups: isAdmin || role === "club_admin",
+    canModerateFanGroups: clubCapabilities.moderateFanGroup,
+    clubCapabilities,
   };
 }
