@@ -30,10 +30,10 @@ RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
 AS $function$
 BEGIN
-  IF NEW.entity_type = 'team' THEN
-    IF TG_OP = 'UPDATE' THEN
-      IF OLD.status = 'approved'
-         AND (NEW.status IS DISTINCT FROM 'approved'
+  IF TG_OP = 'UPDATE' THEN
+      IF OLD.entity_type = 'team' AND OLD.team_directory = 'men' AND OLD.status = 'approved'
+         AND (NEW.entity_type IS DISTINCT FROM 'team'
+              OR NEW.status IS DISTINCT FROM 'approved'
               OR NEW.entity_id IS DISTINCT FROM OLD.entity_id
               OR NEW.requester_id IS DISTINCT FROM OLD.requester_id
               OR NEW.team_directory IS DISTINCT FROM OLD.team_directory) THEN
@@ -52,13 +52,12 @@ BEGIN
           );
       END IF;
     END IF;
-    IF NEW.status = 'approved' AND NEW.team_directory = 'men' THEN
+    IF NEW.entity_type = 'team' AND NEW.status = 'approved' AND NEW.team_directory = 'men' THEN
       INSERT INTO public.team_fan_group_moderators(team_id,user_id,moderator_type)
       VALUES(NEW.entity_id,NEW.requester_id,'club_admin')
       ON CONFLICT(team_id,user_id) DO UPDATE
       SET moderator_type='club_admin';
     END IF;
-  END IF;
   RETURN NEW;
 END;
 $function$;
