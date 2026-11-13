@@ -105,7 +105,7 @@ function SearchContent() {
   useEffect(() => {
     let active = true;
     void supabase.rpc("search_directory_overview").then(({ data, error }) => {
-      if (active && !error && data) setOverview(data as DirectoryOverview);
+      if (active && !error && data && Array.isArray(data.countries)) setOverview(data as DirectoryOverview);
     });
     return () => { active = false; };
   }, []);
@@ -174,7 +174,7 @@ function SearchContent() {
         const [playerResult, coachResult, teamResult, womensTeamResult, leagueResult, usernameResult] = await Promise.all([
           wantsPlayers && !username
             ? supabase.rpc("search_public_players_page", {
-                p_query: username ?? normalizedQuery,
+                p_query: normalizedQuery,
                 p_country: countryFilter,
                 p_position: "",
                 p_verified_only: verifiedOnly,
