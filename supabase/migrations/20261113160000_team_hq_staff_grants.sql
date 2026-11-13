@@ -121,3 +121,38 @@ end;
 $$;
 revoke all on function public.team_hq_accept_invitation(uuid,uuid) from public,anon,authenticated;
 grant execute on function public.team_hq_accept_invitation(uuid,uuid) to service_role;
+
+-- Atomic owner-only revocation; lock the target grant to serialize changes.
+create or replace function public.team_hq_revoke_manager(
+  p_actor uuid, p_club uuid, p_target uuid
+) returns boolean
+language plpgsql security definer
+set search_path = ''
+as $$
+declare v_staff public.team_hq_staff%rowtype;
+begin
+  if p_actor is null or p_club is null or p_target is null or p_actor = p_target then
+    raise exception 'Invalid revocation';
+  end if;
+  if not exists (
+    select 1 from public.profile_claim_requests
+    where requester_id = p_actor and entity_type = 'team'
+      and entity_id = p_club and status = 'approved'
+  ) then
+    raise exception 'Approved club owner required';
+  end if;
+  select * into v_staff from public.team_hq_staff
+    where club_id = p_club and user_id = p_target and revoked_at is null
+    for update;
+  if not found then raise exception 'Active manager grant not found'; end if;
+  update public.team_hq_staff set revoked_at = now()
+    where club_id = p_club and user_id = p_target;
+  update public.team_hq_invitations set revoked_at = now()
+    where club_id = p_club and accepted_by = p_target and revoked_at is null;
+  insert into public.team_hq_audit (club_id,actor_id,target_user_id,action,detail)
+    values (p_club,p_actor,p_target,'revoke',jsonb_build_object('prior_inviter',v_staff.invited_by));
+  return true;
+end;
+$$;
+revoke all on function public.team_hq_revoke_manager(uuid,uuid,uuid) from public,anon,authenticated;
+grant execute on function public.team_hq_revoke_manager(uuid,uuid,uuid) to service_role;
