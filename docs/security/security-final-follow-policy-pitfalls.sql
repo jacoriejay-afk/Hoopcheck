@@ -1,0 +1,36 @@
+-- SECURITY-FINAL: unexecuted candidate for server-enforced person-to-person follows.
+-- NOT a complete user-blocking release. Review alongside privileged RPCs and API routes.
+-- Do not execute on production without isolated role tests and approval.
+--
+-- Proposed prerequisites: public.user_blocks(blocker_id uuid, blocked_id uuid)
+-- with composite primary key, auth.users foreign keys, no self-blocks, owner-only
+-- SELECT/INSERT/DELETE RLS, and authenticated-only privileges.
+--
+-- The current follow_relationships policy permits all owner-managed operations.
+-- A block-aware INSERT policy must replace (not merely supplement) its ALL
+-- policy, because permissive RLS policies are OR-combined.
+--
+-- CREATE POLICY "followers insert own unblocked" ON public.follow_relationships
+-- FOR INSERT TO authenticated WITH CHECK (
+--   follower_id = (SELECT auth.uid())
+--   AND (
+--     target_type NOT IN ('player','fan')
+--     OR NOT EXISTS (
+--       SELECT 1 FROM public.user_blocks b
+--       WHERE (b.blocker_id = follower_id AND b.blocked_id = target_id)
+--          OR (b.blocker_id = target_id AND b.blocked_id = follower_id)
+--     )
+--   )
+-- );
+--
+-- IMPORTANT: querying user_blocks from caller-invoker RLS will not see blocks
+-- created by the other party. Use a carefully audited SECURITY DEFINER helper
+-- or a trigger to check both directions; never deploy the illustrative policy
+-- above as-is. Likewise, ensure service-role write paths enforce the same rule.
+--
+-- An atomic block operation must remove both directions of existing person
+-- follows, without removing team or league follows. A race-safe implementation
+-- must serialize concurrent block/follow operations.
+--
+-- RELEASE GATE: no executable DDL until the policy OR semantics, RLS visibility,
+-- concurrent writes, and all privileged follower read RPCs have isolated tests.
