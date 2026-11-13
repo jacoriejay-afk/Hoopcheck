@@ -21,3 +21,44 @@ ALTER TABLE public.profile_claim_requests
 -- NULL-scoped claims to grant Team HQ permissions; require an exact directory.
 -- Follow-up: update all claim submission paths to send team_directory,
 -- then make it mandatory for team claims in a separate validated migration.
+
+-- The historical trigger grants men's fan-group moderator rights by team_id.
+-- Only explicitly men's claims may enter that legacy fan-group namespace.
+-- Preserve platform moderators; they must not be deleted on approval.
+CREATE OR REPLACE FUNCTION public.transfer_team_fan_group_moderator()
+RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF NEW.entity_type = 'team' THEN
+    IF TG_OP = 'UPDATE' THEN
+      IF OLD.status = 'approved'
+         AND (NEW.status IS DISTINCT FROM 'approved'
+              OR NEW.entity_id IS DISTINCT FROM OLD.entity_id
+              OR NEW.requester_id IS DISTINCT FROM OLD.requester_id
+              OR NEW.team_directory IS DISTINCT FROM OLD.team_directory) THEN
+        DELETE FROM public.team_fan_group_moderators m
+        WHERE m.team_id = OLD.entity_id
+          AND m.user_id = OLD.requester_id
+          AND m.moderator_type = 'club_admin'
+          AND NOT EXISTS (
+            SELECT 1 FROM public.profile_claim_requests c
+            WHERE c.id <> NEW.id
+              AND c.entity_type = 'team'
+              AND c.team_directory = 'men'
+              AND c.entity_id = OLD.entity_id
+              AND c.requester_id = OLD.requester_id
+              AND c.status = 'approved'
+          );
+      END IF;
+    END IF;
+    IF NEW.status = 'approved' AND NEW.team_directory = 'men' THEN
+      INSERT INTO public.team_fan_group_moderators(team_id,user_id,moderator_type)
+      VALUES(NEW.entity_id,NEW.requester_id,'club_admin')
+      ON CONFLICT(team_id,user_id) DO UPDATE
+      SET moderator_type='club_admin';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
