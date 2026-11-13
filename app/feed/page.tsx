@@ -346,25 +346,6 @@ export default function Feed(){
     }catch(e:any){console.error("HoopFeed comment failed",e);setMsg("That comment couldn't be posted. Please try again.");}finally{commentRequests.current.delete(post_id);setSendingComments(x=>({...x,[post_id]:false}));}
   }
 
-  async function saveEdit(p:Post){
-    if(!user||p.author_id!==user.id||savingEdit)return;
-    const next=editText.trim();
-    if(!next||next.length>2000){setMsg("Post text must be between 1 and 2,000 characters.");return;}
-    setSavingEdit(true);
-    try{
-      const {data:{session}}=await supabase.auth.getSession();
-      if(!session?.access_token){setMsg("Please sign in again.");return;}
-      const form=new FormData();
-      form.append("kind","edit");form.append("post_id",p.id);form.append("text",next);
-      const response=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
-      const result=await response.json().catch(()=>({}));
-      if(!response.ok||result.allowed!==true){setMsg(result.message||"Post edit failed.");return;}
-      setPosts(rows=>rows.map(row=>row.id===p.id?{...row,body:next}:row));
-      setEditingPost(null);setMsg("");
-    }catch(error){console.error("HoopFeed edit failed",error);setMsg("Post edit failed. Please try again.");}
-    finally{setSavingEdit(false);}
-  }
-
   async function del(p:Post){if(!user||p.author_id!==user.id)return;if(!confirm("Delete this HoopFeed post?"))return;const {error}=await supabase.from("feed_posts").delete().eq("id",p.id);if(error){console.error("HoopFeed delete failed",error);setMsg("That post couldn't be deleted. Please try again.");return;}{const marker="/storage/v1/object/public/feed-images/";const urls=[...((p.image_urls&&p.image_urls.length)?p.image_urls:[]),...(p.image_url?[p.image_url]:[])];const paths=urls.map(u=>{const i=u.indexOf(marker);return i>=0?u.slice(i+marker.length):"";}).filter(Boolean);if(paths.length)await supabase.storage.from("feed-images").remove(paths);}if(p.video_url){const marker="/storage/v1/object/public/feed-videos/";const i=p.video_url.indexOf(marker);if(i>=0)await supabase.storage.from("feed-videos").remove([p.video_url.slice(i+marker.length)]);}await load(user);}
 
   const title = <h1 className="visually-hidden">HoopFeed</h1>;
