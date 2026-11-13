@@ -19,7 +19,14 @@ grant select,insert,delete on public.hoopfeed_direct_shares to authenticated;
 -- The original feed_posts RLS still decides whether that post can be opened.
 create policy "direct shares own read" on public.hoopfeed_direct_shares
  for select to authenticated
- using ((select auth.uid()) in (sender_id,recipient_id));
+ using (
+  (select auth.uid()) in (sender_id,recipient_id)
+  and not exists (
+    select 1 from public.user_blocks b
+    where (b.blocker_id=sender_id and b.blocked_id=recipient_id)
+       or (b.blocker_id=recipient_id and b.blocked_id=sender_id)
+  )
+);
 create policy "direct shares sender insert" on public.hoopfeed_direct_shares
  for insert to authenticated
  with check (
