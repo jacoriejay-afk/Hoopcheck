@@ -21,7 +21,7 @@ GRANT SELECT ON public.hoopfeed_post_shares TO authenticated;
 CREATE OR REPLACE FUNCTION public.hoopfeed_share_sender_unblocked(p_sender_id uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path = ''
-AS $
+AS $share_guard$
   SELECT (SELECT auth.uid()) IS NOT NULL
     AND p_sender_id IS NOT NULL
     AND NOT EXISTS (
@@ -29,7 +29,7 @@ AS $
       WHERE (b.blocker_id = (SELECT auth.uid()) AND b.blocked_id = p_sender_id)
          OR (b.blocker_id = p_sender_id AND b.blocked_id = (SELECT auth.uid()))
     );
-$;
+$share_guard$;
 REVOKE ALL ON FUNCTION public.hoopfeed_share_sender_unblocked(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.hoopfeed_share_sender_unblocked(uuid) TO authenticated;
 CREATE POLICY "hoopfeed shares recipient read"
