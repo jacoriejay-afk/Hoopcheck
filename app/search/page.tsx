@@ -92,7 +92,6 @@ function SearchContent() {
   const [countryFilter, setCountryFilter] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(true);
-  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const [desktopAutofocus, setDesktopAutofocus] = useState(false);
   useEffect(() => { setDesktopAutofocus(window.matchMedia("(min-width: 768px)").matches); }, []);
   useEffect(() => {
