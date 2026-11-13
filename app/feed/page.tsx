@@ -371,6 +371,7 @@ export default function Feed(){
 
   return <PageShell><main className="page-shell hc-feed-page" onTouchStart={(event)=>{touchStartY.current=window.scrollY===0?(event.touches[0]?.clientY??null):null;}} onTouchEnd={(event)=>{const start=touchStartY.current;touchStartY.current=null;const end=event.changedTouches[0]?.clientY??0;if(start!==null&&end-start>80&&user&&profile&&!refreshing){void(async()=>{setRefreshing(true);try{await load(user);setNow(Date.now());}catch(error){console.error("HoopFeed refresh failed",error);setMsg("Could not refresh HoopFeed. Please try again.");}finally{setRefreshing(false);}})();}}}><div className="page-container">
     {title}
+    <header aria-label="HoopFeed" className="hc-hoopfeed-brand-header"><img src="/hoopfeed-header.svg" alt="HoopFeed™" width="560" height="128" /></header>
 
     <div className="hf5-type-row hc-liquid-glass-filter" role="group" aria-label="Filter HoopFeed by post type">{TYPE_FILTERS.map(t=><button type="button" key={t} className={"hf5-type-chip"+(typeFilter===t?" is-active":"")} aria-pressed={typeFilter===t} onClick={()=>setTypeFilter(t)}>{t}</button>)}</div>
 
