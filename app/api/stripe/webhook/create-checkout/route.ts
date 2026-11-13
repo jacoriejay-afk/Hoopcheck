@@ -298,8 +298,27 @@ export async function POST(
 
     const lookupKey = product.stripeLookupKey;
     const priceList = await stripe.prices.list({lookup_keys:[lookupKey],active:true,limit:1});
-    const priceId = priceList.data[0]?.id;
-    if (!priceId) return NextResponse.json({error:"This membership term is not configured yet."},{status:500});
+    const stripePrice = priceList.data[0];
+    if (!stripePrice) return NextResponse.json({error:"This membership term is not configured yet."},{status:500});
+
+    // Never trust a lookup key alone: a misconfigured Stripe Price could
+    // otherwise charge a different amount or interval than advertised.
+    const expectedInterval = product.duration === "year" ? "year" : "month";
+    const expectedIntervalCount = product.duration === "6_month" ? 6 : 1;
+    if (
+      stripePrice.currency !== product.currency.toLowerCase() ||
+      stripePrice.unit_amount !== product.amountCents ||
+      stripePrice.type !== "recurring" ||
+      stripePrice.recurring?.interval !== expectedInterval ||
+      stripePrice.recurring?.interval_count !== expectedIntervalCount
+    ) {
+      console.error("Stripe Price does not match approved subscription catalog", {
+        lookupKey,
+        priceId: stripePrice.id,
+      });
+      return NextResponse.json({error:"This membership term is temporarily unavailable."},{status:503});
+    }
+    const priceId = stripePrice.id;
 
     const customerId =
       existingSubscription?.stripe_customer_id ||
