@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { getSubscriptionProduct } from "@/lib/subscription-products";
 import { createClient } from "@supabase/supabase-js";
 
 function getAdminSupabase() {
@@ -167,7 +168,8 @@ export async function POST(
       );
     }
 
-    // Enforce the coach/manager Premium-only rule on the server, not only in the UI.
+    // ROLE-2: only approved products for the authenticated account role.
+    // Unpriced role ladders fail closed rather than inheriting Player prices.
     const { data: checkoutProfile, error: checkoutProfileError } = await supabase
       .from("profiles")
       .select("account_type")
@@ -176,8 +178,9 @@ export async function POST(
     if (checkoutProfileError || !checkoutProfile) {
       return NextResponse.json({ error: "Unable to verify your HoopCheck account type." }, { status: 403 });
     }
-    if (["coach", "manager"].includes(checkoutProfile.account_type) && plan !== "premium") {
-      return NextResponse.json({ error: "Coach and Team Manager accounts require HoopCheck Premium." }, { status: 403 });
+    const product = getSubscriptionProduct(checkoutProfile.account_type, plan, interval);
+    if (!product) {
+      return NextResponse.json({ error: "This subscription is not available for your account type." }, { status: 403 });
     }
 
     const submittedPromoCode =
@@ -293,11 +296,7 @@ export async function POST(
       );
     }
 
-    const intervalKey = interval === "month" ? "monthly" : interval === "6_month" ? "6_month" : "year";
-    const amountKey = plan === "pro"
-      ? (interval === "month" ? "499" : interval === "6_month" ? "2695" : "5090")
-      : (interval === "month" ? "999" : interval === "6_month" ? "5395" : "10190");
-    const lookupKey = `hoopcheck_${plan}_${intervalKey}_${amountKey}_2026`;
+    const lookupKey = product.stripeLookupKey;
     const priceList = await stripe.prices.list({lookup_keys:[lookupKey],active:true,limit:1});
     const priceId = priceList.data[0]?.id;
     if (!priceId) return NextResponse.json({error:"This membership term is not configured yet."},{status:500});
