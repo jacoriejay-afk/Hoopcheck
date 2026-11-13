@@ -17,6 +17,7 @@ type SearchBarProps = {
   disabled?: boolean;
   hideSubmit?: boolean;
   autoFocus?: boolean;
+  onKeyDown?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
 } & Pick<InputHTMLAttributes<HTMLInputElement>, "autoComplete" | "required">;
 
 export default function SearchBar({
@@ -34,6 +35,7 @@ export default function SearchBar({
   disabled = false,
   hideSubmit = false,
   autoFocus = false,
+  onKeyDown,
   autoComplete = "off",
   required = false,
 }: SearchBarProps) {
@@ -70,6 +72,7 @@ export default function SearchBar({
         required={required}
         disabled={disabled}
         autoFocus={autoFocus}
+        onKeyDown={onKeyDown}
       />
       {currentValue && <button className="hc-searchbar__clear" type="button" aria-label="Clear search" onClick={() => change("")}>×</button>}
       {!hideSubmit && <button className="hc-searchbar__submit" type="submit" disabled={disabled}>{buttonLabel}</button>}
