@@ -2,6 +2,20 @@
 -- Production may not have the private helper schema yet.
 create schema if not exists private;
 revoke all on schema private from public, anon, authenticated;
+-- Block checks must see both directions, including blocks hidden by user_blocks RLS.
+create or replace function private.hoopfeed_share_not_blocked(p_sender uuid,p_recipient uuid)
+returns boolean language sql stable security definer set search_path = ''
+as $
+  select auth.uid() in (p_sender,p_recipient)
+    and not exists (
+      select 1 from public.user_blocks b
+      where (b.blocker_id=p_sender and b.blocked_id=p_recipient)
+         or (b.blocker_id=p_recipient and b.blocked_id=p_sender)
+    );
+$;
+revoke all on function private.hoopfeed_share_not_blocked(uuid,uuid) from public,anon;
+grant execute on function private.hoopfeed_share_not_blocked(uuid,uuid) to authenticated;
+
 create table public.hoopfeed_direct_shares (
  id uuid primary key default gen_random_uuid(),
  post_id uuid not null references public.feed_posts(id) on delete cascade,
@@ -21,11 +35,7 @@ create policy "direct shares own read" on public.hoopfeed_direct_shares
  for select to authenticated
  using (
   (select auth.uid()) in (sender_id,recipient_id)
-  and not exists (
-    select 1 from public.user_blocks b
-    where (b.blocker_id=sender_id and b.blocked_id=recipient_id)
-       or (b.blocker_id=recipient_id and b.blocked_id=sender_id)
-  )
+  and private.hoopfeed_share_not_blocked(sender_id,recipient_id)
 );
 create policy "direct shares sender insert" on public.hoopfeed_direct_shares
  for insert to authenticated
@@ -43,11 +53,7 @@ create policy "direct shares sender insert" on public.hoopfeed_direct_shares
    where f.follower_id=sender_id and f.target_id=recipient_id
      and f.target_type in ('player','fan') and f.target_type=p.account_type
   )
-  and not exists (
-   select 1 from public.user_blocks b
-   where (b.blocker_id=sender_id and b.blocked_id=recipient_id)
-      or (b.blocker_id=recipient_id and b.blocked_id=sender_id)
-  )
+  and private.hoopfeed_share_not_blocked(sender_id,recipient_id)
  );
 create policy "direct shares sender delete" on public.hoopfeed_direct_shares
  for delete to authenticated using (sender_id=(select auth.uid()));
