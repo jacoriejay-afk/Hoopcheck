@@ -71,7 +71,6 @@ export default function TeamHubPage(){
   if(loading)return <main className="page-shell hc-fan-feed-page"><div className="page-container"><HoopLoading label={labels.loading}/></div></main>;
   const directoryHref=basketballSide==="womens"?"/womens":"/teams";
   return <main className="page-shell hc-fan-feed-page"><div className="page-container">
-    <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/teams">Discover teams</Link><Link href="/fan-feed">Fan HQ</Link></nav></header>
     <section className="hero-card hc-feed-hero"><div><p className="eyebrow">FAN HQ · PERSONAL DASHBOARD</p><h1>Your Team Hub</h1><p className="muted">Your favorite teams, upcoming matchups, live scores and the latest fan conversations—all in one place.</p></div><p className="hc-feed-expiry-note">YOUR TEAMS<span>Scores and schedules refresh automatically.</span></p></section>
     {!signedIn&&<section className="dashboard-card hc-feed-empty"><h2>Sign in to see your teams</h2><p>Follow your favorite teams to build your personalized Team Hub.</p><Link className="btn" href="/login">Sign in</Link></section>}
     {signedIn&&!teams.length&&<section className="dashboard-card hc-feed-empty"><p className="eyebrow">START FOLLOWING</p><h2>Your Team Hub starts here.</h2><p>Follow teams to see upcoming games, live scores and team-tagged fan updates.</p><Link className="btn" href="/teams">Find teams</Link></section>}
