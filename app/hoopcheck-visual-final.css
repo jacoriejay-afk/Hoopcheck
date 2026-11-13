@@ -293,3 +293,19 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header .h
   .hc-fan-groups-directory .page-container { padding-inline: 14px; }
   .hc-fan-groups-directory .hc-fan-groups-list { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* CONSISTENCY-2: single shared header on signup; language and login remain accessible. */
+.auth-page-shell .signup-utility-row { display:flex; justify-content:flex-end; align-items:center; width:min(calc(100% - 32px),960px); margin:12px auto 0; padding:0; }
+.auth-page-shell .signup-utility-row .signup-nav-actions { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+.auth-page-shell .signup-utility-row select { max-width:190px; min-height:40px; border:1px solid var(--hc-card-border,var(--border)); border-radius:var(--hc-radius-control,12px); color:var(--hc-text,var(--ink)); background:var(--hc-surface,var(--paper)); }
+.auth-page-shell .signup-utility-row a { color:inherit; }
+@media (max-width:767px) {
+ .auth-page-shell { min-width:0; }
+ .auth-page-shell .signup-utility-row { width:calc(100% - 28px); margin-top:8px; }
+ .auth-page-shell .signup-page { min-width:0; padding-bottom:calc(100px + env(safe-area-inset-bottom,0px)); }
+ .auth-page-shell .signup-page .auth-hero { padding:14px 16px 8px !important; }
+ .auth-page-shell .signup-page .auth-hero h1 { font-size:clamp(1.7rem,7vw,2.4rem) !important; line-height:1.12; }
+ .auth-page-shell .signup-page .auth-hero .feature-grid { display:none; }
+ .auth-page-shell .signup-page .signup-card { min-width:0; width:100%; padding:20px 16px; border-radius:var(--hc-radius-card,20px); }
+ .auth-page-shell .signup-page .account-type-grid { min-width:0; grid-template-columns:minmax(0,1fr); }
+}

@@ -4,7 +4,6 @@ import { FormEvent, useRef, useState } from "react";
 import UsernameField, { type UsernameFieldHandle } from "../../components/UsernameField";
 import Link from "next/link";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
-import Logo from "../../components/Logo";
 import { useRouter } from "next/navigation";
 import { HoopIcon, type HoopIconName } from "../../components/HoopCheckUI";
 import { supabase } from "../../lib/supabase";
@@ -105,8 +104,7 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
   }
 
   return <main className="auth-page-shell">
-    <nav className="nav signup-nav">
-      <Link href="/" className="logo signup-logo" aria-label="HoopCheck home"><Logo variant="full" size={38} /></Link>
+    <div className="signup-utility-row" aria-label="Sign-up options">
       <div className="signup-nav-actions">
         <label htmlFor="signup-language" className="sr-only">Choose language</label>
         <select id="signup-language" aria-label="Choose language" value={language} onChange={(event) => setLanguage(event.target.value as Language)} className="signup-language-select">
@@ -119,7 +117,7 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
         </select>
         <Link href="/login">Log In</Link>
       </div>
-    </nav>
+    </div>
     <section className="auth-page signup-page">
       <div className="auth-hero">
         <div className="eyebrow">JOIN HOOPCHECK</div>
