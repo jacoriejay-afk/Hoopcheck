@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: false, message: "Choose a JPG, PNG, or WebP image up to 4 MB." }, { status: 400 });
 
     const clubGrant = await resolveClubGrant(user.id, teamId);
-    if (!canManageClub(clubGrant, teamId, "editProfile"))
+    if (!canManageClub(clubGrant, teamId, "publishUpdates"))
       return NextResponse.json({ allowed: false, message: "An approved claim for this team is required." }, { status: 403 });
 
     let imageDataUrl: string | undefined;
