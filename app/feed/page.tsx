@@ -76,7 +76,6 @@ export default function Feed(){
   const [canReply, setCanReply] = useState(false);
 
 
-  const [savingEdit,setSavingEdit]=useState(false);
   const [open,setOpen]=useState<Record<string,boolean>>({});
   const [body,setBody]=useState(""); const [typeFilter,setTypeFilter]=useState<TypeFilter>("All Posts"); const [photos,setPhotos]=useState<File[]>([]); const [previews,setPreviews]=useState<string[]>([]); const [composerMode,setComposerMode]=useState<"post"|"poll"|"news">("post"); const [composerExpanded,setComposerExpanded]=useState(false); const [pollDraft,setPollDraft]=useState<string[]>(["",""]); const [votes,setVotes]=useState<Record<string,VoteState>>({}); const [savedMap,setSavedMap]=useState<Record<string,boolean>>({}); const [carouselIdx,setCarouselIdx]=useState<Record<string,number>>({}); const [video,setVideo]=useState<File|null>(null); const [videoPreview,setVideoPreview]=useState(""); const [showCountry,setShowCountry]=useState(false);
   const [user,setUser]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [adminRole,setAdminRole]=useState<string|null>(null); const [subscription,setSubscription]=useState<Subscription|null>(null); const [memberCount,setMemberCount]=useState<number|null>(null);
