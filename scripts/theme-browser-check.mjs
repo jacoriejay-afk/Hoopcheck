@@ -188,7 +188,7 @@ try {
         await header.locator(".hc-header-more > summary").click();
       }
       const headerColors = await header.evaluate(element => ({
-        foreground: getComputedStyle(element.querySelector(".hc-logo__wordmark")).color,
+        foreground: getComputedStyle(element.querySelector(".hc-logo__official-wordmark") ?? element.querySelector(".hc-logo__wordmark")).color,
         expected: getComputedStyle(element).color,
       }));
       assert.equal(headerColors.foreground, headerColors.expected, `Guest ${theme} at ${width}px: logo must match header foreground`);
