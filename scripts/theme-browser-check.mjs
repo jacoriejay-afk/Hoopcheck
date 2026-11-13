@@ -554,8 +554,8 @@ try {
         await page.waitForFunction((expected) => document.body.innerText.toLocaleUpperCase().includes(expected), expectedAccountHeading, { timeout: 15000 });
       }
       if (requestedPath === "/search") {
-        const expectedSearchHeading = testLanguage === "es" ? "CONEXIÓN ENTRE JUGADORES" : "PLAYER CONNECT";
-        await page.waitForFunction((expected) => document.body.innerText.toLocaleUpperCase().includes(expected), expectedSearchHeading, { timeout: 15000 });
+        // SEARCH-1 replaced the Player Connect hero with compact, browse-first category controls.
+        await page.getByRole("group", { name: "Search categories" }).waitFor({ state: "visible", timeout: 15000 });
       }
       const result = await page.evaluate(({ requestedPath, navigationError }) => {
         const main = document.querySelector("main");
