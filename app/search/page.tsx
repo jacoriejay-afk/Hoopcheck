@@ -123,10 +123,10 @@ function SearchContent() {
   const query = searchParams.get("q")?.trim() || "";
   const initialType = searchParams.get("type");
   const basketballSide = useFanBasketballSide();
-  const [isFanAccount, setIsFanAccount] = useState(false);
+  const [isFanAccount, setIsFanAccount] = useState<boolean | null>(null);
   const [roleReady, setRoleReady] = useState(false);
   const [suggestions, setSuggestions] = useState<SocialSuggestion[]>([]);
-  useEffect(() => { let active = true; void (async () => { try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const [{ data }, { data: graphSuggestions }] = await Promise.all([supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(), supabase.rpc("get_social_suggestions")]); if (!active) return; const fan = data?.account_type === "fan"; setIsFanAccount(fan); setSuggestions(((graphSuggestions || []) as SocialSuggestion[]).filter(item => !fan || item.entity_type === "team")); } catch (error) { console.error("Unable to load search role context:", error); if (active) setIsFanAccount(false); } finally { if (active) setRoleReady(true); } })(); return () => { active = false; }; }, []);
+  useEffect(() => { let active = true; void (async () => { try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const [{ data }, { data: graphSuggestions }] = await Promise.all([supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(), supabase.rpc("get_social_suggestions")]); if (!active) return; const fan = data?.account_type ? data.account_type === "fan" : null; setIsFanAccount(fan); setSuggestions(((graphSuggestions || []) as SocialSuggestion[]).filter(item => !fan || item.entity_type === "team")); } catch (error) { console.error("Unable to load search role context:", error); if (active) setIsFanAccount(null); } finally { if (active) setRoleReady(true); } })(); return () => { active = false; }; }, []);
 
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -190,7 +190,7 @@ function SearchContent() {
 
       try {
         const searchTerm = `%${query.replace(/[,%()]/g, " ")}%`;
-        const wantsPlayers = roleReady && !isFanAccount && (typeFilter === "all" || typeFilter === "players");
+        const wantsPlayers = roleReady && isFanAccount === false && (typeFilter === "all" || typeFilter === "players");
         const wantsCoaches = typeFilter === "all" || typeFilter === "coaches";
         const wantsMensTeams = typeFilter === "all" || typeFilter === "mens-teams";
         const wantsWomensTeams = typeFilter === "all" || typeFilter === "womens-teams";
@@ -288,7 +288,7 @@ function SearchContent() {
   // while their account role (or basketball-side preference) is still loading.
   useEffect(() => {
     if (!roleReady) return;
-    if (initialType === "players" && isFanAccount) { setTypeFilter("all"); return; }
+    if (initialType === "players" && isFanAccount === true) { setTypeFilter("all"); return; }
     if (initialType === "players" || initialType === "coaches" || initialType === "mens-teams" || initialType === "womens-teams" || initialType === "leagues") {
       setTypeFilter(initialType);
     }
@@ -319,7 +319,7 @@ function SearchContent() {
     ? leagues.filter((x) => !countryFilter || x.country === countryFilter)
     : [];
 
-  const totalResults = (roleReady && !isFanAccount ? visiblePlayers.length : 0) + visibleCoaches.length + visibleTeams.length + visibleWomensTeams.length + visibleLeagues.length;
+  const totalResults = (roleReady && isFanAccount === false ? visiblePlayers.length : 0) + visibleCoaches.length + visibleTeams.length + visibleWomensTeams.length + visibleLeagues.length;
 
   return (
     <main className="search-page hc-global-search-page">
