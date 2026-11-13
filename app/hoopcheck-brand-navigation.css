@@ -193,3 +193,26 @@ html body header.site-header-global .site-header-brand .hc-logo__wordmark::after
 .hc-header-feed-wordmark > span {
   color: var(--hc-accent-text, var(--hc-foreground));
 }
+
+/* Official outlined SVG inherits the actual themed header foreground. */
+html body header.site-header-global .site-header-brand .hc-logo--full,
+html body header.site-header-global .site-header-brand .hc-logo__official-wordmark,
+html body header.site-header-global .site-header-brand .hc-logo__icon,
+html body header.site-header-global .site-header-brand .hc-logo__icon .hc-logo__check {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+  stroke: currentColor !important;
+}
+html body header.site-header-global .site-header-brand .hc-logo__official-wordmark {
+  stroke: none !important;
+}
+
+/* Keep the compact desktop breakpoint clear of adjacent header actions. */
+@media (min-width: 768px) and (max-width: 900px) {
+  html body header.site-header-global .hc-header-desktop-links {
+    gap: 6px !important;
+  }
+  html body header.site-header-global .hc-header-more > summary {
+    padding-inline: 0 !important;
+  }
+}
