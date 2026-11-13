@@ -14,9 +14,9 @@ const rows = [];
 for (const [surface, file] of surfaces) {
   const lines = readFileSync(file, "utf8").split("\n");
   for (const [index, line] of lines.entries()) {
-    if (/feed-images|feed-videos|getPublicUrl\(/.test(line)) {
+    if (/feed-images|feed-videos|hoopfeed-private-images|hoopfeed-private-videos|getPublicUrl\(/.test(line)) {
       rows.push({ surface, file, line: index + 1,
-        images: line.includes("feed-images"),
+        images: line.includes("feed-images") || line.includes("hoopfeed-private-images"),
         videos: line.includes("feed-videos"),
         publicUrl: line.includes("getPublicUrl(") });
     }
