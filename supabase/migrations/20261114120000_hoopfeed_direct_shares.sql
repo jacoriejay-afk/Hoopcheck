@@ -42,6 +42,14 @@ create policy "direct shares own read" on public.hoopfeed_direct_shares
  using (
   (select auth.uid()) in (sender_id,recipient_id)
   and private.hoopfeed_share_not_blocked(sender_id,recipient_id)
+  -- A sender or recipient cannot use the inbox to infer a post that is now
+  -- expired, moderated, or inaccessible under feed_posts RLS.
+  and exists (
+    select 1 from public.feed_posts post
+    where post.id = post_id
+      and post.status = 'approved'
+      and (post.expires_at is null or post.expires_at > now())
+  )
 );
 create policy "direct shares sender insert" on public.hoopfeed_direct_shares
  for insert to authenticated
