@@ -299,12 +299,20 @@ function SearchContent() {
       </div>
       {suggestionsOpen && searchInput.trim() && searchInput.trim() === query && !loading && totalResults > 0 && <section id="hc-search-suggestions" className="hc-search-suggestions" aria-label="Search suggestions" aria-live="polite" style={{padding:12,border:"1px solid var(--border)",borderRadius:16,marginBottom:12}}>
         {[
-          ...visibleTeams.slice(0,3).map(team=>({href:"/teams/"+team.id,label:team.name+" · "+(team.country||"")})),
-          ...visibleWomensTeams.slice(0,3).map(team=>({href:"/womens/"+team.id,label:team.name+" · "+(team.country||"")})),
-          ...visiblePlayers.slice(0,3).map(player=>({href:"/players/"+player.id,label:(player.display_name||"Player")+" · "+(player.current_team||"")})),
-          ...visibleCoaches.slice(0,2).map(coach=>({href:"/coaches/"+coach.id,label:coach.name})),
-          ...visibleLeagues.slice(0,2).map(league=>({href:"/leagues/"+league.id,label:league.name}))
-        ].map((item,index)=><Link key={item.href} href={item.href} aria-current={activeSuggestion===index?"true":undefined} onMouseEnter={()=>setActiveSuggestion(index)} style={{display:"block",padding:8,borderRadius:8,background:activeSuggestion===index?"var(--surface-hover, rgba(128,128,128,.18))":"transparent"}}>{item.label}</Link>)}
+          {heading:"Teams", items:[
+            ...visibleTeams.slice(0,3).map(team=>({href:"/teams/"+team.id,label:team.name+" · "+(team.country||"")})),
+            ...visibleWomensTeams.slice(0,3).map(team=>({href:"/womens/"+team.id,label:team.name+" · "+(team.country||"")}))
+          ]},
+          {heading:"Players",items:visiblePlayers.slice(0,3).map(player=>({href:"/players/"+player.id,label:(player.display_name||"Player")+" · "+(player.current_team||"")}))},
+          {heading:"Coaches",items:visibleCoaches.slice(0,2).map(coach=>({href:"/coaches/"+coach.id,label:coach.name}))},
+          {heading:"Leagues",items:visibleLeagues.slice(0,2).map(league=>({href:"/leagues/"+league.id,label:league.name}))}
+        ].filter(group=>group.items.length>0).map(group=><div key={group.heading}>
+          <div style={{fontSize:12,fontWeight:700,opacity:.7,padding:"10px 8px 4px"}}>{group.heading}</div>
+          {group.items.map(item=>{
+            const index=suggestionTargets.indexOf(item.href);
+            return <Link key={item.href} href={item.href} aria-current={activeSuggestion===index?"true":undefined} onMouseEnter={()=>setActiveSuggestion(index)} style={{display:"block",padding:8,borderRadius:8,background:activeSuggestion===index?"var(--surface-hover, rgba(128,128,128,.18))":"transparent"}}>{item.label}</Link>;
+          })}
+        </div>)}
         <a href="#search-full-results" onClick={()=>setSuggestionsOpen(false)} style={{display:"block",padding:8,fontWeight:700}}>See all results for &quot;{query}&quot; →</a>
       </section>}
       {!query && signedInViewer && recentSearches.length > 0 && <section aria-label="Recent searches" style={{padding:"8px 0 12px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><strong>RECENT</strong><button type="button" onClick={()=>{setRecentSearches([]);localStorage.removeItem("hc-recent-searches");}}>Clear all</button></div>{recentSearches.map(term=><div key={term} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:8}}><button type="button" onClick={()=>setSearchInput(term)}>{term}</button><button type="button" aria-label={"Remove "+term} onClick={()=>removeRecent(term)}>×</button></div>)}</section>}
