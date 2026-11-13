@@ -69,6 +69,22 @@ begin
   ) then
     raise exception 'Approved club owner required';
   end if;
+  -- Prevent invitation spam and duplicate outstanding invitations.
+  -- Serialize owner invitation creation so concurrent requests cannot bypass
+  -- the per-club limit or duplicate check.
+  perform pg_advisory_xact_lock(hashtextextended(p_actor::text || ':' || p_club::text, 0));
+  if (select count(*) from public.team_hq_invitations
+      where invited_by = p_actor and club_id = p_club
+        and created_at > now() - interval '24 hours') >= 20 then
+    raise exception 'Invitation rate limit reached';
+  end if;
+  if exists (
+    select 1 from public.team_hq_invitations
+    where club_id = p_club and lower(trim(invitee_email)) = v_email
+      and accepted_at is null and revoked_at is null and expires_at > now()
+  ) then
+    raise exception 'An active invitation already exists for this email';
+  end if;
   insert into public.team_hq_invitations (club_id,invitee_email,invited_by)
     values (p_club,v_email,p_actor) returning id into v_id;
   insert into public.team_hq_audit (club_id,actor_id,action,detail)
