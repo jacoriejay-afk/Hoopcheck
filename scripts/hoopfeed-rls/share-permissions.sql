@@ -62,3 +62,38 @@ BEGIN
   END IF;
 END $$;
 RESET ROLE;
+
+-- Behavioral checks of recipient eligibility and block revocation.
+-- The surrounding test harness MUST run this file in a rollback-only transaction.
+INSERT INTO public.profiles(id,account_type) VALUES
+('a1000000-0000-4000-8000-000000000001','player'),
+('a1000000-0000-4000-8000-000000000002','player'),
+('a1000000-0000-4000-8000-000000000003','player');
+INSERT INTO public.feed_posts(id,author_id,status,expires_at,shared_post_id)
+VALUES ('a2000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000003','approved',now()+interval '1 day',null);
+INSERT INTO public.follow_relationships(follower_id,target_id,target_type)
+VALUES ('a1000000-0000-4000-8000-000000000002','a1000000-0000-4000-8000-000000000003','player');
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','a1000000-0000-4000-8000-000000000001',true);
+DO $$
+BEGIN
+  IF NOT private.hoopfeed_share_recipient_can_read(
+    'a2000000-0000-4000-8000-000000000001',
+    'a1000000-0000-4000-8000-000000000001',
+    'a1000000-0000-4000-8000-000000000002'
+  ) THEN RAISE EXCEPTION 'Eligible following recipient rejected'; END IF;
+END $$;
+RESET ROLE;
+INSERT INTO public.user_blocks(blocker_id,blocked_id)
+VALUES ('a1000000-0000-4000-8000-000000000003','a1000000-0000-4000-8000-000000000002');
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','a1000000-0000-4000-8000-000000000001',true);
+DO $$
+BEGIN
+  IF private.hoopfeed_share_recipient_can_read(
+    'a2000000-0000-4000-8000-000000000001',
+    'a1000000-0000-4000-8000-000000000001',
+    'a1000000-0000-4000-8000-000000000002'
+  ) THEN RAISE EXCEPTION 'Author-blocked recipient was allowed'; END IF;
+END $$;
+RESET ROLE;
