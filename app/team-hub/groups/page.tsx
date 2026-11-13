@@ -8,6 +8,7 @@ import { useLanguage } from "../../../components/LanguageProvider";
 import { supabase } from "../../../lib/supabase";
 
 type Group = { team_id: string; group_name: string };
+type TeamContext = { id: string; country: string | null; basketball_type: string | null; league_name: string | null };
 const PAGE_SIZE = 24;
 
 export default function FanGroupsPage() {
@@ -17,7 +18,7 @@ export default function FanGroupsPage() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const [result, setResult] = useState<{
-    userId: string; query: string; page: number; groups: Group[]; hasNext: boolean; failed: boolean;
+    userId: string; query: string; page: number; groups: Group[]; teams: Record<string, TeamContext>; hasNext: boolean; failed: boolean;
   } | null>(null);
   const current = result?.userId === userId && result.query === query && result.page === page ? result : null;
 
@@ -30,13 +31,21 @@ export default function FanGroupsPage() {
         .order("group_name").order("team_id").range(start, start + PAGE_SIZE);
       const term = query.replace(/[%_*\\]/g, " ").trim();
       if (term) request = request.ilike("group_name", `%${term}%`);
-      void Promise.resolve(request).then(({ data, error }) => {
+      void Promise.resolve(request).then(async ({ data, error }) => {
+        const groups = (data ?? []).slice(0, PAGE_SIZE);
+        const teams: Record<string, TeamContext> = {};
+        if (!error && groups.length) {
+          const { data: teamRows } = await supabase.from("teams")
+            .select("id,country,basketball_type,league_name")
+            .in("id", groups.map(group => group.team_id));
+          for (const team of (teamRows ?? []) as TeamContext[]) teams[team.id] = team;
+        }
         if (active) setResult({
-          userId, query, page, groups: (data ?? []).slice(0, PAGE_SIZE),
+          userId, query, page, groups, teams,
           hasNext: (data?.length ?? 0) > PAGE_SIZE, failed: Boolean(error),
         });
       }, () => {
-        if (active) setResult({ userId, query, page, groups: [], hasNext: false, failed: true });
+        if (active) setResult({ userId, query, page, groups: [], teams: {}, hasNext: false, failed: true });
       });
     }, query ? 250 : 0);
     return () => { active = false; window.clearTimeout(timer); };
@@ -59,6 +68,14 @@ export default function FanGroupsPage() {
           : current.groups.length ? <ul className="result-grid hc-fan-groups-list">
             {current.groups.map(group => <li key={group.team_id} className="result-card hc-fan-groups-item">
               <Link href={`/team-hub/groups/${group.team_id}`}>{group.group_name}</Link>
+              {current.teams[group.team_id] && <p className="muted hc-fan-group-context">
+                {[
+                  current.teams[group.team_id].country,
+                  current.teams[group.team_id].basketball_type === "mens" ? (spanish ? "Masculino" : "Men") :
+                    current.teams[group.team_id].basketball_type === "womens" ? (spanish ? "Femenino" : "Women") : null,
+                  current.teams[group.team_id].league_name,
+                ].filter(Boolean).join(" · ")}
+              </p>}
             </li>)}
           </ul> : <p role="status">{spanish ? "No se encontraron grupos." : "No fan groups found."}</p>}
         {(page > 0 || current?.hasNext) && <div className="actions">
