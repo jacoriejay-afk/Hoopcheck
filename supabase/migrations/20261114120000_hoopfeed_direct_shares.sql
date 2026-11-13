@@ -21,10 +21,10 @@ grant execute on function private.hoopfeed_share_not_blocked(uuid,uuid) to authe
 
 -- Evaluate the recipient's follow graph without changing auth.uid().
 -- This does not grant access: feed_posts RLS still controls actual post reads.
-create or replace function private.hoopfeed_share_recipient_can_read(p_post uuid,p_recipient uuid)
+create or replace function private.hoopfeed_share_recipient_can_read(p_post uuid,p_sender uuid,p_recipient uuid)
 returns boolean language sql stable security definer set search_path = ''
 as $$
-  select auth.uid() is not null
+  select auth.uid() in (p_sender,p_recipient)
     and exists (
       select 1 from public.feed_posts post
       where post.id=p_post
@@ -49,7 +49,7 @@ as $$
         and post.shared_post_id is null
     );
 $$;
-revoke all on function private.hoopfeed_share_recipient_can_read(uuid,uuid) from public,anon;
+revoke all on function private.hoopfeed_share_recipient_can_read(uuid,uuid,uuid) from public,anon;
 grant execute on function private.hoopfeed_share_recipient_can_read(uuid,uuid) to authenticated;
 
 create table public.hoopfeed_direct_shares (
@@ -75,7 +75,7 @@ create policy "direct shares own read" on public.hoopfeed_direct_shares
  using (
   (select auth.uid()) in (sender_id,recipient_id)
   and private.hoopfeed_share_not_blocked(sender_id,recipient_id)
-  and private.hoopfeed_share_recipient_can_read(post_id,recipient_id)
+  and private.hoopfeed_share_recipient_can_read(post_id,sender_id,recipient_id)
   -- A sender or recipient cannot use the inbox to infer a post that is now
   -- expired, moderated, or inaccessible under feed_posts RLS.
   and exists (
@@ -98,7 +98,7 @@ create policy "direct shares sender insert" on public.hoopfeed_direct_shares
   -- Do not send a post to someone who cannot read the original.
   -- Reuse the existing author/reshare access rules with the recipient as viewer
   -- via a dedicated private helper below.
-  and private.hoopfeed_share_recipient_can_read(post_id,recipient_id)
+  and private.hoopfeed_share_recipient_can_read(post_id,sender_id,recipient_id)
   and exists (
    select 1 from public.follow_relationships f
    join public.profiles p on p.id=f.target_id
