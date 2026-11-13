@@ -32,3 +32,10 @@
   .hc-feed-page .hc-feed-composer--compact.is-collapsed .hc-feed-composer__fields { display:none; }
   .hc-feed-page .hc-feed-composer--compact.is-expanded .hc-feed-composer__fields { display:block; }
 }
+
+/* Audience navigation: Global stays non-interactive until post-level RLS is ready. */
+.hc-feed-page .hc-feed-audience { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:8px 0 4px; }
+.hc-feed-page .hc-feed-audience__active,
+.hc-feed-page .hc-feed-audience__disabled { display:inline-flex; align-items:center; min-height:36px; padding:7px 13px; border-radius:999px; font-size:13px; font-weight:750; }
+.hc-feed-page .hc-feed-audience__active { color:#fff; background:#9d390d; border:1px solid #ff7638; }
+.hc-feed-page .hc-feed-audience__disabled { color:#b7b7b7; background:#222; border:1px solid #555; }
