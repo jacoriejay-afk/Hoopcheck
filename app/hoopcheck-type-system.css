@@ -1,0 +1,18 @@
+/* TYPE-1: one athletic display face for headings, while body/UI text stays Inter.
+   The official HoopCheck wordmark is custom SVG artwork, not a font. */
+:root { --hc-heading-font: var(--font-display), Impact, "Arial Narrow", sans-serif; }
+html body :is(h1,h2,h3,h4,h5,h6),
+html body :is(.page-title,.section-title,.card-title,.dashboard-title,.hero-title,.profile-title,.hub-title,.hc-header-feed-wordmark,.hf5-hero__title) {
+  font-family:var(--hc-heading-font);
+  font-weight:400;
+  font-synthesis:none;
+  letter-spacing:-.025em;
+  line-height:1.12;
+  overflow-wrap:break-word;
+}
+/* Preserve brand artwork and keep navigation, form controls and long copy legible. */
+html body :is(button,input,select,textarea,nav,.hc-header-desktop-links,.hc-header-mobile-links) { font-family:var(--font-sans),Inter,Arial,sans-serif; }
+html body .hc-header-feed-wordmark { font-family:var(--hc-heading-font); }
+@media(max-width:600px) {
+  html body :is(h1,.page-title,.dashboard-title,.hero-title,.hub-title) { line-height:1.08; }
+}
