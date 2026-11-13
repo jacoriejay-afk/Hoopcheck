@@ -84,7 +84,7 @@ export function getHoopCheckEntitlements(args: {
   now?: number;
 }): HoopCheckEntitlements {
   const role = args.accountType || "";
-  const isAdmin = args.isAdmin === true || role === "admin";
+  // Admin authority must be supplied only after verification through admin_roles RPC.\n  // A profile account_type value is never sufficient to grant admin access.\n  const isAdmin = args.isAdmin === true;
   const tier = isAdmin ? "premium" : getActiveMembershipTier(args.subscription, args.now);
   const active = isAdmin || tier !== "free";
   const isPlayer = role === "player";
