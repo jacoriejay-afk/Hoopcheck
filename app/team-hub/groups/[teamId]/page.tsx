@@ -182,7 +182,7 @@ export default function TeamFanGroupPage() {
   const canParticipate = isFan && summary.is_member;
 
   return <PageShell><main className="page-shell hc-feed-page hc-team-fan-group-page"><div className="page-container">
-    <header className="topbar"><Link href="/team-hub" className="brand">TEAM HUB</Link><nav className="topnav"><Link href={teamProfileHref}>Team page</Link><Link href="/team-hub">Your teams</Link></nav></header>
+    <nav className="actions" aria-label="Fan group navigation"><Link className="btn" href={teamProfileHref}>Team page</Link><Link className="btn" href="/team-hub">Your teams</Link></nav>
     <section className="hero-card hc-feed-hero"><p className="eyebrow">FAN HQ · OFFICIAL COMMUNITY</p><h1>{summary.group_name}</h1><p className="muted">{teamName} supporters, together in one official fan space.</p><p className="hc-feed-expiry-note">{Number(summary.member_count || 0).toLocaleString()} MEMBERS <span>Group posts stay here permanently.</span></p></section>
     {!summary.is_member && (!isModerator || isFan) && <section className="dashboard-card hc-feed-shared-card hc-team-fan-group-locked"><h2>{isModerator ? "Join to post or comment" : "Join to see the conversation"}</h2><p className="muted">Fans can post and comment after joining the group.</p>{summary.join_mode === "open" ? <button className="btn" disabled={busy} onClick={() => void act("join")}>Join Fan Group</button> : <button className="btn" disabled={busy || summary.has_pending_request} onClick={() => void act("join")}>{summary.has_pending_request ? "Request Pending" : "Request to Join"}</button>}</section>}
     {(summary.is_member || isModerator) && <>
