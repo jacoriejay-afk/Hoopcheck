@@ -11,18 +11,21 @@ export default function FanGroupsDirectory() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   useEffect(() => {
     let active = true;
     async function load() {
-      const result = await supabase.from("teams").select("id,name,country").eq("active", true).eq("basketball_type", "mens").order("name").limit(200);
+      setLoading(true);
+      const result = await supabase.from("teams").select("id,name,country").eq("active", true).eq("basketball_type", "mens").order("name").order("id").range(page * 100, page * 100 + 99);
       if (!active) return;
       if (result.error) setError("Fan groups could not be loaded. Please try again.");
-      else setTeams((result.data || []) as GroupTeam[]);
+      else { setTeams((result.data || []) as GroupTeam[]); setHasMore((result.data || []).length === 100); }
       setLoading(false);
     }
     void load();
     return () => { active = false; };
-  }, []);
+  }, [page]);
   const filtered = teams.filter(team => (team.name + " " + (team.country || "")).toLowerCase().includes(search.toLowerCase()));
   return <main className="page-container" style={{maxWidth:960,margin:"0 auto",padding:"24px 16px"}}>
     <h1>Fan Groups</h1>
@@ -37,6 +40,7 @@ export default function FanGroupsDirectory() {
         <strong>{team.name}</strong><div>{team.country || "Country not listed"}</div><span>Open fan group</span>
       </Link>)}
     </div>
-    <p style={{marginTop:20}}>Showing up to 200 active men’s teams. <Link href="/teams">Browse all teams</Link> or <Link href="/womens">women’s teams</Link>.</p>
+    <div style={{display:"flex",gap:12,marginTop:20,alignItems:"center"}}><button type="button" disabled={page===0 || loading} onClick={()=>setPage(p=>Math.max(0,p-1))}>Previous</button><span>Page {page+1}</span><button type="button" disabled={!hasMore || loading} onClick={()=>setPage(p=>p+1)}>Next</button></div>
+    <p style={{marginTop:20}}>Browse active men’s team fan groups. <Link href="/teams">All teams</Link> · <Link href="/womens">Women’s teams</Link>.</p>
   </main>;
 }
