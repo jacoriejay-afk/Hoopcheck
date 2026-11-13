@@ -333,7 +333,7 @@ try {
           glassSurface,
           pageWrapper: color(wrapperSelector),
           composer: routeName === "feed" ? color(".hc-feed-composer") : null,
-          discoveryHeading: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-header-feed-wordmark")).color : null,
+          discoveryHeading: routeName === "feed" ? (() => { const logo = document.querySelector(".hc-header-feed-artwork"); return logo && logo.getBoundingClientRect().width > 0 && getComputedStyle(logo).visibility === "visible" ? "visible" : null; })() : null,
           composerBorder: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-composer")).borderTopWidth : null,
           filterChip: routeName === "feed" ? color(".hf5-type-chip:not(.is-active)") : null,
           dashboardHeroHeadline: routeName === "dashboard" ? (() => { const element = document.querySelector("main.hc-home3 .hc-home3-greeting-line strong"); return element ? getComputedStyle(element).color : null; })() : null,
