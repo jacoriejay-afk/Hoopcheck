@@ -1,0 +1,22 @@
+name: Live chat pregame window
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/*live_chat_60_minute_opening.sql'
+      - '.github/workflows/live-chat-pregame-window.yml'
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify pregame opening and existing safeguards
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('supabase/migrations/20261113100000_live_chat_60_minute_opening.sql').read_text()
+          assert "g.scheduled_at - interval '60 minutes'" in s
+          assert "g.scheduled_at - interval '30 minutes'" not in s
+          assert "g.ends_at is null or now() < g.ends_at" in s
+          assert "g.status not in" in s
+          PY
