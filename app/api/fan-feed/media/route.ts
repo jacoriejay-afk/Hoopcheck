@@ -16,8 +16,16 @@ export async function POST(request: Request) {
   const viewer = createClient(url, publicKey, { global: { headers: { Authorization: "Bearer " + token } }, auth: { autoRefreshToken: false, persistSession: false } });
   const { data: identity, error: authError } = await viewer.auth.getUser(token);
   if (authError || !identity.user) return NextResponse.json({ error: "Invalid session" }, { status: 401 });
-  const { data: post, error: postError } = await viewer.from("fan_feed_posts").select("image_url,status,expires_at").eq("id", postId).eq("status", "approved").maybeSingle();
+  const { data: post, error: postError } = await viewer.from("fan_feed_posts").select("image_url,status,expires_at,author_id,team_id,womens_team_id").eq("id", postId).eq("status", "approved").maybeSingle();
   if (postError || !post || new Date(post.expires_at).getTime() <= Date.now()) return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
+  if (post.author_id !== identity.user.id) {
+    const teamId = post.womens_team_id || post.team_id;
+    const [{ data: authorFollow }, { data: teamFollow }] = await Promise.all([
+      viewer.from("follow_relationships").select("target_id").eq("follower_id", identity.user.id).eq("target_type", "fan").eq("target_id", post.author_id).maybeSingle(),
+      teamId ? viewer.from("follow_relationships").select("target_id").eq("follower_id", identity.user.id).eq("target_type", "team").eq("target_id", teamId).maybeSingle() : Promise.resolve({ data: null })
+    ]);
+    if (!authorFollow && !teamFollow) return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
+  }
   const prefix = "hoopfeed-private-images/";
   if (!post.image_url?.startsWith(prefix)) return NextResponse.json({ error: "Unsupported image" }, { status: 400 });
   const path = post.image_url.slice(prefix.length);
