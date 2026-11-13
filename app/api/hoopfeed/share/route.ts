@@ -65,15 +65,14 @@ export async function POST(request: Request) {
       .select("blocker_id").or(`and(blocker_id.eq.${sender},blocked_id.eq.${recipientId}),and(blocker_id.eq.${recipientId},blocked_id.eq.${sender})`).limit(1);
     if (blockError || blocks?.length) return json("Sharing with this member is unavailable.", 403);
 
-    const { count, error: rateError } = await db.from("hoopfeed_post_shares")
-      .select("id", { count: "exact", head: true }).eq("sender_id", sender)
-      .gte("created_at", new Date(Date.now() - 60_000).toISOString());
-    if (rateError) return json("Sharing is temporarily unavailable.", 503);
-    if ((count || 0) >= 5) return json("Too many shares. Try again in a minute.", 429);
-
-    const { error: insertError } = await db.from("hoopfeed_post_shares")
-      .insert({ post_id: postId, sender_id: sender, recipient_id: recipientId });
-    if (insertError && insertError.code !== "23505") return json("Couldn't send this share.", 500);
+    // The RPC takes a transaction-scoped sender lock, so concurrent requests
+    // cannot race through a separate count-and-insert check.
+    const { data: delivery, error: deliveryError } = await db.rpc("hoopfeed_send_share_atomic", {
+      p_post_id: postId, p_sender_id: sender, p_recipient_id: recipientId,
+    });
+    if (deliveryError) return json("Couldn't send this share.", 503);
+    if (delivery === "rate_limited") return json("Too many shares. Try again in a minute.", 429);
+    if (delivery !== "sent" && delivery !== "duplicate") return json("Couldn't send this share.", 400);
     return NextResponse.json({ ok: true });
   } catch {
     return json("Sharing is temporarily unavailable.", 503);
