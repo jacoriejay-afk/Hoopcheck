@@ -84,7 +84,7 @@ export async function POST(request:Request) {
     if(!teamFollow) return NextResponse.json({allowed:false,message:"You can only post for teams you follow."},{status:403});
     if(image&&(!IMAGE_TYPES.has(image.type)||image.size>8*1024*1024)) return NextResponse.json({allowed:false,message:"Use a JPG, PNG, or WebP photo no larger than 8 MB."},{status:400});
     if(videoPath&&(!VIDEO_TYPES.has(videoType)||!videoPath.startsWith(user.id+"/")||videoPath.includes("..")||videoPath.length>240)) return NextResponse.json({allowed:false,message:"Invalid video upload. Choose a supported video and try again."},{status:400});
-    if(videoPath&&!text) return NextResponse.json({allowed:false,message:"Add a caption so HoopCheck can run text safety checks before publishing a video."},{status:400});
+    if(videoPath) return NextResponse.json({allowed:false,message:"Legacy video uploads are unavailable while private media delivery is being secured."},{status:400});
     const mod=await moderate(text,image); if(!mod.allowed) return NextResponse.json({allowed:false,message:mod.message},{status:mod.status});
     let image_url:string|null=null;
     let video_url:string|null=null;
@@ -94,7 +94,7 @@ export async function POST(request:Request) {
       if(error) return NextResponse.json({allowed:false,message:"Photo upload failed. Your post was not published."},{status:400});
       image_url=db.storage.from("feed-images").getPublicUrl(path).data.publicUrl;
     }
-    if(videoPath) video_url=db.storage.from("feed-videos").getPublicUrl(videoPath).data.publicUrl;
+    // Legacy public video links are deliberately disabled; private video delivery requires post-scoped authorization.
     const {error}=await db.from("fan_feed_posts").insert({author_id:user.id,team_id:teamType === "mens" ? teamId : null,womens_team_id:teamType === "womens" ? teamId : null,body:text,image_url,video_url,status:"approved",expires_at:new Date(Date.now()+86400000).toISOString()});
     if(error) return NextResponse.json({allowed:false,message:"Your post could not be published."},{status:400});
     return NextResponse.json({allowed:true});
