@@ -75,6 +75,7 @@ create policy "direct shares own read" on public.hoopfeed_direct_shares
  using (
   (select auth.uid()) in (sender_id,recipient_id)
   and private.hoopfeed_share_not_blocked(sender_id,recipient_id)
+  and private.hoopfeed_share_recipient_can_read(post_id,recipient_id)
   -- A sender or recipient cannot use the inbox to infer a post that is now
   -- expired, moderated, or inaccessible under feed_posts RLS.
   and exists (
