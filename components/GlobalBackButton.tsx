@@ -8,7 +8,7 @@ function getFallbackPath(pathname: string): string {
   if (pathname === "/dashboard") return "/";
   // Signed-out authentication pages must never fall back to a protected dashboard.
   if (pathname === "/login" || pathname.startsWith("/login/") || pathname === "/signup" || pathname.startsWith("/signup/") || pathname === "/forgot-password" || pathname === "/reset-password") return "/";
-  if (pathname.startsWith("/team-hub/groups/")) return "/team-hub";
+  if (pathname.startsWith("/team-hub/groups/")) return "/team-hub/groups";
   if (pathname.startsWith("/team-hub/")) return "/team-hub";
   if (pathname.startsWith("/teams/")) return "/teams";
   if (pathname.startsWith("/players/")) return "/players";
@@ -48,7 +48,7 @@ export default function GlobalBackButton() {
   }, [pathname, router]);
 
   // The public landing page is a navigation root, not a detail view.
-  if (pathname === "/") return null;
+  if (["/", "/dashboard", "/feed"].includes(pathname)) return null;
 
   return (
     <div className="global-back-wrap">

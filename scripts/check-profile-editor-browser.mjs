@@ -75,9 +75,10 @@ try {
   assert.equal(await reviewLink.count(),0,'Inactive membership does not unlock reviews');
   subscription={...subscription,status:'active'};
   await page.goto(`${baseURL}/feed`);await page.locator('.hc-feed-composer').waitFor();
-  const header=await page.locator('.hf5-hero').boundingBox(),composer=await page.locator('.hc-feed-composer').boundingBox();
-  assert.ok(header.height>0,'HoopFeed community hero is visible');assert.ok(composer.y>header.y,'Composer follows the community hero');
-  assert.equal(await page.locator('.hf5-hero').count(),1,'Exactly one community hero');
+  const header=await page.locator('header.site-header-global').boundingBox(),composer=await page.locator('.hc-feed-composer').boundingBox();
+  assert.ok(header.height>0,'HoopFeed app bar is visible');assert.ok(composer.y>header.y,'Composer follows the HoopFeed app bar');
+  assert.equal(await page.locator('header.site-header-global .hc-header-feed-wordmark').count(),1,'Exactly one HoopFeed wordmark');
+  assert.equal(await page.getByRole('button',{name:'Go back',exact:true}).count(),0,'HoopFeed has no global back control');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,'No horizontal overflow');
   await page.goto(`${baseURL}/profile`);
   await page.getByRole('navigation',{name:'Profile quick links'}).getByRole('link',{name:'Settings',exact:true}).click();
