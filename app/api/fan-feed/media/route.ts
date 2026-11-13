@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   const prefix = "hoopfeed-private-images/";
   if (!post.image_url?.startsWith(prefix)) return NextResponse.json({ error: "Unsupported image" }, { status: 400 });
   const path = post.image_url.slice(prefix.length);
-  if (!/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(jpg|png|webp)$/i.test(path)) return NextResponse.json({ error: "Invalid image" }, { status: 400 });
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$/i.test(path)) return NextResponse.json({ error: "Invalid image" }, { status: 400 });
   const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
   const { data, error } = await admin.storage.from("hoopfeed-private-images").createSignedUrl(path, 60);
   if (error || !data?.signedUrl) return NextResponse.json({ error: "Image unavailable" }, { status: 404 });
