@@ -92,14 +92,6 @@ function SearchContent() {
   const [countryFilter, setCountryFilter] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(true);
-  const [activeSuggestion, setActiveSuggestion] = useState(-1);
-  const suggestionLinks = [
-    ...teams.slice(0,3).map(x => "/teams/" + x.id),
-    ...womensTeams.slice(0,3).map(x => "/womens/" + x.id),
-    ...(isFanAccount === false ? players.slice(0,3).map(x => "/players/" + x.id) : []),
-    ...coaches.slice(0,2).map(x => "/coaches/" + x.id),
-    ...leagues.slice(0,2).map(x => "/leagues/" + x.id)
-  ];
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setSuggestionsOpen(false);
