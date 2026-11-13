@@ -11,7 +11,7 @@ function json(message: string, status: number) {
 export async function POST(request: Request) {
   try {
     const auth = request.headers.get("authorization") || "";
-    const token = auth.match(/^Bearer\\s+(\\S+)$/i)?.[1];
+    const token = auth.match(/^Bearer\s+(\S+)$/i)?.[1];
     if (!token) return json("Sign in to share a post.", 401);
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
