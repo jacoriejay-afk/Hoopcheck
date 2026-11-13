@@ -13,9 +13,7 @@ export async function POST(request: Request) {
   const payload = await request.json().catch(() => null);
   const postId = typeof payload?.post_id === "string" ? payload.post_id : "";
   if (!/^[0-9a-f-]{36}$/i.test(postId)) return NextResponse.json({ error: "Invalid post" }, { status: 400 });
-  const viewer = createClient(url, publicKey, { global: { headers: { Authorization: "Bearer " + token } }, auth: { autoRefreshToken: false, persistSession: false } });
-  const { data: identity, error: authError } = await viewer.auth.getUser(token);
-  if (authError || !identity.user) return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+  const viewer = createClient(url, publicKey, { auth: { autoRefreshToken: false, persistSession: false } });
   const { data: post, error: postError } = await viewer.from("team_fanfeed_posts").select("image_url,status").eq("id", postId).eq("status", "published").maybeSingle();
   if (postError || !post) return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
   const prefix = "hoopfeed-private-images/";
