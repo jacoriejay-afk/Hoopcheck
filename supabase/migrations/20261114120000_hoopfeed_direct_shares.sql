@@ -42,3 +42,31 @@ create policy "direct shares sender insert" on public.hoopfeed_direct_shares
 create policy "direct shares sender delete" on public.hoopfeed_direct_shares
  for delete to authenticated using (sender_id=(select auth.uid()));
 -- No UPDATE permission or policy: delivery records cannot be reassigned.
+
+-- A server-enforced limit prevents bypassing the UI's ten-recipient cap.
+-- The transaction advisory lock serializes sends from one sender across sessions.
+create or replace function public.hoopfeed_limit_direct_shares()
+returns trigger language plpgsql security definer set search_path = ''
+as $$
+declare recent_minute integer; recent_hour integer;
+begin
+  if new.sender_id <> auth.uid() then
+    raise exception 'Sender does not match authenticated user' using errcode = '42501';
+  end if;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(new.sender_id::text, 60114));
+  select count(*) filter (where created_at > pg_catalog.now() - interval '1 minute'),
+         count(*) filter (where created_at > pg_catalog.now() - interval '1 hour')
+    into recent_minute, recent_hour
+    from public.hoopfeed_direct_shares
+   where sender_id = new.sender_id
+     and created_at > pg_catalog.now() - interval '1 hour';
+  if recent_minute >= 10 or recent_hour >= 60 then
+    raise exception 'Share rate limit exceeded; please try again later' using errcode = '23514';
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.hoopfeed_limit_direct_shares() from public,anon,authenticated;
+create trigger hoopfeed_direct_share_rate_limit
+ before insert on public.hoopfeed_direct_shares
+ for each row execute function public.hoopfeed_limit_direct_shares();
