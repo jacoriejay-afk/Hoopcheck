@@ -424,7 +424,7 @@ export default function Feed(){
       return <div key={share.id} style={{padding:12,border:"1px solid var(--border)",borderRadius:12}}>
         <p style={{margin:"0 0 6px"}}>{sharedPost?"A HoopCheck member shared a post with you.":"A post was shared with you, but it is not available in your current feed."}</p>
         <small className="muted">{ago(share.created_at,now)}</small>
-        {sharedPost&&<button type="button" className="hc-feed-action-pill" style={{marginLeft:10}} onClick={()=>document.getElementById("feed-post-"+share.post_id)?.scrollIntoView({behavior:"smooth",block:"center"})}>Find post</button>}
+        {sharedPost&&<span className="muted" style={{marginLeft:10}}>Available in HoopFeed</span>}
       </div>;
     })}</div>
   </section>
