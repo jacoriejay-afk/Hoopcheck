@@ -23,16 +23,20 @@ export function resolveFeedMedia(
   const legacy = legacyBuckets[kind === "image" ? 0 : 1];
   const privateBucket = privateBuckets[kind === "image" ? 0 : 1];
   const legacyPrefix = new URL(legacyObjectPrefix + legacy + "/", origin).href;
-  const bucket = reference.startsWith(legacyPrefix) ? legacy : privateBucket;
-  const prefix = bucket === legacy ? legacyPrefix : privateBucket + "/";
-  if (!reference.startsWith(prefix)) return null;
+  const prefixes = [
+    { bucket: legacy, prefix: legacyPrefix },
+    { bucket: legacy, prefix: legacy + "/" },
+    { bucket: privateBucket, prefix: privateBucket + "/" },
+  ];
+  const match = prefixes.find(({ prefix }) => reference.startsWith(prefix));
+  if (!match) return null;
 
-  const path = reference.slice(prefix.length);
+  const path = reference.slice(match.prefix.length);
   const ownerPath = teamId ? "team-posts/" + teamId + "/" + ownerId : ownerId;
   if (!path.startsWith(ownerPath + "/")) return null;
   const filename = path.slice(ownerPath.length + 1);
   const extension = kind === "image" ? "(jpg|jpeg|png|webp)" : "(mp4|webm|mov)";
   if (!new RegExp("^" + uuidPattern + "[.]" + extension + "$", "i").test(filename)) return null;
 
-  return { bucket, path };
+  return { bucket: match.bucket, path };
 }
