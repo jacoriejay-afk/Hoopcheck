@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
-import { resolveClubGrant, canManageClub } from "../../../lib/team-hq-access";
+import { resolveClubGrant } from "../../../lib/team-hq-access";
+import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
 
 export const runtime = "nodejs";
 
@@ -57,7 +58,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: false, message: "Choose a JPG, PNG, or WebP image up to 4 MB." }, { status: 400 });
 
     const clubGrant = await resolveClubGrant(user.id, teamId);
-    if (!canManageClub(clubGrant, teamId, "publishUpdates"))
+    const entitlements = getHoopCheckEntitlements({ accountType: null, clubGrant, clubId: teamId });
+    if (!entitlements.clubCapabilities.publishUpdates)
       return NextResponse.json({ allowed: false, message: "An approved claim for this team is required." }, { status: 403 });
 
     let imageDataUrl: string | undefined;
