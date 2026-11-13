@@ -97,3 +97,34 @@ BEGIN
   ) THEN RAISE EXCEPTION 'Author-blocked recipient was allowed'; END IF;
 END $$;
 RESET ROLE;
+
+-- Expiration and moderation must revoke recipient eligibility immediately.
+RESET ROLE;
+DELETE FROM public.user_blocks WHERE blocker_id='a1000000-0000-4000-8000-000000000003'
+ AND blocked_id='a1000000-0000-4000-8000-000000000002';
+UPDATE public.feed_posts SET expires_at=now()-interval '1 minute'
+ WHERE id='a2000000-0000-4000-8000-000000000001';
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','a1000000-0000-4000-8000-000000000001',true);
+DO $$
+BEGIN
+  IF private.hoopfeed_share_recipient_can_read(
+    'a2000000-0000-4000-8000-000000000001',
+    'a1000000-0000-4000-8000-000000000001',
+    'a1000000-0000-4000-8000-000000000002'
+  ) THEN RAISE EXCEPTION 'Expired post recipient eligibility not revoked'; END IF;
+END $$;
+RESET ROLE;
+UPDATE public.feed_posts SET expires_at=now()+interval '1 day',status='pending'
+ WHERE id='a2000000-0000-4000-8000-000000000001';
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','a1000000-0000-4000-8000-000000000001',true);
+DO $$
+BEGIN
+  IF private.hoopfeed_share_recipient_can_read(
+    'a2000000-0000-4000-8000-000000000001',
+    'a1000000-0000-4000-8000-000000000001',
+    'a1000000-0000-4000-8000-000000000002'
+  ) THEN RAISE EXCEPTION 'Moderated post recipient eligibility not revoked'; END IF;
+END $$;
+RESET ROLE;
