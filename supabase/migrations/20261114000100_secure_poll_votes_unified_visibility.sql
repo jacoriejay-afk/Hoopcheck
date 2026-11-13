@@ -15,9 +15,10 @@ for select to authenticated using (
       and fp.status = 'approved'
       and (fp.expires_at is null or fp.expires_at > now())
       and fp.post_kind = 'poll'
-      and jsonb_typeof(fp.poll_options) = 'array'
-      and feed_poll_votes.option_index >= 0
-      and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
+      and case when jsonb_typeof(fp.poll_options) = 'array'
+        then feed_poll_votes.option_index >= 0
+          and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
+        else false end
   )
 );
 
@@ -30,9 +31,10 @@ for insert to authenticated with check (
       and fp.status = 'approved'
       and (fp.expires_at is null or fp.expires_at > now())
       and fp.post_kind = 'poll'
-      and jsonb_typeof(fp.poll_options) = 'array'
-      and feed_poll_votes.option_index >= 0
-      and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
+      and case when jsonb_typeof(fp.poll_options) = 'array'
+        then feed_poll_votes.option_index >= 0
+          and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
+        else false end
   )
 );
 
@@ -46,9 +48,10 @@ using (
       and fp.status = 'approved'
       and (fp.expires_at is null or fp.expires_at > now())
       and fp.post_kind = 'poll'
-      and jsonb_typeof(fp.poll_options) = 'array'
-      and feed_poll_votes.option_index >= 0
-      and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
+      and case when jsonb_typeof(fp.poll_options) = 'array'
+        then feed_poll_votes.option_index >= 0
+          and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
+        else false end
   )
 )
 with check (
@@ -59,9 +62,10 @@ with check (
       and fp.status = 'approved'
       and (fp.expires_at is null or fp.expires_at > now())
       and fp.post_kind = 'poll'
-      and jsonb_typeof(fp.poll_options) = 'array'
-      and feed_poll_votes.option_index >= 0
-      and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
+      and case when jsonb_typeof(fp.poll_options) = 'array'
+        then feed_poll_votes.option_index >= 0
+          and feed_poll_votes.option_index < jsonb_array_length(fp.poll_options)
+        else false end
   )
 );
 commit;
