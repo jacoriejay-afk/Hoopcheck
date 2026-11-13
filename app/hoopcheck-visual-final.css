@@ -329,3 +329,16 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header .h
  .hc-account-page .hc-account-membership-actions > *, .hc-account-page .hc-account-public-actions > * { max-width:100%; }
  .hc-account-page .account-profile-form { grid-template-columns:minmax(0,1fr); }
 }
+
+/* HQ-CONSISTENCY: keep the Agents/Scouts workspace readable on mobile. */
+.hc-agents-hq-page .page-container { min-width:0; max-width:1100px; margin-inline:auto; }
+.hc-agents-hq-page :is(.hero-card,.hc-dashboard-grid,.dashboard-card) { min-width:0; }
+.hc-agents-hq-page .hc-dashboard-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:12px; }
+.hc-agents-hq-page :is(.hero-card,.dashboard-card) :is(h1,h2,p) { overflow-wrap:break-word; }
+@media (max-width:767px) {
+ .hc-agents-hq-page .page-container { padding-inline:14px; padding-bottom:calc(104px + env(safe-area-inset-bottom,0px)); }
+ .hc-agents-hq-page .hero-card { padding:18px 16px; border-radius:var(--hc-radius-card,20px); }
+ .hc-agents-hq-page .hero-card h1 { font-size:clamp(1.5rem,6vw,2rem); line-height:1.15; }
+ .hc-agents-hq-page .hc-dashboard-grid { grid-template-columns:minmax(0,1fr); }
+ .hc-agents-hq-page .dashboard-card { padding:16px; }
+}
