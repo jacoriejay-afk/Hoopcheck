@@ -254,8 +254,7 @@ function SearchContent() {
     : [];
 
   const suggestionTargets = [
-    ...visibleTeams.slice(0,3).map(x=>"/teams/"+x.id),
-    ...visibleWomensTeams.slice(0,3).map(x=>"/womens/"+x.id),
+    ...[...visibleTeams.map(x=>"/teams/"+x.id), ...visibleWomensTeams.map(x=>"/womens/"+x.id)].slice(0,3),
     ...visiblePlayers.slice(0,3).map(x=>"/players/"+x.id),
     ...visibleCoaches.slice(0,2).map(x=>"/coaches/"+x.id),
     ...visibleLeagues.slice(0,2).map(x=>"/leagues/"+x.id)
@@ -300,8 +299,10 @@ function SearchContent() {
       {suggestionsOpen && searchInput.trim() && searchInput.trim() === query && !loading && totalResults > 0 && <section id="hc-search-suggestions" className="hc-search-suggestions" aria-label="Search suggestions" aria-live="polite" style={{padding:12,border:"1px solid var(--border)",borderRadius:16,marginBottom:12}}>
         {[
           {heading:"Teams", items:[
-            ...visibleTeams.slice(0,3).map(team=>({href:"/teams/"+team.id,label:team.name+" · "+(team.country||"")})),
-            ...visibleWomensTeams.slice(0,3).map(team=>({href:"/womens/"+team.id,label:team.name+" · "+(team.country||"")}))
+            ...[
+              ...visibleTeams.map(team=>({href:"/teams/"+team.id,label:team.name+" · "+(team.country||"")})),
+              ...visibleWomensTeams.map(team=>({href:"/womens/"+team.id,label:team.name+" · "+(team.country||"")}))
+            ].slice(0,3)
           ]},
           {heading:"Players",items:visiblePlayers.slice(0,3).map(player=>({href:"/players/"+player.id,label:(player.display_name||"Player")+" · "+(player.current_team||"")}))},
           {heading:"Coaches",items:visibleCoaches.slice(0,2).map(coach=>({href:"/coaches/"+coach.id,label:coach.name}))},
