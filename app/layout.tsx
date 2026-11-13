@@ -28,6 +28,7 @@ import "./hoopcheck-ux2b-profile-completion.css";
 import "./hoopcheck-ia1-home.css";
 import "./hoopcheck-brand-navigation.css";
 import "./hoopcheck-reference-identity.css";
+import "./hoopcheck-type-system.css";
 import "./hoopcheck-pastel-profiles.css";
 import "./hoopcheck-smooth-experience.css";
 import OfflineRuntime from "../components/OfflineRuntime";
