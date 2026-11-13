@@ -1,7 +1,10 @@
 -- HOOPFEED-SHARE-1: private references, never copies of post content or media.
 -- Production may not have the private helper schema yet.
 create schema if not exists private;
-revoke all on schema private from public, anon, authenticated;
+-- Preserve schema USAGE for authenticated users: RLS calls private helper functions.
+-- Schema USAGE alone does not expose private tables through the Data API.
+revoke all on schema private from public, anon;
+grant usage on schema private to authenticated;
 -- Block checks must see both directions, including blocks hidden by user_blocks RLS.
 create or replace function private.hoopfeed_share_not_blocked(p_sender uuid,p_recipient uuid)
 returns boolean language sql stable security definer set search_path = ''
