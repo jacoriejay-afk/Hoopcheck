@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
+import { resolveClubGrant, canManageClub } from "../../../lib/team-hq-access";
 
 export const runtime = "nodejs";
 
@@ -44,9 +45,6 @@ export async function POST(request: Request) {
     const { data: userData, error: userError } = await db.auth.getUser(token);
     const user = userData?.user;
     if (userError || !user) return NextResponse.json({ allowed: false, message: "Your session is invalid." }, { status: 401 });
-    const { data: profile, error: profileError } = await db.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
-    if (profileError || !profile || profile.account_type === "fan") return NextResponse.json({ allowed: false, message: "This action is not available to fan accounts." }, { status: 403 });
-
     const form = await request.formData();
     const teamId = String(form.get("team_id") || "");
     const body = String(form.get("body") || "").trim();
@@ -58,9 +56,9 @@ export async function POST(request: Request) {
     if (image !== null && (!(image instanceof File) || !["image/jpeg","image/png","image/webp"].includes(image.type) || image.size > MAX_IMAGE_BYTES))
       return NextResponse.json({ allowed: false, message: "Choose a JPG, PNG, or WebP image up to 4 MB." }, { status: 400 });
 
-    const { data: claim } = await db.from("profile_claim_requests").select("id")
-      .eq("entity_type", "team").eq("entity_id", teamId).eq("requester_id", user.id).eq("status", "approved").maybeSingle();
-    if (!claim) return NextResponse.json({ allowed: false, message: "An approved claim for this team is required." }, { status: 403 });
+    const clubGrant = await resolveClubGrant(user.id, teamId);
+    if (!canManageClub(clubGrant, teamId, "editProfile"))
+      return NextResponse.json({ allowed: false, message: "An approved claim for this team is required." }, { status: 403 });
 
     let imageDataUrl: string | undefined;
     let bytes: Buffer | undefined;
