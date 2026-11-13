@@ -89,3 +89,19 @@
 /* Account completion anchors remain visible beneath sticky UI. */
 .hc-account-page [id^="profile-editor-field-"],
 .hc-account-page #profile-editor { scroll-margin-top:110px; }
+
+
+/* Account mobile: one full-width settings column without sideways overflow. */
+@media(max-width:767px) {
+ .hc-global-page-shell main.hc-account-page,
+ .hc-global-page-shell main.hc-account-page > .page-container {box-sizing:border-box;width:100%;max-width:100%;min-width:0}
+ .hc-global-page-shell main.hc-account-page > .page-container {padding-inline:max(12px,env(safe-area-inset-left)) max(12px,env(safe-area-inset-right))}
+ .hc-account-page .page-container > :where(.hc-account-settings-header,.hc-settings,.dashboard-card,.hc-account-profile-completion),
+ .hc-account-page .hc-settings > *, .hc-account-page .hc-settings-group {box-sizing:border-box;width:100%;max-width:100%;min-width:0;margin-inline:0}
+ .hc-account-page :where(.hc-account-settings-identity,.hc-account-settings-identity-copy,.hc-account-identity-title,.hc-setting-copy) {min-width:0;max-width:100%}
+ .hc-account-page .hc-account-settings-identity-copy :where(p,strong),
+ .hc-account-page .hc-setting-copy :where(strong,small) {overflow-wrap:anywhere}
+ .hc-account-page .hc-account-identity-actions {display:flex;flex-wrap:wrap;gap:8px}
+ .hc-account-page .hc-account-identity-actions > * {flex:1 1 auto}
+ .hc-account-page .hc-settings {display:grid;gap:12px}
+}
