@@ -27,12 +27,36 @@ try {
         const headers = { 'access-control-allow-origin': baseURL, 'access-control-allow-headers': req.headers()['access-control-request-headers'] || '*', 'access-control-allow-methods': 'GET,POST,OPTIONS', 'cache-control': 'no-store' };
         if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
         if (url.pathname.includes('/coaches') && failCoaches) return route.fulfill({ status: 503, headers, contentType: 'application/json', body: JSON.stringify({ message: 'Fixture category failure' }) });
+        if (url.pathname.endsWith('/rpc/search_directory_overview')) {
+          return route.fulfill({ headers, json: { mens: 13, womens: 1, coaches: 0, leagues: 1, countries: [{ country: 'Azerbaijan', total: 14 }] } });
+        }
         let data = [];
         if (url.pathname.includes('/womens_teams')) { if (holdTeam) await teamGate; data = [women]; }
-        else if (url.pathname.includes('/teams')) data = [men];
+        else if (url.pathname.includes('/teams')) {
+          const pageOffset = Number(url.searchParams.get('offset') || 0);
+          const paged = (url.searchParams.get('or') || '').includes('Paginated');
+          const pageTwo = { ...men, id: '33333333-3333-4333-8333-333333333333', name: 'Page Two QA' };
+          data = paged
+            ? pageOffset > 0 ? [pageTwo] : Array.from({ length: 12 }, (_, index) => ({
+                ...men, id: 'aaaaaaaa-aaaa-4aaa-8aaa-' + String(index).padStart(12, '0'), name: 'Page One QA ' + (index + 1),
+              })).concat(pageTwo)
+            : [men];
+        }
         const single = req.headers().accept?.includes('vnd.pgrst.object');
         await route.fulfill({ status: 200, headers, contentType: 'application/json', body: JSON.stringify(single ? data[0] || null : data) });
       });
+      if (width === 390 && theme === 'light') {
+        await page.goto(`${baseURL}/search`);
+        await page.getByRole('heading', { name: 'Countries with the most teams' }).waitFor();
+        await page.getByRole('link', { name: 'Azerbaijan 14' }).waitFor();
+        await page.goto(`${baseURL}/search?q=Paginated&type=mens-teams`);
+        await page.getByText('12 results on this page').waitFor();
+        await page.getByRole('button', { name: 'Next', exact: true }).click();
+        await page.getByText('Page Two QA').waitFor();
+        assert.equal(new URL(page.url()).searchParams.get('page'), '2');
+        await page.getByRole('button', { name: 'Previous', exact: true }).click();
+        await page.getByText('Page One QA 1', { exact: true }).waitFor();
+      }
       await page.goto(`${baseURL}/search?q=Discovery`);
       const maleLink = page.locator(`.result-group a[href="/teams/${men.id}"]`).first();
       const femaleLink = page.locator(`.result-group a[href="/womens/${women.id}"]`).first();
