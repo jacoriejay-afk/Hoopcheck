@@ -373,7 +373,7 @@ function SearchContent() {
               <h3>{t("nothingFound")}</h3>
               <p>{t("tryDifferentSearch")}</p>
             </div>
-          }
+          )}
 
           {!loading && visiblePlayers.length > 0 && (
             <section className="result-group">
