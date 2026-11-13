@@ -23,6 +23,8 @@ export default function FanGroupsDirectory() {
     async function load() {
       setLoading(true);
       setError("");
+      setTeams([]);
+      setHasMore(false);
       let query = supabase.from("teams").select("id,name,country").eq("active", true).eq("basketball_type", "mens");
       if (debouncedSearch) {
         const safe = debouncedSearch.replace(/[%_,()]/g, " ").trim();
@@ -30,7 +32,7 @@ export default function FanGroupsDirectory() {
       }
       const result = await query.order("name").order("id").range(page * 100, page * 100 + 99);
       if (!active) return;
-      if (result.error) setError("Fan groups could not be loaded. Please try again.");
+      if (result.error) { setTeams([]); setHasMore(false); setError("Fan groups could not be loaded. Please try again."); }
       else { setTeams((result.data || []) as GroupTeam[]); setHasMore((result.data || []).length === 100); }
       setLoading(false);
     }
@@ -46,12 +48,12 @@ export default function FanGroupsDirectory() {
     {loading && <p role="status">Loading fan groups…</p>}
     {error && <p role="alert">{error}</p>}
     {!loading && !error && teams.length === 0 && <p>No matching teams found.</p>}
-    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12}}>
+    {!loading && !error && <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12}}>
       {teams.map(team => <Link key={team.id} href={`/team-hub/groups/${team.id}`} style={{padding:16,border:"1px solid var(--border)",borderRadius:16}}>
         <strong>{team.name}</strong><div>{team.country || "Country not listed"}</div><span>Open fan group</span>
       </Link>)}
-    </div>
-    <div style={{display:"flex",gap:12,marginTop:20,alignItems:"center"}}><button type="button" disabled={page===0 || loading} onClick={()=>setPage(p=>Math.max(0,p-1))}>Previous</button><span>Page {page+1}</span><button type="button" disabled={!hasMore || loading} onClick={()=>setPage(p=>p+1)}>Next</button></div>
+    </div>}
+    {!error && <div style={{display:"flex",gap:12,marginTop:20,alignItems:"center"}}><button type="button" disabled={page===0 || loading} onClick={()=>setPage(p=>Math.max(0,p-1))}>Previous</button><span>Page {page+1}</span><button type="button" disabled={!hasMore || loading} onClick={()=>setPage(p=>p+1)}>Next</button></div>}
     <p style={{marginTop:20}}>Search all active men’s team fan groups. <Link href="/teams">All teams</Link> · <Link href="/womens">Women’s teams</Link>.</p>
   </main>;
 }
