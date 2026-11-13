@@ -8,14 +8,14 @@ grant usage on schema private to authenticated;
 -- Block checks must see both directions, including blocks hidden by user_blocks RLS.
 create or replace function private.hoopfeed_share_not_blocked(p_sender uuid,p_recipient uuid)
 returns boolean language sql stable security definer set search_path = ''
-as $
+as $$
   select auth.uid() in (p_sender,p_recipient)
     and not exists (
       select 1 from public.user_blocks b
       where (b.blocker_id=p_sender and b.blocked_id=p_recipient)
          or (b.blocker_id=p_recipient and b.blocked_id=p_sender)
     );
-$;
+$$;
 revoke all on function private.hoopfeed_share_not_blocked(uuid,uuid) from public,anon;
 grant execute on function private.hoopfeed_share_not_blocked(uuid,uuid) to authenticated;
 
@@ -23,7 +23,7 @@ grant execute on function private.hoopfeed_share_not_blocked(uuid,uuid) to authe
 -- This does not grant access: feed_posts RLS still controls actual post reads.
 create or replace function private.hoopfeed_share_recipient_can_read(p_post uuid,p_recipient uuid)
 returns boolean language sql stable security definer set search_path = ''
-as $
+as $$
   select auth.uid() is not null
     and exists (
       select 1 from public.feed_posts post
@@ -48,7 +48,7 @@ as $
         )
         and post.shared_post_id is null
     );
-$;
+$$;
 revoke all on function private.hoopfeed_share_recipient_can_read(uuid,uuid) from public,anon;
 grant execute on function private.hoopfeed_share_recipient_can_read(uuid,uuid) to authenticated;
 
