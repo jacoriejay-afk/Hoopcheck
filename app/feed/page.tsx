@@ -131,6 +131,10 @@ export default function Feed(){
       supabase.from("feed_poll_votes").select("post_id,user_id,option_index").in("post_id",ids),
       supabase.from("feed_post_bookmarks").select("post_id").eq("user_id",currentUser.id).in("post_id",ids)
     ]).then(([commentsResult,checksResult,votesResult,bookmarksResult])=>{
+      if (commentsResult.error) {
+        console.error("HoopFeed comments could not be loaded", commentsResult.error);
+        setMsg("Comments could not be loaded. Please refresh and try again.");
+      }
       const cg:Record<string,Comment[]>={};const cc:Record<string,number>={};const cm:Record<string,boolean>={};
       (commentsResult.data||[]).forEach((r:any)=>{(cg[r.post_id]??=[]).push({...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)});});
       (checksResult.data||[]).forEach((r:any)=>{cc[r.post_id]=(cc[r.post_id]||0)+1;if(r.user_id===currentUser.id)cm[r.post_id]=true;});
