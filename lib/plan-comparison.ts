@@ -1,12 +1,21 @@
+import { getSubscriptionProduct } from "./subscription-products";
+
 export type MembershipAudience = "fan" | "player";
 export type PlanTier = "free" | "pro" | "premium";
 export type BillingTerm = "month" | "6_month" | "year";
 
-// AUDIT-5 approved display prices; keep aligned with Stripe checkout configuration.
+// Player prices are derived from the approved product catalog.
+// Do not use these values to price Fan or other role subscriptions.
+function playerPrice(tier: "pro" | "premium", duration: BillingTerm): string {
+  const product = getSubscriptionProduct("player", tier, duration);
+  if (!product) throw new Error(`Missing approved Player product: ${tier}/${duration}`);
+  return product.displayPrice;
+}
+
 export const PLAN_PRICES = {
-  pro: { month: "$4.99", "6_month": "$26.95", year: "$50.90" },
-  premium: { month: "$9.99", "6_month": "$53.95", year: "$101.90" },
-} as const;
+  pro: { month: playerPrice("pro", "month"), "6_month": playerPrice("pro", "6_month"), year: playerPrice("pro", "year") },
+  premium: { month: playerPrice("premium", "month"), "6_month": playerPrice("premium", "6_month"), year: playerPrice("premium", "year") },
+};
 export const BILLING_LABELS = { month: "billed monthly", "6_month": "billed every 6 months", year: "billed annually" } as const;
 export const PLAN_PERKS: Record<MembershipAudience, readonly { label: string; minimum: "pro" | "premium" }[]> = {
   fan: [
