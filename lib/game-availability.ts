@@ -21,7 +21,7 @@ export type GameAvailability = {
 };
 
 const MINUTE = 60_000;
-const OPEN_EARLY_MINUTES = 30;
+export const GAME_CHAT_OPEN_EARLY_MINUTES = 60;
 const POST_GAME_MINUTES = 60;
 const MAX_GAME_WINDOW_HOURS = 4;
 
@@ -68,7 +68,7 @@ export function getGameAvailability({
     };
   }
 
-  const opensMs = tipoffMs - OPEN_EARLY_MINUTES * MINUTE;
+  const opensMs = tipoffMs - GAME_CHAT_OPEN_EARLY_MINUTES * MINUTE;
   const closesMs = Number.isFinite(ended)
     ? ended + POST_GAME_MINUTES * MINUTE
     : tipoffMs + MAX_GAME_WINDOW_HOURS * 60 * MINUTE;
@@ -79,7 +79,7 @@ export function getGameAvailability({
   if (now.getTime() < opensMs) {
     return {
       state: "UPCOMING", phase: "pre-game", chatOpen: false, opensAt, closesAt,
-      minutesUntilOpen, reason: "Chat opens 30 minutes before tip-off.",
+      minutesUntilOpen, reason: `Chat opens ${GAME_CHAT_OPEN_EARLY_MINUTES} minutes before tip-off.`,
     };
   }
 
