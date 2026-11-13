@@ -140,6 +140,20 @@ async function saveSubscription(
     );
   }
 
+  // Stripe metadata is not an authorization source. A subscription must
+  // belong to a real HoopCheck profile before it can change entitlements.
+  const { data: ownerProfile, error: ownerProfileError } = await supabase
+    .from("profiles")
+    .select("account_type")
+    .eq("id", userId)
+    .maybeSingle();
+  if (ownerProfileError || !ownerProfile?.account_type) {
+    throw new Error("Cannot synchronize a subscription without its account owner.");
+  }
+  if (!["player", "fan", "coach", "agent", "scout", "club_admin"].includes(ownerProfile.account_type)) {
+    throw new Error("Subscription owner has an unsupported account role.");
+  }
+
   const currentPeriodEndTimestamp =
     subscription.items.data[0]?.current_period_end;
   const currentPeriodEnd =
