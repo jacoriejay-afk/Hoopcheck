@@ -70,7 +70,7 @@ export async function resolveClubGrant(userId: string, clubId: string): Promise<
     const acceptedAt = Date.parse(invite.accepted_at);
     const createdAt = Date.parse(invite.created_at);
     const expiresAt = Date.parse(invite.expires_at);
-    return Number.isFinite(acceptedAt) && Number.isFinite(createdAt) &&
+    return acceptedAt === Date.parse(staff.accepted_at) && Number.isFinite(acceptedAt) && Number.isFinite(createdAt) &&
       Number.isFinite(expiresAt) && acceptedAt >= createdAt &&
       acceptedAt <= expiresAt && acceptedAt <= createdAt + 7 * 86400000;
   });
