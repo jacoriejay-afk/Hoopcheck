@@ -121,9 +121,10 @@ const results = [];
 try {
   // Public routes must not expose member-only mobile navigation when there is
   // no session. Keep this separate from the authenticated screenshot fixtures.
-  for (const theme of ["light", "dark"]) {
+  for (const theme of ["light", "dark", "system"]) {
     const guestContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
+      colorScheme: theme === "light" ? "light" : "dark",
       isMobile: true,
       hasTouch: true,
       serviceWorkers: "block",
@@ -154,9 +155,46 @@ try {
       assert.equal(await guestPage.locator('a.hc-signin-button').count() > 0, true,
         `Guest ${theme} ${route}: sign-in action must be available`);
     }
+    for (const width of [390, 1024, 1440]) {
+      await guestPage.setViewportSize({ width, height: 844 });
+      await guestPage.goto(baseURL + "/");
+      const input = guestPage.locator("main .hc-searchbar__input:visible");
+      await input.fill("Basketball");
+      const readColors = () => input.evaluate((element) => {
+        const style = getComputedStyle(element);
+        const tokenColor = (token) => {
+          const sample = document.createElement("span");
+          sample.style.setProperty("color", `var(${token})`, "important");
+          element.parentElement.append(sample);
+          const color = getComputedStyle(sample).color;
+          sample.remove();
+          return color;
+        };
+        return {
+          text: style.webkitTextFillColor,
+          placeholder: getComputedStyle(element, "::placeholder").webkitTextFillColor,
+          expectedText: tokenColor("--hc-input-fg"),
+          expectedPlaceholder: tokenColor("--hc-foreground-muted"),
+        };
+      });
+      // System mode can transition from the server-rendered theme during hydration.
+      const deadline = Date.now() + 2000;
+      let colors = await readColors();
+      while ((colors.text !== colors.expectedText || colors.placeholder !== colors.expectedPlaceholder) && Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+        colors = await readColors();
+      }
+      assert.equal(colors.text, colors.expectedText, `Guest ${theme} home at ${width}px: typed search text must follow the input theme`);
+      assert.equal(colors.placeholder, colors.expectedPlaceholder, `Guest ${theme} home at ${width}px: search placeholder must follow the muted theme`);
+    }
+    if (theme === "system") {
+      await guestPage.locator("html.theme-dark").waitFor({ state: "attached", timeout: 10000 });
+      await guestPage.emulateMedia({ colorScheme: "light" });
+      await guestPage.locator("html.theme-light").waitFor({ state: "attached", timeout: 10000 });
+    }
     await guestContext.close();
   }
-  console.log("GUEST_MOBILE_NAV=PASS; routes=login,signup,search; themes=light,dark");
+  console.log("GUEST_MOBILE_NAV=PASS; routes=login,signup,search; themes=light,dark,system");
 
   for (const theme of ["dark", "light"]) {
     for (const routeName of ["dashboard", "feed", "admin"]) {
@@ -355,6 +393,7 @@ try {
     ]);
     const page = await context.newPage();
     let activeRoutePath = "";
+    let moderatorViewingGroup = false;
     let liveGameFixtureMode = "empty";
     const fixtureNow = Date.now();
     const liveGameFixtures = [
@@ -442,9 +481,18 @@ try {
         data = isFanTeamFollow ? [{ target_id: teamFixture.id, target_type: "team" }] : single ? null : [];
       }
       else if (url.pathname.includes("/rest/v1/team_fan_groups")) data = single ? { team_id: teamFixture.id, group_name: teamFixture.name + " Fan Group" } : [{ team_id: teamFixture.id, group_name: teamFixture.name + " Fan Group" }];
-      else if (url.pathname.includes("/rest/v1/team_fan_group_members")) data = single ? { team_id: teamFixture.id, user_id: userId } : [{ team_id: teamFixture.id, user_id: userId }];
+      else if (url.pathname.includes("/rest/v1/team_fan_group_members")) data = moderatorViewingGroup ? (single ? null : []) : single ? { team_id: teamFixture.id, user_id: userId } : [{ team_id: teamFixture.id, user_id: userId }];
       else if (url.pathname.includes("/rest/v1/team_fan_group_moderators")) data = single ? null : [];
-      else if (url.pathname.includes("/rest/v1/team_fan_group_posts")) data = [];
+      else if (url.pathname.includes("/rest/v1/rpc/is_team_fan_group_moderator")) data = moderatorViewingGroup;
+      else if (url.pathname.includes("/rest/v1/team_fan_group_posts")) data = moderatorViewingGroup ? [{
+        id: "a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f1",
+        team_id: teamFixture.id,
+        author_id: userId,
+        body: "Post visible to the group moderator",
+        image_url: null,
+        is_pinned: false,
+        created_at: "2026-01-01T00:00:00.000Z",
+      }] : [];
       else if (url.pathname.includes("/rest/v1/team_fan_group_comments")) data = [];
       else if (url.pathname.includes("/rest/v1/rpc/get_team_fan_group_summary")) {
         const summary = {
@@ -627,6 +675,14 @@ try {
         await page.locator("main.hc-team-fan-group-page .hc-feed-empty button").click();
         const composerFocused = await page.locator("#fan-group-post-body").evaluate(element => element === document.activeElement);
         if (!composerFocused) errors.push("team-hub group: empty-state action did not focus the locked group composer");
+        moderatorViewingGroup = true;
+        await page.reload({ waitUntil: "domcontentloaded" });
+        await page.getByText("Post visible to the group moderator").waitFor({ state: "visible", timeout: 15000 });
+        assert.ok(await page.getByRole("button", { name: "Pin", exact: true }).isVisible());
+        assert.equal(await page.locator("#fan-group-post-body").count(), 0);
+        assert.equal(await page.getByPlaceholder("Write a comment…").count(), 0);
+        assert.equal(await page.getByRole("button", { name: "Report", exact: true }).count(), 0);
+        moderatorViewingGroup = false;
       }
       if (requestedPath === "/theme-card-audit") {
         const previews = await page.locator("main.hc-card-audit-page .hc-card-audit-preview").count();

@@ -4199,9 +4199,13 @@ main, section, article, aside, header, footer, nav, form, .card, .result-card, .
 
 
 /* Final component-level overrides for the reusable search field and compact directory rows. */
-.hc-searchbar { display:flex!important; align-items:center!important; min-width:0!important; width:100%!important; min-height:54px!important; gap:10px!important; padding:5px!important; border:1px solid #deded9!important; border-radius:12px!important; background:var(--hc-surface-raised)!important; color:#171717!important; }
-.hc-searchbar .hc-searchbar__input { display:block!important; flex:1 1 0%!important; width:100%!important; min-width:0!important; max-width:100%!important; height:42px!important; border:0!important; padding:0 4px!important; background:transparent!important; color:#171717!important; font-size:15px!important; line-height:1.2!important; white-space:nowrap!important; overflow:hidden!important; text-overflow:ellipsis!important; }
+.hc-searchbar { display:flex!important; align-items:center!important; min-width:0!important; width:100%!important; min-height:54px!important; gap:10px!important; padding:5px!important; border:1px solid var(--hc-border)!important; border-radius:var(--hc-radius-control)!important; background:var(--hc-surface-raised)!important; color:var(--hc-input-fg)!important; }
+.hc-searchbar .hc-searchbar__input { display:block!important; flex:1 1 0%!important; width:100%!important; min-width:0!important; max-width:100%!important; height:42px!important; border:0!important; padding:0 4px!important; background:transparent!important; color:var(--hc-input-fg)!important; font-size:15px!important; line-height:1.2!important; white-space:nowrap!important; overflow:hidden!important; text-overflow:ellipsis!important; }
 .hc-searchbar .hc-searchbar__input::placeholder { white-space:nowrap!important; overflow:hidden!important; text-overflow:ellipsis!important; }
+html:is(.theme-light, .theme-dark) .hc-searchbar .hc-searchbar__input::placeholder {
+  color: var(--hc-foreground-muted) !important;
+  -webkit-text-fill-color: var(--hc-foreground-muted) !important;
+}
 .hc-searchbar .hc-searchbar__submit { display:inline-flex!important; flex:0 0 auto!important; min-width:104px!important; height:42px!important; border-radius:9px!important; background:var(--hc-button-primary-surface)!important; color:var(--hc-button-primary-foreground)!important; }
 .hc-searchbar .hc-searchbar__clear { display:grid!important; flex:0 0 30px!important; }
 @media(max-width:600px) {

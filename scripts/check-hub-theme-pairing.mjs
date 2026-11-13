@@ -88,8 +88,9 @@ if (!fanFeedPage.includes('redirect("/feed")') ||
     !fanGroupPage.includes("FAN HQ · OFFICIAL COMMUNITY") ||
     !fanGroupPage.includes("Join to see the conversation") ||
     !fanGroupPage.includes("Posting to {teamName} fans") ||
-    !fanGroupPage.includes("isFan && summary?.is_member && <section") ||
-    !fanGroupPage.includes("No posts yet — be the first to post for {teamName}.") ||
+    !fanGroupPage.includes("const canParticipate = isFan && summary.is_member;") ||
+    !fanGroupPage.includes("{canParticipate && <section") ||
+    !fanGroupPage.includes("No posts yet") ||
     !fanGroupPage.includes("Be the first to post")) {
   failures.push("Unified HoopFeed redirect or member-gated club Fan Group purpose, context, and composer is missing.");
 }
