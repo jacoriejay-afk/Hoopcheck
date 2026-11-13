@@ -17,6 +17,7 @@ import "./feed-pull-refresh.css";
 
 type MiniProfile = { display_name: string | null; avatar_url: string | null; account_type?: string | null; current_country?: string | null; current_country_public?: boolean; current_team?: string | null };
 type Post = { id:string; shared_post_id?:string|null; shared_post?:{author_id:string;profiles?:{display_name:string|null}|null}|null; body:string; image_url:string|null; image_urls?:string[]|null; video_url?:string|null; post_kind?:string|null; poll_options?:string[]|null; is_pinned?:boolean|null; pinned_at?:string|null; location_country:string|null; topic_tag?:TopicTag|null; game_day_team?:string|null; game_day_opponent?:string|null; game_day_score_for?:number|null; game_day_score_against?:number|null; created_at:string; expires_at:string|null; author_id:string; ageLabel?:string; profiles?:MiniProfile|null };
+type ReceivedShare = {id:string;post_id:string;sender_id:string;created_at:string};
 type ShareRecipient = { id:string|null; target_type:string; target_id:string; display_name:string|null; avatar_url:string|null; account_type:string|null };
 type VoteState = { counts:number[]; total:number; mine:number|null };
 type TopicTag = "Practice" | "Game Day" | "Travel" | "Teammates" | "Culture" | "Win" | "Challenge";
@@ -85,6 +86,8 @@ export default function Feed(){
   const [shareLoading,setShareLoading]=useState(false);
   const [shareSending,setShareSending]=useState(false);
   const [shareNotice,setShareNotice]=useState("");
+  const [receivedShares,setReceivedShares]=useState<ReceivedShare[]>([]);
+  const [receivedShareError,setReceivedShareError]=useState("");
   const [shareError,setShareError]=useState("");
   const [body,setBody]=useState(""); const [typeFilter,setTypeFilter]=useState<TypeFilter>("All Posts"); const [photos,setPhotos]=useState<File[]>([]); const [previews,setPreviews]=useState<string[]>([]); const [composerMode,setComposerMode]=useState<"post"|"poll"|"news">("post"); const [composerExpanded,setComposerExpanded]=useState(false); const [pollDraft,setPollDraft]=useState<string[]>(["",""]); const [votes,setVotes]=useState<Record<string,VoteState>>({}); const [savedMap,setSavedMap]=useState<Record<string,boolean>>({}); const [carouselIdx,setCarouselIdx]=useState<Record<string,number>>({}); const [video,setVideo]=useState<File|null>(null); const [videoPreview,setVideoPreview]=useState(""); const [showCountry,setShowCountry]=useState(false);
   const [user,setUser]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [adminRole,setAdminRole]=useState<string|null>(null); const [subscription,setSubscription]=useState<Subscription|null>(null); const [memberCount,setMemberCount]=useState<number|null>(null);
@@ -101,6 +104,8 @@ export default function Feed(){
   }).slice().sort((a,b)=>{
     return new Date(b.created_at).getTime()-new Date(a.created_at).getTime();
   });
+
+  useEffect(()=>{if(user)void loadReceivedShares();},[user?.id]);
 
   const access=getHoopCheckEntitlements({accountType:profile?.account_type,subscription,isAdmin:adminRole==="admin"}).canReadHoopFeed;
   const isAdmin=adminRole==="admin";
@@ -294,6 +299,15 @@ export default function Feed(){
     }finally{setShareLoading(false);}
   }
 
+  async function loadReceivedShares(){
+    if(!user)return;
+    const {data,error}=await supabase.from("hoopfeed_direct_shares")
+      .select("id,post_id,sender_id,created_at").eq("recipient_id",user.id)
+      .order("created_at",{ascending:false}).limit(30);
+    if(error){setReceivedShareError("Received shares could not be loaded.");return;}
+    setReceivedShareError("");setReceivedShares((data||[]) as ReceivedShare[]);
+  }
+
   async function sendDirectShares(postId:string){
     if(!user||shareSending||selectedShareRecipients.length===0||selectedShareRecipients.length>10)return;
     setShareSending(true);setShareError("");setShareNotice("");
@@ -400,6 +414,19 @@ export default function Feed(){
       {sharePostId===p.id&&<><button type="button" className="hc-feed-comments-backdrop" aria-label="Close HoopCheck share" onClick={()=>setSharePostId(null)}/><div className="hc-feed-comments-panel" role="dialog" aria-modal="true" aria-label="Share on HoopCheck" style={{marginTop:14,borderTop:"1px solid var(--border)",paddingTop:14}}><div className="hc-feed-comments-sheet-head"><strong>SHARE ON HOOPCHECK™</strong><button type="button" onClick={()=>setSharePostId(null)}>Close</button></div><p className="muted">Choose someone from your HoopCheck connections.</p><input aria-label="Search connections to share with" placeholder="Search connections" value={shareSearch} onChange={e=>setShareSearch(e.target.value)}/>{shareLoading?<p role="status">Loading connections…</p>:shareError?<p role="alert">{shareError}</p>:shareRecipients.filter(row=>(row.display_name||"").toLowerCase().includes(shareSearch.toLowerCase())).length===0?<p className="muted">No matching connections.</p>:<div style={{display:"grid",gap:8,marginTop:12}}>{shareRecipients.filter(row=>(row.display_name||"").toLowerCase().includes(shareSearch.toLowerCase())).map(row=><div key={row.target_id} className="hc-connection-row"><span className="hc-connection-copy"><strong>{row.display_name||"HoopCheck member"}</strong><small>{row.account_type||row.target_type}</small></span><label><input type="checkbox" aria-label={`Select ${row.display_name||"HoopCheck member"}`} checked={selectedShareRecipients.includes(row.target_id)} disabled={!selectedShareRecipients.includes(row.target_id)&&selectedShareRecipients.length>=10} onChange={event=>setSelectedShareRecipients(previous=>event.target.checked?(previous.includes(row.target_id)?previous:previous.length<10?[...previous,row.target_id]:previous):previous.filter(id=>id!==row.target_id))}/> Select</label></div>)}</div>}<p role="status" className="muted">{selectedShareRecipients.length} recipient{selectedShareRecipients.length===1?"":"s"} selected (maximum 10). ready to share.</p>{shareNotice&&<p role="status">{shareNotice}</p>}{shareError&&<p role="alert">{shareError}</p>}<button type="button" disabled={shareSending||selectedShareRecipients.length===0} onClick={()=>void sendDirectShares(p.id)}>{shareSending?"Sending…":"Send in HoopCheck"}</button></div></>}
       {open[p.id]&&<><button type="button" className="hc-feed-comments-backdrop" aria-label="Close comments" onClick={()=>setOpen(x=>({...x,[p.id]:false}))}/><div className="hc-feed-comments-panel" role="dialog" aria-modal="true" aria-label="Comments" style={{marginTop:14,borderTop:"1px solid var(--border)",paddingTop:14}}><div className="hc-feed-comments-sheet-head"><strong>COMMENTS</strong><button type="button" onClick={()=>setOpen(x=>({...x,[p.id]:false}))}>Close</button></div><div style={{display:"grid",gap:10}}>{cs.map(c=><div key={c.id} style={{display:"flex",gap:10}}>{c.profiles?.avatar_url?<img src={c.profiles.avatar_url} alt="" style={{width:34,height:34,borderRadius:"50%",objectFit:"cover"}}/>:<div className="player-avatar-fallback" style={{width:34,height:34,minWidth:34}}>HC</div>}<div style={{marginLeft:c.depth?Math.min(c.depth*14,42):0}}><strong>{c.profiles?.display_name||"Member"}</strong>{c.parent_id&&<small className="muted"> · Reply</small>}<div style={{whiteSpace:"pre-wrap"}}>{c.body}</div><small className="muted">{ago(c.created_at,now)}</small>{canReply&&<button type="button" className="hc-feed-action-pill" onClick={()=>setReplyTargets(x=>({...x,[p.id]:{id:c.id,name:c.profiles?.display_name||"Member"}}))}>Reply</button>}</div></div>)}{!cs.length&&<p className="muted">No comments yet.</p>}</div><div style={{display:"flex",gap:8,marginTop:12}}>{replyTargets[p.id]&&<button type="button" className="hc-feed-action-pill" onClick={()=>setReplyTargets(x=>({...x,[p.id]:null}))}>Replying to {replyTargets[p.id]?.name} ×</button>}<input value={drafts[p.id]||""} onChange={e=>setDrafts(x=>({...x,[p.id]:e.target.value}))} maxLength={1000} placeholder={replyTargets[p.id]?"Write a reply...":"Add a comment..."} /><button type="button" className="btn" disabled={!drafts[p.id]?.trim()||Boolean(sendingComments[p.id])} onClick={()=>void comment(p.id)}>{sendingComments[p.id]?"Sending...":"Send"}</button></div></div></>}
     </FeedPostCard>}) : posts.length===0 ? <FeedEmptyState><span className="eyebrow">THE FEED IS QUIET</span><h2>No posts yet — be the first to start the conversation</h2><p className="muted">HoopFeed is one community for players, fans, teams, coaches and agents. Share what is happening in your basketball world.</p><Link href="/players" className="btn">Find Players</Link></FeedEmptyState> : <FeedEmptyState><span className="eyebrow">NOTHING HERE YET</span><h2>{typeFilter==="Polls"?"No polls yet — start one from the composer":typeFilter==="News"?"No news posts yet":typeFilter==="Saved"?"Nothing saved yet — tap Save on any post":"No posts match this filter"}</h2><p className="muted">Try another filter or return to the full feed.</p><button type="button" className="btn" onClick={()=>{setTypeFilter("All Posts");}}>Show All Posts</button></FeedEmptyState>}
+  </section>
+  <section aria-label="Received HoopCheck shares" style={{marginTop:20,padding:16,border:"1px solid var(--border)",borderRadius:16}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}><h2 style={{margin:0}}>Shared with you</h2><button type="button" className="hc-feed-action-pill" onClick={()=>void loadReceivedShares()}>Refresh</button></div>
+    {receivedShareError&&<p role="alert">{receivedShareError}</p>}
+    {!receivedShareError&&receivedShares.length===0&&<p className="muted">No posts shared with you yet.</p>}
+    <div style={{display:"grid",gap:8,marginTop:12}}>{receivedShares.map(share=>{
+      const sharedPost=posts.find(post=>post.id===share.post_id);
+      return <div key={share.id} style={{padding:12,border:"1px solid var(--border)",borderRadius:12}}>
+        <p style={{margin:"0 0 6px"}}>{sharedPost?"A HoopCheck member shared a post with you.":"A post was shared with you, but it is not available in your current feed."}</p>
+        <small className="muted">{ago(share.created_at,now)}</small>
+        {sharedPost&&<button type="button" className="hc-feed-action-pill" style={{marginLeft:10}} onClick={()=>document.getElementById("feed-post-"+share.post_id)?.scrollIntoView({behavior:"smooth",block:"center"})}>Find post</button>}
+      </div>;
+    })}</div>
   </section>
   </div></main></PageShell>;
 }
