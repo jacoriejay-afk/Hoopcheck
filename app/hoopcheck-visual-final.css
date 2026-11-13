@@ -186,6 +186,10 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header .h
     border-radius: var(--hc-radius-control);
   }
 
+  html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-mobile-menu-toggle span {
+    background: var(--hc-header-fg) !important;
+  }
+
   html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-header-nav.is-open {
     inset-block-start: calc(100% + var(--hc-header-gap));
     max-height: max(120px, calc(100dvh - var(--hc-safe-area-top) - var(--hc-safe-area-bottom) - 156px));

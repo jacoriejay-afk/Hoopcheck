@@ -168,6 +168,11 @@ try {
       if (width < 768) {
         const headerBox = await header.boundingBox();
         assert.ok(headerBox.y >= 0 && headerBox.y <= 16, `Guest ${theme} at ${width}px: unexpected top gap ${headerBox.y}px`);
+        const menuColors = await menuToggle.evaluate(button => ({
+          icon: getComputedStyle(button.querySelector("span")).backgroundColor,
+          expected: getComputedStyle(button).color,
+        }));
+        assert.equal(menuColors.icon, menuColors.expected, `Guest ${theme} at ${width}px: menu icon must match header foreground`);
         await menuToggle.click();
         await topNav.getByRole("link", { name: "Explore", exact: true }).waitFor();
         await topNav.getByRole("link", { name: "Men’s Teams", exact: true }).waitFor();
