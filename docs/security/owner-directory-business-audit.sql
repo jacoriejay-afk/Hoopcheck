@@ -1,0 +1,14 @@
+-- SECURITY-FINAL #579: restrict destructive directory operations and
+-- confidential business inquiries to approved platform owner-admins.
+-- Existing function implementations remain unchanged.
+-- Wrapper guards are applied via a minimal, fail-closed rewrite of existing
+-- function definitions in a later reviewed migration; do not change
+-- moderator functions or any table grants in this patch.
+-- Audit baseline:
+-- admin_delete_directory_entry(text, uuid): admin role only, SECURITY DEFINER
+-- admin_list_public_business_inquiries(integer): admin role only, SECURITY DEFINER
+-- Required verification before implementation:
+--   owner admin allowed; admin without owner approval denied;
+--   moderator denied; team manager denied; regular user denied; anon denied.
+--   directory deletion retains review-preservation checks.
+SELECT 'pending implementation and role tests' AS status;
