@@ -36,29 +36,35 @@ export async function POST(request: Request) {
   const { data: identity, error: identityError } = await viewer.auth.getUser(token);
   if (identityError || !identity.user) return NextResponse.json({ error: "Invalid session" }, { status: 401 });
 
-  // RLS must enforce the viewer's role and membership. Posts remain permanent.
-  const { data: post, error: postError } = await viewer.from("feed_posts")
-    .select("author_id,image_url,image_urls,video_url,shared_post_id")
-    .eq("id", postId).eq("status", "approved").maybeSingle();
-  if (postError || !post) return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
+  // Check every source as this viewer. A reshare copies the reference, but
+  // the underlying object still belongs to the author of the original post.
+  const visited = new Set<string>();
+  let sourceId = postId;
+  let kind: "image" | "video" | undefined;
+  let media: ReturnType<typeof resolveFeedMedia> = null;
+  while (true) {
+    if (visited.has(sourceId) || visited.size >= 32) {
+      return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
+    }
+    visited.add(sourceId);
+    const { data: post, error } = await viewer.from("feed_posts")
+      .select("author_id,image_url,image_urls,video_url,shared_post_id")
+      .eq("id", sourceId).eq("status", "approved").maybeSingle();
+    if (error || !post) return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
 
-  // Reshares may reach a different follower audience. Never sign copied private
-  // media unless the viewer can also read the original post through its RLS.
-  let mediaOwnerId = post.author_id;
-  if (post.shared_post_id) {
-    const { data: original, error: originalError } = await viewer.from("feed_posts")
-      .select("id,author_id,image_url,image_urls,video_url")
-      .eq("id", post.shared_post_id).eq("status", "approved").maybeSingle();
-    if (originalError || !original) return NextResponse.json({ error: "Original post unavailable" }, { status: 404 });
-    mediaOwnerId = original.author_id;
-    const originalRefs = [original.image_url, original.video_url, ...(Array.isArray(original.image_urls) ? original.image_urls : [])];
-    if (!originalRefs.includes(mediaUrl)) return NextResponse.json({ error: "Media not attached to original" }, { status: 403 });
+    const attachedKind = post.video_url === mediaUrl ? "video"
+      : post.image_url === mediaUrl || (Array.isArray(post.image_urls) && post.image_urls.includes(mediaUrl)) ? "image"
+      : undefined;
+    if (!attachedKind || (kind && attachedKind !== kind)) {
+      return NextResponse.json({ error: "Media not attached to post" }, { status: 403 });
+    }
+    kind = attachedKind;
+    if (!post.shared_post_id) {
+      media = resolveFeedMedia(mediaUrl, url, post.author_id, kind);
+      break;
+    }
+    sourceId = post.shared_post_id;
   }
-  const references = [post.image_url, post.video_url, ...(Array.isArray(post.image_urls) ? post.image_urls : [])];
-  if (!references.includes(mediaUrl)) return NextResponse.json({ error: "Media not attached to post" }, { status: 403 });
-
-  const kind = mediaUrl === post.video_url ? "video" : "image";
-  const media = resolveFeedMedia(mediaUrl, url, mediaOwnerId, kind);
   if (!media) return NextResponse.json({ error: "Unsupported media reference" }, { status: 400 });
 
   const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });

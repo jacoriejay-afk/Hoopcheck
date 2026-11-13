@@ -32,6 +32,7 @@ const media = load("lib/feed-media-reference.ts", () => assert.fail("Unexpected 
 
 test("only post-scoped trusted legacy and private object paths resolve", () => {
   assert.deepEqual(media.resolveFeedMedia(reference, origin, author, "image", team), { bucket: "feed-images", path: imagePath });
+  assert.deepEqual(media.resolveFeedMedia("feed-images/" + imagePath, origin, author, "image", team), { bucket: "feed-images", path: imagePath });
   assert.deepEqual(media.resolveFeedMedia("hoopfeed-private-images/" + imagePath, origin, author, "image", team), { bucket: "hoopfeed-private-images", path: imagePath });
   for (const invalid of [
     reference.replace(origin, "https://foreign.example"),
@@ -91,4 +92,64 @@ test("official images sign only after the bearer-authenticated viewer can read t
     { table: "team_fanfeed_posts", bearer: "Bearer allowed" },
   ]);
   assert.deepEqual(signed, [{ bucket: "feed-images", path: imagePath, ttl: 60 }]);
+});
+
+test("HoopFeed signs nested reshares against the original uploader under viewer RLS", async () => {
+  const middleId = "55555555-5555-4555-8555-555555555555";
+  const originalId = "66666666-6666-4666-8666-666666666666";
+  const videoPath = author + "/" + objectId + ".mp4";
+  const video = "hoopfeed-private-videos/" + videoPath;
+  const records = new Map([
+    [postId, { author_id: team, video_url: video, shared_post_id: middleId }],
+    [middleId, { author_id: team, video_url: video, shared_post_id: originalId }],
+    [originalId, { author_id: author, video_url: video, shared_post_id: null }],
+  ]);
+  const signed = [];
+  const route = load("app/api/hoopfeed/media/route.ts", id => {
+    if (id === "next/server") return { NextResponse };
+    if (id.endsWith("/feed-media-reference")) return media;
+    assert.equal(id, "@supabase/supabase-js");
+    return { createClient: (_url, key, options) => {
+      if (key === "service") {
+        return { storage: { from: bucket => ({ createSignedUrl: async (path, ttl) => {
+          signed.push({ bucket, path, ttl });
+          return { data: { signedUrl: origin + "/signed" } };
+        } }) } };
+      }
+      return {
+        auth: { getUser: async () => ({ data: { user: { id: team } } }) },
+        from: table => {
+          assert.equal(table, "feed_posts");
+          let id;
+          const query = {
+            select: () => query,
+            eq: (column, value) => {
+              if (column === "id") id = value;
+              else assert.deepEqual([column, value], ["status", "approved"]);
+              return query;
+            },
+            maybeSingle: async () => ({
+              data: id === originalId && options.global.headers.Authorization === "Bearer blocked"
+                ? null : records.get(id),
+            }),
+          };
+          return query;
+        },
+      };
+    } };
+  });
+
+  const request = (token, mediaUrl = video) => new Request("https://hoopcheck.online/api/hoopfeed/media", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token },
+    body: JSON.stringify({ post_id: postId, media_url: mediaUrl }),
+  });
+  assert.equal((await route.POST(request("blocked"))).status, 404);
+  assert.equal((await route.POST(request("allowed", video.replace(".mp4", ".webm")))).status, 403);
+  records.get(originalId).shared_post_id = postId;
+  assert.equal((await route.POST(request("allowed"))).status, 404);
+  records.get(originalId).shared_post_id = null;
+  assert.deepEqual(signed, []);
+  assert.equal((await route.POST(request("allowed"))).status, 200);
+  assert.deepEqual(signed, [{ bucket: "hoopfeed-private-videos", path: videoPath, ttl: 60 }]);
 });
