@@ -91,9 +91,6 @@ export default function Feed(){
     if(typeFilter==="Saved"&&!savedMap[p.id])return false;
     return true;
   }).slice().sort((a,b)=>{
-    const ap=a.is_pinned?1:0; const bp=b.is_pinned?1:0;
-    if(ap!==bp)return bp-ap;
-    if(ap&&bp)return new Date(b.pinned_at||b.created_at).getTime()-new Date(a.pinned_at||a.created_at).getTime();
     return new Date(b.created_at).getTime()-new Date(a.created_at).getTime();
   });
 
