@@ -272,7 +272,7 @@ function SearchContent() {
       </section>
       {suggestionsOpen && searchInput.trim() && <button type="button" onClick={()=>setSuggestionsOpen(false)} style={{fontSize:12,marginBottom:6}}>Close suggestions (Esc)</button>}
       <div className="hc-search-type-chips" role="group" aria-label="Search categories" style={{display:"flex",gap:8,flexWrap:"wrap",padding:"8px 0 12px"}}>
-        {(["all","mens-teams","players","coaches","leagues"] as const).filter(type=>type!=="players"||!isFanAccount).map(type=><button key={type} type="button" className="btn dark" aria-pressed={typeFilter===type} onClick={()=>setTypeFilter(type)}>{type==="all"?"All":type==="mens-teams"?"Teams":type==="players"?"Players":type==="coaches"?"Coaches":"Leagues"}</button>)}
+        {(["all","mens-teams","players","coaches","leagues"] as const).filter(type=>type!=="players"||isFanAccount===false).map(type=><button key={type} type="button" className="btn dark" aria-pressed={typeFilter===type} onClick={()=>setTypeFilter(type)}>{type==="all"?"All":type==="mens-teams"?"Teams":type==="players"?"Players":type==="coaches"?"Coaches":"Leagues"}</button>)}
       </div>
       {suggestionsOpen && searchInput.trim() && searchInput.trim() === query && !loading && totalResults > 0 && <section className="hc-search-suggestions" aria-label="Search suggestions" style={{padding:12,border:"1px solid var(--border)",borderRadius:16,marginBottom:12}}>
         {visibleTeams.slice(0,3).map(team=><Link key={"team-"+team.id} href={`/teams/${team.id}`} style={{display:"block",padding:8}}>{team.name} · {team.country}</Link>)}
@@ -289,7 +289,7 @@ function SearchContent() {
         <Link href="/womens">{t("womensTeams")}</Link>
         <Link href="/coaches">{t("coaches")}</Link>
         <Link href="/leagues">{t("leagues")}</Link>
-        {roleReady && !isFanAccount && <Link href="/players">{t("players")}</Link>}
+        {roleReady && isFanAccount === false && <Link href="/players">{t("players")}</Link>}
         <Link href="/search">{t("globalSearch")}</Link>
         </nav>
 
@@ -329,7 +329,6 @@ function SearchContent() {
                 {verifiedOnly ? <><VerifiedBadge label={t("verifiedFilterActive")} /> {t("verifiedOnly")}</> : t("verifiedOnly")}
               </button>
             </div>
-          )}
 
           {loading && <HoopLoading variant="inline" label={t("searchingHoopCheck")} />}
           {error && <div className="state-card error"><p>{error}</p></div>}
