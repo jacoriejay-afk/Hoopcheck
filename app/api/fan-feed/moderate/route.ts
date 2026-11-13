@@ -88,7 +88,7 @@ export async function POST(request:Request) {
     const mod=await moderate(text,image); if(!mod.allowed) return NextResponse.json({allowed:false,message:mod.message},{status:mod.status});
     let uploadedImagePath:string|null=null;
     let image_url:string|null=null;
-    let video_url:string|null=null;
+    const video_url:string|null=null;
     if(image) {
       const path=user.id+"/"+crypto.randomUUID()+"."+IMAGE_EXT[image.type];
       const {error}=await db.storage.from("hoopfeed-private-images").upload(path,Buffer.from(await image.arrayBuffer()),{contentType:image.type,cacheControl:"31536000",upsert:false});
