@@ -259,11 +259,6 @@ export default function Feed(){
           if(uploadError)throw new Error("Video upload failed. Please try again.");
           uploadedVideoPath="hoopfeed-private-videos/"+upload.path;
           form.append("video_path",uploadedVideoPath);
-        }else if(upload.mode==="legacy"){
-          const path=`${user.id}/${crypto.randomUUID()}.${ext}`;
-          const {error:uploadError}=await supabase.storage.from("feed-videos").upload(path,video,{contentType:videoType,cacheControl:"31536000",upsert:false});
-          if(uploadError)throw new Error("Video upload failed. Please try again.");
-          uploadedVideoPath=path;form.append("video_path",path);
         }else throw new Error("Unsupported video upload mode.");
         form.append("video_type",videoType);
       }
