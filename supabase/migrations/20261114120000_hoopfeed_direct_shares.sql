@@ -19,6 +19,39 @@ $;
 revoke all on function private.hoopfeed_share_not_blocked(uuid,uuid) from public,anon;
 grant execute on function private.hoopfeed_share_not_blocked(uuid,uuid) to authenticated;
 
+-- Evaluate the recipient's follow graph without changing auth.uid().
+-- This does not grant access: feed_posts RLS still controls actual post reads.
+create or replace function private.hoopfeed_share_recipient_can_read(p_post uuid,p_recipient uuid)
+returns boolean language sql stable security definer set search_path = ''
+as $
+  select auth.uid() is not null
+    and exists (
+      select 1 from public.feed_posts post
+      where post.id=p_post
+        and post.status='approved'
+        and (post.expires_at is null or post.expires_at>now())
+        and not exists (
+          select 1 from public.user_blocks b
+          where (b.blocker_id=p_recipient and b.blocked_id=post.author_id)
+             or (b.blocker_id=post.author_id and b.blocked_id=p_recipient)
+        )
+        and (
+          post.author_id=p_recipient
+          or exists (
+            select 1 from public.follow_relationships f
+            join public.profiles author on author.id=f.target_id
+            where f.follower_id=p_recipient
+              and f.target_id=post.author_id
+              and f.target_type in ('player','fan')
+              and f.target_type=author.account_type
+          )
+        )
+        and post.shared_post_id is null
+    );
+$;
+revoke all on function private.hoopfeed_share_recipient_can_read(uuid,uuid) from public,anon;
+grant execute on function private.hoopfeed_share_recipient_can_read(uuid,uuid) to authenticated;
+
 create table public.hoopfeed_direct_shares (
  id uuid primary key default gen_random_uuid(),
  post_id uuid not null references public.feed_posts(id) on delete cascade,
@@ -61,6 +94,10 @@ create policy "direct shares sender insert" on public.hoopfeed_direct_shares
    where post.id=post_id and post.status='approved'
      and (post.expires_at is null or post.expires_at>now())
   )
+  -- Do not send a post to someone who cannot read the original.
+  -- Reuse the existing author/reshare access rules with the recipient as viewer
+  -- via a dedicated private helper below.
+  and private.hoopfeed_share_recipient_can_read(post_id,recipient_id)
   and exists (
    select 1 from public.follow_relationships f
    join public.profiles p on p.id=f.target_id
