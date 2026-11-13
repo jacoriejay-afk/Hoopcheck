@@ -45,12 +45,12 @@ create policy "direct shares sender delete" on public.hoopfeed_direct_shares
 
 -- A server-enforced limit prevents bypassing the UI's ten-recipient cap.
 -- The transaction advisory lock serializes sends from one sender across sessions.
-create or replace function public.hoopfeed_limit_direct_shares()
-returns trigger language plpgsql security definer set search_path = ''
+create or replace function private.hoopfeed_limit_direct_shares()
+returns trigger language plpgsql security invoker set search_path = ''
 as $$
 declare recent_minute integer; recent_hour integer;
 begin
-  if new.sender_id <> auth.uid() then
+  if new.sender_id <> (select auth.uid()) then
     raise exception 'Sender does not match authenticated user' using errcode = '42501';
   end if;
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(new.sender_id::text, 60114));
@@ -66,7 +66,7 @@ begin
   return new;
 end;
 $$;
-revoke all on function public.hoopfeed_limit_direct_shares() from public,anon,authenticated;
+revoke all on function private.hoopfeed_limit_direct_shares() from public,anon,authenticated;
 create trigger hoopfeed_direct_share_rate_limit
  before insert on public.hoopfeed_direct_shares
- for each row execute function public.hoopfeed_limit_direct_shares();
+ for each row execute function private.hoopfeed_limit_direct_shares();
