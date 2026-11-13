@@ -298,11 +298,13 @@ function SearchContent() {
         {(["all","mens-teams","players","coaches","leagues"] as const).filter(type=>type!=="players"||isFanAccount===false).map(type=><button key={type} type="button" className="btn dark" aria-pressed={typeFilter===type} onClick={()=>setTypeFilter(type)}>{type==="all"?"All":type==="mens-teams"?"Teams":type==="players"?"Players":type==="coaches"?"Coaches":"Leagues"}</button>)}
       </div>
       {suggestionsOpen && searchInput.trim() && searchInput.trim() === query && !loading && totalResults > 0 && <section id="hc-search-suggestions" className="hc-search-suggestions" aria-label="Search suggestions" aria-live="polite" style={{padding:12,border:"1px solid var(--border)",borderRadius:16,marginBottom:12}}>
-        {visibleTeams.slice(0,3).map(team=><Link key={"team-"+team.id} href={`/teams/${team.id}`} style={{display:"block",padding:8}}>{team.name} · {team.country}</Link>)}
-        {visibleWomensTeams.slice(0,3).map(team=><Link key={"women-"+team.id} href={`/womens/${team.id}`} style={{display:"block",padding:8}}>{team.name} · {team.country}</Link>)}
-        {visiblePlayers.slice(0,3).map(player=><Link key={"player-"+player.id} href={`/players/${player.id}`} style={{display:"block",padding:8}}>{player.display_name || "Player"} · {player.current_team || ""}</Link>)}
-        {visibleCoaches.slice(0,2).map(coach=><Link key={"coach-"+coach.id} href={`/coaches/${coach.id}`} style={{display:"block",padding:8}}>{coach.name}</Link>)}
-        {visibleLeagues.slice(0,2).map(league=><Link key={"league-"+league.id} href={`/leagues/${league.id}`} style={{display:"block",padding:8}}>{league.name}</Link>)}
+        {[
+          ...visibleTeams.slice(0,3).map(team=>({href:"/teams/"+team.id,label:team.name+" · "+(team.country||"")})),
+          ...visibleWomensTeams.slice(0,3).map(team=>({href:"/womens/"+team.id,label:team.name+" · "+(team.country||"")})),
+          ...visiblePlayers.slice(0,3).map(player=>({href:"/players/"+player.id,label:(player.display_name||"Player")+" · "+(player.current_team||"")})),
+          ...visibleCoaches.slice(0,2).map(coach=>({href:"/coaches/"+coach.id,label:coach.name})),
+          ...visibleLeagues.slice(0,2).map(league=>({href:"/leagues/"+league.id,label:league.name}))
+        ].map((item,index)=><Link key={item.href} href={item.href} aria-current={activeSuggestion===index?"true":undefined} onMouseEnter={()=>setActiveSuggestion(index)} style={{display:"block",padding:8,borderRadius:8,background:activeSuggestion===index?"var(--surface-hover, rgba(128,128,128,.18))":"transparent"}}>{item.label}</Link>)}
         <a href="#search-full-results" onClick={()=>setSuggestionsOpen(false)} style={{display:"block",padding:8,fontWeight:700}}>See all results for &quot;{query}&quot; →</a>
       </section>}
       {!query && signedInViewer && recentSearches.length > 0 && <section aria-label="Recent searches" style={{padding:"8px 0 12px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><strong>RECENT</strong><button type="button" onClick={()=>{setRecentSearches([]);localStorage.removeItem("hc-recent-searches");}}>Clear all</button></div>{recentSearches.map(term=><div key={term} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:8}}><button type="button" onClick={()=>setSearchInput(term)}>{term}</button><button type="button" aria-label={"Remove "+term} onClick={()=>removeRecent(term)}>×</button></div>)}</section>}
