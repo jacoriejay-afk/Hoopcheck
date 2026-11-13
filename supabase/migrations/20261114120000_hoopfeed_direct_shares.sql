@@ -1,4 +1,7 @@
 -- HOOPFEED-SHARE-1: private references, never copies of post content or media.
+-- Production may not have the private helper schema yet.
+create schema if not exists private;
+revoke all on schema private from public, anon, authenticated;
 create table public.hoopfeed_direct_shares (
  id uuid primary key default gen_random_uuid(),
  post_id uuid not null references public.feed_posts(id) on delete cascade,
