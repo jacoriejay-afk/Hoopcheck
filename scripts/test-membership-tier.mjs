@@ -92,7 +92,7 @@ const cases = [
     canReadHoopFeed:true, canWriteHoopFeed:true, canReadFanFeed:false, canWriteFanFeed:false,
     canReadFullReviews:true, canViewTrustScore:true, canWriteReviews:false,
     canUseLiveGameHub:false, canUseLiveGameChat:false, canUseFanGroups:false,
-    canModerateFanGroups:true, canCompare:true, canUseContractCheck:true,
+    canModerateFanGroups:false, canCompare:true, canUseContractCheck:true,
     canUseProPassport:false, canUsePayOnTimeIndex:true, canViewTeamPayHistory:true,
     canSubmitPayCheckIn:false, canUseAskPlayer:false,
   }],
@@ -161,6 +161,8 @@ for (const trialEnd of [null, "not-a-date", "2000-01-01T00:00:00.000Z"]) {
 const forgedAdmin = getHoopCheckEntitlements({ accountType: "admin" });
 assert.equal(forgedAdmin.canModerateFanGroups, false, "profile admin label must not confer moderation");
 assert.equal(forgedAdmin.canReadFullReviews, false, "profile admin label must not confer review access");
+const unverifiedClubManager = getHoopCheckEntitlements({ accountType: "club_admin", subscription: active("premium") });
+assert.equal(unverifiedClubManager.canModerateFanGroups, false, "club_admin profile alone must not grant moderation");
 const verifiedAdmin = getHoopCheckEntitlements({ accountType: "admin", isAdmin: true });
 assert.equal(verifiedAdmin.canModerateFanGroups, true, "verified admin may moderate");
 
