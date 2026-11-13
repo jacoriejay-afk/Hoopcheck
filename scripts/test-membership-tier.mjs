@@ -145,10 +145,24 @@ assert.equal(expired.canWriteHoopFeed, false, "expired Premium must not post to 
 
 const trialing = getHoopCheckEntitlements({
   accountType: "player",
-  subscription: { plan: "premium", status: "trialing", access_status: "trialing" },
+  subscription: { plan: "premium", status: "trialing", access_status: "trialing", trial_end: "2099-01-01T00:00:00.000Z" },
   playerVerified: true,
 });
-assert.equal(trialing.canWriteReviews, true, "trialing Premium inherits Pro access");
+assert.equal(trialing.canWriteReviews, true, "valid trialing Premium inherits Pro access");
+for (const trialEnd of [null, "not-a-date", "2000-01-01T00:00:00.000Z"]) {
+  const invalidTrial = getHoopCheckEntitlements({
+    accountType: "player",
+    subscription: { plan: "premium", status: "trialing", access_status: "trialing", trial_end: trialEnd },
+    playerVerified: true,
+  });
+  assert.equal(invalidTrial.canWriteReviews, false, "missing, invalid or expired trial must not grant review access");
+  assert.equal(invalidTrial.canWriteHoopFeed, false, "missing, invalid or expired trial must not grant feed access");
+}
+const forgedAdmin = getHoopCheckEntitlements({ accountType: "admin" });
+assert.equal(forgedAdmin.canModerateFanGroups, false, "profile admin label must not confer moderation");
+assert.equal(forgedAdmin.canReadFullReviews, false, "profile admin label must not confer review access");
+const verifiedAdmin = getHoopCheckEntitlements({ accountType: "admin", isAdmin: true });
+assert.equal(verifiedAdmin.canModerateFanGroups, true, "verified admin may moderate");
 
 const unverified = getHoopCheckEntitlements({
   accountType: "player", subscription: active("premium"), playerVerified: false,
