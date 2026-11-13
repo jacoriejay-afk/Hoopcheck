@@ -6,7 +6,7 @@ import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import TeamOfficialPrivateImage from "../../components/TeamOfficialPrivateImage";
 
-type Team = { id: string; name: string; country: string | null; city: string | null };
+type Team = { id: string; name: string; country: string | null; city: string | null; role: "owner" | "manager" };
 type Claim = { id: string; entity_id: string; status: "pending" | "approved" | "rejected"; created_at: string };
 type GroupPulse = { memberCount: number | null; pendingRequests: number | null; openReports: number | null; latestPost: string | null };
 type Post = { id: string; team_id: string; author_id: string; body: string; image_url: string | null; created_at: string; status: string };
@@ -25,18 +25,21 @@ export default function TeamDashboardPage() {
   const [message, setMessage] = useState("");
 
   const load = useCallback(async (uid: string) => {
-    const { data: claimRows, error } = await supabase.from("profile_claim_requests")
-      .select("id,entity_id,status,created_at").eq("requester_id", uid).eq("entity_type", "team")
-      .order("created_at", { ascending: false }).limit(100);
-    if (error) { setMessage("Your team claim status could not be loaded."); return; }
-    const rows = (claimRows || []) as Claim[];
-    setClaims(rows);
-    const approvedIds = Array.from(new Set(rows.filter(c => c.status === "approved").map(c => c.entity_id)));
-    if (!approvedIds.length) { setTeams([]); setPosts([]); setTeamId(""); return; }
-    const { data: teamRows } = await supabase.from("teams").select("id,name,country,city").in("id", approvedIds).order("name");
-    const list = (teamRows || []) as Team[];
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setMessage("Sign in to open Team HQ."); setTeams([]); return; }
+    const response = await fetch("/api/team-hq/clubs", {
+      headers: { Authorization: "Bearer " + session.access_token }, cache: "no-store",
+    });
+    if (!response.ok) { setMessage("Club access could not be verified."); setTeams([]); return; }
+    const result = await response.json();
+    const list = (result.clubs || []) as Team[];
+    setClaims(list.filter(team => team.role === "owner").map(team => ({
+      id: team.id, entity_id: team.id, status: "approved" as const, created_at: "",
+    })));
     setTeams(list);
-    setTeamId(current => list.some(t => t.id === current) ? current : list[0]?.id || "");
+    const approvedIds = list.map(team => team.id);
+    setTeamId(current => list.some(team => team.id === current) ? current : list[0]?.id || "");
+    if (!approvedIds.length) { setPosts([]); return; }
     const { data: postRows } = await (supabase as any).from("team_fanfeed_posts")
       .select("id,team_id,author_id,body,image_url,created_at,status").in("team_id", approvedIds)
       .eq("author_id", uid).order("created_at", { ascending: false }).limit(100);
@@ -118,7 +121,7 @@ export default function TeamDashboardPage() {
 
   if (loading) return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading team dashboard..." /></div></main>;
 
-  const approvedCount = claims.filter(c => c.status === "approved").length;
+  const approvedCount = teams.length;
   const pendingCount = claims.filter(c => c.status === "pending").length;
 
   return <main className="page-shell"><div className="page-container">
@@ -138,7 +141,7 @@ export default function TeamDashboardPage() {
             {teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
           </select>
         </label>}
-        <p className="muted">{teams.find(team => team.id === teamId)?.name} · Verified club representative</p>
+        <p className="muted">{teams.find(team => team.id === teamId)?.name} · {teams.find(team => team.id === teamId)?.role === "owner" ? "Verified club owner" : "Invited club manager"}</p>
         {groupPulse && <div className="hc-team-profile-stats">
           {groupPulse.memberCount !== null && <div className="hc-team-profile-stat"><strong>{groupPulse.memberCount}</strong><small>Fan group members</small></div>}
           {groupPulse.pendingRequests !== null && <div className="hc-team-profile-stat"><strong>{groupPulse.pendingRequests}</strong><small>Join requests</small></div>}
@@ -154,7 +157,7 @@ export default function TeamDashboardPage() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
           <Link href={"/team-hub/groups/" + teamId} className="btn">Open fan group</Link>
           <Link href={"/teams/" + teamId + "#reviews"} className="btn dark">Read club reviews</Link>
-          <Link href="/team-dashboard/staff" className="btn dark">Manage club staff</Link>
+          {teams.find(team => team.id === teamId)?.role === "owner" && <Link href="/team-dashboard/staff" className="btn dark">Manage club staff</Link>}
         </div>
       </section>
     </>}
