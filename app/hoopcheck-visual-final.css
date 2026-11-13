@@ -151,8 +151,27 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header .h
 
 @media (min-width: 768px) {
   html body header.site-header-global.hc-template-header.hc-liquid-glass-header {
-    grid-template-columns: max-content minmax(0, 1fr) max-content;
+    grid-template-columns: max-content minmax(0, 1fr);
     gap: clamp(8px, 1.5vw, 20px);
+  }
+
+  html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-header-nav {
+    position: static;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: clamp(8px, 1.5vw, 20px) !important;
+    background: transparent !important;
+    pointer-events: auto;
+  }
+
+  html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-header-actions {
+    position: static;
+    width: auto;
+    justify-self: end;
+  }
+
+  html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-header-desktop-links {
+    gap: clamp(7px, 1vw, 18px);
   }
 }
 

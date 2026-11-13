@@ -160,6 +160,7 @@ try {
       await guestPage.goto(baseURL + "/");
       const resolvedTheme = theme === "system" ? "dark" : theme;
       await guestPage.locator(`html.theme-${resolvedTheme}`).waitFor({ state: "attached" });
+      await guestPage.evaluate(() => document.fonts.ready);
       const header = guestPage.locator("header.site-header-global");
       const brand = header.locator(".site-header-brand");
       const menuToggle = header.getByRole("button", { name: "Open menu" });
@@ -176,7 +177,7 @@ try {
         const linksBox = await header.locator(".hc-header-desktop-links").boundingBox();
         const actionsBox = await header.locator(".hc-header-actions").boundingBox();
         assert.ok(brandBox.x + brandBox.width <= linksBox.x && linksBox.x + linksBox.width <= actionsBox.x,
-          `Guest ${theme} at ${width}px: desktop navigation overlaps`);
+          `Guest ${theme} at ${width}px: desktop navigation overlaps ${JSON.stringify({ brandBox, linksBox, actionsBox })}`);
         await header.locator(".hc-header-more > summary").click();
         await topNav.getByRole("link", { name: "Men’s Teams", exact: true }).waitFor();
         await header.locator(".hc-header-more > summary").click();
