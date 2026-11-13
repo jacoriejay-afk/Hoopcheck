@@ -92,6 +92,7 @@ function SearchContent() {
   const [countryFilter, setCountryFilter] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(true);
+  const [activeSuggestion, setActiveSuggestion] = useState(-1);
   const [desktopAutofocus, setDesktopAutofocus] = useState(false);
   useEffect(() => { setDesktopAutofocus(window.matchMedia("(min-width: 768px)").matches); }, []);
   useEffect(() => {
@@ -252,6 +253,13 @@ function SearchContent() {
     ? leagues.filter((x) => !countryFilter || x.country === countryFilter)
     : [];
 
+  const suggestionTargets = [
+    ...visibleTeams.slice(0,3).map(x=>"/teams/"+x.id),
+    ...visibleWomensTeams.slice(0,3).map(x=>"/womens/"+x.id),
+    ...visiblePlayers.slice(0,3).map(x=>"/players/"+x.id),
+    ...visibleCoaches.slice(0,2).map(x=>"/coaches/"+x.id),
+    ...visibleLeagues.slice(0,2).map(x=>"/leagues/"+x.id)
+  ];
   const totalResults = (roleReady && isFanAccount === false ? visiblePlayers.length : 0) + visibleCoaches.length + visibleTeams.length + visibleWomensTeams.length + visibleLeagues.length;
 
   return (
@@ -264,11 +272,23 @@ function SearchContent() {
           className="search-form"
           hideSubmit
           autoFocus={desktopAutofocus}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+              if (!suggestionsOpen || !suggestionTargets.length) return;
+              event.preventDefault();
+              setActiveSuggestion(previous => event.key === "ArrowDown" ? (previous + 1) % suggestionTargets.length : (previous + suggestionTargets.length - 1) % suggestionTargets.length);
+            }
+            if (event.key === "Enter" && activeSuggestion >= 0 && suggestionTargets[activeSuggestion]) {
+              event.preventDefault();
+              rememberSearch(searchInput);
+              router.push(suggestionTargets[activeSuggestion]);
+            }
+          }
           onSubmit={(value) => { rememberSearch(value); router.push("/search?q=" + encodeURIComponent(value)); }}
 
           name="q"
           value={searchInput}
-          onChange={(value) => { setSearchInput(value); setSuggestionsOpen(true); }}
+          onChange={(value) => { setSearchInput(value); setSuggestionsOpen(true); setActiveSuggestion(-1); }}
           placeholder={!roleReady || isFanAccount ? t("searchBasketballWorld") : t("searchPeoplePlaceholder")}
           ariaLabel={!roleReady || isFanAccount ? t("searchBasketballWorld") : t("searchPeoplePlaceholder")}
         />
