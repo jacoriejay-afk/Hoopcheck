@@ -86,17 +86,22 @@ export async function POST(request:Request) {
     if(videoPath&&(!VIDEO_TYPES.has(videoType)||!videoPath.startsWith(user.id+"/")||videoPath.includes("..")||videoPath.length>240)) return NextResponse.json({allowed:false,message:"Invalid video upload. Choose a supported video and try again."},{status:400});
     if(videoPath) return NextResponse.json({allowed:false,message:"Legacy video uploads are unavailable while private media delivery is being secured."},{status:400});
     const mod=await moderate(text,image); if(!mod.allowed) return NextResponse.json({allowed:false,message:mod.message},{status:mod.status});
+    let uploadedImagePath:string|null=null;
     let image_url:string|null=null;
     let video_url:string|null=null;
     if(image) {
       const path=user.id+"/"+crypto.randomUUID()+"."+IMAGE_EXT[image.type];
-      const {error}=await db.storage.from("feed-images").upload(path,Buffer.from(await image.arrayBuffer()),{contentType:image.type,cacheControl:"31536000",upsert:false});
+      const {error}=await db.storage.from("hoopfeed-private-images").upload(path,Buffer.from(await image.arrayBuffer()),{contentType:image.type,cacheControl:"31536000",upsert:false});
       if(error) return NextResponse.json({allowed:false,message:"Photo upload failed. Your post was not published."},{status:400});
-      image_url=db.storage.from("feed-images").getPublicUrl(path).data.publicUrl;
+      uploadedImagePath=path;
+      image_url="hoopfeed-private-images/"+path;
     }
     // Legacy public video links are deliberately disabled; private video delivery requires post-scoped authorization.
     const {error}=await db.from("fan_feed_posts").insert({author_id:user.id,team_id:teamType === "mens" ? teamId : null,womens_team_id:teamType === "womens" ? teamId : null,body:text,image_url,video_url,status:"approved",expires_at:new Date(Date.now()+86400000).toISOString()});
-    if(error) return NextResponse.json({allowed:false,message:"Your post could not be published."},{status:400});
+    if(error) {
+      if(uploadedImagePath) await db.storage.from("hoopfeed-private-images").remove([uploadedImagePath]);
+      return NextResponse.json({allowed:false,message:"Your post could not be published."},{status:400});
+    }
     return NextResponse.json({allowed:true});
   } catch(error) {
     console.error("Fan HoopFeed request failed",error);
