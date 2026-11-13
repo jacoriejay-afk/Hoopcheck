@@ -50,7 +50,7 @@ as $$
     );
 $$;
 revoke all on function private.hoopfeed_share_recipient_can_read(uuid,uuid,uuid) from public,anon;
-grant execute on function private.hoopfeed_share_recipient_can_read(uuid,uuid) to authenticated;
+grant execute on function private.hoopfeed_share_recipient_can_read(uuid,uuid,uuid) to authenticated;
 
 create table public.hoopfeed_direct_shares (
  id uuid primary key default gen_random_uuid(),
