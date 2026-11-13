@@ -21,6 +21,16 @@ const singleResultLabel: Record<Language, string> = {
   fi: "tulos", he: "תוצאה", lt: "rezultatas", uk: "результат",
 };
 
+const pageSize = 12;
+
+type DirectoryOverview = {
+  mens: number;
+  womens: number;
+  coaches: number;
+  leagues: number;
+  countries: { country: string; total: number }[];
+};
+
 type Coach = { id: string; name: string; country: string | null; city: string | null };
 type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
 type WomensTeam = { id: string; name: string; country: string | null; city: string | null; league_name: string | null; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null };
@@ -45,6 +55,10 @@ function SearchContent() {
   const router = useRouter();
   const query = searchParams.get("q")?.trim() || "";
   const initialType = searchParams.get("type");
+  const countryFilter = searchParams.get("country") || "";
+  const requestedPage = Number(searchParams.get("page"));
+  const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? Math.min(requestedPage, 1000) : 1;
+  const offset = (page - 1) * pageSize;
   const { userId } = useAuthState();
   const [roleContext, setRoleContext] = useState<{
     userId: string;
@@ -84,10 +98,17 @@ function SearchContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState(query);
-  const [typeFilter, setTypeFilter] = useState<"all" | "players" | "coaches" | "mens-teams" | "womens-teams" | "leagues">(
-    initialType === "players" || initialType === "coaches" || initialType === "mens-teams" || initialType === "womens-teams" || initialType === "leagues" ? initialType : "all"
-  );
-  const [countryFilter, setCountryFilter] = useState("");
+  const typeFilter = (initialType === "players" && !isFanAccount) || initialType === "coaches"
+    || initialType === "mens-teams" || initialType === "womens-teams" || initialType === "leagues" ? initialType : "all";
+  const [hasMore, setHasMore] = useState(false);
+  const [overview, setOverview] = useState<DirectoryOverview | null>(null);
+  useEffect(() => {
+    let active = true;
+    void supabase.rpc("search_directory_overview").then(({ data, error }) => {
+      if (active && !error && data) setOverview(data as DirectoryOverview);
+    });
+    return () => { active = false; };
+  }, []);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState(-1);
@@ -123,11 +144,13 @@ function SearchContent() {
         setLeagues([]);
         setPlayers([]);
         setLoading(false);
+        setHasMore(false);
         setError("");
         return;
       }
 
       setLoading(true);
+      setHasMore(false);
       setError("");
 
       try {
@@ -149,20 +172,21 @@ function SearchContent() {
         const wantsLeagues = !username && (typeFilter === "all" || typeFilter === "leagues");
 
         const [playerResult, coachResult, teamResult, womensTeamResult, leagueResult, usernameResult] = await Promise.all([
-          wantsPlayers
-            ? supabase.rpc("search_public_players", {
+          wantsPlayers && !username
+            ? supabase.rpc("search_public_players_page", {
                 p_query: username ?? normalizedQuery,
                 p_country: countryFilter,
                 p_position: "",
                 p_verified_only: verifiedOnly,
-                p_limit: 24,
+                p_limit: pageSize + 1,
+                p_offset: offset,
               })
             : Promise.resolve({ data: [], error: null }),
           wantsCoaches
             ? (() => {
                 let request = supabase.from("coaches").select("id, name, country, city")
                   .or(`name.ilike.${searchTerm},country.ilike.${searchTerm},city.ilike.${searchTerm}`)
-                  .order("name").limit(20);
+                  .order("name").order("id").range(offset, offset + pageSize);
                 if (countryFilter) request = request.eq("country", countryFilter);
                 return request;
               })()
@@ -173,7 +197,7 @@ function SearchContent() {
                   .eq("basketball_type", "mens")
                   .eq("active", true)
                   .or(`name.ilike.${searchTerm},country.ilike.${searchTerm},city.ilike.${searchTerm},league_name.ilike.${searchTerm}`)
-                  .order("name").limit(30);
+                  .order("name").order("id").range(offset, offset + pageSize);
                 if (countryFilter) request = request.eq("country", countryFilter);
                 return request;
               })()
@@ -183,7 +207,7 @@ function SearchContent() {
                 let request = supabase.from("womens_teams").select("id, name, country, city, league_name, logo_url, logo_bg")
                   .eq("active", true)
                   .or(`name.ilike.${searchTerm},country.ilike.${searchTerm},city.ilike.${searchTerm},league_name.ilike.${searchTerm}`)
-                  .order("name").limit(30);
+                  .order("name").order("id").range(offset, offset + pageSize);
                 if (countryFilter) request = request.eq("country", countryFilter);
                 return request;
               })()
@@ -192,12 +216,12 @@ function SearchContent() {
             ? (() => {
                 let request = supabase.from("leagues").select("id, name, country, level")
                   .or(`name.ilike.${searchTerm},country.ilike.${searchTerm},level.ilike.${searchTerm}`)
-                  .order("name").limit(20);
+                  .order("name").order("id").range(offset, offset + pageSize);
                 if (countryFilter) request = request.eq("country", countryFilter);
                 return request;
               })()
             : Promise.resolve({ data: [], error: null }),
-          wantsPlayers && username
+          wantsPlayers && username && page === 1
             ? supabase.from("profiles")
                 .select("id,display_name,username,avatar_url,country,player_position:position,years_pro,current_country,current_team,player_verified")
                 .eq("username", username)
@@ -217,11 +241,13 @@ function SearchContent() {
         const playerMatches = (playerResult.error ? [] : playerResult.data ?? []) as Player[];
         const usernameMatch = usernameResult.data as Player | null;
         const exactPlayer = usernameMatch && (!verifiedOnly || usernameMatch.player_verified) ? usernameMatch : null;
-        setPlayers(exactPlayer ? [exactPlayer, ...playerMatches.filter(player => player.id !== exactPlayer.id)] : playerMatches);
-        setCoaches(coachResult.error ? [] : coachResult.data || []);
-        setTeams(teamResult.error ? [] : teamResult.data || []);
-        setWomensTeams(womensTeamResult.error ? [] : womensTeamResult.data || []);
-        setLeagues(leagueResult.error ? [] : leagueResult.data || []);
+        setHasMore([playerResult, coachResult, teamResult, womensTeamResult, leagueResult]
+          .some(result => !result.error && (result.data?.length ?? 0) > pageSize));
+        setPlayers(exactPlayer ? [exactPlayer] : playerMatches.slice(0, pageSize));
+        setCoaches(coachResult.error ? [] : (coachResult.data ?? []).slice(0, pageSize));
+        setTeams(teamResult.error ? [] : (teamResult.data ?? []).slice(0, pageSize));
+        setWomensTeams(womensTeamResult.error ? [] : (womensTeamResult.data ?? []).slice(0, pageSize));
+        setLeagues(leagueResult.error ? [] : (leagueResult.data ?? []).slice(0, pageSize));
       } catch (err) {
         console.error(err);
         if (active) setError("Something went wrong while searching. Please try again.");
@@ -235,12 +261,14 @@ function SearchContent() {
 
     void search();
     return () => { active = false; };
-  }, [query, countryFilter, verifiedOnly, typeFilter, roleReady, isFanAccount]);
+  }, [query, countryFilter, verifiedOnly, typeFilter, roleReady, isFanAccount, offset, page]);
 
   useEffect(() => { setSearchInput(query); }, [query]);
 
   function updateQuery(value: string) {
     const params = new URLSearchParams(window.location.search);
+    if (params.get("q") !== value) params.delete("page");
+    if (!value) params.delete("country");
     if (value) params.set("q", value);
     else params.delete("q");
     const suffix = params.toString();
@@ -254,17 +282,8 @@ function SearchContent() {
     return () => window.clearTimeout(timer);
   }, [searchInput, query]);
 
-  // Sync explicit URL filters without resetting a category the visitor just selected
-  // while their account role (or basketball-side preference) is still loading.
-  useEffect(() => {
-    if (!roleReady) return;
-    if (initialType === "players" && isFanAccount) { setTypeFilter("all"); return; }
-    if (initialType === "players" || initialType === "coaches" || initialType === "mens-teams" || initialType === "womens-teams" || initialType === "leagues") {
-      setTypeFilter(initialType);
-    }
-  }, [initialType, isFanAccount, roleReady]);
-
   const countries = useMemo(() => Array.from(new Set([
+    ...(overview?.countries.map(item => item.country) ?? []),
     ...players.map((x) => x.country),
     ...players.map((x) => x.current_country),
     ...coaches.map((x) => x.country),
@@ -272,7 +291,7 @@ function SearchContent() {
     ...womensTeams.map((x) => x.country),
     ...leagues.map((x) => x.country),
     countryFilter,
-  ].filter(Boolean) as string[])).sort(), [players, coaches, teams, womensTeams, leagues, countryFilter]);
+  ].filter(Boolean) as string[])).sort(), [players, coaches, teams, womensTeams, leagues, countryFilter, overview]);
 
   const visiblePlayers = roleReady && !isFanAccount && (typeFilter === "all" || typeFilter === "players")
     ? players.filter((x) => !countryFilter || x.country === countryFilter || x.current_country === countryFilter)
@@ -293,11 +312,11 @@ function SearchContent() {
   const totalResults = (roleReady && !isFanAccount ? visiblePlayers.length : 0) + visibleCoaches.length + visibleTeams.length + visibleWomensTeams.length + visibleLeagues.length;
 
   const directoryLinks = [
-    { href: "/teams", label: t("mensTeams") },
-    { href: "/womens", label: t("womensTeams") },
-    ...(roleReady && !isFanAccount ? [{ href: "/players", label: t("players") }] : []),
-    { href: "/coaches", label: t("coaches") },
-    { href: "/leagues", label: t("leagues") },
+    { href: "/teams", label: t("mensTeams"), count: overview?.mens },
+    { href: "/womens", label: t("womensTeams"), count: overview?.womens },
+    ...(roleReady && !isFanAccount ? [{ href: "/players", label: t("players"), count: undefined }] : []),
+    { href: "/coaches", label: t("coaches"), count: overview?.coaches },
+    { href: "/leagues", label: t("leagues"), count: overview?.leagues },
   ];
   const suggestionGroups = [
     { label: t("teams"), rows: [
@@ -320,6 +339,18 @@ function SearchContent() {
     && query === settledQuery && !loading && rows.length > 0;
   const activeSuggestion = showDropdown ? rows[selectedSuggestion] : undefined;
   const activeOptionId = activeSuggestion ? `search-option-${selectedSuggestion}` : undefined;
+
+  function updateSearchParams(changes: Record<string, string>) {
+    const params = new URLSearchParams(window.location.search);
+    for (const [name, value] of Object.entries(changes)) {
+      if (value) params.set(name, value);
+      else params.delete(name);
+    }
+    const suffix = params.toString();
+    window.history.pushState(null, "", suffix ? `/search?${suffix}` : "/search");
+  }
+
+  const numberFormat = new Intl.NumberFormat(language);
 
   function saveRecent(queries: string[]) {
     if (!userId) return;
@@ -417,8 +448,16 @@ function SearchContent() {
       </div>
       {!query && <nav className="hc-search-browse" aria-label={t("browseDirectoriesLabel")}>
         <h1>{t("browseDirectoriesLabel")}</h1>
-        <div>{directoryLinks.map(link => <Link key={link.href} href={link.href}>{link.label}<span aria-hidden="true">↗</span></Link>)}</div>
+        <div>{directoryLinks.map(link => <Link key={link.href} href={link.href}>{link.label}{link.count != null && <small>{numberFormat.format(link.count)}</small>}<span aria-hidden="true">↗</span></Link>)}</div>
       </nav>}
+      {!query && Boolean(overview?.countries.length) && <section className="hc-search-recent">
+        <h2>{language === "es" ? "Países con más equipos" : "Countries with the most teams"}</h2>
+        <ul>{overview?.countries.map(({ country, total }) => <li key={country}>
+          <Link href={`/search?${new URLSearchParams({ q: country, country })}`}>
+            {country} <small>{numberFormat.format(total)}</small>
+          </Link>
+        </li>)}</ul>
+      </section>}
       {!query && recentQueries.length > 0 && <section className="hc-search-recent">
         <h2>{language === "es" ? "Búsquedas recientes" : "Recent searches"}</h2>
         <ul>{recentQueries.map(item => <li key={item}>
@@ -452,7 +491,7 @@ function SearchContent() {
               <div className="eyebrow">{t("searchResults")}</div>
               <h2>{t("resultsFor")} &quot;{query}&quot;</h2>
             </div>
-            {!loading && <div className="result-count">{totalResults} {totalResults === 1 ? singleResultLabel[language] : t("resultCount")}</div>}
+            {!loading && <div className="result-count">{numberFormat.format(totalResults)} {totalResults === 1 ? singleResultLabel[language] : t("resultCount")}{(page > 1 || hasMore) && (language === "es" ? " en esta página" : " on this page")}</div>}
           </div>
 
           {(
@@ -462,17 +501,17 @@ function SearchContent() {
                   key={type}
                   type="button"
                   className="btn dark"
-                  onClick={() => setTypeFilter(type)}
+                  onClick={() => updateSearchParams({ type: type === "all" ? "" : type, page: "" })}
                   aria-pressed={typeFilter === type}
                 >
                   {type === "all" ? t("all") : type === "mens-teams" ? t("mensTeams") : type === "womens-teams" ? t("womensTeams") : type === "players" ? t("players") : type === "coaches" ? t("coaches") : t("leagues")}
                 </button>
               ))}
-              <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} aria-label={t("country")} style={{ padding: "10px 14px", borderRadius: 8 }}>
+              <select value={countryFilter} onChange={(e) => updateSearchParams({ country: e.target.value, page: "" })} aria-label={t("country")} style={{ padding: "10px 14px", borderRadius: 8 }}>
                 <option value="">{t("allCountries")}</option>
                 {countries.map((country) => <option key={country} value={country}>{country}</option>)}
               </select>
-              <button type="button" className="btn dark" onClick={() => setVerifiedOnly((value) => !value)} aria-pressed={verifiedOnly}>
+              <button type="button" className="btn dark" onClick={() => { setVerifiedOnly(value => !value); updateSearchParams({ page: "" }); }} aria-pressed={verifiedOnly}>
                 {verifiedOnly ? <><VerifiedBadge label={t("verifiedFilterActive")} /> {t("verifiedOnly")}</> : t("verifiedOnly")}
               </button>
             </div>
@@ -564,6 +603,15 @@ function SearchContent() {
               </div>
             </section>
           )}
+          {!loading && (page > 1 || hasMore) && <nav className="actions" aria-label={language === "es" ? "Páginas de resultados" : "Search result pages"}>
+            <button type="button" className="btn dark" disabled={page === 1} onClick={() => updateSearchParams({ page: page > 2 ? String(page - 1) : "" })}>
+              {language === "es" ? "Anterior" : "Previous"}
+            </button>
+            <span aria-live="polite">{language === "es" ? "Página" : "Page"} {numberFormat.format(page)}</span>
+            <button type="button" className="btn dark" disabled={!hasMore || page >= 1000} onClick={() => updateSearchParams({ page: String(page + 1) })}>
+              {language === "es" ? "Siguiente" : "Next"}
+            </button>
+          </nav>}
         </section>
       )}
 
