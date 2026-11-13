@@ -92,7 +92,7 @@ const cases = [
     canReadHoopFeed:true, canWriteHoopFeed:true, canReadFanFeed:false, canWriteFanFeed:false,
     canReadFullReviews:true, canViewTrustScore:true, canWriteReviews:false,
     canUseLiveGameHub:false, canUseLiveGameChat:false, canUseFanGroups:false,
-    canModerateFanGroups:true, canCompare:true, canUseContractCheck:true,
+    canModerateFanGroups:false, canCompare:true, canUseContractCheck:true,
     canUseProPassport:false, canUsePayOnTimeIndex:true, canViewTeamPayHistory:true,
     canSubmitPayCheckIn:false, canUseAskPlayer:false,
   }],
@@ -110,6 +110,24 @@ for (const [label, input, expected] of cases) {
   const actual = getHoopCheckEntitlements(input);
   for (const key of keys) assert.equal(actual[key], expected[key] ?? false, label + " → " + key);
 }
+
+// Club-specific grants, not profile labels, determine moderation permissions.
+const clubId = "00000000-0000-4000-8000-000000000001";
+const otherClubId = "00000000-0000-4000-8000-000000000002";
+const clubGrant = {
+  clubId, role: "manager", editProfile: true, manageRoster: true,
+  answerVerifications: true, replyReviews: true, moderateFanGroup: true,
+  manageStaff: false, publishUpdates: true,
+};
+const verifiedManager = getHoopCheckEntitlements({ accountType: "fan", clubId, clubGrant });
+assert.equal(verifiedManager.canModerateFanGroups, true, "verified manager may moderate own club");
+assert.equal(verifiedManager.clubCapabilities.manageStaff, false, "manager cannot manage staff");
+assert.equal(verifiedManager.clubCapabilities.publishUpdates, true, "manager may publish for own club");
+const otherClub = getHoopCheckEntitlements({ accountType: "club_admin", clubId: otherClubId, clubGrant });
+assert.equal(otherClub.canModerateFanGroups, false, "club grants cannot authorize another club");
+assert.equal(otherClub.clubCapabilities.editProfile, false, "cross-club editing denied");
+const forgedRole = getHoopCheckEntitlements({ accountType: "admin" });
+assert.equal(forgedRole.canModerateFanGroups, false, "profile admin label alone grants no club moderation");
 
 // Unified community posting: all recognized paid roles can post; unknown role values cannot.
 for (const role of ["player", "fan", "coach", "scout", "agent", "club_admin"]) {
