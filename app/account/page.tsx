@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { isAuthSessionMissingError } from "@supabase/supabase-js";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Link from "next/link";
+import "./account-editor-navigation.css";
 import HoopLoading from "../../components/HoopLoading";
 import { supabase } from "../../lib/supabase";
 import ThemeToast from "../../components/ThemeToast";
@@ -429,7 +430,7 @@ export default function AccountPage() {
     <main className="page-shell hc-account-page"><div className="page-container">
       <header className="hc-account-settings-header hc-liquid-glass-account-header">
         <p className="hc-account-settings-kicker">{t("settings")}</p>
-        <h1>{t("accountPreferences")}</h1>
+        <h1>Account & Profile</h1>
         <div className="hc-account-settings-identity">
           <span className="hc-account-settings-avatar" aria-hidden="true">
             {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{(displayName || email || "H").trim().split(/\s+/).slice(0,2).map(part => part[0]).join("").toUpperCase()}</span>}
@@ -439,8 +440,9 @@ export default function AccountPage() {
             <p>{email || t("emailNotSet")}</p><p className="hc-account-visibility-status"><span aria-hidden="true" />{profile.account_type === "fan" ? "Fan profile privacy is enabled" : settingsVisibility === "public" ? "Profile visible to everyone" : "Profile visible to players only"}</p>
           </div>
         </div>
+        <nav className="hc-account-identity-actions" aria-label="Account sections"><a href="#profile-editor" className="btn">Edit profile</a><Link href="/settings" className="btn dark">App settings</Link></nav>
         <div className="hc-account-identity-actions">
-          <a href={profile.account_type === "player" ? "/complete-profile" : "#profile-editor"} className="btn">{t("editProfile")}</a>
+          <a href="#profile-editor" className="btn">{t("editProfile")}</a>
           {profile.account_type === "player" && settingsVisibility === "public" ? <Link href={userId ? `/players/${encodeURIComponent(userId)}` : "/profile"} className="btn dark">{t("profilePublic")}</Link> : null}
         </div>
       </header>
@@ -504,7 +506,7 @@ export default function AccountPage() {
             </div>}
           </>}
           <h2>{profile.account_type === "player" ? t("playerInformation") : profile.account_type === "coach" ? t("coachInformation") : t("profileInformation")} {((profile.account_type === "player" && profile.player_verified) || (profile.account_type === "coach" && profile.coach_verified)) && <VerifiedBadge label={t("verifiedProfessional")} />}</h2>
-          <Surface as="form" id="profile-editor" onSubmit={saveProfile} className="account-profile-form" style={{display:"grid",gap:12,marginTop:16}}>
+          <Surface as="form" id="profile-editor" onSubmit={saveProfile} className="account-profile-form hc-account-profile-editor" style={{display:"grid",gap:12,marginTop:16}}>
             <label className="muted">{t("firstName")}</label><input value={profile.first_name ?? ""} readOnly />
             <label className="muted">{t("lastName")}</label><input value={profile.last_name ?? ""} readOnly />
             <p className="muted" style={{fontSize:12}}>{t("nameLocked")}</p>
