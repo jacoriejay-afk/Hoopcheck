@@ -124,6 +124,8 @@ export function getHoopCheckEntitlements(args: {
     canViewTeamPayHistory: recognizedRole && !isFan,
     canSubmitPayCheckIn: isPlayer && args.playerVerified === true && isAtLeastTier(tier, "pro"),
     canUseFanGroups: isFan,
-    canModerateFanGroups: isAdmin || role === "club_admin",
+    // Club managers require separate verified club ownership in the caller.
+    // A self-selected profile role alone must not grant moderation authority.
+    canModerateFanGroups: isAdmin,
   };
 }
