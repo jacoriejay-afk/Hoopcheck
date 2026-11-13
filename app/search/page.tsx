@@ -49,7 +49,7 @@ function SearchContent() {
   const [isFanAccount, setIsFanAccount] = useState<boolean | null>(null);
   const [roleReady, setRoleReady] = useState(false);
   const [suggestions, setSuggestions] = useState<SocialSuggestion[]>([]);
-  useEffect(() => { let active = true; void (async () => { try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const [{ data }, { data: graphSuggestions }] = await Promise.all([supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(), supabase.rpc("get_social_suggestions")]); if (!active) return; const fan = data?.account_type ? data.account_type === "fan" : null; setIsFanAccount(fan); setSuggestions(((graphSuggestions || []) as SocialSuggestion[]).filter(item => !fan || item.entity_type === "team")); } catch (error) { console.error("Unable to load search role context:", error); if (active) setIsFanAccount(null); } finally { if (active) setRoleReady(true); } })(); return () => { active = false; }; }, []);
+  useEffect(() => { let active = true; void (async () => { try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const [{ data }, { data: graphSuggestions }] = await Promise.all([supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(), supabase.rpc("get_social_suggestions")]); if (!active) return; const fan = data?.account_type ? data.account_type === "fan" : null; setIsFanAccount(fan); setSuggestions(((graphSuggestions || []) as SocialSuggestion[]).filter(item => fan === false || item.entity_type === "team")); } catch (error) { console.error("Unable to load search role context:", error); if (active) setIsFanAccount(null); } finally { if (active) setRoleReady(true); } })(); return () => { active = false; }; }, []);
 
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -92,6 +92,14 @@ function SearchContent() {
   const [countryFilter, setCountryFilter] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(true);
+  const [activeSuggestion, setActiveSuggestion] = useState(-1);
+  const suggestionLinks = [
+    ...teams.slice(0,3).map(x => "/teams/" + x.id),
+    ...womensTeams.slice(0,3).map(x => "/womens/" + x.id),
+    ...(isFanAccount === false ? players.slice(0,3).map(x => "/players/" + x.id) : []),
+    ...coaches.slice(0,2).map(x => "/coaches/" + x.id),
+    ...leagues.slice(0,2).map(x => "/leagues/" + x.id)
+  ];
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setSuggestionsOpen(false);
@@ -234,7 +242,7 @@ function SearchContent() {
     ...leagues.map((x) => x.country),
   ].filter(Boolean) as string[])).sort(), [players, coaches, teams, womensTeams, leagues]);
 
-  const visiblePlayers = roleReady && !isFanAccount && (typeFilter === "all" || typeFilter === "players")
+  const visiblePlayers = roleReady && isFanAccount === false && (typeFilter === "all" || typeFilter === "players")
     ? players.filter((x) => !countryFilter || x.country === countryFilter || x.current_country === countryFilter)
     : [];
   const visibleCoaches = typeFilter === "all" || typeFilter === "coaches"
