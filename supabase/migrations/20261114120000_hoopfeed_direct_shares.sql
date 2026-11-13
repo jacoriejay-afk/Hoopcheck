@@ -60,9 +60,11 @@ returns trigger language plpgsql security invoker set search_path = ''
 as $$
 declare recent_minute integer; recent_hour integer;
 begin
-  if new.sender_id <> (select auth.uid()) then
+  if new.sender_id is distinct from auth.uid() then
     raise exception 'Sender does not match authenticated user' using errcode = '42501';
   end if;
+  -- The timestamp is server-controlled; clients cannot backdate sends to evade limits.
+  new.created_at := pg_catalog.now();
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(new.sender_id::text, 60114));
   select count(*) filter (where created_at > pg_catalog.now() - interval '1 minute'),
          count(*) filter (where created_at > pg_catalog.now() - interval '1 hour')
