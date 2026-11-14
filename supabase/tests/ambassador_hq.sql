@@ -1,9 +1,9 @@
 -- This fixture runs inside a rollback-only transaction. The test runner installs
 -- the two versioned migrations and minimal platform tables before including it.
-insert into auth.users (id, email, email_confirmed_at, created_at, raw_app_meta_data)
+insert into auth.users (id, email, email_confirmed_at, created_at, raw_app_meta_data, raw_user_meta_data)
 values
- ('10000000-0000-0000-0000-000000000001','amb1-owner@example.invalid',now(),now(),'{}'),
- ('10000000-0000-0000-0000-000000000002','amb1-other@example.invalid',now(),now(),'{}');
+ ('10000000-0000-0000-0000-000000000001','amb1-owner@example.invalid',now(),now(),'{}',jsonb_build_object('full_name','AMB1 QA','username','amb1fixture1','account_type','fan','gender','male','position','PG','birthdate','1990-01-01','agreed_to_terms',true,'terms_accepted_at',now(),'terms_version','2026-10-01')),
+ ('10000000-0000-0000-0000-000000000002','amb1-other@example.invalid',now(),now(),'{}',jsonb_build_object('full_name','AMB1 QA','username','amb1fixture2','account_type','fan','gender','male','position','PG','birthdate','1990-01-01','agreed_to_terms',true,'terms_accepted_at',now(),'terms_version','2026-10-01'));
 insert into public.ambassador_campaigns (code, display_name) values ('AMB1TEST', 'Test campaign');
 insert into public.ambassador_grants (id,user_id,code,status,agreement_signed_at,activated_at,ends_at,
  first_rate_bps,commission_rate_bps,agreement_reference,payout_terms_reference,approved_by)
@@ -14,12 +14,12 @@ create temp table amb1_links (name text, token uuid);
 insert into amb1_links select name, public.ambassador_open_referral('AMB1TEST')
   from unnest(array['signup','duplicate','google','unverified','self']) n(name);
 insert into auth.users (id,email,email_confirmed_at,created_at,raw_app_meta_data,raw_user_meta_data) values
- ('10000000-0000-0000-0000-000000000003','amb1-referee@example.invalid',now(),now(),'{"provider":"email"}',jsonb_build_object('ambassador_token',(select token from amb1_links where name='signup'))),
- ('10000000-0000-0000-0000-000000000004','amb1-duplicate@example.invalid',now(),now(),'{"provider":"email"}',jsonb_build_object('ambassador_token',(select token from amb1_links where name='duplicate'))),
- ('10000000-0000-0000-0000-000000000005','amb1-disabled@example.invalid',now(),now(),'{"provider":"email"}',jsonb_build_object('ambassador_token',public.ambassador_open_referral('CHRISLYKES'))),
+ ('10000000-0000-0000-0000-000000000003','amb1-referee@example.invalid',now(),now(),'{"provider":"email"}',jsonb_build_object('full_name','AMB1 QA','username','amb1fixture3','account_type','player','gender','male','position','PG','birthdate','1990-01-01','agreed_to_terms',true,'terms_accepted_at',now(),'terms_version','2026-10-01') || jsonb_build_object('ambassador_token',(select token from amb1_links where name='signup'))),
+ ('10000000-0000-0000-0000-000000000004','amb1-duplicate@example.invalid',now(),now(),'{"provider":"email"}',jsonb_build_object('full_name','AMB1 QA','username','amb1fixture4','account_type','fan','gender','male','position','PG','birthdate','1990-01-01','agreed_to_terms',true,'terms_accepted_at',now(),'terms_version','2026-10-01') || jsonb_build_object('ambassador_token',(select token from amb1_links where name='duplicate'))),
+ ('10000000-0000-0000-0000-000000000005','amb1-disabled@example.invalid',now(),now(),'{"provider":"email"}',jsonb_build_object('full_name','AMB1 QA','username','amb1fixture5','account_type','manager','gender','male','position','PG','birthdate','1990-01-01','agreed_to_terms',true,'terms_accepted_at',now(),'terms_version','2026-10-01') || jsonb_build_object('ambassador_token',public.ambassador_open_referral('CHRISLYKES'))),
  ('10000000-0000-0000-0000-000000000006','amb1-google@example.invalid',now(),now(),'{"provider":"google"}','{}'),
- ('10000000-0000-0000-0000-000000000007','amb1-unverified@example.invalid',null,now(),'{"provider":"email"}',jsonb_build_object('ambassador_token',(select token from amb1_links where name='unverified'))),
- ('10000000-0000-0000-0000-000000000008','amb1-reused@example.invalid',now(),now(),'{"provider":"email"}',jsonb_build_object('ambassador_token',(select token from amb1_links where name='signup')));
+ ('10000000-0000-0000-0000-000000000007','amb1-unverified@example.invalid',null,now(),'{"provider":"email"}',jsonb_build_object('full_name','AMB1 QA','username','amb1fixture7','account_type','agent','gender','male','position','PG','birthdate','1990-01-01','agreed_to_terms',true,'terms_accepted_at',now(),'terms_version','2026-10-01') || jsonb_build_object('ambassador_token',(select token from amb1_links where name='unverified'))),
+ ('10000000-0000-0000-0000-000000000008','amb1-reused@example.invalid',now(),now(),'{"provider":"email"}',jsonb_build_object('full_name','AMB1 QA','username','amb1fixture8','account_type','coach','gender','male','position','PG','birthdate','1990-01-01','agreed_to_terms',true,'terms_accepted_at',now(),'terms_version','2026-10-01') || jsonb_build_object('ambassador_token',(select token from amb1_links where name='signup')));
 select public.ambassador_capture_google('10000000-0000-0000-0000-000000000006',(select token from amb1_links where name='google'));
 select hoopcheck_ambassador.capture('10000000-0000-0000-0000-000000000001',(select token from amb1_links where name='self'));
 
