@@ -1,10 +1,10 @@
 -- Isolated SHARE-1 policy regression using the actual versioned inbox migration.
 -- Synthetic users only. Does not touch Supabase production data.
 \set ON_ERROR_STOP on
-do $ begin
+do $roles$ begin
  if not exists(select 1 from pg_roles where rolname='authenticated') then create role authenticated nologin; end if;
  if not exists(select 1 from pg_roles where rolname='anon') then create role anon nologin; end if;
-end $;
+end $roles$;
 create schema auth;
 create schema private;
 create function auth.uid() returns uuid language sql stable as
