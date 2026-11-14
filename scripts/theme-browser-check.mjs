@@ -307,7 +307,18 @@ try {
       await page.goto(baseURL + path, { waitUntil: "domcontentloaded", timeout: 30000 });
       console.log("THEME_BROWSER_PAGE", JSON.stringify({ routeName, theme, url: page.url(), title: await page.title(), body: (await page.locator("body").innerText().catch(() => "")).slice(0, 240) }));
       const wrapperSelector = routeName === "dashboard" ? "main.hc-home3" : routeName === "feed" ? "main.hc-feed-page" : "main.admin-directory-shell";
-      await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
+      try {
+        await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
+      } catch (error) {
+        const diagnostics = await page.evaluate((selector) => {
+          const node = document.querySelector(selector);
+          const style = node ? getComputedStyle(node) : null;
+          return { path: location.pathname, visibleNode: Boolean(node), display: style?.display, visibility: style?.visibility, opacity: style?.opacity, bodyText: document.body.innerText.slice(0, 700) };
+        }, wrapperSelector);
+        console.error("THEME_ROUTE_VISIBILITY_FAILURE", JSON.stringify({ routeName, theme, diagnostics }));
+        await page.screenshot({ path: `${artifactsDir}/routes/visibility-${routeName}-${theme}.png`, fullPage: true }).catch(() => {});
+        throw error;
+      }
       if (routeName === "feed") {
         await page.locator(".hc-feed-composer").waitFor({ state: "visible", timeout: 30000 });
         await page.locator(".hf5-type-chip").first().waitFor({ state: "visible", timeout: 30000 });

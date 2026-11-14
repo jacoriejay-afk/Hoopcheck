@@ -11,6 +11,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [messageIsSuccess, setMessageIsSuccess] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
@@ -92,20 +93,18 @@ export default function LoginPage() {
   return (
     <main className="hc-auth-page">
       <section className="hero hc-auth-hero">
-        <h1>Welcome back.</h1>
+        <h1>Welcome back</h1>
         <p>
-          Sign in to your HoopCheck account to explore teams, coaches, leagues, player experiences, and fan communities around the world.
+          Sign in to your HoopCheck account.
         </p>
       </section>
 
       <section className="hc-auth-form-section">
         <div className="form hc-auth-card">
-          <h2>Sign in to HoopCheck</h2>
+          <h2>Sign in</h2>
           <p className="muted">
-            Use the email and password associated with your account.
+            Your basketball world, all in one place.
           </p>
-
-          <GoogleSignInButton disabled={loading || resetLoading} />
 
           <form onSubmit={handleLogin}>
             <label htmlFor="email">Email</label>
@@ -114,15 +113,19 @@ export default function LoginPage() {
               placeholder="you@example.com" autoComplete="email" required />
 
             <label htmlFor="password">Password</label>
-            <input id="password" className="input" type="password" value={password}
+            <input id="password" className="input" type={showPassword ? "text" : "password"} value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Your password" autoComplete="current-password" required />
+            <button type="button" className="hc-auth-action" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>{showPassword ? "Hide password" : "Show password"}</button>
 
             <button type="submit" className="btn" disabled={loading}
-              style={{ width: "100%", marginTop: 8 }}>
-              {loading ? "Logging In..." : "Log In"}
+              style={{ width: "100%", marginTop: 16, minHeight: 48, borderRadius: 16 }}>
+              {loading ? "Signing in..." : "Sign in"}
             </button>
           </form>
+
+          <div className="hc-auth-divider" aria-hidden="true">or</div>
+          <GoogleSignInButton disabled={loading || resetLoading} />
 
           {message && (
             <div style={{ marginTop: 18, padding: 14, border: "1px solid var(--border)", borderRadius: 20, background: "var(--hc-surface, var(--paper))" }}>
