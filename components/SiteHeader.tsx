@@ -44,7 +44,7 @@ export default function SiteHeader() {
           <details key={pathname} className="hc-header-more">
             <summary>More <span aria-hidden="true">▾</span></summary>
             <div className="hc-header-more-panel">
-              {visibleLinks.filter(item => !desktopPrimary.has(item.href) || isLiveLink(item.href)).map(item =>
+              {visibleLinks.filter(item => !desktopPrimary.has(item.href)).map(item =>
                 navigationLink(item, isLiveLink(item.href) ? "hc-header-compact-link" : ""))}
             </div>
           </details>
