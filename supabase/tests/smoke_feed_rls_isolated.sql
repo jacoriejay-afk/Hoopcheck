@@ -45,6 +45,7 @@ insert into public.feed_posts values
  ('10000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000002','pending','poll','["A"]',now()+interval '1 day'),
  ('10000000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000002','approved','discussion',null,now()+interval '1 day');
 \i supabase/migrations/20261111000100_secure_feed_poll_votes.sql
+\i supabase/migrations/20261114000100_secure_poll_votes_unified_visibility.sql
 \i supabase/migrations/20261111000200_secure_feed_bookmarks.sql
 \i supabase/tests/verify_feed_poll_vote_policies.sql
 \i supabase/tests/verify_feed_bookmark_policies.sql

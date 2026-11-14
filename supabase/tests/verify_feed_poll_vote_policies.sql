@@ -1,5 +1,5 @@
 -- Read-only staging verification for poll-vote RLS migration.
--- Run after applying 20261111000100_secure_feed_poll_votes.sql in staging.
+-- Run after applying 20261114000100_secure_poll_votes_unified_visibility.sql in staging.
 -- This checks policy definitions, not user-specific API authorization.
 do $$
 declare
@@ -19,14 +19,14 @@ begin
   loop
     predicate := coalesce(policy_row.qual,'') || ' ' || coalesce(policy_row.with_check,'');
     if position('can_view_player_feed_post' in predicate) > 0
-       or position('expires_at' in predicate) > 0
+       or position('expires_at' in predicate) = 0
        or position('approved' in predicate) = 0
        or position('post_kind' in predicate) = 0
        or position('poll' in predicate) = 0
        or position('jsonb_array_length' in predicate) = 0
        or position('option_index' in predicate) = 0
        or position('jsonb_typeof' in predicate) = 0 then
-      raise exception 'Poll policy % (%) does not enforce approved permanent poll visibility',
+      raise exception 'Poll policy % (%) does not enforce approved, unexpired poll visibility',
         policy_row.policyname, policy_row.cmd;
     end if;
     if policy_row.cmd in ('INSERT','UPDATE')
