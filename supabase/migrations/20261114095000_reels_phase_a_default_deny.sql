@@ -1,4 +1,7 @@
--- REELS-1 PHASE A: additive default-deny tables only.\n-- No upload, publishing, playback or direct client permissions are enabled.\n-- Apply only through reviewed migrations after verifying against production schema.\n
+-- REELS-1 PHASE A: additive default-deny tables only.
+-- No upload, publishing, playback or direct client permissions are enabled.
+-- Apply only through reviewed migrations after verifying against production schema.
+
 create table if not exists public.reels (
   id uuid primary key default gen_random_uuid(),
   author_id uuid not null references public.profiles(id),
