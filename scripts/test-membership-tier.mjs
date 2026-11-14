@@ -92,7 +92,7 @@ const cases = [
     canReadHoopFeed:true, canWriteHoopFeed:true, canReadFanFeed:false, canWriteFanFeed:false,
     canReadFullReviews:true, canViewTrustScore:true, canWriteReviews:false,
     canUseLiveGameHub:false, canUseLiveGameChat:false, canUseFanGroups:false,
-    canModerateFanGroups:true, canCompare:true, canUseContractCheck:true,
+    canModerateFanGroups:false, canCompare:true, canUseContractCheck:true,
     canUseProPassport:false, canUsePayOnTimeIndex:true, canViewTeamPayHistory:true,
     canSubmitPayCheckIn:false, canUseAskPlayer:false,
   }],
@@ -156,6 +156,14 @@ assert.equal(expired.canReadHoopFeed, false, "expired period must deny HoopFeed 
 
 
 // Administrator authorization is independent of a paid membership, but moderator access is not.
+const forgedAdmin = getHoopCheckEntitlements({ accountType: "admin" });
+assert.equal(forgedAdmin.canModerateFanGroups, false, "profile admin label cannot grant moderation");
+assert.equal(forgedAdmin.canReadFullReviews, false, "profile admin label cannot grant paid access");
+const unverifiedClubAdmin = getHoopCheckEntitlements({ accountType: "club_admin", subscription: active("premium") });
+assert.equal(unverifiedClubAdmin.canModerateFanGroups, false, "club_admin label cannot grant club moderation");
+const verifiedPlatformAdmin = getHoopCheckEntitlements({ accountType: "admin", isAdmin: true });
+assert.equal(verifiedPlatformAdmin.canModerateFanGroups, true, "verified platform admin retains moderation");
+
 const adminWithoutSubscription = getHoopCheckEntitlements({ accountType: "player", isAdmin: true });
 assert.equal(adminWithoutSubscription.canReadHoopFeed, true, "admin must read HoopFeed without a subscription");
 assert.equal(adminWithoutSubscription.canWriteHoopFeed, true, "admin must write HoopFeed without a subscription");
