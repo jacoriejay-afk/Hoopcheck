@@ -141,7 +141,7 @@ export default function TeamsPage() {
           const { data, error, count } = await withTimeout<any>(request.range(
             page * pageSize,
             page * pageSize + pageSize - 1
-          ), 2500, { data: [], error: new Error("timeout") });
+          ), 8000, { data: [], error: new Error("timeout") });
           if (!active) return;
           if (error) {
             console.error("Error loading teams:", error);
