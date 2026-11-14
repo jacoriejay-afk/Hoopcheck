@@ -41,5 +41,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(login);
   }
 
+  const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (assuranceError) {
+    await supabase.auth.signOut({ scope: "local" });
+    login.searchParams.set("google_error", "failed");
+    return NextResponse.redirect(login);
+  }
+  if (assurance.nextLevel === "aal2" && assurance.currentLevel !== "aal2") {
+    return NextResponse.redirect(new URL("/mfa-challenge", request.url));
+  }
   return NextResponse.redirect(new URL("/dashboard", request.url));
 }

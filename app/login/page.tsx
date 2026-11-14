@@ -49,7 +49,9 @@ export default function LoginPage() {
       // Account type and onboarding requirements are handled by the workspace.
       // Do not block a successful login on a separate profiles query or
       // apply player-only fields to fans, coaches, agents and club managers.
-      const destination = returnTo || "/dashboard";
+      const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (assuranceError) throw assuranceError;
+      const destination = assurance.nextLevel === "aal2" && assurance.currentLevel !== "aal2" ? "/mfa-challenge" : (returnTo || "/dashboard");
       setMessage("Login successful! Opening HoopCheck…");
       setMessageIsSuccess(true);
       // Keep the authenticated Supabase client alive across navigation. A full
