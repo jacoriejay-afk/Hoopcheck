@@ -9,6 +9,39 @@ const compiled = ts.transpileModule(source, {
 const moduleUrl = "data:text/javascript;base64," + Buffer.from(compiled).toString("base64");
 const { getHoopCheckEntitlements } = await import(moduleUrl);
 
+// SUB-1 product catalog: prevent price drift, accidental fan checkout,
+// duplicate app-store identifiers, or trial offers on longer terms.
+const catalogSource = readFileSync(new URL("../lib/subscription-products.ts", import.meta.url), "utf8");
+const catalogCompiled = ts.transpileModule(catalogSource, {
+  compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 },
+}).outputText;
+const catalogUrl = "data:text/javascript;base64," + Buffer.from(catalogCompiled).toString("base64");
+const { SUBSCRIPTION_PRODUCTS, getSubscriptionProduct, getTrialOfferCopy } = await import(catalogUrl);
+const approvedPrices = [
+  ["pro", "month", 499, "hoopcheck.pro.monthly"],
+  ["pro", "6_month", 2695, "hoopcheck.pro.6month"],
+  ["pro", "year", 5090, "hoopcheck.pro.annual"],
+  ["premium", "month", 999, "hoopcheck.premium.monthly"],
+  ["premium", "6_month", 5395, "hoopcheck.premium.6month"],
+  ["premium", "year", 10190, "hoopcheck.premium.annual"],
+];
+assert.equal(SUBSCRIPTION_PRODUCTS.length, approvedPrices.length, "exactly six approved player products");
+for (const [tier, duration, amountCents, productId] of approvedPrices) {
+  const product = getSubscriptionProduct("player", tier, duration);
+  assert.ok(product, `missing ${tier}/${duration} product`);
+  assert.equal(product.amountCents, amountCents);
+  assert.equal(product.currency, "USD");
+  assert.equal(product.iosProductId, productId);
+  assert.equal(product.androidProductId, productId);
+  assert.equal(product.trialDays, duration === "month" ? 7 : null);
+  assert.equal(Boolean(getTrialOfferCopy(product)), duration === "month");
+}
+assert.equal(new Set(SUBSCRIPTION_PRODUCTS.map(p => p.iosProductId)).size, 6, "store product IDs must be unique");
+assert.equal(new Set(SUBSCRIPTION_PRODUCTS.map(p => p.stripeLookupKey)).size, 6, "Stripe lookup keys must be unique");
+for (const role of ["fan", "coach", "agent", "scout", "club_admin", "admin", "manager"]) {
+  assert.equal(getSubscriptionProduct(role, "pro", "month"), null, `${role} must not inherit player prices`);
+}
+
 const active = (plan) => ({ plan, status: "active", access_status: "active" });
 const keys = [
   "canReadHoopFeed", "canWriteHoopFeed", "canReadFanFeed", "canWriteFanFeed",
@@ -92,7 +125,7 @@ const cases = [
     canReadHoopFeed:true, canWriteHoopFeed:true, canReadFanFeed:false, canWriteFanFeed:false,
     canReadFullReviews:true, canViewTrustScore:true, canWriteReviews:false,
     canUseLiveGameHub:false, canUseLiveGameChat:false, canUseFanGroups:false,
-    canModerateFanGroups:true, canCompare:true, canUseContractCheck:true,
+    canModerateFanGroups:false, canCompare:true, canUseContractCheck:true,
     canUseProPassport:false, canUsePayOnTimeIndex:true, canViewTeamPayHistory:true,
     canSubmitPayCheckIn:false, canUseAskPlayer:false,
   }],
@@ -145,10 +178,26 @@ assert.equal(expired.canWriteHoopFeed, false, "expired Premium must not post to 
 
 const trialing = getHoopCheckEntitlements({
   accountType: "player",
-  subscription: { plan: "premium", status: "trialing", access_status: "trialing" },
+  subscription: { plan: "premium", status: "trialing", access_status: "trialing", trial_end: "2099-01-01T00:00:00.000Z" },
   playerVerified: true,
 });
-assert.equal(trialing.canWriteReviews, true, "trialing Premium inherits Pro access");
+assert.equal(trialing.canWriteReviews, true, "valid trialing Premium inherits Pro access");
+for (const trialEnd of [null, "not-a-date", "2000-01-01T00:00:00.000Z"]) {
+  const invalidTrial = getHoopCheckEntitlements({
+    accountType: "player",
+    subscription: { plan: "premium", status: "trialing", access_status: "trialing", trial_end: trialEnd },
+    playerVerified: true,
+  });
+  assert.equal(invalidTrial.canWriteReviews, false, "missing, invalid or expired trial must not grant review access");
+  assert.equal(invalidTrial.canWriteHoopFeed, false, "missing, invalid or expired trial must not grant feed access");
+}
+const forgedAdmin = getHoopCheckEntitlements({ accountType: "admin" });
+assert.equal(forgedAdmin.canModerateFanGroups, false, "profile admin label must not confer moderation");
+assert.equal(forgedAdmin.canReadFullReviews, false, "profile admin label must not confer review access");
+const unverifiedClubManager = getHoopCheckEntitlements({ accountType: "club_admin", subscription: active("premium") });
+assert.equal(unverifiedClubManager.canModerateFanGroups, false, "club_admin profile alone must not grant moderation");
+const verifiedAdmin = getHoopCheckEntitlements({ accountType: "admin", isAdmin: true });
+assert.equal(verifiedAdmin.canModerateFanGroups, true, "verified admin may moderate");
 
 const unverified = getHoopCheckEntitlements({
   accountType: "player", subscription: active("premium"), playerVerified: false,

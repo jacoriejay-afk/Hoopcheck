@@ -44,6 +44,7 @@ export type ActiveMembership = {
   status?: string | null;
   access_status?: string | null;
   current_period_end?: string | null;
+  trial_end?: string | null;
 };
 
 export function hasActiveMembershipAtLeast(
@@ -53,8 +54,14 @@ export function hasActiveMembershipAtLeast(
 ): boolean {
   if (!subscription || !isAtLeastTier(subscription.plan, required)) return false;
   if (!["active", "trialing"].includes(subscription.status || "")) return false;
-  if (subscription.current_period_end) {
-    const periodEnd = new Date(subscription.current_period_end).getTime();
+  // A cancelled trial retains access until trial_end, never beyond it.
+  // For active paid subscriptions, use the billing period end as before.
+  const entitlementEnd = subscription.status === "trialing"
+    ? subscription.trial_end
+    : subscription.current_period_end;
+  if (subscription.status === "trialing" && !entitlementEnd) return false;
+  if (entitlementEnd) {
+    const periodEnd = new Date(entitlementEnd).getTime();
     if (!Number.isFinite(periodEnd) || periodEnd <= now) return false;
   }
   return true;
@@ -77,7 +84,9 @@ export function getHoopCheckEntitlements(args: {
   now?: number;
 }): HoopCheckEntitlements {
   const role = args.accountType || "";
-  const isAdmin = args.isAdmin === true || role === "admin";
+  // Admin authority must be supplied only after verification through admin_roles RPC.
+  // A profile account_type value is never sufficient to grant admin access.
+  const isAdmin = args.isAdmin === true;
   const tier = isAdmin ? "premium" : getActiveMembershipTier(args.subscription, args.now);
   const active = isAdmin || tier !== "free";
   const isPlayer = role === "player";
@@ -115,6 +124,8 @@ export function getHoopCheckEntitlements(args: {
     canViewTeamPayHistory: recognizedRole && !isFan,
     canSubmitPayCheckIn: isPlayer && args.playerVerified === true && isAtLeastTier(tier, "pro"),
     canUseFanGroups: isFan,
-    canModerateFanGroups: isAdmin || role === "club_admin",
+    // Club managers require separate verified club ownership in the caller.
+    // A self-selected profile role alone must not grant moderation authority.
+    canModerateFanGroups: isAdmin,
   };
 }

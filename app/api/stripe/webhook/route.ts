@@ -140,6 +140,20 @@ async function saveSubscription(
     );
   }
 
+  // Stripe metadata is not an authorization source. A subscription must
+  // belong to a real HoopCheck profile before it can change entitlements.
+  const { data: ownerProfile, error: ownerProfileError } = await supabase
+    .from("profiles")
+    .select("account_type")
+    .eq("id", userId)
+    .maybeSingle();
+  if (ownerProfileError || !ownerProfile?.account_type) {
+    throw new Error("Cannot synchronize a subscription without its account owner.");
+  }
+  if (!["player", "fan", "coach", "agent", "scout", "club_admin"].includes(ownerProfile.account_type)) {
+    throw new Error("Subscription owner has an unsupported account role.");
+  }
+
   const currentPeriodEndTimestamp =
     subscription.items.data[0]?.current_period_end;
   const currentPeriodEnd =
@@ -148,6 +162,38 @@ async function saveSubscription(
           currentPeriodEndTimestamp * 1000
         ).toISOString()
       : null;
+
+  // Never grant a trial that was not reserved by HoopCheck.
+  // Signed Stripe webhooks alone are insufficient to establish first-time
+  // eligibility: trial history must be checked independently.
+  if (subscription.status === "trialing") {
+    const trialEnd = subscription.trial_end;
+    const trialStart = subscription.trial_start;
+    if (
+      !trialEnd ||
+      !trialStart ||
+      !Number.isFinite(trialEnd) ||
+      !Number.isFinite(trialStart) ||
+      trialEnd <= trialStart ||
+      trialEnd - trialStart > 7 * 24 * 60 * 60 + 300
+    ) {
+      throw new Error("Stripe trial has an invalid or excessive duration.");
+    }
+    const { data: trialHistory, error: historyError } = await supabase
+      .from("subscription_trial_history")
+      .select("first_platform, first_product_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (
+      historyError ||
+      !trialHistory ||
+      trialHistory.first_platform !== "web" ||
+      trialHistory.first_product_id !== `hoopcheck.${plan}.monthly` ||
+      getBillingInterval(priceId, subscription.items.data[0]?.price?.metadata, subscription.metadata) !== "month"
+    ) {
+      throw new Error("Stripe trial does not match a reserved web monthly product.");
+    }
+  }
 
   const { error } =
     await supabase
@@ -171,6 +217,9 @@ async function saveSubscription(
             subscription.status,
           current_period_end:
             currentPeriodEnd,
+          trial_end: subscription.trial_end
+            ? new Date(subscription.trial_end * 1000).toISOString()
+            : null,
           cancel_at_period_end:
             subscription.cancel_at_period_end,
         },
