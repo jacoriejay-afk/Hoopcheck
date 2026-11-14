@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
-import { Graduate, Inter } from "next/font/google";
+import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import Link from "next/link";
 import Script from "next/script";
 import "./globals.css";
@@ -65,7 +66,13 @@ import "./hoopcheck-visual-final.css";
 import "./hoopcheck-ui-video-consistency.css";
 import { SITE_URL } from "../lib/site-url";
 
-const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
+const displayFont = localFont({
+  src: "./hoopcheck-display.woff2",
+  variable: "--font-display",
+  weight: "400",
+  display: "swap",
+  adjustFontFallback: false,
+});
 const sansFont = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
 const siteUrl = SITE_URL;
 const defaultTitle = "HoopCheck — Know Who You're Signing With";
