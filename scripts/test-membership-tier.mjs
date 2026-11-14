@@ -309,6 +309,7 @@ for (const [label, subscription, allowed] of [
   assert.equal(entitlements.canWriteReviews, false, label + " cannot write reviews");
   assert.equal(entitlements.canReadFullReviews, false, label + " cannot read full reviews by creator role");
   assert.equal(entitlements.canViewTrustScore, false, label + " cannot view trust score by creator role");
+  assert.equal(entitlements.canViewTeamPayHistory, false, label + " cannot view team pay history by creator role");
 }
 
 // REELS-1: Creator publishing must not unlock unrelated reviews/trust tools.
