@@ -193,7 +193,7 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header .h
 
   html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-header-nav.is-open {
     inset-block-start: calc(100% + var(--hc-header-gap));
-    max-height: max(120px, calc(100dvh - var(--hc-safe-area-top) - var(--hc-safe-area-bottom) - 88px));
+    max-height: max(0px, min(70dvh, calc(100dvh - var(--hc-safe-area-top) - var(--hc-safe-area-bottom) - 88px)));
     overflow-y: auto;
     overscroll-behavior: contain;
   }
