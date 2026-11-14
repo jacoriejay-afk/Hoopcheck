@@ -41,3 +41,9 @@ Status: planning-only, feature disabled. Do not enable or merge a launch feature
 - v1 order followed authors first then newest; no algorithmic-ranking claims.
 
 This document is a pre-implementation gate, not evidence that migrations, features, or security tests have shipped.
+
+## Production schema verification (2026-11-14, read-only)
+- Production has `public.feed_posts`, `public.feed_post_comments`, `public.profiles`, `public.subscriptions`, and `public.leagues`.
+- Current production policy names include `unified hoopfeed checks insert`, `unified hoopfeed checks read`, and `unified hoopfeed approved posts read`. Policy names alone are not proof of effective permissions; JWT role tests are still required.
+- The separate HoopCheck-PR17-Test database is not a complete production clone and has seven existing public tables with RLS disabled. Do not use it as a production-equivalent security signoff without fixing/isolating that discrepancy.
+- No Reels DDL or storage policy was applied to production during this inspection.
