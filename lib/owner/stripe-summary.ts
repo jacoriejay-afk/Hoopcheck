@@ -1,0 +1,42 @@
+import Stripe from "stripe";
+
+export type OwnerStripeSummary = {
+  currency: string;
+  paidInvoices: number;
+  grossPaidMinor: number;
+  incomplete: boolean;
+  error?: string;
+};
+
+export async function getOwnerStripeSummary(): Promise<OwnerStripeSummary> {
+  const unavailable: OwnerStripeSummary = { currency: "usd", paidInvoices: 0, grossPaidMinor: 0, incomplete: false, error: "Stripe reporting unavailable" };
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return unavailable;
+  const since = Math.floor(Date.now() / 1000) - 30 * 86400;
+  try {
+    const stripe = new Stripe(key);
+    let cursor: string | undefined;
+    let count = 0;
+    let amount = 0;
+    let pages = 0;
+    // Cap reporting work per page request. If capped, explicitly label the figures partial.
+    while (pages < 10) {
+      const batch = await stripe.invoices.list({
+        status: "paid", created: { gte: since }, limit: 100,
+        ...(cursor ? { starting_after: cursor } : {}),
+      });
+      for (const invoice of batch.data) {
+        if (invoice.currency !== "usd") continue;
+        count++;
+        amount += invoice.amount_paid;
+      }
+      pages++;
+      if (!batch.has_more) return { currency: "usd", paidInvoices: count, grossPaidMinor: amount, incomplete: false };
+      cursor = batch.data.at(-1)?.id;
+      if (!cursor) break;
+    }
+    return { currency: "usd", paidInvoices: count, grossPaidMinor: amount, incomplete: true };
+  } catch {
+    return unavailable;
+  }
+}
