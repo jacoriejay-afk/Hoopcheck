@@ -4,6 +4,7 @@ import { getHoopCheckEntitlements } from "../../../../lib/membership-tier";
 import { validateReelInput } from "../../../../lib/reels-validation";
 
 export const runtime = "nodejs";
+const MAX_PREFLIGHT_BYTES = 4096;
 
 /**
  * REELS-1 preflight: validates identity, the existing paid HoopFeed gate,
@@ -34,9 +35,31 @@ export async function POST(request: Request) {
   if (!getHoopCheckEntitlements({ accountType: profile.account_type, subscription }).canWriteHoopFeed)
     return NextResponse.json({ error: "Active HoopFeed membership required" }, { status: 403 });
 
+  // A preflight needs only a few metadata fields. Do not buffer unbounded bodies.
+  const declaredLength = Number(request.headers.get("content-length") || 0);
+  if (!Number.isFinite(declaredLength) || declaredLength > MAX_PREFLIGHT_BYTES)
+    return NextResponse.json({ error: "Metadata too large" }, { status: 413 });
   let payload: unknown;
-  try { payload = await request.json(); }
-  catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+  try {
+    const reader = request.body?.getReader();
+    if (!reader) return NextResponse.json({ error: "Missing metadata" }, { status: 400 });
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > MAX_PREFLIGHT_BYTES) {
+        await reader.cancel();
+        return NextResponse.json({ error: "Metadata too large" }, { status: 413 });
+      }
+      chunks.push(value);
+    }
+    const body = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) { body.set(chunk, offset); offset += chunk.byteLength; }
+    payload = JSON.parse(new TextDecoder().decode(body));
+  } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   if (!payload || typeof payload !== "object" || Array.isArray(payload))
     return NextResponse.json({ error: "Invalid metadata" }, { status: 400 });
   const data = payload as Record<string, unknown>;
