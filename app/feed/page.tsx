@@ -81,6 +81,11 @@ export default function Feed(){
 
 
   const [open,setOpen]=useState<Record<string,boolean>>({});
+  const [sharePostId,setSharePostId]=useState<string|null>(null);
+  const [shareRecipients,setShareRecipients]=useState<Array<{id:string;display_name:string|null;account_type:string}>>([]);
+  const [shareSearch,setShareSearch]=useState("");
+  const [shareLoading,setShareLoading]=useState(false);
+  const [shareSending,setShareSending]=useState(false);
   const [body,setBody]=useState(""); const [typeFilter,setTypeFilter]=useState<TypeFilter>("All Posts"); const [photos,setPhotos]=useState<File[]>([]); const [previews,setPreviews]=useState<string[]>([]); const [composerMode,setComposerMode]=useState<"post"|"poll"|"news">("post"); const [composerExpanded,setComposerExpanded]=useState(false); const [pollDraft,setPollDraft]=useState<string[]>(["",""]); const [votes,setVotes]=useState<Record<string,VoteState>>({}); const [savedMap,setSavedMap]=useState<Record<string,boolean>>({}); const [carouselIdx,setCarouselIdx]=useState<Record<string,number>>({}); const [video,setVideo]=useState<File|null>(null); const [videoPreview,setVideoPreview]=useState(""); const [showCountry,setShowCountry]=useState(false);
   const [user,setUser]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [adminRole,setAdminRole]=useState<string|null>(null); const [subscription,setSubscription]=useState<Subscription|null>(null); const [memberCount,setMemberCount]=useState<number|null>(null);
   const [msg,setMsg]=useState(""); const [refreshing,setRefreshing]=useState(false); const [mediaPickerOpen,setMediaPickerOpen]=useState(false); const [postingStreak,setPostingStreak]=useState(0); const [loading,setLoading]=useState(true); const [posting,setPosting]=useState(false); const [now,setNow]=useState(0); const pendingChecksRef = useRef<Set<string>>(new Set()); const textareaRef = useRef<HTMLTextAreaElement|null>(null); const touchStartY = useRef<number|null>(null);
@@ -293,24 +298,45 @@ export default function Feed(){
   }
 
   async function sharePost(p:Post){
-    // The fragment identifies the post. The recipient's viewer-scoped query decides access.
-    const url = new URL(`/feed#post-${p.id}`, window.location.origin).href;
+    if (!user) { setMsg("Sign in to share posts."); return; }
+    setSharePostId(p.id);
+    setShareSearch("");
+    setShareRecipients([]);
+    setShareLoading(true);
     try {
-      if (typeof navigator.share === "function") {
-        await navigator.share({ title: "HoopFeed™", url });
-        return;
+      const { data: follows, error } = await supabase.from("follow_relationships")
+        .select("target_id,target_type").eq("follower_id", user.id).in("target_type", ["player", "fan"]).limit(100);
+      if (error) throw error;
+      const ids = [...new Set((follows || []).map(f => f.target_id).filter(id => id !== user.id))];
+      if (ids.length) {
+        const { data: members, error: memberError } = await supabase.from("profiles")
+          .select("id,display_name,account_type").in("id", ids);
+        if (memberError) throw memberError;
+        setShareRecipients((members || []).filter(m => ["player","fan"].includes(m.account_type)));
       }
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
-        setMsg("Post link copied.");
-        return;
-      }
-      setMsg("Sharing isn't supported in this browser.");
     } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") return;
-      console.error("HoopFeed share failed", error);
-      setMsg("Couldn't share this post. Please try again.");
-    }
+      console.error("HoopFeed recipients unavailable", error);
+      setMsg("Couldn't load recipients. Please try again.");
+      setSharePostId(null);
+    } finally { setShareLoading(false); }
+  }
+
+  async function sendInAppShare(recipientId:string){
+    if (!sharePostId || shareSending) return;
+    setShareSending(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Sign in to share posts.");
+      const response = await fetch("/api/hoopfeed/share", {
+        method:"POST", headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},
+        body:JSON.stringify({post_id:sharePostId,recipient_id:recipientId})
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.message || "Share failed.");
+      setSharePostId(null);
+      setMsg("Post shared in HoopCheck.");
+    } catch (error) { setMsg(error instanceof Error ? error.message : "Couldn't share this post."); }
+    finally { setShareSending(false); }
   }
 
   async function toggleCheck(p:Post){
@@ -390,6 +416,14 @@ export default function Feed(){
 
     <div className="hc-feed-filter-bar" aria-label="HoopFeed tools">{refreshing && <span className="hc-feed-pull-loading" role="status"><span className="hc-feed-pull-spinner" aria-hidden="true" /> Updating HoopFeed…</span>}<span className="hc-feed-result-count">{visiblePosts.length} {visiblePosts.length===1?"POST":"POSTS"}</span></div>
     {sharedLinkUnavailable && <p role="status">This shared post is unavailable.</p>}
+    {sharePostId&&<div className="hc-feed-comments-backdrop" style={{position:"fixed",inset:0,zIndex:1000,display:"grid",placeItems:"center",background:"rgba(0,0,0,.65)",padding:16}} onClick={()=>!shareSending&&setSharePostId(null)}>
+      <section role="dialog" aria-modal="true" aria-label="Share with HoopCheck members" onClick={e=>e.stopPropagation()} style={{background:"var(--surface, #171717)",color:"var(--text, white)",border:"1px solid var(--border, #444)",borderRadius:20,padding:20,width:"min(100%,440px)",maxHeight:"80vh",overflowY:"auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}><h2 style={{margin:0}}>Share in HoopCheck</h2><button type="button" className="btn dark" disabled={shareSending} onClick={()=>setSharePostId(null)}>Close</button></div>
+        <p className="muted">Send this post to someone you follow. Their access is checked before delivery.</p>
+        <input aria-label="Search recipients" placeholder="Search members" value={shareSearch} onChange={e=>setShareSearch(e.target.value)} style={{width:"100%",marginBottom:12}} />
+        {shareLoading?<p role="status">Loading members…</p>:shareRecipients.filter(m=>(m.display_name||"Member").toLowerCase().includes(shareSearch.toLowerCase())).length===0?<p className="muted">No matching members available.</p>:<div style={{display:"grid",gap:8}}>{shareRecipients.filter(m=>(m.display_name||"Member").toLowerCase().includes(shareSearch.toLowerCase())).map(m=><button key={m.id} type="button" className="hc-feed-action-pill" disabled={shareSending} onClick={()=>void sendInAppShare(m.id)} style={{textAlign:"left",padding:12}}>{m.display_name||"Member"} · {m.account_type}</button>)}</div>}
+      </section>
+    </div>}
     <section className="hc-feed-stream" aria-label="Recent HoopFeed posts">{visiblePosts.length?visiblePosts.map(p=>{const cs=orderCommentThreads(comments[p.id]||[]);const roleKey=(p.profiles?.account_type||"").toLowerCase();const rolePill=ROLE_PILLS[roleKey];const mediaImgs:string[]=(p.image_urls&&p.image_urls.length?p.image_urls:(p.image_url?[p.image_url]:[]));const carouselPos=Math.min(carouselIdx[p.id]||0,Math.max(0,mediaImgs.length-1));return <FeedPostCard key={p.id} onDoubleClick={()=>void toggleCheck(p)}>
       
       <header className="hc-feed-post-header"><FeedAuthorRow>{p.profiles?.avatar_url?<img src={p.profiles.avatar_url} alt="" className="hc-feed-post-avatar hf5-avatar"/>:<span className="player-avatar-fallback hc-feed-post-avatar hf5-avatar">HC</span>}<div className="hc-feed-post-author__meta"><div className="hc-feed-post-author__line"><strong>{p.shared_post_id?"Shared by "+(p.profiles?.display_name||"HoopCheck Member"):(p.profiles?.display_name||"HoopCheck Member")}</strong><span className="hc-feed-verified" aria-label="HoopCheck member">✓</span>{rolePill&&<span className={"hf5-pill hf5-pill--"+roleKey}>{rolePill.label}</span>}{p.post_kind==="news"&&<span className="hf5-pill hf5-pill--news">News</span>}{p.post_kind==="poll"&&<span className="hf5-pill hf5-pill--poll">Poll</span>}<small>· {p.ageLabel}</small></div>{p.profiles?.current_team&&<span className="hc-feed-jersey-tag">{p.profiles.current_team}</span>}{p.shared_post?.profiles?.display_name&&<small className="muted">Originally shared from {p.shared_post.profiles.display_name}</small>}{p.location_country&&p.profiles?.current_country_public!==false&&<div className="muted hc-feed-location"><HoopIcon name="map-pin" size={14} /> Country: {p.location_country}</div>}</div></FeedAuthorRow></header>
