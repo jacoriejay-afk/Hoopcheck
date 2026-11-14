@@ -21,7 +21,7 @@ import "./feed-compact-hero.css";
 import "./feed-pull-refresh.css";
 
 type MiniProfile = { display_name: string | null; avatar_url: string | null; account_type?: string | null; current_country?: string | null; current_country_public?: boolean; current_team?: string | null };
-type Post = TaggedPost & { entity?: EntityTag; post_location?: string | null; id:string; shared_post_id?:string|null; shared_post?:{author_id:string;profiles?:{display_name:string|null}|null}|null; body:string; image_url:string|null; image_urls?:string[]|null; video_url?:string|null; post_kind?:string|null; poll_options?:string[]|null; is_pinned?:boolean|null; pinned_at?:string|null; location_country:string|null; topic_tag?:TopicTag|null; game_day_team?:string|null; game_day_opponent?:string|null; game_day_score_for?:number|null; game_day_score_against?:number|null; created_at:string; expires_at:string|null; author_id:string; ageLabel?:string; profiles?:MiniProfile|null };
+type Post = TaggedPost & { entity?: EntityTag; post_location?: string | null; community_pinned_at?: string | null; id:string; shared_post_id?:string|null; shared_post?:{author_id:string;profiles?:{display_name:string|null}|null}|null; body:string; image_url:string|null; image_urls?:string[]|null; video_url?:string|null; post_kind?:string|null; poll_options?:string[]|null; is_pinned?:boolean|null; pinned_at?:string|null; location_country:string|null; topic_tag?:TopicTag|null; game_day_team?:string|null; game_day_opponent?:string|null; game_day_score_for?:number|null; game_day_score_against?:number|null; created_at:string; expires_at:string|null; author_id:string; ageLabel?:string; profiles?:MiniProfile|null };
 type VoteState = { counts:number[]; total:number; mine:number|null };
 type TopicTag = "Practice" | "Game Day" | "Travel" | "Teammates" | "Culture" | "Win" | "Challenge";
 type TypeFilter = "All Posts" | "Discussion" | "News" | "Media" | "Polls" | "Saved";
@@ -82,7 +82,7 @@ export default function Feed(){
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [world, setWorld] = useState<FeedWorld | null>(null);
   const [ready, setReady] = useState(false);
-  const voteRequests = useRef(new Set<string>());
+  const [pendingVotes, setPendingVotes] = useState<Record<string, boolean>>({});
   const [visibleLimit, setVisibleLimit] = useState(30);
   const [location, setLocation] = useState("");
   const [tag, setTag] = useState<EntityTag | null>(null);
@@ -111,7 +111,7 @@ export default function Feed(){
     return true;
   }).slice().sort((a,b)=>{
     if (a.id !== b.id && (a.id === linkedPostId || b.id === linkedPostId)) return a.id === linkedPostId ? -1 : 1;
-    return compareFeedPosts(a, b, sort, checks, now || Date.now());
+    return compareFeedPosts(a, b, sort, checks, now);
   });
 
   const access=getHoopCheckEntitlements({accountType:profile?.account_type,subscription,isAdmin:adminRole==="admin"}).canReadHoopFeed;
@@ -121,7 +121,7 @@ export default function Feed(){
     const linkedPostId = window.location.hash.match(SHARED_POST_HASH)?.[1]?.toLowerCase();
     if (linkedPostId) setLinkedPostId(linkedPostId);
     const readablePosts = () => supabase.from("feed_posts").select(
-      "id,shared_post_id,body,image_url,image_urls,video_url,post_kind,poll_options,is_pinned,pinned_at,location_country,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,created_at,expires_at,author_id,post_location,club_id,womens_club_id,league_id,womens_league_id,club:teams!feed_posts_club_id_fkey(id,name),womens_club:womens_teams!feed_posts_womens_club_id_fkey(id,name),league:leagues!feed_posts_league_id_fkey(id,name),womens_league:womens_leagues!feed_posts_womens_league_id_fkey(id,name),profiles:profiles!feed_posts_author_id_fkey(display_name,avatar_url,account_type,current_country_public,current_team)")
+      "id,shared_post_id,body,image_url,image_urls,video_url,post_kind,poll_options,is_pinned,pinned_at,community_pinned_at,location_country,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,created_at,expires_at,author_id,post_location,club_id,womens_club_id,league_id,womens_league_id,club:teams!feed_posts_club_id_fkey(id,name),womens_club:womens_teams!feed_posts_womens_club_id_fkey(id,name),league:leagues!feed_posts_league_id_fkey(id,name),womens_league:womens_leagues!feed_posts_womens_league_id_fkey(id,name),profiles:profiles!feed_posts_author_id_fkey(display_name,avatar_url,account_type,current_country_public,current_team)")
       .eq("status", "approved").or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
     const [linkedPostResult, archiveResult, followResult] = await Promise.all([
       linkedPostId ? readablePosts().eq("id", linkedPostId).maybeSingle() : null,
@@ -317,8 +317,8 @@ export default function Feed(){
   }
 
   async function vote(p: Post, optionIndex: number) {
-    if (!user || !access || voteRequests.current.has(p.id)) return;
-    voteRequests.current.add(p.id);
+    if (!user || !access || pendingVotes[p.id]) return;
+    setPendingVotes(current => ({ ...current, [p.id]: true }));
     try {
       const result = await apiAction({ kind: "vote", post_id: p.id, option_index: String(optionIndex) });
       if (!result.ok) { setMsg(result.message || "That vote didn't go through. Please try again."); return; }
@@ -331,7 +331,7 @@ export default function Feed(){
       }
       setVotes(current => ({ ...current, [p.id]: updated }));
     } finally {
-      voteRequests.current.delete(p.id);
+      setPendingVotes(current => ({ ...current, [p.id]: false }));
     }
   }
 
@@ -345,9 +345,9 @@ export default function Feed(){
 
   async function togglePin(p:Post){
     if(!user||!isAdmin)return;
-    const r=await apiAction({kind:"pin",post_id:p.id,pinned:p.is_pinned?"false":"true"});
+    const r=await apiAction({kind:"community-pin",post_id:p.id,pinned:p.community_pinned_at?"false":"true"});
     if(!r.ok){setMsg(r.message||"Couldn't update the pin. Please try again.");return;}
-    setMsg(p.is_pinned?"Post unpinned.":"Post pinned to the top of HoopFeed.");
+    setMsg(p.community_pinned_at ? "Post unpinned." : "Post pinned to Today on HoopFeed.");
     await load(user);
   }
 
@@ -527,9 +527,9 @@ export default function Feed(){
     {msg && <p className="hc-feed-message" role="status">{msg}</p>}
     {refreshing && <p className="hc-feed-pull-loading" role="status">Updating HoopFeed…</p>}
     {segment === "All" && ready && <HoopFeedToday
-      pinned={posts.filter(post => post.is_pinned).sort((a, b) => Date.parse(b.pinned_at ?? b.created_at) - Date.parse(a.pinned_at ?? a.created_at))[0]}
+      pinned={posts.filter(post => post.community_pinned_at).sort((a, b) => Date.parse(b.community_pinned_at!) - Date.parse(a.community_pinned_at!))[0]}
       poll={posts.find(post => post.post_kind === "poll" && votes[post.id]?.mine == null)}
-      world={world} now={now || Date.now()} onPost={showSystemPost} canUseChat={getHoopCheckEntitlements({accountType:profile?.account_type, subscription, isAdmin}).canUseLiveGameChat} />}
+      world={world} now={now} onPost={showSystemPost} canUseChat={getHoopCheckEntitlements({accountType:profile?.account_type, subscription, isAdmin}).canUseLiveGameChat} />}
     {sharedLinkUnavailable && <p role="status">This shared post is unavailable.</p>}
     <section className="hc-feed-stream" aria-label="Recent HoopFeed posts">{!ready ? <FeedLoadingSkeleton count={3} /> : visiblePosts.length?visiblePosts.slice(0, visibleLimit).map(p=>{const cs=orderCommentThreads(comments[p.id]||[]);const roleKey=(p.profiles?.account_type||"").toLowerCase();const rolePill=ROLE_PILLS[roleKey];const mediaImgs:string[]=(p.image_urls&&p.image_urls.length?p.image_urls:(p.image_url?[p.image_url]:[]));const carouselPos=Math.min(carouselIdx[p.id]||0,Math.max(0,mediaImgs.length-1));return <FeedPostCard key={p.id} onDoubleClick={()=>void toggleCheck(p)}>
       
@@ -545,7 +545,7 @@ export default function Feed(){
       {p.topic_tag==="Game Day"&&p.game_day_team&&p.game_day_opponent&&<div className="hc-feed-game-score"><span>{p.game_day_team}</span>{p.game_day_score_for!=null&&p.game_day_score_against!=null?<strong>{p.game_day_score_for} <i>—</i> {p.game_day_score_against}</strong>:<strong className="hc-feed-game-vs">VS</strong>}<span>{p.game_day_opponent}</span></div>}{p.body.trim()&&<div className="hc-feed-post-body"><p>{p.body}</p></div>}{p.post_kind==="poll"&&Array.isArray(p.poll_options)&&p.poll_options.length>0&&(()=>{const v=votes[p.id]||{counts:p.poll_options.map(()=>0),total:0,mine:null};const voted=v.mine!==null;return <div className="hf5-poll" role="group" aria-label="Poll">{p.poll_options.map((opt,oi)=>{const pct=v.total?Math.round((v.counts[oi]||0)/v.total*100):0;return voted?<div key={oi} className={"hf5-poll__result"+(v.mine===oi?" is-mine":"")}><button type="button" className="hf5-poll__bar-button" onClick={()=>void vote(p,oi)} aria-label={"Vote for "+opt}><span className="hf5-poll__fill" style={{width:pct+"%"}} /><span className="hf5-poll__label">{opt}{v.mine===oi?" ✓":""}</span><span className="hf5-poll__pct">{pct}%</span></button></div>:<button key={oi} type="button" className="hf5-poll__option" onClick={()=>void vote(p,oi)}>{opt}</button>;})}<small className="muted">{v.total} {v.total===1?"vote":"votes"}{voted?" · Tap another option to change your vote":""}</small></div>;})()}<FeedMediaArea>{p.image_url||mediaImgs.length?(mediaImgs.length===1?<HoopFeedPrivateMedia postId={p.id} reference={mediaImgs[0]} kind="image" alt="HoopFeed post" className={"hc-feed-post-image"+(checkBursts[p.id]?" hc-feed-photo-check-burst":"")} />:<div className="hf5-carousel"><HoopFeedPrivateMedia postId={p.id} reference={mediaImgs[carouselPos]} kind="image" alt={"HoopFeed post photo "+(carouselPos+1)+" of "+mediaImgs.length} className={"hc-feed-post-image"+(checkBursts[p.id]?" hc-feed-photo-check-burst":"")} /><span className="hf5-carousel__count">{carouselPos+1}/{mediaImgs.length}</span>{carouselPos>0&&<button type="button" className="hf5-carousel__nav hf5-carousel__nav--prev" aria-label="Previous photo" onClick={()=>setCarouselIdx(x=>({...x,[p.id]:carouselPos-1}))}>‹</button>}{carouselPos<mediaImgs.length-1&&<button type="button" className="hf5-carousel__nav hf5-carousel__nav--next" aria-label="Next photo" onClick={()=>setCarouselIdx(x=>({...x,[p.id]:carouselPos+1}))}>›</button>}<div className="hf5-carousel__dots">{mediaImgs.map((_,di)=><span key={di} className={"hf5-carousel__dot"+(di===carouselPos?" is-active":"")} />)}</div></div>):null}{p.video_url&&<HoopFeedPrivateMedia postId={p.id} reference={p.video_url} kind="video" className="hc-feed-post-image" ariaLabel="HoopFeed video"/>}</FeedMediaArea>
       <FeedActionRow><button type="button" className={"hc-feed-action-pill hf5-check"+(mine[p.id]?" is-active":"")+(checkBursts[p.id]?" hc-feed-check-burst":"")} aria-label="Check this post" title="Check" onClick={()=>void toggleCheck(p)}><span className="hf5-up" aria-hidden="true">↑</span> {checks[p.id]||0}{checkBursts[p.id]&&<span className="hc-feed-check-pop" aria-hidden="true">✓</span>}</button><button type="button" className="hc-feed-action-pill" onClick={() => {
         setOpenComments(p.id); void loadComments(p.id);
-      }}>{comments[p.id] ? `${cs.length} ${cs.length === 1 ? "comment" : "comments"}` : "Comments"}</button><button type="button" className="hc-feed-action-pill" disabled={posting} onClick={()=>void sharePost(p)}>Share</button><button type="button" className={"hc-feed-action-pill"+(savedMap[p.id]?" is-active":"")} onClick={()=>void toggleSave(p)}>{savedMap[p.id]?"🔖 Saved":"🔖 Save"}</button>{isAdmin && <button type="button" className="hc-feed-action-pill" onClick={() => void togglePin(p)}>{p.is_pinned ? "Unpin" : "Pin"}</button>}{p.author_id===user?.id&&<><button type="button" className="hc-feed-action-pill" onClick={()=>void del(p)}>Delete</button></>}</FeedActionRow>
+      }}>{comments[p.id] ? `${cs.length} ${cs.length === 1 ? "comment" : "comments"}` : "Comments"}</button><button type="button" className="hc-feed-action-pill" disabled={posting} onClick={()=>void sharePost(p)}>Share</button><button type="button" className={"hc-feed-action-pill"+(savedMap[p.id]?" is-active":"")} onClick={()=>void toggleSave(p)}>{savedMap[p.id]?"🔖 Saved":"🔖 Save"}</button>{isAdmin && <button type="button" className="hc-feed-action-pill" onClick={() => { void togglePin(p); }}>{p.community_pinned_at ? "Unpin" : "Pin"}</button>}{p.author_id===user?.id&&<><button type="button" className="hc-feed-action-pill" onClick={()=>void del(p)}>Delete</button></>}</FeedActionRow>
       {openComments === p.id && <HoopFeedCommentsDialog onClose={() => setOpenComments(null)}>
         <div className="hc-feed-comment-list">
           {cs.map(c => <article key={c.id} style={{ marginInlineStart: Math.min(c.depth * 12, 36) }}>
@@ -563,7 +563,7 @@ export default function Feed(){
           {replyTargets[p.id] && <button type="button" onClick={() => setReplyTargets(current => ({ ...current, [p.id]: null }))}>
             Replying to {replyTargets[p.id]?.name} ×</button>}
           {commentErrors[p.id] && <p role="alert">{commentErrors[p.id]} {!comments[p.id] &&
-            <button type="button" onClick={() => void loadComments(p.id)}>Retry</button>}</p>}
+            <button type="button" onClick={() => { void loadComments(p.id); }}>Retry</button>}</p>}
           <div><input aria-label="Write a comment" value={drafts[p.id] || ""} maxLength={1000}
             onChange={event => setDrafts(current => ({ ...current, [p.id]: event.target.value }))}
             placeholder={replyTargets[p.id] ? "Write a reply…" : "Add a comment…"} />

@@ -2,8 +2,8 @@
 begin;
 create schema if not exists auth;
 create schema if not exists private;
-create role anon;
-create role authenticated;
+do $$ begin create role anon nologin; exception when duplicate_object then null; end $$;
+do $$ begin create role authenticated nologin; exception when duplicate_object then null; end $$;
 grant usage on schema auth, private to authenticated;
 create function auth.uid() returns uuid language sql stable as
 $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;

@@ -5,6 +5,7 @@ alter table public.feed_posts
   add column if not exists league_id uuid references public.leagues(id) on delete set null,
   add column if not exists womens_league_id uuid references public.womens_leagues(id) on delete set null,
   add column if not exists post_location text,
+  add column if not exists community_pinned_at timestamptz,
   add column if not exists community_visible boolean not null default false,
   add constraint feed_posts_one_entity check (num_nonnulls(club_id, womens_club_id, league_id, womens_league_id) <= 1),
   add constraint feed_posts_location_length check (char_length(post_location) between 1 and 100);
