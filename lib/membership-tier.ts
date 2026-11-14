@@ -1,5 +1,5 @@
 export type MembershipTier = "free" | "pro" | "premium";
-export type HoopCheckAccountType = "player" | "fan" | "coach" | "agent" | "club_admin" | "admin" | string;
+export type HoopCheckAccountType = "player" | "fan" | "coach" | "agent" | "club_admin" | "creator" | "admin" | string;
 
 export type HoopCheckEntitlements = {
   tier: MembershipTier;
@@ -82,7 +82,7 @@ export function getHoopCheckEntitlements(args: {
   const active = isAdmin || tier !== "free";
   const isPlayer = role === "player";
   const isFan = role === "fan";
-  const recognizedRole = ["player", "fan", "coach", "scout", "agent", "club_admin", "admin"].includes(role);
+  const recognizedRole = ["player", "fan", "coach", "scout", "agent", "club_admin", "creator", "admin"].includes(role);
   const otherMember = recognizedRole && !isPlayer && !isFan;
   const canUseHoopFeed = isAdmin || (
     (recognizedRole || role === "manager") && active &&
