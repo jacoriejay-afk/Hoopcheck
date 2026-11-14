@@ -296,6 +296,21 @@ assert.match(playerContactPolicy, /target\.profile_visibility = 'public'/, "targ
 assert.match(playerContactPolicy, /target\.moderation_status <> 'suspended'/, "suspended target must be denied");
 
 
+
+for (const [label, subscription, allowed] of [
+  ["Creator Free", null, false],
+  ["Creator Pro", active("pro"), true],
+  ["Creator Premium", active("premium"), true],
+  ["Creator Expired", { ...active("pro"), current_period_end: "2020-01-01T00:00:00Z" }, false],
+]) {
+  const entitlements = getHoopCheckEntitlements({ accountType: "creator", subscription });
+  assert.equal(entitlements.canReadHoopFeed, allowed, label + " read access");
+  assert.equal(entitlements.canWriteHoopFeed, allowed, label + " publishing access");
+  assert.equal(entitlements.canWriteReviews, false, label + " cannot write reviews");
+  assert.equal(entitlements.canReadFullReviews, false, label + " cannot read full reviews by creator role");
+  assert.equal(entitlements.canViewTrustScore, false, label + " cannot view trust score by creator role");
+}
+
 // REELS-1: Creator publishing must not unlock unrelated reviews/trust tools.
 const creatorResolverSource = read("../lib/membership-tier.ts");
 assert.match(creatorResolverSource, /role !== "creator"/, "Creator must not inherit other-member review entitlements");
