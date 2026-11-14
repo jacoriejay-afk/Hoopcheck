@@ -170,7 +170,8 @@ try {
         const toggleBox = await toggle.boundingBox();
         assert.ok(fieldBox && toggleBox && toggleBox.x >= fieldBox.x && toggleBox.y >= fieldBox.y &&
           toggleBox.x + toggleBox.width <= fieldBox.x + fieldBox.width &&
-          toggleBox.y + toggleBox.height <= fieldBox.y + fieldBox.height, "Password toggle fits inside its field");
+          toggleBox.y + toggleBox.height <= fieldBox.y + fieldBox.height,
+          `Password toggle fits inside its field: ${JSON.stringify({ fieldBox, toggleBox })}`);
         await toggle.click();
         assert.equal(await password.getAttribute("type"), "text");
         await guestPage.getByRole("button", { name: "Hide password" }).click();

@@ -192,8 +192,9 @@ main.hc-auth-page .hc-sign-in-card form input.input {
 }
 .hc-auth-password input,
 main.hc-auth-page .hc-sign-in-card form .hc-auth-password input.input {
+  display: block;
   padding-inline-end: 74px;
-  margin-bottom: 0;
+  margin: 0;
 }
 .hc-auth-password button {
   position: absolute;
