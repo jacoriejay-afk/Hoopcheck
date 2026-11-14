@@ -126,7 +126,7 @@ return (
           )}
           <Link
             href={`/leagues/${league.id}`}
-            className="btn"
+            className="btn button-primary"
           >
             View League
           </Link>

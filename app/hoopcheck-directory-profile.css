@@ -1221,7 +1221,7 @@ html.theme-light .admin-team-logo-studio input,
 html.theme-light .admin-team-logo-studio select,
 html.theme-light .admin-team-logo-studio textarea { background: #FFFFFF !important; color: #0A0A0A !important; border-color: #B8B8B8 !important; }
 html.theme-light .admin-team-logo-studio [role="status"] { background: #FFFFFF !important; border-color: #B8B8B8 !important; color: #0A0A0A !important; }
-html.theme-light .admin-team-logo-studio button { color: #FFFFFF; }
+html.theme-light .admin-team-logo-studio button:not(.hc-shared-picker-trigger, .hc-shared-picker-clear) { color: #FFFFFF; }
 /* TM-1 — compact stacked club profile header, shared MOD-1 shell surfaces. */
 .hc-team-entity-profile .hc-team-profile-hero {
   box-sizing:border-box;

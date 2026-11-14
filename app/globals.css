@@ -1267,7 +1267,7 @@ html.theme-dark .card, html.theme-dark .dashboard-card, html.theme-dark .result-
 }
 
 .geo-badge { display:inline-flex; align-items:center; gap:7px; width:max-content; margin:4px 0 10px; padding:5px 9px; border:1px solid var(--border); border-radius:999px; background:rgba(255,255,255,.035); font-size:12px; }
-.geo-badge b { color:var(--orange); font-family:var(--display-font); font-size:10px; letter-spacing:.08em; }
+.geo-badge b { color:var(--hc-accent-text); font-family:var(--display-font); font-size:10px; letter-spacing:.08em; }
 .entity-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:14px 0 6px; }
 .dashboard-card { position:relative; border:1px solid var(--border); border-radius:var(--hc-radius-card); padding:22px; background:linear-gradient(145deg,var(--surface-2),var(--surface-3)); }
 .dashboard-card h2 { margin:7px 0 8px; font-size:20px; }

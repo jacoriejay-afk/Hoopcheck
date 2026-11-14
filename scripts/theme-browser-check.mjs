@@ -558,6 +558,12 @@ try {
       await route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(data) });
     });
 
+    await page.route("**/api/review-access?*", async route => {
+      const { searchParams } = new URL(route.request().url());
+      if (searchParams.get("entityType") !== "team") return route.continue();
+      await route.fulfill({ json: { tier: "pro", canReadFull: true, canWrite: true, reviews: [] } });
+    });
+
     // Exercise the real Settings language control before capturing every route.
     await page.goto(baseURL + "/settings", { waitUntil: "domcontentloaded", timeout: 20000 });
     const languageSelect = page.locator("main:visible select.language-select:visible");

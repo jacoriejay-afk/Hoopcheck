@@ -135,4 +135,6 @@
 .hc-live-hub-page .hc-live-section-heading .eyebrow { color:var(--hc-foreground-muted)!important; }
 
 .hc-live-hub-page .hc-live-hub-hero .eyebrow { color:var(--hc-accent-text)!important; }
-.hc-live-hub-page .hc-live-hub-hero > div > p:not(.eyebrow) { color:var(--hc-foreground-muted)!important; }
+html body main.hc-live-hub-page .hc-live-hub-hero > div > p:not(.eyebrow) { color:var(--hc-foreground-muted)!important; }
+
+html body main.hc-live-hub-page .hc-live-hub-card :is(.hc-live-card__league, .hc-live-card__meta, .hc-live-card__muted, .hc-live-card__vs) { color:var(--hc-foreground-muted)!important; }
