@@ -48,9 +48,11 @@ export default async function OwnerHQ() {
       <section className="dashboard-card">
         <h2>Business operations</h2>
         <p>Stripe paid invoices created in the past 30 days (USD only). This is gross paid invoice volume before refunds, processing fees and taxes; it is not net revenue or MRR.</p>
-        {stripeSummary.error ? <p role="status">Stripe reporting unavailable. No financial totals shown.</p> : <div style={{display:"flex",gap:24,flexWrap:"wrap"}}><p><strong>{stripeSummary.paidInvoices}</strong> paid invoices</p><p><strong>{stripeSummary.activeSubscriptions ?? "Unavailable"}</strong> active Stripe subscriptions</p><p><strong>{new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(stripeSummary.grossPaidMinor/100)}</strong> gross paid invoice volume</p></div>}
+        {stripeSummary.error ? <p role="status">Stripe reporting unavailable. No financial totals shown.</p> : <div style={{display:"flex",gap:24,flexWrap:"wrap"}}><p><strong>{stripeSummary.paidInvoices}</strong> paid invoices</p><p><strong>{stripeSummary.activeSubscriptions ?? "Unavailable"}</strong> active Stripe subscriptions</p><p><strong>{new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(stripeSummary.grossPaidMinor/100)}</strong> gross paid invoice volume</p><p><strong>{stripeSummary.refundedMinor == null ? "Unavailable" : new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(stripeSummary.refundedMinor/100)}</strong> successful USD refunds created in the last 30 days</p></div>}
         {stripeSummary.incomplete && <p role="status">Partial results: invoice pagination limit reached.</p>}
         {stripeSummary.subscriptionsIncomplete && <p role="status">Partial results: subscription pagination limit reached.</p>}
+        {stripeSummary.refundsIncomplete && <p role="status">Partial results: refund pagination limit reached.</p>}
+        <p>Refunds are tracked by refund creation date, while paid invoices are grouped by invoice creation date. Do not subtract these figures to calculate net revenue.</p>
         <p><Link href="/admin/ambassadors">Manage ambassador campaigns, agreements and payouts</Link></p>
       </section>
       <OwnerRolePreview />
