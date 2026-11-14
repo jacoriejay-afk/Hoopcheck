@@ -244,20 +244,20 @@ html.theme-light body main.hc-entity-profile-page .hc-team-profile-hero :where(h
   --hc-page-bg:#F4F4F1; --hc-surface:#FFFFFF; --hc-surface-raised:#FFFFFF;
   --hc-surface-soft:#F8F8F6; --hc-foreground:#151515; --hc-foreground-muted:#666661;
   --hc-border:#E4E4E0; --hc-on-surface-raised:#151515; --hc-on-surface-raised-muted:#666661;
-  --hc-card:#FFFFFF; --hc-text:#151515; --hc-ink:#151515; --hc-paper:#F4F4F1; --hc-paper-strong:#FFFFFF;
+  --hc-accent-text:#A4310B; --hc-card:#FFFFFF; --hc-text:#151515; --hc-ink:#151515; --hc-paper:#F4F4F1; --hc-paper-strong:#FFFFFF;
 }
 .hc-card-audit-preview[data-theme-preview="dark"] {
   --hc-page-bg:#0A0A0A; --hc-surface:#111111; --hc-surface-raised:#171717;
   --hc-surface-soft:#1B1B1B; --hc-foreground:#F5F5F0; --hc-foreground-muted:#B8B8B3;
   --hc-border:#333333; --hc-on-surface-raised:#F5F5F0; --hc-on-surface-raised-muted:#B8B8B3;
-  --hc-card:#171717; --hc-text:#F5F5F0; --hc-ink:#F5F5F0; --hc-paper:#0A0A0A; --hc-paper-strong:#171717;
+  --hc-accent-text:#FF9C74; --hc-card:#171717; --hc-text:#F5F5F0; --hc-ink:#F5F5F0; --hc-paper:#0A0A0A; --hc-paper-strong:#171717;
 }
 .hc-card-audit-page .hc-card-audit-preview :where(.hc-surface,.hc-layout-card,.hc-layout-group,.hc-template-category,.hc-category-tile,.hc-ia-door,.hc-live-hub-hero,.hc-live-hub-card,.hc-live-hub-filters,.hc-ia-completion,.hc-ia-live-strip,.hc-team-profile-hero,.hc-player-profile-hero,.hc-player-profile-completion,.hc-dossier-identity,.hc-profile-panel,.hc-review-card,.hc-membership-hero,.membership-hero,.plan-card,.dashboard-card,.hero-card,.modal-panel) {
   background-color:var(--hc-surface-raised)!important;
   color:var(--hc-on-surface-raised)!important;
   border-color:var(--hc-border)!important;
 }
-.hc-card-audit-page .hc-card-audit-preview :where(h1,h2,h3,h4,p,span,strong,small,label,li,dt,dd,svg):not(.eyebrow):not(.hc-profile-eyebrow):not(.hc-team-profile-kicker) {
+.hc-card-audit-page .hc-card-audit-preview :where(h1,h2,h3,h4,p,span,strong,small,label,li,dt,dd,svg):not(.eyebrow):not(.hc-profile-eyebrow):not(.hc-team-profile-kicker):not(.hc-dossier-tag-orange) {
   color:inherit!important;
   -webkit-text-fill-color:currentColor!important;
 }
@@ -299,4 +299,22 @@ html.theme-light body main.hc-entity-profile-page .hc-team-profile-hero :where(h
 @media(max-width:760px) {
   .hc-card-audit-grid { grid-template-columns:minmax(0,1fr); }
   .hc-card-audit-page { padding-top:16px; }
+}
+
+/* The two audit specimens each own their foreground and background pairing. */
+html body .hc-global-page-shell main.hc-card-audit-page .hc-card-audit-preview[data-theme-preview] :is(.dashboard-card,.hc-layout-group,.modal-panel) {
+  background: var(--hc-surface-raised) !important;
+  color: var(--hc-foreground) !important;
+}
+html body main.hc-card-audit-page .hc-card-audit-preview :is(.dashboard-card,.hc-layout-group,.modal-panel) :is(h3,p,strong) {
+  color: var(--hc-foreground) !important;
+}
+html body main.hc-card-audit-page .hc-card-audit-preview :is(.dashboard-card,.hc-live-hub-hero) .eyebrow {
+  color: var(--hc-accent-text) !important;
+}
+html body .hc-global-page-shell main.hc-card-audit-page .hc-card-audit-preview .hc-player-dossier .hc-dossier-tag-orange {
+  color: #151515 !important;
+}
+html body main.hc-card-audit-page .hc-card-audit-preview .hc-player-dossier td {
+  color: var(--hc-foreground) !important;
 }

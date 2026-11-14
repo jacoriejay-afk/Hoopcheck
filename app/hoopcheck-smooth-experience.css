@@ -76,7 +76,7 @@
 .hc-smooth-presign-link:focus-visible {outline:2px solid var(--brand-orange);outline-offset:2px;}
 @media(max-width:420px){.hc-smooth-presign-link {flex-wrap:wrap;}.hc-smooth-presign-link span{flex-basis:100%;order:3;}}
 
-.hc-trust-details-toggle {display:inline-flex;align-items:center;background:transparent;color:var(--brand-orange);border:0;padding:7px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-size:12px;font-weight:700;}
+.hc-trust-details-toggle {display:inline-flex;align-items:center;background:transparent;color:var(--hc-accent-text);border:0;padding:7px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-size:12px;font-weight:700;}
 .hc-trust-details-toggle:focus-visible {outline:2px solid var(--brand-orange);outline-offset:2px;}
 .hc-trust-details {display:block;max-width:40ch;line-height:1.5;margin-top:5px;}
 .hc-trust-score__dial svg circle[stroke="#FF5A1F"] {transition:stroke-dashoffset 600ms var(--hc-ease-fluid);}

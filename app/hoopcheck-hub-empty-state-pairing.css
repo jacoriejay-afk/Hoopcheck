@@ -85,6 +85,11 @@
 }
 .hc-card-audit-preview .muted { color:var(--hc-foreground-muted)!important; }
 .hc-card-audit-preview .hc-live-hub-card :where(strong,span,p) { color:inherit; }
+main.hc-card-audit-page .hc-card-audit-preview .hc-live-hub-card .hc-live-state {
+  background: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border);
+}
 @media(max-width:760px) {
   .hc-card-audit-grid { grid-template-columns:minmax(0,1fr); }
   .hc-card-audit-page { padding-top:16px; }
