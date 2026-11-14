@@ -26,9 +26,11 @@ export function validateReelInput(input: {
     return "Video must be 100 MB or smaller.";
   if (!Number.isFinite(input.durationSeconds) || input.durationSeconds <= 0 || input.durationSeconds > REEL_MAX_SECONDS)
     return "Video must be 90 seconds or shorter.";
-  if (input.caption.length > REEL_MAX_CAPTION_LENGTH)
+  if (typeof input.caption !== "string" || input.caption.length > REEL_MAX_CAPTION_LENGTH)
     return "Caption must be 300 characters or fewer.";
-  if (input.tag && (!["club", "league", "player"].includes(input.tag.type) ||
+  if (input.tag !== null && (typeof input.tag !== "object" ||
+    !["club", "league", "player"].includes(input.tag.type) ||
+    typeof input.tag.id !== "string" ||
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.tag.id)))
     return "Choose one valid club, league, or player tag.";
   return null;
