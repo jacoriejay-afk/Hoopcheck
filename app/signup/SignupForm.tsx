@@ -15,12 +15,12 @@ const TERMS_VERSION = "2026-10-01";
 type AccountType = "player" | "coach" | "manager" | "scout" | "agent" | "fan";
 
 const ACCOUNT_TYPES: {value:AccountType; title:string; description:string; icon:HoopIconName}[] = [
-  {value:"player",title:"Player",description:"Professional basketball player: build a verified career profile, research before signing, review teams you played for, and connect with the basketball industry.",icon:"basketball"},
-  {value:"coach",title:"Coach",description:"Coach: build a coaching profile, research organizations, and claim your team when authorized.",icon:"clipboard-check"},
-  {value:"manager",title:"Team Manager",description:"Team manager or club representative: claim your organization, submit verification, and manage official team updates after approval.",icon:"users"},
-  {value:"scout",title:"Scout",description:"Scout: discover players and research teams, leagues, markets, and talent around the world.",icon:"search"},
-  {value:"agent",title:"Agent",description:"Agent: research players, teams, leagues, markets, and recruiting opportunities.",icon:"users"},
-  {value:"fan",title:"Fan",description:"Fan: follow favorite teams, track leagues, and personalize a basketball-first experience.",icon:"star"},
+  {value:"player",title:"Player",description:"Build a verified career profile and review teams you played for.",icon:"basketball"},
+  {value:"coach",title:"Coach",description:"Build a coaching profile and research organizations.",icon:"clipboard-check"},
+  {value:"manager",title:"Team Manager",description:"Claim your club and manage team updates after approval.",icon:"users"},
+  {value:"scout",title:"Scout",description:"Discover players and research teams and leagues.",icon:"search"},
+  {value:"agent",title:"Agent",description:"Research players, clubs, and recruiting opportunities.",icon:"users"},
+  {value:"fan",title:"Fan",description:"Follow teams, track leagues, and join fan groups.",icon:"star"},
 ];
 
 export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
@@ -151,7 +151,7 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
           </> : <div className="non-player-preferences">
             <div className="signup-step-label">BASKETBALL TO FOLLOW</div>
             <TeamLeaguePicker mode="team" label="Choose a team to follow" value={favoriteTeamName} returnValue="name" onChange={setFavoriteTeamName} basketballType={null} placeholder="Search teams by name, city or country" />
-            <p className="form-hint">No player-position, years-pro, or former-team questions for {accountType}s. You can follow more teams after signup.</p>
+            <p className="form-hint">You can follow more teams after signup.</p>
           </div>}
 
           <div className="signup-two-col">
