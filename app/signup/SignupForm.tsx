@@ -121,13 +121,8 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
     <section className="auth-page signup-page">
       <div className="auth-hero">
         <div className="eyebrow">JOIN HOOPCHECK</div>
-        <h1>Choose your lane.<br/>Then build your experience.</h1>
-        <p>HoopCheck adapts the signup experience to how you use basketball. Players get professional profile tools; coaches and team managers can request team control; fans, scouts, and agents get a research-first experience.</p>
-        <div className="feature-grid">
-          <div className="feature"><strong>01</strong><span>Research global basketball.</span></div>
-          <div className="feature"><strong>02</strong><span>Follow teams you care about.</span></div>
-          <div className="feature"><strong>03</strong><span>Connect with the basketball community.</span></div>
-        </div>
+        <h1>Create your account</h1>
+        <p>Choose your role to personalize your HoopCheck experience.</p>
       </div>
 
       <div className="auth-card signup-card">
@@ -135,8 +130,8 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
           ? <p className="intro">Finish setting up HoopCheck with {googleEmail || "your Google account"}.</p>
           : <GoogleSignInButton disabled={loading} />}
         <div className="eyebrow">STEP 01 · ACCOUNT TYPE</div>
-        <h2>How will you use HoopCheck?</h2>
-        <p className="intro">Choose this first. We’ll only show you the questions that apply to your account.</p>
+        <h2>Choose your account type</h2>
+        <p className="intro">Select a role to see the fields relevant to you.</p>
         <div className="account-type-grid">
           {ACCOUNT_TYPES.map(type=><button key={type.value} type="button" onClick={()=>{if(!accountType){setAccountType(type.value);setError("");}}} className={`account-type-choice ${accountType===type.value?"selected":""}`}>
             <span className="account-type-icon"><HoopIcon name={type.icon} size={22} /></span><span><strong>{type.title}</strong><small>{type.description}</small></span><span className="account-type-check">{accountType===type.value?<HoopIcon name="check" size={16} />:<HoopIcon name="arrow-right" size={16} />}</span>
