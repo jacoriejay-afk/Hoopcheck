@@ -1160,9 +1160,9 @@ button, a, input, select, textarea { -webkit-tap-highlight-color:transparent; }
   font-weight: 800;
 }
 :where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page) :where(.btn:not(.dark),.search-button) {
-  background: #ff5500;
-  border-color: #ff5500;
-  color: #fff;
+  background: var(--hc-button-primary-bg);
+  border-color: var(--hc-button-primary-bg);
+  color: var(--hc-button-primary-fg);
 }
 .hc-directory-switcher a[aria-current="page"],
 .hc-directory-switcher a[aria-selected="true"],

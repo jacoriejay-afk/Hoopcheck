@@ -24,7 +24,7 @@ const requiredCss = [
   ".hc-live-hub-page .hc-live-hub-card,",
   ".hc-live-hub-page .hc-live-recent-empty",
   ".hc-live-hub-page .hc-live-card__crest",
-  ".hc-live-hub-page .hc-live-join",
+  ".hc-live-hub-page a.hc-live-join",
   "background: var(--hc-surface-raised) !important",
   "color: var(--hc-foreground) !important",
   "background: var(--hc-surface-soft) !important",

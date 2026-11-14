@@ -58,7 +58,7 @@ html body .hc-global-page-shell main :is(.search-hero, .hc-directory-intro) p {
   line-height: 1.6;
   max-width: 62ch;
 }
-html body .hc-global-page-shell main :is(.search-hero, .hc-directory-intro) :is(.eyebrow, .hc-directory-kicker) {
+html body .hc-global-page-shell main :is(.search-hero, .hc-directory-intro, .hc-shared-directory-hero) :is(.eyebrow, .hc-directory-kicker) {
   color: var(--hc-accent-text) !important;
   font-size: 12px;
   font-weight: 800;
@@ -138,4 +138,10 @@ html body .hc-global-page-shell main :is(a,button,input,select,textarea):focus-v
   html body .hc-global-page-shell main .hc-searchbar__submit { grid-column: 1 / -1; width: 100%; }
   html body .hc-global-page-shell main .hc-team-profile-overview-grid { grid-template-columns: minmax(0,1fr); }
   html body .hc-global-page-shell main .hc-team-directory-row { padding: 16px !important; }
+}
+
+/* Directory cards use the shared primary action colors. */
+html body .hc-global-page-shell main:is(.hc-coaches-directory-page, .hc-leagues-directory-page) .hc-team-row .button-primary {
+  background: var(--hc-button-primary-bg) !important;
+  color: var(--hc-button-primary-fg) !important;
 }

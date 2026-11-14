@@ -558,6 +558,12 @@ try {
       await route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(data) });
     });
 
+    await page.route("**/api/review-access?*", async route => {
+      const { searchParams } = new URL(route.request().url());
+      if (searchParams.get("entityType") !== "team") return route.continue();
+      await route.fulfill({ json: { tier: "pro", canReadFull: true, canWrite: true, reviews: [] } });
+    });
+
     // Exercise the real Settings language control before capturing every route.
     await page.goto(baseURL + "/settings", { waitUntil: "domcontentloaded", timeout: 20000 });
     const languageSelect = page.locator("main:visible select.language-select:visible");
@@ -584,7 +590,7 @@ try {
         // A route shell can render before its fixture data and controls. Audit
         // the populated page so timing does not hide contrast/copy findings.
         await page.locator("main:visible").waitFor({ state: "visible", timeout: 15000 });
-        await page.locator("main .hc-brand-loader--screen").waitFor({ state: "hidden", timeout: 15000 });
+        await page.waitForFunction(() => [...document.querySelectorAll("main .hc-brand-loader--screen")].every(loader => !loader.checkVisibility()), null, { timeout: 15000 });
         await page.waitForTimeout(300);
         if (requestedPath === "/live-games") {
           await page.locator("main.hc-live-hub-page .hc-live-hub-hero").waitFor({ state: "visible", timeout: 15000 });
@@ -702,7 +708,7 @@ try {
         await page.getByRole("tab", { name: "Fan Group" }).click();
         await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").waitFor({ state: "visible", timeout: 15000 });
         const fanGroupEntry = (await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").innerText()).trim();
-        if (!fanGroupEntry.includes("Fan Group") || !fanGroupEntry.includes("Joined")) errors.push("women team profile: Fan Group entry is missing or not joined: " + fanGroupEntry);
+        if (!/fan group/i.test(fanGroupEntry) || !/joined/i.test(fanGroupEntry)) errors.push("women team profile: Fan Group entry is missing or not joined: " + fanGroupEntry);
       }
       if (requestedPath === "/fan-feed") {
         // HF-5: Fan Feed now redirects into the shared HoopFeed community.
@@ -717,8 +723,8 @@ try {
         const lockedTarget = (await page.locator("main.hc-team-fan-group-page .hc-team-group-posting-target").innerText()).trim();
         if (!lockedTarget.includes("Posting to") || !lockedTarget.includes(teamFixture.name) || !lockedTarget.includes("Fan Group")) errors.push("team-hub group: composer does not explain its locked club/group destination: " + lockedTarget);
         const groupEmpty = (await page.locator("main.hc-team-fan-group-page .hc-feed-empty").innerText()).trim();
-        if (!groupEmpty.includes("No posts yet — be the first to post for " + teamFixture.name + ".")) errors.push("team-hub group: real club-specific empty state is missing");
-        if (!groupEmpty.includes("Be the first to post")) errors.push("team-hub group: empty-state composer action is missing");
+        if (!groupEmpty.toLowerCase().includes(("No posts yet — be the first to post for " + teamFixture.name + ".").toLowerCase())) errors.push("team-hub group: real club-specific empty state is missing");
+        if (await page.locator("main.hc-team-fan-group-page .hc-feed-empty button").count() !== 1) errors.push("team-hub group: empty-state composer action is missing");
         await page.locator("main.hc-team-fan-group-page .hc-feed-empty button").click();
         const composerFocused = await page.locator("#fan-group-post-body").evaluate(element => element === document.activeElement);
         if (!composerFocused) errors.push("team-hub group: empty-state action did not focus the locked group composer");
@@ -784,11 +790,17 @@ try {
             populatedGameCards: document.querySelectorAll(".hc-live-hub-card").length,
           };
         });
-        const raised = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
-        const soft = theme === "dark" ? "rgb(27, 27, 27)" : "rgb(248, 248, 246)";
-        const foreground = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
-        const muted = theme === "dark" ? "rgb(184, 184, 179)" : "rgb(102, 102, 97)";
-        const accent = "rgb(255, 90, 31)";
+        const palette = await page.locator("main.hc-live-hub-page").evaluate((main) => {
+          const sample = document.createElement("span");
+          main.append(sample);
+          const colors = Object.fromEntries(["surface-raised", "surface-soft", "foreground", "foreground-muted", "orange", "accent-text", "button-primary-bg", "button-primary-fg"].map(token => {
+            sample.style.setProperty("color", `var(--hc-${token})`, "important");
+            return [token, getComputedStyle(sample).color];
+          }));
+          sample.remove();
+          return colors;
+        });
+        const { "surface-raised": raised, "surface-soft": soft, foreground, "foreground-muted": muted, orange: accent } = palette;
         if (audit.emptyCards.length !== 2) errors.push("live-games: expected two empty-state cards; got " + audit.emptyCards.length);
         for (const [index, card] of audit.emptyCards.entries()) {
           if (card.background !== raised || card.color !== foreground || card.headingColor !== foreground || card.bodyColor !== muted) {
@@ -844,14 +856,14 @@ try {
         }
         if (populatedAudit.filter?.background !== raised || populatedAudit.filter?.color !== foreground) errors.push("live-games: populated filter card surface/foreground regressed");
         if (populatedAudit.hero?.background !== raised || populatedAudit.hero?.color !== foreground || populatedAudit.heroTitle?.color !== foreground ||
-            populatedAudit.heroEyebrow?.color !== accent || populatedAudit.heroSubtitle?.color !== muted) {
+            populatedAudit.heroEyebrow?.color !== palette["accent-text"] || populatedAudit.heroSubtitle?.color !== muted) {
           errors.push("live-games: hero dark-surface/light-ink pairing regressed: " + JSON.stringify({hero:populatedAudit.hero, title:populatedAudit.heroTitle, eyebrow:populatedAudit.heroEyebrow, subtitle:populatedAudit.heroSubtitle}));
         }
         if (populatedAudit.crests.length !== 6 || populatedAudit.crests.some(crest => crest.background !== soft || crest.color !== foreground)) {
           errors.push("live-games: team logo chips lost their paired surface/foreground tokens: " + JSON.stringify(populatedAudit.crests));
         }
         if (populatedAudit.mutedLabels.some(label => label.color !== muted)) errors.push("live-games: populated card metadata is not using readable muted foreground: " + JSON.stringify(populatedAudit.mutedLabels));
-        if (populatedAudit.liveChatLinks < 1 || populatedAudit.liveChatEntry?.background !== "rgb(255, 90, 31)" || populatedAudit.liveChatEntry?.color !== "rgb(17, 17, 17)") {
+        if (populatedAudit.liveChatLinks < 1 || populatedAudit.liveChatEntry?.background !== palette["button-primary-bg"] || populatedAudit.liveChatEntry?.color !== palette["button-primary-fg"]) {
           errors.push("live-games: live chat entry is missing or its text/surface pair is unreadable: " + JSON.stringify(populatedAudit.liveChatEntry));
         }
         if (["KICKER", "TITLE", "Subtitle", "TEAM FIRST", "Fan Only Note", "Composer Placeholder", "EMPTY TITLE", "EMPTY KICKER", "Empty Body", "Lorem", "TODO", "Placeholder"].some(term => populatedAudit.renderedText.includes(term))) {
@@ -879,6 +891,10 @@ try {
       if (theme === "dark" && result.whiteSurfaceOffenders.length) errors.push("white surface offenders: " + JSON.stringify(result.whiteSurfaceOffenders));
       if (result.lowContrastText.length) errors.push("low contrast text: " + JSON.stringify(result.lowContrastText));
       if (["/dashboard", "/search", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2"].includes(requestedPath)) {
+        if (requestedPath.startsWith("/teams/")) {
+          await page.getByRole("tab", { name: "Reviews", exact: true }).click();
+          await page.locator("#team-reviews-panel").waitFor({ state: "visible" });
+        }
         const visibleText = await page.locator("body").innerText();
         const expectedText = testLanguage === "es"
           ? requestedPath === "/dashboard" ? ["ACCIONES RÁPIDAS", "CONSULTAR UN EQUIPO"]

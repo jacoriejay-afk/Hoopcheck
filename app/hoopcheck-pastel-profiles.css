@@ -127,12 +127,12 @@
 }
 .hc-coach-entity-profile > section.hero:first-of-type {
   border:1px solid #eee5ed !important;border-radius:26px !important;
-  background:#fffaf7 !important;color:#25232c !important;
+  background:var(--hc-card-surface) !important;color:var(--hc-on-card) !important;
   padding:clamp(20px,4vw,38px) !important;
   box-shadow:0 10px 35px rgba(82,57,78,.07);
 }
 .hc-coach-entity-profile > section.hero:first-of-type h1 {
-  color:#25232c !important;font:800 clamp(25px,5vw,38px)/1.2 Inter,system-ui,sans-serif !important;
+  color:var(--hc-on-card) !important;font:800 clamp(25px,5vw,38px)/1.2 Inter,system-ui,sans-serif !important;
   letter-spacing:-.035em;overflow-wrap:anywhere;
 }
 .hc-coach-entity-profile > section.hero:first-of-type .eyebrow {color:#a04576 !important;}

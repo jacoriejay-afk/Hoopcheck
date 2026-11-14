@@ -143,7 +143,7 @@ html.theme-dark {
 ) :where(
   h1,h2,h3,h4,h5,h6,p,span,strong,small,label,li,dt,dd,legend,time,
   a:not(.btn):not(.button-primary),svg
-):not(.eyebrow):not(.hc-profile-eyebrow):not(.hc-team-profile-kicker):not(.hc-dossier-tag-orange):not(.btn):not(.btn *):not(.button-primary):not(.button-primary *) {
+):not(.hc-live-hub-page *):not(.eyebrow):not(.hc-profile-eyebrow):not(.hc-team-profile-kicker):not(.hc-dossier-tag-orange):not(.btn):not(.btn *):not(.button-primary):not(.button-primary *) {
   color: inherit !important;
   -webkit-text-fill-color: currentColor !important;
 }

@@ -2772,9 +2772,9 @@
   gap: 12px;
   margin: 0;
   padding: 12px clamp(12px, 3.5vw, 48px);
-  color: #555;
-  background: #f3f3f1;
-  border-bottom: 1px solid #dededb;
+  color: var(--hc-foreground-muted);
+  background: var(--hc-surface-soft);
+  border-bottom: 1px solid var(--hc-border);
   font-size: 12px;
   font-weight: 800;
 }
@@ -2818,9 +2818,9 @@
 /* Coach directory count and empty-state consistency. */
 .hc-coaches-directory-page .hc-coach-directory-summary {
   padding: 12px clamp(12px, 3.5vw, 48px);
-  color: #555;
-  background: #f3f3f1;
-  border-bottom: 1px solid #dededb;
+  color: var(--hc-foreground-muted);
+  background: var(--hc-surface-soft);
+  border-bottom: 1px solid var(--hc-border);
   font-size: 12px;
   font-weight: 800;
 }
@@ -4717,9 +4717,9 @@ main:has(.hc-review-form) .hc-review-form > .btn {
   justify-content: center;
   min-height: 36px;
   padding: 8px 11px;
-  color: #f3f3f3;
-  background: #1b1b1b;
-  border: 1px solid #383838;
+  color: var(--hc-button-outline-fg);
+  background: var(--hc-button-outline-bg);
+  border: 1px solid var(--hc-border);
   font-size: 11px;
   font-weight: 850;
   text-decoration: none;
@@ -5037,8 +5037,8 @@ main:has(.hc-review-form) .hc-review-form > .btn {
 .hc-legal-page .legal-card :where(h2,h3) { margin-top: 28px; font-weight: 900; letter-spacing: -.02em; }
 .hc-legal-page .legal-card p { line-height: 1.75; }
 .hc-legal-page .legal-footer { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 20px; border-top: 1px solid #deded9; }
-.hc-legal-page .legal-footer a { padding: 9px 12px; background: #101010; color: #fff; border-bottom: 2px solid var(--hc-orange, #ff6a00); font-size: 12px; font-weight: 800; text-decoration: none; }
-.hc-legal-page .legal-footer a:hover { background: #302219; }
+.hc-legal-page .legal-footer a { padding: 9px 12px; background: var(--hc-button-outline-bg); color: var(--hc-button-outline-fg); border-bottom: 2px solid var(--hc-orange, #ff6a00); font-size: 12px; font-weight: 800; text-decoration: none; }
+.hc-legal-page .legal-footer a:hover { background: var(--hc-nav-active-bg); }
 .hc-auth-page .hc-auth-hero {
   color: #fff;
   background: radial-gradient(ellipse at 90% 8%, rgba(255,106,0,.22), transparent 35%), #101010;

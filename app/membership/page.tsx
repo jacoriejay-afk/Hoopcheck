@@ -356,9 +356,9 @@ function MembershipContent() {
             )}
 
             <div className="hc-billing-options" role="group" aria-label="Choose billing term">
-              <button type="button" aria-pressed={billingInterval==="month"} className={billingInterval==="month" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("month")}><span>Monthly</span><small>Flexible billing</small></button>
-              <button type="button" aria-pressed={billingInterval==="6_month"} className={billingInterval==="6_month" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("6_month")}><span>6 months</span><small>Save 10%</small></button>
-              <button type="button" aria-pressed={billingInterval==="year"} className={billingInterval==="year" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 15%</small></button>
+              <button type="button" aria-pressed={billingInterval==="month"} className="hc-billing-option" onClick={()=>setBillingInterval("month")}><span>Monthly</span><small>Flexible billing</small></button>
+              <button type="button" aria-pressed={billingInterval==="6_month"} className="hc-billing-option" onClick={()=>setBillingInterval("6_month")}><span>6 months</span><small>Save 10%</small></button>
+              <button type="button" aria-pressed={billingInterval==="year"} className="hc-billing-option" onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 15%</small></button>
             </div>
             <div className="hc-membership-value"><span className="hc-membership-value__mark">★</span><div><strong>Best flexibility, better value.</strong><p>Choose monthly, 6-month, or annual billing. The total shown is the amount charged for the selected term.</p></div></div><div className="plans">
               <div className="plan-card">

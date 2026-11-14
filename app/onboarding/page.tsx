@@ -44,7 +44,7 @@ export default function OnboardingPage(){
  const label={player:"Player",coach:"Coach",scout:"Scout",agent:"Agent",fan:"Fan"}[accountType];
  const nonPlayer=accountType!=="player";
  return <main className="page-shell hc-onboarding-page"><div className="page-container signup-complete-shell">
-  <header className="topbar"><Link href="/" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/support">Help</Link><Link href="/login">Sign in</Link></nav></header>
+  <nav aria-label="Profile setup links" className="actions"><Link href="/support" className="btn dark">Help</Link><Link href="/login" className="btn dark">Sign in</Link></nav>
   <section className="hero-card"><p className="eyebrow">PROFILE SETUP · {label.toUpperCase()}</p><h1>Make HoopCheck yours.</h1><p className="muted">{nonPlayer?"A research-first profile with no player-only questions.":"A professional-player profile with structured basketball information."}</p></section>
   <section className="dashboard-card" style={{marginTop:18,display:"grid",gap:12}}>
    <label>Display name<input value={displayName} onChange={e=>setDisplayName(e.target.value)} maxLength={80}/></label>
