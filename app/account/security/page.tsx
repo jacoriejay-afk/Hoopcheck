@@ -12,10 +12,12 @@ export default function AccountSecurityPage() {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [enabled, setEnabled] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
 
   async function refresh() {
     const { data: user } = await supabase.auth.getUser();
-    if (!user.user) { setStatus("Sign in to manage your security."); return; }
+    if (!user.user) { setSignedIn(false); setStatus("Sign in to manage your security."); return; }
+    setSignedIn(true);
     const { data, error } = await supabase.auth.mfa.listFactors();
     if (error) { setStatus(error.message); return; }
     const verified = data.totp.find(f => f.status === "verified");
@@ -38,6 +40,18 @@ export default function AccountSecurityPage() {
     finally { setBusy(false); }
   }
 
+  async function cancelEnrollment() {
+    if (!factorId || busy) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.mfa.unenroll({ factorId });
+      if (error) throw error;
+      setQr(""); setSecret(""); setCode(""); setFactorId("");
+      await refresh();
+    } catch (e) { setStatus(e instanceof Error ? e.message : "Could not cancel enrollment."); }
+    finally { setBusy(false); }
+  }
+
   async function verify() {
     if (!/^\d{6}$/.test(code)) { setStatus("Enter a six-digit authenticator code."); return; }
     setBusy(true);
@@ -57,15 +71,17 @@ export default function AccountSecurityPage() {
     <h1>Account security</h1>
     <h2>Two-factor authentication</h2>
     <p role="status" aria-live="polite">{status}</p>
-    {!enabled && !qr && <button type="button" className="btn" disabled={busy} onClick={enroll}>Set up authenticator</button>}
-    {!enabled && qr && <>
+    {!signedIn && <Link href="/login">Sign in</Link>}
+    {signedIn && !enabled && !qr && <button type="button" className="btn" disabled={busy} onClick={enroll}>Set up authenticator</button>}
+    {signedIn && !enabled && qr && <>
       <p>Scan this QR code using an authenticator app. Keep your setup key private.</p>
       <img src={qr} alt="Authenticator setup QR code" style={{width:220,height:220,maxWidth:"100%"}} />
       <details><summary>Can't scan? Show setup key</summary><code style={{overflowWrap:"anywhere"}}>{secret}</code></details>
       <label htmlFor="totp-code">Six-digit verification code</label>
       <input id="totp-code" className="input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,""))} />
       <button type="button" className="btn" disabled={busy} onClick={verify}>Verify and enable</button>
+      <button type="button" className="btn dark" disabled={busy} onClick={cancelEnrollment}>Cancel setup</button>
     </>}
-    {enabled && <p>Keep your authenticator app available for future sign-ins. Factor removal requires a verified secure session.</p>}
+    {signedIn && enabled && <p>Keep your authenticator app available for future sign-ins. Factor removal requires a verified secure session.</p>}
   </section></main>;
 }
