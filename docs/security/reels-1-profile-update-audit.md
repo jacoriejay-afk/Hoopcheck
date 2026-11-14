@@ -1,3 +1,13 @@
+## Correction after live trigger inspection (2026-11-14)
+
+The initial audit overstated the risk by treating column UPDATE privileges as equivalent to effective write access. **Production has a BEFORE UPDATE trigger** `prevent_user_privileged_profile_fields` which rejects non-admin, non-service-role changes to `account_type`, identity verification, coach verification, profile claims, and moderation fields; player verification requires approved owner admin. Other triggers `protect_profile_moderation_fields` and `enforce_player_profile_locks` also apply.
+
+**Revised status:** Broad UPDATE grants are confirmed, but privilege escalation is **not established**; existing triggers appear to block it. Do not describe this as an exploitable vulnerability without a real authenticated JWT test. Column-scoped grants remain optional defense in depth and require extensive regression tests. Existing signup completion's account_type write was incompatible with the trigger when the value differed; the branch removed that write.
+
+**Remaining validation:** Verify trigger behavior with real JWTs, including attempted privileged updates, normal settings, Google onboarding, admin verification, and service-role operations. Do not apply candidate grants until passing.
+
+---
+
 # Profile UPDATE privilege audit — REELS-1 prerequisite
 
 Production read-only evidence, 2026-11-14:
