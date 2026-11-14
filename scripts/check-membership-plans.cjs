@@ -90,7 +90,7 @@ test("active non-Stripe memberships use the shared tier and do not render checko
 
 test("team directory list and map send session bearer token for trust scores", () => {
   const page = read("app/teams/page.tsx");
-  assert.match(page, /const trustHeaders = session\?\.access_token \? \{ Authorization: `Bearer \$\{session\.access_token\}` \} : \{\};/);
+  assert.match(page, /const trustHeaders: Record<string, string> = session\?\.access_token \? \{ Authorization: `Bearer \$\{session\.access_token\}` \} : \{\};/);
   assert.match(page, /fetch\(`\/api\/trust-score\?entityType=team&entityIds=\$\{batch\.map\(encodeURIComponent\)\.join\(","\)\}`, \{ headers: trustHeaders, cache: "no-store" \}\)/);
   assert.match(page, /headers: session\?\.access_token \? \{ Authorization: `Bearer \$\{session\.access_token\}` \} : \{\}, cache: "no-store"/);
 });
