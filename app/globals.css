@@ -3188,7 +3188,7 @@ body { background-color: var(--hc-page-bg); }
 
 /* Trust Score dial — shared profile/list presentation. */
 .hc-trust-score { display:flex; align-items:center; gap:14px; min-width:0; color:inherit; }
-.hc-trust-score__dial { position:relative; display:grid; flex:0 0 auto; place-items:center; color:#d8d8d2; }
+.hc-trust-score__dial { position:relative; display:grid; flex:0 0 auto; place-items:center; color:var(--hc-foreground); }
 .hc-trust-score__dial svg { display:block; }
 .hc-trust-score__dial strong { position:absolute; color:var(--hc-foreground); font-family:var(--font-display),Impact,sans-serif; font-size:clamp(22px,3vw,29px); line-height:1; }
 .hc-trust-score__copy { display:grid; gap:5px; min-width:0; }

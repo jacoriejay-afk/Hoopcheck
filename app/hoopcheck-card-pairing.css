@@ -257,7 +257,7 @@ html.theme-light body main.hc-entity-profile-page .hc-team-profile-hero :where(h
   color:var(--hc-on-surface-raised)!important;
   border-color:var(--hc-border)!important;
 }
-.hc-card-audit-page .hc-card-audit-preview :where(h1,h2,h3,h4,p,span,strong,small,label,li,dt,dd,svg):not(.eyebrow):not(.hc-profile-eyebrow):not(.hc-team-profile-kicker) {
+.hc-card-audit-page .hc-card-audit-preview :where(h1,h2,h3,h4,p,span,strong,small,label,li,dt,dd,svg):not(.eyebrow):not(.hc-profile-eyebrow):not(.hc-team-profile-kicker):not(.hc-dossier-tag-orange) {
   color:inherit!important;
   -webkit-text-fill-color:currentColor!important;
 }
@@ -302,7 +302,7 @@ html.theme-light body main.hc-entity-profile-page .hc-team-profile-hero :where(h
 }
 
 /* The two audit specimens each own their foreground and background pairing. */
-html body main.hc-card-audit-page .hc-card-audit-preview :is(.dashboard-card,.hc-layout-group,.modal-panel) {
+html body .hc-global-page-shell main.hc-card-audit-page .hc-card-audit-preview[data-theme-preview] :is(.dashboard-card,.hc-layout-group,.modal-panel) {
   background: var(--hc-surface-raised) !important;
   color: var(--hc-foreground) !important;
 }
@@ -312,7 +312,7 @@ html body main.hc-card-audit-page .hc-card-audit-preview :is(.dashboard-card,.hc
 html body main.hc-card-audit-page .hc-card-audit-preview :is(.dashboard-card,.hc-live-hub-hero) .eyebrow {
   color: var(--hc-accent-text) !important;
 }
-html body main.hc-card-audit-page .hc-card-audit-preview .hc-dossier-tag-orange {
+html body .hc-global-page-shell main.hc-card-audit-page .hc-card-audit-preview .hc-player-dossier .hc-dossier-tag-orange {
   color: #151515 !important;
 }
 html body main.hc-card-audit-page .hc-card-audit-preview .hc-player-dossier td {

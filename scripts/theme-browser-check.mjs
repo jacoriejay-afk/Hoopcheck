@@ -617,6 +617,10 @@ try {
       activeRoutePath = requestedPath;
       try {
         await page.goto(baseURL + requestedPath, { waitUntil: "domcontentloaded", timeout: 20000 });
+        if (requestedPath === "/") {
+          await page.waitForURL("**/dashboard", { timeout: 15000 });
+          await page.locator("main.hc-home3").waitFor({ state: "visible", timeout: 15000 });
+        }
         if (requestedPath === "/fan-feed") {
           await page.waitForURL("**/feed", { timeout: 15000 });
           await page.locator("main.hc-feed-page .hc-feed-composer").waitFor({ state: "visible", timeout: 15000 });
