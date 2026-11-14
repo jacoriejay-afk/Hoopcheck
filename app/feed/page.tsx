@@ -416,7 +416,7 @@ export default function Feed(){
       </div><div className="hc-feed-composer__actions">{msg&&<p className="hc-feed-message" role="status" aria-live="polite">{msg}</p>}</div>
     </section>
 
-    <div className="hc-feed-filter-bar" aria-label="HoopFeed tools">{refreshing && <span className="hc-feed-pull-loading" role="status"><span className="hc-feed-pull-spinner" aria-hidden="true" /> Updating HoopFeed…</span>}<span className="hc-feed-result-count">{visiblePosts.length} {visiblePosts.length===1?"POST":"POSTS"}</span></div>
+    <div className="hc-feed-filter-bar" aria-label="HoopFeed tools"><Link href="/feed/inbox" className="hc-feed-action-pill">Shared with you</Link>{refreshing && <span className="hc-feed-pull-loading" role="status"><span className="hc-feed-pull-spinner" aria-hidden="true" /> Updating HoopFeed…</span>}<span className="hc-feed-result-count">{visiblePosts.length} {visiblePosts.length===1?"POST":"POSTS"}</span></div>
     {sharedLinkUnavailable && <p role="status">This shared post is unavailable.</p>}
     {sharePostId&&<div className="hc-feed-comments-backdrop" style={{position:"fixed",inset:0,zIndex:1000,display:"grid",placeItems:"center",background:"rgba(0,0,0,.65)",padding:16}} onClick={()=>!shareSending&&setSharePostId(null)}>
       <section role="dialog" aria-modal="true" aria-label="Share with HoopCheck members" onClick={e=>e.stopPropagation()} style={{background:"var(--surface, #171717)",color:"var(--text, white)",border:"1px solid var(--border, #444)",borderRadius:20,padding:20,width:"min(100%,440px)",maxHeight:"80vh",overflowY:"auto"}}>
