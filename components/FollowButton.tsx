@@ -6,7 +6,7 @@ import { HoopIcon } from "./HoopCheckUI";
 import Link from "next/link";
 import { useLanguage } from "./LanguageProvider";
 
-type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string; variant?: "default" | "club"; showCount?: boolean; showNotifications?: boolean; onCountChange?: (count: number) => void };
+type Props = { targetType: "team" | "player" | "league" | "fan" | "creator"; targetId: string; variant?: "default" | "club"; showCount?: boolean; showNotifications?: boolean; onCountChange?: (count: number) => void };
 
 export default function FollowButton({ targetType, targetId, variant = "default", showCount = true, showNotifications = true, onCountChange }: Props) {
   const { formatNumber, t } = useLanguage();
