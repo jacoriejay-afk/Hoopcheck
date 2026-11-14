@@ -77,7 +77,8 @@ export function getHoopCheckEntitlements(args: {
   now?: number;
 }): HoopCheckEntitlements {
   const role = args.accountType || "";
-  const isAdmin = args.isAdmin === true || role === "admin";
+  // Platform administrator privileges require independently verified admin authority.
+  const isAdmin = args.isAdmin === true;
   const tier = isAdmin ? "premium" : getActiveMembershipTier(args.subscription, args.now);
   const active = isAdmin || tier !== "free";
   const isPlayer = role === "player";
@@ -114,6 +115,7 @@ export function getHoopCheckEntitlements(args: {
     canViewTeamPayHistory: recognizedRole && !isFan,
     canSubmitPayCheckIn: isPlayer && args.playerVerified === true && isAtLeastTier(tier, "pro"),
     canUseFanGroups: isFan,
-    canModerateFanGroups: isAdmin || role === "club_admin",
+    // Club-scoped moderation must be authorized at the call site using a verified club claim.
+    canModerateFanGroups: isAdmin,
   };
 }
