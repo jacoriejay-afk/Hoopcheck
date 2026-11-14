@@ -1,5 +1,5 @@
 export type MembershipTier = "free" | "pro" | "premium";
-export type HoopCheckAccountType = "player" | "fan" | "coach" | "agent" | "club_admin" | "admin" | string;
+export type HoopCheckAccountType = "player" | "fan" | "coach" | "agent" | "club_admin" | "creator" | "admin" | string;
 
 export type HoopCheckEntitlements = {
   tier: MembershipTier;
@@ -83,8 +83,9 @@ export function getHoopCheckEntitlements(args: {
   const active = isAdmin || tier !== "free";
   const isPlayer = role === "player";
   const isFan = role === "fan";
-  const recognizedRole = ["player", "fan", "coach", "scout", "agent", "club_admin", "admin"].includes(role);
-  const otherMember = recognizedRole && !isPlayer && !isFan;
+  const recognizedRole = ["player", "fan", "coach", "scout", "agent", "club_admin", "creator", "admin"].includes(role);
+  // Creator is a publishing identity, not an additional review/trust entitlement.
+  const otherMember = recognizedRole && !isPlayer && !isFan && role !== "creator";
   const canUseHoopFeed = isAdmin || (
     recognizedRole && active
   );
@@ -112,7 +113,7 @@ export function getHoopCheckEntitlements(args: {
     canConnectWithFans: isFan && isAtLeastTier(tier, "pro"),
     canSwitchBasketballSide: isFan && isAtLeastTier(tier, "pro"),
     canStartCoachIdentityVerification: role === "coach" && isAtLeastTier(tier, "pro"),
-    canViewTeamPayHistory: recognizedRole && !isFan,
+    canViewTeamPayHistory: recognizedRole && !isFan && role !== "creator",
     canSubmitPayCheckIn: isPlayer && args.playerVerified === true && isAtLeastTier(tier, "pro"),
     canUseFanGroups: isFan,
     // Club-scoped moderation must be authorized at the call site using a verified club claim.

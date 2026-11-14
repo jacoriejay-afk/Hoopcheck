@@ -68,6 +68,14 @@ jobs:
           PGPASSWORD: postgres
         run: psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_rls_test -f supabase/tests/smoke_feed_rls_isolated.sql
 
+      - name: Execute Reels Phase A migration in isolated PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_rls_test -f supabase/tests/smoke_reels_phase_a_isolated.sql
+
+      - name: Verify Reels upload metadata boundaries
+        run: npm run test:reels
+
       - name: Verify unified HoopFeed RLS migration safeguards
         run: npm run test:hoopfeed-rls
 

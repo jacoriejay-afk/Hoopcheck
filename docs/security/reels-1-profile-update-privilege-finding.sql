@@ -1,0 +1,21 @@
+-- SECURITY prerequisite for REELS-1: restrict profile privilege columns.
+-- REVIEW ONLY, NOT APPLIED. Requires dependency audit and JWT regression tests.
+-- Production inspection: authenticated has table-level UPDATE on profiles,
+-- hence has_column_privilege(... account_type/identity_verification_status ...) = true.
+-- PostgreSQL column-specific REVOKE alone cannot override table-level UPDATE.
+-- Replace table UPDATE grant with an audited allowlist of user-editable columns.
+--
+-- Migration design (DO NOT EXECUTE until allowlist is confirmed):
+-- REVOKE UPDATE ON public.profiles FROM authenticated;
+-- GRANT UPDATE (display_name, first_name, last_name, avatar_url, bio, ...)
+--   ON public.profiles TO authenticated;
+--
+-- The exact allowlist must be generated from existing account/profile editors,
+-- onboarding, and APIs, then tested for every supported role.
+-- Preserve service-role and trusted server workflows for privileged fields.
+-- A separate BEFORE UPDATE guard may be needed for defense in depth,
+-- but do not assume triggers replace column privilege design.
+--
+-- Acceptance: real authenticated JWT cannot update account_type,
+-- identity_verification_status, verification flags, or admin-related fields;
+-- normal profile edits and existing onboarding still pass.

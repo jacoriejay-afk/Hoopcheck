@@ -112,13 +112,21 @@ for (const [label, input, expected] of cases) {
 }
 
 // Unified community posting: all recognized paid roles can post; unknown role values cannot.
-for (const role of ["player", "fan", "coach", "scout", "agent", "club_admin"]) {
+for (const role of ["player", "fan", "coach", "scout", "agent", "club_admin", "creator"]) {
   const allowed = getHoopCheckEntitlements({ accountType: role, subscription: active("pro") });
   assert.equal(allowed.canReadHoopFeed, true, role + " Pro reads unified HoopFeed");
   assert.equal(allowed.canWriteHoopFeed, true, role + " Pro posts to unified HoopFeed");
   const free = getHoopCheckEntitlements({ accountType: role });
   assert.equal(free.canWriteHoopFeed, false, role + " Free cannot post to unified HoopFeed");
 }
+const creator = getHoopCheckEntitlements({ accountType: "creator", subscription: active("premium") });
+assert.equal(creator.canReadHoopFeed, true, "paid creators can read HoopFeed");
+assert.equal(creator.canWriteHoopFeed, true, "paid creators can post to HoopFeed");
+assert.equal(creator.canWriteReviews, false, "creators cannot write club reviews");
+assert.equal(creator.canModerateFanGroups, false, "creators cannot moderate fan groups");
+assert.equal(creator.canUseProPassport, false, "creators do not inherit agent permissions");
+const creatorExpired = getHoopCheckEntitlements({ accountType: "creator", subscription: { ...active("premium"), current_period_end: "2000-01-01T00:00:00.000Z" } });
+assert.equal(creatorExpired.canWriteHoopFeed, false, "expired creators cannot post");
 const unknownRole = getHoopCheckEntitlements({ accountType: "unexpected_role", subscription: active("premium") });
 assert.equal(unknownRole.canReadHoopFeed, false, "unrecognized roles cannot read member HoopFeed");
 assert.equal(unknownRole.canWriteHoopFeed, false, "unrecognized roles cannot post to HoopFeed");
@@ -315,5 +323,27 @@ assert.match(playerContactPolicy, /requester_id = \(SELECT auth\.uid\(\)\)/, "co
 assert.match(playerContactPolicy, /s\.status IN \('active', 'trialing'\)/, "contact RLS must require active or trialing subscription");
 assert.match(playerContactPolicy, /target\.profile_visibility = 'public'/, "target player must be public");
 assert.match(playerContactPolicy, /target\.moderation_status <> 'suspended'/, "suspended target must be denied");
+
+
+
+for (const [label, subscription, allowed] of [
+  ["Creator Free", null, false],
+  ["Creator Pro", active("pro"), true],
+  ["Creator Premium", active("premium"), true],
+  ["Creator Expired", { ...active("pro"), current_period_end: "2020-01-01T00:00:00Z" }, false],
+]) {
+  const entitlements = getHoopCheckEntitlements({ accountType: "creator", subscription });
+  assert.equal(entitlements.canReadHoopFeed, allowed, label + " read access");
+  assert.equal(entitlements.canWriteHoopFeed, allowed, label + " publishing access");
+  assert.equal(entitlements.canWriteReviews, false, label + " cannot write reviews");
+  assert.equal(entitlements.canReadFullReviews, false, label + " cannot read full reviews by creator role");
+  assert.equal(entitlements.canViewTrustScore, false, label + " cannot view trust score by creator role");
+  assert.equal(entitlements.canViewTeamPayHistory, false, label + " cannot view team pay history by creator role");
+}
+
+// REELS-1: Creator publishing must not unlock unrelated reviews/trust tools.
+const creatorResolverSource = read("../lib/membership-tier.ts");
+assert.match(creatorResolverSource, /role !== "creator"/, "Creator must not inherit other-member review entitlements");
+assert.match(creatorResolverSource, /"creator"/, "Creator must remain recognized by the unified entitlement resolver");
 
 console.log("VERIFY-1 entitlement matrix: " + cases.length + " role/tier cells and edge cases passed (" + keys.length + " entitlements).");
