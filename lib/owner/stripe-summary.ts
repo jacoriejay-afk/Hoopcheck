@@ -5,13 +5,15 @@ export type OwnerStripeSummary = {
   paidInvoices: number;
   activeSubscriptions: number | null;
   subscriptionsIncomplete: boolean;
+  refundedMinor: number | null;
+  refundsIncomplete: boolean;
   grossPaidMinor: number;
   incomplete: boolean;
   error?: string;
 };
 
 export async function getOwnerStripeSummary(): Promise<OwnerStripeSummary> {
-  const unavailable: OwnerStripeSummary = { currency: "usd", paidInvoices: 0, activeSubscriptions: null, subscriptionsIncomplete: false, grossPaidMinor: 0, incomplete: false, error: "Stripe reporting unavailable" };
+  const unavailable: OwnerStripeSummary = { currency: "usd", paidInvoices: 0, activeSubscriptions: null, subscriptionsIncomplete: false, refundedMinor: null, refundsIncomplete: false, grossPaidMinor: 0, incomplete: false, error: "Stripe reporting unavailable" };
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return unavailable;
   const since = Math.floor(Date.now() / 1000) - 30 * 86400;
@@ -26,6 +28,18 @@ export async function getOwnerStripeSummary(): Promise<OwnerStripeSummary> {
       if (!batch.has_more) break;
       subscriptionCursor = batch.data[batch.data.length - 1]?.id;
       if (page === 9 || !subscriptionCursor) subscriptionsIncomplete = true;
+    }
+    let refundedMinor = 0;
+    let refundsIncomplete = false;
+    let refundCursor: string | undefined;
+    for (let page = 0; page < 10; page++) {
+      const batch = await stripe.refunds.list({ created: { gte: since }, limit: 100, ...(refundCursor ? { starting_after: refundCursor } : {}) });
+      for (const refund of batch.data) {
+        if (refund.currency === "usd" && refund.status === "succeeded") refundedMinor += refund.amount;
+      }
+      if (!batch.has_more) break;
+      refundCursor = batch.data[batch.data.length - 1]?.id;
+      if (page === 9 || !refundCursor) refundsIncomplete = true;
     }
     let cursor: string | undefined;
     let count = 0;
@@ -43,7 +57,7 @@ export async function getOwnerStripeSummary(): Promise<OwnerStripeSummary> {
         amount += invoice.amount_paid;
       }
       pages++;
-      if (!batch.has_more) return { currency: "usd", paidInvoices: count, activeSubscriptions, subscriptionsIncomplete, grossPaidMinor: amount, incomplete: false };
+      if (!batch.has_more) return { currency: "usd", paidInvoices: count, activeSubscriptions, subscriptionsIncomplete, refundedMinor, refundsIncomplete, grossPaidMinor: amount, incomplete: false };
       cursor = batch.data.at(-1)?.id;
       if (!cursor) break;
     }
