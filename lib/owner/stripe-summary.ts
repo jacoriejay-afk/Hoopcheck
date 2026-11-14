@@ -61,7 +61,7 @@ export async function getOwnerStripeSummary(): Promise<OwnerStripeSummary> {
       cursor = batch.data.at(-1)?.id;
       if (!cursor) break;
     }
-    return { currency: "usd", paidInvoices: count, activeSubscriptions, subscriptionsIncomplete, grossPaidMinor: amount, incomplete: true };
+    return { currency: "usd", paidInvoices: count, activeSubscriptions, subscriptionsIncomplete, refundedMinor, refundsIncomplete, grossPaidMinor: amount, incomplete: true };
   } catch {
     return unavailable;
   }
