@@ -1,0 +1,105 @@
+.hc-discovery-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .5rem 1rem;
+  margin: 0 0 .75rem;
+}
+html body .hc-discovery-heading h1,
+html body .hc-player-profile-name h1 {
+  font-family: var(--hc-heading-font);
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.1;
+  margin: 0;
+}
+.hc-team-discovery-links, .hc-search-results-filters {
+  display: flex;
+  gap: .45rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: .875rem;
+}
+.hc-team-discovery-links a, .hc-discovery-filter, .hc-search-results-filters select {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: .45rem .75rem;
+  border: 1px solid var(--hc-card-border);
+  border-radius: 12px;
+  background: var(--hc-card-surface);
+  color: var(--hc-foreground);
+  text-decoration: none;
+  font: 650 .875rem/1.25 var(--font-sans), sans-serif;
+}
+.hc-team-discovery-links a[aria-current], .hc-discovery-filter[aria-pressed="true"] {
+  border-color: var(--orange);
+}
+.hc-team-directory-filters {
+  padding: .875rem;
+  margin: 0 0 1rem;
+  border: 1px solid var(--hc-card-border);
+  border-radius: 18px;
+  background: var(--hc-card-surface);
+}
+.hc-team-directory-filters .team-filter-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .5rem;
+  margin-top: .5rem;
+}
+.hc-team-directory-filters select {
+  width: 100%;
+  min-height: 42px;
+}
+html body .hc-global-search-page .hc-search-browse h2 { font-size: 1.4rem; margin: 0 0 .65rem; }
+html body .hc-global-search-page .hc-search-browse > div { gap: .5rem; }
+html body .hc-global-search-page .hc-search-browse > div > a { min-height: 48px; padding: .65rem .8rem; }
+.hc-profile-summary, .hc-player-profile-identity, .hc-player-profile-detail, .hc-entity-feed {
+  border: 1px solid var(--hc-card-border);
+  border-radius: 18px;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  margin-block: .875rem;
+  background: var(--hc-card-surface);
+  color: var(--hc-foreground);
+}
+.hc-profile-summary dl, .hc-player-profile-detail dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  margin: 0;
+}
+.hc-profile-summary dt, .hc-player-profile-detail dt { font-size: .8rem; margin-bottom: .25rem; }
+.hc-profile-summary dd, .hc-player-profile-detail dd { font-size: 1rem; font-weight: 700; margin: 0; }
+.hc-profile-summary p, .hc-player-profile-detail p { margin: .75rem 0 0; overflow-wrap: anywhere; }
+.hc-player-profile-identity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+}
+.hc-player-profile-portrait {
+  display: grid;
+  place-items: center;
+  width: clamp(58px, 12vw, 108px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--hc-surface-soft);
+  font-weight: 800;
+  font-size: 1.5rem;
+}
+.hc-player-profile-portrait img { width: 100%; height: 100%; object-fit: cover; }
+.hc-player-profile-name p { margin: .25rem 0; }
+.hc-player-profile-controls { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+.hc-player-profile-footer { display: flex; gap: 1rem; flex-wrap: wrap; margin-block: 1rem; }
+.hc-player-profile-footer button { background: transparent; color: inherit; border: 0; padding: 0; text-decoration: underline; }
+.hc-player-profile-detail h2, .hc-entity-feed h2 { margin: 0 0 .65rem; font-size: 1.4rem; }
+.hc-entity-feed ul { list-style: none; padding: 0; margin: 0; }
+.hc-entity-feed li + li { border-top: 1px solid var(--hc-card-border); margin-top: .45rem; padding-top: .45rem; }
+.hc-entity-feed a { overflow-wrap: anywhere; text-decoration: underline; text-underline-offset: .2em; }
+@media (max-width: 600px) {
+  .hc-team-directory-filters .team-filter-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hc-player-profile-identity { grid-template-columns: auto minmax(0, 1fr); }
+  .hc-player-profile-controls { grid-column: 1 / -1; }
+}

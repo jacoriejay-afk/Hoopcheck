@@ -428,17 +428,35 @@ export async function POST(request: Request) {
       const decision = await moderate(text, null);
       if (!decision.allowed) return NextResponse.json({ allowed: false, message: decision.message }, { status: decision.status });
       if (!(await canInteractWithPost(actionPostId))) return NextResponse.json({ allowed: false, message: "Post unavailable." }, { status: 404 });
-      const { error } = await db.from("feed_post_comments").insert({
+      const { data: publishedComment, error } = await db.from("feed_post_comments").insert({
         post_id: actionPostId,
         author_id: user.id,
         body: text,
         ...(parentId ? { parent_id: parentId } : {}),
-      });
-      if (error) return NextResponse.json({ allowed: false, message: "We couldn't publish your comment. Please try again." }, { status: 400 });
-      return NextResponse.json({ allowed: true });
+      }).select("id,post_id,body,created_at,author_id,parent_id").single();
+      if (error) {
+        console.error("HoopFeed comment insert failed", error.code);
+        return NextResponse.json({ allowed: false, message: "We couldn't publish your comment. Please try again." }, { status: 400 });
+      }
+      return NextResponse.json({ allowed: true, comment: publishedComment });
     }
 
-    const moderationText = kind === "post" && postKind === "poll" ? text + "\n" + (pollOptions ?? []).join("\n") : text;
+    const locationValues = form.getAll("post_location");
+    const location = typeof locationValues[0] === "string" ? locationValues[0].trim() : "";
+    if (locationValues.length > 1 || locationValues.some(value => typeof value !== "string") || location.length > 100) {
+      return NextResponse.json({ allowed: false, message: "Enter a location of up to 100 characters." }, { status: 400 });
+    }
+    const tagColumns = { club_id: "teams", womens_club_id: "womens_teams", league_id: "leagues", womens_league_id: "womens_leagues" } as const;
+    const tags = Object.entries(tagColumns).flatMap(([column, table]) => form.getAll(column).map(id => ({ column, table, id })));
+    if (tags.length > 1 || tags.some(({ id }) => typeof id !== "string" || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id))) {
+      return NextResponse.json({ allowed: false, message: "Choose one club or league from the directory." }, { status: 400 });
+    }
+    const tag = tags[0];
+    if (tag) {
+      const { data: entity } = await db.from(tag.table).select("id").eq("active", true).eq("id", tag.id).maybeSingle();
+      if (!entity) return NextResponse.json({ allowed: false, message: "This directory tag is unavailable." }, { status: 400 });
+    }
+    const moderationText = [text, ...(postKind === "poll" ? pollOptions ?? [] : []), location].filter(Boolean).join("\n");
     const result = await moderate(moderationText, allImages[0] ?? null);
     if (!result.allowed) return NextResponse.json({ allowed: false, message: result.message }, { status: result.status });
 
@@ -483,6 +501,9 @@ export async function POST(request: Request) {
       game_day_score_for: submittedTopicTag === "Game Day" ? scoreFor : null,
       game_day_score_against: submittedTopicTag === "Game Day" ? scoreAgainst : null,
       location_country:shareCountry && profile?.current_country_public !== false ? (submittedCountry || profile?.current_country || null) : null,
+      ...(form.get("audience") === "community" ? { community_visible: true } : {}),
+      ...(location ? { post_location: location } : {}),
+      ...(tag ? { [tag.column]: tag.id } : {}),
       status:"approved", expires_at:null
     });
     if (error) {

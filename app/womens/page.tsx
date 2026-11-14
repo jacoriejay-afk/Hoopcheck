@@ -1,10 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import "../hoopcheck-reference-team-list.css";
 import { useEffect, useMemo, useState } from "react";
-import DirectoryLayout from "../../components/DirectoryLayout";
 import TeamDirectoryRow from "../../components/TeamDirectoryRow";
 import HoopLoading from "../../components/HoopLoading";
 import SearchBar from "../../components/SearchBar";
@@ -83,7 +83,12 @@ export default function Womens() {
     <main className="page-shell hc-womens-directory-page">
       <FanBasketballSideSwitch lockedHint />
       <div className="page-container">
-        <DirectoryLayout current="womens" />
+        <header className="hc-discovery-heading"><h1>{t("womensTeams")}</h1></header>
+        <nav className="hc-team-discovery-links" aria-label={t("browseDirectories")}>
+          <Link href="/teams">{t("mensTeams")}</Link>
+          <Link href="/womens" aria-current="page">{t("womensTeams")}</Link>
+          <Link href="/search">{t("search")}</Link>
+        </nav>
 
         <section className="hc-womens-search-panel" aria-label={t("womensTeamDirectoryView")}>
           <SearchBar inputId="womens-team-search" value={query} onChange={setQuery} placeholder={t("womensSearchPlaceholder")} ariaLabel={t("womensTeamDirectoryView")} onSubmit={(value) => setQuery(value)} />
