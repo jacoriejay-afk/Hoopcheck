@@ -146,7 +146,7 @@ html:is(.theme-light,.theme-dark) .hc-member-profile-page .hc-smooth-passport .h
 html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero .hc-profile-completion {
  background:var(--hc-inverse-surface)!important;color:#f7f7f5!important;border-color:#4d4d4d!important;
 }
-html:is(.theme-light,.theme-dark) .hc-member-profile-page .hc-smooth-passport a:not(.btn) {color:#ff9b70!important;}
+html:is(.theme-light,.theme-dark) .hc-member-profile-page .hc-smooth-passport :is(a:not(.btn), .hc-smooth-passport__bottom button) {color:#ff9b70!important;}
 /* Brand header: HOOP must not disappear against the black masthead. */
 html:is(.theme-light,.theme-dark) :where(.site-header,.topbar) :where(.brand,.logo,.brand-name) {
  color:#f7f7f5;
@@ -157,7 +157,7 @@ html:is(.theme-light,.theme-dark) :where(.site-header,.topbar) :where(.brand,.lo
    repainting the hero light in the light theme, washing the text out. The
    player completion card inside the hero gets the same dark pairing. */
 html:is(.theme-light,.theme-dark) .hc-member-profile-page .hero-card.compact-hero {
- background:linear-gradient(145deg,#141414,#080808)!important;
+ background:linear-gradient(145deg,#141414,#080808) var(--hc-scoreboard-dark)!important;
  border:1px solid #363636!important;
  border-bottom:5px solid #ff6a00!important;
 }
