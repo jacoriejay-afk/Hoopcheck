@@ -71,6 +71,9 @@ jobs:
       - name: Verify unified HoopFeed RLS migration safeguards
         run: npm run test:hoopfeed-rls
 
+      - name: Verify caller-scoped HoopFeed actions
+        run: node scripts/check-hoopfeed-vote-security.mjs
+
       - name: Check HoopFeed text posts and team fan group invariants
         run: npm run check:hf4-fan-groups
 

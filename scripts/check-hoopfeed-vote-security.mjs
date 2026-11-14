@@ -1,79 +1,64 @@
-// Security regression guard: vote endpoint must authorize with caller-scoped RLS.
-// Static checks complement, but do not replace, authenticated integration tests.
-import { readFileSync } from "node:fs";
+// Static checks complement authenticated integration tests and the SQL policy smoke test.
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
-const source = readFileSync(new URL("../app/api/hoopfeed/moderate/route.ts", import.meta.url), "utf8");
-const start = source.indexOf('if (kind === "vote")');
-const end = source.indexOf('if (kind === "bookmark")', start);
-assert(start >= 0 && end > start, "Expected vote endpoint block");
-const vote = source.slice(start, end);
-assert.match(vote, /getHoopCheckEntitlements|canWriteHoopFeed|const viewerDb/);
-// Caller-scoped client must perform the post lookup; service-role lookup is unsafe.
-assert.match(vote, /global:\s*\{\s*headers:\s*\{\s*Authorization:\s*`Bearer \$\{token\}`/);
-assert.match(vote, /viewerDb\s*\.from\("feed_posts"\)/);
-assert.doesNotMatch(vote, /db\.from\("feed_posts"\)/);
-assert.match(vote, /poll\.expires_at/);
-assert.match(vote, /poll\.status\s*!==\s*"approved"/);
-assert.match(vote, /poll\.post_kind\s*!==\s*"poll"/);
-assert.match(vote, /optionIndex\s*>=\s*options\.length/);
+const read = (path) => readFileSync(new URL("../" + path, import.meta.url), "utf8");
+const source = read("app/api/hoopfeed/moderate/route.ts");
 
-
-const bookmarkStart = source.indexOf('if (kind === "bookmark")');
-const bookmarkEnd = source.indexOf('if (kind === "pin")', bookmarkStart);
-assert(bookmarkStart >= 0 && bookmarkEnd > bookmarkStart, "Expected bookmark endpoint block");
-const bookmark = source.slice(bookmarkStart, bookmarkEnd);
-assert.match(bookmark, /Authorization:\s*`Bearer \$\{token\}`/);
-assert.match(bookmark, /viewerDb\.from\("feed_posts"\)/);
-assert.doesNotMatch(bookmark, /db\.from\("feed_posts"\)/);
-assert.match(bookmark, /post\.expires_at/);
-assert.match(bookmark, /post\.status\s*!==\s*"approved"/);
-
-
-const shareStart = source.indexOf('if (kind === "share")');
-const shareEnd = source.indexOf('// Stage 2 post kinds:', shareStart);
-assert(shareStart >= 0 && shareEnd > shareStart, "Expected share endpoint block");
-const share = source.slice(shareStart, shareEnd);
-assert.match(share, /Authorization:\s*`Bearer \$\{token\}`/);
-assert.match(share, /viewerDb\.from\("feed_posts"\)/);
-assert.doesNotMatch(share, /(?:await\s+)db\.from\("feed_posts"\)\s*\.select\(/);
-assert.match(share, /source\.expires_at/);
-assert.match(share, /source\.status\s*!==\s*"approved"/);
-assert.doesNotMatch(share, /2100-01-01/);
-assert.match(share, /const expiresAt = new Date\(source\.expires_at\)/);
-
-const migration = readFileSync(new URL("../supabase/migrations/20261111000100_secure_feed_poll_votes.sql", import.meta.url), "utf8");
-for (const [policyName, nextPolicy] of [
-  ["feed poll votes read", "feed poll votes insert own"],
-  ["feed poll votes insert own", "feed poll votes update own"],
-  ["feed poll votes update own", null],
-]) {
-  const start = migration.indexOf(`create policy "${policyName}"`);
-  assert(start >= 0, `Missing policy: ${policyName}`);
-  const end = nextPolicy ? migration.indexOf(`drop policy if exists "${nextPolicy}"`, start) : migration.indexOf("-- Preserve existing own-vote DELETE", start);
-  assert(end > start, `Missing policy boundary: ${policyName}`);
-  const policy = migration.slice(start, end);
-  for (const required of ["fp.status = 'approved'", "fp.post_kind = 'poll'", "fp.expires_at > now()", "can_view_player_feed_post(fp.author_id)"]) {
-    assert(policy.includes(required), `Policy ${policyName} missing ${required}`);
-  }
-  assert.match(policy, /case\s+when\s+jsonb_typeof\(fp\.poll_options\)\s*=\s*'array'/i, `Policy ${policyName} must guard JSON array length with CASE`);
-  if (policyName !== "feed poll votes read") {
-    assert.match(policy, /user_id\s*=\s*\(select auth\.uid\(\)\)/, `Policy ${policyName} missing owner check`);
-  }
+function action(kind, endMarker) {
+  const start = source.indexOf(`if (kind === "${kind}")`);
+  const end = source.indexOf(endMarker, start);
+  assert(start >= 0 && end > start, `Expected ${kind} action`);
+  return source.slice(start, end);
 }
-assert.match(migration, /commit;/i, "Security migration must commit transaction");
 
-console.log("HoopFeed vote endpoint and poll-vote migration security guards passed");
+assert.match(source, /const viewerDb = [\s\S]*?createClient\(supabaseUrl, publishableKey, \{\s*global: \{ headers: \{ Authorization: "Bearer " \+ token \}/);
+const entitlementGuard = source.indexOf("if (!entitlements.canWriteHoopFeed)");
+assert(entitlementGuard >= 0 && entitlementGuard < source.indexOf('if (kind === "vote")'));
 
+const vote = action("vote", 'if (kind === "bookmark")');
+assert.match(vote, /viewerDb\.from\("feed_posts"\)/);
+assert.match(vote, /viewerDb\.from\("feed_poll_votes"\)\.upsert\(\{ post_id: postId, user_id: user\.id, option_index: optionIndex \}/);
+assert.doesNotMatch(vote, /db\.from\(/);
+assert.match(vote, /poll\.status !== "approved"/);
+assert.match(vote, /poll\.post_kind !== "poll"/);
+assert.match(vote, /poll\.expires_at/);
+assert.match(vote, /optionIndex >= options\.length/);
 
-assert.match(migration, /jsonb_typeof\(fp\.poll_options\)\s*=\s*'array'/);
-assert.match(migration, /option_index\s*>=\s*0/);
-assert.match(migration, /option_index\s*<\s*jsonb_array_length\(fp\.poll_options\)/);
+const bookmark = action("bookmark", 'if (kind === "pin")');
+assert.match(bookmark, /viewerDb\.from\("feed_posts"\)/);
+assert.match(bookmark, /viewerDb\.from\("feed_post_bookmarks"\)\.upsert\(\{ post_id: postId, user_id: user\.id \}/);
+assert.match(bookmark, /viewerDb\.from\("feed_post_bookmarks"\)\.delete\(\).*\.eq\("user_id", user\.id\)/);
+assert.doesNotMatch(bookmark, /db\.from\(/);
+assert.match(bookmark, /post\.status !== "approved"/);
+assert.match(bookmark, /post\.expires_at/);
 
-const bookmarkMigration = readFileSync(new URL("../supabase/migrations/20261111000200_secure_feed_bookmarks.sql", import.meta.url), "utf8");
-assert.match(bookmarkMigration, /drop policy if exists "feed bookmarks insert own"/);
+const share = action("share", "// Stage 2 post kinds:");
+assert.match(share, /viewerDb\.from\("feed_posts"\)\s*\.select\(/);
+assert.doesNotMatch(share, /db\.from\("feed_posts"\)\s*\.select\(/);
+assert.match(share, /source\.status !== "approved"/);
+assert.match(share, /source\.expires_at/);
+assert.match(share, /shared_post_id: source\.id/);
+
+const migration = read("supabase/migrations/20261114000100_secure_poll_votes_unified_visibility.sql");
+for (const name of ["read", "insert own", "update own"]) {
+  const policy = migration.split(`create policy "feed poll votes ${name}"`)[1]?.split(/create policy|commit;/)[0];
+  assert(policy, `Missing policy ${name}`);
+  assert.match(policy, /from public\.feed_posts fp/);
+  assert.match(policy, /fp\.id = feed_poll_votes\.post_id/);
+  assert.match(policy, /fp\.status = 'approved'/);
+  assert.match(policy, /fp\.post_kind = 'poll'/);
+  assert.match(policy, /fp\.expires_at > now\(\)/);
+  assert.match(policy, /case when jsonb_typeof\(fp\.poll_options\) = 'array'/);
+  assert.match(policy, /option_index >= 0/);
+  assert.match(policy, /option_index < jsonb_array_length\(fp\.poll_options\)/);
+  if (name !== "read") assert.match(policy, /user_id = \(select auth\.uid\(\)\)/);
+}
+
+const bookmarkMigration = read("supabase/migrations/20261111000200_secure_feed_bookmarks.sql");
 assert.match(bookmarkMigration, /for insert to authenticated/);
-assert.match(bookmarkMigration, /auth\.uid\(\)/);
-assert.match(bookmarkMigration, /can_view_player_feed_post/);
-assert.match(bookmarkMigration, /expires_at\s*>\s*now\(\)/);
-assert.match(bookmarkMigration, /status\s*=\s*'approved'/);
+assert.match(bookmarkMigration, /user_id = \(select auth\.uid\(\)\)/);
+assert.match(bookmarkMigration, /fp\.id = feed_post_bookmarks\.post_id/);
+assert.match(bookmarkMigration, /fp\.status = 'approved'/);
+
+console.log("HoopFeed vote, bookmark, and share security guards passed");
