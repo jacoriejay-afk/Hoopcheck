@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { GOOGLE_SIGNUP_COOKIE, GOOGLE_SIGNUP_PATH, GOOGLE_SIGNUP_ROLE } from "./lib/google-auth";
 
-const protectedPage = /^\/(?:dashboard|settings|profile|feed|admin)(?:\/|$)|^\/(?:teams|coaches|leagues)\/[^/]+\/review\/?$/;
+const protectedPage = /^\/(?:dashboard|settings|profile|feed|admin|ambassador-hq)(?:\/|$)|^\/(?:teams|coaches|leagues)\/[^/]+\/review\/?$/;
 const pendingAllowed = new Set([GOOGLE_SIGNUP_PATH, "/auth/callback", "/login", "/terms", "/privacy", "/community-guidelines"]);
 
 function isPendingBearer(header: string | null) {
@@ -115,6 +115,7 @@ export const config = {
     "/profile/:path*",
     "/feed/:path*",
     "/admin/:path*",
+    "/ambassador-hq",
     "/api/:path*",
     { source: "/((?!_next|api/|.*\\..*).*)", has: [{ type: "cookie", key: "hoopcheck-google-setup" }] },
   ],

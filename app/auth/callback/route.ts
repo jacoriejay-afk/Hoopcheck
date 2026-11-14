@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GOOGLE_SIGNUP_COOKIE, GOOGLE_SIGNUP_PATH, GOOGLE_SIGNUP_ROLE } from "../../../lib/google-auth";
+import { ambassadorDb, getActiveReferral, referralCookie } from "../../../lib/ambassador/server";
 import { createAuthClient } from "../../../lib/server/supabase-auth";
 
 export async function GET(request: NextRequest) {
@@ -30,6 +31,17 @@ export async function GET(request: NextRequest) {
     response.cookies.set(GOOGLE_SIGNUP_COOKIE, "1", {
       httpOnly: true, path: "/", sameSite: "lax", secure: request.nextUrl.protocol === "https:",
     });
+    const referral = await getActiveReferral();
+    if (referral) {
+      const { error } = await ambassadorDb().rpc("ambassador_capture_google", {
+        p_user: data.session.user.id, p_token: referral,
+      });
+      if (error) {
+        console.error("Ambassador Google attribution could not be saved", error.code);
+      } else {
+        response.cookies.delete(referralCookie);
+      }
+    }
     return response;
   }
 

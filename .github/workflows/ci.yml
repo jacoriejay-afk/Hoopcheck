@@ -68,6 +68,14 @@ jobs:
           PGPASSWORD: postgres
         run: psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_rls_test -f supabase/tests/smoke_feed_rls_isolated.sql
 
+      - name: Verify Ambassador HQ database security and commission lifecycle
+        env:
+          PGPASSWORD: postgres
+        run: psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_rls_test -f supabase/tests/ambassador_hq_isolated.sql
+
+      - name: Verify Ambassador HQ Stripe invoice and adjustment handling
+        run: node --test scripts/test-ambassador-stripe.mjs
+
       - name: Verify unified HoopFeed RLS migration safeguards
         run: npm run test:hoopfeed-rls
 

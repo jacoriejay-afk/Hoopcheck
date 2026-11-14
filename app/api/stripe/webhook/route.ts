@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { reconcileAmbassadorEvent, recordAmbassadorInvoice, updateAmbassadorSubscriptionStatus } from "../../../../lib/ambassador/stripe";
 import { createClient } from "@supabase/supabase-js";
 
 function getAdminSupabase() {
@@ -436,6 +437,8 @@ export async function POST(
     claimedEventId = event.id;
     claimedEventToken = claimResult.claimToken;
 
+    const ledgerRpc = (name: string, args: Record<string, unknown>) => getAdminSupabase().rpc(name, args);
+
     if (event.type === "identity.verification_session.verified") {
       const verificationSession = event.data.object as any;
       const userId = await verifyIdentitySessionOwner(
@@ -551,10 +554,8 @@ export async function POST(
         );
       }
 
-      await saveSubscription(
-        userId,
-        subscription
-      );
+      await saveSubscription(userId, subscription);
+      await updateAmbassadorSubscriptionStatus(ledgerRpc, subscription);
     }
 
     if (
@@ -579,10 +580,10 @@ export async function POST(
           );
 
         if (userId) {
-          await saveSubscription(
-            userId,
-            subscription
-          );
+          await saveSubscription(userId, subscription);
+          const plan = getPlanFromPrice(subscription.items.data[0]?.price.id, subscription.metadata);
+          await recordAmbassadorInvoice(stripe, ledgerRpc, invoice, subscription, userId, plan);
+          await updateAmbassadorSubscriptionStatus(ledgerRpc, subscription);
         }
       }
     }
@@ -609,10 +610,8 @@ export async function POST(
           );
 
         if (userId) {
-          await saveSubscription(
-            userId,
-            subscription
-          );
+          await saveSubscription(userId, subscription);
+          await updateAmbassadorSubscriptionStatus(ledgerRpc, subscription);
         }
       }
     }
@@ -631,6 +630,7 @@ export async function POST(
 
       if (userId) {
         await saveSubscription(userId, subscription);
+        await updateAmbassadorSubscriptionStatus(ledgerRpc, subscription);
       }
     }
 
@@ -647,13 +647,12 @@ export async function POST(
         );
 
       if (userId) {
-        await saveSubscription(
-          userId,
-          subscription
-        );
+        await saveSubscription(userId, subscription);
+        await updateAmbassadorSubscriptionStatus(ledgerRpc, subscription);
       }
     }
 
+    await reconcileAmbassadorEvent(stripe, ledgerRpc, event);
     if (!claimedEventToken) throw new Error("Stripe webhook claim token is missing.");
     await completeStripeWebhookEvent(event, claimedEventToken);
     claimedEventId = null;

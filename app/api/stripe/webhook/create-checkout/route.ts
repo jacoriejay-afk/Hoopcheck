@@ -323,6 +323,14 @@ export async function POST(
       existingSubscription?.stripe_customer_id ||
       undefined;
 
+    const { data: attribution, error: attributionError } = await supabase.rpc(
+      "ambassador_checkout_attribution", { p_user: user.id }
+    );
+    if (attributionError) {
+      console.error("Ambassador checkout lookup failed", attributionError.code);
+      return NextResponse.json({ error: "Unable to verify your checkout details. Try again." }, { status: 503 });
+    }
+
     const session =
       await stripe.checkout.sessions.create(
         {
@@ -365,6 +373,7 @@ export async function POST(
 
           subscription_data: {
             metadata: {
+              ...(typeof attribution === "string" ? { ambassador_attribution_id: attribution } : {}),
               user_id: user.id,
               plan,
               billing_interval: interval,
