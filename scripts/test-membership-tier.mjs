@@ -295,4 +295,10 @@ assert.match(playerContactPolicy, /s\.status IN \('active', 'trialing'\)/, "cont
 assert.match(playerContactPolicy, /target\.profile_visibility = 'public'/, "target player must be public");
 assert.match(playerContactPolicy, /target\.moderation_status <> 'suspended'/, "suspended target must be denied");
 
+
+// REELS-1: Creator publishing must not unlock unrelated reviews/trust tools.
+const creatorResolverSource = read("../lib/membership-tier.ts");
+assert.match(creatorResolverSource, /role !== "creator"/, "Creator must not inherit other-member review entitlements");
+assert.match(creatorResolverSource, /"creator"/, "Creator must remain recognized by the unified entitlement resolver");
+
 console.log("VERIFY-1 entitlement matrix: " + cases.length + " role/tier cells and edge cases passed (" + keys.length + " entitlements).");
