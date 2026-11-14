@@ -88,7 +88,7 @@
   background: var(--hc-surface-raised, #fff);
   color: var(--hc-foreground, #111);
 }
-.hc-shared-directory-hero .eyebrow { margin: 0 0 10px; color: var(--hc-orange, #ff5500); font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+.hc-shared-directory-hero .eyebrow { margin: 0 0 10px; color: var(--hc-accent-text); font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
 .hc-shared-directory-hero h1 { max-width: 900px; margin: 0; color: var(--hc-foreground, #111); font-size: clamp(1.8rem, 5vw, 3.15rem); line-height: 1.03; letter-spacing: -.045em; }
 .hc-shared-directory-description { max-width: 760px; margin: 12px 0 0; color: var(--hc-foreground-muted, #686868); line-height: 1.55; }
 .hc-shared-directory-tiles { margin: 0 0 18px; padding: 14px; border: 1px solid var(--border, #292929); border-radius: 18px; background: #151515; color: #fff; }

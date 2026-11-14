@@ -61,7 +61,7 @@ export default function TeamProfileHero({
       </div>
       <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginTop:16}}>
         <FollowButton targetType="team" targetId={teamId} variant="club" showCount={false} showNotifications={false} onCountChange={onFollowerCountChange} />
-        <a href="#fan-hq" onClick={onOpenFanGroup} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",minHeight:44,padding:"11px 18px",borderRadius:12,background:accent,color:"#fff",fontWeight:800,textDecoration:"none"}}>Join Fan Group</a>
+        <a href="#fan-hq" onClick={onOpenFanGroup} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",minHeight:44,padding:"11px 18px",borderRadius:12,background:accent,color:"var(--hc-button-primary-fg)",fontWeight:800,textDecoration:"none"}}>Join Fan Group</a>
       </div>
     </section>
   );

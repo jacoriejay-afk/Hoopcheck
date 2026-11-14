@@ -208,7 +208,7 @@ html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile
 .hc-team-entity-profile .hc-team-profile-inline-link {
   display:inline-block;
   margin-top:12px;
-  color:#f97337;
+  color:var(--hc-accent-text);
   font-weight:800;
 }
 html.theme-light .hc-team-entity-profile .hc-team-profile-overview-grid > * {
@@ -301,7 +301,7 @@ html body .hc-team-branded-hero .hc-team-profile-stat {border-color:#ffffff38 !i
 /* Accessible team profile tabs */
 .hc-team-entity-profile .hc-team-profile-nav [role="tablist"]{display:flex;align-items:stretch;gap:12px}
 .hc-team-entity-profile .hc-team-profile-nav [role="tab"]{appearance:none;border:0;border-bottom:3px solid transparent;background:transparent;color:inherit;font:inherit;font-weight:700;padding:12px 8px;cursor:pointer;white-space:nowrap}
-.hc-team-entity-profile .hc-team-profile-nav [role="tab"][aria-selected="true"]{border-bottom-color:var(--hc-team-brand-orange,#f97337);color:var(--hc-team-brand-orange,#f97337)}
+.hc-team-entity-profile .hc-team-profile-nav [role="tab"][aria-selected="true"]{border-bottom-color:var(--hc-team-brand-orange,#f97337);color:var(--hc-accent-text)}
 .hc-team-entity-profile .hc-team-profile-nav [role="tab"]:focus-visible{outline:2px solid var(--hc-team-brand-orange,#f97337);outline-offset:2px;border-radius:4px}
 .hc-team-entity-profile [role="tabpanel"][hidden]{display:none!important}
 .hc-team-entity-profile button.hc-team-profile-inline-link{appearance:none;border:0;background:transparent;padding:0;cursor:pointer;text-align:left;font:inherit}

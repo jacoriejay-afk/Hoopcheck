@@ -163,7 +163,7 @@ export default function AdminTeamLogosPage() {
             <label style={{ display: "grid", gap: 7 }}>Logo file<input type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp" onChange={(event: ChangeEvent<HTMLInputElement>) => setFile(event.target.files?.[0] || null)}/></label>
             <label style={{ display: "grid", gap: 7 }}>Logo tile background<select value={bg} onChange={(event) => setBg(event.target.value as typeof bg)} style={inputStyle}><option value="transparent">Transparent</option><option value="light">Light tile</option><option value="dark">Dark tile</option></select></label>
           </div>
-          <button disabled={busy} onClick={() => void uploadManual()} style={{ marginTop: 14, border: 0, borderRadius: 999, background: "#FF5A1F", color: "#fff", padding: "11px 18px", fontWeight: 900 }}>{busy ? "Working…" : "Upload and publish logo"}</button>
+          <button disabled={busy} onClick={() => void uploadManual()} style={{ marginTop: 14, border: 0, borderRadius: 999, background: "var(--hc-button-primary-bg)", color: "var(--hc-button-primary-fg)", padding: "11px 18px", fontWeight: 900 }}>{busy ? "Working…" : "Upload and publish logo"}</button>
         </section>
         <section style={{ border: "1px solid #333", background: "#111", borderRadius: 14, padding: 18, marginTop: 16 }}>
           <h2>3. Fetch candidates from official source pages</h2>

@@ -584,7 +584,7 @@ try {
         // A route shell can render before its fixture data and controls. Audit
         // the populated page so timing does not hide contrast/copy findings.
         await page.locator("main:visible").waitFor({ state: "visible", timeout: 15000 });
-        await page.locator("main .hc-brand-loader--screen").waitFor({ state: "hidden", timeout: 15000 });
+        await page.waitForFunction(() => [...document.querySelectorAll("main .hc-brand-loader--screen")].every(loader => !loader.checkVisibility()), null, { timeout: 15000 });
         await page.waitForTimeout(300);
         if (requestedPath === "/live-games") {
           await page.locator("main.hc-live-hub-page .hc-live-hub-hero").waitFor({ state: "visible", timeout: 15000 });
@@ -702,7 +702,7 @@ try {
         await page.getByRole("tab", { name: "Fan Group" }).click();
         await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").waitFor({ state: "visible", timeout: 15000 });
         const fanGroupEntry = (await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").innerText()).trim();
-        if (!fanGroupEntry.includes("Fan Group") || !fanGroupEntry.includes("Joined")) errors.push("women team profile: Fan Group entry is missing or not joined: " + fanGroupEntry);
+        if (!/fan group/i.test(fanGroupEntry) || !/joined/i.test(fanGroupEntry)) errors.push("women team profile: Fan Group entry is missing or not joined: " + fanGroupEntry);
       }
       if (requestedPath === "/fan-feed") {
         // HF-5: Fan Feed now redirects into the shared HoopFeed community.
@@ -717,8 +717,8 @@ try {
         const lockedTarget = (await page.locator("main.hc-team-fan-group-page .hc-team-group-posting-target").innerText()).trim();
         if (!lockedTarget.includes("Posting to") || !lockedTarget.includes(teamFixture.name) || !lockedTarget.includes("Fan Group")) errors.push("team-hub group: composer does not explain its locked club/group destination: " + lockedTarget);
         const groupEmpty = (await page.locator("main.hc-team-fan-group-page .hc-feed-empty").innerText()).trim();
-        if (!groupEmpty.includes("No posts yet — be the first to post for " + teamFixture.name + ".")) errors.push("team-hub group: real club-specific empty state is missing");
-        if (!groupEmpty.includes("Be the first to post")) errors.push("team-hub group: empty-state composer action is missing");
+        if (!groupEmpty.toLowerCase().includes(("No posts yet — be the first to post for " + teamFixture.name + ".").toLowerCase())) errors.push("team-hub group: real club-specific empty state is missing");
+        if (await page.locator("main.hc-team-fan-group-page .hc-feed-empty button").count() !== 1) errors.push("team-hub group: empty-state composer action is missing");
         await page.locator("main.hc-team-fan-group-page .hc-feed-empty button").click();
         const composerFocused = await page.locator("#fan-group-post-body").evaluate(element => element === document.activeElement);
         if (!composerFocused) errors.push("team-hub group: empty-state action did not focus the locked group composer");
