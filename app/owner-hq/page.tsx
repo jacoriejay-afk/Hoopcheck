@@ -8,10 +8,10 @@ export const metadata: Metadata = {
 };
 
 const views = [
-  { name: "Player HQ", href: "/player-hq", description: "Review the player experience" },
-  { name: "Fan HQ", href: "/fan-hq", description: "Review fan communities and tools" },
+  { name: "Player HQ", href: "/account", description: "Open your account; dedicated player preview pending" },
+  { name: "Fan HQ", href: "/account", description: "Open your account; dedicated fan preview pending" },
   { name: "Agents HQ", href: "/agents-hq", description: "Review agent and scout tools" },
-  { name: "Team HQ", href: "/team-hq", description: "Review club management" },
+  { name: "Team HQ", href: "/account", description: "Open your account; dedicated team preview pending" },
   { name: "Ambassador HQ", href: "/ambassador-hq", description: "Review ambassador experience" },
 ] as const;
 
