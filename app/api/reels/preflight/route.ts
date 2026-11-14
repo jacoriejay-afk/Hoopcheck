@@ -66,11 +66,16 @@ export async function POST(request: Request) {
   if (typeof data.mimeType !== "string" || typeof data.bytes !== "number" ||
       typeof data.durationSeconds !== "number" || typeof data.caption !== "string")
     return NextResponse.json({ error: "Invalid metadata" }, { status: 400 });
+  // Reject ambiguous or unexpected fields instead of silently ignoring them.
+  const allowedFields = new Set(["mimeType", "bytes", "durationSeconds", "caption", "tag"]);
+  if (Object.keys(data).some((field) => !allowedFields.has(field)))
+    return NextResponse.json({ error: "Unexpected metadata field" }, { status: 400 });
   const tag = data.tag == null ? null : data.tag;
   if (tag !== null && (typeof tag !== "object" || Array.isArray(tag)))
     return NextResponse.json({ error: "Invalid tag" }, { status: 400 });
   const tagData = tag as { type?: unknown; id?: unknown } | null;
-  if (tagData && (typeof tagData.type !== "string" || typeof tagData.id !== "string"))
+  if (tagData && (Object.keys(tagData).some((field) => !["type", "id"].includes(field)) ||
+    typeof tagData.type !== "string" || typeof tagData.id !== "string"))
     return NextResponse.json({ error: "Invalid tag" }, { status: 400 });
   const validationError = validateReelInput({
     mimeType: data.mimeType, bytes: data.bytes, durationSeconds: data.durationSeconds,
