@@ -77,7 +77,7 @@ try {
   await page.goto(`${baseURL}/feed`);await page.locator('.hc-feed-composer').waitFor();
   const header=await page.locator('header.site-header-global').boundingBox(),composer=await page.locator('.hc-feed-composer').boundingBox();
   assert.ok(header.height>0,'HoopFeed app bar is visible');assert.ok(composer.y>header.y,'Composer follows the HoopFeed app bar');
-  assert.equal(await page.locator('header.site-header-global .hc-header-feed-artwork[alt="HoopFeed™"]').count(),1,'Exactly one branded HoopFeed top-bar logo');
+  assert.equal(await page.locator('header.site-header-global a[aria-label="HoopFeed™"] .hc-header-feed-artwork use[href="/hoopfeed-header.svg#hoopfeed-artwork"]').count(),1,'Exactly one branded HoopFeed top-bar logo');
   assert.equal(await page.locator('.hc-hoopfeed-brand-header').count(),0,'No duplicate HoopFeed page banner');
   assert.equal(await page.getByRole('button',{name:'Go back',exact:true}).count(),0,'HoopFeed has no global back control');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,'No horizontal overflow');

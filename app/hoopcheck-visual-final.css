@@ -104,7 +104,7 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header {
 html body header.site-header-global.hc-template-header.hc-liquid-glass-header :is(
   .hc-header-links a, .hc-header-more > summary, .hc-header-more > summary > span, .hc-header-icon, .hc-header-icon svg,
   .hc-logo--full, .hc-logo__wordmark, .hc-logo__hoop, .hc-logo__check-word,
-  .hc-header-feed-wordmark, .hc-mobile-menu-toggle
+  .hc-logo__official-wordmark, .hc-header-feed-artwork, .hc-mobile-menu-toggle
 ),
 html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-logo__wordmark::after {
   color: var(--hc-header-fg) !important;
@@ -118,7 +118,7 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header .s
 
 html body header.site-header-global.hc-template-header.hc-liquid-glass-header :is(
   .hc-header-links a:is(:hover, .is-active),
-  .hc-header-icon:hover, .hc-header-icon:hover svg, .hc-header-feed-wordmark > span
+  .hc-header-icon:hover, .hc-header-icon:hover svg
 ) {
   color: var(--hc-header-accent) !important;
   -webkit-text-fill-color: currentColor !important;
@@ -176,13 +176,9 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header .h
 }
 
 @media (max-width: 767px) {
-  /* Reserve the iPhone notch/status-bar inset in normal document flow once.
-     The sticky header then uses only its visual gap; do not add the inset twice. */
+  /* Body padding reserves the inset in flow. Keep the sticky edge below the notch while scrolling. */
   html body:has(header.site-header-global.hc-liquid-glass-header) {
     padding-block-start: var(--hc-safe-area-top) !important;
-  }
-  html body header.site-header-global.hc-template-header.hc-liquid-glass-header {
-    inset-block-start: var(--hc-header-gap) !important;
   }
 
   html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-mobile-menu-toggle {
@@ -197,14 +193,11 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header .h
 
   html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-header-nav.is-open {
     inset-block-start: calc(100% + var(--hc-header-gap));
-    max-height: max(120px, calc(100dvh - var(--hc-safe-area-top) - var(--hc-safe-area-bottom) - 156px));
+    max-height: max(120px, calc(100dvh - var(--hc-safe-area-top) - var(--hc-safe-area-bottom) - 88px));
     overflow-y: auto;
     overscroll-behavior: contain;
   }
 
-  html body:has(nav.hc-lm2f-bottom-nav) {
-    padding-block-end: calc(80px + var(--hc-safe-area-bottom)) !important;
-  }
 }
 
 @media (forced-colors: active) {
@@ -268,33 +261,7 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header .h
   outline: 2px solid var(--hc-orange, #ff5a1f);
   outline-offset: 2px;
 }
-/* Sign-in should read as one form, not two competing hero cards. */
 @media (max-width: 767px) {
-  main.hc-auth-page > .hc-auth-hero {
-    padding: 16px 18px 10px !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    background: transparent !important;
-  }
-  main.hc-auth-page > .hc-auth-hero h1 {
-    margin: 8px 0;
-    font-size: clamp(1.7rem, 7vw, 2.5rem) !important;
-    line-height: 1.1;
-  }
-  main.hc-auth-page > .hc-auth-hero p {
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
-  main.hc-auth-page .hc-auth-form-section {
-    padding: 10px 12px calc(90px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-  main.hc-auth-page .hc-auth-card {
-    width: 100%;
-    max-width: none;
-    padding: 20px 16px;
-    border-radius: var(--hc-radius-card, 20px);
-  }
-  main.hc-auth-page .hc-auth-promo { display: none; }
   .hc-fan-groups-directory .page-container { padding-inline: 14px; }
   .hc-fan-groups-directory .hc-fan-groups-list { grid-template-columns: minmax(0, 1fr); }
 }
@@ -307,7 +274,7 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header .h
 @media (max-width:767px) {
  .auth-page-shell { min-width:0; }
  .auth-page-shell .signup-utility-row { width:calc(100% - 28px); margin-top:8px; }
- .auth-page-shell .signup-page { min-width:0; padding-bottom:calc(100px + env(safe-area-inset-bottom,0px)); }
+ .auth-page-shell .signup-page { min-width:0; }
  .auth-page-shell .signup-page .auth-hero { padding:14px 16px 8px !important; }
  .auth-page-shell .signup-page .auth-hero h1 { font-size:clamp(1.7rem,7vw,2.4rem) !important; line-height:1.12; }
  .auth-page-shell .signup-page .auth-hero .feature-grid { display:none; }
@@ -322,7 +289,7 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header .h
 .hc-account-page :is(.hc-account-settings-identity-copy,.hc-account-settings-identity-copy p,.hc-account-identity-title strong) { min-width:0; overflow-wrap:anywhere; }
 .hc-account-page :is(input,select,textarea) { max-width:100%; }
 @media (max-width:767px) {
- .hc-account-page .page-container { padding-inline:14px; padding-bottom:calc(104px + env(safe-area-inset-bottom,0px)); }
+ .hc-account-page .page-container { padding-inline:14px;  }
  .hc-account-page .hc-account-settings-header { padding:18px 16px; border-radius:var(--hc-radius-card,20px); }
  .hc-account-page .hc-account-settings-header h1 { font-size:clamp(1.5rem,6vw,2rem); line-height:1.15; }
  .hc-account-page .hc-account-identity-actions { gap:8px; }
@@ -332,11 +299,13 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header .h
 
 /* HQ-CONSISTENCY: keep the Agents/Scouts workspace readable on mobile. */
 .hc-agents-hq-page .page-container { min-width:0; max-width:1100px; margin-inline:auto; }
+.hc-role-hq > .page-container { display:grid; gap:var(--hc-content-gap); }
+.hc-role-hq .hero-card { padding:var(--hc-content-padding); }
 .hc-agents-hq-page :is(.hero-card,.hc-dashboard-grid,.dashboard-card) { min-width:0; }
 .hc-agents-hq-page .hc-dashboard-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:12px; }
 .hc-agents-hq-page :is(.hero-card,.dashboard-card) :is(h1,h2,p) { overflow-wrap:break-word; }
 @media (max-width:767px) {
- .hc-agents-hq-page .page-container { padding-inline:14px; padding-bottom:calc(104px + env(safe-area-inset-bottom,0px)); }
+ .hc-agents-hq-page .page-container { padding-inline:14px;  }
  .hc-agents-hq-page .hero-card { padding:18px 16px; border-radius:var(--hc-radius-card,20px); }
  .hc-agents-hq-page .hero-card h1 { font-size:clamp(1.5rem,6vw,2rem); line-height:1.15; }
  .hc-agents-hq-page .hc-dashboard-grid { grid-template-columns:minmax(0,1fr); }

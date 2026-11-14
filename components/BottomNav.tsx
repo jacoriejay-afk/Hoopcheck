@@ -101,9 +101,10 @@ export default function BottomNav() {
       {items.map(([href, translationKey, label]) => {
         const destination = href === "/feed" && accountType === "fan" ? "/fan-feed" : href;
         const feedResolving = href === "/feed" && accountTypeLoading;
-        const active = destination === "/"
-          ? pathname === "/" || pathname === "/dashboard"
-          : pathname === destination || pathname.startsWith(destination + "/");
+        const active = pathname === destination || pathname.startsWith(destination + "/")
+          || (href === "/" && pathname === "/dashboard")
+          || (href === "/feed" && pathname === "/feed")
+          || (href === "/profile" && pathname === "/account");
         return (
           <Link
             key={href}

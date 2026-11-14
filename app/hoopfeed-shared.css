@@ -401,7 +401,7 @@ html body .hc-global-page-shell main.hc-feed-page {
 .hc-feed-page .hf5-type-row { display: flex; gap: 8px; overflow-x: auto; padding: 14px 2px 2px; scrollbar-width: none; }
 .hc-feed-page .hf5-type-row::-webkit-scrollbar { display: none; }
 .hc-feed-page .hf5-type-chip { flex: 0 0 auto; border: 1px solid var(--hc-border); background: var(--hc-surface-raised); color: var(--hc-foreground); border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.hc-feed-page .hf5-type-chip.is-active { background: rgba(255,90,31,.14); border-color: var(--hc-orange, #ff5a1f); color: var(--hc-orange, #ff5a1f); }
+.hc-feed-page .hf5-type-chip.is-active { background: var(--hc-nav-active-bg); border-color: var(--hc-nav-active-fg); color: var(--hc-nav-active-fg); }
 .hc-feed-page .hf5-avatar { border: 2px solid var(--hc-orange, #ff5a1f) !important; border-radius: 50%; object-fit: cover; }
 .hc-feed-page .hf5-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 9px; font-size: 11px; font-weight: 700; letter-spacing: .02em; line-height: 1.5; }
 .hc-feed-page .hf5-pill--player { background: #6c3fd4; color: #fff; }

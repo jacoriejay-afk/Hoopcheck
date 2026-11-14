@@ -1864,9 +1864,9 @@ main:not(.hc-rebrand):not(.hc-template-home) > section:not(.hero):not(.hc-team-r
 .hc-dashboard-shell a.btn,
 .hc-dashboard-shell button,
 main:not(.hc-rebrand):not(.hc-template-home) :where(.btn,button[type="submit"],.button-primary,.btn-primary) {
-  color: #fff !important;
-  background: #e64a00 !important;
-  border-color: #e64a00 !important;
+  color: var(--hc-button-primary-fg) !important;
+  background: var(--hc-button-primary-bg) !important;
+  border-color: var(--hc-button-primary-bg) !important;
 }
 .hc-dashboard-shell .btn.dark,
 main:not(.hc-rebrand):not(.hc-template-home) :where(.btn.dark,.button-dark) {
@@ -1947,9 +1947,9 @@ main.auth-page-shell .signup-account-badge,
 main.auth-page-shell .signup-gate,
 main.auth-page-shell .feature,
 main.auth-page-shell .account-type-choice {
-  color: #171717 !important;
+  color: var(--hc-foreground) !important;
 }
-main.auth-page-shell { background: var(--hc-surface-raised) !important; }
+main.auth-page-shell { background: var(--hc-page-bg) !important; }
 main.auth-page-shell .auth-hero,
 main.auth-page-shell .signup-card,
 main.auth-page-shell .auth-card,
@@ -1959,20 +1959,20 @@ main.auth-page-shell .signup-account-badge,
 main.auth-page-shell .signup-gate {
   background: var(--hc-surface-raised) !important;
   background-image: none !important;
-  border-color: #e2e2e2 !important;
+  border-color: var(--hc-border) !important;
   box-shadow: none !important;
 }
 main.auth-page-shell :where(h1,h2,h3,h4,strong,.logo) {
-  color: #171717 !important;
+  color: var(--hc-foreground) !important;
 }
 main.auth-page-shell :where(p,small,.muted,.intro,.form-hint,.login-link,.signup-gate) {
-  color: #5f5f5f !important;
+  color: var(--hc-foreground-muted) !important;
 }
 main.auth-page-shell .eyebrow,
 main.auth-page-shell .feature > strong,
 main.auth-page-shell .account-type-check,
 main.auth-page-shell :where(.login-link a,.auth-page-shell a:not(.logo)) {
-  color: #d94300 !important;
+  color: var(--hc-accent-text) !important;
 }
 main.auth-page-shell .signup-nav {
   background: #111 !important;
@@ -1981,26 +1981,26 @@ main.auth-page-shell .signup-nav {
 main.auth-page-shell .signup-nav :where(a,span) { color: #fff !important; }
 main.auth-page-shell .account-type-choice.selected {
   border-color: #ff5500 !important;
-  background: #fff7f2 !important;
+  background: var(--hc-nav-active-bg) !important;
 }
 main.auth-page-shell .account-type-choice :where(strong,small,span) {
-  color: #171717 !important;
+  color: var(--hc-foreground) !important;
 }
 main.auth-page-shell .signup-form :where(input,select,textarea) {
-  color: #171717 !important;
+  color: var(--hc-foreground) !important;
   background: var(--hc-surface-raised) !important;
-  border-color: #cfcfcf !important;
-  -webkit-text-fill-color: #171717 !important;
+  border-color: var(--hc-control-border) !important;
+  -webkit-text-fill-color: var(--hc-foreground) !important;
 }
 main.auth-page-shell .signup-form :where(input,select,textarea)::placeholder {
-  color: #666 !important;
-  -webkit-text-fill-color: #666 !important;
+  color: var(--hc-foreground-muted) !important;
+  -webkit-text-fill-color: var(--hc-foreground-muted) !important;
 }
 main.auth-page-shell .signup-form .btn,
 main.auth-page-shell .signup-form button[type="submit"] {
-  color: #fff !important;
-  background: #e64a00 !important;
-  border-color: #e64a00 !important;
+  color: var(--hc-button-primary-fg) !important;
+  background: var(--hc-button-primary-bg) !important;
+  border-color: var(--hc-button-primary-bg) !important;
 }
 main.auth-page-shell .signup-form .checkbox-row,
 main.auth-page-shell .signup-form .checkbox-row span {
@@ -4101,7 +4101,7 @@ main, section, article, aside, header, footer, nav, form, .card, .result-card, .
 .hc-review-verified .hc-verified-badge svg { display:block; width:100%; height:100%; }
 
 /* Auth screens: one compact card, shared field and focus treatment. */
-.hc-auth-page, .auth-page-shell { width:100%; min-height:100dvh; background:#F7F7F5; color:#111; }
+.hc-auth-page, .auth-page-shell { width:100%; background:var(--hc-page-bg); color:var(--hc-foreground); }
 .hc-auth-page .hc-auth-hero { padding:28px 20px 8px !important; text-align:center; background:transparent; color:#111; }
 .hc-auth-page .hc-auth-hero h1 { margin:8px auto; max-width:100%; font-size:clamp(24px,5vw,28px); line-height:1.1; }
 .hc-auth-page .hc-auth-hero p { max-width:480px; margin:8px auto; color:#626262; font-size:14px; line-height:1.5; }

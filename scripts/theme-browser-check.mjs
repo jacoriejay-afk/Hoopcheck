@@ -155,7 +155,7 @@ try {
       assert.equal(await guestPage.locator('a.hc-signin-button').count() > 0, true,
         `Guest ${theme} ${route}: sign-in action must be available`);
     }
-    for (const width of [320, 390, 740, 768, 1024, 1440]) {
+    for (const width of [320, 375, 390, 740, 768, 1024, 1280, 1440]) {
       await guestPage.setViewportSize({ width, height: 844 });
       await guestPage.goto(baseURL + "/");
       const resolvedTheme = theme === "system" ? "dark" : theme;
@@ -177,6 +177,14 @@ try {
         await topNav.getByRole("link", { name: "Explore", exact: true }).waitFor();
         await topNav.getByRole("link", { name: "Men’s Teams", exact: true }).waitFor();
         await header.getByRole("button", { name: "Close menu" }).click();
+        // Chromium's mobile emulator has no physical notch. Set the same CSS
+        // inset token as a notched device and check both normal and sticky flow.
+        const safeArea = await guestPage.addStyleTag({ content: ":root { --hc-safe-area-top: 44px; }" });
+        await guestPage.evaluate(() => window.scrollTo({ top: 350, behavior: "instant" }));
+        const stickyHeader = await header.boundingBox();
+        assert.ok(stickyHeader.y >= 44, `Guest ${theme} at ${width}px: sticky header entered the status-bar inset (${stickyHeader.y}px)`);
+        await safeArea.evaluate(node => node.remove());
+        await guestPage.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
       } else {
         const brandBox = await brand.boundingBox();
         const linksBox = await header.locator(".hc-header-desktop-links").boundingBox();
@@ -374,6 +382,11 @@ try {
       }
       if (routeName === "feed") {
         assert.ok(computed.composer !== null, `feed/${theme}: composer renders`);
+        const artwork = page.locator(".hc-header-feed-artwork");
+        await page.waitForFunction(() => document.querySelector(".hc-header-feed-artwork use")?.getBBox().width > 0);
+        assert.equal(await artwork.evaluate(node => getComputedStyle(node).color),
+          await page.locator("header.site-header-global").evaluate(node => getComputedStyle(node).color),
+          `feed/${theme}: wordmark artwork must use the paired header foreground`);
         assert.ok(computed.discoveryHeading && computed.discoveryHeading !== "rgba(0, 0, 0, 0)", `feed/${theme}: community heading has a computed color`);
         assert.ok(computed.composerBorder !== null, `feed/${theme}: composer border style computed`);
         assert.equal(computed.filterChip, expectedChip, `feed/${theme}: type chip background mismatch`);

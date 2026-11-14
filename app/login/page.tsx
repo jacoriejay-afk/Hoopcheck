@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
 import { googleAuthMessage } from "../../lib/google-auth";
-import Logo from "../../components/Logo";
 import { supabase } from "../../lib/supabase";
 
 export default function LoginPage() {
@@ -92,21 +91,16 @@ export default function LoginPage() {
 
   return (
     <main className="hc-auth-page">
-<section className="hero hc-auth-hero" style={{ paddingBottom: "30px" }}>
-        <div className="eyebrow">WELCOME BACK</div>
+      <section className="hero hc-auth-hero">
         <h1>Welcome back.</h1>
         <p>
           Sign in to your HoopCheck account to explore teams, coaches, leagues, player experiences, and fan communities around the world.
         </p>
       </section>
 
-      <section className="hc-auth-form-section" style={{ maxWidth: "520px", margin: "0 auto", padding: "20px 6% 100px" }}>
+      <section className="hc-auth-form-section">
         <div className="form hc-auth-card">
-          <Link href="/" className="hc-auth-logo" aria-label="HoopCheck home"><Logo variant="full" size={44} /></Link>
-          <div className="eyebrow">Login</div>
-          <h2 style={{ fontSize: "30px", letterSpacing: "-1px", marginTop: 0 }}>
-            Sign in to HoopCheck
-          </h2>
+          <h2>Sign in to HoopCheck</h2>
           <p className="muted">
             Use the email and password associated with your account.
           </p>
@@ -138,28 +132,17 @@ export default function LoginPage() {
             </div>
           )}
 
-          <button type="button" onClick={handlePasswordReset} disabled={resetLoading}
-            style={{ background: "transparent", border: 0, color: "var(--orange)", padding: 0, marginTop: 14, cursor: resetLoading ? "default" : "pointer", fontWeight: 800 }}>
+          <button type="button" onClick={handlePasswordReset} disabled={resetLoading} className="hc-auth-action">
             {resetLoading ? "Sending reset link..." : "Forgot password?"}
           </button>
 
           <p className="muted" style={{ marginTop: 22, marginBottom: 0 }}>
             Don&apos;t have a HoopCheck account?{" "}
-            <Link href="/signup" style={{ color: "var(--orange)", fontWeight: 900 }}>Create one</Link>
+            <Link href="/signup" className="hc-auth-action">Create one</Link>
           </p>
         </div>
       </section>
 
-      <section className="hc-auth-promo" style={{ maxWidth: "900px", margin: "0 auto", padding: "0 6% 100px" }}>
-        <div className="card">
-          <div className="eyebrow">HoopCheck</div>
-          <h2>Research before<br />you commit.</h2>
-          <p>Explore basketball communities and make informed decisions, whether you’re a player, fan, coach, or club representative.</p>
-          <div className="actions">
-            <Link href="/signup" className="btn">Create Free Account</Link>
-          </div>
-        </div>
-      </section>
     </main>
   );
 }
