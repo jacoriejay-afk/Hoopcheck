@@ -112,13 +112,21 @@ for (const [label, input, expected] of cases) {
 }
 
 // Unified community posting: all recognized paid roles can post; unknown role values cannot.
-for (const role of ["player", "fan", "coach", "scout", "agent", "club_admin"]) {
+for (const role of ["player", "fan", "coach", "scout", "agent", "club_admin", "creator"]) {
   const allowed = getHoopCheckEntitlements({ accountType: role, subscription: active("pro") });
   assert.equal(allowed.canReadHoopFeed, true, role + " Pro reads unified HoopFeed");
   assert.equal(allowed.canWriteHoopFeed, true, role + " Pro posts to unified HoopFeed");
   const free = getHoopCheckEntitlements({ accountType: role });
   assert.equal(free.canWriteHoopFeed, false, role + " Free cannot post to unified HoopFeed");
 }
+const creator = getHoopCheckEntitlements({ accountType: "creator", subscription: active("premium") });
+assert.equal(creator.canReadHoopFeed, true, "paid creators can read HoopFeed");
+assert.equal(creator.canWriteHoopFeed, true, "paid creators can post to HoopFeed");
+assert.equal(creator.canWriteReviews, false, "creators cannot write club reviews");
+assert.equal(creator.canModerateFanGroups, false, "creators cannot moderate fan groups");
+assert.equal(creator.canUseProPassport, false, "creators do not inherit agent permissions");
+const creatorExpired = getHoopCheckEntitlements({ accountType: "creator", subscription: { ...active("premium"), current_period_end: "2000-01-01T00:00:00.000Z" } });
+assert.equal(creatorExpired.canWriteHoopFeed, false, "expired creators cannot post");
 const unknownRole = getHoopCheckEntitlements({ accountType: "unexpected_role", subscription: active("premium") });
 assert.equal(unknownRole.canReadHoopFeed, false, "unrecognized roles cannot read member HoopFeed");
 assert.equal(unknownRole.canWriteHoopFeed, false, "unrecognized roles cannot post to HoopFeed");
