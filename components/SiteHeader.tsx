@@ -33,7 +33,7 @@ export default function SiteHeader() {
     </Link>
   );
   return <header className="site-header-global hc-template-header hc-liquid-glass-header">
-    <Link href={onHoopFeed ? "/feed" : signedIn ? roleHome.href : "/"} className="site-header-brand" aria-label={onHoopFeed ? "HoopFeed™" : "HoopCheck™ home"}>{onHoopFeed ? <span className="hc-header-feed-lockup"><svg className="hc-header-feed-artwork" viewBox="0 0 560 128" width={560} height={128} aria-hidden="true" focusable="false"><use href="/hoopfeed-header.svg#hoopfeed-artwork" /></svg></span> : <Logo variant="full" size={42} title="HoopCheck™"/>}</Link>
+    <Link href={onHoopFeed ? "/feed" : signedIn ? roleHome.href : "/"} className="site-header-brand" aria-label={onHoopFeed ? "HoopFeed™" : "HoopCheck™ home"}>{onHoopFeed ? <span className="hc-header-feed-lockup"><svg className="hc-header-feed-artwork" viewBox="0 0 560 128" width={560} height={128} aria-hidden="true" focusable="false"><use href="/hoopfeed-header-lettering.svg#hoopfeed-artwork" /></svg></span> : <Logo variant="full" size={42} title="HoopCheck™"/>}</Link>
     <button type="button" className="hc-mobile-menu-toggle" aria-label={menuOpen?"Close menu":"Open menu"} aria-expanded={menuOpen} onClick={()=>setMenuOpen(v=>!v)}><span/><span/><span/></button>
     <nav className={menuOpen?"hc-header-nav is-open":"hc-header-nav"} aria-label="Primary navigation">
       <div className="hc-header-links">
