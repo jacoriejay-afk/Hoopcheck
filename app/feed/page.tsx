@@ -58,6 +58,8 @@ function orderCommentThreads(items:Comment[]):Array<Comment & {depth:number}>{
 type Profile = { account_type:string; current_country:string|null; current_country_public:boolean };
 type Subscription = { plan:string|null; status:string|null; access_status:string|null; current_period_end:string|null };
 
+const SHARED_POST_HASH = /^#post-([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$/i;
+
 const ago = (v:string, now:number) => {
   const s=Math.max(0,Math.floor((now-new Date(v).getTime())/1000));
   if(s<60)return "just now"; const m=Math.floor(s/60); if(m<60)return m+"m ago";
@@ -66,6 +68,8 @@ const ago = (v:string, now:number) => {
 
 export default function Feed(){
   const [posts,setPosts]=useState<Post[]>([]);
+  const [linkedPostId, setLinkedPostId] = useState<string>();
+  const [sharedLinkUnavailable, setSharedLinkUnavailable] = useState(false);
   const [comments,setComments]=useState<Record<string,Comment[]>>({});
   const [checks,setChecks]=useState<Record<string,number>>({}); const [checkBursts,setCheckBursts]=useState<Record<string,boolean>>({});
   const [mine,setMine]=useState<Record<string,boolean>>({});
@@ -90,6 +94,7 @@ export default function Feed(){
     if(typeFilter==="Saved"&&!savedMap[p.id])return false;
     return true;
   }).slice().sort((a,b)=>{
+    if (a.id !== b.id && (a.id === linkedPostId || b.id === linkedPostId)) return a.id === linkedPostId ? -1 : 1;
     return new Date(b.created_at).getTime()-new Date(a.created_at).getTime();
   });
 
@@ -97,12 +102,24 @@ export default function Feed(){
   const isAdmin=adminRole==="admin";
 
   async function load(currentUser:any){
-    const feedResult=await supabase.from("feed_posts").select("id,shared_post_id,body,image_url,image_urls,video_url,post_kind,poll_options,is_pinned,pinned_at,location_country,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,created_at,expires_at,author_id,profiles:profiles!feed_posts_author_id_fkey(display_name,avatar_url,account_type,current_country,current_country_public,current_team)")
-      .eq("status","approved").or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).order("created_at",{ascending:false}).limit(30);
+    const linkedPostId = window.location.hash.match(SHARED_POST_HASH)?.[1]?.toLowerCase();
+    setLinkedPostId(linkedPostId);
+    const readablePosts = () => supabase.from("feed_posts").select("id,shared_post_id,body,image_url,image_urls,video_url,post_kind,poll_options,is_pinned,pinned_at,location_country,topic_tag,game_day_team,game_day_opponent,game_day_score_for,game_day_score_against,created_at,expires_at,author_id,profiles:profiles!feed_posts_author_id_fkey(display_name,avatar_url,account_type,current_country,current_country_public,current_team)")
+      .eq("status", "approved").or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
+    const [feedResult, linkedPostResult] = await Promise.all([
+      readablePosts().order("created_at", { ascending: false }).limit(30),
+      linkedPostId ? readablePosts().eq("id", linkedPostId).maybeSingle() : null,
+    ]);
     if(feedResult.error){console.error("HoopFeed posts query failed",feedResult.error);setMsg("HoopFeed could not load posts. Please refresh and try again.");return;}
     const {data:archiveRows}=await supabase.from("feed_post_archives").select("post_id").eq("user_id",currentUser.id);
     const archiveIds=new Set((archiveRows||[]).map((r:any)=>r.post_id));
-    const sharedIds=[...new Set((feedResult.data||[]).map((r:any)=>r.shared_post_id).filter(Boolean))] as string[];
+    const linkedPost = linkedPostResult?.data;
+    const feedRows = feedResult.data || [];
+    const sourceRows = linkedPost && !feedRows.some(row => row.id === linkedPost.id)
+      ? [linkedPost, ...feedRows]
+      : feedRows;
+    setSharedLinkUnavailable(Boolean(linkedPostId && (!linkedPost || archiveIds.has(linkedPostId))));
+    const sharedIds=[...new Set(sourceRows.map(row=>row.shared_post_id).filter(Boolean))] as string[];
     let sharedPostsById:Record<string,any>={};
     if(sharedIds.length){
       const {data:sharedRows,error:sharedError}=await supabase.from("feed_posts").select("id,author_id,profiles:profiles!feed_posts_author_id_fkey(display_name)").in("id",sharedIds);
@@ -110,8 +127,11 @@ export default function Feed(){
       sharedPostsById=Object.fromEntries((sharedRows||[]).map((r:any)=>[r.id,{...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)}]));
     }
     const nowTs=Date.now();
-    const rows=(feedResult.data||[]).filter((r:any)=>!archiveIds.has(r.id)).map((r:any)=>{const post={...r,shared_post:r.shared_post_id?sharedPostsById[r.shared_post_id]||null:null,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)} as Post;return {...post,ageLabel:ago(post.created_at,nowTs)};});
+    const rows=sourceRows.filter((r:any)=>!archiveIds.has(r.id)).map((r:any)=>{const post={...r,shared_post:r.shared_post_id?sharedPostsById[r.shared_post_id]||null:null,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)} as Post;return {...post,ageLabel:ago(post.created_at,nowTs)};});
     setPosts(rows);
+    if (linkedPostId && linkedPost && !archiveIds.has(linkedPostId)) {
+      setTypeFilter("All Posts");
+    }
     if(!rows.length){setComments({});setChecks({});setMine({});setVotes({});setSavedMap({});return;}
     const ids=rows.map(p=>p.id);
     const commentFields = "id,post_id,body,created_at,author_id,profiles:profiles!feed_post_comments_author_id_fkey(display_name,avatar_url)";
@@ -148,7 +168,7 @@ export default function Feed(){
 
   useEffect(()=>{setNow(Date.now());const timer=window.setInterval(()=>setNow(Date.now()),60000);return()=>window.clearInterval(timer);},[]);
 
-  useEffect(()=>{(async()=>{const {data:{session}}=await supabase.auth.getSession();const u=session?.user;setUser(u);if(!u){setLoading(false);return;}
+  useEffect(()=>{setLinkedPostId(window.location.hash.match(SHARED_POST_HASH)?.[1]?.toLowerCase());(async()=>{const {data:{session}}=await supabase.auth.getSession();const u=session?.user;setUser(u);if(!u){setLoading(false);return;}
     const [{data:p},{data:s}]=await Promise.all([
       supabase.from("profiles").select("account_type,current_country,current_country_public").eq("id",u.id).maybeSingle(),
       supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",u.id).maybeSingle()
@@ -273,16 +293,16 @@ export default function Feed(){
   }
 
   async function sharePost(p:Post){
-    // HoopFeed is access-controlled: never generate a public URL for a private post.
-    const shareText = [p.body.trim(), "Shared from HoopCheck™ HoopFeed"].filter(Boolean).join("\n\n");
+    // The fragment identifies the post. The recipient's viewer-scoped query decides access.
+    const url = new URL(`/feed#post-${p.id}`, window.location.origin).href;
     try {
       if (typeof navigator.share === "function") {
-        await navigator.share({ text: shareText });
+        await navigator.share({ title: "HoopFeed™", url });
         return;
       }
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(shareText);
-        setMsg("Post text copied. Paste it into a message to share.");
+        await navigator.clipboard.writeText(url);
+        setMsg("Post link copied.");
         return;
       }
       setMsg("Sharing isn't supported in this browser.");
@@ -350,7 +370,7 @@ export default function Feed(){
   const title = <h1 className="visually-hidden">HoopFeed</h1>;
 
   if(loading)return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><HoopLoading label="Loading HoopFeed..." /><FeedLoadingSkeleton count={3} /></div></main></PageShell>;
-  if(!user)return <PageShell><main className="page-shell hc-feed-page"><div className="page-container">{title}<section className="hero-card"><p className="eyebrow">HOOPFEED</p><h2>One community. Every role.</h2><p className="muted">Players, fans, teams, coaches and agents — HoopFeed is where the global basketball community talks. Join to post, comment and Check.</p><div className="actions"><Link href="/signup" className="btn">+ Join Community</Link><Link href="/login" className="btn dark">Sign In</Link></div></section></div></main></PageShell>;
+  if(!user)return <PageShell><main className="page-shell hc-feed-page"><div className="page-container">{title}<section className="hero-card"><p className="eyebrow">HOOPFEED</p><h2>One community. Every role.</h2><p className="muted">Players, fans, teams, coaches and agents — HoopFeed is where the global basketball community talks. Join to post, comment and Check.</p><div className="actions"><Link href="/signup" className="btn">+ Join Community</Link><Link href={linkedPostId ? `/login?returnTo=${encodeURIComponent(`/feed#post-${linkedPostId}`)}` : "/login"} className="btn dark">Sign In</Link></div></section></div></main></PageShell>;
   if(!access)return <PageShell><main className="page-shell hc-feed-page"><div className="page-container">{title}<section className="hero-card"><p className="eyebrow">HOOPFEED</p><h2>The global basketball community</h2><p className="muted">An active Pro or Premium membership is required to enter HoopFeed — one feed for players, fans, teams, coaches and agents.</p><div className="actions"><Link href="/membership" className="btn">Upgrade Membership</Link><Link href="/dashboard" className="btn dark">Back to Dashboard</Link></div></section></div></main></PageShell>;
 
   return <PageShell><main className="page-shell hc-feed-page" onTouchStart={(event)=>{touchStartY.current=window.scrollY===0?(event.touches[0]?.clientY??null):null;}} onTouchEnd={(event)=>{const start=touchStartY.current;touchStartY.current=null;const end=event.changedTouches[0]?.clientY??0;if(start!==null&&end-start>80&&user&&profile&&!refreshing){void(async()=>{setRefreshing(true);try{await load(user);setNow(Date.now());}catch(error){console.error("HoopFeed refresh failed",error);setMsg("Could not refresh HoopFeed. Please try again.");}finally{setRefreshing(false);}})();}}}><div className="page-container">
@@ -369,6 +389,7 @@ export default function Feed(){
     </section>
 
     <div className="hc-feed-filter-bar" aria-label="HoopFeed tools">{refreshing && <span className="hc-feed-pull-loading" role="status"><span className="hc-feed-pull-spinner" aria-hidden="true" /> Updating HoopFeed…</span>}<span className="hc-feed-result-count">{visiblePosts.length} {visiblePosts.length===1?"POST":"POSTS"}</span></div>
+    {sharedLinkUnavailable && <p role="status">This shared post is unavailable.</p>}
     <section className="hc-feed-stream" aria-label="Recent HoopFeed posts">{visiblePosts.length?visiblePosts.map(p=>{const cs=orderCommentThreads(comments[p.id]||[]);const roleKey=(p.profiles?.account_type||"").toLowerCase();const rolePill=ROLE_PILLS[roleKey];const mediaImgs:string[]=(p.image_urls&&p.image_urls.length?p.image_urls:(p.image_url?[p.image_url]:[]));const carouselPos=Math.min(carouselIdx[p.id]||0,Math.max(0,mediaImgs.length-1));return <FeedPostCard key={p.id} onDoubleClick={()=>void toggleCheck(p)}>
       
       <header className="hc-feed-post-header"><FeedAuthorRow>{p.profiles?.avatar_url?<img src={p.profiles.avatar_url} alt="" className="hc-feed-post-avatar hf5-avatar"/>:<span className="player-avatar-fallback hc-feed-post-avatar hf5-avatar">HC</span>}<div className="hc-feed-post-author__meta"><div className="hc-feed-post-author__line"><strong>{p.shared_post_id?"Shared by "+(p.profiles?.display_name||"HoopCheck Member"):(p.profiles?.display_name||"HoopCheck Member")}</strong><span className="hc-feed-verified" aria-label="HoopCheck member">✓</span>{rolePill&&<span className={"hf5-pill hf5-pill--"+roleKey}>{rolePill.label}</span>}{p.post_kind==="news"&&<span className="hf5-pill hf5-pill--news">News</span>}{p.post_kind==="poll"&&<span className="hf5-pill hf5-pill--poll">Poll</span>}<small>· {p.ageLabel}</small></div>{p.profiles?.current_team&&<span className="hc-feed-jersey-tag">{p.profiles.current_team}</span>}{p.shared_post?.profiles?.display_name&&<small className="muted">Originally shared from {p.shared_post.profiles.display_name}</small>}{p.location_country&&p.profiles?.current_country_public!==false&&<div className="muted hc-feed-location"><HoopIcon name="map-pin" size={14} /> Country: {p.location_country}</div>}</div></FeedAuthorRow></header>
