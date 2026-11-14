@@ -1,35 +1,19 @@
-# AMB-1: Ambassador HQ implementation contract
+# AMB-1 Ambassador HQ
 
-Issue: #642. Status: design only; no feature is live.
+Tracked in issue #642 and PR #643. Ambassador access is separate from HoopCheck account types, memberships, and platform administration.
 
-## Confirmed existing integration points (main, 2026-11-14)
-- `lib/membership-tier.ts`: existing centralized membership entitlement resolver. Ambassador status must be separate from account type and subscription tier.
-- `app/api/stripe/webhook/route.ts`: existing subscription webhook. Integrate commission recording only after verifying existing event idempotency and payment event semantics.
-- `app/business-opportunities/page.tsx`: existing athlete ambassador inquiry copy; not an active ambassador portal.
+## Operations
 
-## Planned data model
-1. `ambassador_grants`: user_id unique, status (pending/active/suspended), code unique case-insensitive, agreed_rate_bps nullable, agreement_signed_at nullable, owner approval audit fields. Never infer grants from editable profiles.
-2. `ambassador_attributions`: ambassador_id, referred_user_id unique, source and capture timestamp, immutable after first verified attribution; self-referral disallowed.
-3. `ambassador_commissions`: ambassador_id, attribution_id, Stripe invoice ID unique, subscription ID, first_paid_at, paid_at, gross_minor, net_minor, rate_bps, commission_minor, status, reversals, created_at. Enforce 12-month eligibility measured from first successful customer payment, not campaign end.
-4. `ambassador_payouts` and payout line items: owner-approved manual settlement with audit history. Never store bank details in application tables.
+- Open `/admin/ambassadors` as an approved HoopCheck owner. The Chris Lykes campaign starts reserved and inactive. Link only his verified existing HoopCheck user ID. Enter the signed agreement reference, signed date, confirmed payout terms reference, first-payment and renewal rates, and campaign length before activating. Store agreement and payment credentials in the owner's approved system. The app stores references only.
+- The campaign URL is `https://hoopcheck.online/referral/CHRISLYKES`. It redirects to signup. Active visits receive a short-lived, single-use attribution token. Existing accounts cannot claim a token after signing up. Email must be verified before checkout can carry attribution. The link applies no discount.
+- The existing Stripe webhook must deliver `invoice.paid`, `invoice.payment_failed`, `checkout.session.completed`, `customer.subscription.updated` and `customer.subscription.deleted`. Enable `charge.refunded`, `refund.created`, `refund.updated`, `refund.failed`, and `charge.dispute.*` events used by the handler so the ledger reconciles after payment. Verify permissions to read invoice payments, payment intents, charges, balance transactions, and disputes in the correct Stripe mode.
+- The ledger uses captured USD Stripe subscription receipts with a verifiable payment fingerprint. It subtracts sales tax and actual processing fees. Discounts are already reflected in the amount collected. Refund and unresolved or lost dispute deductions use the non-tax share of the amount. Won disputes release their hold. Zero-dollar, out-of-band, multi-tender, unsupported fingerprint, and native store payments require separate reconciliation before any commission is credited.
+- The first successful qualifying payment starts a 12-calendar-month UTC window. First-payment and renewal rates are captured when a customer is referred. Closing the campaign prevents new qualifying first payments and preserves the tail on existing conversions. Record future terms changes as signed amendments. Already captured rates stay fixed.
+- Owner approval groups eligible commissions after a 30-day validation period. Record the completed external transfer with its reference. If a refund changes an approved amount, cancel the approval and review the new balance before transferring. Previously settled payouts remain in history and adjustments offset future balances. Use the monthly UTC CSV to reconcile the ledger with Stripe and the transfer record.
 
-## Security and business constraints
-- Database RLS: ambassador reads only own grants, aggregate attribution counts and own ledger; no customer emails or Stripe secrets. Service role writes only through verified backend paths.
-- Stripe invoice processing: idempotent by invoice/event identity; account for taxes, discounts, fees and refunds per signed definition of net revenue. Refunds/disputes create audited reversal, not destructive edits.
-- Do not change subscription pricing, tier resolver, or other role permissions.
-- Chris Lykes code `CHRISLYKES` is proposed, not provisioned; no commission percentage or automatic payout until contract signed and approved.
-- No production migration or activation before test coverage and owner confirmation.
+## Deploy and verify
 
-## Sequence
-A. Inspect existing auth, signup, checkout, webhook, migrations and RLS conventions.
-B. Add versioned migration, role checks and unit/RLS tests.
-C. Add server-side referral capture and invoice-based commission processing.
-D. Add responsive /ambassador-hq and owner controls.
-E. Test paid signup, renewal, upgrade, cancellation, refund, webhook replay, expired eligibility and cross-account access.
-F. Run TypeScript and both CI workflows; preview QA in both themes; merge/deploy only after passing verification.
-
-## Acceptance
-- One commission per eligible paid invoice and no duplicate on replay.
-- All payouts are owner-approved; no access to another ambassador's records.
-- Existing subscriptions, roles and pricing unchanged.
-- Live activation explicitly gated on signed agreement and confirmed rate.
+1. Run the isolated Ambassador SQL fixture and Stripe webhook tests in CI. Verify on the connected test project and use Stripe sandbox payments for end-to-end real event delivery.
+2. Apply `20261114072000_ambassador_hq_foundation.sql` and `20261114072854_ambassador_hq_workflows.sql` in order before shipping code that calls the new RPCs. Confirm the campaign reservation exists with no grant and that transactional finance paths are service-role only.
+3. Verify production routes, owner isolation, signed-out behavior, subscription checkout and dashboard rendering. Do not activate Chris's code until signed terms are confirmed.
+4. If a rollback is necessary, close attribution to new referrals and retain the versioned schema and ledger. Keep processing signed refund/dispute events and existing commission windows during reconciliation. Coordinate any application rollback with outstanding referred payments.

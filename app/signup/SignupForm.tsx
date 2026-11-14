@@ -22,7 +22,7 @@ const ACCOUNT_TYPES: {value:AccountType; title:string; description:string; icon:
   {value:"fan",title:"Fan",description:"Fan: follow favorite teams, track leagues, and personalize a basketball-first experience.",icon:"star"},
 ];
 
-export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
+export default function SignupForm({ googleEmail, referralToken }: { googleEmail?: string; referralToken?: string }) {
   const isGoogleSignup = googleEmail !== undefined;
   const router = useRouter();
   const { language, setLanguage } = useLanguage();
@@ -62,6 +62,7 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
       former_team_ids: isPlayer ? formerTeams : [], favorite_teams: favoriteTeamName,
       is_adult: true, birthdate, gender, agreed_to_terms: true,
       terms_accepted_at: new Date().toISOString(), terms_version: TERMS_VERSION,
+      ...(referralToken && !isGoogleSignup ? { ambassador_token: referralToken } : {}),
     };
 
     try {
