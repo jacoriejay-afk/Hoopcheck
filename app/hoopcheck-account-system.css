@@ -187,20 +187,23 @@ main.hc-auth-page .hc-sign-in-card form input.input {
   margin: 0;
 }
 .hc-auth-password {
-  position: relative;
-  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
 }
 .hc-auth-password input,
 main.hc-auth-page .hc-sign-in-card form .hc-auth-password input.input {
-  display: block;
+  grid-area: 1 / 1;
+  min-height: 48px;
   padding-inline-end: 74px;
-  margin: 0;
+  margin: 0 !important;
 }
 .hc-auth-password button {
-  position: absolute;
-  inset-block-start: 50%;
-  inset-inline-end: 4px;
-  transform: translateY(-50%);
+  grid-area: 1 / 1;
+  justify-self: end;
+  align-self: center;
+  margin: 0 4px 0 0 !important;
+  z-index: 1;
   min-width: 60px;
   min-height: 44px !important;
   padding-inline: 8px;
