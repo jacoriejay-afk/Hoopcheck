@@ -343,7 +343,7 @@ try {
         throw error;
       }
       if (routeName === "feed") {
-        await page.locator(".hc-feed-composer").waitFor({ state: "visible", timeout: 30000 });
+        await page.locator(".hc-feed-slim-composer").waitFor({ state: "visible", timeout: 30000 });
         await page.locator(".hf5-type-chip").first().waitFor({ state: "visible", timeout: 30000 });
       }
 
@@ -374,9 +374,9 @@ try {
           body: color("body"),
           glassSurface,
           pageWrapper: color(wrapperSelector),
-          composer: routeName === "feed" ? color(".hc-feed-composer") : null,
+          composer: routeName === "feed" ? color(".hc-feed-slim-composer") : null,
           discoveryHeading: routeName === "feed" ? (() => { const logo = document.querySelector(".hc-header-feed-artwork"); return logo && logo.getBoundingClientRect().width > 0 && getComputedStyle(logo).visibility === "visible" ? "visible" : null; })() : null,
-          composerBorder: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-composer")).borderTopWidth : null,
+          composerBorder: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-slim-composer")).borderTopWidth : null,
           filterChip: routeName === "feed" ? color(".hf5-type-chip:not(.is-active)") : null,
           dashboardHeroHeadline: routeName === "dashboard" ? (() => { const element = document.querySelector("main.hc-home3 .hc-home3-greeting-line strong"); return element ? getComputedStyle(element).color : null; })() : null,
           homePairs: routeName === "dashboard" ? [".hc-home3-greeting", ".hc-home3-section", ".hc-home3-search"].map((selector) => {
@@ -623,7 +623,7 @@ try {
         }
         if (requestedPath === "/fan-feed") {
           await page.waitForURL("**/feed", { timeout: 15000 });
-          await page.locator("main.hc-feed-page .hc-feed-composer").waitFor({ state: "visible", timeout: 15000 });
+          await page.locator("main.hc-feed-page .hc-feed-slim-composer").waitFor({ state: "visible", timeout: 15000 });
         }
         // A route shell can render before its fixture data and controls. Audit
         // the populated page so timing does not hide contrast/copy findings.

@@ -7,8 +7,8 @@ import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import FollowButton from "../../../components/FollowButton";
 import PlayerContactButton from "../../../components/PlayerContactButton";
-import PlayerProfilePanel from "../../../components/PlayerProfilePanel";
-import { HoopIcon, VerifiedBadge } from "../../../components/HoopCheckUI";
+import Surface from "../../../components/Surface";
+import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import PlayerJourney from "../../../components/PlayerJourney";
 import PlayerProfileCompletionCard from "../../../components/PlayerProfileCompletionCard";
 import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
@@ -40,7 +40,7 @@ export default function PlayerProfilePage() {
   const [canManageJourney, setCanManageJourney] = useState(false);
   const [viewerType, setViewerType] = useState("");
   const [connectionAccepted, setConnectionAccepted] = useState(false);
-  const [socialCounts, setSocialCounts] = useState({ followers: 0, following: 0, reviews: 0 });
+  const [followers, setFollowers] = useState<number | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -59,12 +59,6 @@ export default function PlayerProfilePage() {
 
       if (!error && data?.[0]) {
         setPlayer(data[0]);
-        const [followersResult, followingResult, reviewsResult] = await Promise.all([
-          supabase.rpc("get_follow_count", { p_target_type: "player", p_target_id: params.id }),
-          supabase.rpc("get_public_following_count", { p_user_id: params.id }),
-          supabase.from("reviews").select("id", { count: "exact", head: true }).eq("author_id", params.id).eq("status", "approved"),
-        ]);
-        setSocialCounts({ followers: Number(followersResult.data || 0), following: Number(followingResult.data || 0), reviews: Number(reviewsResult.count || 0) });
         const { data: countryVisibility } = await supabase.rpc("is_player_country_public", { p_user_id: params.id });
         setCountryPublic(countryVisibility === true);
         setLoading(false);
@@ -78,12 +72,6 @@ export default function PlayerProfilePage() {
           .maybeSingle();
         if (own) {
           setCountryPublic(Boolean(own.current_country_public));
-          const [followersResult, followingResult, reviewsResult] = await Promise.all([
-            supabase.rpc("get_follow_count", { p_target_type: "player", p_target_id: params.id }),
-            supabase.rpc("get_public_following_count", { p_user_id: params.id }),
-            supabase.from("reviews").select("id", { count: "exact", head: true }).eq("author_id", params.id).eq("status", "approved"),
-          ]);
-          setSocialCounts({ followers: Number(followersResult.data || 0), following: Number(followingResult.data || 0), reviews: Number(reviewsResult.count || 0) });
           setPlayer({
             id: own.id,
             display_name: own.display_name,
@@ -105,10 +93,12 @@ export default function PlayerProfilePage() {
       if(user){
         setIsOwnProfile(user.id===params.id);
         if (user.id === params.id) {
-          const [{ data: ownProfile }, { data: ownSubscription }] = await Promise.all([
+          const [{ data: ownProfile }, { data: ownSubscription }, { data: count }] = await Promise.all([
             supabase.from("profiles").select("id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility").eq("id", user.id).maybeSingle(),
             supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
+            supabase.rpc("get_follow_count", { p_target_type: "player", p_target_id: user.id }),
           ]);
+          setFollowers(count === null ? null : Number(count));
           setOwnCompletionProfile(ownProfile as PlayerProfileCompletionRecord | null);
           const entitlements = getHoopCheckEntitlements({ accountType: ownProfile?.account_type, subscription: ownSubscription });
           setCanManageJourney(entitlements.canUseProPassport);
@@ -142,10 +132,6 @@ export default function PlayerProfilePage() {
     return (
       <main className="page-shell">
         <div className="page-container">
-          <header className="topbar">
-            <Link href="/" className="brand">HOOPCHECK</Link>
-            <nav className="topnav"><Link href="/search">Search</Link><Link href="/profile">Profile</Link></nav>
-          </header>
           <section className="hero-card">
             <div>
               <p className="eyebrow">PLAYER PROFILE</p>
@@ -161,71 +147,49 @@ export default function PlayerProfilePage() {
   return (
     <main className="page-shell player-profile-page">
       <div className="page-container">
-        <header className="topbar">
-          <Link href="/" className="brand">HOOPCHECK</Link>
-          <nav className="topnav">
-            <Link href="/search">Search</Link>
-            <Link href="/dashboard">Dashboard</Link>
-            <Link href={isOwnProfile ? "/account#profile-editor" : "/account"}>{isOwnProfile ? "Edit Profile" : "Account"}</Link>
-          </nav>
-        </header>
-
-        <section className="player-profile-hero hc-player-profile-hero hc-social-profile-header hc-player-dossier-hero">
-          <div className="hc-social-profile-top">
-            <div className="hc-social-avatar-frame"><div className="player-profile-avatar">{player.avatar_url ? <img src={player.avatar_url} alt="" /> : (player.display_name?.trim()?.charAt(0)?.toUpperCase() || "P")}</div></div>
-            <div className="hc-social-profile-main">
-              <div className="hc-social-stats">
-                <span><strong>{socialCounts.reviews}</strong><small>Reviews</small></span>
-                <Link href={"/connections?mode=followers&type=player&id=" + player.id}><strong>{socialCounts.followers}</strong><small>Followers</small></Link>
-                <Link href={"/connections?mode=following&id=" + player.id}><strong>{socialCounts.following}</strong><small>Following</small></Link>
-              </div>
-              <div className="player-profile-heading">
-                <h1>{player.display_name || "HoopCheck Player"} {player.player_verified && <VerifiedBadge label="Verified professional player" />}</h1>
-                <p className="muted">{[player.player_position, player.current_team, player.current_country || player.country].filter(Boolean).join(" · ") || (player.player_verified ? "Verified professional player" : "HoopCheck player")}</p>
-              </div>
-              {player.bio && (isOwnProfile || viewerType !== "player" || connectionAccepted) && <p className="hc-social-profile-bio">{player.bio}</p>}
-              <div className="hc-social-profile-actions">{isOwnProfile ? <Link href="/account#profile-editor" className="btn">Edit Profile</Link> : <FollowButton targetType="player" targetId={player.id} showCount={false} showNotifications={false} />}<PlayerContactButton playerId={player.id} /></div>
-            </div>
+        <Surface as="section" className="hc-player-profile-identity" aria-label="Player profile">
+          <div className="hc-player-profile-portrait">
+            {player.avatar_url ? <img src={player.avatar_url} alt="" /> : (player.display_name?.trim().charAt(0).toUpperCase() || "P")}
           </div>
-        </section>
+          <div className="hc-player-profile-name">
+            <h1>{player.display_name || "HoopCheck Player"}</h1>
+            {player.player_verified && <p><VerifiedBadge label="Verified professional player" /> Verified player</p>}
+            <p>{[player.player_position, player.current_team, (isOwnProfile || countryPublic) && player.current_country].filter(Boolean).join(" · ")}</p>
+            {isOwnProfile && followers !== null && <Link href={`/connections?mode=followers&type=player&id=${player.id}`}>
+              {followers.toLocaleString()} {followers === 1 ? "follower" : "followers"}
+            </Link>}
+          </div>
+          <div className="hc-player-profile-controls">
+            {isOwnProfile ? <Link href="/account#profile-editor" className="btn">Edit profile</Link>
+              : <><FollowButton targetType="player" targetId={player.id} showCount={false} showNotifications={false} />
+                <PlayerContactButton playerId={player.id} /></>}
+          </div>
+        </Surface>
         {isOwnProfile && ownCompletionProfile && <PlayerProfileCompletionCard profile={ownCompletionProfile} />}
 
-        {viewerType==="player" && !isOwnProfile && !connectionAccepted ? (
-          <section className="dashboard-card" style={{marginTop:14}}>
-            <span className="card-kicker">PLAYER ACCESS</span>
+        {viewerType === "player" && !isOwnProfile && !connectionAccepted ? (
+          <Surface as="section" className="hc-player-profile-detail">
             <h2>Player connection required</h2>
-            <p className="muted">Pro and Premium players can request access to another player profile and HoopFeed connection. The player must accept before private player-to-player access opens.</p>
-          </section>
+            <p>Connect with this player to view their career profile.</p>
+          </Surface>
         ) : (
-          <PlayerProfilePanel
-            playerName={player.display_name || "HoopCheck Player"}
-            username={null}
-            position={player.player_position}
-            nationality={player.country}
-            currentTeam={player.current_team}
-            currentCountry={player.current_country}
-            seasonsPro={player.years_pro}
-            verifiedPlayer={player.player_verified}
-            bio={player.bio}
-          />
+          <>
+            {(player.bio || player.years_pro != null || player.country) && <Surface as="section" className="hc-player-profile-detail">
+              <h2>About</h2>
+              {(player.years_pro != null || player.country) && <dl>
+                {player.years_pro != null && <div><dt>Seasons pro</dt><dd>{player.years_pro}</dd></div>}
+                {player.country && <div><dt>Country</dt><dd>{player.country}</dd></div>}
+              </dl>}
+              {player.bio && <p>{player.bio}</p>}
+            </Surface>}
+            <PlayerJourney playerId={player.id} isOwnProfile={isOwnProfile} canManage={isOwnProfile && canManageJourney} />
+          </>
         )}
-
-        {(isOwnProfile || viewerType !== "player" || connectionAccepted) && (
-          <PlayerJourney playerId={player.id} isOwnProfile={isOwnProfile} canManage={isOwnProfile && canManageJourney} />
-        )}
-
-        <section className="dashboard-card" style={{ marginTop: 24 }}>
-          <span className="card-kicker">HOOPCHECK</span>
-          <h2>Player Experience Matters</h2>
-          <p className="muted">
-            HoopCheck gives professional players a place to research basketball environments and share first-hand experiences.
-          </p>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 12 }}>
-            <Link href="/search" className="btn">Explore HoopCheck</Link>
-            <Link href={isOwnProfile ? "/account#profile-editor" : "/account"} className="btn dark">{isOwnProfile ? "Edit Profile" : "My Account"}</Link><button type="button" className="btn dark" onClick={reportProfile}>Report Profile</button>{reportMessage&&<span className="muted">{reportMessage}</span>}
-            <div className="bottom-back"><button type="button" className="btn dark" onClick={() => window.history.back()}><HoopIcon name="arrow-right" size={16} style={{ transform: "rotate(180deg)" }} /> Back</button></div>
-          </div>
-        </section>
+        {!isOwnProfile && <footer className="hc-player-profile-footer">
+          <Link href="/players">Browse players</Link>
+          <button type="button" onClick={reportProfile}>Report profile</button>
+          {reportMessage && <p role="status">{reportMessage}</p>}
+        </footer>}
       </div>
     </main>
   );

@@ -141,7 +141,7 @@ export default function TeamsPage() {
           const { data, error, count } = await withTimeout<any>(request.range(
             page * pageSize,
             page * pageSize + pageSize - 1
-          ), 2500, { data: [], error: new Error("timeout") });
+          ), 8000, { data: [], error: new Error("timeout") });
           if (!active) return;
           if (error) {
             console.error("Error loading teams:", error);
@@ -236,6 +236,8 @@ export default function TeamsPage() {
     setMapLoading(true);
     setMapError(false);
     const loadAllMapTeams = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const trustHeaders: Record<string, string> = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
       const all: Team[] = [];
       for (let offset = 0; offset < 5000; offset += 500) {
         let request = supabase.from("teams")
@@ -285,7 +287,7 @@ export default function TeamsPage() {
       for (let offset = 0; offset < ids.length; offset += 100) {
         const batch = ids.slice(offset, offset + 100);
         try {
-          const response = await fetch(`/api/trust-score?entityType=team&entityIds=${batch.map(encodeURIComponent).join(",")}`);
+          const response = await fetch(`/api/trust-score?entityType=team&entityIds=${batch.map(encodeURIComponent).join(",")}`, { headers: trustHeaders, cache: "no-store" });
           if (!active) return;
           if (response.ok) {
             const payload = await response.json();
@@ -302,11 +304,14 @@ export default function TeamsPage() {
   return (
     <main className="hc-team-directory-page hc-directory-refresh">
       <FanBasketballSideSwitch lockedHint />
-      <div className="hc-directory-compact-head"><h1>{t("mensTeams")}</h1><a href="#request-team">{t("directoryRequest")}</a></div>
+      <header className="hc-discovery-heading"><h1>{t("mensTeams")}</h1><a href="#request-team">{t("directoryRequest")}</a></header>
+      <nav className="hc-team-discovery-links" aria-label={t("browseDirectories")}>
+        <Link href="/teams" aria-current="page">{t("mensTeams")}</Link>
+        <Link href="/womens">{t("womensTeams")}</Link>
+        <Link href="/search">{t("search")}</Link>
+      </nav>
 
-      <section className="hero">
-        <Surface as="div" className="research-search">
-          <div className="search-label">{t("directoryTitle")}</div>
+      <section className="hc-team-directory-filters" aria-label={t("directoryTitle")}>
           <SearchBar value={query} onChange={(value) => { setQuery(value); setPage(0); }} placeholder="Search teams, countries or leagues" ariaLabel={t("directoryTitle")} onSubmit={(value) => { setQuery(value); setPage(0); }} />
           <div className="team-filter-row">
             <select value={continent} onChange={(e) => { setContinent(e.target.value); setCountry(""); setPage(0); }} aria-label={t("filterTeamsByContinent")}>
@@ -326,7 +331,6 @@ export default function TeamsPage() {
               {divisions.map(item => <option key={item} value={item}>{item}</option>)}
             </select>
           </div>
-        </Surface>
       </section>
 
 
@@ -443,7 +447,7 @@ export default function TeamsPage() {
           </Link>
         </div>
       </section>
-      <section className="hc-directory-request-section" id="request-team"><Surface as="div" className="dashboard-card" style={{border:"1px solid var(--orange)"}}><div className="eyebrow">{t("directoryRequest")}</div><h2>{t("dontSeeYourTeam")}</h2><p className="muted">{t("requestTeamDescription")}</p><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10}}><input value={requestName} onChange={e=>setRequestName(e.target.value)} placeholder={t("teamName")} /><input value={requestCountry} onChange={e=>setRequestCountry(e.target.value)} placeholder={t("country")} /><input value={requestCity} onChange={e=>setRequestCity(e.target.value)} placeholder={t("cityOptional")} /><input value={requestLeague} onChange={e=>setRequestLeague(e.target.value)} placeholder={t("leagueOptional")} /></div><button className="btn" style={{marginTop:12}} disabled={requestSubmitting} onClick={async()=>{setRequestMessage("");if(!requestName.trim()||!requestCountry.trim()){setRequestMessage(t("teamNameCountryRequired"));return;}const {data:{user}}=await supabase.auth.getUser();if(!user){window.location.href="/login";return;}setRequestSubmitting(true);const {error}=await supabase.from("directory_team_requests").insert({requester_id:user.id,team_name:requestName.trim().slice(0,160),country:requestCountry.trim().slice(0,80),city:requestCity.trim().slice(0,100)||null,league_name:requestLeague.trim().slice(0,160)||null});if(error)setRequestMessage(error.message);else{setRequestMessage(t("requestSubmitted"));setRequestName("");setRequestCity("");setRequestLeague("");}setRequestSubmitting(false);}}>{requestSubmitting?t("submitting"):t("requestTeamAddition")}</button>{requestMessage&&<p className="muted" role="status">{requestMessage}</p>}</Surface></section>
+      <section className="hc-directory-request-section" id="request-team"><Surface as="div" className="dashboard-card"><div className="eyebrow">{t("directoryRequest")}</div><h2>{t("dontSeeYourTeam")}</h2><p className="muted">{t("requestTeamDescription")}</p><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10}}><input value={requestName} onChange={e=>setRequestName(e.target.value)} placeholder={t("teamName")} /><input value={requestCountry} onChange={e=>setRequestCountry(e.target.value)} placeholder={t("country")} /><input value={requestCity} onChange={e=>setRequestCity(e.target.value)} placeholder={t("cityOptional")} /><input value={requestLeague} onChange={e=>setRequestLeague(e.target.value)} placeholder={t("leagueOptional")} /></div><button className="btn" style={{marginTop:12}} disabled={requestSubmitting} onClick={async()=>{setRequestMessage("");if(!requestName.trim()||!requestCountry.trim()){setRequestMessage(t("teamNameCountryRequired"));return;}const {data:{user}}=await supabase.auth.getUser();if(!user){window.location.href="/login";return;}setRequestSubmitting(true);const {error}=await supabase.from("directory_team_requests").insert({requester_id:user.id,team_name:requestName.trim().slice(0,160),country:requestCountry.trim().slice(0,80),city:requestCity.trim().slice(0,100)||null,league_name:requestLeague.trim().slice(0,160)||null});if(error)setRequestMessage(error.message);else{setRequestMessage(t("requestSubmitted"));setRequestName("");setRequestCity("");setRequestLeague("");}setRequestSubmitting(false);}}>{requestSubmitting?t("submitting"):t("requestTeamAddition")}</button>{requestMessage&&<p className="muted" role="status">{requestMessage}</p>}</Surface></section>
 
 </main>
   );

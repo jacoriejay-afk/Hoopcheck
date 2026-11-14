@@ -74,8 +74,8 @@ try {
   await page.waitForFunction(()=>document.querySelector('#team-review-checklist ul').getAttribute('aria-busy')==='false');
   assert.equal(await reviewLink.count(),0,'Inactive membership does not unlock reviews');
   subscription={...subscription,status:'active'};
-  await page.goto(`${baseURL}/feed`);await page.locator('.hc-feed-composer').waitFor();
-  const header=await page.locator('header.site-header-global').boundingBox(),composer=await page.locator('.hc-feed-composer').boundingBox();
+  await page.goto(`${baseURL}/feed`);await page.locator('.hc-feed-slim-composer').waitFor();
+  const header=await page.locator('header.site-header-global').boundingBox(),composer=await page.locator('.hc-feed-slim-composer').boundingBox();
   assert.ok(header.height>0,'HoopFeed app bar is visible');assert.ok(composer.y>header.y,'Composer follows the HoopFeed app bar');
   assert.equal(await page.locator('header.site-header-global a[aria-label="HoopFeed™"] .hc-header-feed-artwork use[href="/hoopfeed-header-lettering.svg#hoopfeed-artwork"]').count(),1,'Exactly one branded HoopFeed top-bar logo');
   assert.equal(await page.locator('.hc-hoopfeed-brand-header').count(),0,'No duplicate HoopFeed page banner');

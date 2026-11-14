@@ -112,7 +112,7 @@ for (const [label, input, expected] of cases) {
 }
 
 // Unified community posting: all recognized paid roles can post; unknown role values cannot.
-for (const role of ["player", "fan", "coach", "scout", "agent", "club_admin"]) {
+for (const role of ["player", "fan", "coach", "scout", "agent", "club_admin", "manager"]) {
   const allowed = getHoopCheckEntitlements({ accountType: role, subscription: active("pro") });
   assert.equal(allowed.canReadHoopFeed, true, role + " Pro reads unified HoopFeed");
   assert.equal(allowed.canWriteHoopFeed, true, role + " Pro posts to unified HoopFeed");
@@ -159,6 +159,11 @@ assert.equal(expired.canReadHoopFeed, false, "expired period must deny HoopFeed 
 const forgedAdmin = getHoopCheckEntitlements({ accountType: "admin" });
 assert.equal(forgedAdmin.canModerateFanGroups, false, "profile admin label cannot grant moderation");
 assert.equal(forgedAdmin.canReadFullReviews, false, "profile admin label cannot grant paid access");
+const teamManager = getHoopCheckEntitlements({ accountType: "manager", subscription: active("premium") });
+assert.equal(teamManager.canReadHoopFeed, true, "Paid Team Managers can open HoopFeed");
+assert.equal(teamManager.canViewTrustScore, true, "Paid Team Managers can view directory trust scores");
+assert.equal(teamManager.canModerateFanGroups, false, "Team Manager role alone cannot grant club moderation");
+
 const unverifiedClubAdmin = getHoopCheckEntitlements({ accountType: "club_admin", subscription: active("premium") });
 assert.equal(unverifiedClubAdmin.canModerateFanGroups, false, "club_admin label cannot grant club moderation");
 const verifiedPlatformAdmin = getHoopCheckEntitlements({ accountType: "admin", isAdmin: true });

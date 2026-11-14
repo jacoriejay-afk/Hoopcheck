@@ -61,7 +61,7 @@ export default function ProfilePage() {
       if (!active) return;
       if (result.error) { setLoadError(true); setLoading(false); return; }
       setP(result.data);
-      if (result.data?.account_type === "player") {
+      if (result.data) {
         const { data: activity } = await supabase.from("feed_posting_activity").select("activity_date").eq("user_id", user.id).order("activity_date", { ascending: false }).limit(370);
         if (!active) return;
         setPostingStreak(calculatePostingStreak(activity || []));
@@ -139,7 +139,7 @@ export default function ProfilePage() {
             <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href={"/account#profile-editor-field-" + nextFieldAnchor}>Complete profile <span aria-hidden="true">→</span></Link></div>
             <div className="hc-profile-completion-track" role="progressbar" aria-label={t("profileCompleteness")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}><span style={{width: profileCompletion + "%"}} /></div>
           </div>}
-          {p.account_type === "player" && postingStreak > 0 && <div className="hc-profile-streak-row"><span className="hc-feed-streak" aria-label={postingStreak + " day HoopFeed posting streak"}><span aria-hidden="true">🔥</span> {postingStreak}-day streak</span></div>}
+          {postingStreak > 0 && <div className="hc-profile-streak-row"><span className="hc-feed-streak" aria-label={postingStreak + " day HoopFeed posting streak"}><span aria-hidden="true">🔥</span> {postingStreak}-day streak</span></div>}
 
         </section>
 
@@ -154,37 +154,20 @@ export default function ProfilePage() {
           </div>
         </nav>
 
-        <section className="hc-profile-overview" aria-label={t("profileOverview")}>
-          <div className="grid compact-grid">
-            <Surface className="card hc-profile-info-card">
-              <span className="card-kicker">{p.account_type === "fan" ? t("account") : t("basketball")}</span>
-              <h2>{p.account_type === "fan" ? t("fan") : p.basketball_type === "womens" ? t("womensBasketball") : p.basketball_type === "mens" ? t("mensBasketball") : t("basketball")}</h2>
-              <p className="muted">{t(p.account_type)}</p>
-            </Surface>
-            {p.account_type === "player" && (
-              <Surface className="card hc-profile-info-card">
-                <span className="card-kicker">{t("career")}</span>
-                {p.position ? <h2>{p.position}</h2> : <p className="hc-profile-empty-value">{t("positionNotListed")} <Link href="/account#profile-editor">{t("add")} <span aria-hidden="true">→</span></Link></p>}
-                <p className="muted">{p.years_pro == null ? t("yearsProNotListed") : p.years_pro + " " + t("yearsPro")}{" · "}{p.free_agent ? t("freeAgent") : p.current_team || t("teamNotListed")}</p>
-              </Surface>
-            )}
-            <Surface className="card hc-profile-info-card">
-              <span className="card-kicker">{t("location")}</span>
-              {p.current_country ? <h2>{p.current_country}</h2> : <p className="hc-profile-empty-value">{t("notListed")} <Link href="/account#profile-editor">{t("add")} <span aria-hidden="true">→</span></Link></p>}
-              <p className="muted">{p.hometown || p.nationality || t("locationDetailsNotListed")}</p>
-            </Surface>
-          </div>
-        </section>
-
-        {p.account_type === "player" && <OwnProfilePostsGrid userId={p.id} />}
-
-        <section className="dashboard-card compact-section">
-          <p className="eyebrow">{t("about")}</p>
-          <h2>{t("profileDetails")}</h2>
-          <p className="muted">{p.bio || t("addBioFromEditProfile")}</p>
+        <Surface as="section" className="hc-profile-summary" aria-label={t("profileOverview")}>
+          <dl>
+            <div><dt>{t("basketball")}</dt><dd>{p.basketball_type === "womens" ? t("womensBasketball") : p.basketball_type === "mens" ? t("mensBasketball") : t(p.account_type)}</dd></div>
+            {p.account_type === "player" && (p.position || p.current_team || p.free_agent) &&
+              <div><dt>{t("career")}</dt><dd>{[p.position, p.free_agent ? t("freeAgent") : p.current_team].filter(Boolean).join(" · ")}</dd></div>}
+            <div><dt>{t("location")}</dt><dd>{[p.hometown, p.current_country || p.nationality].filter(Boolean).join(", ") ||
+              <Link href="/account#profile-editor">{t("add")}</Link>}</dd></div>
+          </dl>
+          {p.bio && <p>{p.bio}</p>}
           {p.interests && <p><strong>{t("interests")}</strong> {p.interests}</p>}
           {p.favorite_leagues && <p><strong>{t("favoriteLeagues")}</strong> {p.favorite_leagues}</p>}
-        </section>
+        </Surface>
+
+        {p.account_type === "player" && <OwnProfilePostsGrid userId={p.id} />}
 
         <section className="dashboard-card compact-section">
           <p className="eyebrow">{t("account")}</p>
