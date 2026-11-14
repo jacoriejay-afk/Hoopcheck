@@ -21,7 +21,7 @@ type VoteState = { counts:number[]; total:number; mine:number|null };
 type TopicTag = "Practice" | "Game Day" | "Travel" | "Teammates" | "Culture" | "Win" | "Challenge";
 type TypeFilter = "All Posts" | "Discussion" | "News" | "Media" | "Polls" | "Saved";
 const TYPE_FILTERS: TypeFilter[] = ["All Posts","Discussion","News","Media","Polls","Saved"];
-const ROLE_PILLS: Record<string,{label:string}> = { player:{label:"Player"}, team:{label:"Team"}, coach:{label:"Coach"}, fan:{label:"Fan"}, agent:{label:"Agent"}, scout:{label:"Scout"}, manager:{label:"Manager"} };
+const ROLE_PILLS: Record<string,{label:string}> = { player:{label:"Player"}, team:{label:"Team"}, coach:{label:"Coach"}, fan:{label:"Fan"}, agent:{label:"Agent"}, scout:{label:"Scout"}, manager:{label:"Manager"}, creator:{label:"Creator"} };
 const formatCount = (n:number) => n>=1000 ? (Math.round(n/100)/10).toString().replace(/\.0$/,"")+"K" : String(n);
 function calculatePostingStreak(rows: { activity_date: string }[]) {
   const dates = new Set(rows.map(row => String(row.activity_date).slice(0, 10)));
