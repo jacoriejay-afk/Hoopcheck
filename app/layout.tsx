@@ -62,6 +62,7 @@ import "./hoopcheck-lm2f-bottom-nav.css";
 import "./hoopcheck-account-system.css";
 import "./hoopcheck-page-shell.css";
 import "./hoopcheck-visual-final.css";
+import "./hoopcheck-ui-video-consistency.css";
 import { SITE_URL } from "../lib/site-url";
 
 const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
