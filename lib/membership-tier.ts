@@ -83,7 +83,7 @@ export function getHoopCheckEntitlements(args: {
   const isPlayer = role === "player";
   const isFan = role === "fan";
   const recognizedRole = ["player", "fan", "coach", "scout", "agent", "club_admin", "creator", "admin"].includes(role);
-  const otherMember = recognizedRole && !isPlayer && !isFan;
+  // Creator is a publishing identity, not an additional review/trust entitlement.\n  const otherMember = recognizedRole && !isPlayer && !isFan && role !== "creator";
   const canUseHoopFeed = isAdmin || (
     (recognizedRole || role === "manager") && active &&
     ["active", "trialing", "pro", "premium"].includes(args.subscription?.access_status ?? "active")
