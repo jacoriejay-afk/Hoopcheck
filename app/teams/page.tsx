@@ -141,7 +141,7 @@ export default function TeamsPage() {
           const { data, error, count } = await withTimeout<any>(request.range(
             page * pageSize,
             page * pageSize + pageSize - 1
-          ), 2500, { data: [], error: new Error("timeout") });
+          ), 8000, { data: [], error: new Error("timeout") });
           if (!active) return;
           if (error) {
             console.error("Error loading teams:", error);
@@ -236,6 +236,8 @@ export default function TeamsPage() {
     setMapLoading(true);
     setMapError(false);
     const loadAllMapTeams = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const trustHeaders: Record<string, string> = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
       const all: Team[] = [];
       for (let offset = 0; offset < 5000; offset += 500) {
         let request = supabase.from("teams")
@@ -285,7 +287,7 @@ export default function TeamsPage() {
       for (let offset = 0; offset < ids.length; offset += 100) {
         const batch = ids.slice(offset, offset + 100);
         try {
-          const response = await fetch(`/api/trust-score?entityType=team&entityIds=${batch.map(encodeURIComponent).join(",")}`);
+          const response = await fetch(`/api/trust-score?entityType=team&entityIds=${batch.map(encodeURIComponent).join(",")}`, { headers: trustHeaders, cache: "no-store" });
           if (!active) return;
           if (response.ok) {
             const payload = await response.json();
