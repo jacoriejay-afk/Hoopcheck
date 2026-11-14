@@ -449,7 +449,7 @@ function SearchContent() {
       </div>
       {!query && <nav className="hc-search-browse" aria-label={t("browseDirectoriesLabel")}>
         <h2>{t("browseDirectoriesLabel")}</h2>
-        <div>{directoryLinks.map(link => <Link key={link.href} href={link.href}>{link.label}{link.count != null && <small>{numberFormat.format(link.count)}</small>}<span aria-hidden="true">↗</span></Link>)}</div>
+        <div>{directoryLinks.map(link => <Link key={link.href} href={link.href}><span className="hc-directory-tile-label">{link.label}</span>{link.count != null && <small>{numberFormat.format(link.count)}</small>}<span aria-hidden="true">↗︎</span></Link>)}</div>
       </nav>}
       {!query && Boolean(overview?.countries.length) && <section className="hc-search-recent">
         <h2>{language === "es" ? "Países con más equipos" : "Countries with the most teams"}</h2>
@@ -571,7 +571,7 @@ function SearchContent() {
               <div className="group-heading"><h3>{t("mensTeams")}</h3></div>
               <div className="result-grid">
                 {visibleTeams.map((team) => (
-                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" fanView={!roleReady || isFanAccount} logoUrl={team.logo_url} logoBg={team.logo_bg} />
+                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" logoUrl={team.logo_url} logoBg={team.logo_bg} />
                 ))}
               </div>
             </section>
@@ -582,7 +582,7 @@ function SearchContent() {
               <div className="group-heading"><h3>{t("womensTeams")}</h3></div>
               <div className="result-grid">
                 {visibleWomensTeams.map((team) => (
-                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" fanView={isFanAccount} logoUrl={team.logo_url} logoBg={team.logo_bg} />
+                  <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/womens/${team.id}`} kind="womens" logoUrl={team.logo_url} logoBg={team.logo_bg} />
                 ))}
               </div>
             </section>

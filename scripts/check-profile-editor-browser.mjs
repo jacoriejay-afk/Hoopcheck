@@ -24,10 +24,13 @@ try {
   const page=await context.newPage();
   await page.route('https://ci.invalid/**',async route=>{
    const req=route.request(),url=new URL(req.url());
-   const headers={'access-control-allow-origin':baseURL,'access-control-allow-methods':'GET,POST,PATCH,OPTIONS','access-control-allow-headers':req.headers()['access-control-request-headers']||'*','cache-control':'no-store'};
+   const headers={'access-control-allow-origin':baseURL,'access-control-allow-methods':'GET,POST,PUT,PATCH,OPTIONS','access-control-allow-headers':req.headers()['access-control-request-headers']||'*','cache-control':'no-store'};
    if(req.method()==='OPTIONS') return route.fulfill({status:204,headers});
    let data=[];
-   if(url.pathname==='/auth/v1/user') data=user;
+   if(url.pathname==='/auth/v1/user') {
+    if(req.method()==='PUT') user.user_metadata={...user.user_metadata,...req.postDataJSON().data};
+    data=user;
+   }
    else if(url.pathname.endsWith('/profiles')){
     if(req.method()==='PATCH'){const patch=req.postDataJSON();patches.push(patch);profile={...profile,...patch};data={id:uid};}
     else data=profile;
@@ -42,6 +45,11 @@ try {
   });
   await page.goto(`${baseURL}/account`);
   await page.locator('#profile-editor').waitFor();
+  await page.getByRole('radio',{name:'Violet'}).check();
+  await page.getByRole('button',{name:'Save cover'}).click();
+  await page.getByRole('status').filter({hasText:'Profile cover saved.'}).waitFor();
+  assert.equal(user.user_metadata.hoopcheck_profile_cover,'violet');
+  assert.equal(await page.locator('.hc-social-profile').getAttribute('data-profile-cover'),'violet');
   await page.locator('#position').selectOption('PG');
   await page.locator('#player-height').fill('193 cm');
   await page.locator('#current-team .hc-shared-picker-trigger').click();
@@ -82,6 +90,8 @@ try {
   assert.equal(await page.getByRole('button',{name:'Go back',exact:true}).count(),0,'HoopFeed has no global back control');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,'No horizontal overflow');
   await page.goto(`${baseURL}/profile`);
+  await page.locator('.hc-social-profile[data-profile-cover="violet"]').waitFor();
+  assert.equal(await page.locator('.hc-social-profile').getByText(user.email,{exact:false}).count(),0);
   await page.getByRole('navigation',{name:'Profile quick links'}).getByRole('link',{name:'Settings',exact:true}).click();
   await page.waitForURL(`${baseURL}/settings`);
   await page.locator('main.hc-settings-page h1').waitFor();

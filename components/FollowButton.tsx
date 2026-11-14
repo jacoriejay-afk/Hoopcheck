@@ -6,9 +6,9 @@ import { HoopIcon } from "./HoopCheckUI";
 import Link from "next/link";
 import { useLanguage } from "./LanguageProvider";
 
-type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string; variant?: "default" | "club"; showCount?: boolean; showNotifications?: boolean; onCountChange?: (count: number) => void; controlledFollowing?: boolean; onFollowingChange?: (following: boolean) => void };
+type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string; variant?: "default" | "club"; showCount?: boolean; showNotifications?: boolean; compact?: boolean; onCountChange?: (count: number) => void; controlledFollowing?: boolean; onFollowingChange?: (following: boolean) => void };
 
-export default function FollowButton({ targetType, targetId, variant = "default", showCount = true, showNotifications = true, onCountChange, controlledFollowing, onFollowingChange }: Props) {
+export default function FollowButton({ targetType, targetId, variant = "default", showCount = true, showNotifications = true, compact = false, onCountChange, controlledFollowing, onFollowingChange }: Props) {
   const { formatNumber, t } = useLanguage();
   const [ownFollowing, setFollowing] = useState(false);
   const following = controlledFollowing ?? ownFollowing;
@@ -143,7 +143,7 @@ export default function FollowButton({ targetType, targetId, variant = "default"
   }
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+    <div className={compact ? "hc-follow-compact" : undefined} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
       <button
         type="button"
         className={variant === "club" ? `hc-team-follow-pill ${following ? "is-following" : "is-not-following"}` : "btn dark"}
@@ -164,7 +164,7 @@ export default function FollowButton({ targetType, targetId, variant = "default"
       >
         <><HoopIcon name="bell" size={15} /> {notify ? t("on") : t("off")}</>
       </button>}
-      {!signedIn && <span className="muted" style={{ fontSize: 12 }}>{t("signInToFollow")}</span>}
+      {!signedIn && !compact && <span className="muted" style={{ fontSize: 12 }}>{t("signInToFollow")}</span>}
       {notice && <span role="status" aria-live="polite" className="hc-action-toast">{notice}</span>}
     </div>
   );

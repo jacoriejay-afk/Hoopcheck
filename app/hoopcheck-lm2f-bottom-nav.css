@@ -199,6 +199,7 @@
   html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active,
   html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active,
   html.theme-dark body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active {
+    border-radius: var(--radius-sm) !important;
     color: var(--hc-nav-active-fg) !important;
     -webkit-text-fill-color: var(--hc-nav-active-fg) !important;
   }
