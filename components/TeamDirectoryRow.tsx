@@ -50,7 +50,7 @@ export default function TeamDirectoryRow({
       <Link href={href} className="hc-directory-compact-link" aria-label={t("openTeamProfile") + ": " + name}>
         <TeamLogo name={name} logoUrl={logoUrl} logoBg={logoBg} size={44} />
         <span className="hc-directory-compact-copy">
-          <strong>{name}</strong>
+          <strong title={name}>{name}</strong>
           {(city || country) && <small>{flag && <span aria-hidden="true">{flag} </span>}{[city, country].filter(Boolean).join(", ")}</small>}
           {leagueName && <small>{leagueName}</small>}
         </span>

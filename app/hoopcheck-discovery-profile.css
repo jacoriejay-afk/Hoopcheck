@@ -114,6 +114,8 @@ html body .hc-global-page-shell main :is(.hc-team-directory-list, .hc-womens-tea
 }
 html body .hc-global-page-shell main .hc-team-directory-row.hc-directory-compact-row {
   display: block !important;
+  box-sizing: border-box;
+  max-width: 100%;
   min-height: 0 !important;
   height: auto !important;
   margin: 0 !important;
@@ -123,7 +125,7 @@ html body .hc-global-page-shell main .hc-team-directory-row.hc-directory-compact
 }
 .hc-directory-compact-link {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: 44px minmax(0, 1fr) 16px;
   align-items: center;
   gap: .65rem;
   min-width: 0;
@@ -131,10 +133,19 @@ html body .hc-global-page-shell main .hc-team-directory-row.hc-directory-compact
 }
 .hc-directory-compact-copy { display: grid; gap: .18rem; min-width: 0; }
 html body .hc-global-page-shell main .hc-directory-compact-copy strong {
-  font: 750 .95rem/1.25 var(--font-sans), sans-serif;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font: 750 .95rem/1.25 var(--font-sans), sans-serif !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
   overflow-wrap: anywhere;
 }
 .hc-directory-compact-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: .75rem;
   line-height: 1.25;
   overflow-wrap: anywhere;

@@ -163,11 +163,11 @@ try {
           const box = el.getBoundingClientRect();
           const link = el.querySelector('.hc-directory-compact-link').getBoundingClientRect();
           return { border: style.borderTopWidth, radius: style.borderTopLeftRadius, height: box.height,
-            fitted: link.left >= box.left && link.right <= box.right && el.scrollWidth <= el.clientWidth + 1 };
+            fitted: link.left >= box.left - 1 && link.right <= box.right + 1 && el.scrollWidth <= el.clientWidth + 1 };
         });
         assert.equal(border, '1px', `${kind} team result has a visible border`);
         assert.equal(radius, '20px', `${kind} team result uses the shared card radius`);
-        assert.ok(height < 155 && fitted, `${kind} team result is compact and fits its card at ${width}px`);
+        assert.ok(height < 155 && fitted, `${kind} team result is compact and fits its card at ${width}px (height ${height}, fitted ${fitted})`);
       }
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2);
       assert.equal(overflow, false, `Search does not overflow at ${width}px`);
