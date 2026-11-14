@@ -16,7 +16,7 @@
     "test:entitlements": "node scripts/test-membership-tier.mjs",
     "check:rounded-corners": "node scripts/check-rounded-corners.mjs",
     "test:hoopfeed-rls": "node scripts/test-unified-hoopfeed-rls.mjs",
-    "test:reels": "node scripts/test-reels-validation.mjs && node scripts/test-reels-storage.mjs && node scripts/test-reels-media-sniff.mjs && node scripts/test-reels-migration.mjs"
+    "test:reels": "node scripts/test-reels-validation.mjs && node scripts/test-reels-storage.mjs && node scripts/test-reels-media-sniff.mjs && node scripts/test-reels-migration.mjs && node scripts/test-reels-upload-gate.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.7.0",
