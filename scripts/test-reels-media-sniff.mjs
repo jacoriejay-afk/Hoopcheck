@@ -14,6 +14,8 @@ const mp4 = ascii("\x00\x00\x00\x18ftypisom");
 const mov = ascii("\x00\x00\x00\x18ftypqt  ");
 const webm = Uint8Array.from([0x1a, 0x45, 0xdf, 0xa3, 0x9f, 0x42, 0x82, 0x84, 0x77, 0x65, 0x62, 0x6d]);
 assert.equal(detectReelContainer(mp4), "video/mp4");
+assert.equal(detectReelContainer(ascii("\\x00\\x00\\x00\\x08ftypisom")), null, "too-small ftyp box rejected");
+assert.equal(detectReelContainer(ascii("\\x00\\x00\\x00\\x01ftypisom")), null, "unsupported extended-size ftyp rejected");
 assert.equal(detectReelContainer(mov), "video/quicktime");
 assert.equal(detectReelContainer(webm), "video/webm");
 assert.equal(detectReelContainer(Uint8Array.from([0x1a,0x45,0xdf,0xa3,0x9f,0,0,0,0,0,0,0])), null, "generic EBML must not pass as WebM");
