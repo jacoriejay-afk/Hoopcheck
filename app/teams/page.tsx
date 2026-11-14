@@ -237,7 +237,7 @@ export default function TeamsPage() {
     setMapError(false);
     const loadAllMapTeams = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      const trustHeaders = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
+      const trustHeaders: Record<string, string> = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
       const all: Team[] = [];
       for (let offset = 0; offset < 5000; offset += 500) {
         let request = supabase.from("teams")
