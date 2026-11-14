@@ -2,7 +2,21 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { initialRecoveryLink, supabase } from "../../lib/supabase";
+import AuthPasswordField from "../../components/AuthPasswordField";
+import { stringFromBase64URL } from "@supabase/ssr";
+import { consumeInitialRecoveryCode, hasRecoveryCodeVerifier, supabase } from "../../lib/supabase";
+
+const invalidLinkMessage = "This recovery link is invalid, expired, or already used. Request a fresh password reset email.";
+
+function sessionId(accessToken?: string) {
+  try {
+    const payload = accessToken?.split(".")[1];
+    const id: unknown = payload && JSON.parse(stringFromBase64URL(payload)).session_id;
+    return typeof id === "string" && id ? id : null;
+  } catch {
+    return null;
+  }
+}
 
 async function verifyRecoveryLink() {
   const url = new URL(window.location.href);
@@ -11,37 +25,20 @@ async function verifyRecoveryLink() {
     ["error", "error_code", "error_description"].some(key => params.has(key))
   );
 
+  const initialRecoveryCode = consumeInitialRecoveryCode();
   try {
     if (invalid) return null;
-    const tokenHash = url.searchParams.get("token_hash");
-    if (tokenHash && url.searchParams.get("type") === "recovery") {
-      const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" });
-      return error ? null : data.session?.user.id;
-    }
-
-    // Supabase initializes its browser client from legacy PKCE and implicit links.
-    // Only accept its session if initialization actually consumed the callback.
+    const recoveryCode = hasRecoveryCodeVerifier() ? url.searchParams.get("code") : null;
     const { error } = await supabase.auth.initialize();
     if (error) return null;
-    const current = new URL(window.location.href);
-    const autoConsumed = (initialRecoveryLink === "pkce" && !current.searchParams.has("code"))
-      || (initialRecoveryLink === "implicit" && !current.hash);
-    if (autoConsumed) {
+    const code = new URL(window.location.href).searchParams.get("code");
+    if (initialRecoveryCode && !code) {
       const { data } = await supabase.auth.getSession();
-      return data.session?.user.id;
+      return sessionId(data.session?.access_token);
     }
-
-    // Client-side navigation can open the page after the auth client initialized.
-    const code = url.searchParams.get("code");
-    if (code) {
+    if (code && code === recoveryCode) {
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-      return error ? null : data.session?.user.id;
-    }
-    const access_token = fragment.get("access_token");
-    const refresh_token = fragment.get("refresh_token");
-    if (fragment.get("type") === "recovery" && access_token && refresh_token) {
-      const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
-      return error ? null : data.session?.user.id;
+      return error ? null : sessionId(data.session?.access_token);
     }
     return null;
   } finally {
@@ -56,28 +53,63 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [ready, setReady] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [confirmLink, setConfirmLink] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const recoveryToken = useRef<string | null>(null);
   const verification = useRef<ReturnType<typeof verifyRecoveryLink> | null>(null);
-  const recoveryUser = useRef<string | null>(null);
+  const recoverySession = useRef<string | null>(null);
 
   useEffect(() => {
     let active = true;
+    const url = new URL(window.location.href);
+    const token = url.searchParams.get("token_hash");
+    const hasError = ["error", "error_code", "error_description"].some(key => url.searchParams.has(key));
+    if (token && url.searchParams.get("type") === "recovery" && !hasError) {
+      recoveryToken.current = token;
+      window.history.replaceState(window.history.state, "", url.pathname);
+    }
+    if (recoveryToken.current) {
+      setConfirmLink(true);
+      setChecking(false);
+      return;
+    }
+    const hadLink = Boolean(url.search || url.hash);
     verification.current ??= verifyRecoveryLink();
-    void verification.current.then(userId => {
+    void verification.current.then(id => {
       if (!active) return;
-      recoveryUser.current = userId ?? null;
-      setReady(Boolean(userId));
+      recoverySession.current = id;
+      setReady(Boolean(id));
+      if (!id && hadLink) setError(invalidLinkMessage);
     }).catch(() => {
-      if (active) setError("This recovery link is invalid or expired. Request a fresh password reset email.");
+      if (active) setError(invalidLinkMessage);
     }).finally(() => {
       if (active) setChecking(false);
     });
 
     return () => { active = false; };
   }, []);
+
+  async function confirmRecoveryLink() {
+    const token = recoveryToken.current;
+    if (!token) return;
+    recoveryToken.current = null;
+    setConfirmLink(false);
+    setChecking(true);
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({ token_hash: token, type: "recovery" });
+      const id = error ? null : sessionId(data.session?.access_token);
+      if (!id) throw new Error(invalidLinkMessage);
+      recoverySession.current = id;
+      setReady(true);
+    } catch {
+      setError(invalidLinkMessage);
+    } finally {
+      setChecking(false);
+    }
+  }
 
   async function updatePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -95,7 +127,7 @@ export default function ResetPasswordPage() {
     setLoading(true);
     try {
       const { data, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !data.session || data.session.user.id !== recoveryUser.current) {
+      if (sessionError || !data.session || sessionId(data.session.access_token) !== recoverySession.current) {
         setReady(false);
         throw new Error("Your recovery session ended. Request a fresh password reset email.");
       }
@@ -114,33 +146,33 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main>
-      <section className="hero" style={{ paddingBottom: "30px" }}>
-        <div className="eyebrow">ACCOUNT SECURITY</div>
-        <h1>Reset your password.</h1>
-        <p>Choose a new password for your HoopCheck account.</p>
-      </section>
-      <section style={{ maxWidth: "520px", margin: "0 auto", padding: "20px 6% 100px" }}>
-        <div className="form">
+    <main className="hc-auth-page">
+      <section className="hc-auth-form-section" aria-labelledby="reset-title">
+        <div className="hc-auth-card">
+          <h1 id="reset-title">Reset your password</h1>
           {checking ? (
             <p role="status">Verifying your password reset link…</p>
+          ) : confirmLink ? (
+            <button type="button" className="btn hc-auth-submit" onClick={confirmRecoveryLink}>
+              Continue to reset password
+            </button>
           ) : ready ? (
             <form onSubmit={updatePassword}>
               <label htmlFor="password">New password</label>
-              <input id="password" className="input" type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" minLength={8} required />
-              <label htmlFor="confirm">Confirm new password</label>
-              <input id="confirm" className="input" type="password" value={confirm} onChange={e => setConfirm(e.target.value)} autoComplete="new-password" minLength={8} required />
-              <button className="btn" type="submit" disabled={loading}>{loading ? "Updating…" : "Update Password"}</button>
+              <AuthPasswordField id="password" className="input" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" minLength={8} required />
+              <label htmlFor="confirm-password">Confirm new password</label>
+              <AuthPasswordField id="confirm-password" className="input" value={confirm} onChange={e => setConfirm(e.target.value)} autoComplete="new-password" minLength={8} required />
+              <button className="btn hc-auth-submit" type="submit" disabled={loading}>{loading ? "Updating…" : "Update Password"}</button>
             </form>
-          ) : !message ? (
+          ) : !message && !error ? (
             <>
               <h2>Reset link required</h2>
               <p className="muted">Request a fresh reset email from the sign-in page, then open its link.</p>
             </>
           ) : null}
-          {error && <p role="alert">{error}</p>}
-          {message && <p role="status">{message}</p>}
-          {!ready && !checking && <Link href="/login" className="btn">Back to Login</Link>}
+          {error && <p className="hc-auth-feedback" role="alert">{error}</p>}
+          {message && <p className="hc-auth-feedback" role="status">{message}</p>}
+          {!ready && !checking && <Link href="/login" className="hc-auth-action">Back to sign in</Link>}
         </div>
       </section>
     </main>

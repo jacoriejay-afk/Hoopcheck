@@ -1,24 +1,37 @@
-import { createBrowserClient } from "@supabase/ssr";
+import { createBrowserClient, stringFromBase64URL } from "@supabase/ssr";
 
 export const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
 export const supabaseKey =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "placeholder-key";
 
-// The auth client may remove callback parameters before the reset page mounts.
-export const initialRecoveryLink = (() => {
-  if (typeof window === "undefined" || window.location.pathname !== "/reset-password") return null;
-  const query = new URLSearchParams(window.location.search);
-  const fragment = new URLSearchParams(window.location.hash.slice(1));
-  if ([query, fragment].some(params => ["error", "error_code", "error_description"].some(key => params.has(key)))) {
-    return null;
+export function hasRecoveryCodeVerifier() {
+  const projectRef = new URL(supabaseUrl).hostname.split(".")[0];
+  const cookieName = `sb-${projectRef}-auth-token-code-verifier`;
+  const cookie = document.cookie.split("; ").find(value => value.startsWith(`${cookieName}=`));
+  if (!cookie) return false;
+  try {
+    const encoded = decodeURIComponent(cookie.slice(cookieName.length + 1));
+    const value = encoded.startsWith("base64-") ? stringFromBase64URL(encoded.slice(7)) : encoded;
+    // Supabase Auth 2.76.1 stores this suffix on PKCE password recovery requests.
+    const verifier: unknown = JSON.parse(value);
+    return typeof verifier === "string" && verifier.endsWith("/PASSWORD_RECOVERY");
+  } catch {
+    return false;
   }
-  if (query.has("code")) return "pkce";
-  if (fragment.get("type") === "recovery" && fragment.has("access_token") && fragment.has("refresh_token")) {
-    return "implicit";
-  }
-  return null;
-})();
+}
+
+// Supabase may exchange the code before the reset page mounts.
+let initialRecoveryCode = typeof window !== "undefined" &&
+  window.location.pathname === "/reset-password" &&
+  new URLSearchParams(window.location.search).has("code") &&
+  hasRecoveryCodeVerifier();
+
+export function consumeInitialRecoveryCode() {
+  const recovery = initialRecoveryCode;
+  initialRecoveryCode = false;
+  return recovery;
+}
 
 export const supabase = createBrowserClient(supabaseUrl, supabaseKey, {
   auth: {
