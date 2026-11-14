@@ -299,8 +299,25 @@ export async function POST(
       : (interval === "month" ? "999" : interval === "6_month" ? "5395" : "10190");
     const lookupKey = `hoopcheck_${plan}_${intervalKey}_${amountKey}_2026`;
     const priceList = await stripe.prices.list({lookup_keys:[lookupKey],active:true,limit:1});
-    const priceId = priceList.data[0]?.id;
-    if (!priceId) return NextResponse.json({error:"This membership term is not configured yet."},{status:500});
+    const stripePrice = priceList.data[0];
+    if (!stripePrice) return NextResponse.json({error:"This membership term is not configured yet."},{status:500});
+
+    // A lookup key alone cannot guarantee that the configured Stripe Price
+    // matches the approved term and amount shown to the customer.
+    const expectedCents = Number(amountKey);
+    const expectedInterval = interval === "year" ? "year" : "month";
+    const expectedIntervalCount = interval === "6_month" ? 6 : 1;
+    if (
+      stripePrice.currency !== "usd" ||
+      stripePrice.unit_amount !== expectedCents ||
+      stripePrice.type !== "recurring" ||
+      stripePrice.recurring?.interval !== expectedInterval ||
+      stripePrice.recurring?.interval_count !== expectedIntervalCount
+    ) {
+      console.error("Stripe checkout price configuration mismatch", { lookupKey, priceId: stripePrice.id });
+      return NextResponse.json({error:"This membership term is temporarily unavailable."},{status:503});
+    }
+    const priceId = stripePrice.id;
 
     const customerId =
       existingSubscription?.stripe_customer_id ||
