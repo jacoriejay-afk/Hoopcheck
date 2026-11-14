@@ -32,9 +32,10 @@ export default function HoopFeedInboxPage() {
           senderIds.length?supabase.from("profiles").select("id,display_name").in("id",senderIds):Promise.resolve({data:[],error:null})
         ]);
         if(posts.error)throw posts.error;
-        if(senders.error)throw senders.error;
+        // Sender profile visibility can be restricted independently of share access.
+        // Keep authorized inbox entries readable even when profile lookup is denied.
         const visible=new Set((posts.data||[]).map(x=>x.id));
-        const names=new Map((senders.data||[]).map(x=>[x.id,x.display_name||"HoopCheck member"]));
+        const names=new Map<string,string>((senders.error ? [] : (senders.data||[])).map(x=>[x.id,x.display_name||"HoopCheck member"]));
         if(live)setItems(rows.map(x=>({...x,senderName:names.get(x.sender_id)||"HoopCheck member",available:visible.has(x.post_id)})));
       } catch(e) { if(live)setError("Couldn't load your shared posts. Please refresh."); console.error("HoopFeed inbox load failed",e); }
       finally { if(live)setLoading(false); }
