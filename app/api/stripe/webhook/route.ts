@@ -621,19 +621,16 @@ export async function POST(
       event.type ===
       "customer.subscription.updated"
     ) {
-      const subscription =
+      const eventSubscription =
         event.data.object as Stripe.Subscription;
 
-      const userId =
-        await getSubscriptionUserId(
-          subscription
-        );
+      // Webhooks can arrive out of order. Always reconcile against Stripe's
+      // current subscription state rather than an older event snapshot.
+      const subscription = await stripe.subscriptions.retrieve(eventSubscription.id);
+      const userId = await getSubscriptionUserId(subscription);
 
       if (userId) {
-        await saveSubscription(
-          userId,
-          subscription
-        );
+        await saveSubscription(userId, subscription);
       }
     }
 
