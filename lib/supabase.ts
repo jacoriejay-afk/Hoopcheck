@@ -5,6 +5,21 @@ export const supabaseUrl =
 export const supabaseKey =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "placeholder-key";
 
+// The auth client may remove callback parameters before the reset page mounts.
+export const initialRecoveryLink = (() => {
+  if (typeof window === "undefined" || window.location.pathname !== "/reset-password") return null;
+  const query = new URLSearchParams(window.location.search);
+  const fragment = new URLSearchParams(window.location.hash.slice(1));
+  if ([query, fragment].some(params => ["error", "error_code", "error_description"].some(key => params.has(key)))) {
+    return null;
+  }
+  if (query.has("code")) return "pkce";
+  if (fragment.get("type") === "recovery" && fragment.has("access_token") && fragment.has("refresh_token")) {
+    return "implicit";
+  }
+  return null;
+})();
+
 export const supabase = createBrowserClient(supabaseUrl, supabaseKey, {
   auth: {
     autoRefreshToken: true,
