@@ -2,8 +2,15 @@
 -- Parse and execute the real migration, then verify default-deny invariants.
 \set ON_ERROR_STOP on
 begin;
-create role anon nologin;
-create role authenticated nologin;
+do $
+begin
+  if not exists (select 1 from pg_roles where rolname = 'anon') then
+    create role anon nologin;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'authenticated') then
+    create role authenticated nologin;
+  end if;
+end $;
 create schema if not exists public;
 create table public.profiles (id uuid primary key);
 create table public.teams (id uuid primary key);
