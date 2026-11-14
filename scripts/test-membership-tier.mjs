@@ -134,6 +134,27 @@ const expired = getHoopCheckEntitlements({
 assert.equal(expired.canReadFullReviews, false, "expired Premium must not retain Pro access");
 assert.equal(expired.canSubmitPayCheckIn, false, "expired Premium must not submit pay check-ins");
 
+// The canonical status/plan/period-end resolver controls all paid features.
+// Legacy access_status may lag billing synchronization and must not independently
+// lock HoopFeed while other paid features remain available.
+for (const access_status of ["inactive", "expired", "canceled", null]) {
+  const member = getHoopCheckEntitlements({
+    accountType: "player", subscription: { ...active("pro"), access_status },
+  });
+  assert.equal(member.canReadHoopFeed, true, "active Pro reads HoopFeed despite stale access_status");
+  assert.equal(member.canWriteHoopFeed, true, "active Pro writes HoopFeed despite stale access_status");
+  assert.equal(member.canReadFullReviews, true, "active Pro retains reviews despite stale access_status");
+}
+for (const status of ["canceled", "past_due", "unpaid"]) {
+  const member = getHoopCheckEntitlements({
+    accountType: "player", subscription: { ...active("premium"), status, access_status: "active" },
+  });
+  assert.equal(member.canReadHoopFeed, false, "inactive billing status must deny HoopFeed");
+  assert.equal(member.canReadFullReviews, false, "inactive billing status must deny paid reviews");
+}
+assert.equal(expired.canReadHoopFeed, false, "expired period must deny HoopFeed even if legacy access_status is active");
+
+
 // Administrator authorization is independent of a paid membership, but moderator access is not.
 const adminWithoutSubscription = getHoopCheckEntitlements({ accountType: "player", isAdmin: true });
 assert.equal(adminWithoutSubscription.canReadHoopFeed, true, "admin must read HoopFeed without a subscription");
