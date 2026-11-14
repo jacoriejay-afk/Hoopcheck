@@ -127,6 +127,7 @@ export default function AccountPage() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [adminRole, setAdminRole] = useState<"admin"|"moderator"|null>(null);
+  const [isApprovedOwner, setIsApprovedOwner] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -147,6 +148,7 @@ export default function AccountPage() {
         supabase.from("profiles").select("account_type,basketball_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,favorite_teams,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,access_status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
         supabase.rpc("get_current_user_admin_role"),
+        supabase.rpc("is_approved_claim_owner"),
       ]);
       if (profileError || !profileData) throw new Error("Your profile could not be loaded. Refresh and try again.");
       const nextProfile: Profile = profileData
@@ -174,6 +176,7 @@ export default function AccountPage() {
       setAvatarStatus(nextProfile.avatar_moderation_status ?? "approved");
       setSubscription(subscriptionData ?? null);
       setAdminRole(adminRoleData === "admin" || adminRoleData === "moderator" ? adminRoleData : null);
+      setIsApprovedOwner(approvedOwner === true);
       setVerified(Boolean(nextProfile.player_verified || (nextProfile as any).coach_verified));
       const { data } = await supabase.from("reviews")
         .select("id,status,title,body,overall_rating,created_at,coach_id,team_id,league_id")
@@ -446,6 +449,7 @@ export default function AccountPage() {
       </header>
       {profile.account_type === "player" ? <PlayerProfileCompletionCard key={JSON.stringify(profile)} profile={{ ...profile, id: userId }} onPublished={() => { setSettingsVisibility("public"); setProfile(current => ({ ...current, profile_visibility: "public" })); }} /> : (() => { const completion = calculateProfileCompletion({ ...profile, display_name: displayName, bio, avatar_url: avatarUrl, hometown, nationality, interests, favorite_leagues: favoriteLeagues }); const next = completion.nextMissing; return completion.percentage < 100 && next ? <section className="dashboard-card hc-account-profile-completion" style={{marginTop:12}}><strong>Profile {completion.percentage}% complete</strong><p className="muted">Add your {next.label} next.</p><a className="btn" href={"/account#" + (next.key === "avatar_url" ? "profile-editor-field-avatar_url" : "profile-editor-field-" + next.key)}>{next.key === "avatar_url" ? "Add photo" : "Complete profile"}</a></section> : null; })()}
       {(profile as any).moderation_status === "warned" || (profile as any).moderation_status === "flagged" ? <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{(profile as any).moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{(profile as any).moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section> : null}
+      {isApprovedOwner && <section className="dashboard-card" style={{marginBottom:16}}><p className="eyebrow">OWNER ACCESS</p><h2>Owner HQ</h2><p>Business overview, ambassador administration, and account-view navigation.</p><Link href="/owner-hq" className="btn">Open Owner HQ</Link></section>}
       {adminRole && <section className="dashboard-card" style={{marginBottom:16}}><p className="eyebrow">{adminRole.toUpperCase()}</p><h2>{t("adminControlCenter")}</h2><div className="account-actions" style={{display:"flex",gap:10,flexWrap:"wrap"}}><Link href="/admin/directory" className="btn">{t("openAdminPanel")}</Link><Link href="/admin/reviews" className="btn dark">{t("manageReviews")}</Link><Link href="/admin/rights" className="btn dark">{t("rightsCoverage")}</Link></div></section>}
       <section id="account-settings" className="hc-settings" aria-label={t("accountSettings")}>
         <SettingsGroup title={t("accountSection")}>
