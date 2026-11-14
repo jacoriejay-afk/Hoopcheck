@@ -121,11 +121,10 @@ export default function TeamDashboardPage() {
   const approvedCount = claims.filter(c => c.status === "approved").length;
   const pendingCount = claims.filter(c => c.status === "pending").length;
 
-  return <main className="page-shell"><div className="page-container">
-    
+  return <main className="page-shell hc-role-hq"><div className="page-container">
     <section className="hero-card">
       <p className="eyebrow">HOOPCHECK · TEAM PARTNERSHIPS</p>
-      <h1>Team Dashboard</h1>
+      <h1>Team HQ</h1>
       <p className="muted">Manage your claimed team profile and publish official updates for supporters.</p>
     </section>
     {message && <p className="hc-claim-message" role="status">{message}</p>}

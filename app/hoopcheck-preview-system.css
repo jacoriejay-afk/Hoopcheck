@@ -1864,9 +1864,9 @@ main:not(.hc-rebrand):not(.hc-template-home) > section:not(.hero):not(.hc-team-r
 .hc-dashboard-shell a.btn,
 .hc-dashboard-shell button,
 main:not(.hc-rebrand):not(.hc-template-home) :where(.btn,button[type="submit"],.button-primary,.btn-primary) {
-  color: #fff !important;
-  background: #e64a00 !important;
-  border-color: #e64a00 !important;
+  color: var(--hc-button-primary-fg) !important;
+  background: var(--hc-button-primary-bg) !important;
+  border-color: var(--hc-button-primary-bg) !important;
 }
 .hc-dashboard-shell .btn.dark,
 main:not(.hc-rebrand):not(.hc-template-home) :where(.btn.dark,.button-dark) {
