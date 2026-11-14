@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import OwnerRolePreview from "./OwnerRolePreview";
 import { ambassadorDb, requireAmbassadorSession } from "../../lib/ambassador/server";
 
 export const metadata: Metadata = {
@@ -47,8 +48,9 @@ export default async function OwnerHQ() {
         <p>Sales totals and recurring revenue require a verified Stripe reporting integration. No estimated revenue is displayed as real data.</p>
         <p><Link href="/admin/ambassadors">Manage ambassador campaigns, agreements and payouts</Link></p>
       </section>
+      <OwnerRolePreview />
       <section className="dashboard-card">
-        <h2>Switch view</h2>
+        <h2>Open existing dashboards</h2>
         <p>These links open existing role pages using your current account. They do not impersonate users, override membership checks, or change your real account type. A true Free/Pro/Premium preview simulator requires separate read-only UI support.</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
           {views.map(view => <Link className="dashboard-card" key={view.name} href={view.href}>
