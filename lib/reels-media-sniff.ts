@@ -20,7 +20,7 @@ export function detectReelContainer(bytes: Uint8Array): ReelContainer | null {
     }
     return null;
   }
-  const brand = String.fromCharCode(...bytes.subarray(8, 12));
+  // ISO BMFF requires a valid initial ftyp box size; reject truncated and\n  // impossible headers instead of trusting a matching brand at byte eight.\n  const boxSize = ((bytes[0] * 0x1000000) + (bytes[1] << 16) + (bytes[2] << 8) + bytes[3]) >>> 0;\n  if (boxSize < 16 || boxSize === 1) return null;\n  const brand = String.fromCharCode(...bytes.subarray(8, 12));
   const box = String.fromCharCode(...bytes.subarray(4, 8));
   if (box !== "ftyp") return null;
   const majorBrands = new Set(["qt  "]);
