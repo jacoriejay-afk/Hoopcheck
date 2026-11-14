@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import OwnerRolePreview from "./OwnerRolePreview";
+import { getOwnerStripeSummary } from "../../lib/owner/stripe-summary";
 import { ambassadorDb, requireAmbassadorSession } from "../../lib/ambassador/server";
 
 export const metadata: Metadata = {
@@ -19,6 +20,7 @@ const views = [
 export default async function OwnerHQ() {
   await requireAmbassadorSession("/owner-hq", true);
   const db = ambassadorDb();
+  const stripeSummary = await getOwnerStripeSummary();
   const [members, subscriptions, campaigns, commissions] = await Promise.all([
     db.from("profiles").select("id", { count: "exact", head: true }),
     db.from("subscriptions").select("user_id", { count: "exact", head: true }).in("status", ["active", "trialing"]),
@@ -45,7 +47,9 @@ export default async function OwnerHQ() {
       </section>
       <section className="dashboard-card">
         <h2>Business operations</h2>
-        <p>Sales totals and recurring revenue require a verified Stripe reporting integration. No estimated revenue is displayed as real data.</p>
+        <p>Stripe paid invoices created in the past 30 days (USD only). This is gross paid invoice volume before refunds, processing fees and taxes; it is not net revenue or MRR.</p>
+        {stripeSummary.error ? <p role="status">Stripe reporting unavailable. No financial totals shown.</p> : <div style={{display:"flex",gap:24,flexWrap:"wrap"}}><p><strong>{stripeSummary.paidInvoices}</strong> paid invoices</p><p><strong>{new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(stripeSummary.grossPaidMinor/100)}</strong> gross paid invoice volume</p></div>}
+        {stripeSummary.incomplete && <p role="status">Partial results: invoice pagination limit reached.</p>}
         <p><Link href="/admin/ambassadors">Manage ambassador campaigns, agreements and payouts</Link></p>
       </section>
       <OwnerRolePreview />
