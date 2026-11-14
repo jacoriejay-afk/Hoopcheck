@@ -10,8 +10,11 @@ export async function GET(request: NextRequest, context: { params: Promise<{ cod
   if (!referralCodePattern.test(code) || await getActiveReferral() ||
       request.headers.has("next-router-prefetch") || request.headers.get("sec-purpose")?.includes("prefetch")) return response;
 
-  const { data } = await ambassadorDb().rpc("ambassador_open_referral", { p_code: code });
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return response;
 
+  const { data, error } = await ambassadorDb().rpc("ambassador_open_referral", { p_code: code });
+
+  if (error) console.error("Ambassador referral lookup failed", error.code);
   if (typeof data === "string") {
     response.cookies.set(referralCookie, data, {
       maxAge: 30 * 60, httpOnly: true, path: "/", sameSite: "lax",
