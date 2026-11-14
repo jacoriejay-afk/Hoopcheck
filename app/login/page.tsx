@@ -22,6 +22,9 @@ export default function LoginPage() {
     const query = new URLSearchParams(window.location.search);
     const candidate = query.get("returnTo") || "";
     if (query.has("google_error")) setMessage(googleAuthMessage(query.get("google_error")));
+    if (query.has("auth_error")) {
+      setMessage("This email confirmation link is invalid, expired, or already used. Try signing in or request a fresh email from your signup screen.");
+    }
     if (candidate.startsWith("/") && !candidate.startsWith("//") && !candidate.includes("\\\\") && !candidate.includes("\\") && !candidate.startsWith("/login")) setReturnTo(candidate);
   }, []);
 
@@ -82,7 +85,7 @@ export default function LoginPage() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-        redirectTo: "https://hoopcheck.online/reset-password",
+        redirectTo: new URL("/reset-password", window.location.origin).href,
       });
       if (error) throw error;
       setMessageIsSuccess(true);
