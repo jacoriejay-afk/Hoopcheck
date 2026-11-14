@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const sql = readFileSync(new URL("../supabase/migrations/20261114095000_reels_phase_a_default_deny.sql", import.meta.url), "utf8");
+assert.doesNotMatch(sql, /\\\\n/, "migration must not contain literal escaped newline sequences");
 const tables = ["reels", "reel_checks", "reel_bookmarks", "reel_comments"];
 for (const table of tables) {
   assert.match(sql, new RegExp(`create table if not exists public\\.${table}\\s*\\(`, "i"), `${table}: table created`);
