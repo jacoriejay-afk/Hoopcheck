@@ -94,8 +94,7 @@ export default function Feed(){
     if(typeFilter==="Saved"&&!savedMap[p.id])return false;
     return true;
   }).slice().sort((a,b)=>{
-    if (a.id === linkedPostId) return -1;
-    if (b.id === linkedPostId) return 1;
+    if (a.id !== b.id && (a.id === linkedPostId || b.id === linkedPostId)) return a.id === linkedPostId ? -1 : 1;
     return new Date(b.created_at).getTime()-new Date(a.created_at).getTime();
   });
 
@@ -169,7 +168,7 @@ export default function Feed(){
 
   useEffect(()=>{setNow(Date.now());const timer=window.setInterval(()=>setNow(Date.now()),60000);return()=>window.clearInterval(timer);},[]);
 
-  useEffect(()=>{(async()=>{const {data:{session}}=await supabase.auth.getSession();const u=session?.user;setUser(u);if(!u){setLoading(false);return;}
+  useEffect(()=>{setLinkedPostId(window.location.hash.match(SHARED_POST_HASH)?.[1]?.toLowerCase());(async()=>{const {data:{session}}=await supabase.auth.getSession();const u=session?.user;setUser(u);if(!u){setLoading(false);return;}
     const [{data:p},{data:s}]=await Promise.all([
       supabase.from("profiles").select("account_type,current_country,current_country_public").eq("id",u.id).maybeSingle(),
       supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",u.id).maybeSingle()
@@ -371,7 +370,7 @@ export default function Feed(){
   const title = <h1 className="visually-hidden">HoopFeed</h1>;
 
   if(loading)return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><HoopLoading label="Loading HoopFeed..." /><FeedLoadingSkeleton count={3} /></div></main></PageShell>;
-  if(!user)return <PageShell><main className="page-shell hc-feed-page"><div className="page-container">{title}<section className="hero-card"><p className="eyebrow">HOOPFEED</p><h2>One community. Every role.</h2><p className="muted">Players, fans, teams, coaches and agents — HoopFeed is where the global basketball community talks. Join to post, comment and Check.</p><div className="actions"><Link href="/signup" className="btn">+ Join Community</Link><Link href="/login" className="btn dark">Sign In</Link></div></section></div></main></PageShell>;
+  if(!user)return <PageShell><main className="page-shell hc-feed-page"><div className="page-container">{title}<section className="hero-card"><p className="eyebrow">HOOPFEED</p><h2>One community. Every role.</h2><p className="muted">Players, fans, teams, coaches and agents — HoopFeed is where the global basketball community talks. Join to post, comment and Check.</p><div className="actions"><Link href="/signup" className="btn">+ Join Community</Link><Link href={linkedPostId ? `/login?returnTo=${encodeURIComponent(`/feed#post-${linkedPostId}`)}` : "/login"} className="btn dark">Sign In</Link></div></section></div></main></PageShell>;
   if(!access)return <PageShell><main className="page-shell hc-feed-page"><div className="page-container">{title}<section className="hero-card"><p className="eyebrow">HOOPFEED</p><h2>The global basketball community</h2><p className="muted">An active Pro or Premium membership is required to enter HoopFeed — one feed for players, fans, teams, coaches and agents.</p><div className="actions"><Link href="/membership" className="btn">Upgrade Membership</Link><Link href="/dashboard" className="btn dark">Back to Dashboard</Link></div></section></div></main></PageShell>;
 
   return <PageShell><main className="page-shell hc-feed-page" onTouchStart={(event)=>{touchStartY.current=window.scrollY===0?(event.touches[0]?.clientY??null):null;}} onTouchEnd={(event)=>{const start=touchStartY.current;touchStartY.current=null;const end=event.changedTouches[0]?.clientY??0;if(start!==null&&end-start>80&&user&&profile&&!refreshing){void(async()=>{setRefreshing(true);try{await load(user);setNow(Date.now());}catch(error){console.error("HoopFeed refresh failed",error);setMsg("Could not refresh HoopFeed. Please try again.");}finally{setRefreshing(false);}})();}}}><div className="page-container">
