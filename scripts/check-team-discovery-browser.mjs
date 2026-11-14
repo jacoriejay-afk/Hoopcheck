@@ -49,6 +49,9 @@ try {
         await page.goto(`${baseURL}/search`);
         await page.getByRole('heading', { name: 'Countries with the most teams' }).waitFor();
         await page.getByRole('link', { name: 'Azerbaijan 14' }).waitFor();
+        for (const selector of ['.hc-live-search__form', '.hc-search-recent']) {
+          assert.equal(await page.locator(selector).first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgba(0, 0, 0, 0)', selector + ' leaves the page visible outside the rounded controls');
+        }
         await page.goto(`${baseURL}/search?q=Paginated&type=mens-teams`);
         await page.getByText('12 results on this page').waitFor();
         await page.getByRole('button', { name: 'Next', exact: true }).click();
@@ -152,12 +155,16 @@ try {
       await femaleLink.waitFor();
       for (const kind of ['mens', 'womens']) {
         const result = page.locator(`.result-group .hc-team-directory-row--${kind}`).first();
-        const { border, radius } = await result.evaluate(el => {
+        const { border, radius, height, fitted } = await result.evaluate(el => {
           const style = getComputedStyle(el);
-          return { border: style.borderTopWidth, radius: style.borderTopLeftRadius };
+          const box = el.getBoundingClientRect();
+          const link = el.querySelector('.hc-directory-compact-link').getBoundingClientRect();
+          return { border: style.borderTopWidth, radius: style.borderTopLeftRadius, height: box.height,
+            fitted: link.left >= box.left && link.right <= box.right && el.scrollWidth <= el.clientWidth + 1 };
         });
         assert.equal(border, '1px', `${kind} team result has a visible border`);
         assert.equal(radius, '20px', `${kind} team result uses the shared card radius`);
+        assert.ok(height < 155 && fitted, `${kind} team result is compact and fits its card at ${width}px`);
       }
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2);
       assert.equal(overflow, false, `Search does not overflow at ${width}px`);

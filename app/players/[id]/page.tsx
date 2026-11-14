@@ -8,6 +8,7 @@ import { supabase } from "../../../lib/supabase";
 import FollowButton from "../../../components/FollowButton";
 import PlayerContactButton from "../../../components/PlayerContactButton";
 import Surface from "../../../components/Surface";
+import SocialProfileHeader from "../../../components/SocialProfileHeader";
 import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import PlayerJourney from "../../../components/PlayerJourney";
 import PlayerProfileCompletionCard from "../../../components/PlayerProfileCompletionCard";
@@ -147,24 +148,16 @@ export default function PlayerProfilePage() {
   return (
     <main className="page-shell player-profile-page">
       <div className="page-container">
-        <Surface as="section" className="hc-player-profile-identity" aria-label="Player profile">
-          <div className="hc-player-profile-portrait">
-            {player.avatar_url ? <img src={player.avatar_url} alt="" /> : (player.display_name?.trim().charAt(0).toUpperCase() || "P")}
-          </div>
-          <div className="hc-player-profile-name">
-            <h1>{player.display_name || "HoopCheck Player"}</h1>
-            {player.player_verified && <p><VerifiedBadge label="Verified professional player" /> Verified player</p>}
-            <p>{[player.player_position, player.current_team, (isOwnProfile || countryPublic) && player.current_country].filter(Boolean).join(" · ")}</p>
-            {isOwnProfile && followers !== null && <Link href={`/connections?mode=followers&type=player&id=${player.id}`}>
-              {followers.toLocaleString()} {followers === 1 ? "follower" : "followers"}
-            </Link>}
-          </div>
-          <div className="hc-player-profile-controls">
-            {isOwnProfile ? <Link href="/account#profile-editor" className="btn">Edit profile</Link>
-              : <><FollowButton targetType="player" targetId={player.id} showCount={false} showNotifications={false} />
-                <PlayerContactButton playerId={player.id} /></>}
-          </div>
-        </Surface>
+        <SocialProfileHeader name={player.display_name || "HoopCheck Player"} avatarUrl={player.avatar_url}
+          badge={player.player_verified && <VerifiedBadge label="Verified professional player" />}
+          actions={isOwnProfile ? <Link href="/account#profile-editor" className="btn">Edit profile</Link>
+            : <><FollowButton targetType="player" targetId={player.id} showCount={false} showNotifications={false} />
+              <PlayerContactButton playerId={player.id} /></>}>
+          <p className="hc-social-handle">{[player.player_position, player.current_team, (isOwnProfile || countryPublic) && player.current_country].filter(Boolean).join(" · ")}</p>
+          {isOwnProfile && followers !== null && <Link href={`/connections?mode=followers&type=player&id=${player.id}`}>
+            {followers.toLocaleString()} {followers === 1 ? "follower" : "followers"}
+          </Link>}
+        </SocialProfileHeader>
         {isOwnProfile && ownCompletionProfile && <PlayerProfileCompletionCard profile={ownCompletionProfile} />}
 
         {viewerType === "player" && !isOwnProfile && !connectionAccepted ? (

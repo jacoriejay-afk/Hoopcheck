@@ -44,7 +44,6 @@ export default function TeamsPage() {
   const [teams, setTeams] =
     useState<Team[]>([]);
   const [trustScores, setTrustScores] = useState<Record<string, TrustSummary>>({});
-  const [followerCounts, setFollowerCounts] = useState<Record<string, number>>({});
   const [teamCoordinates, setTeamCoordinates] = useState<Record<string, { latitude: number | null; longitude: number | null }>>({});
   const [mapTeams, setMapTeams] = useState<Team[]>([]);
   const [mapLoading, setMapLoading] = useState(false);
@@ -54,7 +53,6 @@ export default function TeamsPage() {
 
   const [loading, setLoading] = useState(true);
   const [viewerRole, setViewerRole] = useState("");
-  const [trustResolved, setTrustResolved] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
@@ -175,10 +173,10 @@ export default function TeamsPage() {
 
 
   useEffect(() => {
-    if (!teams.length) { setTrustScores({}); setFollowerCounts({}); return; }
+    if (!teams.length) { setTrustScores({}); return; }
     let active = true;
     const ids = teams.map(team => team.id).filter(Boolean);
-    setTrustResolved(false);
+    setTrustScores({});
     void (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (active && session?.user) {
@@ -191,24 +189,7 @@ export default function TeamsPage() {
       const payload = response.ok ? await response.json() : null;
       if (active && payload?.accountType) setViewerRole(payload.accountType);
       if (active && payload?.scores) setTrustScores(payload.scores as Record<string, TrustSummary>);
-      if (active) setTrustResolved(true);
-    })().catch(() => { if (active) { setTrustScores({}); setTrustResolved(true); } });
-    return () => { active = false; };
-  }, [teams]);
-
-  useEffect(() => {
-    if (!teams.length || !window.matchMedia("(min-width: 1024px)").matches) { setFollowerCounts({}); return; }
-    let active = true;
-    const ids = teams.map(team => team.id).filter(Boolean);
-    void Promise.all(ids.map(async id => {
-      const { count, error } = await supabase.from("follow_relationships")
-        .select("id", { count: "exact", head: true })
-        .eq("target_type", "team").eq("target_id", id);
-      return [id, error || count == null ? null : count] as const;
-    })).then(rows => {
-      if (!active) return;
-      setFollowerCounts(Object.fromEntries(rows.filter((row): row is readonly [string, number] => row[1] !== null)));
-    }).catch(() => { if (active) setFollowerCounts({}); });
+    })().catch(() => { if (active) setTrustScores({}); });
     return () => { active = false; };
   }, [teams]);
 
@@ -389,7 +370,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           teams.map((team) => (
-            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} followerCount={followerCounts[team.id] ?? null} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={trustResolved ? (trustScores[team.id]?.tier || "free") : "unknown"} viewerRole={viewerRole} logoUrl={team.logo_url} logoBg={team.logo_bg} />
+            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustExplanation={trustScores[team.id]?.explanation || undefined} trustTier={trustScores[team.id]?.tier} viewerRole={viewerRole} logoUrl={team.logo_url} logoBg={team.logo_bg} />
           ))
         )}
       </section>

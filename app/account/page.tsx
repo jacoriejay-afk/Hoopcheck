@@ -8,6 +8,8 @@ import HoopLoading from "../../components/HoopLoading";
 import { supabase } from "../../lib/supabase";
 import ThemeToast from "../../components/ThemeToast";
 import Surface from "../../components/Surface";
+import SocialProfileHeader, { profileCover } from "../../components/SocialProfileHeader";
+import ProfileAppearance from "../../components/ProfileAppearance";
 import { GroupCard, Row } from "../../components/LayoutSystem";
 import { useTheme } from "../../components/ThemeProvider";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
@@ -29,6 +31,7 @@ type Profile = {
   account_type: "player"|"coach"|"scout"|"agent"|"fan";
   basketball_type?: "mens"|"womens"|null;
   display_name: string | null;
+  username?: string | null;
   first_name: string | null;
   last_name: string | null;
   professional_experience: boolean;
@@ -82,6 +85,7 @@ export default function AccountPage() {
   const { setTheme: setGlobalTheme } = useTheme();
   const { t, setLanguage: applyLanguage } = useLanguage();
   const [email, setEmail] = useState("");
+  const [cover, setCover] = useState(profileCover(null));
   const [userId, setUserId] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [targets, setTargets] = useState<Record<string, Target>>({});
@@ -141,10 +145,11 @@ export default function AccountPage() {
         return;
       }
       setEmail(user.email ?? "");
+      setCover(profileCover(user.user_metadata?.hoopcheck_profile_cover));
       setEmailConfirmed(Boolean(user.email_confirmed_at));
       setUserId(user.id);
       const [{ data: profileData, error: profileError }, { data: subscriptionData }, { data: adminRoleData }] = await Promise.all([
-        supabase.from("profiles").select("account_type,basketball_type,display_name,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,favorite_teams,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("account_type,basketball_type,display_name,username,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,favorite_teams,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,access_status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
         supabase.rpc("get_current_user_admin_role"),
       ]);
@@ -427,23 +432,20 @@ export default function AccountPage() {
 
   return (
     <main className="page-shell hc-account-page"><div className="page-container">
-      <header className="hc-account-settings-header hc-liquid-glass-account-header">
-        <p className="hc-account-settings-kicker">{t("settings")}</p>
-        <h1>{t("accountPreferences")}</h1>
-        <div className="hc-account-settings-identity">
-          <span className="hc-account-settings-avatar" aria-hidden="true">
-            {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{(displayName || email || "H").trim().split(/\s+/).slice(0,2).map(part => part[0]).join("").toUpperCase()}</span>}
-          </span>
-          <div className="hc-account-settings-identity-copy">
-            <div className="hc-account-identity-title"><strong>{displayName || t("yourAccount")}</strong><span className="hc-account-membership-pill">{subscription?.plan === "premium" ? "Premium" : subscription?.plan === "pro" ? t("pro") : t("freePlan")}</span></div>
-            <p>{email || t("emailNotSet")}</p><p className="hc-account-visibility-status"><span aria-hidden="true" />{profile.account_type === "fan" ? "Fan profile privacy is enabled" : settingsVisibility === "public" ? "Profile visible to everyone" : "Profile visible to players only"}</p>
-          </div>
-        </div>
-        <div className="hc-account-identity-actions">
-          <a href={profile.account_type === "player" ? "/complete-profile" : "#profile-editor"} className="btn">{t("editProfile")}</a>
-          {profile.account_type === "player" && settingsVisibility === "public" ? <Link href={userId ? `/players/${encodeURIComponent(userId)}` : "/profile"} className="btn dark">{t("profilePublic")}</Link> : null}
-        </div>
-      </header>
+      <SocialProfileHeader name={displayName || profile.username || t("yourAccount")} handle={profile.username}
+        avatarUrl={avatarUrl} cover={cover}
+        badge={(profile.player_verified || profile.coach_verified) && <VerifiedBadge label={t("verifiedProfessional")} />}
+        actions={<a href="#profile-editor" className="btn">{t("editProfile")}</a>}>
+        <p className="hc-social-handle">{t("accountPreferences")}</p>
+      </SocialProfileHeader>
+      <nav className="hc-social-profile-nav" aria-label={t("accountSettings")}>
+        <a href="#profile-appearance">Customize</a>
+        <a href="#account-settings">{t("settings")}</a>
+        <Link href="/profile">{t("yourProfile")}</Link>
+        {profile.account_type === "player" && settingsVisibility === "public" &&
+          <Link href={`/players/${encodeURIComponent(userId)}`}>{t("profilePublic")}</Link>}
+      </nav>
+      <ProfileAppearance key={userId} current={cover} onSave={setCover} />
       {profile.account_type === "player" ? <PlayerProfileCompletionCard key={JSON.stringify(profile)} profile={{ ...profile, id: userId }} onPublished={() => { setSettingsVisibility("public"); setProfile(current => ({ ...current, profile_visibility: "public" })); }} /> : (() => { const completion = calculateProfileCompletion({ ...profile, display_name: displayName, bio, avatar_url: avatarUrl, hometown, nationality, interests, favorite_leagues: favoriteLeagues }); const next = completion.nextMissing; return completion.percentage < 100 && next ? <section className="dashboard-card hc-account-profile-completion" style={{marginTop:12}}><strong>Profile {completion.percentage}% complete</strong><p className="muted">Add your {next.label} next.</p><a className="btn" href={"/account#" + (next.key === "avatar_url" ? "profile-editor-field-avatar_url" : "profile-editor-field-" + next.key)}>{next.key === "avatar_url" ? "Add photo" : "Complete profile"}</a></section> : null; })()}
       {(profile as any).moderation_status === "warned" || (profile as any).moderation_status === "flagged" ? <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{(profile as any).moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{(profile as any).moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section> : null}
       {adminRole && <section className="dashboard-card" style={{marginBottom:16}}><p className="eyebrow">{adminRole.toUpperCase()}</p><h2>{t("adminControlCenter")}</h2><div className="account-actions" style={{display:"flex",gap:10,flexWrap:"wrap"}}><Link href="/admin/directory" className="btn">{t("openAdminPanel")}</Link><Link href="/admin/reviews" className="btn dark">{t("manageReviews")}</Link><Link href="/admin/rights" className="btn dark">{t("rightsCoverage")}</Link></div></section>}
