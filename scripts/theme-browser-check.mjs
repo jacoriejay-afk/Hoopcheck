@@ -154,6 +154,28 @@ try {
         `Guest ${theme} ${route}: member bottom navigation must not render`);
       assert.equal(await guestPage.locator('a.hc-signin-button').count() > 0, true,
         `Guest ${theme} ${route}: sign-in action must be available`);
+      if (route === "/login" || route === "/signup") {
+        const google = guestPage.getByRole("button", { name: "Continue with Google" });
+        const googleBox = await google.boundingBox();
+        assert.ok(googleBox && googleBox.height >= 44, `${route}: Google button touch target`);
+        const divider = guestPage.locator(".hc-auth-divider");
+        assert.ok(await divider.evaluate(node =>
+          ["::before", "::after"].every(side => parseFloat(getComputedStyle(node, side).width) > 0)
+        ), `${route}: OR divider has two visible rules`);
+      }
+      if (route === "/login") {
+        const password = guestPage.getByLabel("Password", { exact: true });
+        const toggle = guestPage.getByRole("button", { name: "Show password" });
+        const fieldBox = await password.boundingBox();
+        const toggleBox = await toggle.boundingBox();
+        assert.ok(fieldBox && toggleBox && toggleBox.x >= fieldBox.x && toggleBox.y >= fieldBox.y &&
+          toggleBox.x + toggleBox.width <= fieldBox.x + fieldBox.width &&
+          toggleBox.y + toggleBox.height <= fieldBox.y + fieldBox.height, "Password toggle fits inside its field");
+        await toggle.click();
+        assert.equal(await password.getAttribute("type"), "text");
+        await guestPage.getByRole("button", { name: "Hide password" }).click();
+        assert.equal(await password.getAttribute("type"), "password");
+      }
     }
     for (const width of [320, 375, 390, 740, 768, 1024, 1280, 1440]) {
       await guestPage.setViewportSize({ width, height: 844 });

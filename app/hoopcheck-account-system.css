@@ -229,7 +229,7 @@ main.hc-auth-page .hc-sign-in-card form .hc-auth-password input.input {
   height: 1px;
   background: var(--hc-control-border);
 }
-.hc-google-button {
+.hc-google-auth > button.hc-google-button {
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -237,7 +237,7 @@ main.hc-auth-page .hc-sign-in-card form .hc-auth-password input.input {
   gap: 10px;
   width: 100%;
   min-height: 48px !important;
-  padding: 10px 14px;
+  padding: 10px 14px !important;
   border: 1px solid var(--hc-control-border);
   border-radius: var(--hc-radius-control);
   background: var(--hc-input-bg);
