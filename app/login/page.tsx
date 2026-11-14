@@ -1,17 +1,18 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import AuthPasswordField from "../../components/AuthPasswordField";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
 import { googleAuthMessage } from "../../lib/google-auth";
 import { supabase } from "../../lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
+  const emailInput = useRef<HTMLInputElement>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [messageIsSuccess, setMessageIsSuccess] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
@@ -26,7 +27,7 @@ export default function LoginPage() {
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (loading) return;
+    if (loading || resetLoading) return;
     setLoading(true);
     setMessage("");
     setMessageIsSuccess(false);
@@ -66,11 +67,14 @@ export default function LoginPage() {
 
   async function handlePasswordReset() {
     const normalizedEmail = email.trim().toLowerCase();
+    setMessageIsSuccess(false);
 
     if (!normalizedEmail) {
       setMessage("Enter your email address first, then select Forgot password.");
+      emailInput.current?.focus();
       return;
     }
+    if (!emailInput.current?.reportValidity()) return;
     if (resetLoading) return;
 
     setResetLoading(true);
@@ -81,6 +85,7 @@ export default function LoginPage() {
         redirectTo: "https://hoopcheck.online/reset-password",
       });
       if (error) throw error;
+      setMessageIsSuccess(true);
       setMessage("If an account exists for that email, we sent a password reset link.");
     } catch (error) {
       console.error("Password reset request failed:", error);
@@ -92,54 +97,36 @@ export default function LoginPage() {
 
   return (
     <main className="hc-auth-page">
-      <section className="hero hc-auth-hero">
-        <h1>Welcome back</h1>
-        <p>
-          Sign in to your HoopCheck account.
-        </p>
-      </section>
-
-      <section className="hc-auth-form-section">
-        <div className="form hc-auth-card">
-          <h2>Sign in</h2>
-          <p className="muted">
-            Your basketball world, all in one place.
-          </p>
+      <section className="hc-auth-form-section" aria-labelledby="sign-in-title">
+        <div className="hc-auth-card hc-sign-in-card">
+          <h1 id="sign-in-title">Sign in</h1>
 
           <form onSubmit={handleLogin}>
             <label htmlFor="email">Email</label>
-            <input id="email" className="input" type="email" value={email}
+            <input ref={emailInput} id="email" className="input" type="email" value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="you@example.com" autoComplete="email" required />
 
             <label htmlFor="password">Password</label>
-            <input id="password" className="input" type={showPassword ? "text" : "password"} value={password}
+            <AuthPasswordField id="password" className="input" value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Your password" autoComplete="current-password" required />
-            <button type="button" className="hc-auth-action" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>{showPassword ? "Hide password" : "Show password"}</button>
 
-            <button type="submit" className="btn" disabled={loading}
-              style={{ width: "100%", marginTop: 16, minHeight: 48, borderRadius: 16 }}>
+            <button type="button" onClick={handlePasswordReset} disabled={loading || resetLoading} className="hc-auth-action hc-reset-link">
+              {resetLoading ? "Sending reset link…" : "Forgot password?"}
+            </button>
+
+            <button type="submit" className="btn hc-auth-submit" disabled={loading || resetLoading}>
               {loading ? "Signing in..." : "Sign in"}
             </button>
           </form>
 
-          <div className="hc-auth-divider" aria-hidden="true">or</div>
+          {message && <p className="hc-auth-feedback" role={messageIsSuccess ? "status" : "alert"}>{message}</p>}
+
+          <div className="hc-auth-divider">or</div>
           <GoogleSignInButton disabled={loading || resetLoading} />
 
-          {message && (
-            <div style={{ marginTop: 18, padding: 14, border: "1px solid var(--border)", borderRadius: 20, background: "var(--hc-surface, var(--paper))" }}>
-              <p role={messageIsSuccess ? "status" : "alert"} aria-live="polite" style={{ margin: 0, color: "var(--hc-text, var(--ink))", lineHeight: 1.5 }}>
-                {message}
-              </p>
-            </div>
-          )}
-
-          <button type="button" onClick={handlePasswordReset} disabled={resetLoading} className="hc-auth-action">
-            {resetLoading ? "Sending reset link..." : "Forgot password?"}
-          </button>
-
-          <p className="muted" style={{ marginTop: 22, marginBottom: 0 }}>
+          <p className="hc-auth-footer">
             Don&apos;t have a HoopCheck account?{" "}
             <Link href="/signup" className="hc-auth-action">Create one</Link>
           </p>

@@ -3,6 +3,7 @@
 import { FormEvent, useRef, useState } from "react";
 import UsernameField, { type UsernameFieldHandle } from "../../components/UsernameField";
 import Link from "next/link";
+import AuthPasswordField from "../../components/AuthPasswordField";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
 import { useRouter } from "next/navigation";
 import { HoopIcon, type HoopIconName } from "../../components/HoopCheckUI";
@@ -38,7 +39,7 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
   const isPlayer = accountType === "player";
 
   async function handleSignup(event:FormEvent){
-    event.preventDefault(); setLoading(true); setError("");
+    event.preventDefault(); if (loading) return; setLoading(true); setError("");
     if(!accountType){setError("Choose an account type first.");setLoading(false);return;}
     if(firstName.trim().length<2||lastName.trim().length<2){setError("Please enter your first and last name.");setLoading(false);return;}
     const usernameCheck=await usernameFieldRef.current?.validate();
@@ -119,28 +120,20 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
       </div>
     </div>
     <section className="auth-page signup-page">
-      <div className="auth-hero">
-        <div className="eyebrow">JOIN HOOPCHECK</div>
-        <h1>Create your account</h1>
-        <p>Choose your role to personalize your HoopCheck experience.</p>
-      </div>
-
       <div className="auth-card signup-card">
+        <h1>Create your account</h1>
         {isGoogleSignup
           ? <p className="intro">Finish setting up HoopCheck with {googleEmail || "your Google account"}.</p>
-          : <GoogleSignInButton disabled={loading} />}
-        <div className="eyebrow">STEP 01 · ACCOUNT TYPE</div>
+          : <><GoogleSignInButton disabled={loading} /><div className="hc-auth-divider">or</div></>}
         <h2>Choose your account type</h2>
-        <p className="intro">Select a role to see the fields relevant to you.</p>
         <div className="account-type-grid">
-          {ACCOUNT_TYPES.map(type=><button key={type.value} type="button" onClick={()=>{if(!accountType){setAccountType(type.value);setError("");}}} className={`account-type-choice ${accountType===type.value?"selected":""}`}>
+          {ACCOUNT_TYPES.map(type=><button key={type.value} type="button" aria-pressed={accountType===type.value} disabled={loading} onClick={()=>{setAccountType(type.value);setError("");}} className={`account-type-choice ${accountType===type.value?"selected":""}`}>
             <span className="account-type-icon"><HoopIcon name={type.icon} size={22} /></span><span><strong>{type.title}</strong><small>{type.description}</small></span><span className="account-type-check">{accountType===type.value?<HoopIcon name="check" size={16} />:<HoopIcon name="arrow-right" size={16} />}</span>
           </button>)}
         </div>
 
         {accountType && <form onSubmit={handleSignup} className="signup-form">
-          <div className="signup-step-label">STEP 02 · CREATE YOUR ACCOUNT</div>
-          <div className="signup-account-badge"><strong>{ACCOUNT_TYPES.find(x=>x.value===accountType)?.title}</strong><span className="muted">Account type is locked after selection.</span>{accountType === "player" && gender === "female" && <span className="women-category-badge">Women’s HoopCheck</span>}</div>
+          <div className="signup-account-badge"><strong>{ACCOUNT_TYPES.find(x=>x.value===accountType)?.title}</strong>{accountType === "player" && gender === "female" && <span className="women-category-badge">Women’s HoopCheck</span>}</div>
           <div className="signup-two-col">
             <div><label htmlFor="first-name">First Name</label><input id="first-name" value={firstName} onChange={e=>setFirstName(e.target.value)} autoComplete="given-name" required /></div>
             <div><label htmlFor="last-name">Last Name</label><input id="last-name" value={lastName} onChange={e=>setLastName(e.target.value)} autoComplete="family-name" required /></div>
@@ -167,18 +160,17 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
           </div>
           {!isGoogleSignup && <><label htmlFor="email">Email</label><input id="email" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" required />
           <div className="signup-two-col">
-            <div><label htmlFor="password">Password</label><input id="password" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 6 characters" autoComplete="new-password" required /></div>
-            <div><label htmlFor="confirm-password">Confirm Password</label><input id="confirm-password" type="password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} autoComplete="new-password" required /></div>
+            <div><label htmlFor="password">Password</label><AuthPasswordField id="password" minLength={6} value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 6 characters" autoComplete="new-password" required /></div>
+            <div><label htmlFor="confirm-password">Confirm Password</label><AuthPasswordField id="confirm-password" minLength={6} value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} autoComplete="new-password" required /></div>
           </div>
           </>}
           <div className="legal-consent">
             <p className="form-hint">Your birthdate is required to verify that you are 18 or older and is stored securely on your HoopCheck profile.</p>
             <label className="checkbox-row"><input type="checkbox" checked={agreedToTerms} onChange={e=>setAgreedToTerms(e.target.checked)}/><span>I agree to the <Link href="/terms">Terms of Service</Link> and acknowledge the <Link href="/privacy">Privacy Policy</Link> and <Link href="/community-guidelines">Community Guidelines</Link>.</span></label>
           </div>
-          {error&&<div className="message error">{error}</div>}
+          {error&&<p className="hc-auth-feedback" role="alert">{error}</p>}
           <button type="submit" className="btn submit" disabled={loading}>{loading?"Creating Account...":`Create ${ACCOUNT_TYPES.find(x=>x.value===accountType)?.title} Account`}</button>
         </form>}
-        {!accountType&&<div className="signup-gate"><span aria-hidden="true"><HoopIcon name="arrow-right" size={18} /></span><strong>Select an account type to continue.</strong><small>Your choices are tailored to your role.</small></div>}
         <div className="login-link">Already have an account? <Link href="/login">Log in</Link></div>
       </div>
     </section>

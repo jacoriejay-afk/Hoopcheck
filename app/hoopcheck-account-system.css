@@ -145,3 +145,138 @@ html body .hc-global-page-shell main:is(.hc-coaches-directory-page, .hc-leagues-
   background: var(--hc-button-primary-bg) !important;
   color: var(--hc-button-primary-fg) !important;
 }
+
+/* Shared entry controls for email and Google authentication. */
+main.hc-auth-page > .hc-auth-form-section {
+  width: min(100%, 460px);
+  padding-top: clamp(12px, 3vw, 28px) !important;
+}
+main.hc-auth-page .hc-sign-in-card,
+.auth-page-shell .signup-card {
+  box-sizing: border-box;
+}
+main.hc-auth-page .hc-sign-in-card h1,
+.auth-page-shell .signup-card h1 {
+  margin: 0 0 18px;
+  color: var(--hc-foreground);
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  line-height: 1.15;
+}
+main.hc-auth-page .hc-sign-in-card form {
+  gap: 6px;
+  margin: 0;
+}
+main.hc-auth-page .hc-sign-in-card form label {
+  margin-top: 0;
+}
+main.hc-auth-page .hc-sign-in-card form input.input {
+  margin: 0 0 6px;
+}
+.hc-sign-in-card .hc-reset-link {
+  justify-self: end;
+  min-height: 36px;
+  margin: 0;
+}
+.hc-sign-in-card .hc-auth-submit {
+  width: 100%;
+  margin: 0;
+}
+.hc-auth-password {
+  position: relative;
+  min-width: 0;
+}
+.hc-auth-password input,
+main.hc-auth-page .hc-sign-in-card form .hc-auth-password input.input {
+  padding-inline-end: 74px;
+  margin-bottom: 0;
+}
+.hc-auth-password button {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: 4px;
+  transform: translateY(-50%);
+  min-width: 60px;
+  min-height: 44px;
+  padding-inline: 8px;
+  border: 0;
+  border-radius: var(--hc-radius-control);
+  background: transparent;
+  color: var(--hc-accent-text);
+  font: inherit;
+  font-size: .875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.hc-auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-block: 12px;
+  color: var(--hc-foreground-muted);
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.hc-auth-divider::before,
+.hc-auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--hc-control-border);
+}
+.hc-google-button {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1px solid var(--hc-control-border);
+  border-radius: var(--hc-radius-control);
+  background: var(--hc-input-bg);
+  color: var(--hc-input-fg);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.hc-google-button:disabled { opacity: .65; cursor: default; }
+.hc-google-mark { flex: 0 0 18px; }
+.hc-google-button:focus-visible,
+.hc-auth-password button:focus-visible {
+  outline: 2px solid var(--hc-accent-text);
+  outline-offset: 2px;
+}
+.hc-auth-feedback,
+.hc-auth-footer { margin: 12px 0 0; }
+.hc-auth-feedback {
+  padding: 8px 12px;
+  border: 1px solid var(--hc-control-border);
+  border-radius: var(--hc-radius-control);
+  overflow-wrap: anywhere;
+}
+.hc-auth-footer {
+  color: var(--hc-foreground-muted);
+  font-size: .875rem;
+  text-align: center;
+}
+.auth-page-shell > .auth-page.signup-page {
+  display: block;
+  width: min(calc(100% - 28px), 640px);
+  margin: 8px auto 28px;
+  padding: 0 !important;
+}
+.auth-page-shell:has(.signup-page) .signup-card {
+  width: 100%;
+  max-width: none;
+}
+.auth-page-shell:has(.signup-page) .signup-utility-row {
+  width: min(calc(100% - 28px), 640px);
+}
+.auth-page-shell .signup-card .account-type-grid {
+  margin-block: 8px 12px;
+}
+.auth-page-shell .signup-card .account-type-choice {
+  text-align: start;
+}
