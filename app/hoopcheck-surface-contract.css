@@ -162,7 +162,8 @@ html body .hc-global-page-shell main :is([data-hc-surface], .card, .dashboard-ca
   .hc-search-browse a, .hc-search-recent li) {
   --hc-card-hue: #ff790b;
   background-clip: padding-box !important;
-  border-color: color-mix(in srgb, var(--hc-border) 54%, var(--hc-card-hue)) !important;
+  --hc-surface-edge: color-mix(in srgb, var(--hc-border) 54%, var(--hc-card-hue));
+  border-color: var(--hc-surface-edge) !important;
   &:nth-child(4n + 2) { --hc-card-hue: #ef77af; }
   &:nth-child(4n + 3) { --hc-card-hue: #9d89f5; }
   &:nth-child(4n) { --hc-card-hue: #59b8cf; }

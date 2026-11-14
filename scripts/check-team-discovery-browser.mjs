@@ -54,6 +54,9 @@ try {
         }
         await page.goto(`${baseURL}/search?q=Paginated&type=mens-teams`);
         await page.getByText('12 results on this page').waitFor();
+        const borders = await page.locator('.hc-directory-compact-row').evaluateAll(rows =>
+          rows.map(row => getComputedStyle(row).borderTopColor));
+        assert.ok(new Set(borders).size > 1, 'Team cards cycle through different loader palette colors');
         await page.getByRole('button', { name: 'Next', exact: true }).click();
         await page.getByText('Page Two QA').waitFor();
         assert.equal(new URL(page.url()).searchParams.get('page'), '2');

@@ -118,7 +118,7 @@ html body .hc-global-page-shell main .hc-team-directory-row.hc-directory-compact
   height: auto !important;
   margin: 0 !important;
   padding: .65rem .8rem !important;
-  border-width: 1px !important;
+  border: 1px solid var(--hc-surface-edge, var(--hc-border)) !important;
   border-radius: var(--hc-radius-card) !important;
 }
 .hc-directory-compact-link {
