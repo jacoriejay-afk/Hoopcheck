@@ -6,11 +6,12 @@ import { HoopIcon } from "./HoopCheckUI";
 import Link from "next/link";
 import { useLanguage } from "./LanguageProvider";
 
-type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string; variant?: "default" | "club"; showCount?: boolean; showNotifications?: boolean; onCountChange?: (count: number) => void };
+type Props = { targetType: "team" | "player" | "league" | "fan"; targetId: string; variant?: "default" | "club"; showCount?: boolean; showNotifications?: boolean; onCountChange?: (count: number) => void; controlledFollowing?: boolean; onFollowingChange?: (following: boolean) => void };
 
-export default function FollowButton({ targetType, targetId, variant = "default", showCount = true, showNotifications = true, onCountChange }: Props) {
+export default function FollowButton({ targetType, targetId, variant = "default", showCount = true, showNotifications = true, onCountChange, controlledFollowing, onFollowingChange }: Props) {
   const { formatNumber, t } = useLanguage();
-  const [following, setFollowing] = useState(false);
+  const [ownFollowing, setFollowing] = useState(false);
+  const following = controlledFollowing ?? ownFollowing;
   const [notify, setNotify] = useState(true);
   const [count, setCount] = useState(0);
   const [signedIn, setSignedIn] = useState(false);
@@ -33,7 +34,7 @@ export default function FollowButton({ targetType, targetId, variant = "default"
       if (!mounted) return;
       userId.current = user?.id ?? null;
       setSignedIn(Boolean(user));
-      const followPromise = user
+      const followPromise = user && controlledFollowing === undefined
         ? supabase.from("follow_relationships")
             .select("notify_reviews,notify_ratings,notify_updates")
             .eq("follower_id", user.id)
@@ -43,7 +44,7 @@ export default function FollowButton({ targetType, targetId, variant = "default"
         : Promise.resolve({ data: null });
       const [followResult, countResult] = await Promise.all([
         followPromise,
-        supabase.rpc("get_follow_count", { p_target_type: targetType, p_target_id: targetId }),
+        showCount || onCountChange ? supabase.rpc("get_follow_count", { p_target_type: targetType, p_target_id: targetId }) : Promise.resolve({ data: null }),
       ]);
       if (!mounted) return;
       const nextCount = Number(countResult.data ?? 0);
@@ -60,7 +61,7 @@ export default function FollowButton({ targetType, targetId, variant = "default"
       mounted = false;
       if (noticeTimer.current) clearTimeout(noticeTimer.current);
     };
-  }, [targetType, targetId, onCountChange]);
+  }, [targetType, targetId, onCountChange, showCount, controlledFollowing]);
 
   async function toggle() {
     if (actionLock.current) return;
@@ -100,7 +101,9 @@ export default function FollowButton({ targetType, targetId, variant = "default"
         onCountChange?.(previousCount);
         showFailure();
       } else {
+        onFollowingChange?.(nextFollowing);
         if (nextFollowing) setNotify(true);
+        if (!showCount && !onCountChange) return;
         const { data: reconciledCount } = await supabase.rpc("get_follow_count", { p_target_type: targetType, p_target_id: targetId });
         if (reconciledCount !== null && reconciledCount !== undefined) {
           const value = Number(reconciledCount);

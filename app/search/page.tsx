@@ -372,6 +372,7 @@ function SearchContent() {
 
   return (
     <main className="search-page hc-global-search-page">
+      <header className="hc-discovery-heading"><h1>{t("search")}</h1></header>
       <div className="hc-live-search">
         <form role="search" className="hc-live-search__form" onSubmit={event => {
           event.preventDefault();
@@ -447,7 +448,7 @@ function SearchContent() {
         </form>
       </div>
       {!query && <nav className="hc-search-browse" aria-label={t("browseDirectoriesLabel")}>
-        <h1>{t("browseDirectoriesLabel")}</h1>
+        <h2>{t("browseDirectoriesLabel")}</h2>
         <div>{directoryLinks.map(link => <Link key={link.href} href={link.href}>{link.label}{link.count != null && <small>{numberFormat.format(link.count)}</small>}<span aria-hidden="true">↗</span></Link>)}</div>
       </nav>}
       {!query && Boolean(overview?.countries.length) && <section className="hc-search-recent">
@@ -495,23 +496,23 @@ function SearchContent() {
           </div>
 
           {(
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 24 }}>
+            <div className="hc-search-results-filters">
               {(roleReady && !isFanAccount ? (["all", "players", "coaches", "mens-teams", "womens-teams", "leagues"] as const) : (["all", "coaches", "mens-teams", "womens-teams", "leagues"] as const)).map((type) => (
                 <button
                   key={type}
                   type="button"
-                  className="btn dark"
+                  className="hc-discovery-filter"
                   onClick={() => updateSearchParams({ type: type === "all" ? "" : type, page: "" })}
                   aria-pressed={typeFilter === type}
                 >
                   {type === "all" ? t("all") : type === "mens-teams" ? t("mensTeams") : type === "womens-teams" ? t("womensTeams") : type === "players" ? t("players") : type === "coaches" ? t("coaches") : t("leagues")}
                 </button>
               ))}
-              <select value={countryFilter} onChange={(e) => updateSearchParams({ country: e.target.value, page: "" })} aria-label={t("country")} style={{ padding: "10px 14px", borderRadius: 8 }}>
+              <select value={countryFilter} onChange={(e) => updateSearchParams({ country: e.target.value, page: "" })} aria-label={t("country")}>
                 <option value="">{t("allCountries")}</option>
                 {countries.map((country) => <option key={country} value={country}>{country}</option>)}
               </select>
-              <button type="button" className="btn dark" onClick={() => { setVerifiedOnly(value => !value); updateSearchParams({ page: "" }); }} aria-pressed={verifiedOnly}>
+              <button type="button" className="hc-discovery-filter" onClick={() => { setVerifiedOnly(value => !value); updateSearchParams({ page: "" }); }} aria-pressed={verifiedOnly}>
                 {verifiedOnly ? <><VerifiedBadge label={t("verifiedFilterActive")} /> {t("verifiedOnly")}</> : t("verifiedOnly")}
               </button>
             </div>

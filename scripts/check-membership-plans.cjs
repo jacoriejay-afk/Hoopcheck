@@ -70,3 +70,34 @@ test("membership page uses approved shared prices instead of stale hardcoded tot
     assert.ok(!page.includes(obsolete), `Obsolete display price remains: ${obsolete}`);
   }
 });
+
+
+test("current Pro and Premium plans are labeled and cannot be repurchased in comparison", () => {
+  for (const currentTier of ["pro", "premium"]) {
+    const html = render({ currentTier, audience: "player" });
+    assert.match(html, /CURRENT/);
+    assert.doesNotMatch(html, new RegExp(`Choose ${currentTier === "pro" ? "Pro" : "Premium"}<`));
+  }
+});
+
+test("active non-Stripe memberships use the shared tier and do not render checkout cards", () => {
+  const page = read("app/membership/page.tsx");
+  assert.match(page, /getActiveMembershipTier\(subscription\)/);
+  assert.match(page, /\{isActive && subscription && \(/);
+  assert.match(page, /\{subscription\.stripe_subscription_id && <button/);
+});
+
+
+test("team directory list and map send session bearer token for trust scores", () => {
+  const page = read("app/teams/page.tsx");
+  assert.match(page, /const trustHeaders: Record<string, string> = session\?\.access_token \? \{ Authorization: `Bearer \$\{session\.access_token\}` \} : \{\};/);
+  assert.match(page, /fetch\(`\/api\/trust-score\?entityType=team&entityIds=\$\{batch\.map\(encodeURIComponent\)\.join\(","\)\}`, \{ headers: trustHeaders, cache: "no-store" \}\)/);
+  assert.match(page, /headers: session\?\.access_token \? \{ Authorization: `Bearer \$\{session\.access_token\}` \} : \{\}, cache: "no-store"/);
+});
+
+test("checkout rejects the current active plan even without a Stripe subscription ID", () => {
+  const checkout = fs.readFileSync("app/api/stripe/webhook/create-checkout/route.ts", "utf8");
+  assert.match(checkout, /stripe_subscription_id, status, plan, current_period_end/);
+  assert.match(checkout, /const currentTier = getActiveMembershipTier\(existingSubscription\)/);
+  assert.match(checkout, /if \(hasStripeSubscription \|\| currentTier === plan\)/);
+});
