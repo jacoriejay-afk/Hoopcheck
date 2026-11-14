@@ -3508,8 +3508,8 @@ body { background-color: var(--hc-page-bg); }
 .hc-membership-page .section-heading h2 { margin:10px 0; font-size:clamp(28px,4vw,42px); }
 .hc-billing-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:0 auto 18px; max-width:760px; }
 .hc-billing-option { border:1px solid var(--hc-border); border-radius:var(--hc-radius-control); background:var(--hc-button-outline-bg); color:var(--hc-button-outline-fg); cursor:pointer; display:flex; min-height:68px; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:10px 12px; white-space:normal; }
-.hc-billing-option span { font-size:14px; font-weight:950; }
-.hc-billing-option small { font-size:11px; font-weight:750; opacity:.86; text-transform:none; }
+.hc-billing-option span { color:inherit; font-size:14px; font-weight:950; }
+.hc-billing-option small { color:inherit; font-size:11px; font-weight:750; opacity:.86; text-transform:none; }
 .hc-billing-option[aria-pressed="true"] { border-color:var(--hc-button-primary-bg); background:var(--hc-button-primary-bg); color:var(--hc-button-primary-fg); }
 .hc-membership-value { display:flex; align-items:flex-start; gap:12px; max-width:760px; margin:0 auto 18px; padding:14px 16px; border:1px solid #e5e5e2; border-left:3px solid #ff5a1f; border-radius:var(--hc-radius-control); background:var(--hc-surface-raised); }
 .hc-membership-value__mark { color:#ff5a1f; font-size:20px; line-height:1; }

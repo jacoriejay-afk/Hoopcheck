@@ -5641,7 +5641,7 @@ html.theme-light main:not(.hc-template-home) {
   background-color: var(--hc-page-bg) !important;
   color: var(--hc-foreground) !important;
 }
-html.theme-dark main:not(.hc-template-home) :where(h1,h2,h3,h4,p,span,label,small,strong,li,a,div):not(.btn):not(.eyebrow):not(.card-kicker):not(.hc-feed-streak):not(.hc-feed-plan-tag):not([class*="badge"]):not([class*="category"]):not([class*="icon"]):not(.hc-team-profile-hero *):not(.hc-team-reviews-trust-strip *):not(.hc-live-hub-hero *):not(.hc-layout-card *):not(.hc-layout-group *):not(.hc-shared-directory-hero *) {
+html.theme-dark main:not(.hc-template-home) :where(h1,h2,h3,h4,p,span,label,small,strong,li,a,div):not(.btn):not(.eyebrow):not(.card-kicker):not(.hc-feed-streak):not(.hc-feed-plan-tag):not([class*="badge"]):not([class*="category"]):not([class*="icon"]):not(.hc-team-profile-hero *):not(.hc-team-reviews-trust-strip *):not(.hc-live-hub-hero *):not(.hc-layout-card *):not(.hc-layout-group *):not(.hc-shared-directory-hero *):not(.hc-billing-option *):not(.hc-live-hub-page *) {
   color: var(--hc-foreground) !important;
 }
 html.theme-dark main:not(.hc-template-home) :where(.muted,.text-muted,.description,.subtle,.hc-feed-counter,.hc-feed-expires,.hc-feed-location,.hc-feed-post-author__meta) {

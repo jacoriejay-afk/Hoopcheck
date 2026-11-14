@@ -2818,9 +2818,9 @@
 /* Coach directory count and empty-state consistency. */
 .hc-coaches-directory-page .hc-coach-directory-summary {
   padding: 12px clamp(12px, 3.5vw, 48px);
-  color: #555;
-  background: #f3f3f1;
-  border-bottom: 1px solid #dededb;
+  color: var(--hc-foreground-muted);
+  background: var(--hc-surface-soft);
+  border-bottom: 1px solid var(--hc-border);
   font-size: 12px;
   font-weight: 800;
 }

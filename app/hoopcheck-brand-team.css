@@ -202,6 +202,7 @@ html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile
   flex-wrap:wrap;
   gap:8px;
 }
+.hc-team-branded-hero .hc-team-hero-fan-link { color: var(--hc-button-primary-fg) !important; }
 .hc-team-entity-profile .hc-team-profile-snapshot-note {
   margin:12px 0;
 }

@@ -58,7 +58,7 @@ html body .hc-global-page-shell main :is(.search-hero, .hc-directory-intro) p {
   line-height: 1.6;
   max-width: 62ch;
 }
-html body .hc-global-page-shell main :is(.search-hero, .hc-directory-intro) :is(.eyebrow, .hc-directory-kicker) {
+html body .hc-global-page-shell main :is(.search-hero, .hc-directory-intro, .hc-shared-directory-hero) :is(.eyebrow, .hc-directory-kicker) {
   color: var(--hc-accent-text) !important;
   font-size: 12px;
   font-weight: 800;

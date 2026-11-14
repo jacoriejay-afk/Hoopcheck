@@ -7,7 +7,7 @@
 .hc-live-hub-page .hc-live-empty :where(h3) {
   color: var(--hc-foreground) !important;
 }
-.hc-live-hub-page .hc-live-empty :where(p) {
+.hc-live-hub-page div.hc-live-empty p {
   color: var(--hc-foreground-muted) !important;
 }
 .hc-live-hub-page .hc-live-empty__icon {
@@ -112,9 +112,9 @@
   color:var(--hc-foreground)!important;
   border-color:var(--hc-border)!important;
 }
-.hc-live-hub-page .hc-live-join {
-  background:#FF5A1F!important;
-  color:#111111!important;
+.hc-live-hub-page a.hc-live-join {
+  background:var(--hc-button-primary-bg)!important;
+  color:var(--hc-button-primary-fg)!important;
 }
 .hc-live-hub-page .hc-remind-button {
   background:var(--hc-surface-soft)!important;
@@ -133,3 +133,6 @@
   border-color:var(--hc-border)!important;
 }
 .hc-live-hub-page .hc-live-section-heading .eyebrow { color:var(--hc-foreground-muted)!important; }
+
+.hc-live-hub-page .hc-live-hub-hero .eyebrow { color:var(--hc-accent-text)!important; }
+.hc-live-hub-page .hc-live-hub-hero > div > p:not(.eyebrow) { color:var(--hc-foreground-muted)!important; }
