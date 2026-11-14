@@ -94,3 +94,10 @@ test("team directory list and map send session bearer token for trust scores", (
   assert.match(page, /fetch\(`\/api\/trust-score\?entityType=team&entityIds=\$\{batch\.map\(encodeURIComponent\)\.join\(","\)\}`, \{ headers: trustHeaders, cache: "no-store" \}\)/);
   assert.match(page, /headers: session\?\.access_token \? \{ Authorization: `Bearer \$\{session\.access_token\}` \} : \{\}, cache: "no-store"/);
 });
+
+test("checkout rejects the current active plan even without a Stripe subscription ID", () => {
+  const checkout = fs.readFileSync("app/api/stripe/webhook/create-checkout/route.ts", "utf8");
+  assert.match(checkout, /stripe_subscription_id, status, plan, current_period_end/);
+  assert.match(checkout, /const currentTier = getActiveMembershipTier\(existingSubscription\)/);
+  assert.match(checkout, /if \(hasStripeSubscription \|\| currentTier === plan\)/);
+});

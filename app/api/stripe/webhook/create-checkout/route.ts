@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { getActiveMembershipTier } from "../../../../../lib/membership-tier";
 
 function getAdminSupabase() {
   const supabaseUrl =
@@ -251,7 +252,7 @@ export async function POST(
       await supabase
         .from("subscriptions")
         .select(
-          "stripe_customer_id, stripe_subscription_id, status, plan"
+          "stripe_customer_id, stripe_subscription_id, status, plan, current_period_end"
         )
         .eq(
           "user_id",
@@ -274,20 +275,14 @@ export async function POST(
       );
     }
 
-    // Only block checkout when the active membership is linked to a real
-    // Stripe subscription. Complimentary/admin-granted memberships may be
-    // active locally without billing and should still be able to subscribe.
-    if (
-      existingSubscription?.stripe_subscription_id &&
-      (
-        existingSubscription.status === "active" ||
-        existingSubscription.status === "trialing"
-      )
-    ) {
+    const currentTier = getActiveMembershipTier(existingSubscription);
+    const hasStripeSubscription = existingSubscription?.stripe_subscription_id &&
+      ["active", "trialing"].includes(existingSubscription.status || "");
+    if (hasStripeSubscription || currentTier === plan) {
       return NextResponse.json(
         {
           error:
-            "You already have an active HoopCheck subscription.",
+            "You already have an active HoopCheck membership. Check your current plan in Membership.",
         },
         { status: 409 }
       );
