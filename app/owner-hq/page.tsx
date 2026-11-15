@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import OwnerRolePreview from "./OwnerRolePreview";
 import { getOwnerStripeSummary } from "../../lib/owner/stripe-summary";
-import { ambassadorDb, requireAmbassadorSession } from "../../lib/ambassador/server";
+import { ambassadorDb, getAmbassadorWorkspace, requireAmbassadorSession } from "../../lib/ambassador/server";
 
 export const metadata: Metadata = {
   title: "Owner HQ | HoopCheck™",
@@ -14,7 +14,6 @@ const views = [
   { name: "Fan HQ", href: "/team-hub" },
   { name: "Agents HQ", href: "/agents-hq" },
   { name: "Team HQ", href: "/team-dashboard" },
-  { name: "Ambassador HQ", href: "/ambassador-hq" },
 ] as const;
 
 async function getOwnerMetrics() {
@@ -41,10 +40,11 @@ async function getOwnerMetrics() {
 }
 
 export default async function OwnerHQ() {
-  await requireAmbassadorSession("/owner-hq", true);
-  const [stripeSummary, metrics] = await Promise.all([
+  const user = await requireAmbassadorSession("/owner-hq", true);
+  const [stripeSummary, metrics, ambassador] = await Promise.all([
     getOwnerStripeSummary(),
     getOwnerMetrics(),
+    getAmbassadorWorkspace(user.id),
   ]);
   return <main className="page-shell">
     <div className="page-container" style={{ display: "grid", gap: 20, paddingBlock: 24 }}>
@@ -52,6 +52,12 @@ export default async function OwnerHQ() {
         <p style={{ textTransform: "uppercase", letterSpacing: ".12em" }}>HoopCheck™ · Private owner workspace</p>
         <h1>Owner HQ</h1>
         <p>Platform metrics, Stripe activity, and account access previews.</p>
+        <nav className="hc-social-profile-nav" aria-label="Owner workspace shortcuts">
+          <Link href="/account">Account</Link>
+          <Link href="/admin/directory">Admin Control Center</Link>
+          <Link href="/admin/ambassadors" prefetch={false}>Ambassador administration</Link>
+          {ambassador && <Link href="/ambassador-hq" prefetch={false}>My Ambassador HQ</Link>}
+        </nav>
       </header>
       <section aria-label="Platform metrics" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
         {metrics.map(item => <div className="dashboard-card" key={item.label}>
@@ -66,7 +72,6 @@ export default async function OwnerHQ() {
         {stripeSummary.subscriptionsIncomplete && <p role="status">Partial results: subscription pagination limit reached.</p>}
         {stripeSummary.refundsIncomplete && <p role="status">Partial results: refund pagination limit reached.</p>}
         <p>Refunds are tracked by refund creation date, while paid invoices are grouped by invoice creation date. Do not subtract these figures to calculate net revenue.</p>
-        <p><Link href="/admin/ambassadors">Manage ambassador campaigns, agreements and payouts</Link></p>
       </section>
       <OwnerRolePreview />
       <section className="dashboard-card">

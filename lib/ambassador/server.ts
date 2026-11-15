@@ -13,6 +13,13 @@ export function ambassadorDb() {
   });
 }
 
+export async function getAmbassadorWorkspace(userId: string) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return false;
+  const { data, error } = await ambassadorDb().from("ambassador_grants")
+    .select("id").eq("user_id", userId).maybeSingle();
+  return !error && Boolean(data);
+}
+
 export async function getActiveReferral() {
   const token = (await cookies()).get(referralCookie)?.value;
   return token && uuidPattern.test(token) ? token : null;

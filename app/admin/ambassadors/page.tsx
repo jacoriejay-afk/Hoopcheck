@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ambassadorDb, requireAmbassadorSession } from "../../../lib/ambassador/server";
 import styles from "../../ambassador-hq/ambassador.module.css";
 import { changeCampaign, changePayout } from "./actions";
@@ -23,7 +24,14 @@ export default async function AmbassadorAdmin({ searchParams }: { searchParams: 
   return (
     <main className="page-shell">
       <div className={`page-container ${styles.stack}`}>
-        <header className="hero-card"><h1>Ambassador administration</h1></header>
+        <header className="hero-card">
+          <h1>Ambassador administration</h1>
+          <nav className="hc-social-profile-nav" aria-label="Ambassador administration shortcuts">
+            <Link href="/account">Account</Link>
+            <Link href="/owner-hq" prefetch={false}>Owner HQ</Link>
+            <Link href="/admin/directory">Admin Control Center</Link>
+          </nav>
+        </header>
         {result === "saved" && <p role="status">Changes saved.</p>}
         {result === "invalid" && <p role="alert">Check the form fields and try again.</p>}
         {result === "campaign-rejected" && <p role="alert">Campaign change refused. Check the verified account and signed terms.</p>}
