@@ -85,7 +85,11 @@ export default function LiveGamesPage() {
       supabase.from("fan_live_games")
         .select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_id,league_name,country,period_label")
         .in("status", ["scheduled", "live", "final", "cancelled", "postponed", "abandoned"])
-        .order("scheduled_at", { ascending: true, nullsFirst: false }).limit(500),
+        // Query the relevant time window BEFORE applying the row limit.
+        // Otherwise older historical fixtures crowd out today's live games.
+        .gte("scheduled_at", new Date(Date.now() - 48 * 3_600_000).toISOString())
+        .lte("scheduled_at", new Date(Date.now() + 7 * 86_400_000).toISOString())
+        .order("scheduled_at", { ascending: true, nullsFirst: false }).limit(1000),
       supabase.from("fan_live_game_reminders").select("game_id").eq("user_id", user.id),
     ]);
     if (gamesResult.error) setMessage("Game schedules are temporarily unavailable. Please refresh in a moment.");
