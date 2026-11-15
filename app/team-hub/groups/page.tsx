@@ -24,11 +24,12 @@ export default function FanGroupsPage() {
   const [filterIndexFailed, setFilterIndexFailed] = useState(false);
   const [country, setCountry] = useState("");
   const [league, setLeague] = useState("");
+  const [side, setSide] = useState("");
   const [page, setPage] = useState(0);
   const [result, setResult] = useState<{
-    userId: string; query: string; country: string; league: string; page: number; groups: Group[]; teams: Record<string, TeamContext>; hasNext: boolean; failed: boolean;
+    userId: string; query: string; country: string; league: string; side: string; page: number; groups: Group[]; teams: Record<string, TeamContext>; hasNext: boolean; failed: boolean;
   } | null>(null);
-  const current = result?.userId === userId && result.query === query && result.country === country && result.league === league && result.page === page ? result : null;
+  const current = result?.userId === userId && result.query === query && result.country === country && result.league === league && result.side === side && result.page === page ? result : null;
   const visibleGroups = current?.groups ?? [];
   const availableCountries = Array.from(new Set([...directoryTeams.map(t => t.country).filter((value): value is string => Boolean(value)), ...(country ? [country] : [])])).sort();
   const availableLeagues = Array.from(new Set([...directoryTeams.filter(t => !country || t.country === country).map(t => t.league_name).filter((value): value is string => Boolean(value)), ...(league ? [league] : [])])).sort();
@@ -92,10 +93,12 @@ export default function FanGroupsPage() {
       if (term) request = request.ilike("group_name", `%${term}%`);
       if (country) request = request.eq("teams.country", country);
       if (league) request = request.eq("teams.league_name", league);
+      if (side) request = request.eq("teams.basketball_type", side);
       const countRequest = supabase.from("team_fan_groups").select("team_id,teams!inner(id)", { count: "exact", head: true });
       let counted = term ? countRequest.ilike("group_name", `%${term}%`) : countRequest;
       if (country) counted = counted.eq("teams.country", country);
       if (league) counted = counted.eq("teams.league_name", league);
+      if (side) counted = counted.eq("teams.basketball_type", side);
       void Promise.all([Promise.resolve(request), Promise.resolve(counted)]).then(async ([{ data, error }, { count, error: countError }]) => {
         if (active) setTotalGroups(countError ? null : count);
         const groups = (data ?? []).slice(0, PAGE_SIZE).map(({ team_id, group_name }) => ({ team_id, group_name }));
@@ -115,7 +118,7 @@ export default function FanGroupsPage() {
           if (active) setMemberCounts(old => ({...old, ...Object.fromEntries(summaries.filter(([,n]) => typeof n === "number"))}));
         }
         if (active) setResult({
-          userId, query, country, league, page, groups, teams,
+          userId, query, country, league, side, page, groups, teams,
           hasNext: (data?.length ?? 0) > PAGE_SIZE, failed: Boolean(error),
         });
       }).catch(() => {
@@ -126,7 +129,7 @@ export default function FanGroupsPage() {
       });
     }, query ? 250 : 0);
     return () => { active = false; window.clearTimeout(timer); };
-  }, [userId, query, country, league, page]);
+  }, [userId, query, country, league, side, page]);
 
   return <main className="page-shell hc-fan-groups-directory">
     <div className="page-container">
@@ -138,7 +141,7 @@ export default function FanGroupsPage() {
         <section aria-label="Categories"><h2>Browse categories</h2><div className="hc-groups-categories">{["Club Groups","Players","Fans","Coaches","Agents","Scouts","Teams","Open Community"].map(name => <button key={name} type="button" disabled={name !== "Club Groups"} title={name !== "Club Groups" ? "Community groups are not yet available" : undefined}>{name}</button>)}</div></section>
         <p className="muted">{totalGroups === null ? "Group count unavailable" : `${totalGroups.toLocaleString()} matching official club groups`} · Country and league filters search all groups.</p>
         {filterIndexFailed && <p role="status" className="muted">Could not load all filter choices. Search remains available.</p>}
-        <div className="hc-groups-filters"><label>Country <select value={country} onChange={e=>{setCountry(e.target.value);setLeague("");setPage(0);}}><option value="">All countries</option>{availableCountries.map(v=><option key={v} value={v}>{v}</option>)}</select></label><label>League <select value={league} onChange={e=>{setLeague(e.target.value);setPage(0);}}><option value="">All leagues</option>{availableLeagues.map(v=><option key={v} value={v}>{v}</option>)}</select></label></div>
+        <div className="hc-groups-filters"><label>Country <select value={country} onChange={e=>{setCountry(e.target.value);setLeague("");setPage(0);}}><option value="">All countries</option>{availableCountries.map(v=><option key={v} value={v}>{v}</option>)}</select></label><label>League <select value={league} onChange={e=>{setLeague(e.target.value);setPage(0);}}><option value="">All leagues</option>{availableLeagues.map(v=><option key={v} value={v}>{v}</option>)}</select></label><label>Division <select value={side} onChange={e=>{setSide(e.target.value);setPage(0);}}><option value="">Men and women</option><option value="mens">Men</option><option value="womens">Women</option></select></label></div>
         <input type="search" aria-label={spanish ? "Buscar grupos" : "Search HoopGroups"}
           placeholder={spanish ? "Buscar grupos" : "Search HoopGroups"}
           maxLength={120} value={query} onChange={event => {
