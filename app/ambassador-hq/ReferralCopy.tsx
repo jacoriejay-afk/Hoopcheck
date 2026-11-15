@@ -11,7 +11,7 @@ export default function ReferralCopy({ link }: { link: string }) {
         <input aria-label="Referral signup link" value={link} readOnly onFocus={event => event.target.select()} />
         <button type="button" className="btn" onClick={async () => {
           try {
-            await navigator.clipboard.writeText(link);
+            await navigator.clipboard.writeText(new URL(link, window.location.origin).href);
             setMessage("Referral link copied.");
           } catch {
             setMessage("Select the referral link to copy it.");
