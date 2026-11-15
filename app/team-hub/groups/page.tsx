@@ -38,6 +38,7 @@ export default function FanGroupsPage() {
     if (!userId) { setDirectoryTeams([]); return; }
     let active = true;
     void (async () => {
+      try {
       const all: TeamContext[] = [];
       const batchSize = 500;
       for (let offset = 0; offset < 100000; offset += batchSize) {
@@ -57,6 +58,9 @@ export default function FanGroupsPage() {
         }
       }
       if (active) setFilterIndexFailed(true);
+      } catch {
+        if (active) setFilterIndexFailed(true);
+      }
     })();
     return () => { active = false; };
   }, [userId]);
@@ -113,8 +117,11 @@ export default function FanGroupsPage() {
           userId, query, country, league, page, groups, teams,
           hasNext: (data?.length ?? 0) > PAGE_SIZE, failed: Boolean(error),
         });
-      }, () => {
-        if (active) setResult({ userId, query, country, league, page, groups: [], teams: {}, hasNext: false, failed: true });
+      }).catch(() => {
+        if (active) {
+          setTotalGroups(null);
+          setResult({ userId, query, country, league, page, groups: [], teams: {}, hasNext: false, failed: true });
+        }
       });
     }, query ? 250 : 0);
     return () => { active = false; window.clearTimeout(timer); };
