@@ -10,18 +10,18 @@ export const metadata: Metadata = {
 };
 
 const views = [
-  { name: "Player HQ", href: "/account", description: "Open your account; dedicated player preview pending" },
-  { name: "Fan HQ", href: "/account", description: "Open your account; dedicated fan preview pending" },
-  { name: "Agents HQ", href: "/agents-hq", description: "Review agent and scout tools" },
-  { name: "Team HQ", href: "/account", description: "Open your account; dedicated team preview pending" },
-  { name: "Ambassador HQ", href: "/ambassador-hq", description: "Review ambassador experience" },
+  { name: "Player HQ", href: "/dashboard" },
+  { name: "Fan HQ", href: "/team-hub" },
+  { name: "Agents HQ", href: "/agents-hq" },
+  { name: "Team HQ", href: "/team-dashboard" },
+  { name: "Ambassador HQ", href: "/ambassador-hq" },
 ] as const;
 
 export default async function OwnerHQ() {
   await requireAmbassadorSession("/owner-hq", true);
   const db = ambassadorDb();
-  const stripeSummary = await getOwnerStripeSummary();
-  const [members, subscriptions, campaigns, commissions] = await Promise.all([
+  const [stripeSummary, members, subscriptions, campaigns, commissions] = await Promise.all([
+    getOwnerStripeSummary(),
     db.from("profiles").select("id", { count: "exact", head: true }),
     db.from("subscriptions").select("user_id", { count: "exact", head: true }).in("status", ["active", "trialing"]),
     db.from("ambassador_campaigns").select("code", { count: "exact", head: true }),
@@ -38,7 +38,7 @@ export default async function OwnerHQ() {
       <header className="hero-card">
         <p style={{ textTransform: "uppercase", letterSpacing: ".12em" }}>HoopCheck™ · Private owner workspace</p>
         <h1>Owner HQ</h1>
-        <p>Business overview and secure access to platform management. Figures below are live database record counts, not revenue or Stripe sales.</p>
+        <p>Platform metrics, Stripe activity, and account access previews.</p>
       </header>
       <section aria-label="Platform metrics" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
         {metrics.map(item => <div className="dashboard-card" key={item.label}>
@@ -58,10 +58,10 @@ export default async function OwnerHQ() {
       <OwnerRolePreview />
       <section className="dashboard-card">
         <h2>Open existing dashboards</h2>
-        <p>These links open existing role pages using your current account. They do not impersonate users, override membership checks, or change your real account type. A true Free/Pro/Premium preview simulator requires separate read-only UI support.</p>
+        <p>Dashboard links use the permissions of your signed-in account.</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
           {views.map(view => <Link className="dashboard-card" key={view.name} href={view.href}>
-            <strong>{view.name}</strong><p>{view.description}</p>
+            <strong>{view.name}</strong>
           </Link>)}
         </div>
       </section>

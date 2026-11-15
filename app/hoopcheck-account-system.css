@@ -11,7 +11,7 @@ html body .hc-global-page-shell main:not(.admin-light-shell):not(.admin-director
   .hc-directory-row, .hc-ia-door, .hc-profile-panel, .hc-team-facts-card,
   .hc-team-profile-overview-grid > *, .hc-team-fan-group-entry
 ):not(.hc-member-profile-hero) {
-  border: 1px solid var(--hc-border) !important;
+  border: 1px solid var(--hc-surface-edge, var(--hc-border)) !important;
   border-radius: var(--hc-content-radius) !important;
   background: var(--surface) !important;
   color: var(--on-surface) !important;

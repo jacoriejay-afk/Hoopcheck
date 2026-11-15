@@ -1808,7 +1808,7 @@ main:not(.hc-template-home) :where(.empty-state,.error-state,.loading-state) {
 }
 body { background: var(--hc-surface-raised) !important; color: #171717 !important; }
 main:not(.hc-rebrand):not(.hc-template-home),
-main:not(.hc-rebrand):not(.hc-template-home) > section:not(.hero):not(.hc-team-reviews-trust-strip):not(.hc-live-hub-hero):not(.hc-layout-card):not(.hc-layout-group):not(.hc-shared-directory-hero) {
+main:not(.hc-rebrand):not(.hc-template-home) > section:not(.hero):not(.hc-team-reviews-trust-strip):not(.hc-live-hub-hero):not(.hc-layout-card):not(.hc-layout-group):not(.hc-shared-directory-hero):not(:where(.hc-team-directory-list, .hc-womens-team-list, .hc-search-recent)) {
   background-color: var(--hc-surface-raised) !important;
   color: #171717 !important;
 }

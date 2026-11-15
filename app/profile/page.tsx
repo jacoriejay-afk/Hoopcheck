@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import "../hoopcheck-brand-profile.css";
+import SocialProfileHeader, { profileCover } from "../../components/SocialProfileHeader";
 import OwnProfilePostsGrid from "../../components/OwnProfilePostsGrid";
 import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
@@ -30,7 +30,7 @@ function calculatePostingStreak(rows: { activity_date: string }[]) {
 export default function ProfilePage() {
   const { t } = useLanguage();
   const [p, setP] = useState<any>(null);
-  const [email, setEmail] = useState("");
+  const [cover, setCover] = useState(profileCover(null));
   const [loading, setLoading] = useState(true);
   const [postingStreak, setPostingStreak] = useState(0);
   const [loadError, setLoadError] = useState(false);
@@ -49,7 +49,7 @@ export default function ProfilePage() {
       }
 
       if (!active) return;
-      setEmail(user.email || "");
+      setCover(profileCover(user.user_metadata?.hoopcheck_profile_cover));
       const result = await Promise.race([
         supabase
           .from("profiles")
@@ -61,7 +61,7 @@ export default function ProfilePage() {
       if (!active) return;
       if (result.error) { setLoadError(true); setLoading(false); return; }
       setP(result.data);
-      if (result.data?.account_type === "player") {
+      if (result.data) {
         const { data: activity } = await supabase.from("feed_posting_activity").select("activity_date").eq("user_id", user.id).order("activity_date", { ascending: false }).limit(370);
         if (!active) return;
         setPostingStreak(calculatePostingStreak(activity || []));
@@ -96,7 +96,6 @@ export default function ProfilePage() {
   }
 
   const name = p.display_name || p.username || "HoopCheck Member";
-  const initials = name.trim().split(/\s+/).slice(0, 2).map((part: string) => part[0]).join("").toUpperCase() || "HC";
   const completion = calculateProfileCompletion(p);
   const profileCompletion = completion.percentage;
   const firstMissingField = completion.nextMissing?.label ?? "profile details";
@@ -105,44 +104,27 @@ export default function ProfilePage() {
   return (
     <main className="page-shell hc-member-profile-page">
       <div className="page-container">
-        <section className="hero-card compact-hero hc-member-profile-hero" aria-labelledby="hc-member-profile-title">
-          <div className="hc-member-profile-identity">
-            <div className="hc-member-profile-avatar-wrap">
-              <div className="hc-member-profile-avatar">
-                {p.avatar_url ? <img src={p.avatar_url} alt={name + " profile photo"} /> : <span>{initials}</span>}
-              </div>
-              {p.avatar_url && p.avatar_moderation_status === "pending" && <span className="hc-profile-photo-state">{t("photoReview")}</span>}
-            </div>
-            <div className="hc-member-profile-copy">
-              <p className="eyebrow">{t("account").toUpperCase()}</p>
-              <h1 id="hc-member-profile-title">
-                <span>{name}</span>
-                {(p.player_verified || p.coach_verified) && <VerifiedBadge label={p.player_verified ? "Verified player" : "Verified coach"} />}
-              </h1>
-              <p className="muted hc-profile-email">{p.username ? "@" + p.username + (email ? " · " + email : "") : email}</p>
-            </div>
-          </div>
-
-          <div className="hc-member-profile-actions">
-            <Link href="/account#profile-editor" className="btn hc-profile-edit-button">{t("editProfile")}</Link>{p.account_type === "player" && <Link href="/account#team-review-checklist" className="btn dark">Team review checklist</Link>}
-            {p.account_type === "player" && (p.profile_visibility === "public" ? (
-              <Link href={"/players/" + encodeURIComponent(p.id)} className="btn dark hc-profile-public-button">
-                <span className="hc-profile-public-full">{t("profilePublic")}</span><span className="hc-profile-public-short">{t("profilePublic")}</span><HoopIcon name="arrow-up-right" size={16} />
-              </Link>
-            ) : (
-              <Link href="/account#profile-editor" className="btn dark hc-profile-public-button">
-                <span>Profile visibility · {t("profilePrivate")}</span><HoopIcon name="arrow-up-right" size={16} />
-              </Link>
-            ))}
-          </div>
+        <SocialProfileHeader name={name} handle={p.username} avatarUrl={p.avatar_url} cover={cover}
+          badge={(p.player_verified || p.coach_verified) && <VerifiedBadge label={p.player_verified ? "Verified player" : "Verified coach"} />}
+          actions={<Link href="/account#profile-editor" className="btn">{t("editProfile")}</Link>}>
+          {p.avatar_url && p.avatar_moderation_status === "pending" && <p className="muted">{t("photoReview")}</p>}
+          {p.bio && <p className="hc-social-bio">{p.bio}</p>}
+          {postingStreak > 0 && <p className="hc-social-streak"><span aria-hidden="true">🔥</span> {postingStreak}-day streak</p>}
+        </SocialProfileHeader>
+        <nav className="hc-social-profile-nav" aria-label="Profile sections">
+          <a href="#profile-about">About</a>
+          {p.account_type === "player" && <a href="#profile-posts">Posts</a>}
+          <a href="#career-passport">Career Passport</a>
+          <Link href="/account#profile-appearance">Customize</Link>
+          {p.account_type === "player" && (p.profile_visibility === "public"
+            ? <Link href={"/players/" + encodeURIComponent(p.id)}>{t("profilePublic")}</Link>
+            : <Link href="/account#visibility">{t("editVisibility")}</Link>)}
+          {p.account_type === "player" && <Link href="/account#team-review-checklist">Team review checklist</Link>}
+        </nav>
           {p.account_type === "player" ? <PlayerProfileCompletionCard profile={p} onPublished={() => setP((current: any) => ({ ...current, profile_visibility: "public" }))} /> : profileCompletion < 100 && <div className="hc-profile-completion">
             <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href={"/account#profile-editor-field-" + nextFieldAnchor}>Complete profile <span aria-hidden="true">→</span></Link></div>
             <div className="hc-profile-completion-track" role="progressbar" aria-label={t("profileCompleteness")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}><span style={{width: profileCompletion + "%"}} /></div>
           </div>}
-          {p.account_type === "player" && postingStreak > 0 && <div className="hc-profile-streak-row"><span className="hc-feed-streak" aria-label={postingStreak + " day HoopFeed posting streak"}><span aria-hidden="true">🔥</span> {postingStreak}-day streak</span></div>}
-
-        </section>
-
         <div id="career-passport" style={{ scrollMarginTop: 96 }}><HoopPassport name={name} accountType={p.account_type||"member"} username={p.username} verified={Boolean(p.player_verified||p.coach_verified)} country={p.current_country} position={p.account_type==="player"?p.position:null} team={p.account_type==="player"?p.current_team:null}/></div>
         <nav className="hc-profile-action-hub" aria-label="Profile quick links">
           <Link href="/membership" className="hc-profile-membership-link"><HoopIcon name="star" size={20} /><span>Membership &amp; Perks</span><HoopIcon name="chevron-right" size={18} /></Link>
@@ -154,37 +136,19 @@ export default function ProfilePage() {
           </div>
         </nav>
 
-        <section className="hc-profile-overview" aria-label={t("profileOverview")}>
-          <div className="grid compact-grid">
-            <Surface className="card hc-profile-info-card">
-              <span className="card-kicker">{p.account_type === "fan" ? t("account") : t("basketball")}</span>
-              <h2>{p.account_type === "fan" ? t("fan") : p.basketball_type === "womens" ? t("womensBasketball") : p.basketball_type === "mens" ? t("mensBasketball") : t("basketball")}</h2>
-              <p className="muted">{t(p.account_type)}</p>
-            </Surface>
-            {p.account_type === "player" && (
-              <Surface className="card hc-profile-info-card">
-                <span className="card-kicker">{t("career")}</span>
-                {p.position ? <h2>{p.position}</h2> : <p className="hc-profile-empty-value">{t("positionNotListed")} <Link href="/account#profile-editor">{t("add")} <span aria-hidden="true">→</span></Link></p>}
-                <p className="muted">{p.years_pro == null ? t("yearsProNotListed") : p.years_pro + " " + t("yearsPro")}{" · "}{p.free_agent ? t("freeAgent") : p.current_team || t("teamNotListed")}</p>
-              </Surface>
-            )}
-            <Surface className="card hc-profile-info-card">
-              <span className="card-kicker">{t("location")}</span>
-              {p.current_country ? <h2>{p.current_country}</h2> : <p className="hc-profile-empty-value">{t("notListed")} <Link href="/account#profile-editor">{t("add")} <span aria-hidden="true">→</span></Link></p>}
-              <p className="muted">{p.hometown || p.nationality || t("locationDetailsNotListed")}</p>
-            </Surface>
-          </div>
-        </section>
-
-        {p.account_type === "player" && <OwnProfilePostsGrid userId={p.id} />}
-
-        <section className="dashboard-card compact-section">
-          <p className="eyebrow">{t("about")}</p>
-          <h2>{t("profileDetails")}</h2>
-          <p className="muted">{p.bio || t("addBioFromEditProfile")}</p>
+        <Surface as="section" className="hc-profile-summary" id="profile-about" aria-label={t("profileOverview")}>
+          <dl>
+            <div><dt>{t("basketball")}</dt><dd>{p.basketball_type === "womens" ? t("womensBasketball") : p.basketball_type === "mens" ? t("mensBasketball") : t(p.account_type)}</dd></div>
+            {p.account_type === "player" && (p.position || p.current_team || p.free_agent) &&
+              <div><dt>{t("career")}</dt><dd>{[p.position, p.free_agent ? t("freeAgent") : p.current_team].filter(Boolean).join(" · ")}</dd></div>}
+            <div><dt>{t("location")}</dt><dd>{[p.hometown, p.current_country || p.nationality].filter(Boolean).join(", ") ||
+              <Link href="/account#profile-editor">{t("add")}</Link>}</dd></div>
+          </dl>
           {p.interests && <p><strong>{t("interests")}</strong> {p.interests}</p>}
           {p.favorite_leagues && <p><strong>{t("favoriteLeagues")}</strong> {p.favorite_leagues}</p>}
-        </section>
+        </Surface>
+
+        {p.account_type === "player" && <div id="profile-posts"><OwnProfilePostsGrid userId={p.id} /></div>}
 
         <section className="dashboard-card compact-section">
           <p className="eyebrow">{t("account")}</p>

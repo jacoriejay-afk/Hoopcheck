@@ -1,42 +1,96 @@
 "use client";
 
 import { useState } from "react";
+import { getHoopCheckEntitlements, type HoopCheckEntitlements, type MembershipTier } from "../../lib/membership-tier";
 
-type Role = "player" | "fan" | "agent" | "team" | "ambassador";
-type Tier = "free" | "pro" | "premium";
+const roles = {
+  player: "Player",
+  fan: "Fan",
+  coach: "Coach",
+  agent: "Agent",
+  scout: "Scout",
+  manager: "Team Manager",
+  ambassador: "Ambassador",
+} as const;
 
-const roleLabels: Record<Role, string> = {
-  player: "Player", fan: "Fan", agent: "Agent / Scout",
-  team: "Team Manager", ambassador: "Ambassador",
-};
-const tierLabels: Record<Tier, string> = { free: "Free", pro: "Pro", premium: "Premium" };
-const preview: Record<Role, string[]> = {
-  player: ["Player profile and directory", "Club reviews and Pre-Sign Check", "HoopFeed and connections"],
-  fan: ["Team follows and fan groups", "Live Game Hub and chat", "Fan membership content"],
-  agent: ["Player and club discovery", "Scouting tools and connections", "Agents HQ"],
-  team: ["Claimed club management", "Roster and team profile", "Fan community moderation"],
-  ambassador: ["Referral link and conversions", "Commission history", "Payout reports"],
-};
+const tiers = { free: "Free", pro: "Pro", premium: "Premium" } as const;
+
+const features = {
+  canReadHoopFeed: "Read HoopFeed",
+  canWriteHoopFeed: "Post on HoopFeed",
+  canReadFanFeed: "Read Fan HQ feed",
+  canWriteFanFeed: "Post on Fan HQ feed",
+  canReadFullReviews: "Read full reviews",
+  canViewTrustScore: "View Trust Score",
+  canWriteReviews: "Write reviews",
+  canUseLiveGameHub: "Live Game Hub",
+  canUseLiveGameChat: "Live game chat",
+  canCompare: "Compare",
+  canUseContractCheck: "Contract Check",
+  canUseProPassport: "Pro Passport",
+  canUseRecruitingNetwork: "Recruiting Network",
+  canUsePayOnTimeIndex: "Pay-on-Time Index",
+  canUseAskPlayer: "Ask a Player",
+  canConnectWithFans: "Connect with fans",
+  canSwitchBasketballSide: "Switch men’s and women’s basketball",
+  canStartCoachIdentityVerification: "Start coach identity verification",
+  canViewTeamPayHistory: "View team pay history",
+  canSubmitPayCheckIn: "Submit a pay check-in",
+  canUseFanGroups: "Use fan groups",
+} satisfies Partial<Record<keyof HoopCheckEntitlements, string>>;
+
+type Role = keyof typeof roles;
+const featureKeys = Object.keys(features) as (keyof typeof features)[];
 
 export default function OwnerRolePreview() {
   const [role, setRole] = useState<Role>("player");
-  const [tier, setTier] = useState<Tier>("free");
-  const membership = role === "player" || role === "fan";
-  return <section className="dashboard-card" aria-label="Owner role preview">
-    <h2>Preview account experience</h2>
-    <p role="status"><strong>READ-ONLY PREVIEW</strong> — This is a feature checklist, not an impersonated account or a live entitlement test.</p>
-    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBlock:12}} role="group" aria-label="Account type">
-      {(Object.keys(roleLabels) as Role[]).map(item =>
-        <button type="button" key={item} className={role===item?"btn":"btn dark"} aria-pressed={role===item} onClick={()=>setRole(item)}>{roleLabels[item]}</button>
+  const [tier, setTier] = useState<MembershipTier>("free");
+  const [verifiedPlayer, setVerifiedPlayer] = useState(false);
+  const entitlements = getHoopCheckEntitlements({
+    accountType: role,
+    subscription: tier === "free" ? null : { plan: tier, status: "active" },
+    playerVerified: role === "player" && verifiedPlayer,
+  });
+
+  return (
+    <section className="dashboard-card" aria-labelledby="owner-preview-heading">
+      <h2 id="owner-preview-heading">Preview account access</h2>
+      <p>Check what a role and membership can access. Your own account and membership stay the same.</p>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBlock: 12 }}>
+        <label>
+          Account type
+          <select className="input" value={role} onChange={event => setRole(event.target.value as Role)}>
+            {Object.entries(roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+        </label>
+        {role !== "ambassador" && (
+          <label>
+            Membership tier
+            <select className="input" value={tier} onChange={event => setTier(event.target.value as MembershipTier)}>
+              {Object.entries(tiers).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </label>
+        )}
+        {role === "player" && (
+          <label>
+            <input type="checkbox" checked={verifiedPlayer} onChange={event => setVerifiedPlayer(event.target.checked)} />
+            {" "}Verified player
+          </label>
+        )}
+      </div>
+
+      <h3 aria-live="polite">{roles[role]}{role === "ambassador" ? "" : ` · ${tiers[entitlements.tier]}`}</h3>
+      {role === "ambassador" ? (
+        <p>Ambassador HQ access depends on campaign assignment. Assigned ambassadors can view their referral link, conversions, and commission history.</p>
+      ) : (
+        <ul style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 230px), 1fr))", gap: 8 }}>
+          {featureKeys.map(feature => (
+            <li key={feature}>{features[feature]} · <strong>{entitlements[feature] ? "Available" : "Locked"}</strong></li>
+          ))}
+        </ul>
       )}
-    </div>
-    {membership && <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBlock:12}} role="group" aria-label="Membership tier">
-      {(Object.keys(tierLabels) as Tier[]).map(item =>
-        <button type="button" key={item} className={tier===item?"btn":"btn dark"} aria-pressed={tier===item} onClick={()=>setTier(item)}>{tierLabels[item]}</button>
-      )}
-    </div>}
-    <h3>{roleLabels[role]}{membership ? ` · ${tierLabels[tier]}` : ""}</h3>
-    <ul>{preview[role].map(item=><li key={item}>{item}</li>)}</ul>
-    <p>Access restrictions must be verified using the real entitlement resolver and isolated test fixtures before this preview can be treated as a permission audit.</p>
-  </section>;
+      {role === "manager" && <p>Club management and group moderation require an approved claim for the club.</p>}
+    </section>
+  );
 }

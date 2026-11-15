@@ -150,3 +150,26 @@ html.theme-light body .hc-feed-composer {
 /* Highest-specificity composer theme contract: the legacy composer also has dashboard-card styles. */
 html.theme-dark body main section.dashboard-card.hc-feed-composer { background:var(--hc-surface-raised)!important; background-color:var(--hc-surface-raised)!important; }
 html.theme-light body main section.dashboard-card.hc-feed-composer { background:var(--hc-surface-raised)!important; background-color:var(--hc-surface-raised)!important; }
+
+/* Layout wrappers let the page show between cards. Only the surface paints a fill. */
+html body .hc-global-page-shell main :is(.hc-team-directory-list, .hc-womens-team-list, .hc-search-recent, .hc-live-search__form) {
+  background: transparent !important;
+}
+
+html body .hc-global-page-shell main :is([data-hc-surface], .card, .dashboard-card, .hero-card, .result-card,
+  .quick-card, .state-card, .hc-layout-card, .hc-layout-group, .hc-auth-card, .review-card,
+  .profile-card, .team-card, .league-card, .coach-card, .player-card, .hc-live-search__field,
+  .hc-search-browse a, .hc-search-recent li) {
+  --hc-card-hue: #ff790b;
+  background-clip: padding-box !important;
+  --hc-surface-edge: color-mix(in srgb, var(--hc-border) 54%, var(--hc-card-hue));
+  border-color: var(--hc-surface-edge) !important;
+  &:nth-child(4n + 2) { --hc-card-hue: #ef77af; }
+  &:nth-child(4n + 3) { --hc-card-hue: #9d89f5; }
+  &:nth-child(4n) { --hc-card-hue: #59b8cf; }
+}
+
+/* Clip decorative art at its own boundary so focus rings and popovers stay visible. */
+.hc-global-page-shell main :where(.hc-court-empty-art, .hc-home-hero-art, .hc-social-cover) {
+  border-radius: inherit;
+}

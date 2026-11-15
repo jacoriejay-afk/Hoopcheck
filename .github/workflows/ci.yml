@@ -68,6 +68,13 @@ jobs:
           PGPASSWORD: postgres
         run: psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_rls_test -f supabase/tests/smoke_feed_rls_isolated.sql
 
+      - name: Verify HoopFeed organization visibility and real totals
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_organization_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_organization_test -f supabase/tests/hoopfeed_organization_isolated.sql
+
       - name: Verify Ambassador HQ database security and commission lifecycle
         env:
           PGPASSWORD: postgres

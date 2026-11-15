@@ -44,7 +44,6 @@ export default function TeamsPage() {
   const [teams, setTeams] =
     useState<Team[]>([]);
   const [trustScores, setTrustScores] = useState<Record<string, TrustSummary>>({});
-  const [followerCounts, setFollowerCounts] = useState<Record<string, number>>({});
   const [teamCoordinates, setTeamCoordinates] = useState<Record<string, { latitude: number | null; longitude: number | null }>>({});
   const [mapTeams, setMapTeams] = useState<Team[]>([]);
   const [mapLoading, setMapLoading] = useState(false);
@@ -54,7 +53,6 @@ export default function TeamsPage() {
 
   const [loading, setLoading] = useState(true);
   const [viewerRole, setViewerRole] = useState("");
-  const [trustResolved, setTrustResolved] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
@@ -141,7 +139,7 @@ export default function TeamsPage() {
           const { data, error, count } = await withTimeout<any>(request.range(
             page * pageSize,
             page * pageSize + pageSize - 1
-          ), 2500, { data: [], error: new Error("timeout") });
+          ), 8000, { data: [], error: new Error("timeout") });
           if (!active) return;
           if (error) {
             console.error("Error loading teams:", error);
@@ -175,10 +173,10 @@ export default function TeamsPage() {
 
 
   useEffect(() => {
-    if (!teams.length) { setTrustScores({}); setFollowerCounts({}); return; }
+    if (!teams.length) { setTrustScores({}); return; }
     let active = true;
     const ids = teams.map(team => team.id).filter(Boolean);
-    setTrustResolved(false);
+    setTrustScores({});
     void (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (active && session?.user) {
@@ -191,24 +189,7 @@ export default function TeamsPage() {
       const payload = response.ok ? await response.json() : null;
       if (active && payload?.accountType) setViewerRole(payload.accountType);
       if (active && payload?.scores) setTrustScores(payload.scores as Record<string, TrustSummary>);
-      if (active) setTrustResolved(true);
-    })().catch(() => { if (active) { setTrustScores({}); setTrustResolved(true); } });
-    return () => { active = false; };
-  }, [teams]);
-
-  useEffect(() => {
-    if (!teams.length || !window.matchMedia("(min-width: 1024px)").matches) { setFollowerCounts({}); return; }
-    let active = true;
-    const ids = teams.map(team => team.id).filter(Boolean);
-    void Promise.all(ids.map(async id => {
-      const { count, error } = await supabase.from("follow_relationships")
-        .select("id", { count: "exact", head: true })
-        .eq("target_type", "team").eq("target_id", id);
-      return [id, error || count == null ? null : count] as const;
-    })).then(rows => {
-      if (!active) return;
-      setFollowerCounts(Object.fromEntries(rows.filter((row): row is readonly [string, number] => row[1] !== null)));
-    }).catch(() => { if (active) setFollowerCounts({}); });
+    })().catch(() => { if (active) setTrustScores({}); });
     return () => { active = false; };
   }, [teams]);
 
@@ -236,6 +217,8 @@ export default function TeamsPage() {
     setMapLoading(true);
     setMapError(false);
     const loadAllMapTeams = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const trustHeaders: Record<string, string> = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
       const all: Team[] = [];
       for (let offset = 0; offset < 5000; offset += 500) {
         let request = supabase.from("teams")
@@ -285,7 +268,7 @@ export default function TeamsPage() {
       for (let offset = 0; offset < ids.length; offset += 100) {
         const batch = ids.slice(offset, offset + 100);
         try {
-          const response = await fetch(`/api/trust-score?entityType=team&entityIds=${batch.map(encodeURIComponent).join(",")}`);
+          const response = await fetch(`/api/trust-score?entityType=team&entityIds=${batch.map(encodeURIComponent).join(",")}`, { headers: trustHeaders, cache: "no-store" });
           if (!active) return;
           if (response.ok) {
             const payload = await response.json();
@@ -302,11 +285,14 @@ export default function TeamsPage() {
   return (
     <main className="hc-team-directory-page hc-directory-refresh">
       <FanBasketballSideSwitch lockedHint />
-      <div className="hc-directory-compact-head"><h1>{t("mensTeams")}</h1><a href="#request-team">{t("directoryRequest")}</a></div>
+      <header className="hc-discovery-heading"><h1>{t("mensTeams")}</h1><a href="#request-team">{t("directoryRequest")}</a></header>
+      <nav className="hc-team-discovery-links" aria-label={t("browseDirectories")}>
+        <Link href="/teams" aria-current="page">{t("mensTeams")}</Link>
+        <Link href="/womens">{t("womensTeams")}</Link>
+        <Link href="/search">{t("search")}</Link>
+      </nav>
 
-      <section className="hero">
-        <Surface as="div" className="research-search">
-          <div className="search-label">{t("directoryTitle")}</div>
+      <section className="hc-team-directory-filters" aria-label={t("directoryTitle")}>
           <SearchBar value={query} onChange={(value) => { setQuery(value); setPage(0); }} placeholder="Search teams, countries or leagues" ariaLabel={t("directoryTitle")} onSubmit={(value) => { setQuery(value); setPage(0); }} />
           <div className="team-filter-row">
             <select value={continent} onChange={(e) => { setContinent(e.target.value); setCountry(""); setPage(0); }} aria-label={t("filterTeamsByContinent")}>
@@ -326,7 +312,6 @@ export default function TeamsPage() {
               {divisions.map(item => <option key={item} value={item}>{item}</option>)}
             </select>
           </div>
-        </Surface>
       </section>
 
 
@@ -385,7 +370,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           teams.map((team) => (
-            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustVerifiedReviewCount={trustScores[team.id]?.verifiedReviewCount ?? undefined} followerCount={followerCounts[team.id] ?? null} trustExplanation={trustScores[team.id]?.explanation || undefined} averageRating={trustScores[team.id]?.averageRating} trustTier={trustResolved ? (trustScores[team.id]?.tier || "free") : "unknown"} viewerRole={viewerRole} logoUrl={team.logo_url} logoBg={team.logo_bg} />
+            <TeamDirectoryRow key={team.id} id={team.id} name={team.name} city={team.city} country={team.country} leagueName={team.league_name} href={`/teams/${team.id}`} kind="mens" trustScore={trustScores[team.id]?.score} trustReviewCount={trustScores[team.id]?.reviewCount ?? undefined} trustExplanation={trustScores[team.id]?.explanation || undefined} trustTier={trustScores[team.id]?.tier} viewerRole={viewerRole} logoUrl={team.logo_url} logoBg={team.logo_bg} />
           ))
         )}
       </section>
@@ -443,7 +428,7 @@ export default function TeamsPage() {
           </Link>
         </div>
       </section>
-      <section className="hc-directory-request-section" id="request-team"><Surface as="div" className="dashboard-card" style={{border:"1px solid var(--orange)"}}><div className="eyebrow">{t("directoryRequest")}</div><h2>{t("dontSeeYourTeam")}</h2><p className="muted">{t("requestTeamDescription")}</p><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10}}><input value={requestName} onChange={e=>setRequestName(e.target.value)} placeholder={t("teamName")} /><input value={requestCountry} onChange={e=>setRequestCountry(e.target.value)} placeholder={t("country")} /><input value={requestCity} onChange={e=>setRequestCity(e.target.value)} placeholder={t("cityOptional")} /><input value={requestLeague} onChange={e=>setRequestLeague(e.target.value)} placeholder={t("leagueOptional")} /></div><button className="btn" style={{marginTop:12}} disabled={requestSubmitting} onClick={async()=>{setRequestMessage("");if(!requestName.trim()||!requestCountry.trim()){setRequestMessage(t("teamNameCountryRequired"));return;}const {data:{user}}=await supabase.auth.getUser();if(!user){window.location.href="/login";return;}setRequestSubmitting(true);const {error}=await supabase.from("directory_team_requests").insert({requester_id:user.id,team_name:requestName.trim().slice(0,160),country:requestCountry.trim().slice(0,80),city:requestCity.trim().slice(0,100)||null,league_name:requestLeague.trim().slice(0,160)||null});if(error)setRequestMessage(error.message);else{setRequestMessage(t("requestSubmitted"));setRequestName("");setRequestCity("");setRequestLeague("");}setRequestSubmitting(false);}}>{requestSubmitting?t("submitting"):t("requestTeamAddition")}</button>{requestMessage&&<p className="muted" role="status">{requestMessage}</p>}</Surface></section>
+      <section className="hc-directory-request-section" id="request-team"><Surface as="div" className="dashboard-card"><div className="eyebrow">{t("directoryRequest")}</div><h2>{t("dontSeeYourTeam")}</h2><p className="muted">{t("requestTeamDescription")}</p><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10}}><input value={requestName} onChange={e=>setRequestName(e.target.value)} placeholder={t("teamName")} /><input value={requestCountry} onChange={e=>setRequestCountry(e.target.value)} placeholder={t("country")} /><input value={requestCity} onChange={e=>setRequestCity(e.target.value)} placeholder={t("cityOptional")} /><input value={requestLeague} onChange={e=>setRequestLeague(e.target.value)} placeholder={t("leagueOptional")} /></div><button className="btn" style={{marginTop:12}} disabled={requestSubmitting} onClick={async()=>{setRequestMessage("");if(!requestName.trim()||!requestCountry.trim()){setRequestMessage(t("teamNameCountryRequired"));return;}const {data:{user}}=await supabase.auth.getUser();if(!user){window.location.href="/login";return;}setRequestSubmitting(true);const {error}=await supabase.from("directory_team_requests").insert({requester_id:user.id,team_name:requestName.trim().slice(0,160),country:requestCountry.trim().slice(0,80),city:requestCity.trim().slice(0,100)||null,league_name:requestLeague.trim().slice(0,160)||null});if(error)setRequestMessage(error.message);else{setRequestMessage(t("requestSubmitted"));setRequestName("");setRequestCity("");setRequestLeague("");}setRequestSubmitting(false);}}>{requestSubmitting?t("submitting"):t("requestTeamAddition")}</button>{requestMessage&&<p className="muted" role="status">{requestMessage}</p>}</Surface></section>
 
 </main>
   );

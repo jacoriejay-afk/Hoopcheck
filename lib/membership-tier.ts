@@ -83,7 +83,7 @@ export function getHoopCheckEntitlements(args: {
   const active = isAdmin || tier !== "free";
   const isPlayer = role === "player";
   const isFan = role === "fan";
-  const recognizedRole = ["player", "fan", "coach", "scout", "agent", "club_admin", "admin"].includes(role);
+  const recognizedRole = ["player", "fan", "coach", "scout", "agent", "club_admin", "manager", "admin"].includes(role);
   const otherMember = recognizedRole && !isPlayer && !isFan;
   const canUseHoopFeed = isAdmin || (
     recognizedRole && active
