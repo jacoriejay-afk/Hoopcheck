@@ -31,6 +31,27 @@ begin
   end;
   if not rejected then raise exception 'Expected pinned-post unique index to reject direct move'; end if;
 
+  -- Direct moves must also reject duplicate memberships, the second
+  -- platform moderator, and duplicate pending requests.
+  rejected:=false;
+  begin
+    update hc_members set team_id=1 where team_id=2 and user_id=100;
+  exception when unique_violation then rejected:=true;
+  end;
+  if not rejected then raise exception 'Expected duplicate membership rejection'; end if;
+  rejected:=false;
+  begin
+    update hc_moderators set team_id=1 where id=2;
+  exception when unique_violation then rejected:=true;
+  end;
+  if not rejected then raise exception 'Expected platform moderator collision rejection'; end if;
+  rejected:=false;
+  begin
+    update hc_requests set team_id=1 where id=2;
+  exception when unique_violation then rejected:=true;
+  end;
+  if not rejected then raise exception 'Expected pending request collision rejection'; end if;
+
   -- Resolve the collision explicitly, preserve original post UUIDs, and
   -- reparent report references before retiring the alias group.
   -- Explicit collision resolution preserves the survivor membership and
