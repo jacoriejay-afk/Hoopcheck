@@ -447,7 +447,7 @@ try {
             let ancestor = element.parentElement;
             while (ancestor && ancestor !== document.body) {
               const ancestorStyle = getComputedStyle(ancestor);
-              if (["auto", "scroll", "hidden", "clip"].includes(ancestorStyle.overflowX)) {
+              if (["auto", "scroll"].includes(ancestorStyle.overflowX)) {
                 const bounds = ancestor.getBoundingClientRect();
                 if (bounds.left >= -2 && bounds.right <= viewport + 2 && ancestor.clientWidth > 0) return false;
               }
