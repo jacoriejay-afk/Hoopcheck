@@ -23,8 +23,11 @@ from prerequisites
 order by relation_name;
 
 -- Check the dedicated private-image bucket independently of table availability.
-select case when exists(select 1 from storage.buckets where id='fan-group-images')
-  then 'PRESENT' else 'MISSING' end as fan_group_images_bucket;
+select case
+  when not exists(select 1 from storage.buckets where id='fan-group-images') then 'MISSING'
+  when exists(select 1 from storage.buckets where id='fan-group-images' and public=true) then 'UNSAFE_PUBLIC'
+  else 'PRIVATE'
+end as fan_group_images_bucket;
 
 -- A missing prerequisite means STOP: build an isolated, version-matched
 -- baseline using migrations and synthetic data. Never restore production
