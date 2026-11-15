@@ -6,7 +6,6 @@ import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
-import SearchBar from "../../components/SearchBar";
 import CourtLines from "../../components/CourtLines";
 import { getGameAvailability, formatViewerLocalTime } from "../../lib/game-availability";
 import { HoopIcon } from "../../components/HoopCheckUI";
@@ -31,7 +30,7 @@ type Game = {
   period_label: string | null;
 };
 type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null; country?: string | null; league_name?: string | null };
-type Filter = "all" | "live" | "my-teams";
+type Filter = "live" | "upcoming" | "my-teams";
 
 
 
@@ -52,8 +51,8 @@ export default function LiveGamesPage() {
   const [reminders, setReminders] = useState<string[]>([]);
   const [presenceCounts, setPresenceCounts] = useState<Record<string, number>>({});
   const [joinedGameIds, setJoinedGameIds] = useState<Set<string>>(new Set());
-  const [filter, setFilter] = useState<Filter>("all");
-  const [leagueFilter, setLeagueFilter] = useState("");
+  const [filter, setFilter] = useState<Filter>("live");
+  const [collapsedLeagues, setCollapsedLeagues] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [allowed, setAllowed] = useState(false);
@@ -170,12 +169,9 @@ export default function LiveGamesPage() {
     away: teams[game.opponent_team_id || ""] || { id: game.opponent_team_id || "", name: game.opponent_name },
   })), [games, teams, clock]);
 
-  const leagues = useMemo(() => Array.from(new Set(prepared.map(({game}) => game.league_name || teams[game.team_id]?.league_name).filter((value): value is string => Boolean(value)))).sort(), [prepared, teams]);
   const filtered = useMemo(() => prepared.filter(({game,home,away,availability}) => {
     const leagueName = game.league_name || teams[game.team_id]?.league_name || "";
-    if (leagueFilter && leagueName !== leagueFilter) return false;
-    if (filter === "live" && !(availability.state === "LIVE" && availability.phase !== "post-game")) return false;
-    if (filter === "my-teams" && !followedIds.some(id => id === game.team_id || id === game.opponent_team_id)) return false;
+
     const search = query.trim().toLocaleLowerCase();
     if (search && ![home?.name, away?.name, game.opponent_name, leagueName, game.country, home?.country, away?.country].some(value => value?.toLocaleLowerCase().includes(search))) return false;
     return true;
@@ -275,42 +271,55 @@ export default function LiveGamesPage() {
 
   return <main className="page-shell hc-live-hub-page">
       <FanBasketballSideSwitch /><div className="page-container">
-    <header className="hc-live-hub-hero">
-      <div><p className="eyebrow">HOOPCHECK · LIVE GAME HUB</p><h1>LIVE GAME CHAT<span>.</span></h1><p>Watch together. Follow live and upcoming games, and join the conversation.</p></div>
-      <div className="hc-live-hero-orbit" aria-hidden="true"><span /><span /><span /></div>
-    </header>
-
-    <section className="hc-live-hub-filters" aria-label="Filter games">
+    <section aria-label="Happening Now" className="hc-live-hub-section">
+      <div className="hc-live-section-heading"><div><p className="eyebrow">THE CONVERSATION</p><h1>Happening Now</h1></div></div>
+      {filtered.filter(({game,availability}) => availability.chatOpen && (presenceCounts[game.id] || 0) > 0)
+        .sort((a,b) => (presenceCounts[b.game.id] || 0) - (presenceCounts[a.game.id] || 0))
+        .slice(0,8).length > 0
+        ? <div className="hc-live-hub-grid">{filtered.filter(({game,availability}) => availability.chatOpen && (presenceCounts[game.id] || 0) > 0)
+          .sort((a,b) => (presenceCounts[b.game.id] || 0) - (presenceCounts[a.game.id] || 0))
+          .slice(0,8).map(entry => <GameCard key={entry.game.id} entry={entry} variant={entry.game.status === "live" ? "live" : "postgame"} />)}</div>
+        : <p className="muted">Active conversations will appear here when people join a game chat.</p>}
+    </section>
+    <section className="hc-live-hub-filters" aria-label="Browse game conversations">
       <div className="hc-live-hub-filter-tabs">
-        {([{value:"all",label:"All games"},{value:"live",label:"Live only"},{value:"my-teams",label:"My teams"}] as const).map(option =>
+        {([{value:"live",label:"Live Now"},{value:"upcoming",label:"Upcoming"},{value:"my-teams",label:"My Teams"}] as const).map(option =>
           <button key={option.value} type="button" className={filter===option.value ? "is-active" : ""} onClick={() => setFilter(option.value)}>{option.label}</button>
         )}
       </div>
       <div className="hc-live-hub-filter-tools">
-        <SearchBar value={query} onChange={setQuery} onSubmit={() => {}} placeholder="Search country, team, or league…" ariaLabel="Search games by country, team, or league" buttonLabel="Search" className="hc-live-hub-search" />
-        <label className="hc-live-league-select"><span>League</span><select value={leagueFilter} onChange={event => setLeagueFilter(event.target.value)}><option value="">All leagues</option>{leagues.map(league => <option key={league} value={league}>{league}</option>)}</select></label>
+        <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search teams, leagues, countries…" aria-label="Search games" className="hc-live-hub-search" />
       </div>
     </section>
     {message && <p className="hc-live-hub-message" role="status">{message}</p>}
 
-    <section className="hc-live-hub-section">
-      <div className="hc-live-section-heading"><div><p className="eyebrow">RIGHT NOW</p><h2>LIVE NOW <span>{live.length}</span></h2></div><p>Real-time conversations, one game at a time.</p></div>
-      {live.length ? <div className="hc-live-hub-grid">{live.map(entry => <GameCard key={entry.game.id} entry={entry} variant="live" />)}</div>
-        : <div className="hc-live-empty"><div className="hc-live-empty__icon"><HoopIcon name="basketball" size={24} /></div><div><h3>No live games right now</h3>{upcoming[0] ? <><p>Next tip-off: {formatViewerLocalTime(upcoming[0].game.scheduled_at || upcoming[0].game.started_at)}. Set a reminder and we’ll keep it on your list.</p><div className="hc-live-empty__actions"><button type="button" className={`hc-remind-button ${reminders.includes(upcoming[0].game.id) ? "is-set" : ""}`} disabled={reminding===upcoming[0].game.id} onClick={() => void toggleReminder(upcoming[0].game.id)}><HoopIcon name="bell" size={16}/>{reminders.includes(upcoming[0].game.id) ? "REMINDER SET" : "REMIND ME"}</button></div></> : <p>When a game is live, its chat will appear here. There are no confirmed upcoming tip-off times yet.</p>}</div></div>}
-      {postGameOpen.length > 0 && <><div className="hc-live-section-heading hc-live-post-heading"><div><p className="eyebrow">STAY IN THE CONVERSATION</p><h2>POST-GAME CHAT <span>{postGameOpen.length}</span></h2></div></div><div className="hc-live-hub-grid">{postGameOpen.map(entry => <GameCard key={entry.game.id} entry={entry} variant="postgame" />)}</div></>}
-    </section>
-
-    <section className="hc-live-hub-section">
-      <div className="hc-live-section-heading"><div><p className="eyebrow">NEXT UP</p><h2>UPCOMING <span>{upcoming.length}</span></h2></div><p>Tip-off times are shown in your local timezone.</p></div>
-      {upcoming.length ? <div className="hc-live-hub-grid">{upcoming.map(entry => <GameCard key={entry.game.id} entry={entry} variant="upcoming" />)}</div>
-        : <div className="hc-live-empty"><div className="hc-live-empty__icon"><HoopIcon name="calendar" size={24} /></div><div><h3>No confirmed upcoming games</h3><p>There are no scheduled fixtures in the current game feed yet. We’ll show them here when the provider supplies confirmed tip-off times.</p></div></div>}
-    </section>
-
-    <section className="hc-live-hub-section hc-live-recent-section">
-      <div className="hc-live-section-heading"><div><p className="eyebrow">FINAL WHISTLE</p><h2>RECENTLY FINISHED <span>{recent.length}</span></h2></div><p>Games from the last 48 hours.</p></div>
-      {recent.length ? <div className="hc-live-hub-grid">{recent.map(entry => <GameCard key={entry.game.id} entry={entry} variant="recent" />)}</div>
-        : <div className="hc-live-recent-empty">Recent final scores will appear here when available.</div>}
-    </section>
+    {(() => {
+      const selected = filter === "upcoming" ? upcoming : filter === "my-teams"
+        ? filtered.filter(({game}) => followedIds.includes(game.team_id) || Boolean(game.opponent_team_id && followedIds.includes(game.opponent_team_id)))
+        : [...live, ...postGameOpen, ...recent];
+      const ordered = [...selected].sort((a,b) => {
+        const mineA = followedIds.includes(a.game.team_id) || Boolean(a.game.opponent_team_id && followedIds.includes(a.game.opponent_team_id));
+        const mineB = followedIds.includes(b.game.team_id) || Boolean(b.game.opponent_team_id && followedIds.includes(b.game.opponent_team_id));
+        return Number(mineB) - Number(mineA) || Date.parse(a.game.scheduled_at || "") - Date.parse(b.game.scheduled_at || "");
+      });
+      const groups = new Map<string, typeof prepared>();
+      for (const entry of ordered) {
+        const country = entry.game.country || entry.home?.country || "Other countries";
+        const league = entry.game.league_name || entry.home?.league_name || "Other leagues";
+        const key = country + " / " + league;
+        groups.set(key, [...(groups.get(key) || []), entry]);
+      }
+      return <section className="hc-live-hub-section" aria-label={filter === "my-teams" ? "My team games" : filter === "upcoming" ? "Upcoming games" : "Live conversations"}>
+        {!ordered.length && <p className="muted">No games in this segment right now.</p>}
+        {[...groups.entries()].map(([key, entries]) => <section key={key} className="hc-live-hub-section">
+          <button type="button" aria-expanded={!collapsedLeagues.includes(key)} className="hc-live-section-heading" onClick={() => setCollapsedLeagues(current => current.includes(key) ? current.filter(value => value !== key) : [...current,key])}>
+            <strong>{key}</strong><span>{entries.length} games {collapsedLeagues.includes(key) ? "＋" : "−"}</span>
+          </button>
+          {!collapsedLeagues.includes(key) && <div className="hc-live-hub-grid">{entries.map(entry =>
+            <GameCard key={entry.game.id} entry={entry} variant={entry.game.status === "live" ? "live" : ["final","finished"].includes(entry.game.status.toLowerCase()) ? "recent" : "upcoming"} />)}</div>}
+        </section>)}
+      </section>;
+    })()}
 
     {!filtered.length && <section className="hc-live-no-games"><CourtLines variant="circle" className="hc-court-empty-art" /><h2>{games.length ? "No games match these filters" : "No games scheduled yet"}</h2><p>{games.length ? "Try another team, league, or filter — or browse the full team directory." : "The game schedule has no fixtures yet. Browse the team directory while the schedule feed is being populated."}</p><Link href="/teams" className="btn">Browse Teams</Link></section>}
     <div className="hc-live-hub-footer"><span>Game states refresh automatically every 60 seconds.</span><Link href="/teams">Explore teams <span aria-hidden="true">→</span></Link></div>
