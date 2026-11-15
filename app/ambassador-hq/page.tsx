@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import { ambassadorDb, requireAmbassadorSession } from "../../lib/ambassador/server";
+import { SITE_URL } from "../../lib/site-url";
 import styles from "./ambassador.module.css";
 import ReferralCopy from "./ReferralCopy";
 
@@ -54,6 +55,10 @@ export default async function AmbassadorHQ() {
   if (error) throw new Error("Ambassador HQ is temporarily unavailable.");
   if (!data) notFound();
   const dashboard = data as Dashboard;
+  const referralOrigin = process.env.VERCEL_ENV === "production"
+    ? SITE_URL
+    : (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/+$/, "");
+  const referralLink = `${referralOrigin}/referral/${dashboard.code}`;
 
   return (
     <main className="page-shell">
@@ -80,7 +85,7 @@ export default async function AmbassadorHQ() {
           <h2>Referral link and promotional materials</h2>
           {dashboard.active ? <>
             <p>Referral code <strong>{dashboard.code}</strong></p>
-            <ReferralCopy link={`https://hoopcheck.online/referral/${dashboard.code}`} />
+            <ReferralCopy link={referralLink} />
             <p>“Know who you’re signing with. Explore HoopCheck™ with my referral link. I may earn a commission if you subscribe.”</p>
             <a href="/hoopcheck-logo.svg" download className="btn dark">
               <Image src="/hoopcheck-logo.svg" alt="" width={27} height={27} /> Download HoopCheck™ logo
