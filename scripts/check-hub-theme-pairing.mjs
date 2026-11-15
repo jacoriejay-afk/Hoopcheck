@@ -85,7 +85,7 @@ for (const route of ['"/fan-feed"', '"/team-hub/groups/"', '"/live-games"', '"/t
 // HF-5 unifies the public community feed at /feed; /fan-feed is a redirect.
 // Club Fan Groups remain separate, member-gated destinations under Team Hub.
 if (!fanFeedPage.includes('redirect("/feed")') ||
-    !fanGroupPage.includes("FAN HQ · OFFICIAL COMMUNITY") ||
+    !(fanGroupPage.includes("FAN HQ · OFFICIAL COMMUNITY") || fanGroupPage.includes("HOOPGROUPS · OFFICIAL CLUB GROUP")) ||
     !fanGroupPage.includes("Join to see the conversation") ||
     !fanGroupPage.includes("Posting to {teamName} fans") ||
     !fanGroupPage.includes("const canParticipate = isFan && summary.is_member;") ||
