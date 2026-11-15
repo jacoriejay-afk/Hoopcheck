@@ -131,7 +131,19 @@ export default function LiveGamesPage() {
     setLoading(false);
   }, [basketballSide]);
 
-  useEffect(() => { void load(true); }, [load]);
+  useEffect(() => {
+    // Supabase requests can stall on mobile networks or an expired preview session.
+    // Never leave the hub on an indefinite loading screen.
+    const watchdog = window.setTimeout(() => {
+      setMessage("Live Games took too long to load. Check your connection and try again.");
+      setLoading(false);
+    }, 15000);
+    void load(true).catch(() => {
+      setMessage("Live Games could not load. Please retry.");
+      setLoading(false);
+    }).finally(() => window.clearTimeout(watchdog));
+    return () => window.clearTimeout(watchdog);
+  }, [load]);
   useEffect(() => {
     const presenceChannel = supabase.channel("live-games-presence-counts")
       .on("postgres_changes", { event: "*", schema: "public", table: "fan_live_chat_presence" }, () => { void load(); })
