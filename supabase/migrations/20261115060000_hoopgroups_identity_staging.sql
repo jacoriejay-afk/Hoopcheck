@@ -20,6 +20,15 @@ alter table public.team_fan_groups
   drop constraint if exists team_fan_groups_privacy_check;
 alter table public.team_fan_groups
   add constraint team_fan_groups_privacy_check check (privacy in ('public','private'));
+-- Prevent a future community group from impersonating an official club and
+-- prevent official-club records from appearing in community categories.
+alter table public.team_fan_groups
+  drop constraint if exists team_fan_groups_kind_category_check;
+alter table public.team_fan_groups
+  add constraint team_fan_groups_kind_category_check
+  check ((kind = 'official_club' and category = 'club')
+      or (kind = 'community' and category <> 'club'));
+
 -- Existing rows receive defaults when columns are first added. Do not rewrite
 -- existing metadata on reapplication: privacy and ownership may have changed
 -- legitimately since the original migration. Community creation remains gated
