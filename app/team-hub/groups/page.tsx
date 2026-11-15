@@ -35,18 +35,19 @@ export default function FanGroupsPage() {
 
 
   useEffect(() => {
-    if (!userId) { setDirectoryTeams([]); return; }
+    if (!userId) { setDirectoryTeams([]); setFilterIndexFailed(false); return; }
     let active = true;
+    setFilterIndexFailed(false);
     void (async () => {
       try {
-      const all: TeamContext[] = [];
-      const batchSize = 500;
-      for (let offset = 0; offset < 100000; offset += batchSize) {
+        const all: TeamContext[] = [];
+        const batchSize = 500;
+        for (let offset = 0; offset < 100000; offset += batchSize) {
         const { data, error } = await supabase.from("team_fan_groups")
           .select("teams!inner(id,country,basketball_type,league_name)")
           .order("team_id").range(offset, offset + batchSize - 1);
         if (!active) return;
-        if (error) { setFilterIndexFailed(true); return; }
+        if (error) { if (active) setFilterIndexFailed(true); return; }
         for (const row of data ?? []) {
           const team = Array.isArray(row.teams) ? row.teams[0] : row.teams;
           if (team?.id) all.push(team as TeamContext);
@@ -57,7 +58,7 @@ export default function FanGroupsPage() {
           return;
         }
       }
-      if (active) setFilterIndexFailed(true);
+        if (active) setFilterIndexFailed(true);
       } catch {
         if (active) setFilterIndexFailed(true);
       }
