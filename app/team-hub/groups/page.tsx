@@ -24,10 +24,10 @@ export default function FanGroupsPage() {
   const [league, setLeague] = useState("");
   const [page, setPage] = useState(0);
   const [result, setResult] = useState<{
-    userId: string; query: string; page: number; groups: Group[]; teams: Record<string, TeamContext>; hasNext: boolean; failed: boolean;
+    userId: string; query: string; country: string; league: string; page: number; groups: Group[]; teams: Record<string, TeamContext>; hasNext: boolean; failed: boolean;
   } | null>(null);
-  const current = result?.userId === userId && result.query === query && result.page === page ? result : null;
-  const visibleGroups = current?.groups.filter(g => (!country || current.teams[g.team_id]?.country === country) && (!league || current.teams[g.team_id]?.league_name === league)) ?? [];
+  const current = result?.userId === userId && result.query === query && result.country === country && result.league === league && result.page === page ? result : null;
+  const visibleGroups = current?.groups ?? [];
 
   useEffect(() => {
     if (!userId) { setMemberships([]); return; }
@@ -49,21 +49,25 @@ export default function FanGroupsPage() {
     setTotalGroups(null);
     const timer = window.setTimeout(() => {
       const start = page * PAGE_SIZE;
-      let request = supabase.from("team_fan_groups").select("team_id,group_name")
+      let request = supabase.from("team_fan_groups").select("team_id,group_name,teams!inner(id,country,basketball_type,league_name)")
         .order("group_name").order("team_id").range(start, start + PAGE_SIZE);
       const term = query.replace(/[%_*\\]/g, " ").trim();
       if (term) request = request.ilike("group_name", `%${term}%`);
-      const countRequest = supabase.from("team_fan_groups").select("team_id", { count: "exact", head: true });
-      const counted = term ? countRequest.ilike("group_name", `%${term}%`) : countRequest;
+      if (country) request = request.eq("teams.country", country);
+      if (league) request = request.eq("teams.league_name", league);
+      const countRequest = supabase.from("team_fan_groups").select("team_id,teams!inner(id)", { count: "exact", head: true });
+      let counted = term ? countRequest.ilike("group_name", `%${term}%`) : countRequest;
+      if (country) counted = counted.eq("teams.country", country);
+      if (league) counted = counted.eq("teams.league_name", league);
       void Promise.all([Promise.resolve(request), Promise.resolve(counted)]).then(async ([{ data, error }, { count, error: countError }]) => {
         if (active) setTotalGroups(countError ? null : count);
-        const groups = (data ?? []).slice(0, PAGE_SIZE);
+        const groups = (data ?? []).slice(0, PAGE_SIZE).map(({ team_id, group_name }) => ({ team_id, group_name }));
         const teams: Record<string, TeamContext> = {};
         if (!error && groups.length) {
-          const { data: teamRows } = await supabase.from("teams")
-            .select("id,country,basketball_type,league_name")
-            .in("id", groups.map(group => group.team_id));
-          for (const team of (teamRows ?? []) as TeamContext[]) teams[team.id] = team;
+          for (const group of (data ?? [])) {
+            const team = Array.isArray(group.teams) ? group.teams[0] : group.teams;
+            if (team?.id) teams[team.id] = team as TeamContext;
+          }
         }
         if (!error && groups.length) {
           const summaries = await Promise.all(groups.map(async group => {
@@ -74,15 +78,15 @@ export default function FanGroupsPage() {
           if (active) setMemberCounts(old => ({...old, ...Object.fromEntries(summaries.filter(([,n]) => typeof n === "number"))}));
         }
         if (active) setResult({
-          userId, query, page, groups, teams,
+          userId, query, country, league, page, groups, teams,
           hasNext: (data?.length ?? 0) > PAGE_SIZE, failed: Boolean(error),
         });
       }, () => {
-        if (active) setResult({ userId, query, page, groups: [], teams: {}, hasNext: false, failed: true });
+        if (active) setResult({ userId, query, country, league, page, groups: [], teams: {}, hasNext: false, failed: true });
       });
     }, query ? 250 : 0);
     return () => { active = false; window.clearTimeout(timer); };
-  }, [userId, query, page]);
+  }, [userId, query, country, league, page]);
 
   return <main className="page-shell hc-fan-groups-directory">
     <div className="page-container">
@@ -92,7 +96,7 @@ export default function FanGroupsPage() {
       </Link> : <>
         <section aria-label="My Groups"><h2>My Groups</h2>{memberships.length ? <div className="hc-groups-compact">{memberships.map(m => <Link key={m.team_id} href={`/team-hub/groups/${m.team_id}`}>{m.group_name.replace(/ Fan Group$/, "")}</Link>)}</div> : <p className="muted">No joined groups yet.</p>}</section>
         <section aria-label="Categories"><h2>Browse categories</h2><div className="hc-groups-categories">{["Club Groups","Players","Fans","Coaches","Agents","Scouts","Teams","Open Community"].map(name => <button key={name} type="button" disabled={name !== "Club Groups"} title={name !== "Club Groups" ? "Community groups are not yet available" : undefined}>{name}</button>)}</div></section>
-        <p className="muted">{totalGroups === null ? "Group count unavailable" : `${totalGroups.toLocaleString()} matching official club groups`} · Country and league filters apply to the current results page until the full directory index is available.</p>
+        <p className="muted">{totalGroups === null ? "Group count unavailable" : `${totalGroups.toLocaleString()} matching official club groups`} · Country and league filters apply to all matching groups.</p>
         <div className="hc-groups-filters"><label>Country <select value={country} onChange={e=>{setCountry(e.target.value);setLeague("");setPage(0);}}><option value="">All countries</option>{Array.from(new Set(Object.values(current?.teams || {}).map(t=>t.country).filter(Boolean))).sort().map(v=><option key={v!} value={v!}>{v}</option>)}</select></label><label>League <select value={league} onChange={e=>{setLeague(e.target.value);setPage(0);}}><option value="">All leagues</option>{Array.from(new Set(Object.values(current?.teams || {}).filter(t=>!country||t.country===country).map(t=>t.league_name).filter(Boolean))).sort().map(v=><option key={v!} value={v!}>{v}</option>)}</select></label></div>
         <input type="search" aria-label={spanish ? "Buscar grupos" : "Search HoopGroups"}
           placeholder={spanish ? "Buscar grupos" : "Search HoopGroups"}
