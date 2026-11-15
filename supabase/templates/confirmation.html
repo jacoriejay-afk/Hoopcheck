@@ -1,0 +1,8 @@
+<h2>Confirm your HoopCheck™ email</h2>
+<p>Verify your email address to finish setting up your HoopCheck account.</p>
+{{ if or (eq .RedirectTo "https://hoopcheck.online/auth/confirm") (eq .RedirectTo "https://hoopcheck-git-fix-auth-email-recovery-confirmation-hoopcheck.vercel.app/auth/confirm") }}
+<p><a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email">Verify email address</a></p>
+{{ else }}
+<p><a href="{{ .ConfirmationURL }}">Verify email address</a></p>
+{{ end }}
+<p>If you did not create a HoopCheck account, you can ignore this email.</p>
