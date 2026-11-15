@@ -433,6 +433,22 @@ try {
         );
       }
 
+      // UI-FINAL: detect horizontal overflow without masking it with body overflow-x: clip.
+      // The widest visible element matters even when the document reports no scroll width.
+      const overflow = await page.evaluate(() => {
+        const viewport = document.documentElement.clientWidth;
+        return Array.from(document.querySelectorAll("main *, header.site-header-global *, nav *"))
+          .filter(element => {
+            const style = getComputedStyle(element);
+            if (style.display === "none" || style.visibility === "hidden" || style.position === "fixed") return false;
+            const rect = element.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0 && (rect.left < -2 || rect.right > viewport + 2);
+          })
+          .slice(0, 15)
+          .map(element => ({ tag: element.tagName.toLowerCase(), className: typeof element.className === "string" ? element.className.slice(0, 100) : "", rect: { left: Math.round(element.getBoundingClientRect().left), right: Math.round(element.getBoundingClientRect().right) } }));
+      });
+      assert.equal(overflow.length, 0, `${routeName}/${theme}: visible horizontal overflow: ${JSON.stringify(overflow)}`);
+
       results.push({ route: path, theme, computed });
       await page.screenshot({
         path: `${artifactsDir}/${routeName}-${theme}-${testLanguage}-mobile.png`,
