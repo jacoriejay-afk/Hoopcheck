@@ -175,7 +175,7 @@ export default function LiveGamesPage() {
     const search = query.trim().toLocaleLowerCase();
     if (search && ![home?.name, away?.name, game.opponent_name, leagueName, game.country, home?.country, away?.country].some(value => value?.toLocaleLowerCase().includes(search))) return false;
     return true;
-  }), [prepared, leagueFilter, filter, followedIds, query, teams]);
+  }), [prepared, query, teams]);
 
   const nowMs = clock.getTime();
   const live = filtered.filter(({game,availability}) =>
