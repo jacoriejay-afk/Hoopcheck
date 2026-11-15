@@ -37,6 +37,7 @@ function fixture() {
     invoicePayments: { list: async () => ({ data: [payment] }) },
     paymentIntents: { retrieve: async () => ({ latest_charge: charge.id }) },
     charges: { retrieve: async () => charge },
+    refunds: { list: async () => ({ data: [{ id: "re_1", charge: "ch_1", amount: 150, currency: "usd", status: "succeeded", created: 1700000000 }], has_more: false }) },
     disputes: { list: async () => ({ data: [{ status: "lost", amount: 300 }, { status: "won", amount: 199 }] }) },
   };
   const subscription = { id: "sub_1", customer: "cus_1", status: "active", created: 1700000000,
@@ -95,9 +96,13 @@ test("signed refund and dispute events reconcile current charge using cumulative
   assert.equal(f.calls[0].name, "ambassador_has_charge");
   assert.equal(f.calls[1].name, "ambassador_reconcile_charge");
   assert.equal(f.calls[1].args.p_deduction, 450);
+  assert.equal(f.calls[2].name, "ambassador_record_refund_audit");
+  assert.equal(f.calls[2].args.p_refund, "re_1");
+  assert.equal(f.calls[2].args.p_amount, 150);
   f.charge.amount_refunded = 350;
   await reconcileAmbassadorEvent(f.stripe, f.rpc, event);
-  assert.equal(f.calls.at(-1).args.p_deduction, 499);
+  assert.equal(f.calls.at(-2).args.p_deduction, 499);
+  assert.equal(f.calls.at(-1).name, "ambassador_record_refund_audit");
 });
 
 test("checkout and cancellation update referral status without generating earnings", async () => {
