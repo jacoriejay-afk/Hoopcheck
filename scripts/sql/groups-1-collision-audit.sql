@@ -21,11 +21,20 @@ with reviewed as (
    (select count(*) from public.team_fan_group_moderators m
      where m.team_id=r.survivor_id and m.moderator_type='platform') survivor_platform_moderators,
    (select count(*) from public.team_fan_group_reports x
-     where x.team_id=r.alias_id) reports_to_preserve
+     where x.team_id=r.alias_id) reports_to_preserve,
+   (select count(*) from public.team_fan_group_comments x join public.team_fan_group_posts p on p.id=x.post_id
+     where p.team_id=r.alias_id) comments_to_preserve,
+   (select count(*) from public.team_fan_group_posts p
+     where p.team_id=r.alias_id and p.image_url is not null) image_posts_to_preserve,
+   (select count(*) from storage.objects o
+     where o.bucket_id='fan-group-images' and split_part(o.name,'/',1)=r.alias_id::text) private_objects_under_alias,
+   (select count(*) from public.team_fan_group_reports x join public.team_fan_group_posts p on p.id=x.post_id
+     where x.team_id=r.alias_id and p.team_id<>x.team_id) mismatched_report_team_ids
  from reviewed r
 )
 select *, (alias_pinned_posts>0 and survivor_pinned_posts>0) as pinned_conflict,
- (alias_platform_moderators>0 and survivor_platform_moderators>0) as platform_moderator_conflict
+ (alias_platform_moderators>0 and survivor_platform_moderators>0) as platform_moderator_conflict,
+ (mismatched_report_team_ids>0) as inconsistent_report_link
 from collisions order by alias_id;
 
 -- Group-image storage paths are keyed by the original team UUID. A merge must
