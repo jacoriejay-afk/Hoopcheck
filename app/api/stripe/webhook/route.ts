@@ -385,11 +385,8 @@ export async function POST(
           signature,
           webhookSecret
         );
-    } catch (error) {
-      console.error(
-        "Stripe signature verification failed:",
-        error
-      );
+    } catch {
+      console.warn("Stripe signature verification failed.");
 
       return NextResponse.json(
         {
