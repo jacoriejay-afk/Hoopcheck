@@ -8,7 +8,7 @@ import { useLanguage } from "../../../components/LanguageProvider";
 import { supabase } from "../../../lib/supabase";
 
 type Group = { team_id: string; group_name: string };
-type Membership = { team_id: string };
+type Membership = { team_id: string; group_name: string };
 type TeamContext = { id: string; country: string | null; basketball_type: string | null; league_name: string | null };
 const PAGE_SIZE = 24;
 
@@ -30,9 +30,14 @@ export default function FanGroupsPage() {
   useEffect(() => {
     if (!userId) { setMemberships([]); return; }
     let active = true;
-    void supabase.from("team_fan_group_members").select("team_id").eq("user_id", userId).then(({data}) => {
-      if (active) setMemberships((data ?? []) as Membership[]);
-    });
+    void (async () => {
+      const { data: rows, error } = await supabase.from("team_fan_group_members").select("team_id").eq("user_id", userId);
+      if (error || !rows?.length) { if (active) setMemberships([]); return; }
+      const ids = rows.map(row => row.team_id);
+      const { data: groups } = await supabase.from("team_fan_groups").select("team_id,group_name").in("team_id", ids);
+      const names = new Map((groups ?? []).map(group => [group.team_id, group.group_name]));
+      if (active) setMemberships(ids.filter(id => names.has(id)).map(id => ({team_id:id,group_name:names.get(id)!})));
+    })();
     return () => { active = false; };
   }, [userId]);
 
@@ -79,11 +84,12 @@ export default function FanGroupsPage() {
       {!userId ? <Link className="btn" href="/login?returnTo=%2Fteam-hub%2Fgroups">
         {spanish ? "Inicia sesión para ver los grupos" : "Sign in to browse groups"}
       </Link> : <>
-        <section aria-label="My Groups"><h2>My Groups</h2>{memberships.length ? <div className="hc-groups-compact">{memberships.map(m => <Link key={m.team_id} href={`/team-hub/groups/${m.team_id}`}>{current?.groups.find(g => g.team_id === m.team_id)?.group_name || "View club group"}</Link>)}</div> : <p className="muted">No joined groups yet.</p>}</section>
+        <section aria-label="My Groups"><h2>My Groups</h2>{memberships.length ? <div className="hc-groups-compact">{memberships.map(m => <Link key={m.team_id} href={`/team-hub/groups/${m.team_id}`}>{m.group_name.replace(/ Fan Group$/, "")}</Link>)}</div> : <p className="muted">No joined groups yet.</p>}</section>
         <section aria-label="Categories"><h2>Browse categories</h2><div className="hc-groups-categories">{["Club Groups","Players","Fans","Coaches","Agents","Scouts","Teams","Open Community"].map(name => <button key={name} type="button" disabled={name !== "Club Groups"} title={name !== "Club Groups" ? "Community groups are not yet available" : undefined}>{name}</button>)}</div></section>
+        <p className="muted">Country and league filters apply to the current results page until the full directory index is available.</p>
         <div className="hc-groups-filters"><label>Country <select value={country} onChange={e=>{setCountry(e.target.value);setLeague("");}}><option value="">All countries</option>{Array.from(new Set(Object.values(current?.teams || {}).map(t=>t.country).filter(Boolean))).sort().map(v=><option key={v!} value={v!}>{v}</option>)}</select></label><label>League <select value={league} onChange={e=>setLeague(e.target.value)}><option value="">All leagues</option>{Array.from(new Set(Object.values(current?.teams || {}).filter(t=>!country||t.country===country).map(t=>t.league_name).filter(Boolean))).sort().map(v=><option key={v!} value={v!}>{v}</option>)}</select></label></div>
         <input type="search" aria-label={spanish ? "Buscar grupos" : "Search HoopGroups"}
-          placeholder={spanish ? "Buscar grupos" : "Search fan groups"}
+          placeholder={spanish ? "Buscar grupos" : "Search HoopGroups"}
           maxLength={120} value={query} onChange={event => {
             setQuery(event.target.value);
             setPage(0);
