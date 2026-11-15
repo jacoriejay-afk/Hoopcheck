@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getStripeKeyMode } from "../../../../../lib/stripe-key-mode";
+import { stripeMatchesDeployment } from "../../../../../lib/stripe-key-mode";
 import { createClient } from "@supabase/supabase-js";
 import { getActiveMembershipTier } from "../../../../../lib/membership-tier";
 
@@ -47,16 +47,16 @@ export async function POST(
     process.env.VERCEL_ENV === "production" ? "live" : "test";
   const configuredMode = process.env.STRIPE_CHECKOUT_MODE;
   const checkoutEnabled = process.env.STRIPE_CHECKOUT_ENABLED === "true";
-  const keyPrefixValid = getStripeKeyMode(stripeSecretKey) === deploymentMode;
+  const stripeConfigMatches = stripeMatchesDeployment(stripeSecretKey);
 
-  if (!checkoutEnabled || configuredMode !== deploymentMode || !keyPrefixValid) {
+  if (!checkoutEnabled || configuredMode !== deploymentMode || !stripeConfigMatches) {
     // Log only non-secret configuration booleans/modes; never log key material.
     console.warn("Stripe checkout configuration guard failed", {
       checkoutEnabled,
       configuredMode: configuredMode ?? null,
       deploymentMode,
       hasSecretKey: Boolean(stripeSecretKey),
-      keyPrefixValid,
+      stripeConfigMatches,
     });
     return NextResponse.json(
       { error: "Checkout is temporarily unavailable while payment configuration is verified." },

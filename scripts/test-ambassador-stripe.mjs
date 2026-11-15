@@ -110,3 +110,33 @@ test("checkout and cancellation update referral status without generating earnin
     ["ambassador_subscription_status", "cancelling"], ["ambassador_subscription_status", "canceled"],
   ]);
 });
+
+test("test Stripe credentials require the separate Supabase project", async () => {
+  const source = await readFile(new URL("../lib/stripe-key-mode.ts", import.meta.url), "utf8");
+  const { stripeMatchesDeployment } = compile(source, "stripe-key-mode.ts");
+  const productionUrl = "https://ucbdceaieyenljcwlhnj.supabase.co";
+  const isolatedUrl = "https://test-project.supabase.co";
+  const names = ["VERCEL_ENV", "NEXT_PUBLIC_SUPABASE_URL", "HOOPCHECK_STRIPE_TEST_SUPABASE_URL"];
+  const original = Object.fromEntries(names.map(name => [name, process.env[name]]));
+  try {
+    process.env.VERCEL_ENV = "preview";
+    process.env.NEXT_PUBLIC_SUPABASE_URL = productionUrl;
+    delete process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL;
+    assert.equal(stripeMatchesDeployment("sk_test_fixture"), false);
+    process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL = productionUrl;
+    assert.equal(stripeMatchesDeployment("sk_test_fixture"), false);
+    process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL = isolatedUrl;
+    assert.equal(stripeMatchesDeployment("sk_test_fixture"), false);
+    process.env.NEXT_PUBLIC_SUPABASE_URL = isolatedUrl;
+    assert.equal(stripeMatchesDeployment("rk_test_fixture"), true);
+    assert.equal(stripeMatchesDeployment("sk_live_fixture"), false);
+    process.env.VERCEL_ENV = "production";
+    assert.equal(stripeMatchesDeployment("sk_test_fixture"), false);
+    assert.equal(stripeMatchesDeployment("sk_live_fixture"), true);
+  } finally {
+    for (const name of names) {
+      if (original[name] === undefined) delete process.env[name];
+      else process.env[name] = original[name];
+    }
+  }
+});

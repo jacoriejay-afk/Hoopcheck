@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { stripeMatchesDeployment } from "../stripe-key-mode";
 
 export type OwnerStripeSummary = {
   currency: string;
@@ -15,7 +16,7 @@ export type OwnerStripeSummary = {
 export async function getOwnerStripeSummary(): Promise<OwnerStripeSummary> {
   const unavailable: OwnerStripeSummary = { currency: "usd", paidInvoices: 0, activeSubscriptions: null, subscriptionsIncomplete: false, refundedMinor: null, refundsIncomplete: false, grossPaidMinor: 0, incomplete: false, error: "Stripe reporting unavailable" };
   const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) return unavailable;
+  if (!key || !stripeMatchesDeployment(key)) return unavailable;
   const since = Math.floor(Date.now() / 1000) - 30 * 86400;
   try {
     const stripe = new Stripe(key);
