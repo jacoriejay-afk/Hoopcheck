@@ -278,7 +278,7 @@ export default function LiveGamesPage() {
         .slice(0,8).length > 0
         ? <div className="hc-live-hub-grid">{filtered.filter(({game,availability}) => availability.chatOpen && (presenceCounts[game.id] || 0) > 0)
           .sort((a,b) => (presenceCounts[b.game.id] || 0) - (presenceCounts[a.game.id] || 0))
-          .slice(0,8).map(entry => <GameCard key={entry.game.id} entry={entry} variant={entry.game.status === "live" ? "live" : "postgame"} />)}</div>
+          .slice(0,8).map(entry => <GameCard key={entry.game.id} entry={entry} variant={entry.game.status.toLowerCase() === "live" ? "live" : ["final", "finished"].includes(entry.game.status.toLowerCase()) || entry.availability.phase === "post-game" ? "postgame" : "upcoming"} />)}</div>
         : <p className="muted">Active conversations will appear here when people join a game chat.</p>}
     </section>
     <section className="hc-live-hub-filters" aria-label="Browse game conversations">
