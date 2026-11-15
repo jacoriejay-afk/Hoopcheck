@@ -24,6 +24,21 @@ begin
  left join public.team_fan_groups c on c.team_id=r.canonical_team_id
  where a.team_id is null or c.team_id is null or a.created_at<c.created_at;
  if v_count > 0 then raise exception 'Unsafe identity mapping: % missing groups or older aliases',v_count; end if;
+ select count(*) into v_count
+ from public.hoopgroup_retired_group_redirects d
+ left join public.hoopgroup_club_identity_review r on r.team_id=d.retired_team_id
+ where r.team_id is null or r.canonical_team_id<>d.survivor_team_id;
+ if v_count > 0 then raise exception 'Unsafe redirect: % entries do not match reviewed identities',v_count; end if;
+ select count(*) into v_count
+ from public.hoopgroup_retired_group_redirects d
+ where exists(select 1 from public.hoopgroup_retired_group_redirects next
+              where next.retired_team_id=d.survivor_team_id);
+ if v_count > 0 then raise exception 'Unsafe redirect: % chained redirects',v_count; end if;
+ select count(*) into v_count
+ from public.hoopgroup_retired_group_redirects d
+ left join public.team_fan_groups survivor on survivor.team_id=d.survivor_team_id
+ where survivor.team_id is null;
+ if v_count > 0 then raise exception 'Unsafe redirect: % missing survivor groups',v_count; end if;
  raise notice 'GROUPS-1 identity mapping structural assertions passed';
 end $$;
 
