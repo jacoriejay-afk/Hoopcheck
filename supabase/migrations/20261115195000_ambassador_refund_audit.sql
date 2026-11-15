@@ -20,3 +20,39 @@ revoke all on table public.ambassador_refund_audit from anon, authenticated;
 -- Deliberately no client RLS policy. Webhook writes require the service role.
 -- Existing ambassador_commission_adjustments remain cumulative delta entries.
 -- This migration is additive; it does not backfill or change production commissions.
+
+-- SECURITY DEFINER is intentionally restricted to the service role. No client may
+-- forge Stripe refund evidence, even when a client can call other RPCs.
+create or replace function public.ambassador_record_refund_audit(
+  p_refund text, p_charge text, p_amount bigint, p_currency text,
+  p_status text, p_created_at timestamptz
+) returns void language plpgsql security definer set search_path = ''
+as $$
+declare v_commission uuid;
+begin
+  if auth.role() is distinct from 'service_role' then
+    raise exception 'service role required';
+  end if;
+  if p_refund is null or p_charge is null or p_amount is null
+    or p_currency is null or p_status is null or p_created_at is null then
+    raise exception 'missing refund audit fields';
+  end if;
+  select id into v_commission
+    from public.ambassador_commissions where stripe_charge_id = p_charge;
+  if v_commission is null then return; end if;
+  insert into public.ambassador_refund_audit
+    (stripe_refund_id, stripe_charge_id, commission_id, amount_minor,
+     currency, refund_status, stripe_created_at)
+  values (p_refund, p_charge, v_commission, p_amount, lower(p_currency),
+          p_status, p_created_at)
+  on conflict (stripe_refund_id) do update
+    set refund_status = excluded.refund_status, updated_at = now()
+    where public.ambassador_refund_audit.stripe_charge_id = excluded.stripe_charge_id
+      and public.ambassador_refund_audit.commission_id = excluded.commission_id
+      and public.ambassador_refund_audit.amount_minor = excluded.amount_minor
+      and public.ambassador_refund_audit.currency = excluded.currency
+      and public.ambassador_refund_audit.stripe_created_at = excluded.stripe_created_at;
+end;
+$$;
+revoke all on function public.ambassador_record_refund_audit(text,text,bigint,text,text,timestamptz) from public, anon, authenticated;
+grant execute on function public.ambassador_record_refund_audit(text,text,bigint,text,text,timestamptz) to service_role;
