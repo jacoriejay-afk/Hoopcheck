@@ -19,6 +19,7 @@ export default function FanGroupsPage() {
   const [query, setQuery] = useState("");
   const [memberships, setMemberships] = useState<Membership[]>([]);
   const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
+  const [totalGroups, setTotalGroups] = useState<number | null>(null);
   const [country, setCountry] = useState("");
   const [league, setLeague] = useState("");
   const [page, setPage] = useState(0);
@@ -45,13 +46,17 @@ export default function FanGroupsPage() {
   useEffect(() => {
     if (!userId) return;
     let active = true;
+    setTotalGroups(null);
     const timer = window.setTimeout(() => {
       const start = page * PAGE_SIZE;
       let request = supabase.from("team_fan_groups").select("team_id,group_name")
         .order("group_name").order("team_id").range(start, start + PAGE_SIZE);
       const term = query.replace(/[%_*\\]/g, " ").trim();
       if (term) request = request.ilike("group_name", `%${term}%`);
-      void Promise.resolve(request).then(async ({ data, error }) => {
+      const countRequest = supabase.from("team_fan_groups").select("team_id", { count: "exact", head: true });
+      const counted = term ? countRequest.ilike("group_name", `%${term}%`) : countRequest;
+      void Promise.all([Promise.resolve(request), Promise.resolve(counted)]).then(async ([{ data, error }, { count, error: countError }]) => {
+        if (active) setTotalGroups(countError ? null : count);
         const groups = (data ?? []).slice(0, PAGE_SIZE);
         const teams: Record<string, TeamContext> = {};
         if (!error && groups.length) {
@@ -87,7 +92,7 @@ export default function FanGroupsPage() {
       </Link> : <>
         <section aria-label="My Groups"><h2>My Groups</h2>{memberships.length ? <div className="hc-groups-compact">{memberships.map(m => <Link key={m.team_id} href={`/team-hub/groups/${m.team_id}`}>{m.group_name.replace(/ Fan Group$/, "")}</Link>)}</div> : <p className="muted">No joined groups yet.</p>}</section>
         <section aria-label="Categories"><h2>Browse categories</h2><div className="hc-groups-categories">{["Club Groups","Players","Fans","Coaches","Agents","Scouts","Teams","Open Community"].map(name => <button key={name} type="button" disabled={name !== "Club Groups"} title={name !== "Club Groups" ? "Community groups are not yet available" : undefined}>{name}</button>)}</div></section>
-        <p className="muted">Country and league filters apply to the current results page until the full directory index is available.</p>
+        <p className="muted">{totalGroups === null ? "Group count unavailable" : `${totalGroups.toLocaleString()} matching official club groups`} · Country and league filters apply to the current results page until the full directory index is available.</p>
         <div className="hc-groups-filters"><label>Country <select value={country} onChange={e=>{setCountry(e.target.value);setLeague("");setPage(0);}}><option value="">All countries</option>{Array.from(new Set(Object.values(current?.teams || {}).map(t=>t.country).filter(Boolean))).sort().map(v=><option key={v!} value={v!}>{v}</option>)}</select></label><label>League <select value={league} onChange={e=>{setLeague(e.target.value);setPage(0);}}><option value="">All leagues</option>{Array.from(new Set(Object.values(current?.teams || {}).filter(t=>!country||t.country===country).map(t=>t.league_name).filter(Boolean))).sort().map(v=><option key={v!} value={v!}>{v}</option>)}</select></label></div>
         <input type="search" aria-label={spanish ? "Buscar grupos" : "Search HoopGroups"}
           placeholder={spanish ? "Buscar grupos" : "Search HoopGroups"}
