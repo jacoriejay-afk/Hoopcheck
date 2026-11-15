@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import { ambassadorDb, requireAmbassadorSession } from "../../lib/ambassador/server";
@@ -62,6 +63,7 @@ export default async function AmbassadorHQ() {
             <HoopIcon name="shield-check" size={18} /> Official HoopCheck™ Ambassador
           </span>}
           <h1>Ambassador HQ</h1>
+          <Link href="/account">Back to Account</Link>
           <p className="muted">{dashboard.active ? "Your referral campaign is active."
             : dashboard.status === "pending" ? "Campaign awaiting signed terms and owner activation."
             : "Your referral campaign is closed to new signups."}</p>
