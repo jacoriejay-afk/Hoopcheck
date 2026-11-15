@@ -20,10 +20,10 @@ alter table public.team_fan_groups
   drop constraint if exists team_fan_groups_privacy_check;
 alter table public.team_fan_groups
   add constraint team_fan_groups_privacy_check check (privacy in ('public','private'));
--- Existing rows are official clubs; do not permit community inserts via existing API.
-update public.team_fan_groups
-set kind='official_club',category='club',privacy='public',created_by=null
-where kind='official_club';
+-- Existing rows receive defaults when columns are first added. Do not rewrite
+-- existing metadata on reapplication: privacy and ownership may have changed
+-- legitimately since the original migration. Community creation remains gated
+-- at the application/service layer pending Report + Block verification.
 
 -- Reviewed mapping staging: one team -> one canonical survivor team.
 -- No public client grants; review and migration must be performed by privileged operators.
