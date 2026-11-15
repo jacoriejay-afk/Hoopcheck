@@ -124,7 +124,7 @@ export default function FanGroupsPage() {
       }).catch(() => {
         if (active) {
           setTotalGroups(null);
-          setResult({ userId, query, country, league, page, groups: [], teams: {}, hasNext: false, failed: true });
+          setResult({ userId, query, country, league, side, page, groups: [], teams: {}, hasNext: false, failed: true });
         }
       });
     }, query ? 250 : 0);
