@@ -56,6 +56,19 @@ begin
  from public.hoopgroup_retired_group_redirects d
  join public.team_fan_group_join_requests q on q.team_id=d.retired_team_id;
  if v_count > 0 then raise exception 'Incomplete retirement: % join requests remain on redirected groups',v_count; end if;
+ select count(*) into v_count
+ from public.hoopgroup_retired_group_redirects d
+ join public.team_fan_group_moderators m on m.team_id=d.retired_team_id;
+ if v_count > 0 then raise exception 'Incomplete retirement: % moderators remain on redirected groups',v_count; end if;
+ select count(*) into v_count
+ from public.hoopgroup_retired_group_redirects d
+ join public.team_fan_group_reports r on r.team_id=d.retired_team_id;
+ if v_count > 0 then raise exception 'Incomplete retirement: % reports remain on redirected groups',v_count; end if;
+ select count(*) into v_count
+ from public.hoopgroup_retired_group_redirects d
+ join storage.objects o on o.bucket_id='fan-group-images'
+   and split_part(o.name,'/',1)=d.retired_team_id::text;
+ if v_count > 0 then raise exception 'Incomplete retirement: % private images remain on redirected groups',v_count; end if;
  raise notice 'GROUPS-1 identity mapping structural assertions passed';
 end $$;
 
