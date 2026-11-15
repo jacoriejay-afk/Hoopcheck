@@ -28,7 +28,7 @@
     "android": {
       "package": "online.hoopcheck.app"
     },
-    "owner": "Jayycorrie",
+    "owner": "hoopcheck",
     "extra": {
       "eas": {
         "projectId": "62f822cb-ab9a-42ba-8456-007d2822ef70"
