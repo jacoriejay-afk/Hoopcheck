@@ -3,7 +3,7 @@
 -- Matching name + country + basketball side is a CANDIDATE only.
 -- No inserts, updates, deletes, merges, or privilege changes.
 with candidates as (
- select lower(regexp_replace(trim(t.name),'\\s+',' ','g')) as normalized_name,
+ select lower(regexp_replace(trim(t.name),'[[:space:]]+',' ','g')) as normalized_name,
         lower(coalesce(trim(t.country),'')) as normalized_country,
         coalesce(t.basketball_type,'') as basketball_side,
         count(*) as team_rows,
