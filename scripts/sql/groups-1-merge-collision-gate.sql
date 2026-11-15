@@ -23,6 +23,16 @@ begin
   select count(*) into n
   from public.hoopgroup_club_identity_review r
   where exists (
+    select 1 from public.team_fan_group_moderators a
+    join public.team_fan_group_moderators b
+      on b.team_id=r.canonical_team_id and b.user_id=a.user_id
+    where a.team_id=r.team_id and a.user_id is not null
+  );
+  if n>0 then raise exception 'GROUPS-1: % reviewed pairs have duplicate named moderators',n; end if;
+
+  select count(*) into n
+  from public.hoopgroup_club_identity_review r
+  where exists (
     select 1 from public.team_fan_group_join_requests a
     join public.team_fan_group_join_requests b
       on b.team_id=r.canonical_team_id and b.user_id=a.user_id and b.status='pending'
