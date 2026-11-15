@@ -17,22 +17,35 @@ const views = [
   { name: "Ambassador HQ", href: "/ambassador-hq" },
 ] as const;
 
+async function getOwnerMetrics() {
+  const metrics = [
+    { label: "Registered profiles", table: "profiles", column: "id" },
+    { label: "Active/trialing subscription records", table: "subscriptions", column: "user_id" },
+    { label: "Ambassador campaigns", table: "ambassador_campaigns", column: "code" },
+    { label: "Commission records", table: "ambassador_commissions", column: "id" },
+  ] as const;
+
+  // Previews can verify account access without privileged database credentials.
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return metrics.map(({ label }) => ({ label, value: "Unavailable" }));
+  }
+
+  const db = ambassadorDb();
+  return Promise.all(metrics.map(async ({ label, table, column }) => {
+    const query = db.from(table).select(column, { count: "exact", head: true });
+    const { count, error } = await (table === "subscriptions"
+      ? query.in("status", ["active", "trialing"])
+      : query);
+    return { label, value: error || count == null ? "Unavailable" : String(count) };
+  }));
+}
+
 export default async function OwnerHQ() {
   await requireAmbassadorSession("/owner-hq", true);
-  const db = ambassadorDb();
-  const [stripeSummary, members, subscriptions, campaigns, commissions] = await Promise.all([
+  const [stripeSummary, metrics] = await Promise.all([
     getOwnerStripeSummary(),
-    db.from("profiles").select("id", { count: "exact", head: true }),
-    db.from("subscriptions").select("user_id", { count: "exact", head: true }).in("status", ["active", "trialing"]),
-    db.from("ambassador_campaigns").select("code", { count: "exact", head: true }),
-    db.from("ambassador_commissions").select("id", { count: "exact", head: true }),
+    getOwnerMetrics(),
   ]);
-  const metrics = [
-    { label: "Registered profiles", value: members.error ? "Unavailable" : String(members.count ?? 0) },
-    { label: "Active/trialing subscription records", value: subscriptions.error ? "Unavailable" : String(subscriptions.count ?? 0) },
-    { label: "Ambassador campaigns", value: campaigns.error ? "Unavailable" : String(campaigns.count ?? 0) },
-    { label: "Commission records", value: commissions.error ? "Unavailable" : String(commissions.count ?? 0) },
-  ];
   return <main className="page-shell">
     <div className="page-container" style={{ display: "grid", gap: 20, paddingBlock: 24 }}>
       <header className="hero-card">
