@@ -1,0 +1,36 @@
+-- GROUPS-1: regression assertions for reviewed canonical-club mappings.
+-- READ ONLY: raises on any unsafe mapping. Run on staging after review rows exist.
+do $$
+declare v_count bigint;
+begin
+ if to_regclass('public.hoopgroup_club_identity_review') is null then
+   raise exception 'GROUPS-1 staging migration not installed';
+ end if;
+ if to_regclass('public.hoopgroup_retired_group_redirects') is null then
+   raise exception 'GROUPS-1 redirects table missing';
+ end if;
+ select count(*) into v_count from public.hoopgroup_club_identity_review r
+ join public.teams a on a.id=r.team_id
+ join public.teams c on c.id=r.canonical_team_id
+ where lower(trim(a.country)) is distinct from lower(trim(c.country))
+    or coalesce(a.basketball_type,'') is distinct from coalesce(c.basketball_type,'');
+ if v_count > 0 then raise exception 'Unsafe identity mapping: % country/side mismatches',v_count; end if;
+ select count(*) into v_count from public.hoopgroup_club_identity_review r
+ where exists(select 1 from public.hoopgroup_club_identity_review next
+              where next.team_id=r.canonical_team_id);
+ if v_count > 0 then raise exception 'Unsafe identity mapping: % chained mappings',v_count; end if;
+ select count(*) into v_count from public.hoopgroup_club_identity_review r
+ left join public.team_fan_groups a on a.team_id=r.team_id
+ left join public.team_fan_groups c on c.team_id=r.canonical_team_id
+ where a.team_id is null or c.team_id is null or a.created_at<c.created_at;
+ if v_count > 0 then raise exception 'Unsafe identity mapping: % missing groups or older aliases',v_count; end if;
+ raise notice 'GROUPS-1 identity mapping structural assertions passed';
+end $$;
+
+-- Snapshot row counts before/after any future merge. A merge must preserve
+-- posts, comments, reports, and all distinct user memberships.
+select 'posts' as relation,count(*) as rows from public.team_fan_group_posts
+union all select 'comments',count(*) from public.team_fan_group_comments
+union all select 'reports',count(*) from public.team_fan_group_reports
+union all select 'memberships',count(*) from public.team_fan_group_members
+union all select 'moderators',count(*) from public.team_fan_group_moderators;
