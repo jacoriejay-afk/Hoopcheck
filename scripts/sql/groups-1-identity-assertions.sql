@@ -39,6 +39,23 @@ begin
  left join public.team_fan_groups survivor on survivor.team_id=d.survivor_team_id
  where survivor.team_id is null;
  if v_count > 0 then raise exception 'Unsafe redirect: % missing survivor groups',v_count; end if;
+ select count(*) into v_count
+ from public.team_fan_group_reports r
+ join public.team_fan_group_posts p on p.id=r.post_id
+ where r.team_id is distinct from p.team_id;
+ if v_count > 0 then raise exception 'Unsafe report linkage: % reports point to posts in other groups',v_count; end if;
+ select count(*) into v_count
+ from public.hoopgroup_retired_group_redirects d
+ join public.team_fan_group_posts p on p.team_id=d.retired_team_id;
+ if v_count > 0 then raise exception 'Incomplete retirement: % posts remain on redirected groups',v_count; end if;
+ select count(*) into v_count
+ from public.hoopgroup_retired_group_redirects d
+ join public.team_fan_group_members m on m.team_id=d.retired_team_id;
+ if v_count > 0 then raise exception 'Incomplete retirement: % memberships remain on redirected groups',v_count; end if;
+ select count(*) into v_count
+ from public.hoopgroup_retired_group_redirects d
+ join public.team_fan_group_join_requests q on q.team_id=d.retired_team_id;
+ if v_count > 0 then raise exception 'Incomplete retirement: % join requests remain on redirected groups',v_count; end if;
  raise notice 'GROUPS-1 identity mapping structural assertions passed';
 end $$;
 
@@ -48,4 +65,6 @@ select 'posts' as relation,count(*) as rows from public.team_fan_group_posts
 union all select 'comments',count(*) from public.team_fan_group_comments
 union all select 'reports',count(*) from public.team_fan_group_reports
 union all select 'memberships',count(*) from public.team_fan_group_members
-union all select 'moderators',count(*) from public.team_fan_group_moderators;
+union all select 'moderators',count(*) from public.team_fan_group_moderators
+union all select 'join_requests',count(*) from public.team_fan_group_join_requests
+union all select 'private_image_objects',count(*) from storage.objects where bucket_id='fan-group-images';
