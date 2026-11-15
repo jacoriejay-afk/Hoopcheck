@@ -28,6 +28,8 @@ export default function FanGroupsPage() {
   } | null>(null);
   const current = result?.userId === userId && result.query === query && result.country === country && result.league === league && result.page === page ? result : null;
   const visibleGroups = current?.groups ?? [];
+  const availableCountries = Array.from(new Set([...Object.values(current?.teams || {}).map(t => t.country).filter((value): value is string => Boolean(value)), ...(country ? [country] : [])])).sort();
+  const availableLeagues = Array.from(new Set([...Object.values(current?.teams || {}).filter(t => !country || t.country === country).map(t => t.league_name).filter((value): value is string => Boolean(value)), ...(league ? [league] : [])])).sort();
 
   useEffect(() => {
     if (!userId) { setMemberships([]); return; }
@@ -96,8 +98,8 @@ export default function FanGroupsPage() {
       </Link> : <>
         <section aria-label="My Groups"><h2>My Groups</h2>{memberships.length ? <div className="hc-groups-compact">{memberships.map(m => <Link key={m.team_id} href={`/team-hub/groups/${m.team_id}`}>{m.group_name.replace(/ Fan Group$/, "")}</Link>)}</div> : <p className="muted">No joined groups yet.</p>}</section>
         <section aria-label="Categories"><h2>Browse categories</h2><div className="hc-groups-categories">{["Club Groups","Players","Fans","Coaches","Agents","Scouts","Teams","Open Community"].map(name => <button key={name} type="button" disabled={name !== "Club Groups"} title={name !== "Club Groups" ? "Community groups are not yet available" : undefined}>{name}</button>)}</div></section>
-        <p className="muted">{totalGroups === null ? "Group count unavailable" : `${totalGroups.toLocaleString()} matching official club groups`} · Country and league filters apply to all matching groups.</p>
-        <div className="hc-groups-filters"><label>Country <select value={country} onChange={e=>{setCountry(e.target.value);setLeague("");setPage(0);}}><option value="">All countries</option>{Array.from(new Set(Object.values(current?.teams || {}).map(t=>t.country).filter(Boolean))).sort().map(v=><option key={v!} value={v!}>{v}</option>)}</select></label><label>League <select value={league} onChange={e=>{setLeague(e.target.value);setPage(0);}}><option value="">All leagues</option>{Array.from(new Set(Object.values(current?.teams || {}).filter(t=>!country||t.country===country).map(t=>t.league_name).filter(Boolean))).sort().map(v=><option key={v!} value={v!}>{v}</option>)}</select></label></div>
+        <p className="muted">{totalGroups === null ? "Group count unavailable" : `${totalGroups.toLocaleString()} matching official club groups`} · Country and league filters search all groups; available filter choices are currently drawn from this results page.</p>
+        <div className="hc-groups-filters"><label>Country <select value={country} onChange={e=>{setCountry(e.target.value);setLeague("");setPage(0);}}><option value="">All countries</option>{availableCountries.map(v=><option key={v} value={v}>{v}</option>)}</select></label><label>League <select value={league} onChange={e=>{setLeague(e.target.value);setPage(0);}}><option value="">All leagues</option>{availableLeagues.map(v=><option key={v} value={v}>{v}</option>)}</select></label></div>
         <input type="search" aria-label={spanish ? "Buscar grupos" : "Search HoopGroups"}
           placeholder={spanish ? "Buscar grupos" : "Search HoopGroups"}
           maxLength={120} value={query} onChange={event => {
@@ -105,7 +107,7 @@ export default function FanGroupsPage() {
             setPage(0);
           }} />
         {!current ? <HoopLoading variant="inline" label={spanish ? "Cargando grupos" : "Loading groups"} />
-          : current.failed ? <p role="status">{spanish ? "No se pudieron cargar los grupos." : "Could not load fan groups."}</p>
+          : current.failed ? <p role="status">{spanish ? "No se pudieron cargar los grupos." : "Could not load HoopGroups."}</p>
           : visibleGroups.length ? <ul className="result-grid hc-fan-groups-list">
             {visibleGroups.map(group => <li key={group.team_id} className="result-card hc-fan-groups-item">
               <Link href={`/team-hub/groups/${group.team_id}`}>{group.group_name.replace(/ Fan Group$/, "")}</Link><span className="hc-group-official">Official</span><span className="muted">{memberCounts[group.team_id] === undefined ? "Members unavailable" : `${memberCounts[group.team_id]} members`}</span><Link href={`/team-hub/groups/${group.team_id}`} className="btn">{memberships.some(m=>m.team_id===group.team_id) ? "Joined" : "View / Join"}</Link>
