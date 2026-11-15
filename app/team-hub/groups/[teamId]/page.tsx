@@ -143,7 +143,7 @@ export default function TeamFanGroupPage() {
       if (image) form.append("image", image);
       const response = await fetch("/api/fan-groups", { method: "POST", headers: { Authorization: "Bearer " + session.access_token }, body: form });
       const result = await response.json().catch(() => ({}));
-      setMessage(result.message || (response.ok && result.ok ? action === "join" ? "You joined the Fan Group." : action === "leave" ? "You left the Fan Group." : "Saved." : "That action could not be completed."));
+      setMessage(result.message || (response.ok && result.ok ? action === "join" ? "You joined the Club Group." : action === "leave" ? "You left the Club Group." : "Saved." : "That action could not be completed."));
       if (response.ok && result.ok) {
         if (action === "join" || action === "leave") {
           const joined = action === "join";
@@ -175,15 +175,15 @@ export default function TeamFanGroupPage() {
     const result = await act("comment", { body, post_id: postId });
     if (result?.ok) setCommentDrafts(old => ({ ...old, [postId]: "" }));
   }
-  if (loading) return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><HoopLoading label="Loading Fan Group…" /></div></main></PageShell>;
-  if (!user) return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><section className="hero-card"><h1>Sign in to join this Fan Group</h1><Link className="btn" href="/login">Sign in</Link></section></div></main></PageShell>;
-  if (!summary) return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><h1>Fan Group unavailable</h1><Link href={teamProfileHref}>Back to team</Link></div></main></PageShell>;
+  if (loading) return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><HoopLoading label="Loading HoopGroup…" /></div></main></PageShell>;
+  if (!user) return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><section className="hero-card"><h1>Sign in to join this Club Group</h1><Link className="btn" href="/login">Sign in</Link></section></div></main></PageShell>;
+  if (!summary) return <PageShell><main className="page-shell hc-feed-page"><div className="page-container"><h1>Club Group unavailable</h1><Link href={teamProfileHref}>Back to team</Link></div></main></PageShell>;
 
   const canParticipate = isFan && summary.is_member;
 
   return <PageShell><main className="page-shell hc-feed-page hc-team-fan-group-page"><div className="page-container">
     <nav className="actions" aria-label="Fan group navigation"><Link className="btn" href={teamProfileHref}>Team page</Link><Link className="btn" href="/team-hub">Your teams</Link></nav>
-    <section className="hero-card hc-feed-hero"><p className="eyebrow">FAN HQ · OFFICIAL COMMUNITY</p><h1>{summary.group_name}</h1><p className="muted">{teamName} supporters, together in one official fan space.</p><p className="hc-feed-expiry-note">{Number(summary.member_count || 0).toLocaleString()} MEMBERS <span>Group posts stay here permanently.</span></p></section>
+    <section className="hero-card hc-feed-hero"><p className="eyebrow">HOOPGROUPS · OFFICIAL CLUB GROUP</p><h1>{summary.group_name.replace(/ Fan Group$/, "")}</h1><p className="muted">{teamName} supporters, together in one official fan space.</p><p className="hc-feed-expiry-note">{Number(summary.member_count || 0).toLocaleString()} MEMBERS <span>Group posts stay here permanently.</span></p></section>
     {!summary.is_member && (!isModerator || isFan) && <section className="dashboard-card hc-feed-shared-card hc-team-fan-group-locked"><h2>{isModerator ? "Join to post or comment" : "Join to see the conversation"}</h2><p className="muted">Fans can post and comment after joining the group.</p>{summary.join_mode === "open" ? <button className="btn" disabled={busy} onClick={() => void act("join")}>Join Fan Group</button> : <button className="btn" disabled={busy || summary.has_pending_request} onClick={() => void act("join")}>{summary.has_pending_request ? "Request Pending" : "Request to Join"}</button>}</section>}
     {(summary.is_member || isModerator) && <>
       {canParticipate && <section className="dashboard-card hc-feed-composer hc-team-fan-group-composer hc-liquid-glass-group-composer"><div className="hc-team-group-posting-target"><span className="card-kicker">POST TO THE GROUP</span><strong>Posting to {teamName} fans</strong><small>{summary.group_name}</small></div><textarea id="fan-group-post-body" value={draft} maxLength={2000} rows={3} onChange={e => setDraft(e.target.value)} placeholder="Share something with the fans…" /><div className="hc-feed-composer__footer"><label className="hc-feed-photo-button">Photo<input type="file" accept="image/jpeg,image/png,image/webp" className="visually-hidden" onChange={e => setPhoto(e.target.files?.[0] || null)} /></label><span className="hc-feed-counter">{draft.length}/2000</span><button className="btn hc-feed-post-button" disabled={busy || (!draft.trim() && !photo)} onClick={() => void publish()}>{busy ? "Posting…" : "Post"}</button></div>{photo && <p className="muted">{photo.name} · <button type="button" onClick={() => setPhoto(null)}>Remove</button></p>}</section>}
