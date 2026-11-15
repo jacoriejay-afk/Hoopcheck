@@ -127,6 +127,12 @@ test("test Stripe credentials require the separate Supabase project", async () =
     assert.equal(stripeMatchesDeployment("sk_test_fixture"), false);
     process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL = isolatedUrl;
     assert.equal(stripeMatchesDeployment("sk_test_fixture"), false);
+    for (const url of [productionUrl + "/", productionUrl.toUpperCase(), productionUrl + ".", "invalid"]) {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = url;
+      process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL = url;
+      assert.equal(stripeMatchesDeployment("sk_test_fixture"), false);
+    }
+    process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL = isolatedUrl;
     process.env.NEXT_PUBLIC_SUPABASE_URL = isolatedUrl;
     assert.equal(stripeMatchesDeployment("rk_test_fixture"), true);
     assert.equal(stripeMatchesDeployment("sk_live_fixture"), false);
