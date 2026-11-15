@@ -52,6 +52,7 @@ try {
       assert.equal(await directoryLinks.count(), 4, 'Guest directory switcher has four accessible routes');
       assert.equal(await directoryNav.locator('[aria-current="page"]').getAttribute('href'), '/coaches');
       const layout = await directoryNav.evaluate(grid => ({
+        backdrop: getComputedStyle(grid.parentElement).backgroundColor,
         width: grid.clientWidth,
         scrollWidth: grid.scrollWidth,
         right: grid.getBoundingClientRect().right,
@@ -60,6 +61,7 @@ try {
           return { right, height, shadow: getComputedStyle(link).boxShadow };
         }),
       }));
+      assert.equal(layout.backdrop, 'rgba(0, 0, 0, 0)', 'Directory navigation leaves the page visible between links');
       assert.equal(layout.width, layout.scrollWidth, 'Directory links fit without horizontal scrolling');
       assert.ok(layout.links.every(link => link.height >= 44), 'Directory links retain mobile-sized targets');
       assert.ok(Math.abs(layout.links.at(-1).right - layout.right) < 1, 'Directory links fill the available row');

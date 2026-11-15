@@ -165,6 +165,7 @@ html body main .hc-shared-directory-tile-grid a[aria-current="page"] {
 @media (max-width: 680px) {
   .hc-shared-directory-hero { min-height: 178px; padding: 20px 16px; }
   .hc-shared-directory-tile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hc-shared-directory-tile-grid a:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .hc-team-directory-page .team-filter-row,
   .hc-womens-directory-page .team-filter-row,
   .hc-coaches-directory-page .team-filter-row,
