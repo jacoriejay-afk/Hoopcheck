@@ -110,6 +110,28 @@ export async function reconcileAmbassadorEvent(stripe: Stripe, rpc: Rpc, event: 
   await runRpc(rpc, "ambassador_reconcile_charge", {
     p_charge: chargeId, ...await chargeDeductions(stripe, charge, checkedAt),
   });
+
+  // Audit individual refund identities separately from the cumulative charge
+  // deduction. Never treat a refund's amount as a commission payout adjustment.
+  // Re-read Stripe's current state to tolerate event replay and out-of-order
+  // refund.created / refund.updated / charge.refunded deliveries.
+  const refunds = await stripe.refunds.list({ charge: chargeId, limit: 100 });
+  if (refunds.has_more) {
+    throw new Error("Refund audit requires pagination for this charge");
+  }
+  for (const refund of refunds.data) {
+    if (objectId(refund.charge) !== chargeId) {
+      throw new Error("Stripe refund does not belong to reconciled charge");
+    }
+    await runRpc(rpc, "ambassador_record_refund_audit", {
+      p_refund: refund.id,
+      p_charge: chargeId,
+      p_amount: refund.amount,
+      p_currency: refund.currency,
+      p_status: refund.status ?? "unknown",
+      p_created_at: new Date(refund.created * 1000).toISOString(),
+    });
+  }
 }
 
 export async function updateAmbassadorSubscriptionStatus(
