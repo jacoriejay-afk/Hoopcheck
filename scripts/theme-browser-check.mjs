@@ -441,6 +441,18 @@ try {
           .filter(element => {
             const style = getComputedStyle(element);
             if (style.display === "none" || style.visibility === "hidden" || style.position === "fixed") return false;
+            // Children of an intentional horizontal scroll rail may extend past the
+            // viewport without causing page overflow. Only ignore them when an
+            // actual scroll container clips their horizontal overflow.
+            let ancestor = element.parentElement;
+            while (ancestor && ancestor !== document.body) {
+              const ancestorStyle = getComputedStyle(ancestor);
+              if (["auto", "scroll", "hidden", "clip"].includes(ancestorStyle.overflowX)) {
+                const bounds = ancestor.getBoundingClientRect();
+                if (bounds.left >= -2 && bounds.right <= viewport + 2 && ancestor.clientWidth > 0) return false;
+              }
+              ancestor = ancestor.parentElement;
+            }
             const rect = element.getBoundingClientRect();
             return rect.width > 0 && rect.height > 0 && (rect.left < -2 || rect.right > viewport + 2);
           })
