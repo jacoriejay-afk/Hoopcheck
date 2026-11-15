@@ -88,6 +88,8 @@ export default function SignupForm({ googleEmail, referralToken }: { googleEmail
       email:email.trim().toLowerCase(), password, options:{data:metadata, emailRedirectTo: new URL("/auth/confirm", window.location.origin).href}
     });
     if(error) throw error;
+    // Supabase can return an obfuscated success for an existing email.
+    // Never interpret this response alone as proof of a newly created account.
     const normalizedEmail = email.trim().toLowerCase();
     if (!data.session) {
       // Supabase may require email confirmation before creating an authenticated session.
@@ -95,6 +97,10 @@ export default function SignupForm({ googleEmail, referralToken }: { googleEmail
       router.push(`/signup/complete?email=${encodeURIComponent(normalizedEmail)}&confirmation=required`);
       return;
     }
+    // A live session identifies a real authenticated user; confirm the profile exists.
+    if (!data.user?.id) throw new Error("We couldn't verify your new account. Please try signing in.");
+    const { data: createdProfile, error: profileLookupError } = await supabase.from("profiles").select("id").eq("id", data.user.id).maybeSingle();
+    if (profileLookupError || !createdProfile) throw new Error("Your account was authenticated, but the profile could not be verified. Please contact support.");
     router.push(`/signup/complete?email=${encodeURIComponent(normalizedEmail)}`);
     } catch (signupError) {
       console.error("Signup failed:",signupError);
