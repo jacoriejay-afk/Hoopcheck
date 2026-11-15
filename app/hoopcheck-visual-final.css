@@ -311,3 +311,25 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header .h
  .hc-agents-hq-page .hc-dashboard-grid { grid-template-columns:minmax(0,1fr); }
  .hc-agents-hq-page .dashboard-card { padding:16px; }
 }
+
+/* GROUPS-1: compact, accessible HoopGroups draft layout. */
+.hc-fan-groups-directory .hc-groups-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hc-fan-groups-directory .hc-groups-heading .btn:disabled {opacity:.55;cursor:not-allowed}
+.hc-fan-groups-directory section[aria-label="My Groups"],
+.hc-fan-groups-directory section[aria-label="Categories"] {margin-block:16px}
+.hc-fan-groups-directory section h2 {font-size:1.1rem;margin:0 0 10px}
+.hc-fan-groups-directory .hc-groups-compact {display:grid;gap:6px}
+.hc-fan-groups-directory .hc-groups-compact a {display:block;padding:10px 12px;border:1px solid var(--hc-card-border,var(--border));border-radius:12px;color:inherit;overflow-wrap:anywhere}
+.hc-fan-groups-directory .hc-groups-categories {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:8px}
+.hc-fan-groups-directory .hc-groups-categories button {min-height:42px;text-align:left;padding:8px 12px;border-radius:12px;border:1px solid var(--hc-card-border,var(--border));background:var(--hc-surface,var(--paper));color:var(--hc-text,var(--ink))}
+.hc-fan-groups-directory .hc-groups-categories button:disabled {opacity:.6}
+.hc-fan-groups-directory .hc-groups-filters {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:10px;margin-block:12px}
+.hc-fan-groups-directory .hc-groups-filters label {display:grid;gap:4px}
+.hc-fan-groups-directory .hc-groups-filters select {min-width:0;width:100%;padding:9px;border-radius:12px;background:var(--hc-surface,var(--paper));color:var(--hc-text,var(--ink));border:1px solid var(--hc-card-border,var(--border))}
+.hc-fan-groups-directory .hc-fan-groups-list {grid-template-columns:minmax(0,1fr)}
+.hc-fan-groups-directory .hc-fan-groups-item {display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px}
+.hc-fan-groups-directory .hc-fan-groups-item > a:first-child {flex:1 1 190px;min-height:0;padding:4px;font-weight:650}
+.hc-fan-groups-directory .hc-fan-groups-item > a.btn {flex:0 0 auto;min-height:36px;padding:7px 12px}
+.hc-fan-groups-directory .hc-fan-groups-item .hc-fan-group-context {flex-basis:100%;margin:0;font-size:.82rem}
+.hc-fan-groups-directory .hc-group-official {font-size:.75rem;font-weight:700;border:1px solid var(--hc-card-border,var(--border));border-radius:999px;padding:3px 8px}
+@media(max-width:520px){.hc-fan-groups-directory .hc-fan-groups-item > a:first-child {flex-basis:100%}.hc-fan-groups-directory .hc-fan-groups-item > a.btn {margin-left:auto}}

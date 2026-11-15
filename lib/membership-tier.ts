@@ -25,6 +25,7 @@ export type HoopCheckEntitlements = {
   canViewTeamPayHistory: boolean;
   canSubmitPayCheckIn: boolean;
   canUseFanGroups: boolean;
+  canBrowseHoopGroups: boolean;
   canModerateFanGroups: boolean;
 };
 
@@ -115,6 +116,8 @@ export function getHoopCheckEntitlements(args: {
     canViewTeamPayHistory: recognizedRole && !isFan,
     canSubmitPayCheckIn: isPlayer && args.playerVerified === true && isAtLeastTier(tier, "pro"),
     canUseFanGroups: isFan,
+    // GROUPS-1: independent from HoopFeed subscription gating.
+    canBrowseHoopGroups: recognizedRole || isAdmin,
     // Club-scoped moderation must be authorized at the call site using a verified club claim.
     canModerateFanGroups: isAdmin,
   };
