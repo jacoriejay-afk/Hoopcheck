@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { getStripeKeyMode } from "../../../../lib/stripe-key-mode";
 import { reconcileAmbassadorEvent, recordAmbassadorInvoice, updateAmbassadorSubscriptionStatus } from "../../../../lib/ambassador/stripe";
 import { createClient } from "@supabase/supabase-js";
 
@@ -400,16 +401,12 @@ export async function POST(
     }
 
     // Reject events if the webhook's mode differs from the configured Stripe key.
-    const keyMode = stripeSecretKey.startsWith("sk_live_")
-      ? "live"
-      : stripeSecretKey.startsWith("sk_test_")
-        ? "test"
-        : "unknown";
+    const keyMode = getStripeKeyMode(stripeSecretKey);
     const deploymentMode =
       process.env.VERCEL_ENV === "production" ? "live" : "test";
 
     // Prevent a test-mode webhook from mutating production membership records.
-    if (keyMode === "unknown" || keyMode !== deploymentMode) {
+    if (keyMode !== deploymentMode) {
       console.error("Stripe key mode does not match deployment environment.");
       return NextResponse.json(
         { error: "Stripe webhook configuration does not match this environment." },
