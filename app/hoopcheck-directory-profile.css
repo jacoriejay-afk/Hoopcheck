@@ -91,11 +91,38 @@
 .hc-shared-directory-hero .eyebrow { margin: 0 0 10px; color: var(--hc-accent-text); font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
 .hc-shared-directory-hero h1 { max-width: 900px; margin: 0; color: var(--hc-foreground, #111); font-size: clamp(1.8rem, 5vw, 3.15rem); line-height: 1.03; letter-spacing: -.045em; }
 .hc-shared-directory-description { max-width: 760px; margin: 12px 0 0; color: var(--hc-foreground-muted, #686868); line-height: 1.55; }
-.hc-shared-directory-tiles { margin: 0 0 18px; padding: 14px; border: 1px solid var(--border, #292929); border-radius: 18px; background: #151515; color: #fff; }
-.hc-shared-directory-tiles-label { display: block; margin: 0 0 10px; color: #bdbdbd; font-size: 10px; font-weight: 900; letter-spacing: .15em; text-transform: uppercase; }
-.hc-shared-directory-tile-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
-.hc-shared-directory-tile-grid a { display: flex; min-height: 48px; align-items: center; justify-content: center; padding: 10px 8px; border: 1px solid #383838; border-radius: 12px; background: #202020; color: #f5f5f5; text-align: center; text-decoration: none; font-size: 12px; font-weight: 850; line-height: 1.2; transition: background .15s ease, border-color .15s ease; }
-.hc-shared-directory-tile-grid a:hover, .hc-shared-directory-tile-grid a.is-current { border-color: var(--orange, #ff5500); background: #2a1a13; color: #fff; }
+.hc-shared-directory-tiles { margin: 0 0 18px; }
+.hc-shared-directory-tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 110px), 1fr));
+  gap: 8px;
+}
+.hc-shared-directory-tile-grid a {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: 1px solid var(--hc-border);
+  border-radius: 12px;
+  background: var(--hc-surface-raised);
+  color: var(--hc-foreground);
+  text-align: center;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+html body main .hc-shared-directory-tile-grid a:hover {
+  text-decoration: underline;
+  text-underline-offset: .2em;
+}
+html body main .hc-shared-directory-tile-grid a[aria-current="page"] {
+  box-shadow: inset 0 0 0 1px var(--hc-accent-text);
+  color: var(--hc-accent-text) !important;
+  font-weight: 850;
+}
 .hc-team-directory-page .research-search,
 .hc-coaches-directory-page .research-search,
 .hc-leagues-directory-page .hc-league-filter,
@@ -137,9 +164,8 @@
 .hc-directory-switcher { display: none !important; }
 @media (max-width: 680px) {
   .hc-shared-directory-hero { min-height: 178px; padding: 20px 16px; }
-  .hc-shared-directory-tiles { padding: 12px; }
   .hc-shared-directory-tile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .hc-shared-directory-tile-grid a:last-child { grid-column: 1 / -1; }
+  .hc-shared-directory-tile-grid a:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .hc-team-directory-page .team-filter-row,
   .hc-womens-directory-page .team-filter-row,
   .hc-coaches-directory-page .team-filter-row,
@@ -364,7 +390,7 @@ html.theme-dark main :where(
   .hc-player-result,.hc-directory-result,.hc-review-state,.hc-coach-empty,
   .admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,
   .moderation-card,.modal-panel,.modal-content,.form-card,.auth-card,.hc-auth-card,.legal-card,
-  .hc-shared-directory-hero,.hc-shared-directory-tiles,.hc-shared-directory-tiles a,
+  .hc-shared-directory-hero,
   .research-search,.hc-league-filter,.hc-team-profile-logo,.hc-team-logo-tile,
   .hc-dashboard-stat-card,.hc-dashboard-profile-block
 ),
@@ -375,7 +401,7 @@ html.theme-light main :where(
   .hc-player-result,.hc-directory-result,.hc-review-state,.hc-coach-empty,
   .admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,
   .moderation-card,.modal-panel,.modal-content,.form-card,.auth-card,.hc-auth-card,.legal-card,
-  .hc-shared-directory-hero,.hc-shared-directory-tiles,.hc-shared-directory-tiles a,
+  .hc-shared-directory-hero,
   .research-search,.hc-league-filter,.hc-team-profile-logo,.hc-team-logo-tile,
   .hc-dashboard-stat-card,.hc-dashboard-profile-block
 ) {
@@ -390,7 +416,7 @@ html.theme-dark main :where(
   .hc-player-result,.hc-directory-result,.hc-review-state,.hc-coach-empty,
   .admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,
   .moderation-card,.modal-panel,.modal-content,.form-card,.auth-card,.hc-auth-card,.legal-card,
-  .hc-shared-directory-hero,.hc-shared-directory-tiles,.hc-shared-directory-tiles a,
+  .hc-shared-directory-hero,
   .research-search,.hc-league-filter,.hc-team-profile-logo,.hc-team-logo-tile,
   .hc-dashboard-stat-card,.hc-dashboard-profile-block
 ) :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn)),
@@ -401,7 +427,7 @@ html.theme-light main :where(
   .hc-player-result,.hc-directory-result,.hc-review-state,.hc-coach-empty,
   .admin-panel,.admin-card,.admin-section,.admin-stat-card,.admin-review-card,.admin-report-card,
   .moderation-card,.modal-panel,.modal-content,.form-card,.auth-card,.hc-auth-card,.legal-card,
-  .hc-shared-directory-hero,.hc-shared-directory-tiles,.hc-shared-directory-tiles a,
+  .hc-shared-directory-hero,
   .research-search,.hc-league-filter,.hc-team-profile-logo,.hc-team-logo-tile,
   .hc-dashboard-stat-card,.hc-dashboard-profile-block
 ) :where(h1,h2,h3,h4,p,span,label,small,strong,li,a:not(.btn)) {
