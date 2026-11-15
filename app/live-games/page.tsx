@@ -220,7 +220,7 @@ export default function LiveGamesPage() {
     const isLive = variant === "live";
     const isUpcoming = variant === "upcoming";
     const isRecent = variant === "recent";
-    const canJoin = availability.chatOpen && !isRecent && !["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()) && (!isUpcoming || Boolean(game.scheduled_at && Date.parse(game.scheduled_at) <= nowMs));
+    const canJoin = availability.chatOpen && !["cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase());
     const score = scoreText(game);
     const tip = game.scheduled_at || game.started_at;
     return (
@@ -248,18 +248,18 @@ export default function LiveGamesPage() {
           </div>
         </div>
         <div className="hc-live-card__meta">
-          {isLive && availability.chatOpen && allowed && presenceCounts[game.id] > 0 && <span><HoopIcon name="users" size={15} /> {presenceCounts[game.id]} {presenceCounts[game.id] === 1 ? "member chatting" : "members chatting"}</span>}
+          {availability.chatOpen && allowed && presenceCounts[game.id] > 0 && <span><HoopIcon name="users" size={15} /> {presenceCounts[game.id]} {presenceCounts[game.id] === 1 ? "member chatting" : "members chatting"}</span>}
           {isUpcoming && <span><HoopIcon name="calendar" size={15} /> {formatViewerLocalTime(tip)}</span>}
-          {isRecent && <span><HoopIcon name="check" size={15} /> Chat closed</span>}
+          {isRecent && <span><HoopIcon name="check" size={15} /> {availability.chatOpen ? "Post-game conversation" : "Final score"}</span>}
           {variant === "postgame" && <span><HoopIcon name="message-square" size={15} /> Post-game chat remains open</span>}
         </div>
-        {isUpcoming && availability.opensAt && <p className="hc-live-card__muted">Chat opens {formatViewerLocalTime(availability.opensAt.toISOString(), { weekday: undefined })} · Remind Me sends an in-app reminder.</p>}
+        {isUpcoming && availability.opensAt && <p className="hc-live-card__muted">{availability.minutesUntilOpen && availability.minutesUntilOpen > 0 ? `Chat opens in ${availability.minutesUntilOpen} min` : "Chat open"} · {formatViewerLocalTime(availability.opensAt.toISOString(), { weekday: undefined })}</p>}
         <div className="hc-live-card__actions">
           {canJoin && <Link href={`/fan-live?gameId=${encodeURIComponent(game.id)}`} className="btn hc-live-join">{joinedGameIds.has(game.id) ? "IN CHAT ✓" : "JOIN CHAT"} <span aria-hidden="true">→</span></Link>}
           {isUpcoming && <button type="button" className={`hc-remind-button ${reminders.includes(game.id) ? "is-set" : ""}`} disabled={reminding === game.id} onClick={() => void toggleReminder(game.id)}>
             <HoopIcon name="bell" size={16} /> {reminding === game.id ? "Saving…" : reminders.includes(game.id) ? "REMINDER SET" : "REMIND ME"}
           </button>}
-          {isRecent && <span className="hc-live-card__muted">Final score {score || "not available"}</span>}
+          {isRecent && !canJoin && <span className="hc-live-card__muted">Final score {score || "not available"}</span>}
         </div>
       </article>
     );
@@ -306,7 +306,9 @@ export default function LiveGamesPage() {
       for (const entry of ordered) {
         const country = entry.game.country || entry.home?.country || "Other countries";
         const league = entry.game.league_name || entry.home?.league_name || "Other leagues";
-        const key = country + " / " + league;
+        const tip = entry.game.scheduled_at ? Date.parse(entry.game.scheduled_at) : NaN;
+        const timeBucket = filter !== "upcoming" ? "" : !Number.isFinite(tip) ? "Time unconfirmed" : tip <= nowMs + 3_600_000 ? "Starting within the hour" : new Date(tip).toDateString() === clock.toDateString() ? "Tonight / Today" : new Date(tip).toDateString() === new Date(nowMs + 86_400_000).toDateString() ? "Tomorrow" : "Later";
+        const key = (timeBucket ? timeBucket + " · " : "") + country + " / " + league;
         groups.set(key, [...(groups.get(key) || []), entry]);
       }
       return <section className="hc-live-hub-section" aria-label={filter === "my-teams" ? "My team games" : filter === "upcoming" ? "Upcoming games" : "Live conversations"}>
