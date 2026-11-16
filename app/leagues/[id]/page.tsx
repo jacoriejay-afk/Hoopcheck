@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import Link from "next/link";
+import "../../hoopcheck-brand-team.css";
 
 import { useParams } from "next/navigation";
 
@@ -472,9 +473,8 @@ export default function LeagueDetailPage() {
         {accountType !== "fan" && <Link href="/players">Players</Link>}
         <Link href="/search">Global Search</Link>
       </nav>
-<section className="hero">
-        <div className="eyebrow">
-          League Research
+<section className="hero hc-team-look-hero hc-league-look-hero" style={{background:"linear-gradient(125deg,#111827,#352019 65%,#10131a)",borderRadius:20,padding:"clamp(16px,3vw,36px)",color:"#fff"}}>
+        <div className="eyebrow">League Research
         </div>
 
         <div className="hc-league-hero-id">
