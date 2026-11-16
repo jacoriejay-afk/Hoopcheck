@@ -7,10 +7,26 @@ import { createClient, processLock } from "@supabase/supabase-js";
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
+function validateSupabaseUrl(value: string | undefined): string | null {
+  if (!value) return "Supabase URL is missing from this build.";
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash ||
+        (url.pathname !== "/" && url.pathname !== "") ||
+        !/^[a-z0-9-]+\\.supabase\\.co$/i.test(url.hostname)) {
+      return "Supabase URL must be the HTTPS project base URL without a path or query.";
+    }
+    return null;
+  } catch {
+    return "Supabase URL is malformed in this build.";
+  }
+}
+
 export const supabaseConfigurationError =
-  !supabaseUrl || !supabaseKey
-    ? "Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY to apps/mobile/.env.local."
-    : null;
+  validateSupabaseUrl(supabaseUrl) ||
+  (!supabaseKey || supabaseKey === "placeholder-publishable-key"
+    ? "Supabase publishable key is missing from this build."
+    : null);
 
 const secureStorage = {
   getItem: (key: string) => SecureStore.getItemAsync(key),
