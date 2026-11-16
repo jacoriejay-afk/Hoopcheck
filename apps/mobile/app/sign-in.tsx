@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Link, useRouter } from "expo-router";
+import * as Linking from "expo-linking";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
 
@@ -24,6 +25,23 @@ export default function SignInScreen() {
     } finally { setBusy(false); }
   }
 
+  async function signInWithGoogle() {
+    if (supabaseConfigurationError) { Alert.alert("Setup required", supabaseConfigurationError); return; }
+    setBusy(true);
+    try {
+      const redirectTo = Linking.createURL("auth/callback");
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo, skipBrowserRedirect: true },
+      });
+      if (error) throw error;
+      if (!data.url) throw new Error("Google sign-in URL was not returned.");
+      await Linking.openURL(data.url);
+    } catch (error) {
+      Alert.alert("Google sign-in unavailable", error instanceof Error ? error.message : "Please try again.");
+    } finally { setBusy(false); }
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -37,6 +55,9 @@ export default function SignInScreen() {
           <Link href="/forgot-password" style={styles.link}>Forgot password?</Link>
           <Pressable onPress={signIn} disabled={busy} style={({ pressed }) => [styles.button, (pressed || busy) && styles.buttonDim]}>
             <Text style={styles.buttonText}>{busy ? "Signing in…" : "Sign in"}</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={signInWithGoogle} disabled={busy} style={[styles.googleButton, busy && styles.buttonDim]}>
+            <Text style={styles.googleButtonText}>Continue with Google</Text>
           </Pressable>
           <Text style={styles.signupPrompt}>New to HoopCheck? <Link href="/sign-up" style={styles.link}>Create an account</Link></Text>
           <Link href="/" style={styles.backLink}>Back to welcome</Link>
@@ -56,6 +77,8 @@ const styles = StyleSheet.create({
   link: { color: "#FF8A3D", fontWeight: "700" },
   button: { minHeight: 52, borderRadius: 10, backgroundColor: "#FF6A00", alignItems: "center", justifyContent: "center", marginTop: 24 },
   buttonDim: { opacity: 0.7 }, buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
+  googleButton: { minHeight: 52, borderRadius: 10, borderWidth: 1, borderColor: "#D5DCE5", alignItems: "center", justifyContent: "center", marginTop: 12 },
+  googleButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
   signupPrompt: { color: "#BDBDBD", textAlign: "center", marginTop: 22 },
   backLink: { color: "#FF8A3D", textAlign: "center", fontWeight: "700", marginTop: 24 },
 })
