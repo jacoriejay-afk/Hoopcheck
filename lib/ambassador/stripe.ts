@@ -94,6 +94,7 @@ export async function reconcileAmbassadorEvent(stripe: Stripe, rpc: Rpc, event: 
     case "refund.created":
     case "refund.updated":
     case "refund.failed":
+    case "charge.refund.updated":
     case "charge.dispute.created":
     case "charge.dispute.updated":
     case "charge.dispute.closed":
