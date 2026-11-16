@@ -13,7 +13,7 @@ function validateSupabaseUrl(value: string | undefined): string | null {
     const url = new URL(value);
     if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash ||
         (url.pathname !== "/" && url.pathname !== "") ||
-        !/^[a-z0-9-]+\\.supabase\\.co$/i.test(url.hostname)) {
+        !/^[a-z0-9-]+\.supabase\.co$/i.test(url.hostname)) {
       return "Supabase URL must be the HTTPS project base URL without a path or query.";
     }
     return null;
