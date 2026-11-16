@@ -344,3 +344,22 @@ html:is(.theme-light,.theme-dark) body .hc-global-page-shell main.hc-team-entity
   .hc-team-profile-overview-grid {
   background-color: transparent;
 }
+
+
+/* ABOUT-SURFACE-1: the About page uses a plain Tailwind layout rather than
+   shared cards. Give its copy the canonical foreground without painting a
+   second opaque surface over the page background. */
+html:is(.theme-light,.theme-dark) body main.hc-about-page {
+  background-color: transparent;
+  color: var(--hc-foreground);
+}
+html:is(.theme-light,.theme-dark) body main.hc-about-page :is(h1,h2,p) {
+  color: inherit;
+}
+html:is(.theme-light,.theme-dark) body main.hc-about-page nav a {
+  color: var(--hc-foreground);
+  text-underline-offset: 4px;
+}
+html:is(.theme-light,.theme-dark) body main.hc-about-page nav a:hover {
+  color: var(--hc-accent-text);
+}
