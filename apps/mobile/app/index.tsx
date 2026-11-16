@@ -1,4 +1,4 @@
-import { Link } from "expo-router";
+import { useRouter } from "expo-router";
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEntryTheme } from "../src/theme";
@@ -9,6 +9,7 @@ const hoopcheckMark = require("../assets/hoopcheck-mark.png");
 
 export default function WelcomeScreen() {
   const theme = useEntryTheme();
+  const router = useRouter();
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
@@ -24,22 +25,19 @@ export default function WelcomeScreen() {
           <Text style={[styles.description, { color: theme.muted }]}>
             Research basketball teams, coaches, and leagues through the experiences of players who have been there.
           </Text>
-          <Link href="/sign-in" asChild>
-            <Pressable accessibilityRole="link" style={({ pressed }) => [
-              styles.action,
-              { backgroundColor: theme.button, borderRadius: theme.cardRadius, opacity: pressed ? 0.75 : 1 },
-            ]}>
-              <Text style={[styles.actionLabel, { color: theme.onButton }]}>Sign in</Text>
-            </Pressable>
-          </Link>
-          <Link href="/sign-up" asChild>
-            <Pressable accessibilityRole="link" style={({ pressed }) => [
-              styles.action,
-              { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1, borderRadius: theme.cardRadius, opacity: pressed ? 0.75 : 1 },
-            ]}>
-              <Text style={[styles.actionLabel, { color: theme.foreground }]}>Create an account</Text>
-            </Pressable>
-          </Link>
+          <Pressable accessibilityRole="button" accessibilityLabel="Sign in" onPress={() => router.push("/sign-in")} style={({ pressed }) => [
+            styles.action,
+            styles.primaryAction,
+            { borderRadius: theme.cardRadius, opacity: pressed ? 0.75 : 1 },
+          ]}>
+            <Text style={[styles.actionLabel, styles.primaryActionLabel]}>Sign in</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Create an account" onPress={() => router.push("/sign-up")} style={({ pressed }) => [
+            styles.action,
+            { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1, borderRadius: theme.cardRadius, opacity: pressed ? 0.75 : 1 },
+          ]}>
+            <Text style={[styles.actionLabel, { color: theme.foreground }]}>Create an account</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -57,4 +55,6 @@ const styles = StyleSheet.create({
   description: { fontSize: 17, lineHeight: 25, marginBottom: 16 },
   action: { minHeight: 52, padding: 14, alignItems: "center", justifyContent: "center" },
   actionLabel: { fontSize: 16, fontWeight: "800", textAlign: "center" },
+  primaryAction: { backgroundColor: "#FF793D" },
+  primaryActionLabel: { color: "#1A100A" },
 });
