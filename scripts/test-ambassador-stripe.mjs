@@ -105,6 +105,39 @@ test("signed refund and dispute events reconcile current charge using cumulative
   assert.equal(f.calls.at(-1).name, "ambassador_record_refund_audit");
 });
 
+
+test("multiple refunds are audited individually; replay and out-of-order events preserve identities", async () => {
+  const f = fixture();
+  const refunds = [
+    { id: "re_partial_1", charge: "ch_1", amount: 100, currency: "usd", status: "succeeded", created: 1700000000 },
+    { id: "re_partial_2", charge: "ch_1", amount: 50, currency: "usd", status: "pending", created: 1700000010 },
+  ];
+  f.stripe.refunds.list = async () => ({ data: refunds, has_more: false });
+  f.charge.amount_refunded = 150;
+  const event = { type: "refund.updated", data: { object: { charge: "ch_1" } } };
+  await reconcileAmbassadorEvent(f.stripe, f.rpc, event);
+  assert.deepEqual(f.calls.filter(c => c.name === "ambassador_record_refund_audit").map(c => c.args.p_refund),
+    ["re_partial_1", "re_partial_2"]);
+  assert.equal(f.calls.find(c => c.name === "ambassador_reconcile_charge").args.p_deduction, 150);
+  refunds[1].status = "succeeded";
+  await reconcileAmbassadorEvent(f.stripe, f.rpc, event);
+  assert.equal(f.calls.filter(c => c.name === "ambassador_record_refund_audit").length, 4);
+  assert.equal(f.calls.at(-1).args.p_status, "succeeded");
+  // The DB upsert keys on Stripe refund ID, so replay updates status without a duplicate row.
+});
+
+test("refund pagination and mismatched charge fail reconciliation for safe retry", async () => {
+  const f = fixture();
+  const event = { type: "refund.updated", data: { object: { charge: "ch_1" } } };
+  f.stripe.refunds.list = async () => ({ data: [], has_more: true });
+  await assert.rejects(reconcileAmbassadorEvent(f.stripe, f.rpc, event), /pagination/);
+  f.stripe.refunds.list = async () => ({ data: [
+    { id: "re_other", charge: "ch_other", amount: 50, currency: "usd", status: "succeeded", created: 1700000000 },
+  ], has_more: false });
+  await assert.rejects(reconcileAmbassadorEvent(f.stripe, f.rpc, event), /does not belong/);
+  assert.equal(f.calls.filter(c => c.name === "ambassador_record_refund_audit").length, 0);
+});
+
 test("checkout and cancellation update referral status without generating earnings", async () => {
   const f = fixture();
   f.subscription.cancel_at_period_end = true;
