@@ -23,7 +23,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "online.hoopcheck.app"
+      "bundleIdentifier": "online.hoopcheck.app",
+      "buildNumber": "2"
     },
     "android": {
       "package": "online.hoopcheck.app"
