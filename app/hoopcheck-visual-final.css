@@ -311,3 +311,36 @@ html body header.site-header-global.hc-template-header.hc-liquid-glass-header .h
  .hc-agents-hq-page .hc-dashboard-grid { grid-template-columns:minmax(0,1fr); }
  .hc-agents-hq-page .dashboard-card { padding:16px; }
 }
+
+
+/* UI-FINAL SURFACE-1: consistent primary card surfaces on owner-reported routes.
+   Keep secondary controls, selected chips, warning banners and artwork distinct.
+   Scope to known page roots instead of overriding every card site-wide. */
+html:is(.theme-light,.theme-dark) body .hc-global-page-shell main:is(
+  .hc-settings-page,
+  .hc-live-room,
+  .hc-team-entity-profile
+) :is(.settings-card,.hero-card,.dashboard-card,.card,.hc-team-profile-about,.hc-team-profile-snapshot),
+html:is(.theme-light,.theme-dark) body .hc-global-page-shell main .hc-connection-list .hc-connection-row,
+html:is(.theme-light,.theme-dark) body .hc-global-page-shell main .hc-connection-list + .dashboard-card {
+  background-color: var(--hc-card-surface) !important;
+  color: var(--hc-on-card) !important;
+  border-color: var(--hc-card-border) !important;
+}
+
+/* The chat viewport and message composer are secondary surfaces within the
+   room card; they should never inherit a legacy fixed light/dark background. */
+html:is(.theme-light,.theme-dark) body .hc-global-page-shell main.hc-live-room :is(
+  .hc-live-chat-shell,.hc-live-chat-messages,.hc-live-chat-compose
+) {
+  background-color: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-card-border) !important;
+}
+
+/* Avoid creating a second opaque card behind the individual team profile
+   fact cards; preserve distinct badges, crest artwork and status colors. */
+html:is(.theme-light,.theme-dark) body .hc-global-page-shell main.hc-team-entity-profile
+  .hc-team-profile-overview-grid {
+  background-color: transparent;
+}
