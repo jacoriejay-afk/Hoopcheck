@@ -308,44 +308,32 @@ html body .hc-team-branded-hero .hc-team-profile-stat {border-color:#ffffff38 !i
 .hc-team-entity-profile button.hc-team-profile-inline-link{appearance:none;border:0;background:transparent;padding:0;cursor:pointer;text-align:left;font:inherit}
 
 
-/* Issue #676: dark club cover retains readable text regardless of the page theme. */
-html.theme-light .hc-team-look-hero,
-html.theme-dark .hc-team-look-hero,
-html .hc-team-look-hero {
-  color: #fff !important;
+/* Issue #676 follow-up: scoped hero colors, preserving controls and badges. */
+.hc-team-look-hero {
+  --hc-hero-foreground: #fff;
+  --hc-hero-muted: #ffe2cf;
+  color: var(--hc-hero-foreground);
+  overflow-wrap: anywhere;
 }
-html.theme-light .hc-team-look-hero :is(h1, h2, h3, p, strong),
-html.theme-dark .hc-team-look-hero :is(h1, h2, h3, p, strong),
-html .hc-team-look-hero :is(h1, h2, h3, p, strong) {
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
+.hc-team-look-hero :is(h1, h2, h3),
+.hc-team-look-hero > .eyebrow,
+.hc-team-look-hero .hc-league-hero-id {
+  color: var(--hc-hero-foreground);
 }
-html.theme-light .hc-team-look-hero p:first-child,
-html.theme-dark .hc-team-look-hero p:first-child,
-html .hc-team-look-hero p:first-child {
-  color: #ffe2cf !important;
-  -webkit-text-fill-color: #ffe2cf !important;
+.hc-team-look-hero .eyebrow { color: var(--hc-hero-muted); }
+.hc-team-look-hero :is(button, a, [role="button"], .badge) {
+  -webkit-text-fill-color: currentColor;
 }
-html.theme-light .hc-team-look-hero span[style*="border-radius: 999px"],
-html.theme-dark .hc-team-look-hero span[style*="border-radius: 999px"] {
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
-}
-html .hc-team-look-hero .hc-team-hero-fan-link {
-  color: #111 !important;
-  -webkit-text-fill-color: #111 !important;
-}
-html .hc-team-look-hero .hc-team-follow-pill,
-html .hc-team-look-hero .hc-team-follow-pill * {
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
-}
+.hc-team-look-hero .hc-team-hero-fan-link { color: #111; }
+.hc-team-look-hero .hc-team-follow-pill { color: #fff; }
 @media (max-width: 700px) {
   main.hc-team-entity-profile,
   main.hc-league-entity-profile,
   main.hc-womens-profile-page {
-    padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px));
+    min-width: 0;
   }
-  .hc-team-look-hero { overflow-wrap: anywhere; }
-  .hc-team-look-hero > div { max-width: 100%; }
+  .hc-team-look-hero > div { max-width: 100%; min-width: 0; }
+  .hc-team-profile-overview-grid { min-width: 0; }
+  .hc-team-profile-overview-grid > * { min-width: 0; overflow-wrap: anywhere; }
 }
