@@ -32,6 +32,7 @@ export default function ProfilePage() {
   const { t } = useLanguage();
   const [p, setP] = useState<any>(null);
   const [cover, setCover] = useState(profileCover(null));
+  const [profileLayout, setProfileLayout] = useState<"standard" | "compact">("standard");
   const [loading, setLoading] = useState(true);
   const [postingStreak, setPostingStreak] = useState(0);
   const [loadError, setLoadError] = useState(false);
@@ -51,6 +52,7 @@ export default function ProfilePage() {
 
       if (!active) return;
       setCover(profileCover(user.user_metadata?.hoopcheck_profile_cover));
+      setProfileLayout(user.user_metadata?.hoopcheck_profile_layout === "compact" ? "compact" : "standard");
       const result = await Promise.race([
         supabase
           .from("profiles")
@@ -74,7 +76,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <main className="page-shell hc-member-profile-page">
+      <main className="page-shell hc-member-profile-page" data-profile-layout={profileLayout}>
         <div className="page-container">
           <HoopLoading label={t("loading")} />
         </div>
