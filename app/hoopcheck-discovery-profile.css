@@ -286,3 +286,7 @@ html body .hc-global-page-shell main .hc-social-profile :is(.hc-social-handle,.h
 @media (max-width: 420px) {
   .hc-member-profile-page[data-profile-layout="compact"] .hc-social-avatar-row { margin-top: -24px; }
 }
+
+.hc-profile-social-links { display: flex; flex-wrap: wrap; gap: .4rem .65rem; margin-top: .7rem; }
+.hc-profile-social-links a { display: inline-flex; align-items: center; min-height: 40px; max-width: 100%; padding: .3rem .65rem; border: 1px solid var(--hc-border); border-radius: 999px; color: var(--hc-foreground); background: var(--hc-surface-soft); font-size: .85rem; font-weight: 650; text-decoration: none; overflow-wrap: anywhere; }
+.hc-profile-social-links a:focus-visible { outline: 2px solid var(--hc-orange); outline-offset: 2px; }
