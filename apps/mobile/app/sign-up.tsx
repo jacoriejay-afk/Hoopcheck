@@ -112,8 +112,8 @@ export default function SignUpScreen() {
           <Text style={[styles.label, { color: theme.foreground }]}>Account type</Text>
           <View style={styles.choices}>
             {ACCOUNT_TYPES.map((item) => (
-              <Pressable key={item.value} accessibilityRole="radio" accessibilityState={{ selected: accountType === item.value }} onPress={() => setAccountType(item.value)} style={[styles.choice, accountType === item.value && styles.choiceSelected]}>
-                <Text style={[styles.choiceText, accountType === item.value && styles.choiceTextSelected]}>{item.label}</Text>
+              <Pressable key={item.value} accessibilityRole="radio" accessibilityState={{ selected: accountType === item.value }} onPress={() => setAccountType(item.value)} style={[styles.choice, { backgroundColor: theme.surface, borderColor: theme.border }, accountType === item.value && { borderColor: theme.button, backgroundColor: theme.accentSurface }]}>
+                <Text style={[styles.choiceText, { color: theme.foreground }]}>{item.label}</Text>
               </Pressable>
             ))}
           </View>
@@ -125,14 +125,14 @@ export default function SignUpScreen() {
           <UsernameField ref={usernameFieldRef} value={username} onChange={setUsername} disabled={busy} />
           <Text style={[styles.label, { color: theme.foreground }]}>Birthdate (YYYY-MM-DD)</Text>
           <TextInput value={birthdate} onChangeText={setBirthdate} keyboardType="numbers-and-punctuation" placeholder="1990-04-23" style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.foreground }]} maxLength={10} />
-          <Text style={styles.hint}>Your birthdate is used to enforce HoopCheck’s 18+ account requirement.</Text>
+          <Text style={[styles.hint, { color: theme.muted }]}>Your birthdate is used to enforce HoopCheck’s 18+ account requirement.</Text>
           <Text style={[styles.label, { color: theme.foreground }]}>Gender</Text>
           <View style={styles.genderChoices}>
             {[
               ["male", "Male"], ["female", "Female"], ["non_binary", "Non-binary"], ["prefer_not_to_say", "Prefer not to say"],
             ].map(([value, label]) => (
-              <Pressable key={value} accessibilityRole="radio" accessibilityState={{ selected: gender === value }} onPress={() => setGender(value)} style={[styles.choice, gender === value && styles.choiceSelected]}>
-                <Text style={[styles.choiceText, gender === value && styles.choiceTextSelected]}>{label}</Text>
+              <Pressable key={value} accessibilityRole="radio" accessibilityState={{ selected: gender === value }} onPress={() => setGender(value)} style={[styles.choice, { backgroundColor: theme.surface, borderColor: theme.border }, gender === value && { borderColor: theme.button, backgroundColor: theme.accentSurface }]}>
+                <Text style={[styles.choiceText, { color: theme.foreground }]}>{label}</Text>
               </Pressable>
             ))}
           </View>
@@ -141,8 +141,8 @@ export default function SignUpScreen() {
               <Text style={[styles.label, { color: theme.foreground }]}>Primary basketball position</Text>
               <View style={styles.choices}>
                 {[["PG", "Point guard"], ["SG", "Shooting guard"], ["SF", "Small forward"], ["PF", "Power forward"], ["C", "Center"]].map(([value, label]) => (
-                  <Pressable key={value} accessibilityRole="radio" accessibilityState={{ selected: position === value }} onPress={() => setPosition(value)} style={[styles.choice, position === value && styles.choiceSelected]}>
-                    <Text style={[styles.choiceText, position === value && styles.choiceTextSelected]}>{label}</Text>
+                  <Pressable key={value} accessibilityRole="radio" accessibilityState={{ selected: position === value }} onPress={() => setPosition(value)} style={[styles.choice, { backgroundColor: theme.surface, borderColor: theme.border }, position === value && { borderColor: theme.button, backgroundColor: theme.accentSurface }]}>
+                    <Text style={[styles.choiceText, { color: theme.foreground }]}>{label}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -165,7 +165,7 @@ export default function SignUpScreen() {
             <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/community-guidelines`)} style={[styles.link, { color: theme.accent }]}>Community Guidelines</Text>
           </View>
           {errorMessage ? <Text accessibilityRole="alert" style={styles.error}>{errorMessage}</Text> : null}
-          <Pressable onPress={createAccount} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Creating account…" : "Create account"}</Text></Pressable>
+          <Pressable onPress={createAccount} disabled={busy} style={[styles.button, { backgroundColor: theme.button }, busy && styles.dim]}><Text style={[styles.buttonText, { color: theme.onButton }]}>{busy ? "Creating account…" : "Create account"}</Text></Pressable>
           <Text style={[styles.bottomText, { color: theme.muted }]}>Already have an account? <Link href="/sign-in" style={[styles.link, { color: theme.accent }]}>Sign in</Link></Text>
         </ScrollView>
       </KeyboardAvoidingView>
