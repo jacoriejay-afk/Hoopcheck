@@ -433,6 +433,34 @@ try {
         );
       }
 
+      // UI-FINAL: detect horizontal overflow without masking it with body overflow-x: clip.
+      // The widest visible element matters even when the document reports no scroll width.
+      const overflow = await page.evaluate(() => {
+        const viewport = document.documentElement.clientWidth;
+        return Array.from(document.querySelectorAll("main *, header.site-header-global *, nav *"))
+          .filter(element => {
+            const style = getComputedStyle(element);
+            if (style.display === "none" || style.visibility === "hidden" || style.position === "fixed") return false;
+            // Children of an intentional horizontal scroll rail may extend past the
+            // viewport without causing page overflow. Only ignore them when an
+            // actual scroll container clips their horizontal overflow.
+            let ancestor = element.parentElement;
+            while (ancestor && ancestor !== document.body) {
+              const ancestorStyle = getComputedStyle(ancestor);
+              if (["auto", "scroll"].includes(ancestorStyle.overflowX)) {
+                const bounds = ancestor.getBoundingClientRect();
+                if (bounds.left >= -2 && bounds.right <= viewport + 2 && ancestor.clientWidth > 0) return false;
+              }
+              ancestor = ancestor.parentElement;
+            }
+            const rect = element.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0 && (rect.left < -2 || rect.right > viewport + 2);
+          })
+          .slice(0, 15)
+          .map(element => ({ tag: element.tagName.toLowerCase(), className: typeof element.className === "string" ? element.className.slice(0, 100) : "", rect: { left: Math.round(element.getBoundingClientRect().left), right: Math.round(element.getBoundingClientRect().right) } }));
+      });
+      assert.equal(overflow.length, 0, `${routeName}/${theme}: visible horizontal overflow: ${JSON.stringify(overflow)}`);
+
       results.push({ route: path, theme, computed });
       await page.screenshot({
         path: `${artifactsDir}/${routeName}-${theme}-${testLanguage}-mobile.png`,
@@ -909,6 +937,30 @@ try {
         await page.locator('img[alt="Logo candidate preview"]').waitFor({ state: "visible", timeout: 10000 });
         await page.screenshot({ path: `${artifactsDir}/admin-logo-candidate-approval-flow-${theme}.png`, fullPage: true, animations: "disabled" });
       }
+      // UI-FINAL: apply viewport overflow coverage to every route in the existing
+      // light/dark route sweep, not only dashboard, feed and admin directory.
+      const pageOverflow = await page.evaluate(() => {
+        const viewport = document.documentElement.clientWidth;
+        return Array.from(document.querySelectorAll("main *, header.site-header-global *, nav *"))
+          .filter(element => {
+            const style = getComputedStyle(element);
+            if (style.display === "none" || style.visibility === "hidden" || style.position === "fixed") return false;
+            let ancestor = element.parentElement;
+            while (ancestor && ancestor !== document.body) {
+              const ancestorStyle = getComputedStyle(ancestor);
+              if (["auto", "scroll"].includes(ancestorStyle.overflowX)) {
+                const bounds = ancestor.getBoundingClientRect();
+                if (bounds.left >= -2 && bounds.right <= viewport + 2 && ancestor.clientWidth > 0) return false;
+              }
+              ancestor = ancestor.parentElement;
+            }
+            const rect = element.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0 && (rect.left < -2 || rect.right > viewport + 2);
+          })
+          .slice(0, 10)
+          .map(element => ({ tag: element.tagName.toLowerCase(), className: typeof element.className === "string" ? element.className.slice(0, 80) : "" }));
+      });
+      if (pageOverflow.length) errors.push("viewport overflow: " + JSON.stringify(pageOverflow));
       routeSweepResults.push({ theme, ...result, status: errors.length ? "FAIL" : result.pageWrapper ? "PASS" : "NO_MAIN", reason: errors.join("; ") || (result.pageWrapper ? "" : "route rendered no main element") });
     }
     if (testLanguage === "en") {
