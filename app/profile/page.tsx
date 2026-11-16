@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import SocialProfileHeader, { profileCover } from "../../components/SocialProfileHeader";
 import OwnProfilePostsGrid from "../../components/OwnProfilePostsGrid";
+import ProfileLatestPost from "../../components/ProfileLatestPost";
 import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
@@ -31,6 +32,8 @@ export default function ProfilePage() {
   const { t } = useLanguage();
   const [p, setP] = useState<any>(null);
   const [cover, setCover] = useState(profileCover(null));
+  const [profileLayout, setProfileLayout] = useState<"standard" | "compact">("standard");
+  const [socialLinks, setSocialLinks] = useState<{ label: string; url: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [postingStreak, setPostingStreak] = useState(0);
   const [loadError, setLoadError] = useState(false);
@@ -50,6 +53,20 @@ export default function ProfilePage() {
 
       if (!active) return;
       setCover(profileCover(user.user_metadata?.hoopcheck_profile_cover));
+      setProfileLayout(user.user_metadata?.hoopcheck_profile_layout === "compact" ? "compact" : "standard");
+      const storedLinks = user.user_metadata?.hoopcheck_social_links;
+      const safeLinks: { label: string; url: string }[] = [];
+      for (const [key, label, domain] of [["instagram", "Instagram", "instagram.com"], ["tiktok", "TikTok", "tiktok.com"], ["youtube", "YouTube", "youtube.com"], ["website", "Website", ""]] as const) {
+        const value = storedLinks?.[key];
+        if (typeof value !== "string" || value.length > 250) continue;
+        try {
+          const parsed = new URL(value);
+          if (parsed.protocol !== "https:" || parsed.username || parsed.password) continue;
+          if (domain && parsed.hostname !== domain && parsed.hostname !== "www." + domain && !(key === "youtube" && parsed.hostname === "youtu.be")) continue;
+          safeLinks.push({ label, url: parsed.href });
+        } catch { /* Ignore invalid saved links. */ }
+      }
+      setSocialLinks(safeLinks);
       const result = await Promise.race([
         supabase
           .from("profiles")
@@ -73,7 +90,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <main className="page-shell hc-member-profile-page">
+      <main className="page-shell hc-member-profile-page" data-profile-layout={profileLayout}>
         <div className="page-container">
           <HoopLoading label={t("loading")} />
         </div>
@@ -102,17 +119,21 @@ export default function ProfilePage() {
   const nextFieldAnchor = completion.nextMissing?.key ?? "profile-editor";
 
   return (
-    <main className="page-shell hc-member-profile-page">
+    <main className="page-shell hc-member-profile-page" data-profile-layout={profileLayout}>
       <div className="page-container">
         <SocialProfileHeader name={name} handle={p.username} avatarUrl={p.avatar_url} cover={cover}
           badge={(p.player_verified || p.coach_verified) && <VerifiedBadge label={p.player_verified ? "Verified player" : "Verified coach"} />}
           actions={<Link href="/account#profile-editor" className="btn">{t("editProfile")}</Link>}>
           {p.avatar_url && p.avatar_moderation_status === "pending" && <p className="muted">{t("photoReview")}</p>}
           {p.bio && <p className="hc-social-bio">{p.bio}</p>}
+          {socialLinks.length > 0 && <nav aria-label="Social links" className="hc-profile-social-links">
+            {socialLinks.map(link => <a key={link.label} href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>)}
+          </nav>}
           {postingStreak > 0 && <p className="hc-social-streak"><span aria-hidden="true">🔥</span> {postingStreak}-day streak</p>}
         </SocialProfileHeader>
         <nav className="hc-social-profile-nav" aria-label="Profile sections">
           <a href="#profile-about">About</a>
+          <a href="#profile-latest-post">Latest Post</a>
           {p.account_type === "player" && <a href="#profile-posts">Posts</a>}
           <a href="#career-passport">Career Passport</a>
           <Link href="/account#profile-appearance">Customize</Link>
@@ -148,6 +169,7 @@ export default function ProfilePage() {
           {p.favorite_leagues && <p><strong>{t("favoriteLeagues")}</strong> {p.favorite_leagues}</p>}
         </Surface>
 
+        <div id="profile-latest-post" style={{ scrollMarginTop: 96 }}><ProfileLatestPost userId={p.id} /></div>
         {p.account_type === "player" && <div id="profile-posts"><OwnProfilePostsGrid userId={p.id} /></div>}
 
         <section className="dashboard-card compact-section">
