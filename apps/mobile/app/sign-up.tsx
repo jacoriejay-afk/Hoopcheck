@@ -4,6 +4,7 @@ import { Link, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
 import UsernameField, { type UsernameFieldHandle } from "../components/UsernameField";
+import { useEntryTheme } from "../src/theme";
 
 const TERMS_VERSION = "2026-10-01";
 const ACCOUNT_TYPES = [
@@ -14,7 +15,7 @@ const ACCOUNT_TYPES = [
   { value: "agent", label: "Agent" },
   { value: "fan", label: "Fan" },
 ] as const;
-const LEGAL_BASE = "https://hoopcheck-hoopcheck.vercel.app";
+const LEGAL_BASE = "https://hoopcheck.online";
 
 function validBirthdate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -32,6 +33,7 @@ function ageAtDate(value: string): number {
 
 export default function SignUpScreen() {
   const router = useRouter();
+  const theme = useEntryTheme();
   const [accountType, setAccountType] = useState<(typeof ACCOUNT_TYPES)[number]["value"]>("player");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -101,13 +103,13 @@ export default function SignUpScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <Text style={styles.title}>Create your account</Text>
-          <Text style={styles.subtitle}>Join the basketball community. You must be 18 or older.</Text>
+          <Text style={[styles.title, { color: theme.foreground }]}>Create your account</Text>
+          <Text style={[styles.subtitle, { color: theme.muted }]}>Join the basketball community. You must be 18 or older.</Text>
 
-          <Text style={styles.label}>Account type</Text>
+          <Text style={[styles.label, { color: theme.foreground }]}>Account type</Text>
           <View style={styles.choices}>
             {ACCOUNT_TYPES.map((item) => (
               <Pressable key={item.value} accessibilityRole="radio" accessibilityState={{ selected: accountType === item.value }} onPress={() => setAccountType(item.value)} style={[styles.choice, accountType === item.value && styles.choiceSelected]}>
@@ -116,15 +118,15 @@ export default function SignUpScreen() {
             ))}
           </View>
 
-          <Text style={styles.label}>First name</Text>
-          <TextInput value={firstName} onChangeText={setFirstName} autoComplete="given-name" style={styles.input} placeholder="First name" />
-          <Text style={styles.label}>Last name</Text>
-          <TextInput value={lastName} onChangeText={setLastName} autoComplete="family-name" style={styles.input} placeholder="Last name" />
+          <Text style={[styles.label, { color: theme.foreground }]}>First name</Text>
+          <TextInput value={firstName} onChangeText={setFirstName} autoComplete="given-name" style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.foreground }]} placeholder="First name" />
+          <Text style={[styles.label, { color: theme.foreground }]}>Last name</Text>
+          <TextInput value={lastName} onChangeText={setLastName} autoComplete="family-name" style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.foreground }]} placeholder="Last name" />
           <UsernameField ref={usernameFieldRef} value={username} onChange={setUsername} disabled={busy} />
-          <Text style={styles.label}>Birthdate (YYYY-MM-DD)</Text>
-          <TextInput value={birthdate} onChangeText={setBirthdate} keyboardType="numbers-and-punctuation" placeholder="1990-04-23" style={styles.input} maxLength={10} />
+          <Text style={[styles.label, { color: theme.foreground }]}>Birthdate (YYYY-MM-DD)</Text>
+          <TextInput value={birthdate} onChangeText={setBirthdate} keyboardType="numbers-and-punctuation" placeholder="1990-04-23" style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.foreground }]} maxLength={10} />
           <Text style={styles.hint}>Your birthdate is used to enforce HoopCheck’s 18+ account requirement.</Text>
-          <Text style={styles.label}>Gender</Text>
+          <Text style={[styles.label, { color: theme.foreground }]}>Gender</Text>
           <View style={styles.genderChoices}>
             {[
               ["male", "Male"], ["female", "Female"], ["non_binary", "Non-binary"], ["prefer_not_to_say", "Prefer not to say"],
@@ -136,7 +138,7 @@ export default function SignUpScreen() {
           </View>
           {accountType === "player" ? (
             <>
-              <Text style={styles.label}>Primary basketball position</Text>
+              <Text style={[styles.label, { color: theme.foreground }]}>Primary basketball position</Text>
               <View style={styles.choices}>
                 {[["PG", "Point guard"], ["SG", "Shooting guard"], ["SF", "Small forward"], ["PF", "Power forward"], ["C", "Center"]].map(([value, label]) => (
                   <Pressable key={value} accessibilityRole="radio" accessibilityState={{ selected: position === value }} onPress={() => setPosition(value)} style={[styles.choice, position === value && styles.choiceSelected]}>
@@ -146,25 +148,25 @@ export default function SignUpScreen() {
               </View>
             </>
           ) : null}
-          <Text style={styles.label}>Email</Text>
-          <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" style={styles.input} placeholder="you@example.com" />
-          <Text style={styles.label}>Password</Text>
-          <TextInput value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" style={styles.input} placeholder="At least 6 characters" />
-          <Text style={styles.label}>Confirm password</Text>
-          <TextInput value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry autoComplete="new-password" style={styles.input} placeholder="Enter password again" />
+          <Text style={[styles.label, { color: theme.foreground }]}>Email</Text>
+          <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.foreground }]} placeholder="you@example.com" />
+          <Text style={[styles.label, { color: theme.foreground }]}>Password</Text>
+          <TextInput value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.foreground }]} placeholder="At least 6 characters" />
+          <Text style={[styles.label, { color: theme.foreground }]}>Confirm password</Text>
+          <TextInput value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry autoComplete="new-password" style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.foreground }]} placeholder="Enter password again" />
 
           <Pressable onPress={() => setAccepted(!accepted)} accessibilityRole="checkbox" accessibilityState={{ checked: accepted }} style={styles.consent}>
             <View style={[styles.checkbox, accepted && styles.checkboxChecked]}><Text style={styles.checkmark}>{accepted ? "✓" : ""}</Text></View>
-            <Text style={styles.consentText}>I agree to the Terms of Service and acknowledge the Privacy Policy and Community Guidelines.</Text>
+            <Text style={[styles.consentText, { color: theme.foreground }]}>I agree to the Terms of Service and acknowledge the Privacy Policy and Community Guidelines.</Text>
           </Pressable>
           <View style={styles.legalLinks}>
-            <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/terms`)} style={styles.link}>Terms of Service</Text>
-            <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/privacy`)} style={styles.link}>Privacy Policy</Text>
-            <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/community-guidelines`)} style={styles.link}>Community Guidelines</Text>
+            <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/terms`)} style={[styles.link, { color: theme.accent }]}>Terms of Service</Text>
+            <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/privacy`)} style={[styles.link, { color: theme.accent }]}>Privacy Policy</Text>
+            <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/community-guidelines`)} style={[styles.link, { color: theme.accent }]}>Community Guidelines</Text>
           </View>
           {errorMessage ? <Text accessibilityRole="alert" style={styles.error}>{errorMessage}</Text> : null}
           <Pressable onPress={createAccount} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Creating account…" : "Create account"}</Text></Pressable>
-          <Text style={styles.bottomText}>Already have an account? <Link href="/sign-in" style={styles.link}>Sign in</Link></Text>
+          <Text style={[styles.bottomText, { color: theme.muted }]}>Already have an account? <Link href="/sign-in" style={[styles.link, { color: theme.accent }]}>Sign in</Link></Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
