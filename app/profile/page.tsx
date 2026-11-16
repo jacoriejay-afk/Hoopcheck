@@ -119,7 +119,7 @@ export default function ProfilePage() {
   const nextFieldAnchor = completion.nextMissing?.key ?? "profile-editor";
 
   return (
-    <main className="page-shell hc-member-profile-page">
+    <main className="page-shell hc-member-profile-page" data-profile-layout={profileLayout}>
       <div className="page-container">
         <SocialProfileHeader name={name} handle={p.username} avatarUrl={p.avatar_url} cover={cover}
           badge={(p.player_verified || p.coach_verified) && <VerifiedBadge label={p.player_verified ? "Verified player" : "Verified coach"} />}
