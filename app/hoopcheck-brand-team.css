@@ -333,6 +333,15 @@ html body .hc-team-branded-hero .hc-team-profile-stat {border-color:#ffffff38 !i
     padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px));
     min-width: 0;
   }
+  /* Women's content sits inside page-container, unlike the men's main layout. */
+  main.hc-womens-profile-page > .page-container {
+    min-width: 0;
+    padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px));
+  }
+  main.hc-womens-profile-page .hc-team-profile-nav {
+    max-width: 100%;
+    min-width: 0;
+  }
   .hc-team-look-hero > div { max-width: 100%; min-width: 0; }
   .hc-team-profile-overview-grid { min-width: 0; }
   .hc-team-profile-overview-grid > * { min-width: 0; overflow-wrap: anywhere; }
