@@ -185,6 +185,10 @@ html body .hc-global-page-shell main .hc-directory-compact-meta .hc-follow-compa
 [data-profile-cover="rose"] { --hc-cover-hue: #ef77af !important; }
 [data-profile-cover="violet"] { --hc-cover-hue: #9d89f5 !important; }
 [data-profile-cover="ocean"] { --hc-cover-hue: #59b8cf !important; }
+[data-profile-cover="forest"] { --hc-cover-hue: #2fa67b !important; }
+[data-profile-cover="gold"] { --hc-cover-hue: #e5b84c !important; }
+[data-profile-cover="midnight"] { --hc-cover-hue: #5266b5 !important; }
+[data-profile-cover="coral"] { --hc-cover-hue: #ef745c !important; }
 
 .hc-social-profile {
   border: 1px solid var(--hc-border);
