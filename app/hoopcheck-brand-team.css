@@ -306,3 +306,46 @@ html body .hc-team-branded-hero .hc-team-profile-stat {border-color:#ffffff38 !i
 .hc-team-entity-profile .hc-team-profile-nav [role="tab"]:focus-visible{outline:2px solid var(--hc-team-brand-orange,#f97337);outline-offset:2px;border-radius:4px}
 .hc-team-entity-profile [role="tabpanel"][hidden]{display:none!important}
 .hc-team-entity-profile button.hc-team-profile-inline-link{appearance:none;border:0;background:transparent;padding:0;cursor:pointer;text-align:left;font:inherit}
+
+
+/* Issue #676: dark club cover retains readable text regardless of the page theme. */
+html.theme-light .hc-team-look-hero,
+html.theme-dark .hc-team-look-hero,
+html .hc-team-look-hero {
+  color: #fff !important;
+}
+html.theme-light .hc-team-look-hero :is(h1, h2, h3, p, strong),
+html.theme-dark .hc-team-look-hero :is(h1, h2, h3, p, strong),
+html .hc-team-look-hero :is(h1, h2, h3, p, strong) {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+html.theme-light .hc-team-look-hero p:first-child,
+html.theme-dark .hc-team-look-hero p:first-child,
+html .hc-team-look-hero p:first-child {
+  color: #ffe2cf !important;
+  -webkit-text-fill-color: #ffe2cf !important;
+}
+html.theme-light .hc-team-look-hero span[style*="border-radius: 999px"],
+html.theme-dark .hc-team-look-hero span[style*="border-radius: 999px"] {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+html .hc-team-look-hero .hc-team-hero-fan-link {
+  color: #111 !important;
+  -webkit-text-fill-color: #111 !important;
+}
+html .hc-team-look-hero .hc-team-follow-pill,
+html .hc-team-look-hero .hc-team-follow-pill * {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+@media (max-width: 700px) {
+  main.hc-team-entity-profile,
+  main.hc-league-entity-profile,
+  main.hc-womens-profile-page {
+    padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .hc-team-look-hero { overflow-wrap: anywhere; }
+  .hc-team-look-hero > div { max-width: 100%; }
+}
