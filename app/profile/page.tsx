@@ -33,6 +33,7 @@ export default function ProfilePage() {
   const [p, setP] = useState<any>(null);
   const [cover, setCover] = useState(profileCover(null));
   const [profileLayout, setProfileLayout] = useState<"standard" | "compact">("standard");
+  const [socialLinks, setSocialLinks] = useState<{ label: string; url: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [postingStreak, setPostingStreak] = useState(0);
   const [loadError, setLoadError] = useState(false);
@@ -53,6 +54,19 @@ export default function ProfilePage() {
       if (!active) return;
       setCover(profileCover(user.user_metadata?.hoopcheck_profile_cover));
       setProfileLayout(user.user_metadata?.hoopcheck_profile_layout === "compact" ? "compact" : "standard");
+      const storedLinks = user.user_metadata?.hoopcheck_social_links;
+      const safeLinks: { label: string; url: string }[] = [];
+      for (const [key, label, domain] of [["instagram", "Instagram", "instagram.com"], ["tiktok", "TikTok", "tiktok.com"], ["youtube", "YouTube", "youtube.com"], ["website", "Website", ""]] as const) {
+        const value = storedLinks?.[key];
+        if (typeof value !== "string" || value.length > 250) continue;
+        try {
+          const parsed = new URL(value);
+          if (parsed.protocol !== "https:" || parsed.username || parsed.password) continue;
+          if (domain && parsed.hostname !== domain && parsed.hostname !== "www." + domain && !(key === "youtube" && parsed.hostname === "youtu.be")) continue;
+          safeLinks.push({ label, url: parsed.href });
+        } catch { /* Ignore invalid saved links. */ }
+      }
+      setSocialLinks(safeLinks);
       const result = await Promise.race([
         supabase
           .from("profiles")
@@ -112,6 +126,9 @@ export default function ProfilePage() {
           actions={<Link href="/account#profile-editor" className="btn">{t("editProfile")}</Link>}>
           {p.avatar_url && p.avatar_moderation_status === "pending" && <p className="muted">{t("photoReview")}</p>}
           {p.bio && <p className="hc-social-bio">{p.bio}</p>}
+          {socialLinks.length > 0 && <nav aria-label="Social links" className="hc-profile-social-links">
+            {socialLinks.map(link => <a key={link.label} href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>)}
+          </nav>}
           {postingStreak > 0 && <p className="hc-social-streak"><span aria-hidden="true">🔥</span> {postingStreak}-day streak</p>}
         </SocialProfileHeader>
         <nav className="hc-social-profile-nav" aria-label="Profile sections">
