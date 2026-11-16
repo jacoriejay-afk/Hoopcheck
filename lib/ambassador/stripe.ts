@@ -104,7 +104,13 @@ export async function reconcileAmbassadorEvent(stripe: Stripe, rpc: Rpc, event: 
     default:
       return;
   }
-  if (!chargeId || !await runRpc(rpc, "ambassador_has_charge", { p_charge: chargeId })) return;
+  if (!chargeId) return;
+  const hasAmbassadorCharge = await runRpc(rpc, "ambassador_has_charge", { p_charge: chargeId });
+  // Temporary sandbox diagnostic: IDs and booleans only, never secrets or customer data.
+  if (process.env.VERCEL_ENV === "preview") {
+    console.info("[refund-audit-668] reconciliation", { deployment: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ?? "unknown", eventType: event.type, eventId: event.id, hasAmbassadorCharge: Boolean(hasAmbassadorCharge) });
+  }
+  if (!hasAmbassadorCharge) return;
   const checkedAt = new Date().toISOString();
   const charge = await stripe.charges.retrieve(chargeId);
   await runRpc(rpc, "ambassador_reconcile_charge", {
@@ -123,6 +129,7 @@ export async function reconcileAmbassadorEvent(stripe: Stripe, rpc: Rpc, event: 
     if (objectId(refund.charge) !== chargeId) {
       throw new Error("Stripe refund does not belong to reconciled charge");
     }
+    if (process.env.VERCEL_ENV === "preview") console.info("[refund-audit-668] writing audit", { refundId: refund.id, chargeId, status: refund.status });
     await runRpc(rpc, "ambassador_record_refund_audit", {
       p_refund: refund.id,
       p_charge: chargeId,
@@ -131,6 +138,7 @@ export async function reconcileAmbassadorEvent(stripe: Stripe, rpc: Rpc, event: 
       p_status: refund.status ?? "unknown",
       p_created_at: new Date(refund.created * 1000).toISOString(),
     });
+    if (process.env.VERCEL_ENV === "preview") console.info("[refund-audit-668] audit recorded", { refundId: refund.id });
   }
 }
 
