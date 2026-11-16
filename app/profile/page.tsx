@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import SocialProfileHeader, { profileCover } from "../../components/SocialProfileHeader";
 import OwnProfilePostsGrid from "../../components/OwnProfilePostsGrid";
+import ProfileLatestPost from "../../components/ProfileLatestPost";
 import { getCachedSession, supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
@@ -113,6 +114,7 @@ export default function ProfilePage() {
         </SocialProfileHeader>
         <nav className="hc-social-profile-nav" aria-label="Profile sections">
           <a href="#profile-about">About</a>
+          <a href="#profile-latest-post">Latest Post</a>
           {p.account_type === "player" && <a href="#profile-posts">Posts</a>}
           <a href="#career-passport">Career Passport</a>
           <Link href="/account#profile-appearance">Customize</Link>
@@ -148,6 +150,7 @@ export default function ProfilePage() {
           {p.favorite_leagues && <p><strong>{t("favoriteLeagues")}</strong> {p.favorite_leagues}</p>}
         </Surface>
 
+        <div id="profile-latest-post" style={{ scrollMarginTop: 96 }}><ProfileLatestPost userId={p.id} /></div>
         {p.account_type === "player" && <div id="profile-posts"><OwnProfilePostsGrid userId={p.id} /></div>}
 
         <section className="dashboard-card compact-section">
