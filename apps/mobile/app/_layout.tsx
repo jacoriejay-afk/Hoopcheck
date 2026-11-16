@@ -37,7 +37,9 @@ export default function RootLayout() {
     const currentRoute = segments[0] ?? "";
     const inAppArea = ["dashboard", "teams", "leagues", "players", "coaches", "choose-username"].includes(currentRoute);
     const onPasswordRecovery = currentRoute === "reset-password";
-    if (signedIn && !inAppArea && !onPasswordRecovery) router.replace("/dashboard");
+    // Let the OAuth callback exchange its PKCE code and choose the destination.
+    const onAuthCallback = currentRoute === "auth";
+    if (signedIn && !inAppArea && !onPasswordRecovery && !onAuthCallback) router.replace("/dashboard");
     if (!signedIn && inAppArea) router.replace("/sign-in");
   }, [sessionReady, signedIn, segments, router]);
 
@@ -54,6 +56,7 @@ export default function RootLayout() {
       >
         <Stack.Screen name="index" options={{ title: "HoopCheck™", headerShown: false }} />
         <Stack.Screen name="sign-in" options={{ title: "Sign in" }} />
+        <Stack.Screen name="auth/callback" options={{ title: "Signing in" }} />
         <Stack.Screen name="sign-up" options={{ title: "Create account" }} />
         <Stack.Screen name="choose-username" options={{ title: "Choose username" }} />
         <Stack.Screen name="forgot-password" options={{ title: "Reset password" }} />
