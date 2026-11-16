@@ -276,3 +276,13 @@ html body .hc-global-page-shell main .hc-social-profile :is(.hc-social-handle,.h
 }
 .hc-cover-options input { width: auto !important; min-height: 0 !important; margin: 0; }
 .hc-cover-swatch { display: inline-block; width: .8rem; height: .8rem; border-radius: 50%; background: var(--hc-cover-hue); }
+
+/* Optional compact member profile layout. Keeps standard theme tokens and accessible controls. */
+.hc-member-profile-page[data-profile-layout="compact"] .hc-social-cover { height: 80px; }
+.hc-member-profile-page[data-profile-layout="compact"] .hc-social-profile-body { padding-bottom: .65rem; }
+.hc-member-profile-page[data-profile-layout="compact"] .hc-social-avatar { width: 68px; height: 68px; }
+.hc-member-profile-page[data-profile-layout="compact"] .hc-social-profile-nav { margin-block: .25rem .6rem; }
+.hc-member-profile-page[data-profile-layout="compact"] .hc-profile-quick-grid { gap: .45rem; }
+@media (max-width: 420px) {
+  .hc-member-profile-page[data-profile-layout="compact"] .hc-social-avatar-row { margin-top: -24px; }
+}
