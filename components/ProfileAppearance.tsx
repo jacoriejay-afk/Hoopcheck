@@ -66,7 +66,7 @@ export default function ProfileAppearance({ current, onSave }: { current: Cover;
       onSave(choice);
       setSavedLayout(layout);
       setSavedLinks({ ...links });
-      setMessage("Profile appearance and links saved.");
+      setMessage("Profile cover saved.");
     } catch {
       setFailed(true);
       setMessage("Could not save your profile cover. Try again.");
