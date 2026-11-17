@@ -43,7 +43,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "online.hoopcheck.app",
+      "bundleIdentifier": "com.online.hoopcheck.app",
       "associatedDomains": [
         "applinks:hoopcheck.online"
       ]
