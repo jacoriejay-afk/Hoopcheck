@@ -137,14 +137,14 @@ html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile
   max-width:680px;
   align-self:flex-start;
 }
-.hc-team-entity-profile .hc-team-profile-overview-grid {
+:is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-overview-grid {
   display:grid;
   grid-template-columns:minmax(0,1.5fr) minmax(230px,1fr) minmax(230px,1fr);
   align-items:stretch;
   gap:16px;
   margin:20px 0 24px;
 }
-.hc-team-entity-profile .hc-team-profile-overview-grid > * {
+:is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-overview-grid > * {
   min-width:0;
   padding:clamp(18px,2vw,26px);
   border:1px solid var(--hc-border,#454545);
@@ -153,14 +153,14 @@ html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile
   color:var(--hc-text,#f6f6f6);
   box-shadow:none;
 }
-.hc-team-entity-profile .hc-team-profile-overview-grid h2 {
+:is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-overview-grid h2 {
   margin:5px 0 12px;
   font-size:clamp(20px,2vw,28px);
   line-height:1.2;
   color:inherit;
 }
-.hc-team-entity-profile .hc-team-profile-overview-grid p { line-height:1.55; }
-.hc-team-entity-profile .hc-team-profile-facts {
+:is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-overview-grid p { line-height:1.55; }
+:is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-facts {
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
   gap:12px;
@@ -168,11 +168,11 @@ html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile
   padding-top:16px;
   border-top:1px solid var(--hc-border,#444);
 }
-.hc-team-entity-profile .hc-team-profile-facts dt {
+:is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-facts dt {
   font-size:12px;
   opacity:.75;
 }
-.hc-team-entity-profile .hc-team-profile-facts dd {
+:is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-facts dd {
   margin:4px 0 0;
   font-weight:750;
   overflow-wrap:anywhere;
@@ -203,30 +203,30 @@ html.theme-dark .hc-team-entity-profile > .hc-team-profile-hero .hc-team-profile
   gap:8px;
 }
 .hc-team-branded-hero .hc-team-hero-fan-link { color: var(--hc-button-primary-fg) !important; }
-.hc-team-entity-profile .hc-team-profile-snapshot-note {
+:is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-snapshot-note {
   margin:12px 0;
 }
-.hc-team-entity-profile .hc-team-profile-inline-link {
+:is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-inline-link {
   display:inline-block;
   margin-top:12px;
   color:var(--hc-accent-text);
   font-weight:800;
 }
-html.theme-light .hc-team-entity-profile .hc-team-profile-overview-grid > * {
+html.theme-light :is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-overview-grid > * {
   background:var(--hc-surface,#fafafa);
   color:#171717;
   border-color:#dedbd5;
 }
-html.theme-dark .hc-team-entity-profile .hc-team-profile-overview-grid > * {
+html.theme-dark :is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-overview-grid > * {
   background:#191919;
   color:#f6f6f6;
   border-color:#454545;
 }
 @media(max-width:1000px) {
-  .hc-team-entity-profile .hc-team-profile-overview-grid {
+  :is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-overview-grid {
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
-  .hc-team-entity-profile .hc-team-profile-about { grid-column:1/-1; }
+  :is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-about { grid-column:1/-1; }
 }
 @media(max-width:700px) {
   .hc-team-entity-profile .hc-team-profile-identity {
@@ -237,12 +237,12 @@ html.theme-dark .hc-team-entity-profile .hc-team-profile-overview-grid > * {
     grid-column:1/-1;
     justify-self:start;
   }
-  .hc-team-entity-profile .hc-team-profile-overview-grid {
+  :is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-overview-grid {
     grid-template-columns:minmax(0,1fr);
     gap:12px;
   }
-  .hc-team-entity-profile .hc-team-profile-about { grid-column:auto; }
-  .hc-team-entity-profile .hc-team-profile-facts {
+  :is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-about { grid-column:auto; }
+  :is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-facts {
     grid-template-columns:minmax(0,1fr);
   }
 }
@@ -300,49 +300,54 @@ html body .hc-team-branded-hero .hc-team-profile-stat {border-color:#ffffff38 !i
 @media(max-width:700px){.hc-team-branded-hero .hc-team-social-top{flex-wrap:wrap;gap:18px}.hc-team-art-label{font-size:9px;letter-spacing:.05em}.hc-team-branded-hero .hc-team-profile-heading{min-width:0;width:100%}.hc-team-branded-hero .hc-team-profile-heading__copy{min-width:0}.hc-team-branded-hero h1{overflow-wrap:anywhere}}
 
 /* Accessible team profile tabs */
-.hc-team-entity-profile .hc-team-profile-nav [role="tablist"]{display:flex;align-items:stretch;gap:12px}
-.hc-team-entity-profile .hc-team-profile-nav [role="tab"]{appearance:none;border:0;border-bottom:3px solid transparent;background:transparent;color:inherit;font:inherit;font-weight:700;padding:12px 8px;cursor:pointer;white-space:nowrap}
-.hc-team-entity-profile .hc-team-profile-nav [role="tab"][aria-selected="true"]{border-bottom-color:var(--hc-team-brand-orange,#f97337);color:var(--hc-accent-text)}
-.hc-team-entity-profile .hc-team-profile-nav [role="tab"]:focus-visible{outline:2px solid var(--hc-team-brand-orange,#f97337);outline-offset:2px;border-radius:4px}
-.hc-team-entity-profile [role="tabpanel"][hidden]{display:none!important}
-.hc-team-entity-profile button.hc-team-profile-inline-link{appearance:none;border:0;background:transparent;padding:0;cursor:pointer;text-align:left;font:inherit}
+:is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-nav [role="tablist"]{display:flex;align-items:stretch;gap:12px}
+:is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-nav [role="tab"]{appearance:none;border:0;border-bottom:3px solid transparent;background:transparent;color:inherit;font:inherit;font-weight:700;padding:12px 8px;cursor:pointer;white-space:nowrap}
+:is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-nav [role="tab"][aria-selected="true"]{border-bottom-color:var(--hc-team-brand-orange,#f97337);color:var(--hc-accent-text)}
+:is(.hc-team-entity-profile, .hc-womens-profile-page) .hc-team-profile-nav [role="tab"]:focus-visible{outline:2px solid var(--hc-team-brand-orange,#f97337);outline-offset:2px;border-radius:4px}
+:is(.hc-team-entity-profile, .hc-womens-profile-page) [role="tabpanel"][hidden]{display:none!important}
+:is(.hc-team-entity-profile, .hc-womens-profile-page) button.hc-team-profile-inline-link{appearance:none;border:0;background:transparent;padding:0;cursor:pointer;text-align:left;font:inherit}
 
 
-/* Issue #676 follow-up: scoped hero colors, preserving controls and badges. */
-.hc-team-look-hero {
+/* Keep profile hero typography readable against its dark background in both themes. */
+html body main .hc-team-look-hero {
   --hc-hero-foreground: #fff;
   --hc-hero-muted: #ffe2cf;
   color: var(--hc-hero-foreground);
   overflow-wrap: anywhere;
 }
-.hc-team-look-hero :is(h1, h2, h3),
-.hc-team-look-hero > .eyebrow,
-.hc-team-look-hero .hc-league-hero-id {
-  color: var(--hc-hero-foreground);
-}
-.hc-team-look-hero .eyebrow { color: var(--hc-hero-muted); }
-.hc-team-look-hero :is(button, a, [role="button"], .badge) {
+html body main .hc-team-look-hero :is(h1, .hc-team-hero-location, .hc-team-hero-chip),
+html body main .hc-team-look-hero .hc-league-hero-id .hc-dir-flagchip {
+  color: var(--hc-hero-foreground) !important;
   -webkit-text-fill-color: currentColor;
 }
-.hc-team-look-hero .hc-team-hero-fan-link { color: #111; }
-.hc-team-look-hero .hc-team-follow-pill { color: #fff; }
+html body main .hc-team-look-hero :is(.hc-team-hero-kicker, .eyebrow, .hc-team-hero-actions .muted) {
+  color: var(--hc-hero-muted) !important;
+  -webkit-text-fill-color: currentColor;
+}
+html body main .hc-team-look-hero :is(.hc-team-hero-fan-link, .hc-team-follow-pill.is-not-following) {
+  color: #111 !important;
+  -webkit-text-fill-color: currentColor;
+}
+html body main .hc-team-look-hero .hc-team-follow-pill.is-following {
+  color: #fff !important;
+  border-color: currentColor;
+  -webkit-text-fill-color: currentColor;
+}
+@media (min-width: 1001px) {
+  .hc-womens-profile-page .hc-team-profile-overview-grid {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  }
+}
 @media (max-width: 700px) {
-  main.hc-team-entity-profile,
-  main.hc-league-entity-profile,
-  main.hc-womens-profile-page {
-    padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px));
+  html body main:is(.hc-team-entity-profile, .hc-league-entity-profile, .hc-womens-profile-page) {
+    padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)) !important;
     min-width: 0;
   }
-  /* Women's content sits inside page-container, unlike the men's main layout. */
-  main.hc-womens-profile-page > .page-container {
+  main.hc-womens-profile-page > .page-container,
+  main.hc-womens-profile-page .hc-team-profile-nav,
+  .hc-team-look-hero > div {
     min-width: 0;
-    padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px));
-  }
-  main.hc-womens-profile-page .hc-team-profile-nav {
     max-width: 100%;
-    min-width: 0;
   }
-  .hc-team-look-hero > div { max-width: 100%; min-width: 0; }
-  .hc-team-profile-overview-grid { min-width: 0; }
-  .hc-team-profile-overview-grid > * { min-width: 0; overflow-wrap: anywhere; }
+  .hc-team-profile-overview-grid > * { overflow-wrap: anywhere; }
 }

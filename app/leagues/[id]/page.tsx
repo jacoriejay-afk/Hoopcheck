@@ -488,15 +488,15 @@ export default function LeagueDetailPage() {
 
         <div className="entity-actions"><GeoBadge country={league.country} regional={league.country === "Europe"} /><WatchButton targetType="league" targetId={league.id} targetName={league.name} /></div>
 
-        <p>
+        <p className="hc-team-hero-location">
           {league.country ||
             t("countryNotListed")}
         </p>
 
         {league.level && (
           <p
+            className="hc-team-hero-kicker"
             style={{
-              color: "var(--orange)",
               fontWeight: 800,
               textTransform: "uppercase",
               letterSpacing: "0.5px",
