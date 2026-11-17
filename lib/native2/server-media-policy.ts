@@ -14,6 +14,8 @@ export interface Native2MediaAuthorizationInput {
   bucket: string;
   objectPath: string;
   requestOwnerId?: string | null;
+  requestId?: string | null;
+  trustedRequestId?: string | null;
   expiresAt?: string | null;
   now: string;
 }
@@ -33,6 +35,7 @@ export function native2AuthorizeOwnerMedia(input: Native2MediaAuthorizationInput
   if (objectPath !== `${prefix}.mp4` && objectPath !== `${prefix}.mov`) return false;
   if (kind === "verification") {
     if (!input.requestOwnerId || !UUID.test(input.requestOwnerId) || input.requestOwnerId.toLowerCase() !== recordOwnerId.toLowerCase()) return false;
+    if (!input.requestId || !input.trustedRequestId || !UUID.test(input.requestId) || !UUID.test(input.trustedRequestId) || input.requestId.toLowerCase() !== input.trustedRequestId.toLowerCase()) return false;
     const now = Date.parse(input.now);
     const expiry = Date.parse(input.expiresAt ?? "");
     if (!Number.isFinite(now) || !Number.isFinite(expiry) || now >= expiry) return false;
