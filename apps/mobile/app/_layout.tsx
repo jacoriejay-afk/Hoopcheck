@@ -1,3 +1,4 @@
+import { useFonts } from "expo-font";
 import { useEffect, useState } from "react";
 import { Stack, usePathname, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -6,6 +7,9 @@ import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 
 export default function RootLayout() {
+  // Metro statically resolves bundled font assets from require().
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const [fontsLoaded, fontError] = useFonts({ HoopCheckDisplay: require("../assets/hoopcheck-display.ttf") });
   const router = useRouter();
   const segments = useSegments();
   const theme = useEntryTheme();
@@ -41,15 +45,17 @@ export default function RootLayout() {
     if (!signedIn && inAppArea) router.replace("/sign-in");
   }, [sessionReady, signedIn, segments, router]);
 
+  if (!fontsLoaded && !fontError) return null;
+
   return (
     <SafeAreaProvider>
-      <StatusBar style={entryScreen && !theme.dark ? "dark" : "light"} />
+      <StatusBar style={!theme.dark ? "dark" : "light"} />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: "#070707" },
-          headerTintColor: "#FF6A00",
-          headerTitleStyle: { fontWeight: "900", fontSize: 19, color: "#FFFFFF" },
-          contentStyle: { backgroundColor: "#070707" },
+          headerStyle: { backgroundColor: theme.surface },
+          headerTintColor: theme.accent,
+          headerTitleStyle: { fontWeight: "900", fontSize: 19, color: theme.foreground },
+          contentStyle: { backgroundColor: theme.surface },
         }}
       >
         <Stack.Screen name="index" options={{ title: "HoopCheck™", headerShown: false }} />
