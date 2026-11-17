@@ -3,28 +3,17 @@ import { AppState, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { createClient, processLock } from "@supabase/supabase-js";
+import { validateSupabaseUrl } from "./supabase-url";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-function validateSupabaseUrl(value: string | undefined): string | null {
-  if (!value) return "Supabase URL is missing from this build.";
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash ||
-        (url.pathname !== "/" && url.pathname !== "") ||
-        !/^[a-z0-9-]+\.supabase\.co$/i.test(url.hostname)) {
-      return "Supabase URL must be the HTTPS project base URL without a path or query.";
-    }
-    return null;
-  } catch {
-    return "Supabase URL is malformed in this build.";
-  }
-}
+const projectUrl = supabaseUrl?.trim();
+const publishableKey = supabaseKey?.trim();
 
 export const supabaseConfigurationError =
-  validateSupabaseUrl(supabaseUrl) ||
-  (!supabaseKey || supabaseKey === "placeholder-publishable-key"
+  validateSupabaseUrl(projectUrl) ||
+  (!publishableKey || publishableKey === "placeholder-publishable-key"
     ? "Supabase publishable key is missing from this build."
     : null);
 
@@ -41,12 +30,12 @@ const webStorage = {
 };
 
 export const supabase = createClient(
-  supabaseUrl || "https://placeholder.supabase.co",
-  supabaseKey || "placeholder-publishable-key",
+  supabaseConfigurationError ? "https://placeholder.supabase.co" : projectUrl!,
+  supabaseConfigurationError ? "placeholder-publishable-key" : publishableKey!,
   {
     auth: {
       storage: Platform.OS === "web" ? webStorage : secureStorage,
-      autoRefreshToken: true,
+      autoRefreshToken: !supabaseConfigurationError,
       persistSession: true,
       detectSessionInUrl: false,
       flowType: "pkce",
@@ -55,7 +44,7 @@ export const supabase = createClient(
   },
 );
 
-if (Platform.OS !== "web") {
+if (!supabaseConfigurationError && Platform.OS !== "web") {
   AppState.addEventListener("change", (state) => {
     if (state === "active") supabase.auth.startAutoRefresh();
     else supabase.auth.stopAutoRefresh();
