@@ -11,7 +11,12 @@ Status: **draft PR #685, all four feature flags OFF**. No native camera/location
 - Security unit tests in `apps/mobile/src/lib/native2/*.test.mjs`, executed by `.github/workflows/native2-security.yml`.
 - All three migrations applied to **isolated Supabase test project only** (`vcprqpjkyubzzcjatdpx`); production project (`ucbdceaieyenljcwlhnj`) untouched.
 - Sandbox RLS test: user A sees only own travel preference, cannot see or update user B's preference; test transaction rolled back.
-- At commit `bef2261`, NATIVE-2 Security Tests, Mobile App Checks, HoopCheck CI, and Launch Test all passed.
+- Server owner-media policy in `lib/native2/server-media-policy.ts`, with unit tests. No caller-provided reviewer authorization.
+- Default-disabled `POST /api/native2/highlight-download` endpoint authenticates Supabase bearer tokens with the project's publishable key, looks up the owner's ready asset server-side, requires confirmed baked watermark and end card, validates canonical private path, and issues a 60-second signed URL. Verification-video download is not exposed.
+- Static and mocked server-behavior tests cover feature-off, invalid tokens/asset IDs, cross-user records, incomplete assets, invalid paths, signing errors, and successful owner requests. These tests do **not** substitute for real authenticated HTTP/Storage integration tests.
+- All five workflows passed at commit `b08e575` (HoopCheck CI, Launch Test, Mobile App Checks, entitlement matrix, NATIVE-2 Security Tests).
+- Isolated sandbox SQL rollback tests confirmed owner can read own highlight record (1), cross-user cannot (0), and unauthenticated identity cannot (0). These are database RLS checks, **not** signed-URL or API integration checks.
+- Sandbox storage audit confirmed both NATIVE-2 buckets remain private, with 100 MiB and MP4/QuickTime restrictions; no NATIVE-2-specific client storage policies.
 
 ## Existing integration boundaries
 - `apps/mobile/src/lib/supabase.ts`: Expo SecureStore-backed client.
