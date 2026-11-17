@@ -17,7 +17,7 @@ export default async function AmbassadorAdmin({ searchParams }: { searchParams: 
     db.from("ambassador_grants").select("id,code,status,activated_at,ends_at,first_rate_bps,commission_rate_bps,agreement_reference,payout_terms_reference"),
     db.from("ambassador_payouts").select("ambassador_id,amount_minor").eq("currency", "usd").eq("status", "approved"),
     db.from("ambassador_payouts").select("id,ambassador_id,amount_minor,status,paid_at")
-      .eq("currency", "usd").neq("status", "approved").order("created_at", { ascending: false }).limit(100),
+      .eq("currency", "usd").order("created_at", { ascending: false }).limit(100),
   ]);
   if (campaigns.error || grants.error || approvedPayouts.error || payoutHistory.error) throw new Error("Ambassador administration is temporarily unavailable.");
   const result = (await searchParams).result;
