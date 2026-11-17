@@ -17,7 +17,7 @@ export default function WelcomeScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <GlassCard style={styles.content}>
           <View style={styles.brand}>
-            <Image accessibilityLabel="HoopCheck" source={hoopcheckMark} style={styles.mark} />
+            <Image alt="HoopCheck" accessibilityLabel="HoopCheck" source={hoopcheckMark} style={styles.mark} />
 
           </View>
           <Text accessibilityRole="header" style={[theme.type.display, styles.headline, { color: theme.foreground }]}>

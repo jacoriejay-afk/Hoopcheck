@@ -1,4 +1,9 @@
-import { useState } from "react";
+import { useHaptics } from "../../../src/native/haptics";
+import { requireOnline, useNetwork } from "../../../src/native/network";
+import { OfflineBanner } from "../../../components/OfflineBanner";
+import { traceFlow } from "../../../src/native/telemetry";
+import { useEntryTheme } from "../../../src/theme";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -14,7 +19,11 @@ const RATING_FIELDS = [
 ] as const;
 
 export default function TeamReviewScreen() {
+  const theme = useEntryTheme();
+  const styles = createStyles(theme);
   const router = useRouter();
+  const haptic = useHaptics();
+  const { offline } = useNetwork();
   const params = useLocalSearchParams<{ id?: string | string[]; teamName?: string | string[] }>();
   const teamId = Array.isArray(params.id) ? params.id[0] : params.id;
   const teamName = Array.isArray(params.teamName) ? params.teamName[0] : params.teamName;
@@ -28,7 +37,10 @@ export default function TeamReviewScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => { if (error) haptic("error"); }, [error, haptic]);
+
   async function submitReview() {
+    if (submitting) return;
     setError("");
     if (!teamId) { setError("This team could not be identified. Return to the team profile and try again."); return; }
     if (!API_BASE_URL) { setError("Review submission is not configured yet. Please use the HoopCheck website or try again later."); return; }
@@ -45,13 +57,14 @@ export default function TeamReviewScreen() {
 
     setSubmitting(true);
     try {
+      await requireOnline();
       const { data, error: sessionError } = await supabase.auth.getSession();
       const token = data.session?.access_token;
       if (sessionError || !token) {
         setError("Your session has expired. Sign in again before submitting a review.");
         return;
       }
-      const response = await fetch(`${API_BASE_URL}/api/reviews`, {
+      const response = await traceFlow("posting", () => fetch(`${API_BASE_URL}/api/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -62,19 +75,20 @@ export default function TeamReviewScreen() {
           is_anonymous: anonymous,
           ...ratings,
         }),
-      });
+      }));
       const result = await response.json().catch(() => ({})) as { error?: string; id?: string; status?: string };
       if (!response.ok) {
         setError(result.error || "Your review could not be submitted. Please try again.");
         return;
       }
+      haptic("reviewSubmitted");
       Alert.alert(
         "Review submitted",
         "Your review has been sent for moderation. It will not appear publicly unless approved.",
         [{ text: "Done", onPress: () => router.replace({ pathname: "/teams/[id]", params: { id: teamId } }) }],
       );
-    } catch {
-      setError("Could not connect to HoopCheck. Check your connection and try again.");
+    } catch (cause) {
+      setError(cause instanceof Error && cause.message.includes("offline") ? cause.message : "Could not connect to HoopCheck. Nothing was confirmed as sent. Your text stays here; reconnect and try again.");
     } finally {
       setSubmitting(false);
     }
@@ -82,6 +96,7 @@ export default function TeamReviewScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <OfflineBanner savedAt={null} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back to team</Text></Pressable>
         <Text style={styles.kicker}>PLAYER EXPERIENCE</Text>
@@ -92,7 +107,7 @@ export default function TeamReviewScreen() {
           <Text style={styles.noticeText}>Submission requires a confirmed email, verified professional player profile, active HoopCheck membership, and a verified current or former affiliation with this team. The server checks these requirements.</Text>
         </View>
         <Text style={styles.label}>SEASON YOU PLAYED</Text>
-        <TextInput value={season} onChangeText={setSeason} placeholder="e.g. 2025-26" placeholderTextColor="#7B8797" autoCapitalize="none" style={styles.input} maxLength={9} />
+        <TextInput value={season} onChangeText={setSeason} placeholder="e.g. 2025-26" placeholderTextColor={theme.muted} autoCapitalize="none" style={styles.input} maxLength={9} />
         {RATING_FIELDS.map(field => (
           <View key={field.key} style={styles.ratingGroup}>
             <Text style={styles.label}>{field.label.toUpperCase()}</Text>
@@ -106,9 +121,9 @@ export default function TeamReviewScreen() {
           </View>
         ))}
         <Text style={styles.label}>TITLE (OPTIONAL)</Text>
-        <TextInput value={title} onChangeText={setTitle} placeholder="Summarize your experience" placeholderTextColor="#7B8797" style={styles.input} maxLength={120} />
+        <TextInput value={title} onChangeText={setTitle} placeholder="Summarize your experience" placeholderTextColor={theme.muted} style={styles.input} maxLength={120} />
         <Text style={styles.label}>YOUR REVIEW</Text>
-        <TextInput value={body} onChangeText={setBody} placeholder="Describe your experience with specific, factual details. Avoid personal information and claims you cannot support." placeholderTextColor="#7B8797" style={[styles.input, styles.textArea]} multiline textAlignVertical="top" maxLength={5000} />
+        <TextInput value={body} onChangeText={setBody} placeholder="Describe your experience with specific, factual details. Avoid personal information and claims you cannot support." placeholderTextColor={theme.muted} style={[styles.input, styles.textArea]} multiline textAlignVertical="top" maxLength={5000} />
         <Text style={styles.charCount}>{body.length}/5000 characters (minimum 10)</Text>
         <View style={styles.anonymousRow}>
           <View style={styles.anonymousCopy}>
@@ -118,8 +133,8 @@ export default function TeamReviewScreen() {
           <Switch value={anonymous} onValueChange={setAnonymous} trackColor={{ false: "#C7D0DE", true: "#D69E18" }} />
         </View>
         {error ? <View accessibilityRole="alert" style={styles.errorBox}><Text style={styles.errorText}>{error}</Text></View> : null}
-        <Pressable accessibilityRole="button" disabled={submitting} onPress={() => void submitReview()} style={[styles.submit, submitting && styles.disabled]}>
-          {submitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitText}>Submit for moderation</Text>}
+        <Pressable accessibilityRole="button" disabled={submitting || offline} onPress={() => void submitReview()} style={[styles.submit, submitting && styles.disabled]}>
+          {submitting ? <ActivityIndicator color={theme.foreground} /> : <Text style={styles.submitText}>{offline ? "Reconnect to submit · nothing sent" : "Submit for moderation"}</Text>}
         </Pressable>
         <Text style={styles.footer}>Do not include private contact details, threats, discriminatory language, or information about another person that they would reasonably expect to remain private.</Text>
       </ScrollView>
@@ -127,34 +142,34 @@ export default function TeamReviewScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#050505" },
+const createStyles = (theme: ReturnType<typeof useEntryTheme>) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.background },
   content: { padding: 22, paddingBottom: 38 },
-  back: { color: "#FF6A00", fontSize: 15, fontWeight: "800", marginBottom: 24 },
-  kicker: { color: "#FF6A00", fontSize: 11, fontWeight: "900", letterSpacing: 1.4 },
-  heading: { color: "#FFFFFF", fontSize: 28, fontWeight: "900", marginTop: 8 },
-  subtitle: { color: "#BDBDBD", fontSize: 14, lineHeight: 21, marginTop: 10, marginBottom: 18 },
-  notice: { backgroundColor: "#FFF7E0", borderColor: "#F0D88D", borderWidth: 1, borderRadius: 12, padding: 14, marginBottom: 22 },
-  noticeTitle: { color: "#694B00", fontWeight: "900", fontSize: 14 },
-  noticeText: { color: "#694B00", fontSize: 13, lineHeight: 19, marginTop: 5 },
-  label: { color: "#969696", fontSize: 11, fontWeight: "900", letterSpacing: 0.8, marginBottom: 8 },
-  input: { backgroundColor: "#111111", borderColor: "#303030", borderWidth: 1, borderRadius: 10, minHeight: 48, paddingHorizontal: 13, paddingVertical: 12, color: "#FFFFFF", fontSize: 15, marginBottom: 18 },
+  back: { color: theme.accent, fontSize: 15, fontWeight: "800", marginBottom: 24 },
+  kicker: { color: theme.accent, fontSize: 11, fontWeight: "900", letterSpacing: 1.4 },
+  heading: { color: theme.foreground, fontSize: 28, fontWeight: "900", marginTop: 8 },
+  subtitle: { color: theme.muted, fontSize: 14, lineHeight: 21, marginTop: 10, marginBottom: 18 },
+  notice: { backgroundColor: theme.accentSurface, borderColor: theme.border, borderWidth: 1, borderRadius: 12, padding: 14, marginBottom: 22 },
+  noticeTitle: { color: theme.foreground, fontWeight: "900", fontSize: 14 },
+  noticeText: { color: theme.foreground, fontSize: 13, lineHeight: 19, marginTop: 5 },
+  label: { color: theme.muted, fontSize: 11, fontWeight: "900", letterSpacing: 0.8, marginBottom: 8 },
+  input: { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1, borderRadius: 10, minHeight: 48, paddingHorizontal: 13, paddingVertical: 12, color: theme.foreground, fontSize: 15, marginBottom: 18 },
   ratingGroup: { marginBottom: 20 },
   stars: { flexDirection: "row", gap: 9 },
-  starButton: { width: 43, height: 43, borderRadius: 10, borderWidth: 1, borderColor: "#303030", backgroundColor: "#111111", alignItems: "center", justifyContent: "center" },
-  starSelected: { backgroundColor: "#050505", borderColor: "#101827" },
-  starText: { color: "#D0D0D0", fontSize: 15, fontWeight: "800" },
-  starTextSelected: { color: "#FF6A00" },
+  starButton: { width: 43, height: 43, borderRadius: 10, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.surface, alignItems: "center", justifyContent: "center" },
+  starSelected: { backgroundColor: theme.background, borderColor: theme.border },
+  starText: { color: theme.muted, fontSize: 15, fontWeight: "800" },
+  starTextSelected: { color: theme.accent },
   textArea: { minHeight: 150, paddingTop: 13 },
-  charCount: { color: "#969696", fontSize: 12, textAlign: "right", marginTop: -10, marginBottom: 18 },
-  anonymousRow: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#111111", borderColor: "#303030", borderWidth: 1, borderRadius: 12, padding: 14, marginBottom: 16 },
+  charCount: { color: theme.muted, fontSize: 12, textAlign: "right", marginTop: -10, marginBottom: 18 },
+  anonymousRow: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1, borderRadius: 12, padding: 14, marginBottom: 16 },
   anonymousCopy: { flex: 1 },
-  anonymousTitle: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
-  anonymousHint: { color: "#969696", fontSize: 12, lineHeight: 18, marginTop: 5 },
-  errorBox: { backgroundColor: "#FEECEC", borderRadius: 10, padding: 12, marginBottom: 14 },
-  errorText: { color: "#9F1D1D", fontSize: 13, lineHeight: 19 },
-  submit: { minHeight: 52, borderRadius: 10, backgroundColor: "#050505", alignItems: "center", justifyContent: "center" },
-  submitText: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
+  anonymousTitle: { color: theme.foreground, fontSize: 14, fontWeight: "800" },
+  anonymousHint: { color: theme.muted, fontSize: 12, lineHeight: 18, marginTop: 5 },
+  errorBox: { backgroundColor: theme.errorSurface, borderRadius: 10, padding: 12, marginBottom: 14 },
+  errorText: { color: theme.error, fontSize: 13, lineHeight: 19 },
+  submit: { minHeight: 52, borderRadius: 10, backgroundColor: theme.button, alignItems: "center", justifyContent: "center" },
+  submitText: { color: theme.onButton, fontSize: 15, fontWeight: "900" },
   disabled: { opacity: 0.65 },
-  footer: { color: "#969696", fontSize: 12, lineHeight: 18, marginTop: 18 },
+  footer: { color: theme.muted, fontSize: 12, lineHeight: 18, marginTop: 18 },
 });

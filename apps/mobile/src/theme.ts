@@ -33,6 +33,8 @@ export function getEntryTheme(dark: boolean) {
     onChip: dark ? "#E7E7E1" : "#4C4C46",
     button: "#FF5A1F", onButton: "#111111", cardRadius: tokens.radius.card,
     error: dark ? "#FFD7D7" : "#171717",
+    success: dark ? "#86E3B2" : "#176B46",
+    successSurface: dark ? "#193328" : "#DDF7E8",
     errorSurface: dark ? "#351616" : "#F8F8F6",
     glassFill: dark ? "rgba(23,23,23,.92)" : "rgba(255,255,255,.92)",
     shadow: { shadowColor: "#000000", shadowOffset: { width: 0, height: 12 }, shadowRadius: 32, shadowOpacity: dark ? .32 : .12, elevation: 8 },

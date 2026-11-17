@@ -1,7 +1,9 @@
+import { recordFreshSignIn } from "../src/native/lockPolicy";
+import { useDevicePreferences } from "../src/native/preferences";
 import { Input, Button } from "../src/primitives";
 import { useEntryTheme, type EntryTheme } from "../src/theme";
-import { useRef, useState } from "react";
-import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
@@ -36,7 +38,9 @@ export default function SignUpScreen() {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
   const router = useRouter();
+  const { preferences } = useDevicePreferences();
   const [accountType, setAccountType] = useState<(typeof ACCOUNT_TYPES)[number]["value"]>("player");
+  useEffect(() => { if (preferences.role) setAccountType(preferences.role); }, [preferences.role]);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
@@ -93,13 +97,14 @@ export default function SignUpScreen() {
       });
       if (error) throw error;
       if (data.session) {
+        recordFreshSignIn();
         router.replace("/dashboard");
       } else {
         Alert.alert("Check your email", "HoopCheck may require email verification before you can sign in.", [
           { text: "Go to sign in", onPress: () => router.replace("/sign-in") },
         ]);
       }
-    } catch (error) {
+    } catch {
       setErrorMessage("Could not create the account. Please check your details and try again.");
     } finally { setBusy(false); }
   }

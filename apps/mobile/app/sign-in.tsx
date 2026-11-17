@@ -1,3 +1,5 @@
+import { recordFreshSignIn } from "../src/native/lockPolicy";
+import { takeDestination } from "../src/native/pendingDestination";
 import { GlassCard, Input, Button } from "../src/primitives";
 import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useState } from "react";
@@ -25,7 +27,8 @@ export default function SignInScreen() {
       if (error) throw error;
       stage = "profile";
       const profile = data.user ? await supabase.from("profiles").select("username").eq("id", data.user.id).maybeSingle() : null;
-      router.replace(profile?.data && !profile.data.username?.trim() ? "/choose-username" : "/dashboard");
+      recordFreshSignIn();
+      router.replace((profile?.data && !profile.data.username?.trim() ? "/choose-username" : takeDestination() ?? "/dashboard") as "/dashboard");
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Please try again.";
       Alert.alert(stage === "authentication" ? "Authentication failed" : "Profile loading failed", detail);

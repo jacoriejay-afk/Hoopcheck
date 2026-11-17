@@ -1,5 +1,10 @@
-import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { Input, GlassCard, Button } from "../src/primitives";
+import { useCachedRead, useNetwork } from "../src/native/network";
+import { OfflineBanner } from "../components/OfflineBanner";
+import { Reveal, Skeleton } from "../components/Motion";
+import { RecentSearches, useRecentSearches } from "../components/RecentSearches";
+import { motion } from "../src/motion/config";
+import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,8 +17,11 @@ const PAGE_SIZE = 30;
 export default function CoachesScreen() {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
-  const requestId = useRef(0);
   const router = useRouter();
+  const { read, savedAt } = useCachedRead();
+  const { revision } = useNetwork();
+  const { recents, remember } = useRecentSearches("coaches");
+  const requestId = useRef(0);
   const [items, setItems] = useState<Coach[]>([]);
   const [term, setTerm] = useState("");
   const [appliedTerm, setAppliedTerm] = useState("");
@@ -24,7 +32,7 @@ export default function CoachesScreen() {
   const [hasMore, setHasMore] = useState(false);
 
   const load = useCallback(async (search: string, start = 0, append = false) => {
-    const request = ++requestId.current;
+    const currentRequest = ++requestId.current;
     if (start === 0) setLoading(true);
     setError("");
     const clean = search.trim().replace(/[^\p{L}\p{N} '\-]/gu, " ").replace(/\s+/g, " ").trim();
@@ -34,8 +42,8 @@ export default function CoachesScreen() {
       .order("name", { ascending: true })
       .range(start, start + PAGE_SIZE);
     if (clean) query = query.or(`name.ilike.%${clean}%,country.ilike.%${clean}%,city.ilike.%${clean}%`);
-    const { data, error: queryError } = await query;
-    if (request !== requestId.current) return;
+    const { data, error: queryError } = await read(`coaches:${clean}:${start}`, () => query);
+    if (currentRequest !== requestId.current) return;
     if (queryError) {
       setError("We couldn’t load coach records. Check your connection and try again.");
       if (!append) setItems([]);
@@ -50,15 +58,17 @@ export default function CoachesScreen() {
     setOffset(start);
     setLoading(false);
     setRefreshing(false);
-  }, []);
+  }, [read]);
+
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setAppliedTerm(term.trim());
       void load(term, 0, false);
-    }, 300);
-    return () => { clearTimeout(timer); requestId.current++; };
-  }, [term, load]);
+    }, motion.searchDelay);
+    return () => { clearTimeout(timer); requestId.current += 1; };
+  }, [term, revision, load]);
+
   async function nextPage() {
     if (loading || !hasMore) return;
     setLoading(true);
@@ -68,25 +78,28 @@ export default function CoachesScreen() {
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
+      <OfflineBanner savedAt={savedAt} />
       <View style={styles.header}>
         <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
         <Text style={styles.kicker}>COACH DIRECTORY</Text>
         <Text style={styles.title}>Find a coach</Text>
         <Text style={styles.subtitle}>Search available coach records by name or location. Verify a coach’s current role and contract details independently.</Text>
         <View style={styles.searchRow}>
-          <Input value={term} onChangeText={value => { requestId.current++; setTerm(value); setLoading(true); setItems([]); setHasMore(false); }} returnKeyType="search" placeholder="Coach name, country or city" placeholderTextColor={theme.muted} style={styles.input} />
+          <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={value => { requestId.current++; setTerm(value); setLoading(true); setItems([]); setHasMore(false); }} returnKeyType="search" placeholder="Coach name, country or city" placeholderTextColor={theme.muted} style={styles.input} />
         </View>
-        <Text style={styles.count}>{loading ? "Loading coaches…" : `${items.length}${hasMore ? "+" : ""} results shown`}</Text>
+        {!term ? <RecentSearches items={recents} onSelect={setTerm} /> : null}
+        <Text style={styles.count}>{loading ? "Loading coaches…" : `${items.length}${hasMore ? "+" : ""} ${items.length === 1 && !hasMore ? "result" : "results"} shown`}</Text>
       </View>
       {error ? <View style={styles.errorBox}><Text style={styles.error}>{error}</Text><Pressable onPress={() => void load(appliedTerm)}><Text style={styles.retry}>Try again</Text></Pressable></View> : null}
-      {loading && items.length === 0 ? <ActivityIndicator style={styles.loader} size="large" color={theme.accent} /> : (
+      {loading && items.length === 0 ? <Skeleton /> : (
         <FlatList
           keyboardShouldPersistTaps="handled"
           data={items}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} colors={[theme.accent]} progressBackgroundColor={theme.surface} />}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
+            <Reveal key={`${appliedTerm}:${item.id}`} index={index}>
             <GlassCard style={styles.card}>
               <View style={styles.avatar}><Text style={styles.avatarText}>{item.name.slice(0, 1).toUpperCase()}</Text></View>
               <View style={styles.cardBody}>
@@ -95,6 +108,7 @@ export default function CoachesScreen() {
                 {item.website && /^https?:\/\//i.test(item.website) ? <Text style={styles.website}>{item.website}</Text> : null}
               </View>
             </GlassCard>
+            </Reveal>
           )}
           ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>No coach records available yet</Text><Text style={styles.emptyText}>HoopCheck’s coach directory currently has no active records. No sample or invented coaches are shown. Check back as verified directory data is added.</Text></View>}
           ListFooterComponent={hasMore ? <Button onPress={() => void nextPage()} style={styles.more}>{loading ? <ActivityIndicator color={theme.onButton} /> : <Text style={styles.moreText}>Load more coaches</Text>}</Button> : <Text style={styles.footer}>Directory listings are not endorsements. Confirm current employment, references, and contract terms before making a decision.</Text>}

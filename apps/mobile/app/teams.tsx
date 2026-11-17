@@ -1,6 +1,12 @@
 import { DirectoryCrest, CountryChip } from "../components/DirectoryIdentity";
-import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { Input, Button } from "../src/primitives";
+import { Sheet } from "../components/Sheet";
+import { useCachedRead, useNetwork } from "../src/native/network";
+import { OfflineBanner } from "../components/OfflineBanner";
+import { Reveal, Skeleton } from "../components/Motion";
+import { RecentSearches, useRecentSearches } from "../components/RecentSearches";
+import { motion } from "../src/motion/config";
+import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -13,8 +19,12 @@ const PAGE_SIZE = 40;
 export default function TeamsScreen() {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
-  const requestId = useRef(0);
   const router = useRouter();
+  const { read, savedAt } = useCachedRead();
+  const { revision } = useNetwork();
+  const { recents, remember } = useRecentSearches("teams");
+  const requestId = useRef(0);
+  const [preview, setPreview] = useState<Team | null>(null);
   const [items, setItems] = useState<Team[]>([]);
   const [term, setTerm] = useState("");
   const [appliedTerm, setAppliedTerm] = useState("");
@@ -25,14 +35,14 @@ export default function TeamsScreen() {
   const [hasMore, setHasMore] = useState(false);
 
   const load = useCallback(async (search: string, start = 0, append = false) => {
-    const request = ++requestId.current;
+    const currentRequest = ++requestId.current;
     if (start === 0) setLoading(true);
     setError("");
     const clean = search.trim().replace(/[^\p{L}\p{N} '\-]/gu, " ").replace(/\s+/g, " ").trim();
     let query = supabase.from("teams").select("id,name,country,city,league_name,website").eq("active", true).eq("basketball_type", "mens").order("name", { ascending: true }).range(start, start + PAGE_SIZE);
     if (clean) query = query.or(`name.ilike.%${clean}%,country.ilike.%${clean}%,city.ilike.%${clean}%,league_name.ilike.%${clean}%`);
-    const { data, error: queryError } = await query;
-    if (request !== requestId.current) return;
+    const { data, error: queryError } = await read(`teams:${clean}:${start}`, () => query);
+    if (currentRequest !== requestId.current) return;
     if (queryError) {
       setError("We couldn’t load teams. Check your connection and try again.");
       if (!append) setItems([]);
@@ -44,16 +54,17 @@ export default function TeamsScreen() {
     setItems(append ? current => [...current, ...page] : page);
     setOffset(start);
     setLoading(false); setRefreshing(false);
-  }, []);
+  }, [read]);
+
+
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setAppliedTerm(term.trim());
       void load(term, 0, false);
-    }, 300);
-    return () => { clearTimeout(timer); requestId.current++; };
-  }, [term, load]);
-
+    }, motion.searchDelay);
+    return () => { clearTimeout(timer); requestId.current += 1; };
+  }, [term, revision, load]);
 
   async function nextPage() {
     if (loading || !hasMore) return;
@@ -65,26 +76,29 @@ export default function TeamsScreen() {
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
+      <OfflineBanner savedAt={savedAt} />
       <View style={styles.header}>
         <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
         <Text style={styles.kicker}>DIRECTORY</Text>
         <Text style={styles.title}>Find a team</Text>
         <Text style={styles.subtitle}>Explore men’s professional basketball teams before you sign.</Text>
         <View style={styles.searchRow}>
-          <Input value={term} onChangeText={value => { requestId.current++; setTerm(value); setLoading(true); setItems([]); setHasMore(false); }} returnKeyType="search" placeholder="Team, country, city or league" placeholderTextColor={theme.muted} style={styles.input} />
+          <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={value => { requestId.current++; setTerm(value); setLoading(true); setItems([]); setHasMore(false); }} returnKeyType="search" placeholder="Team, country, city or league" placeholderTextColor={theme.muted} style={styles.input} />
         </View>
-        <Text style={styles.count}>{loading ? "Loading teams…" : `${items.length}${hasMore ? "+" : ""} results shown`}</Text>
+        {!term ? <RecentSearches items={recents} onSelect={setTerm} /> : null}
+        <Text style={styles.count}>{loading ? "Loading teams…" : `${items.length}${hasMore ? "+" : ""} ${items.length === 1 && !hasMore ? "result" : "results"} shown`}</Text>
       </View>
       {error ? <View style={styles.errorBox}><Text style={styles.error}>{error}</Text><Pressable onPress={() => void load(appliedTerm)}><Text style={styles.retry}>Try again</Text></Pressable></View> : null}
-      {loading && items.length === 0 ? <ActivityIndicator style={styles.loader} size="large" color={theme.accent} /> : (
+      {loading && items.length === 0 ? <Skeleton /> : (
         <FlatList
           keyboardShouldPersistTaps="handled"
           data={items}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} colors={[theme.accent]} progressBackgroundColor={theme.surface} />}
-          renderItem={({ item }) => (
-            <Pressable onPress={() => router.push({ pathname: "/teams/[id]", params: { id: item.id } })} style={styles.card}>
+          renderItem={({ item, index }) => (
+            <Reveal key={`${appliedTerm}:${item.id}`} index={index}>
+            <Pressable accessibilityHint="Hold to preview this team" onLongPress={() => setPreview(item)} onPress={() => router.push({ pathname: "/teams/[id]", params: { id: item.id } })} style={styles.card}>
               <DirectoryCrest name={item.name} kind="teams" />
               <View style={styles.cardBody}>
                 <Text style={styles.teamName}>{item.name}</Text>
@@ -94,6 +108,7 @@ export default function TeamsScreen() {
                 <Text style={styles.openProfile}>View profile →</Text>
               </View>
             </Pressable>
+            </Reveal>
           )}
           ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>No teams found</Text><Text style={styles.emptyText}>Try a shorter name or another country.</Text></View>}
           ListFooterComponent={hasMore ? <Button onPress={() => void nextPage()} style={styles.more}>{loading ? <ActivityIndicator color={theme.onButton} /> : <Text style={styles.moreText}>Load more teams</Text>}</Button> : <Text style={styles.footer}>Team data can change. Confirm contract details directly before signing.</Text>}
@@ -101,6 +116,10 @@ export default function TeamsScreen() {
           onEndReached={() => { if (hasMore && !loading) void nextPage(); }}
         />
       )}
+      <Sheet open={Boolean(preview)} onClose={() => setPreview(null)} title={preview?.name ?? "Team preview"}>
+        <Text style={{ color: theme.muted }}>{[preview?.city, preview?.country, preview?.league_name].filter(Boolean).join(" · ") || "Location and league not listed"}</Text>
+        {preview ? <Pressable accessibilityRole="button" onPress={() => { const id = preview.id; setPreview(null); router.push({ pathname: "/teams/[id]", params: { id } }); }} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent }}>Open team profile</Text></Pressable> : null}
+      </Sheet>
     </SafeAreaView>
   );
 }

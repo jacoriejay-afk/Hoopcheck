@@ -1,7 +1,7 @@
 import { Chip, SectionHeader } from "../src/primitives";
 import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../src/lib/supabase";
@@ -69,8 +69,7 @@ export default function DashboardScreen() {
           <SectionHeader>Explore basketball</SectionHeader>
           <View style={styles.directories}>
             {directories.map(({ href, icon, title, detail }) => (
-              <Link key={href} href={href} asChild>
-                <Pressable accessibilityRole="link" style={({ pressed }) => [
+              <Pressable key={href} onPress={() => router.push(href)} accessibilityRole="link" style={({ pressed }) => [
                   styles.directory, panel, pressed && { backgroundColor: theme.accentSurface },
                 ]}>
                   <View style={[styles.icon, { backgroundColor: theme.accentSurface }]}>
@@ -82,7 +81,6 @@ export default function DashboardScreen() {
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={theme.accent} />
                 </Pressable>
-              </Link>
             ))}
           </View>
 
