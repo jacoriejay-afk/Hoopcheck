@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   const token = /^Bearer ([^\s]+)$/i.exec(bearer)?.[1];
   if (!token || token.length > 8192) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const publicKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const publicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !publicKey || !serviceKey) return NextResponse.json({ error: "Unavailable" }, { status: 503, headers });
   let body: unknown;
