@@ -30,8 +30,10 @@ The native app does not currently call getHoopCheckEntitlements. Existing detail
 ## Validation
 
 - `cd apps/mobile && npm run typecheck`
-- `node apps/mobile/scripts/verify-parity-2.cjs`: compares crest output with the actual web algorithms, verifies the country lookup mirror, checks semantic and screen-style text contrast in both themes, and compares every existing mobile Supabase query expression against merged PARITY-1.
+- `node apps/mobile/scripts/verify-parity-2.mjs`: compares crest output with the actual web algorithms, verifies the country lookup mirror, checks semantic and screen-style text contrast in both themes, and compares every existing mobile Supabase query expression against merged PARITY-1.
 - `git diff --check`
+- Repository `npm run lint`: zero errors (141 warnings). Static Expo font asset require is narrowly exempted; verification script uses ES modules.
+- Expo SDK 54 production export for both iOS and Android: success, 1,268/1,264 modules bundled, including display font and SVG crests.
 - Production homepage fetched read-only with HTTP 200; no authenticated production APIs or database changes.
 
-Native device visual/interaction verification is outstanding: no Android SDK/emulator or iOS simulator is configured here. In particular, confirm SVG text baseline, card blur, long countries/names, keyboard/search, pagination, reporting controls and safe-area behavior on both platforms and themes. Automated style checks do not establish full visual parity. Keep this PR draft until those checks and the absent-surface scope are reviewed.
+Native device visual/interaction verification is outstanding: no Android SDK/emulator or iOS simulator is configured here. In particular, confirm SVG text baseline, card blur, long countries/names, keyboard/search, pagination, reporting controls and safe-area behavior on both platforms and themes. Automated style checks do not establish full visual parity. These runtime device checks remain a documented verification limit; they are not represented as completed by the automated checks or bundle exports.

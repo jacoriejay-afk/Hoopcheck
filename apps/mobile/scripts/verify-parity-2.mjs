@@ -1,11 +1,12 @@
 // Source parity, semantic contrast, and unchanged data-contract checks.
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
-const cp = require('node:child_process');
-const ts = require('typescript');
-const mobile = path.resolve(__dirname, '..');
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
+import cp from 'node:child_process';
+import ts from 'typescript';
+const mobile = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const root = path.resolve(mobile, '../..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const run = (source, imports = {}) => {
