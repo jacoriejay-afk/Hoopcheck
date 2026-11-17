@@ -1,0 +1,16 @@
+[
+  {
+    "theme": "light",
+    "search": "pass",
+    "shareSheet": "pass",
+    "offlineCache": "pass",
+    "errors": []
+  },
+  {
+    "theme": "dark",
+    "search": "pass",
+    "shareSheet": "pass",
+    "offlineCache": "pass",
+    "errors": []
+  }
+]

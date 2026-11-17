@@ -1,4 +1,7 @@
-import { useRef, useState } from "react";
+import { recordFreshSignIn } from "../src/native/lockPolicy";
+import { useEntryTheme } from "../src/theme";
+import { useDevicePreferences } from "../src/native/preferences";
+import { useEffect, useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -31,8 +34,12 @@ function ageAtDate(value: string): number {
 }
 
 export default function SignUpScreen() {
+  const theme = useEntryTheme();
+  const styles = createStyles(theme);
   const router = useRouter();
+  const { preferences } = useDevicePreferences();
   const [accountType, setAccountType] = useState<(typeof ACCOUNT_TYPES)[number]["value"]>("player");
+  useEffect(() => { if (preferences.role) setAccountType(preferences.role); }, [preferences.role]);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
@@ -89,6 +96,7 @@ export default function SignUpScreen() {
       });
       if (error) throw error;
       if (data.session) {
+        recordFreshSignIn();
         router.replace("/dashboard");
       } else {
         Alert.alert("Check your email", "HoopCheck may require email verification before you can sign in.", [
@@ -171,28 +179,28 @@ export default function SignUpScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#050505" }, flex: { flex: 1 },
+const createStyles = (theme: ReturnType<typeof useEntryTheme>) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.background }, flex: { flex: 1 },
   container: { padding: 22, paddingBottom: 36 },
-  title: { fontSize: 28, fontWeight: "800", color: "#FFFFFF" },
-  subtitle: { color: "#BDBDBD", fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 18 },
-  label: { color: "#253247", fontWeight: "700", marginTop: 15, marginBottom: 7 },
-  input: { minHeight: 48, borderColor: "#D5DCE5", borderWidth: 1, borderRadius: 10, backgroundColor: "#111111", paddingHorizontal: 13, color: "#FFFFFF", fontSize: 16 },
+  title: { fontSize: 28, fontWeight: "800", color: theme.foreground },
+  subtitle: { color: theme.muted, fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 18 },
+  label: { color: theme.foreground, fontWeight: "700", marginTop: 15, marginBottom: 7 },
+  input: { minHeight: 48, borderColor: theme.border, borderWidth: 1, borderRadius: 10, backgroundColor: theme.surface, paddingHorizontal: 13, color: theme.foreground, fontSize: 16 },
   choices: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   genderChoices: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  choice: { borderWidth: 1, borderColor: "#D5DCE5", borderRadius: 9, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: "#111111" },
-  choiceSelected: { borderColor: "#101827", backgroundColor: "#050505" },
-  choiceText: { color: "#263247", fontWeight: "600" }, choiceTextSelected: { color: "#FFFFFF" },
-  hint: { color: "#969696", fontSize: 12, lineHeight: 17, marginTop: 5 },
+  choice: { borderWidth: 1, borderColor: theme.border, borderRadius: 9, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: theme.surface },
+  choiceSelected: { borderColor: theme.border, backgroundColor: theme.background },
+  choiceText: { color: theme.foreground, fontWeight: "600" }, choiceTextSelected: { color: theme.foreground },
+  hint: { color: theme.muted, fontSize: 12, lineHeight: 17, marginTop: 5 },
   consent: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginTop: 20 },
-  checkbox: { width: 22, height: 22, borderWidth: 1, borderColor: "#778397", borderRadius: 5, alignItems: "center", justifyContent: "center" },
-  checkboxChecked: { backgroundColor: "#050505", borderColor: "#101827" },
-  checkmark: { color: "#FFFFFF", fontWeight: "800" },
-  consentText: { flex: 1, color: "#37465C", fontSize: 13, lineHeight: 19 },
+  checkbox: { width: 22, height: 22, borderWidth: 1, borderColor: theme.border, borderRadius: 5, alignItems: "center", justifyContent: "center" },
+  checkboxChecked: { backgroundColor: theme.background, borderColor: theme.border },
+  checkmark: { color: theme.foreground, fontWeight: "800" },
+  consentText: { flex: 1, color: theme.muted, fontSize: 13, lineHeight: 19 },
   legalLinks: { flexDirection: "row", flexWrap: "wrap", gap: 14, marginTop: 10 },
-  link: { color: "#263B59", fontWeight: "700" },
-  error: { color: "#B42318", backgroundColor: "#FEE4E2", padding: 12, borderRadius: 8, marginTop: 14, lineHeight: 20 },
-  button: { minHeight: 52, borderRadius: 10, backgroundColor: "#050505", alignItems: "center", justifyContent: "center", marginTop: 22 },
-  dim: { opacity: 0.65 }, buttonText: { color: "#FFFFFF", fontWeight: "800", fontSize: 16 },
-  bottomText: { color: "#BDBDBD", textAlign: "center", marginTop: 22 },
+  link: { color: theme.accent, fontWeight: "700" },
+  error: { color: theme.error, backgroundColor: theme.errorSurface, padding: 12, borderRadius: 8, marginTop: 14, lineHeight: 20 },
+  button: { minHeight: 52, borderRadius: 10, backgroundColor: theme.button, alignItems: "center", justifyContent: "center", marginTop: 22 },
+  dim: { opacity: 0.65 }, buttonText: { color: theme.onButton, fontWeight: "800", fontSize: 16 },
+  bottomText: { color: theme.muted, textAlign: "center", marginTop: 22 },
 });

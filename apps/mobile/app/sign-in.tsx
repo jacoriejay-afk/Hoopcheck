@@ -1,3 +1,6 @@
+import { recordFreshSignIn } from "../src/native/lockPolicy";
+import { takeDestination } from "../src/native/pendingDestination";
+import { useEntryTheme } from "../src/theme";
 import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Link, useRouter } from "expo-router";
@@ -5,6 +8,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
 
 export default function SignInScreen() {
+  const theme = useEntryTheme();
+  const styles = createStyles(theme);
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,8 +22,9 @@ export default function SignInScreen() {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
       if (error) throw error;
+      recordFreshSignIn();
       const profile = data.user ? await supabase.from("profiles").select("username").eq("id", data.user.id).maybeSingle() : null;
-      router.replace(profile?.data && !profile.data.username?.trim() ? "/choose-username" : "/dashboard");
+      router.replace((profile?.data && !profile.data.username?.trim() ? "/choose-username" : takeDestination() ?? "/dashboard") as "/dashboard");
     } catch (error) {
       Alert.alert("Could not sign in", error instanceof Error ? error.message : "Please try again.");
     } finally { setBusy(false); }
@@ -31,9 +37,9 @@ export default function SignInScreen() {
           <Text style={styles.title}>Welcome back</Text>
           <Text style={styles.subtitle}>Sign in to continue to HoopCheck.</Text>
           <Text style={styles.label}>Email</Text>
-          <TextInput autoCapitalize="none" autoComplete="email" keyboardType="email-address" value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor="#7A8798" style={styles.input} accessibilityLabel="Email" />
+          <TextInput autoCapitalize="none" autoComplete="email" keyboardType="email-address" value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor={theme.muted} style={styles.input} accessibilityLabel="Email" />
           <Text style={styles.label}>Password</Text>
-          <TextInput value={password} onChangeText={setPassword} placeholder="Your password" placeholderTextColor="#7A8798" secureTextEntry autoComplete="password" style={styles.input} accessibilityLabel="Password" />
+          <TextInput value={password} onChangeText={setPassword} placeholder="Your password" placeholderTextColor={theme.muted} secureTextEntry autoComplete="password" style={styles.input} accessibilityLabel="Password" />
           <Link href="/forgot-password" style={styles.link}>Forgot password?</Link>
           <Pressable onPress={signIn} disabled={busy} style={({ pressed }) => [styles.button, (pressed || busy) && styles.buttonDim]}>
             <Text style={styles.buttonText}>{busy ? "Signing in…" : "Sign in"}</Text>
@@ -46,16 +52,16 @@ export default function SignInScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#050505" }, flex: { flex: 1 },
+const createStyles = (theme: ReturnType<typeof useEntryTheme>) => StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: theme.background }, flex: { flex: 1 },
   container: { flex: 1, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 24 },
-  title: { color: "#FFFFFF", fontSize: 30, fontWeight: "800" },
-  subtitle: { color: "#BDBDBD", fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 20 },
-  label: { color: "#E5E7EB", fontSize: 13, fontWeight: "700", marginBottom: 8, marginTop: 14 },
-  input: { minHeight: 50, borderColor: "#D5DCE5", borderWidth: 1, borderRadius: 10, backgroundColor: "#111111", paddingHorizontal: 14, color: "#FFFFFF", fontSize: 16 },
-  link: { color: "#FF8A3D", fontWeight: "700" },
-  button: { minHeight: 52, borderRadius: 10, backgroundColor: "#FF6A00", alignItems: "center", justifyContent: "center", marginTop: 24 },
-  buttonDim: { opacity: 0.7 }, buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
-  signupPrompt: { color: "#BDBDBD", textAlign: "center", marginTop: 22 },
-  backLink: { color: "#FF8A3D", textAlign: "center", fontWeight: "700", marginTop: 24 },
+  title: { color: theme.foreground, fontSize: 30, fontWeight: "800" },
+  subtitle: { color: theme.muted, fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 20 },
+  label: { color: theme.foreground, fontSize: 13, fontWeight: "700", marginBottom: 8, marginTop: 14 },
+  input: { minHeight: 50, borderColor: theme.border, borderWidth: 1, borderRadius: 10, backgroundColor: theme.surface, paddingHorizontal: 14, color: theme.foreground, fontSize: 16 },
+  link: { color: theme.accent, fontWeight: "700" },
+  button: { minHeight: 52, borderRadius: 10, backgroundColor: theme.button, alignItems: "center", justifyContent: "center", marginTop: 24 },
+  buttonDim: { opacity: 0.7 }, buttonText: { color: theme.onButton, fontSize: 16, fontWeight: "800" },
+  signupPrompt: { color: theme.muted, textAlign: "center", marginTop: 22 },
+  backLink: { color: theme.accent, textAlign: "center", fontWeight: "700", marginTop: 24 },
 })

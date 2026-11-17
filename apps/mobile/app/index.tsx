@@ -1,4 +1,4 @@
-import { Link } from "expo-router";
+import { useRouter } from "expo-router";
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEntryTheme } from "../src/theme";
@@ -9,6 +9,7 @@ const hoopcheckMark = require("../assets/hoopcheck-mark.png");
 
 export default function WelcomeScreen() {
   const theme = useEntryTheme();
+  const router = useRouter();
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
@@ -24,22 +25,18 @@ export default function WelcomeScreen() {
           <Text style={[styles.description, { color: theme.muted }]}>
             Research basketball teams, coaches, and leagues through the experiences of players who have been there.
           </Text>
-          <Link href="/sign-in" asChild>
-            <Pressable accessibilityRole="link" style={({ pressed }) => [
+          <Pressable onPress={() => router.push("/sign-in")} accessibilityRole="link" style={({ pressed }) => [
               styles.action,
               { backgroundColor: theme.button, borderRadius: theme.cardRadius, opacity: pressed ? 0.75 : 1 },
             ]}>
               <Text style={[styles.actionLabel, { color: theme.onButton }]}>Sign in</Text>
             </Pressable>
-          </Link>
-          <Link href="/sign-up" asChild>
-            <Pressable accessibilityRole="link" style={({ pressed }) => [
+          <Pressable onPress={() => router.push("/sign-up")} accessibilityRole="link" style={({ pressed }) => [
               styles.action,
               { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1, borderRadius: theme.cardRadius, opacity: pressed ? 0.75 : 1 },
             ]}>
               <Text style={[styles.actionLabel, { color: theme.foreground }]}>Create an account</Text>
             </Pressable>
-          </Link>
         </View>
       </ScrollView>
     </SafeAreaView>

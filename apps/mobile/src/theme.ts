@@ -13,6 +13,10 @@ export function useEntryTheme() {
     accentSurface: dark ? "#38241D" : "#FDE9DD",
     button: "#FF793D",
     onButton: "#1A100A",
+    error: dark ? "#FFB4AB" : "#8C2525",
+    errorSurface: dark ? "#3C2020" : "#FDECEC",
+    success: dark ? "#86E3B2" : "#176B46",
+    successSurface: dark ? "#193328" : "#DDF7E8",
     cardRadius: 20,
   };
 }

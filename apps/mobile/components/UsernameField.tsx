@@ -1,3 +1,4 @@
+import { useEntryTheme } from "../src/theme";
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { supabase } from "../src/lib/supabase";
@@ -8,6 +9,8 @@ export type UsernameFieldHandle = { validate: () => Promise<{ valid: boolean; me
 type Props = { value: string; onChange: (value: string) => void; disabled?: boolean };
 
 const UsernameField = forwardRef<UsernameFieldHandle, Props>(function UsernameField({ value, onChange, disabled }, ref) {
+  const theme = useEntryTheme();
+  const styles = createStyles(theme);
   const inputRef = useRef<TextInput>(null);
   const requestRef = useRef(0);
   const [state, setState] = useState<State>("idle");
@@ -31,9 +34,9 @@ const UsernameField = forwardRef<UsernameFieldHandle, Props>(function UsernameFi
       }
       setState("available"); setMessage("✓ available");
       return { valid: true };
-    } catch (error) {
+    } catch {
       if (id !== requestRef.current) return { valid: false };
-      console.error("Username availability check failed:", error);
+
       setState("error"); setMessage("We couldn't check availability. Please try again.");
       return { valid: false, message: "We couldn't check availability. Please try again." };
     }
@@ -66,7 +69,7 @@ const UsernameField = forwardRef<UsernameFieldHandle, Props>(function UsernameFi
         editable={!disabled}
         style={[styles.input, (state === "invalid" || state === "taken" || state === "error") && styles.inputError]}
         placeholder="yourname"
-        placeholderTextColor="#8D929A"
+        placeholderTextColor={theme.muted}
       />
       <Text style={styles.rule}>3–20 characters — letters, numbers, underscores</Text>
       {message ? <Text accessibilityLiveRegion="polite" style={[styles.feedback, state === "available" && styles.available, state === "checking" && styles.checking]}>{message}</Text> : null}
@@ -74,15 +77,15 @@ const UsernameField = forwardRef<UsernameFieldHandle, Props>(function UsernameFi
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ReturnType<typeof useEntryTheme>) => StyleSheet.create({
   wrap: { marginTop: 15 },
-  label: { color: "#F7F7F5", fontWeight: "800", letterSpacing: 1, marginBottom: 7 },
-  input: { minHeight: 48, borderColor: "#62666D", borderWidth: 1, borderRadius: 10, backgroundColor: "#111111", paddingHorizontal: 13, color: "#FFFFFF", fontSize: 16 },
-  inputError: { borderColor: "#F04438", borderWidth: 2 },
-  rule: { color: "#BDBDBD", fontSize: 12, lineHeight: 17, marginTop: 5 },
-  feedback: { color: "#F97066", fontSize: 12, lineHeight: 17, fontWeight: "700", marginTop: 3 },
-  available: { color: "#32C875" },
-  checking: { color: "#BDBDBD" },
+  label: { color: theme.foreground, fontWeight: "800", letterSpacing: 1, marginBottom: 7 },
+  input: { minHeight: 48, borderColor: theme.border, borderWidth: 1, borderRadius: 10, backgroundColor: theme.surface, paddingHorizontal: 13, color: theme.foreground, fontSize: 16 },
+  inputError: { borderColor: theme.error, borderWidth: 2 },
+  rule: { color: theme.muted, fontSize: 12, lineHeight: 17, marginTop: 5 },
+  feedback: { color: theme.error, fontSize: 12, lineHeight: 17, fontWeight: "700", marginTop: 3 },
+  available: { color: theme.success },
+  checking: { color: theme.muted },
 });
 
 export default UsernameField;

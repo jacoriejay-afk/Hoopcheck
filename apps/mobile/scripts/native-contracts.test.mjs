@@ -1,0 +1,75 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { nativeDestination, canonicalWebUrl } from "../src/native/deepLinks.ts";
+import { privateEvent } from "../src/native/telemetryPrivacy.ts";
+import { backgroundRequiresLock, lockAfter, recordFreshSignIn, consumeFreshSignIn } from "../src/native/lockPolicy.ts";
+
+test("app lock waits five minutes and fails closed for invalid restoration state", () => {
+  assert.equal(backgroundRequiresLock(1000, 1000 + lockAfter - 1), false);
+  assert.equal(backgroundRequiresLock(1000, 1000 + lockAfter), true);
+  assert.equal(backgroundRequiresLock(1000, 1000 + lockAfter + 1), true);
+  for (const value of [null, NaN, Infinity, 2000]) assert.equal(backgroundRequiresLock(value, 1000), true);
+});
+
+test("normal sign-in bypasses restored app lock once, without authorizing later opens", () => {
+  recordFreshSignIn(1000);
+  assert.equal(consumeFreshSignIn(1001), true);
+  assert.equal(consumeFreshSignIn(1002), false);
+  recordFreshSignIn(1000);
+  assert.equal(consumeFreshSignIn(31000), false);
+});
+
+test("native directory/profile links retain their exact entity, including custom scheme", () => {
+  for (const type of ["teams", "leagues", "players"]) {
+    for (const prefix of ["https://hoopcheck.online", "", "hoopcheck:/"]) {
+      assert.equal(nativeDestination(`${prefix}/${type}/abc-123`), `/${type}/abc-123`);
+    }
+    assert.equal(nativeDestination(`hoopcheck://${type}/abc-123`), `/${type}/abc-123`);
+  }
+});
+
+test("unimplemented post and group pages keep canonical web paths", () => {
+  for (const path of ["/feed?post=abc", "/feed#post=abc", "/groups/abc", "/womens/teams/abc"]) {
+    assert.equal(nativeDestination(`https://hoopcheck.online${path}`), `/web?path=${encodeURIComponent(path)}`);
+  }
+});
+
+test("both Lykes referral route spellings preserve the server attribution entry", () => {
+  for (const path of ["/r/CHRISLYKES", "/referral/CHRISLYKES", "/r/chrislykes"]) {
+    assert.equal(nativeDestination(`https://hoopcheck.online${path}`), "/web?path=%2Freferral%2FCHRISLYKES");
+  }
+  assert.equal(canonicalWebUrl("/referral/CHRISLYKES"), "https://hoopcheck.online/referral/CHRISLYKES");
+});
+
+test("malformed links and external redirects cannot become trusted web destinations", () => {
+  for (const path of ["https://evil.example/teams/abc", "https://hoopcheck.online.evil.example/teams/abc", "https://user:password@hoopcheck.online/teams/abc", "http://hoopcheck.online/teams/abc", "https://hoopcheck.online:8443/teams/abc", "javascript:alert(1)", "//evil.example/a"]) {
+    assert.equal(nativeDestination(path), "/", path);
+  }
+  for (const path of ["//evil.example", "https://evil.example", "/\\evil.example"]) assert.equal(canonicalWebUrl(path), null);
+});
+
+test("Sentry drops private content even when integrations nest it in unknown fields", () => {
+  const secret = "secret@example.com private message review text Bearer token";
+  const event = {
+    event_id: "a".repeat(32), timestamp: 12, start_timestamp: 11, type: "transaction", transaction: secret,
+    contexts: { app: { secret }, trace: { trace_id: "b".repeat(32), span_id: "c".repeat(16), data: { secret } } },
+    message: secret, extra: { anything: { secret } }, tags: { secret }, request: { headers: { Authorization: secret } }, user: { email: secret },
+    breadcrumbs: [{ message: secret }], spans: [{ description: secret, data: { secret } }],
+    exception: { values: [{ value: secret, type: secret, stacktrace: { frames: [{ filename: "https://api.example/review?body=" + secret, function: secret }] } }] },
+  };
+  const clean = privateEvent(event);
+  assert.ok(!JSON.stringify(clean).includes(secret));
+  assert.equal(clean.event_id, event.event_id);
+  assert.equal(clean.contexts.trace.trace_id, event.contexts.trace.trace_id);
+  assert.equal(clean.transaction, undefined);
+  assert.deepEqual(clean.spans, []);
+  assert.equal(clean.request, undefined);
+});
+
+test("Sentry retains allowlisted flow timing and bundled symbolication locations", () => {
+  const event = privateEvent({ transaction: "team", timestamp: 12, start_timestamp: 11, type: "transaction", exception: { values: [{ stacktrace: { frames: [{ filename: "app:///index.android.bundle?token=private", lineno: 2, colno: 3 }] } }] } });
+  assert.equal(event.transaction, "team");
+  assert.equal(event.timestamp - event.start_timestamp, 1);
+  assert.equal(event.exception.values[0].stacktrace.frames[0].filename, "app:///index.android.bundle");
+  assert.ok(!JSON.stringify(event).includes("private"));
+});

@@ -1,3 +1,4 @@
+import { useEntryTheme } from "../src/theme";
 import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Link } from "expo-router";
@@ -5,6 +6,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
 
 export default function ForgotPasswordScreen() {
+  const theme = useEntryTheme();
+  const styles = createStyles(theme);
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -36,14 +39,14 @@ export default function ForgotPasswordScreen() {
     </SafeAreaView>
   );
 }
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#050505" }, flex: { flex: 1 },
+const createStyles = (theme: ReturnType<typeof useEntryTheme>) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.background }, flex: { flex: 1 },
   container: { flex: 1, justifyContent: "center", padding: 24 },
-  title: { fontSize: 29, fontWeight: "800", color: "#FFFFFF" },
-  subtitle: { color: "#BDBDBD", fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 20 },
-  label: { color: "#253247", fontWeight: "700", marginBottom: 8 },
-  input: { minHeight: 50, borderColor: "#D5DCE5", borderWidth: 1, borderRadius: 10, backgroundColor: "#111111", paddingHorizontal: 14, color: "#FFFFFF", fontSize: 16 },
-  button: { minHeight: 52, borderRadius: 10, backgroundColor: "#050505", alignItems: "center", justifyContent: "center", marginTop: 24 },
-  dim: { opacity: 0.65 }, buttonText: { color: "#FFFFFF", fontWeight: "800" },
-  link: { color: "#263B59", fontWeight: "700", textAlign: "center", marginTop: 24 },
+  title: { fontSize: 29, fontWeight: "800", color: theme.foreground },
+  subtitle: { color: theme.muted, fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 20 },
+  label: { color: theme.foreground, fontWeight: "700", marginBottom: 8 },
+  input: { minHeight: 50, borderColor: theme.border, borderWidth: 1, borderRadius: 10, backgroundColor: theme.surface, paddingHorizontal: 14, color: theme.foreground, fontSize: 16 },
+  button: { minHeight: 52, borderRadius: 10, backgroundColor: theme.button, alignItems: "center", justifyContent: "center", marginTop: 24 },
+  dim: { opacity: 0.65 }, buttonText: { color: theme.onButton, fontWeight: "800" },
+  link: { color: theme.accent, fontWeight: "700", textAlign: "center", marginTop: 24 },
 });
