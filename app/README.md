@@ -41,10 +41,11 @@ STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_CHECKOUT_ENABLED=true
 STRIPE_CHECKOUT_MODE=test
+HOOPCHECK_STRIPE_TEST_SUPABASE_URL=
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-Use Stripe **test-mode** keys and test-mode Price objects for local and preview testing. The checkout API selects Price objects by lookup key; it does not use `STRIPE_PRO_PRICE_ID` or `STRIPE_PREMIUM_PRICE_ID`. Production deployments must separately use live-mode keys and `STRIPE_CHECKOUT_MODE=live`.
+Use Stripe **test-mode** keys and test-mode Price objects for local and preview testing. Set both Supabase URL variables to the same isolated test project URL. The checkout API selects Price objects by lookup key; it does not use `STRIPE_PRO_PRICE_ID` or `STRIPE_PREMIUM_PRICE_ID`. Production deployments must separately use live-mode keys and `STRIPE_CHECKOUT_MODE=live`.
 
 Never commit .env.local or any secret keys to GitHub.
 

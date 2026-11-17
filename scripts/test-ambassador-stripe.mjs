@@ -37,6 +37,7 @@ function fixture() {
     invoicePayments: { list: async () => ({ data: [payment] }) },
     paymentIntents: { retrieve: async () => ({ latest_charge: charge.id }) },
     charges: { retrieve: async () => charge },
+    refunds: { list: async () => ({ data: [{ id: "re_1", charge: "ch_1", amount: 150, currency: "usd", status: "succeeded", created: 1700000000 }], has_more: false }) },
     disputes: { list: async () => ({ data: [{ status: "lost", amount: 300 }, { status: "won", amount: 199 }] }) },
   };
   const subscription = { id: "sub_1", customer: "cus_1", status: "active", created: 1700000000,
@@ -95,9 +96,46 @@ test("signed refund and dispute events reconcile current charge using cumulative
   assert.equal(f.calls[0].name, "ambassador_has_charge");
   assert.equal(f.calls[1].name, "ambassador_reconcile_charge");
   assert.equal(f.calls[1].args.p_deduction, 450);
+  assert.equal(f.calls[2].name, "ambassador_record_refund_audit");
+  assert.equal(f.calls[2].args.p_refund, "re_1");
+  assert.equal(f.calls[2].args.p_amount, 150);
   f.charge.amount_refunded = 350;
   await reconcileAmbassadorEvent(f.stripe, f.rpc, event);
-  assert.equal(f.calls.at(-1).args.p_deduction, 499);
+  assert.equal(f.calls.at(-2).args.p_deduction, 499);
+  assert.equal(f.calls.at(-1).name, "ambassador_record_refund_audit");
+});
+
+
+test("multiple refunds are audited individually; replay and out-of-order events preserve identities", async () => {
+  const f = fixture();
+  const refunds = [
+    { id: "re_partial_1", charge: "ch_1", amount: 100, currency: "usd", status: "succeeded", created: 1700000000 },
+    { id: "re_partial_2", charge: "ch_1", amount: 50, currency: "usd", status: "pending", created: 1700000010 },
+  ];
+  f.stripe.refunds.list = async () => ({ data: refunds, has_more: false });
+  f.charge.amount_refunded = 150;
+  const event = { type: "refund.updated", data: { object: { charge: "ch_1" } } };
+  await reconcileAmbassadorEvent(f.stripe, f.rpc, event);
+  assert.deepEqual(f.calls.filter(c => c.name === "ambassador_record_refund_audit").map(c => c.args.p_refund),
+    ["re_partial_1", "re_partial_2"]);
+  assert.equal(f.calls.find(c => c.name === "ambassador_reconcile_charge").args.p_deduction, 150);
+  refunds[1].status = "succeeded";
+  await reconcileAmbassadorEvent(f.stripe, f.rpc, event);
+  assert.equal(f.calls.filter(c => c.name === "ambassador_record_refund_audit").length, 4);
+  assert.equal(f.calls.at(-1).args.p_status, "succeeded");
+  // The DB upsert keys on Stripe refund ID, so replay updates status without a duplicate row.
+});
+
+test("refund pagination and mismatched charge fail reconciliation for safe retry", async () => {
+  const f = fixture();
+  const event = { type: "refund.updated", data: { object: { charge: "ch_1" } } };
+  f.stripe.refunds.list = async () => ({ data: [], has_more: true });
+  await assert.rejects(reconcileAmbassadorEvent(f.stripe, f.rpc, event), /pagination/);
+  f.stripe.refunds.list = async () => ({ data: [
+    { id: "re_other", charge: "ch_other", amount: 50, currency: "usd", status: "succeeded", created: 1700000000 },
+  ], has_more: false });
+  await assert.rejects(reconcileAmbassadorEvent(f.stripe, f.rpc, event), /does not belong/);
+  assert.equal(f.calls.filter(c => c.name === "ambassador_record_refund_audit").length, 0);
 });
 
 test("checkout and cancellation update referral status without generating earnings", async () => {
@@ -109,4 +147,40 @@ test("checkout and cancellation update referral status without generating earnin
   assert.deepEqual(f.calls.map(call => [call.name, call.args.p_status]), [
     ["ambassador_subscription_status", "cancelling"], ["ambassador_subscription_status", "canceled"],
   ]);
+});
+
+test("test Stripe credentials require the separate Supabase project", async () => {
+  const source = await readFile(new URL("../lib/stripe-key-mode.ts", import.meta.url), "utf8");
+  const { stripeMatchesDeployment } = compile(source, "stripe-key-mode.ts");
+  const productionUrl = "https://ucbdceaieyenljcwlhnj.supabase.co";
+  const isolatedUrl = "https://test-project.supabase.co";
+  const names = ["VERCEL_ENV", "NEXT_PUBLIC_SUPABASE_URL", "HOOPCHECK_STRIPE_TEST_SUPABASE_URL"];
+  const original = Object.fromEntries(names.map(name => [name, process.env[name]]));
+  try {
+    process.env.VERCEL_ENV = "preview";
+    process.env.NEXT_PUBLIC_SUPABASE_URL = productionUrl;
+    delete process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL;
+    assert.equal(stripeMatchesDeployment("sk_test_fixture"), false);
+    process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL = productionUrl;
+    assert.equal(stripeMatchesDeployment("sk_test_fixture"), false);
+    process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL = isolatedUrl;
+    assert.equal(stripeMatchesDeployment("sk_test_fixture"), false);
+    for (const url of [productionUrl + "/", productionUrl.toUpperCase(), productionUrl + ".", "invalid"]) {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = url;
+      process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL = url;
+      assert.equal(stripeMatchesDeployment("sk_test_fixture"), false);
+    }
+    process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL = isolatedUrl;
+    process.env.NEXT_PUBLIC_SUPABASE_URL = isolatedUrl;
+    assert.equal(stripeMatchesDeployment("rk_test_fixture"), true);
+    assert.equal(stripeMatchesDeployment("sk_live_fixture"), false);
+    process.env.VERCEL_ENV = "production";
+    assert.equal(stripeMatchesDeployment("sk_test_fixture"), false);
+    assert.equal(stripeMatchesDeployment("sk_live_fixture"), true);
+  } finally {
+    for (const name of names) {
+      if (original[name] === undefined) delete process.env[name];
+      else process.env[name] = original[name];
+    }
+  }
 });

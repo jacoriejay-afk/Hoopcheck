@@ -30,17 +30,22 @@ export async function GET(request: NextRequest) {
     if (!payload || typeof payload !== "object" || !("data" in payload) || !Array.isArray(payload.data)) {
       return NextResponse.json({ ok: false, error: "Invalid provider response" }, { status: 502 });
     }
-    const games = payload.data as Array<{ status_state?: string }>;
+    const games: unknown[] = payload.data;
+    const statuses = new Map<string, number>();
+    for (const game of games) {
+      if (!game || typeof game !== "object" || !("status" in game) ||
+          typeof game.status !== "string" || !game.status.trim()) {
+        return NextResponse.json({ ok: false, error: "Invalid provider response" }, { status: 502 });
+      }
+      const status = "postponed" in game && game.postponed === true ? "Postponed" : game.status;
+      statuses.set(status, (statuses.get(status) ?? 0) + 1);
+    }
     return NextResponse.json({
       ok: true,
       provider: "balldontlie-nba",
       date: today,
       games: games.length,
-      statuses: games.reduce<Record<string, number>>((counts, game) => {
-        const status = game.status_state || "unknown";
-        counts[status] = (counts[status] || 0) + 1;
-        return counts;
-      }, {}),
+      statuses: Object.fromEntries(statuses),
       persisted: false,
     }, { headers: { "Cache-Control": "no-store" } });
   } catch {

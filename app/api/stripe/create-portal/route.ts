@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getStripeKeyMode } from "../../../../lib/stripe-key-mode";
+import { stripeMatchesDeployment } from "../../../../lib/stripe-key-mode";
 import { createClient } from "@supabase/supabase-js";
 
 function getAdminSupabase() {
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     if (
       process.env.STRIPE_CHECKOUT_ENABLED !== "true" ||
       configuredMode !== deploymentMode ||
-      !stripeSecretKey || getStripeKeyMode(stripeSecretKey) !== deploymentMode
+      !stripeSecretKey || !stripeMatchesDeployment(stripeSecretKey)
     ) {
       return NextResponse.json(
         { error: "Billing portal is temporarily unavailable while payment configuration is verified." },

@@ -433,6 +433,34 @@ try {
         );
       }
 
+      // UI-FINAL: detect horizontal overflow without masking it with body overflow-x: clip.
+      // The widest visible element matters even when the document reports no scroll width.
+      const overflow = await page.evaluate(() => {
+        const viewport = document.documentElement.clientWidth;
+        return Array.from(document.querySelectorAll("main *, header.site-header-global *, nav *"))
+          .filter(element => {
+            const style = getComputedStyle(element);
+            if (style.display === "none" || style.visibility === "hidden" || style.position === "fixed") return false;
+            // Children of an intentional horizontal scroll rail may extend past the
+            // viewport without causing page overflow. Only ignore them when an
+            // actual scroll container clips their horizontal overflow.
+            let ancestor = element.parentElement;
+            while (ancestor && ancestor !== document.body) {
+              const ancestorStyle = getComputedStyle(ancestor);
+              if (["auto", "scroll"].includes(ancestorStyle.overflowX)) {
+                const bounds = ancestor.getBoundingClientRect();
+                if (bounds.left >= -2 && bounds.right <= viewport + 2 && ancestor.clientWidth > 0) return false;
+              }
+              ancestor = ancestor.parentElement;
+            }
+            const rect = element.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0 && (rect.left < -2 || rect.right > viewport + 2);
+          })
+          .slice(0, 15)
+          .map(element => ({ tag: element.tagName.toLowerCase(), className: typeof element.className === "string" ? element.className.slice(0, 100) : "", rect: { left: Math.round(element.getBoundingClientRect().left), right: Math.round(element.getBoundingClientRect().right) } }));
+      });
+      assert.equal(overflow.length, 0, `${routeName}/${theme}: visible horizontal overflow: ${JSON.stringify(overflow)}`);
+
       results.push({ route: path, theme, computed });
       await page.screenshot({
         path: `${artifactsDir}/${routeName}-${theme}-${testLanguage}-mobile.png`,
@@ -631,7 +659,7 @@ try {
         await page.waitForFunction(() => [...document.querySelectorAll("main .hc-brand-loader--screen")].every(loader => !loader.checkVisibility()), null, { timeout: 15000 });
         await page.waitForTimeout(300);
         if (requestedPath === "/live-games") {
-          await page.locator("main.hc-live-hub-page .hc-live-hub-hero").waitFor({ state: "visible", timeout: 15000 });
+          await page.locator("main.hc-live-hub-page .hc-live-hub-filters").waitFor({ state: "visible", timeout: 15000 });
         }
         if (requestedPath === "/theme-card-audit") {
           await page.locator("main.hc-card-audit-page .hc-card-audit-preview[data-theme-preview='light']").first().waitFor({ state: "visible", timeout: 15000 });
@@ -795,119 +823,32 @@ try {
         }
       }
       if (requestedPath === "/live-games") {
-        const audit = await page.evaluate(() => {
-          const read = (value) => {
-            const element = typeof value === "string" ? document.querySelector(value) : value;
-            if (!element) return null;
-            const style = getComputedStyle(element);
-            return { background: style.backgroundColor, color: style.color, text: (element.textContent || "").trim() };
-          };
-          return {
-            emptyCards: Array.from(document.querySelectorAll(".hc-live-empty")).map((element) => {
-              const heading = element.querySelector("h3");
-              const body = element.querySelector("p");
-              const icon = element.querySelector(".hc-live-empty__icon");
-              const style = (node) => node ? getComputedStyle(node) : null;
-              return {
-                background: style(element).backgroundColor,
-                color: style(element).color,
-                headingColor: style(heading)?.color || null,
-                bodyColor: style(body)?.color || null,
-                iconBackground: style(icon)?.backgroundColor || null,
-                iconColor: style(icon)?.color || null,
-              };
-            }),
-            countBadges: Array.from(document.querySelectorAll(".hc-live-section-heading h2 span")).map(read),
-            filterCard: read(".hc-live-hub-filters"),
-            recentEmpty: (() => {
-              const element = document.querySelector(".hc-live-recent-empty");
-              if (!element) return null;
-              const style = getComputedStyle(element);
-              return { background: style.backgroundColor, color: style.color, borderStyle: style.borderStyle };
-            })(),
-            populatedGameCards: document.querySelectorAll(".hc-live-hub-card").length,
-          };
-        });
-        const palette = await page.locator("main.hc-live-hub-page").evaluate((main) => {
-          const sample = document.createElement("span");
-          main.append(sample);
-          const colors = Object.fromEntries(["surface-raised", "surface-soft", "foreground", "foreground-muted", "orange", "accent-text", "button-primary-bg", "button-primary-fg"].map(token => {
-            sample.style.setProperty("color", `var(--hc-${token})`, "important");
-            return [token, getComputedStyle(sample).color];
-          }));
-          sample.remove();
-          return colors;
-        });
-        const { "surface-raised": raised, "surface-soft": soft, foreground, "foreground-muted": muted, orange: accent } = palette;
-        if (audit.emptyCards.length !== 2) errors.push("live-games: expected two empty-state cards; got " + audit.emptyCards.length);
-        for (const [index, card] of audit.emptyCards.entries()) {
-          if (card.background !== raised || card.color !== foreground || card.headingColor !== foreground || card.bodyColor !== muted) {
-            errors.push("live-games: empty card " + index + " has unpaired surface/foreground tokens: " + JSON.stringify(card));
-          }
-          if (card.iconBackground !== soft || card.iconColor !== accent) {
-            errors.push("live-games: empty card icon chip lost its paired tint: " + JSON.stringify(card));
-          }
+        // LIVECHAT-2: assert the new conversation-first layout rather than the removed hero.
+        const hub = page.locator("main.hc-live-hub-page");
+        await hub.getByRole("heading", { name: "Happening Now" }).waitFor({ state: "visible" });
+        assert.equal(await hub.locator(".hc-live-hub-hero").count(), 0, "old hero must be removed");
+        for (const label of ["Live Now", "Upcoming", "My Teams"]) {
+          assert.equal(await hub.getByRole("button", { name: label, exact: true }).count(), 1, "missing segment: " + label);
         }
-        if (audit.countBadges.length !== 3) errors.push("live-games: expected three section count badges; got " + audit.countBadges.length);
-        for (const [index, badge] of audit.countBadges.entries()) {
-          if (badge.text !== "0" || badge.background !== soft || badge.color !== foreground) {
-            errors.push("live-games: count badge " + index + " is blank or has an unpaired theme: " + JSON.stringify(badge));
-          }
-        }
-        if (audit.filterCard?.background !== raised) errors.push("live-games: filter card surface regressed: " + JSON.stringify(audit.filterCard));
-        if (audit.recentEmpty?.borderStyle !== "dashed" || audit.recentEmpty?.color !== muted) errors.push("live-games: Recently Finished empty state lost its readable dashed treatment: " + JSON.stringify(audit.recentEmpty));
-        if (audit.populatedGameCards !== 0) errors.push("live-games: empty-fixture test unexpectedly rendered game cards");
-        result.liveHubPairing = audit;
-
+        assert.equal(await hub.locator("select").count(), 0, "league dropdown must be removed");
+        assert.equal(await hub.getByRole("searchbox", { name: "Search games" }).count(), 1);
+        assert.equal(await hub.getByText("0 members chatting").count(), 0, "never render zero presence");
         liveGameFixtureMode = "populated";
         await page.reload({ waitUntil: "domcontentloaded", timeout: 20000 });
-        await page.locator("main.hc-live-hub-page").waitFor({ state: "visible", timeout: 15000 });
-        await page.waitForFunction(() => document.querySelectorAll("main.hc-live-hub-page .hc-live-hub-card").length >= 3, null, { timeout: 15000 });
-        const populatedAudit = await page.evaluate(() => {
-          const read = (value) => {
-            const element = typeof value === "string" ? document.querySelector(value) : value;
-            if (!element) return null;
-            const style = getComputedStyle(element);
-            return { background: style.backgroundColor, color: style.color, text: (element.textContent || "").trim() };
-          };
-          return {
-            cards: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-hub-card")).map(read),
-            counts: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-section-heading h2 span")).map(read),
-            filter: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-filters")),
-            hero: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero")),
-            heroTitle: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero h1")),
-            heroEyebrow: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero .eyebrow")),
-            heroSubtitle: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero > div:first-child > p:last-child")),
-            crests: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-card__crest")).map(read),
-            mutedLabels: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-card__league, main.hc-live-hub-page .hc-live-card__meta, main.hc-live-hub-page .hc-live-card__muted, main.hc-live-hub-page .hc-live-card__vs, main.hc-live-hub-page .hc-live-card__middle small")).map(read),
-            liveChatEntry: read(document.querySelector("main.hc-live-hub-page .hc-live-join")),
-            liveChatLinks: document.querySelectorAll('main.hc-live-hub-page a[href^="/fan-live?gameId="]').length,
-            renderedText: document.querySelector("main.hc-live-hub-page")?.innerText || "",
-          };
-        });
-        if (populatedAudit.cards.length !== 3) errors.push("live-games: populated fixture did not render three real GameCard rows");
-        for (const [index, card] of populatedAudit.cards.entries()) {
-          if (card.background !== raised || card.color !== foreground) errors.push("live-games: populated GameCard " + index + " has an unpaired theme: " + JSON.stringify(card));
-        }
-        if (populatedAudit.counts.length !== 3 || populatedAudit.counts.some(badge => badge.text !== "1" || badge.background !== soft || badge.color !== foreground)) {
-          errors.push("live-games: populated section badges are not visibly paired: " + JSON.stringify(populatedAudit.counts));
-        }
-        if (populatedAudit.filter?.background !== raised || populatedAudit.filter?.color !== foreground) errors.push("live-games: populated filter card surface/foreground regressed");
-        if (populatedAudit.hero?.background !== raised || populatedAudit.hero?.color !== foreground || populatedAudit.heroTitle?.color !== foreground ||
-            populatedAudit.heroEyebrow?.color !== palette["accent-text"] || populatedAudit.heroSubtitle?.color !== muted) {
-          errors.push("live-games: hero dark-surface/light-ink pairing regressed: " + JSON.stringify({hero:populatedAudit.hero, title:populatedAudit.heroTitle, eyebrow:populatedAudit.heroEyebrow, subtitle:populatedAudit.heroSubtitle}));
-        }
-        if (populatedAudit.crests.length !== 6 || populatedAudit.crests.some(crest => crest.background !== soft || crest.color !== foreground)) {
-          errors.push("live-games: team logo chips lost their paired surface/foreground tokens: " + JSON.stringify(populatedAudit.crests));
-        }
-        if (populatedAudit.mutedLabels.some(label => label.color !== muted)) errors.push("live-games: populated card metadata is not using readable muted foreground: " + JSON.stringify(populatedAudit.mutedLabels));
-        if (populatedAudit.liveChatLinks < 1 || populatedAudit.liveChatEntry?.background !== palette["button-primary-bg"] || populatedAudit.liveChatEntry?.color !== palette["button-primary-fg"]) {
-          errors.push("live-games: live chat entry is missing or its text/surface pair is unreadable: " + JSON.stringify(populatedAudit.liveChatEntry));
-        }
-        if (["KICKER", "TITLE", "Subtitle", "TEAM FIRST", "Fan Only Note", "Composer Placeholder", "EMPTY TITLE", "EMPTY KICKER", "Empty Body", "Lorem", "TODO", "Placeholder"].some(term => populatedAudit.renderedText.includes(term))) {
-          errors.push("live-games: populated route rendered scaffold text");
-        }
-        result.liveHubPopulated = populatedAudit;
+        await hub.getByRole("heading", { name: "Happening Now" }).waitFor({ state: "visible", timeout: 15000 });
+        await hub.getByRole("button", { name: "Upcoming", exact: true }).click();
+        await hub.locator(".hc-live-hub-card").first().waitFor({ state: "visible", timeout: 15000 });
+        const sections = hub.locator("section button[aria-expanded]");
+        assert.ok(await sections.count() > 0, "country/league groups should be collapsible");
+        await sections.first().click();
+        assert.equal(await sections.first().getAttribute("aria-expanded"), "false", "league collapse should work");
+        await sections.first().click();
+        assert.equal(await sections.first().getAttribute("aria-expanded"), "true", "league expand should work");
+        const search = hub.getByRole("searchbox", { name: "Search games" });
+        await search.fill("zzzz-unmatched-club");
+        assert.equal(await hub.locator(".hc-live-hub-card").count(), 0, "search filters as you type");
+        await search.fill("");
+        result.liveHubPopulated = { groups: await sections.count(), cards: await hub.locator(".hc-live-hub-card").count() };
         liveGameFixtureMode = "empty";
       }
       if (result.themeClass !== theme) errors.push("html theme class mismatch");
@@ -996,6 +937,30 @@ try {
         await page.locator('img[alt="Logo candidate preview"]').waitFor({ state: "visible", timeout: 10000 });
         await page.screenshot({ path: `${artifactsDir}/admin-logo-candidate-approval-flow-${theme}.png`, fullPage: true, animations: "disabled" });
       }
+      // UI-FINAL: apply viewport overflow coverage to every route in the existing
+      // light/dark route sweep, not only dashboard, feed and admin directory.
+      const pageOverflow = await page.evaluate(() => {
+        const viewport = document.documentElement.clientWidth;
+        return Array.from(document.querySelectorAll("main *, header.site-header-global *, nav *"))
+          .filter(element => {
+            const style = getComputedStyle(element);
+            if (style.display === "none" || style.visibility === "hidden" || style.position === "fixed") return false;
+            let ancestor = element.parentElement;
+            while (ancestor && ancestor !== document.body) {
+              const ancestorStyle = getComputedStyle(ancestor);
+              if (["auto", "scroll"].includes(ancestorStyle.overflowX)) {
+                const bounds = ancestor.getBoundingClientRect();
+                if (bounds.left >= -2 && bounds.right <= viewport + 2 && ancestor.clientWidth > 0) return false;
+              }
+              ancestor = ancestor.parentElement;
+            }
+            const rect = element.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0 && (rect.left < -2 || rect.right > viewport + 2);
+          })
+          .slice(0, 10)
+          .map(element => ({ tag: element.tagName.toLowerCase(), className: typeof element.className === "string" ? element.className.slice(0, 80) : "" }));
+      });
+      if (pageOverflow.length) errors.push("viewport overflow: " + JSON.stringify(pageOverflow));
       routeSweepResults.push({ theme, ...result, status: errors.length ? "FAIL" : result.pageWrapper ? "PASS" : "NO_MAIN", reason: errors.join("; ") || (result.pageWrapper ? "" : "route rendered no main element") });
     }
     if (testLanguage === "en") {
