@@ -1,9 +1,12 @@
+import { useEntryTheme, type EntryTheme } from "../../src/theme";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { supabase, supabaseConfigurationError } from "../../src/lib/supabase";
 
 export default function AuthCallback() {
+  const theme = useEntryTheme();
+  const styles = createStyles(theme);
   const router = useRouter();
   const { code, error_description } = useLocalSearchParams<{ code?: string; error_description?: string }>();
   const [message, setMessage] = useState("Completing Google sign-in…");
@@ -33,15 +36,15 @@ export default function AuthCallback() {
   }, [code, error_description, router]);
 
   return <View style={styles.container}>
-    {!failed ? <ActivityIndicator color="#FF6A00" /> : null}
+    {!failed ? <ActivityIndicator color={theme.accent} /> : null}
     <Text style={styles.message}>{message}</Text>
     {failed ? <Pressable accessibilityRole="button" onPress={() => router.replace("/sign-in")} style={styles.retry}><Text style={styles.retryText}>Return to sign in</Text></Pressable> : null}
   </View>;
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#050505", justifyContent: "center", alignItems: "center", padding: 24 },
-  message: { color: "#FFFFFF", textAlign: "center", marginTop: 16 },
-  retry: { backgroundColor: "#FF6A00", paddingVertical: 14, paddingHorizontal: 20, borderRadius: 10, marginTop: 20 },
-  retryText: { color: "#FFFFFF", fontWeight: "700" },
+const createStyles = (theme: EntryTheme) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.background, justifyContent: "center", alignItems: "center", padding: 24 },
+  message: { color: theme.foreground, textAlign: "center", marginTop: 16 },
+  retry: { backgroundColor: theme.button, paddingVertical: 14, paddingHorizontal: 20, borderRadius: theme.radius.control, marginTop: 20 },
+  retryText: { color: theme.onButton, fontWeight: "700" },
 });

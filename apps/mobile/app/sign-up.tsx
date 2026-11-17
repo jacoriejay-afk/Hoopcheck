@@ -1,10 +1,11 @@
+import { Input, Button } from "../src/primitives";
+import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
 import UsernameField, { type UsernameFieldHandle } from "../components/UsernameField";
-import { useEntryTheme } from "../src/theme";
 
 const TERMS_VERSION = "2026-10-01";
 const ACCOUNT_TYPES = [
@@ -32,8 +33,9 @@ function ageAtDate(value: string): number {
 }
 
 export default function SignUpScreen() {
-  const router = useRouter();
   const theme = useEntryTheme();
+  const styles = createStyles(theme);
+  const router = useRouter();
   const [accountType, setAccountType] = useState<(typeof ACCOUNT_TYPES)[number]["value"]>("player");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -98,103 +100,103 @@ export default function SignUpScreen() {
         ]);
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Could not create the account. Please try again.");
+      setErrorMessage("Could not create the account. Please check your details and try again.");
     } finally { setBusy(false); }
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <Text style={[styles.title, { color: theme.foreground }]}>Create your account</Text>
-          <Text style={[styles.subtitle, { color: theme.muted }]}>Join the basketball community. You must be 18 or older.</Text>
+          <Text style={[styles.title, { fontFamily: "HoopCheckDisplay", fontWeight: "400" }]}>Create your account</Text>
+          <Text style={styles.subtitle}>Join the basketball community. You must be 18 or older.</Text>
 
-          <Text style={[styles.label, { color: theme.foreground }]}>Account type</Text>
+          <Text style={styles.label}>Account type</Text>
           <View style={styles.choices}>
             {ACCOUNT_TYPES.map((item) => (
-              <Pressable key={item.value} accessibilityRole="radio" accessibilityState={{ selected: accountType === item.value }} onPress={() => setAccountType(item.value)} style={[styles.choice, { backgroundColor: theme.surface, borderColor: theme.border }, accountType === item.value && { borderColor: theme.button, backgroundColor: theme.accentSurface }]}>
-                <Text style={[styles.choiceText, { color: theme.foreground }]}>{item.label}</Text>
+              <Pressable key={item.value} accessibilityRole="radio" accessibilityState={{ selected: accountType === item.value }} onPress={() => setAccountType(item.value)} style={[styles.choice, accountType === item.value && styles.choiceSelected]}>
+                <Text style={[styles.choiceText, accountType === item.value && styles.choiceTextSelected]}>{item.label}</Text>
               </Pressable>
             ))}
           </View>
 
-          <Text style={[styles.label, { color: theme.foreground }]}>First name</Text>
-          <TextInput value={firstName} onChangeText={setFirstName} autoComplete="given-name" style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.foreground }]} placeholder="First name" />
-          <Text style={[styles.label, { color: theme.foreground }]}>Last name</Text>
-          <TextInput value={lastName} onChangeText={setLastName} autoComplete="family-name" style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.foreground }]} placeholder="Last name" />
+          <Text style={styles.label}>First name</Text>
+          <Input placeholderTextColor={theme.muted} value={firstName} onChangeText={setFirstName} autoComplete="given-name" style={styles.input} placeholder="First name" />
+          <Text style={styles.label}>Last name</Text>
+          <Input placeholderTextColor={theme.muted} value={lastName} onChangeText={setLastName} autoComplete="family-name" style={styles.input} placeholder="Last name" />
           <UsernameField ref={usernameFieldRef} value={username} onChange={setUsername} disabled={busy} />
-          <Text style={[styles.label, { color: theme.foreground }]}>Birthdate (YYYY-MM-DD)</Text>
-          <TextInput value={birthdate} onChangeText={setBirthdate} keyboardType="numbers-and-punctuation" placeholder="1990-04-23" style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.foreground }]} maxLength={10} />
-          <Text style={[styles.hint, { color: theme.muted }]}>Your birthdate is used to enforce HoopCheck’s 18+ account requirement.</Text>
-          <Text style={[styles.label, { color: theme.foreground }]}>Gender</Text>
+          <Text style={styles.label}>Birthdate (YYYY-MM-DD)</Text>
+          <Input placeholderTextColor={theme.muted} value={birthdate} onChangeText={setBirthdate} keyboardType="numbers-and-punctuation" placeholder="1990-04-23" style={styles.input} maxLength={10} />
+          <Text style={styles.hint}>Your birthdate is used to enforce HoopCheck’s 18+ account requirement.</Text>
+          <Text style={styles.label}>Gender</Text>
           <View style={styles.genderChoices}>
             {[
               ["male", "Male"], ["female", "Female"], ["non_binary", "Non-binary"], ["prefer_not_to_say", "Prefer not to say"],
             ].map(([value, label]) => (
-              <Pressable key={value} accessibilityRole="radio" accessibilityState={{ selected: gender === value }} onPress={() => setGender(value)} style={[styles.choice, { backgroundColor: theme.surface, borderColor: theme.border }, gender === value && { borderColor: theme.button, backgroundColor: theme.accentSurface }]}>
-                <Text style={[styles.choiceText, { color: theme.foreground }]}>{label}</Text>
+              <Pressable key={value} accessibilityRole="radio" accessibilityState={{ selected: gender === value }} onPress={() => setGender(value)} style={[styles.choice, gender === value && styles.choiceSelected]}>
+                <Text style={[styles.choiceText, gender === value && styles.choiceTextSelected]}>{label}</Text>
               </Pressable>
             ))}
           </View>
           {accountType === "player" ? (
             <>
-              <Text style={[styles.label, { color: theme.foreground }]}>Primary basketball position</Text>
+              <Text style={styles.label}>Primary basketball position</Text>
               <View style={styles.choices}>
                 {[["PG", "Point guard"], ["SG", "Shooting guard"], ["SF", "Small forward"], ["PF", "Power forward"], ["C", "Center"]].map(([value, label]) => (
-                  <Pressable key={value} accessibilityRole="radio" accessibilityState={{ selected: position === value }} onPress={() => setPosition(value)} style={[styles.choice, { backgroundColor: theme.surface, borderColor: theme.border }, position === value && { borderColor: theme.button, backgroundColor: theme.accentSurface }]}>
-                    <Text style={[styles.choiceText, { color: theme.foreground }]}>{label}</Text>
+                  <Pressable key={value} accessibilityRole="radio" accessibilityState={{ selected: position === value }} onPress={() => setPosition(value)} style={[styles.choice, position === value && styles.choiceSelected]}>
+                    <Text style={[styles.choiceText, position === value && styles.choiceTextSelected]}>{label}</Text>
                   </Pressable>
                 ))}
               </View>
             </>
           ) : null}
-          <Text style={[styles.label, { color: theme.foreground }]}>Email</Text>
-          <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.foreground }]} placeholder="you@example.com" />
-          <Text style={[styles.label, { color: theme.foreground }]}>Password</Text>
-          <TextInput value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.foreground }]} placeholder="At least 6 characters" />
-          <Text style={[styles.label, { color: theme.foreground }]}>Confirm password</Text>
-          <TextInput value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry autoComplete="new-password" style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.foreground }]} placeholder="Enter password again" />
+          <Text style={styles.label}>Email</Text>
+          <Input placeholderTextColor={theme.muted} value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" style={styles.input} placeholder="you@example.com" />
+          <Text style={styles.label}>Password</Text>
+          <Input placeholderTextColor={theme.muted} value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" style={styles.input} placeholder="At least 6 characters" />
+          <Text style={styles.label}>Confirm password</Text>
+          <Input placeholderTextColor={theme.muted} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry autoComplete="new-password" style={styles.input} placeholder="Enter password again" />
 
           <Pressable onPress={() => setAccepted(!accepted)} accessibilityRole="checkbox" accessibilityState={{ checked: accepted }} style={styles.consent}>
             <View style={[styles.checkbox, accepted && styles.checkboxChecked]}><Text style={styles.checkmark}>{accepted ? "✓" : ""}</Text></View>
-            <Text style={[styles.consentText, { color: theme.foreground }]}>I agree to the Terms of Service and acknowledge the Privacy Policy and Community Guidelines.</Text>
+            <Text style={styles.consentText}>I agree to the Terms of Service and acknowledge the Privacy Policy and Community Guidelines.</Text>
           </Pressable>
           <View style={styles.legalLinks}>
-            <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/terms`)} style={[styles.link, { color: theme.accent }]}>Terms of Service</Text>
-            <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/privacy`)} style={[styles.link, { color: theme.accent }]}>Privacy Policy</Text>
-            <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/community-guidelines`)} style={[styles.link, { color: theme.accent }]}>Community Guidelines</Text>
+            <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/terms`)} style={styles.link}>Terms of Service</Text>
+            <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/privacy`)} style={styles.link}>Privacy Policy</Text>
+            <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/community-guidelines`)} style={styles.link}>Community Guidelines</Text>
           </View>
           {errorMessage ? <Text accessibilityRole="alert" style={styles.error}>{errorMessage}</Text> : null}
-          <Pressable onPress={createAccount} disabled={busy} style={[styles.button, { backgroundColor: theme.button }, busy && styles.dim]}><Text style={[styles.buttonText, { color: theme.onButton }]}>{busy ? "Creating account…" : "Create account"}</Text></Pressable>
-          <Text style={[styles.bottomText, { color: theme.muted }]}>Already have an account? <Link href="/sign-in" style={[styles.link, { color: theme.accent }]}>Sign in</Link></Text>
+          <Button onPress={createAccount} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Creating account…" : "Create account"}</Text></Button>
+          <Text style={styles.bottomText}>Already have an account? <Link href="/sign-in" style={styles.link}>Sign in</Link></Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#050505" }, flex: { flex: 1 },
+const createStyles = (theme: EntryTheme) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.background }, flex: { flex: 1 },
   container: { padding: 22, paddingBottom: 36 },
-  title: { fontSize: 28, fontWeight: "800", color: "#FFFFFF" },
-  subtitle: { color: "#BDBDBD", fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 18 },
-  label: { color: "#253247", fontWeight: "700", marginTop: 15, marginBottom: 7 },
-  input: { minHeight: 48, borderColor: "#D5DCE5", borderWidth: 1, borderRadius: 10, backgroundColor: "#111111", paddingHorizontal: 13, color: "#FFFFFF", fontSize: 16 },
+  title: { fontSize: 28, fontWeight: "800", color: theme.foreground },
+  subtitle: { color: theme.muted, fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 18 },
+  label: { color: theme.foreground, fontWeight: "700", marginTop: 15, marginBottom: 7 },
+  input: { minHeight: 48, borderColor: theme.border, borderWidth: 1, borderRadius: theme.radius.control, backgroundColor: theme.input, paddingHorizontal: 13, color: theme.foreground, fontSize: 16 },
   choices: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   genderChoices: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  choice: { borderWidth: 1, borderColor: "#D5DCE5", borderRadius: 9, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: "#111111" },
-  choiceSelected: { borderColor: "#101827", backgroundColor: "#050505" },
-  choiceText: { color: "#263247", fontWeight: "600" }, choiceTextSelected: { color: "#FFFFFF" },
-  hint: { color: "#969696", fontSize: 12, lineHeight: 17, marginTop: 5 },
+  choice: { borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.pill, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: theme.surface },
+  choiceSelected: { borderColor: theme.button, backgroundColor: theme.accentSurface },
+  choiceText: { color: theme.foreground, fontWeight: "600" }, choiceTextSelected: { color: theme.foreground },
+  hint: { color: theme.muted, fontSize: 12, lineHeight: 17, marginTop: 5 },
   consent: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginTop: 20 },
-  checkbox: { width: 22, height: 22, borderWidth: 1, borderColor: "#778397", borderRadius: 5, alignItems: "center", justifyContent: "center" },
-  checkboxChecked: { backgroundColor: "#050505", borderColor: "#101827" },
-  checkmark: { color: "#FFFFFF", fontWeight: "800" },
-  consentText: { flex: 1, color: "#37465C", fontSize: 13, lineHeight: 19 },
+  checkbox: { width: 22, height: 22, borderWidth: 1, borderColor: theme.border, borderRadius: 5, alignItems: "center", justifyContent: "center" },
+  checkboxChecked: { backgroundColor: theme.surface, borderColor: theme.border },
+  checkmark: { color: theme.foreground, fontWeight: "800" },
+  consentText: { flex: 1, color: theme.foreground, fontSize: 13, lineHeight: 19 },
   legalLinks: { flexDirection: "row", flexWrap: "wrap", gap: 14, marginTop: 10 },
-  link: { color: "#263B59", fontWeight: "700" },
-  error: { color: "#B42318", backgroundColor: "#FEE4E2", padding: 12, borderRadius: 8, marginTop: 14, lineHeight: 20 },
-  button: { minHeight: 52, borderRadius: 10, backgroundColor: "#050505", alignItems: "center", justifyContent: "center", marginTop: 22 },
-  dim: { opacity: 0.65 }, buttonText: { color: "#FFFFFF", fontWeight: "800", fontSize: 16 },
-  bottomText: { color: "#BDBDBD", textAlign: "center", marginTop: 22 },
+  link: { color: theme.accent, fontWeight: "700" },
+  error: { color: theme.foreground, backgroundColor: theme.surface, padding: 12, borderRadius: 8, marginTop: 14, lineHeight: 20 },
+  button: { minHeight: 52, borderRadius: theme.radius.control, backgroundColor: theme.button, alignItems: "center", justifyContent: "center", marginTop: 22 },
+  dim: { opacity: 0.65 }, buttonText: { color: theme.onButton, fontWeight: "800", fontSize: 16 },
+  bottomText: { color: theme.muted, textAlign: "center", marginTop: 22 },
 });
