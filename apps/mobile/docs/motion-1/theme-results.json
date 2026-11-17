@@ -10,28 +10,28 @@
     "theme": "light",
     "path": "/teams",
     "url": "http://localhost:8081/teams",
-    "title": "Teams\n‹ Back\nDIRECTORY\nFind a team\nExplore men’s professional basketball teams before you sign.\n1 result shown\nF\nFixture Basketball Club\nFixture City, Test Coun",
+    "title": "Teams\n‹ Back\nDIRECTORY\nFind a team\nExplore men’s professional basketball teams before you sign.\n1 result shown\nFB\nFixture Basketball Club\nTest Country\nFixture C",
     "errors": []
   },
   {
     "theme": "light",
     "path": "/teams/abc-123",
     "url": "http://localhost:8081/teams/abc-123",
-    "title": "Team profile\n‹ Back to teams\nF\nTEAM PROFILE\nFixture Basketball Club\nShare profile\nFixture City, Test Country\nLEAGUE\nFixture League\nLOCATION\nFixture City, Test C",
+    "title": "Team profile\n‹ Back to teams\nFB\nTest Country\nTEAM PROFILE\nFixture Basketball Club\nShare profile\nFixture City, Test Country\nLEAGUE\nFixture League\nLOCATION\nFixtur",
     "errors": []
   },
   {
     "theme": "light",
     "path": "/leagues",
     "url": "http://localhost:8081/leagues",
-    "title": "Leagues\n‹ Back\nDIRECTORY\nFind a league\nExplore men’s professional basketball leagues and competition levels.\n1 result shown\nF\nFixture League\nTest Country · Prof",
+    "title": "Leagues\n‹ Back\nDIRECTORY\nFind a league\nExplore men’s professional basketball leagues and competition levels.\n1 result shown\nFL\nFixture League\nTest Country\nTest ",
     "errors": []
   },
   {
     "theme": "light",
     "path": "/leagues/league-123",
     "url": "http://localhost:8081/leagues/league-123",
-    "title": "League profile\n‹ Back to leagues\nF\nLEAGUE PROFILE\nFixture League\nShare profile\nTest Country\nCOMPETITION LEVEL\nProfessional\nSEASON\n2026-27\nCOUNTRY\nTest Country\nL",
+    "title": "League profile\n‹ Back to leagues\nFL\nTest Country\nLEAGUE PROFILE\nFixture League\nShare profile\nTest Country\nCOMPETITION LEVEL\nProfessional\nSEASON\n2026-27\nCOUNTRY\n",
     "errors": []
   },
   {
@@ -45,7 +45,7 @@
     "theme": "light",
     "path": "/players/11111111-1111-4111-8111-111111111111",
     "url": "http://localhost:8081/players/11111111-1111-4111-8111-111111111111",
-    "title": "Player profile\n‹ Back to players\nF\nPUBLIC MEN'S PLAYER PROFILE\nFixture Player\nShare profile\n@fixtureplayer\nPlayer details\nCURRENT TEAM\nFixture Basketball Club\nC",
+    "title": "Player profile\n‹ Back to players\nF\nPlayer\nPUBLIC MEN'S PLAYER PROFILE\nFixture Player\nShare profile\n@fixtureplayer\nPlayer details\nCURRENT TEAM\nFixture Basketball",
     "errors": []
   },
   {
@@ -73,7 +73,7 @@
     "theme": "light",
     "path": "/",
     "anonymous": true,
-    "title": "HoopCheck™\nKnow who you’re signing with.\nResearch basketball teams, coaches, and leagues through the experiences of play"
+    "title": "Know who you’re signing with.\nResearch basketball teams, coaches, and leagues through the experiences of players who hav"
   },
   {
     "theme": "light",
@@ -104,28 +104,28 @@
     "theme": "dark",
     "path": "/teams",
     "url": "http://localhost:8081/teams",
-    "title": "Teams\n‹ Back\nDIRECTORY\nFind a team\nExplore men’s professional basketball teams before you sign.\n1 result shown\nF\nFixture Basketball Club\nFixture City, Test Coun",
+    "title": "Teams\n‹ Back\nDIRECTORY\nFind a team\nExplore men’s professional basketball teams before you sign.\n1 result shown\nFB\nFixture Basketball Club\nTest Country\nFixture C",
     "errors": []
   },
   {
     "theme": "dark",
     "path": "/teams/abc-123",
     "url": "http://localhost:8081/teams/abc-123",
-    "title": "Team profile\n‹ Back to teams\nF\nTEAM PROFILE\nFixture Basketball Club\nShare profile\nFixture City, Test Country\nLEAGUE\nFixture League\nLOCATION\nFixture City, Test C",
+    "title": "Team profile\n‹ Back to teams\nFB\nTest Country\nTEAM PROFILE\nFixture Basketball Club\nShare profile\nFixture City, Test Country\nLEAGUE\nFixture League\nLOCATION\nFixtur",
     "errors": []
   },
   {
     "theme": "dark",
     "path": "/leagues",
     "url": "http://localhost:8081/leagues",
-    "title": "Leagues\n‹ Back\nDIRECTORY\nFind a league\nExplore men’s professional basketball leagues and competition levels.\n1 result shown\nF\nFixture League\nTest Country · Prof",
+    "title": "Leagues\n‹ Back\nDIRECTORY\nFind a league\nExplore men’s professional basketball leagues and competition levels.\n1 result shown\nFL\nFixture League\nTest Country\nTest ",
     "errors": []
   },
   {
     "theme": "dark",
     "path": "/leagues/league-123",
     "url": "http://localhost:8081/leagues/league-123",
-    "title": "League profile\n‹ Back to leagues\nF\nLEAGUE PROFILE\nFixture League\nShare profile\nTest Country\nCOMPETITION LEVEL\nProfessional\nSEASON\n2026-27\nCOUNTRY\nTest Country\nL",
+    "title": "League profile\n‹ Back to leagues\nFL\nTest Country\nLEAGUE PROFILE\nFixture League\nShare profile\nTest Country\nCOMPETITION LEVEL\nProfessional\nSEASON\n2026-27\nCOUNTRY\n",
     "errors": []
   },
   {
@@ -139,7 +139,7 @@
     "theme": "dark",
     "path": "/players/11111111-1111-4111-8111-111111111111",
     "url": "http://localhost:8081/players/11111111-1111-4111-8111-111111111111",
-    "title": "Player profile\n‹ Back to players\nF\nPUBLIC MEN'S PLAYER PROFILE\nFixture Player\nShare profile\n@fixtureplayer\nPlayer details\nCURRENT TEAM\nFixture Basketball Club\nC",
+    "title": "Player profile\n‹ Back to players\nF\nPlayer\nPUBLIC MEN'S PLAYER PROFILE\nFixture Player\nShare profile\n@fixtureplayer\nPlayer details\nCURRENT TEAM\nFixture Basketball",
     "errors": []
   },
   {
@@ -167,7 +167,7 @@
     "theme": "dark",
     "path": "/",
     "anonymous": true,
-    "title": "HoopCheck™\nKnow who you’re signing with.\nResearch basketball teams, coaches, and leagues through the experiences of play"
+    "title": "Know who you’re signing with.\nResearch basketball teams, coaches, and leagues through the experiences of players who hav"
   },
   {
     "theme": "dark",

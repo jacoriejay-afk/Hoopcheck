@@ -1,11 +1,12 @@
+import { Input, Button } from "../src/primitives";
 import { useCachedRead, useNetwork } from "../src/native/network";
 import { OfflineBanner } from "../components/OfflineBanner";
 import { Reveal, Skeleton } from "../components/Motion";
 import { RecentSearches, useRecentSearches } from "../components/RecentSearches";
 import { motion } from "../src/motion/config";
-import { useEntryTheme } from "../src/theme";
+import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { supabase } from "../src/lib/supabase";
@@ -95,7 +96,7 @@ export default function PlayersScreen() {
   const refresh = () => { if (!appliedTerm) return; setRefreshing(true); void load(appliedTerm, 0, false); };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
       <OfflineBanner savedAt={savedAt} />
       <View style={styles.header}>
         <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
@@ -103,7 +104,7 @@ export default function PlayersScreen() {
         <Text style={styles.title}>Find players</Text>
         <Text style={styles.subtitle}>Explore public profiles of professional basketball players.</Text>
         <View style={styles.searchRow}>
-          <TextInput value={term} onChangeText={updateTerm} onSubmitEditing={() => remember(term)} onBlur={() => remember(term)} returnKeyType="search" placeholder="Enter a username (e.g. @player)" placeholderTextColor={theme.muted} style={styles.input} />
+          <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={updateTerm} returnKeyType="search" placeholder="Enter a username (e.g. @player)" placeholderTextColor={theme.muted} style={styles.input} />
         </View>
         {!term ? <RecentSearches items={recents} onSelect={setTerm} /> : null}
         <Text style={styles.count}>{!appliedTerm ? "Search by username to view profiles" : loading ? "Searching usernames…" : items.length + (hasMore ? "+" : "") + " results shown"}</Text>
@@ -116,10 +117,11 @@ export default function PlayersScreen() {
         </View>
       ) : loading && items.length === 0 ? <Skeleton /> : (
         <FlatList
+          keyboardShouldPersistTaps="handled"
           data={items}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} colors={[theme.accent]} progressBackgroundColor={theme.surface} />}
           renderItem={({ item, index }) => (
             <Reveal key={`${appliedTerm}:${item.id}`} index={index}>
             <Pressable onPress={() => router.push(`/players/${item.id}`)} style={styles.card}>
@@ -136,7 +138,7 @@ export default function PlayersScreen() {
             </Reveal>
           )}
           ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>No public player profiles found</Text><Text style={styles.emptyText}>Profiles appear here only when they are public, marked as professional, and visible under current privacy and moderation settings.</Text></View>}
-          ListFooterComponent={hasMore ? <Pressable onPress={() => void nextPage()} style={styles.more}>{loading ? <ActivityIndicator color="#101827" /> : <Text style={styles.moreText}>Load more players</Text>}</Pressable> : <Text style={styles.footer}>Only public, non-suspended professional player profiles are shown. Profile details depend on each player’s settings.</Text>}
+          ListFooterComponent={hasMore ? <Button onPress={() => void nextPage()} style={styles.more}>{loading ? <ActivityIndicator color={theme.onButton} /> : <Text style={styles.moreText}>Load more players</Text>}</Button> : <Text style={styles.footer}>Only public, non-suspended professional player profiles are shown. Profile details depend on each player’s settings.</Text>}
           onEndReachedThreshold={0.5}
           onEndReached={() => { if (hasMore && !loading) void nextPage(); }}
         />
@@ -144,6 +146,6 @@ export default function PlayersScreen() {
     </SafeAreaView>
   );
 }
-const createStyles = (theme: ReturnType<typeof useEntryTheme>) => StyleSheet.create({
-  safe:{flex:1,backgroundColor: theme.background},header:{paddingHorizontal:20,paddingTop:12,paddingBottom:12,backgroundColor: theme.background},back:{color: theme.accent,fontSize:15,fontWeight:"700",marginBottom:18},kicker:{color: theme.accent,fontSize:11,fontWeight:"900",letterSpacing:1.5},title:{color:theme.foreground,fontSize:29,fontWeight:"900",marginTop:5},subtitle:{color:theme.muted,fontSize:14,lineHeight:20,marginTop:7},searchRow:{flexDirection:"row",gap:8,marginTop:18},input:{flex:1,minWidth:0,height:48,backgroundColor: theme.surface,borderRadius:10,paddingHorizontal:12,color: theme.foreground,fontSize:14},searchButton:{backgroundColor: theme.accent,borderRadius:10,alignItems:"center",justifyContent:"center",paddingHorizontal:15},searchButtonText:{color: theme.foreground,fontWeight:"900"},count:{color:theme.muted,fontSize:12,marginTop:12},list:{padding:16,paddingBottom:30,gap:10},card:{flexDirection:"row",alignItems:"center",backgroundColor: theme.surface,borderRadius:12,padding:14,borderWidth:1,borderColor: theme.border,gap:12},avatar:{width:44,height:44,borderRadius:22,backgroundColor: theme.accentSurface,alignItems:"center",justifyContent:"center"},avatarText:{color: theme.foreground,fontSize:19,fontWeight:"900"},cardBody:{flex:1},playerName:{color: theme.foreground,fontSize:15,fontWeight:"800"},handle:{color: theme.muted,fontSize:12,marginTop:3},meta:{color:theme.muted,fontSize:12,marginTop:5},detail:{color: theme.muted,fontSize:12,marginTop:5},freeAgent:{color:theme.success,fontSize:12,fontWeight:"900",marginTop:6},openArrow:{fontSize:24,color: theme.accent,fontWeight:"800"},loader:{marginTop:45},errorBox:{margin:16,padding:14,backgroundColor:theme.errorSurface,borderRadius:10},error:{color:theme.error},retry:{color:theme.error,fontWeight:"800",marginTop:8},empty:{padding:30,alignItems:"center"},emptyTitle:{color: theme.foreground,fontWeight:"900",fontSize:17},emptyText:{color: theme.muted,textAlign:"center",marginTop:7,lineHeight:20},more:{minHeight:46,alignItems:"center",justifyContent:"center",backgroundColor:theme.surface,borderRadius:10,marginTop:4},moreText:{color: theme.foreground,fontWeight:"800"},footer:{color:theme.muted,fontSize:12,lineHeight:18,paddingHorizontal:8,paddingTop:14,textAlign:"center"}
+const createStyles = (theme: EntryTheme) => StyleSheet.create({
+  safe: {flex:1,backgroundColor: theme.background},header: {paddingHorizontal:20,paddingTop:12,paddingBottom:12,backgroundColor: theme.background},back: {color: theme.accent,fontSize:15,fontWeight:"700",marginBottom:18},kicker: {color: theme.accent,fontSize:11,fontWeight:"900",letterSpacing:1.5},title: {color: theme.foreground,fontSize:28,fontWeight: "400", fontFamily: "HoopCheckDisplay",marginTop:5},subtitle: {color: theme.muted,fontSize:14,lineHeight:20,marginTop:7},searchRow: {flexDirection:"row",gap:8,marginTop:18},input: {flex:1,minWidth:0,height:48,backgroundColor: theme.input,borderRadius: theme.radius.control,paddingHorizontal:12,color: theme.foreground,fontSize:14},searchButton: {backgroundColor: theme.surface,borderRadius:10,alignItems:"center",justifyContent:"center",paddingHorizontal:15},searchButtonText: {color: theme.foreground,fontWeight:"900"},count: {color: theme.muted,fontSize:12,marginTop:12},list: {padding:16,paddingBottom:30,gap:10},card: {flexDirection:"row",alignItems:"center",backgroundColor: theme.surface,borderRadius: theme.radius.card,padding:14,borderWidth:1,borderColor: theme.border,gap:12},avatar: {width:44,height:44,borderRadius:22,backgroundColor: theme.chip,alignItems:"center",justifyContent:"center"},avatarText: {color: theme.onChip,fontSize:19,fontWeight:"900"},cardBody: {flex:1},playerName: {color: theme.foreground,fontSize:15,fontWeight:"800"},handle: {color: theme.muted,fontSize:12,marginTop:3},meta: {color: theme.muted,fontSize:12,marginTop:5},detail: {color: theme.muted,fontSize:12,marginTop:5},freeAgent: {color: theme.foreground,fontSize:12,fontWeight:"900",marginTop:6},openArrow: {fontSize:24,color: theme.accent,fontWeight:"800"},loader: {marginTop:45},errorBox: {margin:16,padding:14,backgroundColor: theme.errorSurface,borderRadius:10},error: {color: theme.error},retry: {color: theme.accent,fontWeight:"800",marginTop:8},empty: {padding:30,alignItems:"center"},emptyTitle: {color: theme.foreground,fontWeight:"900",fontSize:17},emptyText: {color: theme.muted,textAlign:"center",marginTop:7,lineHeight:20},more: {minHeight:46,alignItems:"center",justifyContent:"center",backgroundColor: theme.button,borderRadius: theme.radius.control,marginTop:4},moreText: {color: theme.onButton,fontWeight:"800"},footer: {color: theme.muted,fontSize:12,lineHeight:18,paddingHorizontal:8,paddingTop:14,textAlign:"center"}
 });

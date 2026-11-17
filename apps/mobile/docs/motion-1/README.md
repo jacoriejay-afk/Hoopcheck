@@ -1,7 +1,7 @@
 # MOTION-1 implementation and release handoff
 
 Status: **draft; not the complete MOTION-1 release**. Native configuration version is
-0.2.0. No EAS build, OTA update, production deployment, database change, or merge
+0.2.0. No EAS build, OTA update, production deployment, database change, or PR merge
 has been performed.
 
 The repository's Expo app has authentication, directories, public player profiles,
@@ -46,7 +46,7 @@ configuration. Do not call referral attribution end-to-end verified.
 ## Local evidence
 
 - TypeScript and focused mobile ESLint pass.
-- Eight native link, app-lock boundary/fallback, and telemetry privacy contracts pass.
+- Nine native link, app-lock hydration/boundary/fallback, and telemetry privacy contracts pass.
 - Existing VERIFY-1 matrix passes: 10 role/tier cells, edge cases and 22 entitlements.
 - iOS and Android Hermes exports pass (bundling, not native compilation).
 - iOS and Android prebuilds pass without installing native build toolchains.
@@ -56,10 +56,12 @@ configuration. Do not call referral attribution end-to-end verified.
   inspected; corrected legacy dark-theme button contrast and Link/Pressable styling.
 - Streamed search, share-sheet content placement, offline saved-data navigation and
   reconnect checks pass in both themes using isolated fixtures.
-- Expo Doctor passed 16/18 checks before the final icon module addition. Its config
-  schema and React Native Directory metadata requests could not reach their remote
-  services. The final app config resolves and prebuilds, but those remote checks
-  must be rerun successfully before release.
+- Expo Doctor passes all 18 checks on the reconciled branch, including the SDK-pinned
+  SVG dependency and the optional icon bridge using Expo’s exported module API.
+- Preserves PARITY-1/2’s shared controls, display font, crests, country chips, solid
+  entity heroes, and navigation. Source parity/contrast/query-contract checks pass.
+- Startup conceals app content until both auth and the persisted lock preference
+  are known; regression coverage includes that hydration boundary.
 
 `theme-results.json` and `interaction-results.json` contain fixture run summaries.
 These results are browser render/data-path evidence, not Supabase RLS, live-account,
