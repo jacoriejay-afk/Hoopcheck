@@ -325,8 +325,12 @@ html body main .hc-team-look-hero {
   color: var(--hc-hero-foreground);
   overflow-wrap: anywhere;
 }
-html body main .hc-team-look-hero :is(h1, .hc-team-hero-location, .hc-team-hero-chip),
+html body main .hc-team-look-hero :is(h1, .hc-team-hero-location, .hc-team-hero-chip) {
+  color: var(--hc-hero-foreground) !important;
+  -webkit-text-fill-color: currentColor;
+}
 html body main .hc-team-look-hero .hc-league-hero-id .hc-dir-flagchip {
+  background: #29232a;
   color: var(--hc-hero-foreground) !important;
   -webkit-text-fill-color: currentColor;
 }
