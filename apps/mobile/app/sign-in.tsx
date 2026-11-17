@@ -5,6 +5,7 @@ import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from "react-native";
 import { Link, useRouter } from "expo-router";
+import * as Linking from "expo-linking";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
 
@@ -20,14 +21,34 @@ export default function SignInScreen() {
     if (supabaseConfigurationError) { Alert.alert("Setup required", supabaseConfigurationError); return; }
     if (!email.trim() || !password) { Alert.alert("Missing details", "Enter your email and password."); return; }
     setBusy(true);
+    let stage: "authentication" | "profile" = "authentication";
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
       if (error) throw error;
+      stage = "profile";
       const profile = data.user ? await supabase.from("profiles").select("username").eq("id", data.user.id).maybeSingle() : null;
       recordFreshSignIn();
       router.replace((profile?.data && !profile.data.username?.trim() ? "/choose-username" : takeDestination() ?? "/dashboard") as "/dashboard");
-    } catch {
-      Alert.alert("Could not sign in", "Please check your details and try again.");
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Please try again.";
+      Alert.alert(stage === "authentication" ? "Authentication failed" : "Profile loading failed", detail);
+    } finally { setBusy(false); }
+  }
+
+  async function signInWithGoogle() {
+    if (supabaseConfigurationError) { Alert.alert("Setup required", supabaseConfigurationError); return; }
+    setBusy(true);
+    try {
+      const redirectTo = Linking.createURL("auth/callback");
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo, skipBrowserRedirect: true },
+      });
+      if (error) throw error;
+      if (!data.url) throw new Error("Google sign-in URL was not returned.");
+      await Linking.openURL(data.url);
+    } catch (error) {
+      Alert.alert("Google sign-in unavailable", error instanceof Error ? error.message : "Please try again.");
     } finally { setBusy(false); }
   }
 
@@ -46,6 +67,7 @@ export default function SignInScreen() {
           <Button onPress={signIn} disabled={busy} style={({ pressed }) => [styles.button, (pressed || busy) && styles.buttonDim]}>
             <Text style={styles.buttonText}>{busy ? "Signing in…" : "Sign in"}</Text>
           </Button>
+          <Button secondary accessibilityLabel="Continue with Google" onPress={signInWithGoogle} disabled={busy} style={styles.googleButton}>Continue with Google</Button>
           <Text style={styles.signupPrompt}>New to HoopCheck? <Link href="/sign-up" style={styles.link}>Create an account</Link></Text>
           <Link href="/" style={styles.backLink}>Back to welcome</Link>
         </GlassCard>
@@ -65,6 +87,7 @@ const createStyles = (theme: EntryTheme) => StyleSheet.create({
   link: { color: theme.accent, fontWeight: "700" },
   button: { minHeight: 52, borderRadius: theme.radius.control, backgroundColor: theme.button, alignItems: "center", justifyContent: "center", marginTop: 24 },
   buttonDim: { opacity: 0.7 }, buttonText: { color: theme.onButton, fontSize: 16, fontWeight: "800" },
+  googleButton: { marginTop: 12 },
   signupPrompt: { color: theme.muted, textAlign: "center", marginTop: 22 },
   backLink: { color: theme.accent, textAlign: "center", fontWeight: "700", marginTop: 24 },
 })

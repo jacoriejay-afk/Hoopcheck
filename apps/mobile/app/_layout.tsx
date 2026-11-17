@@ -68,12 +68,16 @@ function RootLayout() {
     const inAppArea = ["dashboard", "teams", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
     if (["web", "sign-in", "sign-up"].includes(currentRoute)) return;
     const onPasswordRecovery = currentRoute === "reset-password";
-    if (signedIn && !inAppArea && !onPasswordRecovery) {
+    // Let the OAuth callback exchange its PKCE code and choose the destination.
+    const onAuthCallback = currentRoute === "auth";
+    if (signedIn && !inAppArea && !onPasswordRecovery && !onAuthCallback) {
       const target = takeDestination();
       router.replace((target ?? "/dashboard") as "/dashboard");
     }
     if (!signedIn && inAppArea) { rememberDestination(pathname); router.replace("/sign-in"); }
   }, [sessionReady, signedIn, segments, router, pathname]);
+
+  if (!fontsLoaded && !fontError) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}><SafeAreaProvider><MotionProvider><DevicePreferences><NetworkProvider><BottomSheetModalProvider>
@@ -91,6 +95,7 @@ function RootLayout() {
         <Stack.Screen name="web" options={{ title: "HoopCheck" }} />
         <Stack.Screen name="index" options={{ title: "HoopCheck™", headerShown: false }} />
         <Stack.Screen name="sign-in" options={{ title: "Sign in" }} />
+        <Stack.Screen name="auth/callback" options={{ title: "Signing in" }} />
         <Stack.Screen name="sign-up" options={{ title: "Create account" }} />
         <Stack.Screen name="choose-username" options={{ title: "Choose username" }} />
         <Stack.Screen name="forgot-password" options={{ title: "Reset password" }} />
