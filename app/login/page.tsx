@@ -1,15 +1,16 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import AuthPasswordField from "../../components/AuthPasswordField";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
 import { googleAuthMessage } from "../../lib/google-auth";
-import Logo from "../../components/Logo";
 import { supabase } from "../../lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
+  const emailInput = useRef<HTMLInputElement>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -21,12 +22,15 @@ export default function LoginPage() {
     const query = new URLSearchParams(window.location.search);
     const candidate = query.get("returnTo") || "";
     if (query.has("google_error")) setMessage(googleAuthMessage(query.get("google_error")));
+    if (query.has("auth_error")) {
+      setMessage("This email confirmation link is invalid, expired, or already used. Try signing in or request a fresh email from your signup screen.");
+    }
     if (candidate.startsWith("/") && !candidate.startsWith("//") && !candidate.includes("\\\\") && !candidate.includes("\\") && !candidate.startsWith("/login")) setReturnTo(candidate);
   }, []);
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (loading) return;
+    if (loading || resetLoading) return;
     setLoading(true);
     setMessage("");
     setMessageIsSuccess(false);
@@ -66,11 +70,14 @@ export default function LoginPage() {
 
   async function handlePasswordReset() {
     const normalizedEmail = email.trim().toLowerCase();
+    setMessageIsSuccess(false);
 
     if (!normalizedEmail) {
       setMessage("Enter your email address first, then select Forgot password.");
+      emailInput.current?.focus();
       return;
     }
+    if (!emailInput.current?.reportValidity()) return;
     if (resetLoading) return;
 
     setResetLoading(true);
@@ -78,9 +85,10 @@ export default function LoginPage() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: new URL("/reset-password", window.location.origin).href,
       });
       if (error) throw error;
+      setMessageIsSuccess(true);
       setMessage("If an account exists for that email, we sent a password reset link.");
     } catch (error) {
       console.error("Password reset request failed:", error);
@@ -92,74 +100,42 @@ export default function LoginPage() {
 
   return (
     <main className="hc-auth-page">
-<section className="hero hc-auth-hero" style={{ paddingBottom: "30px" }}>
-        <div className="eyebrow">WELCOME BACK</div>
-        <h1>Welcome back.</h1>
-        <p>
-          Sign in to your HoopCheck account to explore teams, coaches, leagues, player experiences, and fan communities around the world.
-        </p>
-      </section>
-
-      <section className="hc-auth-form-section" style={{ maxWidth: "520px", margin: "0 auto", padding: "20px 6% 100px" }}>
-        <div className="form hc-auth-card">
-          <Link href="/" className="hc-auth-logo" aria-label="HoopCheck home"><Logo variant="full" size={44} /></Link>
-          <div className="eyebrow">Login</div>
-          <h2 style={{ fontSize: "30px", letterSpacing: "-1px", marginTop: 0 }}>
-            Sign in to HoopCheck
-          </h2>
-          <p className="muted">
-            Use the email and password associated with your account.
-          </p>
-
-          <GoogleSignInButton disabled={loading || resetLoading} />
+      <section className="hc-auth-form-section" aria-labelledby="sign-in-title">
+        <div className="hc-auth-card hc-sign-in-card">
+          <h1 id="sign-in-title">Sign in</h1>
 
           <form onSubmit={handleLogin}>
             <label htmlFor="email">Email</label>
-            <input id="email" className="input" type="email" value={email}
+            <input ref={emailInput} id="email" className="input" type="email" value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="you@example.com" autoComplete="email" required />
 
             <label htmlFor="password">Password</label>
-            <input id="password" className="input" type="password" value={password}
+            <AuthPasswordField id="password" className="input" value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Your password" autoComplete="current-password" required />
 
-            <button type="submit" className="btn" disabled={loading}
-              style={{ width: "100%", marginTop: 8 }}>
-              {loading ? "Logging In..." : "Log In"}
+            <button type="button" onClick={handlePasswordReset} disabled={loading || resetLoading} className="hc-auth-action hc-reset-link">
+              {resetLoading ? "Sending reset link…" : "Forgot password?"}
+            </button>
+
+            <button type="submit" className="btn hc-auth-submit" disabled={loading || resetLoading}>
+              {loading ? "Signing in..." : "Sign in"}
             </button>
           </form>
 
-          {message && (
-            <div style={{ marginTop: 18, padding: 14, border: messageIsSuccess ? "1px solid #86c7a2" : "1px solid #e5aaa6", borderRadius: 8, background: messageIsSuccess ? "#edf9f1" : "#fff1f0" }}>
-              <p role={messageIsSuccess ? "status" : "alert"} aria-live="polite" style={{ margin: 0, color: messageIsSuccess ? "#17633a" : "#8c1d18", lineHeight: 1.5 }}>
-                {message}
-              </p>
-            </div>
-          )}
+          {message && <p className="hc-auth-feedback" role={messageIsSuccess ? "status" : "alert"}>{message}</p>}
 
-          <button type="button" onClick={handlePasswordReset} disabled={resetLoading}
-            style={{ background: "transparent", border: 0, color: "var(--orange)", padding: 0, marginTop: 14, cursor: resetLoading ? "default" : "pointer", fontWeight: 800 }}>
-            {resetLoading ? "Sending reset link..." : "Forgot password?"}
-          </button>
+          <div className="hc-auth-divider">or</div>
+          <GoogleSignInButton disabled={loading || resetLoading} />
 
-          <p className="muted" style={{ marginTop: 22, marginBottom: 0 }}>
+          <p className="hc-auth-footer">
             Don&apos;t have a HoopCheck account?{" "}
-            <Link href="/signup" style={{ color: "var(--orange)", fontWeight: 900 }}>Create one</Link>
+            <Link href="/signup" className="hc-auth-action">Create one</Link>
           </p>
         </div>
       </section>
 
-      <section className="hc-auth-promo" style={{ maxWidth: "900px", margin: "0 auto", padding: "0 6% 100px" }}>
-        <div className="card">
-          <div className="eyebrow">HoopCheck</div>
-          <h2>Research before<br />you commit.</h2>
-          <p>Explore basketball communities and make informed decisions, whether you’re a player, fan, coach, or club representative.</p>
-          <div className="actions">
-            <Link href="/signup" className="btn">Create Free Account</Link>
-          </div>
-        </div>
-      </section>
     </main>
   );
 }

@@ -3,8 +3,8 @@
 import { FormEvent, useRef, useState } from "react";
 import UsernameField, { type UsernameFieldHandle } from "../../components/UsernameField";
 import Link from "next/link";
+import AuthPasswordField from "../../components/AuthPasswordField";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
-import Logo from "../../components/Logo";
 import { useRouter } from "next/navigation";
 import { HoopIcon, type HoopIconName } from "../../components/HoopCheckUI";
 import { supabase } from "../../lib/supabase";
@@ -15,15 +15,15 @@ const TERMS_VERSION = "2026-10-01";
 type AccountType = "player" | "coach" | "manager" | "scout" | "agent" | "fan";
 
 const ACCOUNT_TYPES: {value:AccountType; title:string; description:string; icon:HoopIconName}[] = [
-  {value:"player",title:"Player",description:"Professional basketball player: build a verified career profile, research before signing, review teams you played for, and connect with the basketball industry.",icon:"basketball"},
-  {value:"coach",title:"Coach",description:"Coach: build a coaching profile, research organizations, and claim your team when authorized.",icon:"clipboard-check"},
-  {value:"manager",title:"Team Manager",description:"Team manager or club representative: claim your organization, submit verification, and manage official team updates after approval.",icon:"users"},
-  {value:"scout",title:"Scout",description:"Scout: discover players and research teams, leagues, markets, and talent around the world.",icon:"search"},
-  {value:"agent",title:"Agent",description:"Agent: research players, teams, leagues, markets, and recruiting opportunities.",icon:"users"},
-  {value:"fan",title:"Fan",description:"Fan: follow favorite teams, track leagues, and personalize a basketball-first experience.",icon:"star"},
+  {value:"player",title:"Player",description:"Build a verified career profile and review teams you played for.",icon:"basketball"},
+  {value:"coach",title:"Coach",description:"Build a coaching profile and research organizations.",icon:"clipboard-check"},
+  {value:"manager",title:"Team Manager",description:"Claim your club and manage team updates after approval.",icon:"users"},
+  {value:"scout",title:"Scout",description:"Discover players and research teams and leagues.",icon:"search"},
+  {value:"agent",title:"Agent",description:"Research players, clubs, and recruiting opportunities.",icon:"users"},
+  {value:"fan",title:"Fan",description:"Follow teams, track leagues, and join fan groups.",icon:"star"},
 ];
 
-export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
+export default function SignupForm({ googleEmail, referralToken }: { googleEmail?: string; referralToken?: string }) {
   const isGoogleSignup = googleEmail !== undefined;
   const router = useRouter();
   const { language, setLanguage } = useLanguage();
@@ -39,7 +39,7 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
   const isPlayer = accountType === "player";
 
   async function handleSignup(event:FormEvent){
-    event.preventDefault(); setLoading(true); setError("");
+    event.preventDefault(); if (loading) return; setLoading(true); setError("");
     if(!accountType){setError("Choose an account type first.");setLoading(false);return;}
     if(firstName.trim().length<2||lastName.trim().length<2){setError("Please enter your first and last name.");setLoading(false);return;}
     const usernameCheck=await usernameFieldRef.current?.validate();
@@ -48,7 +48,7 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
     if(!isGoogleSignup && password!==confirmPassword){setError("Passwords do not match.");setLoading(false);return;}
     if(!birthMonth||!birthDay||!birthYear){setError("Birthdate is required.");setLoading(false);return;}
     const birthdate=`${birthYear}-${birthMonth.padStart(2,"0")}-${birthDay.padStart(2,"0")}`; const maxDay=new Date(Date.UTC(Number(birthYear),Number(birthMonth),0)).getUTCDate();
-    if(Number(birthDay)<1||Number(birthDay)>maxDay){setError("Please enter a valid birthdate.");setLoading(false);return;}
+    if(!Number.isInteger(Number(birthYear)) || Number(birthYear) < 1900 || Number(birthYear) > new Date().getFullYear() || !Number.isInteger(Number(birthMonth)) || Number(birthMonth) < 1 || Number(birthMonth) > 12 || !Number.isInteger(Number(birthDay)) || Number(birthDay) < 1 || Number(birthDay) > maxDay){setError("Please enter a valid birthdate.");setLoading(false);return;}
     const today=new Date(); let age=today.getFullYear()-Number(birthYear); const birthdayPassed=(today.getMonth()+1>Number(birthMonth))||(today.getMonth()+1===Number(birthMonth)&&today.getDate()>=Number(birthDay)); if(!birthdayPassed) age--;
     if(age<18){setError("You must be 18 or older.");setLoading(false);return;}
     if(!gender){setError("Gender is required.");setLoading(false);return;}
@@ -63,6 +63,7 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
       former_team_ids: isPlayer ? formerTeams : [], favorite_teams: favoriteTeamName,
       is_adult: true, birthdate, gender, agreed_to_terms: true,
       terms_accepted_at: new Date().toISOString(), terms_version: TERMS_VERSION,
+      ...(referralToken && !isGoogleSignup ? { ambassador_token: referralToken } : {}),
     };
 
     try {
@@ -84,9 +85,11 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
       return;
     }
     const {data,error}=await supabase.auth.signUp({
-      email:email.trim().toLowerCase(), password, options:{data:metadata}
+      email:email.trim().toLowerCase(), password, options:{data:metadata, emailRedirectTo: new URL("/auth/confirm", window.location.origin).href}
     });
     if(error) throw error;
+    // Supabase can return an obfuscated success for an existing email.
+    // Never interpret this response alone as proof of a newly created account.
     const normalizedEmail = email.trim().toLowerCase();
     if (!data.session) {
       // Supabase may require email confirmation before creating an authenticated session.
@@ -94,6 +97,10 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
       router.push(`/signup/complete?email=${encodeURIComponent(normalizedEmail)}&confirmation=required`);
       return;
     }
+    // A live session identifies a real authenticated user; confirm the profile exists.
+    if (!data.user?.id) throw new Error("We couldn't verify your new account. Please try signing in.");
+    const { data: createdProfile, error: profileLookupError } = await supabase.from("profiles").select("id").eq("id", data.user.id).maybeSingle();
+    if (profileLookupError || !createdProfile) throw new Error("Your account was authenticated, but the profile could not be verified. Please contact support.");
     router.push(`/signup/complete?email=${encodeURIComponent(normalizedEmail)}`);
     } catch (signupError) {
       console.error("Signup failed:",signupError);
@@ -105,8 +112,7 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
   }
 
   return <main className="auth-page-shell">
-    <nav className="nav signup-nav">
-      <Link href="/" className="logo signup-logo" aria-label="HoopCheck home"><Logo variant="full" size={38} /></Link>
+    <div className="signup-utility-row" aria-label="Sign-up options">
       <div className="signup-nav-actions">
         <label htmlFor="signup-language" className="sr-only">Choose language</label>
         <select id="signup-language" aria-label="Choose language" value={language} onChange={(event) => setLanguage(event.target.value as Language)} className="signup-language-select">
@@ -119,35 +125,22 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
         </select>
         <Link href="/login">Log In</Link>
       </div>
-    </nav>
+    </div>
     <section className="auth-page signup-page">
-      <div className="auth-hero">
-        <div className="eyebrow">JOIN HOOPCHECK</div>
-        <h1>Choose your lane.<br/>Then build your experience.</h1>
-        <p>HoopCheck adapts the signup experience to how you use basketball. Players get professional profile tools; coaches and team managers can request team control; fans, scouts, and agents get a research-first experience.</p>
-        <div className="feature-grid">
-          <div className="feature"><strong>01</strong><span>Research global basketball.</span></div>
-          <div className="feature"><strong>02</strong><span>Follow teams you care about.</span></div>
-          <div className="feature"><strong>03</strong><span>Connect with the basketball community.</span></div>
-        </div>
-      </div>
-
       <div className="auth-card signup-card">
+        <h1>Create your account</h1>
         {isGoogleSignup
           ? <p className="intro">Finish setting up HoopCheck with {googleEmail || "your Google account"}.</p>
-          : <GoogleSignInButton disabled={loading} />}
-        <div className="eyebrow">STEP 01 · ACCOUNT TYPE</div>
-        <h2>How will you use HoopCheck?</h2>
-        <p className="intro">Choose this first. We’ll only show you the questions that apply to your account.</p>
+          : <><GoogleSignInButton disabled={loading} /><div className="hc-auth-divider">or</div></>}
+        <h2>Choose your account type</h2>
         <div className="account-type-grid">
-          {ACCOUNT_TYPES.map(type=><button key={type.value} type="button" onClick={()=>{if(!accountType){setAccountType(type.value);setError("");}}} className={`account-type-choice ${accountType===type.value?"selected":""}`}>
+          {ACCOUNT_TYPES.map(type=><button key={type.value} type="button" aria-pressed={accountType===type.value} disabled={loading} onClick={()=>{setAccountType(type.value);setError("");}} className={`account-type-choice ${accountType===type.value?"selected":""}`}>
             <span className="account-type-icon"><HoopIcon name={type.icon} size={22} /></span><span><strong>{type.title}</strong><small>{type.description}</small></span><span className="account-type-check">{accountType===type.value?<HoopIcon name="check" size={16} />:<HoopIcon name="arrow-right" size={16} />}</span>
           </button>)}
         </div>
 
         {accountType && <form onSubmit={handleSignup} className="signup-form">
-          <div className="signup-step-label">STEP 02 · CREATE YOUR ACCOUNT</div>
-          <div className="signup-account-badge"><strong>{ACCOUNT_TYPES.find(x=>x.value===accountType)?.title}</strong><span className="muted">Account type is locked after selection.</span>{accountType === "player" && gender === "female" && <span className="women-category-badge">Women’s HoopCheck</span>}</div>
+          <div className="signup-account-badge"><strong>{ACCOUNT_TYPES.find(x=>x.value===accountType)?.title}</strong>{accountType === "player" && gender === "female" && <span className="women-category-badge">Women’s HoopCheck</span>}</div>
           <div className="signup-two-col">
             <div><label htmlFor="first-name">First Name</label><input id="first-name" value={firstName} onChange={e=>setFirstName(e.target.value)} autoComplete="given-name" required /></div>
             <div><label htmlFor="last-name">Last Name</label><input id="last-name" value={lastName} onChange={e=>setLastName(e.target.value)} autoComplete="family-name" required /></div>
@@ -165,7 +158,7 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
           </> : <div className="non-player-preferences">
             <div className="signup-step-label">BASKETBALL TO FOLLOW</div>
             <TeamLeaguePicker mode="team" label="Choose a team to follow" value={favoriteTeamName} returnValue="name" onChange={setFavoriteTeamName} basketballType={null} placeholder="Search teams by name, city or country" />
-            <p className="form-hint">No player-position, years-pro, or former-team questions for {accountType}s. You can follow more teams after signup.</p>
+            <p className="form-hint">You can follow more teams after signup.</p>
           </div>}
 
           <div className="signup-two-col">
@@ -174,18 +167,17 @@ export default function SignupForm({ googleEmail }: { googleEmail?: string }) {
           </div>
           {!isGoogleSignup && <><label htmlFor="email">Email</label><input id="email" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" required />
           <div className="signup-two-col">
-            <div><label htmlFor="password">Password</label><input id="password" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 6 characters" autoComplete="new-password" required /></div>
-            <div><label htmlFor="confirm-password">Confirm Password</label><input id="confirm-password" type="password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} autoComplete="new-password" required /></div>
+            <div><label htmlFor="password">Password</label><AuthPasswordField id="password" minLength={6} value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 6 characters" autoComplete="new-password" required /></div>
+            <div><label htmlFor="confirm-password">Confirm Password</label><AuthPasswordField id="confirm-password" minLength={6} value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} autoComplete="new-password" required /></div>
           </div>
           </>}
           <div className="legal-consent">
             <p className="form-hint">Your birthdate is required to verify that you are 18 or older and is stored securely on your HoopCheck profile.</p>
             <label className="checkbox-row"><input type="checkbox" checked={agreedToTerms} onChange={e=>setAgreedToTerms(e.target.checked)}/><span>I agree to the <Link href="/terms">Terms of Service</Link> and acknowledge the <Link href="/privacy">Privacy Policy</Link> and <Link href="/community-guidelines">Community Guidelines</Link>.</span></label>
           </div>
-          {error&&<div className="message error">{error}</div>}
+          {error&&<p className="hc-auth-feedback" role="alert">{error}</p>}
           <button type="submit" className="btn submit" disabled={loading}>{loading?"Creating Account...":`Create ${ACCOUNT_TYPES.find(x=>x.value===accountType)?.title} Account`}</button>
         </form>}
-        {!accountType&&<div className="signup-gate"><span aria-hidden="true"><HoopIcon name="arrow-right" size={18} /></span><strong>Select an account type to continue.</strong><small>Your choices are tailored to your role.</small></div>}
         <div className="login-link">Already have an account? <Link href="/login">Log in</Link></div>
       </div>
     </section>

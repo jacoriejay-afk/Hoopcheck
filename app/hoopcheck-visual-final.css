@@ -1,0 +1,365 @@
+/* VISUAL-FINAL-1: compact shared UI refinements, loaded after existing theme layers. */
+.site-header-global :where(.hc-header-desktop-links, .hc-header-actions, .hc-header-links) { min-width: 0; }
+.site-header-global :where(.hc-header-desktop-links, .hc-header-actions) { align-items: center; }
+.site-header-global .site-header-brand { flex-shrink: 0; }
+.site-header-global :where(.hc-header-icon, .hc-mobile-menu-toggle) { flex-shrink: 0; }
+:where(.hc-shared-picker-dialog, .hc-shared-picker-results) { overscroll-behavior: contain; }
+:where(.hc-shared-picker-dialog, .hc-team-entity-profile) :where(p, h1, h2, h3, strong) { overflow-wrap: break-word; }
+@media (max-width: 640px) {
+  .site-header-global { min-width: 0; }
+  .site-header-global .site-header-brand { min-width: 0; }
+  .hc-shared-picker-filters > * { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.site-header-global, .hc-shared-picker-dialog) { scroll-behavior: auto; }
+}
+
+/* VISUAL-FINAL-2: use the existing 20px hero radius for shared cards.
+   Limit this to the canonical card tokens so buttons, pills, and compact controls
+   retain their purpose-specific radii. */
+:root, html.theme-light, html.theme-dark {
+  --hc-radius-card: var(--radius-lg, 20px);
+}
+
+/* VISUAL-FINAL-3: shared interactive controls across both themes. */
+:where(.hc-shared-picker-dialog, .hc-shared-picker-filters, .hc-auth-card)
+  :where(button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--hc-focus-ring, #ff5a1f);
+  outline-offset: 3px;
+}
+:where(.hc-shared-picker-dialog, .hc-shared-picker-filters)
+  :where(input, select, button) {
+  max-width: 100%;
+  min-width: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.btn, .dashboard-card, .result-card, .quick-card, .hc-shared-picker-dialog button) {
+    transition: none;
+    animation: none;
+  }
+  :where(.btn, .dashboard-card, .result-card, .quick-card):hover {
+    transform: none;
+  }
+}
+
+/* VISUAL-FINAL-4: shared typography and spacing rhythm.
+   Keep existing page-specific type scales and compact controls intact. */
+:root, html.theme-light, html.theme-dark {
+  /* Card gaps remain owned by SP-1 (12px); avoid overriding its shared token. */
+  --hc-reading-line-height: 1.55;
+}
+:where(.dashboard-card, .result-card, .quick-card, .hc-auth-card)
+  :where(p, li, dd) {
+  line-height: var(--hc-reading-line-height);
+}
+:where(.dashboard-card, .result-card, .quick-card, .hc-auth-card)
+  :where(h1, h2, h3, h4) {
+  line-height: 1.2;
+  text-wrap: balance;
+}
+:where(.dashboard-card, .result-card, .quick-card, .hc-auth-card)
+  :where(p, h1, h2, h3, h4, strong, small) {
+  overflow-wrap: break-word;
+}
+@media (max-width: 640px) {
+  :where(.dashboard-card, .result-card, .quick-card, .hc-auth-card) {
+    min-width: 0;
+  }
+}
+
+/* Shared navigation geometry and theme pairing. */
+html body header.site-header-global.hc-template-header.hc-liquid-glass-header {
+  --hc-header-gap: 8px;
+  --hc-header-bg: var(--hc-tab-bg);
+  --hc-header-fg: var(--hc-tab-fg);
+  --hc-header-accent: var(--hc-nav-active-fg);
+  position: sticky !important;
+  inset-block-start: calc(var(--hc-safe-area-top) + var(--hc-header-gap)) !important;
+  z-index: 1200;
+  box-sizing: border-box;
+  width: min(calc(100% - 24px), calc(var(--hc-shell-width) + 2 * var(--hc-shell-gutter))) !important;
+  margin: var(--hc-header-gap) auto 0 !important;
+  padding: 9px clamp(12px, 2vw, 26px) !important;
+  min-height: 62px;
+  background: var(--hc-header-bg) !important;
+  color: var(--hc-header-fg) !important;
+  border: 1px solid var(--hc-card-border) !important;
+  border-block-end: 2px solid var(--hc-orange) !important;
+  border-radius: var(--hc-radius-card) !important;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 15%);
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  @media (prefers-reduced-transparency: no-preference) and (prefers-contrast: no-preference) and (forced-colors: none) {
+    html body header.site-header-global.hc-template-header.hc-liquid-glass-header {
+      background: color-mix(in srgb, var(--hc-header-bg) 92%, transparent) !important;
+      -webkit-backdrop-filter: saturate(145%) blur(16px) !important;
+      backdrop-filter: saturate(145%) blur(16px) !important;
+    }
+  }
+}
+
+html body header.site-header-global.hc-template-header.hc-liquid-glass-header :is(
+  .hc-header-links a, .hc-header-more > summary, .hc-header-more > summary > span, .hc-header-icon, .hc-header-icon svg,
+  .hc-logo--full, .hc-logo__wordmark, .hc-logo__hoop, .hc-logo__check-word,
+  .hc-logo__official-wordmark, .hc-header-feed-artwork, .hc-mobile-menu-toggle
+),
+html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-logo__wordmark::after {
+  color: var(--hc-header-fg) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+html body header.site-header-global.hc-template-header.hc-liquid-glass-header .site-header-brand :is(.hc-logo__icon, .hc-logo__check) {
+  color: var(--hc-header-fg) !important;
+  stroke: currentColor !important;
+}
+
+html body header.site-header-global.hc-template-header.hc-liquid-glass-header :is(
+  .hc-header-links a:is(:hover, .is-active),
+  .hc-header-icon:hover, .hc-header-icon:hover svg
+) {
+  color: var(--hc-header-accent) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+html body header.site-header-global.hc-template-header.hc-liquid-glass-header :is(.hc-header-nav.is-open, .hc-header-more-panel) {
+  background: var(--hc-header-bg) !important;
+  color: var(--hc-header-fg) !important;
+  border: 1px solid var(--hc-card-border) !important;
+  border-radius: var(--hc-radius-card);
+}
+
+html body header.site-header-global.hc-template-header.hc-liquid-glass-header :is(.hc-header-links a, .hc-header-icon):hover {
+  background: var(--hc-nav-active-bg);
+}
+
+html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-signin-button {
+  background: var(--hc-button-primary-bg) !important;
+  color: var(--hc-button-primary-fg) !important;
+  -webkit-text-fill-color: currentColor !important;
+  border: 1px solid var(--hc-button-primary-bg) !important;
+  border-radius: var(--hc-radius-control);
+  padding-inline: 12px;
+  white-space: nowrap;
+}
+
+html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-signin-button > span {
+  color: inherit;
+}
+
+@media (min-width: 768px) {
+  html body header.site-header-global.hc-template-header.hc-liquid-glass-header {
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: clamp(8px, 1.5vw, 20px);
+  }
+
+  html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-header-nav {
+    position: static;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: clamp(8px, 1.5vw, 20px) !important;
+    background: transparent !important;
+    pointer-events: auto;
+  }
+
+  html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-header-actions {
+    position: static;
+    width: auto;
+    justify-self: end;
+  }
+
+  html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-header-desktop-links {
+    gap: clamp(7px, 1vw, 18px);
+  }
+}
+
+@media (max-width: 767px) {
+  /* Body padding reserves the inset in flow. Keep the sticky edge below the notch while scrolling. */
+  html body:has(header.site-header-global.hc-liquid-glass-header) {
+    padding-block-start: var(--hc-safe-area-top) !important;
+  }
+
+  html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-mobile-menu-toggle {
+    background: var(--hc-header-bg) !important;
+    border-color: var(--hc-card-border) !important;
+    border-radius: var(--hc-radius-control);
+  }
+
+  html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-mobile-menu-toggle span {
+    background: var(--hc-header-fg) !important;
+  }
+
+  html body header.site-header-global.hc-template-header.hc-liquid-glass-header .hc-header-nav.is-open {
+    inset-block-start: calc(100% + var(--hc-header-gap));
+    max-height: max(0px, min(70dvh, calc(100dvh - var(--hc-safe-area-top) - var(--hc-safe-area-bottom) - 88px)));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+}
+
+@media (forced-colors: active) {
+  html body header.site-header-global.hc-template-header.hc-liquid-glass-header {
+    --hc-header-bg: Canvas;
+    --hc-header-fg: CanvasText;
+    --hc-header-accent: LinkText;
+    border-color: CanvasText !important;
+    box-shadow: none;
+  }
+}
+
+
+/* CONSISTENCY-1: compact fan-group discovery without covering the last row. */
+.hc-fan-groups-directory .page-container {
+  width: min(100%, 960px);
+  margin-inline: auto;
+  padding-block-end: calc(110px + env(safe-area-inset-bottom, 0px));
+}
+.hc-fan-groups-directory h1 {
+  margin-block: 12px 18px;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.6rem, 5vw, 2.5rem);
+  line-height: 1.15;
+}
+.hc-fan-groups-directory input[type="search"] {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  margin-block-end: 16px;
+  border-radius: var(--hc-radius-control, 12px);
+  color: var(--hc-text, var(--ink));
+  background: var(--hc-surface, var(--paper));
+  border: 1px solid var(--hc-card-border, var(--border));
+}
+.hc-fan-groups-directory .hc-fan-groups-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hc-fan-groups-directory .hc-fan-groups-item {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  border-radius: var(--hc-radius-card, 20px);
+}
+.hc-fan-groups-directory .hc-fan-groups-item a {
+  display: flex;
+  align-items: center;
+  min-height: 54px;
+  padding: 12px 16px;
+  color: inherit;
+  font: 500 0.96rem/1.4 var(--font-sans), sans-serif;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.hc-fan-groups-directory .hc-fan-groups-item a:focus-visible {
+  outline: 2px solid var(--hc-orange, #ff5a1f);
+  outline-offset: 2px;
+}
+@media (max-width: 767px) {
+  .hc-fan-groups-directory .page-container { padding-inline: 14px; }
+  .hc-fan-groups-directory .hc-fan-groups-list { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* CONSISTENCY-2: single shared header on signup; language and login remain accessible. */
+.auth-page-shell .signup-utility-row { display:flex; justify-content:flex-end; align-items:center; width:min(calc(100% - 32px),960px); margin:12px auto 0; padding:0; }
+.auth-page-shell .signup-utility-row .signup-nav-actions { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+.auth-page-shell .signup-utility-row select { max-width:190px; min-height:40px; border:1px solid var(--hc-card-border,var(--border)); border-radius:var(--hc-radius-control,12px); color:var(--hc-text,var(--ink)); background:var(--hc-surface,var(--paper)); }
+.auth-page-shell .signup-utility-row a { color:inherit; }
+@media (max-width:767px) {
+ .auth-page-shell { min-width:0; }
+ .auth-page-shell .signup-utility-row { width:calc(100% - 28px); margin-top:8px; }
+ .auth-page-shell .signup-page { min-width:0; }
+ .auth-page-shell .signup-page .auth-hero { padding:14px 16px 8px !important; }
+ .auth-page-shell .signup-page .auth-hero h1 { font-size:clamp(1.7rem,7vw,2.4rem) !important; line-height:1.12; }
+ .auth-page-shell .signup-page .auth-hero .feature-grid { display:none; }
+ .auth-page-shell .signup-page .signup-card { min-width:0; width:100%; padding:20px 16px; border-radius:var(--hc-radius-card,20px); }
+ .auth-page-shell .signup-page .account-type-grid { min-width:0; grid-template-columns:minmax(0,1fr); }
+}
+
+/* CONSISTENCY-3: account settings should fit small phones without horizontal overflow. */
+.hc-account-page .page-container { min-width:0; max-width:960px; margin-inline:auto; }
+.hc-account-page :is(.hc-account-settings-header,.hc-settings,.hc-settings-group,.account-profile-form,.hc-account-public-profile) { min-width:0; max-width:100%; }
+.hc-account-page :is(.hc-account-settings-identity,.hc-account-identity-title,.hc-account-identity-actions,.hc-account-membership-actions,.hc-account-public-actions) { min-width:0; flex-wrap:wrap; }
+.hc-account-page :is(.hc-account-settings-identity-copy,.hc-account-settings-identity-copy p,.hc-account-identity-title strong) { min-width:0; overflow-wrap:anywhere; }
+.hc-account-page :is(input,select,textarea) { max-width:100%; }
+@media (max-width:767px) {
+ .hc-account-page .page-container { padding-inline:14px;  }
+ .hc-account-page .hc-account-settings-header { padding:18px 16px; border-radius:var(--hc-radius-card,20px); }
+ .hc-account-page .hc-account-settings-header h1 { font-size:clamp(1.5rem,6vw,2rem); line-height:1.15; }
+ .hc-account-page .hc-account-identity-actions { gap:8px; }
+ .hc-account-page .hc-account-membership-actions > *, .hc-account-page .hc-account-public-actions > * { max-width:100%; }
+ .hc-account-page .account-profile-form { grid-template-columns:minmax(0,1fr); }
+}
+
+/* HQ-CONSISTENCY: keep the Agents/Scouts workspace readable on mobile. */
+.hc-agents-hq-page .page-container { min-width:0; max-width:1100px; margin-inline:auto; }
+.hc-role-hq > .page-container { display:grid; gap:var(--hc-content-gap); }
+.hc-role-hq .hero-card { padding:var(--hc-content-padding); }
+.hc-agents-hq-page :is(.hero-card,.hc-dashboard-grid,.dashboard-card) { min-width:0; }
+.hc-agents-hq-page .hc-dashboard-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:12px; }
+.hc-agents-hq-page :is(.hero-card,.dashboard-card) :is(h1,h2,p) { overflow-wrap:break-word; }
+@media (max-width:767px) {
+ .hc-agents-hq-page .page-container { padding-inline:14px;  }
+ .hc-agents-hq-page .hero-card { padding:18px 16px; border-radius:var(--hc-radius-card,20px); }
+ .hc-agents-hq-page .hero-card h1 { font-size:clamp(1.5rem,6vw,2rem); line-height:1.15; }
+ .hc-agents-hq-page .hc-dashboard-grid { grid-template-columns:minmax(0,1fr); }
+ .hc-agents-hq-page .dashboard-card { padding:16px; }
+}
+
+
+/* UI-FINAL SURFACE-1: consistent primary card surfaces on owner-reported routes.
+   Keep secondary controls, selected chips, warning banners and artwork distinct.
+   Scope to known page roots instead of overriding every card site-wide. */
+html:is(.theme-light,.theme-dark) body .hc-global-page-shell main:is(
+  .hc-settings-page,
+  .hc-live-room,
+  .hc-team-entity-profile
+) :is(.settings-card,.hero-card,.dashboard-card,.card,.hc-team-profile-about,.hc-team-profile-snapshot),
+html:is(.theme-light,.theme-dark) body .hc-global-page-shell main .hc-connection-list .hc-connection-row,
+html:is(.theme-light,.theme-dark) body .hc-global-page-shell main .hc-connection-list + .dashboard-card {
+  background-color: var(--hc-card-surface) !important;
+  color: var(--hc-on-card) !important;
+  border-color: var(--hc-card-border) !important;
+}
+
+/* The chat viewport and message composer are secondary surfaces within the
+   room card; they should never inherit a legacy fixed light/dark background. */
+html:is(.theme-light,.theme-dark) body .hc-global-page-shell main.hc-live-room :is(
+  .hc-live-chat-shell,.hc-live-chat-messages,.hc-live-chat-compose
+) {
+  background-color: var(--hc-surface-soft) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-card-border) !important;
+}
+
+/* Avoid creating a second opaque card behind the individual team profile
+   fact cards; preserve distinct badges, crest artwork and status colors. */
+html:is(.theme-light,.theme-dark) body .hc-global-page-shell main.hc-team-entity-profile
+  .hc-team-profile-overview-grid {
+  background-color: transparent;
+}
+
+
+/* ABOUT-SURFACE-1: the About page uses a plain Tailwind layout rather than
+   shared cards. Give its copy the canonical foreground without painting a
+   second opaque surface over the page background. */
+html:is(.theme-light,.theme-dark) body main.hc-about-page {
+  background-color: transparent;
+  color: var(--hc-foreground);
+}
+html:is(.theme-light,.theme-dark) body main.hc-about-page :is(h1,h2,p) {
+  color: inherit;
+}
+html:is(.theme-light,.theme-dark) body main.hc-about-page nav a {
+  color: var(--hc-foreground);
+  text-underline-offset: 4px;
+}
+html:is(.theme-light,.theme-dark) body main.hc-about-page nav a:hover {
+  color: var(--hc-accent-text);
+}

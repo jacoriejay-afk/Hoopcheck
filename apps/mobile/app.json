@@ -2,6 +2,7 @@
   "expo": {
     "name": "HoopCheck",
     "slug": "hoopcheck-mobile",
+    "icon": "./assets/app-icon.png",
     "version": "0.1.0",
     "orientation": "portrait",
     "scheme": "hoopcheck",
@@ -22,12 +23,12 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "online.hoopcheck.ios"
+      "bundleIdentifier": "online.hoopcheck.app"
     },
     "android": {
       "package": "online.hoopcheck.app"
     },
-    "owner": "Jayycorrie",
+    "owner": "hoopcheck",
     "extra": {
       "eas": {
         "projectId": "62f822cb-ab9a-42ba-8456-007d2822ef70"

@@ -44,9 +44,8 @@ export default function DirectoryLayout({ current }: Props) {
       <p className="hc-shared-directory-description">{t(headerKeys[current].description)}</p>
     </section>
     <nav className="hc-shared-directory-tiles" aria-label={t("browseDirectories")}>
-      <span className="hc-shared-directory-tiles-label">{t("browseDirectories")}</span>
       <div className="hc-shared-directory-tile-grid">
-        {destinations.filter((item) => item.key !== "players" || showPlayers).map((item) => <Link key={item.key} href={item.href} aria-current={current === item.key ? "page" : undefined} className={current === item.key ? "is-current" : ""}>{t(item.labelKey)}</Link>)}
+        {destinations.filter((item) => item.key !== "players" || showPlayers).map((item) => <Link key={item.key} href={item.href} aria-current={current === item.key ? "page" : undefined}>{t(item.labelKey)}</Link>)}
       </div>
     </nav>
   </>;
