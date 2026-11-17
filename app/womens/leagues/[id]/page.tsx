@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../../../lib/supabase";
 import HoopFeedFromEntity from "../../../../components/HoopFeedFromEntity";
+import LeagueProfileHero from "../../../../components/LeagueProfileHero";
 import HoopLoading from "../../../../components/HoopLoading";
 
 type League = { name: string; country: string | null; level: string | null };
@@ -14,10 +15,12 @@ export default function WomensLeaguePage() {
   const { id } = useParams<{ id: string }>();
   const [league, setLeague] = useState<League | null>();
   const [clubs, setClubs] = useState<Club[]>([]);
+  const [clubsUnavailable, setClubsUnavailable] = useState(false);
   useEffect(() => {
     let active = true;
     setLeague(undefined);
     setClubs([]);
+    setClubsUnavailable(false);
     void Promise.all([
       supabase.from("womens_leagues").select("name,country,level").eq("id", id).eq("active", true).maybeSingle(),
       supabase.from("womens_teams").select("id,name").eq("league_id", id).eq("active", true).order("name"),
@@ -25,19 +28,35 @@ export default function WomensLeaguePage() {
       if (!active) return;
       setLeague(leagueResult.data);
       setClubs(clubResult.data ?? []);
+      setClubsUnavailable(Boolean(clubResult.error));
     });
     return () => { active = false; };
   }, [id]);
 
-  return <main className="page-shell"><div className="page-container">
-    <Link href="/womens">Women’s teams</Link>
-    {league === undefined ? <HoopLoading /> : league ? <>
-      <h1>{league.name}</h1>
-      <p className="muted">{[league.country, league.level].filter(Boolean).join(" · ")}</p>
-      {clubs.length > 0 && <section className="hc-entity-feed" aria-label="League clubs"><h2>Clubs</h2>
-        <ul>{clubs.map(club => <li key={club.id}><Link href={`/womens/${club.id}`}>{club.name}</Link></li>)}</ul>
-      </section>}
-      <HoopFeedFromEntity id={id} column="womens_league_id" />
-    </> : <h1>League unavailable</h1>}
-  </div></main>;
+  return (
+    <main className="hc-entity-profile-page hc-league-entity-profile">
+      <nav className="hc-directory-switcher hc-profile-directory-switcher" aria-label="Browse HoopCheck directories">
+        <Link href="/teams">Men’s Teams</Link>
+        <Link href="/womens">Women’s Teams</Link>
+        <Link href="/leagues">Leagues</Link>
+        <Link href="/search">Global Search</Link>
+      </nav>
+      {league === undefined ? <HoopLoading /> : league ? (
+        <>
+          <LeagueProfileHero name={league.name} country={league.country} level={league.level} countryFallback="Country not listed">
+            <div className="actions"><Link className="btn dark" href="/womens">Back to women’s teams</Link></div>
+          </LeagueProfileHero>
+          <section className="hero" aria-labelledby="womens-league-clubs">
+            <h2 id="womens-league-clubs">Clubs</h2>
+            {clubsUnavailable ? <p role="status">Couldn’t load the clubs for this league.</p> : clubs.length ? (
+              <ul className="hc-league-club-list">
+                {clubs.map(club => <li key={club.id}><Link className="card" href={`/womens/${club.id}`}>{club.name}</Link></li>)}
+              </ul>
+            ) : <p>No active clubs are listed for this league.</p>}
+          </section>
+          <HoopFeedFromEntity id={id} column="womens_league_id" />
+        </>
+      ) : <h1>League unavailable</h1>}
+    </main>
+  );
 }
