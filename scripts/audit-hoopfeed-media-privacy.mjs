@@ -14,9 +14,9 @@ const rows = [];
 for (const [surface, file] of surfaces) {
   const lines = readFileSync(file, "utf8").split("\n");
   for (const [index, line] of lines.entries()) {
-    if (/feed-images|feed-videos|getPublicUrl\(/.test(line)) {
+    if (/feed-images|feed-videos|hoopfeed-private-images|hoopfeed-private-videos|getPublicUrl\(/.test(line)) {
       rows.push({ surface, file, line: index + 1,
-        images: line.includes("feed-images"),
+        images: line.includes("feed-images") || line.includes("hoopfeed-private-images"),
         videos: line.includes("feed-videos"),
         publicUrl: line.includes("getPublicUrl(") });
     }
@@ -27,11 +27,14 @@ const hoopfeedMedia = rows.filter(row => row.surface === "HoopFeed moderation" |
 assert(hoopfeedMedia.some(row => row.images), "HoopFeed image bucket reference missing; review upload migration.");
 assert(hoopfeedMedia.some(row => row.videos), "HoopFeed video bucket reference missing; review upload migration.");
 const fanSurfaces = rows.filter(row => /Fan Feed/.test(row.surface));
-assert(fanSurfaces.some(row => row.images), "Expected shared fan-feed image bucket; review migration assumptions.");
+assert(fanSurfaces.length > 0, "Expected Fan Feed and Team Fan Feed media references.");
+assert(!fanSurfaces.some(row => row.publicUrl), "Legacy fan surfaces must not generate public media URLs.");
 const hoopfeed = rows.filter(row => row.surface.startsWith("HoopFeed"));
-assert(hoopfeed.some(row => row.publicUrl), "Expected HoopFeed public URL dependency; update the rollout inventory.");
+const newUploadPublicUrlReferences = hoopfeed.filter(row => row.publicUrl);
+// No public URL references in new upload paths is progress, not a historical migration pass.
 console.log(JSON.stringify({
-  finding: "PUBLIC_MEDIA_DEPENDENCIES_PRESENT",
+  finding: "PUBLIC_MEDIA_MIGRATION_STILL_REQUIRED",
+  newUploadPublicUrlReferences: newUploadPublicUrlReferences.length,
   note: "Post RLS does not protect public storage URLs. This inventory is not a privacy pass.",
   references: rows,
 }, null, 2));

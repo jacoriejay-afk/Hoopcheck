@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { stripeMatchesDeployment } from "../../../../../lib/stripe-key-mode";
 import { createClient } from "@supabase/supabase-js";
+import { getActiveMembershipTier } from "../../../../../lib/membership-tier";
 
 function getAdminSupabase() {
   const supabaseUrl =
@@ -44,27 +46,17 @@ export async function POST(
   const deploymentMode =
     process.env.VERCEL_ENV === "production" ? "live" : "test";
   const configuredMode = process.env.STRIPE_CHECKOUT_MODE;
-  // Stripe restricted API keys (rk_live_/rk_test_) are valid server-side
-  // credentials too. Accept either key type, but never mix live and test modes.
-  const allowedKeyPrefixes =
-    deploymentMode === "live"
-      ? ["sk_live_", "rk_live_"]
-      : ["sk_test_", "rk_test_"];
-
   const checkoutEnabled = process.env.STRIPE_CHECKOUT_ENABLED === "true";
-  const keyPrefixValid = Boolean(
-    stripeSecretKey &&
-      allowedKeyPrefixes.some((prefix) => stripeSecretKey.startsWith(prefix))
-  );
+  const stripeConfigMatches = stripeMatchesDeployment(stripeSecretKey);
 
-  if (!checkoutEnabled || configuredMode !== deploymentMode || !keyPrefixValid) {
+  if (!checkoutEnabled || configuredMode !== deploymentMode || !stripeConfigMatches) {
     // Log only non-secret configuration booleans/modes; never log key material.
     console.warn("Stripe checkout configuration guard failed", {
       checkoutEnabled,
       configuredMode: configuredMode ?? null,
       deploymentMode,
       hasSecretKey: Boolean(stripeSecretKey),
-      keyPrefixValid,
+      stripeConfigMatches,
     });
     return NextResponse.json(
       { error: "Checkout is temporarily unavailable while payment configuration is verified." },
@@ -251,7 +243,7 @@ export async function POST(
       await supabase
         .from("subscriptions")
         .select(
-          "stripe_customer_id, stripe_subscription_id, status, plan"
+          "stripe_customer_id, stripe_subscription_id, status, plan, current_period_end"
         )
         .eq(
           "user_id",
@@ -274,20 +266,14 @@ export async function POST(
       );
     }
 
-    // Only block checkout when the active membership is linked to a real
-    // Stripe subscription. Complimentary/admin-granted memberships may be
-    // active locally without billing and should still be able to subscribe.
-    if (
-      existingSubscription?.stripe_subscription_id &&
-      (
-        existingSubscription.status === "active" ||
-        existingSubscription.status === "trialing"
-      )
-    ) {
+    const currentTier = getActiveMembershipTier(existingSubscription);
+    const hasStripeSubscription = existingSubscription?.stripe_subscription_id &&
+      ["active", "trialing"].includes(existingSubscription.status || "");
+    if (hasStripeSubscription || currentTier === plan) {
       return NextResponse.json(
         {
           error:
-            "You already have an active HoopCheck subscription.",
+            "You already have an active HoopCheck membership. Check your current plan in Membership.",
         },
         { status: 409 }
       );
@@ -299,12 +285,37 @@ export async function POST(
       : (interval === "month" ? "999" : interval === "6_month" ? "5395" : "10190");
     const lookupKey = `hoopcheck_${plan}_${intervalKey}_${amountKey}_2026`;
     const priceList = await stripe.prices.list({lookup_keys:[lookupKey],active:true,limit:1});
-    const priceId = priceList.data[0]?.id;
-    if (!priceId) return NextResponse.json({error:"This membership term is not configured yet."},{status:500});
+    const stripePrice = priceList.data[0];
+    if (!stripePrice) return NextResponse.json({error:"This membership term is not configured yet."},{status:500});
+
+    // A lookup key alone cannot guarantee that the configured Stripe Price
+    // matches the approved term and amount shown to the customer.
+    const expectedCents = Number(amountKey);
+    const expectedInterval = interval === "year" ? "year" : "month";
+    const expectedIntervalCount = interval === "6_month" ? 6 : 1;
+    if (
+      stripePrice.currency !== "usd" ||
+      stripePrice.unit_amount !== expectedCents ||
+      stripePrice.type !== "recurring" ||
+      stripePrice.recurring?.interval !== expectedInterval ||
+      stripePrice.recurring?.interval_count !== expectedIntervalCount
+    ) {
+      console.error("Stripe checkout price configuration mismatch", { lookupKey, priceId: stripePrice.id });
+      return NextResponse.json({error:"This membership term is temporarily unavailable."},{status:503});
+    }
+    const priceId = stripePrice.id;
 
     const customerId =
       existingSubscription?.stripe_customer_id ||
       undefined;
+
+    const { data: attribution, error: attributionError } = await supabase.rpc(
+      "ambassador_checkout_attribution", { p_user: user.id }
+    );
+    if (attributionError) {
+      console.error("Ambassador checkout lookup failed", attributionError.code);
+      return NextResponse.json({ error: "Unable to verify your checkout details. Try again." }, { status: 503 });
+    }
 
     const session =
       await stripe.checkout.sessions.create(
@@ -348,6 +359,7 @@ export async function POST(
 
           subscription_data: {
             metadata: {
+              ...(typeof attribution === "string" ? { ambassador_attribution_id: attribution } : {}),
               user_id: user.id,
               plan,
               billing_interval: interval,
