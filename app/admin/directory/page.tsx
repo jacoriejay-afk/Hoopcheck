@@ -19,6 +19,7 @@ export default function AdminDirectoryPage() {
   const router = useRouter();
 
   const [hasAdminAccess, setHasAdminAccess] = useState(false);
+  const [hasOwnerAccess, setHasOwnerAccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [counts, setCounts] = useState<DirectoryCounts>({
     coaches: 0,
@@ -59,6 +60,7 @@ export default function AdminDirectoryPage() {
         { count: coachCount, error: coachError },
         { count: teamCount, error: teamError },
         { count: leagueCount, error: leagueError },
+        { data: approvedOwner },
       ] = await Promise.all([
         supabase
           .from("coaches")
@@ -74,6 +76,7 @@ export default function AdminDirectoryPage() {
           .from("leagues")
           .select("*", { count: "exact", head: true })
           .eq("active", true),
+        supabase.rpc("is_approved_claim_owner"),
       ]);
 
       if (!mounted) return;
@@ -87,6 +90,7 @@ export default function AdminDirectoryPage() {
         );
       }
 
+      setHasOwnerAccess(approvedOwner === true);
       setCounts({
         coaches: coachCount ?? 0,
         teams: teamCount ?? 0,
@@ -126,6 +130,11 @@ export default function AdminDirectoryPage() {
           </div>
 
           <div style={styles.headerActions}>
+            <Link href="/account" style={styles.secondaryButton}>{t("account")}</Link>
+            {hasOwnerAccess && <>
+              <Link href="/owner-hq" prefetch={false} style={styles.secondaryButton}>Owner HQ</Link>
+              <Link href="/admin/ambassadors" prefetch={false} style={styles.secondaryButton}>Ambassador administration</Link>
+            </>}
             <Link href="/admin/reviews" className="admin-primary-action" style={styles.secondaryButton}>{t("reviewQueue")}</Link>
             <Link href="/admin/users?account_type=manager" style={styles.secondaryButton}>Team Managers</Link>
 

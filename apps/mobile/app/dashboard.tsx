@@ -1,15 +1,33 @@
 import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../src/lib/supabase";
+import { useEntryTheme } from "../src/theme";
+
+const directories = [
+  { href: "/teams", icon: "basketball-outline", title: "Teams", detail: "Research professional clubs" },
+  { href: "/leagues", icon: "earth-outline", title: "Leagues", detail: "Explore competitions" },
+  { href: "/players", icon: "people-outline", title: "Players", detail: "Find public player profiles" },
+  { href: "/coaches", icon: "school-outline", title: "Coaches", detail: "Find professional coaches" },
+] as const;
+
+const accountLinks = [
+  { path: "/account", label: "Account settings" },
+  { path: "/support", label: "Support" },
+  { path: "/terms", label: "Terms of Service" },
+  { path: "/privacy", label: "Privacy Policy" },
+  { path: "/community-guidelines", label: "Community Guidelines" },
+  { path: "/privacy-center", label: "Privacy Request Center" },
+];
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const theme = useEntryTheme();
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
-  const [accountType, setAccountType] = useState("member");
+  const [accountType, setAccountType] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -17,105 +35,102 @@ export default function DashboardScreen() {
       if (!alive || error) return;
       setEmail(data.user?.email ?? "");
       const role = data.user?.user_metadata?.account_type;
-      if (typeof role === "string" && role.length > 0) setAccountType(role);
+      if (typeof role === "string") setAccountType(role.replaceAll("_", " "));
     });
     return () => { alive = false; };
   }, []);
 
-  async function openHelp(path: string) {
-    try { await Linking.openURL(`https://hoopcheck-hoopcheck.vercel.app/${path}`); }
-    catch { Alert.alert("Unable to open link", "Please try again or visit hoopcheck-hoopcheck.vercel.app in your browser."); }
+  async function openAccountLink(path: string) {
+    try {
+      await Linking.openURL(`https://hoopcheck.online${path}`);
+    } catch {
+      Alert.alert("Unable to open link", "Please try again or visit hoopcheck.online in your browser.");
+    }
   }
 
   async function signOut() {
     setBusy(true);
     const { error } = await supabase.auth.signOut();
     setBusy(false);
-    if (error) { Alert.alert("Could not sign out", error.message); return; }
+    if (error) {
+      Alert.alert("Could not sign out", error.message);
+      return;
+    }
     router.replace("/");
   }
 
+  const panel = { backgroundColor: theme.surface, borderColor: theme.border, borderRadius: theme.cardRadius };
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.brandLockup}><View style={styles.brandMark}><Text style={styles.brandMarkText}>HC</Text><View style={styles.brandArrow} /></View><Text style={styles.wordmark}>HOOP<Text style={styles.wordmarkAccent}>CHECK</Text></Text></View>
-        <Text style={styles.title}>You’re signed in.</Text>
-        <Text style={styles.subtitle}>Welcome to your mobile account.</Text>
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>ACCOUNT</Text>
-          <Text style={styles.value}>{email || "Signed-in member"}</Text>
-          <Text style={styles.role}>Account type: {accountType}</Text>
-        </View>
-        <Text style={styles.sectionTitle}>Explore basketball</Text>
-        <Pressable onPress={() => router.push("/players")} style={styles.playerWideCard}>
-          <View style={styles.directoryIcon}><Ionicons name="people-outline" size={22} color="#FF5A1F" /></View>
-          <View style={styles.playerWideBody}>
-            <Text style={styles.directoryTitle}>Find players</Text>
-            <Text style={styles.directoryCaption}>Search public professional player profiles</Text>
+    <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.content}>
+          <Text accessibilityRole="header" style={[styles.title, { color: theme.foreground }]}>Explore basketball</Text>
+          <View style={styles.directories}>
+            {directories.map(({ href, icon, title, detail }) => (
+              <Link key={href} href={href} asChild>
+                <Pressable accessibilityRole="link" style={({ pressed }) => [
+                  styles.directory, panel, pressed && { backgroundColor: theme.accentSurface },
+                ]}>
+                  <View style={[styles.icon, { backgroundColor: theme.accentSurface }]}>
+                    <Ionicons name={icon} size={22} color={theme.accent} />
+                  </View>
+                  <View style={styles.directoryCopy}>
+                    <Text style={[styles.rowLabel, { color: theme.foreground }]}>{title}</Text>
+                    <Text style={[styles.detail, { color: theme.muted }]}>{detail}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={theme.accent} />
+                </Pressable>
+              </Link>
+            ))}
           </View>
-          <Text style={styles.directoryAction}>Search →</Text>
-        </Pressable>
-        <View style={styles.directoryRow}>
-          <Pressable onPress={() => router.push("/teams")} style={styles.directoryCard}>
-            <View style={styles.directoryIcon}><Ionicons name="basketball-outline" size={22} color="#FF5A1F" /></View>
-            <Text style={styles.directoryTitle}>Teams</Text>
-            <Text style={styles.directoryCaption}>Search professional clubs</Text>
-            <Text style={styles.directoryAction}>Browse teams →</Text>
-          </Pressable>
-          <Pressable onPress={() => router.push("/leagues")} style={styles.directoryCard}>
-            <View style={styles.directoryIcon}><Ionicons name="earth-outline" size={22} color="#FF5A1F" /></View>
-            <Text style={styles.directoryTitle}>Leagues</Text>
-            <Text style={styles.directoryCaption}>Explore competitions</Text>
-            <Text style={styles.directoryAction}>Browse leagues →</Text>
-          </Pressable>
-        </View>
-        <Pressable onPress={() => router.push("/coaches")} style={styles.playerWideCard}>
-          <View style={styles.directoryIcon}><Ionicons name="school-outline" size={22} color="#FF5A1F" /></View>
-          <View style={styles.playerWideBody}>
-            <Text style={styles.directoryTitle}>Find coaches</Text>
-            <Text style={styles.directoryCaption}>Search the existing coach directory</Text>
+
+          <Text accessibilityRole="header" style={[styles.sectionTitle, { color: theme.foreground }]}>Account &amp; support</Text>
+          <View style={[styles.account, panel]}>
+            {email ? (
+              <View style={styles.identity}>
+                <Text style={[styles.rowLabel, { color: theme.foreground }]}>{email}</Text>
+                {accountType ? <Text style={[styles.role, { color: theme.muted }]}>{accountType}</Text> : null}
+              </View>
+            ) : null}
+            {accountLinks.map(({ path, label }, index) => (
+              <Pressable key={path} accessibilityRole="link" onPress={() => void openAccountLink(path)}
+                style={({ pressed }) => [
+                  styles.accountLink,
+                  (index > 0 || Boolean(email)) && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border },
+                  pressed && { backgroundColor: theme.accentSurface },
+                ]}>
+                <Text style={[styles.linkLabel, { color: theme.foreground }]}>{label}</Text>
+                <Ionicons name="open-outline" size={17} color={theme.accent} />
+              </Pressable>
+            ))}
           </View>
-          <Text style={styles.directoryAction}>Search →</Text>
-        </Pressable>
-        <Text style={styles.note}>Directories use HoopCheck’s existing Supabase data. Player search only displays public, non-suspended professional profiles from men’s and women’s basketball. The coach table currently has no active records, so the coach directory will show an honest empty state until data is added. Reviews, membership and account controls are not yet enabled in this mobile milestone.</Text>
-        <Text style={styles.sectionTitle}>Help & privacy</Text>
-        <View style={styles.legalCard}>
-          <Pressable onPress={() => void openHelp("support")} style={styles.legalLink}><Text style={styles.legalText}>Support</Text><Text style={styles.chevron}>›</Text></Pressable>
-          <Pressable onPress={() => void openHelp("terms")} style={styles.legalLink}><Text style={styles.legalText}>Terms of Service</Text><Text style={styles.chevron}>›</Text></Pressable>
-          <Pressable onPress={() => void openHelp("privacy")} style={styles.legalLink}><Text style={styles.legalText}>Privacy Policy</Text><Text style={styles.chevron}>›</Text></Pressable>
-          <Pressable onPress={() => void openHelp("community-guidelines")} style={styles.legalLink}><Text style={styles.legalText}>Community Guidelines</Text><Text style={styles.chevron}>›</Text></Pressable>
-          <Pressable onPress={() => void openHelp("privacy-center")} style={styles.legalLink}><Text style={styles.legalText}>Privacy Request Center</Text><Text style={styles.chevron}>›</Text></Pressable>
-          <Pressable onPress={() => void openHelp("account")} style={styles.legalLink}><Text style={styles.legalText}>Account settings</Text><Text style={styles.chevron}>›</Text></Pressable>
+          <Pressable accessibilityRole="button" accessibilityState={{ disabled: busy, busy }} onPress={signOut} disabled={busy}
+            style={({ pressed }) => [styles.signOut, (pressed || busy) && { opacity: 0.65 }]}>
+            <Text style={[styles.rowLabel, { color: theme.accent }]}>{busy ? "Signing out…" : "Sign out"}</Text>
+          </Pressable>
         </View>
-        <Pressable onPress={signOut} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Signing out…" : "Sign out"}</Text></Pressable>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#050505" },
-  container: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 18, paddingBottom: 28 },
-  brandLockup: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }, brandMark: { width: 38, height: 38, borderWidth: 1.5, borderColor: "#FFFFFF", alignItems: "center", justifyContent: "center", position: "relative" }, brandMarkText: { color: "#FF6A00", fontSize: 14, fontWeight: "900" }, brandArrow: { position: "absolute", width: 13, height: 2, backgroundColor: "#FF6A00", right: -3, top: 8, transform: [{ rotate: "-38deg" }] }, wordmark: { color: "#FFFFFF", fontSize: 23, fontWeight: "900", letterSpacing: -0.8 }, wordmarkAccent: { color: "#FF6A00" },
-  title: { color: "#FFFFFF", fontSize: 30, fontWeight: "800", marginTop: 18 },
-  subtitle: { color: "#BDBDBD", fontSize: 16, marginTop: 8 },
-  card: { backgroundColor: "#111111", borderRadius: 12, padding: 18, borderWidth: 1, borderColor: "#303030", marginTop: 26 },
-  cardLabel: { color: "#969696", fontSize: 11, fontWeight: "800", letterSpacing: 1 },
-  value: { color: "#FFFFFF", fontSize: 16, fontWeight: "700", marginTop: 8 },
-  role: { color: "#BDBDBD", marginTop: 8, textTransform: "capitalize" },
-  sectionTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "900", marginTop: 26, marginBottom: 12 },
-  playerWideCard: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#111111", borderRadius: 12, borderWidth: 1, borderColor: "#303030", padding: 14, marginBottom: 10 },
-  playerWideBody: { flex: 1 },
-  directoryRow: { flexDirection: "row", gap: 10 },
-  directoryCard: { flex: 1, backgroundColor: "#111111", borderRadius: 12, borderWidth: 1, borderColor: "#303030", padding: 14, minHeight: 154 },
-  directoryIcon: { width: 40, height: 40, borderRadius: 10, backgroundColor: "#FFF0E8", alignItems: "center", justifyContent: "center" },
-  directoryTitle: { color: "#FFFFFF", fontSize: 16, fontWeight: "900", marginTop: 8 },
-  directoryCaption: { color: "#969696", fontSize: 12, lineHeight: 17, marginTop: 4 },
-  directoryAction: { color: "#FF6A00", fontWeight: "800", fontSize: 12, marginTop: 10 },
-  note: { color: "#969696", fontSize: 13, lineHeight: 20, marginTop: 18 },
-  legalCard: { backgroundColor: "#111111", borderRadius: 12, borderWidth: 1, borderColor: "#303030", paddingHorizontal: 14, marginBottom: 6 },
-  legalLink: { minHeight: 46, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: "#292929" },
-  legalText: { color: "#D0D0D0", fontSize: 14, fontWeight: "700" },
-  chevron: { color: "#FF6A00", fontSize: 23, fontWeight: "700" },
-  button: { minHeight: 52, borderRadius: 10, backgroundColor: "#050505", alignItems: "center", justifyContent: "center", marginTop: 18 },
-  dim: { opacity: 0.65 }, buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
+  safe: { flex: 1 },
+  scroll: { flexGrow: 1, padding: 20 },
+  content: { width: "100%", maxWidth: 640, alignSelf: "center" },
+  title: { fontSize: 32, fontWeight: "900", letterSpacing: -0.7, marginBottom: 16 },
+  directories: { gap: 8 },
+  directory: { minHeight: 70, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, padding: 12 },
+  icon: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  directoryCopy: { flex: 1 },
+  rowLabel: { fontSize: 16, fontWeight: "800" },
+  detail: { fontSize: 14, lineHeight: 19, marginTop: 2 },
+  sectionTitle: { fontSize: 21, fontWeight: "800", marginTop: 28, marginBottom: 10 },
+  account: { borderWidth: 1, overflow: "hidden" },
+  identity: { padding: 14, gap: 4 },
+  role: { fontSize: 14, textTransform: "capitalize" },
+  accountLink: { minHeight: 48, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 10 },
+  linkLabel: { flex: 1, fontSize: 15, fontWeight: "600" },
+  signOut: { minHeight: 48, alignItems: "center", justifyContent: "center", marginTop: 12 },
 });

@@ -27,12 +27,63 @@ try {
         const headers = { 'access-control-allow-origin': baseURL, 'access-control-allow-headers': req.headers()['access-control-request-headers'] || '*', 'access-control-allow-methods': 'GET,POST,OPTIONS', 'cache-control': 'no-store' };
         if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
         if (url.pathname.includes('/coaches') && failCoaches) return route.fulfill({ status: 503, headers, contentType: 'application/json', body: JSON.stringify({ message: 'Fixture category failure' }) });
+        if (url.pathname.endsWith('/rpc/search_directory_overview')) {
+          return route.fulfill({ headers, json: { mens: 13, womens: 1, coaches: 0, leagues: 1, countries: [{ country: 'Azerbaijan', total: 14 }] } });
+        }
         let data = [];
         if (url.pathname.includes('/womens_teams')) { if (holdTeam) await teamGate; data = [women]; }
-        else if (url.pathname.includes('/teams')) data = [men];
+        else if (url.pathname.includes('/teams')) {
+          const pageOffset = Number(url.searchParams.get('offset') || 0);
+          const paged = (url.searchParams.get('or') || '').includes('Paginated');
+          const pageTwo = { ...men, id: '33333333-3333-4333-8333-333333333333', name: 'Page Two QA' };
+          data = paged
+            ? pageOffset > 0 ? [pageTwo] : Array.from({ length: 12 }, (_, index) => ({
+                ...men, id: 'aaaaaaaa-aaaa-4aaa-8aaa-' + String(index).padStart(12, '0'), name: 'Page One QA ' + (index + 1),
+              })).concat(pageTwo)
+            : [men];
+        }
         const single = req.headers().accept?.includes('vnd.pgrst.object');
         await route.fulfill({ status: 200, headers, contentType: 'application/json', body: JSON.stringify(single ? data[0] || null : data) });
       });
+      await page.goto(`${baseURL}/coaches`);
+      await page.locator(`html.theme-${theme}`).waitFor();
+      const directoryNav = page.locator('.hc-shared-directory-tile-grid');
+      const directoryLinks = directoryNav.getByRole('link');
+      assert.equal(await directoryLinks.count(), 4, 'Guest directory switcher has four accessible routes');
+      assert.equal(await directoryNav.locator('[aria-current="page"]').getAttribute('href'), '/coaches');
+      const layout = await directoryNav.evaluate(grid => ({
+        backdrop: getComputedStyle(grid.parentElement).backgroundColor,
+        width: grid.clientWidth,
+        scrollWidth: grid.scrollWidth,
+        right: grid.getBoundingClientRect().right,
+        links: [...grid.querySelectorAll('a')].map(link => {
+          const { right, height } = link.getBoundingClientRect();
+          return { right, height, shadow: getComputedStyle(link).boxShadow };
+        }),
+      }));
+      assert.equal(layout.backdrop, 'rgba(0, 0, 0, 0)', 'Directory navigation leaves the page visible between links');
+      assert.equal(layout.width, layout.scrollWidth, 'Directory links fit without horizontal scrolling');
+      assert.ok(layout.links.every(link => link.height >= 44), 'Directory links retain mobile-sized targets');
+      assert.ok(Math.abs(layout.links.at(-1).right - layout.right) < 1, 'Directory links fill the available row');
+      assert.ok(layout.links[2].shadow !== 'none', 'Current directory is visually indicated');
+      if (width === 390 && theme === 'light') {
+        await page.goto(`${baseURL}/search`);
+        await page.getByRole('heading', { name: 'Countries with the most teams' }).waitFor();
+        await page.getByRole('link', { name: 'Azerbaijan 14' }).waitFor();
+        for (const selector of ['.hc-live-search__form', '.hc-search-recent']) {
+          assert.equal(await page.locator(selector).first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgba(0, 0, 0, 0)', selector + ' leaves the page visible outside the rounded controls');
+        }
+        await page.goto(`${baseURL}/search?q=Paginated&type=mens-teams`);
+        await page.getByText('12 results on this page').waitFor();
+        const borders = await page.locator('.hc-directory-compact-row').evaluateAll(rows =>
+          rows.map(row => getComputedStyle(row).borderTopColor));
+        assert.ok(new Set(borders).size > 1, 'Team cards cycle through different loader palette colors');
+        await page.getByRole('button', { name: 'Next', exact: true }).click();
+        await page.getByText('Page Two QA').waitFor();
+        assert.equal(new URL(page.url()).searchParams.get('page'), '2');
+        await page.getByRole('button', { name: 'Previous', exact: true }).click();
+        await page.getByText('Page One QA 1', { exact: true }).waitFor();
+      }
       await page.goto(`${baseURL}/search?q=Discovery`);
       const maleLink = page.locator(`.result-group a[href="/teams/${men.id}"]`).first();
       const femaleLink = page.locator(`.result-group a[href="/womens/${women.id}"]`).first();
@@ -98,6 +149,19 @@ try {
       releaseTeam();
       holdTeam = false;
       await page.locator('.hc-womens-branded-hero').waitFor();
+      const overviewTab = page.getByRole("tab", { name: "Overview" });
+      const reviewsTab = page.getByRole("tab", { name: "Reviews" });
+      await overviewTab.focus();
+      await overviewTab.press("ArrowRight");
+      assert.equal(await page.getByRole("tab", { name: "Roster" }).getAttribute("aria-selected"), "true");
+      await page.getByRole("tab", { name: "Roster" }).press("ArrowRight");
+      assert.equal(await page.getByRole("tab", { name: "Coaches" }).getAttribute("aria-selected"), "true");
+      await page.getByRole("tab", { name: "Coaches" }).press("ArrowRight");
+      assert.equal(await reviewsTab.getAttribute("aria-selected"), "true");
+      assert.equal(await page.getByRole("tabpanel", { name: "Reviews" }).isVisible(), true);
+      assert.equal(await page.getByRole("tabpanel", { name: "Overview" }).isVisible(), false);
+      await overviewTab.click();
+      assert.equal(await overviewTab.getAttribute("aria-selected"), "true");
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2), false, 'Long team name fits the profile viewport');
       const art = await page.locator('.hc-womens-branded-hero').evaluate(el => getComputedStyle(el).backgroundImage);
       assert.ok(art.includes('basketball-arena-ai.webp'), 'Women’s team uses the AI arena background');
@@ -115,15 +179,26 @@ try {
       await femaleLink.waitFor();
       for (const kind of ['mens', 'womens']) {
         const result = page.locator(`.result-group .hc-team-directory-row--${kind}`).first();
-        const { border, radius } = await result.evaluate(el => {
+        const { border, radius, height, fitted } = await result.evaluate(el => {
           const style = getComputedStyle(el);
-          return { border: style.borderTopWidth, radius: style.borderTopLeftRadius };
+          const box = el.getBoundingClientRect();
+          const link = el.querySelector('.hc-directory-compact-link').getBoundingClientRect();
+          return { border: style.borderTopWidth, radius: style.borderTopLeftRadius, height: box.height,
+            fitted: link.left >= box.left - 1 && link.right <= box.right + 1 && el.scrollWidth <= el.clientWidth + 1 };
         });
         assert.equal(border, '1px', `${kind} team result has a visible border`);
         assert.equal(radius, '20px', `${kind} team result uses the shared card radius`);
+        assert.ok(height < 155 && fitted, `${kind} team result is compact and fits its card at ${width}px (height ${height}, fitted ${fitted})`);
       }
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2);
       assert.equal(overflow, false, `Search does not overflow at ${width}px`);
+      await page.locator(".hc-live-search input").fill("Discovery Team");
+      const option = page.getByRole("option", { name: /Discovery Men QA/ });
+      await option.waitFor();
+      await page.locator(".hc-live-search input").press("ArrowDown");
+      assert.equal(await option.getAttribute("aria-selected"), "true");
+      await page.locator(".hc-live-search input").press("Escape");
+      await option.waitFor({ state: "hidden" });
       console.log(`PASS ${width}px ${theme}: both team searches, women’s navigation, long names, bordered results, centered loader, reduced motion, AI art, partial failure recovery`);
       await context.close();
     }

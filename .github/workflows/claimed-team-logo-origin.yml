@@ -1,0 +1,23 @@
+name: Claimed team logo storage origin
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/*claimed_team_logo_storage_origin.sql'
+      - '.github/workflows/claimed-team-logo-origin.yml'
+  workflow_dispatch:
+jobs:
+  verify-origin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate trusted origin and claim checks
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('supabase/migrations/20261113070000_claimed_team_logo_storage_origin.sql').read_text()
+          assert "ucbdceaieyenljcwlhnj[.]supabase[.]co/storage/v1/object/public/team-logos/" in s
+          assert "'^https://[^/]+/storage" not in s
+          assert "c.requester_id = auth.uid()" in s
+          assert "c.status = 'approved'" in s
+          assert "p_team_table not in ('teams', 'womens_teams')" in s
+          PY

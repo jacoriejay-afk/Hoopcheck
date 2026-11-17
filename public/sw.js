@@ -1,4 +1,4 @@
-const VERSION = "hoopcheck-shell-v1";
+const VERSION = "hoopcheck-shell-v2";
 const SHELL_CACHE = VERSION + "-shell";
 const STATIC_CACHE = VERSION + "-static";
 const OFFLINE_URL = "/offline";
@@ -8,6 +8,9 @@ self.addEventListener("install", (event) => {
     const cache = await caches.open(SHELL_CACHE);
     try { await cache.add(new Request(OFFLINE_URL, { cache: "reload" })); } catch {}
   })());
+  // Activate updated service workers promptly so installed iOS PWAs do not
+  // continue serving an older shell after a successful deployment.
+  self.skipWaiting();
 });
 
 self.addEventListener("message", (event) => {

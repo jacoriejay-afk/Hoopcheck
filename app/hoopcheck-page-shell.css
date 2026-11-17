@@ -55,3 +55,11 @@ html body .hc-global-page-shell > .hc-route-transition main > .page-container {
   -webkit-backdrop-filter: var(--hc-surface-backdrop, none);
   backdrop-filter: var(--hc-surface-backdrop, none);
 }
+
+/* Reserve clearance for the 66px floating tab bar, its bottom offset and
+   the iOS home-indicator inset. Keep the final page/footer actions tappable. */
+@media (max-width: 767px) {
+  html body:has(nav.hc-lm2f-bottom-nav) {
+    padding-block-end: calc(80px + var(--hc-safe-area-bottom)) !important;
+  }
+}

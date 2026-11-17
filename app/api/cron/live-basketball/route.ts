@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { GAME_CHAT_OPEN_EARLY_MINUTES } from "../../../../lib/game-availability";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 20;
@@ -161,6 +162,7 @@ export async function GET(request: NextRequest) {
 
       const startDate = game.timestamp ? new Date(game.timestamp * 1000).toISOString()
         : (game.date && !Number.isNaN(Date.parse(game.date)) ? new Date(game.date).toISOString() : null);
+      const providerLeagueId = game.league?.id;
       const providerStatus = statusOf(game);
       const storedStatus = liveStatuses.has(providerStatus) ? "live"
         : scheduledStatuses.has(providerStatus) ? "scheduled"
@@ -172,6 +174,7 @@ export async function GET(request: NextRequest) {
         opponent_name: opponentName,
         provider_source: "api-sports-basketball",
         provider_game_id: String(game.id),
+        provider_league_id: typeof providerLeagueId === "number" && Number.isSafeInteger(providerLeagueId) && providerLeagueId > 0 ? providerLeagueId : null,
         status: storedStatus,
         home_score: storedStatus === "scheduled" ? null : primaryScore,
         away_score: storedStatus === "scheduled" ? null : opponentScore,
@@ -198,7 +201,7 @@ export async function GET(request: NextRequest) {
     const { error: staleError } = await staleQuery;
     if (staleError) throw staleError;
 
-    // Send one in-app reminder when the 30-minute chat window opens.
+    // Send one in-app reminder when the pregame chat window opens.
     const { data: pendingReminders, error: reminderReadError } = await db.from("fan_live_game_reminders")
       .select("id,game_id,user_id").is("notified_at", null).limit(1000);
     if (reminderReadError) throw reminderReadError;
@@ -214,7 +217,7 @@ export async function GET(request: NextRequest) {
         const game = byId.get(reminder.game_id);
         if (!game || !game.scheduled_at || ["cancelled","canceled","postponed","abandoned","final"].includes(String(game.status).toLowerCase())) continue;
         const tipoff = Date.parse(game.scheduled_at);
-        const opens = tipoff - 30 * 60 * 1000;
+        const opens = tipoff - GAME_CHAT_OPEN_EARLY_MINUTES * 60 * 1000;
         const closes = game.ends_at ? Date.parse(game.ends_at) + 60 * 60 * 1000 : tipoff + 4 * 60 * 60 * 1000;
         if (!Number.isFinite(tipoff) || now < opens || now >= closes) continue;
         const { data: preferences } = await db.from("user_preferences").select("notifications_enabled")
@@ -223,7 +226,7 @@ export async function GET(request: NextRequest) {
           const { error: notificationError } = await db.from("notifications").insert({
             user_id: reminder.user_id, target_type: "game", target_id: game.id,
             notification_type: "game_reminder", title: "Game chat is open",
-            body: "Chat opens soon for " + (game.opponent_name || "your scheduled game") + ". Join the game room now.",
+            body: "Chat is open for " + (game.opponent_name || "your scheduled game") + ". Join the game room now.",
           });
           if (notificationError) throw notificationError;
         }
