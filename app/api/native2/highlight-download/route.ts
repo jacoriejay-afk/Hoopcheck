@@ -32,10 +32,10 @@ export async function POST(request: NextRequest) {
   if (authError || !identity.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers });
   const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: asset, error } = await admin.from("native2_highlight_assets")
-    .select("id,owner_id,private_storage_path,status")
+    .select("id,owner_id,private_storage_path,status,watermark_applied,end_card_applied")
     .eq("id", body.assetId).eq("owner_id", identity.user.id).maybeSingle();
   if (error) return NextResponse.json({ error: "Unavailable" }, { status: 503, headers });
-  if (!asset || asset.status !== "ready" || !native2AuthorizeOwnerMedia({
+  if (!asset || asset.status !== "ready" || asset.watermark_applied !== true || asset.end_card_applied !== true || !native2AuthorizeOwnerMedia({
     kind: "highlight", operation: "download", authenticatedUserId: identity.user.id,
     recordOwnerId: asset.owner_id, recordId: asset.id, bucket: "native2-highlights",
     objectPath: asset.private_storage_path, now: new Date().toISOString(),
