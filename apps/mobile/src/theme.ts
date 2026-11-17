@@ -4,6 +4,10 @@ import { Platform, useColorScheme } from "react-native";
 export const tokens = {
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 },
   radius: { control: 12, card: 16, hero: 20, pill: 999 },
+  // components/TeamLogo.tsx; directory crest artwork is theme-independent.
+  // TeamProfileHero.tsx: solid first gradient stop for native authored hero art.
+  entityHero: { background: "#111827", ink: "#FFFFFF", muted: "#E5E7EB" },
+  crest: { panel: "#1A1A1A", border: "#2D2D2D", ink: "#F7F7F5", palette: ["#8A2A0D", "#8C1B53", "#173C86", "#176C3D", "#4C2A90", "#7B5900"] },
   roles: { women: "#E84393", coaches: "#2456C8", leagues: "#1E9E50", players: "#6C3FD4", alerts: "#F5B800" },
   type: {
     display: { fontFamily: "HoopCheckDisplay", fontSize: 48, fontWeight: "400" as const, letterSpacing: -1.68, lineHeight: 49 },
