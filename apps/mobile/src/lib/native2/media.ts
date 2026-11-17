@@ -1,4 +1,4 @@
-/** NATIVE-2 private media path contracts. Server-side authorization is still required. */
+/** NATIVE-2 private media paths. This client helper never grants reviewer access. */
 export type Native2MediaKind = "highlight" | "verification";
 export const NATIVE2_MEDIA_BUCKETS = {
   highlight: "native2-highlights",
@@ -6,13 +6,14 @@ export const NATIVE2_MEDIA_BUCKETS = {
 } as const;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-/** No user-supplied path fragments: generate opaque paths on the trusted server. */
+/** Generate an opaque, normalized path. The trusted server must validate the record. */
 export function native2MediaObjectPath(ownerId: string, assetId: string, extension: "mp4" | "mov"): string {
   if (!UUID.test(ownerId) || !UUID.test(assetId)) throw new Error("Invalid media identity");
+  if (extension !== "mp4" && extension !== "mov") throw new Error("Invalid media extension");
   return `${ownerId.toLowerCase()}/${assetId.toLowerCase()}.${extension}`;
 }
 
-/** Defense in depth: validate identity, bucket and object key before signing access. */
+/** Owner-only preflight; never treat this as server authorization or reviewer approval. */
 export function native2CanAccessMedia(
   kind: Native2MediaKind,
   bucket: string,
@@ -20,14 +21,10 @@ export function native2CanAccessMedia(
   authenticatedUserId: string,
   recordOwnerId: string,
   assetId: string,
-  isAuthorizedReviewer = false,
 ): boolean {
   if (!UUID.test(authenticatedUserId) || !UUID.test(recordOwnerId) || !UUID.test(assetId)) return false;
+  if (kind !== "highlight" && kind !== "verification") return false;
   if (bucket !== NATIVE2_MEDIA_BUCKETS[kind]) return false;
-  if (isAuthorizedReviewer && kind === "verification") return (
-    path === native2MediaObjectPath(recordOwnerId, assetId, "mp4") ||
-    path === native2MediaObjectPath(recordOwnerId, assetId, "mov")
-  );
   if (authenticatedUserId.toLowerCase() !== recordOwnerId.toLowerCase()) return false;
   return path === native2MediaObjectPath(recordOwnerId, assetId, "mp4") ||
     path === native2MediaObjectPath(recordOwnerId, assetId, "mov");
