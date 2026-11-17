@@ -12,12 +12,14 @@ export const metadata: Metadata = {
 export default async function AmbassadorAdmin({ searchParams }: { searchParams: Promise<{ result?: string | string[] }> }) {
   await requireAmbassadorSession("/admin/ambassadors", true);
   const db = ambassadorDb();
-  const [campaigns, grants, payouts] = await Promise.all([
+  const [campaigns, grants, approvedPayouts, payoutHistory] = await Promise.all([
     db.from("ambassador_campaigns").select("code,display_name").order("display_name"),
     db.from("ambassador_grants").select("id,code,status,activated_at,ends_at,first_rate_bps,commission_rate_bps,agreement_reference,payout_terms_reference"),
-    db.from("ambassador_payouts").select("id,ambassador_id,amount_minor,status,paid_at").order("created_at", { ascending: false }).limit(100),
+    db.from("ambassador_payouts").select("ambassador_id,amount_minor").eq("currency", "usd").eq("status", "approved"),
+    db.from("ambassador_payouts").select("id,ambassador_id,amount_minor,status,paid_at")
+      .eq("currency", "usd").neq("status", "approved").order("created_at", { ascending: false }).limit(100),
   ]);
-  if (campaigns.error || grants.error || payouts.error) throw new Error("Ambassador administration is temporarily unavailable.");
+  if (campaigns.error || grants.error || approvedPayouts.error || payoutHistory.error) throw new Error("Ambassador administration is temporarily unavailable.");
   const result = (await searchParams).result;
   const reportMonth = new Date().toISOString().slice(0, 7);
 
@@ -38,7 +40,7 @@ export default async function AmbassadorAdmin({ searchParams }: { searchParams: 
         {result === "payout-rejected" && <p role="alert">Payout change refused. Check the payable balance, existing approval and transfer reference.</p>}
         {campaigns.data.map(campaign => {
           const grant = grants.data.find(item => item.code === campaign.code);
-          const approved = payouts.data.find(item => item.ambassador_id === grant?.id && item.status === "approved");
+          const approved = approvedPayouts.data.find(item => item.ambassador_id === grant?.id);
           return <section key={campaign.code} className={`dashboard-card ${styles.stack}`}>
             <div>
               <h2>{campaign.display_name}</h2>
@@ -79,7 +81,7 @@ export default async function AmbassadorAdmin({ searchParams }: { searchParams: 
                   <button className="btn" name="action" value="approve">Approve eligible balance</button>
                 </form>}
                 <ul className={styles.list}>
-                  {payouts.data.filter(item => item.ambassador_id === grant.id).map(item => <li className={styles.row} key={item.id}>
+                  {payoutHistory.data.filter(item => item.ambassador_id === grant.id).map(item => <li className={styles.row} key={item.id}>
                     <span>{item.paid_at?.slice(0, 10) ?? "Awaiting settlement"}</span>
                     <span>{item.status}</span><strong>${(item.amount_minor / 100).toFixed(2)}</strong>
                   </li>)}
