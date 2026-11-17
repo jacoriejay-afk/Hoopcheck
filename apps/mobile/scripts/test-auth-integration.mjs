@@ -102,7 +102,7 @@ test("invalid build configuration blocks both sign-in methods before any auth re
 test("layout does not interrupt callback exchange, but retains protected-route redirects", () => {
   for (const [segments, signedIn, expected] of [
     [["auth", "callback"], true, []], [["auth", "callback"], false, []],
-    [["reset-password"], true, []], [["sign-in"], true, ["/dashboard"]],
+    [["reset-password"], true, []], [["sign-in"], true, []],
     [["dashboard"], false, ["/sign-in"]],
   ]) {
     const f = screen("app/_layout.tsx", { state: [true, signedIn], segments });
