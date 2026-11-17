@@ -185,6 +185,10 @@ html body .hc-global-page-shell main .hc-directory-compact-meta .hc-follow-compa
 [data-profile-cover="rose"] { --hc-cover-hue: #ef77af !important; }
 [data-profile-cover="violet"] { --hc-cover-hue: #9d89f5 !important; }
 [data-profile-cover="ocean"] { --hc-cover-hue: #59b8cf !important; }
+[data-profile-cover="forest"] { --hc-cover-hue: #2fa67b !important; }
+[data-profile-cover="gold"] { --hc-cover-hue: #e5b84c !important; }
+[data-profile-cover="midnight"] { --hc-cover-hue: #5266b5 !important; }
+[data-profile-cover="coral"] { --hc-cover-hue: #ef745c !important; }
 
 .hc-social-profile {
   border: 1px solid var(--hc-border);
@@ -272,3 +276,17 @@ html body .hc-global-page-shell main .hc-social-profile :is(.hc-social-handle,.h
 }
 .hc-cover-options input { width: auto !important; min-height: 0 !important; margin: 0; }
 .hc-cover-swatch { display: inline-block; width: .8rem; height: .8rem; border-radius: 50%; background: var(--hc-cover-hue); }
+
+/* Optional compact member profile layout. Keeps standard theme tokens and accessible controls. */
+.hc-member-profile-page[data-profile-layout="compact"] .hc-social-cover { height: 80px; }
+.hc-member-profile-page[data-profile-layout="compact"] .hc-social-profile-body { padding-bottom: .65rem; }
+.hc-member-profile-page[data-profile-layout="compact"] .hc-social-avatar { width: 68px; height: 68px; }
+.hc-member-profile-page[data-profile-layout="compact"] .hc-social-profile-nav { margin-block: .25rem .6rem; }
+.hc-member-profile-page[data-profile-layout="compact"] .hc-profile-quick-grid { gap: .45rem; }
+@media (max-width: 420px) {
+  .hc-member-profile-page[data-profile-layout="compact"] .hc-social-avatar-row { margin-top: -24px; }
+}
+
+.hc-profile-social-links { display: flex; flex-wrap: wrap; gap: .4rem .65rem; margin-top: .7rem; }
+.hc-profile-social-links a { display: inline-flex; align-items: center; min-height: 40px; max-width: 100%; padding: .3rem .65rem; border: 1px solid var(--hc-border); border-radius: 999px; color: var(--hc-foreground); background: var(--hc-surface-soft); font-size: .85rem; font-weight: 650; text-decoration: none; overflow-wrap: anywhere; }
+.hc-profile-social-links a:focus-visible { outline: 2px solid var(--hc-orange); outline-offset: 2px; }
