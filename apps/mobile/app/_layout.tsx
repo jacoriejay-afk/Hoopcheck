@@ -7,7 +7,7 @@ import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 
 export default function RootLayout() {
-  // Metro requires a static asset reference for native font bundling.
+  // Metro statically resolves bundled font assets from require().
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const [fontsLoaded, fontError] = useFonts({ HoopCheckDisplay: require("../assets/hoopcheck-display.ttf") });
   const router = useRouter();
