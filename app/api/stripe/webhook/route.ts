@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { getStripeKeyMode, stripeMatchesDeployment } from "../../../../lib/stripe-key-mode";
+import { reconcileAmbassadorEvent, recordAmbassadorInvoice, updateAmbassadorSubscriptionStatus } from "../../../../lib/ambassador/stripe";
 import { createClient } from "@supabase/supabase-js";
 
 function getAdminSupabase() {
@@ -138,6 +140,20 @@ async function saveSubscription(
     throw new Error(
       `Unknown Stripe price: ${priceId || "missing"}`
     );
+  }
+
+  // Never let subscription metadata alone grant membership to an arbitrary ID.
+  // The recipient must be a real HoopCheck profile before any entitlement write.
+  const { data: ownerProfile, error: ownerProfileError } = await supabase
+    .from("profiles")
+    .select("account_type")
+    .eq("id", userId)
+    .maybeSingle();
+  if (ownerProfileError || !ownerProfile?.account_type) {
+    throw new Error("Cannot synchronize a subscription without its account owner.");
+  }
+  if (!["player", "fan", "coach", "agent", "scout", "club_admin", "manager"].includes(ownerProfile.account_type)) {
+    throw new Error("Subscription owner has an unsupported account role.");
   }
 
   const currentPeriodEndTimestamp =
@@ -369,11 +385,8 @@ export async function POST(
           signature,
           webhookSecret
         );
-    } catch (error) {
-      console.error(
-        "Stripe signature verification failed:",
-        error
-      );
+    } catch {
+      console.warn("Stripe signature verification failed.");
 
       return NextResponse.json(
         {
@@ -385,16 +398,10 @@ export async function POST(
     }
 
     // Reject events if the webhook's mode differs from the configured Stripe key.
-    const keyMode = stripeSecretKey.startsWith("sk_live_")
-      ? "live"
-      : stripeSecretKey.startsWith("sk_test_")
-        ? "test"
-        : "unknown";
-    const deploymentMode =
-      process.env.VERCEL_ENV === "production" ? "live" : "test";
+    const keyMode = getStripeKeyMode(stripeSecretKey);
 
     // Prevent a test-mode webhook from mutating production membership records.
-    if (keyMode === "unknown" || keyMode !== deploymentMode) {
+    if (!stripeMatchesDeployment(stripeSecretKey)) {
       console.error("Stripe key mode does not match deployment environment.");
       return NextResponse.json(
         { error: "Stripe webhook configuration does not match this environment." },
@@ -421,6 +428,8 @@ export async function POST(
     }
     claimedEventId = event.id;
     claimedEventToken = claimResult.claimToken;
+
+    const ledgerRpc = (name: string, args: Record<string, unknown>) => getAdminSupabase().rpc(name, args);
 
     if (event.type === "identity.verification_session.verified") {
       const verificationSession = event.data.object as any;
@@ -537,10 +546,8 @@ export async function POST(
         );
       }
 
-      await saveSubscription(
-        userId,
-        subscription
-      );
+      await saveSubscription(userId, subscription);
+      await updateAmbassadorSubscriptionStatus(ledgerRpc, subscription);
     }
 
     if (
@@ -565,10 +572,10 @@ export async function POST(
           );
 
         if (userId) {
-          await saveSubscription(
-            userId,
-            subscription
-          );
+          await saveSubscription(userId, subscription);
+          const plan = getPlanFromPrice(subscription.items.data[0]?.price.id, subscription.metadata);
+          await recordAmbassadorInvoice(stripe, ledgerRpc, invoice, subscription, userId, plan);
+          await updateAmbassadorSubscriptionStatus(ledgerRpc, subscription);
         }
       }
     }
@@ -595,10 +602,8 @@ export async function POST(
           );
 
         if (userId) {
-          await saveSubscription(
-            userId,
-            subscription
-          );
+          await saveSubscription(userId, subscription);
+          await updateAmbassadorSubscriptionStatus(ledgerRpc, subscription);
         }
       }
     }
@@ -607,19 +612,17 @@ export async function POST(
       event.type ===
       "customer.subscription.updated"
     ) {
-      const subscription =
+      const eventSubscription =
         event.data.object as Stripe.Subscription;
 
-      const userId =
-        await getSubscriptionUserId(
-          subscription
-        );
+      // Webhooks can arrive out of order. Always reconcile against Stripe's
+      // current subscription state rather than an older event snapshot.
+      const subscription = await stripe.subscriptions.retrieve(eventSubscription.id);
+      const userId = await getSubscriptionUserId(subscription);
 
       if (userId) {
-        await saveSubscription(
-          userId,
-          subscription
-        );
+        await saveSubscription(userId, subscription);
+        await updateAmbassadorSubscriptionStatus(ledgerRpc, subscription);
       }
     }
 
@@ -636,13 +639,12 @@ export async function POST(
         );
 
       if (userId) {
-        await saveSubscription(
-          userId,
-          subscription
-        );
+        await saveSubscription(userId, subscription);
+        await updateAmbassadorSubscriptionStatus(ledgerRpc, subscription);
       }
     }
 
+    await reconcileAmbassadorEvent(stripe, ledgerRpc, event);
     if (!claimedEventToken) throw new Error("Stripe webhook claim token is missing.");
     await completeStripeWebhookEvent(event, claimedEventToken);
     claimedEventId = null;

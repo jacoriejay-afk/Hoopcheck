@@ -161,8 +161,8 @@ html.theme-light main :where(
   .hc-profile-info-card,.hc-profile-review-list > *,.hc-review-card,.hc-player-result,.hc-directory-result,
   .hc-review-state,.hc-coach-empty,.admin-panel,.admin-card,.admin-section,.admin-stat-card,
   .admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,
-  .auth-card,.hc-auth-card,.legal-card,.hc-shared-directory-hero,.hc-shared-directory-tiles,
-  .hc-shared-directory-tiles a,.research-search,.hc-league-filter,.hc-team-facts-card,
+  .auth-card,.hc-auth-card,.legal-card,.hc-shared-directory-hero,
+  .research-search,.hc-league-filter,.hc-team-facts-card,
   .hc-dashboard-stat-card,.hc-dashboard-profile-block,.hc-team-directory-row,.hc-scout-card__report,
   .hc-team-logo-tile,.hc-team-profile-logo,.hc-team-directory-row__trust,.hc-scout-card__stats
 ),
@@ -172,8 +172,8 @@ html.theme-dark main :where(
   .hc-profile-info-card,.hc-profile-review-list > *,.hc-review-card,.hc-player-result,.hc-directory-result,
   .hc-review-state,.hc-coach-empty,.admin-panel,.admin-card,.admin-section,.admin-stat-card,
   .admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,
-  .auth-card,.hc-auth-card,.legal-card,.hc-shared-directory-hero,.hc-shared-directory-tiles,
-  .hc-shared-directory-tiles a,.research-search,.hc-league-filter,.hc-team-facts-card,
+  .auth-card,.hc-auth-card,.legal-card,.hc-shared-directory-hero,
+  .research-search,.hc-league-filter,.hc-team-facts-card,
   .hc-dashboard-stat-card,.hc-dashboard-profile-block,.hc-team-directory-row,.hc-scout-card__report,
   .hc-team-logo-tile,.hc-team-profile-logo,.hc-team-directory-row__trust,.hc-scout-card__stats
 ) {
@@ -188,7 +188,7 @@ html.theme-light main :where(
   .hc-profile-info-card,.hc-profile-review-list > *,.hc-review-card,.hc-player-result,.hc-directory-result,
   .hc-review-state,.hc-coach-empty,.admin-panel,.admin-card,.admin-section,.admin-stat-card,
   .admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,
-  .auth-card,.hc-auth-card,.legal-card,.hc-shared-directory-hero,.hc-shared-directory-tiles,
+  .auth-card,.hc-auth-card,.legal-card,.hc-shared-directory-hero,
   .hc-team-facts-card,.hc-team-directory-row
 ) :where(h1,h2,h3,h4,p,li,dt,dd,label,small,strong,span,a:not(.btn),div) { color: var(--hc-foreground); }
 html.theme-dark main :where(
@@ -197,7 +197,7 @@ html.theme-dark main :where(
   .hc-profile-info-card,.hc-profile-review-list > *,.hc-review-card,.hc-player-result,.hc-directory-result,
   .hc-review-state,.hc-coach-empty,.admin-panel,.admin-card,.admin-section,.admin-stat-card,
   .admin-review-card,.admin-report-card,.moderation-card,.modal-panel,.modal-content,.form-card,
-  .auth-card,.hc-auth-card,.legal-card,.hc-shared-directory-hero,.hc-shared-directory-tiles,
+  .auth-card,.hc-auth-card,.legal-card,.hc-shared-directory-hero,
   .hc-team-facts-card,.hc-team-directory-row
 ) :where(h1,h2,h3,h4,p,li,dt,dd,label,small,strong,span,a:not(.btn),div) { color: var(--hc-foreground) !important; }
 html.theme-light main :where(input,textarea,select,.research-search,.hc-league-filter),
@@ -236,8 +236,8 @@ html.theme-dark .hc-team-logo-tile, html.theme-dark .hc-team-profile-logo {
   }
 }
 @media (min-width:1200px) {
-  html.theme-dark main :where(.hc-team-directory-row,.hc-shared-directory-hero,.hc-shared-directory-tiles),
-  html.theme-light main :where(.hc-team-directory-row,.hc-shared-directory-hero,.hc-shared-directory-tiles) {
+  html.theme-dark main :where(.hc-team-directory-row,.hc-shared-directory-hero),
+  html.theme-light main :where(.hc-team-directory-row,.hc-shared-directory-hero) {
     border-color: var(--hc-border);
   }
 }

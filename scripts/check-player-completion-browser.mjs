@@ -62,7 +62,7 @@ try {
   await progress.waitFor();
   assert.equal(await progress.getAttribute("aria-valuenow"), "100");
   await page.getByRole("button", { name: /Make Public/ }).click();
-  await page.getByText("Profile visible to everyone").waitFor();
+  await page.getByRole("region", { name: "Player profile completion" }).first().getByRole("link", { name: /View Public Profile/ }).waitFor();
   assert.equal(profile.profile_visibility, "public");
   console.log("Player completion browser checks passed.");
 } finally {

@@ -759,17 +759,17 @@ main:not(.hc-template-home) {
   min-height: 44px;
   flex: 0 0 auto;
   padding: 0 15px;
-  border: 1px solid #eaeaea;
+  border: 1px solid var(--hc-border);
   border-radius: 999px;
-  background: var(--hc-paper-strong);
-  color: #333;
+  background: var(--hc-button-outline-bg);
+  color: var(--hc-button-outline-fg);
   font-size: 12px;
   font-weight: 800;
 }
 .hc-reviews-page .hc-review-filter[aria-pressed="true"] {
-  border-color: #ff5500;
-  background: #ff5500;
-  color: var(--hc-paper-strong);
+  border-color: var(--hc-button-primary-bg);
+  background: var(--hc-button-primary-bg);
+  color: var(--hc-button-primary-fg);
 }
 .hc-reviews-page .hc-review-feed { display: grid; gap: 10px; }
 .hc-reviews-page .hc-review-card {
@@ -862,14 +862,14 @@ main:not(.hc-template-home) {
   min-height: 44px;
   flex: 0 0 auto;
   padding: 0 15px;
-  border: 1px solid #eaeaea;
+  border: 1px solid var(--hc-border);
   border-radius: 999px;
-  background: var(--hc-paper-strong);
-  color: #333;
+  background: var(--hc-button-outline-bg);
+  color: var(--hc-button-outline-fg);
   font-size: 12px;
   font-weight: 800;
 }
-.hc-directory-filter[aria-pressed="true"] { border-color: #ff5500; background: #ff5500; color: var(--hc-paper-strong); }
+.hc-directory-filter[aria-pressed="true"] { border-color: var(--hc-button-primary-bg); background: var(--hc-button-primary-bg); color: var(--hc-button-primary-fg); }
 .hc-directory-list { overflow: hidden; border: 1px solid #eaeaea; border-radius: 12px; background: var(--hc-paper-strong); }
 .hc-directory-row { display: flex; min-height: 82px; align-items: center; gap: 13px; padding: 13px 14px; border-bottom: 1px solid #eaeaea; text-decoration: none; }
 .hc-directory-row:last-child { border-bottom: 0; }
@@ -1808,7 +1808,7 @@ main:not(.hc-template-home) :where(.empty-state,.error-state,.loading-state) {
 }
 body { background: var(--hc-surface-raised) !important; color: #171717 !important; }
 main:not(.hc-rebrand):not(.hc-template-home),
-main:not(.hc-rebrand):not(.hc-template-home) > section:not(.hero):not(.hc-team-reviews-trust-strip):not(.hc-live-hub-hero):not(.hc-layout-card):not(.hc-layout-group):not(.hc-shared-directory-hero) {
+main:not(.hc-rebrand):not(.hc-template-home) > section:not(.hero):not(.hc-team-reviews-trust-strip):not(.hc-live-hub-hero):not(.hc-layout-card):not(.hc-layout-group):not(.hc-shared-directory-hero):not(:where(.hc-team-directory-list, .hc-womens-team-list, .hc-search-recent)) {
   background-color: var(--hc-surface-raised) !important;
   color: #171717 !important;
 }
@@ -1864,9 +1864,9 @@ main:not(.hc-rebrand):not(.hc-template-home) > section:not(.hero):not(.hc-team-r
 .hc-dashboard-shell a.btn,
 .hc-dashboard-shell button,
 main:not(.hc-rebrand):not(.hc-template-home) :where(.btn,button[type="submit"],.button-primary,.btn-primary) {
-  color: #fff !important;
-  background: #e64a00 !important;
-  border-color: #e64a00 !important;
+  color: var(--hc-button-primary-fg) !important;
+  background: var(--hc-button-primary-bg) !important;
+  border-color: var(--hc-button-primary-bg) !important;
 }
 .hc-dashboard-shell .btn.dark,
 main:not(.hc-rebrand):not(.hc-template-home) :where(.btn.dark,.button-dark) {
@@ -1947,9 +1947,9 @@ main.auth-page-shell .signup-account-badge,
 main.auth-page-shell .signup-gate,
 main.auth-page-shell .feature,
 main.auth-page-shell .account-type-choice {
-  color: #171717 !important;
+  color: var(--hc-foreground) !important;
 }
-main.auth-page-shell { background: var(--hc-surface-raised) !important; }
+main.auth-page-shell { background: var(--hc-page-bg) !important; }
 main.auth-page-shell .auth-hero,
 main.auth-page-shell .signup-card,
 main.auth-page-shell .auth-card,
@@ -1959,20 +1959,20 @@ main.auth-page-shell .signup-account-badge,
 main.auth-page-shell .signup-gate {
   background: var(--hc-surface-raised) !important;
   background-image: none !important;
-  border-color: #e2e2e2 !important;
+  border-color: var(--hc-border) !important;
   box-shadow: none !important;
 }
 main.auth-page-shell :where(h1,h2,h3,h4,strong,.logo) {
-  color: #171717 !important;
+  color: var(--hc-foreground) !important;
 }
 main.auth-page-shell :where(p,small,.muted,.intro,.form-hint,.login-link,.signup-gate) {
-  color: #5f5f5f !important;
+  color: var(--hc-foreground-muted) !important;
 }
 main.auth-page-shell .eyebrow,
 main.auth-page-shell .feature > strong,
 main.auth-page-shell .account-type-check,
 main.auth-page-shell :where(.login-link a,.auth-page-shell a:not(.logo)) {
-  color: #d94300 !important;
+  color: var(--hc-accent-text) !important;
 }
 main.auth-page-shell .signup-nav {
   background: #111 !important;
@@ -1981,26 +1981,26 @@ main.auth-page-shell .signup-nav {
 main.auth-page-shell .signup-nav :where(a,span) { color: #fff !important; }
 main.auth-page-shell .account-type-choice.selected {
   border-color: #ff5500 !important;
-  background: #fff7f2 !important;
+  background: var(--hc-nav-active-bg) !important;
 }
 main.auth-page-shell .account-type-choice :where(strong,small,span) {
-  color: #171717 !important;
+  color: var(--hc-foreground) !important;
 }
 main.auth-page-shell .signup-form :where(input,select,textarea) {
-  color: #171717 !important;
+  color: var(--hc-foreground) !important;
   background: var(--hc-surface-raised) !important;
-  border-color: #cfcfcf !important;
-  -webkit-text-fill-color: #171717 !important;
+  border-color: var(--hc-control-border) !important;
+  -webkit-text-fill-color: var(--hc-foreground) !important;
 }
 main.auth-page-shell .signup-form :where(input,select,textarea)::placeholder {
-  color: #666 !important;
-  -webkit-text-fill-color: #666 !important;
+  color: var(--hc-foreground-muted) !important;
+  -webkit-text-fill-color: var(--hc-foreground-muted) !important;
 }
 main.auth-page-shell .signup-form .btn,
 main.auth-page-shell .signup-form button[type="submit"] {
-  color: #fff !important;
-  background: #e64a00 !important;
-  border-color: #e64a00 !important;
+  color: var(--hc-button-primary-fg) !important;
+  background: var(--hc-button-primary-bg) !important;
+  border-color: var(--hc-button-primary-bg) !important;
 }
 main.auth-page-shell .signup-form .checkbox-row,
 main.auth-page-shell .signup-form .checkbox-row span {
@@ -4101,7 +4101,7 @@ main, section, article, aside, header, footer, nav, form, .card, .result-card, .
 .hc-review-verified .hc-verified-badge svg { display:block; width:100%; height:100%; }
 
 /* Auth screens: one compact card, shared field and focus treatment. */
-.hc-auth-page, .auth-page-shell { width:100%; min-height:100dvh; background:#F7F7F5; color:#111; }
+.hc-auth-page, .auth-page-shell { width:100%; background:var(--hc-page-bg); color:var(--hc-foreground); }
 .hc-auth-page .hc-auth-hero { padding:28px 20px 8px !important; text-align:center; background:transparent; color:#111; }
 .hc-auth-page .hc-auth-hero h1 { margin:8px auto; max-width:100%; font-size:clamp(24px,5vw,28px); line-height:1.1; }
 .hc-auth-page .hc-auth-hero p { max-width:480px; margin:8px auto; color:#626262; font-size:14px; line-height:1.5; }
@@ -4199,9 +4199,13 @@ main, section, article, aside, header, footer, nav, form, .card, .result-card, .
 
 
 /* Final component-level overrides for the reusable search field and compact directory rows. */
-.hc-searchbar { display:flex!important; align-items:center!important; min-width:0!important; width:100%!important; min-height:54px!important; gap:10px!important; padding:5px!important; border:1px solid #deded9!important; border-radius:12px!important; background:var(--hc-surface-raised)!important; color:#171717!important; }
-.hc-searchbar .hc-searchbar__input { display:block!important; flex:1 1 0%!important; width:100%!important; min-width:0!important; max-width:100%!important; height:42px!important; border:0!important; padding:0 4px!important; background:transparent!important; color:#171717!important; font-size:15px!important; line-height:1.2!important; white-space:nowrap!important; overflow:hidden!important; text-overflow:ellipsis!important; }
+.hc-searchbar { display:flex!important; align-items:center!important; min-width:0!important; width:100%!important; min-height:54px!important; gap:10px!important; padding:5px!important; border:1px solid var(--hc-border)!important; border-radius:var(--hc-radius-control)!important; background:var(--hc-surface-raised)!important; color:var(--hc-input-fg)!important; }
+.hc-searchbar .hc-searchbar__input { display:block!important; flex:1 1 0%!important; width:100%!important; min-width:0!important; max-width:100%!important; height:42px!important; border:0!important; padding:0 4px!important; background:transparent!important; color:var(--hc-input-fg)!important; font-size:15px!important; line-height:1.2!important; white-space:nowrap!important; overflow:hidden!important; text-overflow:ellipsis!important; }
 .hc-searchbar .hc-searchbar__input::placeholder { white-space:nowrap!important; overflow:hidden!important; text-overflow:ellipsis!important; }
+html:is(.theme-light, .theme-dark) .hc-searchbar .hc-searchbar__input::placeholder {
+  color: var(--hc-foreground-muted) !important;
+  -webkit-text-fill-color: var(--hc-foreground-muted) !important;
+}
 .hc-searchbar .hc-searchbar__submit { display:inline-flex!important; flex:0 0 auto!important; min-width:104px!important; height:42px!important; border-radius:9px!important; background:var(--hc-button-primary-surface)!important; color:var(--hc-button-primary-foreground)!important; }
 .hc-searchbar .hc-searchbar__clear { display:grid!important; flex:0 0 30px!important; }
 @media(max-width:600px) {
@@ -5637,7 +5641,7 @@ html.theme-light main:not(.hc-template-home) {
   background-color: var(--hc-page-bg) !important;
   color: var(--hc-foreground) !important;
 }
-html.theme-dark main:not(.hc-template-home) :where(h1,h2,h3,h4,p,span,label,small,strong,li,a,div):not(.btn):not(.eyebrow):not(.card-kicker):not(.hc-feed-streak):not(.hc-feed-plan-tag):not([class*="badge"]):not([class*="category"]):not([class*="icon"]):not(.hc-team-profile-hero *):not(.hc-team-reviews-trust-strip *):not(.hc-live-hub-hero *):not(.hc-layout-card *):not(.hc-layout-group *):not(.hc-shared-directory-hero *) {
+html.theme-dark main:not(.hc-template-home) :where(h1,h2,h3,h4,p,span,label,small,strong,li,a,div):not(.btn):not(.eyebrow):not(.card-kicker):not(.hc-feed-streak):not(.hc-feed-plan-tag):not([class*="badge"]):not([class*="category"]):not([class*="icon"]):not(.hc-team-profile-hero *):not(.hc-team-reviews-trust-strip *):not(.hc-live-hub-hero *):not(.hc-layout-card *):not(.hc-layout-group *):not(.hc-shared-directory-hero *):not(.hc-billing-option *):not(.hc-live-hub-page *) {
   color: var(--hc-foreground) !important;
 }
 html.theme-dark main:not(.hc-template-home) :where(.muted,.text-muted,.description,.subtle,.hc-feed-counter,.hc-feed-expires,.hc-feed-location,.hc-feed-post-author__meta) {
