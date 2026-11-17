@@ -1,7 +1,7 @@
 import { GlassCard, Input, Button } from "../src/primitives";
 import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from "react-native";
 import { Link, useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -64,7 +64,7 @@ export default function SignInScreen() {
           <Button onPress={signIn} disabled={busy} style={({ pressed }) => [styles.button, (pressed || busy) && styles.buttonDim]}>
             <Text style={styles.buttonText}>{busy ? "Signing in…" : "Sign in"}</Text>
           </Button>
-          <Button secondary accessibilityLabel="Continue with Google" onPress={signInWithGoogle} disabled={busy} style={{ marginTop: 12 }}>Continue with Google</Button>
+          <Button secondary accessibilityLabel="Continue with Google" onPress={signInWithGoogle} disabled={busy} style={styles.googleButton}>Continue with Google</Button>
           <Text style={styles.signupPrompt}>New to HoopCheck? <Link href="/sign-up" style={styles.link}>Create an account</Link></Text>
           <Link href="/" style={styles.backLink}>Back to welcome</Link>
         </GlassCard>
@@ -84,6 +84,7 @@ const createStyles = (theme: EntryTheme) => StyleSheet.create({
   link: { color: theme.accent, fontWeight: "700" },
   button: { minHeight: 52, borderRadius: theme.radius.control, backgroundColor: theme.button, alignItems: "center", justifyContent: "center", marginTop: 24 },
   buttonDim: { opacity: 0.7 }, buttonText: { color: theme.onButton, fontSize: 16, fontWeight: "800" },
+  googleButton: { marginTop: 12 },
   signupPrompt: { color: theme.muted, textAlign: "center", marginTop: 22 },
   backLink: { color: theme.accent, textAlign: "center", fontWeight: "700", marginTop: 24 },
 })

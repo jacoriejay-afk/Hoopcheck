@@ -1,6 +1,6 @@
 import { useFonts } from "expo-font";
 import { useEffect, useState } from "react";
-import { Stack, usePathname, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { supabase } from "../src/lib/supabase";
@@ -13,8 +13,6 @@ export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
   const theme = useEntryTheme();
-  const pathname = usePathname();
-  const entryScreen = pathname === "/" || pathname === "/dashboard";
   const [sessionReady, setSessionReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
 

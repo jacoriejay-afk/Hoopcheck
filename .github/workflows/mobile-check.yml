@@ -31,5 +31,7 @@ jobs:
         run: npm run typecheck
       - name: Test native Supabase URL validation
         run: node --test scripts/test-supabase-url.mjs
+      - name: Test native sign-in and callback integration
+        run: node --test scripts/test-auth-integration.mjs
       - name: Expo dependency and configuration diagnostics
         run: npx expo-doctor

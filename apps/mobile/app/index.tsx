@@ -26,8 +26,8 @@ export default function WelcomeScreen() {
           <Text style={[styles.description, { color: theme.muted }]}>
             Research basketball teams, coaches, and leagues through the experiences of players who have been there.
           </Text>
-          <Button onPress={() => router.push("/sign-in")}>Sign in</Button>
-          <Button secondary onPress={() => router.push("/sign-up")}>Create an account</Button>
+          <Button accessibilityLabel="Sign in" onPress={() => router.push("/sign-in")}>Sign in</Button>
+          <Button secondary accessibilityLabel="Create an account" onPress={() => router.push("/sign-up")}>Create an account</Button>
         </GlassCard>
       </ScrollView>
     </SafeAreaView>
