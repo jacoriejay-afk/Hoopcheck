@@ -13,8 +13,8 @@ type ReviewMembershipGateProps = {
 };
 
 export default function ReviewMembershipGate({
-  title = "Full review details require an eligible membership",
-  description = "An eligible active membership unlocks full review details.",
+  title = "Review access depends on your account and membership",
+  description = "Player Pro and Premium members can read reviews and submit eligible player reviews. Fan Premium members can read full reviews, while Fan Pro members see a rating preview. Fans cannot submit reviews.",
   actionLabel = "View Membership",
   accountType = "",
   tier = "free",
@@ -27,7 +27,7 @@ export default function ReviewMembershipGate({
   const resolvedTitle = isFan
     ? "Fan Premium unlocks full reviews and ratings"
     : isPlayer
-      ? "Player Pro or Premium membership required"
+      ? "Player Pro or Premium unlocks review access"
       : accountType
         ? title
         : signedOut
@@ -35,14 +35,14 @@ export default function ReviewMembershipGate({
           : title;
   const resolvedDescription = isFan
     ? tier === "pro"
-      ? "Fan Pro shows the overall rating preview. Upgrade to Fan Premium to unlock full reviews and category details."
-      : "Choose Fan Premium to unlock full reviews and rating details across HoopCheck."
+      ? "Fan Pro shows the overall rating preview. Upgrade to Fan Premium to read full reviews and category details. Fan accounts cannot write reviews."
+      : "Fan Premium unlocks full reviews and rating details. Fan Pro includes a rating preview. Fan accounts cannot write reviews."
     : isPlayer
-      ? "An active Pro or Premium player membership unlocks full review details and review-writing access."
+      ? "Player Pro and Premium members can read full reviews and submit reviews when eligible and verified. Fan accounts cannot write reviews."
       : accountType
         ? description
         : signedOut
-          ? "Sign in and choose an eligible HoopCheck membership to view full review details."
+          ? "Sign in to choose a membership. Player Pro/Premium and Fan Premium can read full reviews; Fan Pro sees a preview. Only eligible players can submit reviews."
           : description;
   const resolvedActionLabel = isFan ? "View Fan Premium" : isPlayer ? "View Membership" : accountType ? actionLabel : "View Membership";
 
