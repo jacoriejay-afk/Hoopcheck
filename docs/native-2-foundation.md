@@ -1,26 +1,33 @@
 # NATIVE-2 — foundation and release gates
 
-Status: draft, feature flags off. This branch introduces typed contracts only; no native modules, migrations, buckets, permissions, or production changes.
+Status: **draft PR #685, all four feature flags OFF**. No native camera/location modules installed, no production database changes, no merge, no EAS build.
 
-## Existing integration points inspected
-- `apps/mobile/src/lib/supabase.ts`: Expo SecureStore-backed Supabase client.
-- `supabase/migrations/20261004190000_harden_player_verification.sql` and owner verification migrations: approval authority must remain server-side.
-- `lib/game-availability.ts`: existing chat window is authoritative; do not bypass it for attendance.
-- HoopFeed moderation scripts and RLS audit: publishing must use existing server-side entitlements and moderation.
+## Implemented in this branch
+- Typed contracts and disabled flags for Arena Check-In, Travel Mode, Highlight Camera, and In-App Verification Video.
+- Client preflight helpers for attendance location/time, travel country selection, chat/publishing gates, and owner-only media paths. **Client preflight is not authorization.**
+- Four RLS-enabled tables in `20261117093000_native2_foundation.sql`: `native2_travel_preferences`, `native2_arena_checkins`, `native2_highlight_assets`, `native2_verification_video_assets`.
+- `20261117094000_native2_explicit_privilege_lockdown.sql` revokes default table grants; only own travel preferences allow authenticated writes under RLS. Check-ins and media records are server-write-only.
+- `20261117095000_native2_private_media_buckets.sql` creates private `native2-highlights` and `native2-verification-videos` buckets, 100 MiB limits, MP4/QuickTime MIME restrictions. No client storage policies or upload/download permissions.
+- Security unit tests in `apps/mobile/src/lib/native2/*.test.mjs`, executed by `.github/workflows/native2-security.yml`.
+- All three migrations applied to **isolated Supabase test project only** (`vcprqpjkyubzzcjatdpx`); production project (`ucbdceaieyenljcwlhnj`) untouched.
+- Sandbox RLS test: user A sees only own travel preference, cannot see or update user B's preference; test transaction rolled back.
+- At commit `bef2261`, NATIVE-2 Security Tests, Mobile App Checks, HoopCheck CI, and Launch Test all passed.
 
-## Proposed database changes (separate reviewed migration)
-- `arena_venues`: curated game venue coordinates and verified source; never trust client-supplied venue coordinates.
-- `arena_checkins`: user/game unique constraint, server-derived timestamps, verified/rejected state; writes only through authenticated server-side validation with rate limits and anti-spoofing checks.
-- `travel_preferences`: user-owned opt-in, country code, foreground/manual mode. Do not store location history or raw coordinates by default.
-- `highlight_assets`: owner, private source, processing state, watermark/end-card metadata; publish only when server checks eligibility.
-- `verification_video_assets`: private object path linked to existing player verification request, accessible only to owner and authorized reviewers; enforce retention and deletion policy.
+## Existing integration boundaries
+- `apps/mobile/src/lib/supabase.ts`: Expo SecureStore-backed client.
+- Existing player verification workflow: only authorized server-side reviewers can approve; uploaded video cannot approve itself.
+- Existing game chat window, block/moderation, and HoopFeed entitlements remain authoritative.
 
-## Security and launch gates
-1. Review current Supabase table definitions and RLS before writing migration; test on isolated database only.
-2. Verify that player/fan attendance does not bypass chat lifecycle, blocking, moderation, or subscription rules.
-3. Keep video verification private; no public bucket, public URL, or client-side badge approval.
-4. Obtain foreground location and camera/microphone permission only when used; support manual travel selection.
-5. Ensure watermark and end card are baked into the rendered export; never mark incomplete processing ready.
-6. Install native Expo modules only after version compatibility review; create new EAS build, not OTA.
-7. Run mobile typecheck, security tests, CI, iOS/Android physical-device checks, and light/dark QA.
-8. Keep all features disabled until independent approval; do not merge or migrate production without verification.
+## Not yet implemented — required before enabling features
+1. Trusted server API for authenticated, rate-limited, short-lived upload/download access, verifying database record ownership, object path, bucket and content metadata. Never issue reviewer access based on a caller-supplied boolean. Ensure reviewer access uses existing verified owner/admin authorization.
+2. Private video retention/deletion and orphan cleanup; verification request linkage and audit logging.
+3. Arena venue provenance and server-side game-time, location/anti-spoof, duplicate and abuse checks. Attendance must never override game chat lifecycle.
+4. Travel Mode UI with opt-in/manual country and no background location history.
+5. Native camera capture, processing, watermark/end-card export, privacy consent and moderation checks. A preview overlay is not a baked-in watermark.
+6. Expo native dependency compatibility review and new signed EAS builds for iOS/Android, physical-device and light/dark testing.
+7. Isolated end-to-end server/storage/RLS tests, privacy and threat review, final owner signoff. Production migrations only after explicit approval and verified rollout plan.
+
+## Scope protection
+- Do not alter unrelated sandbox security advisor findings in this PR.
+- No direct client access to private media buckets, public URLs, client-side verification approval, or premature feature flag activation.
+- PR #685 remains draft and unmerged until the above gates pass.
