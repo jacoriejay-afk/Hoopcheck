@@ -3,11 +3,9 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, Tex
 import { Link, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
-import { useEntryTheme } from "../src/theme";
 
 export default function SignInScreen() {
   const router = useRouter();
-  const theme = useEntryTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -27,21 +25,21 @@ export default function SignInScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <View style={styles.container}>
-          <Text style={[styles.title, { color: theme.foreground }]}>Welcome back</Text>
-          <Text style={[styles.subtitle, { color: theme.muted }]}>Sign in to continue to HoopCheck.</Text>
-          <Text style={[styles.label, { color: theme.foreground }]}>Email</Text>
-          <TextInput autoCapitalize="none" autoComplete="email" keyboardType="email-address" value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor="#7A8798" style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.foreground }]} accessibilityLabel="Email" />
-          <Text style={[styles.label, { color: theme.foreground }]}>Password</Text>
-          <TextInput value={password} onChangeText={setPassword} placeholder="Your password" placeholderTextColor="#7A8798" secureTextEntry autoComplete="password" style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.foreground }]} accessibilityLabel="Password" />
-          <Link href="/forgot-password" style={[styles.link, { color: theme.accent }]}>Forgot password?</Link>
-          <Pressable onPress={signIn} disabled={busy} style={({ pressed }) => [styles.button, { backgroundColor: theme.button }, (pressed || busy) && styles.buttonDim]}>
-            <Text style={[styles.buttonText, { color: theme.onButton }]}>{busy ? "Signing in…" : "Sign in"}</Text>
+          <Text style={styles.title}>Welcome back</Text>
+          <Text style={styles.subtitle}>Sign in to continue to HoopCheck.</Text>
+          <Text style={styles.label}>Email</Text>
+          <TextInput autoCapitalize="none" autoComplete="email" keyboardType="email-address" value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor="#7A8798" style={styles.input} accessibilityLabel="Email" />
+          <Text style={styles.label}>Password</Text>
+          <TextInput value={password} onChangeText={setPassword} placeholder="Your password" placeholderTextColor="#7A8798" secureTextEntry autoComplete="password" style={styles.input} accessibilityLabel="Password" />
+          <Link href="/forgot-password" style={styles.link}>Forgot password?</Link>
+          <Pressable onPress={signIn} disabled={busy} style={({ pressed }) => [styles.button, (pressed || busy) && styles.buttonDim]}>
+            <Text style={styles.buttonText}>{busy ? "Signing in…" : "Sign in"}</Text>
           </Pressable>
-          <Text style={[styles.signupPrompt, { color: theme.muted }]}>New to HoopCheck? <Link href="/sign-up" style={[styles.link, { color: theme.accent }]}>Create an account</Link></Text>
-          <Link href="/" style={[styles.backLink, { color: theme.accent }]}>Back to welcome</Link>
+          <Text style={styles.signupPrompt}>New to HoopCheck? <Link href="/sign-up" style={styles.link}>Create an account</Link></Text>
+          <Link href="/" style={styles.backLink}>Back to welcome</Link>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

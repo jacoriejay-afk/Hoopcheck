@@ -14,15 +14,7 @@
       "channel": "preview"
     },
     "production": {
-      "channel": "production",
-      "environment": "production"
-    }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "ascAppId": "6835366982"
-      }
+      "channel": "production"
     }
   }
 }
