@@ -24,7 +24,7 @@ function screen(path, { state = [], params = {}, segments = [], configurationErr
   Stack.Screen = "Screen";
   const imports = name => {
     if (name === "react") return { useState: initial => [state[slot++] ?? initial, () => {}], useEffect: f => effects.push(f) };
-    if (name === "react-native") return { Platform: { OS: "ios" }, StyleSheet: { create: s => s }, Alert: { alert: (...args) => calls.alerts.push(args) }, Image: "Image", ScrollView: "ScrollView", Text: "Text", View: "View", Pressable: "Pressable", KeyboardAvoidingView: "KeyboardAvoidingView", ActivityIndicator: "ActivityIndicator" };
+    if (name === "react-native") return { Platform: { OS: "ios" }, StyleSheet: { create: s => s }, Alert: { alert: (...args) => calls.alerts.push(args) }, AccessibilityInfo: { isReduceMotionEnabled: async () => false }, Image: "Image", ScrollView: "ScrollView", Text: "Text", View: "View", Pressable: "Pressable", KeyboardAvoidingView: "KeyboardAvoidingView", ActivityIndicator: "ActivityIndicator" };
     if (name === "expo-router") return { Stack, Link: "Link", useRouter: () => router, useLocalSearchParams: () => params, useSegments: () => segments, usePathname: () => "/" };
     if (name === "expo-linking") return { createURL: p => `hoopcheck://${p}`, openURL: async url => calls.oauthUrls.push(url) };
     if (name === "expo-font") return { useFonts: () => [true, null] };
@@ -33,6 +33,20 @@ function screen(path, { state = [], params = {}, segments = [], configurationErr
     if (name.endsWith("/theme")) return { useEntryTheme: () => theme };
     if (name.endsWith("/primitives")) return { GlassCard: "GlassCard", Input: "Input", Button: "Button" };
     if (name.endsWith("/supabase")) return { supabase, supabaseConfigurationError: configurationError };
+    if (name.endsWith("/native/lockPolicy")) return { recordFreshSignIn: () => {} };
+    if (name.endsWith("/native/pendingDestination")) return { takeDestination: () => null, rememberDestination: () => {} };
+    if (name === "react-native-gesture-handler") return { GestureHandlerRootView: "GestureHandlerRootView" };
+    if (name === "@gorhom/bottom-sheet") return { BottomSheetModalProvider: "BottomSheetModalProvider" };
+    if (name === "expo-splash-screen") return { preventAutoHideAsync: async () => {}, setOptions: () => {}, hideAsync: async () => {} };
+    if (name.endsWith("/native/preferences")) return { DevicePreferences: "DevicePreferences" };
+    if (name.endsWith("/native/network")) return { NetworkProvider: "NetworkProvider" };
+    if (name.endsWith("/motion/Provider")) return { MotionProvider: "MotionProvider" };
+    if (name.endsWith("/motion/config")) return { motion: { logo: 300, shortFade: 100, splashDeadline: 2000 } };
+    if (name.endsWith("/native/telemetry")) return { traceFlow: (_, fn) => fn(), Sentry: { wrap: component => component } };
+    if (name.endsWith("/Onboarding")) return { Onboarding: "Onboarding" };
+    if (name.endsWith("/AppLock")) return { AppLock: "AppLock" };
+    if (name.endsWith("/TabBar")) return { TabBar: "TabBar" };
+    if (name.endsWith("/RouteFade")) return { RouteFade: "RouteFade" };
     if (/\.(png|ttf)$/.test(name)) return 1;
     return require(name);
   };
@@ -92,7 +106,7 @@ test("layout does not interrupt callback exchange, but retains protected-route r
     [["dashboard"], false, ["/sign-in"]],
   ]) {
     const f = screen("app/_layout.tsx", { state: [true, signedIn], segments });
-    f.effects[1]();
+    f.effects[2]();
     assert.deepEqual(f.calls.replace, expected);
   }
 });
