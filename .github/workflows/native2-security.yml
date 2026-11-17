@@ -1,0 +1,33 @@
+name: NATIVE-2 Security Tests
+on:
+  pull_request:
+    paths:
+      - 'apps/mobile/src/lib/native2/**'
+      - 'apps/mobile/package.json'
+      - 'lib/native2/**'
+      - 'app/api/native2/**'
+      - '.github/workflows/native2-security.yml'
+  push:
+    branches:
+      - feat/native-2-foundation
+    paths:
+      - 'apps/mobile/src/lib/native2/**'
+      - 'apps/mobile/package.json'
+      - 'lib/native2/**'
+      - 'app/api/native2/**'
+      - '.github/workflows/native2-security.yml'
+permissions:
+  contents: read
+jobs:
+  native2-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Test NATIVE-2 access and feature gates
+        run: node --test apps/mobile/src/lib/native2/*.test.mjs lib/native2/*.test.mjs

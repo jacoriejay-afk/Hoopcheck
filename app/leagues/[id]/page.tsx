@@ -7,7 +7,6 @@ import {
 } from "react";
 
 import Link from "next/link";
-import "../../hoopcheck-brand-team.css";
 
 import { useParams } from "next/navigation";
 
@@ -20,8 +19,7 @@ import ReviewCommunityActions from "../../../components/ReviewCommunityActions";
 import WatchButton from "../../../components/WatchButton";
 import { VerifiedBadge } from "../../../components/HoopCheckUI";
 import GeoBadge from "../../../components/GeoBadge";
-import TeamLogo from "../../../components/TeamLogo";
-import { countryFlag } from "../../../lib/countryFlag";
+import LeagueProfileHero from "../../../components/LeagueProfileHero";
 
 type League = {
   id: string;
@@ -473,40 +471,17 @@ export default function LeagueDetailPage() {
         {accountType !== "fan" && <Link href="/players">Players</Link>}
         <Link href="/search">Global Search</Link>
       </nav>
-<section className="hero hc-team-look-hero hc-league-look-hero" style={{background:"linear-gradient(125deg,#111827,#352019 65%,#10131a)",borderRadius:20,padding:"clamp(16px,3vw,36px)",color:"#fff"}}>
-        <div className="eyebrow">League Research
+      <LeagueProfileHero
+        name={league.name}
+        country={league.country}
+        level={league.level}
+        logoUrl={league.logo_url}
+        countryFallback={t("countryNotListed")}
+      >
+        <div className="entity-actions">
+          <GeoBadge country={league.country} regional={league.country === "Europe"} />
+          <WatchButton targetType="league" targetId={league.id} targetName={league.name} />
         </div>
-
-        <div className="hc-league-hero-id">
-          <span className="hc-dir-crest hc-dir-crest--league"><TeamLogo name={league.name} logoUrl={league.logo_url} size={72} /></span>
-          {league.country ? <span className="hc-dir-flagchip">{countryFlag(league.country) ? <span className="hc-dir-flag" aria-hidden="true">{countryFlag(league.country)}</span> : null}<span>{league.country}</span></span> : null}
-        </div>
-
-        <h1>
-          {league.name}
-        </h1>
-
-        <div className="entity-actions"><GeoBadge country={league.country} regional={league.country === "Europe"} /><WatchButton targetType="league" targetId={league.id} targetName={league.name} /></div>
-
-        <p className="hc-team-hero-location">
-          {league.country ||
-            t("countryNotListed")}
-        </p>
-
-        {league.level && (
-          <p
-            className="hc-team-hero-kicker"
-            style={{
-              fontWeight: 800,
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
-              fontSize: "13px",
-            }}
-          >
-            {league.level}
-          </p>
-        )}
-
         <div className="actions">
           {accountType === "player" ? (
             <Link href={canWriteReviews ? `/leagues/${league.id}/review` : "/membership"} className="btn">
@@ -521,7 +496,7 @@ export default function LeagueDetailPage() {
             {t("backToLeagues")}
           </Link>
         </div>
-      </section>
+      </LeagueProfileHero>
 
       <section className="hero">
         <div className="eyebrow">Team Membership History</div>

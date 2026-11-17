@@ -1,0 +1,190 @@
+[
+  {
+    "theme": "light",
+    "path": "/dashboard",
+    "url": "http://localhost:8081/dashboard",
+    "title": "HoopCheck™\nExplore basketball\n\nTeams\nResearch professional clubs\n\n\nLeagues\nExplore competitions\n\n\nPlayers\nFind public player profiles\n\n\nCoaches\nFind prof",
+    "errors": []
+  },
+  {
+    "theme": "light",
+    "path": "/teams",
+    "url": "http://localhost:8081/teams",
+    "title": "Teams\n‹ Back\nDIRECTORY\nFind a team\nExplore men’s professional basketball teams before you sign.\n1 result shown\nFB\nFixture Basketball Club\nTest Country\nFixture C",
+    "errors": []
+  },
+  {
+    "theme": "light",
+    "path": "/teams/abc-123",
+    "url": "http://localhost:8081/teams/abc-123",
+    "title": "Team profile\n‹ Back to teams\nFB\nTest Country\nTEAM PROFILE\nFixture Basketball Club\nShare profile\nFixture City, Test Country\nLEAGUE\nFixture League\nLOCATION\nFixtur",
+    "errors": []
+  },
+  {
+    "theme": "light",
+    "path": "/leagues",
+    "url": "http://localhost:8081/leagues",
+    "title": "Leagues\n‹ Back\nDIRECTORY\nFind a league\nExplore men’s professional basketball leagues and competition levels.\n1 result shown\nFL\nFixture League\nTest Country\nTest ",
+    "errors": []
+  },
+  {
+    "theme": "light",
+    "path": "/leagues/league-123",
+    "url": "http://localhost:8081/leagues/league-123",
+    "title": "League profile\n‹ Back to leagues\nFL\nTest Country\nLEAGUE PROFILE\nFixture League\nShare profile\nTest Country\nCOMPETITION LEVEL\nProfessional\nSEASON\n2026-27\nCOUNTRY\n",
+    "errors": []
+  },
+  {
+    "theme": "light",
+    "path": "/players",
+    "url": "http://localhost:8081/players",
+    "title": "Find players\n‹ Back\nPLAYER DIRECTORY\nFind players\nExplore public profiles of professional basketball players.\nSearch by username to view profiles\nSearch by user",
+    "errors": []
+  },
+  {
+    "theme": "light",
+    "path": "/players/11111111-1111-4111-8111-111111111111",
+    "url": "http://localhost:8081/players/11111111-1111-4111-8111-111111111111",
+    "title": "Player profile\n‹ Back to players\nF\nPlayer\nPUBLIC MEN'S PLAYER PROFILE\nFixture Player\nShare profile\n@fixtureplayer\nPlayer details\nCURRENT TEAM\nFixture Basketball",
+    "errors": []
+  },
+  {
+    "theme": "light",
+    "path": "/coaches",
+    "url": "http://localhost:8081/coaches",
+    "title": "Find a coach\n‹ Back\nCOACH DIRECTORY\nFind a coach\nSearch available coach records by name or location. Verify a coach’s current role and contract details independ",
+    "errors": []
+  },
+  {
+    "theme": "light",
+    "path": "/teams/abc-123/review",
+    "url": "http://localhost:8081/teams/abc-123/review",
+    "title": "Write a review\n‹ Back to team\nPLAYER EXPERIENCE\nReview this team\nShare a factual account of your experience to help players make informed decisions. Reviews are",
+    "errors": []
+  },
+  {
+    "theme": "light",
+    "path": "/settings",
+    "url": "http://localhost:8081/settings",
+    "title": "Settings\nSettings\nHaptics\nFace ID / device app lock\nLock after five minutes in the background. Device passcode and normal sign-in remain available. Motion follo",
+    "errors": []
+  },
+  {
+    "theme": "light",
+    "path": "/",
+    "anonymous": true,
+    "title": "Know who you’re signing with.\nResearch basketball teams, coaches, and leagues through the experiences of players who hav"
+  },
+  {
+    "theme": "light",
+    "path": "/sign-in",
+    "anonymous": true,
+    "title": "Sign in\nWelcome back\nSign in to continue to HoopCheck.\nEmail\nPassword\nForgot password?\nSign in\nNew to HoopCheck? Create "
+  },
+  {
+    "theme": "light",
+    "path": "/sign-up",
+    "anonymous": true,
+    "title": "Create account\nCreate your account\nJoin the basketball community. You must be 18 or older.\nAccount type\nPlayer\nCoach\nTea"
+  },
+  {
+    "theme": "light",
+    "path": "/forgot-password",
+    "anonymous": true,
+    "title": "Reset password\nReset password\nEnter your account email to request a recovery message.\nEmail\nSend recovery email\nBack to "
+  },
+  {
+    "theme": "dark",
+    "path": "/dashboard",
+    "url": "http://localhost:8081/dashboard",
+    "title": "HoopCheck™\nExplore basketball\n\nTeams\nResearch professional clubs\n\n\nLeagues\nExplore competitions\n\n\nPlayers\nFind public player profiles\n\n\nCoaches\nFind prof",
+    "errors": []
+  },
+  {
+    "theme": "dark",
+    "path": "/teams",
+    "url": "http://localhost:8081/teams",
+    "title": "Teams\n‹ Back\nDIRECTORY\nFind a team\nExplore men’s professional basketball teams before you sign.\n1 result shown\nFB\nFixture Basketball Club\nTest Country\nFixture C",
+    "errors": []
+  },
+  {
+    "theme": "dark",
+    "path": "/teams/abc-123",
+    "url": "http://localhost:8081/teams/abc-123",
+    "title": "Team profile\n‹ Back to teams\nFB\nTest Country\nTEAM PROFILE\nFixture Basketball Club\nShare profile\nFixture City, Test Country\nLEAGUE\nFixture League\nLOCATION\nFixtur",
+    "errors": []
+  },
+  {
+    "theme": "dark",
+    "path": "/leagues",
+    "url": "http://localhost:8081/leagues",
+    "title": "Leagues\n‹ Back\nDIRECTORY\nFind a league\nExplore men’s professional basketball leagues and competition levels.\n1 result shown\nFL\nFixture League\nTest Country\nTest ",
+    "errors": []
+  },
+  {
+    "theme": "dark",
+    "path": "/leagues/league-123",
+    "url": "http://localhost:8081/leagues/league-123",
+    "title": "League profile\n‹ Back to leagues\nFL\nTest Country\nLEAGUE PROFILE\nFixture League\nShare profile\nTest Country\nCOMPETITION LEVEL\nProfessional\nSEASON\n2026-27\nCOUNTRY\n",
+    "errors": []
+  },
+  {
+    "theme": "dark",
+    "path": "/players",
+    "url": "http://localhost:8081/players",
+    "title": "Find players\n‹ Back\nPLAYER DIRECTORY\nFind players\nExplore public profiles of professional basketball players.\nSearch by username to view profiles\nSearch by user",
+    "errors": []
+  },
+  {
+    "theme": "dark",
+    "path": "/players/11111111-1111-4111-8111-111111111111",
+    "url": "http://localhost:8081/players/11111111-1111-4111-8111-111111111111",
+    "title": "Player profile\n‹ Back to players\nF\nPlayer\nPUBLIC MEN'S PLAYER PROFILE\nFixture Player\nShare profile\n@fixtureplayer\nPlayer details\nCURRENT TEAM\nFixture Basketball",
+    "errors": []
+  },
+  {
+    "theme": "dark",
+    "path": "/coaches",
+    "url": "http://localhost:8081/coaches",
+    "title": "Find a coach\n‹ Back\nCOACH DIRECTORY\nFind a coach\nSearch available coach records by name or location. Verify a coach’s current role and contract details independ",
+    "errors": []
+  },
+  {
+    "theme": "dark",
+    "path": "/teams/abc-123/review",
+    "url": "http://localhost:8081/teams/abc-123/review",
+    "title": "Write a review\n‹ Back to team\nPLAYER EXPERIENCE\nReview this team\nShare a factual account of your experience to help players make informed decisions. Reviews are",
+    "errors": []
+  },
+  {
+    "theme": "dark",
+    "path": "/settings",
+    "url": "http://localhost:8081/settings",
+    "title": "Settings\nSettings\nHaptics\nFace ID / device app lock\nLock after five minutes in the background. Device passcode and normal sign-in remain available. Motion follo",
+    "errors": []
+  },
+  {
+    "theme": "dark",
+    "path": "/",
+    "anonymous": true,
+    "title": "Know who you’re signing with.\nResearch basketball teams, coaches, and leagues through the experiences of players who hav"
+  },
+  {
+    "theme": "dark",
+    "path": "/sign-in",
+    "anonymous": true,
+    "title": "Sign in\nWelcome back\nSign in to continue to HoopCheck.\nEmail\nPassword\nForgot password?\nSign in\nNew to HoopCheck? Create "
+  },
+  {
+    "theme": "dark",
+    "path": "/sign-up",
+    "anonymous": true,
+    "title": "Create account\nCreate your account\nJoin the basketball community. You must be 18 or older.\nAccount type\nPlayer\nCoach\nTea"
+  },
+  {
+    "theme": "dark",
+    "path": "/forgot-password",
+    "anonymous": true,
+    "title": "Reset password\nReset password\nEnter your account email to request a recovery message.\nEmail\nSend recovery email\nBack to "
+  }
+]

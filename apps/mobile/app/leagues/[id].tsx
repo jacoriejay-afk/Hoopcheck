@@ -1,5 +1,12 @@
+import { DirectoryCrest, CountryChip } from "../../components/DirectoryIdentity";
+import { GlassCard, Button } from "../../src/primitives";
+import { ShareSheet } from "../../components/ShareSheet";
+import { useCachedRead, useNetwork } from "../../src/native/network";
+import { OfflineBanner } from "../../components/OfflineBanner";
+import { Skeleton } from "../../components/Motion";
+import { useEntryTheme, type EntryTheme } from "../../src/theme";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Linking, Pressable, ScrollView, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../src/lib/supabase";
@@ -9,7 +16,13 @@ type League = { id: string; name: string; country: string | null; level: string 
 function safeWebsite(value: string | null) { if (!value) return null; try { const url = new URL(value.startsWith("http") ? value : `https://${value}`); return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null; } catch { return null; } }
 
 export default function LeagueDetailScreen() {
+  const theme = useEntryTheme();
+  const styles = createStyles(theme);
   const router = useRouter();
+  const { read, savedAt } = useCachedRead();
+  const { revision, offline } = useNetwork();
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshId, setRefreshId] = useState(0);
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const [league, setLeague] = useState<League | null>(null);
@@ -22,7 +35,8 @@ export default function LeagueDetailScreen() {
   useEffect(() => {
     let alive = true;
     async function loadReviews() {
-      if (!id) { setReviewsLoading(false); return; }
+      setReviewsLoading(true);
+      if (!id || offline) { setReviews([]); setReviewsLoading(false); return; }
       // RLS is the source of truth for who may read approved reviews.
       const { data, error: queryError } = await supabase
         .from("reviews")
@@ -37,20 +51,22 @@ export default function LeagueDetailScreen() {
     }
     void loadReviews();
     return () => { alive = false; };
-  }, [id]);
+  }, [id, revision, refreshId, offline, read]);
 
   useEffect(() => {
     let alive = true;
     async function load() {
+      setLoading(true);
       if (!id) { setError(true); setLoading(false); return; }
-      const { data, error: queryError } = await supabase.from("leagues").select("id,name,country,level,season,website").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle();
+      const { data, error: queryError } = await read(`leagues:profile:${id}`, () => supabase.from("leagues").select("id,name,country,level,season,website").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle());
       if (!alive) return;
-      if (queryError || !data) { setError(true); setLeague(null); } else setLeague(data as League);
+      if (queryError || !data) { setError(true); setLeague(null); } else { setError(false); setLeague(data as League); }
       setLoading(false);
+      setRefreshing(false);
     }
     void load();
     return () => { alive = false; };
-  }, [id]);
+  }, [id, revision, refreshId, offline, read]);
 
   async function openWebsite() {
     const url = safeWebsite(league?.website ?? null);
@@ -59,30 +75,35 @@ export default function LeagueDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.content}>
+    <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
+      <OfflineBanner savedAt={savedAt} />
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setRefreshId(value => value + 1); }} />} contentContainerStyle={styles.content}>
         <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back to leagues</Text></Pressable>
-        {loading ? <ActivityIndicator size="large" color="#D69E18" style={styles.loader} /> : error || !league ? (
+        {loading ? <Skeleton profile /> : error || !league ? (
           <View style={styles.empty}><Text style={styles.title}>League unavailable</Text><Text style={styles.body}>This league may have been removed or is not currently listed.</Text></View>
         ) : (
           <>
-            <View style={styles.heroIcon}><Text style={styles.heroLetter}>{league.name.slice(0,1).toUpperCase()}</Text></View>
-            <Text style={styles.kicker}>LEAGUE PROFILE</Text>
-            <Text style={styles.title}>{league.name}</Text>
-            <Text style={styles.location}>{league.country || "Country not listed"}</Text>
-            <View style={styles.card}>
+            <View style={{ backgroundColor: theme.entityHero.background, borderRadius: theme.radius.hero, padding: theme.spacing.lg, gap: theme.spacing.sm }}>
+            <DirectoryCrest name={league.name} kind="leagues" size={88} />
+            <CountryChip country={league.country} />
+            <Text style={[styles.kicker, { color: theme.entityHero.muted }]}>LEAGUE PROFILE</Text>
+            <Text style={[styles.title, { color: theme.entityHero.ink }]}>{league.name}</Text>
+            <ShareSheet onHero title={league.name} path={`/leagues/${league.id}`} />
+            <Text style={[styles.location, { color: theme.entityHero.muted }]}>{league.country || "Country not listed"}</Text>
+            </View>
+            <GlassCard style={styles.card}>
               <Text style={styles.label}>COMPETITION LEVEL</Text><Text style={styles.value}>{league.level || "Not listed"}</Text>
               <View style={styles.divider} />
               <Text style={styles.label}>SEASON</Text><Text style={styles.value}>{league.season || "Not listed"}</Text>
               <View style={styles.divider} />
               <Text style={styles.label}>COUNTRY</Text><Text style={styles.value}>{league.country || "Not listed"}</Text>
-            </View>
-            {safeWebsite(league.website) ? <Pressable onPress={openWebsite} style={styles.button}><Text style={styles.buttonText}>Open league website ↗</Text></Pressable> : null}
+            </GlassCard>
+            {safeWebsite(league.website) ? <Button onPress={openWebsite} style={styles.button}><Text style={styles.buttonText}>Open league website ↗</Text></Button> : null}
             <View style={styles.reviewsSection}>
               <Text style={styles.reviewsTitle}>Latest reviews</Text>
-              <Text style={styles.reviewsSubtitle}>Approved reviews only · access follows your HoopCheck account permissions</Text>
-              {reviewsLoading ? <ActivityIndicator color="#D69E18" style={styles.reviewsLoader} /> : reviews.length ? reviews.map(review => (
-                <View key={review.id} style={styles.reviewCard}>
+              <Text style={styles.reviewsSubtitle}>{offline ? "Reconnect to revalidate review access. Reviews are not saved offline." : "Approved reviews only · access follows your HoopCheck account permissions"}</Text>
+              {reviewsLoading ? <Skeleton review /> : reviews.length ? reviews.map(review => (
+                <GlassCard key={review.id} style={styles.reviewCard}>
                   <View style={styles.reviewTopRow}>
                     <Text style={styles.reviewRating}>{review.overall_rating == null ? "Rating not listed" : `${review.overall_rating}/5 overall`}</Text>
                     {review.player_season ? <Text style={styles.reviewSeason}>{review.player_season}</Text> : null}
@@ -90,7 +111,7 @@ export default function LeagueDetailScreen() {
                   {review.title ? <Text style={styles.reviewHeading}>{review.title}</Text> : null}
                   {review.body ? <Text style={styles.reviewBody}>{review.body}</Text> : null}
                   <Text style={styles.reviewDate}>{new Date(review.created_at).toLocaleDateString()}</Text>
-                </View>
+                </GlassCard>
               )) : <Text style={styles.reviewsEmpty}>No reviews are available to display for this account. Reviews are filtered by HoopCheck’s existing subscription and moderation permissions.</Text>}
             </View>
             <View style={styles.notice}><Text style={styles.noticeTitle}>Before you sign</Text><Text style={styles.body}>Competition details and seasons can change. Confirm league registration, team participation, contract terms and payment obligations through independently verified contacts.</Text></View>
@@ -100,6 +121,6 @@ export default function LeagueDetailScreen() {
     </SafeAreaView>
   );
 }
-const styles = StyleSheet.create({
-  safe:{flex:1,backgroundColor: "#050505"},content:{padding:22,paddingBottom:36},back:{color: "#FF6A00",fontSize:15,fontWeight:"800",marginBottom:24},loader:{marginTop:70},heroIcon:{width:66,height:66,borderRadius:18,backgroundColor:"#FFF0C2",alignItems:"center",justifyContent:"center",marginBottom:20},heroLetter:{fontSize:29,fontWeight:"900",color: "#FFFFFF"},kicker:{color: "#FF6A00",fontSize:11,fontWeight:"900",letterSpacing:1.4},title:{color: "#FFFFFF",fontSize:29,fontWeight:"900",marginTop:8},location:{color: "#BDBDBD",fontSize:15,marginTop:8},card:{backgroundColor: "#111111",borderRadius:14,borderWidth:1,borderColor: "#303030",padding:18,marginTop:26},label:{color: "#969696",fontSize:11,fontWeight:"900",letterSpacing:1},value:{color: "#FFFFFF",fontSize:16,fontWeight:"700",marginTop:7},divider:{height:1,backgroundColor:"#E8ECF1",marginVertical:16},button:{minHeight:50,backgroundColor: "#050505",borderRadius:10,alignItems:"center",justifyContent:"center",marginTop:16},buttonText:{color:"#FFFFFF",fontWeight:"900",fontSize:15},notice:{backgroundColor:"#FFF6DB",borderRadius:12,padding:16,marginTop:22},noticeTitle:{color:"#5F4600",fontWeight:"900",fontSize:15,marginBottom:7},body:{color: "#BDBDBD",fontSize:14,lineHeight:21},reviewsSection:{marginTop:24},reviewsTitle:{color: "#FFFFFF",fontSize:20,fontWeight:"900"},reviewsSubtitle:{color: "#969696",fontSize:12,lineHeight:18,marginTop:5,marginBottom:12},reviewsLoader:{marginVertical:16},reviewCard:{backgroundColor: "#111111",borderRadius:12,borderWidth:1,borderColor: "#303030",padding:14,marginBottom:10},reviewTopRow:{flexDirection:"row",justifyContent:"space-between",alignItems:"center",gap:8},reviewRating:{color: "#FF6A00",fontSize:13,fontWeight:"900"},reviewSeason:{color: "#969696",fontSize:11},reviewHeading:{color: "#FFFFFF",fontSize:15,fontWeight:"800",marginTop:8},reviewBody:{color:"#465367",fontSize:14,lineHeight:21,marginTop:6},reviewDate:{color:"#7B8797",fontSize:11,marginTop:9},reviewsEmpty:{color: "#969696",fontSize:13,lineHeight:19,backgroundColor: "#111111",borderWidth:1,borderColor: "#303030",borderRadius:12,padding:14},empty:{paddingVertical:48}
+const createStyles = (theme: EntryTheme) => StyleSheet.create({
+  safe: {flex:1,backgroundColor: theme.background},content: {padding:22,paddingBottom:36},back: {color: theme.accent,fontSize:15,fontWeight:"800",marginBottom:24},loader: {marginTop:70},heroIcon: {width:66,height:66,borderRadius:18,backgroundColor: theme.surface,alignItems:"center",justifyContent:"center",marginBottom:20},heroLetter: {fontSize:29,fontWeight:"900",color: theme.foreground},kicker: {color: theme.accent,fontSize:11,fontWeight:"900",letterSpacing:1.4},title: {color: theme.foreground,fontSize:29,fontWeight: "400", fontFamily: "HoopCheckDisplay",marginTop:8},location: {color: theme.muted,fontSize:15,marginTop:8},card: {backgroundColor: theme.surface,borderRadius: theme.radius.card,borderWidth:1,borderColor: theme.border,padding:18,marginTop:26},label: {color: theme.muted,fontSize:11,fontWeight:"900",letterSpacing:1},value: {color: theme.foreground,fontSize:16,fontWeight:"700",marginTop:7},divider: {height:1,backgroundColor: theme.surface,marginVertical:16},button: {minHeight:50,backgroundColor: theme.button,borderRadius: theme.radius.control,alignItems:"center",justifyContent:"center",marginTop:16},buttonText: {color: theme.onButton,fontWeight:"900",fontSize:15},notice: {backgroundColor: theme.surface,borderRadius:12,padding:16,marginTop:22},noticeTitle: {color: theme.foreground,fontWeight:"900",fontSize:15,marginBottom:7},body: {color: theme.muted,fontSize:14,lineHeight:21},reviewsSection: {marginTop:24},reviewsTitle: {color: theme.foreground,fontSize:20,fontWeight:"900"},reviewsSubtitle: {color: theme.muted,fontSize:12,lineHeight:18,marginTop:5,marginBottom:12},reviewsLoader: {marginVertical:16},reviewCard: {backgroundColor: theme.surface,borderRadius: theme.radius.card,borderWidth:1,borderColor: theme.border,padding:14,marginBottom:10},reviewTopRow: {flexDirection:"row",justifyContent:"space-between",alignItems:"center",gap:8},reviewRating: {color: theme.accent,fontSize:13,fontWeight:"900"},reviewSeason: {color: theme.muted,fontSize:11},reviewHeading: {color: theme.foreground,fontSize:15,fontWeight:"800",marginTop:8},reviewBody: {color: theme.muted,fontSize:14,lineHeight:21,marginTop:6},reviewDate: {color: theme.muted,fontSize:11,marginTop:9},reviewsEmpty: {color: theme.muted,fontSize:13,lineHeight:19,backgroundColor: theme.surface,borderWidth:1,borderColor: theme.border,borderRadius:12,padding:14},empty: {paddingVertical:48}
 });

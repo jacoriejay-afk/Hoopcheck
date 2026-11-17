@@ -1,10 +1,14 @@
+import { GlassCard, Input, Button } from "../src/primitives";
+import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useEffect, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
 
 export default function ResetPasswordScreen() {
+  const theme = useEntryTheme();
+  const styles = createStyles(theme);
   const router = useRouter();
   const params = useLocalSearchParams<{ code?: string | string[]; error_description?: string | string[] }>();
   const code = Array.isArray(params.code) ? params.code[0] : params.code;
@@ -61,29 +65,31 @@ export default function ResetPasswordScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <View style={styles.container}>
-          <Text style={styles.title}>Choose a new password</Text>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
+        <GlassCard style={styles.container}>
+          <Text style={[styles.title, { fontFamily: "HoopCheckDisplay", fontWeight: "400" }]}>Choose a new password</Text>
           <Text style={styles.subtitle}>Use at least 8 characters. This updates the password for your HoopCheck account.</Text>
           <Text style={styles.label}>New password</Text>
-          <TextInput value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" textContentType="newPassword" style={styles.input} placeholder="At least 8 characters" />
+          <Input placeholderTextColor={theme.muted} value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" textContentType="newPassword" style={styles.input} placeholder="At least 8 characters" />
           <Text style={styles.label}>Confirm new password</Text>
-          <TextInput value={confirmation} onChangeText={setConfirmation} secureTextEntry autoComplete="new-password" textContentType="newPassword" style={styles.input} placeholder="Enter it again" />
-          <Pressable onPress={savePassword} disabled={busy || !ready} style={[styles.button, (busy || !ready) && styles.dim]}>
+          <Input placeholderTextColor={theme.muted} value={confirmation} onChangeText={setConfirmation} secureTextEntry autoComplete="new-password" textContentType="newPassword" style={styles.input} placeholder="Enter it again" />
+          <Button onPress={savePassword} disabled={busy || !ready} style={[styles.button, (busy || !ready) && styles.dim]}>
             <Text style={styles.buttonText}>{busy ? "Saving…" : ready ? "Update password" : "Validating recovery link…"}</Text>
-          </Pressable>
-        </View>
+          </Button>
+        </GlassCard>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#050505" }, flex: { flex: 1 },
-  container: { flex: 1, justifyContent: "center", padding: 24 },
-  title: { fontSize: 28, fontWeight: "800", color: "#FFFFFF" },
-  subtitle: { color: "#BDBDBD", fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 20 },
-  label: { color: "#253247", fontWeight: "700", marginBottom: 8, marginTop: 14 },
-  input: { minHeight: 50, borderColor: "#D5DCE5", borderWidth: 1, borderRadius: 10, backgroundColor: "#111111", paddingHorizontal: 14, color: "#FFFFFF", fontSize: 16 },
-  button: { minHeight: 52, borderRadius: 10, backgroundColor: "#050505", alignItems: "center", justifyContent: "center", marginTop: 24 },
-  dim: { opacity: 0.65 }, buttonText: { color: "#FFFFFF", fontWeight: "800" },
+const createStyles = (theme: EntryTheme) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.background }, flex: { flex: 1 },
+  container: { margin: 24, justifyContent: "center", padding: 24 },
+  title: { fontSize: 28, fontWeight: "800", color: theme.foreground },
+  subtitle: { color: theme.muted, fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 20 },
+  label: { color: theme.foreground, fontWeight: "700", marginBottom: 8, marginTop: 14 },
+  input: { minHeight: 50, borderColor: theme.border, borderWidth: 1, borderRadius: theme.radius.control, backgroundColor: theme.input, paddingHorizontal: 14, color: theme.foreground, fontSize: 16 },
+  button: { minHeight: 52, borderRadius: theme.radius.control, backgroundColor: theme.button, alignItems: "center", justifyContent: "center", marginTop: 24 },
+  dim: { opacity: 0.65 }, buttonText: { color: theme.onButton, fontWeight: "800" },
 });

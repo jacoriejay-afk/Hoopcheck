@@ -26,8 +26,14 @@ jobs:
         with:
           node-version: 22
       - name: Install mobile dependencies
-        run: npm install
+        run: npm ci
+      - name: Native link and telemetry privacy contracts
+        run: npm run test:native
       - name: TypeScript typecheck
         run: npm run typecheck
+      - name: Test native Supabase URL validation
+        run: node --test scripts/test-supabase-url.mjs
+      - name: Test native sign-in and callback integration
+        run: node --test scripts/test-auth-integration.mjs
       - name: Expo dependency and configuration diagnostics
         run: npx expo-doctor

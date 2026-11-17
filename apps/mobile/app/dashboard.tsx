@@ -1,6 +1,7 @@
+import { Chip, SectionHeader } from "../src/primitives";
 import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../src/lib/supabase";
@@ -65,11 +66,10 @@ export default function DashboardScreen() {
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
-          <Text accessibilityRole="header" style={[styles.title, { color: theme.foreground }]}>Explore basketball</Text>
+          <SectionHeader>Explore basketball</SectionHeader>
           <View style={styles.directories}>
             {directories.map(({ href, icon, title, detail }) => (
-              <Link key={href} href={href} asChild>
-                <Pressable accessibilityRole="link" style={({ pressed }) => [
+              <Pressable key={href} onPress={() => router.push(href)} accessibilityRole="link" style={({ pressed }) => [
                   styles.directory, panel, pressed && { backgroundColor: theme.accentSurface },
                 ]}>
                   <View style={[styles.icon, { backgroundColor: theme.accentSurface }]}>
@@ -81,16 +81,15 @@ export default function DashboardScreen() {
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={theme.accent} />
                 </Pressable>
-              </Link>
             ))}
           </View>
 
-          <Text accessibilityRole="header" style={[styles.sectionTitle, { color: theme.foreground }]}>Account &amp; support</Text>
+          <View style={styles.sectionTitle}><SectionHeader>Account &amp; support</SectionHeader></View>
           <View style={[styles.account, panel]}>
             {email ? (
               <View style={styles.identity}>
                 <Text style={[styles.rowLabel, { color: theme.foreground }]}>{email}</Text>
-                {accountType ? <Text style={[styles.role, { color: theme.muted }]}>{accountType}</Text> : null}
+                {accountType ? <View style={{ alignSelf: "flex-start" }}><Chip>{accountType}</Chip></View> : null}
               </View>
             ) : null}
             {accountLinks.map(({ path, label }, index) => (
@@ -120,7 +119,7 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, padding: 20 },
   content: { width: "100%", maxWidth: 640, alignSelf: "center" },
   title: { fontSize: 32, fontWeight: "900", letterSpacing: -0.7, marginBottom: 16 },
-  directories: { gap: 8 },
+  directories: { gap: 8, marginTop: 12 },
   directory: { minHeight: 70, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, padding: 12 },
   icon: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   directoryCopy: { flex: 1 },

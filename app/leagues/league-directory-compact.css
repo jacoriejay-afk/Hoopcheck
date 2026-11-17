@@ -1,0 +1,9 @@
+/* Compact league directory. Match the shared card contract specificity so legacy
+   row rules cannot override the orange outlines, flex layout or 44px controls. */
+.hc-league-directory-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:14px; margin:16px auto; }
+html body .hc-global-page-shell main.hc-leagues-directory-page .hc-league-directory-grid .card.hc-league-compact-card { display:flex!important; flex-direction:column; align-items:flex-start; gap:10px; min-width:0; min-height:0!important; height:auto!important; padding:18px!important; border:1px solid #ff5a1f!important; border-radius:var(--hc-radius-card)!important; box-shadow:none!important; }
+html body .hc-global-page-shell main.hc-leagues-directory-page .hc-league-directory-grid .card.hc-league-compact-card .hc-league-row-head { display:flex; align-items:center; gap:12px; width:100%; min-width:0; margin:0; }
+html body .hc-global-page-shell main.hc-leagues-directory-page .hc-league-directory-grid .card.hc-league-compact-card h2 { margin:4px 0!important; font-size:clamp(19px,2vw,25px); line-height:1.25; overflow-wrap:anywhere; }
+html body .hc-global-page-shell main.hc-leagues-directory-page .hc-league-directory-grid .card.hc-league-compact-card p { margin:0!important; line-height:1.45; }
+html body .hc-global-page-shell main.hc-leagues-directory-page .hc-league-directory-grid .card.hc-league-compact-card .btn { margin-top:auto; align-self:flex-start; min-height:44px!important; display:inline-flex; align-items:center; justify-content:center; border-radius:999px; }
+@media(max-width:700px) { .hc-league-directory-grid { grid-template-columns:minmax(0,1fr); gap:12px; padding-inline:12px; } html body .hc-global-page-shell main.hc-leagues-directory-page .hc-league-directory-grid .card.hc-league-compact-card { padding:16px!important; } }

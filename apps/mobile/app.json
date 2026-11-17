@@ -3,7 +3,7 @@
     "name": "HoopCheck",
     "slug": "hoopcheck-mobile",
     "icon": "./assets/app-icon.png",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "scheme": "hoopcheck",
     "userInterfaceStyle": "automatic",
@@ -16,6 +16,26 @@
           "configureAndroidBackup": true,
           "faceIDPermission": "Allow HoopCheck to securely protect your sign-in session."
         }
+      ],
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/hoopcheck-mark.png",
+          "imageWidth": 120,
+          "resizeMode": "contain",
+          "backgroundColor": "#F4F4F1",
+          "dark": {
+            "image": "./assets/hoopcheck-mark.png",
+            "backgroundColor": "#000000"
+          }
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Unlock HoopCheck after five minutes away using Face ID. Normal sign-in is always available."
+        }
       ]
     ],
     "experiments": {
@@ -23,10 +43,30 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "online.hoopcheck.ios"
+      "bundleIdentifier": "com.online.hoopcheck.app",
+      "associatedDomains": [
+        "applinks:hoopcheck.online"
+      ]
     },
     "android": {
-      "package": "online.hoopcheck.app"
+      "package": "online.hoopcheck.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "hoopcheck.online",
+              "pathPrefix": "/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "owner": "hoopcheck",
     "extra": {
