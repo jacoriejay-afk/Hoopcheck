@@ -8,9 +8,9 @@ const base = new URL("./", import.meta.url);
 const load = (name, require) => {
   const source = readFileSync(new URL(name, base), "utf8");
   const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-  const module = { exports: {} };
-  vm.runInNewContext(code, { module, exports: module.exports, require });
-  return module.exports;
+  const sandboxModule = { exports: {} };
+  vm.runInNewContext(code, { module: sandboxModule, exports: sandboxModule.exports, require });
+  return sandboxModule.exports;
 };
 const contracts = load("contracts.ts", () => { throw Error("unexpected import"); });
 const policies = load("policies.ts", (name) => {
