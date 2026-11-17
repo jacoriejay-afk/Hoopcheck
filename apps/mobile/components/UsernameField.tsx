@@ -1,4 +1,4 @@
-import { useEntryTheme } from "../src/theme";
+import { useEntryTheme, type EntryTheme } from "../src/theme";
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { supabase } from "../src/lib/supabase";
@@ -34,9 +34,9 @@ const UsernameField = forwardRef<UsernameFieldHandle, Props>(function UsernameFi
       }
       setState("available"); setMessage("✓ available");
       return { valid: true };
-    } catch {
+    } catch (error) {
       if (id !== requestRef.current) return { valid: false };
-
+      console.error("Username availability check failed:", error);
       setState("error"); setMessage("We couldn't check availability. Please try again.");
       return { valid: false, message: "We couldn't check availability. Please try again." };
     }
@@ -77,15 +77,15 @@ const UsernameField = forwardRef<UsernameFieldHandle, Props>(function UsernameFi
   );
 });
 
-const createStyles = (theme: ReturnType<typeof useEntryTheme>) => StyleSheet.create({
+const createStyles = (theme: EntryTheme) => StyleSheet.create({
   wrap: { marginTop: 15 },
   label: { color: theme.foreground, fontWeight: "800", letterSpacing: 1, marginBottom: 7 },
-  input: { minHeight: 48, borderColor: theme.border, borderWidth: 1, borderRadius: 10, backgroundColor: theme.surface, paddingHorizontal: 13, color: theme.foreground, fontSize: 16 },
-  inputError: { borderColor: theme.error, borderWidth: 2 },
-  rule: { color: theme.muted, fontSize: 12, lineHeight: 17, marginTop: 5 },
-  feedback: { color: theme.error, fontSize: 12, lineHeight: 17, fontWeight: "700", marginTop: 3 },
-  available: { color: theme.success },
-  checking: { color: theme.muted },
+  input: { minHeight: 48, borderColor: theme.border, borderWidth: 1, borderRadius: theme.radius.control, backgroundColor: theme.input, paddingHorizontal: 13, color: theme.foreground, fontSize: 16 },
+  inputError: { borderColor: theme.border, borderWidth: 2 },
+  rule: { color: theme.foreground, fontSize: 12, lineHeight: 17, marginTop: 5 },
+  feedback: { color: theme.foreground, fontSize: 12, lineHeight: 17, fontWeight: "700", marginTop: 3 },
+  available: { color: theme.foreground },
+  checking: { color: theme.foreground },
 });
 
 export default UsernameField;

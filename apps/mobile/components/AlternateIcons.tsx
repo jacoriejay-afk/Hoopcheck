@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Platform, Pressable, Text } from "react-native";
-import { requireOptionalNativeModule } from "expo-modules-core";
+import { requireOptionalNativeModule } from "expo";
 import { Sheet } from "./Sheet";
 import { useEntryTheme } from "../src/theme";
 

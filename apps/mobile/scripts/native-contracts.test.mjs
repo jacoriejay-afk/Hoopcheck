@@ -2,7 +2,17 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { nativeDestination, canonicalWebUrl } from "../src/native/deepLinks.ts";
 import { privateEvent } from "../src/native/telemetryPrivacy.ts";
-import { backgroundRequiresLock, lockAfter, recordFreshSignIn, consumeFreshSignIn } from "../src/native/lockPolicy.ts";
+import { backgroundRequiresLock, lockAfter, recordFreshSignIn, consumeFreshSignIn, lockScreenRequired } from "../src/native/lockPolicy.ts";
+
+test("session and preference hydration conceal content before app-lock state is known", () => {
+  assert.equal(lockScreenRequired(false, false, false, false, false), true);
+  assert.equal(lockScreenRequired(true, false, true, false, false), true);
+  assert.equal(lockScreenRequired(false, true, true, true, false), true);
+  assert.equal(lockScreenRequired(true, true, true, true, true), true);
+  assert.equal(lockScreenRequired(true, true, false, true, true), false);
+  assert.equal(lockScreenRequired(true, true, true, false, true), false);
+  assert.equal(lockScreenRequired(true, true, true, true, false), false);
+});
 
 test("app lock waits five minutes and fails closed for invalid restoration state", () => {
   assert.equal(backgroundRequiresLock(1000, 1000 + lockAfter - 1), false);

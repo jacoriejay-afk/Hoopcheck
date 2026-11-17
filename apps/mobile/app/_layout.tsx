@@ -1,3 +1,4 @@
+import { useFonts } from "expo-font";
 import { rememberDestination, takeDestination } from "../src/native/pendingDestination";
 import "react-native-gesture-handler";
 import { AccessibilityInfo } from "react-native";
@@ -26,6 +27,9 @@ import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 
 function RootLayout() {
+  // Metro statically resolves the upstream display font.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const [fontsLoaded, fontError] = useFonts({ HoopCheckDisplay: require("../assets/hoopcheck-display.ttf") });
   const router = useRouter();
   const segments = useSegments();
   const theme = useEntryTheme();
@@ -39,21 +43,24 @@ function RootLayout() {
       if (!alive) return;
       setSignedIn(Boolean(data.session));
       setSessionReady(true);
-      clearTimeout(splashDeadline);
-      void SplashScreen.hideAsync().catch(() => {});
-    }).catch(() => { setSessionReady(true); void SplashScreen.hideAsync().catch(() => {}); });
+    }).catch(() => { if (alive) setSessionReady(true); });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!alive) return;
       setSignedIn(Boolean(session));
       setSessionReady(true);
-      clearTimeout(splashDeadline);
-      void SplashScreen.hideAsync().catch(() => {});
     });
     return () => {
       alive = false;
       listener.subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (sessionReady && (fontsLoaded || fontError)) {
+      clearTimeout(splashDeadline);
+      void SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [sessionReady, fontsLoaded, fontError]);
 
   useEffect(() => {
     if (!sessionReady) return;
@@ -74,7 +81,7 @@ function RootLayout() {
       <Stack
         screenOptions={{
           animation: "none",
-          headerStyle: { backgroundColor: theme.background },
+          headerStyle: { backgroundColor: theme.surface },
           headerTintColor: theme.accent,
           headerTitleStyle: { fontWeight: "900", fontSize: 19, color: theme.foreground },
           contentStyle: { backgroundColor: theme.background },
@@ -105,7 +112,7 @@ function RootLayout() {
         <Stack.Screen name="leagues" options={{ title: "Leagues" }} />
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile" }} />
       </Stack></RouteFade>
-      {signedIn ? <TabBar /> : null}<Onboarding />{signedIn && !["sign-in", "sign-up", "reset-password"].includes(segments[0] ?? "") ? <AppLock /> : null}
+      {signedIn ? <TabBar /> : null}<Onboarding /><AppLock authReady={sessionReady} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password"].includes(segments[0] ?? "")} />
     </BottomSheetModalProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
   );
 }

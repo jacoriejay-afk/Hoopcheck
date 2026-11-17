@@ -1,8 +1,9 @@
 import { recordFreshSignIn } from "../src/native/lockPolicy";
 import { takeDestination } from "../src/native/pendingDestination";
-import { useEntryTheme } from "../src/theme";
+import { GlassCard, Input, Button } from "../src/primitives";
+import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
@@ -22,45 +23,47 @@ export default function SignInScreen() {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
       if (error) throw error;
-      recordFreshSignIn();
       const profile = data.user ? await supabase.from("profiles").select("username").eq("id", data.user.id).maybeSingle() : null;
+      recordFreshSignIn();
       router.replace((profile?.data && !profile.data.username?.trim() ? "/choose-username" : takeDestination() ?? "/dashboard") as "/dashboard");
-    } catch (error) {
-      Alert.alert("Could not sign in", error instanceof Error ? error.message : "Please try again.");
+    } catch {
+      Alert.alert("Could not sign in", "Please check your details and try again.");
     } finally { setBusy(false); }
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <View style={styles.container}>
-          <Text style={styles.title}>Welcome back</Text>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
+        <GlassCard style={styles.container}>
+          <Text style={[styles.title, { fontFamily: "HoopCheckDisplay", fontWeight: "400" }]}>Welcome back</Text>
           <Text style={styles.subtitle}>Sign in to continue to HoopCheck.</Text>
           <Text style={styles.label}>Email</Text>
-          <TextInput autoCapitalize="none" autoComplete="email" keyboardType="email-address" value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor={theme.muted} style={styles.input} accessibilityLabel="Email" />
+          <Input autoCapitalize="none" autoComplete="email" keyboardType="email-address" value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor={theme.muted} style={styles.input} accessibilityLabel="Email" />
           <Text style={styles.label}>Password</Text>
-          <TextInput value={password} onChangeText={setPassword} placeholder="Your password" placeholderTextColor={theme.muted} secureTextEntry autoComplete="password" style={styles.input} accessibilityLabel="Password" />
+          <Input value={password} onChangeText={setPassword} placeholder="Your password" placeholderTextColor={theme.muted} secureTextEntry autoComplete="password" style={styles.input} accessibilityLabel="Password" />
           <Link href="/forgot-password" style={styles.link}>Forgot password?</Link>
-          <Pressable onPress={signIn} disabled={busy} style={({ pressed }) => [styles.button, (pressed || busy) && styles.buttonDim]}>
+          <Button onPress={signIn} disabled={busy} style={({ pressed }) => [styles.button, (pressed || busy) && styles.buttonDim]}>
             <Text style={styles.buttonText}>{busy ? "Signing in…" : "Sign in"}</Text>
-          </Pressable>
+          </Button>
           <Text style={styles.signupPrompt}>New to HoopCheck? <Link href="/sign-up" style={styles.link}>Create an account</Link></Text>
           <Link href="/" style={styles.backLink}>Back to welcome</Link>
-        </View>
+        </GlassCard>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const createStyles = (theme: ReturnType<typeof useEntryTheme>) => StyleSheet.create({
+const createStyles = (theme: EntryTheme) => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: theme.background }, flex: { flex: 1 },
-  container: { flex: 1, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 24 },
+  container: { margin: 24, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 24 },
   title: { color: theme.foreground, fontSize: 30, fontWeight: "800" },
   subtitle: { color: theme.muted, fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 20 },
   label: { color: theme.foreground, fontSize: 13, fontWeight: "700", marginBottom: 8, marginTop: 14 },
-  input: { minHeight: 50, borderColor: theme.border, borderWidth: 1, borderRadius: 10, backgroundColor: theme.surface, paddingHorizontal: 14, color: theme.foreground, fontSize: 16 },
+  input: { minHeight: 50, borderColor: theme.border, borderWidth: 1, borderRadius: theme.radius.control, backgroundColor: theme.input, paddingHorizontal: 14, color: theme.foreground, fontSize: 16 },
   link: { color: theme.accent, fontWeight: "700" },
-  button: { minHeight: 52, borderRadius: 10, backgroundColor: theme.button, alignItems: "center", justifyContent: "center", marginTop: 24 },
+  button: { minHeight: 52, borderRadius: theme.radius.control, backgroundColor: theme.button, alignItems: "center", justifyContent: "center", marginTop: 24 },
   buttonDim: { opacity: 0.7 }, buttonText: { color: theme.onButton, fontSize: 16, fontWeight: "800" },
   signupPrompt: { color: theme.muted, textAlign: "center", marginTop: 22 },
   backLink: { color: theme.accent, textAlign: "center", fontWeight: "700", marginTop: 24 },

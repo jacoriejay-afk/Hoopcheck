@@ -1,4 +1,7 @@
 export const lockAfter = 5 * 60 * 1000;
+export function lockScreenRequired(authReady: boolean, preferencesReady: boolean, protectedScreen: boolean, appLock: boolean, locked: boolean) {
+  return !authReady || !preferencesReady || (protectedScreen && appLock && locked);
+}
 export function backgroundRequiresLock(leftAt: number | null, now: number) {
   // Missing/invalid restoration state is not evidence that an account is unlocked.
   return leftAt === null || !Number.isFinite(leftAt) || leftAt > now || now - leftAt >= lockAfter;

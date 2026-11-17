@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { AppState, Modal, Pressable, Text, View } from "react-native";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as SecureStore from "expo-secure-store";
-import { backgroundRequiresLock, consumeFreshSignIn } from "../src/native/lockPolicy";
+import { backgroundRequiresLock, consumeFreshSignIn, lockScreenRequired } from "../src/native/lockPolicy";
 import { useDevicePreferences } from "../src/native/preferences";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 
-export function AppLock() {
+export function AppLock({ authReady, protectedScreen }: { authReady: boolean; protectedScreen: boolean }) {
   const { ready, preferences } = useDevicePreferences();
   const theme = useEntryTheme();
   const leftAt = useRef<number | null>(null);
@@ -16,6 +16,7 @@ export function AppLock() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   useEffect(() => {
+    if (!protectedScreen) { restored.current = false; setLocked(true); return; }
     if (!ready || restored.current) return;
     restored.current = true;
     if (!preferences.appLock || consumeFreshSignIn()) { setLocked(false); return; }
@@ -23,9 +24,10 @@ export function AppLock() {
     void SecureStore.getItemAsync("hoopcheck-last-background").then(value => {
       if (active) setLocked(backgroundRequiresLock(value ? Number(value) : null, Date.now()));
     }).catch(() => { if (active) setLocked(true); });
-    return () => { active = false; };
-  }, [ready, preferences.appLock]);
+    return () => { active = false; restored.current = false; };
+  }, [ready, protectedScreen, preferences.appLock]);
   useEffect(() => {
+    if (!protectedScreen || !preferences.appLock) return;
     const listener = AppState.addEventListener("change", state => {
       if (state === "background" && leftAt.current === null) {
         leftAt.current = Date.now();
@@ -38,7 +40,7 @@ export function AppLock() {
       }
     });
     return () => listener.remove();
-  }, [preferences.appLock]);
+  }, [protectedScreen, preferences.appLock]);
   async function unlock() {
     if (busy) return;
     setBusy(true);
@@ -59,11 +61,14 @@ export function AppLock() {
     } catch { setMessage("Couldn’t prepare normal sign-in. Please try again."); }
     finally { setBusy(false); }
   }
-  return <Modal visible={ready && preferences.appLock && locked} animationType="none" onRequestClose={() => {}}><View style={{ flex: 1, justifyContent: "center", backgroundColor: theme.background, padding: 28, gap: 24 }}>
+  const bootstrapping = !authReady || !ready;
+  return <Modal visible={lockScreenRequired(authReady, ready, protectedScreen, preferences.appLock, locked)} animationType="none" onRequestClose={() => {}}><View style={{ flex: 1, justifyContent: "center", backgroundColor: theme.background, padding: 28, gap: 24 }}>
+    {bootstrapping ? <Text accessibilityLiveRegion="polite" style={{ color: theme.foreground }}>Preparing HoopCheck…</Text> : <>
     <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 28, fontWeight: "900" }}>Unlock HoopCheck</Text>
     <Text style={{ color: theme.muted }}>Use Face ID, fingerprint, or your device passcode.</Text>
     <Pressable disabled={busy} onPress={() => void unlock()} style={{ minHeight: 48 }}><Text style={{ color: theme.accent, fontSize: 18 }}>Unlock</Text></Pressable>
     <Pressable disabled={busy} onPress={() => void normalSignIn()} style={{ minHeight: 48 }}><Text style={{ color: theme.accent, fontSize: 18 }}>Use normal sign-in</Text></Pressable>
     {message ? <Text accessibilityRole="alert" style={{ color: theme.foreground }}>{message}</Text> : null}
+    </>}
   </View></Modal>;
 }

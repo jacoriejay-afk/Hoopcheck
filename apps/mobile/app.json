@@ -24,10 +24,10 @@
           "image": "./assets/hoopcheck-mark.png",
           "imageWidth": 120,
           "resizeMode": "contain",
-          "backgroundColor": "#F7F6F3",
+          "backgroundColor": "#F4F4F1",
           "dark": {
             "image": "./assets/hoopcheck-mark.png",
-            "backgroundColor": "#101014"
+            "backgroundColor": "#000000"
           }
         }
       ],
