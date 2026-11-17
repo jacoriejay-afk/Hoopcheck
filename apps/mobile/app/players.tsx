@@ -1,5 +1,10 @@
-import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { Input, Button } from "../src/primitives";
+import { useCachedRead, useNetwork } from "../src/native/network";
+import { OfflineBanner } from "../components/OfflineBanner";
+import { Reveal, Skeleton } from "../components/Motion";
+import { RecentSearches, useRecentSearches } from "../components/RecentSearches";
+import { motion } from "../src/motion/config";
+import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -13,6 +18,9 @@ export default function PlayersScreen() {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
   const router = useRouter();
+  const { read, savedAt } = useCachedRead();
+  const { revision } = useNetwork();
+  const { recents, remember } = useRecentSearches("players");
   const [items, setItems] = useState<Player[]>([]);
   const [term, setTerm] = useState("");
   const [appliedTerm, setAppliedTerm] = useState("");
@@ -46,7 +54,7 @@ export default function PlayersScreen() {
       .ilike("username", "%" + clean + "%")
       .order("username", { ascending: true })
       .range(start, start + PAGE_SIZE);
-    const { data, error: queryError } = await query;
+    const { data, error: queryError } = await read(`players:${clean}:${start}`, () => query);
     if (currentRequest !== requestId.current) return;
     if (queryError) {
       setError("We couldn’t load player profiles. Check your connection and try again.");
@@ -59,10 +67,10 @@ export default function PlayersScreen() {
     setItems(append ? current => [...current, ...page] : page);
     setOffset(start);
     setLoading(false); setRefreshing(false);
-  }, []);
+  }, [read]);
 
   function updateTerm(value: string) {
-    setTerm(value);
+    setTerm(value); setLoading(true);
     const normalized = value.trim().replace(/^@+/, "").toLowerCase();
     if (normalized !== appliedTerm.toLowerCase()) {
       requestId.current += 1;
@@ -78,26 +86,27 @@ export default function PlayersScreen() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const username = term.trim().replace(/^@+/, "");
-      if (username.length < 2) return;
-      setAppliedTerm(username);
-      void load(username, 0, false);
-    }, 300);
-    return () => { clearTimeout(timer); requestId.current++; };
-  }, [term, load]);
+      setAppliedTerm(term.trim());
+      void load(term, 0, false);
+    }, motion.searchDelay);
+    return () => { clearTimeout(timer); requestId.current += 1; };
+  }, [term, revision, load]);
+
   async function nextPage() { if (loading || !hasMore || !appliedTerm) return; setLoading(true); await load(appliedTerm, offset + PAGE_SIZE, true); }
   const refresh = () => { if (!appliedTerm) return; setRefreshing(true); void load(appliedTerm, 0, false); };
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
+      <OfflineBanner savedAt={savedAt} />
       <View style={styles.header}>
         <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
         <Text style={styles.kicker}>PLAYER DIRECTORY</Text>
         <Text style={styles.title}>Find players</Text>
         <Text style={styles.subtitle}>Explore public profiles of professional basketball players.</Text>
         <View style={styles.searchRow}>
-          <Input value={term} onChangeText={updateTerm} returnKeyType="search" placeholder="Enter a username (e.g. @player)" placeholderTextColor={theme.muted} style={styles.input} />
+          <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={updateTerm} returnKeyType="search" placeholder="Enter a username (e.g. @player)" placeholderTextColor={theme.muted} style={styles.input} />
         </View>
+        {!term ? <RecentSearches items={recents} onSelect={setTerm} /> : null}
         <Text style={styles.count}>{!appliedTerm ? "Search by username to view profiles" : loading ? "Searching usernames…" : items.length + (hasMore ? "+" : "") + " results shown"}</Text>
       </View>
       {error ? <View style={styles.errorBox}><Text style={styles.error}>{error}</Text><Pressable onPress={() => void load(appliedTerm)}><Text style={styles.retry}>Try again</Text></Pressable></View> : null}
@@ -106,14 +115,15 @@ export default function PlayersScreen() {
           <Text style={styles.emptyTitle}>Search by username</Text>
           <Text style={styles.emptyText}>Player profiles stay hidden until you enter a username. Search requires at least two characters.</Text>
         </View>
-      ) : loading && items.length === 0 ? <ActivityIndicator style={styles.loader} size="large" color={theme.accent} /> : (
+      ) : loading && items.length === 0 ? <Skeleton /> : (
         <FlatList
           keyboardShouldPersistTaps="handled"
           data={items}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} colors={[theme.accent]} progressBackgroundColor={theme.surface} />}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
+            <Reveal key={`${appliedTerm}:${item.id}`} index={index}>
             <Pressable onPress={() => router.push(`/players/${item.id}`)} style={styles.card}>
               <View style={styles.avatar}><Text style={styles.avatarText}>{(item.display_name || item.username || "P").slice(0,1).toUpperCase()}</Text></View>
               <View style={styles.cardBody}>
@@ -125,6 +135,7 @@ export default function PlayersScreen() {
               </View>
               <Text style={styles.openArrow}>›</Text>
             </Pressable>
+            </Reveal>
           )}
           ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>No public player profiles found</Text><Text style={styles.emptyText}>Profiles appear here only when they are public, marked as professional, and visible under current privacy and moderation settings.</Text></View>}
           ListFooterComponent={hasMore ? <Button onPress={() => void nextPage()} style={styles.more}>{loading ? <ActivityIndicator color={theme.onButton} /> : <Text style={styles.moreText}>Load more players</Text>}</Button> : <Text style={styles.footer}>Only public, non-suspended professional player profiles are shown. Profile details depend on each player’s settings.</Text>}

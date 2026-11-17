@@ -1,5 +1,5 @@
 import { GlassCard, Button } from "../src/primitives";
-import { Link } from "expo-router";
+import { useRouter } from "expo-router";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEntryTheme } from "../src/theme";
@@ -10,13 +10,14 @@ const hoopcheckMark = require("../assets/hoopcheck-mark.png");
 
 export default function WelcomeScreen() {
   const theme = useEntryTheme();
+  const router = useRouter();
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <GlassCard style={styles.content}>
           <View style={styles.brand}>
-            <Image accessibilityLabel="HoopCheck" source={hoopcheckMark} style={styles.mark} />
+            <Image alt="HoopCheck" accessibilityLabel="HoopCheck" source={hoopcheckMark} style={styles.mark} />
 
           </View>
           <Text accessibilityRole="header" style={[theme.type.display, styles.headline, { color: theme.foreground }]}>
@@ -25,8 +26,8 @@ export default function WelcomeScreen() {
           <Text style={[styles.description, { color: theme.muted }]}>
             Research basketball teams, coaches, and leagues through the experiences of players who have been there.
           </Text>
-          <Link href="/sign-in" asChild><Button>Sign in</Button></Link>
-          <Link href="/sign-up" asChild><Button secondary>Create an account</Button></Link>
+          <Button onPress={() => router.push("/sign-in")}>Sign in</Button>
+          <Button secondary onPress={() => router.push("/sign-up")}>Create an account</Button>
         </GlassCard>
       </ScrollView>
     </SafeAreaView>

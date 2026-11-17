@@ -1,8 +1,12 @@
 import { DirectoryCrest, CountryChip } from "../../components/DirectoryIdentity";
-import { useEntryTheme, type EntryTheme } from "../../src/theme";
 import { GlassCard, Button } from "../../src/primitives";
+import { ShareSheet } from "../../components/ShareSheet";
+import { useCachedRead, useNetwork } from "../../src/native/network";
+import { OfflineBanner } from "../../components/OfflineBanner";
+import { Skeleton } from "../../components/Motion";
+import { useEntryTheme, type EntryTheme } from "../../src/theme";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Linking, Pressable, ScrollView, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../src/lib/supabase";
@@ -15,6 +19,10 @@ export default function TeamDetailScreen() {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
   const router = useRouter();
+  const { read, savedAt } = useCachedRead();
+  const { revision, offline } = useNetwork();
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshId, setRefreshId] = useState(0);
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const [team, setTeam] = useState<Team | null>(null);
@@ -27,7 +35,8 @@ export default function TeamDetailScreen() {
   useEffect(() => {
     let alive = true;
     async function loadReviews() {
-      if (!id) { setReviewsLoading(false); return; }
+      setReviewsLoading(true);
+      if (!id || offline) { setReviews([]); setReviewsLoading(false); return; }
       // RLS is the source of truth for who may read approved reviews.
       const { data, error: queryError } = await supabase
         .from("reviews")
@@ -42,20 +51,22 @@ export default function TeamDetailScreen() {
     }
     void loadReviews();
     return () => { alive = false; };
-  }, [id]);
+  }, [id, revision, refreshId, offline, read]);
 
   useEffect(() => {
     let alive = true;
     async function load() {
+      setLoading(true);
       if (!id) { setError(true); setLoading(false); return; }
-      const { data, error: queryError } = await supabase.from("teams").select("id,name,country,city,league_name,website").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle();
+      const { data, error: queryError } = await read(`teams:profile:${id}`, () => supabase.from("teams").select("id,name,country,city,league_name,website").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle());
       if (!alive) return;
-      if (queryError || !data) { setError(true); setTeam(null); } else setTeam(data as Team);
+      if (queryError || !data) { setError(true); setTeam(null); } else { setError(false); setTeam(data as Team); }
       setLoading(false);
+      setRefreshing(false);
     }
     void load();
     return () => { alive = false; };
-  }, [id]);
+  }, [id, revision, refreshId, offline, read]);
 
   async function openWebsite() {
     const url = safeWebsite(team?.website ?? null);
@@ -65,9 +76,10 @@ export default function TeamDetailScreen() {
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <OfflineBanner savedAt={savedAt} />
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setRefreshId(value => value + 1); }} />} contentContainerStyle={styles.content}>
         <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back to teams</Text></Pressable>
-        {loading ? <ActivityIndicator size="large" color={theme.accent} style={styles.loader} /> : error || !team ? (
+        {loading ? <Skeleton profile /> : error || !team ? (
           <View style={styles.empty}><Text style={styles.title}>Team unavailable</Text><Text style={styles.body}>This team may have been removed or is not currently listed.</Text></View>
         ) : (
           <>
@@ -76,6 +88,7 @@ export default function TeamDetailScreen() {
             <CountryChip country={team.country} />
             <Text style={[styles.kicker, { color: theme.entityHero.muted }]}>TEAM PROFILE</Text>
             <Text style={[styles.title, { color: theme.entityHero.ink }]}>{team.name}</Text>
+            <ShareSheet onHero title={team.name} path={`/teams/${team.id}`} />
             <Text style={[styles.location, { color: theme.entityHero.muted }]}>{[team.city, team.country].filter(Boolean).join(", ") || "Location not listed"}</Text>
             </View>
             <GlassCard style={styles.card}>
@@ -87,8 +100,8 @@ export default function TeamDetailScreen() {
             <Pressable onPress={() => router.push({ pathname: "/teams/[id]/review", params: { id: team.id, teamName: team.name } })} style={[styles.button, styles.reviewButton]}><Text style={styles.buttonText}>Write a team review</Text></Pressable>
             <View style={styles.reviewsSection}>
               <Text style={styles.reviewsTitle}>Latest reviews</Text>
-              <Text style={styles.reviewsSubtitle}>Approved reviews only · access follows your HoopCheck account permissions</Text>
-              {reviewsLoading ? <ActivityIndicator color={theme.accent} style={styles.reviewsLoader} /> : reviews.length ? reviews.map(review => (
+              <Text style={styles.reviewsSubtitle}>{offline ? "Reconnect to revalidate review access. Reviews are not saved offline." : "Approved reviews only · access follows your HoopCheck account permissions"}</Text>
+              {reviewsLoading ? <Skeleton review /> : reviews.length ? reviews.map(review => (
                 <GlassCard key={review.id} style={styles.reviewCard}>
                   <View style={styles.reviewTopRow}>
                     <Text style={styles.reviewRating}>{review.overall_rating == null ? "Rating not listed" : `${review.overall_rating}/5 overall`}</Text>

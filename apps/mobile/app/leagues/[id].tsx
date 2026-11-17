@@ -1,8 +1,12 @@
 import { DirectoryCrest, CountryChip } from "../../components/DirectoryIdentity";
-import { useEntryTheme, type EntryTheme } from "../../src/theme";
 import { GlassCard, Button } from "../../src/primitives";
+import { ShareSheet } from "../../components/ShareSheet";
+import { useCachedRead, useNetwork } from "../../src/native/network";
+import { OfflineBanner } from "../../components/OfflineBanner";
+import { Skeleton } from "../../components/Motion";
+import { useEntryTheme, type EntryTheme } from "../../src/theme";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Linking, Pressable, ScrollView, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../src/lib/supabase";
@@ -15,6 +19,10 @@ export default function LeagueDetailScreen() {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
   const router = useRouter();
+  const { read, savedAt } = useCachedRead();
+  const { revision, offline } = useNetwork();
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshId, setRefreshId] = useState(0);
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const [league, setLeague] = useState<League | null>(null);
@@ -27,7 +35,8 @@ export default function LeagueDetailScreen() {
   useEffect(() => {
     let alive = true;
     async function loadReviews() {
-      if (!id) { setReviewsLoading(false); return; }
+      setReviewsLoading(true);
+      if (!id || offline) { setReviews([]); setReviewsLoading(false); return; }
       // RLS is the source of truth for who may read approved reviews.
       const { data, error: queryError } = await supabase
         .from("reviews")
@@ -42,20 +51,22 @@ export default function LeagueDetailScreen() {
     }
     void loadReviews();
     return () => { alive = false; };
-  }, [id]);
+  }, [id, revision, refreshId, offline, read]);
 
   useEffect(() => {
     let alive = true;
     async function load() {
+      setLoading(true);
       if (!id) { setError(true); setLoading(false); return; }
-      const { data, error: queryError } = await supabase.from("leagues").select("id,name,country,level,season,website").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle();
+      const { data, error: queryError } = await read(`leagues:profile:${id}`, () => supabase.from("leagues").select("id,name,country,level,season,website").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle());
       if (!alive) return;
-      if (queryError || !data) { setError(true); setLeague(null); } else setLeague(data as League);
+      if (queryError || !data) { setError(true); setLeague(null); } else { setError(false); setLeague(data as League); }
       setLoading(false);
+      setRefreshing(false);
     }
     void load();
     return () => { alive = false; };
-  }, [id]);
+  }, [id, revision, refreshId, offline, read]);
 
   async function openWebsite() {
     const url = safeWebsite(league?.website ?? null);
@@ -65,9 +76,10 @@ export default function LeagueDetailScreen() {
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <OfflineBanner savedAt={savedAt} />
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setRefreshId(value => value + 1); }} />} contentContainerStyle={styles.content}>
         <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back to leagues</Text></Pressable>
-        {loading ? <ActivityIndicator size="large" color={theme.accent} style={styles.loader} /> : error || !league ? (
+        {loading ? <Skeleton profile /> : error || !league ? (
           <View style={styles.empty}><Text style={styles.title}>League unavailable</Text><Text style={styles.body}>This league may have been removed or is not currently listed.</Text></View>
         ) : (
           <>
@@ -76,6 +88,7 @@ export default function LeagueDetailScreen() {
             <CountryChip country={league.country} />
             <Text style={[styles.kicker, { color: theme.entityHero.muted }]}>LEAGUE PROFILE</Text>
             <Text style={[styles.title, { color: theme.entityHero.ink }]}>{league.name}</Text>
+            <ShareSheet onHero title={league.name} path={`/leagues/${league.id}`} />
             <Text style={[styles.location, { color: theme.entityHero.muted }]}>{league.country || "Country not listed"}</Text>
             </View>
             <GlassCard style={styles.card}>
@@ -88,8 +101,8 @@ export default function LeagueDetailScreen() {
             {safeWebsite(league.website) ? <Button onPress={openWebsite} style={styles.button}><Text style={styles.buttonText}>Open league website ↗</Text></Button> : null}
             <View style={styles.reviewsSection}>
               <Text style={styles.reviewsTitle}>Latest reviews</Text>
-              <Text style={styles.reviewsSubtitle}>Approved reviews only · access follows your HoopCheck account permissions</Text>
-              {reviewsLoading ? <ActivityIndicator color={theme.accent} style={styles.reviewsLoader} /> : reviews.length ? reviews.map(review => (
+              <Text style={styles.reviewsSubtitle}>{offline ? "Reconnect to revalidate review access. Reviews are not saved offline." : "Approved reviews only · access follows your HoopCheck account permissions"}</Text>
+              {reviewsLoading ? <Skeleton review /> : reviews.length ? reviews.map(review => (
                 <GlassCard key={review.id} style={styles.reviewCard}>
                   <View style={styles.reviewTopRow}>
                     <Text style={styles.reviewRating}>{review.overall_rating == null ? "Rating not listed" : `${review.overall_rating}/5 overall`}</Text>

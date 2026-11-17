@@ -1,7 +1,9 @@
+import { recordFreshSignIn } from "../src/native/lockPolicy";
+import { takeDestination } from "../src/native/pendingDestination";
 import { GlassCard, Input, Button } from "../src/primitives";
 import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
@@ -22,8 +24,9 @@ export default function SignInScreen() {
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
       if (error) throw error;
       const profile = data.user ? await supabase.from("profiles").select("username").eq("id", data.user.id).maybeSingle() : null;
-      router.replace(profile?.data && !profile.data.username?.trim() ? "/choose-username" : "/dashboard");
-    } catch (error) {
+      recordFreshSignIn();
+      router.replace((profile?.data && !profile.data.username?.trim() ? "/choose-username" : takeDestination() ?? "/dashboard") as "/dashboard");
+    } catch {
       Alert.alert("Could not sign in", "Please check your details and try again.");
     } finally { setBusy(false); }
   }

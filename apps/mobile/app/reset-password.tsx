@@ -1,7 +1,7 @@
 import { GlassCard, Input, Button } from "../src/primitives";
 import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useEffect, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, supabaseConfigurationError } from "../src/lib/supabase";

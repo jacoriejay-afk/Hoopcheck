@@ -1,7 +1,14 @@
+import { GlassCard, Button, Chip } from "../../src/primitives";
+import { ShareSheet } from "../../components/ShareSheet";
+import { Sheet } from "../../components/Sheet";
+import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
+import { useHaptics } from "../../src/native/haptics";
+import { useCachedRead, useNetwork, requireOnline } from "../../src/native/network";
+import { OfflineBanner } from "../../components/OfflineBanner";
+import { Skeleton } from "../../components/Motion";
 import { useEntryTheme, type EntryTheme } from "../../src/theme";
-import { Input, GlassCard, Button, Chip } from "../../src/primitives";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { supabase } from "../../src/lib/supabase";
@@ -18,6 +25,11 @@ export default function PlayerDetailScreen() {
   const styles = createStyles(theme);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const haptic = useHaptics();
+  const { read, savedAt } = useCachedRead();
+  const { revision, offline } = useNetwork();
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshId, setRefreshId] = useState(0);
   const [player, setPlayer] = useState<PlayerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -29,8 +41,9 @@ export default function PlayerDetailScreen() {
   useEffect(() => {
     let active = true;
     async function load() {
+      setLoading(true);
       setLoading(true); setError("");
-      const { data, error: queryError } = await supabase.from("profiles")
+      const { data, error: queryError } = await read(`players:profile:${id}`, () => supabase.from("profiles")
         .select("id,display_name,username,country,current_country,current_team,position,years_pro,free_agent,bio,hometown,nationality,experience_summary,basketball_type")
         .eq("id", id)
         .eq("account_type", "player")
@@ -38,7 +51,7 @@ export default function PlayerDetailScreen() {
         .eq("moderation_status", "normal")
         .in("basketball_type", ["mens", "womens"])
         .eq("professional_experience", true)
-        .maybeSingle();
+        .maybeSingle());
       if (!active) return;
       if (queryError || !data) {
         setError("This profile is unavailable or is no longer public.");
@@ -47,10 +60,11 @@ export default function PlayerDetailScreen() {
         setPlayer(data as PlayerProfile);
       }
       setLoading(false);
+      setRefreshing(false);
     }
     if (id) void load(); else { setError("This profile link is invalid."); setLoading(false); }
     return () => { active = false; };
-  }, [id]);
+  }, [id, revision, refreshId, offline, read]);
 
   async function submitReport() {
     const reason = reportReason.trim();
@@ -66,6 +80,7 @@ export default function PlayerDetailScreen() {
     setReportSubmitting(true);
     setReportMessage("");
     try {
+      await requireOnline();
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session?.access_token) {
         setReportMessage("Please sign in again before reporting this profile.");
@@ -81,13 +96,16 @@ export default function PlayerDetailScreen() {
       });
       const result = await response.json().catch(() => ({})) as { error?: string; ok?: boolean };
       if (!response.ok) {
+        haptic("error");
         setReportMessage(result.error || "We couldn't submit your report. Please try again.");
         return;
       }
+      haptic("posted");
       setReportReason("");
       setReporting(false);
       setReportMessage("Report submitted. Thank you for helping keep HoopCheck safe.");
     } catch {
+      haptic("error");
       setReportMessage("Couldn't connect to HoopCheck. Check your connection and try again.");
     } finally {
       setReportSubmitting(false);
@@ -97,9 +115,10 @@ export default function PlayerDetailScreen() {
   const name = player?.display_name || (player?.username ? `@${player.username}` : "Player profile");
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <OfflineBanner savedAt={savedAt} />
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setRefreshId(value => value + 1); }} />} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back to players</Text></Pressable>
-        {loading ? <ActivityIndicator style={styles.loader} size="large" color={theme.accent} /> : error ? (
+        {loading ? <Skeleton profile /> : error ? (
           <View style={styles.empty}><Text style={styles.emptyTitle}>Profile unavailable</Text><Text style={styles.body}>{error}</Text><Button style={styles.button} onPress={() => router.replace("/players")}><Text style={styles.buttonText}>Return to player search</Text></Button></View>
         ) : player ? (
           <>
@@ -108,6 +127,7 @@ export default function PlayerDetailScreen() {
               <View style={{ alignSelf: "flex-start" }}><Chip>Player</Chip></View>
               <Text style={styles.kicker}>PUBLIC {player.basketball_type === "womens" ? "WOMEN'S" : "MEN'S"} PLAYER PROFILE</Text>
               <Text style={styles.heroTitle}>{name}</Text>
+              <ShareSheet title={name} path={`/players/${player.id}`} />
               {player.username && player.display_name ? <Text style={styles.handle}>@{player.username}</Text> : null}
               {player.free_agent ? <View style={styles.pill}><Text style={styles.pillText}>FREE AGENT</Text></View> : null}
             </GlassCard>
@@ -125,14 +145,15 @@ export default function PlayerDetailScreen() {
             <GlassCard style={styles.reportCard}>
               <Text style={styles.sectionTitle}>Safety and reporting</Text>
               <Text style={styles.body}>If this profile contains impersonation, harassment, or inappropriate personal information, report it to the HoopCheck team.</Text>
-              {!reporting ? (
+              {(
                 <Button accessibilityRole="button" style={styles.reportButton} onPress={() => { setReporting(true); setReportMessage(""); }}>
                   <Text style={styles.reportButtonText}>Report this profile</Text>
                 </Button>
-              ) : (
+              )}
+              <Sheet open={reporting} onClose={() => setReporting(false)} title="Report profile">
                 <View style={styles.reportForm}>
                   <Text style={styles.label}>Why are you reporting this profile?</Text>
-                  <Input
+                  <BottomSheetTextInput
                     accessibilityLabel="Reason for reporting profile"
                     value={reportReason}
                     onChangeText={setReportReason}
@@ -143,6 +164,7 @@ export default function PlayerDetailScreen() {
                     textAlignVertical="top"
                     style={styles.reportInput}
                   />
+                  {reportMessage ? <Text accessibilityRole="alert" style={styles.reportMessage}>{reportMessage}</Text> : null}
                   <Text style={styles.characterCount}>{reportReason.trim().length}/500</Text>
                   <View style={styles.reportActions}>
                     <Button secondary disabled={reportSubmitting} style={styles.cancelButton} onPress={() => { setReporting(false); setReportReason(""); setReportMessage(""); }}>
@@ -153,7 +175,7 @@ export default function PlayerDetailScreen() {
                     </Pressable>
                   </View>
                 </View>
-              )}
+              </Sheet>
               {reportMessage ? <Text accessibilityRole="alert" style={styles.reportMessage}>{reportMessage}</Text> : null}
             </GlassCard>
             <Text style={styles.footer}>Only fields intended for public profile display are shown. Profile availability follows the player’s privacy and moderation settings. Verify roster and free-agent status independently.</Text>

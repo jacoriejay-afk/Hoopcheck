@@ -1,6 +1,11 @@
 import { DirectoryCrest, CountryChip } from "../components/DirectoryIdentity";
-import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { Input, Button } from "../src/primitives";
+import { useCachedRead, useNetwork } from "../src/native/network";
+import { OfflineBanner } from "../components/OfflineBanner";
+import { Reveal, Skeleton } from "../components/Motion";
+import { RecentSearches, useRecentSearches } from "../components/RecentSearches";
+import { motion } from "../src/motion/config";
+import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -13,8 +18,11 @@ const PAGE_SIZE = 40;
 export default function LeaguesScreen() {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
-  const requestId = useRef(0);
   const router = useRouter();
+  const { read, savedAt } = useCachedRead();
+  const { revision } = useNetwork();
+  const { recents, remember } = useRecentSearches("leagues");
+  const requestId = useRef(0);
   const [items, setItems] = useState<League[]>([]);
   const [term, setTerm] = useState("");
   const [appliedTerm, setAppliedTerm] = useState("");
@@ -25,14 +33,14 @@ export default function LeaguesScreen() {
   const [hasMore, setHasMore] = useState(false);
 
   const load = useCallback(async (search: string, start = 0, append = false) => {
-    const request = ++requestId.current;
+    const currentRequest = ++requestId.current;
     if (start === 0) setLoading(true);
     setError("");
     const clean = search.trim().replace(/[^\p{L}\p{N} '\-]/gu, " ").replace(/\s+/g, " ").trim();
     let query = supabase.from("leagues").select("id,name,country,level,season,website").eq("active", true).eq("basketball_type", "mens").order("name", { ascending: true }).range(start, start + PAGE_SIZE);
     if (clean) query = query.or(`name.ilike.%${clean}%,country.ilike.%${clean}%,level.ilike.%${clean}%`);
-    const { data, error: queryError } = await query;
-    if (request !== requestId.current) return;
+    const { data, error: queryError } = await read(`leagues:${clean}:${start}`, () => query);
+    if (currentRequest !== requestId.current) return;
     if (queryError) {
       setError("We couldn’t load leagues. Check your connection and try again.");
       if (!append) setItems([]);
@@ -44,39 +52,44 @@ export default function LeaguesScreen() {
     setItems(append ? current => [...current, ...page] : page);
     setOffset(start);
     setLoading(false); setRefreshing(false);
-  }, []);
+  }, [read]);
+
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setAppliedTerm(term.trim());
       void load(term, 0, false);
-    }, 300);
-    return () => { clearTimeout(timer); requestId.current++; };
-  }, [term, load]);
+    }, motion.searchDelay);
+    return () => { clearTimeout(timer); requestId.current += 1; };
+  }, [term, revision, load]);
+
   async function nextPage() { if (loading || !hasMore) return; setLoading(true); await load(appliedTerm, offset + PAGE_SIZE, true); }
   const refresh = () => { setRefreshing(true); void load(appliedTerm, 0, false); };
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
+      <OfflineBanner savedAt={savedAt} />
       <View style={styles.header}>
         <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
         <Text style={styles.kicker}>DIRECTORY</Text>
         <Text style={styles.title}>Find a league</Text>
         <Text style={styles.subtitle}>Explore men’s professional basketball leagues and competition levels.</Text>
         <View style={styles.searchRow}>
-          <Input value={term} onChangeText={value => { requestId.current++; setTerm(value); setLoading(true); setItems([]); setHasMore(false); }} returnKeyType="search" placeholder="League, country or level" placeholderTextColor={theme.muted} style={styles.input} />
+          <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={value => { requestId.current++; setTerm(value); setLoading(true); setItems([]); setHasMore(false); }} returnKeyType="search" placeholder="League, country or level" placeholderTextColor={theme.muted} style={styles.input} />
         </View>
-        <Text style={styles.count}>{loading ? "Loading leagues…" : `${items.length}${hasMore ? "+" : ""} results shown`}</Text>
+        {!term ? <RecentSearches items={recents} onSelect={setTerm} /> : null}
+        <Text style={styles.count}>{loading ? "Loading leagues…" : `${items.length}${hasMore ? "+" : ""} ${items.length === 1 && !hasMore ? "result" : "results"} shown`}</Text>
       </View>
       {error ? <View style={styles.errorBox}><Text style={styles.error}>{error}</Text><Pressable onPress={() => void load(appliedTerm)}><Text style={styles.retry}>Try again</Text></Pressable></View> : null}
-      {loading && items.length === 0 ? <ActivityIndicator style={styles.loader} size="large" color={theme.accent} /> : (
+      {loading && items.length === 0 ? <Skeleton /> : (
         <FlatList
           keyboardShouldPersistTaps="handled"
           data={items}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} colors={[theme.accent]} progressBackgroundColor={theme.surface} />}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
+            <Reveal key={`${appliedTerm}:${item.id}`} index={index}>
             <Pressable onPress={() => router.push({ pathname: "/leagues/[id]", params: { id: item.id } })} style={styles.card}>
               <DirectoryCrest name={item.name} kind="leagues" />
               <View style={styles.cardBody}>
@@ -87,6 +100,7 @@ export default function LeaguesScreen() {
                 <Text style={styles.openProfile}>View profile →</Text>
               </View>
             </Pressable>
+            </Reveal>
           )}
           ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>No leagues found</Text><Text style={styles.emptyText}>Try a shorter name or another country.</Text></View>}
           ListFooterComponent={hasMore ? <Button onPress={() => void nextPage()} style={styles.more}>{loading ? <ActivityIndicator color={theme.onButton} /> : <Text style={styles.moreText}>Load more leagues</Text>}</Button> : <Text style={styles.footer}>Confirm league rules, payment terms and contract details independently before signing.</Text>}
