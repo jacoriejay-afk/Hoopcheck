@@ -1,10 +1,13 @@
 "use client";
 
+import { BILLING_LABELS, PLAN_PRICES } from "../../lib/plan-comparison";
+
+
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
 import MembershipComparison from "../../components/MembershipComparison";
-import { hasActiveMembershipAtLeast } from "../../lib/membership-tier";
+import { getActiveMembershipTier } from "../../lib/membership-tier";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
@@ -238,8 +241,8 @@ function MembershipContent() {
     }
   }
 
-  const isActive =
-    subscription?.status === "active" || subscription?.status === "trialing";
+  const currentTier = getActiveMembershipTier(subscription);
+  const isActive = currentTier !== "free";
   const premiumOnlyAccount = accountType === "coach" || accountType === "manager";
 
   return (
@@ -269,19 +272,19 @@ function MembershipContent() {
       <section className="membership-section">
         {isActive && subscription && !subscription.stripe_subscription_id && (
           <div className="dashboard-card" style={{ marginBottom: 16 }}>
-            <strong>Complimentary HoopCheck access is active.</strong>
-            <span className="muted"> You can keep using your current access or choose a paid membership below.</span>
+            <strong>Your HoopCheck membership is active.</strong>
+            <span className="muted"> Your current access is based on your account membership. You can review available plans below.</span>
           </div>
         )}
-        {isActive && subscription?.stripe_subscription_id && (
+        {isActive && subscription && (
           <MembershipComparison
             audience={accountType === "fan" ? "fan" : "player"}
-            currentTier={hasActiveMembershipAtLeast(subscription, "premium") ? "premium" : hasActiveMembershipAtLeast(subscription, "pro") ? "pro" : "free"}
+            currentTier={currentTier}
             billingTerm={billingInterval}
             premiumOnly={premiumOnlyAccount}
           />
         )}
-        {isActive && subscription?.stripe_subscription_id ? (
+        {isActive && subscription ? (
           <div className="active-card" id="manage-subscription">
             <div className="eyebrow">CURRENT MEMBERSHIP</div>
             <h2>
@@ -302,10 +305,10 @@ function MembershipContent() {
               </p>
             )}
             <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-              <button className="btn" onClick={openCustomerPortal} disabled={portalLoading || cancelLoading}>
+              {subscription.stripe_subscription_id && <button className="btn" onClick={openCustomerPortal} disabled={portalLoading || cancelLoading}>
                 {portalLoading ? "Opening billing..." : "Manage / Upgrade Plan"}
-              </button>
-              {subscription.cancel_at_period_end ? (
+              </button>}
+              {subscription.stripe_subscription_id && (subscription.cancel_at_period_end ? (
                 <button className="btn dark" onClick={resumeMembership} disabled={cancelLoading}>
                   {cancelLoading ? "Updating..." : "Keep Membership"}
                 </button>
@@ -313,11 +316,12 @@ function MembershipContent() {
                 <button className="btn dark" onClick={cancelMembership} disabled={cancelLoading}>
                   {cancelLoading ? "Canceling..." : "Cancel Membership"}
                 </button>
-              )}
+              ))}
             </div>
             <div className="legal-note">
-              Billing is managed securely through Stripe. You can manage eligible
-              subscription settings through the billing portal.
+              {subscription.stripe_subscription_id
+                ? "Billing is managed securely through Stripe. You can manage eligible subscription settings through the billing portal."
+                : "Your existing membership is active. Contact support to change a membership that is not managed through Stripe."}
             </div>
           </div>
         ) : (
@@ -353,9 +357,9 @@ function MembershipContent() {
             )}
 
             <div className="hc-billing-options" role="group" aria-label="Choose billing term">
-              <button type="button" aria-pressed={billingInterval==="month"} className={billingInterval==="month" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("month")}><span>Monthly</span><small>Flexible billing</small></button>
-              <button type="button" aria-pressed={billingInterval==="6_month"} className={billingInterval==="6_month" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("6_month")}><span>6 months</span><small>Save 10%</small></button>
-              <button type="button" aria-pressed={billingInterval==="year"} className={billingInterval==="year" ? "btn hc-billing-option is-selected" : "btn dark hc-billing-option"} onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 15%</small></button>
+              <button type="button" aria-pressed={billingInterval==="month"} className="hc-billing-option" onClick={()=>setBillingInterval("month")}><span>Monthly</span><small>Flexible billing</small></button>
+              <button type="button" aria-pressed={billingInterval==="6_month"} className="hc-billing-option" onClick={()=>setBillingInterval("6_month")}><span>6 months</span><small>Save 10%</small></button>
+              <button type="button" aria-pressed={billingInterval==="year"} className="hc-billing-option" onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 15%</small></button>
             </div>
             <div className="hc-membership-value"><span className="hc-membership-value__mark">★</span><div><strong>Best flexibility, better value.</strong><p>Choose monthly, 6-month, or annual billing. The total shown is the amount charged for the selected term.</p></div></div><div className="plans">
               <div className="plan-card">
@@ -365,8 +369,8 @@ function MembershipContent() {
                     <h3>{accountType === "fan" ? "Fan Pro" : "Pro"}</h3>
                   </div>
                   <div className="price">
-                    <strong>{billingInterval==="month" ? "\$4.99" : billingInterval==="6_month" ? "\$25.45" : "\$53.89"}</strong>
-                    <span>{billingInterval==="month" ? "billed monthly" : billingInterval==="6_month" ? "billed every 6 months" : "billed annually"}</span>
+                    <strong>{PLAN_PRICES.pro[billingInterval]}</strong>
+                    <span>{BILLING_LABELS[billingInterval]}</span>
                   </div>
                 </div>
                 <p className="plan-description">
@@ -377,6 +381,7 @@ function MembershipContent() {
                 <ul>
                   {accountType === "fan" ? <>
                     <li>Fan HoopFeed reading and posting</li>
+                    <li>Review previews only; full player-written reviews require Fan Premium</li>
                     <li>Fan network and connection requests</li>
                     <li>Live Game Hub and Chat</li>
                     <li>Team comparison and team alerts</li>
@@ -406,7 +411,7 @@ function MembershipContent() {
                     <h3>{accountType === "fan" ? "Fan Premium" : "Premium"}</h3>
                   </div>
                   <div className="price">
-                    <strong>{billingInterval==="month" ? "\$9.99" : billingInterval==="6_month" ? "\$50.95" : "\$107.89"}</strong>
+                    <strong>{PLAN_PRICES.premium[billingInterval]}</strong>
                     <span>{billingInterval==="month" ? "billed monthly" : billingInterval==="6_month" ? "billed every 6 months" : "billed annually"}</span>
                   </div>
                 </div>

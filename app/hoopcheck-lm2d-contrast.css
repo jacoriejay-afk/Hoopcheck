@@ -1,9 +1,6 @@
 /* LM-2D contrast lock: final shared overrides for theme-paired foreground/backgrounds. */
 :root {
-  --hc-category-teams: #FF5A1F;
-  --hc-category-womens: #E84393;
   --hc-category-coaches: #2456C8;
-  --hc-category-leagues: #1E9E50;
   --hc-category-players: #6C3FD4;
   --hc-category-reviews: #0A0A0A;
   --hc-category-alerts: #F5B800;

@@ -1,0 +1,23 @@
+name: Fan feed subscription expiry security
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/*fan_feed_subscription_expiry.sql'
+      - '.github/workflows/fan-feed-expiry-security.yml'
+  workflow_dispatch:
+jobs:
+  verify-expiry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify both access paths enforce billing expiry
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('supabase/migrations/20261113080000_fan_feed_subscription_expiry.sql').read_text()
+          assert s.count('sub.current_period_end is null or sub.current_period_end > now()')==2
+          assert 'CREATE OR REPLACE FUNCTION public.can_view_fan_feed_post' in s
+          assert 'CREATE OR REPLACE FUNCTION public.get_fan_team_hub_posts' in s
+          assert s.count("sub.status in ('active','trialing')")==2
+          assert s.count("viewer.account_type = 'fan'")==1
+          PY

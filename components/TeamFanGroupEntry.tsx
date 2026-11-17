@@ -47,7 +47,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
     ]);
     if (authError || summaryError) throw authError || summaryError;
 
-    const nextActualMember = false;
+    let nextActualMember = false;
     if (user) {
       const [{ data: profile, error: profileError }, { data: moderators, error: moderatorsError }, { data: platformAdmin, error: adminError }, { data: membership, error: membershipError }] = await Promise.all([
         supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
@@ -55,6 +55,9 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
         supabase.rpc("is_current_user_admin_or_moderator"),
         supabase.from("team_fan_group_members").select("user_id").eq("team_id", teamId).eq("user_id", user.id).maybeSingle()
       ]);
+      if (profileError || moderatorsError || adminError || membershipError) throw profileError || moderatorsError || adminError || membershipError;
+      nextActualMember = Boolean(membership);
+      setActualMember(nextActualMember);
       const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, isAdmin: platformAdmin === true });
       setIsFan(entitlements.canUseFanGroups);
       setIsModerator(Boolean(entitlements.canModerateFanGroups ||
@@ -67,11 +70,18 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
     }
 
     const row = Array.isArray(rows) ? rows[0] : rows;
-    const normalizedRow = row ? { ...row, is_member: row.is_member || nextActualMember } : row;
+    const normalizedRow = row ? { ...row, is_member: nextActualMember } : row;
     setSummary(normalizedRow || null);
   }, [teamId]);
 
-  useEffect(() => { void load().catch(() => setMessage(labels.failed)); }, [load, labels.failed]);
+  useEffect(() => {
+    setSummary(null);
+    setActualMember(null);
+    setIsFan(false);
+    setIsModerator(false);
+    setMessage("");
+    void load().catch(() => setMessage(labels.failed));
+  }, [load, labels.failed]);
 
   const isJoined = actualMember ?? Boolean(summary?.is_member);
 
@@ -95,7 +105,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
         return;
       }
       setActualMember(true);
-      setSummary(current => current ? { ...current, is_member: true, member_count: Math.max(1, Number(current.member_count || 0) + (current.is_member ? 0 : 1)) } : current);
+      setSummary(current => current ? { ...current, is_member: true, member_count: Math.max(1, Number(current.member_count || 0) + (isJoined ? 0 : 1)) } : current);
       try { await load(); } catch { /* API confirmed membership; keep optimistic state until refresh completes. */ }
       setMessage(labels.joinedMessage);
     } catch {
@@ -106,7 +116,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
   }
 
   async function leave() {
-    if (!window.confirm("Leave this Fan Group? You can join again anytime.")) return;
+    if (!window.confirm(`${labels.leave}?`)) return;
     setBusy(true);
     setMessage("");
     try {
@@ -119,10 +129,10 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.ok) { setMessage(result.message || "Could not leave this group."); return; }
       setActualMember(false);
-      setSummary(current => current ? { ...current, is_member: false, member_count: Math.max(0, Number(current.member_count || 0) - (current.is_member ? 1 : 0)) } : current);
+      setSummary(current => current ? { ...current, is_member: false, member_count: Math.max(0, Number(current.member_count || 0) - (isJoined ? 1 : 0)) } : current);
       try { await load(); } catch { /* API confirmed membership removal; keep optimistic state until refresh completes. */ }
-      setMessage("You left the Fan Group. You can rejoin anytime.");
-    } catch { setMessage("Could not leave this group. Please try again."); }
+      setMessage(labels.leave);
+    } catch { setMessage(labels.failed); }
     finally { setBusy(false); }
   }
 
@@ -133,7 +143,7 @@ export default function TeamFanGroupEntry({ teamId }: { teamId: string }) {
       {isFan && (isJoined
         ? <><Link className="btn" href={"/team-hub/groups/" + teamId}>{labels.joinedOpen}</Link><button type="button" className="btn hc-fan-group-leave" disabled={busy} onClick={() => void leave()}>{busy ? labels.wait : labels.leave}</button></>
         : <button className="btn" type="button" disabled={busy} onClick={() => void join()}>{busy ? labels.wait : labels.join}</button>) }
-      {isModerator && <Link className="btn hc-fan-group-moderator-link" href={"/team-hub/groups/" + teamId}>{labels.moderatorOpen}</Link>}
+      {isModerator && !isJoined && <Link className="btn hc-fan-group-moderator-link" href={"/team-hub/groups/" + teamId}>{labels.moderatorOpen}</Link>}
     </div>
     {message && <p className="hc-feed-message" role="status">{message}</p>}
   </section>;

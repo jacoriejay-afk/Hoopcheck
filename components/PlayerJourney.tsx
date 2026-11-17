@@ -127,7 +127,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
       </article>)}
     </div> : <div className="hc-journey-empty"><span>01 / CAREER PASSPORT</span><h3>No career stops added yet</h3><p>Build a timeline of the teams, leagues, countries, seasons, and positions that shaped your career.</p></div>}
     {isOwnProfile&&!canManage&&<div className="hc-journey-upgrade"><strong>Premium Players · My Journey</strong><p>Add career stops and create your professional basketball passport. Public sharing is always optional.</p><Link href="/membership" className="btn">Unlock My Journey</Link></div>}
-    {isOwnProfile&&canManage&&<form className="hc-journey-form" onSubmit={addStop}>
+    {isOwnProfile&&canManage&&<form className="hc-journey-form hc-liquid-glass-journey-form" onSubmit={addStop}>
       <p className="eyebrow">ADD CAREER STOP</p>
       <label>Match a HoopCheck team <select value={teamId} onChange={event=>chooseTeam(event.target.value)}><option value="">Not listed / enter team below</option>{teams.map(team=><option key={team.id} value={team.id}>{team.name}{team.country?` · ${team.country}`:""}</option>)}</select></label>
       <label>Team name <input value={teamName} onChange={event=>setTeamName(event.target.value)} maxLength={160} required placeholder="Team or club name"/></label>

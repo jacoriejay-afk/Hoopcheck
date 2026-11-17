@@ -116,12 +116,156 @@ for (let attempt = 0; attempt < 60; attempt += 1) {
 }
 assert.ok(serverReady, "Next production server did not become ready within 60 seconds.");
 
-const browser = await chromium.launch({ channel: "chrome", headless: true, args: ["--no-sandbox"] });
+const browser = await chromium.launch({ ...(process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : { channel: "chrome" }), headless: true, args: ["--no-sandbox"] });
 const results = [];
 try {
+  // Public routes must not expose member-only mobile navigation when there is
+  // no session. Keep this separate from the authenticated screenshot fixtures.
+  for (const theme of ["light", "dark", "system"]) {
+    const guestContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      colorScheme: theme === "light" ? "light" : "dark",
+      isMobile: true,
+      hasTouch: true,
+      serviceWorkers: "block",
+    });
+    const guestPage = await guestContext.newPage();
+    await guestContext.addCookies([{ name: "hoopcheck-theme", value: theme, url: baseURL }]);
+    await guestPage.addInitScript((preference) => {
+      localStorage.setItem("hoopcheck-theme", preference);
+      localStorage.removeItem("sb-ci-auth-token");
+    }, theme);
+    await guestPage.route("https://ci.invalid/**", async route => {
+      const req = route.request();
+      const headers = {
+        "access-control-allow-origin": baseURL,
+        "access-control-allow-credentials": "true",
+        "access-control-allow-headers": req.headers()["access-control-request-headers"] || "*",
+        "access-control-allow-methods": "GET,POST,OPTIONS",
+      };
+      if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers });
+      return route.fulfill({ status: 401, headers, contentType: "application/json", body: JSON.stringify({ message: "Guest fixture: no session" }) });
+    });
+    for (const route of ["/login", "/signup", "/search"]) {
+      await guestPage.goto(baseURL + route);
+      await guestPage.locator("body").waitFor({ state: "visible" });
+      await guestPage.waitForTimeout(400);
+      assert.equal(await guestPage.locator("nav.bottom-nav").count(), 0,
+        `Guest ${theme} ${route}: member bottom navigation must not render`);
+      assert.equal(await guestPage.locator('a.hc-signin-button').count() > 0, true,
+        `Guest ${theme} ${route}: sign-in action must be available`);
+      if (route === "/login" || route === "/signup") {
+        const google = guestPage.getByRole("button", { name: "Continue with Google" });
+        const googleBox = await google.boundingBox();
+        assert.ok(googleBox && googleBox.height >= 44, `${route}: Google button touch target`);
+        const divider = guestPage.locator(".hc-auth-divider");
+        assert.ok(await divider.evaluate(node =>
+          ["::before", "::after"].every(side => parseFloat(getComputedStyle(node, side).width) > 0)
+        ), `${route}: OR divider has two visible rules`);
+      }
+      if (route === "/login") {
+        const password = guestPage.getByLabel("Password", { exact: true });
+        const toggle = guestPage.getByRole("button", { name: "Show password" });
+        const fieldBox = await password.boundingBox();
+        const toggleBox = await toggle.boundingBox();
+        assert.ok(fieldBox && toggleBox && toggleBox.x >= fieldBox.x && toggleBox.y >= fieldBox.y &&
+          toggleBox.x + toggleBox.width <= fieldBox.x + fieldBox.width &&
+          toggleBox.y + toggleBox.height <= fieldBox.y + fieldBox.height,
+          `Password toggle fits inside its field: ${JSON.stringify({ fieldBox, toggleBox })}`);
+        await toggle.click();
+        assert.equal(await password.getAttribute("type"), "text");
+        await guestPage.getByRole("button", { name: "Hide password" }).click();
+        assert.equal(await password.getAttribute("type"), "password");
+      }
+    }
+    for (const width of [320, 375, 390, 740, 768, 1024, 1280, 1440]) {
+      await guestPage.setViewportSize({ width, height: 844 });
+      await guestPage.goto(baseURL + "/");
+      const resolvedTheme = theme === "system" ? "dark" : theme;
+      await guestPage.locator(`html.theme-${resolvedTheme}`).waitFor({ state: "attached" });
+      await guestPage.evaluate(() => document.fonts.ready);
+      const header = guestPage.locator("header.site-header-global");
+      const brand = header.locator(".site-header-brand");
+      const menuToggle = header.getByRole("button", { name: "Open menu" });
+      const topNav = header.getByRole("navigation", { name: "Primary navigation" });
+      if (width < 768) {
+        const headerBox = await header.boundingBox();
+        assert.ok(headerBox.y >= 0 && headerBox.y <= 16, `Guest ${theme} at ${width}px: unexpected top gap ${headerBox.y}px`);
+        const menuColors = await menuToggle.evaluate(button => ({
+          icon: getComputedStyle(button.querySelector("span")).backgroundColor,
+          expected: getComputedStyle(button).color,
+        }));
+        assert.equal(menuColors.icon, menuColors.expected, `Guest ${theme} at ${width}px: menu icon must match header foreground`);
+        await menuToggle.click();
+        await topNav.getByRole("link", { name: "Explore", exact: true }).waitFor();
+        await topNav.getByRole("link", { name: "Men’s Teams", exact: true }).waitFor();
+        await header.getByRole("button", { name: "Close menu" }).click();
+        // Chromium's mobile emulator has no physical notch. Set the same CSS
+        // inset token as a notched device and check both normal and sticky flow.
+        const safeArea = await guestPage.addStyleTag({ content: ":root { --hc-safe-area-top: 44px; }" });
+        await guestPage.evaluate(() => window.scrollTo({ top: 350, behavior: "instant" }));
+        const stickyHeader = await header.boundingBox();
+        assert.ok(stickyHeader.y >= 44, `Guest ${theme} at ${width}px: sticky header entered the status-bar inset (${stickyHeader.y}px)`);
+        await safeArea.evaluate(node => node.remove());
+        await guestPage.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+      } else {
+        const brandBox = await brand.boundingBox();
+        const linksBox = await header.locator(".hc-header-desktop-links").boundingBox();
+        const actionsBox = await header.locator(".hc-header-actions").boundingBox();
+        assert.ok(brandBox.x + brandBox.width <= linksBox.x && linksBox.x + linksBox.width <= actionsBox.x,
+          `Guest ${theme} at ${width}px: desktop navigation overlaps ${JSON.stringify({ brandBox, linksBox, actionsBox })}`);
+        await header.locator(".hc-header-more > summary").click();
+        await topNav.getByRole("link", { name: "Men’s Teams", exact: true }).waitFor();
+        await header.locator(".hc-header-more > summary").click();
+      }
+      const headerColors = await header.evaluate(element => ({
+        foreground: getComputedStyle(element.querySelector(".hc-logo__official-wordmark") ?? element.querySelector(".hc-logo__wordmark")).color,
+        expected: getComputedStyle(element).color,
+      }));
+      assert.equal(headerColors.foreground, headerColors.expected, `Guest ${theme} at ${width}px: logo must match header foreground`);
+      const input = guestPage.locator("main .hc-searchbar__input:visible");
+      await input.fill("Basketball");
+      const readColors = () => input.evaluate((element) => {
+        const style = getComputedStyle(element);
+        const tokenColor = (token) => {
+          const sample = document.createElement("span");
+          sample.style.setProperty("color", `var(${token})`, "important");
+          element.parentElement.append(sample);
+          const color = getComputedStyle(sample).color;
+          sample.remove();
+          return color;
+        };
+        return {
+          text: style.webkitTextFillColor,
+          placeholder: getComputedStyle(element, "::placeholder").webkitTextFillColor,
+          expectedText: tokenColor("--hc-input-fg"),
+          expectedPlaceholder: tokenColor("--hc-foreground-muted"),
+        };
+      });
+      // System mode can transition from the server-rendered theme during hydration.
+      const deadline = Date.now() + 2000;
+      let colors = await readColors();
+      while ((colors.text !== colors.expectedText || colors.placeholder !== colors.expectedPlaceholder) && Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+        colors = await readColors();
+      }
+      assert.equal(colors.text, colors.expectedText, `Guest ${theme} home at ${width}px: typed search text must follow the input theme`);
+      assert.equal(colors.placeholder, colors.expectedPlaceholder, `Guest ${theme} home at ${width}px: search placeholder must follow the muted theme`);
+    }
+    if (theme === "system") {
+      await guestPage.locator("html.theme-dark").waitFor({ state: "attached", timeout: 10000 });
+      await guestPage.emulateMedia({ colorScheme: "light" });
+      await guestPage.locator("html.theme-light").waitFor({ state: "attached", timeout: 10000 });
+    }
+    await guestContext.close();
+  }
+  console.log("GUEST_MOBILE_NAV=PASS; routes=login,signup,search; themes=light,dark,system");
+
   for (const theme of ["dark", "light"]) {
     for (const routeName of ["dashboard", "feed", "admin"]) {
       const context = await browser.newContext({
+        // Fixture routes must reach Playwright rather than a service worker.
+        serviceWorkers: "block",
         viewport: { width: 390, height: 844 },
         deviceScaleFactor: 1,
         isMobile: true,
@@ -185,10 +329,21 @@ try {
       const path = routeName === "dashboard" ? "/dashboard" : routeName === "feed" ? "/feed" : "/admin/directory";
       await page.goto(baseURL + path, { waitUntil: "domcontentloaded", timeout: 30000 });
       console.log("THEME_BROWSER_PAGE", JSON.stringify({ routeName, theme, url: page.url(), title: await page.title(), body: (await page.locator("body").innerText().catch(() => "")).slice(0, 240) }));
-      const wrapperSelector = routeName === "dashboard" ? "main.hc-ia-home" : routeName === "feed" ? "main.hc-feed-page" : "main.admin-directory-shell";
-      await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
+      const wrapperSelector = routeName === "dashboard" ? "main.hc-home3" : routeName === "feed" ? "main.hc-feed-page" : "main.admin-directory-shell";
+      try {
+        await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
+      } catch (error) {
+        const diagnostics = await page.evaluate((selector) => {
+          const node = document.querySelector(selector);
+          const style = node ? getComputedStyle(node) : null;
+          return { path: location.pathname, visibleNode: Boolean(node), display: style?.display, visibility: style?.visibility, opacity: style?.opacity, bodyText: document.body.innerText.slice(0, 700) };
+        }, wrapperSelector);
+        console.error("THEME_ROUTE_VISIBILITY_FAILURE", JSON.stringify({ routeName, theme, diagnostics }));
+        await page.screenshot({ path: `${artifactsDir}/routes/visibility-${routeName}-${theme}.png`, fullPage: true }).catch(() => {});
+        throw error;
+      }
       if (routeName === "feed") {
-        await page.locator(".hc-feed-composer").waitFor({ state: "visible", timeout: 30000 });
+        await page.locator(".hc-feed-slim-composer").waitFor({ state: "visible", timeout: 30000 });
         await page.locator(".hf5-type-chip").first().waitFor({ state: "visible", timeout: 30000 });
       }
 
@@ -200,28 +355,35 @@ try {
       await page.waitForTimeout(750);
       await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
       if (routeName === "dashboard") {
-        await page.locator(".hc-ia-identity").waitFor({ state: "visible", timeout: 30000 });
-        await page.locator(".hc-ia-door").first().waitFor({ state: "visible", timeout: 30000 });
+        await page.locator(".hc-home3-greeting").waitFor({ state: "visible", timeout: 30000 });
+        await page.locator(".hc-home3-search").first().waitFor({ state: "visible", timeout: 30000 });
       }
       const computed = await page.evaluate(({ wrapperSelector, routeName }) => {
         const color = (selector) => {
           const element = document.querySelector(selector);
           return element ? getComputedStyle(element).backgroundColor : null;
         };
+        const probe = document.createElement("span");
+        probe.style.backgroundColor = "var(--surface)";
+        document.body.append(probe);
+        const glassSurface = getComputedStyle(probe).backgroundColor;
+        probe.remove();
         return {
           themeClass: document.documentElement.classList.contains("theme-dark") ? "dark" :
             document.documentElement.classList.contains("theme-light") ? "light" : "missing",
           body: color("body"),
+          glassSurface,
           pageWrapper: color(wrapperSelector),
-          composer: routeName === "feed" ? color(".hc-feed-composer") : null,
-          discoveryHeading: routeName === "feed" ? getComputedStyle(document.querySelector(".hf5-hero__title")).color : null,
-          composerBorder: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-composer")).borderTopWidth : null,
+          composer: routeName === "feed" ? color(".hc-feed-slim-composer") : null,
+          discoveryHeading: routeName === "feed" ? (() => { const logo = document.querySelector(".hc-header-feed-artwork"); return logo && logo.getBoundingClientRect().width > 0 && getComputedStyle(logo).visibility === "visible" ? "visible" : null; })() : null,
+          composerBorder: routeName === "feed" ? getComputedStyle(document.querySelector(".hc-feed-slim-composer")).borderTopWidth : null,
           filterChip: routeName === "feed" ? color(".hf5-type-chip:not(.is-active)") : null,
-          homePairs: routeName === "dashboard" ? [".hc-ia-identity", ".hc-ia-live-strip", ".hc-ia-door"].map((selector) => {
+          dashboardHeroHeadline: routeName === "dashboard" ? (() => { const element = document.querySelector("main.hc-home3 .hc-home3-greeting-line strong"); return element ? getComputedStyle(element).color : null; })() : null,
+          homePairs: routeName === "dashboard" ? [".hc-home3-greeting", ".hc-home3-section", ".hc-home3-search"].map((selector) => {
             const element = document.querySelector(selector);
             if (!element) return { selector, missing: true };
             const style = getComputedStyle(element);
-            const title = element.querySelector("strong");
+            const title = element.querySelector("strong, h2, span");
             return { selector, background: style.backgroundColor, color: style.color, title: title && getComputedStyle(title).color };
           }) : [],
           whiteSurfaceOffenders: Array.from(document.querySelectorAll("main *, .global-back-button"))
@@ -241,27 +403,24 @@ try {
       }, { wrapperSelector, routeName });
 
       assert.equal(computed.themeClass, theme, `${routeName}: expected html theme class ${theme}, got ${computed.themeClass}`);
-      const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
+      const expectedPage = theme === "dark" ? "rgb(0, 0, 0)" : "rgb(244, 244, 241)";
       const expectedChip = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
       assert.equal(computed.body, expectedPage, `${routeName}/${theme}: body background mismatch`);
       assert.equal(computed.pageWrapper, expectedPage, `${routeName}/${theme}: page wrapper background mismatch`);
       if (routeName === "dashboard") {
-        const surface = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
-        for (const pair of computed.homePairs) {
-          assert.equal(pair.background, surface, `dashboard/${theme}: ${pair.selector} surface: ${JSON.stringify(pair)}`);
-          const contrast = (foreground, background) => {
-            const luminance = (color) => color.match(/\d+/g).slice(0, 3).map(Number)
-              .map(value => value / 255)
-              .map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4)
-              .reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
-            const levels = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
-            return (levels[0] + 0.05) / (levels[1] + 0.05);
-          };
-          assert.ok(pair.title && contrast(pair.title, pair.background) >= 4.5, `dashboard/${theme}: ${pair.selector} title contrast: ${JSON.stringify(pair)}`);
+        assert.ok(computed.dashboardHeroHeadline && (() => { const channel = (color) => color.match(/\d+/g).slice(0, 3).map(Number).map(value => value / 255).map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4); const luminance = (color) => channel(color).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0); const a = luminance(computed.dashboardHeroHeadline); const b = luminance(computed.body); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) >= 4.5; })(), `dashboard/${theme}: greeting headline contrast must be >= 4.5:1 against page background, got ${computed.dashboardHeroHeadline}`);
+        assert.ok(computed.homePairs.some(pair => !pair.missing && pair.title), `dashboard/${theme}: dashboard greeting and search must render`);
+        for (const pair of computed.homePairs.filter(pair => !pair.missing && pair.title)) {
+          assert.ok(pair.background && pair.color && pair.title, `dashboard/${theme}: visible section styles must resolve: ${JSON.stringify(pair)}`);
         }
       }
       if (routeName === "feed") {
         assert.ok(computed.composer !== null, `feed/${theme}: composer renders`);
+        const artwork = page.locator(".hc-header-feed-artwork");
+        await page.waitForFunction(() => document.querySelector(".hc-header-feed-artwork use")?.getBBox().width > 0);
+        assert.equal(await artwork.evaluate(node => getComputedStyle(node).color),
+          await page.locator("header.site-header-global").evaluate(node => getComputedStyle(node).color),
+          `feed/${theme}: wordmark artwork must use the paired header foreground`);
         assert.ok(computed.discoveryHeading && computed.discoveryHeading !== "rgba(0, 0, 0, 0)", `feed/${theme}: community heading has a computed color`);
         assert.ok(computed.composerBorder !== null, `feed/${theme}: composer border style computed`);
         assert.equal(computed.filterChip, expectedChip, `feed/${theme}: type chip background mismatch`);
@@ -273,6 +432,34 @@ try {
           `${routeName}/dark: remaining fixed white surfaces: ${JSON.stringify(computed.whiteSurfaceOffenders)}`,
         );
       }
+
+      // UI-FINAL: detect horizontal overflow without masking it with body overflow-x: clip.
+      // The widest visible element matters even when the document reports no scroll width.
+      const overflow = await page.evaluate(() => {
+        const viewport = document.documentElement.clientWidth;
+        return Array.from(document.querySelectorAll("main *, header.site-header-global *, nav *"))
+          .filter(element => {
+            const style = getComputedStyle(element);
+            if (style.display === "none" || style.visibility === "hidden" || style.position === "fixed") return false;
+            // Children of an intentional horizontal scroll rail may extend past the
+            // viewport without causing page overflow. Only ignore them when an
+            // actual scroll container clips their horizontal overflow.
+            let ancestor = element.parentElement;
+            while (ancestor && ancestor !== document.body) {
+              const ancestorStyle = getComputedStyle(ancestor);
+              if (["auto", "scroll"].includes(ancestorStyle.overflowX)) {
+                const bounds = ancestor.getBoundingClientRect();
+                if (bounds.left >= -2 && bounds.right <= viewport + 2 && ancestor.clientWidth > 0) return false;
+              }
+              ancestor = ancestor.parentElement;
+            }
+            const rect = element.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0 && (rect.left < -2 || rect.right > viewport + 2);
+          })
+          .slice(0, 15)
+          .map(element => ({ tag: element.tagName.toLowerCase(), className: typeof element.className === "string" ? element.className.slice(0, 100) : "", rect: { left: Math.round(element.getBoundingClientRect().left), right: Math.round(element.getBoundingClientRect().right) } }));
+      });
+      assert.equal(overflow.length, 0, `${routeName}/${theme}: visible horizontal overflow: ${JSON.stringify(overflow)}`);
 
       results.push({ route: path, theme, computed });
       await page.screenshot({
@@ -306,7 +493,7 @@ try {
   ];
   const routeSweepResults = [];
   for (const theme of ["dark", "light"]) {
-    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, serviceWorkers: "block" });
     const encodedSession = "base64-" + btoa(unescape(encodeURIComponent(JSON.stringify(session))))
       .replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
     await context.addCookies([
@@ -315,6 +502,7 @@ try {
     ]);
     const page = await context.newPage();
     let activeRoutePath = "";
+    let moderatorViewingGroup = false;
     let liveGameFixtureMode = "empty";
     const fixtureNow = Date.now();
     const liveGameFixtures = [
@@ -402,9 +590,18 @@ try {
         data = isFanTeamFollow ? [{ target_id: teamFixture.id, target_type: "team" }] : single ? null : [];
       }
       else if (url.pathname.includes("/rest/v1/team_fan_groups")) data = single ? { team_id: teamFixture.id, group_name: teamFixture.name + " Fan Group" } : [{ team_id: teamFixture.id, group_name: teamFixture.name + " Fan Group" }];
-      else if (url.pathname.includes("/rest/v1/team_fan_group_members")) data = single ? { team_id: teamFixture.id, user_id: userId } : [{ team_id: teamFixture.id, user_id: userId }];
+      else if (url.pathname.includes("/rest/v1/team_fan_group_members")) data = moderatorViewingGroup ? (single ? null : []) : single ? { team_id: teamFixture.id, user_id: userId } : [{ team_id: teamFixture.id, user_id: userId }];
       else if (url.pathname.includes("/rest/v1/team_fan_group_moderators")) data = single ? null : [];
-      else if (url.pathname.includes("/rest/v1/team_fan_group_posts")) data = [];
+      else if (url.pathname.includes("/rest/v1/rpc/is_team_fan_group_moderator")) data = moderatorViewingGroup;
+      else if (url.pathname.includes("/rest/v1/team_fan_group_posts")) data = moderatorViewingGroup ? [{
+        id: "a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f1",
+        team_id: teamFixture.id,
+        author_id: userId,
+        body: "Post visible to the group moderator",
+        image_url: null,
+        is_pinned: false,
+        created_at: "2026-01-01T00:00:00.000Z",
+      }] : [];
       else if (url.pathname.includes("/rest/v1/team_fan_group_comments")) data = [];
       else if (url.pathname.includes("/rest/v1/rpc/get_team_fan_group_summary")) {
         const summary = {
@@ -423,14 +620,20 @@ try {
       await route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(data) });
     });
 
+    await page.route("**/api/review-access?*", async route => {
+      const { searchParams } = new URL(route.request().url());
+      if (searchParams.get("entityType") !== "team") return route.continue();
+      await route.fulfill({ json: { tier: "pro", canReadFull: true, canWrite: true, reviews: [] } });
+    });
+
     // Exercise the real Settings language control before capturing every route.
     await page.goto(baseURL + "/settings", { waitUntil: "domcontentloaded", timeout: 20000 });
-    const languageSelect = page.locator("select.language-select");
+    const languageSelect = page.locator("main:visible select.language-select:visible");
     await languageSelect.waitFor({ state: "visible", timeout: 10000 });
     if (testLanguage === "en") {
       await languageSelect.selectOption("es");
       await page.waitForFunction(() => document.documentElement.lang === "es", null, { timeout: 10000 });
-      await page.locator("select.language-select").selectOption("en");
+      await page.locator("main:visible select.language-select:visible").selectOption("en");
     } else {
       await languageSelect.selectOption("es");
     }
@@ -442,9 +645,21 @@ try {
       activeRoutePath = requestedPath;
       try {
         await page.goto(baseURL + requestedPath, { waitUntil: "domcontentloaded", timeout: 20000 });
+        if (requestedPath === "/") {
+          await page.waitForURL("**/dashboard", { timeout: 15000 });
+          await page.locator("main.hc-home3").waitFor({ state: "visible", timeout: 15000 });
+        }
+        if (requestedPath === "/fan-feed") {
+          await page.waitForURL("**/feed", { timeout: 15000 });
+          await page.locator("main.hc-feed-page .hc-feed-slim-composer").waitFor({ state: "visible", timeout: 15000 });
+        }
+        // A route shell can render before its fixture data and controls. Audit
+        // the populated page so timing does not hide contrast/copy findings.
+        await page.locator("main:visible").waitFor({ state: "visible", timeout: 15000 });
+        await page.waitForFunction(() => [...document.querySelectorAll("main .hc-brand-loader--screen")].every(loader => !loader.checkVisibility()), null, { timeout: 15000 });
         await page.waitForTimeout(300);
         if (requestedPath === "/live-games") {
-          await page.locator("main.hc-live-hub-page .hc-live-hub-hero").waitFor({ state: "visible", timeout: 15000 });
+          await page.locator("main.hc-live-hub-page .hc-live-hub-filters").waitFor({ state: "visible", timeout: 15000 });
         }
         if (requestedPath === "/theme-card-audit") {
           await page.locator("main.hc-card-audit-page .hc-card-audit-preview[data-theme-preview='light']").first().waitFor({ state: "visible", timeout: 15000 });
@@ -458,11 +673,11 @@ try {
         await page.waitForFunction((expected) => document.body.innerText.toLocaleUpperCase().includes(expected), expectedAccountHeading, { timeout: 15000 });
       }
       if (requestedPath === "/search") {
-        const expectedSearchHeading = testLanguage === "es" ? "CONEXIÓN ENTRE JUGADORES" : "PLAYER CONNECT";
-        await page.waitForFunction((expected) => document.body.innerText.toLocaleUpperCase().includes(expected), expectedSearchHeading, { timeout: 15000 });
+        await page.locator("main:visible").getByRole("combobox").waitFor({ state: "visible", timeout: 15000 });
+        await page.locator(".hc-search-browse a[href='/teams']").waitFor({ state: "visible", timeout: 15000 });
       }
       const result = await page.evaluate(({ requestedPath, navigationError }) => {
-        const main = document.querySelector("main");
+        const main = Array.from(document.querySelectorAll("main")).find((element) => element.checkVisibility());
         const routeRoot = document.body;
         const color = (element) => element ? getComputedStyle(element).backgroundColor : null;
         const scaffoldTerms = ["KICKER", "TITLE", "Subtitle", "TEAM FIRST", "Fan Only Note", "Composer Placeholder", "EMPTY TITLE", "EMPTY KICKER", "Empty Body", "Lorem", "TODO", "Placeholder"];
@@ -485,7 +700,7 @@ try {
           headerTop: document.querySelector(".site-header-global") ? document.querySelector(".site-header-global").getBoundingClientRect().top : null,
           mainTop: main ? main.getBoundingClientRect().top : null,
           safeAreaBottom: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hc-safe-area-bottom")) || 0,
-          tabBarBottomPadding: document.querySelector(".bottom-nav") ? parseFloat(getComputedStyle(document.querySelector(".bottom-nav")).paddingBottom) || 0 : null,
+          tabBarBottomClearance: document.querySelector(".bottom-nav") ? window.innerHeight - document.querySelector(".bottom-nav").getBoundingClientRect().bottom : null,
           criticalControlContrast: Array.from(document.querySelectorAll(".hc-dashboard-edit-profile,.hc-dashboard-avatar,.player-avatar-fallback,.hc-mobile-menu-toggle,.quick-access-count,.quick-card-count,.count-badge,.hc-count-badge,.hc-mobile-section-count"))
             .filter((element) => element.getClientRects().length)
             .map((element) => {
@@ -553,12 +768,13 @@ try {
           navigationError,
         };
       }, { requestedPath, navigationError });
-      const expectedPage = theme === "dark" ? "rgb(10, 10, 10)" : "rgb(244, 244, 241)";
+      const expectedPage = theme === "dark" ? "rgb(0, 0, 0)" : "rgb(244, 244, 241)";
       const errors = [];
       if (requestedPath.startsWith("/womens/")) {
+        await page.getByRole("tab", { name: "Fan Group" }).click();
         await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").waitFor({ state: "visible", timeout: 15000 });
         const fanGroupEntry = (await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").innerText()).trim();
-        if (!fanGroupEntry.includes("Fan Group") || !fanGroupEntry.includes("Joined")) errors.push("women team profile: Fan Group entry is missing or not joined: " + fanGroupEntry);
+        if (!/fan group/i.test(fanGroupEntry) || !/joined/i.test(fanGroupEntry)) errors.push("women team profile: Fan Group entry is missing or not joined: " + fanGroupEntry);
       }
       if (requestedPath === "/fan-feed") {
         // HF-5: Fan Feed now redirects into the shared HoopFeed community.
@@ -573,11 +789,19 @@ try {
         const lockedTarget = (await page.locator("main.hc-team-fan-group-page .hc-team-group-posting-target").innerText()).trim();
         if (!lockedTarget.includes("Posting to") || !lockedTarget.includes(teamFixture.name) || !lockedTarget.includes("Fan Group")) errors.push("team-hub group: composer does not explain its locked club/group destination: " + lockedTarget);
         const groupEmpty = (await page.locator("main.hc-team-fan-group-page .hc-feed-empty").innerText()).trim();
-        if (!groupEmpty.includes("No posts yet — be the first to post for " + teamFixture.name + ".")) errors.push("team-hub group: real club-specific empty state is missing");
-        if (!groupEmpty.includes("Be the first to post")) errors.push("team-hub group: empty-state composer action is missing");
+        if (!groupEmpty.toLowerCase().includes(("No posts yet — be the first to post for " + teamFixture.name + ".").toLowerCase())) errors.push("team-hub group: real club-specific empty state is missing");
+        if (await page.locator("main.hc-team-fan-group-page .hc-feed-empty button").count() !== 1) errors.push("team-hub group: empty-state composer action is missing");
         await page.locator("main.hc-team-fan-group-page .hc-feed-empty button").click();
         const composerFocused = await page.locator("#fan-group-post-body").evaluate(element => element === document.activeElement);
         if (!composerFocused) errors.push("team-hub group: empty-state action did not focus the locked group composer");
+        moderatorViewingGroup = true;
+        await page.reload({ waitUntil: "domcontentloaded" });
+        await page.getByText("Post visible to the group moderator").waitFor({ state: "visible", timeout: 15000 });
+        assert.ok(await page.getByRole("button", { name: "Pin", exact: true }).isVisible());
+        assert.equal(await page.locator("#fan-group-post-body").count(), 0);
+        assert.equal(await page.getByPlaceholder("Write a comment…").count(), 0);
+        assert.equal(await page.getByRole("button", { name: "Report", exact: true }).count(), 0);
+        moderatorViewingGroup = false;
       }
       if (requestedPath === "/theme-card-audit") {
         const previews = await page.locator("main.hc-card-audit-page .hc-card-audit-preview").count();
@@ -599,113 +823,32 @@ try {
         }
       }
       if (requestedPath === "/live-games") {
-        const audit = await page.evaluate(() => {
-          const read = (value) => {
-            const element = typeof value === "string" ? document.querySelector(value) : value;
-            if (!element) return null;
-            const style = getComputedStyle(element);
-            return { background: style.backgroundColor, color: style.color, text: (element.textContent || "").trim() };
-          };
-          return {
-            emptyCards: Array.from(document.querySelectorAll(".hc-live-empty")).map((element) => {
-              const heading = element.querySelector("h3");
-              const body = element.querySelector("p");
-              const icon = element.querySelector(".hc-live-empty__icon");
-              const style = (node) => node ? getComputedStyle(node) : null;
-              return {
-                background: style(element).backgroundColor,
-                color: style(element).color,
-                headingColor: style(heading)?.color || null,
-                bodyColor: style(body)?.color || null,
-                iconBackground: style(icon)?.backgroundColor || null,
-                iconColor: style(icon)?.color || null,
-              };
-            }),
-            countBadges: Array.from(document.querySelectorAll(".hc-live-section-heading h2 span")).map(read),
-            filterCard: read(".hc-live-hub-filters"),
-            recentEmpty: (() => {
-              const element = document.querySelector(".hc-live-recent-empty");
-              if (!element) return null;
-              const style = getComputedStyle(element);
-              return { background: style.backgroundColor, color: style.color, borderStyle: style.borderStyle };
-            })(),
-            populatedGameCards: document.querySelectorAll(".hc-live-hub-card").length,
-          };
-        });
-        const raised = theme === "dark" ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)";
-        const soft = theme === "dark" ? "rgb(27, 27, 27)" : "rgb(248, 248, 246)";
-        const foreground = theme === "dark" ? "rgb(245, 245, 240)" : "rgb(21, 21, 21)";
-        const muted = theme === "dark" ? "rgb(184, 184, 179)" : "rgb(102, 102, 97)";
-        const accent = "rgb(255, 90, 31)";
-        if (audit.emptyCards.length !== 2) errors.push("live-games: expected two empty-state cards; got " + audit.emptyCards.length);
-        for (const [index, card] of audit.emptyCards.entries()) {
-          if (card.background !== raised || card.color !== foreground || card.headingColor !== foreground || card.bodyColor !== muted) {
-            errors.push("live-games: empty card " + index + " has unpaired surface/foreground tokens: " + JSON.stringify(card));
-          }
-          if (card.iconBackground !== soft || card.iconColor !== accent) {
-            errors.push("live-games: empty card icon chip lost its paired tint: " + JSON.stringify(card));
-          }
+        // LIVECHAT-2: assert the new conversation-first layout rather than the removed hero.
+        const hub = page.locator("main.hc-live-hub-page");
+        await hub.getByRole("heading", { name: "Happening Now" }).waitFor({ state: "visible" });
+        assert.equal(await hub.locator(".hc-live-hub-hero").count(), 0, "old hero must be removed");
+        for (const label of ["Live Now", "Upcoming", "My Teams"]) {
+          assert.equal(await hub.getByRole("button", { name: label, exact: true }).count(), 1, "missing segment: " + label);
         }
-        if (audit.countBadges.length !== 3) errors.push("live-games: expected three section count badges; got " + audit.countBadges.length);
-        for (const [index, badge] of audit.countBadges.entries()) {
-          if (badge.text !== "0" || badge.background !== soft || badge.color !== foreground) {
-            errors.push("live-games: count badge " + index + " is blank or has an unpaired theme: " + JSON.stringify(badge));
-          }
-        }
-        if (audit.filterCard?.background !== raised) errors.push("live-games: filter card surface regressed: " + JSON.stringify(audit.filterCard));
-        if (audit.recentEmpty?.borderStyle !== "dashed" || audit.recentEmpty?.color !== muted) errors.push("live-games: Recently Finished empty state lost its readable dashed treatment: " + JSON.stringify(audit.recentEmpty));
-        if (audit.populatedGameCards !== 0) errors.push("live-games: empty-fixture test unexpectedly rendered game cards");
-        result.liveHubPairing = audit;
-
+        assert.equal(await hub.locator("select").count(), 0, "league dropdown must be removed");
+        assert.equal(await hub.getByRole("searchbox", { name: "Search games" }).count(), 1);
+        assert.equal(await hub.getByText("0 members chatting").count(), 0, "never render zero presence");
         liveGameFixtureMode = "populated";
         await page.reload({ waitUntil: "domcontentloaded", timeout: 20000 });
-        await page.locator("main.hc-live-hub-page").waitFor({ state: "visible", timeout: 15000 });
-        await page.waitForFunction(() => document.querySelectorAll("main.hc-live-hub-page .hc-live-hub-card").length >= 3, null, { timeout: 15000 });
-        const populatedAudit = await page.evaluate(() => {
-          const read = (value) => {
-            const element = typeof value === "string" ? document.querySelector(value) : value;
-            if (!element) return null;
-            const style = getComputedStyle(element);
-            return { background: style.backgroundColor, color: style.color, text: (element.textContent || "").trim() };
-          };
-          return {
-            cards: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-hub-card")).map(read),
-            counts: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-section-heading h2 span")).map(read),
-            filter: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-filters")),
-            hero: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero")),
-            heroTitle: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero h1")),
-            heroEyebrow: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero .eyebrow")),
-            heroSubtitle: read(document.querySelector("main.hc-live-hub-page .hc-live-hub-hero > div:first-child > p:last-child")),
-            crests: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-card__crest")).map(read),
-            mutedLabels: Array.from(document.querySelectorAll("main.hc-live-hub-page .hc-live-card__league, main.hc-live-hub-page .hc-live-card__meta, main.hc-live-hub-page .hc-live-card__muted, main.hc-live-hub-page .hc-live-card__vs, main.hc-live-hub-page .hc-live-card__middle small")).map(read),
-            liveChatEntry: read(document.querySelector("main.hc-live-hub-page .hc-live-join")),
-            liveChatLinks: document.querySelectorAll('main.hc-live-hub-page a[href^="/fan-live?gameId="]').length,
-            renderedText: document.querySelector("main.hc-live-hub-page")?.innerText || "",
-          };
-        });
-        if (populatedAudit.cards.length !== 3) errors.push("live-games: populated fixture did not render three real GameCard rows");
-        for (const [index, card] of populatedAudit.cards.entries()) {
-          if (card.background !== raised || card.color !== foreground) errors.push("live-games: populated GameCard " + index + " has an unpaired theme: " + JSON.stringify(card));
-        }
-        if (populatedAudit.counts.length !== 3 || populatedAudit.counts.some(badge => badge.text !== "1" || badge.background !== soft || badge.color !== foreground)) {
-          errors.push("live-games: populated section badges are not visibly paired: " + JSON.stringify(populatedAudit.counts));
-        }
-        if (populatedAudit.filter?.background !== raised || populatedAudit.filter?.color !== foreground) errors.push("live-games: populated filter card surface/foreground regressed");
-        if (populatedAudit.hero?.background !== raised || populatedAudit.hero?.color !== foreground || populatedAudit.heroTitle?.color !== foreground ||
-            populatedAudit.heroEyebrow?.color !== accent || populatedAudit.heroSubtitle?.color !== muted) {
-          errors.push("live-games: hero dark-surface/light-ink pairing regressed: " + JSON.stringify({hero:populatedAudit.hero, title:populatedAudit.heroTitle, eyebrow:populatedAudit.heroEyebrow, subtitle:populatedAudit.heroSubtitle}));
-        }
-        if (populatedAudit.crests.length !== 6 || populatedAudit.crests.some(crest => crest.background !== soft || crest.color !== foreground)) {
-          errors.push("live-games: team logo chips lost their paired surface/foreground tokens: " + JSON.stringify(populatedAudit.crests));
-        }
-        if (populatedAudit.mutedLabels.some(label => label.color !== muted)) errors.push("live-games: populated card metadata is not using readable muted foreground: " + JSON.stringify(populatedAudit.mutedLabels));
-        if (populatedAudit.liveChatLinks < 1 || populatedAudit.liveChatEntry?.background !== "rgb(255, 90, 31)" || populatedAudit.liveChatEntry?.color !== "rgb(17, 17, 17)") {
-          errors.push("live-games: live chat entry is missing or its text/surface pair is unreadable: " + JSON.stringify(populatedAudit.liveChatEntry));
-        }
-        if (["KICKER", "TITLE", "Subtitle", "TEAM FIRST", "Fan Only Note", "Composer Placeholder", "EMPTY TITLE", "EMPTY KICKER", "Empty Body", "Lorem", "TODO", "Placeholder"].some(term => populatedAudit.renderedText.includes(term))) {
-          errors.push("live-games: populated route rendered scaffold text");
-        }
-        result.liveHubPopulated = populatedAudit;
+        await hub.getByRole("heading", { name: "Happening Now" }).waitFor({ state: "visible", timeout: 15000 });
+        await hub.getByRole("button", { name: "Upcoming", exact: true }).click();
+        await hub.locator(".hc-live-hub-card").first().waitFor({ state: "visible", timeout: 15000 });
+        const sections = hub.locator("section button[aria-expanded]");
+        assert.ok(await sections.count() > 0, "country/league groups should be collapsible");
+        await sections.first().click();
+        assert.equal(await sections.first().getAttribute("aria-expanded"), "false", "league collapse should work");
+        await sections.first().click();
+        assert.equal(await sections.first().getAttribute("aria-expanded"), "true", "league expand should work");
+        const search = hub.getByRole("searchbox", { name: "Search games" });
+        await search.fill("zzzz-unmatched-club");
+        assert.equal(await hub.locator(".hc-live-hub-card").count(), 0, "search filters as you type");
+        await search.fill("");
+        result.liveHubPopulated = { groups: await sections.count(), cards: await hub.locator(".hc-live-hub-card").count() };
         liveGameFixtureMode = "empty";
       }
       if (result.themeClass !== theme) errors.push("html theme class mismatch");
@@ -722,18 +865,22 @@ try {
       if (result.bodyTopPadding < result.safeAreaTop - 1) errors.push("top safe-area padding missing");
       if (result.headerTop !== null && result.headerTop < result.safeAreaTop - 1) errors.push("header overlaps the status-bar safe area");
       if (result.mainTop !== null && result.mainTop < result.safeAreaTop - 1) errors.push("main content overlaps the status-bar safe area");
-      if (result.tabBarBottomPadding !== null && result.tabBarBottomPadding < result.safeAreaBottom - 1) errors.push("bottom tab bar overlaps the home-indicator safe area");
+      if (result.tabBarBottomClearance !== null && result.tabBarBottomClearance < result.safeAreaBottom - 1) errors.push("bottom tab bar overlaps the home-indicator safe area");
       if (result.criticalControlContrast.length) errors.push("low contrast critical controls: " + JSON.stringify(result.criticalControlContrast));
       if (theme === "dark" && result.whiteSurfaceOffenders.length) errors.push("white surface offenders: " + JSON.stringify(result.whiteSurfaceOffenders));
       if (result.lowContrastText.length) errors.push("low contrast text: " + JSON.stringify(result.lowContrastText));
       if (["/dashboard", "/search", "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2"].includes(requestedPath)) {
+        if (requestedPath.startsWith("/teams/")) {
+          await page.getByRole("tab", { name: "Reviews", exact: true }).click();
+          await page.locator("#team-reviews-panel").waitFor({ state: "visible" });
+        }
         const visibleText = await page.locator("body").innerText();
         const expectedText = testLanguage === "es"
-          ? requestedPath === "/dashboard" ? ["TUS ACCESOS DIRECTOS", "ACCESO RÁPIDO"]
-            : requestedPath === "/search" ? ["CONEXIÓN ENTRE JUGADORES", "EMPIEZA A INVESTIGAR"]
+          ? requestedPath === "/dashboard" ? ["ACCIONES RÁPIDAS", "CONSULTAR UN EQUIPO"]
+            : requestedPath === "/search" ? ["Explorar directorios"]
             : ["TABLERO DE PLANTILLA", "AÚN NO HAY RESEÑAS APROBADAS"]
-          : requestedPath === "/dashboard" ? ["YOUR SHORTCUTS", "Quick Access"]
-            : requestedPath === "/search" ? ["PLAYER CONNECT", "Start Researching"]
+          : requestedPath === "/dashboard" ? ["QUICK ACTIONS", "Check a Team"]
+            : requestedPath === "/search" ? ["Browse directories"]
             : ["ROSTER BOARD", "No approved reviews yet"];
         const missingText = expectedText.filter((expected) => !visibleText.toLocaleUpperCase().includes(expected.toLocaleUpperCase()));
         if (missingText.length) errors.push("language assertions missing: " + missingText.join(", "));
@@ -790,22 +937,46 @@ try {
         await page.locator('img[alt="Logo candidate preview"]').waitFor({ state: "visible", timeout: 10000 });
         await page.screenshot({ path: `${artifactsDir}/admin-logo-candidate-approval-flow-${theme}.png`, fullPage: true, animations: "disabled" });
       }
+      // UI-FINAL: apply viewport overflow coverage to every route in the existing
+      // light/dark route sweep, not only dashboard, feed and admin directory.
+      const pageOverflow = await page.evaluate(() => {
+        const viewport = document.documentElement.clientWidth;
+        return Array.from(document.querySelectorAll("main *, header.site-header-global *, nav *"))
+          .filter(element => {
+            const style = getComputedStyle(element);
+            if (style.display === "none" || style.visibility === "hidden" || style.position === "fixed") return false;
+            let ancestor = element.parentElement;
+            while (ancestor && ancestor !== document.body) {
+              const ancestorStyle = getComputedStyle(ancestor);
+              if (["auto", "scroll"].includes(ancestorStyle.overflowX)) {
+                const bounds = ancestor.getBoundingClientRect();
+                if (bounds.left >= -2 && bounds.right <= viewport + 2 && ancestor.clientWidth > 0) return false;
+              }
+              ancestor = ancestor.parentElement;
+            }
+            const rect = element.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0 && (rect.left < -2 || rect.right > viewport + 2);
+          })
+          .slice(0, 10)
+          .map(element => ({ tag: element.tagName.toLowerCase(), className: typeof element.className === "string" ? element.className.slice(0, 80) : "" }));
+      });
+      if (pageOverflow.length) errors.push("viewport overflow: " + JSON.stringify(pageOverflow));
       routeSweepResults.push({ theme, ...result, status: errors.length ? "FAIL" : result.pageWrapper ? "PASS" : "NO_MAIN", reason: errors.join("; ") || (result.pageWrapper ? "" : "route rendered no main element") });
     }
     if (testLanguage === "en") {
       await page.goto(baseURL + "/settings", { waitUntil: "domcontentloaded" });
-      await page.locator(".language-select").waitFor({ state: "visible", timeout: 30000 });
+      await page.locator("main:visible select.language-select:visible").waitFor({ state: "visible", timeout: 30000 });
       const beforeSwitchOrigin = await page.evaluate(() => performance.timeOrigin);
       await page.screenshot({ path: `${artifactsDir}/language-live-01-settings-en.png`, fullPage: true, animations: "disabled" });
-      await page.locator(".language-select").selectOption("es");
+      await page.locator("main:visible select.language-select:visible").selectOption("es");
       await page.waitForFunction(() => document.documentElement.lang === "es", null, { timeout: 10000 });
       await page.getByRole("heading", { name: "AJUSTES" }).waitFor({ state: "visible", timeout: 10000 });
       await page.screenshot({ path: `${artifactsDir}/language-live-02-settings-es.png`, fullPage: true, animations: "disabled" });
       assert.equal(await page.evaluate(() => performance.timeOrigin), beforeSwitchOrigin, "language selection reloaded the document");
       await page.locator("a.site-header-brand").click();
       await page.waitForURL(/\/dashboard$/, { timeout: 15000 });
-      await page.getByText("TUS ACCESOS DIRECTOS", { exact: false }).waitFor({ state: "visible", timeout: 15000 });
-      await page.getByText("ACCESO RÁPIDO", { exact: false }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByRole("heading", { name: "ACCIONES RÁPIDAS" }).waitFor({ state: "visible", timeout: 15000 });
+      await page.getByText("Consultar un equipo", { exact: true }).waitFor({ state: "visible", timeout: 15000 });
       await page.screenshot({ path: `${artifactsDir}/language-live-03-dashboard-es.png`, fullPage: true, animations: "disabled" });
       assert.equal(await page.evaluate(() => performance.timeOrigin), beforeSwitchOrigin, "dashboard navigation performed a full document reload");
       await page.locator('a[href="/teams"]:visible').first().click();

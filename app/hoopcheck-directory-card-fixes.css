@@ -26,7 +26,7 @@
 }
 html.theme-dark .hc-scout-card .hc-team-logo-tile,
 html.theme-light .hc-scout-card .hc-team-logo-tile {
-  background: #fff !important;
+  background: var(--surface-strong) !important;
   color: #0a0a0a !important;
 }
 html.theme-dark .hc-scout-card .hc-team-logo-tile > span,
@@ -74,8 +74,8 @@ html.theme-light .hc-scout-card :where(
 /* Visual refresh P2: directory identity — crest panels + flag chips.
    Panels are authored dark art (both themes); chips use paired theme tokens. */
 .hc-dir-crest { display:inline-flex; align-items:center; justify-content:center; padding:6px; border-radius:14px; background:linear-gradient(135deg,#1a1a1a,#0b0b0b); border:1px solid #2d2d2d; border-left:4px solid #ff5a1f; flex:0 0 auto; }
-.hc-team-directory-row--womens .hc-dir-crest { border-left-color:#e84393; }
-.hc-dir-crest--league { border-left-color:#1e9e50; }
+.hc-team-directory-row--womens .hc-dir-crest { border-left-color:var(--hc-category-womens); }
+.hc-dir-crest--league { border-left-color:var(--hc-category-leagues); }
 .hc-dir-flagchip { display:inline-flex; align-items:center; gap:6px; margin-top:6px; padding:3px 10px; border-radius:999px; background:var(--hc-surface-raised); border:1px solid var(--hc-border); color:var(--hc-foreground); font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; width:fit-content; white-space:nowrap; }
 .hc-dir-flagchip .hc-dir-flag { font-size:15px; line-height:1; }
 .hc-league-row-head { display:flex; align-items:center; gap:12px; margin-bottom:10px; }

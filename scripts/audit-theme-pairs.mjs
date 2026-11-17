@@ -2,7 +2,6 @@ import { readFile } from "node:fs/promises";
 
 const files = {
   tokens: await readFile("app/hoopcheck-theme-tokens.css", "utf8"),
-  scoreboard: await readFile("app/hoopcheck-global-scoreboard.css", "utf8"),
   home: await readFile("app/hoopcheck-ia1-home.css", "utf8"),
   live: await readFile("app/globals.css", "utf8"),
   nav: await readFile("app/hoopcheck-lm2f-bottom-nav.css", "utf8"),
@@ -14,6 +13,7 @@ const files = {
 };
 const errors = [];
 const requiredTokens = [
+  "--surface-strong","--on-surface","--border","--accent",
   "--hc-card","--hc-border","--hc-foreground","--hc-foreground-muted",
   "--hc-card-surface","--hc-card-border","--hc-on-card","--hc-on-card-muted",
   "--hc-chip-surface","--hc-chip-foreground","--hc-live-chip-surface",
@@ -28,13 +28,17 @@ function blockAfter(source, selector) {
   const match = source.match(new RegExp("(?:^|})\\s*[^{}]*" + escaped + "(?![a-zA-Z0-9_-])[^{}]*\\{([^}]*)\\}", "m"));
   return match?.[1] ?? null;
 }
+const paletteRules = [...files.tokens.matchAll(/^(:root|html\.theme-(?:light|dark))[^{}]*\{([^}]*)\}/gm)]
+  .map(([rule, , declarations]) => ({
+    selectors: rule.slice(0, rule.indexOf("{")).split(",").map(selector => selector.trim()),
+    declarations: new Map([...declarations.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/gi)]
+      .map(([, property, value]) => [property, value.trim()])),
+  }));
 function tokenValue(themeSelector, token, seen = new Set()) {
   if (seen.has(token)) return null;
   seen.add(token);
-  const block = blockAfter(files.tokens, themeSelector);
-  const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const lateBlock = blockAfter(files.scoreboard, themeSelector);
-  const value = (lateBlock?.match(new RegExp(escaped + "\\s*:\\s*([^;]+)")) ?? block?.match(new RegExp(escaped + "\\s*:\\s*([^;]+)")))?.[1]?.trim();
+  const value = paletteRules.findLast(rule => rule.selectors.includes(themeSelector) && rule.declarations.has(token))?.declarations.get(token)
+    ?? paletteRules.findLast(rule => rule.selectors.includes(":root") && rule.declarations.has(token))?.declarations.get(token);
   if (!value) return null;
   const alias = value.match(/^var\((--[a-z0-9-]+)\)$/i);
   if (alias) return tokenValue(themeSelector, alias[1], seen);

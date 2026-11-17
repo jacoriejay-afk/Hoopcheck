@@ -186,7 +186,7 @@ export default function TeamLeaguePicker({
       {displayItems.length>0&&!multiple&&<button type="button" className="hc-shared-picker-clear" onClick={()=>remove(displayItems[0])} disabled={disabled}>Remove</button>}
     </div>
     {open&&<div className="hc-shared-picker-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setOpen(false);}}>
-      <section className="hc-shared-picker-dialog" role="dialog" aria-modal="true" aria-label={label||(mode==="team"?"Choose a team":"Choose a league")}>
+      <section className="hc-shared-picker-dialog hc-liquid-glass-picker-dialog" role="dialog" aria-modal="true" aria-label={label||(mode==="team"?"Choose a team":"Choose a league")}>
         <header className="hc-shared-picker-sticky">
           <div className="hc-shared-picker-dialog-heading"><strong>{mode==="team"?"Choose a team":"Choose a league"}</strong><button type="button" onClick={()=>setOpen(false)} aria-label="Close picker">×</button></div>
           {basketballType==null&&!allCategories&&<div className="hc-shared-picker-gender"><button type="button" className={activeGender==="mens"?"is-active":""} onClick={()=>{setActiveGender("mens");setItems([]);setHasLoaded(false);setCountry("");setLeague("");}}>Men’s</button><button type="button" className={activeGender==="womens"?"is-active":""} onClick={()=>{setActiveGender("womens");setItems([]);setHasLoaded(false);setCountry("");setLeague("");}}>Women’s</button></div>}

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
-import { Graduate, Inter } from "next/font/google";
+import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import Link from "next/link";
 import Script from "next/script";
 import "./globals.css";
@@ -22,19 +23,19 @@ import "./hoopcheck-lm2d-contrast.css";
 import "./hoopcheck-motion.css";
 import "./hoopcheck-mobile-tabbar-repair.css";
 import "./hoopcheck-lm2e-account-layout.css";
-import "./hoopcheck-lm2f-bottom-nav.css";
 import "./hoopcheck-sp1-spacing.css";
 import "./hoopcheck-lg1-logo-contrast.css";
 import "./hoopcheck-ux2b-profile-completion.css";
 import "./hoopcheck-ia1-home.css";
 import "./hoopcheck-brand-navigation.css";
 import "./hoopcheck-reference-identity.css";
+import "./hoopcheck-type-system.css";
+import "./hoopfeed-topbar-only.css";
 import "./hoopcheck-pastel-profiles.css";
 import "./hoopcheck-smooth-experience.css";
 import OfflineRuntime from "../components/OfflineRuntime";
 import ThemeProvider from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
-import MobileAuth from "../components/MobileAuth";
 import GlobalBackButton from "../components/GlobalBackButton";
 import LanguageProvider from "../components/LanguageProvider";
 import BottomNav from "../components/BottomNav";
@@ -56,9 +57,23 @@ import "./hoopcheck-unified-layout.css";
 import "./hoopcheck-spacing-density-consolidated.css";
 import "./hoopcheck-membership-refresh.css";
 import "./hoopcheck-flow.css";
+import "./hoopcheck-liquid-glass.css";
+import "./styles/liquid-glass.css";
+import "./hoopcheck-lm2f-bottom-nav.css";
+import "./hoopcheck-account-system.css";
+import "./hoopcheck-page-shell.css";
+import "./hoopcheck-visual-final.css";
+import "./hoopcheck-ui-video-consistency.css";
+import "./hoopcheck-discovery-profile.css";
 import { SITE_URL } from "../lib/site-url";
 
-const displayFont = Graduate({ variable: "--font-display", subsets: ["latin"], weight: "400", display: "swap" });
+const displayFont = localFont({
+  src: "./hoopcheck-display.woff2",
+  variable: "--font-display",
+  weight: "400",
+  display: "swap",
+  adjustFontFallback: false,
+});
 const sansFont = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
 const siteUrl = SITE_URL;
 const defaultTitle = "HoopCheck — Know Who You're Signing With";
@@ -139,7 +154,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <LanguageProvider initialLanguage={initialLanguage}>
               <AnalyticsTracker />
               <SiteHeader />
-              <MobileAuth />
               <BottomNav />
               <PageShell><GlobalBackButton /><PageTransition>{children}</PageTransition></PageShell>
             </LanguageProvider>

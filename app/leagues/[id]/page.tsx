@@ -1,5 +1,6 @@
 "use client";
 
+import HoopFeedFromEntity from "../../../components/HoopFeedFromEntity";
 import {
   useEffect,
   useState,
@@ -829,6 +830,7 @@ export default function LeagueDetailPage() {
           </div>
         </div>
       )}
+      <HoopFeedFromEntity id={league.id} column="league_id" />
     </main>
   );
 }

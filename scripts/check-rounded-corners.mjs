@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 
-const root = readFileSync("app/globals.css", "utf8");
+const root = readFileSync("app/hoopcheck-theme-tokens.css", "utf8");
 const tailwind = readFileSync("tailwind.config.ts", "utf8");
 const stylesheets = [
   "app/globals.css",
@@ -10,9 +10,9 @@ const stylesheets = [
 ];
 
 for (const [token, value] of Object.entries({
-  "--hc-radius-control": "12px",
-  "--hc-radius-card": "16px",
-  "--hc-radius-hero": "20px",
+  "--radius-sm": "12px",
+  "--radius-md": "16px",
+  "--radius-lg": "20px",
 })) {
   assert.match(root, new RegExp(token + "\\s*:\\s*" + value.replace(".", "\\.") + "\\s*;"), token + " missing");
   assert.ok(!root.includes(token + ": " + value + ";\\n"), token + " has escaped newline");

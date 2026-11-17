@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { stripeMatchesDeployment } from "../../../../lib/stripe-key-mode";
 import { createClient } from "@supabase/supabase-js";
 
 function getAdminSupabase() {
@@ -21,13 +22,12 @@ export async function POST(request: Request) {
     const secret = process.env.STRIPE_SECRET_KEY;
     const deploymentMode = process.env.VERCEL_ENV === "production" ? "live" : "test";
     const configuredMode = process.env.STRIPE_CHECKOUT_MODE;
-    const expectedKeyPrefix = deploymentMode === "live" ? "sk_live_" : "sk_test_";
 
     // Match the checkout route: fail closed when the Stripe key and deployment mode disagree.
     if (
       process.env.STRIPE_CHECKOUT_ENABLED !== "true" ||
       configuredMode !== deploymentMode ||
-      !secret?.startsWith(expectedKeyPrefix)
+      !secret || !stripeMatchesDeployment(secret)
     ) {
       return NextResponse.json(
         { error: "Membership changes are temporarily unavailable while payment configuration is verified." },

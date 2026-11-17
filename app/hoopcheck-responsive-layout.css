@@ -72,7 +72,6 @@ main.hc-player-directory-page > *, main.hc-womens-directory-page > *, main.hc-en
 :where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-womens-directory-page) .hc-scout-card__ticket a {
   font-size: 11px; line-height: 1.4;
 }
-.hc-shared-directory-tile-grid { grid-template-columns: repeat(5,minmax(0,1fr)); }
 .hc-shared-directory-hero h1,
 :where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page,.hc-womens-directory-page) > .hero h1 {
   font-size: clamp(2.25rem,4.5vw,4rem); max-width: 100%; overflow-wrap: anywhere;
@@ -89,7 +88,6 @@ main.hc-player-directory-page > *, main.hc-womens-directory-page > *, main.hc-en
     grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px;
   }
   .hc-shared-directory-hero { padding: 32px; }
-  .hc-shared-directory-tiles { padding: 18px; }
 }
 /* Desktop team sections follow the profile's document flow. The explicit
    overview grid owns its own columns; no outer implicit sidebar rows. */
@@ -103,8 +101,6 @@ main.hc-player-directory-page > *, main.hc-womens-directory-page > *, main.hc-en
 @media (max-width:767px) {
   main.hc-team-directory-page,main.hc-coaches-directory-page,main.hc-leagues-directory-page,
   main.hc-player-directory-page,main.hc-womens-directory-page,main.hc-entity-profile-page { padding: 16px 16px 48px; }
-  .hc-shared-directory-tile-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
-  .hc-shared-directory-tile-grid a:last-child { grid-column: auto; }
   :where(.hc-team-directory-page,.hc-coaches-directory-page,.hc-leagues-directory-page,.hc-player-directory-page,.hc-womens-directory-page) .team-filter-row {
     grid-template-columns: repeat(2,minmax(0,1fr));
   }

@@ -79,7 +79,7 @@ export default function VerificationPage() {
 
   if(loading)return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading verification center..." /></div></main>;
   return <main className="page-shell"><div className="page-container">
-    <header className="topbar verification-topbar"><Link href="/" className="brand">HOOPCHECK</Link><nav className="topnav"><Link href="/account">Account</Link></nav></header>
+    <nav aria-label="Verification links"><Link href="/account" className="btn dark">Account</Link></nav>
     <section className="hero-card"><p className="eyebrow">{accountType==="coach" ? "COACH VERIFICATION" : "PLAYER VERIFICATION"}</p><h1>{accountType==="coach" ? "Get your verified coach badge." : "Get your player badge."}</h1><p className="muted">Verification helps HoopCheck confirm professional basketball identities. Secure identity verification uses a government ID or passport plus a live selfie check.</p></section>
     <section className="dashboard-card" style={{marginTop:24}}>
       {status==="approved" ? <><h2><VerifiedBadge label="Verified" /> Verified {accountType==="coach" ? "Coach" : "Player"}</h2><p className="muted">Your professional identity is verified. {accountType==="coach" ? "You can now request placement with teams from your dashboard." : "Your player verification is active."}</p></> :

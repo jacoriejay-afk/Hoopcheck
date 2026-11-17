@@ -29,13 +29,26 @@ try {
     else if (url.pathname.includes("/rpc/get_follow_count") || url.pathname.includes("/rpc/get_public_following_count")) data = 0;
     return route.fulfill({ status: 200, headers, contentType: "application/json", body: JSON.stringify(data) });
   });
+  // Next.js may abort a document navigation while the prior page is still
+  // settling; retry only that transient Chromium error, not test assertions.
+  const navigate = async path => {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await page.goto(baseURL + path, { waitUntil: "domcontentloaded" });
+        return;
+      } catch (error) {
+        if (!String(error).includes("net::ERR_ABORTED") || attempt === 2) throw error;
+        await page.waitForTimeout(200 * (attempt + 1));
+      }
+    }
+  };
   for (const path of ["/dashboard", "/account", "/profile", `/players/${uid}`]) {
-    await page.goto(baseURL + path);
+    await navigate(path);
     const progress = page.getByRole("progressbar", { name: "Player profile completion" });
     await progress.waitFor();
     assert.equal(await progress.getAttribute("aria-valuenow"), "86", path);
   }
-  await page.goto(baseURL + "/complete-profile");
+  await navigate("/complete-profile");
   await page.getByRole("button", { name: /Current team/ }).click();
   await page.getByLabel("Free agent").check();
   await page.getByRole("button", { name: "Save detail" }).click();
@@ -44,12 +57,12 @@ try {
   assert.equal(profile.current_team, null);
   assert.equal(profile.profile_visibility, "players_only");
   assert.equal(await page.getByRole("progressbar", { name: "Player profile completion" }).getAttribute("aria-valuenow"), "100");
-  await page.goto(baseURL + "/account");
+  await navigate("/account");
   const progress = page.getByRole("progressbar", { name: "Player profile completion" });
   await progress.waitFor();
   assert.equal(await progress.getAttribute("aria-valuenow"), "100");
   await page.getByRole("button", { name: /Make Public/ }).click();
-  await page.getByText("Profile visible to everyone").waitFor();
+  await page.getByRole("region", { name: "Player profile completion" }).first().getByRole("link", { name: /View Public Profile/ }).waitFor();
   assert.equal(profile.profile_visibility, "public");
   console.log("Player completion browser checks passed.");
 } finally {

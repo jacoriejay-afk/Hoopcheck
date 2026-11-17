@@ -11,7 +11,9 @@ const rules = [
   ["utility bg-[#fff]", /bg-\[#(?:fff|ffffff)\]/i],
   ["inline white backgroundColor", /backgroundColor\s*:\s*(?:["']white["']|["']#(?:fff|ffffff)["']|white\b|#(?:fff|ffffff)\b)/i],
   ["hardcoded white background", /background(?:-color)?\s*:\s*(?:white\b|#(?:fff|ffffff)\b|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))/i],
+  ["hardcoded black background", /background(?:-color)?\s*:\s*(?:black\b|#(?:000|000000)\b|rgb\(\s*0\s*,\s*0\s*,\s*0\s*\))/i],
 ];
+const smallRadius = /border-(?:radius|(?:top|bottom)-(?:left|right)-radius)\s*:[^;}]*?(?<![\w.-])[23]px\b|rounded-\[[23]px\]|borderRadius\s*:\s*(?:[23]\b|["'][23]px["'])/i;
 
 async function walk(dir) {
   let entries;
@@ -34,6 +36,9 @@ for (const file of files) {
   const lines = (await readFile(file, "utf8")).split(/\r?\n/);
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    if (!relative.startsWith("apps/") && smallRadius.test(line)) {
+      matches.push({ file: relative, line: i + 1, kind: "hardcoded 2px or 3px radius", source: line.trim() });
+    }
     const context = lines.slice(Math.max(0, i - 4), Math.min(lines.length, i + 2)).join(" ");
     if (allowedTileSelector.test(context) && /(?:logo|avatar|photo|portrait|image)/i.test(context)) continue;
     for (const [kind, regex] of rules) {

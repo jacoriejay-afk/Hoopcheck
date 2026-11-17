@@ -18,16 +18,19 @@ try {
   const team={id:tid,name:`${gender==='mens'?'Men':'Women'} QA Club`,country:'QA Country',city:'QA City',league_name:'QA League',basketball_type:gender,active:true,created_at:'2020-01-01T00:00:00Z'};
   let subscription={plan:'pro',status:'active',access_status:'active',current_period_end:null};
   let eligible=false,patches=[];
-  const context=await browser.newContext({viewport:{width,height:900}});
+  const context=await browser.newContext({viewport:{width,height:900},serviceWorkers:'block'});
   await context.addCookies([{name:'sb-ci-auth-token',value:'base64-'+Buffer.from(JSON.stringify(session)).toString('base64url'),url:baseURL}]);
   await context.addInitScript(session=>{localStorage.setItem('sb-ci-auth-token',JSON.stringify(session));localStorage.setItem('hoopcheck-theme','light');localStorage.setItem('hoopcheck-language','en');},session);
   const page=await context.newPage();
   await page.route('https://ci.invalid/**',async route=>{
    const req=route.request(),url=new URL(req.url());
-   const headers={'access-control-allow-origin':baseURL,'access-control-allow-methods':'GET,POST,PATCH,OPTIONS','access-control-allow-headers':req.headers()['access-control-request-headers']||'*','cache-control':'no-store'};
+   const headers={'access-control-allow-origin':baseURL,'access-control-allow-methods':'GET,POST,PUT,PATCH,OPTIONS','access-control-allow-headers':req.headers()['access-control-request-headers']||'*','cache-control':'no-store'};
    if(req.method()==='OPTIONS') return route.fulfill({status:204,headers});
    let data=[];
-   if(url.pathname==='/auth/v1/user') data=user;
+   if(url.pathname==='/auth/v1/user') {
+    if(req.method()==='PUT') user.user_metadata={...user.user_metadata,...req.postDataJSON().data};
+    data=user;
+   }
    else if(url.pathname.endsWith('/profiles')){
     if(req.method()==='PATCH'){const patch=req.postDataJSON();patches.push(patch);profile={...profile,...patch};data={id:uid};}
     else data=profile;
@@ -42,6 +45,11 @@ try {
   });
   await page.goto(`${baseURL}/account`);
   await page.locator('#profile-editor').waitFor();
+  await page.getByRole('radio',{name:'Violet'}).check();
+  await page.getByRole('button',{name:'Save cover'}).click();
+  await page.getByRole('status').filter({hasText:'Profile cover saved.'}).waitFor();
+  assert.equal(user.user_metadata.hoopcheck_profile_cover,'violet');
+  assert.equal(await page.locator('.hc-social-profile').getAttribute('data-profile-cover'),'violet');
   await page.locator('#position').selectOption('PG');
   await page.locator('#player-height').fill('193 cm');
   await page.locator('#current-team .hc-shared-picker-trigger').click();
@@ -56,6 +64,7 @@ try {
   await page.waitForFunction(()=>!document.querySelector('#profile-editor button[type="submit"]').disabled);
   assert.ok(patches.length>0,'Profile update was sent');
   const saved=patches.find(p=>p.height==='193 cm');
+  assert.ok(saved, `Expected profile PATCH containing height 193 cm; observed PATCH keys: ${JSON.stringify(patches.map(p=>Object.keys(p).sort()))}; observed heights: ${JSON.stringify(patches.map(p=>p.height ?? null))}`);
   assert.equal(saved.position,'PG');assert.equal(saved.current_team,team.name);assert.equal(saved.current_country,'QA Country');assert.equal(saved.favorite_teams,team.name);
   assert.equal(saved.profile_visibility,'players_only','Editing preserves private visibility');
   for(const key of ['player_verified','selected_team_id','selected_womens_team_id','years_pro'])assert.ok(!(key in saved),`${key} is not self-assigned`);
@@ -73,12 +82,24 @@ try {
   await page.waitForFunction(()=>document.querySelector('#team-review-checklist ul').getAttribute('aria-busy')==='false');
   assert.equal(await reviewLink.count(),0,'Inactive membership does not unlock reviews');
   subscription={...subscription,status:'active'};
-  await page.goto(`${baseURL}/feed`);await page.locator('.hc-feed-composer').waitFor();
-  const header=await page.locator('.hf5-hero').boundingBox(),composer=await page.locator('.hc-feed-composer').boundingBox();
-  assert.ok(header.height>0,'HoopFeed community hero is visible');assert.ok(composer.y>header.y,'Composer follows the community hero');
-  assert.equal(await page.locator('.hf5-hero').count(),1,'Exactly one community hero');
+  await page.goto(`${baseURL}/feed`);await page.locator('.hc-feed-slim-composer').waitFor();
+  const header=await page.locator('header.site-header-global').boundingBox(),composer=await page.locator('.hc-feed-slim-composer').boundingBox();
+  assert.ok(header.height>0,'HoopFeed app bar is visible');assert.ok(composer.y>header.y,'Composer follows the HoopFeed app bar');
+  assert.equal(await page.locator('header.site-header-global a[aria-label="HoopFeed™"] .hc-header-feed-artwork use[href="/hoopfeed-header-lettering.svg#hoopfeed-artwork"]').count(),1,'Exactly one branded HoopFeed top-bar logo');
+  assert.equal(await page.locator('.hc-hoopfeed-brand-header').count(),0,'No duplicate HoopFeed page banner');
+  assert.equal(await page.getByRole('button',{name:'Go back',exact:true}).count(),0,'HoopFeed has no global back control');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,'No horizontal overflow');
-  console.log(`PASS ${gender} ${width}px: editable profile, team dropdown, privacy preservation, review eligibility, compact feed`);
+  await page.goto(`${baseURL}/profile`);
+  await page.locator('.hc-social-profile[data-profile-cover="violet"]').waitFor();
+  assert.equal(await page.locator('.hc-social-profile').getByText(user.email,{exact:false}).count(),0);
+  await page.getByRole('navigation',{name:'Profile quick links'}).getByRole('link',{name:'Settings',exact:true}).click();
+  await page.waitForURL(`${baseURL}/settings`);
+  await page.locator('main.hc-settings-page h1').waitFor();
+  assert.match(await page.locator('main.hc-settings-page h1').textContent(), /^settings$/i);
+  await page.goBack();
+  await page.waitForURL(`${baseURL}/profile`);
+  await page.getByRole('navigation',{name:'Profile quick links'}).waitFor();
+  console.log(`PASS ${gender} ${width}px: editable profile, team dropdown, privacy preservation, review eligibility, compact feed, Settings navigation`);
   await context.close();
  }
 } finally {await browser.close();}

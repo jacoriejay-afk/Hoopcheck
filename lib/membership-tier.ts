@@ -77,18 +77,23 @@ export function getHoopCheckEntitlements(args: {
   now?: number;
 }): HoopCheckEntitlements {
   const role = args.accountType || "";
-  const isAdmin = args.isAdmin === true || role === "admin";
+  // Platform administrator privileges require independently verified admin authority.
+  const isAdmin = args.isAdmin === true;
   const tier = isAdmin ? "premium" : getActiveMembershipTier(args.subscription, args.now);
   const active = isAdmin || tier !== "free";
   const isPlayer = role === "player";
   const isFan = role === "fan";
-  const otherMember = Boolean(role) && !isPlayer && !isFan;
+  const recognizedRole = ["player", "fan", "coach", "scout", "agent", "club_admin", "manager", "admin"].includes(role);
+  const otherMember = recognizedRole && !isPlayer && !isFan;
+  const canUseHoopFeed = isAdmin || (
+    recognizedRole && active
+  );
 
   return {
     tier,
     hasPaidMembership: active,
-    canReadHoopFeed: active && (isAdmin || Boolean(role)),
-    canWriteHoopFeed: (isAdmin || Boolean(role)) && isAtLeastTier(tier, "pro"),
+    canReadHoopFeed: canUseHoopFeed,
+    canWriteHoopFeed: canUseHoopFeed,
     canReadFanFeed: isFan && isAtLeastTier(tier, "pro"),
     canWriteFanFeed: isFan && isAtLeastTier(tier, "pro"),
     canReadFullReviews: isAdmin || (isPlayer && isAtLeastTier(tier, "pro")) ||
@@ -107,9 +112,10 @@ export function getHoopCheckEntitlements(args: {
     canConnectWithFans: isFan && isAtLeastTier(tier, "pro"),
     canSwitchBasketballSide: isFan && isAtLeastTier(tier, "pro"),
     canStartCoachIdentityVerification: role === "coach" && isAtLeastTier(tier, "pro"),
-    canViewTeamPayHistory: Boolean(role) && !isFan,
+    canViewTeamPayHistory: recognizedRole && !isFan,
     canSubmitPayCheckIn: isPlayer && args.playerVerified === true && isAtLeastTier(tier, "pro"),
     canUseFanGroups: isFan,
-    canModerateFanGroups: isAdmin || role === "club_admin",
+    // Club-scoped moderation must be authorized at the call site using a verified club claim.
+    canModerateFanGroups: isAdmin,
   };
 }
