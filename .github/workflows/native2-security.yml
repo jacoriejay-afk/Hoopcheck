@@ -4,6 +4,8 @@ on:
     paths:
       - 'apps/mobile/src/lib/native2/**'
       - 'apps/mobile/package.json'
+      - 'lib/native2/**'
+      - 'lib/native2/**'
       - '.github/workflows/native2-security.yml'
   push:
     branches:
@@ -26,4 +28,4 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - name: Test NATIVE-2 access and feature gates
-        run: node --test apps/mobile/src/lib/native2/*.test.mjs
+        run: node --test apps/mobile/src/lib/native2/*.test.mjs lib/native2/*.test.mjs
