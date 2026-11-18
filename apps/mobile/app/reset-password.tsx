@@ -10,9 +10,9 @@ export default function ResetPasswordScreen() {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
   const router = useRouter();
-  const params = useLocalSearchParams<{ code?: string | string[]; error_description?: string | string[] }>();
+  const params = useLocalSearchParams<{ code?: string | string[]; error_description?: string | string[]; error?: string | string[] }>();
   const code = Array.isArray(params.code) ? params.code[0] : params.code;
-  const recoveryError = Array.isArray(params.error_description) ? params.error_description[0] : params.error_description;
+  const recoveryError = params.error_description || params.error;
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [ready, setReady] = useState(false);
@@ -26,7 +26,7 @@ export default function ResetPasswordScreen() {
         return;
       }
       if (recoveryError) {
-        if (alive) Alert.alert("Recovery link invalid", recoveryError);
+        if (alive) Alert.alert("Recovery link invalid", "This recovery link was denied or expired. Request a new password recovery email.");
         return;
       }
       if (!code) {

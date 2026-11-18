@@ -15,8 +15,8 @@ function compile(path, imports, globals = {}) {
   return compiled.exports;
 }
 const theme = { radius: { control: 16 }, type: { display: {} } };
-function screen(path, { state = [], params = {}, segments = [], configurationError = null, supabase = {} } = {}) {
-  const calls = { push: [], replace: [], alerts: [], oauthUrls: [] };
+function screen(path, { state = [], params = {}, segments = [], configurationError = null, pendingDestination = null, supabase = {} } = {}) {
+  const calls = { push: [], replace: [], alerts: [], oauthUrls: [], freshSignIns: 0 };
   const effects = [];
   let slot = 0;
   const router = { push: p => calls.push.push(p), replace: p => calls.replace.push(p) };
@@ -33,8 +33,8 @@ function screen(path, { state = [], params = {}, segments = [], configurationErr
     if (name.endsWith("/theme")) return { useEntryTheme: () => theme };
     if (name.endsWith("/primitives")) return { GlassCard: "GlassCard", Input: "Input", Button: "Button" };
     if (name.endsWith("/supabase")) return { supabase, supabaseConfigurationError: configurationError };
-    if (name.endsWith("/native/lockPolicy")) return { recordFreshSignIn: () => {} };
-    if (name.endsWith("/native/pendingDestination")) return { takeDestination: () => null, rememberDestination: () => {} };
+    if (name.endsWith("/native/lockPolicy")) return { recordFreshSignIn: () => { calls.freshSignIns++; } };
+    if (name.endsWith("/native/pendingDestination")) return { takeDestination: () => pendingDestination, rememberDestination: () => {} };
     if (name === "react-native-gesture-handler") return { GestureHandlerRootView: "GestureHandlerRootView" };
     if (name === "@gorhom/bottom-sheet") return { BottomSheetModalProvider: "BottomSheetModalProvider" };
     if (name === "expo-splash-screen") return { preventAutoHideAsync: async () => {}, setOptions: () => {}, hideAsync: async () => {} };
@@ -132,5 +132,48 @@ test("denied, missing-code and misconfigured callbacks never exchange or redirec
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(exchanged, false);
     assert.deepEqual(f.calls.replace, []);
+  }
+});
+
+
+test("OS callback URL reaches native PKCE exchange rather than browser handoff", async () => {
+  const links = compile("src/native/deepLinks.ts", () => { throw new Error("Unexpected dependency"); });
+  const intent = compile("app/+native-intent.tsx", name => {
+    assert.equal(name, "../src/native/deepLinks"); return links;
+  });
+  const destination = intent.redirectSystemPath({ path: "hoopcheck://auth/callback?code=fixture-code", initial: true });
+  assert.equal(destination.split("?")[0], "/auth/callback");
+  const params = Object.fromEntries(new URL(destination, "https://fixture.example").searchParams);
+  const codes = [];
+  const f = screen("app/auth/callback.tsx", { params, supabase: {
+    ...profile("fixture"), auth: { exchangeCodeForSession: async code => { codes.push(code); return { data: { user: { id: "user" } }, error: null }; } },
+  } });
+  f.effects[0](); await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(codes, ["fixture-code"]);
+  assert.deepEqual(f.calls.replace, ["/dashboard"]);
+});
+
+
+test("OAuth callback honors the pending destination after a verified fresh sign-in", async () => {
+  const f = screen("app/auth/callback.tsx", { params: { code: "fixture-code" }, pendingDestination: "/teams/fixture", supabase: {
+    ...profile("fixture"), auth: { exchangeCodeForSession: async () => ({ data: { user: { id: "user" } }, error: null }) },
+  } });
+  f.effects[0](); await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(f.calls.replace, ["/teams/fixture"]);
+  assert.equal(f.calls.freshSignIns, 1);
+});
+
+test("a provider error without description never exchanges a supplied code", async () => {
+  let exchanged = false;
+  const f = screen("app/auth/callback.tsx", { params: { code: "fixture", error: "access_denied" }, supabase: { auth: { exchangeCodeForSession: async () => { exchanged = true; } } } });
+  f.effects[0](); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(exchanged, false);
+  assert.equal(f.calls.freshSignIns, 0);
+});
+
+test("OAuth exchange screen does not trigger app lock before fresh sign-in is recorded", () => {
+  for (const [segments, expected] of [[["auth", "callback"], false], [["dashboard"], true]]) {
+    const f = screen("app/_layout.tsx", { state: [true, true], segments });
+    assert.equal(f.nodes.find(node => node.type === "AppLock").props.protectedScreen, expected);
   }
 });
