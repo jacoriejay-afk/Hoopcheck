@@ -1,3 +1,4 @@
+import { createAuthIntents, guardAuthResponses, bindAuthIntents } from "./auth/auth-intents";
 import { createBrowserClient, stringFromBase64URL } from "@supabase/ssr";
 
 export const supabaseUrl =
@@ -33,13 +34,21 @@ export function consumeInitialRecoveryCode() {
   return recovery;
 }
 
+const intentCookie = `hoopcheck-auth-intent-${new URL(supabaseUrl).hostname.split(".")[0]}`;
+const authIntents = createAuthIntents(typeof document === "undefined" ? undefined : {
+  read: () => document.cookie.split("; ").find(cookie => cookie.startsWith(`${intentCookie}=`))?.slice(intentCookie.length + 1) || "",
+  write: value => { document.cookie = `${intentCookie}=${value}; Path=/; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`; },
+});
 export const supabase = createBrowserClient(supabaseUrl, supabaseKey, {
+  global: { fetch: guardAuthResponses(supabaseUrl, authIntents) },
   auth: {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     persistSession: true,
   },
 });
+
+bindAuthIntents(supabase.auth, authIntents);
 
 let sessionPromise: ReturnType<typeof supabase.auth.getSession> | null = null;
 let sessionListenerStarted = false;

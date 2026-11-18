@@ -4,12 +4,14 @@ on:
   pull_request:
     paths:
       - "apps/mobile/**"
+      - "lib/auth/**"
   push:
     branches:
       - "feat/expo-mobile-foundation"
       - "fix/expo-doctor-dependencies"
     paths:
       - "apps/mobile/**"
+      - "lib/auth/**"
       - ".github/workflows/mobile-check.yml"
 
 jobs:

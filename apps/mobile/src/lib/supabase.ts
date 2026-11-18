@@ -3,6 +3,8 @@ import { AppState, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { createClient, processLock } from "@supabase/supabase-js";
+import { createAuthIntents, guardAuthResponses, bindAuthIntents } from "../../../../lib/auth/auth-intents";
+import { serializeAuthStorage } from "../../../../lib/auth/serialized-storage";
 import { validateSupabaseUrl } from "./supabase-url";
 import { readWithDeadline } from "../native/readDeadline";
 
@@ -18,11 +20,12 @@ export const supabaseConfigurationError =
     ? "Supabase publishable key is missing from this build."
     : null);
 
-const secureStorage = {
-  getItem: (key: string) => readWithDeadline(() => SecureStore.getItemAsync(key)),
+const serializedSecureStorage = serializeAuthStorage({
+  getItem: (key: string) => SecureStore.getItemAsync(key),
   setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
   removeItem: (key: string) => SecureStore.deleteItemAsync(key),
-};
+});
+const secureStorage = { ...serializedSecureStorage, getItem: (key: string) => readWithDeadline(() => serializedSecureStorage.getItem(key)) };
 
 const webStorage = {
   getItem: (key: string) => readWithDeadline(() => AsyncStorage.getItem(key)),
@@ -30,10 +33,12 @@ const webStorage = {
   removeItem: (key: string) => AsyncStorage.removeItem(key),
 };
 
+const authIntents = createAuthIntents();
 export const supabase = createClient(
   supabaseConfigurationError ? "https://placeholder.supabase.co" : projectUrl!,
   supabaseConfigurationError ? "placeholder-publishable-key" : publishableKey!,
   {
+    global: { fetch: guardAuthResponses(supabaseConfigurationError ? "https://placeholder.supabase.co" : projectUrl!, authIntents) },
     auth: {
       storage: Platform.OS === "web" ? webStorage : secureStorage,
       autoRefreshToken: !supabaseConfigurationError,
@@ -44,6 +49,8 @@ export const supabase = createClient(
     },
   },
 );
+
+bindAuthIntents(supabase.auth, authIntents);
 
 if (!supabaseConfigurationError && Platform.OS !== "web") {
   AppState.addEventListener("change", (state) => {
