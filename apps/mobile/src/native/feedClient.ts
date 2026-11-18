@@ -3,7 +3,7 @@ export const FEED_PAGE_SIZE = 20;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isFeedId = (value: string) => uuid.test(value);
 export type FeedCursor = { id: string; created_at: string };
-export type FeedPost = FeedCursor & { author_id: string; body: string | null; image_url: string | null; image_urls: string[] | null; video_url: string | null; post_kind: string; poll_options: string[] | null; expires_at: string | null; profiles: { display_name: string | null; account_type: string | null } | null };
+export type FeedPost = FeedCursor & { author_id: string; body: string | null; image_url: string | null; image_urls: string[] | null; video_url: string | null; post_kind: string; poll_options: string[] | null; expires_at: string | null; profiles: { display_name: string | null; account_type: string | null; avatar_url?: string | null; avatar_moderation_status?: string | null } | null };
 export type FeedComment = FeedCursor & { author_id: string; body: string; parent_id: string | null; profiles: { display_name: string | null } | null };
 function apiUrl(origin: string, path: string) {
   const url = new URL(origin);
@@ -15,7 +15,7 @@ function validCursor(cursor: FeedCursor) {
   return uuid.test(cursor.id) && /^\d{4}-\d{2}-\d{2}T[\d:.]+(?:Z|[+-]\d\d:\d\d)$/.test(cursor.created_at) && Number.isFinite(Date.parse(cursor.created_at));
 }
 function readablePosts(client: SupabaseClient, now: Date) {
-  return client.from("feed_posts").select("id,author_id,body,image_url,image_urls,video_url,post_kind,poll_options,created_at,expires_at,profiles:profiles!feed_posts_author_id_fkey(display_name,account_type)").eq("status", "approved").or(`expires_at.is.null,expires_at.gt.${now.toISOString()}`);
+  return client.from("feed_posts").select("id,author_id,body,image_url,image_urls,video_url,post_kind,poll_options,created_at,expires_at,profiles:profiles!feed_posts_author_id_fkey(display_name,account_type,avatar_url,avatar_moderation_status)").eq("status", "approved").or(`expires_at.is.null,expires_at.gt.${now.toISOString()}`);
 }
 export async function readSharedFeedPost(client: SupabaseClient, userId: string, postId: string, now = new Date()): Promise<FeedPost | null> {
   if (!uuid.test(userId) || !uuid.test(postId)) throw new Error("Invalid shared post");
