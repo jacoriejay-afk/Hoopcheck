@@ -62,7 +62,9 @@ export function AppLock({ authReady, protectedScreen }: { authReady: boolean; pr
     finally { setBusy(false); }
   }
   const bootstrapping = !authReady || !ready;
-  return <Modal visible={lockScreenRequired(authReady, ready, protectedScreen, preferences.appLock, locked)} animationType="none" onRequestClose={() => {}}><View style={{ flex: 1, justifyContent: "center", backgroundColor: theme.background, padding: 28, gap: 24 }}>
+  // An inactive native Modal must not remain mounted over the dashboard.
+  if (!lockScreenRequired(authReady, ready, protectedScreen, preferences.appLock, locked)) return null;
+  return <Modal visible={true} animationType="none" onRequestClose={() => {}}><View style={{ flex: 1, justifyContent: "center", backgroundColor: theme.background, padding: 28, gap: 24 }}>
     {bootstrapping ? <Text accessibilityLiveRegion="polite" style={{ color: theme.foreground }}>Preparing HoopCheck…</Text> : <>
     <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 28, fontWeight: "900" }}>Unlock HoopCheck</Text>
     <Text style={{ color: theme.muted }}>Use Face ID, fingerprint, or your device passcode.</Text>
