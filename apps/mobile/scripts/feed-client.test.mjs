@@ -1,12 +1,22 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
-import { readFeedPage, readSharedFeedPost, readFeedComments, moderateFeedText, authorizedFeedMedia, toggleFeedCheck, readFeedSaved, feedAction } from '../src/native/feedClient.ts';
+import { readFeedPage, readSharedFeedPost, readFeedComments, moderateFeedText, publishFeedPoll, validatedPollOptions, authorizedFeedMedia, toggleFeedCheck, readFeedSaved, feedAction } from '../src/native/feedClient.ts';
 const uid = '11111111-1111-4111-8111-111111111111';
 const id = n => `22222222-2222-4222-8222-${String(n).padStart(12, '0')}`;
 const now = new Date('2026-11-18T12:00:00Z');
 const post = n => ({ id: id(n), created_at: `2026-11-17T12:00:${String(59-n).padStart(2,'0')}Z`, author_id: uid, body: 'Fixture', expires_at: null, profiles: [{ display_name: 'Member' }] });
 const client = request => createClient('https://fixture.supabase.co', 'fixture-key', { auth: { persistSession:false,autoRefreshToken:false,detectSessionInUrl:false }, global:{fetch:request} });
+test('native polls use only moderated canonical fields and require acknowledged publication', async () => {
+  let call;const request=async(url,options)=>{call={url,options};return Response.json({allowed:true});};
+  await publishFeedPoll('https://api.test','token',' Question? ',[' Home ',' Away '],request);
+  assert.equal(call.url,'https://api.test/api/hoopfeed/moderate');assert.equal(call.options.headers.Authorization,'Bearer token');assert.equal(call.options.cache,'no-store');assert.equal(call.options.redirect,'error');
+  assert.deepEqual(Object.fromEntries(call.options.body),{kind:'post',text:'Question?',post_kind:'poll',poll_options:'["Home","Away"]',audience:'community'});
+  for(const options of [[],['one'],['one','two','three','four','five'],['Home',' home '],['a',''],['a','b'.repeat(61)],[1,'b']])assert.throws(()=>validatedPollOptions(options));
+  await assert.rejects(publishFeedPoll('https://api.test','token','',['a','b'],request));
+  await assert.rejects(publishFeedPoll('https://api.test','token','Question',['a','b'],async()=>Response.json({allowed:false,message:'Moderation declined'},{status:400})),/Moderation declined/);
+  await assert.rejects(publishFeedPoll('https://api.test','token','Question',['a','b'],async()=>Response.json({allowed:'true'})),/could not be confirmed/);
+});
 test('feed uses approved unexpired rows, deterministic keyset pages and viewer-only archives', async () => {
   const calls = [];
   const rows = Array.from({length:21}, (_,i) => post(i));
