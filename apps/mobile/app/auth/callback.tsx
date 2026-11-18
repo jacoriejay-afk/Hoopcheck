@@ -1,3 +1,5 @@
+import { takeDestination } from "../../src/native/pendingDestination";
+import { recordFreshSignIn } from "../../src/native/lockPolicy";
 import { useEntryTheme, type EntryTheme } from "../../src/theme";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
@@ -8,7 +10,7 @@ export default function AuthCallback() {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
   const router = useRouter();
-  const { code, error_description } = useLocalSearchParams<{ code?: string; error_description?: string }>();
+  const { code, error_description, error: oauthError } = useLocalSearchParams<{ code?: string; error_description?: string; error?: string }>();
   const [message, setMessage] = useState("Completing Google sign-in…");
   const [failed, setFailed] = useState(false);
 
@@ -17,13 +19,14 @@ export default function AuthCallback() {
     async function complete() {
       try {
         if (supabaseConfigurationError) throw new Error(supabaseConfigurationError);
-        if (error_description) throw new Error("Google sign-in was cancelled or denied.");
+        if (error_description || oauthError) throw new Error("Google sign-in was cancelled or denied.");
         if (!code || typeof code !== "string") throw new Error("Google sign-in returned no authorization code.");
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) throw error;
         if (!data.user) throw new Error("Google sign-in did not return a user.");
+        recordFreshSignIn();
         const profile = await supabase.from("profiles").select("username").eq("id", data.user.id).maybeSingle();
-        if (active) router.replace(profile.data && !profile.data.username?.trim() ? "/choose-username" : "/dashboard");
+        if (active) router.replace((profile.data && !profile.data.username?.trim() ? "/choose-username" : takeDestination() ?? "/dashboard") as "/dashboard");
       } catch {
         if (active) {
           setMessage("Could not complete Google sign-in. Please try again.");
@@ -33,7 +36,7 @@ export default function AuthCallback() {
     }
     void complete();
     return () => { active = false; };
-  }, [code, error_description, router]);
+  }, [code, error_description, oauthError, router]);
 
   return <View style={styles.container}>
     {!failed ? <ActivityIndicator color={theme.accent} /> : null}
