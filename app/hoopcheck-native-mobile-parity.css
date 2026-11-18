@@ -1,0 +1,50 @@
+/* Mobile web parity with apps/mobile/src/theme.ts and TabBar.tsx.
+   Scoped to handheld layouts; desktop remains unchanged. */
+@media (max-width: 767px) {
+  html.theme-light {
+    --hc-native-bg: #F4F4F1;
+    --hc-native-surface: #FFFFFF;
+    --hc-native-ink: #171717;
+    --hc-native-muted: #535353;
+    --hc-native-border: #D2D2CC;
+    --hc-native-accent: #B83E14;
+  }
+  html.theme-dark {
+    --hc-native-bg: #000000;
+    --hc-native-surface: #171717;
+    --hc-native-ink: #F7F7F5;
+    --hc-native-muted: #BDBDBD;
+    --hc-native-border: #414141;
+    --hc-native-accent: #FF8A5C;
+  }
+  html.theme-light body, html.theme-dark body {
+    background-color: var(--hc-native-bg);
+    color: var(--hc-native-ink);
+  }
+  html.theme-light body nav.hc-lm2f-bottom-nav,
+  html.theme-dark body nav.hc-lm2f-bottom-nav {
+    background: var(--hc-native-surface) !important;
+    border-color: var(--hc-native-border) !important;
+  }
+  html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab,
+  html.theme-dark body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab {
+    color: var(--hc-native-muted) !important;
+  }
+  html.theme-light body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active,
+  html.theme-dark body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab.active {
+    color: var(--hc-native-accent) !important;
+  }
+  html body nav.hc-lm2f-bottom-nav .hc-lm2f-tab-icon,
+  html body nav.hc-lm2f-bottom-nav > a.hc-lm2f-tab .hc-lm2f-tab-icon > svg {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+  }
+  html body nav.hc-lm2f-bottom-nav .hc-lm2f-tab-label {
+    font-size: 11px !important;
+  }
+  html body nav.hc-lm2f-bottom-nav .hc-lm2f-active-indicator {
+    background: var(--hc-native-accent) !important;
+  }
+}
