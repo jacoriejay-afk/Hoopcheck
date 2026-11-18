@@ -3,14 +3,19 @@ import { AppState, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { createClient, processLock } from "@supabase/supabase-js";
+import { validateSupabaseUrl } from "./supabase-url";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
+const projectUrl = supabaseUrl?.trim();
+const publishableKey = supabaseKey?.trim();
+
 export const supabaseConfigurationError =
-  !supabaseUrl || !supabaseKey
-    ? "Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY to apps/mobile/.env.local."
-    : null;
+  validateSupabaseUrl(projectUrl) ||
+  (!publishableKey || publishableKey === "placeholder-publishable-key"
+    ? "Supabase publishable key is missing from this build."
+    : null);
 
 const secureStorage = {
   getItem: (key: string) => SecureStore.getItemAsync(key),
@@ -25,20 +30,21 @@ const webStorage = {
 };
 
 export const supabase = createClient(
-  supabaseUrl || "https://placeholder.supabase.co",
-  supabaseKey || "placeholder-publishable-key",
+  supabaseConfigurationError ? "https://placeholder.supabase.co" : projectUrl!,
+  supabaseConfigurationError ? "placeholder-publishable-key" : publishableKey!,
   {
     auth: {
       storage: Platform.OS === "web" ? webStorage : secureStorage,
-      autoRefreshToken: true,
+      autoRefreshToken: !supabaseConfigurationError,
       persistSession: true,
       detectSessionInUrl: false,
+      flowType: "pkce",
       lock: processLock,
     },
   },
 );
 
-if (Platform.OS !== "web") {
+if (!supabaseConfigurationError && Platform.OS !== "web") {
   AppState.addEventListener("change", (state) => {
     if (state === "active") supabase.auth.startAutoRefresh();
     else supabase.auth.stopAutoRefresh();

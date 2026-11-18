@@ -1,5 +1,6 @@
-import { Link } from "expo-router";
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { GlassCard, Button } from "../src/primitives";
+import { useRouter } from "expo-router";
+import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEntryTheme } from "../src/theme";
 
@@ -9,38 +10,25 @@ const hoopcheckMark = require("../assets/hoopcheck-mark.png");
 
 export default function WelcomeScreen() {
   const theme = useEntryTheme();
+  const router = useRouter();
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.content}>
+        <GlassCard style={styles.content}>
           <View style={styles.brand}>
-            <Image alt="" source={hoopcheckMark} style={styles.mark} />
-            <Text style={[styles.wordmark, { color: theme.foreground }]}>HoopCheck™</Text>
+            <Image alt="HoopCheck" accessibilityLabel="HoopCheck" source={hoopcheckMark} style={styles.mark} />
+
           </View>
-          <Text accessibilityRole="header" style={[styles.headline, { color: theme.foreground }]}>
+          <Text accessibilityRole="header" style={[theme.type.display, styles.headline, { color: theme.foreground }]}>
             Know who you’re signing with.
           </Text>
           <Text style={[styles.description, { color: theme.muted }]}>
             Research basketball teams, coaches, and leagues through the experiences of players who have been there.
           </Text>
-          <Link href="/sign-in" asChild>
-            <Pressable accessibilityRole="link" style={({ pressed }) => [
-              styles.action,
-              { backgroundColor: theme.button, borderRadius: theme.cardRadius, opacity: pressed ? 0.75 : 1 },
-            ]}>
-              <Text style={[styles.actionLabel, { color: theme.onButton }]}>Sign in</Text>
-            </Pressable>
-          </Link>
-          <Link href="/sign-up" asChild>
-            <Pressable accessibilityRole="link" style={({ pressed }) => [
-              styles.action,
-              { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1, borderRadius: theme.cardRadius, opacity: pressed ? 0.75 : 1 },
-            ]}>
-              <Text style={[styles.actionLabel, { color: theme.foreground }]}>Create an account</Text>
-            </Pressable>
-          </Link>
-        </View>
+          <Button accessibilityLabel="Sign in" onPress={() => router.push("/sign-in")}>Sign in</Button>
+          <Button secondary accessibilityLabel="Create an account" onPress={() => router.push("/sign-up")}>Create an account</Button>
+        </GlassCard>
       </ScrollView>
     </SafeAreaView>
   );
@@ -51,9 +39,8 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, justifyContent: "center", padding: 24 },
   content: { width: "100%", maxWidth: 520, alignSelf: "center", gap: 12 },
   brand: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 20 },
-  mark: { width: 48, height: 48, borderRadius: 12 },
-  wordmark: { flexShrink: 1, fontSize: 23, fontWeight: "800" },
-  headline: { fontSize: 44, fontWeight: "900", letterSpacing: -1.4 },
+  mark: { width: 48, height: 48, },
+  headline: {},
   description: { fontSize: 17, lineHeight: 25, marginBottom: 16 },
   action: { minHeight: 52, padding: 14, alignItems: "center", justifyContent: "center" },
   actionLabel: { fontSize: 16, fontWeight: "800", textAlign: "center" },

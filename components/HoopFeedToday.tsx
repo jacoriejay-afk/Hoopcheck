@@ -2,10 +2,9 @@ import Link from "next/link";
 import { formatViewerLocalTime, getGameAvailability } from "../lib/game-availability";
 import type { FeedWorld } from "../lib/hoopfeed-organization";
 
-type PostLink = { id: string; body: string; author?: string | null };
+type PostLink = { id: string; body: string };
 
-export default function HoopFeedToday({ pinned, poll, world, now, onPost, canUseChat }: {
-  pinned?: PostLink;
+export default function HoopFeedToday({ poll, world, now, onPost, canUseChat }: {
   poll?: PostLink;
   world: FeedWorld | null;
   now: number;
@@ -13,9 +12,6 @@ export default function HoopFeedToday({ pinned, poll, world, now, onPost, canUse
   onPost: (id: string) => void;
 }) {
   const cards = [];
-  if (pinned) cards.push(<article key={pinned.id}><small>PINNED</small>
-    <button type="button" onClick={() => onPost(pinned.id)}>{pinned.body.trim().slice(0, 120) || pinned.author || "View pinned post"}</button>
-  </article>);
   for (const game of world?.fixtures ?? []) {
     const availability = getGameAvailability({
       status: game.status, scheduledAt: game.scheduled_at, startedAt: game.started_at, endsAt: game.ends_at, now: new Date(now),

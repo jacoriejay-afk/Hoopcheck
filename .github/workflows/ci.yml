@@ -83,6 +83,9 @@ jobs:
       - name: Verify Ambassador HQ Stripe invoice and adjustment handling
         run: node --test scripts/test-ambassador-stripe.mjs
 
+      - name: Verify native bootstrap authorization
+        run: node --test scripts/test-mobile-bootstrap.mjs
+
       - name: Verify unified HoopFeed RLS migration safeguards
         run: npm run test:hoopfeed-rls
 
@@ -112,6 +115,9 @@ jobs:
 
       - name: Check rounded-corner design tokens
         run: npm run check:rounded-corners
+
+      - name: Verify read-only NBA validation authorization and error handling
+        run: node --test scripts/test-balldontlie-validation.mjs
 
       - name: Lint
         run: npm run lint

@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import Link from "next/link";
+import "../../hoopcheck-brand-team.css";
 
 import { useParams } from "next/navigation";
 
@@ -472,9 +473,8 @@ export default function LeagueDetailPage() {
         {accountType !== "fan" && <Link href="/players">Players</Link>}
         <Link href="/search">Global Search</Link>
       </nav>
-<section className="hero">
-        <div className="eyebrow">
-          League Research
+      <section className="hero hc-team-look-hero hc-league-look-hero">
+        <div className="eyebrow">League Research
         </div>
 
         <div className="hc-league-hero-id">
@@ -488,15 +488,15 @@ export default function LeagueDetailPage() {
 
         <div className="entity-actions"><GeoBadge country={league.country} regional={league.country === "Europe"} /><WatchButton targetType="league" targetId={league.id} targetName={league.name} /></div>
 
-        <p>
+        <p className="hc-team-hero-location">
           {league.country ||
             t("countryNotListed")}
         </p>
 
         {league.level && (
           <p
+            className="hc-team-hero-kicker"
             style={{
-              color: "var(--orange)",
               fontWeight: 800,
               textTransform: "uppercase",
               letterSpacing: "0.5px",
