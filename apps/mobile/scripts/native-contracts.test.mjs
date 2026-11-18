@@ -104,3 +104,20 @@ test("native feed share URLs preserve exact posts and legacy fan feed resolves t
   assert.equal(nativeDestination("https://hoopcheck.online/feed?post=invalid"), "/feed");
   assert.equal(nativeDestination("https://hoopcheck.online/reels"), "/reels");
 });
+
+test("native PKCE callbacks preserve the code instead of opening the website", () => {
+  for (const prefix of ["hoopcheck://auth", "hoopcheck:///auth", "https://hoopcheck.online/auth", "/auth"]) {
+    assert.equal(nativeDestination(`${prefix}/callback?code=fixture-code`), "/auth/callback?code=fixture-code");
+  }
+  assert.equal(nativeDestination("https://evil.example/auth/callback?code=fixture"), "/");
+  assert.equal(nativeDestination("hoopcheck://auth/callback?code=fixture&redirect=https://evil.example"), "/auth/callback?code=fixture");
+});
+
+test("auth errors and malformed escapes are safely re-encoded and oversized links fail closed", () => {
+  assert.equal(nativeDestination("hoopcheck://auth/callback?error_description=Denied%20access"), "/auth/callback?error_description=Denied+access");
+  const destination = nativeDestination("hoopcheck://auth/callback?code=%ZZ");
+  assert.equal(destination, "/auth/callback?code=%25ZZ");
+  assert.doesNotThrow(() => decodeURIComponent(destination.split("code=")[1]));
+  assert.equal(nativeDestination("hoopcheck://auth/callback?code=" + "x".repeat(9000)), "/");
+  assert.equal(nativeDestination("hoopcheck://reset-password?code=fixture-code"), "/reset-password?code=fixture-code");
+});
