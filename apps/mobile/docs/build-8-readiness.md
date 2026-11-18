@@ -21,7 +21,7 @@ was available here. Keep #699 open and PR #700 draft pending native evidence.
 
 On the existing Build 7 binary, capture device console logs while reproducing:
 1. Fresh sign-in and restored session; onboarding complete and incomplete.
-2. Scroll dashboard, tap a directory card, then Home/Teams/Leagues/Players/Settings.
+2. Scroll dashboard, tap a directory card, then Home/HoopFeed/Search/Alerts/Account on the integrated candidate.
 3. Repeat in light/dark themes and Reduce Motion enabled/disabled.
 4. With app lock on, background over five minutes, cancel unlock, then unlock or
    choose normal sign-in. Confirm content remains concealed until authorized.
@@ -65,7 +65,9 @@ OAuth routing repairs. Draft #710 adds the feed, Reels, alerts and website tabs;
 chat safety and predictions; #714 adds current club-group flows and memory-only
 drafts. These have isolated client/browser evidence, not physical native or live
 role-matrix proof. #713 combines the earlier search/freeze/feed/styling heads;
-its input list must be reconciled with newer revisions before release.
+its older inputs are now reconciled with current #700/#710 plus #712/#714 on
+`reconcile/native-build8-complete`. See build-8-reconciliation.md for exact heads,
+combined test evidence and remaining release gates.
 
 Full native parity is not complete: native media upload/poll creation, profile
 customization and store billing remain separate work. The broader community-group
