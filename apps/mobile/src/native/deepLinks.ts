@@ -16,6 +16,13 @@ export function nativeDestination(path: string): string {
     if (parts.length === 3 && parts[0] === "womens" && parts[1] === "leagues" && safeId.test(parts[2])) return `/womens/leagues/${parts[2]}`;
     if (parts.length === 2 && ["teams", "womens", "leagues", "players"].includes(parts[0]) && safeId.test(parts[1])) return `/${parts[0]}/${parts[1]}`;
     if (parts.length === 1 && ["account", "teams", "womens", "leagues", "players", "coaches", "dashboard", "settings"].includes(parts[0])) return url.pathname;
+    if (url.pathname === "/search") {
+      const query = new URLSearchParams();
+      const term = url.searchParams.get("q");
+      if (term) query.set("q", term.slice(0, 100));
+      const serialized = query.toString();
+      return "/search" + (serialized ? `?${serialized}` : "");
+    }
 
     if (url.pathname === "/auth/callback" || url.pathname === "/reset-password") {
       // Re-encode only the PKCE/error fields understood by native auth screens.
@@ -30,6 +37,7 @@ export function nativeDestination(path: string): string {
       const serialized = query.toString();
       return url.pathname + (serialized ? `?${serialized}` : "");
     }
+
 
     if (["r", "referral"].includes(parts[0]) && parts.length === 2 && /^[A-Za-z0-9_-]{4,40}$/.test(parts[1])) {
       // Reuse the server-issued, httpOnly referral cookie and existing web signup.

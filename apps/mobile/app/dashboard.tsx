@@ -1,4 +1,4 @@
-import { Chip, SectionHeader } from "../src/primitives";
+import { Input, Button, Chip, SectionHeader } from "../src/primitives";
 import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
@@ -8,6 +8,7 @@ import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 
 const directories = [
+  { href: "/womens", icon: "basketball-outline", title: "Women’s teams", detail: "Explore women’s basketball" },
   { href: "/teams", icon: "basketball-outline", title: "Teams", detail: "Research professional clubs" },
   { href: "/leagues", icon: "earth-outline", title: "Leagues", detail: "Explore competitions" },
   { href: "/players", icon: "people-outline", title: "Players", detail: "Find public player profiles" },
@@ -27,6 +28,7 @@ const accountLinks = [
 export default function DashboardScreen() {
   const router = useRouter();
   const theme = useEntryTheme();
+  const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
   const [accountType, setAccountType] = useState("");
@@ -68,6 +70,11 @@ export default function DashboardScreen() {
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
+          <Text style={{ color: theme.accent, fontSize: 12, fontWeight: "800", letterSpacing: 1.5 }}>THE GLOBAL BASKETBALL INTELLIGENCE HUB</Text>
+          <Text accessibilityRole="header" style={[theme.type.display, { color: theme.foreground, marginVertical: 16 }]}>Know who you’re signing with.</Text>
+          <Text style={{ color: theme.muted, fontSize: 16, lineHeight: 24, marginBottom: 20 }}>Explore teams, coaches, leagues, and real basketball experiences.</Text>
+          <Input accessibilityLabel="Search basketball directory" placeholder="Search teams, leagues, coaches or players" value={search} maxLength={100} onChangeText={setSearch} returnKeyType="search" onSubmitEditing={() => router.push({ pathname: "/search", params: { q: search } })} />
+          <Button style={{ marginTop: 8, marginBottom: 24 }} onPress={() => router.push({ pathname: "/search", params: { q: search } })}>Search</Button>
           <SectionHeader>Explore basketball</SectionHeader>
           <View style={styles.directories}>
             {directories.map(({ href, icon, title, detail }) => (

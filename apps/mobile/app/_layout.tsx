@@ -20,7 +20,7 @@ SplashScreen.setOptions({ duration: motion.logo, fade: true });
 void AccessibilityInfo.isReduceMotionEnabled().then(reduced => SplashScreen.setOptions({ duration: reduced ? motion.shortFade : motion.logo, fade: true })).catch(() => {});
 const splashDeadline = setTimeout(() => { void SplashScreen.hideAsync().catch(() => {}); }, motion.splashDeadline - motion.logo);
 import { useEffect, useState } from "react";
-import { Stack, usePathname, useRouter, useSegments } from "expo-router";
+import { Stack, useGlobalSearchParams, usePathname, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { supabase } from "../src/lib/supabase";
@@ -36,6 +36,7 @@ function RootLayout() {
   const [sessionReady, setSessionReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const pathname = usePathname();
+  const routeParams = useGlobalSearchParams<{ q?: string | string[] }>();
 
   useEffect(() => {
     let alive = true;
@@ -65,7 +66,8 @@ function RootLayout() {
   useEffect(() => {
     if (!sessionReady) return;
     const currentRoute = segments[0] ?? "";
-    const inAppArea = ["dashboard", "account", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
+    const inAppArea = ["dashboard", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
+
 
     if (["web", "sign-in", "sign-up"].includes(currentRoute)) return;
     const onPasswordRecovery = currentRoute === "reset-password";
@@ -75,8 +77,11 @@ function RootLayout() {
       const target = takeDestination();
       router.replace((target ?? "/dashboard") as "/dashboard");
     }
-    if (!signedIn && inAppArea) { rememberDestination(pathname); router.replace("/sign-in"); }
-  }, [sessionReady, signedIn, segments, router, pathname]);
+    if (!signedIn && inAppArea) { const query = new URLSearchParams();
+      if (currentRoute === "search" && typeof routeParams.q === "string") query.set("q", routeParams.q.slice(0, 100));
+      const serialized = query.toString();
+      rememberDestination(pathname + (serialized ? `?${serialized}` : "")); router.replace("/sign-in"); }
+  }, [sessionReady, signedIn, segments, router, pathname, routeParams.q]);
 
   if (!fontsLoaded && !fontError) return null;
 
@@ -116,6 +121,8 @@ function RootLayout() {
         <Stack.Screen name="womens/index" options={{ title: "Women’s teams" }} />
         <Stack.Screen name="womens/leagues/[id]" options={{ title: "League profile" }} />
         <Stack.Screen name="womens/[id]" options={{ title: "Team profile" }} />
+        <Stack.Screen name="search" options={{ title: "Search" }} />
+
         <Stack.Screen name="teams" options={{ title: "Teams" }} />
         <Stack.Screen name="teams/[id]" options={{ title: "Team profile" }} />
         <Stack.Screen name="teams/[id]/review" options={{ title: "Write a review" }} />

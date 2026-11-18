@@ -111,3 +111,9 @@ test("auth errors and malformed escapes are safely re-encoded and oversized link
   assert.equal(nativeDestination("hoopcheck://auth/callback?code=" + "x".repeat(9000)), "/");
   assert.equal(nativeDestination("hoopcheck://reset-password?code=fixture-code"), "/reset-password?code=fixture-code");
 });
+
+
+test("search links bound and safely re-encode terms for native routing", () => {
+  assert.equal(nativeDestination("hoopcheck://search?q=%ZZ&token=discard"), "/search?q=%25ZZ");
+  assert.equal(nativeDestination("/search?q=" + "x".repeat(200)), "/search?q=" + "x".repeat(100));
+});

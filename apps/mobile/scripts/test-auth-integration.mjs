@@ -15,8 +15,8 @@ function compile(path, imports, globals = {}) {
   return compiled.exports;
 }
 const theme = { radius: { control: 16 }, type: { display: {} } };
-function screen(path, { state = [], params = {}, segments = [], configurationError = null, pendingDestination = null, supabase = {} } = {}) {
-  const calls = { push: [], replace: [], alerts: [], oauthUrls: [], freshSignIns: 0 };
+function screen(path, { state = [], params = {}, segments = [], pathname = "/", configurationError = null, pendingDestination = null, supabase = {} } = {}) {
+  const calls = { push: [], replace: [], alerts: [], oauthUrls: [], freshSignIns: 0, remembered: [] };
   const effects = [];
   let slot = 0;
   const router = { push: p => calls.push.push(p), replace: p => calls.replace.push(p) };
@@ -25,7 +25,7 @@ function screen(path, { state = [], params = {}, segments = [], configurationErr
   const imports = name => {
     if (name === "react") return { useState: initial => [state[slot++] ?? initial, () => {}], useEffect: f => effects.push(f) };
     if (name === "react-native") return { Platform: { OS: "ios" }, StyleSheet: { create: s => s }, Alert: { alert: (...args) => calls.alerts.push(args) }, AccessibilityInfo: { isReduceMotionEnabled: async () => false }, Image: "Image", ScrollView: "ScrollView", Text: "Text", View: "View", Pressable: "Pressable", KeyboardAvoidingView: "KeyboardAvoidingView", ActivityIndicator: "ActivityIndicator" };
-    if (name === "expo-router") return { Stack, Link: "Link", useRouter: () => router, useLocalSearchParams: () => params, useSegments: () => segments, usePathname: () => "/" };
+    if (name === "expo-router") return { Stack, Link: "Link", useRouter: () => router, useLocalSearchParams: () => params, useGlobalSearchParams: () => params, useSegments: () => segments, usePathname: () => pathname };
     if (name === "expo-linking") return { createURL: p => `hoopcheck://${p}`, openURL: async url => calls.oauthUrls.push(url) };
     if (name === "expo-font") return { useFonts: () => [true, null] };
     if (name === "expo-status-bar") return { StatusBar: "StatusBar" };
@@ -34,7 +34,7 @@ function screen(path, { state = [], params = {}, segments = [], configurationErr
     if (name.endsWith("/primitives")) return { GlassCard: "GlassCard", Input: "Input", Button: "Button" };
     if (name.endsWith("/supabase")) return { supabase, supabaseConfigurationError: configurationError };
     if (name.endsWith("/native/lockPolicy")) return { recordFreshSignIn: () => { calls.freshSignIns++; } };
-    if (name.endsWith("/native/pendingDestination")) return { takeDestination: () => pendingDestination, rememberDestination: () => {} };
+    if (name.endsWith("/native/pendingDestination")) return { takeDestination: () => pendingDestination, rememberDestination: value => calls.remembered.push(value) };
     if (name === "react-native-gesture-handler") return { GestureHandlerRootView: "GestureHandlerRootView" };
     if (name === "@gorhom/bottom-sheet") return { BottomSheetModalProvider: "BottomSheetModalProvider" };
     if (name === "expo-splash-screen") return { preventAutoHideAsync: async () => {}, setOptions: () => {}, hideAsync: async () => {} };
@@ -176,4 +176,10 @@ test("OAuth exchange screen does not trigger app lock before fresh sign-in is re
     const f = screen("app/_layout.tsx", { state: [true, true], segments });
     assert.equal(f.nodes.find(node => node.type === "AppLock").props.protectedScreen, expected);
   }
+});
+
+
+test("protected search retains a bounded query across sign-in without extra URL fields", () => {
+  const f = screen("app/_layout.tsx", { state: [true, false], segments: ["search"], pathname: "/search", params: { q: "x".repeat(200), token: "discard" } });
+  f.effects[2](); assert.deepEqual(f.calls.remembered, ["/search?q=" + "x".repeat(100)]);
 });
