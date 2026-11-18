@@ -29,7 +29,14 @@ export function nativeDestination(path: string): string {
       return "/fan-live" + (id && /^[0-9a-f-]{36}$/i.test(id) ? `?gameId=${id}` : "");
     }
     if (url.pathname === "/reels") return "/reels";
-    if (url.pathname === "/search") return "/search" + url.search;
+    if (url.pathname === "/search") {
+      const query = new URLSearchParams();
+      const term = url.searchParams.get("q");
+      if (term) query.set("q", term.slice(0, 100));
+      const serialized = query.toString();
+      return "/search" + (serialized ? `?${serialized}` : "");
+    }
+
     if (url.pathname === "/auth/callback" || url.pathname === "/reset-password") {
       // Re-encode only the PKCE/error fields understood by native auth screens.
       // Invalid percent sequences must not reach the router's legacy decoder.
@@ -43,6 +50,7 @@ export function nativeDestination(path: string): string {
       const serialized = query.toString();
       return url.pathname + (serialized ? `?${serialized}` : "");
     }
+
 
     if (["r", "referral"].includes(parts[0]) && parts.length === 2 && /^[A-Za-z0-9_-]{4,40}$/.test(parts[1])) {
       // Reuse the server-issued, httpOnly referral cookie and existing web signup.

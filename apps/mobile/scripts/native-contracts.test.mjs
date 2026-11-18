@@ -136,3 +136,8 @@ test("club group canonical links retain group identity and malformed alternative
   assert.equal(nativeDestination("/team-hub/groups"), "/team-hub/groups");
   assert.equal(nativeDestination("/groups/other"), "/web?path=%2Fgroups%2Fother");
 });
+
+test("search links bound and safely re-encode terms for native routing", () => {
+  assert.equal(nativeDestination("hoopcheck://search?q=%ZZ&token=discard"), "/search?q=%25ZZ");
+  assert.equal(nativeDestination("/search?q=" + "x".repeat(200)), "/search?q=" + "x".repeat(100));
+});
