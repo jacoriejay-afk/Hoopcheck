@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- Isolated local theme regression harness. */
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const assert=require('node:assert/strict');
+const base=process.env.NATIVE_TEST_URL || 'http://127.0.0.1:8091';
+if(!['127.0.0.1','localhost'].includes(new URL(base).hostname))throw new Error('Local fixture only');
 const uid='11111111-1111-4111-8111-111111111111';
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || '/usr/bin/chromium',headless:true,args:['--no-sandbox']});
@@ -8,7 +10,7 @@ const uid='11111111-1111-4111-8111-111111111111';
  const context=await browser.newContext({viewport:{width:390,height:844},colorScheme:'dark'});
  await context.route('**/*',async route=>{
   const url=new URL(route.request().url());
-  if(url.origin==='http://127.0.0.1:8091')return route.continue();
+  if(url.origin===new URL(base).origin)return route.continue();
   if(url.hostname==='fixture.supabase.co')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(url.pathname==='/auth/v1/user'?{id:uid,email:'fixture@example.test',user_metadata:{}}:[])});
   return route.abort();
  });
@@ -19,8 +21,7 @@ const uid='11111111-1111-4111-8111-111111111111';
   localStorage.setItem('sb-fixture-auth-token',JSON.stringify({access_token:token,refresh_token:'fixture',token_type:'bearer',expires_at:exp,user:{id:uid,aud:'authenticated',email:'fixture@example.test',user_metadata:{}}}));
  },{uid});
  const page=await context.newPage();page.on('pageerror',e=>console.log('PAGEERROR',e.message));
- await page.goto('http://127.0.0.1:8091');
- await page.getByRole('tab',{name:'Settings',exact:true}).click();
+ await page.goto(`${base}/settings`);
  const group=page.getByRole('radiogroup',{name:'Appearance',exact:true});
  async function background(expected){await page.waitForFunction(expected=>{
   let el=document.querySelector('[role="radiogroup"][aria-label="Appearance"]');
@@ -30,7 +31,7 @@ const uid='11111111-1111-4111-8111-111111111111';
  async function choose(name,value,color){await page.getByRole('radio',{name,exact:true}).click();await page.locator(`[role="radio"][aria-label="${name}"][aria-checked="true"]`).waitFor({timeout:5000}).catch(async e=>{console.log('RADIOS',await page.locator('[role=radio]').evaluateAll(nodes=>nodes.map(n=>n.outerHTML)));console.log('PREFS',await page.evaluate(()=>localStorage.getItem('hoopcheck:device-preferences:v1')));console.log('BODY',await page.locator('body').innerText());throw e;});await background(color);assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('hoopcheck:device-preferences:v1')).theme),value);}
  await group.waitFor();await background('rgb(0, 0, 0)');
  await choose('Light theme','light','rgb(244, 244, 241)');
- await page.reload();await page.getByRole('tab',{name:'Settings',exact:true}).click();await background('rgb(244, 244, 241)');
+ await page.reload();await background('rgb(244, 244, 241)');
  await choose('Dark theme','dark','rgb(0, 0, 0)');
  await choose('Use device theme','system','rgb(0, 0, 0)');
  await page.emulateMedia({colorScheme:'light'});await background('rgb(244, 244, 241)');
