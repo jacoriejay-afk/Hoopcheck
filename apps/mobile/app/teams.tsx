@@ -27,6 +27,7 @@ export default function TeamsScreen() {
   const [preview, setPreview] = useState<Team | null>(null);
   const [items, setItems] = useState<Team[]>([]);
   const [term, setTerm] = useState("");
+  const [side, setSide] = useState<"mens" | "womens">("mens");
   const [appliedTerm, setAppliedTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -39,9 +40,9 @@ export default function TeamsScreen() {
     if (start === 0) setLoading(true);
     setError("");
     const clean = search.trim().replace(/[^\p{L}\p{N} '\-]/gu, " ").replace(/\s+/g, " ").trim();
-    let query = supabase.from("teams").select("id,name,country,city,league_name,website").eq("active", true).eq("basketball_type", "mens").order("name", { ascending: true }).range(start, start + PAGE_SIZE);
+    let query = (side === "womens" ? supabase.from("womens_teams").select("id,name,country,city,league_name,website").eq("active", true) : supabase.from("teams").select("id,name,country,city,league_name,website").eq("active", true).eq("basketball_type", "mens")).order("name", { ascending: true }).range(start, start + PAGE_SIZE);
     if (clean) query = query.or(`name.ilike.%${clean}%,country.ilike.%${clean}%,city.ilike.%${clean}%,league_name.ilike.%${clean}%`);
-    const { data, error: queryError } = await read(`teams:${clean}:${start}`, () => query);
+    const { data, error: queryError } = await read(`teams:${side}:${clean}:${start}`, () => query);
     if (currentRequest !== requestId.current) return;
     if (queryError) {
       setError("We couldn’t load teams. Check your connection and try again.");
@@ -54,7 +55,7 @@ export default function TeamsScreen() {
     setItems(append ? current => [...current, ...page] : page);
     setOffset(start);
     setLoading(false); setRefreshing(false);
-  }, [read]);
+  }, [read, side]);
 
 
 
@@ -81,7 +82,10 @@ export default function TeamsScreen() {
         <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
         <Text style={styles.kicker}>DIRECTORY</Text>
         <Text style={styles.title}>Find a team</Text>
-        <Text style={styles.subtitle}>Explore men’s professional basketball teams before you sign.</Text>
+        <Text style={styles.subtitle}>Explore men’s and women’s professional basketball teams before you sign.</Text>
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
+          {(["mens", "womens"] as const).map(value => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: side === value }} onPress={() => { requestId.current++; setItems([]); setSide(value); }} style={{ paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: theme.border, backgroundColor: side === value ? theme.accentSurface : theme.surface }}><Text style={{ color: theme.foreground, fontWeight: "800" }}>{value === "mens" ? "Men’s" : "Women’s"}</Text></Pressable>)}
+        </View>
         <View style={styles.searchRow}>
           <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={value => { requestId.current++; setTerm(value); setLoading(true); setItems([]); setHasMore(false); }} returnKeyType="search" placeholder="Team, country, city or league" placeholderTextColor={theme.muted} style={styles.input} />
         </View>
@@ -98,7 +102,7 @@ export default function TeamsScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} colors={[theme.accent]} progressBackgroundColor={theme.surface} />}
           renderItem={({ item, index }) => (
             <Reveal key={`${appliedTerm}:${item.id}`} index={index}>
-            <Pressable accessibilityHint="Hold to preview this team" onLongPress={() => setPreview(item)} onPress={() => router.push({ pathname: "/teams/[id]", params: { id: item.id } })} style={styles.card}>
+            <Pressable accessibilityHint="Hold to preview this team" onLongPress={() => setPreview(item)} onPress={() => router.push({ pathname: "/teams/[id]", params: { id: item.id, side } })} style={styles.card}>
               <DirectoryCrest name={item.name} kind="teams" />
               <View style={styles.cardBody}>
                 <Text style={styles.teamName}>{item.name}</Text>
@@ -118,7 +122,7 @@ export default function TeamsScreen() {
       )}
       <Sheet open={Boolean(preview)} onClose={() => setPreview(null)} title={preview?.name ?? "Team preview"}>
         <Text style={{ color: theme.muted }}>{[preview?.city, preview?.country, preview?.league_name].filter(Boolean).join(" · ") || "Location and league not listed"}</Text>
-        {preview ? <Pressable accessibilityRole="button" onPress={() => { const id = preview.id; setPreview(null); router.push({ pathname: "/teams/[id]", params: { id } }); }} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent }}>Open team profile</Text></Pressable> : null}
+        {preview ? <Pressable accessibilityRole="button" onPress={() => { const id = preview.id; setPreview(null); router.push({ pathname: "/teams/[id]", params: { id, side } }); }} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent }}>Open team profile</Text></Pressable> : null}
       </Sheet>
     </SafeAreaView>
   );
