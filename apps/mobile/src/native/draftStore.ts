@@ -13,8 +13,9 @@ export function createDraftStore() {
     },
     read(userId: string | undefined, key: string) { return userId && userId === owner ? values.get(key) || "" : ""; },
     write(userId: string | undefined, key: string, text: string) {
-      if (!userId || userId !== owner || !/^(game:chat|group:post|group:comment):[0-9a-f-]{36}$/i.test(key)) return false;
-      const value = text.slice(0, 2000);
+      if (!userId || userId !== owner || !/^(game:chat|group:post|group:comment|profile:edit):[0-9a-f-]{36}$/i.test(key)) return false;
+      if (key.startsWith("profile:edit:") && key !== `profile:edit:${userId}`) return false;
+      const value = text.slice(0, key.startsWith("profile:edit:") ? 8000 : 2000);
       if ((values.get(key) || "") === value) return true;
       const next = new Map(values); next.delete(key);
       if (value) next.set(key, value);

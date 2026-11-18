@@ -14,3 +14,8 @@ test('drafts have a bounded memory/key contract and subscribers clean up',()=>{
  store.write(uid,key,'');assert.equal(store.read(uid,key),'');assert.equal(calls,2);unsubscribe();store.write(uid,key,'Later');assert.equal(calls,2);
  store.switchUser('invalid');assert.equal(store.read(uid,key),'');
 });
+test('profile drafts have room for the bounded form and cannot target another identity',()=>{
+ const store=createDraftStore();store.switchUser(uid);const profile=`profile:edit:${uid}`;
+ assert.equal(store.write(uid,`profile:edit:${other}`,'forged'),false);store.write(uid,profile,'x'.repeat(9000));assert.equal(store.read(uid,profile).length,8000);
+ store.switchUser(other);assert.equal(store.read(uid,profile),'');
+});
