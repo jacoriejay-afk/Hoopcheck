@@ -9,8 +9,7 @@ import { useEntryTheme } from "../src/theme";
 const links = [
   { label: "Edit profile", path: "/account", icon: "person-circle-outline" },
   { label: "Membership", path: "/membership", icon: "card-outline" },
-  { label: "Notifications", path: "/notifications", icon: "notifications-outline" },
-  { label: "Support", path: "/support", icon: "help-circle-outline" },
+    { label: "Support", path: "/support", icon: "help-circle-outline" },
 ] as const;
 
 export default function AccountScreen() {
@@ -60,6 +59,12 @@ export default function AccountScreen() {
             <Ionicons name="open-outline" size={17} color={theme.muted} />
           </Pressable>
         ))}
+        <Pressable accessibilityRole="link" onPress={() => router.push("/notifications")}
+          style={[styles.link, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <Ionicons name="notifications-outline" size={22} color={theme.accent} />
+          <Text style={[styles.linkText, { color: theme.foreground }]}>Alerts</Text>
+          <Ionicons name="chevron-forward" size={17} color={theme.muted} />
+        </Pressable>
         <Pressable accessibilityRole="link" onPress={() => router.push("/settings")}
           style={[styles.link, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <Ionicons name="settings-outline" size={22} color={theme.accent} />
