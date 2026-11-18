@@ -15,6 +15,7 @@ const directories = [
 ] as const;
 
 const accountLinks = [
+  { path: "/feed", label: "HoopFeed on the web" },
   { path: "/account", label: "Account settings" },
   { path: "/support", label: "Support" },
   { path: "/terms", label: "Terms of Service" },
