@@ -59,15 +59,15 @@ export default function TeamDetailScreen() {
     async function load() {
       setLoading(true);
       if (!id) { setError(true); setLoading(false); return; }
-      const { data, error: queryError } = await read(`teams:profile:${womens ? "womens" : "mens"}:${id}`, () => (womens ? supabase.from("womens_teams").select("id,name,country,city,league_name,website").eq("id", id).eq("active", true).maybeSingle() : supabase.from("teams").select("id,name,country,city,league_name,website").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle()));
+      const { data, error: queryError } = await read(`teams:profile:${womens ? "womens" : "mens"}:${id}`, () => (womens ? supabase.from("womens_teams").select("id,name,country,city,league_name").eq("id", id).eq("active", true).maybeSingle() : supabase.from("teams").select("id,name,country,city,league_name,website").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle()));
       if (!alive) return;
-      if (queryError || !data) { setError(true); setTeam(null); } else { setError(false); setTeam(data as Team); }
+      if (queryError || !data) { setError(true); setTeam(null); } else { setError(false); setTeam({ ...data, website: "website" in data && typeof data.website === "string" ? data.website : null } as Team); }
       setLoading(false);
       setRefreshing(false);
     }
     void load();
     return () => { alive = false; };
-  }, [id, revision, refreshId, offline, read]);
+  }, [id, womens, revision, refreshId, offline, read]);
 
   async function openWebsite() {
     const url = safeWebsite(team?.website ?? null);
